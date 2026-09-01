@@ -1,9 +1,7 @@
-import { trpc } from '@op/api/client';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useCallback, useMemo, useState } from 'react';
 
 import { createSupabaseOtpStrategy } from './phoneAuth/supabaseOtp';
-import { createTwilioDirectStrategy } from './phoneAuth/twilioDirect';
 import type { PhoneCodeResult, PhoneVerifyResult } from './phoneAuth/types';
 
 export type {
@@ -13,59 +11,32 @@ export type {
 } from './phoneAuth/types';
 
 /**
- * Which strategy signs a person in.
- *
- * A deployment setting rather than a rollout. Two people in one release must
- * take the same path, or an incident report cannot say which code ran.
- *
- * `twilio-direct` is the default, because our server has to witness the
- * verification. Network membership reads a row this server writes when a
- * provider approves a number, and only this path produces one. It is also the
- * only path where the SMS sign-in flag, our own rate limit, and a display name
- * on a new account apply.
- *
- * `supabase` remains available and still signs a person in, but GoTrue answers
- * the browser directly and our server never sees the call. An account created
- * that way holds no verification record, so it reaches the product as a
- * non-member.
- */
-const strategyName =
-  process.env.NEXT_PUBLIC_PHONE_AUTH_STRATEGY === 'supabase'
-    ? 'supabase'
-    : 'twilio-direct';
-
-/**
  * Signs a person in with a phone number and an SMS code.
  *
- * Selects a strategy and reports progress. The strategies are factories rather
- * than hooks, so this stays the only hook and the choice stays a plain
- * conditional. Both tRPC mutations are created either way and cost nothing
- * until called, which keeps the hook order stable.
+ * GoTrue owns the code. It generates one, hands it to Twilio Verify, checks the
+ * reply, and issues the session, so neither this hook nor our server ever holds
+ * a code. The browser talks to Supabase directly.
  *
- * Progress lives here rather than in a strategy, so both report it the same
- * way whether the work happens on our server or in the browser.
+ * A confirmed number becomes network membership through a trigger on
+ * `auth.users`, not through anything here. Nothing in the application writes
+ * that record; see `record_phone_verification` in the migrations.
+ *
+ * The work sits behind {@link PhoneAuthStrategy} so a later provider change is
+ * one new file rather than a rewrite of the panel. One implementation exists,
+ * which is why nothing chooses between them.
+ *
+ * Progress lives here rather than in the strategy, so the panel reads it the
+ * same way whoever does the work.
  */
 export const usePhoneLogin = () => {
   const supabase = useMemo(() => createSBBrowserClient(), []);
-  const start = trpc.account.startPhoneLogin.useMutation();
-  const verify = trpc.account.verifyPhoneLogin.useMutation();
+  const strategy = useMemo(
+    () => createSupabaseOtpStrategy({ supabase }),
+    [supabase],
+  );
 
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-
-  const strategy = useMemo(
-    () =>
-      strategyName === 'twilio-direct'
-        ? createTwilioDirectStrategy({
-            supabase,
-            calls: {
-              startPhoneLogin: (input) => start.mutateAsync(input),
-              verifyPhoneLogin: (input) => verify.mutateAsync(input),
-            },
-          })
-        : createSupabaseOtpStrategy({ supabase }),
-    [supabase, start, verify],
-  );
 
   const requestCode = useCallback(
     async (phone: string): Promise<PhoneCodeResult> => {

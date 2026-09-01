@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createSupabaseOtpStrategy } from './supabaseOtp';
-import { createTwilioDirectStrategy } from './twilioDirect';
 
 vi.mock('@op/logging/client', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
@@ -77,91 +76,6 @@ describe('createSupabaseOtpStrategy', () => {
           data: { session: { access_token: 'a' } },
           error: null,
         }),
-      }),
-    });
-
-    await expect(
-      strategy.verifyCode({ phone: PHONE, code: '123456' }),
-    ).resolves.toEqual({ ok: true });
-  });
-});
-
-describe('createTwilioDirectStrategy', () => {
-  const build = (
-    calls: Partial<Parameters<typeof createTwilioDirectStrategy>[0]['calls']>,
-    auth: Record<string, unknown> = {
-      setSession: async () => ({ error: null }),
-    },
-  ) =>
-    createTwilioDirectStrategy({
-      supabase: stubClient(auth),
-      calls: {
-        startPhoneLogin: async () => ({ status: 'pending' as const }),
-        verifyPhoneLogin: async () => ({ status: 'rejected' as const }),
-        ...calls,
-      },
-    });
-
-  it('reports a refused number as unreachable', async () => {
-    const strategy = build({
-      startPhoneLogin: async () => ({ status: 'rejected' as const }),
-    });
-
-    await expect(strategy.requestCode(PHONE)).resolves.toMatchObject({
-      ok: false,
-      reason: 'unreachable',
-    });
-  });
-
-  it('sorts a rate-limit error into its own reason', async () => {
-    const strategy = build({
-      startPhoneLogin: async () => {
-        throw new Error('Too many codes were sent to this number.');
-      },
-    });
-
-    await expect(strategy.requestCode(PHONE)).resolves.toMatchObject({
-      ok: false,
-      reason: 'rate_limited',
-    });
-  });
-
-  it('keeps an expired verification apart from a wrong code', async () => {
-    const strategy = build({
-      verifyPhoneLogin: async () => ({ status: 'expired' as const }),
-    });
-
-    await expect(
-      strategy.verifyCode({ phone: PHONE, code: '123456' }),
-    ).resolves.toMatchObject({ ok: false, reason: 'expired' });
-  });
-
-  it('does not call a correct code wrong when the session fails to save', async () => {
-    const strategy = build(
-      {
-        verifyPhoneLogin: async () => ({
-          status: 'approved' as const,
-          accessToken: 'access',
-          refreshToken: 'refresh',
-        }),
-      },
-      { setSession: async () => ({ error: { message: 'storage blocked' } }) },
-    );
-
-    // Twilio approved the code and the server minted a real session. Only the
-    // browser's write failed. Telling this person their code was wrong sends
-    // them retyping a correct one until they give up.
-    await expect(
-      strategy.verifyCode({ phone: PHONE, code: '123456' }),
-    ).resolves.toMatchObject({ ok: false, reason: 'session_failed' });
-  });
-
-  it('reports success once the session is adopted', async () => {
-    const strategy = build({
-      verifyPhoneLogin: async () => ({
-        status: 'approved' as const,
-        accessToken: 'access',
-        refreshToken: 'refresh',
       }),
     });
 

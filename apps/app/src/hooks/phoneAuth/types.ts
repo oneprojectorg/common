@@ -1,18 +1,14 @@
 /** Why asking for a code failed. */
-export type PhoneCodeFailure =
-  | 'rate_limited'
-  | 'unreachable'
-  | 'unavailable'
-  | 'unknown';
+export type PhoneCodeFailure = 'rate_limited' | 'unavailable' | 'unknown';
 
-/** Why checking a code failed. */
-export type PhoneVerifyFailure =
-  | 'wrong_code'
-  | 'expired'
-  | 'session_failed'
-  | 'rate_limited'
-  | 'unavailable'
-  | 'unknown';
+/**
+ * Why checking a code failed.
+ *
+ * GoTrue reports an expired verification and a wrong code with one error code,
+ * so `expired` is a best reading rather than a certainty. Asking for a new code
+ * recovers from both, which a bare "wrong code" would not.
+ */
+export type PhoneVerifyFailure = 'wrong_code' | 'expired' | 'unknown';
 
 /**
  * What a strategy reports back to the panel.
@@ -35,28 +31,24 @@ export type PhoneVerifyResult =
 /**
  * One way to sign a person in with a phone number and an SMS code.
  *
- * The panel depends on this and never on a vendor. Two implementations exist,
- * and they differ in where the work happens rather than in what they offer:
+ * The panel depends on this and never on a vendor. One implementation exists:
+ * `createSupabaseOtpStrategy` asks GoTrue, which asks Twilio Verify. The
+ * browser talks to Supabase directly and our server is not involved.
  *
- * - `createTwilioDirectStrategy` asks our own procedures, which call Twilio
- *   Verify, mint the session, and record the verification. This is the default,
- *   and the only path that makes an account a network member.
- * - `createSupabaseOtpStrategy` asks GoTrue, which asks Twilio. The browser
- *   talks to Supabase directly and our server is not involved, so no
- *   verification record exists and the account signs in as a non-member.
+ * A confirmed number becomes network membership through a trigger on
+ * `auth.users`, so nothing in this layer writes that record.
  *
- * A strategy is a factory rather than a hook, so the selection in
- * `usePhoneLogin` stays a plain conditional. A hook could not be chosen
- * conditionally without breaking the rules of hooks.
+ * A strategy is a factory rather than a hook, so a future selection between two
+ * of them stays a plain conditional. A hook could not be chosen conditionally
+ * without breaking the rules of hooks.
  *
  * Both leave a live Supabase session behind on success. Everything after
  * sign-in reads that session, so a strategy that only proved ownership of a
  * number has not finished the job.
  *
- * Each strategy translates its own vendor's failures into the reasons above.
- * The distinctions exist because they need different instructions: retype the
- * code, ask for a new one, or wait. `session_failed` matters most — the code
- * was right, so telling the person it was wrong sends them retyping forever.
+ * A strategy translates its vendor's failures into the reasons above. The
+ * distinctions exist because they need different instructions: retype the code,
+ * ask for a new one, or wait.
  */
 export interface PhoneAuthStrategy {
   /** Asks for a code to be texted to `phone`. */

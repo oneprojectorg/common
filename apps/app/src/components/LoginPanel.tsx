@@ -87,10 +87,9 @@ export const LoginPanel = () => {
   const phoneFlow = usePhoneLoginFlow({ onSignedIn: () => finishSignIn() });
 
   // Off hides the option entirely, so the panel is the email-only one it was
-  // before. On the `twilio-direct` path the server refuses the call as well;
-  // on the `supabase` path GoTrue answers the browser and this is the only
-  // check, which is why an account created that way holds no verification
-  // record and reaches the product as a non-member.
+  // before. GoTrue answers the browser directly, so this is the only check on
+  // the request itself. The same flag is read again on the server, where it
+  // decides whether a verified number grants membership.
   const smsLoginEnabled = useFeatureFlag('sms-login') ?? false;
 
   // The channel every branch below agrees on.

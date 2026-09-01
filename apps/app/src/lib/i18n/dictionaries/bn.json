@@ -1731,9 +1731,7 @@
   "That code was wrong. Try again.": "কোডটি ভুল ছিল। আবার চেষ্টা করুন।",
   "Send the code again": "আবার কোড পাঠান",
   "Use a different number": "অন্য নম্বর ব্যবহার করুন",
-  "We could not finish signing you in. Try once more.": "আমরা আপনার সাইন-ইন সম্পূর্ণ করতে পারিনি। আরেকবার চেষ্টা করুন।",
   "Too many attempts. Wait a minute and try again.": "অনেক বেশি চেষ্টা। এক মিনিট অপেক্ষা করে আবার চেষ্টা করুন।",
-  "We could not reach that number.": "আমরা ওই নম্বরে পৌঁছাতে পারিনি।",
   "Signing in by text is unavailable right now.": "এই মুহূর্তে টেক্সটের মাধ্যমে সাইন ইন করা যাচ্ছে না।",
   "Code sent!": "কোড পাঠানো হয়েছে!",
   "A code was sent to {phone}. Type the code below to sign in.": "{phone} নম্বরে একটি কোড পাঠানো হয়েছে। সাইন ইন করতে নিচে কোডটি লিখুন।"

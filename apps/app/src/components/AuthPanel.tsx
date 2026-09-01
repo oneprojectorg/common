@@ -236,8 +236,8 @@ export const AuthEmailField = ({
 /**
  * The phone number field on the login panel.
  *
- * Mirrors {@link AuthEmailField}. The number reaches Twilio Verify either way,
- * and Verify requires E.164, so the placeholder shows that shape.
+ * Mirrors {@link AuthEmailField}. GoTrue hands the number to Twilio Verify,
+ * which requires E.164, so the placeholder shows that shape.
  * `normalizePhoneNumber` accepts what people actually type and converts it.
  */
 export const AuthPhoneField = ({

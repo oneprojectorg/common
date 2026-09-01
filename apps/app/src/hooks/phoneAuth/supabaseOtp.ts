@@ -20,16 +20,16 @@ const RATE_LIMITED_CODE = 'over_sms_send_rate_limit';
  * Supabase config names. It issues the session itself, so nothing here mints
  * one.
  *
- * Three consequences follow from the browser talking to GoTrue directly:
+ * Two consequences follow from the browser talking to GoTrue directly:
  *
- * - Our server never sees the request, so no server-side feature flag or rate
- *   limit applies. GoTrue's own limits are the only ones in force.
- * - No verification record is written, so an account created this way signs in
- *   and then reaches the product as a non-member. `twilio-direct` is the
- *   default for that reason.
+ * - Our server never sees the request, so no server-side rate limit applies.
+ *   GoTrue's own limits are the only ones in force.
  * - `displayName` is dropped. `signInWithOtp` does accept `options.data`, and
  *   the signup trigger reads `display_name` from it, so carrying the name is a
  *   gap someone could close rather than a limit of the API.
+ *
+ * A confirmed number becomes network membership through the
+ * `record_phone_verification` trigger on `auth.users`, not through this code.
  *
  * @param deps.supabase - The browser client, which stores the session.
  */

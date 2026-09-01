@@ -1731,9 +1731,7 @@
   "That code was wrong. Try again.": "الرمز غير صحيح. حاول مرة أخرى.",
   "Send the code again": "أعد إرسال الرمز",
   "Use a different number": "استخدم رقمًا آخر",
-  "We could not finish signing you in. Try once more.": "تعذَّر إكمال تسجيل الدخول. حاول مرة أخرى.",
   "Too many attempts. Wait a minute and try again.": "محاولات كثيرة. انتظر دقيقة ثم حاول مرة أخرى.",
-  "We could not reach that number.": "تعذَّر الوصول إلى هذا الرقم.",
   "Signing in by text is unavailable right now.": "تسجيل الدخول عبر الرسائل النصية غير متاح حاليًا.",
   "Code sent!": "تم إرسال الرمز!",
   "A code was sent to {phone}. Type the code below to sign in.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لتسجيل الدخول."

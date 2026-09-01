@@ -1731,9 +1731,7 @@
   "That code was wrong. Try again.": "A kód hibás. Próbálja újra.",
   "Send the code again": "Kód újraküldése",
   "Use a different number": "Másik szám használata",
-  "We could not finish signing you in. Try once more.": "Nem tudtuk befejezni a bejelentkezést. Próbálja még egyszer.",
   "Too many attempts. Wait a minute and try again.": "Túl sok próbálkozás. Várjon egy percet, és próbálja újra.",
-  "We could not reach that number.": "Nem sikerült elérni ezt a számot.",
   "Signing in by text is unavailable right now.": "Az SMS-es bejelentkezés jelenleg nem érhető el.",
   "Code sent!": "Kód elküldve!",
   "A code was sent to {phone}. Type the code below to sign in.": "Kódot küldtünk a következő számra: {phone}. Írja be lent a bejelentkezéshez."
