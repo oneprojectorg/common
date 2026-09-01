@@ -166,10 +166,10 @@ function ResultCard({
  * direct direction, which supersedes the side-by-side "Answer" frame in Figma.
  * Don't restore the horizontal row from that frame without asking them again.
  *
- * The explanation goes through `FieldDescription` (muted, `text-sm`) because
- * `text-label` puts the value at 1rem, the same size as body copy: stacked
- * same-size text in one colour reads as one paragraph, so the hierarchy has to
- * come from colour and size on the description instead.
+ * The explanation reads as body text — `text-base`, full foreground — per the
+ * Figma. The hierarchy against the value above it comes from the serif face
+ * alone, not from a muted, smaller description (an earlier direction this
+ * supersedes).
  */
 function ResultCardTopRow({ value, description }: Omit<ResultCardRow, 'id'>) {
   return (
@@ -179,7 +179,7 @@ function ResultCardTopRow({ value, description }: Omit<ResultCardRow, 'id'>) {
       )}
       {description ? (
         // Authored copy, so its line breaks are meant.
-        <FieldDescription className="whitespace-pre-wrap">
+        <FieldDescription className="text-base whitespace-pre-wrap text-foreground">
           {description}
         </FieldDescription>
       ) : null}
