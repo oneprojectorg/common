@@ -38,7 +38,7 @@ export const usePhoneLoginFlow = ({
   // after a reload would explain a failure the visitor never saw.
   const [error, setError] = useState<string | undefined>(undefined);
 
-  // People type `(818) 212-4554`. Validate and send what they meant.
+  // People type `(415) 555-0132`. Validate and send what they meant.
   const normalized = normalizePhoneNumber(phone);
   const isValid = phoneNumberSchema.safeParse(normalized).success;
   const isBusy = phoneLogin.isSending || phoneLogin.isVerifying;
