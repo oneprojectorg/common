@@ -170,13 +170,13 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 //   - images: svg, png, jpg, jpeg, gif, webp, avif, ico, bmp
 //   - fonts:  woff, woff2, ttf, otf, eot
 //   - docs:   pdf
-//   - text:   json, xml, txt
+//   - text:   json, xml, txt, html
 //   - build:  css, js, map
 //   - media:  mp4, webm, mp3, ogg, wav
 //
 // `proxy.test.ts` reads this literal directly to exercise the regex.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|api|assets|stats|waitlist|info|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|css|js|map|mp4|webm|mp3|ogg|wav)$).*)',
+    '/((?!_next/static|_next/image|api|assets|stats|waitlist|info|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|html|css|js|map|mp4|webm|mp3|ogg|wav)$).*)',
   ],
 };
