@@ -125,7 +125,7 @@ export const OPBatchSend = async (
     return { data: [], errors: [] };
   }
 
-  const results: any[] = [];
+  const results: { id: string }[] = [];
   const errors: { email: string; error: any }[] = [];
 
   if (process.env.EMAIL_SMTP_URL) {
@@ -169,7 +169,12 @@ export const OPBatchSend = async (
           errors.push({ email: email.to, error });
         });
       } else {
-        results.push(...(Array.isArray(data) ? data : data ? [data] : []));
+        // The batch endpoint responds { data: [{ id }, ...] } and the SDK
+        // hands that body back as `data`, so the per-email ids sit at
+        // data.data — pushing `data` itself would count 100-email chunks,
+        // making "N sent" logs lie for any send over one email.
+        // https://resend.com/docs/api-reference/emails/send-batch-emails
+        results.push(...(data?.data ?? []));
       }
     } catch (error) {
       // If batch fails, mark all emails in this batch as failed
