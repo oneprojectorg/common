@@ -35,11 +35,13 @@ export const ProposalRejectedEmail = ({
   note?: string;
 }) => {
   return (
-    <EmailTemplate previewText={`Your proposal "${proposalName}" was rejected`}>
-      <Header>Proposal Rejected</Header>
+    <EmailTemplate
+      previewText={`Your proposal "${proposalName}" was not advanced`}
+    >
+      <Header>Proposal Not Advanced</Header>
       <Text className="my-8 text-lg">
         Your proposal <InlineLink href={proposalUrl}>{proposalName}</InlineLink>{' '}
-        was rejected in <strong>{processTitle}</strong>. Reason:{' '}
+        was not advanced in <strong>{processTitle}</strong>. Reason:{' '}
         <strong>{reasonLabels[reason]}</strong>.
       </Text>
 
@@ -55,7 +57,7 @@ export const ProposalRejectedEmail = ({
 };
 
 ProposalRejectedEmail.subject = (proposalName: string) =>
-  `Your proposal "${proposalName}" was rejected`;
+  `Your proposal "${proposalName}" was not advanced`;
 
 ProposalRejectedEmail.PreviewProps = {
   proposalName: 'Community Garden Revamp',
