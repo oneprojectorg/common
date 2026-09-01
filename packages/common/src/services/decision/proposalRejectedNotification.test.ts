@@ -41,7 +41,7 @@ describe('ProposalRejectedEmail', () => {
 describe('ProposalRejectedEmail.subject', () => {
   it('names the proposal', () => {
     expect(ProposalRejectedEmail.subject('Community Garden Revamp')).toBe(
-      'Your proposal "Community Garden Revamp" was rejected',
+      'Your proposal "Community Garden Revamp" was not advanced',
     );
   });
 });
