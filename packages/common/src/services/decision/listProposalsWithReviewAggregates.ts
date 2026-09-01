@@ -31,13 +31,9 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
  *   - filtered: caller passes `proposalIds`.
  *   - phase-scoped: no `proposalIds`, returns the whole phase.
  *
- * The two branches stay separate because they authorize differently; see the
- * dispatch note on `listProposalsWithReviewAggregates`.
- *
- * The phase-scoped branch is strict so a filtered read that fails validation
- * (empty `proposalIds`, a malformed uuid) is rejected instead of falling
- * through to it with the key stripped — that fallthrough would hand a caller
- * who asked for a few proposals the entire phase.
+ * Strict on the second branch: without it a filtered read that fails
+ * validation falls through with `proposalIds` stripped, handing a caller who
+ * asked for a few proposals the entire phase.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
@@ -172,11 +168,7 @@ async function listProposalsFiltered({
 
 // ── Phase-scoped mode (whole phase) ───────────────────────────────────
 
-/**
- * Unbounded by construction, like `listSelectionCandidates`: a phase is a
- * bounded set that an admin has to see whole to act on it. A page limit here
- * silently hid every proposal past the first 50 from the advance screen.
- */
+/** Unbounded, like `listSelectionCandidates`: an admin has to see the phase whole to act on it. */
 async function listPhaseProposalsWithAggregates({
   processInstanceId,
   phaseId,

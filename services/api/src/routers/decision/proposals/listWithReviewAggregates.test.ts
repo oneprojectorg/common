@@ -279,9 +279,7 @@ describe.concurrent('listWithReviewAggregates', () => {
       created.context.defaultReviewer.email,
     );
 
-    // An empty array fails the filtered branch. Without the strict phase-scoped
-    // branch it would fall through with `proposalIds` stripped, handing a
-    // caller who asked for nothing every proposal in the phase.
+    // Fails the filtered branch; must not fall through to the phase-scoped one.
     await expect(
       adminCaller.decision.listWithReviewAggregates({
         processInstanceId: created.context.instance.instance.id,

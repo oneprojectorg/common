@@ -203,9 +203,8 @@ export const proposalWithAggregatesSchema = z.object({
 });
 
 /**
- * Single response shape for both filtered and phase-scoped modes. Neither
- * paginates, so there is no page count or cursor to carry — a caller that
- * wants a count reads `items.length`.
+ * Single response shape for both modes. Neither paginates, so there is no
+ * count or cursor to carry — a caller that wants a count reads `items.length`.
  */
 export const proposalsWithReviewAggregatesListSchema = z.object({
   items: z.array(proposalWithAggregatesSchema),
