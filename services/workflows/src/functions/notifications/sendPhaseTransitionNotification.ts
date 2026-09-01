@@ -27,7 +27,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     { event: phaseTransitioned.name },
     { event: manualSelectionsConfirmed.name },
   ],
-  async ({ event, step }) => {
+  async ({ event, step, runId }) => {
     const { processInstanceId, toPhaseId } = phaseTransitioned.schema.parse(
       event.data,
     );
@@ -127,22 +127,29 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
             }),
         }));
 
-        const { errors } = await OPBatchSend(emails);
+        const { errors } = await OPBatchSend(emails, {
+          // Stable across retries, unique per run: a retry replays delivered
+          // chunks and only the failed ones go out again.
+          idempotencyKeyPrefix: `phase-transition/${runId}`,
+        });
 
-        // Throwing would make Inngest retry the step and re-blast everyone
-        // whose batch already succeeded.
         if (errors.length > 0) {
           logger.error('Some phase transition notifications failed to send', {
             processInstanceId,
             failedCount: errors.length,
           });
+          throw new Error(
+            `Phase transition email batch failed for ${errors.length} recipient(s)`,
+          );
         }
 
-        // Not `data.length` — under Resend that counts 100-email batches.
-        return {
-          sent: emails.length - errors.length,
-          failed: errors.length,
-        };
+        logger.info('Phase transition notifications sent', {
+          processInstanceId,
+          toPhaseId,
+          sent: emails.length,
+          idempotencyKeyPrefix: `phase-transition/${runId}`,
+        });
+        return { sent: emails.length };
       } catch (error) {
         logger.error('Failed to send phase transition notifications', {
           error,
@@ -154,8 +161,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
 
     return {
       sent: result.sent,
-      failed: result.failed,
-      message: `${result.sent} phase transition notification(s) sent, ${result.failed} failed`,
+      message: `${result.sent} phase transition notification(s) sent`,
     };
   },
 );
