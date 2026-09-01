@@ -1,8 +1,6 @@
 'use client';
 
-import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { templateCollectsBudget } from '@op/common/client';
 import { Button } from '@op/sense/Button';
@@ -30,10 +28,6 @@ import {
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { StandardSelectionFooter } from './StandardSelectionFooter';
 import { useManualSelection } from './useManualSelection';
-import { useProposalFilters } from './useProposalFilters';
-
-// Stable reference: useProposalFilters memoizes on `votedProposalIds`.
-const EMPTY_VOTED_IDS: string[] = [];
 
 interface ManualSelectionListProps {
   instanceId: string;
@@ -55,7 +49,6 @@ export const ManualSelectionList = ({
   pinOffset,
 }: ManualSelectionListProps) => {
   const t = useTranslations();
-  const { user } = useRequiredUser();
   const posthog = usePostHog();
   const router = useRouter();
   const pathname = usePathname();
@@ -115,15 +108,6 @@ export const ManualSelectionList = ({
     [selectedIds, proposalCache],
   );
 
-  const { filteredProposals, proposalFilter, setProposalFilter } =
-    useProposalFilters({
-      proposals: candidates?.proposals ?? [],
-      currentProfileId: user.currentProfile?.id,
-      votedProposalIds: EMPTY_VOTED_IDS,
-      hasVoted: false,
-      initialFilter: ProposalFilter.ALL,
-    });
-
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       // Channel-based invalidation flips selectionsAreConfirmed in the client
@@ -166,15 +150,12 @@ export const ManualSelectionList = ({
   );
 
   const toolbarFilters = useMemo<SelectionFilters>(
-    () => ({ proposalFilter, selectedCategory, sortOrder }),
-    [proposalFilter, selectedCategory, sortOrder],
+    () => ({ selectedCategory, sortOrder }),
+    [selectedCategory, sortOrder],
   );
 
   const handleToolbarChange = useCallback(
     (patch: Partial<SelectionFilters>) => {
-      if (patch.proposalFilter !== undefined) {
-        setProposalFilter(patch.proposalFilter);
-      }
       if (patch.selectedCategory !== undefined) {
         setSelectedCategory(patch.selectedCategory);
       }
@@ -182,7 +163,7 @@ export const ManualSelectionList = ({
         setSortOrder(patch.sortOrder);
       }
     },
-    [setProposalFilter],
+    [],
   );
 
   const handleConfirmSelection = useCallback(() => {
@@ -222,10 +203,9 @@ export const ManualSelectionList = ({
     return null;
   }
 
-  // Full pool empty → dead end, no toolbar. Any narrowing filter keeps
+  // Full pool empty → dead end, no toolbar. A narrowing category filter keeps
   // the toolbar (below) so the admin can loosen it.
-  const isUnfiltered = !categoryId && proposalFilter === ProposalFilter.ALL;
-  if (isUnfiltered && candidates.proposals.length === 0) {
+  if (!categoryId && candidates.proposals.length === 0) {
     return (
       <Empty>
         <EmptyHeader>
@@ -249,7 +229,7 @@ export const ManualSelectionList = ({
     );
   };
 
-  const proposals = filteredProposals;
+  const proposals = candidates.proposals;
   const numSelected = selectedIds.length;
   // No budget key in the instance's proposal template means the process
   // collects no budgets, so the column would only ever show "—".
@@ -265,8 +245,6 @@ export const ManualSelectionList = ({
     <div className="relative flex flex-col gap-6 pb-20">
       <ManualSelectionToolbar
         count={proposals.length}
-        total={candidates.proposals.length}
-        currentProfileId={user.currentProfile?.id}
         categories={categoriesData.categories}
         filters={toolbarFilters}
         onChange={handleToolbarChange}
