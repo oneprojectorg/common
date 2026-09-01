@@ -23,7 +23,7 @@ const createCaller = createCallerFactory(appRouter);
 
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
-  'x-field-order': ['impact'],
+  'x-field-order': ['impact', 'departments'],
   properties: {
     impact: {
       type: 'integer',
@@ -36,6 +36,23 @@ const rubricTemplate: RubricTemplateSchema = {
         { const: 2, title: 'Medium' },
         { const: 3, title: 'High' },
       ],
+    },
+    // "Check all that apply": `x-format` stays on the array and the options
+    // move to `items`. Optional, so the criteria-specific tests below can
+    // leave it out — the required path is `impact`'s.
+    departments: {
+      type: 'array',
+      title: 'Which departments would this fall under?',
+      'x-format': 'dropdown',
+      minItems: 1,
+      items: {
+        type: 'string',
+        oneOf: [
+          { const: 'a1b2c3d4', title: 'Parks' },
+          { const: 'e5f6a7b8', title: 'Transportation' },
+          { const: 'c9d0e1f2', title: 'Public Health' },
+        ],
+      },
     },
   },
   required: ['impact'],
@@ -118,7 +135,7 @@ describe.concurrent('submitReview', () => {
     const result = await reviewerCaller.decision.submitReview({
       assignmentId: created.assignment.id,
       reviewData: {
-        answers: { impact: 3 },
+        answers: { impact: 3, departments: ['a1b2c3d4', 'c9d0e1f2'] },
         rationales: { impact: 'Solid execution plan' },
       },
       overallComment: 'Ready to move forward',
@@ -126,7 +143,12 @@ describe.concurrent('submitReview', () => {
 
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);
     expect(result.submittedAt).toBeTruthy();
-    expect(result.reviewData.answers).toEqual({ impact: 3 });
+    // The multi-select answer keeps its array shape and its option order —
+    // `coerceToSchema` leaves an array alone when the schema wants one.
+    expect(result.reviewData.answers).toEqual({
+      impact: 3,
+      departments: ['a1b2c3d4', 'c9d0e1f2'],
+    });
     expect(result.reviewData.rationales).toEqual({
       impact: 'Solid execution plan',
     });
@@ -142,7 +164,7 @@ describe.concurrent('submitReview', () => {
     expect(assignment?.completedAt).toBeTruthy();
     expect(assignment?.reviews[0]?.state).toBe(ProposalReviewState.SUBMITTED);
     expect(assignment?.reviews[0]?.reviewData).toMatchObject({
-      answers: { impact: 3 },
+      answers: { impact: 3, departments: ['a1b2c3d4', 'c9d0e1f2'] },
       rationales: { impact: 'Solid execution plan' },
     });
   });
@@ -247,6 +269,78 @@ describe.concurrent('submitReview', () => {
 
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);
     expect(result.reviewData.answers).toEqual({ department: ['e5f6a7b8'] });
+  });
+
+  it('rejects a multi-select answer containing an option outside oneOf', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: {
+          answers: { impact: 3, departments: ['a1b2c3d4', 'not-an-option'] },
+          rationales: {},
+        },
+      }),
+    ).rejects.toThrow('Rubric validation failed');
+  });
+
+  it('rejects an empty multi-select answer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // `minItems: 1` — an empty selection is "unanswered", which the form
+    // expresses by dropping the key, so `[]` must never validate.
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: {
+          answers: { impact: 3, departments: [] },
+          rationales: {},
+        },
+      }),
+    ).rejects.toThrow('Rubric validation failed');
+  });
+
+  it('rejects a non-array multi-select answer that is not a known option', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // A bare scalar is not rejected for being scalar: `coerceToSchema` wraps
+    // it to `[value]` when the schema wants an array (the mirror of the
+    // single-select case above). What it then validates against is the option
+    // list, which is what rejects this one.
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: {
+          answers: { impact: 3, departments: 'not-an-option' },
+          rationales: {},
+        },
+      }),
+    ).rejects.toThrow('Rubric validation failed');
   });
 
   it('accepts a money answer and stores it verbatim', async ({

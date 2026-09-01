@@ -1715,4 +1715,6 @@
   "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {# ID not found} other {# IDs not found}}",
   "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}",
   "No proposal IDs found in what you pasted.": "No proposal IDs found in what you pasted.",
-  "Add to selection": "Add to selection"}
+  "Add to selection": "Add to selection",
+  "Check all that apply": "Check all that apply",
+  "Reviewers select one or more options": "Reviewers select one or more options"}

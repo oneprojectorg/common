@@ -1715,4 +1715,6 @@
   "{count, plural, one {# ID not found} other {# IDs not found}}": "{count, plural, one {معرّف واحد غير موجود} other {# معرّفات غير موجودة}}",
   "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}": "{count, plural, one {تم تخطي مقترح واحد (معيّن مسبقًا أو من مقترحات المراجع نفسه)} other {تم تخطي # مقترحات (معيّنة مسبقًا أو من مقترحات المراجع نفسه)}}",
   "No proposal IDs found in what you pasted.": "لم يُعثر على أي معرّف مقترح في ما ألصقته.",
-  "Add to selection": "إضافة إلى التحديد"}
+  "Add to selection": "إضافة إلى التحديد",
+  "Check all that apply": "اختر كل ما ينطبق",
+  "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر"}
