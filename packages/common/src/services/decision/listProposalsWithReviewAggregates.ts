@@ -103,7 +103,7 @@ export async function listProposalsWithReviewAggregates(
     });
   }
 
-  return listProposalsForPhase({
+  return listPhaseProposalsWithAggregates({
     processInstanceId,
     phaseId,
     phaseProposalIds,
@@ -135,7 +135,7 @@ async function listProposalsFiltered({
   );
 
   if (filteredProposalIds.length === 0) {
-    return { items: [], total: 0, next: null, rubricTemplate };
+    return { items: [], rubricTemplate };
   }
 
   const [proposalsFull, categoriesByProposalId] = await Promise.all([
@@ -166,8 +166,6 @@ async function listProposalsFiltered({
 
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
-    total: items.length,
-    next: null,
     rubricTemplate,
   });
 }
@@ -179,7 +177,7 @@ async function listProposalsFiltered({
  * bounded set that an admin has to see whole to act on it. A page limit here
  * silently hid every proposal past the first 50 from the advance screen.
  */
-async function listProposalsForPhase({
+async function listPhaseProposalsWithAggregates({
   processInstanceId,
   phaseId,
   phaseProposalIds,
@@ -193,7 +191,7 @@ async function listProposalsForPhase({
   rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   if (phaseProposalIds.length === 0) {
-    return { items: [], total: 0, next: null, rubricTemplate };
+    return { items: [], rubricTemplate };
   }
 
   const rows = await db.query.proposals.findMany({
@@ -212,7 +210,7 @@ async function listProposalsForPhase({
   });
 
   if (rows.length === 0) {
-    return { items: [], total: 0, next: null, rubricTemplate };
+    return { items: [], rubricTemplate };
   }
 
   const categoriesByProposalId = await getCategoriesByProposalIds(
@@ -230,8 +228,6 @@ async function listProposalsForPhase({
 
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
-    total: items.length,
-    next: null,
     rubricTemplate,
   });
 }

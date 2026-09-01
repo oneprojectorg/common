@@ -204,13 +204,11 @@ export const proposalWithAggregatesSchema = z.object({
 
 /**
  * Single response shape for both filtered and phase-scoped modes. Neither
- * paginates, so `total` is always `items.length` and `next` is always null —
- * one shape is simpler than a union and clients can ignore the extras.
+ * paginates, so there is no page count or cursor to carry — a caller that
+ * wants a count reads `items.length`.
  */
 export const proposalsWithReviewAggregatesListSchema = z.object({
   items: z.array(proposalWithAggregatesSchema),
-  total: z.number().int(),
-  next: z.string().nullable(),
   /** The phase-resolved rubric the items' aggregates were scored against. */
   rubricTemplate: rubricTemplateSchema.nullable(),
 });

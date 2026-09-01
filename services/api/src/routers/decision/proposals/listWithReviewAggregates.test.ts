@@ -318,8 +318,6 @@ describe.concurrent('listWithReviewAggregates', () => {
     });
 
     expect(result.items).toHaveLength(created.length);
-    expect(result.total).toBe(result.items.length);
-    expect(result.next).toBeNull();
     expect(result.items.map((i) => i.proposal.id).sort()).toEqual(
       created.map((p) => p.proposal.id).sort(),
     );
