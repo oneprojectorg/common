@@ -69,7 +69,7 @@ export const verifications = pgTable(
   (table) => [
     ...serviceRolePolicies,
     // Membership asks "has this account verified a number", once per authorized
-    // request. `type` leads with `auth_user_id` because no read spans types.
+    // request. The index carries `type` because every read filters on it.
     index().on(table.authUserId, table.type),
     // One row per account, type and address: signing in again re-verifies an
     // address the account already proved.
