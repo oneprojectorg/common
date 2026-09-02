@@ -72,7 +72,7 @@ content_path = "./supabase/templates/magiclink.html"
 
 [auth.sms]
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = true
 template = "Your code is {{ .Code }} ."
 max_frequency = "5s"
 
@@ -87,16 +87,21 @@ max_frequency = "5s"
 # Verify owns the copy and the expiry here, so `template` and `sms_otp_exp`
 # above do not reach the participant.
 #
-# `enable_confirmations = false` above is GoTrue's SMS autoconfirm.
+# `enable_confirmations = true` above turns GoTrue's SMS autoconfirm off, and
+# it has to stay off.
 #
 # GoTrue owns verification: it generates the code, sends it through Verify,
 # checks the reply, and issues the session. Our server never sees any of it.
 # The `record_phone_verification` trigger on `auth.users` turns a confirmed
 # number into the `phone_verifications` row that network membership reads.
 #
-# The cost of autoconfirm is that GoTrue can set `phone_confirmed_at` on a
-# phone *change* without checking a code, and the trigger cannot tell that
-# apart from a real verification.
+# That makes `phone_confirmed_at` a network credential, and the trigger cannot
+# tell how the column was set. Autoconfirm sets it on a phone signup, and on a
+# phone change, without checking any code, so an account that never held the
+# number would be admitted. Requiring a confirmation is what makes the
+# trigger's premise true.
+#
+# `smsAutoconfirm.test.ts` in services/api fails if this is turned back on.
 [auth.sms.twilio_verify]
 enabled = true
 account_sid = "env(TWILIO_ACCOUNT_SID)"
