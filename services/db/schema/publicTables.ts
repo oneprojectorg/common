@@ -98,6 +98,10 @@ export {
   allowListRelations,
   type AllowList,
 } from './tables/allowList.sql';
+export {
+  phoneVerifications,
+  type PhoneVerification,
+} from './tables/phoneVerifications.sql';
 export { EntityType, entityTypeEnum } from './tables/entities.sql';
 export {
   JoinProfileRequestStatus,

@@ -967,4 +967,19 @@ export const relations = defineRelations(schema, (r) => ({
       alias: 'moderationFlag_flaggedBy',
     }),
   },
+
+  /**
+   * Phone verification relations
+   *
+   * A row records that a provider approved a number for an account. Network
+   * membership reads this rather than `auth.users.phone_confirmed_at`, which
+   * the account holder can set on their own row.
+   */
+  phoneVerifications: {
+    authUser: r.one.authUsers({
+      from: r.phoneVerifications.authUserId,
+      to: r.authUsers.id,
+      optional: false,
+    }),
+  },
 }));
