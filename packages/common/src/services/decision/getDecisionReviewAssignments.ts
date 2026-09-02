@@ -1,5 +1,6 @@
 import { aliasedTable, db, eq, inArray } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
@@ -63,6 +64,16 @@ export async function getDecisionReviewAssignments({
   /** Omit for every phase. */
   phaseId?: string;
 }): Promise<AdminDecisionReviewAssignments> {
+  // Stage timings for the slow-screen investigation: the read is dominated by
+  // the document fan-out, but the split has to be visible per request to rule
+  // the other stages in or out on Vercel.
+  const tTotal = performance.now();
+  const stageMs: Record<string, number> = {};
+  const mark = (stage: string, since: number) => {
+    stageMs[stage] = Math.round(performance.now() - since);
+  };
+
+  let tStage = performance.now();
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
     columns: {
@@ -77,6 +88,7 @@ export async function getDecisionReviewAssignments({
   if (!instance) {
     throw new NotFoundError('Decision instance not found');
   }
+  mark('instance', tStage);
 
   // Needed to read preview text out of the document fragments, exactly like
   // the proposal list reads. Started now, awaited after the assignment query.
@@ -86,6 +98,7 @@ export async function getDecisionReviewAssignments({
   );
 
   // Not paginated: bounded by reviewers × proposals of a single process.
+  tStage = performance.now();
   const [assignments, eligibleProfileIds, phaseProposalIds] = await Promise.all(
     [
       db.query.proposalReviewAssignments.findMany({
@@ -123,6 +136,7 @@ export async function getDecisionReviewAssignments({
       getProposalIdsForPhase({ instance, phaseId }),
     ],
   );
+  mark('assignmentsAndIds', tStage);
 
   const categorizedProposalIds = [
     ...new Set([
@@ -167,6 +181,7 @@ export async function getDecisionReviewAssignments({
       : Promise.resolve([]);
 
   const proposalTemplate = await proposalTemplatePromise;
+  tStage = performance.now();
 
   // Reviewers share proposals, so fetch and parse each snapshot once.
   const assignedProposals = [
@@ -199,6 +214,7 @@ export async function getDecisionReviewAssignments({
       { onFetchError: 'omit' },
     ),
   ]);
+  mark('proposalsCategoriesAndDocs', tStage);
 
   const byReviewer = new Map<string, ReviewerRollup>();
   const cardFieldsByProposalId = new Map<
@@ -297,7 +313,8 @@ export async function getDecisionReviewAssignments({
       (a.profile.name ?? '').localeCompare(b.profile.name ?? ''),
   );
 
-  return adminDecisionReviewAssignmentsSchema.parse({
+  tStage = performance.now();
+  const parsed = adminDecisionReviewAssignmentsSchema.parse({
     reviewers,
     totalAssignments: assignments.length,
     eligibleReviewers: eligibleReviewers.sort((a, b) =>
@@ -322,4 +339,19 @@ export async function getDecisionReviewAssignments({
       };
     }),
   });
+  mark('outputParse', tStage);
+
+  const summary = {
+    instanceId,
+    phaseId,
+    totalMs: Math.round(performance.now() - tTotal),
+    assignments: assignments.length,
+    distinctProposals: assignedProposals.length,
+    stageMs,
+  };
+  logger.info('review assignments read summary', summary);
+  // eslint-disable-next-line no-console
+  console.log(`[review-assignments-summary] ${JSON.stringify(summary)}`);
+
+  return parsed;
 }

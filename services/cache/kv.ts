@@ -37,6 +37,23 @@ export type RedisGetResult =
   | { status: 'timeout' }
   | { status: 'error' };
 
+/**
+ * Where a `cache()` read was answered, reported through `options.onOutcome`.
+ * The non-obvious one is `redis-not-ready`: REDIS_URL is configured but the
+ * client hasn't finished connecting (a cold lambda answering before
+ * `connect()` resolves) — the read behaves like a miss, but the cause is
+ * availability, not absence.
+ */
+export type CacheReadOutcome =
+  | 'memory-hit'
+  | 'redis-hit'
+  | 'redis-miss'
+  | 'redis-not-ready'
+  | 'race-timeout'
+  | 'command-timeout'
+  | 'redis-error'
+  | 'no-redis';
+
 // Create Redis client only if REDIS_URL is provided
 let redis: ReturnType<typeof createClient> | null = null;
 
@@ -198,6 +215,13 @@ export const cache = async <T>({
     storeNulls?: boolean;
     ttl?: number;
     skipCacheWrite?: (result: Awaited<T>) => boolean;
+    /**
+     * Reports where this read was answered, with the Redis phase duration
+     * when one ran. Lets batch callers aggregate exact tier outcomes into a
+     * single log line — the per-outcome metrics can't be joined back to one
+     * request.
+     */
+    onOutcome?: (outcome: CacheReadOutcome, info: { redisMs?: number }) => void;
   };
 }): Promise<Awaited<T>> => {
   const cacheKey = getCacheKey(type, appKey, params);
@@ -213,8 +237,18 @@ export const cache = async <T>({
   const cachedVal = !skipMemCache ? memCache.get(cacheKey) : undefined;
   if (cachedVal) {
     cacheMetrics.recordHit({ type: 'memory', keyType: type });
+    options.onOutcome?.('memory-hit', {});
     return cachedVal.data as Awaited<T>;
   }
+
+  // Distinguish "Redis answered: nothing there" from "there was no Redis to
+  // ask" before racing — after the race a not-ready client's answer is
+  // indistinguishable from a genuine miss.
+  const redisUnavailable: CacheReadOutcome | null = !REDIS_URL
+    ? 'no-redis'
+    : !redis?.isReady
+      ? 'redis-not-ready'
+      : null;
 
   // fall back to Redis cache
   //
@@ -232,18 +266,27 @@ export const cache = async <T>({
     setTimeout(() => resolve(RACE_TIMEOUT), REDIS_RACE_TIMEOUT_MS);
   });
 
+  const tRedis = performance.now();
   const raced = await Promise.race([tryGetFromRedis(cacheKey), raceTimeout]);
+  const redisMs = performance.now() - tRedis;
 
   if (raced === RACE_TIMEOUT) {
     cacheMetrics.recordTimeout({ layer: 'race', keyType: type });
+    options.onOutcome?.('race-timeout', { redisMs });
   } else if (raced.status === 'hit') {
     cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
+    options.onOutcome?.('redis-hit', { redisMs });
     memCache.set(cacheKey, { data: raced.data }, { ttl: memTtl });
     return raced.data as Awaited<T>;
   } else if (raced.status === 'timeout') {
     cacheMetrics.recordTimeout({ layer: 'command', keyType: type });
+    options.onOutcome?.('command-timeout', { redisMs });
+  } else if (raced.status === 'error') {
+    cacheMetrics.recordMiss(type);
+    options.onOutcome?.('redis-error', { redisMs });
   } else {
     cacheMetrics.recordMiss(type);
+    options.onOutcome?.(redisUnavailable ?? 'redis-miss', { redisMs });
   }
 
   // finally retrieve the data from the DB
@@ -384,10 +427,22 @@ export const set = async (key: string, data: unknown, ttl?: number) => {
     return;
   }
 
+  // A write attempted before the client finishes connecting throws (offline
+  // queue is disabled) — that's an availability gap, not a serialization bug,
+  // and on a cold lambda it can silently leave the cache unfilled. Logged so
+  // the fill path is observable.
+  if (!redis.isReady) {
+    cacheMetrics.recordError('set');
+    logger.warn('CACHE: Redis SET skipped, client not ready', { key });
+    return;
+  }
+
   const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+  let bytes = 0;
 
   try {
     const serializedData = JSON.stringify(data);
+    bytes = serializedData.length;
     const scopedRedis = redis.withAbortSignal(signal);
     if (data === null) {
       await scopedRedis.del(key);
@@ -397,10 +452,15 @@ export const set = async (key: string, data: unknown, ttl?: number) => {
   } catch (e) {
     if (signal.aborted) {
       cacheMetrics.recordTimeout({ layer: 'command' });
+      logger.warn('CACHE: Redis SET timed out', {
+        key,
+        bytes,
+        timeoutMs: REDIS_COMMAND_TIMEOUT_MS,
+      });
       return;
     }
 
-    logger.error('CACHE: error setting to Redis', { error: e });
+    logger.error('CACHE: error setting to Redis', { error: e, key, bytes });
     cacheMetrics.recordError('set');
   }
 };

@@ -1,3 +1,4 @@
+import type { CacheReadOutcome } from '@op/cache';
 import {
   type TipTapFragmentResponse,
   getCachedDocumentFragments,
@@ -92,6 +93,15 @@ export async function getProposalDocumentsContent(
   if (proposalsWithCollabDoc.length > 0) {
     const client = getTipTapClient();
 
+    // Cache-tier diagnostics: exact per-request outcome counts plus a per-doc
+    // latency distribution. The cache metrics counters can't be joined back
+    // to a single request, and a Redis failure here silently degrades into a
+    // full TipTap fan-out — this is the only place that sees the whole batch.
+    const outcomes: Partial<Record<CacheReadOutcome, number>> = {};
+    const redisTimings: number[] = [];
+    const docTimings: number[] = [];
+    const tBatch = performance.now();
+
     const results = await pMap(
       proposalsWithCollabDoc,
       async ({
@@ -105,12 +115,20 @@ export async function getProposalDocumentsContent(
           : ['default'];
 
         try {
+          const tDoc = performance.now();
           const fragments = await getCachedDocumentFragments({
             client,
             docId: collaborationDocId,
             versionId: collaborationDocVersionId,
             fragmentNames,
+            onOutcome: (outcome, { redisMs }) => {
+              outcomes[outcome] = (outcomes[outcome] ?? 0) + 1;
+              if (redisMs !== undefined) {
+                redisTimings.push(redisMs);
+              }
+            },
           });
+          docTimings.push(performance.now() - tDoc);
 
           return { id, fragments, failed: false as const };
         } catch (error) {
@@ -123,6 +141,27 @@ export async function getProposalDocumentsContent(
       },
       { concurrency: 10 },
     );
+
+    const sortedDocMs = [...docTimings].sort((a, b) => a - b);
+    const sortedRedisMs = [...redisTimings].sort((a, b) => a - b);
+    const pct = (sorted: number[], p: number) =>
+      Math.round(sorted[Math.floor((sorted.length - 1) * p)] ?? 0);
+    const summary = {
+      docCount: proposalsWithCollabDoc.length,
+      failed: results.filter((r) => r.failed).length,
+      totalMs: Math.round(performance.now() - tBatch),
+      docMsP50: pct(sortedDocMs, 0.5),
+      docMsP95: pct(sortedDocMs, 0.95),
+      docMsMax: pct(sortedDocMs, 1),
+      redisMsP50: pct(sortedRedisMs, 0.5),
+      redisMsP95: pct(sortedRedisMs, 0.95),
+      outcomes,
+    };
+    logger.info('proposal documents cache summary', summary);
+    // Also to stdout: the OTel logger ships to PostHog only, and the Axiom
+    // `vercel` dataset only sees what the function writes to its console.
+    // eslint-disable-next-line no-console
+    console.log(`[doc-cache-summary] ${JSON.stringify(summary)}`);
 
     for (const { id, fragments, failed } of results) {
       if (fragments) {

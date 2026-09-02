@@ -1,4 +1,4 @@
-import { cache, invalidate } from '@op/cache';
+import { type CacheReadOutcome, cache, invalidate } from '@op/cache';
 import { createHash } from 'node:crypto';
 
 import type { TipTapClient, TipTapFragmentResponse } from './client';
@@ -32,6 +32,8 @@ export interface GetCachedDocumentFragmentsArgs {
    */
   versionId: number | undefined;
   fragmentNames: string[];
+  /** Reports which cache tier answered — see `cache()`'s `onOutcome`. */
+  onOutcome?: (outcome: CacheReadOutcome, info: { redisMs?: number }) => void;
 }
 
 /**
@@ -48,6 +50,7 @@ export async function getCachedDocumentFragments({
   docId,
   versionId,
   fragmentNames,
+  onOutcome,
 }: GetCachedDocumentFragmentsArgs): Promise<TipTapFragmentResponse> {
   if (versionId === undefined) {
     return client.getDocumentFragments(docId, fragmentNames);
@@ -60,7 +63,7 @@ export async function getCachedDocumentFragments({
     params: [docId, versionId, fragmentsHash],
     fetch: () =>
       client.getDocumentFragments(docId, fragmentNames, { version: versionId }),
-    options: { ttl: COLLAB_CACHE_TTL_MS },
+    options: { ttl: COLLAB_CACHE_TTL_MS, onOutcome },
   });
 }
 
