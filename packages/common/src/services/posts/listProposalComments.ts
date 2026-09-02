@@ -1,9 +1,6 @@
-import { and, db, inArray } from '@op/db/client';
-
 import { NotFoundError } from '../../utils';
 import { type AccessUser } from '../access';
-import { getMergedSourceProposalIds } from '../decision/proposalSupersession';
-import { needsNoAccessException } from '../decision/proposalVisibility';
+import { getVisibleMergedSourceProfiles } from '../decision/proposalSupersession';
 import { assertPostReadAccess } from './access';
 import { getPostsPageForProfiles } from './getPostsPageForProfiles';
 
@@ -45,29 +42,15 @@ export const listProposalComments = async ({
     throw new NotFoundError('Proposal', profileId);
   }
 
-  const sourceIds = await getMergedSourceProposalIds({
-    targetProposalId: proposal.id,
-  });
-
   // The same visibility floor `listContributingProposals` applies, so comments
   // carry over from exactly the proposals the "Contributing ideas" section
   // already shows — a hidden or flagged source leaks neither.
-  const sources = sourceIds.length
-    ? await db.query.proposals.findMany({
-        where: {
-          RAW: (table) =>
-            and(inArray(table.id, sourceIds), needsNoAccessException(table))!,
-        },
-        columns: { profileId: true },
-        with: { profile: { columns: { name: true } } },
-      })
-    : [];
+  const sources = await getVisibleMergedSourceProfiles({
+    targetProposalId: proposal.id,
+  });
 
   const originByProfileId = new Map<string, ProposalCommentOrigin>(
-    sources.map((source) => [
-      source.profileId,
-      { profileId: source.profileId, name: source.profile.name },
-    ]),
+    sources.map((source) => [source.profileId, source]),
   );
 
   const profileIds = [profileId, ...originByProfileId.keys()];

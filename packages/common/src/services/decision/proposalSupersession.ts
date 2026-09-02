@@ -7,7 +7,22 @@ import {
   isNull,
   notExists,
 } from '@op/db/client';
-import { ProposalRelationshipType, proposalRelationships } from '@op/db/schema';
+import {
+  ProposalRelationshipType,
+  profiles,
+  proposalRelationships,
+  proposals,
+} from '@op/db/schema';
+
+import { needsNoAccessException } from './proposalVisibility';
+
+/** A live `merged` edge pointing *at* `targetProposalId`. */
+const liveMergeInto = (targetProposalId: string): SQL =>
+  and(
+    eq(proposalRelationships.targetProposalId, targetProposalId),
+    eq(proposalRelationships.relationshipType, ProposalRelationshipType.MERGED),
+    isNull(proposalRelationships.deletedAt),
+  )!;
 
 // Both ends take a literal id or a correlated column, so the read predicate and
 // the lookup below share one definition.
@@ -57,19 +72,42 @@ export async function getMergedSourceProposalIds({
   const edges = await db
     .select({ sourceProposalId: proposalRelationships.sourceProposalId })
     .from(proposalRelationships)
-    .where(
-      and(
-        eq(proposalRelationships.targetProposalId, targetProposalId),
-        eq(
-          proposalRelationships.relationshipType,
-          ProposalRelationshipType.MERGED,
-        ),
-        isNull(proposalRelationships.deletedAt),
-      ),
-    )
+    .where(liveMergeInto(targetProposalId))
     .orderBy(proposalRelationships.createdAt, proposalRelationships.id);
 
   return edges.map((edge) => edge.sourceProposalId);
+}
+
+/**
+ * The proposals merged into `targetProposalId` that the caller could open,
+ * with the profile each one is named by, in merge order.
+ *
+ * One statement rather than an id read followed by a lookup: the ids are only
+ * ever used to fetch these rows, and the two-step made the round trips serial.
+ * `needsNoAccessException` is the visibility floor `getMergedSourceProposalIds`
+ * leaves to its callers, applied here.
+ */
+export async function getVisibleMergedSourceProfiles({
+  targetProposalId,
+}: {
+  targetProposalId: string;
+}): Promise<Array<{ profileId: string; name: string }>> {
+  return (
+    db
+      .select({ profileId: profiles.id, name: profiles.name })
+      .from(proposalRelationships)
+      // Inner joins: the composite foreign key guarantees the source is a
+      // proposal in this decision, and every proposal owns a profile.
+      .innerJoin(
+        proposals,
+        eq(proposals.id, proposalRelationships.sourceProposalId),
+      )
+      .innerJoin(profiles, eq(profiles.id, proposals.profileId))
+      .where(
+        and(liveMergeInto(targetProposalId), needsNoAccessException(proposals)),
+      )
+      .orderBy(proposalRelationships.createdAt, proposalRelationships.id)
+  );
 }
 
 /**
