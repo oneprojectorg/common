@@ -1,14 +1,9 @@
-import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils/error';
-import {
-  getProfileAccessUser,
-  getUserSession,
-  profileUserCacheKey,
-} from '../access';
+import { invalidateProfileUserAccessCache } from '../access';
 import { assertProfileAdmin, assertProfileUser } from '../assert';
 
 /**
@@ -40,24 +35,10 @@ export const removeProfileUser = async ({
     throw new NotFoundError('Profile user', profileUserId);
   }
 
-  await Promise.all([
-    invalidate({
-      type: 'profileUser',
-      params: profileUserCacheKey({
-        user: { id: deletedUser.authUserId },
-        profileId: deletedUser.profileId,
-      }),
-    }),
-    invalidate({
-      type: 'user',
-      params: [deletedUser.authUserId],
-    }),
-  ]);
-  getProfileAccessUser.invalidate({
-    user: { id: deletedUser.authUserId },
+  await invalidateProfileUserAccessCache({
+    authUserId: deletedUser.authUserId,
     profileId: deletedUser.profileId,
   });
-  getUserSession.invalidate({ authUserId: deletedUser.authUserId });
 
   return deletedUser;
 };
