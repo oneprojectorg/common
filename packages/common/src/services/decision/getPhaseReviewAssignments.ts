@@ -13,9 +13,9 @@ import { assertInstancePhase } from './utils/instance';
  * the instance's own admin capability.
  */
 export async function getPhaseReviewAssignments(
-  input: InstancePhaseRef & { user: User },
+  input: InstancePhaseRef & { user: User; reviewerProfileId?: string },
 ): Promise<AdminDecisionReviewAssignments> {
-  const { user, processInstanceId, phaseId } = input;
+  const { user, processInstanceId, phaseId, reviewerProfileId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
@@ -31,5 +31,6 @@ export async function getPhaseReviewAssignments(
   return getDecisionReviewAssignments({
     instanceId: processInstanceId,
     phaseId,
+    reviewerProfileId,
   });
 }

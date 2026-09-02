@@ -32,7 +32,8 @@ function ManageAssignmentsTrigger({
   reviewerProfileId,
 }: ManageAssignmentsActionProps) {
   const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId },
+    // Same input as the page body's query, so both read one cache entry.
+    { processInstanceId, phaseId, reviewerProfileId },
     // Refetch through the client link on mount — the SSR-seeded cache alone
     // never registers the `reviewAssignments` realtime channel.
     { refetchOnMount: 'always' },

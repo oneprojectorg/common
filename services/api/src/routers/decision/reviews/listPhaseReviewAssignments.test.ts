@@ -231,7 +231,7 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
-  it('carries the budget and a description preview on assignment cards', async ({
+  it('carries the budget and a description preview when scoped to the reviewer', async ({
     task,
     onTestFinished,
   }) => {
@@ -263,6 +263,7 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
     const result = await adminCaller.decision.listPhaseReviewAssignments({
       processInstanceId: context.instance.instance.id,
       phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
     });
 
     const assignment = result.reviewers[0]?.assignments[0];
@@ -271,6 +272,47 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
     expect(assignment?.previewText).toBe(
       'A shared garden for the whole block.',
     );
+  });
+
+  it('omits preview text on the phase-wide read, which renders no previews', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: `Unscoped proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = created.context;
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // Same fixture as the scoped test above: a proposal that DOES have a
+    // previewable body, so a null preview can only come from the scoping.
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: `Unscoped proposal ${task.id}`,
+          description: '<p>A shared garden for the whole block.</p>',
+          budget: { amount: 25000, currency: 'EUR' },
+        },
+      })
+      .where(eq(proposals.id, created.proposal.id));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listPhaseReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    const assignment = result.reviewers[0]?.assignments[0];
+    expect(assignment?.proposalId).toBe(created.proposal.id);
+    expect(assignment?.previewText).toBeNull();
+    // The snapshot budget is free of the document fetch, so it survives.
+    expect(assignment?.budget).toEqual({ amount: 25000, currency: 'EUR' });
   });
 
   it('nulls the budget and preview for a proposal that has neither', async ({

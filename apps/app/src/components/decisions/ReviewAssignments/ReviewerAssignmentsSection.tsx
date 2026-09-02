@@ -22,7 +22,10 @@ import { useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
-import { ReviewerAssignmentsBodySkeleton } from './ReviewAssignmentsSkeletons';
+import {
+  ReviewerAssignmentsBodySkeleton,
+  ReviewerHeaderSkeleton,
+} from './ReviewAssignmentsSkeletons';
 import { ReviewerHeader } from './ReviewerHeader';
 import {
   type AssignmentStatusValue,
@@ -35,8 +38,6 @@ interface ReviewerAssignmentsSectionProps {
   processInstanceId: string;
   phaseId: string;
   reviewerProfileId: string;
-  /** False when the seeding fetch failed — then this section renders the header itself. */
-  hasServerRenderedHeader: boolean;
 }
 
 export function ReviewerAssignmentsSection(
@@ -64,7 +65,14 @@ export function ReviewerAssignmentsSection(
         ),
       }}
     >
-      <Suspense fallback={<ReviewerAssignmentsBodySkeleton />}>
+      <Suspense
+        fallback={
+          <>
+            <ReviewerHeaderSkeleton />
+            <ReviewerAssignmentsBodySkeleton />
+          </>
+        }
+      >
         <ReviewerAssignmentsContent {...props} />
       </Suspense>
     </APIErrorBoundary>
@@ -75,12 +83,13 @@ function ReviewerAssignmentsContent({
   processInstanceId,
   phaseId,
   reviewerProfileId,
-  hasServerRenderedHeader,
 }: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
 
   const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId },
+    // reviewerProfileId asks the server for this reviewer's proposal previews
+    // only — the card descriptions below are the sole consumer of them.
+    { processInstanceId, phaseId, reviewerProfileId },
     // Refetch through the client link on mount — the SSR-seeded cache alone
     // never registers the `reviewAssignments` realtime channel.
     { refetchOnMount: 'always' },
@@ -113,9 +122,7 @@ function ReviewerAssignmentsContent({
 
   return (
     <>
-      {hasServerRenderedHeader ? null : (
-        <ReviewerHeader name={reviewer.label} email={reviewer.email} />
-      )}
+      <ReviewerHeader name={reviewer.label} email={reviewer.email} />
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         <div className="flex min-w-0 flex-1 flex-col gap-5">

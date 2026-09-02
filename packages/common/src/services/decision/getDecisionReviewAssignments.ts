@@ -4,7 +4,10 @@ import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import {
+  type ProposalDocumentContent,
+  getProposalDocumentsContent,
+} from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
 import { type BudgetData, parseProposalData } from './proposalDataSchema';
@@ -58,10 +61,17 @@ interface ReviewerRollup {
 export async function getDecisionReviewAssignments({
   instanceId,
   phaseId,
+  reviewerProfileId,
 }: {
   instanceId: string;
   /** Omit for every phase. */
   phaseId?: string;
+  /**
+   * Scopes the proposal-document fetch to one reviewer's assignments. The
+   * fan-out is one Tiptap GET per proposal, so a phase-wide read (omit this)
+   * fetches none and every `previewText` comes back null.
+   */
+  reviewerProfileId?: string;
 }): Promise<AdminDecisionReviewAssignments> {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
@@ -168,15 +178,20 @@ export async function getDecisionReviewAssignments({
 
   const proposalTemplate = await proposalTemplatePromise;
 
-  // Reviewers share proposals, so fetch and parse each snapshot once.
-  const assignedProposals = [
-    ...new Map(
-      assignments.map((assignment) => [
-        assignment.proposal.id,
-        assignment.proposal,
-      ]),
-    ).values(),
-  ];
+  // Only the reviewer detail cards render previews, and reviewers share
+  // proposals, so fetch and parse each of that reviewer's snapshots once.
+  const previewProposals = reviewerProfileId
+    ? [
+        ...new Map(
+          assignments
+            .filter(
+              (assignment) =>
+                assignment.reviewerProfileId === reviewerProfileId,
+            )
+            .map((assignment) => [assignment.proposal.id, assignment.proposal]),
+        ).values(),
+      ]
+    : [];
 
   const [
     assignableProposals,
@@ -187,17 +202,19 @@ export async function getDecisionReviewAssignments({
     assignableProposalsPromise,
     eligibleReviewersPromise,
     getCategoriesByProposalIds(categorizedProposalIds),
-    getProposalDocumentsContent(
-      assignedProposals.map((proposal) => ({
-        id: proposal.id,
-        proposalData: proposal.proposalData,
-        proposalTemplate,
-        collaborationDocVersionId: parseProposalData(proposal.proposalData)
-          .collaborationDocVersionId,
-      })),
-      // A single unavailable document must not break the whole read.
-      { onFetchError: 'omit' },
-    ),
+    previewProposals.length > 0
+      ? getProposalDocumentsContent(
+          previewProposals.map((proposal) => ({
+            id: proposal.id,
+            proposalData: proposal.proposalData,
+            proposalTemplate,
+            collaborationDocVersionId: parseProposalData(proposal.proposalData)
+              .collaborationDocVersionId,
+          })),
+          // A single unavailable document must not break the whole read.
+          { onFetchError: 'omit' },
+        )
+      : Promise.resolve(new Map<string, ProposalDocumentContent>()),
   ]);
 
   const byReviewer = new Map<string, ReviewerRollup>();

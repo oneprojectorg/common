@@ -1,7 +1,7 @@
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 
-/** Server-rendered when the preload fetch succeeded; else the client section renders it. */
+/** Rendered by the client section, from the same query as the assignment cards. */
 export function ReviewerHeader({
   name,
   email,
