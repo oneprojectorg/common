@@ -11,7 +11,6 @@ import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
 import { CommonError, UnauthorizedError } from '../../utils';
-import { invalidateProfileUserAccessCache } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
@@ -106,15 +105,6 @@ export const createDecisionInstance = async ({
     });
 
     return newInstance;
-  });
-
-  // The instance profile is new so no profileUser entry can be stale, but the
-  // creator's `user` cache entry (membership list) is — and every
-  // membership-granting write invalidates through the same helper so no path
-  // drifts out of the rule.
-  await invalidateProfileUserAccessCache({
-    authUserId: creatorAuthUserId,
-    profileId: instance.profileId!,
   });
 
   // Note: Transitions are NOT created here because the instance is created as DRAFT.

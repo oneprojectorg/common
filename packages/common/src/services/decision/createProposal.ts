@@ -15,11 +15,7 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import {
-  assertInstanceProfileAccess,
-  getCurrentProfileId,
-  invalidateProfileUserAccessCache,
-} from '../access';
+import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
@@ -277,15 +273,6 @@ export const createProposal = async ({
     }
 
     return proposal;
-  });
-
-  // The proposal profile is new so no profileUser entry can be stale, but the
-  // creator's `user` cache entry (membership list) is — and every
-  // membership-granting write invalidates through the same helper so no path
-  // drifts out of the rule.
-  await invalidateProfileUserAccessCache({
-    authUserId,
-    profileId: createdProposal.profile.id,
   });
 
   return createdProposal;
