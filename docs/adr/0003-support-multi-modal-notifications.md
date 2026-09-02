@@ -73,18 +73,6 @@ notification preference and send the correct notification. We will
 structure these notifications as batches. We will send each batch to
 the external provider and retry it with the Inngest Step API.
 
-No Workflow function will construct a Twilio client. Each one will ask
-a client factory for the client that serves a given recipient, and the
-factory will resolve a region from the recipient's phone number — the
-E.164 country calling code — and hand back the client configured for
-that region, one cached instance per region.
-
-Region support will be optional. We will configure the US region and
-leave the EU region unconfigured, so every send goes through the US
-region and all message data stays US-based. A region without
-credentials resolves to the default region rather than failing. Turning
-the EU on later is credentials and configuration; no caller changes.
-
 We will focus on implementing multi-modal support for the signup flow
 first, and then on voting.
 
@@ -111,6 +99,9 @@ preference"}
   resend --> inbox["Participant email"]
   twilio --> phone["Participant phone"]
 ```
+
+The client factory and the EU region are recorded intent rather than
+work this ADR covers.
 
 Our server never observes a verification, so it cannot record one. A
 trigger on `auth.users` writes a `phone_verifications` row when a number
@@ -148,22 +139,34 @@ We will reuse the existing Inngest Workflow system, so a failed
 notification retries the same way it does today. An SMS or WhatsApp
 retry costs money for each attempt. An email retry does not.
 
-The factory is the only seam that knows about regions, so adding the EU
-means adding credentials and a mapping entry, not editing every
-Workflow function. Until we do, the EU branch is untested and the
-mapping is a stub whose only real answer is the default.
+This work configures one Twilio region, the US. It does not build
+region selection. We record how we would add a second region here,
+because the choice is cheap to keep open now and expensive to retrofit.
+
+Sending already runs through one shared batch helper. Nine notification
+functions call `OPBatchSend` rather than construct a client of their
+own, and the Twilio path will follow that shape. The helper will ask a
+client factory for the client that serves a recipient, and the factory
+will resolve a region from the E.164 country calling code. A second
+region therefore costs credentials and a mapping entry in one place,
+not an edit to every Workflow function.
+
+A region we have not enabled resolves to the default region. A region
+we have enabled must fail when its credentials do not work. Falling
+back in that case would send EU traffic through the US and report
+success, which is the outcome the region exists to prevent.
 
 A country calling code is a guess about where someone lives, not a
 fact. A participant in the EU with a US number would be routed to the
 US region, and any real residency commitment will need a stored
 preference on the profile rather than the number alone.
 
-The factory covers where Twilio processes a message. It does not cover
-where we store the phone number, the notification preference, or the
-message metadata; those sit in our existing US database and a genuine
-EU residency requirement would need its own decision.
+Region selection covers where Twilio processes a message. It does not
+cover where we store the phone number, the notification preference, or
+the message metadata; those sit in our existing US database and a
+genuine EU residency requirement would need its own decision.
 
-Signup stays outside the factory. GoTrue holds the Twilio Verify
+Signup stays outside this seam. GoTrue holds the Twilio Verify
 credentials and performs those sends itself, so verification traffic is
 not ours to route and cannot be segmented this way.
 
