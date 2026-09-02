@@ -74,7 +74,7 @@ describe('getSmsProvider', () => {
     expect(() => getSmsProvider()).toThrow(/TWILIO_VERIFY_SERVICE_SID/);
   });
 
-  it('sends but does not verify with only a Messaging Service', () => {
+  it('sends with only a Messaging Service', () => {
     setEnv({
       TWILIO_ACCOUNT_SID: 'AC1',
       TWILIO_AUTH_TOKEN: 'token',
@@ -84,11 +84,9 @@ describe('getSmsProvider', () => {
     const provider = getSmsProvider();
 
     expect(provider?.sendSms).toBeDefined();
-    expect(provider?.startVerification).toBeUndefined();
-    expect(provider?.checkVerification).toBeUndefined();
   });
 
-  it('verifies but does not send with only a Verify service', () => {
+  it('carries no method with only a Verify service', () => {
     setEnv({
       TWILIO_ACCOUNT_SID: 'AC1',
       TWILIO_AUTH_TOKEN: 'token',
@@ -97,14 +95,12 @@ describe('getSmsProvider', () => {
 
     const provider = getSmsProvider();
 
-    // This is the phase-1 shape. Twilio exempts Verify traffic from A2P 10DLC,
-    // so signup works weeks before a Messaging Service campaign is approved.
-    expect(provider?.startVerification).toBeDefined();
-    expect(provider?.checkVerification).toBeDefined();
+    // This is the phase-1 shape. GoTrue reads TWILIO_VERIFY_SERVICE_SID and
+    // confirms numbers itself, so this provider carries no method at all.
     expect(provider?.sendSms).toBeUndefined();
   });
 
-  it('offers every capability with both services', () => {
+  it('sends with both services', () => {
     setEnv({
       TWILIO_ACCOUNT_SID: 'AC1',
       TWILIO_AUTH_TOKEN: 'token',
@@ -115,8 +111,6 @@ describe('getSmsProvider', () => {
     const provider = getSmsProvider();
 
     expect(provider?.sendSms).toBeDefined();
-    expect(provider?.startVerification).toBeDefined();
-    expect(provider?.checkVerification).toBeDefined();
   });
 
   describe('credentials', () => {

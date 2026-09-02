@@ -6,8 +6,6 @@ import type {
   SmsFailureReason,
   SmsProvider,
   SmsSendResult,
-  VerificationCheck,
-  VerificationStart,
 } from '../types';
 
 /**
@@ -43,7 +41,6 @@ import type {
  *
  * @interface
  * @see {@link https://www.twilio.com/docs/messaging/api/message-resource}
- * @see {@link https://www.twilio.com/docs/verify/api/verification}
  */
 export interface TwilioRestClient {
   /** Twilio's Message resource, which sends an SMS. */
@@ -65,49 +62,6 @@ export interface TwilioRestClient {
       body: string;
       messagingServiceSid: string;
     }): Promise<{ sid: string }>;
-  };
-
-  /** Twilio's Verify API, which owns the code and checks it for us. */
-  verify: {
-    v2: {
-      /**
-       * Selects one Verify service.
-       *
-       * @param serviceSid - The `VA...` service to verify against.
-       */
-      services(serviceSid: string): {
-        verifications: {
-          /**
-           * Generates a code and sends it to `to`.
-           *
-           * @param options.channel - The delivery channel. The adapter always
-           *   sends `sms`.
-           * @param options.locale - The language of the code's message. Twilio
-           *   resolves a locale from the country code when this is absent, so
-           *   the adapter omits the property rather than passing `undefined`.
-           * @returns The verification. Its `status` reads `pending`.
-           */
-          create(options: {
-            to: string;
-            channel: string;
-            locale?: string;
-          }): Promise<{ status: string }>;
-        };
-        verificationChecks: {
-          /**
-           * Checks a code against the pending verification for `to`.
-           *
-           * @returns The check. Its `status` reads `approved` for a correct
-           *   code, and `pending` or `canceled` for an incorrect one. The call
-           *   throws a 404 when the verification expired.
-           */
-          create(options: {
-            to: string;
-            code: string;
-          }): Promise<{ status: string }>;
-        };
-      };
-    };
   };
 }
 
@@ -239,10 +193,9 @@ const toRejection = (
  * The returned provider speaks only our vocabulary. A caller never sees a
  * Twilio error code, a SID, or an exception from the SDK.
  *
- * Each service SID switches on its own capability, and both are optional. A
- * deployment configures them at different times: Twilio exempts verification
- * traffic from A2P 10DLC registration, so a Verify service works immediately,
- * while a Messaging Service waits on a campaign review of ten to fifteen days.
+ * The Messaging Service SID is optional, and it switches on the one capability
+ * this adapter carries. A2P 10DLC registration gates it behind a campaign
+ * review of ten to fifteen days.
  *
  * @param options.client - The Twilio client to call. See
  *   {@link TwilioRestClient}.
@@ -250,10 +203,8 @@ const toRejection = (
  *   goes through. Omit it and the provider omits `sendSms`. A2P 10DLC requires
  *   a Messaging Service, and sticky sender and geomatch are its features, so
  *   the adapter never sends from a bare number.
- * @param options.verifyServiceSid - The `VA...` Verify service. Omit it and the
- *   provider omits `startVerification` and `checkVerification`.
- * @returns A provider carrying one capability per SID supplied. Passing neither
- *   returns a provider with no methods, which no caller can use.
+ * @returns A provider that can send when a Messaging Service SID is supplied.
+ *   Omitting it returns a provider with no methods, which no caller can use.
  *
  * @example Send one message, when the deployment can send
  * ```ts
@@ -267,11 +218,9 @@ const toRejection = (
 export const createTwilioProvider = ({
   client,
   messagingServiceSid,
-  verifyServiceSid,
 }: {
   client: TwilioRestClient;
   messagingServiceSid?: string;
-  verifyServiceSid?: string;
 }): SmsProvider => {
   /**
    * Implements {@link SmsProvider.sendSms} against Twilio's Message resource.
@@ -304,82 +253,7 @@ export const createTwilioProvider = ({
       }
     };
 
-  const sending: Pick<SmsProvider, 'sendSms'> = messagingServiceSid
+  return messagingServiceSid
     ? { sendSms: buildSendSms(messagingServiceSid) }
     : {};
-
-  if (!verifyServiceSid) {
-    return sending;
-  }
-
-  /** Binds the configured Verify service, which both verification calls use. */
-  const verifyService = () => client.verify.v2.services(verifyServiceSid);
-
-  return {
-    ...sending,
-
-    /**
-     * Implements {@link SmsProvider.startVerification} against Twilio Verify.
-     *
-     * Twilio generates the code, texts it, and holds it. We never see it.
-     * Verify traffic is also exempt from A2P 10DLC registration, so this call
-     * works before a campaign is approved.
-     */
-    startVerification: async ({
-      to,
-      locale,
-    }: {
-      to: PhoneNumber;
-      locale?: string;
-    }): Promise<VerificationStart> => {
-      try {
-        await verifyService().verifications.create({
-          to,
-          channel: 'sms',
-          ...(locale ? { locale } : {}),
-        });
-        return { status: 'pending' };
-      } catch (error) {
-        return {
-          status: 'rejected',
-          ...toRejection(error, 'startVerification'),
-        };
-      }
-    },
-
-    /**
-     * Implements {@link SmsProvider.checkVerification} against Twilio Verify.
-     *
-     * Separates a wrong code from an expired verification. Twilio reports the
-     * two differently, and a participant who retypes a correct code against an
-     * expired verification would otherwise be told the code was wrong.
-     */
-    checkVerification: async ({
-      to,
-      code,
-    }: {
-      to: PhoneNumber;
-      code: string;
-    }): Promise<VerificationCheck> => {
-      try {
-        const check = await verifyService().verificationChecks.create({
-          to,
-          code,
-        });
-        // Twilio answers `pending` when the code did not match, and `canceled`
-        // when the verification was stopped. Only `approved` confirms it.
-        return check.status === 'approved'
-          ? { status: 'approved' }
-          : { status: 'rejected' };
-      } catch (error) {
-        // A check against an expired or already-consumed verification 404s
-        // rather than returning a wrong-code answer. Treated as "start over"
-        // so the caller does not report it to the participant as a bad code.
-        if (asRestError(error)?.status === 404) {
-          return { status: 'expired' };
-        }
-        throw error;
-      }
-    },
-  };
 };
