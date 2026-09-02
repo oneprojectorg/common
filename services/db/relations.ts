@@ -969,15 +969,15 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
-   * Phone verification relations
+   * Verification relations
    *
-   * A row records that a provider approved a number for an account. Network
-   * membership reads this rather than `auth.users.phone_confirmed_at`, which
-   * the account holder can set on their own row.
+   * A row records that a provider approved a contact address for an account.
+   * Network membership reads this rather than `auth.users.phone_confirmed_at`,
+   * which the account holder can set on their own row.
    */
-  phoneVerifications: {
+  verifications: {
     authUser: r.one.authUsers({
-      from: r.phoneVerifications.authUserId,
+      from: r.verifications.authUserId,
       to: r.authUsers.id,
       optional: false,
     }),

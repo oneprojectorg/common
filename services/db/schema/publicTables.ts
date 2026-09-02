@@ -99,9 +99,11 @@ export {
   type AllowList,
 } from './tables/allowList.sql';
 export {
-  phoneVerifications,
-  type PhoneVerification,
-} from './tables/phoneVerifications.sql';
+  VerificationType,
+  verificationTypeEnum,
+  verifications,
+  type Verification,
+} from './tables/verifications.sql';
 export { EntityType, entityTypeEnum } from './tables/entities.sql';
 export {
   JoinProfileRequestStatus,
