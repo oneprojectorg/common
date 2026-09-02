@@ -166,11 +166,9 @@ export const acceptProposalInvite = async ({
     return proposalProfileUser;
   });
 
-  // The invitee may already carry a cached (e.g. visitor) role set for these
-  // profiles from browsing them before accepting — drop it or the new roles
-  // don't take effect until the cache TTL expires. The decision-profile entry
-  // is the critical one: a stale visitor role there blocks reviewer/admin
-  // screens on the whole process.
+  // A signed-in invitee may have cached effective access from the decision's
+  // GLOBAL_USER_PUBLIC grant. Accepting creates personal memberships without
+  // changing the cache keys, so clear both affected profiles before returning.
   await Promise.all([
     invalidateProfileUserAccessCache({
       authUserId: user.id,
