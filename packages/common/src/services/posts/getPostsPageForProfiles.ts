@@ -104,9 +104,22 @@ export const getPostsPageForProfiles = async ({
   const pageItems = pageRows.slice(0, limit);
   const postIds = pageItems.map((row) => row.postId);
 
+  // The moderation filter is reapplied here, not just on the id page above: a
+  // flag landing between the two queries would otherwise hand this reader the
+  // full content — and, via `isFlagged`, the moderation state — of a post the
+  // page query would now exclude. A row dropped here just shortens the page;
+  // the reorder below already tolerates a missing post.
   const hydrated = postIds.length
     ? await db.query.posts.findMany({
-        where: { id: { in: postIds } },
+        where: {
+          RAW: (table) =>
+            isProfileAdmin
+              ? inArray(table.id, postIds)
+              : and(
+                  inArray(table.id, postIds),
+                  postModerationFilter(table, actorProfileId),
+                )!,
+        },
         with: {
           profile: { with: { avatarImage: true } },
           attachments: { with: { storageObject: true } },
