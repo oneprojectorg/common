@@ -101,6 +101,20 @@ account that could already sign in would be able to admit itself.
 GoTrue offers seven auth hooks. None of them reports a phone
 verification, which is why this is a trigger and not a hook.
 
+Network membership admits a participant to the platform. It is not
+access to an organization or to a decision. A confirmed phone number
+therefore lets anyone who holds a phone create an account, which is what
+self-enrollment means. An invitation still decides what that participant
+sees: `assertOrgAccess` and `assertInstanceProfileAccess` require a role
+on the owning profile, and a new account holds none.
+
+Self-enrollment splits the gates in two. A gate that reads a role stays
+as narrow as the role. A gate that reads membership alone widens to
+everyone who can receive a text. `assertPostReadAccess` reads roles. The
+comment path in `assertPostWriteAccess` reads membership alone, so any
+account can comment on any organization's post. That rule predates
+self-enrollment and needs a decision of its own.
+
 We will need to store the notification preference for a user in the
 database.
 
@@ -112,8 +126,12 @@ We will reuse the existing Inngest Workflow system, so a failed
 notification retries the same way it does today. An SMS or WhatsApp
 retry costs money for each attempt. An email retry does not.
 
-Two costs come with GoTrue owning the code. SMS autoconfirm is on, so
-GoTrue can confirm a number on a change without checking a code, and the
-trigger cannot tell that apart from a real verification. No per-number
-send limit of ours applies either, because no request of ours carries the
-send; Twilio's geographic permissions are the remaining control.
+One cost comes with GoTrue owning the code. No per-number send limit of
+ours applies, because no request of ours carries the send. Twilio's
+geographic permissions are the remaining control.
+
+SMS autoconfirm has to stay off. With it on, GoTrue confirms a number on
+a signup, and on a change, without checking a code, and the trigger
+cannot tell either apart from a real verification. The row would then
+admit an account that never held the number, so `enable_confirmations`
+is true in every Supabase config.
