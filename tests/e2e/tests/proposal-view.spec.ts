@@ -690,7 +690,7 @@ test.describe('Proposal View', () => {
     ).toBeVisible({ timeout: 30_000 });
   });
 
-  test('gates write actions per viewer: reactions/Like/Follow members-only, Report visible to all', async ({
+  test('gates write actions per viewer: post like/Like/Follow members-only, Report visible to all', async ({
     authenticatedPage,
     org,
     browser,
@@ -717,7 +717,7 @@ test.describe('Proposal View', () => {
     // Public decision so anonymous and logged-out visitors can read it.
     await makeDecisionPublic({ profileId: instance.profileId });
 
-    // Reactions render per-comment; seed a top-level post + like on the proposal.
+    // Likes render per-comment; seed a top-level post + like on the proposal.
     const commentText = 'Seeded comment carrying a like';
     const [comment] = await db
       .insert(posts)
@@ -737,12 +737,11 @@ test.describe('Proposal View', () => {
     });
 
     const proposalUrl = `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`;
-    const likeBadge = /👍\s*1/;
 
     // Every viewer sees the proposal, the comment, the seeded like, and the
     // Report action (moderation is open to any caller). Only a signed-in
-    // member also gets the interact-only write controls (add-reaction, Like,
-    // Follow).
+    // member also gets the interact-only write controls (the comment's like
+    // toggle, Like, Follow).
     const expectProposalView = async (
       page: Page,
       { canInteract }: { canInteract: boolean },
@@ -752,12 +751,24 @@ test.describe('Proposal View', () => {
         page.getByRole('heading', { name: 'Reactable Proposal' }),
       ).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(commentText)).toBeVisible();
-      await expect(page.getByText(likeBadge)).toBeVisible();
+
+      // The comment's like button renders for everyone so read-only viewers
+      // still see the seeded count; only a member gets it as a real toggle. It
+      // draws just the heart and the number, so "1 like" is its aria-label.
+      // Anchored regex, not the string form: `name` as a string matches
+      // case-insensitively on a substring, so '1 like' would also pick up the
+      // proposal-level "N Likes" stat and "11 likes".
+      const commentLike = page.getByRole('button', { name: /^1 like$/ });
+      await expect(commentLike).toBeVisible();
+      if (canInteract) {
+        await expect(commentLike).toHaveAttribute('aria-pressed', 'false');
+      } else {
+        await expect(commentLike).toHaveAttribute('aria-disabled', 'true');
+      }
 
       // The like and follow toggles are named by the stat they show
       // ("0 Likes"), so match the noun rather than a bare verb.
       const writeControls = [
-        page.getByRole('button', { name: 'Add reaction' }),
         page.getByRole('button', { name: /^\d+ Likes?$/ }),
         page.getByRole('button', { name: /^\d+ Followers?$/ }),
       ];

@@ -15,7 +15,7 @@ import {
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
 import {
-  getItemsWithReactionsAndComments,
+  getItemsWithLikesAndComments,
   postModerationFilter,
 } from './listPosts';
 
@@ -221,10 +221,10 @@ export const getPosts = async (input: GetPostsInput) => {
         })
       ).map((post) => ({ post }));
 
-  const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
+  const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
     items: postsData.map((item) => ({ post: item.post })),
     profileId: actorProfileId,
   });
 
-  return itemsWithReactionsAndComments.map((item) => item.post);
+  return itemsWithLikesAndComments.map((item) => item.post);
 };

@@ -3,6 +3,10 @@
 import * as React from 'react';
 import { LuMessageCircle } from 'react-icons/lu';
 
+import {
+  footerButtonClasses,
+  footerButtonInteractiveClasses,
+} from '../../lib/footerButton';
 import { cn } from '../../lib/utils';
 
 interface CommentButtonProps extends Omit<
@@ -11,31 +15,43 @@ interface CommentButtonProps extends Omit<
 > {
   count?: number;
   /**
-   * Fully-formatted, translated label (e.g. "3 comments"). Consumers should
-   * pass an i18n-translated string since this package is locale-agnostic.
-   * Falls back to an English default when omitted.
+   * Translated accessible name (e.g. "3 comments"). Only the count is drawn, so
+   * this is what a screen reader announces; it should contain the count so the
+   * name still matches the visible text. Consumers pass an i18n-translated
+   * string since this package is locale-agnostic.
    */
   label?: string;
 }
 
+/**
+ * The comment half of a post's footer — a bubble and a count, sized to sit
+ * beside `LikeButton`.
+ */
 function CommentButton({
   count = 0,
   label,
   className,
+  dir = 'auto',
+  disabled,
   ...props
 }: CommentButtonProps) {
   return (
     <button
       type="button"
       data-slot="comment-button"
+      dir={dir}
+      aria-label={label ?? `${count} comments`}
+      disabled={disabled}
       className={cn(
-        'flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md bg-muted px-2 py-1 text-sm text-nowrap text-muted-foreground transition-colors outline-none hover:bg-gray-100 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:bg-gray-200 active:text-foreground',
+        footerButtonClasses,
+        !disabled && footerButtonInteractiveClasses,
         className,
       )}
       {...props}
     >
-      <LuMessageCircle className="size-4 shrink-0" />
-      <span>{label ?? `${count} comments`}</span>
+      <LuMessageCircle className="size-5 shrink-0" />
+      {/* The count changes without a navigation when a comment is posted. */}
+      <span aria-live="polite">{count}</span>
     </button>
   );
 }

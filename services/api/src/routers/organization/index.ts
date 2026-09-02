@@ -13,12 +13,12 @@ import { getOrganizationsByProfileRouter } from './getOrganizationsByProfile';
 import { getRolesRouter } from './getRoles';
 import { inviteUserRouter } from './inviteUser';
 import { joinOrganization } from './joinOrganization';
+import { likesRouter } from './likes';
 import { listOrganizationsRouter } from './listOrganizations';
 import { listOrganizationPostsRouter } from './listPosts';
 import { listRelatedOrganizationPostsRouter } from './listRelatedOrganizationPosts';
 import { listRelationshipsRouter } from './listRelationships';
 import { listUsersRouter } from './listUsers';
-import { reactionsRouter } from './reactions';
 import { removeRelationshipRouter } from './removeRelationship';
 import { searchOrganizationsRouter } from './searchOrganizations';
 import { updateOrganizationRouter } from './updateOrganization';
@@ -48,7 +48,7 @@ export const organizationRouter = mergeRouters(
   joinOrganization,
   inviteUserRouter,
   checkMembershipRouter,
-  reactionsRouter,
+  likesRouter,
   updateOrganizationUserRouter,
   deleteOrganizationUserRouter,
 );

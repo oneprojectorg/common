@@ -46,7 +46,7 @@ export function ProposalComments({
     });
 
   const comments = commentsData?.items ?? [];
-  const { handleReactionClick } = usePostFeedActions();
+  const { handleLikeClick } = usePostFeedActions();
 
   // Mirror the server-side comment gate (`assertPostWriteAccess` →
   // SUBMIT_PROPOSALS on the decision profile). Showing the post box to users
@@ -126,7 +126,7 @@ export function ProposalComments({
                     organization={null}
                     user={user}
                     withLinks={true}
-                    onReactionClick={handleReactionClick}
+                    onLikeClick={handleLikeClick}
                     className="sm:px-0"
                   />
                   {comments.length !== i + 1 && <hr className="my-4" />}

@@ -29,7 +29,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
     notFound();
   }
 
-  const { handleReactionClick } = usePostDetailActions({
+  const { handleLikeClick } = usePostDetailActions({
     postId: post.id,
     user,
   });
@@ -46,7 +46,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
               organization={organization}
               user={user}
               withLinks={false}
-              onReactionClick={handleReactionClick}
+              onLikeClick={handleLikeClick}
               commentCount={0}
             />
           </PostFeed>
@@ -68,7 +68,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
                   postId={post.id}
                   organization={organization}
                   user={user}
-                  onReactionClick={handleReactionClick}
+                  onLikeClick={handleLikeClick}
                 />
               </Suspense>
             </ErrorBoundary>

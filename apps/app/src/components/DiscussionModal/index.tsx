@@ -41,7 +41,7 @@ export function DiscussionModal({
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
-  const { handleReactionClick, handleCommentClick } = usePostFeedActions();
+  const { handleLikeClick, handleCommentClick } = usePostFeedActions();
 
   // Get comments for the post using getPosts without profileId (works for all post types)
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
@@ -114,7 +114,7 @@ export function DiscussionModal({
               organization={organization ?? null}
               user={user}
               withLinks={false}
-              onReactionClick={handleReactionClick}
+              onLikeClick={handleLikeClick}
               className="px-4"
             />
             <hr />
@@ -142,7 +142,7 @@ export function DiscussionModal({
                         organization={organization ?? null}
                         user={user}
                         withLinks={true}
-                        onReactionClick={handleReactionClick}
+                        onLikeClick={handleLikeClick}
                         onCommentClick={handleCommentClick}
                         className="px-4"
                       />

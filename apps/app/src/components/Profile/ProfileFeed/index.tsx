@@ -35,7 +35,7 @@ export type ProfileFeedRenderProps = {
   infiniteScrollRef: RefCallback<HTMLElement>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;
-  handleReactionClick: (postId: string, emoji: string) => void;
+  handleLikeClick: (postId: string) => Promise<unknown>;
   handleCommentClick: (post: Post, organization: Organization | null) => void;
   discussionModal: DiscussionModalState;
   handleModalClose: () => void;
@@ -74,7 +74,7 @@ export const ProfileFeedProvider = ({
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -103,7 +103,7 @@ export const ProfileFeedProvider = ({
     infiniteScrollRef: ref,
     shouldShowTrigger,
     isFetchingNextPage,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     discussionModal,
     handleModalClose,
@@ -116,7 +116,7 @@ export const ProfileFeedCards = ({
   infiniteScrollRef,
   shouldShowTrigger,
   isFetchingNextPage,
-  handleReactionClick: onReactionClick,
+  handleLikeClick: onLikeClick,
   handleCommentClick: onCommentClick,
   discussionModal,
   handleModalClose: onModalClose,
@@ -142,7 +142,7 @@ export const ProfileFeedCards = ({
                 organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
-                onReactionClick={onReactionClick}
+                onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
               />
             </HorizontalListItem>
@@ -174,7 +174,7 @@ export const ProfileFeedList = ({
   infiniteScrollRef,
   shouldShowTrigger,
   isFetchingNextPage,
-  handleReactionClick: onReactionClick,
+  handleLikeClick: onLikeClick,
   handleCommentClick: onCommentClick,
   discussionModal,
   handleModalClose: onModalClose,
@@ -191,7 +191,7 @@ export const ProfileFeedList = ({
                 organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
-                onReactionClick={onReactionClick}
+                onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
                 className="p-4"
               />
