@@ -41,7 +41,8 @@ class ErrorBoundary extends Component<Props, State> {
     const { fallback, children } = this.props;
 
     if (hasError) {
-      return <div>{fallback ?? <ErrorMessage />}</div>;
+      // No wrapper: a block box here collapses a full-page fallback's height.
+      return fallback ?? <ErrorMessage />;
     }
 
     return children;
