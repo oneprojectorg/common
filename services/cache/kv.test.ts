@@ -347,6 +347,7 @@ describe('set()', () => {
   let recordError: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    fakeRedis.isReady = true;
     fakeRedis.setEx.mockReset();
     fakeRedis.del.mockReset();
     recordTimeout = vi.spyOn(cacheMetrics, 'recordTimeout');
@@ -355,6 +356,16 @@ describe('set()', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  // Writing before the client finishes connecting throws (offline queue is
+  // disabled), so the write is skipped up front and counted — on a cold
+  // lambda this is the path that leaves the cache unfilled.
+  it('skips the write and records an error when the client is not ready', async () => {
+    fakeRedis.isReady = false;
+    await expect(set('k', { a: 1 })).resolves.toBeUndefined();
+    expect(fakeRedis.setEx).not.toHaveBeenCalled();
+    expect(recordError).toHaveBeenCalledWith('set');
   });
 
   it('records a command timeout when setEx is too slow, does not throw', async () => {
