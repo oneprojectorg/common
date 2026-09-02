@@ -153,7 +153,11 @@ function ReviewerRowCells({ row, href }: { row: ReviewerRow; href: string }) {
 
   return (
     // `relative` anchors the name link's stretched ::after (row-wide click).
-    <TableRow className="relative">
+    // `transform-gpu` is load-bearing, not an optimization: WebKit ignores
+    // `position: relative` on a <tr> as a containing block, so without it the
+    // overlay escapes to the table container in Safari and one row swallows
+    // every click in the table.
+    <TableRow className="relative transform-gpu">
       <TableRowHeader>
         {/* `static` keeps the row the ::after's containing block — ANY
             transform or `relative` here collapses the row-wide target. */}
