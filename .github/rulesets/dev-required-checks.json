@@ -16,7 +16,10 @@
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           { "context": "Typecheck" },
-          { "context": "Tests" }
+          { "context": "Tests" },
+          { "context": "Build E2E" },
+          { "context": "E2E Tests (shard 1/2)" },
+          { "context": "E2E Tests (shard 2/2)" }
         ]
       }
     }
