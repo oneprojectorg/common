@@ -153,7 +153,7 @@ export function TemplateEditorContent({
   // Single-instance field types that can't be added again. Location uses a
   // fixed key, so a second one would overwrite the first.
   const disabledTypes = useMemo<FieldType[]>(
-    () => (template.properties?.[LOCATION_FIELD_KEY] ? ['location'] : []),
+    () => (getFieldSchema(template, LOCATION_FIELD_KEY) ? ['location'] : []),
     [template],
   );
 
@@ -179,6 +179,12 @@ export function TemplateEditorContent({
 
   const handleAddField = useCallback(
     (type: FieldType) => {
+      // The menu disables a single-instance type once the template has one;
+      // this is defense in depth. Adding a second location would reuse the
+      // fixed key and overwrite the first, losing its saved map view.
+      if (disabledTypes.includes(type)) {
+        return;
+      }
       // Location uses a fixed key (single instance, projected to a geometry
       // column server-side) and is always required.
       const fieldId =
@@ -196,7 +202,7 @@ export function TemplateEditorContent({
       setExpandedFieldIds((prev) => new Set(prev).add(fieldId));
       setNewFieldIds((prev) => new Set(prev).add(fieldId));
     },
-    [t],
+    [t, disabledTypes],
   );
 
   const handleExpandedChange = useCallback(
