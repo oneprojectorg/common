@@ -65,31 +65,6 @@ export type SmsSendResult =
   | { status: 'rejected'; reason: SmsFailureReason; retryable: boolean };
 
 /**
- * The outcome of checking a code that a participant typed.
- *
- * Tell the participant something different for each member. `rejected` and
- * `expired` both mean the participant is not confirmed, and they need opposite
- * instructions: retype the code, or request a new one.
- */
-export type VerificationCheck =
-  /** The code matched. The phone number is confirmed. */
-  | { status: 'approved' }
-  /** The code was wrong. The participant can try again. */
-  | { status: 'rejected' }
-  /** The verification expired, or someone already used it. Start a new one. */
-  | { status: 'expired' };
-
-/**
- * The outcome of asking a vendor to send a verification code.
- *
- * `pending` reports that the vendor accepted the request and holds a code. It
- * does not report that the participant received the message.
- */
-export type VerificationStart =
-  | { status: 'pending' }
-  | { status: 'rejected'; reason: SmsFailureReason; retryable: boolean };
-
-/**
  * One SMS vendor, behind our own vocabulary.
  *
  * Depend on this type in a service, and take the provider as an argument.
@@ -97,26 +72,25 @@ export type VerificationStart =
  * procedure or a workflow function, and passes it in. A service that resolves
  * its own provider reads the environment, which makes it hard to test.
  *
- * Every method is optional, and each one answers for a capability the
- * deployment configured separately. Check for a method before you call it.
- * `ModerationProvider` marks its own capabilities optional for the same reason.
+ * `sendSms` is optional, and it answers for a capability the deployment
+ * configures separately. Check for it before you call it. `ModerationProvider`
+ * marks its own capabilities optional for the same reason.
  *
- * Sending and verifying are genuinely independent. Twilio exempts verification
- * traffic from A2P 10DLC registration, and registration takes weeks, so a
- * deployment can confirm phone numbers long before it can send a notification.
- * A provider that verifies but cannot send is a normal state, not a broken one.
+ * This interface does not confirm a phone number. GoTrue owns that lifecycle
+ * through `[auth.sms.twilio_verify]`, and the browser calls GoTrue directly, so
+ * no code of ours generates or checks a code. ADR 0003 records that decision.
  *
  * @interface
  * @example Take a provider rather than resolving one
  * ```ts
- * const confirmPhone = async (
- *   { to, code }: { to: PhoneNumber; code: string },
+ * const notify = async (
+ *   { to, body }: { to: PhoneNumber; body: string },
  *   deps: { provider: SmsProvider },
  * ) => {
- *   if (!deps.provider.checkVerification) {
- *     throw new Error('This vendor cannot verify a phone number.');
+ *   if (!deps.provider.sendSms) {
+ *     throw new Error('This deployment cannot send an SMS.');
  *   }
- *   return deps.provider.checkVerification({ to, code });
+ *   return deps.provider.sendSms({ to, body });
  * };
  * ```
  */
@@ -139,36 +113,4 @@ export interface SmsProvider {
    *   {@link SmsSendResult} on why acceptance is not delivery.
    */
   sendSms?(input: { to: PhoneNumber; body: string }): Promise<SmsSendResult>;
-
-  /**
-   * Asks the vendor to generate a code and text it to `to`.
-   *
-   * Present only on a vendor that owns the code lifecycle. Check for the method
-   * before calling it.
-   *
-   * @param input.to - The number to confirm.
-   * @param input.locale - A BCP-47 tag for the message copy, used when the
-   *   vendor localises it. Omit it to accept the vendor's own choice.
-   * @returns A pending verification, or a rejection.
-   */
-  startVerification?(input: {
-    to: PhoneNumber;
-    locale?: string;
-  }): Promise<VerificationStart>;
-
-  /**
-   * Checks a code that a participant typed against the pending verification.
-   *
-   * Present only on a vendor that owns the code lifecycle. Check for the method
-   * before calling it.
-   *
-   * @param input.to - The number being confirmed.
-   * @param input.code - The code the participant typed.
-   * @returns Approval, a wrong code, or an expired verification. See
-   *   {@link VerificationCheck}.
-   */
-  checkVerification?(input: {
-    to: PhoneNumber;
-    code: string;
-  }): Promise<VerificationCheck>;
 }

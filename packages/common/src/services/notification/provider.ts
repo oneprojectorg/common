@@ -45,12 +45,13 @@ const assertSidPrefix = (
  * mistake, and turning SMS off silently would hide it until a participant
  * failed to receive a code.
  *
- * Both service SIDs are optional, and each switches on its own capability. Set
- * `TWILIO_VERIFY_SERVICE_SID` alone to confirm phone numbers, which is all a
- * signup flow needs and which Twilio exempts from A2P 10DLC registration. Set
- * `TWILIO_MESSAGING_SERVICE_SID` alone to send notifications, once a campaign
- * is approved. Set both to do both. Setting neither throws, because an account
- * with no service can do nothing.
+ * Both service SIDs are optional, and at least one must be set, because an
+ * account with no service can do nothing. `TWILIO_MESSAGING_SERVICE_SID`
+ * switches on `sendSms`, once an A2P 10DLC campaign is approved.
+ * `TWILIO_VERIFY_SERVICE_SID` switches on nothing here: GoTrue reads that
+ * variable itself and confirms phone numbers without this provider. It is
+ * still validated below, so a value pasted into the wrong slot fails at
+ * startup rather than inside GoTrue.
  *
  * Two credentials work. An API key pair — `TWILIO_API_KEY_SID` with
  * `TWILIO_API_KEY_SECRET` — is preferred, because a key is scoped and can be
@@ -64,9 +65,9 @@ const assertSidPrefix = (
  * Vitest, so a passing test does not prove the import is right. Keep the
  * construction here and let callers take the provider.
  *
- * @returns The configured provider, or `null` when SMS is off. Check for a
- *   method on the provider before calling it; which ones are present follows
- *   from which service SIDs the deployment set.
+ * @returns The configured provider, or `null` when SMS is off. Check for
+ *   `sendSms` before calling it. A Verify-only deployment returns a provider
+ *   with no methods, which is the signup-phase shape.
  * @throws {CommonError} When a SID carries the wrong prefix, when no credential
  *   is set, when `TWILIO_API_KEY_SID` has no secret, or when neither service SID
  *   is set.
@@ -122,6 +123,5 @@ export const getSmsProvider = (): SmsProvider | null => {
         ? new twilio.Twilio(apiKeySid, apiKeySecret, { accountSid })
         : new twilio.Twilio(accountSid, authToken),
     messagingServiceSid,
-    verifyServiceSid,
   });
 };

@@ -39,40 +39,24 @@ const capabilityOf = <K extends keyof SmsProvider>(
   return capability;
 };
 
-type Services = TwilioRestClient['verify']['v2']['services'];
 type MessageCreate = TwilioRestClient['messages']['create'];
-type VerificationCreate = ReturnType<Services>['verifications']['create'];
-type CheckCreate = ReturnType<Services>['verificationChecks']['create'];
 
 /**
  * Builds a fake Twilio client from the outcome each call should produce.
  *
- * The mock signatures are derived from `TwilioRestClient` itself, so the fake
+ * The mock signature is derived from `TwilioRestClient` itself, so the fake
  * cannot drift from the interface the adapter consumes. Stubbing the network
  * would not work here: the SDK sends over axios, so `vi.stubGlobal('fetch')`
  * never intercepts it.
  */
 const fakeClient = ({
   message = async () => ({ sid: 'SM123' }),
-  verification = async () => ({ status: 'pending' }),
-  check = async () => ({ status: 'approved' }),
 }: {
   message?: () => Promise<{ sid: string }>;
-  verification?: () => Promise<{ status: string }>;
-  check?: () => Promise<{ status: string }>;
 } = {}) => {
   const messageCreate = vi.fn<MessageCreate>(message);
-  const verificationCreate = vi.fn<VerificationCreate>(verification);
-  const checkCreate = vi.fn<CheckCreate>(check);
-  const services = vi.fn<Services>(() => ({
-    verifications: { create: verificationCreate },
-    verificationChecks: { create: checkCreate },
-  }));
-  const client: TwilioRestClient = {
-    messages: { create: messageCreate },
-    verify: { v2: { services } },
-  };
-  return { client, messageCreate, verificationCreate, checkCreate, services };
+  const client: TwilioRestClient = { messages: { create: messageCreate } };
+  return { client, messageCreate };
 };
 
 describe('createTwilioProvider', () => {
@@ -200,97 +184,6 @@ describe('createTwilioProvider', () => {
         reason: 'unknown',
         retryable: false,
       });
-    });
-  });
-
-  describe('verification', () => {
-    it('omits the verification pair when no Verify service is configured', () => {
-      const { client } = fakeClient();
-
-      const provider = createTwilioProvider({
-        client,
-        messagingServiceSid: 'MG1',
-      });
-
-      expect(provider.startVerification).toBeUndefined();
-      expect(provider.checkVerification).toBeUndefined();
-      expect(provider.sendSms).toBeDefined();
-    });
-
-    it('starts an SMS verification against the configured service', async () => {
-      const { client, verificationCreate, services } = fakeClient();
-
-      const result = await capabilityOf(
-        { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
-        'startVerification',
-      )({ to: TO, locale: 'ar' });
-
-      expect(services).toHaveBeenCalledWith('VA1');
-      expect(verificationCreate).toHaveBeenCalledWith({
-        to: '+15005550006',
-        channel: 'sms',
-        locale: 'ar',
-      });
-      expect(result).toEqual({ status: 'pending' });
-    });
-
-    it('omits locale entirely when the caller gives none', async () => {
-      const { client, verificationCreate } = fakeClient();
-
-      await capabilityOf(
-        { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
-        'startVerification',
-      )({ to: TO });
-
-      // Sending `locale: undefined` would override Twilio's own
-      // country-code-based resolution with nothing.
-      expect(verificationCreate.mock.calls[0]?.[0]).not.toHaveProperty(
-        'locale',
-      );
-    });
-
-    it('approves only an approved check', async () => {
-      const { client } = fakeClient({
-        check: async () => ({ status: 'approved' }),
-      });
-
-      await expect(
-        capabilityOf(
-          { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
-          'checkVerification',
-        )({ to: TO, code: '123456' }),
-      ).resolves.toEqual({ status: 'approved' });
-    });
-
-    it.each(['pending', 'canceled'])(
-      'treats a %s check as a wrong code',
-      async (status) => {
-        const { client } = fakeClient({
-          check: async () => ({ status }),
-        });
-
-        await expect(
-          capabilityOf(
-            { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
-            'checkVerification',
-          )({ to: TO, code: '000000' }),
-        ).resolves.toEqual({ status: 'rejected' });
-      },
-    );
-
-    it('reads a 404 as expired rather than as a wrong code', async () => {
-      const { client } = fakeClient({
-        check: () => Promise.reject(restError(20404, 404)),
-      });
-
-      // Telling a participant their code was wrong, when the verification had
-      // expired, sends them back to retyping a code that can never work.
-      await expect(
-        capabilityOf(
-          { client, messagingServiceSid: 'MG1', verifyServiceSid: 'VA1' },
-          'checkVerification',
-        )({ to: TO, code: '123456' }),
-      ).resolves.toEqual({ status: 'expired' });
     });
   });
 });
