@@ -1,13 +1,10 @@
+import { areFeatureFlagsForcedOn } from '@op/analytics/client-utils';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
 
 export const useFeatureFlag = (key: string) => {
-  // enable flags for development and e2e environments
-  if (
-    process.env.NODE_ENV === 'development' ||
-    process.env.NEXT_PUBLIC_E2E === 'true'
-  ) {
-    return true;
-  }
+  // Asked before the environment check, because an early return would call a
+  // hook on some renders and not others.
+  const enabled = useFeatureFlagEnabled(key);
 
-  return useFeatureFlagEnabled(key);
+  return areFeatureFlagsForcedOn() ? true : enabled;
 };

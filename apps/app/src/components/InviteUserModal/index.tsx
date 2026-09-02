@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
@@ -14,7 +15,6 @@ import {
 } from '@op/sense/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -56,7 +56,7 @@ export const InviteUserModal = ({
   const organizationItems = useAdminOrganizations();
 
   const inviteUserEnabled =
-    useFeatureFlagEnabled('invite_admin_user') ||
+    useFeatureFlag('invite_admin_user') ||
     user.currentOrganization?.networkOrganization;
 
   // Follow the profile switcher. This modal stays mounted across a switch, so
