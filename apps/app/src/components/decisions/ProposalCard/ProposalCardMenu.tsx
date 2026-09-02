@@ -8,7 +8,7 @@ import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useOpenMergeProposalDialog } from '../MergeProposalDialogHost';
+import { useOpenMergeProposalDialog } from '../MergeProposalDialogContext';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
@@ -36,8 +36,8 @@ export function ProposalCardMenu({
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  // Hosted above the grid, so a list refresh that re-parents this card can't
-  // close a merge in progress — see `MergeProposalDialogHost`.
+  // Owned above the grid, so a list refresh that re-parents this card can't
+  // close a merge in progress — see `MergeProposalDialogContext`.
   const openMergeDialog = useOpenMergeProposalDialog();
 
   const {

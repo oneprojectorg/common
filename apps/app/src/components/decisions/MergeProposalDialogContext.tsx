@@ -18,7 +18,7 @@ const MergeProposalDialogContext =
   createContext<OpenMergeProposalDialog | null>(null);
 
 /**
- * Hosts the one merge dialog a proposal list can have open, above the grid
+ * Owns the one merge dialog a proposal list can have open, above the grid
  * rather than inside the card whose menu opened it.
  *
  * The grid lays its cards out with `react-masonry-css`, which hands child `i`
@@ -28,8 +28,17 @@ const MergeProposalDialogContext =
  * card went with it: the modal vanished mid-merge and took the admin's picked
  * target and note along (ONE-1123). Owning it here keeps it mounted through
  * any number of list refreshes.
+ *
+ * Context rather than an `onMerge` prop for the same reason
+ * {@link ProposalReviewDecorationProvider} exists: the list, grid, map and card
+ * components in between are proposal-agnostic, and threading a merge callback
+ * through all four would undo that.
  */
-export function MergeProposalDialogHost({ children }: { children: ReactNode }) {
+export function MergeProposalDialogProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   // The proposal as it was when the menu opened, held past the close so the
   // dialog animates out rather than disappearing. It no longer tracks the list,
   // which is the point: the merge names the proposal the admin chose, and only
@@ -57,16 +66,16 @@ export function MergeProposalDialogHost({ children }: { children: ReactNode }) {
 }
 
 /**
- * Opens the merge dialog for one proposal. Throws outside a
- * {@link MergeProposalDialogHost} — a menu whose Merge item silently did
- * nothing would look like the bug this host exists to fix.
+ * Opens the merge dialog for one proposal. Throws without a provider, like
+ * {@link useSetDecisionTranslation} — a Merge item that silently did nothing
+ * would look like the bug this provider exists to fix.
  */
 export function useOpenMergeProposalDialog() {
   const openMergeDialog = useContext(MergeProposalDialogContext);
 
   if (!openMergeDialog) {
     throw new Error(
-      'useOpenMergeProposalDialog must be used inside a MergeProposalDialogHost',
+      'useOpenMergeProposalDialog must be used within a MergeProposalDialogProvider',
     );
   }
 

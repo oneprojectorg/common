@@ -35,7 +35,7 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
-import { MergeProposalDialogHost } from './MergeProposalDialogHost';
+import { MergeProposalDialogProvider } from './MergeProposalDialogContext';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import {
@@ -395,10 +395,10 @@ export const ProposalsList = (props: ProposalsListProps) => {
     />
   );
 
-  // The host sits above the loaders, so a refreshed list re-parenting its cards
-  // can't close a merge the admin is halfway through.
+  // The provider sits above the loaders, so a refreshed list re-parenting its
+  // cards can't close a merge the admin is halfway through.
   return (
-    <MergeProposalDialogHost>
+    <MergeProposalDialogProvider>
       {phase === 'results' ? (
         <ResultsPhaseProposalsLoader queryParams={queryParams}>
           {renderContent}
@@ -408,7 +408,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
           {renderContent}
         </CurrentPhaseProposalsLoader>
       )}
-    </MergeProposalDialogHost>
+    </MergeProposalDialogProvider>
   );
 };
 
