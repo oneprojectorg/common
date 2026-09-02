@@ -12,7 +12,6 @@ import { Header2 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -40,6 +39,7 @@ import {
   updateFieldLabel,
 } from '@/components/decisions/proposalTemplate';
 
+import { AddFieldMenu } from './AddFieldMenu';
 import { BudgetFieldConfig } from './BudgetFieldConfig';
 import {
   FieldCard,
@@ -147,6 +147,13 @@ export function TemplateEditorContent({
   // that are always rendered separately above the sortable list.
   const fields = useMemo(
     () => getFields(template).filter((f) => !SYSTEM_FIELD_KEYS.has(f.id)),
+    [template],
+  );
+
+  // Single-instance field types that can't be added again. Location uses a
+  // fixed key, so a second one would overwrite the first.
+  const disabledTypes = useMemo<FieldType[]>(
+    () => (template.properties?.[LOCATION_FIELD_KEY] ? ['location'] : []),
     [template],
   );
 
@@ -431,14 +438,10 @@ export function TemplateEditorContent({
               {(field, controls) => renderFieldCard(field, controls)}
             </Sortable>
           </div>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => handleAddField('short_text')}
-          >
-            <LuPlus className="size-4" />
-            {t('Add field')}
-          </Button>
+          <AddFieldMenu
+            onAddField={handleAddField}
+            disabledTypes={disabledTypes}
+          />
         </div>
       </div>
 
