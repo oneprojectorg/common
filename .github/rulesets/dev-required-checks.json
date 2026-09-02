@@ -1,0 +1,28 @@
+{
+  "name": "dev required checks",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/dev"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          { "context": "Typecheck" },
+          { "context": "Tests" }
+        ]
+      }
+    }
+  ],
+  "bypass_actors": [
+    { "actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "always" },
+    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }
+  ]
+}
