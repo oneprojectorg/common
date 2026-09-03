@@ -57,6 +57,10 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 - **Drizzle relations**: define new relations in `services/db/relations.ts` using the v2 `defineRelations` API (the source of truth for `db.query`). The v1 `relations()` blocks in individual `*.sql.ts` files still exist for legacy `db._query` callers but should **not** be added for new tables.
 - **Row types**: derive a table's row type with `typeof <table>.$inferSelect` (e.g. `export type Foo = typeof foos.$inferSelect;`). Prefer this over `InferModel<typeof <table>>`.
 
+### Email recipients
+
+**`auth.users.email` is the only delivery address.** No sender reads an email column directly — addresses come from the resolvers in `packages/common/src/services/email/recipients.ts`, keyed on `authUserId`. Every other `email` column is a snapshot with no working sync (`profile_users.email`, `public.users.email`) or an unverified public contact field (`profiles.email`, the org contact address).
+
 ## AI Assistant Guidelines
 
 ### File Search Scope

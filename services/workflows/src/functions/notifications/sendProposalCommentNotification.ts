@@ -1,3 +1,5 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { posts, profiles } from '@op/db/schema';
@@ -68,20 +70,23 @@ export const sendProposalCommentNotification = inngest.createFunction(
       return;
     }
 
-    const proposalAuthor = await step.run('get-proposal-author', async () => {
-      const [row] = await db
-        .select({
-          name: profiles.name,
-          email: profiles.email,
-        })
-        .from(profiles)
-        .where(eq(profiles.id, proposal.submittedByProfileId))
-        .limit(1);
-      return row ?? null;
-    });
+    const [proposalAuthor, authorRecipients] = await Promise.all([
+      step.run('get-proposal-author', async () => {
+        const [row] = await db
+          .select({ name: profiles.name })
+          .from(profiles)
+          .where(eq(profiles.id, proposal.submittedByProfileId))
+          .limit(1);
+        return row ?? null;
+      }),
+      step.run('get-author-recipients', async () =>
+        listProfileRecipients({ profileId: proposal.submittedByProfileId }),
+      ),
+    ]);
 
-    const recipientEmail = proposalAuthor?.email;
-    if (!recipientEmail) {
+    const [recipientEmail] = selectEmailRecipients(authorRecipients);
+
+    if (!proposalAuthor || !recipientEmail) {
       return;
     }
 

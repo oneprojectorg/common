@@ -1,4 +1,5 @@
-import { hasEmail } from '@op/common/client';
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -39,13 +40,6 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
               profile: true,
             },
           },
-          reviewer: {
-            with: {
-              profileUsers: {
-                where: { email: { isNotNull: true } },
-              },
-            },
-          },
           requests: true,
         },
       });
@@ -84,11 +78,15 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
       return;
     }
 
-    const { proposal, processInstance, reviewer } = assignment;
-    const reviewerEmails = reviewer.profileUsers.filter(hasEmail);
+    const { proposal, processInstance } = assignment;
 
-    if (reviewerEmails.length === 0) {
-      logger.warn('No reviewer emails found for reviewer profile', {
+    const reviewers = await step.run('get-reviewer-recipients', async () =>
+      listProfileRecipients({ profileId: assignment.reviewerProfileId }),
+    );
+    const recipients = selectEmailRecipients(reviewers);
+
+    if (recipients.length === 0) {
+      logger.warn('No reviewer addresses found for reviewer profile', {
         reviewerProfileId: assignment.reviewerProfileId,
       });
       return;
@@ -108,7 +106,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
 
     const result = await step.run('send-emails', async () => {
       try {
-        const emails = reviewerEmails.map(({ email }) => ({
+        const emails = recipients.map((email) => ({
           to: email,
           subject: RevisionResubmittedEmail.subject(proposalName),
           component: () =>

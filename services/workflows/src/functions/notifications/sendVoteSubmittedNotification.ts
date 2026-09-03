@@ -1,9 +1,10 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
   decisionsVoteSubmissions,
   processInstances,
-  profileUsers,
   profiles,
 } from '@op/db/schema';
 import { OPNodemailer, VoteSubmittedEmail } from '@op/emails';
@@ -88,18 +89,12 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // Step 2: Get voter's email
-    const voterEmail = await step.run('get-voter-email', async () => {
-      const result = await db
-        .select({
-          email: profileUsers.email,
-        })
-        .from(profileUsers)
-        .where(eq(profileUsers.profileId, voteData.voterProfileId))
-        .limit(1);
+    // Step 2: Get the voter's sign-in address
+    const voter = await step.run('get-voter-recipients', async () =>
+      listProfileRecipients({ profileId: voteData.voterProfileId }),
+    );
 
-      return result[0]?.email ?? null;
-    });
+    const [voterEmail] = selectEmailRecipients(voter);
 
     if (!voterEmail) {
       logger.info('No email found for voter profile', {

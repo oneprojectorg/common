@@ -1,3 +1,5 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -37,7 +39,6 @@ export const sendPostCommentNotification = inngest.createFunction(
             postContent: posts.content,
             recipientId: profiles.id,
             recipientName: profiles.name,
-            recipientEmail: profiles.email,
             recipientSlug: profiles.slug,
           })
           .from(posts)
@@ -88,7 +89,12 @@ export const sendPostCommentNotification = inngest.createFunction(
     if (parent.recipientId === authorProfileId) {
       return;
     }
-    const recipientEmail = parent.recipientEmail;
+
+    const recipients = await step.run('get-recipients', async () =>
+      listProfileRecipients({ profileId: parent.recipientId }),
+    );
+    const [recipientEmail] = selectEmailRecipients(recipients);
+
     if (!recipientEmail) {
       return;
     }
