@@ -79,6 +79,12 @@ export {
   type AdminDecisionReviewAssignments,
 } from './services/decision/schemas/adminDecisionInstance';
 export {
+  phaseReviewerSummarySchema,
+  type PhaseReviewerSummary,
+  phaseReviewerSummariesSchema,
+  type PhaseReviewerSummaries,
+} from './services/decision/schemas/reviewAssignments';
+export {
   proposalSelectionSchema,
   type ProposalSelection,
 } from './services/decision/schemas/selection';
