@@ -1,6 +1,10 @@
 import { NotFoundError } from '../../utils';
-import { type AccessUser } from '../access';
+import {
+  type AccessUser,
+  getProfileAccessRolesWithOrgFallback,
+} from '../access';
 import { getVisibleMergedSourceProfiles } from '../decision/proposalSupersession';
+import { getProposalReadContext } from '../decision/proposalVisibility';
 import { assertPostReadAccess } from './access';
 import { getPostsPageForProfiles } from './getPostsPageForProfiles';
 
@@ -42,11 +46,20 @@ export const listProposalComments = async ({
     throw new NotFoundError('Proposal', profileId);
   }
 
-  // The same visibility floor `listContributingProposals` applies, so comments
-  // carry over from exactly the proposals the "Contributing ideas" section
-  // already shows — a hidden or flagged source leaks neither.
+  // Resolved here rather than left to `getPostsPageForProfiles`, which needs
+  // the same roles: `getProfileAccessUser` underneath is memoized per request,
+  // so the second caller reads them for free.
+  const decisionRoles = await getProfileAccessRolesWithOrgFallback({
+    user,
+    profileId: moderationProfileId,
+  });
+
+  // The same gate `listContributingProposals` applies to the far end of every
+  // edge, so comments carry over from exactly the proposals the "Contributing
+  // ideas" section lists — for admins and authors that includes hidden ones.
   const sources = await getVisibleMergedSourceProfiles({
     targetProposalId: proposal.id,
+    readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
   const originByProfileId = new Map<string, ProposalCommentOrigin>(

@@ -181,24 +181,48 @@ describe.concurrent('posts.listProposalComments', () => {
     expect(secondPage.next).toBeNull();
   });
 
-  it('leaves out the comments of a merged proposal the caller cannot open', async ({
+  it('carries a hidden merged proposal’s comments to an admin but not to other members', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { caller, target, source, targetComment } =
-      await createMergedProposalsWithComments(testData);
+    const {
+      setup,
+      caller,
+      target,
+      source,
+      targetComment,
+      sourceEarly,
+      sourceLate,
+    } = await createMergedProposalsWithComments(testData);
 
     await db
       .update(proposals)
       .set({ visibility: Visibility.HIDDEN })
       .where(eq(proposals.id, source.id));
 
-    const result = await caller.posts.listProposalComments({
+    // Same gate `listContributingProposals` applies to the far end of an edge:
+    // a hidden merged proposal stays listed for whoever can still open it, so
+    // the comments it carries over have to follow the card.
+    const adminResult = await caller.posts.listProposalComments({
       profileId: target.profileId,
     });
+    expect(adminResult.items.map((item) => item.post.id)).toEqual([
+      sourceLate.id,
+      targetComment.id,
+      sourceEarly.id,
+    ]);
 
-    expect(result.items.map((item) => item.post.id)).toEqual([
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const memberResult = await memberCaller.posts.listProposalComments({
+      profileId: target.profileId,
+    });
+    expect(memberResult.items.map((item) => item.post.id)).toEqual([
       targetComment.id,
     ]);
   });

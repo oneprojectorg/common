@@ -1,10 +1,5 @@
-import { and, db, eq, inArray, isNull } from '@op/db/client';
-import {
-  ProposalRelationshipType,
-  ProposalStatus,
-  proposalRelationships,
-  proposals,
-} from '@op/db/schema';
+import { and, db, eq, inArray } from '@op/db/client';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -12,7 +7,6 @@ import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getCachedInstance } from './getCachedInstance';
-import { getMergedSourceProposalIds } from './proposalSupersession';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import {
@@ -22,6 +16,7 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import { getMergedSourceProposalIds } from './proposalSupersession';
 import {
   getProposalReadContext,
   isProposalReadable,

@@ -14,7 +14,10 @@ import {
   proposals,
 } from '@op/db/schema';
 
-import { needsNoAccessException } from './proposalVisibility';
+import {
+  type ProposalReadContext,
+  isProposalReadable,
+} from './proposalVisibility';
 
 /** A live `merged` edge pointing *at* `targetProposalId`. */
 const liveMergeInto = (targetProposalId: string): SQL =>
@@ -84,13 +87,18 @@ export async function getMergedSourceProposalIds({
  *
  * One statement rather than an id read followed by a lookup: the ids are only
  * ever used to fetch these rows, and the two-step made the round trips serial.
- * `needsNoAccessException` is the visibility floor `getMergedSourceProposalIds`
- * leaves to its callers, applied here.
+ *
+ * Gated on `isProposalReadable`, the same predicate `listContributingProposals`
+ * applies to the far end of every edge — so the comments that carry over come
+ * from exactly the proposals the "Contributing ideas" section lists, including
+ * the hidden ones an admin or the proposal's own authors can still open.
  */
 export async function getVisibleMergedSourceProfiles({
   targetProposalId,
+  readContext,
 }: {
   targetProposalId: string;
+  readContext: ProposalReadContext;
 }): Promise<Array<{ profileId: string; name: string }>> {
   return (
     db
@@ -104,7 +112,10 @@ export async function getVisibleMergedSourceProfiles({
       )
       .innerJoin(profiles, eq(profiles.id, proposals.profileId))
       .where(
-        and(liveMergeInto(targetProposalId), needsNoAccessException(proposals)),
+        and(
+          liveMergeInto(targetProposalId),
+          isProposalReadable(proposals, readContext),
+        ),
       )
       .orderBy(proposalRelationships.createdAt, proposalRelationships.id)
   );
