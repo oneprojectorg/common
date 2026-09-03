@@ -21,8 +21,8 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { z } from 'zod';
 
-import { ValidationError } from '../../../utils/error';
-import { assertInstanceProfileAccess } from '../../access';
+import { UnauthorizedError, ValidationError } from '../../../utils/error';
+import { assertProfileAccess } from '../../assert';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import type { InstancePhaseRef } from '../schemas/instance';
@@ -61,22 +61,24 @@ export async function listPhaseReviewerSummaries({
 }): Promise<PhaseReviewerSummaries> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  await assertInstanceProfileAccess({
+  // No org fallback: admin access comes from a grant on the instance's own
+  // profile, which legacy instances may not have — fail closed there.
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+  await assertProfileAccess({
     user,
-    instance,
-    profilePermissions: { decisions: permission.ADMIN },
-    orgFallbackPermissions: { decisions: permission.ADMIN },
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
   });
 
   assertInstancePhase({ instance, phaseId });
 
   const decodedCursor = decodePhaseReviewerCursor(cursor);
 
-  const eligibleProfileIds = instance.profileId
-    ? await getEligibleReviewerProfileIds({
-        decisionProfileId: instance.profileId,
-      })
-    : [];
+  const eligibleProfileIds = await getEligibleReviewerProfileIds({
+    decisionProfileId: instance.profileId,
+  });
 
   // An assignment only counts while its proposal is still reachable. Deleted
   // and moderation-detached proposals are invisible even to admins (see
