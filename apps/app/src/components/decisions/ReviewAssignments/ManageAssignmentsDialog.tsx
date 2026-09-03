@@ -4,8 +4,6 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import type {
   AdminAssignableProposal,
-  AdminEligibleReviewer,
-  ReviewerAssignmentPool,
   ReviewerPoolAssignment,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
@@ -27,7 +25,6 @@ import { Label } from '@op/sense/Label';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import type { ReactNode } from 'react';
 import { useId, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -35,6 +32,8 @@ import { useTranslations } from '@/lib/i18n';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
+
+const EMPTY_PROPOSALS: AdminAssignableProposal[] = [];
 
 /** How a proposal row behaves for this reviewer. */
 type RowKind = 'own' | 'locked' | 'assigned' | 'free';
@@ -54,98 +53,34 @@ interface ManageAssignmentsDialogContentProps {
   onSaved: () => void;
 }
 
+/**
+ * Base UI's portal keeps this subtree unmounted until the dialog opens, so
+ * both reads below fire on open rather than on page load.
+ */
 export function ManageAssignmentsDialogContent({
   processInstanceId,
   phaseId,
   reviewerProfileId,
   onSaved,
 }: ManageAssignmentsDialogContentProps) {
-  const t = useTranslations();
-
-  const [data] = trpc.decision.getReviewerAssignmentPool.useSuspenseQuery(
+  // Neither read suspends: the chrome paints at once and only the row list
+  // waits. The queue shares the page body's cache entry, and no staleTime is
+  // configured, so refetchOnMount must be off or opening the dialog refires
+  // it — the body's observer owns the refetch and the channel registration.
+  const queueQuery = trpc.decision.getReviewerAssignments.useQuery(
     { processInstanceId, phaseId, reviewerProfileId },
-    // An SSR-seeded entry never registers the realtime channel; refetch.
-    { refetchOnMount: 'always' },
+    { refetchOnMount: false },
   );
+  const poolQuery = trpc.decision.getReviewerAssignmentPool.useQuery({
+    processInstanceId,
+    phaseId,
+    reviewerProfileId,
+  });
+  const queue = queueQuery.data;
+  const pool = poolQuery.data;
+  const reviewer = queue?.reviewer ?? pool?.reviewer ?? null;
+  const proposals = pool?.proposals ?? EMPTY_PROPOSALS;
 
-  if (!data.reviewer) {
-    return (
-      <ManageAssignmentsDialogMessage>
-        {t('This person does not review in this phase.')}
-      </ManageAssignmentsDialogMessage>
-    );
-  }
-
-  return (
-    <ManageAssignmentsForm
-      processInstanceId={processInstanceId}
-      phaseId={phaseId}
-      pool={data}
-      reviewer={data.reviewer}
-      onSaved={onSaved}
-    />
-  );
-}
-
-/** Dialog-shaped shell for the loading, error and unknown-reviewer states. */
-export function ManageAssignmentsDialogMessage({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const t = useTranslations();
-
-  return (
-    <DialogContent className="sm:max-w-136">
-      <DialogHeader>
-        <DialogTitle>{t('Manage assignments')}</DialogTitle>
-      </DialogHeader>
-      <p className="px-6 py-4 text-sm text-muted-foreground">{children}</p>
-      <DialogFooter>
-        <DialogClose render={<Button variant="outline" />}>
-          {t('Cancel')}
-        </DialogClose>
-      </DialogFooter>
-    </DialogContent>
-  );
-}
-
-export function ManageAssignmentsDialogSkeleton() {
-  const t = useTranslations();
-
-  return (
-    <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
-      <DialogHeader>
-        <DialogTitle>{t('Manage assignments')}</DialogTitle>
-      </DialogHeader>
-      <div className="flex flex-col gap-3 px-6 py-4">
-        <Skeleton className="h-9 w-full" />
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} className="h-10 w-full" />
-        ))}
-      </div>
-    </DialogContent>
-  );
-}
-
-interface ManageAssignmentsFormProps {
-  processInstanceId: string;
-  phaseId: string;
-  pool: ReviewerAssignmentPool;
-  /** Narrowed by the caller — the form never renders without an identity. */
-  reviewer: AdminEligibleReviewer;
-  onSaved: () => void;
-}
-
-/** A diff (assign / unassign) Save applies in one go; the visible diff IS the confirmation. */
-function ManageAssignmentsForm({
-  processInstanceId,
-  phaseId,
-  pool,
-  reviewer,
-  onSaved,
-}: ManageAssignmentsFormProps) {
-  const { proposals } = pool;
   const t = useTranslations();
   const filterId = useId();
   const importEnabled = useFeatureFlag('bulk_assign_import');
@@ -158,17 +93,26 @@ function ManageAssignmentsForm({
     () => new Set<string>(),
   );
 
-  const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
+  const name = reviewer
+    ? (reviewer.name ?? reviewer.slug ?? reviewer.id)
+    : null;
   // A reviewer without the role gets a frozen queue: unassign pending only.
-  const canAssign = pool.isEligible;
+  const canAssign = (queue?.isEligible ?? pool?.isEligible) === true;
+  const isLoading = poolQuery.isPending;
+  const hasFailed = poolQuery.isError || queueQuery.isError;
+  // Loaded, and neither read claims this profile reviews here.
+  const isUnknownReviewer = Boolean(queue && !queue.reviewer);
 
   const assignReviews = trpc.decision.assignReviews.useMutation();
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation();
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
 
   const rows = useMemo(
-    () => buildProposalRows(proposals, pool.assignments, reviewer.id),
-    [proposals, pool.assignments, reviewer.id],
+    () =>
+      pool?.reviewer
+        ? buildProposalRows(proposals, pool.assignments, pool.reviewer.id)
+        : [],
+    [pool, proposals],
   );
 
   const visibleRows = useMemo(() => filterRows(rows, query), [rows, query]);
@@ -188,7 +132,9 @@ function ManageAssignmentsForm({
   );
 
   const assignedCount =
-    pool.assignments.length - unassignAssignmentIds.length + assignIds.length;
+    (pool?.assignments.length ?? queue?.assignedCount ?? 0) -
+    unassignAssignmentIds.length +
+    assignIds.length;
   const hasChanges = assignIds.length > 0 || unassignAssignmentIds.length > 0;
 
   // Additive only: never bulk-unassigns.
@@ -258,7 +204,7 @@ function ManageAssignmentsForm({
         const result = await assignReviews.mutateAsync({
           processInstanceId,
           phaseId,
-          reviewerProfileId: reviewer.id,
+          reviewerProfileId,
           proposalIds: assignIds,
         });
         createdCount = result.createdCount;
@@ -266,7 +212,7 @@ function ManageAssignmentsForm({
         logger.error('Failed to save review assignment changes', {
           error,
           context: 'ManageAssignmentsDialog',
-          reviewerProfileId: reviewer.id,
+          reviewerProfileId,
         });
         // Nothing committed yet — every selection is still worth retrying.
         toast.error(t('Could not save the changes. Please try again.'));
@@ -290,7 +236,7 @@ function ManageAssignmentsForm({
         logger.error('Failed to save review assignment changes', {
           error,
           context: 'ManageAssignmentsDialog',
-          reviewerProfileId: reviewer.id,
+          reviewerProfileId,
         });
         if (createdCount > 0) {
           // The assign half committed — drop it so a retry only re-sends the removals.
@@ -324,7 +270,11 @@ function ManageAssignmentsForm({
     // 34rem × 38rem — the size the design's dialog was composed at.
     <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
       <DialogHeader>
-        <DialogTitle>{t("Manage {name}'s assignments", { name })}</DialogTitle>
+        <DialogTitle>
+          {name
+            ? t("Manage {name}'s assignments", { name })
+            : t('Manage assignments')}
+        </DialogTitle>
         <DialogDescription>
           {t(
             "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
@@ -348,6 +298,7 @@ function ManageAssignmentsForm({
                 poolIds={poolIds}
                 assignableIds={importableIds}
                 onImport={importProposals}
+                disabled={!pool}
               />
             ) : null}
             <Button
@@ -360,13 +311,13 @@ function ManageAssignmentsForm({
           </div>
         </div>
 
-        {canAssign ? null : (
+        {queue && !canAssign && !isUnknownReviewer ? (
           <p className="text-sm text-muted-foreground">
             {t(
               'This reviewer no longer has the reviewer role, so they cannot take new proposals.',
             )}
           </p>
-        )}
+        ) : null}
 
         <Field>
           <FieldLabel htmlFor={filterId} className="sr-only">
@@ -381,32 +332,51 @@ function ManageAssignmentsForm({
           />
         </Field>
 
+        {/* Silent until the rows exist — "0 proposals shown" mid-load is a lie. */}
         <p aria-live="polite" className="sr-only">
-          {t(
-            '{count, plural, one {# proposal shown} other {# proposals shown}}',
-            {
-              count: visibleRows.length,
-            },
-          )}
+          {pool && !isUnknownReviewer
+            ? t(
+                '{count, plural, one {# proposal shown} other {# proposals shown}}',
+                { count: visibleRows.length },
+              )
+            : ''}
         </p>
 
         <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border">
-          {visibleRows.map((row) => (
-            <ProposalCheckRow
-              key={row.proposal.id}
-              row={row}
-              canAssign={canAssign}
-              isChecked={isRowChecked(row, toAssign, toUnassign)}
-              onToggle={() => toggleRow(row)}
-            />
-          ))}
-          {visibleRows.length === 0 ? (
+          {isUnknownReviewer || hasFailed ? (
             <li className="px-3 py-2 text-sm text-muted-foreground">
-              {proposals.length === 0
-                ? t('No proposals in this phase yet.')
-                : t('No proposals match "{query}".', { query: query.trim() })}
+              {isUnknownReviewer
+                ? t('This person does not review in this phase.')
+                : t('Please refresh the page to try again.')}
             </li>
-          ) : null}
+          ) : isLoading ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <li key={index} className="border-b p-3 last:border-b-0">
+                <Skeleton className="h-5 w-full" />
+              </li>
+            ))
+          ) : (
+            <>
+              {visibleRows.map((row) => (
+                <ProposalCheckRow
+                  key={row.proposal.id}
+                  row={row}
+                  canAssign={canAssign}
+                  isChecked={isRowChecked(row, toAssign, toUnassign)}
+                  onToggle={() => toggleRow(row)}
+                />
+              ))}
+              {visibleRows.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-muted-foreground">
+                  {proposals.length === 0
+                    ? t('No proposals in this phase yet.')
+                    : t('No proposals match "{query}".', {
+                        query: query.trim(),
+                      })}
+                </li>
+              ) : null}
+            </>
+          )}
         </ul>
       </div>
 
