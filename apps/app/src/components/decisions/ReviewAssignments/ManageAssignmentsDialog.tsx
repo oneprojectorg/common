@@ -4,28 +4,29 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import type {
   AdminAssignableProposal,
-  AdminReviewAssignment,
+  ReviewerAssignmentPool,
+  ReviewerPoolAssignment,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import {
-  Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@op/sense/Dialog';
 import { Field, FieldLabel } from '@op/sense/Field';
 import { Header3 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { Label } from '@op/sense/Label';
+import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import type { ReactNode } from 'react';
 import { useId, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -33,7 +34,6 @@ import { useTranslations } from '@/lib/i18n';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
-import type { ReviewerRow } from './buildReviewerRows';
 
 /** How a proposal row behaves for this reviewer. */
 type RowKind = 'own' | 'locked' | 'assigned' | 'free';
@@ -41,30 +41,102 @@ type RowKind = 'own' | 'locked' | 'assigned' | 'free';
 interface ProposalRow {
   proposal: AdminAssignableProposal;
   kind: RowKind;
-  assignment: AdminReviewAssignment | null;
+  assignment: ReviewerPoolAssignment | null;
   /** The reviewer submitted this proposal — labelled whatever the kind is. */
   isOwn: boolean;
 }
 
-interface ManageAssignmentsDialogProps {
+interface ManageAssignmentsDialogContentProps {
   processInstanceId: string;
   phaseId: string;
-  reviewer: ReviewerRow;
-  proposals: AdminAssignableProposal[];
+  reviewerProfileId: string;
+  onSaved: () => void;
+}
+
+/** Fetches the pick list; mounted only while the dialog is open. */
+export function ManageAssignmentsDialogContent({
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+  onSaved,
+}: ManageAssignmentsDialogContentProps) {
+  const [data] = trpc.decision.getReviewerAssignmentPool.useSuspenseQuery(
+    { processInstanceId, phaseId, reviewerProfileId },
+    // Refetch through the client link on mount — the SSR-seeded cache alone
+    // never registers the `reviewAssignments` realtime channel.
+    { refetchOnMount: 'always' },
+  );
+
+  return (
+    <ManageAssignmentsForm
+      processInstanceId={processInstanceId}
+      phaseId={phaseId}
+      pool={data}
+      onSaved={onSaved}
+    />
+  );
+}
+
+/** A dialog-shaped shell for the loading, error and unknown-reviewer states. */
+export function ManageAssignmentsDialogMessage({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const t = useTranslations();
+
+  return (
+    <DialogContent className="sm:max-w-136">
+      <DialogHeader>
+        <DialogTitle>{t('Manage assignments')}</DialogTitle>
+      </DialogHeader>
+      <p className="px-6 py-4 text-sm text-muted-foreground">{children}</p>
+      <DialogFooter>
+        <DialogClose render={<Button variant="outline" />}>
+          {t('Cancel')}
+        </DialogClose>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+export function ManageAssignmentsDialogSkeleton() {
+  const t = useTranslations();
+
+  return (
+    <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
+      <DialogHeader>
+        <DialogTitle>{t('Manage assignments')}</DialogTitle>
+      </DialogHeader>
+      <div className="flex flex-col gap-3 px-6 py-4">
+        <Skeleton className="h-9 w-full" />
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton key={index} className="h-10 w-full" />
+        ))}
+      </div>
+    </DialogContent>
+  );
+}
+
+interface ManageAssignmentsFormProps {
+  processInstanceId: string;
+  phaseId: string;
+  pool: ReviewerAssignmentPool;
+  onSaved: () => void;
 }
 
 /** A diff (assign / unassign) Save applies in one go; the visible diff IS the confirmation. */
-export function ManageAssignmentsDialog({
+function ManageAssignmentsForm({
   processInstanceId,
   phaseId,
-  reviewer,
-  proposals,
-}: ManageAssignmentsDialogProps) {
+  pool,
+  onSaved,
+}: ManageAssignmentsFormProps) {
+  const { reviewer, proposals } = pool;
   const t = useTranslations();
   const filterId = useId();
   const importEnabled = useFeatureFlag('bulk_assign_import');
 
-  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [toAssign, setToAssign] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
@@ -73,17 +145,17 @@ export function ManageAssignmentsDialog({
     () => new Set<string>(),
   );
 
-  const name = reviewer.label;
+  const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
   // A reviewer without the role gets a frozen queue: unassign pending only.
-  const canAssign = reviewer.isEligible;
+  const canAssign = pool.isEligible;
 
   const assignReviews = trpc.decision.assignReviews.useMutation();
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation();
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
 
   const rows = useMemo(
-    () => buildProposalRows(proposals, reviewer),
-    [proposals, reviewer],
+    () => buildProposalRows(proposals, pool),
+    [proposals, pool],
   );
 
   const visibleRows = useMemo(() => filterRows(rows, query), [rows, query]);
@@ -103,9 +175,7 @@ export function ManageAssignmentsDialog({
   );
 
   const assignedCount =
-    reviewer.assignments.length -
-    unassignAssignmentIds.length +
-    assignIds.length;
+    pool.assignments.length - unassignAssignmentIds.length + assignIds.length;
   const hasChanges = assignIds.length > 0 || unassignAssignmentIds.length > 0;
 
   // Additive only: never bulk-unassigns.
@@ -134,12 +204,6 @@ export function ManageAssignmentsDialog({
   // rows the admin ticked by hand.
   const importProposals = (proposalIds: Array<string>) => {
     setToAssign((current) => new Set([...current, ...proposalIds]));
-  };
-
-  const reset = () => {
-    setQuery('');
-    setToAssign(new Set());
-    setToUnassign(new Set());
   };
 
   const toggleRow = (row: ProposalRow) => {
@@ -181,7 +245,7 @@ export function ManageAssignmentsDialog({
         const result = await assignReviews.mutateAsync({
           processInstanceId,
           phaseId,
-          reviewerProfileId: reviewer.profile.id,
+          reviewerProfileId: reviewer.id,
           proposalIds: assignIds,
         });
         createdCount = result.createdCount;
@@ -189,7 +253,7 @@ export function ManageAssignmentsDialog({
         logger.error('Failed to save review assignment changes', {
           error,
           context: 'ManageAssignmentsDialog',
-          reviewerProfileId: reviewer.profile.id,
+          reviewerProfileId: reviewer.id,
         });
         // Nothing committed yet — every selection is still worth retrying.
         toast.error(t('Could not save the changes. Please try again.'));
@@ -213,7 +277,7 @@ export function ManageAssignmentsDialog({
         logger.error('Failed to save review assignment changes', {
           error,
           context: 'ManageAssignmentsDialog',
-          reviewerProfileId: reviewer.profile.id,
+          reviewerProfileId: reviewer.id,
         });
         if (createdCount > 0) {
           // The assign half committed — drop it so a retry only re-sends the removals.
@@ -240,144 +304,127 @@ export function ManageAssignmentsDialog({
       toast.error(t('Could not unassign — the assignment has changed.'));
     }
 
-    reset();
-    setIsOpen(false);
+    onSaved();
   };
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        setIsOpen(open);
-        if (!open) {
-          reset();
-        }
-      }}
-    >
-      <DialogTrigger render={<Button />}>
-        {t('Manage assignments')}
-      </DialogTrigger>
+    // 34rem × 38rem — the size the design's dialog was composed at.
+    <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
+      <DialogHeader>
+        <DialogTitle>{t("Manage {name}'s assignments", { name })}</DialogTitle>
+        <DialogDescription>
+          {t(
+            "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
+          )}
+        </DialogDescription>
+      </DialogHeader>
 
-      {/* 34rem × 38rem — the size the design's dialog was composed at. */}
-      <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>
-            {t("Manage {name}'s assignments", { name })}
-          </DialogTitle>
-          <DialogDescription>
-            {t(
-              "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
-            )}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
-          <div className="flex items-center justify-between gap-3">
-            {/* Not the filter's label — a moving count would rename the control. */}
-            <Header3 aria-live="polite" className="font-light">
-              {t('Proposals ({count} assigned)', { count: assignedCount })}
-            </Header3>
-            <div className="flex items-center gap-2">
-              {/* Import builds the selection like Select all does, so it lives
+      <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
+        <div className="flex items-center justify-between gap-3">
+          {/* Not the filter's label — a moving count would rename the control. */}
+          <Header3 aria-live="polite" className="font-light">
+            {t('Proposals ({count} assigned)', { count: assignedCount })}
+          </Header3>
+          <div className="flex items-center gap-2">
+            {/* Import builds the selection like Select all does, so it lives
                   beside it. Stacked on this dialog, which stays mounted
                   underneath. A frozen reviewer takes no new proposals, so
                   there is nothing to import into. */}
-              {importEnabled && canAssign ? (
-                <ImportProposalIdsDialog
-                  poolIds={poolIds}
-                  assignableIds={importableIds}
-                  onImport={importProposals}
-                />
-              ) : null}
-              <Button
-                variant="link"
-                onClick={toggleVisibleFree}
-                disabled={visibleFreeIds.length === 0}
-              >
-                {allVisibleFreeSelected ? t('Clear') : t('Select all')}
-              </Button>
-            </div>
-          </div>
-
-          {canAssign ? null : (
-            <p className="text-sm text-muted-foreground">
-              {t(
-                'This reviewer no longer has the reviewer role, so they cannot take new proposals.',
-              )}
-            </p>
-          )}
-
-          <Field>
-            <FieldLabel htmlFor={filterId} className="sr-only">
-              {t('Filter proposals')}
-            </FieldLabel>
-            <Input
-              id={filterId}
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('Filter by title or category…')}
-            />
-          </Field>
-
-          <p aria-live="polite" className="sr-only">
-            {t(
-              '{count, plural, one {# proposal shown} other {# proposals shown}}',
-              {
-                count: visibleRows.length,
-              },
-            )}
-          </p>
-
-          <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border">
-            {visibleRows.map((row) => (
-              <ProposalCheckRow
-                key={row.proposal.id}
-                row={row}
-                canAssign={canAssign}
-                isChecked={isRowChecked(row, toAssign, toUnassign)}
-                onToggle={() => toggleRow(row)}
+            {importEnabled && canAssign ? (
+              <ImportProposalIdsDialog
+                poolIds={poolIds}
+                assignableIds={importableIds}
+                onImport={importProposals}
               />
-            ))}
-            {visibleRows.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-muted-foreground">
-                {proposals.length === 0
-                  ? t('No proposals in this phase yet.')
-                  : t('No proposals match "{query}".', { query: query.trim() })}
-              </li>
             ) : null}
-          </ul>
-        </div>
-
-        <DialogFooter className="sm:justify-between">
-          <p
-            aria-live="polite"
-            className="text-sm text-muted-foreground sm:self-center"
-          >
-            {hasChanges
-              ? t('{assign} to assign · {unassign} to unassign', {
-                  assign: assignIds.length,
-                  unassign: unassignAssignmentIds.length,
-                })
-              : t('No changes yet')}
-          </p>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
-            <DialogClose render={<Button variant="outline" />}>
-              {t('Cancel')}
-            </DialogClose>
             <Button
-              disabled={!hasChanges || isSaving}
-              loading={isSaving}
-              onClick={() => {
-                void save();
-              }}
+              variant="link"
+              onClick={toggleVisibleFree}
+              disabled={visibleFreeIds.length === 0}
             >
-              {t('Save changes')}
+              {allVisibleFreeSelected ? t('Clear') : t('Select all')}
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+
+        {canAssign ? null : (
+          <p className="text-sm text-muted-foreground">
+            {t(
+              'This reviewer no longer has the reviewer role, so they cannot take new proposals.',
+            )}
+          </p>
+        )}
+
+        <Field>
+          <FieldLabel htmlFor={filterId} className="sr-only">
+            {t('Filter proposals')}
+          </FieldLabel>
+          <Input
+            id={filterId}
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('Filter by title or category…')}
+          />
+        </Field>
+
+        <p aria-live="polite" className="sr-only">
+          {t(
+            '{count, plural, one {# proposal shown} other {# proposals shown}}',
+            {
+              count: visibleRows.length,
+            },
+          )}
+        </p>
+
+        <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border">
+          {visibleRows.map((row) => (
+            <ProposalCheckRow
+              key={row.proposal.id}
+              row={row}
+              canAssign={canAssign}
+              isChecked={isRowChecked(row, toAssign, toUnassign)}
+              onToggle={() => toggleRow(row)}
+            />
+          ))}
+          {visibleRows.length === 0 ? (
+            <li className="px-3 py-2 text-sm text-muted-foreground">
+              {proposals.length === 0
+                ? t('No proposals in this phase yet.')
+                : t('No proposals match "{query}".', { query: query.trim() })}
+            </li>
+          ) : null}
+        </ul>
+      </div>
+
+      <DialogFooter className="sm:justify-between">
+        <p
+          aria-live="polite"
+          className="text-sm text-muted-foreground sm:self-center"
+        >
+          {hasChanges
+            ? t('{assign} to assign · {unassign} to unassign', {
+                assign: assignIds.length,
+                unassign: unassignAssignmentIds.length,
+              })
+            : t('No changes yet')}
+        </p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <DialogClose render={<Button variant="outline" />}>
+            {t('Cancel')}
+          </DialogClose>
+          <Button
+            disabled={!hasChanges || isSaving}
+            loading={isSaving}
+            onClick={() => {
+              void save();
+            }}
+          >
+            {t('Save changes')}
+          </Button>
+        </div>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -449,18 +496,15 @@ function ProposalCheckRow({
 
 function buildProposalRows(
   proposals: AdminAssignableProposal[],
-  reviewer: ReviewerRow,
+  pool: ReviewerAssignmentPool,
 ): ProposalRow[] {
   const assignmentByProposalId = new Map(
-    reviewer.assignments.map((assignment) => [
-      assignment.proposalId,
-      assignment,
-    ]),
+    pool.assignments.map((assignment) => [assignment.proposalId, assignment]),
   );
 
   return proposals.map((proposal) => {
     const assignment = assignmentByProposalId.get(proposal.id) ?? null;
-    const isOwn = proposal.submittedByProfileId === reviewer.profile.id;
+    const isOwn = proposal.submittedByProfileId === pool.reviewer.id;
 
     return {
       proposal,
@@ -474,7 +518,7 @@ function buildProposalRows(
 // An existing assignment outranks "own proposal" — a stray self-assignment
 // must stay visible and, while pending, removable.
 function resolveRowKind(
-  assignment: AdminReviewAssignment | null,
+  assignment: ReviewerPoolAssignment | null,
   isOwn: boolean,
 ): RowKind {
   if (assignment) {

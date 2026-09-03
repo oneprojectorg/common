@@ -166,3 +166,75 @@ export const adminDecisionReviewAssignmentsSchema = z.object({
 export type AdminDecisionReviewAssignments = z.infer<
   typeof adminDecisionReviewAssignmentsSchema
 >;
+
+// ── Reviewers table (per-reviewer progress, no assignment rows) ────────
+
+export const phaseReviewerSummarySchema = z.object({
+  profile: adminProfileRefSchema,
+  email: z.string().nullable(),
+  assignedCount: z.number(),
+  submittedCount: z.number(),
+  draftCount: z.number(),
+  lastSubmittedAt: z.string().nullable(),
+});
+
+export type PhaseReviewerSummary = z.infer<typeof phaseReviewerSummarySchema>;
+
+export const phaseReviewerSummariesSchema = z.object({
+  reviewers: z.array(phaseReviewerSummarySchema),
+  totalAssignments: z.number(),
+});
+
+export type PhaseReviewerSummaries = z.infer<
+  typeof phaseReviewerSummariesSchema
+>;
+
+// ── Manage-assignments dialog (one reviewer's pick list) ───────────────
+
+export const reviewerPoolAssignmentSchema = z.object({
+  id: z.string(),
+  proposalId: z.string(),
+  status: z.enum(ProposalReviewAssignmentStatus),
+  reviewState: z.enum(ProposalReviewState).nullable(),
+});
+
+export const reviewerAssignmentPoolSchema = z.object({
+  reviewer: adminEligibleReviewerSchema,
+  /** False once the reviewer lost the REVIEW capability; the queue freezes. */
+  isEligible: z.boolean(),
+  assignments: z.array(reviewerPoolAssignmentSchema),
+  /** Proposals in the phase (per getProposalIdsForPhase). */
+  proposals: z.array(adminAssignableProposalSchema),
+});
+
+export type ReviewerPoolAssignment = z.infer<
+  typeof reviewerPoolAssignmentSchema
+>;
+
+export type ReviewerAssignmentPool = z.infer<
+  typeof reviewerAssignmentPoolSchema
+>;
+
+// ── One reviewer's queue (reviewer detail screen) ──────────────────────
+
+export const reviewerAssignmentCardSchema = adminReviewAssignmentSchema.extend({
+  /** Submitted reviews on this proposal across every reviewer, not just this one. */
+  reviewedCount: z.number(),
+});
+
+export type ReviewerAssignmentCard = z.infer<
+  typeof reviewerAssignmentCardSchema
+>;
+
+export const reviewerAssignmentsSchema = z.object({
+  reviewer: adminEligibleReviewerSchema,
+  /** False once the reviewer lost the REVIEW capability; history stays visible. */
+  isEligible: z.boolean(),
+  assignedCount: z.number(),
+  submittedCount: z.number(),
+  draftCount: z.number(),
+  lastSubmittedAt: z.string().nullable(),
+  assignments: z.array(reviewerAssignmentCardSchema),
+});
+
+export type ReviewerAssignments = z.infer<typeof reviewerAssignmentsSchema>;

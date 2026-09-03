@@ -3,9 +3,11 @@ import { addCategoryReviewerRouter } from './addCategoryReviewer';
 import { assignReviewsRouter } from './assignReviews';
 import { cancelRevisionRequestRouter } from './cancelRevisionRequest';
 import { getReviewAssignmentRouter } from './getReviewAssignment';
+import { getReviewerAssignmentPoolRouter } from './getReviewerAssignmentPool';
+import { getReviewerAssignmentsRouter } from './getReviewerAssignments';
 import { listCategoryReviewersRouter } from './listCategoryReviewers';
 import { listEligibleReviewersRouter } from './listEligibleReviewers';
-import { listPhaseReviewAssignmentsRouter } from './listPhaseReviewAssignments';
+import { listPhaseReviewerSummariesRouter } from './listPhaseReviewerSummaries';
 import { listProposalFeedbackRouter } from './listProposalFeedback';
 import { listProposalRevisionRequestsRouter } from './listProposalRevisionRequests';
 import { listProposalsRevisionRequestsRouter } from './listProposalsRevisionRequests';
@@ -24,13 +26,15 @@ export const reviewsRouter = mergeRouters(
   assignReviewsRouter,
   cancelRevisionRequestRouter,
   getReviewAssignmentRouter,
+  getReviewerAssignmentPoolRouter,
+  getReviewerAssignmentsRouter,
   listCategoryReviewersRouter,
   listEligibleReviewersRouter,
   listReviewerCategoriesRouter,
   listProposalFeedbackRouter,
   listProposalRevisionRequestsRouter,
   listProposalsRevisionRequestsRouter,
-  listPhaseReviewAssignmentsRouter,
+  listPhaseReviewerSummariesRouter,
   listReviewAssignmentsRouter,
   removeCategoryReviewerRouter,
   removeReviewAssignmentsRouter,

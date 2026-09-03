@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import type { PhaseReviewerSummary } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -22,7 +23,7 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
-import { Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 import { LuChevronRight, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -30,7 +31,6 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
-import { type ReviewerRow, buildReviewerRows } from './buildReviewerRows';
 
 interface ReviewersTableSectionProps {
   decisionSlug: string;
@@ -75,18 +75,14 @@ function ReviewersTableContent({
 }: ReviewersTableSectionProps) {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
+  const [data] = trpc.decision.listPhaseReviewerSummaries.useSuspenseQuery(
     { processInstanceId, phaseId },
     // Refetch through the client link on mount — the SSR-seeded cache alone
     // never registers the `reviewAssignments` realtime channel.
     { refetchOnMount: 'always' },
   );
 
-  const { rows } = useMemo(
-    () =>
-      buildReviewerRows(data.reviewers, data.eligibleReviewers, data.proposals),
-    [data.reviewers, data.eligibleReviewers, data.proposals],
-  );
+  const rows = data.reviewers;
 
   return (
     <div className="flex flex-col gap-3">
@@ -141,10 +137,16 @@ function ReviewersTableContent({
   );
 }
 
-function ReviewerRowCells({ row, href }: { row: ReviewerRow; href: string }) {
+function ReviewerRowCells({
+  row,
+  href,
+}: {
+  row: PhaseReviewerSummary;
+  href: string;
+}) {
   const t = useTranslations();
   const format = useFormatter();
-  const name = row.label;
+  const name = row.profile.name ?? row.profile.slug ?? row.profile.id;
   const lastSubmittedAt = row.lastSubmittedAt
     ? new Date(row.lastSubmittedAt)
     : null;

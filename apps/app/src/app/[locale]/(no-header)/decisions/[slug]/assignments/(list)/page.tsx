@@ -38,7 +38,7 @@ export default async function ReviewAssignmentsPage({
   // Best effort: on failure the client refetches under its own boundary.
   const { utils, queryClient } = await createServerUtils();
   try {
-    await utils.decision.listPhaseReviewAssignments.fetch({
+    await utils.decision.listPhaseReviewerSummaries.fetch({
       processInstanceId,
       phaseId,
     });

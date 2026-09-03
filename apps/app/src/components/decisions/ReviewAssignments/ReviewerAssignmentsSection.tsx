@@ -2,7 +2,10 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { AdminReviewAssignment } from '@op/common/client';
+import type {
+  ReviewerAssignmentCard,
+  ReviewerAssignments,
+} from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -32,7 +35,6 @@ import {
   assignmentStatusRank,
   assignmentStatusSpecs,
 } from './assignmentStatusSpecs';
-import { type ReviewerRow, buildReviewerRows } from './buildReviewerRows';
 
 interface ReviewerAssignmentsSectionProps {
   processInstanceId: string;
@@ -86,23 +88,16 @@ function ReviewerAssignmentsContent({
 }: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
+  const [data] = trpc.decision.getReviewerAssignments.useSuspenseQuery(
     { processInstanceId, phaseId, reviewerProfileId },
     // Refetch through the client link on mount — the SSR-seeded cache alone
     // never registers the `reviewAssignments` realtime channel.
     { refetchOnMount: 'always' },
   );
 
-  const { rows, submittedCountByProposalId } = useMemo(
-    () =>
-      buildReviewerRows(data.reviewers, data.eligibleReviewers, data.proposals),
-    [data.reviewers, data.eligibleReviewers, data.proposals],
-  );
-
-  const reviewer = rows.find((row) => row.profile.id === reviewerProfileId);
-
-  // An id the list doesn't hold is a dead link, not a server error.
-  if (!reviewer) {
+  // A profile that neither reviews here nor ever did is a dead link, not a
+  // server error.
+  if (!data.isEligible && data.assignments.length === 0) {
     return (
       <Empty className="rounded-md border border-dashed">
         <EmptyHeader>
@@ -118,39 +113,36 @@ function ReviewerAssignmentsContent({
     );
   }
 
+  const name = data.reviewer.name ?? data.reviewer.slug ?? data.reviewer.id;
+
   return (
     <>
-      <ReviewerHeader name={reviewer.label} email={reviewer.email} />
+      <ReviewerHeader name={name} email={data.reviewer.email} />
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           <Header3 className="font-light">
             {t('Assigned proposals ({count})', {
-              count: reviewer.assignments.length,
+              count: data.assignments.length,
             })}
           </Header3>
 
-          {reviewer.assignments.length === 0 ? (
+          {data.assignments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t('Nothing assigned to this reviewer yet.')}
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {reviewer.assignments.map((assignment) => (
+              {data.assignments.map((assignment) => (
                 <li key={assignment.id}>
-                  <AssignmentCard
-                    assignment={assignment}
-                    reviewedCount={
-                      submittedCountByProposalId.get(assignment.proposalId) ?? 0
-                    }
-                  />
+                  <AssignmentCard assignment={assignment} />
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        <ReviewProgressRail reviewer={reviewer} />
+        <ReviewProgressRail reviewer={data} />
       </div>
     </>
   );
@@ -158,10 +150,8 @@ function ReviewerAssignmentsContent({
 
 function AssignmentCard({
   assignment,
-  reviewedCount,
 }: {
-  assignment: AdminReviewAssignment;
-  reviewedCount: number;
+  assignment: ReviewerAssignmentCard;
 }) {
   const t = useTranslations();
 
@@ -181,12 +171,14 @@ function AssignmentCard({
           status={assignment.reviewState ?? assignment.status}
         />
       }
-      reviewedLabel={t('{count} Reviewed', { count: reviewedCount })}
+      reviewedLabel={t('{count} Reviewed', {
+        count: assignment.reviewedCount,
+      })}
     />
   );
 }
 
-function ReviewProgressRail({ reviewer }: { reviewer: ReviewerRow }) {
+function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
   const t = useTranslations();
   const format = useFormatter();
 
@@ -254,7 +246,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function statusBreakdown(
-  assignments: AdminReviewAssignment[],
+  assignments: ReviewerAssignmentCard[],
 ): Array<{ status: AssignmentStatusValue; count: number }> {
   const counts = new Map<AssignmentStatusValue, number>();
 

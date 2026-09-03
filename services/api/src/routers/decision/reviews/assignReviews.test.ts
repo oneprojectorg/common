@@ -93,16 +93,14 @@ describe.concurrent('decision.assignReviews', () => {
     });
     expect(second.createdCount).toBe(0);
 
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const queue = await adminCaller.decision.getReviewerAssignments({
       processInstanceId,
       phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
     });
 
-    const rollup = listing.reviewers.find(
-      (candidate) => candidate.profile.id === reviewer.profileId,
-    );
-    expect(rollup?.assignedCount).toBe(1);
-    expect(rollup?.assignments[0]?.proposalId).toBe(proposal.id);
+    expect(queue.assignedCount).toBe(1);
+    expect(queue.assignments[0]?.proposalId).toBe(proposal.id);
   });
 
   it('rejects a reviewer who is not an instance admin', async ({
@@ -216,11 +214,12 @@ describe.concurrent('decision.assignReviews', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const pool = await adminCaller.decision.getReviewerAssignmentPool({
       processInstanceId,
       phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
     });
-    expect(listing.proposals.map((candidate) => candidate.id)).not.toContain(
+    expect(pool.proposals.map((candidate) => candidate.id)).not.toContain(
       proposal.id,
     );
   });
@@ -269,14 +268,12 @@ describe.concurrent('decision.assignReviews', () => {
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
     // Atomic: the valid id must not have been assigned either.
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const queue = await adminCaller.decision.getReviewerAssignments({
       processInstanceId,
       phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
     });
-    const rollup = listing.reviewers.find(
-      (candidate) => candidate.profile.id === reviewer.profileId,
-    );
-    expect(rollup).toBeUndefined();
+    expect(queue.assignments).toEqual([]);
   });
 
   it('rejects a phaseId that does not exist on the instance', async ({
