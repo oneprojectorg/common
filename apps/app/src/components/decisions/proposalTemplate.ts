@@ -382,11 +382,26 @@ export function changeFieldType(
 /**
  * Move a field to a new key, preserving its schema, order and required flag.
  *
- * Needed because `location` is addressed by a fixed key rather than by its
- * `x-format` everywhere: the CSV export filters it out of the custom-field
- * columns and lets a live document override the snapshot by key. A field that
- * becomes a location therefore has to take `LOCATION_FIELD_KEY`, and one that
- * stops being a location has to give it back.
+ * Only the location field needs this, because the codebase identifies it two
+ * different ways. Most callers scan for the `location` x-format and don't care
+ * what the property is called (`templateCollectsLocation`,
+ * `getLocationFieldMapView`, `assembleProposalData`). The CSV export instead
+ * addresses it by the literal `location` property key, in three places: it
+ * fills the Address/Latitude/Longitude columns from `proposalData.location`,
+ * it lists `location` in `OVERRIDABLE_FIELD_KEYS` so a live edit can override
+ * the stored snapshot, and it excludes `location` from the per-field columns
+ * because those three dedicated ones already cover it.
+ *
+ * So the key has to follow the type, both ways. A field retyped *to* location
+ * that kept its generated id would export blank Address/Lat/Lng — the export
+ * looks under `location` and finds nothing — plus a stray extra column. A
+ * field retyped *away* from location that kept the `location` key would be
+ * dropped from the export entirely, since that key is filtered out of the
+ * per-field columns.
+ *
+ * Nothing else breaks in either case, which is what makes it easy to miss:
+ * the editor, submit validation and the map view all key off x-format and
+ * carry on working.
  */
 export function renameField(
   template: ProposalTemplateSchema,

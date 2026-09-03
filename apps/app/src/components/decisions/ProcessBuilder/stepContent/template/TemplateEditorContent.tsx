@@ -495,10 +495,10 @@ function createFieldId(): string {
 /**
  * The property key a field must use once it is a given type.
  *
- * Location is addressed by a fixed key rather than by its `x-format` in the
- * CSV export, so a field becoming one takes `LOCATION_FIELD_KEY` and a field
- * leaving the type hands it back — otherwise a plain text field would keep
- * the reserved key and be dropped from the export's custom-field columns.
+ * A field becoming a location takes `LOCATION_FIELD_KEY`, and one leaving the
+ * type hands it back and gets a fresh id. The CSV export addresses the
+ * location field by that literal key rather than by its x-format — see
+ * `renameField` for what breaks in each direction if the key doesn't follow.
  */
 function getFieldIdForType(fieldId: string, type: FieldType): string {
   if (type === 'location') {
