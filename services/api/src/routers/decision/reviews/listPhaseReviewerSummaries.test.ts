@@ -129,43 +129,77 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(result.totalAssignments).toBe(0);
   });
 
-  it('orders idle reviewers among the 0-submitted ones, not after them', async ({
+  it('orders by assigned count, then name, with idle reviewers last', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
-      title: `Ordered proposal ${task.id}`,
+    const first = await testData.createReviewAssignment({
+      title: `Ordered proposal A1 ${task.id}`,
       status: ProposalReviewAssignmentStatus.PENDING,
     });
-    const context = created.context;
+    const context = first.context;
+    await testData.createReviewAssignment({
+      context,
+      title: `Ordered proposal A2 ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+
+    // Seeded as assignments rather than through assignReviews: a rollup row
+    // comes from the assignment, so these two need no reviewer role.
+    const tieEarly = await testData.createInstanceMember(context);
+    const tieLate = await testData.createInstanceMember(context);
+    await testData.createReviewAssignment({
+      context,
+      reviewer: tieEarly,
+      title: `Ordered proposal B ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const tieLateAssignment = await testData.createReviewAssignment({
+      context,
+      reviewer: tieLate,
+      title: `Ordered proposal C ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const idle = await testData.createInstanceReviewerWithRole(context);
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // The assigned reviewer has submitted nothing, so it ties with the idle
-    // one at 0 and the two must interleave by name.
-    const idle = await testData.createInstanceReviewerWithRole(context);
-    await db
-      .update(profiles)
-      .set({ name: `AAA idle ${task.id}` })
-      .where(eq(profiles.id, idle.profileId));
-    await db
-      .update(profiles)
-      .set({ name: `ZZZ assigned ${task.id}` })
-      .where(eq(profiles.id, context.defaultReviewer.profileId));
+    // tieLate submits: under a submitted-first ordering it would jump the
+    // queue, so this pins assigned count as the primary key.
+    await createProposalReview({
+      assignmentId: tieLateAssignment.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+
+    const named = [
+      [context.defaultReviewer.profileId, `A two ${task.id}`],
+      [tieEarly.profileId, `B one ${task.id}`],
+      [tieLate.profileId, `C one ${task.id}`],
+      [idle.profileId, `D idle ${task.id}`],
+    ] as const;
+    for (const [profileId, name] of named) {
+      await db.update(profiles).set({ name }).where(eq(profiles.id, profileId));
+    }
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
-
     const result = await adminCaller.decision.listPhaseReviewerSummaries({
       processInstanceId: context.instance.instance.id,
       phaseId: 'review',
     });
 
-    const names = result.reviewers.map((reviewer) => reviewer.profile.name);
-    expect(names.indexOf(`AAA idle ${task.id}`)).toBeLessThan(
-      names.indexOf(`ZZZ assigned ${task.id}`),
-    );
+    const expected = named.map(([, name]) => name);
+    // Filtered to the four seeded rows, so a dropped row fails outright
+    // rather than shifting an index past an unrelated reviewer.
+    const names = result.reviewers
+      .map((reviewer) => reviewer.profile.name)
+      .filter((name): name is string =>
+        (expected as readonly (string | null)[]).includes(name),
+      );
+    expect(names).toEqual(expected);
   });
 
   it('excludes assignments whose proposal was moderation-detached', async ({

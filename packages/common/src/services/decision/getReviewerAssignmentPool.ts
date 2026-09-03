@@ -16,11 +16,7 @@ import {
 import type { InstancePhaseRef } from './schemas/instance';
 import { assertInstancePhase } from './utils/instance';
 
-/**
- * What the manage-assignments dialog picks from: the phase's proposals, and
- * which of them this one reviewer already holds. Deliberately carries no
- * other reviewer's rows — the dialog assigns for a single reviewer.
- */
+/** The manage dialog's pick list: phase proposals + this reviewer's rows. */
 export async function getReviewerAssignmentPool({
   user,
   processInstanceId,

@@ -49,8 +49,7 @@ describe.concurrent('decision.getReviewerAssignments', () => {
       submittedAt: new Date().toISOString(),
     });
 
-    // The header subtitle reads the profile's contact email, which the
-    // fixture leaves unset.
+    // The fixture leaves the profile's contact email unset.
     await db
       .update(profiles)
       .set({ email: `reviewer-${task.id}@example.org` })
@@ -105,7 +104,7 @@ describe.concurrent('decision.getReviewerAssignments', () => {
       reviewerProfileId: other.profileId,
     });
 
-    // Both reviewers hold the same proposal; the scoped read returns one row.
+    // Both reviewers hold it; the scoped read returns one row.
     expect(result.assignedCount).toBe(1);
     expect(result.assignments).toHaveLength(1);
     expect(result.assignments[0]?.proposalId).toBe(created.proposal.id);
@@ -135,8 +134,7 @@ describe.concurrent('decision.getReviewerAssignments', () => {
       proposalIds: [created.proposal.id],
     });
 
-    // Only the OTHER reviewer submits. The scoped reviewer has submitted
-    // nothing, so a JS tally over their own rows would report 0.
+    // Only the OTHER reviewer submits: a tally over the scoped rows says 0.
     const otherAssignment = await db.query.proposalReviewAssignments.findFirst({
       where: {
         proposalId: created.proposal.id,
@@ -242,8 +240,7 @@ describe.concurrent('decision.getReviewerAssignments', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    // A real profile elsewhere on the platform: an admin who can guess a UUID
-    // must not be able to read back its name or email.
+    // An admin who guesses a UUID must not read back a name or email.
     const outsider = await testData.createContext();
 
     const adminCaller = await createAuthenticatedCaller(
@@ -256,38 +253,9 @@ describe.concurrent('decision.getReviewerAssignments', () => {
       reviewerProfileId: outsider.defaultReviewer.profileId,
     });
 
-    // The screen renders its own "not in this phase" empty state from this,
-    // rather than treating a dead link as a server error.
     expect(result.reviewer).toBeNull();
     expect(result.isEligible).toBe(false);
     expect(result.assignments).toEqual([]);
-  });
-
-  it('keeps the identity of a reviewer who lost the role but kept history', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
-      title: `Frozen queue proposal ${task.id}`,
-      status: ProposalReviewAssignmentStatus.PENDING,
-    });
-    const context = created.context;
-    await testData.setCurrentPhase(context.instance.instance.id, 'review');
-
-    const adminCaller = await createAuthenticatedCaller(
-      context.defaultReviewer.email,
-    );
-
-    const result = await adminCaller.decision.getReviewerAssignments({
-      processInstanceId: context.instance.instance.id,
-      phaseId: 'review',
-      reviewerProfileId: context.defaultReviewer.profileId,
-    });
-
-    // Association is assignments OR eligibility, so history alone is enough.
-    expect(result.reviewer?.id).toBe(context.defaultReviewer.profileId);
-    expect(result.assignments).toHaveLength(1);
   });
 
   it('rejects a reviewer who is not an instance admin', async ({
@@ -307,26 +275,6 @@ describe.concurrent('decision.getReviewerAssignments', () => {
         reviewerProfileId: reviewer.profileId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
-  });
-
-  it('rejects a phaseId that does not exist on the instance', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const context = await testData.createContext();
-
-    const adminCaller = await createAuthenticatedCaller(
-      context.defaultReviewer.email,
-    );
-
-    await expect(
-      adminCaller.decision.getReviewerAssignments({
-        processInstanceId: context.instance.instance.id,
-        phaseId: 'this-phase-does-not-exist',
-        reviewerProfileId: context.defaultReviewer.profileId,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 });
 

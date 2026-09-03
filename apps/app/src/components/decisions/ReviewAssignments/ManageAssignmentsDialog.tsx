@@ -54,7 +54,6 @@ interface ManageAssignmentsDialogContentProps {
   onSaved: () => void;
 }
 
-/** Fetches the pick list; mounted only while the dialog is open. */
 export function ManageAssignmentsDialogContent({
   processInstanceId,
   phaseId,
@@ -65,8 +64,7 @@ export function ManageAssignmentsDialogContent({
 
   const [data] = trpc.decision.getReviewerAssignmentPool.useSuspenseQuery(
     { processInstanceId, phaseId, reviewerProfileId },
-    // Refetch through the client link on mount — the SSR-seeded cache alone
-    // never registers the `reviewAssignments` realtime channel.
+    // An SSR-seeded entry never registers the realtime channel; refetch.
     { refetchOnMount: 'always' },
   );
 
@@ -89,7 +87,7 @@ export function ManageAssignmentsDialogContent({
   );
 }
 
-/** A dialog-shaped shell for the loading, error and unknown-reviewer states. */
+/** Dialog-shaped shell for the loading, error and unknown-reviewer states. */
 export function ManageAssignmentsDialogMessage({
   children,
 }: {

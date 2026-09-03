@@ -58,7 +58,7 @@ describe.concurrent('decision.getReviewerAssignmentPool', () => {
     expect(pool.proposals.map((proposal) => proposal.id)).toContain(
       created.proposal.id,
     );
-    // Both reviewers hold this proposal; the pool carries one row, theirs.
+    // Both reviewers hold it; the pool carries one row, theirs.
     expect(pool.assignments).toHaveLength(1);
     expect(pool.assignments[0]?.proposalId).toBe(created.proposal.id);
     expect(pool.assignments[0]?.status).toBe(

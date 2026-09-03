@@ -23,10 +23,7 @@ import {
 import type { InstancePhaseRef } from './schemas/instance';
 import { assertInstancePhase } from './utils/instance';
 
-/**
- * One reviewer's queue for a phase: the header identity, the progress totals
- * and the assignment cards with their previews.
- */
+/** One reviewer's queue: header identity, progress totals, assignment cards. */
 export async function getReviewerAssignments({
   user,
   processInstanceId,
@@ -47,8 +44,7 @@ export async function getReviewerAssignments({
 
   assertInstancePhase({ instance, phaseId });
 
-  // Picks the fragment names the document fetch asks for, so it has to land
-  // before that fetch starts.
+  // Picks the fragment names, so it must land before the document fetch.
   const proposalTemplatePromise = resolveProposalTemplate(
     instance.instanceData as Record<string, unknown> | null,
     instance.processId,
@@ -59,7 +55,6 @@ export async function getReviewerAssignments({
       where: { id: reviewerProfileId },
       columns: { id: true, name: true, slug: true, email: true },
     }),
-    // Scoped in SQL: this screen never reads another reviewer's rows.
     db.query.proposalReviewAssignments.findMany({
       where: {
         processInstanceId,
@@ -177,9 +172,8 @@ export async function getReviewerAssignments({
     };
   });
 
-  // Any profile id can be put in the URL, so identity is only returned for a
-  // profile this process actually touches — otherwise this reads back the
-  // name and email of an arbitrary platform user.
+  // Any id can be put in the URL, so identity is returned only for a profile
+  // this process touches — else this reads back an arbitrary user's email.
   const isEligible = eligibleProfileIds.includes(reviewerProfileId);
   const isAssociated = isEligible || assignments.length > 0;
 
@@ -194,10 +188,7 @@ export async function getReviewerAssignments({
   });
 }
 
-/**
- * Submitted reviews per proposal across EVERY reviewer — the "N Reviewed"
- * tally, which is a property of the proposal, not of this reviewer.
- */
+/** The "N Reviewed" tally: a property of the proposal, not of this reviewer. */
 async function getReviewedCountByProposalId({
   processInstanceId,
   phaseId,

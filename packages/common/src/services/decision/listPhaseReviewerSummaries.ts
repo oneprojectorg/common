@@ -19,11 +19,7 @@ import {
 import type { InstancePhaseRef } from './schemas/instance';
 import { assertInstancePhase } from './utils/instance';
 
-/**
- * Per-reviewer progress for the reviewers table. Counts are aggregated in SQL
- * — the assignment rows themselves run to five figures on a large phase and
- * this screen renders none of them.
- */
+/** Per-reviewer progress, aggregated in SQL: this screen renders no rows. */
 export async function listPhaseReviewerSummaries({
   user,
   processInstanceId,
@@ -40,8 +36,6 @@ export async function listPhaseReviewerSummaries({
 
   assertInstancePhase({ instance, phaseId });
 
-  const submittedCount = sql<number>`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`;
-
   const rollups = await db
     .select({
       id: profiles.id,
@@ -49,7 +43,10 @@ export async function listPhaseReviewerSummaries({
       slug: profiles.slug,
       email: profiles.email,
       assignedCount: count(proposalReviewAssignments.id),
-      submittedCount: submittedCount.mapWith(Number),
+      submittedCount:
+        sql<number>`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`.mapWith(
+          Number,
+        ),
       draftCount:
         sql<number>`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`.mapWith(
           Number,
@@ -82,7 +79,8 @@ export async function listPhaseReviewerSummaries({
       ),
     )
     .groupBy(profiles.id, profiles.name, profiles.slug, profiles.email)
-    .orderBy(sql`${submittedCount} desc`, profiles.name);
+    // Heaviest queue first; the table is scanned for workload.
+    .orderBy(sql`count(${proposalReviewAssignments.id}) desc`, profiles.name);
 
   const rolledUpIds = new Set(rollups.map((row) => row.id));
   const eligibleProfileIds = instance.profileId
@@ -92,8 +90,7 @@ export async function listPhaseReviewerSummaries({
     : [];
   const idleIds = eligibleProfileIds.filter((id) => !rolledUpIds.has(id));
 
-  // Reviewers holding the role but carrying nothing yet still get a row, so
-  // an admin can open them and assign.
+  // Reviewers holding the role but carrying nothing still get a row.
   const idleReviewers =
     idleIds.length > 0
       ? await db
@@ -108,9 +105,8 @@ export async function listPhaseReviewerSummaries({
           .orderBy(profiles.name)
       : [];
 
-  // Concatenating the two queries would put every idle reviewer after every
-  // 0-submitted rollup regardless of name. One list, one order — safe in JS
-  // only because this is every reviewer of one process, never paginated.
+  // Every rollup carries at least one assignment and every idle reviewer
+  // none, so the two ordered queries concatenate into one assigned-desc list.
   const reviewers = [
     ...rollups.map((row) => ({
       profile: { id: row.id, name: row.name, slug: row.slug },
@@ -128,11 +124,7 @@ export async function listPhaseReviewerSummaries({
       draftCount: 0,
       lastSubmittedAt: null,
     })),
-  ].sort(
-    (a, b) =>
-      b.submittedCount - a.submittedCount ||
-      (a.profile.name ?? '').localeCompare(b.profile.name ?? ''),
-  );
+  ];
 
   return phaseReviewerSummariesSchema.parse({
     reviewers,

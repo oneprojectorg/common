@@ -19,10 +19,7 @@ interface ManageAssignmentsActionProps {
   reviewerProfileId: string;
 }
 
-/**
- * The button needs no data, so the phase-wide proposal pool is only fetched
- * once the dialog opens — it is the heaviest read on this screen.
- */
+/** The button needs no data, so the pool is only fetched once the dialog opens. */
 export function ManageAssignmentsAction({
   processInstanceId,
   phaseId,
@@ -30,8 +27,7 @@ export function ManageAssignmentsAction({
 }: ManageAssignmentsActionProps) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
-  // Unmounting on close would cut the exit animation, so the content outlives
-  // `isOpen` until Base UI reports the transition finished.
+  // Outlives `isOpen`: unmounting on close would cut the exit animation.
   const [isMounted, setIsMounted] = useState(false);
 
   return (

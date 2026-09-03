@@ -77,8 +77,7 @@ function ReviewersTableContent({
 
   const [data] = trpc.decision.listPhaseReviewerSummaries.useSuspenseQuery(
     { processInstanceId, phaseId },
-    // Refetch through the client link on mount — the SSR-seeded cache alone
-    // never registers the `reviewAssignments` realtime channel.
+    // An SSR-seeded entry never registers the realtime channel; refetch.
     { refetchOnMount: 'always' },
   );
 

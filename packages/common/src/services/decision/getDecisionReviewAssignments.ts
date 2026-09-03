@@ -38,8 +38,7 @@ interface ReviewerRollup {
  * Per-reviewer rollups for one phase plus the manual-assignment dialog's
  * candidate lists. Carries no authorization of its own — callers gate it.
  *
- * Renders no proposal previews, so it fetches no documents: `previewText` is
- * always null here. The reviewer detail screen uses getReviewerAssignments.
+ * Fetches no documents, so `previewText` is always null here.
  */
 export async function getDecisionReviewAssignments({
   instanceId,

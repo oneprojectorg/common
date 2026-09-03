@@ -90,13 +90,11 @@ function ReviewerAssignmentsContent({
 
   const [data] = trpc.decision.getReviewerAssignments.useSuspenseQuery(
     { processInstanceId, phaseId, reviewerProfileId },
-    // Refetch through the client link on mount — the SSR-seeded cache alone
-    // never registers the `reviewAssignments` realtime channel.
+    // An SSR-seeded entry never registers the realtime channel; refetch.
     { refetchOnMount: 'always' },
   );
 
-  // The server withholds identity for a profile with no tie to this process,
-  // which is a dead link rather than a server error.
+  // No identity means no tie to this process: a dead link, not an error.
   if (!data.reviewer) {
     return (
       <Empty className="rounded-md border border-dashed">
