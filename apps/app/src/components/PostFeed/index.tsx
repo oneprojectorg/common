@@ -451,7 +451,7 @@ export const PostItem = ({
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
           <div className="flex flex-col items-baseline gap-2">
-            <Header3 className="font-sans text-base leading-3 font-normal">
+            <Header3 className="font-sans text-base font-normal">
               <PostDisplayName
                 profile={profile}
                 displayName={displayName}
@@ -521,7 +521,7 @@ export const PostItemOnDetailPage = ({
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
           <div className="flex items-baseline gap-2">
-            <Header3 className="font-sans leading-3 font-semibold">
+            <Header3 className="font-sans font-semibold">
               <PostDisplayName
                 profile={profile}
                 displayName={displayName}
