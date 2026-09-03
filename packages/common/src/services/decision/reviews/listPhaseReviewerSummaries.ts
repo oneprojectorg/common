@@ -21,7 +21,12 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { z } from 'zod';
 
-import { UnauthorizedError, ValidationError } from '../../../utils/error';
+import {
+  UnauthorizedError,
+  ValidationError,
+  decodeCursor,
+  encodeCursor,
+} from '../../../utils';
 import { assertProfileAccess } from '../../assert';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
@@ -231,7 +236,7 @@ export async function listPhaseReviewerSummaries({
 }
 
 function encodePhaseReviewerCursor(cursor: PhaseReviewerCursor): string {
-  return Buffer.from(JSON.stringify(cursor)).toString('base64');
+  return encodeCursor<PhaseReviewerCursor>(cursor);
 }
 
 function decodePhaseReviewerCursor(
@@ -241,15 +246,18 @@ function decodePhaseReviewerCursor(
     return undefined;
   }
 
-  const parsed = ((): unknown => {
+  // `decodeCursor` raises a bare CommonError (500) on unreadable base64/JSON,
+  // and its generic is an unchecked cast. Funnelling both failure modes into
+  // the schema check keeps every bad cursor a 400 with one message.
+  const decoded = ((): unknown => {
     try {
-      return JSON.parse(Buffer.from(cursor, 'base64').toString());
+      return decodeCursor<unknown>(cursor);
     } catch {
       return undefined;
     }
   })();
 
-  const result = phaseReviewerCursorSchema.safeParse(parsed);
+  const result = phaseReviewerCursorSchema.safeParse(decoded);
 
   if (!result.success) {
     throw new ValidationError('Invalid cursor');
