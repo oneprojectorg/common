@@ -285,6 +285,35 @@ describe('getCriteria', () => {
     expect(single?.options).toHaveLength(2);
     expect(single?.options[0]?.title).toBe('Parks');
   });
+
+  // `x-field-order` is ordering metadata, not the record of what exists. A
+  // rubric authored outside the builder (API, or carried in on a process
+  // template) has criteria without it, and reading order as existence rendered
+  // those as an empty rubric.
+  it('returns criteria for a rubric with no x-field-order', () => {
+    const ordered = addCriterion(
+      addCriterion(createEmptyRubricTemplate(), 'impact', 'scored', 'Impact'),
+      'notes',
+      'long_text',
+      'Notes',
+    );
+    const { 'x-field-order': _order, ...noOrder } = ordered;
+
+    expect(getCriteria(noOrder).map((c) => c.id)).toEqual(['impact', 'notes']);
+  });
+
+  it('appends criteria that x-field-order omits', () => {
+    const ordered = addCriterion(
+      addCriterion(createEmptyRubricTemplate(), 'impact', 'scored', 'Impact'),
+      'notes',
+      'long_text',
+      'Notes',
+    );
+
+    expect(
+      getCriteria({ ...ordered, 'x-field-order': ['notes'] }).map((c) => c.id),
+    ).toEqual(['notes', 'impact']);
+  });
 });
 
 // ---------------------------------------------------------------------------
