@@ -50,7 +50,7 @@ function ReviewResultOption({
 }: ReviewResultOptionProps) {
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <span className="font-serif text-label">{title}</span>
+      <span className="font-serif text-label text-foreground">{title}</span>
       {description ? (
         // Authored copy, so its line breaks are meant.
         <p className="text-base whitespace-pre-wrap text-foreground">
