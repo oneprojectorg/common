@@ -32,7 +32,7 @@ import {
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
 
-export const DEFAULT_PHASE_REVIEWER_SUMMARY_LIMIT = 50;
+const DEFAULT_PHASE_REVIEWER_SUMMARY_LIMIT = 50;
 
 /**
  * Keyset position in the fixed sort order. Opaque to the client — it is only

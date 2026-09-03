@@ -10,10 +10,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { TranslatedText } from '@/components/TranslatedText';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
-import {
-  REVIEWERS_PAGE_SIZE,
-  ReviewersTableSection,
-} from '@/components/decisions/ReviewAssignments/ReviewersTableSection';
+import { ReviewersTableSection } from '@/components/decisions/ReviewAssignments/ReviewersTableSection';
 
 import { loadReviewAssignmentsPage } from './loadReviewAssignmentsPage';
 
@@ -46,7 +43,6 @@ export default async function ReviewAssignmentsPage({
     await utils.decision.listPhaseReviewerSummaries.fetchInfinite({
       processInstanceId,
       phaseId,
-      limit: REVIEWERS_PAGE_SIZE,
     });
   } catch (error) {
     logger.warn('Failed to preload phase review assignments', {

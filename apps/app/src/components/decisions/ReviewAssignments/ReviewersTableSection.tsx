@@ -34,9 +34,6 @@ import { ButtonLink } from '@/components/ButtonLink';
 
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
 
-/** Kept beside the page's SSR prefetch — a differing input breaks hydration. */
-export const REVIEWERS_PAGE_SIZE = 50;
-
 interface ReviewersTableSectionProps {
   decisionSlug: string;
   processInstanceId: string;
@@ -82,7 +79,7 @@ function ReviewersTableContent({
 
   const [data, query] =
     trpc.decision.listPhaseReviewerSummaries.useSuspenseInfiniteQuery(
-      { processInstanceId, phaseId, limit: REVIEWERS_PAGE_SIZE },
+      { processInstanceId, phaseId },
       {
         getNextPageParam: (lastPage) => lastPage.next,
         // An SSR-seeded entry never registers the realtime channel; refetch.
