@@ -20,7 +20,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
+import { getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -271,34 +271,36 @@ async function assertProposalUpdateAccess({
   proposal: { id: string; profileId: string; status: string | null };
   processInstance: {
     profileId: string | null;
-    ownerProfileId: string | null;
     currentStateId: string | null;
   };
   instancePhases: readonly PhaseInstanceData[];
 }): Promise<void> {
+  if (!processInstance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const instanceRoles = await getProfileAccessRoles({
+    user: { id: user.id },
+    profileId: processInstance.profileId,
+  });
+
   if (data.status || data.visibility) {
-    await assertInstanceProfileAccess({
-      user: { id: user.id },
-      instance: processInstance,
-      profilePermissions: { decisions: permission.ADMIN },
-      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-    });
+    if (!checkPermission({ decisions: permission.ADMIN }, instanceRoles)) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
     return;
   }
 
-  // Data updates require profile-level update permission on the proposal's profile
   const proposalRoles = await getProfileAccessRoles({
     user: { id: user.id },
     profileId: proposal.profileId,
   });
 
-  if (!checkPermission({ profile: permission.UPDATE }, proposalRoles)) {
-    await assertInstanceProfileAccess({
-      user: { id: user.id },
-      instance: processInstance,
-      profilePermissions: { decisions: permission.UPDATE },
-      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-    });
+  if (
+    !checkPermission({ profile: permission.UPDATE }, proposalRoles) &&
+    !checkPermission({ decisions: permission.UPDATE }, instanceRoles)
+  ) {
+    throw new UnauthorizedError("You don't have access to do this");
   }
 
   if (
@@ -311,24 +313,14 @@ async function assertProposalUpdateAccess({
     return;
   }
 
-  // An open revision request is itself the invitation to edit, and the editor
-  // autosaves system fields through here on the way to `resubmit`.
-  const [instanceRoles, hasRevisionRequest] = await Promise.all([
-    processInstance.profileId
-      ? getProfileAccessRoles({
-          user: { id: user.id },
-          profileId: processInstance.profileId,
-        })
-      : [],
-    hasOpenRevisionRequest(proposal.id),
-  ]);
-
   const isInstanceAdmin = checkPermission(
     [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
     instanceRoles,
   );
 
-  if (!isInstanceAdmin && !hasRevisionRequest) {
+  // An open revision request is itself the invitation to edit, and the editor
+  // autosaves system fields through here on the way to `resubmit`.
+  if (!isInstanceAdmin && !(await hasOpenRevisionRequest(proposal.id))) {
     throw new UnauthorizedError('Editing proposals is closed for this phase');
   }
 }
