@@ -3,18 +3,18 @@ import { profiles, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { assertInstanceProfileAccess } from '../access';
-import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { getInstance } from './getInstance';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
-import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
+import { assertInstanceProfileAccess } from '../../access';
+import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
+import { getInstance } from '../getInstance';
+import { getProposalIdsForPhase } from '../getProposalsForPhase';
+import { getCategoriesByProposalIds } from '../listProposalsWithReviewAggregates';
 import { resolveProposalTitle } from './resolveProposalTitle';
 import {
   type ReviewerAssignmentPool,
   reviewerAssignmentPoolSchema,
-} from './schemas/adminDecisionInstance';
-import type { InstancePhaseRef } from './schemas/instance';
-import { assertInstancePhase } from './utils/instance';
+} from '../schemas/reviewAssignments';
+import type { InstancePhaseRef } from '../schemas/instance';
+import { assertInstancePhase } from '../utils/instance';
 
 /** The manage dialog's pick list: phase proposals + this reviewer's rows. */
 export async function getReviewerAssignmentPool({

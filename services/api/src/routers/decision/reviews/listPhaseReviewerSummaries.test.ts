@@ -61,7 +61,8 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
 
     expect(result.totalAssignments).toBe(1);
     const summary = result.reviewers.find(
-      (candidate) => candidate.profile.id === context.defaultReviewer.profileId,
+      (candidate) =>
+        candidate.reviewer.id === context.defaultReviewer.profileId,
     );
     expect(summary?.assignedCount).toBe(1);
     expect(summary?.submittedCount).toBe(1);
@@ -97,7 +98,8 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     });
 
     const summary = result.reviewers.find(
-      (candidate) => candidate.profile.id === context.defaultReviewer.profileId,
+      (candidate) =>
+        candidate.reviewer.id === context.defaultReviewer.profileId,
     );
     expect(summary?.assignedCount).toBe(1);
     expect(summary?.draftCount).toBe(1);
@@ -123,7 +125,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     });
 
     const summary = result.reviewers.find(
-      (candidate) => candidate.profile.id === idle.profileId,
+      (candidate) => candidate.reviewer.id === idle.profileId,
     );
     expect(summary?.assignedCount).toBe(0);
     expect(result.totalAssignments).toBe(0);
@@ -195,7 +197,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     // Filtered to the four seeded rows, so a dropped row fails outright
     // rather than shifting an index past an unrelated reviewer.
     const names = result.reviewers
-      .map((reviewer) => reviewer.profile.name)
+      .map((summary) => summary.reviewer.name)
       .filter((name): name is string =>
         (expected as readonly (string | null)[]).includes(name),
       );

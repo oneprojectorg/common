@@ -124,9 +124,9 @@ function ReviewersTableContent({
           <TableBody>
             {rows.map((row) => (
               <ReviewerRowCells
-                key={row.profile.id}
+                key={row.reviewer.id}
                 row={row}
-                href={`/decisions/${decisionSlug}/assignments/${row.profile.id}`}
+                href={`/decisions/${decisionSlug}/assignments/${row.reviewer.id}`}
               />
             ))}
           </TableBody>
@@ -145,7 +145,7 @@ function ReviewerRowCells({
 }) {
   const t = useTranslations();
   const format = useFormatter();
-  const name = row.profile.name ?? row.profile.slug ?? row.profile.id;
+  const name = row.reviewer.name ?? row.reviewer.slug ?? row.reviewer.id;
   const lastSubmittedAt = row.lastSubmittedAt
     ? new Date(row.lastSubmittedAt)
     : null;
@@ -166,7 +166,7 @@ function ReviewerRowCells({
             avatar={<ProfileAvatar name={name} alt={name} />}
             title={name}
             titleClassName="font-normal"
-            description={row.email ?? undefined}
+            description={row.reviewer.email ?? undefined}
           />
         </Link>
       </TableRowHeader>

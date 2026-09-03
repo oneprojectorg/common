@@ -7,21 +7,21 @@ import {
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { assertInstanceProfileAccess } from '../access';
-import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { getInstance } from './getInstance';
-import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
-import { parseProposalData } from './proposalDataSchema';
-import { buildProposalListPreview } from './proposalListPreview';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { assertInstanceProfileAccess } from '../../access';
+import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
+import { getInstance } from '../getInstance';
+import { getProposalDocumentsContent } from '../getProposalDocumentsContent';
+import { getCategoriesByProposalIds } from '../listProposalsWithReviewAggregates';
+import { parseProposalData } from '../proposalDataSchema';
+import { buildProposalListPreview } from '../proposalListPreview';
+import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { resolveProposalTitle } from './resolveProposalTitle';
 import {
   type ReviewerAssignments,
   reviewerAssignmentsSchema,
-} from './schemas/adminDecisionInstance';
-import type { InstancePhaseRef } from './schemas/instance';
-import { assertInstancePhase } from './utils/instance';
+} from '../schemas/reviewAssignments';
+import type { InstancePhaseRef } from '../schemas/instance';
+import { assertInstancePhase } from '../utils/instance';
 
 /** One reviewer's queue: header identity, progress totals, assignment cards. */
 export async function getReviewerAssignments({

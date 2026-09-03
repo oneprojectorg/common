@@ -9,15 +9,15 @@ import {
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { assertInstanceProfileAccess } from '../access';
-import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { getInstance } from './getInstance';
+import { assertInstanceProfileAccess } from '../../access';
+import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
+import { getInstance } from '../getInstance';
 import {
   type PhaseReviewerSummaries,
   phaseReviewerSummariesSchema,
-} from './schemas/adminDecisionInstance';
-import type { InstancePhaseRef } from './schemas/instance';
-import { assertInstancePhase } from './utils/instance';
+} from '../schemas/reviewAssignments';
+import type { InstancePhaseRef } from '../schemas/instance';
+import { assertInstancePhase } from '../utils/instance';
 
 /** Per-reviewer progress, aggregated in SQL: this screen renders no rows. */
 export async function listPhaseReviewerSummaries({
@@ -109,16 +109,24 @@ export async function listPhaseReviewerSummaries({
   // none, so the two ordered queries concatenate into one assigned-desc list.
   const reviewers = [
     ...rollups.map((row) => ({
-      profile: { id: row.id, name: row.name, slug: row.slug },
-      email: row.email,
+      reviewer: {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        email: row.email,
+      },
       assignedCount: row.assignedCount,
       submittedCount: row.submittedCount,
       draftCount: row.draftCount,
       lastSubmittedAt: row.lastSubmittedAt,
     })),
     ...idleReviewers.map((row) => ({
-      profile: { id: row.id, name: row.name, slug: row.slug },
-      email: row.email,
+      reviewer: {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        email: row.email,
+      },
       assignedCount: 0,
       submittedCount: 0,
       draftCount: 0,

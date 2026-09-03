@@ -1,17 +1,17 @@
 import { aliasedTable, db, eq, inArray } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
 
-import { NotFoundError } from '../../utils';
-import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
-import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
-import { type BudgetData, parseProposalData } from './proposalDataSchema';
+import { NotFoundError } from '../../../utils';
+import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
+import { getProposalIdsForPhase } from '../getProposalsForPhase';
+import { getCategoriesByProposalIds } from '../listProposalsWithReviewAggregates';
+import { type BudgetData, parseProposalData } from '../proposalDataSchema';
 import { resolveProposalTitle } from './resolveProposalTitle';
 import {
   type AdminDecisionReviewAssignments,
   adminDecisionReviewAssignmentsSchema,
-} from './schemas/adminDecisionInstance';
-import type { ProposalCategoryItem } from './schemas/proposalCategory';
+} from '../schemas/reviewAssignments';
+import type { ProposalCategoryItem } from '../schemas/proposalCategory';
 
 /** Accumulator shape; enum fields validated by the output schema parse. */
 interface ReviewerRollup {
