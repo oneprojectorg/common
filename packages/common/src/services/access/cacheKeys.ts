@@ -30,6 +30,17 @@ export const resolveAccessUserIds = (user?: AccessUser): string[] =>
     : [GLOBAL_USER_PUBLIC];
 
 /**
+ * The caller's own auth id, or `undefined` when they hold no account grants.
+ * The counterpart to {@link resolveAccessUserIds} for a grant the public
+ * sentinel can never hold — on a resource public grants never sit on, unioning
+ * it in widens nothing and scans every public grant to prove it. `undefined`
+ * means "no such grant is possible", so the caller drops the condition rather
+ * than letting Drizzle skip it.
+ */
+export const resolveAccountUserId = (user?: AccessUser): string | undefined =>
+  user?.id && user.id !== GLOBAL_USER_PUBLIC ? user.id : undefined;
+
+/**
  * Cache key for the durable `orgUser` cache. Shared by the write site and every
  * invalidator so the key shape can't drift — the resolved id set (own ∪ public)
  * is part of the identity, so a stale `[organizationId, user.id]` key would miss

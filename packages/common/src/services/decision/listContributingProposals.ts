@@ -10,6 +10,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getCachedInstance } from './getCachedInstance';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
@@ -20,7 +21,10 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import { needsNoAccessException } from './proposalVisibility';
+import {
+  getProposalReadContext,
+  isProposalReadable,
+} from './proposalVisibility';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { ListContributingProposalsInput } from './schemas/contributingProposals';
 
@@ -40,23 +44,15 @@ export async function listContributingProposals({
   const proposal = await getProposalAccessContext(proposalId);
 
   // The assert rejects the whole `Promise.all`, so an unauthorized caller never
-  // receives the rows read alongside it.
-  const [, pinnedIsReadable, instance, edges] = await Promise.all([
-    // Profile-level grants only — no org fallback, matching `mergeProposals`.
-    // `ADMIN` isn't listed alongside `READ` because the seeded decisions Admin
-    // role already carries `read`, so it would never admit anyone extra.
+  // receives the rows read alongside it. Profile-level grants only — no org
+  // fallback, matching `mergeProposals`. `ADMIN` isn't listed alongside `READ`
+  // because the seeded decisions Admin role already carries `read`.
+  const [decisionRoles, instance, edges] = await Promise.all([
     assertProfileAccess({
       user,
       profileId: proposal.instance.profileId,
       permissions: { decisions: permission.READ },
     }),
-    db
-      .select({ id: proposals.id })
-      .from(proposals)
-      .where(
-        and(eq(proposals.id, proposalId), needsNoAccessException(proposals)),
-      )
-      .limit(1),
     // Shares `getInstance`'s cached row: on a proposal page the decision has
     // almost certainly been read already, so this is a hit. A miss costs the
     // wider snapshot, which is the price of not forking the cache key.
@@ -77,6 +73,43 @@ export async function listContributingProposals({
       .orderBy(proposalRelationships.createdAt, proposalRelationships.id),
   ]);
 
+  const readContext = getProposalReadContext({ user, decisionRoles });
+  const contributingIds = edges.map((edge) => edge.sourceProposalId);
+
+  const [pinnedIsReadable, rows, proposalTemplate] = await Promise.all([
+    db
+      .select({ id: proposals.id })
+      .from(proposals)
+      .where(
+        and(
+          eq(proposals.id, proposalId),
+          isProposalReadable(proposals, readContext),
+        ),
+      )
+      .limit(1),
+    contributingIds.length === 0
+      ? []
+      : db.query.proposals.findMany({
+          where: {
+            RAW: (table) =>
+              and(
+                inArray(table.id, contributingIds),
+                isProposalReadable(table, readContext),
+              )!,
+          },
+          with: {
+            submittedBy: proposalAuthorRelation,
+            profile: { columns: proposalProfileColumns },
+          },
+        }),
+    instance
+      ? resolveProposalTemplate(
+          instance.instanceData as Record<string, unknown> | null,
+          instance.processId,
+        )
+      : null,
+  ]);
+
   // `NotFoundError`, never `Unauthorized`, so a restricted proposal's existence
   // doesn't leak.
   if (pinnedIsReadable.length === 0) {
@@ -88,7 +121,6 @@ export async function listContributingProposals({
     processInstanceId: proposal.processInstanceId,
   };
 
-  const contributingIds = edges.map((edge) => edge.sourceProposalId);
   if (contributingIds.length === 0) {
     return { queriedProposal, proposals: [] };
   }
@@ -99,42 +131,29 @@ export async function listContributingProposals({
     throw new NotFoundError('Decision instance', proposal.processInstanceId);
   }
 
-  const [rows, proposalTemplate] = await Promise.all([
-    db.query.proposals.findMany({
-      where: {
-        RAW: (table) =>
-          and(
-            inArray(table.id, contributingIds),
-            needsNoAccessException(table),
-          )!,
-      },
-      with: {
-        submittedBy: proposalAuthorRelation,
-        profile: { columns: proposalProfileColumns },
-      },
-    }),
-    resolveProposalTemplate(
-      instance.instanceData as Record<string, unknown> | null,
-      instance.processId,
+  const [documentContentMap, flaggedIds] = await Promise.all([
+    getProposalDocumentsContent(
+      rows.map((row) => {
+        const parsed = parseProposalData(row.proposalData);
+        return {
+          id: row.id,
+          proposalData: row.proposalData,
+          proposalTemplate,
+          collaborationDocVersionId:
+            row.status === ProposalStatus.DRAFT
+              ? undefined
+              : parsed.collaborationDocVersionId,
+        };
+      }),
+      // A single unavailable document must not empty the whole section.
+      { onFetchError: 'omit' },
+    ),
+    // Only its authors or an admin get this far, so the card can mark it.
+    getActivelyFlaggedItemIds(
+      'proposal',
+      rows.map((row) => row.id),
     ),
   ]);
-
-  const documentContentMap = await getProposalDocumentsContent(
-    rows.map((row) => {
-      const parsed = parseProposalData(row.proposalData);
-      return {
-        id: row.id,
-        proposalData: row.proposalData,
-        proposalTemplate,
-        collaborationDocVersionId:
-          row.status === ProposalStatus.DRAFT
-            ? undefined
-            : parsed.collaborationDocVersionId,
-      };
-    }),
-    // A single unavailable document must not empty the whole section.
-    { onFetchError: 'omit' },
-  );
 
   const byId = new Map(
     rows.map((row) => {
@@ -164,6 +183,7 @@ export async function listContributingProposals({
           proposalData: { ...parsedProposalData, ...systemFieldOverrides },
           status: row.status,
           visibility: row.visibility,
+          isFlagged: flaggedIds.has(row.id),
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           profileId: row.profileId,
