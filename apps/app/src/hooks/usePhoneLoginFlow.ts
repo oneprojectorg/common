@@ -44,6 +44,15 @@ export const usePhoneLoginFlow = ({
   const isBusy = phoneLogin.isSending || phoneLogin.isVerifying;
 
   const requestCode = useCallback(async () => {
+    // The submit button is disabled for a number that does not parse, but a
+    // form submit — Enter in the field — reaches here anyway. GoTrue answers
+    // 422, which reads as `unavailable`, so a typo would tell someone the
+    // feature is down and log their mistake as an error. Do what the disabled
+    // button does.
+    if (!isValid) {
+      return;
+    }
+
     setError(undefined);
     const result = await phoneLogin.requestCode(normalized);
     if (result.ok) {
@@ -51,7 +60,7 @@ export const usePhoneLoginFlow = ({
       return;
     }
     setError(phoneFailureMessage(result.reason, t));
-  }, [normalized, phoneLogin, setPhoneCodeSent, t]);
+  }, [isValid, normalized, phoneLogin, setPhoneCodeSent, t]);
 
   /**
    * Asks for another code.

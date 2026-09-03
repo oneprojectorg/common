@@ -324,7 +324,10 @@ export const LoginPanel = () => {
     <AuthPanelShell title={title} subtitle={subtitle}>
       {!isConnectionError && !isErrorState && (
         <div className="flex flex-col gap-8">
-          {!loginSuccess && (
+          {/* `loginSuccess` alone hides these on `email-code`, because that
+              step is derived from it. The phone flow never sets it, so the
+              step has to be named for the code screens to agree. */}
+          {step !== 'email-code' && step !== 'phone-code' && (
             <>
               <AuthGoogleButton onPress={handleLogin} />
               <AuthDivider />

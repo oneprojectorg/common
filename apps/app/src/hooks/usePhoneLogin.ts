@@ -17,9 +17,9 @@ export type {
  * reply, and issues the session, so neither this hook nor our server ever holds
  * a code. The browser talks to Supabase directly.
  *
- * A confirmed number becomes network membership through a trigger on
- * `auth.users`, not through anything here. Nothing in the application writes
- * that record; see `record_phone_verification` in the migrations.
+ * Signing in here authenticates someone and admits them nowhere. Network
+ * membership reads an email address, and an account created this way holds
+ * none.
  *
  * The work sits behind {@link PhoneAuthStrategy} so a later provider change is
  * one new file rather than a rewrite of the panel. One implementation exists,
