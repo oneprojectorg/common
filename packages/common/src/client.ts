@@ -15,7 +15,6 @@ export {
 export {
   getPhaseReviewSettings,
   hasVotingPhase,
-  isProposalEditingPhase,
   isReviewPhase,
   isVotingPhase,
   type ReviewSettings,

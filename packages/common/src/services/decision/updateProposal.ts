@@ -20,11 +20,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import {
-  assertInstanceProfileAccess,
-  getProfileAccessRoles,
-  hasInstanceProfileAccess,
-} from '../access';
+import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -44,16 +40,6 @@ import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
-
-/**
- * "Manages this decision", as the UI reads it: profile admin on the decision
- * profile, or the decision zone's own admin bit. Matches the access
- * `getInstance` reports, so the client's admin affordances and this gate agree.
- */
-const INSTANCE_ADMIN_PERMISSIONS = [
-  { profile: permission.ADMIN },
-  { decisions: permission.ADMIN },
-];
 
 export interface UpdateProposalInput {
   title?: string;
@@ -273,14 +259,6 @@ export const updateProposal = async ({
   return updatedProposal;
 };
 
-/**
- * Authorizes an update against the proposal, the caller, and the phase.
- *
- * Status and visibility are instance-admin territory. Content updates need
- * write access to the proposal itself, and — once it has been submitted — the
- * current phase's "Proposal editing" rule ("Proposal editing" in the Process
- * Builder) must still allow authors to change it.
- */
 async function assertProposalUpdateAccess({
   user,
   data,
@@ -323,7 +301,6 @@ async function assertProposalUpdateAccess({
     });
   }
 
-  // A draft is pre-submission, so the post-submission rule doesn't reach it.
   if (
     proposal.status === ProposalStatus.DRAFT ||
     isPostSubmissionEditingAllowed({
@@ -334,29 +311,28 @@ async function assertProposalUpdateAccess({
     return;
   }
 
-  // Two callers still get through with the setting off: instance admins, who
-  // manage proposals throughout, and an author answering a reviewer's revision
-  // request — that request is itself the invitation to edit, and the editor
+  // An open revision request is itself the invitation to edit, and the editor
   // autosaves system fields through here on the way to `resubmit`.
-  const [isInstanceAdmin, hasRevisionRequest] = await Promise.all([
-    hasInstanceProfileAccess({
-      user: { id: user.id },
-      instance: processInstance,
-      profilePermissions: INSTANCE_ADMIN_PERMISSIONS,
-      orgFallbackPermissions: INSTANCE_ADMIN_PERMISSIONS,
-    }),
+  const [instanceRoles, hasRevisionRequest] = await Promise.all([
+    processInstance.profileId
+      ? getProfileAccessRoles({
+          user: { id: user.id },
+          profileId: processInstance.profileId,
+        })
+      : [],
     hasOpenRevisionRequest(proposal.id),
   ]);
+
+  const isInstanceAdmin = checkPermission(
+    [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
+    instanceRoles,
+  );
 
   if (!isInstanceAdmin && !hasRevisionRequest) {
     throw new UnauthorizedError('Editing proposals is closed for this phase');
   }
 }
 
-/**
- * True while a reviewer has an outstanding revision request on the proposal —
- * the author is expected to edit and resubmit, whatever the phase rule says.
- */
 async function hasOpenRevisionRequest(proposalId: string): Promise<boolean> {
   const [openRequest] = await db
     .select({ id: proposalReviewRequests.id })

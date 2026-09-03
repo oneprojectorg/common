@@ -4,7 +4,6 @@ import {
   getPhaseReviewSettings,
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
-  isProposalEditingPhase,
   isReviewPhase,
   isVotingPhase,
 } from './phaseSettings';
@@ -42,25 +41,6 @@ describe('isVotingPhase', () => {
   });
 });
 
-describe('isProposalEditingPhase', () => {
-  it('reads proposals.edit, defaulting to false', () => {
-    expect(
-      isProposalEditingPhase({ rules: { proposals: { edit: true } } }),
-    ).toBe(true);
-    expect(
-      isProposalEditingPhase({ rules: { proposals: { edit: false } } }),
-    ).toBe(false);
-    expect(isProposalEditingPhase({ rules: { proposals: {} } })).toBe(false);
-    expect(isProposalEditingPhase({})).toBe(false);
-  });
-
-  it('is independent of the submission rule', () => {
-    expect(
-      isProposalEditingPhase({ rules: { proposals: { submit: true } } }),
-    ).toBe(false);
-  });
-});
-
 describe('isPostSubmissionEditingAllowed', () => {
   const phases = [
     {
@@ -68,6 +48,7 @@ describe('isPostSubmissionEditingAllowed', () => {
       rules: { proposals: { submit: true, edit: true } },
     },
     { phaseId: 'review', rules: { proposals: { edit: false } } },
+    { phaseId: 'voting', rules: { proposals: { submit: true } } },
     { phaseId: 'results', rules: {} },
   ];
 
@@ -81,6 +62,9 @@ describe('isPostSubmissionEditingAllowed', () => {
   });
 
   it('denies when the current phase leaves the rule unset', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'voting' }),
+    ).toBe(false);
     expect(
       isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'results' }),
     ).toBe(false);

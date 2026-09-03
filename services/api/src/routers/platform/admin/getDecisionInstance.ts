@@ -1,7 +1,6 @@
 import { NotFoundError } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
-  isProposalEditingPhase,
   isReviewPhase,
 } from '@op/common/client';
 import { db } from '@op/db/client';
@@ -166,7 +165,7 @@ export const getDecisionInstanceRouter = router({
             hasProposals: rules?.proposals?.submit ?? false,
             hasReviews: isReviewPhase({ rules }),
             hasVoting: rules?.voting?.submit ?? false,
-            canEditProposals: isProposalEditingPhase({ rules }),
+            canEditProposals: rules?.proposals?.edit ?? false,
             canEditVotes: rules?.voting?.edit ?? false,
             maxVotesPerMember: rules?.voting?.maxVotesPerMember ?? null,
             proposalsHiddenByDefault:
