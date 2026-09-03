@@ -11,10 +11,10 @@ export const isProposalReachable = (proposal: {
 }): boolean => !proposal.deletedAt && !proposal.moderationDetachedAt;
 
 /**
- * The phase a proposal would have moved into next — the one a rejection kept it
- * out of. Undefined when the process is on its last phase, when the current
- * phase is unknown, and when that next phase was never named: an author is
- * better told nothing than told "Unknown".
+ * The phase after the current one — for a rejected proposal, the one it failed
+ * to reach. Undefined on the last phase, an unknown current phase, or an unnamed
+ * next phase. No "Unknown" placeholder like `checkProposalsAllowed`: this copy
+ * reaches an author.
  */
 export function getNextPhaseName({
   phases,

@@ -7,14 +7,9 @@ import { Header } from '../components/Header';
 import { QuotedNote } from '../components/QuotedNote';
 
 /**
- * What the author is told about each reason, copied from the designer's
- * annotation on the body sentence. The enum value itself never reaches a
- * reader.
- *
- * Emails are English-only — nothing in the send path carries a recipient
- * locale — so the reader-facing copy lives here rather than in the app
- * dictionaries. `satisfies` is what makes a new reason fail to compile until it
- * has one.
+ * Emails are English-only — nothing in the send path carries a recipient locale
+ * — so this copy lives here rather than in the app dictionaries. `satisfies` is
+ * what makes a new reason fail to compile until it has one.
  */
 const reasonSentences = {
   [RejectionReason.INELIGIBLE]:
@@ -34,17 +29,14 @@ export const ProposalRejectedEmail = ({
   note,
 }: {
   proposalName: string;
-  /**
-   * The phase the proposal failed to reach. Absent when the process has no
-   * next phase to name, in which case the clause is dropped rather than guessed.
-   */
+  /** The phase it failed to reach. Absent when there is none to name. */
   phaseName?: string;
   proposalUrl: string;
   reason: RejectionReason;
   /** The admin's note to the author. Absent when they wrote none. */
   note?: string;
 }) => {
-  const outcome = phaseName
+  const outcomeSentence = phaseName
     ? `did not advance to ${phaseName}.`
     : 'did not advance.';
 
@@ -54,7 +46,7 @@ export const ProposalRejectedEmail = ({
     >
       <Header>Your proposal did not advance.</Header>
       <Text className="my-8 text-lg">
-        Your proposal, <strong>{proposalName}</strong>, {outcome}
+        Your proposal, <strong>{proposalName}</strong>, {outcomeSentence}
         <br />
         <strong>{reasonSentences[reason]}</strong>
       </Text>

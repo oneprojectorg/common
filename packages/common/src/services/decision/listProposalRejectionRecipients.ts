@@ -54,9 +54,9 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'notRejected' };
   }
 
-  const processProfile = proposal.processInstance?.profile;
+  const processInstance = proposal.processInstance;
 
-  if (!processProfile || !isProposalReachable(proposal)) {
+  if (!processInstance?.profile || !isProposalReachable(proposal)) {
     return { ok: false, reason: 'proposalUnavailable' };
   }
 
@@ -70,8 +70,8 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'noRecipients' };
   }
 
-  const instanceData = proposal.processInstance
-    ?.instanceData as DecisionInstanceData | null;
+  const instanceData =
+    processInstance.instanceData as DecisionInstanceData | null;
 
   return {
     ok: true,
@@ -80,9 +80,9 @@ export async function listProposalRejectionRecipients({
       proposalProfileId: proposal.profileId,
       phaseName: getNextPhaseName({
         phases: instanceData?.phases ?? [],
-        currentPhaseId: proposal.processInstance?.currentStateId ?? null,
+        currentPhaseId: processInstance.currentStateId,
       }),
-      processProfileSlug: processProfile.slug,
+      processProfileSlug: processInstance.profile.slug,
       recipients,
     },
   };

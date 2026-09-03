@@ -14,6 +14,8 @@ describe('ProposalRejectedEmail', () => {
     expect(html).not.toContain('off-topic');
   });
 
+  // `satisfies` catches a reason with no copy; this catches one whose copy is
+  // wrong. INFEASIBLE stops before its apostrophe, which the renderer escapes.
   it.each([
     [
       RejectionReason.INELIGIBLE,
@@ -28,7 +30,7 @@ describe('ProposalRejectedEmail', () => {
       RejectionReason.INFEASIBLE,
       'The review team found it could not be delivered within the program',
     ],
-  ])('has copy for %s', async (reason, sentence) => {
+  ])('has reader-facing copy for %s', async (reason, sentence) => {
     const html = await render(
       ProposalRejectedEmail({ ...ProposalRejectedEmail.PreviewProps, reason }),
     );
@@ -72,6 +74,23 @@ describe('ProposalRejectedEmail', () => {
     expect(html).not.toContain('transit funding');
   });
 
+  // The sparsest email we send: final phase, no note. Both optional blocks drop
+  // out at once, and what is left still has to read as finished copy.
+  it('reads as finished copy with neither a phase nor a note', async () => {
+    const html = await render(
+      ProposalRejectedEmail({
+        ...ProposalRejectedEmail.PreviewProps,
+        phaseName: undefined,
+        note: undefined,
+      }),
+    );
+
+    expect(html).toContain('did not advance.');
+    expect(html).toContain('It falls outside what this process covers.');
+    expect(html).not.toContain('A note from the review team');
+    expect(html).toContain('View proposal');
+  });
+
   it('labels the note when the admin wrote one', async () => {
     const html = await render(
       ProposalRejectedEmail(ProposalRejectedEmail.PreviewProps),
@@ -95,7 +114,7 @@ describe('ProposalRejectedEmail', () => {
 });
 
 describe('ProposalRejectedEmail.subject', () => {
-  it('matches the design', () => {
+  it('is the same line for every proposal, as the design specifies', () => {
     expect(ProposalRejectedEmail.subject()).toBe(
       'Your proposal did not advance',
     );
