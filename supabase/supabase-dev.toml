@@ -115,14 +115,12 @@ max_frequency = "5s"
 #
 # GoTrue owns verification: it generates the code, sends it through Verify,
 # checks the reply, and issues the session. Our server never sees any of it.
-# The `record_phone_verification` trigger on `auth.users` turns a confirmed
-# number into the `phone_verifications` row that network membership reads.
 #
-# That makes `phone_confirmed_at` a network credential, and the trigger cannot
-# tell how the column was set. Autoconfirm sets it on a phone signup, and on a
-# phone change, without checking any code, so an account that never held the
-# number would be admitted. Requiring a confirmation is what makes the
-# trigger's premise true.
+# Autoconfirm sets `phone_confirmed_at` on a phone signup, and on a phone
+# change, without checking any code, and GoTrue issues a session for it. Anyone
+# who could reach GoTrue would then sign in as a number they do not hold.
+# Signing in by phone grants no network membership either way — that reads an
+# email address — so what autoconfirm hands out is the account itself.
 #
 # `smsAutoconfirm.test.ts` in services/api fails if this is turned back on.
 [auth.sms.twilio_verify]

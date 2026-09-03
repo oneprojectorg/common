@@ -47,17 +47,21 @@ describe('SMS autoconfirm', () => {
  *
  * `[auth.email]` carries its own `enable_confirmations`, so a whole-file match
  * would read the wrong setting.
+ *
+ * The match is on a whole line. A comment that mentions `[auth.sms]` inside
+ * another section would otherwise start the slice there, and the assertion
+ * would pass while reading the email settings.
  */
 const readSection = (path: string, header: string): string => {
-  const contents = readFileSync(path, 'utf8');
-  const start = contents.indexOf(`${header}\n`);
+  const lines = readFileSync(path, 'utf8').split('\n');
+  const start = lines.indexOf(header);
 
   if (start === -1) {
     throw new Error(`${path} has no ${header} section`);
   }
 
-  const body = contents.slice(start + header.length);
-  const end = body.indexOf('\n[');
+  const body = lines.slice(start + 1);
+  const end = body.findIndex((line) => line.startsWith('['));
 
-  return end === -1 ? body : body.slice(0, end);
+  return (end === -1 ? body : body.slice(0, end)).join('\n');
 };
