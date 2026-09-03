@@ -203,14 +203,11 @@ export const proposalWithAggregatesSchema = z.object({
 });
 
 /**
- * Single response shape for both filtered and paginated modes. In
- * filtered mode `total` is just `items.length` and `next` is null —
- * one shape is simpler than a union and clients can ignore the extras.
+ * Single response shape for both modes. A caller that wants a count reads
+ * `items.length`.
  */
 export const proposalsWithReviewAggregatesListSchema = z.object({
   items: z.array(proposalWithAggregatesSchema),
-  total: z.number().int(),
-  next: z.string().nullable(),
   /** The phase-resolved rubric the items' aggregates were scored against. */
   rubricTemplate: rubricTemplateSchema.nullable(),
 });
