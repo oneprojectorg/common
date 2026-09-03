@@ -1596,7 +1596,6 @@
   "Already assigned": "ইতিমধ্যেই নিয়োজিত",
   "{count, plural, one {# reviewer} other {# reviewers}}": "{count, plural, one {# জন পর্যালোচক} other {# জন পর্যালোচক}}",
   "No proposals in this phase yet.": "এই পর্যায়ে এখনও কোনো প্রস্তাবনা নেই।",
-  "Filter by title or category…": "শিরোনাম বা বিভাগ দিয়ে ফিল্টার করুন…",
   "Unassign": "নিয়োগ বাতিল করুন",
   "Could not unassign — the assignment has changed.": "নিয়োগ বাতিল করা যায়নি — নিয়োগটি বদলে গেছে।",
   "Assigned": "নিয়োজিত",
@@ -1681,7 +1680,6 @@
   "Amount": "পরিমাণ",
   "Reviewers enter an amount": "পর্যালোচকরা একটি পরিমাণ লিখবেন",
   "Assigned proposals ({count})": "নির্ধারিত প্রস্তাব ({count})",
-  "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "একটি প্রস্তাব নির্ধারণ করতে টিক দিন; অপেক্ষমাণ একটির টিক তুলে নিলে নির্ধারণ বাতিল হবে। শুরু হয়ে যাওয়া পর্যালোচনা সরানো যায় না।",
   "Could not save the changes. Please try again.": "পরিবর্তনগুলি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।",
   "Assignments were saved, but unassigning failed — try again.": "অ্যাসাইনমেন্টগুলি সংরক্ষণ করা হয়েছে, কিন্তু আনঅ্যাসাইন ব্যর্থ হয়েছে — আবার চেষ্টা করুন।",
   "Manage assignments": "নির্ধারণ পরিচালনা করুন",
@@ -1690,7 +1688,6 @@
   "Nothing assigned to this reviewer yet.": "এই পর্যালোচকের জন্য এখনও কিছু নির্ধারণ করা হয়নি।",
   "Open": "খুলুন",
   "Open {name}'s assignments": "{name}-এর নির্ধারণ খুলুন",
-  "Proposals ({count} assigned)": "প্রস্তাব ({count}টি নির্ধারিত)",
   "Review assignments": "পর্যালোচনার নির্ধারণ",
   "Reviewer not found": "পর্যালোচক পাওয়া যায়নি",
   "This person does not review in this phase.": "এই ব্যক্তি এই পর্যায়ে পর্যালোচনা করেন না।",
@@ -1722,5 +1719,12 @@
   "Check all that apply": "প্রযোজ্য সবগুলি নির্বাচন করুন",
   "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন",
   "Comments could not be loaded": "মন্তব্য লোড করা যায়নি",
-  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)"
+  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)",
+  "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.": "একটি অপেক্ষমাণ নির্ধারণ সরান, বা যোগ করতে একটি প্রস্তাব নির্বাচন করুন। শুরু হওয়া পর্যালোচনা সরানো যায় না।",
+  "Assigned ({count})": "নির্ধারিত ({count})",
+  "Add proposals": "প্রস্তাব যোগ করুন",
+  "Search by title": "শিরোনাম দিয়ে খুঁজুন",
+  "Loading more proposals…": "আরও প্রস্তাব লোড হচ্ছে…",
+  "Keep {title} assigned": "{title} নির্ধারিত রাখুন",
+  "Remove {title}": "{title} সরান"
 }

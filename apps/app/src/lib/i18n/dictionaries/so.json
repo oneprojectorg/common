@@ -1596,7 +1596,6 @@
   "Already assigned": "Mar hore la qoonday",
   "{count, plural, one {# reviewer} other {# reviewers}}": "{count, plural, one {# dib-u-eege} other {# dib-u-eegayaal}}",
   "No proposals in this phase yet.": "Weli ma jiro soo jeedimo marxaladdan.",
-  "Filter by title or category…": "Ku shaandhee cinwaanka ama qaybta…",
   "Unassign": "Ka saar qoondada",
   "Could not unassign — the assignment has changed.": "Qoondada lama saari karo — qoondada waa isbeddeshay.",
   "Assigned": "La qoonday",
@@ -1681,7 +1680,6 @@
   "Amount": "Qaddarka",
   "Reviewers enter an amount": "Dib-u-eegayaashu waxay gelinayaan qadar",
   "Assigned proposals ({count})": "Soo-jeedinnada loo qoondeeyay ({count})",
-  "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Calaamadee soo-jeedin si loo qoondeeyo; ka saar calaamadda mid sugaya si qoondaynta laga qaado. Dib-u-eegisyada la bilaabay lama saari karo.",
   "Could not save the changes. Please try again.": "Isbeddellada lama kaydin karin. Fadlan isku day mar kale.",
   "Assignments were saved, but unassigning failed — try again.": "Hawlgelinta waa la keydiyay, laakiin ka-saaristu way fashilantay — isku day mar kale.",
   "Manage assignments": "Maamul qoondaynta",
@@ -1690,7 +1688,6 @@
   "Nothing assigned to this reviewer yet.": "Weli waxba lama qoondayn qofkan dib-u-eegista.",
   "Open": "Fur",
   "Open {name}'s assignments": "Fur qoondaynta {name}",
-  "Proposals ({count} assigned)": "Soo-jeedinno ({count} la qoondeeyay)",
   "Review assignments": "Qoondaynta dib-u-eegista",
   "Reviewer not found": "Dib-u-eegaha lama helin",
   "This person does not review in this phase.": "Qofkan dib-u-eegis kuma sameeyo wejigan.",
@@ -1722,5 +1719,12 @@
   "Check all that apply": "Dooro dhammaan waxa khuseeya",
   "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan",
   "Comments could not be loaded": "Faallooyinka lama soo bixin karin",
-  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)"
+  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)",
+  "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.": "Ka saar qoondo sugaya, ama calaamadee soo jeedin si aad ku darto. Dib-u-eegisyada la bilaabay lama saari karo.",
+  "Assigned ({count})": "La qoondeeyay ({count})",
+  "Add proposals": "Ku dar soo jeedimo",
+  "Search by title": "Raadi cinwaanka",
+  "Loading more proposals…": "Waxaa la soo dejinayaa soo jeedimo dheeraad ah…",
+  "Keep {title} assigned": "Sii wad in {title} la qoondeeyo",
+  "Remove {title}": "Ka saar {title}"
 }

@@ -1596,7 +1596,6 @@
   "Already assigned": "Déjà attribuée",
   "{count, plural, one {# reviewer} other {# reviewers}}": "{count, plural, one {# évaluateur} other {# évaluateurs}}",
   "No proposals in this phase yet.": "Aucune proposition dans cette phase pour l'instant.",
-  "Filter by title or category…": "Filtrer par titre ou catégorie…",
   "Unassign": "Retirer l'attribution",
   "Could not unassign — the assignment has changed.": "Impossible de retirer l’attribution : l’attribution a changé.",
   "Assigned": "Attribuées",
@@ -1681,7 +1680,6 @@
   "Amount": "Montant",
   "Reviewers enter an amount": "Les évaluateurs saisissent un montant",
   "Assigned proposals ({count})": "Propositions attribuées ({count})",
-  "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Cochez une proposition pour l’attribuer ; décochez une proposition en attente pour retirer l’attribution. Les évaluations commencées ne peuvent pas être retirées.",
   "Could not save the changes. Please try again.": "Impossible d’enregistrer les modifications. Veuillez réessayer.",
   "Assignments were saved, but unassigning failed — try again.": "Les attributions ont été enregistrées, mais la désattribution a échoué — réessayez.",
   "Manage assignments": "Gérer les attributions",
@@ -1690,7 +1688,6 @@
   "Nothing assigned to this reviewer yet.": "Rien n’a encore été attribué à cette personne.",
   "Open": "Ouvrir",
   "Open {name}'s assignments": "Ouvrir les attributions de {name}",
-  "Proposals ({count} assigned)": "Propositions ({count} attribuées)",
   "Review assignments": "Attributions d’évaluation",
   "Reviewer not found": "Évaluateur introuvable",
   "This person does not review in this phase.": "Cette personne n’évalue pas dans cette phase.",
@@ -1722,5 +1719,12 @@
   "Check all that apply": "Cochez toutes les réponses applicables",
   "Reviewers select one or more options": "Les évaluateurs sélectionnent une ou plusieurs options",
   "Comments could not be loaded": "Impossible de charger les commentaires",
-  "(opens in a new tab)": "(s’ouvre dans un nouvel onglet)"
+  "(opens in a new tab)": "(s’ouvre dans un nouvel onglet)",
+  "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.": "Retirez une attribution en attente ou cochez une proposition pour l’ajouter. Les évaluations déjà commencées ne peuvent pas être retirées.",
+  "Assigned ({count})": "Attribuées ({count})",
+  "Add proposals": "Ajouter des propositions",
+  "Search by title": "Rechercher par titre",
+  "Loading more proposals…": "Chargement d’autres propositions…",
+  "Keep {title} assigned": "Garder {title} attribuée",
+  "Remove {title}": "Retirer {title}"
 }

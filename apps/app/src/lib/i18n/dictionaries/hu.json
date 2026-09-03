@@ -1661,7 +1661,6 @@
   "No proposals match \"{query}\".": "Egy javaslat sem felel meg a következőnek: „{query}”.",
   "Already assigned": "Már hozzárendelve",
   "{count, plural, one {# reviewer} other {# reviewers}}": "{count, plural, one {# értékelő} other {# értékelő}}",
-  "Filter by title or category…": "Szűrés cím vagy kategória szerint…",
   "Unassign": "Hozzárendelés megszüntetése",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {# értékelési feladat létrehozva} other {# értékelési feladat létrehozva}}",
   "This reviewer no longer has the reviewer role, so they cannot take new proposals.": "Ennek az értékelőnek már nincs értékelői szerepköre, ezért nem vállalhat új javaslatokat.",
@@ -1681,7 +1680,6 @@
   "Amount": "Összeg",
   "Reviewers enter an amount": "Az értékelők megadnak egy összeget",
   "Assigned proposals ({count})": "Kiosztott javaslatok ({count})",
-  "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Jelöljön be egy javaslatot a kiosztáshoz; egy még el nem kezdett javaslat bejelölésének eltávolítása visszavonja a kiosztást. A már elkezdett értékelések nem távolíthatók el.",
   "Could not save the changes. Please try again.": "A módosításokat nem sikerült elmenteni. Kérjük, próbálja újra.",
   "Assignments were saved, but unassigning failed — try again.": "A hozzárendelések mentése sikerült, de a visszavonás nem — próbálja újra.",
   "Manage assignments": "Kiosztások kezelése",
@@ -1690,7 +1688,6 @@
   "Nothing assigned to this reviewer yet.": "Ehhez az értékelőhöz még nincs semmi kiosztva.",
   "Open": "Megnyitás",
   "Open {name}'s assignments": "{name} kiosztásainak megnyitása",
-  "Proposals ({count} assigned)": "Javaslatok ({count} kiosztva)",
   "Review assignments": "Értékelési kiosztások",
   "Reviewer not found": "Az értékelő nem található",
   "This person does not review in this phase.": "Ez a személy nem értékel ebben a szakaszban.",
@@ -1722,5 +1719,12 @@
   "Check all that apply": "Jelöld be az összes megfelelőt",
   "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak",
   "Comments could not be loaded": "A hozzászólásokat nem sikerült betölteni",
-  "(opens in a new tab)": "(új lapon nyílik meg)"
+  "(opens in a new tab)": "(új lapon nyílik meg)",
+  "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.": "Távolítson el egy folyamatban lévő kiosztást, vagy jelöljön be egy javaslatot a hozzáadáshoz. A már elkezdett értékelések nem távolíthatók el.",
+  "Assigned ({count})": "Kiosztva ({count})",
+  "Add proposals": "Javaslatok hozzáadása",
+  "Search by title": "Keresés cím szerint",
+  "Loading more proposals…": "További javaslatok betöltése…",
+  "Keep {title} assigned": "{title} kiosztva marad",
+  "Remove {title}": "{title} eltávolítása"
 }

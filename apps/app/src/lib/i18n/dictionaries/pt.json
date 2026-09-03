@@ -1596,7 +1596,6 @@
   "Already assigned": "Já atribuída",
   "{count, plural, one {# reviewer} other {# reviewers}}": "{count, plural, one {# revisor} other {# revisores}}",
   "No proposals in this phase yet.": "Ainda não há propostas nesta fase.",
-  "Filter by title or category…": "Filtrar por título ou categoria…",
   "Unassign": "Remover atribuição",
   "Could not unassign — the assignment has changed.": "Não foi possível remover a atribuição: a atribuição mudou.",
   "Assigned": "Atribuídas",
@@ -1681,7 +1680,6 @@
   "Amount": "Montante",
   "Reviewers enter an amount": "Os avaliadores inserem um valor",
   "Assigned proposals ({count})": "Propostas atribuídas ({count})",
-  "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Marque uma proposta para atribuí-la; desmarque uma pendente para retirar a atribuição. As avaliações já iniciadas não podem ser removidas.",
   "Could not save the changes. Please try again.": "Não foi possível salvar as alterações. Tente novamente.",
   "Assignments were saved, but unassigning failed — try again.": "As atribuições foram salvas, mas a desatribuição falhou — tente novamente.",
   "Manage assignments": "Gerenciar atribuições",
@@ -1690,7 +1688,6 @@
   "Nothing assigned to this reviewer yet.": "Ainda não há nada atribuído a esta pessoa.",
   "Open": "Abrir",
   "Open {name}'s assignments": "Abrir as atribuições de {name}",
-  "Proposals ({count} assigned)": "Propostas ({count} atribuídas)",
   "Review assignments": "Atribuições de avaliação",
   "Reviewer not found": "Avaliador não encontrado",
   "This person does not review in this phase.": "Esta pessoa não avalia nesta fase.",
@@ -1722,5 +1719,12 @@
   "Check all that apply": "Marque todas as opções aplicáveis",
   "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções",
   "Comments could not be loaded": "Não foi possível carregar os comentários",
-  "(opens in a new tab)": "(abre num novo separador)"
+  "(opens in a new tab)": "(abre num novo separador)",
+  "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.": "Remova uma atribuição pendente ou marque uma proposta para adicioná-la. Revisões já iniciadas não podem ser removidas.",
+  "Assigned ({count})": "Atribuídas ({count})",
+  "Add proposals": "Adicionar propostas",
+  "Search by title": "Pesquisar por título",
+  "Loading more proposals…": "Carregando mais propostas…",
+  "Keep {title} assigned": "Manter {title} atribuída",
+  "Remove {title}": "Remover {title}"
 }
