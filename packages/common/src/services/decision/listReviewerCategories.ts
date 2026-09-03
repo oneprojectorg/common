@@ -4,8 +4,7 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { decisionPermission } from './permissions';
 import type { ReviewerCategory } from './schemas/reviews';
 
@@ -43,11 +42,15 @@ export async function listReviewerCategories({
     { decisions: permission.ADMIN },
   ];
 
-  await assertInstanceProfileAccess({
+  // No org fallback: reviewer access comes from a grant on the instance's own
+  // profile, which legacy instances may not have — fail closed there.
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+  await assertProfileAccess({
     user,
-    instance,
-    profilePermissions: reviewOrAdmin,
-    orgFallbackPermissions: reviewOrAdmin,
+    profileId: instance.profileId,
+    permissions: reviewOrAdmin,
   });
 
   // Manual join: the relational API can't ORDER BY a joined column. DISTINCT
