@@ -28,8 +28,8 @@ const RATE_LIMITED_CODE = 'over_sms_send_rate_limit';
  *   the signup trigger reads `display_name` from it, so carrying the name is a
  *   gap someone could close rather than a limit of the API.
  *
- * A confirmed number becomes network membership through the
- * `record_phone_verification` trigger on `auth.users`, not through this code.
+ * A confirmed number grants no network membership. That reads an email
+ * address, which an account created this way does not have.
  *
  * @param deps.supabase - The browser client, which stores the session.
  */
