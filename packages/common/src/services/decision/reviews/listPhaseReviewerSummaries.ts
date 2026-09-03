@@ -34,11 +34,6 @@ import { assertInstancePhase } from '../utils/instance';
 
 const DEFAULT_PHASE_REVIEWER_SUMMARY_LIMIT = 50;
 
-/**
- * Keyset position in the fixed sort order. Opaque to the client — it is only
- * ever handed back, never constructed — but still validated on the way in so a
- * mangled cursor is a 400 rather than a SQL type error.
- */
 const phaseReviewerCursorSchema = z.object({
   assignedCount: z.number().int().nonnegative(),
   name: z.string(),
@@ -47,7 +42,6 @@ const phaseReviewerCursorSchema = z.object({
 
 type PhaseReviewerCursor = z.infer<typeof phaseReviewerCursorSchema>;
 
-/** Per-reviewer progress for one phase, aggregated in SQL: this screen renders no rows. */
 export async function listPhaseReviewerSummaries({
   user,
   processInstanceId,
@@ -61,8 +55,6 @@ export async function listPhaseReviewerSummaries({
 }): Promise<PhaseReviewerSummaries> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  // No org fallback: admin access comes from a grant on the instance's own
-  // profile, which legacy instances may not have — fail closed there.
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -80,10 +72,8 @@ export async function listPhaseReviewerSummaries({
     decisionProfileId: instance.profileId,
   });
 
-  // An assignment only counts while its proposal is still reachable. Deleted
-  // and moderation-detached proposals are invisible even to admins (see
-  // detachProposalForModeration), so an assignment made before the detach
-  // would otherwise leak the proposal back through the counts.
+  // Deleted and moderation-detached proposals are invisible even to admins, so
+  // an assignment made before the detach must stop counting.
   const countsTowardsPhase = (
     assignmentProposalId: typeof proposalReviewAssignments.proposalId,
   ) =>
@@ -114,9 +104,6 @@ export async function listPhaseReviewerSummaries({
       ),
   );
 
-  // Anchored on `profiles`, not on the assignments, so a reviewer holding the
-  // role but carrying nothing still gets a row — and so does one who lost the
-  // role while assignments are still on their queue.
   const rollup = db
     .select({
       id: profiles.id,
@@ -142,9 +129,8 @@ export async function listPhaseReviewerSummaries({
       ),
     })
     .from(profiles)
-    // Every phase filter lives in the join condition rather than the WHERE:
-    // as a predicate it would turn the left join into an inner one and drop
-    // the reviewers who have no assignments at all.
+    // The phase filters stay in the join condition: as WHERE predicates they
+    // would turn this left join into an inner one and drop idle reviewers.
     .leftJoin(
       proposalReviewAssignments,
       and(
@@ -172,10 +158,8 @@ export async function listPhaseReviewerSummaries({
     )
     .as('rollup');
 
-  // Heaviest queue first; the table is scanned for workload. Sorting on an
-  // aggregate means the keyset predicate cannot sit beside the GROUP BY, hence
-  // the subquery. Mixed directions rule out a row-value comparison, so the
-  // three sort keys are expanded by hand.
+  // Mixed sort directions rule out a row-value comparison, so the three sort
+  // keys are expanded by hand.
   const keysetCondition = decodedCursor
     ? sql`(
         ${rollup.assignedCount} < ${decodedCursor.assignedCount}
@@ -203,10 +187,8 @@ export async function listPhaseReviewerSummaries({
     )
     .limit(limit + 1);
 
-  // The totals are phase-wide, so they cannot come off the page. A window
-  // count would be one round trip fewer, but it rides on the rows — an empty
-  // trailing page (rows removed under a live cursor) would report zero
-  // reviewers. This aggregate re-reads the same rollup and always answers.
+  // Phase-wide totals, so they cannot come off the page: a window count rides
+  // on the rows and would report zero on an empty trailing page.
   const [totals] = await db
     .select({
       totalReviewers: sql<number>`count(*)::int`.mapWith(Number),
@@ -239,8 +221,6 @@ export async function listPhaseReviewerSummaries({
       hasMore && lastRow
         ? encodePhaseReviewerCursor({
             assignedCount: lastRow.assignedCount,
-            // '' matches the COALESCE the ORDER BY and the keyset both apply,
-            // so a nameless reviewer sorts and resumes at the same place.
             name: lastRow.name ?? '',
             id: lastRow.id,
           })

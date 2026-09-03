@@ -147,8 +147,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       status: ProposalReviewAssignmentStatus.PENDING,
     });
 
-    // Seeded as assignments rather than through assignReviews: a rollup row
-    // comes from the assignment, so these two need no reviewer role.
     const tieEarly = await testData.createInstanceMember(context);
     const tieLate = await testData.createInstanceMember(context);
     await testData.createReviewAssignment({
@@ -166,8 +164,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     const idle = await testData.createInstanceReviewerWithRole(context);
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // tieLate submits: under a submitted-first ordering it would jump the
-    // queue, so this pins assigned count as the primary key.
     await createProposalReview({
       assignmentId: tieLateAssignment.assignment.id,
       state: ProposalReviewState.SUBMITTED,
@@ -194,8 +190,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     });
 
     const expected = named.map(([, name]) => name);
-    // Filtered to the four seeded rows, so a dropped row fails outright
-    // rather than shifting an index past an unrelated reviewer.
     const names = result.reviewers
       .map((summary) => summary.reviewer.name)
       .filter((name): name is string =>
@@ -225,8 +219,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(firstPage.reviewers.map((row) => row.reviewer.id)).toEqual(
       expectedProfileIds.slice(0, 2),
     );
-    // Two assignments beats one, and the nameless reviewer's '' sort key puts
-    // it ahead of every named one on the tie.
     expect(firstPage.reviewers.map((row) => row.assignedCount)).toEqual([2, 1]);
     expect(firstPage.reviewers[1]?.reviewer.name).toBe('');
     expect(firstPage.next).not.toBeNull();
@@ -241,8 +233,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(secondPage.reviewers.map((row) => row.reviewer.id)).toEqual(
       expectedProfileIds.slice(2, 4),
     );
-    // The two equal-count reviewers straddle the page boundary, so a cursor
-    // that ignored the name/id tiebreakers would repeat or drop one here.
     expect(secondPage.reviewers.map((row) => row.assignedCount)).toEqual([
       1, 1,
     ]);
@@ -276,7 +266,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(secondPage.totalAssignments).toBe(5);
     expect(secondPage.totalReviewers).toBe(firstPage.totalReviewers);
     expect(secondPage.totalReviewers).toBeGreaterThanOrEqual(4);
-    // The page holds two rows; the total counts the whole phase.
     expect(secondPage.reviewers).toHaveLength(2);
   });
 
@@ -368,11 +357,8 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
 });
 
 /**
- * Four reviewers carrying 2/1/1/1 assignments, one of them nameless — the
- * shape the keyset has to survive: a page boundary that lands between two
- * equal counts, with the lowest possible name key on one side of it.
- * `profiles.name` is NOT NULL, so '' is that key, and it is also what the
- * ordering's COALESCE folds a missing name onto.
+ * Four reviewers carrying 2/1/1/1 assignments, one seeded with an empty name:
+ * `profiles.name` is NOT NULL, so '' is the lowest key the COALESCE folds onto.
  */
 async function seedPagedReviewers(
   testData: TestReviewsDataManager,

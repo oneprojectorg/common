@@ -99,7 +99,6 @@ function ReviewersTableContent({
     });
 
   const rows = data.pages.flatMap((page) => page.reviewers);
-  // Phase-wide, so the label does not creep upward as pages arrive.
   const totalReviewers = data.pages[0]?.totalReviewers ?? rows.length;
 
   return (
@@ -153,9 +152,6 @@ function ReviewersTableContent({
           </Table>
 
           {shouldShowTrigger ? (
-            // Sits below the table rather than inside <tbody>, which admits
-            // no div. Nothing focusable goes in it — the next page arrives on
-            // scroll, so a keyboard user would only find an empty stop.
             <div ref={scrollTriggerRef} className="flex flex-col gap-3 py-2">
               {isFetchingNextPage ? (
                 <>

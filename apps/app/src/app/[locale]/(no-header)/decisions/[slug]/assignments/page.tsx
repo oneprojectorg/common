@@ -38,8 +38,6 @@ export default async function ReviewAssignmentsPage({
   // Best effort: on failure the client refetches under its own boundary.
   const { utils, queryClient } = await createServerUtils();
   try {
-    // fetchInfinite with the client's exact input, or the hydrated entry is a
-    // different cache key and the table suspends on mount anyway.
     await utils.decision.listPhaseReviewerSummaries.fetchInfinite({
       processInstanceId,
       phaseId,
