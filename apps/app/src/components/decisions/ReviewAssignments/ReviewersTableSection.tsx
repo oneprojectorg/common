@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import type { PhaseReviewerSummary } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -22,7 +23,7 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
-import { Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 import { LuChevronRight, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -30,7 +31,6 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
-import { type ReviewerRow, buildReviewerRows } from './buildReviewerRows';
 
 interface ReviewersTableSectionProps {
   decisionSlug: string;
@@ -75,18 +75,13 @@ function ReviewersTableContent({
 }: ReviewersTableSectionProps) {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
+  const [data] = trpc.decision.listPhaseReviewerSummaries.useSuspenseQuery(
     { processInstanceId, phaseId },
-    // Refetch through the client link on mount — the SSR-seeded cache alone
-    // never registers the `reviewAssignments` realtime channel.
+    // An SSR-seeded entry never registers the realtime channel; refetch.
     { refetchOnMount: 'always' },
   );
 
-  const { rows } = useMemo(
-    () =>
-      buildReviewerRows(data.reviewers, data.eligibleReviewers, data.proposals),
-    [data.reviewers, data.eligibleReviewers, data.proposals],
-  );
+  const rows = data.reviewers;
 
   return (
     <div className="flex flex-col gap-3">
@@ -129,9 +124,9 @@ function ReviewersTableContent({
           <TableBody>
             {rows.map((row) => (
               <ReviewerRowCells
-                key={row.profile.id}
+                key={row.reviewer.id}
                 row={row}
-                href={`/decisions/${decisionSlug}/assignments/${row.profile.id}`}
+                href={`/decisions/${decisionSlug}/assignments/${row.reviewer.id}`}
               />
             ))}
           </TableBody>
@@ -141,10 +136,16 @@ function ReviewersTableContent({
   );
 }
 
-function ReviewerRowCells({ row, href }: { row: ReviewerRow; href: string }) {
+function ReviewerRowCells({
+  row,
+  href,
+}: {
+  row: PhaseReviewerSummary;
+  href: string;
+}) {
   const t = useTranslations();
   const format = useFormatter();
-  const name = row.label;
+  const name = row.reviewer.name ?? row.reviewer.slug ?? row.reviewer.id;
   const lastSubmittedAt = row.lastSubmittedAt
     ? new Date(row.lastSubmittedAt)
     : null;
@@ -169,7 +170,7 @@ function ReviewerRowCells({ row, href }: { row: ReviewerRow; href: string }) {
             avatar={<ProfileAvatar name={name} alt={name} />}
             title={name}
             titleClassName="font-normal"
-            description={row.email ?? undefined}
+            description={row.reviewer.email ?? undefined}
           />
         </Link>
       </TableRowHeader>

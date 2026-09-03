@@ -67,6 +67,8 @@ export {
   type AdminDecisionConfig,
   adminDecisionInstanceDetailSchema,
   type AdminDecisionInstanceDetail,
+} from './services/decision/schemas/adminDecisionInstance';
+export {
   adminReviewAssignmentSchema,
   type AdminReviewAssignment,
   adminDecisionReviewerSchema,
@@ -77,7 +79,19 @@ export {
   type AdminEligibleReviewer,
   adminDecisionReviewAssignmentsSchema,
   type AdminDecisionReviewAssignments,
-} from './services/decision/schemas/adminDecisionInstance';
+  phaseReviewerSummarySchema,
+  type PhaseReviewerSummary,
+  phaseReviewerSummariesSchema,
+  type PhaseReviewerSummaries,
+  reviewerPoolAssignmentSchema,
+  type ReviewerPoolAssignment,
+  reviewerAssignmentPoolSchema,
+  type ReviewerAssignmentPool,
+  reviewerAssignmentCardSchema,
+  type ReviewerAssignmentCard,
+  reviewerAssignmentsSchema,
+  type ReviewerAssignments,
+} from './services/decision/schemas/reviewAssignments';
 export {
   proposalSelectionSchema,
   type ProposalSelection,

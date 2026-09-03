@@ -1,34 +1,17 @@
 import { aliasedTable, db, eq, inArray } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
-import { z } from 'zod';
 
-import { NotFoundError } from '../../utils';
-import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
-import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
-import { type BudgetData, parseProposalData } from './proposalDataSchema';
-import { buildProposalListPreview } from './proposalListPreview';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { NotFoundError } from '../../../utils';
+import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
+import { getProposalIdsForPhase } from '../getProposalsForPhase';
+import { getCategoriesByProposalIds } from '../listProposalsWithReviewAggregates';
+import { type BudgetData, parseProposalData } from '../proposalDataSchema';
+import { resolveProposalTitle } from './resolveProposalTitle';
 import {
   type AdminDecisionReviewAssignments,
   adminDecisionReviewAssignmentsSchema,
-} from './schemas/adminDecisionInstance';
-import type { ProposalCategoryItem } from './schemas/proposalCategory';
-
-const proposalTitleData = z.object({ title: z.string().nullish() }).partial();
-
-/** Edits write the title to the profile, so proposalData.title is a legacy fallback. */
-function resolveProposalTitle(
-  profileName: string | null,
-  proposalData: unknown,
-): string | null {
-  if (profileName) {
-    return profileName;
-  }
-  const parsed = proposalTitleData.safeParse(proposalData);
-  return parsed.success ? (parsed.data.title ?? null) : null;
-}
+} from '../schemas/reviewAssignments';
+import type { ProposalCategoryItem } from '../schemas/proposalCategory';
 
 /** Accumulator shape; enum fields validated by the output schema parse. */
 interface ReviewerRollup {
@@ -54,6 +37,8 @@ interface ReviewerRollup {
 /**
  * Per-reviewer rollups for one phase plus the manual-assignment dialog's
  * candidate lists. Carries no authorization of its own — callers gate it.
+ *
+ * Fetches no documents, so `previewText` is always null here.
  */
 export async function getDecisionReviewAssignments({
   instanceId,
@@ -77,13 +62,6 @@ export async function getDecisionReviewAssignments({
   if (!instance) {
     throw new NotFoundError('Decision instance not found');
   }
-
-  // Needed to read preview text out of the document fragments, exactly like
-  // the proposal list reads. Started now, awaited after the assignment query.
-  const proposalTemplatePromise = resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
-    instance.processId,
-  );
 
   // Not paginated: bounded by reviewers × proposals of a single process.
   const [assignments, eligibleProfileIds, phaseProposalIds] = await Promise.all(
@@ -166,65 +144,18 @@ export async function getDecisionReviewAssignments({
           .where(inArray(profiles.id, eligibleProfileIds))
       : Promise.resolve([]);
 
-  const proposalTemplate = await proposalTemplatePromise;
-
-  // Reviewers share proposals, so fetch and parse each snapshot once.
-  const assignedProposals = [
-    ...new Map(
-      assignments.map((assignment) => [
-        assignment.proposal.id,
-        assignment.proposal,
-      ]),
-    ).values(),
-  ];
-
-  const [
-    assignableProposals,
-    eligibleReviewers,
-    categoriesByProposalId,
-    documentContentMap,
-  ] = await Promise.all([
-    assignableProposalsPromise,
-    eligibleReviewersPromise,
-    getCategoriesByProposalIds(categorizedProposalIds),
-    getProposalDocumentsContent(
-      assignedProposals.map((proposal) => ({
-        id: proposal.id,
-        proposalData: proposal.proposalData,
-        proposalTemplate,
-        collaborationDocVersionId: parseProposalData(proposal.proposalData)
-          .collaborationDocVersionId,
-      })),
-      // A single unavailable document must not break the whole read.
-      { onFetchError: 'omit' },
-    ),
-  ]);
+  const [assignableProposals, eligibleReviewers, categoriesByProposalId] =
+    await Promise.all([
+      assignableProposalsPromise,
+      eligibleReviewersPromise,
+      getCategoriesByProposalIds(categorizedProposalIds),
+    ]);
 
   const byReviewer = new Map<string, ReviewerRollup>();
   const cardFieldsByProposalId = new Map<
     string,
     { previewText: string | null; budget: BudgetData | null }
   >();
-
-  // Same preview + budget resolution as the proposal list rows: body text and
-  // budget come from the pinned document fragments, falling back to the
-  // proposalData snapshot (and legacy HTML descriptions).
-  const buildCardFields = (proposal: {
-    id: string;
-    proposalData: unknown;
-  }): { previewText: string | null; budget: BudgetData | null } => {
-    const parsed = parseProposalData(proposal.proposalData);
-    const { previewText, systemFieldOverrides } = buildProposalListPreview({
-      documentContent: documentContentMap.get(proposal.id),
-      proposalTemplate,
-      existingBudget: parsed.budget,
-    });
-
-    return {
-      previewText,
-      budget: systemFieldOverrides.budget ?? parsed.budget ?? null,
-    };
-  };
 
   for (const assignment of assignments) {
     // assignmentId is UNIQUE on reviews, so there is 0 or 1 row.
@@ -260,7 +191,11 @@ export async function getDecisionReviewAssignments({
 
     let cardFields = cardFieldsByProposalId.get(assignment.proposal.id);
     if (!cardFields) {
-      cardFields = buildCardFields(assignment.proposal);
+      cardFields = {
+        previewText: null,
+        budget:
+          parseProposalData(assignment.proposal.proposalData).budget ?? null,
+      };
       cardFieldsByProposalId.set(assignment.proposal.id, cardFields);
     }
 

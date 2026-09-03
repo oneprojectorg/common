@@ -12,7 +12,7 @@ import { TranslatedText } from '@/components/TranslatedText';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
 import { ReviewersTableSection } from '@/components/decisions/ReviewAssignments/ReviewersTableSection';
 
-import { loadReviewAssignmentsPage } from './loadReviewAssignmentsPage';
+import { loadReviewAssignmentsPage } from '../loadReviewAssignmentsPage';
 
 interface ReviewAssignmentsPageProps {
   params: Promise<{ slug: string; locale: string }>;
@@ -38,7 +38,7 @@ export default async function ReviewAssignmentsPage({
   // Best effort: on failure the client refetches under its own boundary.
   const { utils, queryClient } = await createServerUtils();
   try {
-    await utils.decision.listPhaseReviewAssignments.fetch({
+    await utils.decision.listPhaseReviewerSummaries.fetch({
       processInstanceId,
       phaseId,
     });
