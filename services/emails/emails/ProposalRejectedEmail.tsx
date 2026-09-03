@@ -29,7 +29,7 @@ export const ProposalRejectedEmail = ({
   note,
 }: {
   proposalName: string;
-  /** The phase it failed to reach. Absent when there is none to name. */
+  /** The phase it did not advance to. Absent when none is configured. */
   phaseName?: string;
   proposalUrl: string;
   reason: RejectionReason;

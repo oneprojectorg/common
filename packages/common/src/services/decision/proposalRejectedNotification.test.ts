@@ -38,7 +38,7 @@ describe('ProposalRejectedEmail', () => {
     expect(html).toContain(sentence);
   });
 
-  it('names the phase the proposal failed to reach', async () => {
+  it('names the phase the proposal did not advance to', async () => {
     const html = await render(
       ProposalRejectedEmail({
         ...ProposalRejectedEmail.PreviewProps,
@@ -49,7 +49,7 @@ describe('ProposalRejectedEmail', () => {
     expect(html).toContain('did not advance to Voting.');
   });
 
-  // The last phase has nothing after it, so there is no phase to name.
+  // An instance with no phase configured names none rather than a placeholder.
   it('still reads as a sentence when there is no phase to name', async () => {
     const html = await render(
       ProposalRejectedEmail({

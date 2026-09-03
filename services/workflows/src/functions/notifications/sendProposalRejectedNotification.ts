@@ -41,6 +41,7 @@ export const sendProposalRejectedNotification = inngest.createFunction(
       proposalName,
       proposalProfileId,
       phaseName,
+      stewardName,
       processProfileSlug,
       recipients,
     } = result.notification;
@@ -51,6 +52,8 @@ export const sendProposalRejectedNotification = inngest.createFunction(
       sendNotificationEmails({
         emails: recipients.map(({ email }) => ({
           to: email,
+          // Without a steward the From falls back to Common's own name.
+          ...(stewardName ? { from: `${stewardName} via Common` } : {}),
           subject: ProposalRejectedEmail.subject(),
           component: () =>
             ProposalRejectedEmail({
