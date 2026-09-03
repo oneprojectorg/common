@@ -21,12 +21,7 @@ export async function generateMetadata({
   return { title: t('Review assignments') };
 }
 
-/**
- * One reviewer's assignments — admin only. The shell renders without any
- * blocking data fetch: the assignments read is the slowest call on the screen
- * and the client refetches it on mount regardless, so SSR-seeding it only
- * bought a doubled round trip.
- */
+/** One reviewer's assignments — admin only. */
 export default async function ReviewerAssignmentsPage({
   params,
 }: ReviewerAssignmentsPageProps) {

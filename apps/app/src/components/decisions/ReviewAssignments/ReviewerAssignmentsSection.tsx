@@ -87,8 +87,6 @@ function ReviewerAssignmentsContent({
   const t = useTranslations();
 
   const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    // reviewerProfileId asks the server for this reviewer's proposal previews
-    // only — the card descriptions below are the sole consumer of them.
     { processInstanceId, phaseId, reviewerProfileId },
     // Refetch through the client link on mount — the SSR-seeded cache alone
     // never registers the `reviewAssignments` realtime channel.

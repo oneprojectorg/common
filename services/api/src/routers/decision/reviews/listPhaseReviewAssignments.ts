@@ -8,9 +8,7 @@ import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
-// Preview text costs one Tiptap request per proposal, so it is opt-in per
-// reviewer: only the reviewer detail screen renders it, and it passes its own
-// profile id here. The phase-wide reviewer table asks for none.
+// Preview text costs one Tiptap request per proposal, so it is opt-in.
 const listPhaseReviewAssignmentsInput = instancePhaseRefSchema.extend({
   reviewerProfileId: z.uuid().optional(),
 });

@@ -4,10 +4,7 @@ import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import {
-  type ProposalDocumentContent,
-  getProposalDocumentsContent,
-} from './getProposalDocumentsContent';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
 import { type BudgetData, parseProposalData } from './proposalDataSchema';
@@ -66,11 +63,7 @@ export async function getDecisionReviewAssignments({
   instanceId: string;
   /** Omit for every phase. */
   phaseId?: string;
-  /**
-   * Scopes the proposal-document fetch to one reviewer's assignments. The
-   * fan-out is one Tiptap GET per proposal, so a phase-wide read (omit this)
-   * fetches none and every `previewText` comes back null.
-   */
+  /** Scopes the doc fetch; omit and every `previewText` comes back null. */
   reviewerProfileId?: string;
 }): Promise<AdminDecisionReviewAssignments> {
   const instance = await db.query.processInstances.findFirst({
@@ -95,6 +88,8 @@ export async function getDecisionReviewAssignments({
     instance.processId,
   );
 
+  // Stays phase-wide even when scoped: the per-proposal tallies count every
+  // reviewer's submissions, not just the scoped one's.
   // Not paginated: bounded by reviewers × proposals of a single process.
   const [assignments, eligibleProfileIds, phaseProposalIds] = await Promise.all(
     [
@@ -178,8 +173,7 @@ export async function getDecisionReviewAssignments({
 
   const proposalTemplate = await proposalTemplatePromise;
 
-  // Only the reviewer detail cards render previews, and reviewers share
-  // proposals, so fetch and parse each of that reviewer's snapshots once.
+  // Reviewers share proposals, so fetch and parse each snapshot once.
   const previewProposals = reviewerProfileId
     ? [
         ...new Map(
@@ -202,19 +196,17 @@ export async function getDecisionReviewAssignments({
     assignableProposalsPromise,
     eligibleReviewersPromise,
     getCategoriesByProposalIds(categorizedProposalIds),
-    previewProposals.length > 0
-      ? getProposalDocumentsContent(
-          previewProposals.map((proposal) => ({
-            id: proposal.id,
-            proposalData: proposal.proposalData,
-            proposalTemplate,
-            collaborationDocVersionId: parseProposalData(proposal.proposalData)
-              .collaborationDocVersionId,
-          })),
-          // A single unavailable document must not break the whole read.
-          { onFetchError: 'omit' },
-        )
-      : Promise.resolve(new Map<string, ProposalDocumentContent>()),
+    getProposalDocumentsContent(
+      previewProposals.map((proposal) => ({
+        id: proposal.id,
+        proposalData: proposal.proposalData,
+        proposalTemplate,
+        collaborationDocVersionId: parseProposalData(proposal.proposalData)
+          .collaborationDocVersionId,
+      })),
+      // A single unavailable document must not break the whole read.
+      { onFetchError: 'omit' },
+    ),
   ]);
 
   const byReviewer = new Map<string, ReviewerRollup>();

@@ -286,8 +286,7 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
     const context = created.context;
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // Same fixture as the scoped test above: a proposal that DOES have a
-    // previewable body, so a null preview can only come from the scoping.
+    // Has a previewable body, so a null preview can only be the scoping.
     await db
       .update(proposals)
       .set({
@@ -311,7 +310,6 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
     const assignment = result.reviewers[0]?.assignments[0];
     expect(assignment?.proposalId).toBe(created.proposal.id);
     expect(assignment?.previewText).toBeNull();
-    // The snapshot budget is free of the document fetch, so it survives.
     expect(assignment?.budget).toEqual({ amount: 25000, currency: 'EUR' });
   });
 
