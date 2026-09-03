@@ -40,7 +40,7 @@ export const sendProposalRejectedNotification = inngest.createFunction(
     const {
       proposalName,
       proposalProfileId,
-      processTitle,
+      phaseName,
       processProfileSlug,
       recipients,
     } = result.notification;
@@ -51,11 +51,11 @@ export const sendProposalRejectedNotification = inngest.createFunction(
       sendNotificationEmails({
         emails: recipients.map(({ email }) => ({
           to: email,
-          subject: ProposalRejectedEmail.subject(proposalName),
+          subject: ProposalRejectedEmail.subject(),
           component: () =>
             ProposalRejectedEmail({
               proposalName,
-              processTitle,
+              phaseName,
               proposalUrl,
               reason,
               note,

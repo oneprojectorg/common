@@ -2,13 +2,15 @@ import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
-import { isProposalReachable } from './utils/proposal';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { getNextPhaseName, isProposalReachable } from './utils/proposal';
 
 export type ProposalRejectionNotification = {
   proposalName: string;
   /** App URLs address a proposal by its profile id, not its own id. */
   proposalProfileId: string;
-  processTitle: string;
+  /** The phase the proposal failed to reach; absent on the last phase. */
+  phaseName?: string;
   processProfileSlug: string;
   /** Authors of the rejected proposal, minus the admin who rejected it. */
   recipients: Array<{ email: string }>;
@@ -68,12 +70,18 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'noRecipients' };
   }
 
+  const instanceData = proposal.processInstance
+    ?.instanceData as DecisionInstanceData | null;
+
   return {
     ok: true,
     notification: {
       proposalName: proposal.profile.name,
       proposalProfileId: proposal.profileId,
-      processTitle: processProfile.name,
+      phaseName: getNextPhaseName({
+        phases: instanceData?.phases ?? [],
+        currentPhaseId: proposal.processInstance?.currentStateId ?? null,
+      }),
       processProfileSlug: processProfile.slug,
       recipients,
     },

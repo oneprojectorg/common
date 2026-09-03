@@ -11,6 +11,30 @@ export const isProposalReachable = (proposal: {
 }): boolean => !proposal.deletedAt && !proposal.moderationDetachedAt;
 
 /**
+ * The phase a proposal would have moved into next — the one a rejection kept it
+ * out of. Undefined when the process is on its last phase, when the current
+ * phase is unknown, and when that next phase was never named: an author is
+ * better told nothing than told "Unknown".
+ */
+export function getNextPhaseName({
+  phases,
+  currentPhaseId,
+}: {
+  phases: PhaseInstanceData[];
+  currentPhaseId: string | null;
+}): string | undefined {
+  if (!currentPhaseId) {
+    return undefined;
+  }
+
+  const currentIndex = phases.findIndex(
+    (phase) => phase.phaseId === currentPhaseId,
+  );
+
+  return currentIndex === -1 ? undefined : phases[currentIndex + 1]?.name;
+}
+
+/**
  * Helper to check if proposals are allowed in the current phase.
  * Reads from instanceData phases which now contain all template fields.
  */
