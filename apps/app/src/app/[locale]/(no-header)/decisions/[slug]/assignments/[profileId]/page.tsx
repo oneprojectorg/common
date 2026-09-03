@@ -10,8 +10,6 @@ import { getTranslations } from 'next-intl/server';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
 import { ManageAssignmentsAction } from '@/components/decisions/ReviewAssignments/ManageAssignmentsAction';
 import { ReviewerAssignmentsSection } from '@/components/decisions/ReviewAssignments/ReviewerAssignmentsSection';
-import { ReviewerHeader } from '@/components/decisions/ReviewAssignments/ReviewerHeader';
-import { buildReviewerRows } from '@/components/decisions/ReviewAssignments/buildReviewerRows';
 
 import { loadReviewAssignmentsPage } from '../loadReviewAssignmentsPage';
 
@@ -34,73 +32,47 @@ export default async function ReviewerAssignmentsPage({
   params,
 }: ReviewerAssignmentsPageProps) {
   const { slug, profileId } = await params;
-  const { processInstanceId, phaseId } = await loadReviewAssignmentsPage(slug);
+  const { processInstanceId, phaseId, access } =
+    await loadReviewAssignmentsPage(slug);
 
+  // The section suspends on this input, so it must be seeded here: without a
+  // hydrated entry the SSR render reaches for the browser client's relative URL.
   const { utils, queryClient } = await createServerUtils();
-  const reviewer = await loadReviewer(utils, {
-    processInstanceId,
-    phaseId,
-    profileId,
-  });
+  try {
+    await utils.decision.listReviewerAssignments.fetch({
+      processInstanceId,
+      phaseId,
+      reviewerProfileId: profileId,
+    });
+  } catch (error) {
+    logger.warn('Failed to preload reviewer assignments', {
+      processInstanceId,
+      phaseId,
+      reviewerProfileId: profileId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   return (
     <AssignmentsPageShell
       backHref={`/decisions/${slug}/current?tab=assignments`}
       action={
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          <ManageAssignmentsAction
-            processInstanceId={processInstanceId}
-            phaseId={phaseId}
-            reviewerProfileId={profileId}
-          />
-        </HydrationBoundary>
+        <ManageAssignmentsAction
+          processInstanceId={processInstanceId}
+          phaseId={phaseId}
+          reviewerProfileId={profileId}
+        />
       }
     >
-      {reviewer ? (
-        <ReviewerHeader name={reviewer.name} email={reviewer.email} />
-      ) : null}
-
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ReviewerAssignmentsSection
           processInstanceId={processInstanceId}
           phaseId={phaseId}
           reviewerProfileId={profileId}
-          hasServerRenderedHeader={reviewer !== null}
+          decisionSlug={slug}
+          access={access}
         />
       </HydrationBoundary>
     </AssignmentsPageShell>
   );
-}
-
-/** Loads the reviewer, warming the query cache. Best effort — the client recovers. */
-async function loadReviewer(
-  utils: Awaited<ReturnType<typeof createServerUtils>>['utils'],
-  {
-    processInstanceId,
-    phaseId,
-    profileId,
-  }: { processInstanceId: string; phaseId: string; profileId: string },
-) {
-  try {
-    const data = await utils.decision.listPhaseReviewAssignments.fetch({
-      processInstanceId,
-      phaseId,
-    });
-    const { rows } = buildReviewerRows(
-      data.reviewers,
-      data.eligibleReviewers,
-      data.proposals,
-    );
-    const row = rows.find((candidate) => candidate.profile.id === profileId);
-
-    return row ? { name: row.label, email: row.email } : null;
-  } catch (error) {
-    logger.warn('Failed to preload phase review assignments', {
-      processInstanceId,
-      phaseId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return null;
-  }
 }

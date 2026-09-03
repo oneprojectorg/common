@@ -83,6 +83,8 @@ export {
   type PhaseReviewerSummary,
   phaseReviewerSummariesSchema,
   type PhaseReviewerSummaries,
+  reviewerAssignmentsSchema,
+  type ReviewerAssignments,
 } from './services/decision/schemas/reviewAssignments';
 export {
   proposalSelectionSchema,

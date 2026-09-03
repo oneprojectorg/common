@@ -2,7 +2,11 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { AdminReviewAssignment } from '@op/common/client';
+import type { DecisionAccess } from '@op/api/encoders';
+import type {
+  ReviewAssignmentExtended,
+  ReviewerAssignments,
+} from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -12,7 +16,6 @@ import {
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { Item, ItemContent, ItemTitle } from '@op/sense/Item';
-import { ProposalCard } from '@op/sense/ProposalCard';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useFormatter } from 'next-intl';
 import { Suspense, useMemo } from 'react';
@@ -20,23 +23,27 @@ import { LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { formatBudget } from '../BudgetDisplay';
-import { ReviewStatusBadge } from '../ReviewStatusBadge';
-import { ReviewerAssignmentsBodySkeleton } from './ReviewAssignmentsSkeletons';
+import { ReviewAssignmentCard } from '../ReviewAssignmentCard';
+import { useReviewersByProposalId } from '../useReviewersByProposalId';
+import {
+  ReviewerAssignmentsBodySkeleton,
+  ReviewerHeaderSkeleton,
+} from './ReviewAssignmentsSkeletons';
 import { ReviewerHeader } from './ReviewerHeader';
 import {
   type AssignmentStatusValue,
   assignmentStatusRank,
   assignmentStatusSpecs,
 } from './assignmentStatusSpecs';
-import { type ReviewerRow, buildReviewerRows } from './buildReviewerRows';
 
 interface ReviewerAssignmentsSectionProps {
   processInstanceId: string;
   phaseId: string;
   reviewerProfileId: string;
-  /** False when the seeding fetch failed — then this section renders the header itself. */
-  hasServerRenderedHeader: boolean;
+  /** Builds the per-proposal review-progress links on the cards. */
+  decisionSlug: string;
+  /** Decides whether the review count links to the progress screen. */
+  access: DecisionAccess;
 }
 
 export function ReviewerAssignmentsSection(
@@ -64,7 +71,14 @@ export function ReviewerAssignmentsSection(
         ),
       }}
     >
-      <Suspense fallback={<ReviewerAssignmentsBodySkeleton />}>
+      <Suspense
+        fallback={
+          <>
+            <ReviewerHeaderSkeleton />
+            <ReviewerAssignmentsBodySkeleton />
+          </>
+        }
+      >
         <ReviewerAssignmentsContent {...props} />
       </Suspense>
     </APIErrorBoundary>
@@ -75,27 +89,26 @@ function ReviewerAssignmentsContent({
   processInstanceId,
   phaseId,
   reviewerProfileId,
-  hasServerRenderedHeader,
+  decisionSlug,
+  access,
 }: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId },
-    // Refetch through the client link on mount — the SSR-seeded cache alone
-    // never registers the `reviewAssignments` realtime channel.
+  const [data] = trpc.decision.listReviewerAssignments.useSuspenseQuery(
+    { processInstanceId, phaseId, reviewerProfileId },
+    // An SSR-seeded entry never registers the realtime channel; refetch.
     { refetchOnMount: 'always' },
   );
 
-  const { rows, submittedCountByProposalId } = useMemo(
-    () =>
-      buildReviewerRows(data.reviewers, data.eligibleReviewers, data.proposals),
-    [data.reviewers, data.eligibleReviewers, data.proposals],
-  );
+  const reviewersByProposalId = useReviewersByProposalId({
+    processInstanceId,
+    phaseId,
+    proposalIds: data.assignments.map((item) => item.assignment.proposal.id),
+    enabled: access.admin,
+  });
 
-  const reviewer = rows.find((row) => row.profile.id === reviewerProfileId);
-
-  // An id the list doesn't hold is a dead link, not a server error.
-  if (!reviewer) {
+  // No identity means no tie to this process: a dead link, not an error.
+  if (!data.reviewer) {
     return (
       <Empty className="rounded-md border border-dashed">
         <EmptyHeader>
@@ -111,77 +124,55 @@ function ReviewerAssignmentsContent({
     );
   }
 
+  const { reviewer } = data;
+  const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
+
   return (
     <>
-      {hasServerRenderedHeader ? null : (
-        <ReviewerHeader name={reviewer.label} email={reviewer.email} />
-      )}
+      <ReviewerHeader name={name} email={reviewer.email} />
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           <Header3 className="font-light">
             {t('Assigned proposals ({count})', {
-              count: reviewer.assignments.length,
+              count: data.assignments.length,
             })}
           </Header3>
 
-          {reviewer.assignments.length === 0 ? (
+          {data.assignments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t('Nothing assigned to this reviewer yet.')}
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {reviewer.assignments.map((assignment) => (
-                <li key={assignment.id}>
-                  <AssignmentCard
-                    assignment={assignment}
-                    reviewedCount={
-                      submittedCountByProposalId.get(assignment.proposalId) ?? 0
-                    }
-                  />
-                </li>
-              ))}
+              {data.assignments.map((item) => {
+                const href = `/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`;
+
+                return (
+                  <li key={item.assignment.id}>
+                    <ReviewAssignmentCard
+                      assignment={item}
+                      viewHref={href}
+                      reviewsHref={href}
+                      reviewers={reviewersByProposalId.get(
+                        item.assignment.proposal.id,
+                      )}
+                      access={access}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
-        <ReviewProgressRail reviewer={reviewer} />
+        <ReviewProgressRail reviewer={data} />
       </div>
     </>
   );
 }
 
-function AssignmentCard({
-  assignment,
-  reviewedCount,
-}: {
-  assignment: AdminReviewAssignment;
-  reviewedCount: number;
-}) {
-  const t = useTranslations();
-
-  const authorName = assignment.author
-    ? (assignment.author.name ?? assignment.author.slug)
-    : null;
-
-  return (
-    <ProposalCard
-      title={assignment.proposalTitle ?? t('Untitled Proposal')}
-      budget={formatBudget(assignment.budget) ?? undefined}
-      tags={assignment.categories.map((category) => category.label)}
-      authors={authorName ? [{ name: authorName }] : undefined}
-      description={assignment.previewText ?? undefined}
-      status={
-        <ReviewStatusBadge
-          status={assignment.reviewState ?? assignment.status}
-        />
-      }
-      reviewedLabel={t('{count} Reviewed', { count: reviewedCount })}
-    />
-  );
-}
-
-function ReviewProgressRail({ reviewer }: { reviewer: ReviewerRow }) {
+function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
   const t = useTranslations();
   const format = useFormatter();
 
@@ -249,12 +240,12 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function statusBreakdown(
-  assignments: AdminReviewAssignment[],
+  assignments: ReviewAssignmentExtended[],
 ): Array<{ status: AssignmentStatusValue; count: number }> {
   const counts = new Map<AssignmentStatusValue, number>();
 
-  for (const assignment of assignments) {
-    const status = assignment.reviewState ?? assignment.status;
+  for (const item of assignments) {
+    const status = item.review?.state ?? item.assignment.status;
     counts.set(status, (counts.get(status) ?? 0) + 1);
   }
 
