@@ -7,7 +7,6 @@ import {
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getInstance } from './getInstance';
@@ -86,10 +85,6 @@ export async function getReviewerAssignments({
       orderBy: { assignedAt: 'asc' },
     }),
   ]);
-
-  if (!reviewer) {
-    throw new NotFoundError('Reviewer profile not found');
-  }
 
   const proposalIds = [
     ...new Set(assignments.map((assignment) => assignment.proposalId)),
@@ -182,11 +177,15 @@ export async function getReviewerAssignments({
     };
   });
 
+  // Any profile id can be put in the URL, so identity is only returned for a
+  // profile this process actually touches — otherwise this reads back the
+  // name and email of an arbitrary platform user.
+  const isEligible = eligibleProfileIds.includes(reviewerProfileId);
+  const isAssociated = isEligible || assignments.length > 0;
+
   return reviewerAssignmentsSchema.parse({
-    reviewer,
-    // Distinguishes a reviewer who lost the role (queue frozen, history kept)
-    // from a profile that never reviewed here at all.
-    isEligible: eligibleProfileIds.includes(reviewerProfileId),
+    reviewer: isAssociated ? (reviewer ?? null) : null,
+    isEligible,
     assignedCount: assignments.length,
     submittedCount,
     draftCount,

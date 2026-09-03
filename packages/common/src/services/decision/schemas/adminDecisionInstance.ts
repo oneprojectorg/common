@@ -199,7 +199,8 @@ export const reviewerPoolAssignmentSchema = z.object({
 });
 
 export const reviewerAssignmentPoolSchema = z.object({
-  reviewer: adminEligibleReviewerSchema,
+  /** Null when the profile has no tie to this process — see getReviewerAssignmentPool. */
+  reviewer: adminEligibleReviewerSchema.nullable(),
   /** False once the reviewer lost the REVIEW capability; the queue freezes. */
   isEligible: z.boolean(),
   assignments: z.array(reviewerPoolAssignmentSchema),
@@ -227,7 +228,8 @@ export type ReviewerAssignmentCard = z.infer<
 >;
 
 export const reviewerAssignmentsSchema = z.object({
-  reviewer: adminEligibleReviewerSchema,
+  /** Null when the profile has no tie to this process — see getReviewerAssignments. */
+  reviewer: adminEligibleReviewerSchema.nullable(),
   /** False once the reviewer lost the REVIEW capability; history stays visible. */
   isEligible: z.boolean(),
   assignedCount: z.number(),

@@ -30,14 +30,30 @@ export function ManageAssignmentsAction({
 }: ManageAssignmentsActionProps) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
+  // Unmounting on close would cut the exit animation, so the content outlives
+  // `isOpen` until Base UI reports the transition finished.
+  const [isMounted, setIsMounted] = useState(false);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) {
+          setIsMounted(true);
+        }
+      }}
+      onOpenChangeComplete={(open) => {
+        if (!open) {
+          setIsMounted(false);
+        }
+      }}
+    >
       <DialogTrigger render={<Button />}>
         {t('Manage assignments')}
       </DialogTrigger>
 
-      {isOpen ? (
+      {isMounted ? (
         <APIErrorBoundary
           fallbacks={{
             default: () => (

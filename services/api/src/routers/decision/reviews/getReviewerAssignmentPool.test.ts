@@ -1,4 +1,6 @@
-import { ProposalReviewAssignmentStatus } from '@op/db/schema';
+import { ProposalReviewAssignmentStatus, proposals } from '@op/db/schema';
+import { db } from '@op/db/test';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -51,7 +53,7 @@ describe.concurrent('decision.getReviewerAssignmentPool', () => {
       reviewerProfileId: other.profileId,
     });
 
-    expect(pool.reviewer.id).toBe(other.profileId);
+    expect(pool.reviewer?.id).toBe(other.profileId);
     expect(pool.isEligible).toBe(true);
     expect(pool.proposals.map((proposal) => proposal.id)).toContain(
       created.proposal.id,
@@ -64,27 +66,72 @@ describe.concurrent('decision.getReviewerAssignmentPool', () => {
     );
   });
 
-  it('marks a member without the reviewer role as ineligible', async ({
+  it('withholds the identity of a profile with no tie to the process', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    const member = await testData.createInstanceMember(context);
+    const outsider = await testData.createContext();
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    // Drives the dialog's frozen state: unassign only, no new work.
     const pool = await adminCaller.decision.getReviewerAssignmentPool({
       processInstanceId: context.instance.instance.id,
       phaseId: 'review',
-      reviewerProfileId: member.profileId,
+      reviewerProfileId: outsider.defaultReviewer.profileId,
     });
 
+    expect(pool.reviewer).toBeNull();
     expect(pool.isEligible).toBe(false);
     expect(pool.assignments).toEqual([]);
+  });
+
+  it('leaves moderation-detached and deleted proposals out of the pool', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const detached = await testData.createReviewAssignment({
+      title: `Detached proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = detached.context;
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const deleted = await testData.createReviewAssignment({
+      context,
+      title: `Deleted proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+
+    await db
+      .update(proposals)
+      .set({ moderationDetachedAt: new Date().toISOString() })
+      .where(eq(proposals.id, detached.proposal.id));
+    await db
+      .update(proposals)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(proposals.id, deleted.proposal.id));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const pool = await adminCaller.decision.getReviewerAssignmentPool({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+    });
+
+    const poolIds = pool.proposals.map((proposal) => proposal.id);
+    expect(poolIds).not.toContain(detached.proposal.id);
+    expect(poolIds).not.toContain(deleted.proposal.id);
+    expect(pool.assignments.map((a) => a.proposalId)).not.toContain(
+      detached.proposal.id,
+    );
   });
 
   it('rejects a reviewer who is not an instance admin', async ({

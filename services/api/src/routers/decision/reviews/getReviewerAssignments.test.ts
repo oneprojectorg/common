@@ -66,8 +66,8 @@ describe.concurrent('decision.getReviewerAssignments', () => {
       reviewerProfileId: context.defaultReviewer.profileId,
     });
 
-    expect(result.reviewer.id).toBe(context.defaultReviewer.profileId);
-    expect(result.reviewer.email).toBe(`reviewer-${task.id}@example.org`);
+    expect(result.reviewer?.id).toBe(context.defaultReviewer.profileId);
+    expect(result.reviewer?.email).toBe(`reviewer-${task.id}@example.org`);
     expect(result.assignedCount).toBe(1);
     expect(result.submittedCount).toBe(1);
     expect(result.lastSubmittedAt).not.toBeNull();
@@ -109,7 +109,7 @@ describe.concurrent('decision.getReviewerAssignments', () => {
     expect(result.assignedCount).toBe(1);
     expect(result.assignments).toHaveLength(1);
     expect(result.assignments[0]?.proposalId).toBe(created.proposal.id);
-    expect(result.reviewer.id).toBe(other.profileId);
+    expect(result.reviewer?.id).toBe(other.profileId);
   });
 
   it('counts reviews by every reviewer in reviewedCount, not just this one', async ({
@@ -236,28 +236,58 @@ describe.concurrent('decision.getReviewerAssignments', () => {
     expect(result.assignments).toEqual([]);
   });
 
-  it('reports a member who never reviewed here as ineligible with no work', async ({
+  it('withholds the identity of a profile with no tie to the process', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    const member = await testData.createInstanceMember(context);
+    // A real profile elsewhere on the platform: an admin who can guess a UUID
+    // must not be able to read back its name or email.
+    const outsider = await testData.createContext();
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    // The screen renders its own "not in this phase" empty state from this,
-    // rather than treating a dead link as a server error.
     const result = await adminCaller.decision.getReviewerAssignments({
       processInstanceId: context.instance.instance.id,
       phaseId: 'review',
-      reviewerProfileId: member.profileId,
+      reviewerProfileId: outsider.defaultReviewer.profileId,
     });
 
+    // The screen renders its own "not in this phase" empty state from this,
+    // rather than treating a dead link as a server error.
+    expect(result.reviewer).toBeNull();
     expect(result.isEligible).toBe(false);
     expect(result.assignments).toEqual([]);
+  });
+
+  it('keeps the identity of a reviewer who lost the role but kept history', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: `Frozen queue proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = created.context;
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.getReviewerAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+    });
+
+    // Association is assignments OR eligibility, so history alone is enough.
+    expect(result.reviewer?.id).toBe(context.defaultReviewer.profileId);
+    expect(result.assignments).toHaveLength(1);
   });
 
   it('rejects a reviewer who is not an instance admin', async ({

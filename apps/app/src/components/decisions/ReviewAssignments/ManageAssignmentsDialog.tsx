@@ -4,6 +4,7 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import type {
   AdminAssignableProposal,
+  AdminEligibleReviewer,
   ReviewerAssignmentPool,
   ReviewerPoolAssignment,
 } from '@op/common/client';
@@ -60,6 +61,8 @@ export function ManageAssignmentsDialogContent({
   reviewerProfileId,
   onSaved,
 }: ManageAssignmentsDialogContentProps) {
+  const t = useTranslations();
+
   const [data] = trpc.decision.getReviewerAssignmentPool.useSuspenseQuery(
     { processInstanceId, phaseId, reviewerProfileId },
     // Refetch through the client link on mount — the SSR-seeded cache alone
@@ -67,11 +70,20 @@ export function ManageAssignmentsDialogContent({
     { refetchOnMount: 'always' },
   );
 
+  if (!data.reviewer) {
+    return (
+      <ManageAssignmentsDialogMessage>
+        {t('This person does not review in this phase.')}
+      </ManageAssignmentsDialogMessage>
+    );
+  }
+
   return (
     <ManageAssignmentsForm
       processInstanceId={processInstanceId}
       phaseId={phaseId}
       pool={data}
+      reviewer={data.reviewer}
       onSaved={onSaved}
     />
   );
@@ -122,6 +134,8 @@ interface ManageAssignmentsFormProps {
   processInstanceId: string;
   phaseId: string;
   pool: ReviewerAssignmentPool;
+  /** Narrowed by the caller — the form never renders without an identity. */
+  reviewer: AdminEligibleReviewer;
   onSaved: () => void;
 }
 
@@ -130,9 +144,10 @@ function ManageAssignmentsForm({
   processInstanceId,
   phaseId,
   pool,
+  reviewer,
   onSaved,
 }: ManageAssignmentsFormProps) {
-  const { reviewer, proposals } = pool;
+  const { proposals } = pool;
   const t = useTranslations();
   const filterId = useId();
   const importEnabled = useFeatureFlag('bulk_assign_import');
@@ -154,8 +169,8 @@ function ManageAssignmentsForm({
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
 
   const rows = useMemo(
-    () => buildProposalRows(proposals, pool),
-    [proposals, pool],
+    () => buildProposalRows(proposals, pool.assignments, reviewer.id),
+    [proposals, pool.assignments, reviewer.id],
   );
 
   const visibleRows = useMemo(() => filterRows(rows, query), [rows, query]);
@@ -496,15 +511,16 @@ function ProposalCheckRow({
 
 function buildProposalRows(
   proposals: AdminAssignableProposal[],
-  pool: ReviewerAssignmentPool,
+  assignments: ReviewerPoolAssignment[],
+  reviewerProfileId: string,
 ): ProposalRow[] {
   const assignmentByProposalId = new Map(
-    pool.assignments.map((assignment) => [assignment.proposalId, assignment]),
+    assignments.map((assignment) => [assignment.proposalId, assignment]),
   );
 
   return proposals.map((proposal) => {
     const assignment = assignmentByProposalId.get(proposal.id) ?? null;
-    const isOwn = proposal.submittedByProfileId === pool.reviewer.id;
+    const isOwn = proposal.submittedByProfileId === reviewerProfileId;
 
     return {
       proposal,

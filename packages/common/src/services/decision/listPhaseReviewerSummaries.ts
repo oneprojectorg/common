@@ -108,25 +108,34 @@ export async function listPhaseReviewerSummaries({
           .orderBy(profiles.name)
       : [];
 
+  // Concatenating the two queries would put every idle reviewer after every
+  // 0-submitted rollup regardless of name. One list, one order — safe in JS
+  // only because this is every reviewer of one process, never paginated.
+  const reviewers = [
+    ...rollups.map((row) => ({
+      profile: { id: row.id, name: row.name, slug: row.slug },
+      email: row.email,
+      assignedCount: row.assignedCount,
+      submittedCount: row.submittedCount,
+      draftCount: row.draftCount,
+      lastSubmittedAt: row.lastSubmittedAt,
+    })),
+    ...idleReviewers.map((row) => ({
+      profile: { id: row.id, name: row.name, slug: row.slug },
+      email: row.email,
+      assignedCount: 0,
+      submittedCount: 0,
+      draftCount: 0,
+      lastSubmittedAt: null,
+    })),
+  ].sort(
+    (a, b) =>
+      b.submittedCount - a.submittedCount ||
+      (a.profile.name ?? '').localeCompare(b.profile.name ?? ''),
+  );
+
   return phaseReviewerSummariesSchema.parse({
-    reviewers: [
-      ...rollups.map((row) => ({
-        profile: { id: row.id, name: row.name, slug: row.slug },
-        email: row.email,
-        assignedCount: row.assignedCount,
-        submittedCount: row.submittedCount,
-        draftCount: row.draftCount,
-        lastSubmittedAt: row.lastSubmittedAt,
-      })),
-      ...idleReviewers.map((row) => ({
-        profile: { id: row.id, name: row.name, slug: row.slug },
-        email: row.email,
-        assignedCount: 0,
-        submittedCount: 0,
-        draftCount: 0,
-        lastSubmittedAt: null,
-      })),
-    ],
+    reviewers,
     totalAssignments: rollups.reduce((sum, row) => sum + row.assignedCount, 0),
   });
 }

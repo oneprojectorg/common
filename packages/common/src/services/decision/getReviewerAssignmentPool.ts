@@ -3,7 +3,6 @@ import { profiles, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getInstance } from './getInstance';
@@ -71,10 +70,6 @@ export async function getReviewerAssignmentPool({
         : Promise.resolve<string[]>([]),
     ]);
 
-  if (!reviewer) {
-    throw new NotFoundError('Reviewer profile not found');
-  }
-
   const proposalProfiles = aliasedTable(profiles, 'proposal_profiles');
   const [pool, categoriesByProposalId] = await Promise.all([
     phaseProposalIds.length > 0
@@ -99,9 +94,13 @@ export async function getReviewerAssignmentPool({
     getCategoriesByProposalIds(phaseProposalIds),
   ]);
 
+  // Identity only for a profile this process touches — see getReviewerAssignments.
+  const isEligible = eligibleProfileIds.includes(reviewerProfileId);
+  const isAssociated = isEligible || assignments.length > 0;
+
   return reviewerAssignmentPoolSchema.parse({
-    reviewer,
-    isEligible: eligibleProfileIds.includes(reviewerProfileId),
+    reviewer: isAssociated ? (reviewer ?? null) : null,
+    isEligible,
     assignments: assignments.map((assignment) => ({
       id: assignment.id,
       proposalId: assignment.proposalId,

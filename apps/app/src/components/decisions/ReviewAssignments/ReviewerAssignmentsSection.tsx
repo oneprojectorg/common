@@ -95,9 +95,9 @@ function ReviewerAssignmentsContent({
     { refetchOnMount: 'always' },
   );
 
-  // A profile that neither reviews here nor ever did is a dead link, not a
-  // server error.
-  if (!data.isEligible && data.assignments.length === 0) {
+  // The server withholds identity for a profile with no tie to this process,
+  // which is a dead link rather than a server error.
+  if (!data.reviewer) {
     return (
       <Empty className="rounded-md border border-dashed">
         <EmptyHeader>
@@ -113,11 +113,12 @@ function ReviewerAssignmentsContent({
     );
   }
 
-  const name = data.reviewer.name ?? data.reviewer.slug ?? data.reviewer.id;
+  const { reviewer } = data;
+  const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
 
   return (
     <>
-      <ReviewerHeader name={name} email={data.reviewer.email} />
+      <ReviewerHeader name={name} email={reviewer.email} />
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         <div className="flex min-w-0 flex-1 flex-col gap-5">

@@ -1,6 +1,7 @@
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  profiles,
   proposals,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
@@ -126,6 +127,45 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     );
     expect(summary?.assignedCount).toBe(0);
     expect(result.totalAssignments).toBe(0);
+  });
+
+  it('orders idle reviewers among the 0-submitted ones, not after them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: `Ordered proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = created.context;
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // The assigned reviewer has submitted nothing, so it ties with the idle
+    // one at 0 and the two must interleave by name.
+    const idle = await testData.createInstanceReviewerWithRole(context);
+    await db
+      .update(profiles)
+      .set({ name: `AAA idle ${task.id}` })
+      .where(eq(profiles.id, idle.profileId));
+    await db
+      .update(profiles)
+      .set({ name: `ZZZ assigned ${task.id}` })
+      .where(eq(profiles.id, context.defaultReviewer.profileId));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listPhaseReviewerSummaries({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    const names = result.reviewers.map((reviewer) => reviewer.profile.name);
+    expect(names.indexOf(`AAA idle ${task.id}`)).toBeLessThan(
+      names.indexOf(`ZZZ assigned ${task.id}`),
+    );
   });
 
   it('excludes assignments whose proposal was moderation-detached', async ({
