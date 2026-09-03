@@ -78,6 +78,7 @@ describe('listProposalRejectionRecipients', () => {
   it.each([
     ['the process is on its last phase', { currentStateId: 'voting' }],
     ['the process has no current phase', { currentStateId: null }],
+    ['the current phase is not in the instance', { currentStateId: 'gone' }],
     [
       'the next phase was never named',
       { phases: [{ phaseId: 'review' }, { phaseId: 'voting' }] },
