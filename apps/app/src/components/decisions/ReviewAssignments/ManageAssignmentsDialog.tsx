@@ -53,11 +53,21 @@ interface ManageAssignmentsDialogContentProps {
   onSaved: () => void;
 }
 
-/**
- * Base UI's portal keeps this subtree unmounted until the dialog opens, so
- * both reads below fire on open rather than on page load.
- */
-export function ManageAssignmentsDialogContent({
+export function ManageAssignmentsDialogContent(
+  props: ManageAssignmentsDialogContentProps,
+) {
+  return (
+    // 34rem × 38rem — the size the design's dialog was composed at.
+    <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
+      {/* A child, not this component: the portal renders nothing until the
+          dialog opens, so only hooks BELOW it are deferred to open — and
+          unmounting on close is what resets the selection. */}
+      <ManageAssignmentsBody {...props} />
+    </DialogContent>
+  );
+}
+
+function ManageAssignmentsBody({
   processInstanceId,
   phaseId,
   reviewerProfileId,
@@ -267,8 +277,7 @@ export function ManageAssignmentsDialogContent({
   };
 
   return (
-    // 34rem × 38rem — the size the design's dialog was composed at.
-    <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
+    <>
       <DialogHeader>
         <DialogTitle>
           {name
@@ -407,7 +416,7 @@ export function ManageAssignmentsDialogContent({
           </Button>
         </div>
       </DialogFooter>
-    </DialogContent>
+    </>
   );
 }
 
