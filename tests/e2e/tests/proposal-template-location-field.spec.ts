@@ -64,13 +64,19 @@ test.describe('Proposal template — location field', () => {
     //    the author can edit.)
     await expect(page.getByText('Map view')).toBeVisible({ timeout: 12_000 });
 
-    // 6. A template that collects a location always requires one, so the
+    // 6. The location card keeps the same header row as every other field —
+    //    field name and type side by side. It used to drop its Type select
+    //    entirely, which is what left Location unreachable in the first place.
+    await expect(typeSelects).toHaveCount(2);
+    await expect(typeSelects.first()).toContainText('Location');
+
+    // 7. A template that collects a location always requires one, so the
     //    toggle is forced on and locked.
     const requiredToggles = page.getByRole('switch', { name: 'Required' });
     await expect(requiredToggles.first()).toBeChecked();
     await expect(requiredToggles.first()).toBeDisabled();
 
-    // 7. Location is single-instance — a second one would overwrite the first
+    // 8. Location is single-instance — a second one would overwrite the first
     //    at the shared fixed key, so the other field can no longer take it.
     await typeSelects.last().click();
     await expect(
