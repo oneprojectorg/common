@@ -31,11 +31,7 @@ export function isVotingPhase(phase: {
   return phase.rules?.voting?.submit ?? false;
 }
 
-/**
- * Whether an already-submitted proposal may still be edited. Legacy instances
- * carry no phase rules (`isLastPhase` treats them the same way); they predate
- * the setting and keep editing open.
- */
+/** Whether an already-submitted proposal may still be edited. */
 export function isPostSubmissionEditingAllowed({
   phases,
   currentPhaseId,
@@ -46,13 +42,10 @@ export function isPostSubmissionEditingAllowed({
   }[];
   currentPhaseId: string | null | undefined;
 }): boolean {
-  if (!currentPhaseId || phases.length === 0) {
-    return true;
-  }
-
-  const currentPhase = phases.find((phase) => phase.phaseId === currentPhaseId);
-
-  return currentPhase?.rules?.proposals?.edit ?? false;
+  return (
+    phases.find((phase) => phase.phaseId === currentPhaseId)?.rules?.proposals
+      ?.edit ?? false
+  );
 }
 
 /**

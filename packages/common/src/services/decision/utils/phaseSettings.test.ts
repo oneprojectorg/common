@@ -76,13 +76,13 @@ describe('isPostSubmissionEditingAllowed', () => {
     ).toBe(false);
   });
 
-  it('leaves editing open for instances without resolvable phase rules', () => {
+  it('denies when there is no resolvable current phase', () => {
     expect(
       isPostSubmissionEditingAllowed({ phases: [], currentPhaseId: 'review' }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isPostSubmissionEditingAllowed({ phases, currentPhaseId: null }),
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 
