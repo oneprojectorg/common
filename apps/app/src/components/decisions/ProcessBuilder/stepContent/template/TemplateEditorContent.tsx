@@ -12,6 +12,7 @@ import { Header2 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -33,13 +34,13 @@ import {
   getFieldSchema,
   getFields,
   removeField as removeFieldFromTemplate,
+  renameField,
   reorderFields as reorderTemplateFields,
   setFieldRequired,
   updateFieldDescription,
   updateFieldLabel,
 } from '@/components/decisions/proposalTemplate';
 
-import { AddFieldMenu } from './AddFieldMenu';
 import { BudgetFieldConfig } from './BudgetFieldConfig';
 import {
   FieldCard,
@@ -150,11 +151,16 @@ export function TemplateEditorContent({
     [template],
   );
 
-  // Single-instance field types that can't be added again. Location uses a
-  // fixed key, so a second one would overwrite the first.
+  // Location is single-instance: it lives at a fixed key, so a second one
+  // would overwrite the first. Once the template has one, every other card
+  // stops offering the type (the location card keeps it so it reads as the
+  // current selection).
+  const hasLocationField = Boolean(
+    getFieldSchema(template, LOCATION_FIELD_KEY),
+  );
   const disabledTypes = useMemo<FieldType[]>(
-    () => (getFieldSchema(template, LOCATION_FIELD_KEY) ? ['location'] : []),
-    [template],
+    () => (hasLocationField ? ['location'] : []),
+    [hasLocationField],
   );
 
   // Save template changes via the shared autosave context.
@@ -179,30 +185,14 @@ export function TemplateEditorContent({
 
   const handleAddField = useCallback(
     (type: FieldType) => {
-      // The menu disables a single-instance type once the template has one;
-      // this is defense in depth. Adding a second location would reuse the
-      // fixed key and overwrite the first, losing its saved map view.
-      if (disabledTypes.includes(type)) {
-        return;
-      }
-      // Location uses a fixed key (single instance, projected to a geometry
-      // column server-side) and is always required.
-      const fieldId =
-        type === 'location'
-          ? LOCATION_FIELD_KEY
-          : crypto.randomUUID().slice(0, 8);
+      const fieldId = createFieldId();
       const label = t(getFieldLabelKey(type));
-      setTemplate((prev) => {
-        const next = addFieldToTemplate(prev, fieldId, type, label);
-        return type === 'location'
-          ? setFieldRequired(next, fieldId, true)
-          : next;
-      });
+      setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
       // Auto-expand the newly added field and mark it as new
       setExpandedFieldIds((prev) => new Set(prev).add(fieldId));
       setNewFieldIds((prev) => new Set(prev).add(fieldId));
     },
-    [t, disabledTypes],
+    [t],
   );
 
   const handleExpandedChange = useCallback(
@@ -321,14 +311,38 @@ export function TemplateEditorContent({
 
   const handleChangeFieldType = useCallback(
     (fieldId: string, newType: FieldType) => {
-      // Location fields can't change type (and nothing can become one) —
-      // the type selector is hidden for them, this is defense in depth.
-      if (fieldId === LOCATION_FIELD_KEY || newType === 'location') {
+      // The Type select disables a single-instance type once it's taken; this
+      // is defense in depth. Retyping onto an occupied fixed key would
+      // overwrite that field and lose its saved map view.
+      if (fieldId !== LOCATION_FIELD_KEY && disabledTypes.includes(newType)) {
         return;
       }
-      setTemplate((prev) => changeFieldType(prev, fieldId, newType));
+
+      const nextFieldId = getFieldIdForType(fieldId, newType);
+
+      setTemplate((prev) => {
+        const retyped = changeFieldType(prev, fieldId, newType);
+        const rekeyed =
+          nextFieldId === fieldId
+            ? retyped
+            : renameField(retyped, fieldId, nextFieldId);
+
+        // A template that collects a location always requires one — the
+        // toggle is disabled on the card to match.
+        return newType === 'location'
+          ? setFieldRequired(rekeyed, nextFieldId, true)
+          : rekeyed;
+      });
+
+      if (nextFieldId !== fieldId) {
+        // Per-field UI state is keyed by field id, so it has to follow the
+        // rekey or the card collapses and its errors detach mid-edit.
+        setExpandedFieldIds((prev) => renameInSet(prev, fieldId, nextFieldId));
+        setNewFieldIds((prev) => renameInSet(prev, fieldId, nextFieldId));
+        setFieldErrors((prev) => renameInMap(prev, fieldId, nextFieldId));
+      }
     },
-    [],
+    [disabledTypes],
   );
 
   /** Render a FieldCard for a given field view. */
@@ -348,6 +362,9 @@ export function TemplateEditorContent({
         field={field}
         fieldSchema={getFieldSchema(template, field.id) ?? {}}
         errors={displayedErrors}
+        disabledTypes={
+          field.id === LOCATION_FIELD_KEY ? EMPTY_FIELD_TYPES : disabledTypes
+        }
         controls={controls}
         isExpanded={expandedFieldIds.has(field.id)}
         onExpandedChange={(expanded) =>
@@ -444,10 +461,14 @@ export function TemplateEditorContent({
               {(field, controls) => renderFieldCard(field, controls)}
             </Sortable>
           </div>
-          <AddFieldMenu
-            onAddField={handleAddField}
-            disabledTypes={disabledTypes}
-          />
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => handleAddField('short_text')}
+          >
+            <LuPlus className="size-4" />
+            {t('Add field')}
+          </Button>
         </div>
       </div>
 
@@ -462,4 +483,58 @@ export function TemplateEditorContent({
       />
     </>
   );
+}
+
+/** Stable identity so a card without disabled types doesn't re-render. */
+const EMPTY_FIELD_TYPES: FieldType[] = [];
+
+function createFieldId(): string {
+  return crypto.randomUUID().slice(0, 8);
+}
+
+/**
+ * The property key a field must use once it is a given type.
+ *
+ * Location is addressed by a fixed key rather than by its `x-format` in the
+ * CSV export, so a field becoming one takes `LOCATION_FIELD_KEY` and a field
+ * leaving the type hands it back — otherwise a plain text field would keep
+ * the reserved key and be dropped from the export's custom-field columns.
+ */
+function getFieldIdForType(fieldId: string, type: FieldType): string {
+  if (type === 'location') {
+    return LOCATION_FIELD_KEY;
+  }
+  if (fieldId === LOCATION_FIELD_KEY) {
+    return createFieldId();
+  }
+  return fieldId;
+}
+
+function renameInSet(
+  ids: Set<string>,
+  fromId: string,
+  toId: string,
+): Set<string> {
+  if (!ids.has(fromId)) {
+    return ids;
+  }
+  const next = new Set(ids);
+  next.delete(fromId);
+  next.add(toId);
+  return next;
+}
+
+function renameInMap<T>(
+  entries: Map<string, T>,
+  fromId: string,
+  toId: string,
+): Map<string, T> {
+  const value = entries.get(fromId);
+  if (value === undefined) {
+    return entries;
+  }
+  const next = new Map(entries);
+  next.delete(fromId);
+  next.set(toId, value);
+  return next;
 }

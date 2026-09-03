@@ -27,6 +27,7 @@ import {
   getPropertyOrder,
   isPropertyRequired,
   removeProperty,
+  renameProperty,
   reorderProperties,
   setPropertyRequired,
   updateProperty,
@@ -367,11 +368,32 @@ export function changeFieldType(
       ...fresh,
       title: existing.title,
       ...(existing.description ? { description: existing.description } : {}),
-      // Carry forward dropdown options so switching away and back doesn't lose them.
-      // Non-dropdown types ignore `oneOf`; dropdown restores it.
-      ...(existing.oneOf ? { oneOf: existing.oneOf } : {}),
+      // Carry forward dropdown options so switching away and back doesn't lose
+      // them. Only string-valued types can round-trip `oneOf` — location stores
+      // an object, and a leftover `oneOf` of string consts there rejects every
+      // value the field collects.
+      ...(existing.oneOf && fresh.type === 'string'
+        ? { oneOf: existing.oneOf }
+        : {}),
     };
   });
+}
+
+/**
+ * Move a field to a new key, preserving its schema, order and required flag.
+ *
+ * Needed because `location` is addressed by a fixed key rather than by its
+ * `x-format` everywhere: the CSV export filters it out of the custom-field
+ * columns and lets a live document override the snapshot by key. A field that
+ * becomes a location therefore has to take `LOCATION_FIELD_KEY`, and one that
+ * stops being a location has to give it back.
+ */
+export function renameField(
+  template: ProposalTemplateSchema,
+  fromId: string,
+  toId: string,
+): ProposalTemplateSchema {
+  return renameProperty(template, fromId, toId);
 }
 
 export function setFieldRequired(

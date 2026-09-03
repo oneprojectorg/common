@@ -76,10 +76,9 @@ test.describe('Proposal template — multi-select category', () => {
 
     const addFieldButton = page.getByRole('button', { name: 'Add field' });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
-    // "Add field" opens a menu of field types; pick Short text.
+    // "Add field" adds a short-text field directly (no type menu).
     const fieldSaved = waitForAutoSave(page);
     await addFieldButton.click();
-    await page.getByRole('menuitem', { name: 'Short text' }).click();
     await fieldSaved;
 
     // 6. Positive control: Process Settings was left blank (no name/description

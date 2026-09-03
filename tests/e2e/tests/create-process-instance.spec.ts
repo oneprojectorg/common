@@ -169,8 +169,8 @@ test.describe('Create Process Instance', () => {
     ).toBeVisible({ timeout: 12_000 });
 
     // 10b. Add a custom field so the template passes validation (requires at
-    //       least 1 non-system field). "Add field" opens a menu of field
-    //       types; pick Short text.
+    //       least 1 non-system field). "Add field" adds a short-text field
+    //       directly (no type menu — change type via the card's Type select).
     const addFieldButton = authenticatedPage.getByRole('button', {
       name: 'Add field',
     });
@@ -178,9 +178,6 @@ test.describe('Create Process Instance', () => {
     // Arm the autosave wait before the click that triggers it.
     const templateFieldSaved = waitForAutoSave(authenticatedPage);
     await addFieldButton.click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Short text' })
-      .click();
     await templateFieldSaved;
 
     // 10. Expand the Funding amount card — budget is enabled by default in the

@@ -246,11 +246,8 @@ test.describe('Edit Published Process', () => {
       name: 'Add field',
     });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
-    // "Add field" opens a menu of field types; pick Short text.
+    // "Add field" adds a short-text field directly (no type menu).
     await addFieldButton.click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Short text' })
-      .click();
 
     // 6. Verify the field was added (card appears in the sortable list)
     await expect(authenticatedPage.getByText('Short text').first()).toBeVisible(

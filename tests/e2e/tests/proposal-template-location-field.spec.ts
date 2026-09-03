@@ -4,12 +4,11 @@ import { expect, test, waitForAutoSave } from '../fixtures/index.js';
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test.describe('Proposal template — location field', () => {
-  // Regression guard: the sense migration replaced the categorized "Add field"
-  // menu with a plain button that always added Short text, which left no UI
-  // path to a location field at all — the field card's Type select excludes
-  // location on purpose (single instance, fixed key), so the menu is the only
-  // entry point.
-  test('location can be added from the Add field menu, and only once', async ({
+  // Regression guard: the sense migration dropped Location from the field
+  // card's Type select, and there is no other route to it — location is
+  // single-instance with a fixed key, so it is never "added", only switched
+  // to from an existing field.
+  test('a field can be switched to Location, and only one at a time', async ({
     authenticatedPage: page,
   }) => {
     test.setTimeout(144_000);
@@ -34,34 +33,48 @@ test.describe('Proposal template — location field', () => {
       timeout: 12_000,
     });
 
-    // 3. The Add field menu offers Location alongside the text types.
+    // 3. Add two fields. Both land as Short text and auto-expand, so each has
+    //    a Type select on screen.
     const addFieldButton = page.getByRole('button', { name: 'Add field' });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
+
+    const firstFieldSaved = waitForAutoSave(page);
     await addFieldButton.click();
+    await firstFieldSaved;
 
-    await expect(
-      page.getByRole('menuitem', { name: 'Short text' }),
-    ).toBeVisible();
-    const locationItem = page.getByRole('menuitem', { name: 'Location' });
-    await expect(locationItem).toBeVisible();
-    await expect(locationItem).toBeEnabled();
-
-    // 4. Adding it persists a location field.
-    const fieldSaved = waitForAutoSave(page, 'location');
-    await locationItem.click();
-    await fieldSaved;
-
-    // 5. The card renders as Required — the location toggle is forced on
-    //    because the server projects the value onto a geometry column.
-    await expect(
-      page.getByRole('button', { name: /^Location Required$/ }),
-    ).toBeVisible({ timeout: 6_000 });
-
-    // 6. Location is single-instance: a second one would overwrite the first,
-    //    so the menu entry is disabled once the template has one.
+    const secondFieldSaved = waitForAutoSave(page);
     await addFieldButton.click();
-    await expect(page.getByRole('menuitem', { name: 'Location' })).toBeDisabled(
-      { timeout: 6_000 },
-    );
+    await secondFieldSaved;
+
+    const typeSelects = page.getByLabel('Type');
+    await expect(typeSelects).toHaveCount(2);
+
+    // 4. Switch the first field to Location.
+    const locationSaved = waitForAutoSave(page, 'location');
+    await typeSelects.first().click();
+    await page
+      .getByRole('listbox')
+      .getByRole('option', { name: 'Location' })
+      .click();
+    await locationSaved;
+
+    // 5. The location config lands — its map-view picker is what proves the
+    //    field is a real location field and not just a relabelled text one.
+    //    (The card keeps its "Short text" name; retyping preserves the label
+    //    the author can edit.)
+    await expect(page.getByText('Map view')).toBeVisible({ timeout: 12_000 });
+
+    // 6. A template that collects a location always requires one, so the
+    //    toggle is forced on and locked.
+    const requiredToggles = page.getByRole('switch', { name: 'Required' });
+    await expect(requiredToggles.first()).toBeChecked();
+    await expect(requiredToggles.first()).toBeDisabled();
+
+    // 7. Location is single-instance — a second one would overwrite the first
+    //    at the shared fixed key, so the other field can no longer take it.
+    await typeSelects.last().click();
+    await expect(
+      page.getByRole('listbox').getByRole('option', { name: 'Location' }),
+    ).toBeDisabled({ timeout: 6_000 });
   });
 });
