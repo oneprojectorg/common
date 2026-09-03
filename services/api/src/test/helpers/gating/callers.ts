@@ -170,9 +170,12 @@ export const createGatingCallers = (
  * session.
  */
 const createPhoneAccount = async () => {
-  // Twilio reserves 500 555 01xx for testing, so no fixture names a real line.
-  const suffix = String(Math.floor(Math.random() * 90) + 10);
-  const phone = parsePhoneNumber(`+15005550${suffix}0`);
+  // Draws from +1 500 555 1000-9999. The 500 area code is not geographic and
+  // Twilio reserves 500 555 for testing, so no fixture names a real line. The
+  // pool was 90 wide, which two concurrent files could exhaust into a
+  // duplicate that `auth.admin.createUser` rejects.
+  const suffix = String(Math.floor(Math.random() * 9000) + 1000);
+  const phone = parsePhoneNumber(`+1500555${suffix}`);
   const password = randomUUID();
 
   const { data, error } = await supabaseTestAdminClient.auth.admin.createUser({
