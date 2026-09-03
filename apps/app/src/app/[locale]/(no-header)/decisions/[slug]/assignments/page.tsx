@@ -10,7 +10,10 @@ import { getTranslations } from 'next-intl/server';
 
 import { TranslatedText } from '@/components/TranslatedText';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
-import { ReviewersTableSection } from '@/components/decisions/ReviewAssignments/ReviewersTableSection';
+import {
+  REVIEWERS_PAGE_SIZE,
+  ReviewersTableSection,
+} from '@/components/decisions/ReviewAssignments/ReviewersTableSection';
 
 import { loadReviewAssignmentsPage } from './loadReviewAssignmentsPage';
 
@@ -38,9 +41,12 @@ export default async function ReviewAssignmentsPage({
   // Best effort: on failure the client refetches under its own boundary.
   const { utils, queryClient } = await createServerUtils();
   try {
-    await utils.decision.listPhaseReviewAssignments.fetch({
+    // fetchInfinite with the client's exact input, or the hydrated entry is a
+    // different cache key and the table suspends on mount anyway.
+    await utils.decision.listPhaseReviewerSummaries.fetchInfinite({
       processInstanceId,
       phaseId,
+      limit: REVIEWERS_PAGE_SIZE,
     });
   } catch (error) {
     logger.warn('Failed to preload phase review assignments', {

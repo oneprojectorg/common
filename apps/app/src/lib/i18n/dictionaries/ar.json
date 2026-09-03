@@ -1677,6 +1677,7 @@
   "No reviewers yet": "لا يوجد مراجعون بعد",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "امنح الأشخاص دور المراجع وسيظهرون هنا جاهزين لاستلام المقترحات.",
   "Reviewers": "المراجعون",
+  "Loading more reviewers...": "جارٍ تحميل مزيد من المراجعين...",
   "Amount": "المبلغ",
   "Reviewers enter an amount": "يُدخل المراجعون مبلغًا",
   "Assigned proposals ({count})": "المقترحات المعيّنة ({count})",

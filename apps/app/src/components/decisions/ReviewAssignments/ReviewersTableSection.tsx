@@ -2,6 +2,8 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import type { PhaseReviewerSummary } from '@op/common/client';
+import { useInfiniteScroll } from '@op/hooks';
 import {
   Empty,
   EmptyDescription,
@@ -12,6 +14,7 @@ import {
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Progress } from '@op/sense/Progress';
+import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
   TableBody,
@@ -22,7 +25,7 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useCallback } from 'react';
 import { LuChevronRight, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -30,7 +33,9 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
-import { type ReviewerRow, buildReviewerRows } from './buildReviewerRows';
+
+/** Kept beside the page's SSR prefetch — a differing input breaks hydration. */
+export const REVIEWERS_PAGE_SIZE = 50;
 
 interface ReviewersTableSectionProps {
   decisionSlug: string;
@@ -75,24 +80,36 @@ function ReviewersTableContent({
 }: ReviewersTableSectionProps) {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId },
-    // Refetch through the client link on mount — the SSR-seeded cache alone
-    // never registers the `reviewAssignments` realtime channel.
-    { refetchOnMount: 'always' },
-  );
+  const [data, query] =
+    trpc.decision.listPhaseReviewerSummaries.useSuspenseInfiniteQuery(
+      { processInstanceId, phaseId, limit: REVIEWERS_PAGE_SIZE },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+        // An SSR-seeded entry never registers the realtime channel; refetch.
+        refetchOnMount: 'always',
+      },
+    );
 
-  const { rows } = useMemo(
-    () =>
-      buildReviewerRows(data.reviewers, data.eligibleReviewers, data.proposals),
-    [data.reviewers, data.eligibleReviewers, data.proposals],
-  );
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
+  const stableFetchNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref: scrollTriggerRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(stableFetchNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+    });
+
+  const rows = data.pages.flatMap((page) => page.reviewers);
+  // Phase-wide, so the label does not creep upward as pages arrive.
+  const totalReviewers = data.pages[0]?.totalReviewers ?? rows.length;
 
   return (
     <div className="flex flex-col gap-3">
       <p aria-live="polite">
         {t('{count, plural, one {# reviewer} other {# reviewers}}', {
-          count: rows.length,
+          count: totalReviewers,
         })}
       </p>
 
@@ -111,40 +128,65 @@ function ReviewersTableContent({
           </EmptyHeader>
         </Empty>
       ) : (
-        <Table
-          aria-label={t('Reviewers')}
-          className="w-full [&_tbody_th]:px-5 [&_tbody_th]:py-3 [&_td]:px-5 [&_td]:py-3 [&_th]:px-5 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-3 [&_tr>*:last-child]:pe-3"
-        >
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('Name')}</TableHead>
-              <TableHead className="text-end">{t('Assigned')}</TableHead>
-              <TableHead>{t('Progress')}</TableHead>
-              <TableHead>{t('Last submission')}</TableHead>
-              <TableHead className="text-end">
-                <span className="sr-only">{t('Open')}</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <ReviewerRowCells
-                key={row.profile.id}
-                row={row}
-                href={`/decisions/${decisionSlug}/assignments/${row.profile.id}`}
-              />
-            ))}
-          </TableBody>
-        </Table>
+        <>
+          <Table
+            aria-label={t('Reviewers')}
+            className="w-full [&_tbody_th]:px-5 [&_tbody_th]:py-3 [&_td]:px-5 [&_td]:py-3 [&_th]:px-5 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-3 [&_tr>*:last-child]:pe-3"
+          >
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('Name')}</TableHead>
+                <TableHead className="text-end">{t('Assigned')}</TableHead>
+                <TableHead>{t('Progress')}</TableHead>
+                <TableHead>{t('Last submission')}</TableHead>
+                <TableHead className="text-end">
+                  <span className="sr-only">{t('Open')}</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <ReviewerRowCells
+                  key={row.reviewer.id}
+                  row={row}
+                  href={`/decisions/${decisionSlug}/assignments/${row.reviewer.id}`}
+                />
+              ))}
+            </TableBody>
+          </Table>
+
+          {shouldShowTrigger ? (
+            // Sits below the table rather than inside <tbody>, which admits
+            // no div. Nothing focusable goes in it — the next page arrives on
+            // scroll, so a keyboard user would only find an empty stop.
+            <div ref={scrollTriggerRef} className="flex flex-col gap-3 py-2">
+              {isFetchingNextPage ? (
+                <>
+                  <span aria-live="polite" className="sr-only">
+                    {t('Loading more reviewers...')}
+                  </span>
+                  <Skeleton className="h-12 w-full" aria-hidden />
+                  <Skeleton className="h-12 w-full" aria-hidden />
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );
 }
 
-function ReviewerRowCells({ row, href }: { row: ReviewerRow; href: string }) {
+function ReviewerRowCells({
+  row,
+  href,
+}: {
+  row: PhaseReviewerSummary;
+  href: string;
+}) {
   const t = useTranslations();
   const format = useFormatter();
-  const name = row.label;
+  const name = row.reviewer.name ?? row.reviewer.slug ?? row.reviewer.id;
   const lastSubmittedAt = row.lastSubmittedAt
     ? new Date(row.lastSubmittedAt)
     : null;
@@ -169,7 +211,7 @@ function ReviewerRowCells({ row, href }: { row: ReviewerRow; href: string }) {
             avatar={<ProfileAvatar name={name} alt={name} />}
             title={name}
             titleClassName="font-normal"
-            description={row.email ?? undefined}
+            description={row.reviewer.email ?? undefined}
           />
         </Link>
       </TableRowHeader>
