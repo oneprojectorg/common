@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from '@op/sense/Dialog';
 import { RichTextViewer } from '@op/sense/RichTextEditor';
+import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import { Spinner } from '@op/sense/Spinner';
 import he from 'he';
 import { useParams } from 'next/navigation';
@@ -66,7 +67,7 @@ export const DecisionActionBar = ({
                 {markup && description ? (
                   <div
                     dir="auto"
-                    className="prose max-w-none prose-gray"
+                    className={viewerProseStyles}
                     dangerouslySetInnerHTML={{
                       __html: he.decode(description),
                     }}
@@ -75,7 +76,6 @@ export const DecisionActionBar = ({
                   <RichTextViewer
                     extensions={getViewerExtensions()}
                     content={description}
-                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
                   />
                 )}
               </div>
