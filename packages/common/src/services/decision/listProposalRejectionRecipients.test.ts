@@ -21,12 +21,21 @@ type ProfileUser = { email: string | null; authUserId: string };
 
 const ADA = { email: 'ada@example.com', authUserId: ADA_AUTH_USER_ID };
 
+const PHASES = [
+  { phaseId: 'submission', name: 'Proposal Submission' },
+  { phaseId: 'review', name: 'Review & Shortlist' },
+  { phaseId: 'voting', name: 'Voting' },
+];
+
 /** A rejected proposal whose process and profile are both healthy. */
 const rejectedProposal = ({
   status = ProposalStatus.REJECTED,
   profileUsers = [ADA] as Array<ProfileUser>,
   deletedAt = null as string | null,
   moderationDetachedAt = null as string | null,
+  currentStateId = 'review' as string | null,
+  phases = PHASES,
+  steward = { name: 'Columbus Parks Coalition' } as { name: string } | null,
 } = {}) => ({
   status,
   deletedAt,
@@ -34,6 +43,9 @@ const rejectedProposal = ({
   profileId: PROPOSAL_PROFILE_ID,
   profile: { name: 'Community Garden Revamp', profileUsers },
   processInstance: {
+    currentStateId,
+    instanceData: { phases },
+    steward,
     profile: { name: 'Participatory Budgeting 2026', slug: 'pb-2026' },
   },
 });
@@ -57,11 +69,37 @@ describe('listProposalRejectionRecipients', () => {
       notification: {
         proposalName: 'Community Garden Revamp',
         proposalProfileId: PROPOSAL_PROFILE_ID,
-        processTitle: 'Participatory Budgeting 2026',
+        phaseName: 'Review & Shortlist',
+        stewardName: 'Columbus Parks Coalition',
         processProfileSlug: 'pb-2026',
         recipients: [{ email: 'ada@example.com' }],
       },
     });
+  });
+
+  // The email drops the clause rather than naming a phase that isn't there.
+  it.each([
+    ['the process has no current phase', { currentStateId: null }],
+    ['the current phase is not in the instance', { currentStateId: 'gone' }],
+    [
+      'the current phase was never named',
+      { phases: [{ phaseId: 'review' }, { phaseId: 'voting' }] },
+    ],
+  ])('names no phase when %s', async (_label, overrides) => {
+    findFirst.mockResolvedValue(rejectedProposal(overrides) as never);
+
+    const result = await run();
+
+    expect(result.ok && result.notification.phaseName).toBeUndefined();
+  });
+
+  // stewardProfileId is nullable, and the From then falls back to Common.
+  it('names no steward when the process has none', async () => {
+    findFirst.mockResolvedValue(rejectedProposal({ steward: null }) as never);
+
+    const result = await run();
+
+    expect(result.ok && result.notification.stewardName).toBeUndefined();
   });
 
   // The success toast puts Undo one tap away, inside the debounce window.

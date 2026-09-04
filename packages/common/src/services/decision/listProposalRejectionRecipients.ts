@@ -2,13 +2,18 @@ import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
+import type { PhaseInstanceData } from './schemas/instanceData';
+import { getInstanceCurrentPhase } from './utils/instance';
 import { isProposalReachable } from './utils/proposal';
 
 export type ProposalRejectionNotification = {
   proposalName: string;
   /** App URLs address a proposal by its profile id, not its own id. */
   proposalProfileId: string;
-  processTitle: string;
+  /** The phase it did not advance to; absent when none is configured. */
+  phaseName?: string;
+  /** The profile running the process, shown as the email's sender. */
+  stewardName?: string;
   processProfileSlug: string;
   /** Authors of the rejected proposal, minus the admin who rejected it. */
   recipients: Array<{ email: string }>;
@@ -39,7 +44,7 @@ export async function listProposalRejectionRecipients({
     where: { id: proposalId },
     with: {
       profile: { with: { profileUsers: true } },
-      processInstance: { with: { profile: true } },
+      processInstance: { with: { profile: true, steward: true } },
     },
   });
 
@@ -52,9 +57,9 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'notRejected' };
   }
 
-  const processProfile = proposal.processInstance?.profile;
+  const processInstance = proposal.processInstance;
 
-  if (!processProfile || !isProposalReachable(proposal)) {
+  if (!processInstance?.profile || !isProposalReachable(proposal)) {
     return { ok: false, reason: 'proposalUnavailable' };
   }
 
@@ -68,13 +73,21 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'noRecipients' };
   }
 
+  const currentPhase = getInstanceCurrentPhase<PhaseInstanceData>({
+    currentStateId: processInstance.currentStateId,
+    instanceData: processInstance.instanceData as {
+      phases?: PhaseInstanceData[];
+    } | null,
+  });
+
   return {
     ok: true,
     notification: {
       proposalName: proposal.profile.name,
       proposalProfileId: proposal.profileId,
-      processTitle: processProfile.name,
-      processProfileSlug: processProfile.slug,
+      phaseName: currentPhase?.name,
+      stewardName: processInstance.steward?.name,
+      processProfileSlug: processInstance.profile.slug,
       recipients,
     },
   };
