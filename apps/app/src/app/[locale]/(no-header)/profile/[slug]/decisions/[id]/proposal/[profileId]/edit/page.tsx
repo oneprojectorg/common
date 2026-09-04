@@ -4,8 +4,9 @@ import {
   dehydrate,
 } from '@op/api/server';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { LegacyProposalEditClient } from './ProposalEditClient';
 
