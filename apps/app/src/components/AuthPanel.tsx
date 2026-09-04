@@ -257,8 +257,6 @@ export const AuthPhoneField = ({
   onSubmit: () => void;
   placeholder?: string;
 }) => {
-  const t = useTranslations();
-
   return (
     <div className="flex flex-col">
       <form
@@ -275,7 +273,11 @@ export const AuthPhoneField = ({
           </FieldLabel>
           <Input
             id="auth-phone"
-            aria-label={t('Phone number')}
+            // Follows the visible label rather than repeating a fixed string:
+            // `aria-label` overrides the `FieldLabel` above, so a caller that
+            // passes a different label would otherwise be announced as
+            // something the screen does not show.
+            aria-label={label}
             aria-required
             type="tel"
             inputMode="tel"
