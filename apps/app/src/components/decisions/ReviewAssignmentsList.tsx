@@ -96,17 +96,13 @@ export function ReviewAssignmentsList({
     (phase) => phase.phaseId === instance.currentStateId,
   );
 
-  // The queue is this phase's work, and both reads below require a phase. The
-  // tab is only mounted on a review phase; throw rather than invent a fallback
-  // so a stateless instance surfaces on the surrounding error boundary instead
-  // of quietly listing every phase (same guard as ManualSelectionList).
+  // The tab is only mounted on a review phase; a stateless instance is a bug
+  // for the error boundary, not a fallback (same guard as ManualSelectionList).
   if (!instance.currentStateId) {
     throw new Error('ReviewAssignmentsList: instance has no currentStateId');
   }
   const phaseId = instance.currentStateId;
 
-  // Status and sort stay part of the query input, so changing either starts a
-  // fresh first page rather than appending to the old one.
   const queueInput = {
     processInstanceId,
     phaseId,
@@ -125,7 +121,6 @@ export function ReviewAssignmentsList({
     () => data?.pages.flatMap((page) => page.assignments) ?? [],
     [data?.pages],
   );
-  // Server-side count for the active filters, not just the loaded pages.
   const total = data?.pages[0]?.total ?? 0;
   const proposalIds = assignments.map((a) => a.assignment.proposal.id);
 
@@ -275,10 +270,8 @@ export function ReviewAssignmentsList({
     ],
   );
 
-  // One sentinel definition for both views — map mode renders it inside the
-  // list column (via listFooter), grid mode below the grid. `aria-hidden` and
-  // no tabindex keep the bare trigger out of the tab order; the `aria-live`
-  // line at the end of the component is what a screen reader gets instead.
+  // Shared by both views. `aria-hidden` keeps the trigger out of the a11y
+  // tree; the `aria-live` line at the bottom announces loading instead.
   const renderScrollSentinel = (skeleton: ReactNode) =>
     shouldShowTrigger ? (
       <div
@@ -436,8 +429,7 @@ export function ReviewAssignmentsList({
           translations={translation.translationState?.translations ?? {}}
         >
           {isMapMode ? (
-            // Local boundaries keep the pin query from suspending / erroring
-            // the whole list subtree (filter bar + view toggle stay mounted).
+            // Local boundaries keep the filter bar mounted while pins load or fail.
             <APIErrorBoundary
               fallbacks={{
                 default: () => (
@@ -448,18 +440,13 @@ export function ReviewAssignmentsList({
               }}
             >
               <Suspense fallback={<ReviewAssignmentListSkeletonGrid />}>
-                {/* Pins come from a dedicated assignment-scoped query rather
-                    than the loaded pages, so the map isn't capped by the page
-                    size; the list column beside it stays paginated and pages
-                    through `listFooter`. */}
+                {/* Pins come from their own query so the map isn't capped by
+                    the page size; the list column still pages via listFooter. */}
                 <ReviewAssignmentsMapWithLocations
                   proposals={assignedProposals}
                   renderCard={renderCard}
                   hrefFor={reviewsHref}
                   mapView={mapView}
-                  // The queue's own filters, so the pins describe the same set
-                  // as the cards and the count. Strip the list-only pagination
-                  // fields — the map returns every located assignment.
                   locationFilter={{
                     processInstanceId: queueInput.processInstanceId,
                     phaseId: queueInput.phaseId,
@@ -491,9 +478,7 @@ export function ReviewAssignmentsList({
         </ProposalTranslationProvider>
       )}
 
-      {/* Grid mode: the load-more skeletons render inside the masonry (see
-          ProposalMasonry `loadingMore`), so the sentinel is just the trigger.
-          Map mode renders it inside the list column via `listFooter`. */}
+      {/* Grid mode: the masonry renders its own load-more skeletons. */}
       {!isMapMode && renderScrollSentinel(null)}
 
       <p aria-live="polite" className="sr-only">

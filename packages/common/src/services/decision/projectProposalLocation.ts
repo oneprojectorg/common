@@ -6,10 +6,7 @@ type MaybeSingle<T> = T | T[] | null | undefined;
 
 type AuthorProfileUsers = Parameters<typeof isAnonymousAuthor>[0];
 
-/**
- * The columns a pin needs. Shared so the two pin reads select the same set and
- * therefore project identically.
- */
+/** The columns a pin needs. */
 export const proposalLocationColumns = {
   id: true,
   processInstanceId: true,
@@ -21,9 +18,8 @@ export const proposalLocationColumns = {
 } satisfies Record<string, true>;
 
 /**
- * The relations a pin's marker and hovercard read. `profileUsers` is not
- * optional: without it `isAnonymousAuthor` sees no rows, every author folds to
- * "not anonymous", and the hovercard links a profile it should not.
+ * The relations a pin needs. `profileUsers` feeds `isAnonymousAuthor`; without
+ * it every author reads as not anonymous.
  */
 export const proposalLocationWith = {
   submittedBy: {
@@ -39,15 +35,8 @@ export const proposalLocationWith = {
 } as const;
 
 /**
- * Turns one proposal row into the map's pin shape, or nothing when it has no
- * coordinates — drafts and unlocated proposals never render a pin. Returns an
- * array so callers `flatMap` it.
- *
- * Shared by `listProposalLocations` (every located proposal in scope) and
- * `listReviewAssignmentLocations` (only the caller's own assignments): the two
- * reads answer different questions but must hand the map the same `Proposal`
- * shape, and the anonymity fold is the part that must not drift — miss it and
- * an anonymous author's profile gets linked from the hovercard.
+ * Projects one proposal row into the map's pin shape, or `[]` when it has no
+ * coordinates. Shared by both pin reads so the `Proposal` shape cannot drift.
  */
 export const projectProposalLocation = <
   TAuthor extends { profileUsers: AuthorProfileUsers },
@@ -56,8 +45,7 @@ export const projectProposalLocation = <
   id: string;
   processInstanceId: string;
   proposalData: unknown;
-  // Nullable on the row, and passed through untouched — the response schema at
-  // the router boundary is what narrows them.
+  // Nullable on the row; the router's output schema narrows them.
   status: string | null;
   visibility: string | null;
   profileId: string;

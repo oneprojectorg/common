@@ -19,9 +19,7 @@ export const listReviewAssignmentsRouter = router({
         /** Limits results to one proposal's assignments. */
         proposalProfileId: z.uuid().optional(),
         sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
-        /** Keyset cursor from the previous page's `next`. */
         cursor: z.string().nullish(),
-        /** Omit to take the service's page size, which the client relies on. */
         limit: z.number().int().min(1).max(100).optional(),
       }),
     )

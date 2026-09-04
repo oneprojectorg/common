@@ -38,7 +38,6 @@ import {
   resolveAssignmentProposal,
   reviewAssignmentWithConfig,
 } from './reviewHelpers';
-import { PROPOSAL_PAGE_LIMIT } from './schemas/proposal';
 import {
   type ReviewAssignmentList,
   type ReviewAssignmentSort,
@@ -63,27 +62,26 @@ const STATUS_SORT_RANK: Record<string, number> = {
 /** Any unmapped (future) status sorts after all known ones. */
 const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
+// Matches the browse grid's page size: a multiple of three for the grid, kept
+// small because each row renders the proposal document.
+const DEFAULT_PAGE_LIMIT = 24;
+
 /**
- * `assignedAt` round-trips as the Postgres text form the driver hands back —
- * `2026-09-04 10:01:17.354004+00`, or `2026-01-01 00:00:00+00` with no
- * fractional part — not ISO 8601. Matched by shape rather than `Date.parse`,
- * which accepts `'0'` and `'2026'`: those satisfy the schema and then reach
- * Postgres as a timestamp comparison it rejects, which is the 500 this guards.
+ * `assignedAt` round-trips in the driver's Postgres text form
+ * (`2026-09-04 10:01:17.354004+00`), not ISO 8601. `Date.parse` would accept
+ * `'2026'`, which Postgres then rejects with a 500.
  */
 const PG_TIMESTAMP =
   /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?[+-]\d{2}(:\d{2})?$/;
 
-/** `newest` / `oldest` keyset position. `assignedAt` is nullable. */
 const dateCursorSchema = z.object({
   assignedAt: z.string().regex(PG_TIMESTAMP).nullable(),
   id: z.uuid(),
 });
 
-/** `leastReviewed` keyset position — all four sort expressions. */
 const coverageCursorSchema = z.object({
   completedReviewCount: z.number().int().nonnegative(),
   statusRank: z.number().int().nonnegative(),
-  /** `md5()` output, so exactly 32 lowercase hex digits. */
   reviewerShuffle: z.string().regex(/^[0-9a-f]{32}$/),
   id: z.uuid(),
 });
@@ -99,9 +97,8 @@ export async function listReviewAssignments({
   proposalProfileId,
   sort = 'leastReviewed',
   cursor,
-  // Defaulted here, not on the router input, so the client sends no `limit` and
-  // the SSR and client query keys stay identical.
-  limit = PROPOSAL_PAGE_LIMIT,
+  // Defaulted here, not on the router, so SSR and client query keys match.
+  limit = DEFAULT_PAGE_LIMIT,
   user,
 }: {
   processInstanceId: string;
@@ -174,9 +171,7 @@ export async function listReviewAssignments({
         AND pra_completed.status = ${ProposalReviewAssignmentStatus.COMPLETED}
     )`;
 
-  // `::int` is load-bearing: the ranks arrive as untyped bind params, so
-  // without it Postgres types the CASE as text — which sorts the ranks
-  // lexically and hands the cursor a string where it expects a number.
+  // `::int` is required: the ranks bind untyped, and a text CASE sorts lexically.
   const statusRank = (t: typeof proposalReviewAssignments) =>
     sql<number>`(CASE ${t.status} ${sql.join(
       Object.entries(STATUS_SORT_RANK).map(
@@ -191,9 +186,7 @@ export async function listReviewAssignments({
   const reviewerShuffle = (t: typeof proposalReviewAssignments) =>
     sql<string>`md5(${reviewerProfileId} || ${t.proposalId}::text)`;
 
-  // One builder for the page and the count, so `total` can never describe a
-  // different set than the rows. Param'd on the table ref because the
-  // relational `RAW` callback hands over an aliased table.
+  // Shared by the page and the count so `total` describes the same set.
   const buildFilterConditions = (t: typeof proposalReviewAssignments): SQL =>
     and(
       eq(t.processInstanceId, processInstanceId),
@@ -228,9 +221,8 @@ export async function listReviewAssignments({
       return undefined;
     }
 
-    // `assignedAt` sorts NULLS LAST in both directions, so a cursor taken
-    // inside the trailing NULL block can only continue by id — comparing the
-    // NULL against a value would drop every remaining row.
+    // NULLS LAST on both directions: a cursor inside the trailing NULL block
+    // continues by id only.
     if (sort === 'newest') {
       const position = parseCursor(cursor, dateCursorSchema);
       if (position.assignedAt === null) {
@@ -255,9 +247,7 @@ export async function listReviewAssignments({
       )!;
     }
 
-    // 'leastReviewed': the expanded lexicographic form of the four ascending
-    // sort keys. All three expressions are deterministic for a given reviewer
-    // and phase, so a position stays valid across pages.
+    // 'leastReviewed': lexicographic comparison over the four sort keys.
     const position = parseCursor(cursor, coverageCursorSchema);
     const completed = completedReviewCount(t);
     const rank = statusRank(t);
@@ -281,7 +271,6 @@ export async function listReviewAssignments({
     )!;
   };
 
-  // The cursor narrows the page only — `total` stays the count for the filters.
   const [rows, countResult] = await Promise.all([
     db.query.proposalReviewAssignments.findMany({
       where: {
@@ -289,10 +278,8 @@ export async function listReviewAssignments({
           and(buildFilterConditions(table), buildKeysetCondition(table))!,
       },
       with: reviewAssignmentWithConfig,
-      // The `leastReviewed` cursor carries all four sort keys, and three of
-      // them are computed — so they have to come back with the row. Emitted as
-      // cheap constants for the date sorts, which don't read them, rather than
-      // made conditional (that would widen the row type to `| undefined`).
+      // The `leastReviewed` cursor needs the computed sort keys back with the
+      // row. Constants for the date sorts keep the row type narrow.
       extras: {
         completedReviewCount: (table, { sql: sqlOp }) =>
           sort === 'leastReviewed'
@@ -309,26 +296,17 @@ export async function listReviewAssignments({
             ? sqlOp<string>`${reviewerShuffle(table)}`.as('reviewer_shuffle')
             : sqlOp<string>`''`.as('reviewer_shuffle'),
       },
-      // One extra row tells us whether a next page exists.
       limit: limit + 1,
-      // The `id` tie-break gives a deterministic order when the primary keys
-      // are equal (e.g. same `assignedAt`, or same coverage before the
-      // shuffle) — without it, rows sharing a sort value are skipped or
-      // repeated at a page boundary.
+      // The `id` tie-break keeps page boundaries stable between equal keys.
       orderBy: (table, { asc, desc }) => {
-        // `assignedAt` is nullable, and Postgres puts NULLs first on DESC —
-        // which would let an undated assignment lead the "newest" list (the
-        // single-proposal resolver reads the first row as the latest one).
-        // NULLS LAST on both directions keeps an undated assignment from ever
-        // winning.
+        // Postgres puts NULLs first on DESC, which would let an undated
+        // assignment lead the "newest" list.
         if (sort === 'newest') {
           return [sql`${table.assignedAt} DESC NULLS LAST`, desc(table.id)];
         }
         if (sort === 'oldest') {
           return [sql`${table.assignedAt} ASC NULLS LAST`, asc(table.id)];
         }
-        // 'leastReviewed': fewest completed reviews, then status priority, then
-        // the stable per-reviewer shuffle.
         return [
           asc(completedReviewCount(table)),
           asc(statusRank(table)),
@@ -436,11 +414,7 @@ export async function listReviewAssignments({
   });
 }
 
-/**
- * Base64 JSON from an unknown source: reject a tampered or stale-shaped
- * payload here so the query never sees it, and the caller gets a 400 rather
- * than a SQL type error.
- */
+/** Rejects a malformed cursor with a 400 before it reaches SQL. */
 function parseCursor<TSchema extends z.ZodType>(
   cursor: string,
   schema: TSchema,

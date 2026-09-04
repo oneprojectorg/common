@@ -26,8 +26,6 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-// The fixture's proposalData type is intentionally narrow, so the pin location
-// is written straight to the row — the only field these tests care about.
 async function setLocation(
   proposalId: string,
   location: { lat: number; lng: number } | null,
@@ -71,8 +69,6 @@ describe.concurrent('listReviewAssignmentLocations', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    // The other reviewer's located proposal is the one that must not leak, and
-    // an assigned proposal without coordinates still renders no pin.
     expect(result.proposals.map((p) => p.id)).toEqual([mine.proposal.id]);
   });
 
@@ -122,8 +118,6 @@ describe.concurrent('listReviewAssignmentLocations', () => {
       phaseId: REVIEW_PHASE,
     };
 
-    // The queue's filter has to reach the pins, or the map contradicts the
-    // cards and the count beside it.
     const onlyCompleted = await caller.decision.listReviewAssignmentLocations({
       ...input,
       status: ProposalReviewAssignmentStatus.COMPLETED,

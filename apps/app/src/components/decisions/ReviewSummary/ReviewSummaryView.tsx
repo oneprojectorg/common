@@ -29,7 +29,6 @@ interface ReviewSummaryViewProps {
   instanceId: string;
   proposalId: string;
   proposalProfileId: string;
-  /** Required: the assignment reads below are phase-scoped. */
   phaseId: string;
   isPhaseInProgress?: boolean;
   reviewSettings: ReviewSettings;

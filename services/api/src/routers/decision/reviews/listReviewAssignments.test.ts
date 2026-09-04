@@ -173,10 +173,7 @@ function seedProposalCollab(proposal: { proposalData: unknown }) {
 
 type QueueCaller = Awaited<ReturnType<typeof createAuthenticatedCaller>>;
 
-/**
- * Walks every page of the queue and returns what the caller saw. Throws rather
- * than looping forever if a cursor fails to advance.
- */
+/** Walks every page; throws if a cursor fails to advance. */
 async function collectPages(
   caller: QueueCaller,
   input: Omit<
@@ -204,11 +201,7 @@ async function collectPages(
   throw new Error('cursor never reached the last page');
 }
 
-/**
- * One reviewer, four assignments in the review phase: a distinct newest, a pair
- * sharing `assignedAt`, and an undated row. Covers the tie-break and the
- * NULLS LAST block in a single fixture.
- */
+/** Four assignments: a distinct newest, a pair sharing `assignedAt`, and an undated row. */
 async function createPaginationFixture(testData: TestReviewsDataManager) {
   const context = await createReviewPhaseContext(testData);
   const newest = await testData.createReviewAssignment({
@@ -235,8 +228,6 @@ async function createPaginationFixture(testData: TestReviewsDataManager) {
     title: 'Undated',
   });
 
-  // The fixture helper only ever writes a timestamp, so the NULL case is set
-  // on the row directly.
   await db
     .update(proposalReviewAssignments)
     .set({ assignedAt: null })
@@ -279,15 +270,12 @@ describe.concurrent('listReviewAssignments pagination', () => {
 
       expect(single.next).toBeNull();
       expect(paged.pageCount).toBe(2);
-      // The paged walk must reproduce the one-shot order exactly, which is what
-      // rules out both a gap and a repeat at the boundary.
       expect(paged.ids).toEqual(
         single.assignments.map((entry) => entry.assignment.id),
       );
       expect(new Set(paged.ids).size).toBe(fixture.assignmentIds.length);
       // NULLS LAST in both directions, so the undated row never leads.
       expect(paged.ids.at(-1)).toBe(fixture.undated.assignment.id);
-      // Filter-wide on every page, not the size of the page.
       expect(paged.totals).toEqual([4, 4]);
     });
   }
@@ -320,8 +308,6 @@ describe.concurrent('listReviewAssignments pagination', () => {
       sort: 'leastReviewed' as const,
     };
 
-    // Every row is PENDING with zero completed reviews, so the shuffle and the
-    // id tie-break are the only things separating the pages.
     const single = await caller.decision.listReviewAssignments(input);
     const paged = await collectPages(caller, { ...input, limit: 2 });
 
@@ -350,7 +336,6 @@ describe.concurrent('listReviewAssignments pagination', () => {
     expect(page.assignments).toHaveLength(1);
     expect(page.total).toBe(4);
 
-    // The status filter narrows the count too — it is not the unfiltered pool.
     const completed = await caller.decision.listReviewAssignments({
       processInstanceId: fixture.instanceId,
       phaseId: REVIEW_PHASE,
@@ -406,9 +391,7 @@ describe.concurrent('listReviewAssignments pagination', () => {
     const encode = (payload: unknown) =>
       Buffer.from(JSON.stringify(payload)).toString('base64');
 
-    // Each of these passes a `z.object` keyed the right way and would reach
-    // Postgres as a uuid / timestamp / text comparison it rejects — a 500
-    // where the caller deserves a 400.
+    // Well-keyed but ill-typed: Postgres would reject these with a 500.
     const cases = [
       {
         sort: 'newest' as const,
@@ -757,8 +740,6 @@ describe.concurrent('listReviewAssignments', () => {
       feasibility.reviewer.email,
     );
 
-    // The instance sits on the community phase, so the earlier phase is the
-    // one that proves the scope follows the request rather than the state.
     const past = await reviewerCaller.decision.listReviewAssignments({
       processInstanceId: context.instance.instance.id,
       phaseId: FEASIBILITY_PHASE,
@@ -1005,8 +986,6 @@ describe.concurrent('listReviewAssignments', () => {
       feasibility.reviewer.email,
     );
 
-    // The phase the assignment lives in resolves it; the instance's current
-    // phase does not, which is what the single-proposal resolver relies on.
     const ownPhase = await reviewerCaller.decision.listReviewAssignments({
       processInstanceId: context.instance.instance.id,
       phaseId: FEASIBILITY_PHASE,
@@ -1031,9 +1010,7 @@ describe.concurrent('listReviewAssignments', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await createReviewPhaseContext(testData);
 
-    // A single batch insert stamps the same `assignedAt` on every row, so the
-    // tie-break is the only thing keeping the order stable across refetches —
-    // and a page boundary that lands inside the tie depends on it.
+    // One batch insert shares `assignedAt`, so the id tie-break sets the order.
     const assignedAt = '2026-03-01T00:00:00.000Z';
     const first = await testData.createReviewAssignment({
       context,

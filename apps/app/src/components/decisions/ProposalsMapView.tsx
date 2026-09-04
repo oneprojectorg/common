@@ -28,8 +28,6 @@ interface ProposalLocationFilter {
   phase?: 'results';
 }
 
-/** Filter for the reviewer queue's pin query — the queue's own filters, minus
- * the list-only pagination fields (the map returns every located assignment). */
 interface ReviewAssignmentLocationFilter {
   processInstanceId: string;
   phaseId: string;
@@ -260,13 +258,7 @@ export function ProposalsMapWithLocations({
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
 
-/**
- * The reviewer queue's pin source: every located proposal the caller is
- * assigned to review, which is a different question than
- * `listProposalLocations` answers — asked from the assignment side so the map
- * can never plot a proposal this reviewer wasn't assigned. Same output shape,
- * so the view below consumes it unchanged.
- */
+/** Pin source for the reviewer queue: every located proposal the caller is assigned to review. */
 export function ReviewAssignmentsMapWithLocations({
   locationFilter,
   ...props
@@ -278,8 +270,7 @@ export function ReviewAssignmentsMapWithLocations({
       locationFilter,
       {
         staleTime: 30 * 1000,
-        // Force a client-side fetch so the query registers its invalidation
-        // channel via the client link (same pattern as the list query).
+        // Client-side fetch registers the invalidation channel.
         refetchOnMount: 'always',
       },
     );

@@ -83,9 +83,7 @@ export async function ReviewSummaryLayout({
   }
 
   const proposalId = proposal.id;
-  // Every read below is phase-scoped, and an instance with neither phases nor
-  // a current state has no review to summarize — an unresolvable path, like the
-  // missing-proposal case above.
+  // Every read below is phase-scoped; no phase means no review to summarize.
   const phaseId = resolveReviewPhaseId(instance);
   if (!phaseId) {
     notFound();
