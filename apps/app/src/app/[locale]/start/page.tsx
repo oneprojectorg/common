@@ -1,6 +1,7 @@
 import { getUser } from '@/utils/getUser';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { OnboardingFlow } from '@/components/Onboarding';
 

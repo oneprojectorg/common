@@ -1,6 +1,7 @@
 import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { ProposalReviewsLayout } from '@/components/decisions/ProposalReviews/ProposalReviewsLayout';
 
