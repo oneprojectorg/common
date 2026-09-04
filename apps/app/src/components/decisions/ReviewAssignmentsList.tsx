@@ -41,9 +41,9 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ProposalViewToggle } from './ProposalViewToggle';
-import { ReviewAssignmentsMapWithLocations } from './ProposalsMapView';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
+import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
 import { StickyFilterBar } from './StickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import {

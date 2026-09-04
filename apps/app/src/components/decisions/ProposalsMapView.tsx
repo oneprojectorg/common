@@ -3,7 +3,6 @@
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { trpc } from '@op/api/client';
 import type { ProposalStatus } from '@op/api/encoders';
-import type { ProposalReviewAssignmentStatus } from '@op/common/client';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
@@ -28,12 +27,6 @@ interface ProposalLocationFilter {
   phase?: 'results';
 }
 
-interface ReviewAssignmentLocationFilter {
-  processInstanceId: string;
-  phaseId: string;
-  status?: ProposalReviewAssignmentStatus;
-}
-
 /** Renders one proposal in the desktop list column. The view owns the active
  * highlight, so it hands the card the `className` carrying that policy. */
 type RenderProposalCard = (
@@ -41,7 +34,7 @@ type RenderProposalCard = (
   opts: { className: string },
 ) => ReactNode;
 
-interface ProposalsMapViewProps {
+export interface ProposalsMapViewProps {
   /** Loaded list pages — drives the desktop list column (stays paginated). */
   proposals: Proposal[];
   /** Marker source. Every located proposal the pins should plot, which can be
@@ -254,26 +247,6 @@ export function ProposalsMapWithLocations({
       // channel via the client link (same pattern as the list query).
       refetchOnMount: 'always',
     });
-
-  return <ProposalsMapView {...props} pinProposals={pinProposals} />;
-}
-
-/** Pin source for the reviewer queue: every located proposal the caller is assigned to review. */
-export function ReviewAssignmentsMapWithLocations({
-  locationFilter,
-  ...props
-}: Omit<ProposalsMapViewProps, 'pinProposals'> & {
-  locationFilter: ReviewAssignmentLocationFilter;
-}) {
-  const [{ proposals: pinProposals }] =
-    trpc.decision.listReviewAssignmentLocations.useSuspenseQuery(
-      locationFilter,
-      {
-        staleTime: 30 * 1000,
-        // Client-side fetch registers the invalidation channel.
-        refetchOnMount: 'always',
-      },
-    );
 
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
