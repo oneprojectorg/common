@@ -4,6 +4,7 @@ import { db } from '@op/db/client';
 import {
   EntityType,
   accessRolePermissionsOnAccessZones,
+  organizations,
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
@@ -11,7 +12,7 @@ import { permission } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
-import { assertProfileAdmin } from '../assert';
+import { assertOrgAccess, assertProfileAdmin } from '../assert';
 import { decisionPermission } from '../decision/permissions';
 import { profileUserCacheKey } from './cacheKeys';
 
@@ -58,6 +59,53 @@ const publicGrantsFor = (type: string): PublicGrant[] | undefined => {
 };
 
 /**
+ * Asserts the caller may open or close public access on a profile.
+ *
+ * An organization is asked about through `assertOrgAccess`, not
+ * `assertProfileAdmin`. Two reasons, and either alone is enough:
+ *
+ * - An org's grants live on `organizationUsers`. A `profileUsers` lookup on its
+ *   profile never sees the org's own admin, so the profile-level check refuses
+ *   the very person who runs the organization.
+ * - `getProfileAccessUser` unions the public sentinel's grant into every
+ *   caller's roles. Once a profile is public it always matches a row, which
+ *   shadows the org fallback — so an org opened once could never be closed.
+ *
+ * A decision keeps the profile-level check. Its admins hold real
+ * `profileUsers` rows, and the union only adds the Public role's read, so a
+ * stranger still fails and a real admin still passes.
+ */
+const assertMayChangePublicAccess = async ({
+  user,
+  profileId,
+  type,
+}: {
+  user: { id: string };
+  profileId: string;
+  type: string;
+}): Promise<void> => {
+  if (type !== EntityType.ORG) {
+    await assertProfileAdmin({ user, profileId });
+    return;
+  }
+
+  const [organization] = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.profileId, profileId));
+
+  if (!organization) {
+    throw new NotFoundError('Organization', profileId);
+  }
+
+  await assertOrgAccess({
+    user,
+    organizationId: organization.id,
+    permissions: { profile: permission.ADMIN },
+  });
+};
+
+/**
  * Opens a profile to everyone — members, logged-in non-members, anonymous
  * sessions and no-JWT visitors alike.
  *
@@ -86,8 +134,6 @@ export async function makeProfilePublic({
   profileId: string;
   user: { id: string };
 }): Promise<void> {
-  await assertProfileAdmin({ user, profileId });
-
   const profile = await db.query.profiles.findFirst({
     where: { id: profileId },
     columns: { id: true, type: true },
@@ -96,6 +142,8 @@ export async function makeProfilePublic({
   if (!profile) {
     throw new NotFoundError('Profile', profileId);
   }
+
+  await assertMayChangePublicAccess({ user, profileId, type: profile.type });
 
   const grants = publicGrantsFor(profile.type);
 
@@ -190,7 +238,16 @@ export async function revokeProfilePublicAccess({
   profileId: string;
   user: { id: string };
 }): Promise<void> {
-  await assertProfileAdmin({ user, profileId });
+  const profile = await db.query.profiles.findFirst({
+    where: { id: profileId },
+    columns: { id: true, type: true },
+  });
+
+  if (!profile) {
+    throw new NotFoundError('Profile', profileId);
+  }
+
+  await assertMayChangePublicAccess({ user, profileId, type: profile.type });
 
   const role = await db.query.accessRoles.findFirst({
     where: { name: PUBLIC_ROLE_NAME, profileId: { isNull: true } },
