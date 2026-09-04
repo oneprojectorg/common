@@ -1,16 +1,21 @@
 import { db } from '@op/db/client';
 import type { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { assertUserByAuthId } from '../assert';
+import { CommonError, UnauthorizedError } from '../../utils';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
+import { decisionPermission } from './permissions';
 import {
   projectProposalLocation,
   proposalLocationColumns,
   proposalLocationWith,
 } from './projectProposalLocation';
-import { notSuperseded } from './proposalSupersession';
+import {
+  type ProposalLocations,
+  proposalLocationsSchema,
+} from './schemas/proposal';
 import { assertInstancePhase } from './utils/instance';
 
 /**
@@ -28,7 +33,7 @@ export const listReviewAssignmentLocations = async ({
   phaseId: string;
   status?: ProposalReviewAssignmentStatus;
   user: User;
-}) => {
+}): Promise<ProposalLocations> => {
   const [instance, dbUser] = await Promise.all([
     getInstance({ instanceId: processInstanceId, user }),
     assertUserByAuthId(user.id),
@@ -39,9 +44,21 @@ export const listReviewAssignmentLocations = async ({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  if (!instance.access.review && !instance.access.admin) {
-    throw new UnauthorizedError("You don't have access to review proposals");
+  if (!instance.profileId) {
+    throw new CommonError(
+      'Decision instance does not have an associated profile',
+    );
   }
+
+  // No org fallback by design: that pattern is being retired.
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: [
+      { decisions: decisionPermission.REVIEW },
+      { decisions: permission.ADMIN },
+    ],
+  });
 
   assertInstancePhase({ instance, phaseId });
 
@@ -52,12 +69,6 @@ export const listReviewAssignmentLocations = async ({
       reviewerProfileId,
       phaseId,
       ...(status && { status }),
-      // Match the queue: a merged-away proposal gets no pin.
-      RAW: (table) =>
-        notSuperseded({
-          proposalId: table.proposalId,
-          processInstanceId,
-        }),
     },
     with: {
       proposal: {
@@ -68,12 +79,9 @@ export const listReviewAssignmentLocations = async ({
   });
 
   // (instance, proposal, reviewer, phase) is unique, so no de-duplication.
-  const proposals = rows.flatMap((row) => {
-    const proposal = Array.isArray(row.proposal)
-      ? row.proposal[0]
-      : row.proposal;
-    return proposal ? projectProposalLocation(proposal) : [];
-  });
+  const proposals = rows.flatMap((row) =>
+    projectProposalLocation(row.proposal),
+  );
 
-  return { proposals };
+  return proposalLocationsSchema.parse({ proposals });
 };

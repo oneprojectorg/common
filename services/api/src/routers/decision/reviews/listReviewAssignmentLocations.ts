@@ -24,13 +24,11 @@ export const listReviewAssignmentLocationsRouter = router({
         Channels.reviewAssignments(input.processInstanceId),
       ]);
 
-      const result = await listReviewAssignmentLocations({
+      return await listReviewAssignmentLocations({
         processInstanceId: input.processInstanceId,
         phaseId: input.phaseId,
         status: input.status,
         user: ctx.user,
       });
-
-      return proposalLocationsSchema.parse(result);
     }),
 });

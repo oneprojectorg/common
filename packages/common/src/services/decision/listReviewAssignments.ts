@@ -18,14 +18,8 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { z } from 'zod';
 
-import {
-  UnauthorizedError,
-  ValidationError,
-  decodeCursor,
-  encodeCursor,
-} from '../../utils';
+import { UnauthorizedError, decodeCursor, encodeCursor } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
@@ -66,25 +60,16 @@ const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 // small because each row renders the proposal document.
 const DEFAULT_PAGE_LIMIT = 24;
 
-/**
- * `assignedAt` round-trips in the driver's Postgres text form
- * (`2026-09-04 10:01:17.354004+00`), not ISO 8601. `Date.parse` would accept
- * `'2026'`, which Postgres then rejects with a 500.
- */
-const PG_TIMESTAMP =
-  /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?[+-]\d{2}(:\d{2})?$/;
+/** Keyset position for the date sorts; `assignedAt` is the driver's text form. */
+type DateCursor = { assignedAt: string | null; id: string };
 
-const dateCursorSchema = z.object({
-  assignedAt: z.string().regex(PG_TIMESTAMP).nullable(),
-  id: z.uuid(),
-});
-
-const coverageCursorSchema = z.object({
-  completedReviewCount: z.number().int().nonnegative(),
-  statusRank: z.number().int().nonnegative(),
-  reviewerShuffle: z.string().regex(/^[0-9a-f]{32}$/),
-  id: z.uuid(),
-});
+/** Keyset position for `leastReviewed`: the computed sort keys plus the id tie-break. */
+type CoverageCursor = {
+  completedReviewCount: number;
+  statusRank: number;
+  reviewerShuffle: string;
+  id: string;
+};
 
 /**
  * Returns one page of the reviewer's authorized review assignments in `phaseId`.
@@ -224,7 +209,7 @@ export async function listReviewAssignments({
     // NULLS LAST on both directions: a cursor inside the trailing NULL block
     // continues by id only.
     if (sort === 'newest') {
-      const position = parseCursor(cursor, dateCursorSchema);
+      const position = decodeCursor<DateCursor>(cursor);
       if (position.assignedAt === null) {
         return and(isNull(t.assignedAt), lt(t.id, position.id))!;
       }
@@ -236,7 +221,7 @@ export async function listReviewAssignments({
     }
 
     if (sort === 'oldest') {
-      const position = parseCursor(cursor, dateCursorSchema);
+      const position = decodeCursor<DateCursor>(cursor);
       if (position.assignedAt === null) {
         return and(isNull(t.assignedAt), gt(t.id, position.id))!;
       }
@@ -248,7 +233,7 @@ export async function listReviewAssignments({
     }
 
     // 'leastReviewed': lexicographic comparison over the four sort keys.
-    const position = parseCursor(cursor, coverageCursorSchema);
+    const position = decodeCursor<CoverageCursor>(cursor);
     const completed = completedReviewCount(t);
     const rank = statusRank(t);
     const shuffle = reviewerShuffle(t);
@@ -395,13 +380,13 @@ export async function listReviewAssignments({
   if (hasMore && lastRow) {
     next =
       sort === 'leastReviewed'
-        ? encodeCursor<z.infer<typeof coverageCursorSchema>>({
+        ? encodeCursor<CoverageCursor>({
             completedReviewCount: lastRow.completedReviewCount,
             statusRank: lastRow.statusRank,
             reviewerShuffle: lastRow.reviewerShuffle,
             id: lastRow.id,
           })
-        : encodeCursor<z.infer<typeof dateCursorSchema>>({
+        : encodeCursor<DateCursor>({
             assignedAt: lastRow.assignedAt,
             id: lastRow.id,
           });
@@ -412,23 +397,4 @@ export async function listReviewAssignments({
     next,
     total,
   });
-}
-
-/** Rejects a malformed cursor with a 400 before it reaches SQL. */
-function parseCursor<TSchema extends z.ZodType>(
-  cursor: string,
-  schema: TSchema,
-): z.output<TSchema> {
-  let decoded: unknown;
-  try {
-    decoded = decodeCursor<unknown>(cursor);
-  } catch {
-    throw new ValidationError('Invalid cursor');
-  }
-
-  const result = schema.safeParse(decoded);
-  if (!result.success) {
-    throw new ValidationError('Invalid cursor');
-  }
-  return result.data;
 }
