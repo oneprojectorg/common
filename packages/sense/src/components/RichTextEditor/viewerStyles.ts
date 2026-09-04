@@ -15,14 +15,8 @@
  * `Header*` design-system components.
  */
 export const viewerProseStyles = [
-  // `leading-normal` (1.5) in place of prose's 1.75. Wins bare: same specificity
-  // as prose's root rule, later in the utilities layer. Paragraphs, list items
-  // and blockquotes inherit it; headings, `pre` and `table` keep their own.
   'prose text-foreground leading-normal',
   '[&_a:hover]:underline [&_a]:text-primary [&_a]:no-underline',
-  // Single-paragraph list items only: prose already spaces the `li` itself, so
-  // keeping the `p` margins there doubles the gap. A multi-paragraph item still
-  // needs them.
   '[&_li>p:only-child]:my-0',
   '[&_blockquote]:font-normal',
   '[&_:is(h1,h2,h3)]:my-4',
