@@ -1721,5 +1721,18 @@
   "Check all that apply": "Marque todas as opções aplicáveis",
   "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções",
   "Comments could not be loaded": "Não foi possível carregar os comentários",
-  "(opens in a new tab)": "(abre num novo separador)"
+  "(opens in a new tab)": "(abre num novo separador)",
+  "Phone number": "Número de telefone",
+  "We text you a code. Standard message and data rates may apply.": "Enviamos um código por SMS. Podem aplicar-se tarifas de mensagens e dados.",
+  "Use a phone number instead": "Usar um número de telefone",
+  "Use an email address instead": "Usar um endereço de e-mail",
+  "We could not send a code.": "Não conseguimos enviar o código.",
+  "That code expired. Request a new one.": "Esse código expirou. Peça um novo.",
+  "That code was wrong. Try again.": "Esse código está incorreto. Tente novamente.",
+  "Send the code again": "Enviar o código novamente",
+  "Use a different number": "Usar outro número",
+  "Too many attempts. Wait a minute and try again.": "Demasiadas tentativas. Aguarde um minuto e tente novamente.",
+  "Signing in by text is unavailable right now.": "O início de sessão por SMS não está disponível de momento.",
+  "Code sent!": "Código enviado!",
+  "A code was sent to {phone}. Type the code below to sign in.": "Foi enviado um código para {phone}. Escreva o código abaixo para iniciar sessão."
 }

@@ -1721,5 +1721,18 @@
   "Check all that apply": "اختر كل ما ينطبق",
   "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر",
   "Comments could not be loaded": "تعذّر تحميل التعليقات",
-  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)"
+  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)",
+  "Phone number": "رقم الهاتف",
+  "We text you a code. Standard message and data rates may apply.": "نرسل إليك رمزًا برسالة نصية. قد تُطبَّق رسوم الرسائل والبيانات المعتادة.",
+  "Use a phone number instead": "استخدم رقم هاتف بدلاً من ذلك",
+  "Use an email address instead": "استخدم بريدًا إلكترونيًا بدلاً من ذلك",
+  "We could not send a code.": "تعذَّر إرسال الرمز.",
+  "That code expired. Request a new one.": "انتهت صلاحية الرمز. اطلب رمزًا جديدًا.",
+  "That code was wrong. Try again.": "الرمز غير صحيح. حاول مرة أخرى.",
+  "Send the code again": "أعد إرسال الرمز",
+  "Use a different number": "استخدم رقمًا آخر",
+  "Too many attempts. Wait a minute and try again.": "محاولات كثيرة. انتظر دقيقة ثم حاول مرة أخرى.",
+  "Signing in by text is unavailable right now.": "تسجيل الدخول عبر الرسائل النصية غير متاح حاليًا.",
+  "Code sent!": "تم إرسال الرمز!",
+  "A code was sent to {phone}. Type the code below to sign in.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لتسجيل الدخول."
 }

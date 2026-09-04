@@ -316,3 +316,11 @@ export function getSafeRedirectPath(path: string | null): string | null {
 export function isSafeRedirectPath(path: string | null): path is string {
   return getSafeRedirectPath(path) !== null;
 }
+
+// The login panel validates a phone number before enabling its submit button.
+// GoTrue answers the browser directly, so this is the only check the number
+// passes before Twilio Verify sees it.
+export {
+  normalizePhoneNumber,
+  phoneNumberSchema,
+} from './services/notification/schemas';

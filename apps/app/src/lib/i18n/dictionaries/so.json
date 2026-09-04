@@ -1721,5 +1721,18 @@
   "Check all that apply": "Dooro dhammaan waxa khuseeya",
   "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan",
   "Comments could not be loaded": "Faallooyinka lama soo bixin karin",
-  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)"
+  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)",
+  "Phone number": "Lambarka taleefanka",
+  "We text you a code. Standard message and data rates may apply.": "Waxaan kuu soo dirnaa kood fariin ahaan. Khidmadaha caadiga ah ee fariinta iyo xogta ayaa laga yaabaa in la dalaco.",
+  "Use a phone number instead": "Halkii isticmaal lambar taleefan",
+  "Use an email address instead": "Halkii isticmaal cinwaan iimayl",
+  "We could not send a code.": "Ma aanan dirin koodhka.",
+  "That code expired. Request a new one.": "Koodhkaas wuu dhacay. Mid cusub codso.",
+  "That code was wrong. Try again.": "Koodhkaas waa khalad. Mar kale isku day.",
+  "Send the code again": "Mar kale dir koodhka",
+  "Use a different number": "Isticmaal lambar kale",
+  "Too many attempts. Wait a minute and try again.": "Isku dayo badan. Hal daqiiqo sug oo mar kale isku day.",
+  "Signing in by text is unavailable right now.": "Gelitaanka fariinta ayaa hadda la heli karin.",
+  "Code sent!": "Koodhka waa la diray!",
+  "A code was sent to {phone}. Type the code below to sign in.": "Kood ayaa loo diray {phone}. Hoosta ku qor koodhka si aad u gasho."
 }

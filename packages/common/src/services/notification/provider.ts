@@ -113,6 +113,10 @@ export const getSmsProvider = (): SmsProvider | null => {
     );
   }
 
+  // Both variables stay meaningful even though only one reaches the provider.
+  // GoTrue reads TWILIO_VERIFY_SERVICE_SID from `[auth.sms.twilio_verify]` and
+  // performs verification itself, so a deployment that sets only that one is
+  // correctly configured — it just has no sending capability here.
   if (!messagingServiceSid && !verifyServiceSid) {
     throw new CommonError(
       'TWILIO_ACCOUNT_SID is set but neither TWILIO_MESSAGING_SERVICE_SID nor TWILIO_VERIFY_SERVICE_SID is. Set at least one, or unset TWILIO_ACCOUNT_SID to turn SMS off.',

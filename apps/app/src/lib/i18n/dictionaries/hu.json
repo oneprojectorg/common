@@ -1721,5 +1721,18 @@
   "Check all that apply": "Jelöld be az összes megfelelőt",
   "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak",
   "Comments could not be loaded": "A hozzászólásokat nem sikerült betölteni",
-  "(opens in a new tab)": "(új lapon nyílik meg)"
+  "(opens in a new tab)": "(új lapon nyílik meg)",
+  "Phone number": "Telefonszám",
+  "We text you a code. Standard message and data rates may apply.": "Kódot küldünk SMS-ben. A szokásos üzenet- és adatdíjak felmerülhetnek.",
+  "Use a phone number instead": "Inkább telefonszámmal",
+  "Use an email address instead": "Inkább e-mail-címmel",
+  "We could not send a code.": "Nem tudtuk elküldeni a kódot.",
+  "That code expired. Request a new one.": "A kód lejárt. Kérjen újat.",
+  "That code was wrong. Try again.": "A kód hibás. Próbálja újra.",
+  "Send the code again": "Kód újraküldése",
+  "Use a different number": "Másik szám használata",
+  "Too many attempts. Wait a minute and try again.": "Túl sok próbálkozás. Várjon egy percet, és próbálja újra.",
+  "Signing in by text is unavailable right now.": "Az SMS-es bejelentkezés jelenleg nem érhető el.",
+  "Code sent!": "Kód elküldve!",
+  "A code was sent to {phone}. Type the code below to sign in.": "Kódot küldtünk a következő számra: {phone}. Írja be lent a bejelentkezéshez."
 }

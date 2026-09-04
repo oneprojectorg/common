@@ -55,3 +55,43 @@ export const parsePhoneNumber = (value: string): PhoneNumber => {
   }
   return parsed.data as PhoneNumber;
 };
+
+/**
+ * Turns a number as a person types it into E.164.
+ *
+ * People type `(415) 555-0132`, not `+14155550132`. This strips the formatting
+ * and adds a country code when the input leaves no doubt, so a caller can
+ * validate what a person meant rather than what they typed.
+ *
+ * The `1` default is a United States assumption. It applies only to a bare
+ * ten-digit number, which is unambiguous in the North American plan. Anything
+ * else must carry its own `+` and country code, so no international number is
+ * silently rewritten into the wrong country.
+ *
+ * Returns the input unchanged when it fits no rule. {@link phoneNumberSchema}
+ * then rejects it and names the field.
+ *
+ * @param value - A number as typed.
+ * @returns The number in E.164, or the input unchanged.
+ *
+ * @example
+ * ```ts
+ * normalizePhoneNumber('(415) 555-0132'); // '+14155550132'
+ * normalizePhoneNumber('+44 20 7946 0958'); // '+442079460958'
+ * ```
+ */
+export const normalizePhoneNumber = (value: string): string => {
+  const trimmed = value.trim();
+  const digits = trimmed.replace(/\D/g, '');
+
+  if (trimmed.startsWith('+')) {
+    return `+${digits}`;
+  }
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  return trimmed;
+};
