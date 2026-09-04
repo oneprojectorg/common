@@ -15,6 +15,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
+import { z } from 'zod';
 
 import {
   CommonError,
@@ -60,11 +61,36 @@ const STATUS_SORT_RANK: Record<string, number> = {
 const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
 /**
- * Offset pagination behind an opaque cursor. The queue is bounded to one
- * reviewer's assignments, and the `leastReviewed` keys move under the reader
- * whenever anyone completes a review, so keyset would not stop skips either.
+ * Keyset cursor: the sort keys of the last row on the page. Each key is the
+ * same SQL expression the ORDER BY uses, so the page boundary is an exact row
+ * comparison. The `sort` tag rejects a cursor minted under another sort.
  */
-type OffsetCursor = { offset: number };
+const queueCursorSchema = z.discriminatedUnion('sort', [
+  z.object({
+    sort: z.enum(['newest', 'oldest']),
+    assignedAt: z.string().nullable(),
+    id: z.uuid(),
+  }),
+  z.object({
+    sort: z.literal('leastReviewed'),
+    completedCount: z.number().int(),
+    statusRank: z.number().int(),
+    shuffle: z.string(),
+    id: z.uuid(),
+  }),
+]);
+type QueueCursor = z.infer<typeof queueCursorSchema>;
+
+const decodeQueueCursor = (
+  cursor: string,
+  sort: ReviewAssignmentSort,
+): QueueCursor => {
+  const parsed = queueCursorSchema.safeParse(decodeCursor<unknown>(cursor));
+  if (!parsed.success || parsed.data.sort !== sort) {
+    throw new CommonError('Invalid cursor');
+  }
+  return parsed.data;
+};
 
 /**
  * Returns one page of the reviewer's authorized review assignments in `phaseId`.
@@ -177,6 +203,37 @@ export async function listReviewAssignments({
   const reviewerShuffle = (t: typeof proposalReviewAssignments) =>
     sql<string>`md5(${reviewerProfileId} || ${t.proposalId}::text)`;
 
+  // NULLS LAST in both directions: Postgres puts NULLs first on DESC, which
+  // would let an undated assignment lead the "newest" list. Written as a
+  // COALESCE so the cursor can compare against the very same expression.
+  const assignedAtKey = (t: typeof proposalReviewAssignments) =>
+    sort === 'oldest'
+      ? sql`COALESCE(${t.assignedAt}, 'infinity'::timestamptz)`
+      : sql`COALESCE(${t.assignedAt}, '-infinity'::timestamptz)`;
+
+  const decodedCursor = cursor ? decodeQueueCursor(cursor, sort) : undefined;
+
+  // Row-value comparison against the ORDER BY keys, direction included.
+  const cursorCondition = (
+    t: typeof proposalReviewAssignments,
+  ): SQL | undefined => {
+    if (!decodedCursor) {
+      return undefined;
+    }
+    if (decodedCursor.sort === 'leastReviewed') {
+      return sql`(${completedReviewCount(t)}, ${statusRank(t)}, ${reviewerShuffle(t)}, ${t.id})
+        > (${decodedCursor.completedCount}::int, ${decodedCursor.statusRank}::int, ${decodedCursor.shuffle}::text, ${decodedCursor.id}::uuid)`;
+    }
+    const cursorAssignedAt =
+      decodedCursor.assignedAt === null
+        ? sort === 'oldest'
+          ? sql`'infinity'::timestamptz`
+          : sql`'-infinity'::timestamptz`
+        : sql`${decodedCursor.assignedAt}::timestamptz`;
+    const after = sort === 'oldest' ? sql`>` : sql`<`;
+    return sql`(${assignedAtKey(t)}, ${t.id}) ${after} (${cursorAssignedAt}, ${decodedCursor.id}::uuid)`;
+  };
+
   // Shared by the page and the count so `total` describes the same set.
   const buildFilterConditions = (t: typeof proposalReviewAssignments): SQL =>
     and(
@@ -205,28 +262,29 @@ export async function listReviewAssignments({
       notSuperseded({ proposalId: t.proposalId, processInstanceId }),
     )!;
 
-  const offset = cursor ? decodeCursor<OffsetCursor>(cursor).offset : 0;
-  // decodeCursor only checks the encoding; a negative or non-integer offset
-  // would surface as a Postgres error instead of a bad-input one.
-  if (!Number.isSafeInteger(offset) || offset < 0) {
-    throw new CommonError('Invalid cursor');
-  }
-
   const [rows, countResult] = await Promise.all([
     db.query.proposalReviewAssignments.findMany({
-      where: { RAW: buildFilterConditions },
+      // The cursor lives on the page query only, so `total` stays the full count.
+      where: { RAW: (t) => and(buildFilterConditions(t), cursorCondition(t))! },
       with: reviewAssignmentWithConfig,
-      offset,
+      // The next cursor needs the last row's sort keys, read back from the
+      // same expressions the ORDER BY uses.
+      extras: {
+        completedCount: (table, { sql: sqlOp }) =>
+          sqlOp<number>`${completedReviewCount(table)}`.as('completed_count'),
+        statusRank: (table, { sql: sqlOp }) =>
+          sqlOp<number>`${statusRank(table)}`.as('status_rank'),
+        shuffle: (table, { sql: sqlOp }) =>
+          sqlOp<string>`${reviewerShuffle(table)}`.as('shuffle'),
+      },
       limit: limit + 1,
       // The `id` tie-break keeps page boundaries stable between equal keys.
       orderBy: (table, { asc, desc }) => {
-        // Postgres puts NULLs first on DESC, which would let an undated
-        // assignment lead the "newest" list.
         if (sort === 'newest') {
-          return [sql`${table.assignedAt} DESC NULLS LAST`, desc(table.id)];
+          return [desc(assignedAtKey(table)), desc(table.id)];
         }
         if (sort === 'oldest') {
-          return [sql`${table.assignedAt} ASC NULLS LAST`, asc(table.id)];
+          return [asc(assignedAtKey(table)), asc(table.id)];
         }
         return [
           asc(completedReviewCount(table)),
@@ -311,9 +369,21 @@ export async function listReviewAssignments({
     };
   });
 
-  const next = hasMore
-    ? encodeCursor<OffsetCursor>({ offset: offset + limit })
-    : null;
+  const last = assignments.at(-1);
+  const next =
+    hasMore && last
+      ? encodeCursor<QueueCursor>(
+          sort === 'leastReviewed'
+            ? {
+                sort,
+                completedCount: last.completedCount,
+                statusRank: last.statusRank,
+                shuffle: last.shuffle,
+                id: last.id,
+              }
+            : { sort, assignedAt: last.assignedAt, id: last.id },
+        )
+      : null;
 
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,

@@ -250,6 +250,57 @@ async function createPaginationFixture(testData: TestReviewsDataManager) {
   };
 }
 
+/**
+ * Three proposals assigned to one reviewer, all pending for them, with zero,
+ * one and two completed reviews by other reviewers.
+ */
+async function createCoverageFixture(testData: TestReviewsDataManager) {
+  const zero = await testData.createReviewAssignment({
+    context: await createReviewPhaseContext(testData),
+    title: 'Zero completed reviews',
+  });
+  const context = zero.context;
+  const reviewer = zero.reviewer;
+  const one = await testData.createReviewAssignment({
+    context,
+    reviewer,
+    title: 'One completed review',
+  });
+  const two = await testData.createReviewAssignment({
+    context,
+    reviewer,
+    title: 'Two completed reviews',
+  });
+
+  for (const created of [zero, one, two]) {
+    seedProposalCollab(created.proposal);
+  }
+
+  const otherA = await testData.createReviewer(context);
+  const otherB = await testData.createReviewer(context);
+  const instanceId = context.instance.instance.id;
+  await createReviewAssignmentRow({
+    processInstanceId: instanceId,
+    proposalId: one.proposal.id,
+    reviewerProfileId: otherA.profileId,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
+  await createReviewAssignmentRow({
+    processInstanceId: instanceId,
+    proposalId: two.proposal.id,
+    reviewerProfileId: otherA.profileId,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
+  await createReviewAssignmentRow({
+    processInstanceId: instanceId,
+    proposalId: two.proposal.id,
+    reviewerProfileId: otherB.profileId,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
+
+  return { context, reviewer, instanceId, zero, one, two };
+}
+
 describe.concurrent('listReviewAssignments pagination', () => {
   for (const sort of ['newest', 'oldest'] as const) {
     it(`pages the ${sort} sort without duplicating, skipping or reordering a row`, async ({
@@ -316,6 +367,76 @@ describe.concurrent('listReviewAssignments pagination', () => {
     );
     expect(new Set(paged.ids).size).toBe(4);
     expect(paged.totals).toEqual([4, 4]);
+  });
+
+  it('pages the leastReviewed sort across rows with different coverage', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const fixture = await createCoverageFixture(testData);
+    const caller = await createAuthenticatedCaller(fixture.reviewer.email);
+
+    const paged = await collectPages(caller, {
+      processInstanceId: fixture.instanceId,
+      phaseId: REVIEW_PHASE,
+      sort: 'leastReviewed',
+      limit: 1,
+    });
+
+    expect(paged.pageCount).toBe(3);
+    expect(paged.ids).toEqual([
+      fixture.zero.assignment.id,
+      fixture.one.assignment.id,
+      fixture.two.assignment.id,
+    ]);
+  });
+
+  it('rejects a cursor it did not mint for that sort', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const fixture = await createPaginationFixture(testData);
+    const caller = await createAuthenticatedCaller(fixture.reviewer.email);
+    const input = {
+      processInstanceId: fixture.instanceId,
+      phaseId: REVIEW_PHASE,
+      limit: 1,
+    };
+
+    const invalid = {
+      cause: { name: 'CommonError', message: 'Invalid cursor' },
+    };
+
+    await expect(
+      caller.decision.listReviewAssignments({
+        ...input,
+        cursor: 'not-a-cursor',
+      }),
+    ).rejects.toMatchObject(invalid);
+
+    // Well-formed, but not a queue cursor.
+    await expect(
+      caller.decision.listReviewAssignments({
+        ...input,
+        cursor: Buffer.from(JSON.stringify({ offset: -1 })).toString('base64'),
+      }),
+    ).rejects.toMatchObject(invalid);
+
+    // Minted under one sort, replayed under another.
+    const newest = await caller.decision.listReviewAssignments({
+      ...input,
+      sort: 'newest',
+    });
+    expect(newest.next).not.toBeNull();
+    await expect(
+      caller.decision.listReviewAssignments({
+        ...input,
+        sort: 'oldest',
+        cursor: newest.next,
+      }),
+    ).rejects.toMatchObject(invalid);
   });
 
   it('counts every match in total while a page returns only its slice', async ({
@@ -529,54 +650,8 @@ describe.concurrent('listReviewAssignments', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-
-    // Three proposals assigned to the same reviewer, all pending for them.
-    const zero = await testData.createReviewAssignment({
-      context: await createReviewPhaseContext(testData),
-      title: 'Zero completed reviews',
-    });
-    const context = zero.context;
-    const reviewer = zero.reviewer;
-    const one = await testData.createReviewAssignment({
-      context,
-      reviewer,
-      title: 'One completed review',
-    });
-    const two = await testData.createReviewAssignment({
-      context,
-      reviewer,
-      title: 'Two completed reviews',
-    });
-
-    for (const created of [zero, one, two]) {
-      const { collaborationDocId } = created.proposal.proposalData as {
-        collaborationDocId: string;
-      };
-      seedMockCollab(collaborationDocId);
-    }
-
-    // Other reviewers complete some proposals so their coverage differs.
-    const otherA = await testData.createReviewer(context);
-    const otherB = await testData.createReviewer(context);
-    const instanceId = context.instance.instance.id;
-    await createReviewAssignmentRow({
-      processInstanceId: instanceId,
-      proposalId: one.proposal.id,
-      reviewerProfileId: otherA.profileId,
-      status: ProposalReviewAssignmentStatus.COMPLETED,
-    });
-    await createReviewAssignmentRow({
-      processInstanceId: instanceId,
-      proposalId: two.proposal.id,
-      reviewerProfileId: otherA.profileId,
-      status: ProposalReviewAssignmentStatus.COMPLETED,
-    });
-    await createReviewAssignmentRow({
-      processInstanceId: instanceId,
-      proposalId: two.proposal.id,
-      reviewerProfileId: otherB.profileId,
-      status: ProposalReviewAssignmentStatus.COMPLETED,
-    });
+    const { reviewer, instanceId, zero, one, two } =
+      await createCoverageFixture(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
     const result = await reviewerCaller.decision.listReviewAssignments({
