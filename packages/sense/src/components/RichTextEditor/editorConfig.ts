@@ -1,5 +1,4 @@
-import { headingClasses } from '@op/styles/constants';
-import { Extension, mergeAttributes } from '@tiptap/core';
+import { Extension } from '@tiptap/core';
 import {
   Details,
   DetailsContent,
@@ -12,29 +11,6 @@ import TextAlign from '@tiptap/extension-text-align';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import StarterKit from '@tiptap/starter-kit';
-
-/**
- * TipTap heading extension that bakes the design-system `headingClasses` onto
- * each rendered `<h1>`–`<h4>` tag, keeping editor output visually identical to
- * the `Header1`–`Header4` components. Any level without a mapped class
- * renders without a baked class.
- */
-export const StyledHeading = Heading.extend({
-  renderHTML({ node, HTMLAttributes }) {
-    const level = node.attrs.level as 1 | 2 | 3 | 4;
-    const className =
-      headingClasses[`h${level}` as keyof typeof headingClasses];
-    return [
-      `h${level}`,
-      mergeAttributes(
-        this.options.HTMLAttributes,
-        HTMLAttributes,
-        className ? { class: className } : {},
-      ),
-      0,
-    ];
-  },
-});
 
 /**
  * Adds an `is-focused` class to the `details` node that currently contains the
@@ -91,7 +67,7 @@ const baseExtensions = [
     inline: true,
     allowBase64: true,
   }),
-  StyledHeading.configure({
+  Heading.configure({
     levels: [1, 2, 3, 4],
   }),
   // Vanilla Details extension — its built-in node view provides the toggle
