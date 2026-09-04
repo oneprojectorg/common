@@ -7,7 +7,7 @@ import {
   processInstances,
   profiles,
 } from '@op/db/schema';
-import { OPNodemailer, VoteSubmittedEmail } from '@op/emails';
+import { OPBatchSend, VoteSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
@@ -89,14 +89,15 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // Step 2: Get the voter's sign-in address
-    const voter = await step.run('get-voter-recipients', async () =>
-      listProfileRecipients({ profileId: voteData.voterProfileId }),
+    // Step 2: Get the voter's sign-in address — or, for a vote cast as an
+    // organization, the addresses of its admins.
+    const recipients = selectEmailRecipients(
+      await step.run('get-voter-recipients', async () =>
+        listProfileRecipients({ profileId: voteData.voterProfileId }),
+      ),
     );
 
-    const [voterEmail] = selectEmailRecipients(voter);
-
-    if (!voterEmail) {
+    if (recipients.length === 0) {
       logger.info('No email found for voter profile', {
         voterProfileId: voteData.voterProfileId,
       });
@@ -114,16 +115,22 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     // Step 3: Send notification email
     await step.run('send-email', async () => {
       try {
-        await OPNodemailer({
-          to: voterEmail,
-          subject: VoteSubmittedEmail.subject(voteData.processProfileName),
-          component: () =>
-            VoteSubmittedEmail({
-              processTitle: voteData.processProfileName,
-              decisionUrl,
-              nextSteps,
-            }),
-        });
+        const { errors } = await OPBatchSend(
+          recipients.map((to) => ({
+            to,
+            subject: VoteSubmittedEmail.subject(voteData.processProfileName),
+            component: () =>
+              VoteSubmittedEmail({
+                processTitle: voteData.processProfileName,
+                decisionUrl,
+                nextSteps,
+              }),
+          })),
+        );
+
+        if (errors.length > 0) {
+          throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+        }
       } catch (error) {
         logger.error('Failed to send vote submitted notification', {
           error,

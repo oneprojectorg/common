@@ -1,9 +1,15 @@
 import { listProfileRecipients } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProcessStatus, authUsers, profileUsers } from '@op/db/schema';
+import {
+  ProcessStatus,
+  authUsers,
+  profileUsers,
+  profiles,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import { schemaWithoutPipeline } from '../../test/helpers/pipelineSchemas';
 
 /**
@@ -146,5 +152,50 @@ describe.concurrent('listProfileRecipients', () => {
     ).resolves.toEqual([
       { authUserId: member.authUserId, email: member.email },
     ]);
+  });
+
+  it('addresses an organization profile through its admins, not its members or contact address', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { organization, adminUsers, memberUsers } =
+      await testData.createOrganization({ users: { admin: 2, member: 1 } });
+    const orgProfileId = organization.profileId;
+
+    if (!orgProfileId) {
+      throw new Error('Test organization has no profile');
+    }
+
+    // The org's public contact address must never be a delivery address.
+    await db
+      .update(profiles)
+      .set({ email: `contact-${organization.id}@example.com` })
+      .where(eq(profiles.id, orgProfileId));
+    // A member who accepted a profile invite has a profileUsers row on the
+    // org profile; they are not an admin, so they are not in the audience.
+    for (const member of memberUsers) {
+      await writeStaleSnapshot({
+        profileId: orgProfileId,
+        authUserId: member.authUserId,
+        email: member.email,
+      });
+    }
+
+    const addresses = (
+      await listProfileRecipients({ profileId: orgProfileId })
+    ).map(({ email }) => email);
+
+    expect(addresses.sort()).toEqual(
+      adminUsers.map(({ email }) => email).sort(),
+    );
+  });
+
+  it('returns nothing for an unknown profile', async () => {
+    await expect(
+      listProfileRecipients({
+        profileId: '11111111-1111-4111-8111-111111111111',
+      }),
+    ).resolves.toEqual([]);
   });
 });

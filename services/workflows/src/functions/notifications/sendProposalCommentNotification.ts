@@ -84,9 +84,10 @@ export const sendProposalCommentNotification = inngest.createFunction(
       ),
     ]);
 
-    const [recipientEmail] = selectEmailRecipients(authorRecipients);
+    // One address for a person's proposal; every admin for an org's.
+    const recipients = selectEmailRecipients(authorRecipients);
 
-    if (!proposalAuthor || !recipientEmail) {
+    if (!proposalAuthor || recipients.length === 0) {
       return;
     }
 
@@ -125,9 +126,9 @@ export const sendProposalCommentNotification = inngest.createFunction(
       proposal.processInstance?.name ?? 'Decision Making Process';
 
     const result = await step.run('send-email', async () => {
-      const { errors } = await OPBatchSend([
-        {
-          to: recipientEmail,
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
           from: `${commenter.name} via Common`,
           subject: CommentNotificationEmail.subject(commenter.name, 'proposal'),
           component: () =>
@@ -141,14 +142,14 @@ export const sendProposalCommentNotification = inngest.createFunction(
               contextName,
               postedIn,
             }),
-        },
-      ]);
+        })),
+      );
 
       if (errors.length > 0) {
         throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
       }
 
-      return { sent: 1 };
+      return { sent: recipients.length };
     });
 
     return {

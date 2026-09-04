@@ -101,11 +101,12 @@ export const sendContentFlaggedNotification = inngest.createFunction(
 
     await step.run('send-flagged-email', async () => {
       const recipient = await resolveRecipient(itemType, itemId);
-      const [recipientEmail] = recipient
+      // One address for a person's content; every admin for an org's.
+      const recipients = recipient
         ? selectEmailRecipients(recipient.candidates)
         : [];
 
-      if (!recipient || !recipientEmail) {
+      if (!recipient || recipients.length === 0) {
         logger.info('No recipient email for flagged content', {
           itemType,
           itemId,
@@ -113,17 +114,23 @@ export const sendContentFlaggedNotification = inngest.createFunction(
         return;
       }
 
-      const { OPNodemailer, ContentFlaggedEmail } = await import('@op/emails');
+      const { OPBatchSend, ContentFlaggedEmail } = await import('@op/emails');
 
-      await OPNodemailer({
-        to: recipientEmail,
-        subject: `Your ${recipient.contentType} has been flagged`,
-        component: () =>
-          ContentFlaggedEmail({
-            recipientName: recipient.name ?? undefined,
-            contentType: recipient.contentType,
-          }),
-      });
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
+          subject: `Your ${recipient.contentType} has been flagged`,
+          component: () =>
+            ContentFlaggedEmail({
+              recipientName: recipient.name ?? undefined,
+              contentType: recipient.contentType,
+            }),
+        })),
+      );
+
+      if (errors.length > 0) {
+        throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+      }
     });
 
     return { notified: true };

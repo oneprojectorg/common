@@ -1,10 +1,15 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import {
+  EntityType,
+  accessRoles,
   authUsers as authUsersTable,
+  organizationUserToAccessRoles,
+  organizationUsers,
+  organizations,
   profileUsers,
   users,
 } from '@op/db/schema';
-import { alias, union } from 'drizzle-orm/pg-core';
+import { alias } from 'drizzle-orm/pg-core';
 
 /**
  * `public.users` and `auth.users` are both named `users`, so a query that
@@ -25,43 +30,103 @@ export type EmailRecipient = {
  * directly.** Every other `email` column in the schema is either a snapshot
  * with no working sync (`profile_users.email`, `public.users.email`) or a
  * public contact field the person typed and we never verified
- * (`profiles.email`, the org contact address). Addresses come from the
- * resolvers below, and a recipient list is keyed on `authUserId` so the
- * dedupe and any exclusion are identity comparisons rather than string
+ * (`profiles.email`, the org contact address). Addresses come from
+ * `listProfileRecipients`, and a recipient list is keyed on `authUserId` so
+ * the dedupe and any exclusion are identity comparisons rather than string
  * comparisons across two different columns.
  *
- * Each resolver is one primary-key join onto `auth.users` over a member list
- * of tens to hundreds of rows, so it costs nothing measurable per
- * notification. If a sender cannot use one of these cleanly, write the same
- * join inline there rather than reading a snapshot column.
+ * The three builders below are the only joins onto `auth.users`. They are
+ * unexecuted so a caller can `union()` them or add its own joins; each is one
+ * primary-key join over a member list of tens to hundreds of rows.
  */
 
+/** The account an individual profile belongs to, via `users.profile_id`. */
+export const profileOwnerRecipients = (profileId: string) =>
+  db
+    .select({ authUserId: users.authUserId, email: authUsers.email })
+    .from(users)
+    .innerJoin(authUsers, eq(authUsers.id, users.authUserId))
+    .where(eq(users.profileId, profileId));
+
 /**
- * Everyone reachable through a profile: the person an individual profile
- * belongs to, plus every member row on a profile that has a members panel
- * (organization, process, proposal). Both paths, unioned, because a profile
- * id on its own does not say which shape it is — a vote's submitter and a
- * proposal's collaborators arrive at this helper the same way.
+ * Every member on a profile with a members panel, before any filter. The
+ * caller adds `.where()` (and any join) so a process audience can reach
+ * proposal collaborators through `proposals.profile_id` with the same join.
+ * Distinct because one person can hold two member rows written at different
+ * times; with the address sourced per authUserId they collapse to one.
+ */
+export const profileMemberRecipients = () =>
+  db
+    .selectDistinct({
+      authUserId: profileUsers.authUserId,
+      email: authUsers.email,
+    })
+    .from(profileUsers)
+    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId));
+
+/**
+ * Admins of the organization behind an org profile. An organization never
+ * logs in, so mail addressed to one goes to the people who run it — not to
+ * the org's public contact address.
+ */
+export const organizationAdminRecipients = (organizationProfileId: string) =>
+  db
+    .selectDistinct({
+      authUserId: organizationUsers.authUserId,
+      email: authUsers.email,
+    })
+    .from(organizationUsers)
+    .innerJoin(
+      organizations,
+      eq(organizations.id, organizationUsers.organizationId),
+    )
+    .innerJoin(authUsers, eq(authUsers.id, organizationUsers.authUserId))
+    .innerJoin(
+      organizationUserToAccessRoles,
+      eq(
+        organizationUserToAccessRoles.organizationUserId,
+        organizationUsers.id,
+      ),
+    )
+    .innerJoin(
+      accessRoles,
+      eq(accessRoles.id, organizationUserToAccessRoles.accessRoleId),
+    )
+    .where(
+      and(
+        eq(organizations.profileId, organizationProfileId),
+        eq(accessRoles.name, 'Admin'),
+      ),
+    );
+
+/**
+ * Who a notification addressed to a profile reaches, by what kind of profile
+ * it is: the owner of an individual profile, the admins of an organization,
+ * and every member of a proposal or decision profile. Senders hand over the
+ * profile they have — a post's author, a vote's submitter, a proposal — and
+ * do not need to know which shape it is.
  */
 export async function listProfileRecipients({
   profileId,
 }: {
   profileId: string;
 }): Promise<Array<EmailRecipient>> {
-  const owner = db
-    .select({ authUserId: users.authUserId, email: authUsers.email })
-    .from(users)
-    .innerJoin(authUsers, eq(authUsers.id, users.authUserId))
-    .where(eq(users.profileId, profileId));
+  const profile = await db.query.profiles.findFirst({
+    where: { id: profileId },
+    columns: { type: true },
+  });
 
-  const members = db
-    .select({ authUserId: profileUsers.authUserId, email: authUsers.email })
-    .from(profileUsers)
-    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
-    .where(eq(profileUsers.profileId, profileId));
-
-  // An individual profile has one owner in `users` and no `profile_users`
-  // rows. A shared profile (org, proposal, process) has the reverse. Only one
-  // half returns rows, so UNION selects the right source without a type check.
-  return union(owner, members);
+  switch (profile?.type) {
+    case undefined:
+      return [];
+    case EntityType.INDIVIDUAL:
+    case EntityType.USER:
+      return profileOwnerRecipients(profileId);
+    case EntityType.ORG:
+      return organizationAdminRecipients(profileId);
+    default:
+      return profileMemberRecipients().where(
+        eq(profileUsers.profileId, profileId),
+      );
+  }
 }

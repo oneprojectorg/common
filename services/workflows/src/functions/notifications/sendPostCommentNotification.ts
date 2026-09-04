@@ -90,12 +90,14 @@ export const sendPostCommentNotification = inngest.createFunction(
       return;
     }
 
-    const recipients = await step.run('get-recipients', async () =>
-      listProfileRecipients({ profileId: parent.recipientId }),
+    // One address for a person's post; every admin for an org's.
+    const recipients = selectEmailRecipients(
+      await step.run('get-recipients', async () =>
+        listProfileRecipients({ profileId: parent.recipientId }),
+      ),
     );
-    const [recipientEmail] = selectEmailRecipients(recipients);
 
-    if (!recipientEmail) {
+    if (recipients.length === 0) {
       return;
     }
 
@@ -114,9 +116,9 @@ export const sendPostCommentNotification = inngest.createFunction(
     const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${parentPostId}`;
 
     const result = await step.run('send-email', async () => {
-      const { errors } = await OPBatchSend([
-        {
-          to: recipientEmail,
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
           from: `${commenter.name} via Common`,
           subject: CommentNotificationEmail.subject(commenter.name, 'post'),
           component: () =>
@@ -130,14 +132,14 @@ export const sendPostCommentNotification = inngest.createFunction(
               contextName,
               postedIn,
             }),
-        },
-      ]);
+        })),
+      );
 
       if (errors.length > 0) {
         throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
       }
 
-      return { sent: 1 };
+      return { sent: recipients.length };
     });
 
     return {

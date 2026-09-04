@@ -49,9 +49,9 @@ export const sendReactionNotification = inngest.createFunction(
 
           postAuthorName: postAuthorProfile.name,
 
+          orgProfileId: orgProfile.id,
           orgProfileSlug: orgProfile.slug,
           orgProfileName: orgProfile.name,
-          orgProfileEmail: orgProfile.email,
 
           parentPostContent: parentPost.content,
         })
@@ -99,10 +99,8 @@ export const sendReactionNotification = inngest.createFunction(
       return;
     }
 
-    // The post's own author when it has one, otherwise the org's contact
-    // address. An org-attached post with no author profile has no account
-    // behind it, so the org's public contact field is the only address there
-    // is — the one place a sender still reads `profiles.email`.
+    // The post's own author when it has one, otherwise the organization the
+    // post belongs to. The resolver turns an org profile into its admins.
     const audience = await step.run('get-recipients', async () => {
       if (data.postProfileId) {
         return {
@@ -115,7 +113,9 @@ export const sendReactionNotification = inngest.createFunction(
 
       return {
         recipientName: data.orgProfileName,
-        candidates: [{ email: data.orgProfileEmail }],
+        candidates: data.orgProfileId
+          ? await listProfileRecipients({ profileId: data.orgProfileId })
+          : [],
       };
     });
 
