@@ -1,6 +1,5 @@
 import { useTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '../TranslatedText';
 import { ResponsiveSelect } from './ResponsiveSelect';
 
 export const ALL_CATEGORIES = 'all-categories';
@@ -44,12 +43,7 @@ export const CategoryFilterSelect = ({
       items={[
         {
           id: ALL_CATEGORIES,
-          label: usesDistricts ? (
-            <TranslatedText text="All districts" />
-          ) : (
-            <TranslatedText text="All categories" />
-          ),
-          textValue: usesDistricts ? t('All districts') : t('All categories'),
+          label: usesDistricts ? t('All districts') : t('All categories'),
         },
         ...categories.map((category) => ({
           id: category.id,

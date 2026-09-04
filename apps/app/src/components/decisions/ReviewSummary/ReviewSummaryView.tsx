@@ -12,8 +12,6 @@ import { LuCheck, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
@@ -197,21 +195,12 @@ export function ReviewSummaryView({
       </DecisionSubpageHeader>
 
       <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="summary">
-        <SplitPane.Pane
-          id="proposal"
-          label={<TranslatedText text="Proposal" />}
-        >
+        <SplitPane.Pane id="proposal" label={t('Proposal')}>
           <ProposalPreview proposal={proposal} translation={translation} />
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"
-          label={
-            isPhaseInProgress ? (
-              <TranslatedText text="Review Progress" />
-            ) : (
-              <TranslatedText text="Review Summary" />
-            )
-          }
+          label={isPhaseInProgress ? t('Review Progress') : t('Review Summary')}
         >
           {/* Outside the panel: a live region around the form would announce
               every keystroke. */}

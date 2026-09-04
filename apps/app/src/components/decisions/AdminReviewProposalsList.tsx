@@ -14,8 +14,6 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
 import { ProposalListSkeleton } from './ProposalListSkeleton';
 import { ProposalsList } from './ProposalsList';
 import { ProposalReviewDecorationProvider } from './proposalReviewDecoration';
@@ -102,18 +100,20 @@ const AdminReviewHeader = ({ count }: { count: number }) => {
   );
 };
 
-const AdminReviewProposalsError = () => (
-  <Empty>
-    <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <LuLeaf className="size-6" />
-      </EmptyMedia>
-      <EmptyTitle>
-        <TranslatedText text="We couldn't load proposals" />
-      </EmptyTitle>
-      <EmptyDescription>
-        <TranslatedText text="Please refresh the page to try again." />
-      </EmptyDescription>
-    </EmptyHeader>
-  </Empty>
-);
+const AdminReviewProposalsError = () => {
+  const t = useTranslations();
+
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t("We couldn't load proposals")}</EmptyTitle>
+        <EmptyDescription>
+          {t('Please refresh the page to try again.')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+};

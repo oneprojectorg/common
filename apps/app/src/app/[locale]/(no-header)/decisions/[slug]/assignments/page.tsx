@@ -9,7 +9,6 @@ import type { Metadata } from 'next';
 
 import { getTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '@/components/TranslatedText';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
 import { ReviewersTableSection } from '@/components/decisions/ReviewAssignments/ReviewersTableSection';
 
@@ -34,7 +33,10 @@ export default async function ReviewAssignmentsPage({
   params,
 }: ReviewAssignmentsPageProps) {
   const { slug } = await params;
-  const { processInstanceId, phaseId } = await loadReviewAssignmentsPage(slug);
+  const [t, { processInstanceId, phaseId }] = await Promise.all([
+    getTranslations(),
+    loadReviewAssignmentsPage(slug),
+  ]);
 
   // Best effort: on failure the client refetches under its own boundary.
   const { utils, queryClient } = await createServerUtils();
@@ -55,9 +57,7 @@ export default async function ReviewAssignmentsPage({
     <AssignmentsPageShell
       backHref={`/decisions/${slug}/current?tab=assignments`}
     >
-      <Header1 className="text-headline">
-        <TranslatedText text="Review assignments" />
-      </Header1>
+      <Header1 className="text-headline">{t('Review assignments')}</Header1>
 
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ReviewersTableSection
