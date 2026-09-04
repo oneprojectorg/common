@@ -18,12 +18,19 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 
-import { UnauthorizedError, decodeCursor, encodeCursor } from '../../utils';
-import { assertUserByAuthId } from '../assert';
+import {
+  CommonError,
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+} from '../../utils';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { decisionPermission } from './permissions';
 import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
@@ -109,9 +116,21 @@ export async function listReviewAssignments({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  if (!instance.access.review && !instance.access.admin) {
-    throw new UnauthorizedError("You don't have access to review proposals");
+  if (!instance.profileId) {
+    throw new CommonError(
+      'Decision instance does not have an associated profile',
+    );
   }
+
+  // No org fallback by design: that pattern is being retired.
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: [
+      { decisions: decisionPermission.REVIEW },
+      { decisions: permission.ADMIN },
+    ],
+  });
 
   assertInstancePhase({ instance, phaseId });
 
