@@ -12,6 +12,7 @@ import {
   proposalLocationColumns,
   proposalLocationWith,
 } from './projectProposalLocation';
+import { notSuperseded } from './proposalSupersession';
 import {
   type ProposalLocations,
   proposalLocationsSchema,
@@ -69,6 +70,10 @@ export const listReviewAssignmentLocations = async ({
       reviewerProfileId,
       phaseId,
       ...(status && { status }),
+      // Same rule as the queue: a proposal merged mid-review keeps its
+      // assignment row, and its pin must go with its card.
+      RAW: (t) =>
+        notSuperseded({ proposalId: t.proposalId, processInstanceId }),
     },
     with: {
       proposal: {

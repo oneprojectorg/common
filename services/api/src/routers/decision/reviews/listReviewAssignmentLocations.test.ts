@@ -1,5 +1,11 @@
 import { db } from '@op/db/client';
-import { ProposalReviewAssignmentStatus, proposals } from '@op/db/schema';
+import {
+  ProposalRelationshipType,
+  ProposalReviewAssignmentStatus,
+  authUsers,
+  proposalRelationships,
+  proposals,
+} from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -131,6 +137,65 @@ describe.concurrent('listReviewAssignmentLocations', () => {
     expect(unfiltered.proposals.map((p) => p.id).sort()).toEqual(
       [pending.proposal.id, completed.proposal.id].sort(),
     );
+  });
+
+  it('drops the pin of a proposal that was merged away, like the queue does', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const merged = await testData.createReviewAssignment({ title: 'Merged' });
+    const context = merged.context;
+    const survivor = await testData.createReviewAssignment({
+      context,
+      reviewer: merged.reviewer,
+      title: 'Survivor',
+    });
+    const instanceId = context.instance.instance.id;
+
+    await Promise.all([
+      setLocation(merged.proposal.id, { lat: 40.7, lng: -74 }),
+      setLocation(survivor.proposal.id, { lat: 34, lng: -118.2 }),
+    ]);
+    // The edge directly: what's under test is the read.
+    await db.insert(proposalRelationships).values({
+      processInstanceId: instanceId,
+      sourceProposalId: merged.proposal.id,
+      targetProposalId: survivor.proposal.id,
+      relationshipType: ProposalRelationshipType.MERGED,
+    });
+
+    const caller = await createAuthenticatedCaller(merged.reviewer.email);
+    const result = await caller.decision.listReviewAssignmentLocations({
+      processInstanceId: instanceId,
+      phaseId: REVIEW_PHASE,
+    });
+
+    expect(result.proposals.map((p) => p.id)).toEqual([survivor.proposal.id]);
+  });
+
+  it('marks an anonymous author on the pin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({ title: 'Anon' });
+    await setLocation(created.proposal.id, { lat: 40.7, lng: -74 });
+    await db
+      .update(authUsers)
+      .set({ isAnonymous: true })
+      .where(eq(authUsers.id, created.author.authUserId));
+
+    const caller = await createAuthenticatedCaller(created.reviewer.email);
+    const result = await caller.decision.listReviewAssignmentLocations({
+      processInstanceId: created.context.instance.instance.id,
+      phaseId: REVIEW_PHASE,
+    });
+
+    // Without the `profileUsers` join every author reads as not anonymous.
+    expect(result.proposals[0]?.submittedBy).toMatchObject({
+      isAnonymous: true,
+    });
   });
 
   it('rejects a phaseId that does not exist on the instance', async ({
