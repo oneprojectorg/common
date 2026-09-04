@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useLazyOverlay } from '@/hooks/useLazyOverlay';
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
@@ -10,7 +11,6 @@ import { Button } from '@op/sense/Button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@op/sense/Dialog';
@@ -28,6 +28,7 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { Separator } from '@op/sense/Separator';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
+import dynamic from 'next/dynamic';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
@@ -39,13 +40,26 @@ import {
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
-import { CommunityCommitmentsContent } from '../CommunityCommitmentsContent';
-import { DeleteOrganizationModal } from '../DeleteOrganizationModal';
-import { PrivacyPolicyContent } from '../PrivacyPolicyContent';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
-import { ToSContent } from '../ToSContent';
+import type { LegalDialog } from './LegalDialogs';
 
-type LegalDialog = 'privacy' | 'tos' | 'community';
+// Loaded on first open, never at page load. Between them these two carry the
+// three legal documents (~2k lines of static copy) and the org-deletion flow —
+// all of it behind a menu most viewers never open, and none of it needed to
+// paint the header. `ProfileSwitchingModal` stays eager on purpose: it is the
+// switch overlay and has to be on screen the instant a switch starts.
+const LegalDialogs = dynamic(
+  () => import('./LegalDialogs').then((module) => module.LegalDialogs),
+  { ssr: false },
+);
+
+const DeleteOrganizationModal = dynamic(
+  () =>
+    import('../DeleteOrganizationModal').then(
+      (module) => module.DeleteOrganizationModal,
+    ),
+  { ssr: false },
+);
 
 /**
  * A profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
@@ -447,51 +461,16 @@ const AvatarMenuContent = ({
   );
 };
 
-const legalTitles = {
-  privacy: 'Privacy Policy',
-  tos: 'Terms of Service',
-  community: 'Community Commitments',
-} as const;
-
-const LegalDialogs = ({
-  open,
-  onOpenChange,
-}: {
-  open: LegalDialog | null;
-  onOpenChange: (open: boolean) => void;
-}) => {
-  const t = useTranslations();
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <Dialog open={open !== null} onOpenChange={onOpenChange}>
-      {/* `initialFocus` on the scroll container, else base-ui focuses the first
-          link deep in the legal text and opens the dialog scrolled. */}
-      <DialogContent className="p-0 sm:max-w-xl" initialFocus={scrollRef}>
-        <DialogHeader>
-          <DialogTitle>{open ? t(legalTitles[open]) : ''}</DialogTitle>
-        </DialogHeader>
-        <div
-          ref={scrollRef}
-          tabIndex={-1}
-          className="min-h-0 flex-1 overflow-y-auto px-6 py-4 outline-none"
-        >
-          {open === 'privacy' ? <PrivacyPolicyContent /> : null}
-          {open === 'tos' ? <ToSContent /> : null}
-          {open === 'community' ? <CommunityCommitmentsContent /> : null}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const t = useTranslations();
   const { user } = useRequiredUser();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isOrgDeletionOpen, setIsOrgDeletionOpen] = useState(false);
+  const orgDeletion = useLazyOverlay();
+  const legal = useLazyOverlay();
+  // Which document the (lazily mounted) legal dialog shows. Deliberately not
+  // cleared on close, so the title doesn't blank out mid-fade.
   const [legalDialog, setLegalDialog] = useState<LegalDialog | null>(null);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
@@ -516,11 +495,12 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const openLegal = (dialog: LegalDialog) => {
     closeMenus();
     setLegalDialog(dialog);
+    legal.setIsOpen(true);
   };
 
   const openDeleteAccount = () => {
     closeMenus();
-    setIsOrgDeletionOpen(true);
+    orgDeletion.setIsOpen(true);
   };
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
@@ -561,24 +541,23 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   // shadcn "menu item opens a dialog" pattern).
   const overlays = (
     <>
-      <LegalDialogs
-        open={legalDialog}
-        onOpenChange={(next) => {
-          if (!next) {
-            setLegalDialog(null);
-          }
-        }}
-      />
+      {legal.shouldRender && legalDialog ? (
+        <LegalDialogs
+          dialog={legalDialog}
+          isOpen={legal.isOpen}
+          onOpenChange={legal.setIsOpen}
+        />
+      ) : null}
       <ProfileSwitchingModal
         isOpen={isSwitchingProfile}
         avatarImage={switchingToProfile?.avatarImage}
         profileName={switchingToProfile?.name}
         onOpenChange={setIsSwitchingProfile}
       />
-      {deleteOrganizationEnabled ? (
+      {deleteOrganizationEnabled && orgDeletion.shouldRender ? (
         <DeleteOrganizationModal
-          isOpen={isOrgDeletionOpen}
-          onOpenChange={setIsOrgDeletionOpen}
+          isOpen={orgDeletion.isOpen}
+          onOpenChange={orgDeletion.setIsOpen}
         />
       ) : null}
     </>

@@ -8,7 +8,7 @@ import { LuCheck, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { UserAvatarMenu } from '../../SiteHeader';
+import { UserAvatarMenu } from '../../SiteHeader/UserAvatarMenu';
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { RequestRevisionModal } from './RequestRevisionModal';
 import { useReviewForm } from './ReviewFormContext';

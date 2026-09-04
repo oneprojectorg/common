@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useLazyOverlay } from '@/hooks/useLazyOverlay';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -17,13 +18,27 @@ import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
 import { useMutation } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { InviteUserModal } from '../InviteUserModal';
-import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
+// Both modals are forms nobody sees until they pick an item out of this menu,
+// so they load on first open instead of riding along in the header's
+// first-paint bundle.
+const InviteUserModal = dynamic(
+  () => import('../InviteUserModal').then((module) => module.InviteUserModal),
+  { ssr: false },
+);
+
+const CreateOrganizationModal = dynamic(
+  () =>
+    import('../Profile/ProfileDetails/CreateOrganizationModal').then(
+      (module) => module.CreateOrganizationModal,
+    ),
+  { ssr: false },
+);
 
 // Tailwind v4 default sm breakpoint (640px)
 const SM_BREAKPOINT = screens.sm;
@@ -31,9 +46,8 @@ const SM_BREAKPOINT = screens.sm;
 export const CreateMenu = () => {
   const t = useTranslations();
   const router = useRouter();
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
-    useState(false);
+  const inviteModal = useLazyOverlay();
+  const createOrganizationModal = useLazyOverlay();
   const { user } = useRequiredUser();
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
@@ -80,7 +94,7 @@ export const CreateMenu = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem
-            onClick={() => setIsCreateOrganizationModalOpen(true)}
+            onClick={() => createOrganizationModal.setIsOpen(true)}
           >
             <LuUsers className="size-4" /> {t('Organization')}
           </DropdownMenuItem>
@@ -100,23 +114,25 @@ export const CreateMenu = () => {
           {isOrg && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsInviteModalOpen(true)}>
+              <DropdownMenuItem onClick={() => inviteModal.setIsOpen(true)}>
                 <LuUserPlus className="size-4" /> {t('Invite member')}
               </DropdownMenuItem>
             </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <CreateOrganizationModal
-        isOpen={isCreateOrganizationModalOpen}
-        onOpenChange={setIsCreateOrganizationModalOpen}
-      />
-      {isOrg && (
-        <InviteUserModal
-          isOpen={isInviteModalOpen}
-          onOpenChange={setIsInviteModalOpen}
+      {createOrganizationModal.shouldRender ? (
+        <CreateOrganizationModal
+          isOpen={createOrganizationModal.isOpen}
+          onOpenChange={createOrganizationModal.setIsOpen}
         />
-      )}
+      ) : null}
+      {isOrg && inviteModal.shouldRender ? (
+        <InviteUserModal
+          isOpen={inviteModal.isOpen}
+          onOpenChange={inviteModal.setIsOpen}
+        />
+      ) : null}
     </>
   );
 };
