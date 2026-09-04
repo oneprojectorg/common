@@ -1,4 +1,4 @@
-import { NotFoundError } from '../../utils';
+import { NotFoundError, PAGE_LIMIT } from '../../utils';
 import {
   type AccessUser,
   getProfileAccessRolesWithOrgFallback,
@@ -25,7 +25,7 @@ export type ProposalCommentOrigin = {
 export const listProposalComments = async ({
   user,
   profileId,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   user: AccessUser | undefined;

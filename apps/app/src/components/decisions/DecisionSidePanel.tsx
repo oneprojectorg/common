@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { useDirection } from '@op/sense/Direction';
@@ -35,8 +36,6 @@ import { ResourcesTabContent } from '@/components/Resources/ResourcesTabContent'
 
 import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
-
-const UPDATES_PAGE_SIZE = 20;
 
 const isPanelTab = (key: string): key is PanelTab =>
   (PANEL_TABS as readonly string[]).includes(key);
@@ -239,7 +238,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
-      { profileId: decisionProfileId, limit: UPDATES_PAGE_SIZE },
+      { profileId: decisionProfileId, limit: PAGE_LIMIT.md },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
         staleTime: 30 * 1000,

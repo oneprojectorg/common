@@ -8,6 +8,7 @@ import type {
   Post,
   PostToOrganization,
 } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
 import { SkeletonText } from '@op/sense/Skeleton';
@@ -43,7 +44,7 @@ export type ProfileFeedRenderProps = {
 
 export const ProfileFeedProvider = ({
   profile,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   children,
 }: {
   profile: Organization;

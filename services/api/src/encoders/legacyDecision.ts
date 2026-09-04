@@ -1,4 +1,8 @@
-import { documentContentSchema, proposalDataSchema } from '@op/common/client';
+import {
+  PAGE_LIMIT,
+  documentContentSchema,
+  proposalDataSchema,
+} from '@op/common/client';
 import {
   ProcessStatus,
   decisionProcesses,
@@ -260,7 +264,7 @@ export const legacyGetInstanceInputSchema = z.object({
 
 // Pagination Schema (internal — used by legacyInstanceFilterSchema)
 const legacyPaginationInputSchema = z.object({
-  limit: z.number().min(1).max(100).prefault(20),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.md),
   offset: z.number().min(0).prefault(0),
 });
 

@@ -8,7 +8,7 @@ import {
 import { checkPermission, permission } from 'access-zones';
 import { type SQL, and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils';
+import { PAGE_LIMIT, UnauthorizedError } from '../../utils';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
@@ -33,7 +33,7 @@ export const getPosts = async (input: GetPostsInput) => {
   const {
     profileId,
     parentPostId,
-    limit = 20,
+    limit = PAGE_LIMIT.md,
     offset = 0,
     includeChildren = false,
     authUserId,

@@ -16,6 +16,7 @@ import { checkPermission, permission } from 'access-zones';
 import type { SQL } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   NotFoundError,
   decodeCursor,
   encodeCursor,
@@ -51,7 +52,7 @@ export const postModerationFilter = (
 export const listPosts = async ({
   authUserId,
   slug,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   authUserId: string;

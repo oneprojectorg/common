@@ -2,7 +2,11 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { MERGE_NOTE_MAX_LENGTH, type Proposal } from '@op/common/client';
+import {
+  MERGE_NOTE_MAX_LENGTH,
+  PAGE_LIMIT,
+  type Proposal,
+} from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -56,9 +60,6 @@ import {
   getMergeCandidates,
   getProposalDisplayTitle,
 } from './proposals/merge';
-
-/** Shared by both pickers, so a search can reach whatever the list can. */
-const MERGE_CANDIDATE_PAGE_LIMIT = 50;
 
 // Stable identity: Base UI re-renders every option when this changes.
 const getMergeCandidateLabel = (candidate: MergeCandidate) => candidate.title;
@@ -508,7 +509,9 @@ function useMergeCandidateSearch({
     {
       processInstanceId: proposal.processInstanceId,
       dir: 'desc',
-      limit: MERGE_CANDIDATE_PAGE_LIMIT,
+      // Same tier as the list picker below, so a search can reach whatever
+      // the list can.
+      limit: PAGE_LIMIT.lg,
       // Server-side, so a match outside the suggestions below is still found.
       search: debouncedSearchQuery,
     },
@@ -619,7 +622,7 @@ function MergeCandidateListSuspense({
       {
         processInstanceId: proposal.processInstanceId,
         dir: 'desc',
-        limit: MERGE_CANDIDATE_PAGE_LIMIT,
+        limit: PAGE_LIMIT.lg,
       },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,

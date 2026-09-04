@@ -4,6 +4,7 @@ import { logger } from '@op/logging';
 import type { GetOrganizationPostsInput } from '@op/types';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
+import { PAGE_LIMIT } from '../../utils/pagination';
 import { getCurrentProfileId } from '../access';
 import { getItemsWithLikesAndComments } from './listPosts';
 
@@ -17,7 +18,7 @@ export const getOrganizationPosts = async (
   const {
     organizationId,
     parentPostId,
-    limit = 20,
+    limit = PAGE_LIMIT.md,
     offset = 0,
     includeChildren = false,
     authUserId,

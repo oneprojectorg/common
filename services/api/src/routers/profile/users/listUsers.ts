@@ -1,5 +1,5 @@
 import { Channels, listProfileUsers } from '@op/common';
-import { profileUserWithRolesSchema } from '@op/common/client';
+import { PAGE_LIMIT, profileUserWithRolesSchema } from '@op/common/client';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -16,7 +16,7 @@ export const listUsersRouter = router({
           query: z.string().min(2).optional(),
           roleId: z.uuid().optional(),
           cursor: z.string().nullish(),
-          limit: z.number().min(1).max(100).optional(),
+          limit: z.number().min(1).max(PAGE_LIMIT.max).optional(),
         })
         .merge(profileUserSortable),
     )

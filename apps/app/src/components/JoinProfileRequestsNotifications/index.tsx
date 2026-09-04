@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   NotificationPanel,
@@ -46,7 +47,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
   const [{ items: requests }] = trpc.profile.listJoinRequests.useSuspenseQuery({
     targetProfileId,
     status: JoinProfileRequestStatus.PENDING,
-    limit: 20,
+    limit: PAGE_LIMIT.md,
   });
 
   const updateRequestMutation = trpc.profile.updateJoinRequest.useMutation({
