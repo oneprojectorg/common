@@ -12,7 +12,7 @@ import { LuArrowLeft, LuCheck, LuUserPlus } from 'react-icons/lu';
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { LocaleChooser } from '../LocaleChooser';
-import { UserAvatarMenu } from '../SiteHeader';
+import { UserAvatarMenu } from '../SiteHeader/UserAvatarMenu';
 
 interface ProposalEditorHeaderProps {
   backHref: string;

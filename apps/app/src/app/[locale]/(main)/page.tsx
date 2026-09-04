@@ -17,10 +17,16 @@ export async function generateMetadata({
   return { title: t('Home') };
 }
 
-const MainPage = () => {
+const MainPage = ({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) => {
   return (
     <Suspense fallback={<LandingScreenSkeleton />}>
-      <LandingScreen />
+      {/* Not awaited here: the promise is forwarded so only the welcome
+          headline suspends on it, behind its own boundary. */}
+      <LandingScreen searchParams={searchParams} />
     </Suspense>
   );
 };
