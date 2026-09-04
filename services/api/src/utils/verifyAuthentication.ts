@@ -25,7 +25,13 @@ export const verifyAuthentication = (data: UserResponse) => {
     throw new AccessTierError('anon');
   }
 
-  if (data.data.user.confirmed_at === null) {
+  // Falsy, not `=== null`. GoTrue omits `confirmed_at` from the payload when
+  // neither credential is confirmed — the SDK types it `string | undefined`,
+  // never `null` — so the strict comparison never fired and this gate admitted
+  // an unconfirmed account. The column is generated as
+  // `LEAST(email_confirmed_at, phone_confirmed_at)`, so one confirmed
+  // credential of either kind sets it.
+  if (!data.data.user.confirmed_at) {
     throw new AccessTierError('anon');
   }
 
