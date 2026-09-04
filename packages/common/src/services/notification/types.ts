@@ -80,6 +80,12 @@ export type SmsSendResult =
  * through `[auth.sms.twilio_verify]`, and the browser calls GoTrue directly, so
  * no code of ours generates or checks a code. ADR 0003 records that decision.
  *
+ * Nothing calls `sendSms` yet. GoTrue sends every sign-in code, so the one SMS
+ * the product sends today does not pass through here. This interface stays for
+ * notifications — telling a participant that a decision opened, or that their
+ * proposal changed phase. Write those against this type rather than a vendor,
+ * so the first notification does not also become the first vendor lock-in.
+ *
  * @interface
  * @example Take a provider rather than resolving one
  * ```ts

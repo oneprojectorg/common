@@ -47,7 +47,9 @@ const assertSidPrefix = (
  *
  * Both service SIDs are optional, and at least one must be set, because an
  * account with no service can do nothing. `TWILIO_MESSAGING_SERVICE_SID`
- * switches on `sendSms`, once an A2P 10DLC campaign is approved.
+ * switches on `sendSms`, once an A2P 10DLC campaign is approved — which is
+ * what notifications will need, and the reason this resolver exists before
+ * anything calls it.
  * `TWILIO_VERIFY_SERVICE_SID` switches on nothing here: GoTrue reads that
  * variable itself and confirms phone numbers without this provider. It is
  * still validated below, so a value pasted into the wrong slot fails at
