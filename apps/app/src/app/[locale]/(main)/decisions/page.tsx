@@ -1,6 +1,7 @@
 import { Header1 } from '@op/sense/Header';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { TranslatedText } from '@/components/TranslatedText';
 import { AllDecisions } from '@/components/decisions/AllDecisions';

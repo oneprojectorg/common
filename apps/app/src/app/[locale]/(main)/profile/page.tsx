@@ -2,7 +2,8 @@ import { EntityType } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 import { Header1 } from '@op/sense/Header';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import { ListPageLayout } from '@/components/layout/ListPageLayout';

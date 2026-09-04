@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import {
   LandingScreen,

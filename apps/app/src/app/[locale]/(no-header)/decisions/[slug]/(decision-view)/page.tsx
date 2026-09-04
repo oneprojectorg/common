@@ -1,6 +1,7 @@
 import { OPURLConfig, getTextPreview } from '@op/core';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { DecisionOverview } from '@/components/decisions/DecisionOverview';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';

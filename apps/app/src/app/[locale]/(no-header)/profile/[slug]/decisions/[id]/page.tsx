@@ -6,8 +6,9 @@ import {
 } from '@op/api/server';
 import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { Suspense, cache } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
