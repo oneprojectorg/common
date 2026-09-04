@@ -18,7 +18,7 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
@@ -280,8 +280,7 @@ export const listProposals = async ({
   );
 
   const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
-    phases:
-      (instance.instanceData as DecisionInstanceData | null)?.phases ?? [],
+    phases: getInstancePhases(instance.instanceData),
     currentPhaseId: instance.currentStateId,
   });
 

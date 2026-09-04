@@ -34,6 +34,7 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   type DecisionInstanceData,
   type PhaseInstanceData,
+  getInstancePhases,
   isLastPhase,
 } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
@@ -85,8 +86,7 @@ export const updateProposal = async ({
   const processInstance = existingProposal.processInstance;
 
   // Reject updates when the instance is in the final (results) phase
-  const instancePhases =
-    (processInstance.instanceData as DecisionInstanceData | null)?.phases ?? [];
+  const instancePhases = getInstancePhases(processInstance.instanceData);
   if (isLastPhase(processInstance.currentStateId, instancePhases)) {
     throw new ValidationError(
       'Proposals cannot be edited during the results phase',

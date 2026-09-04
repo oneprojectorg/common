@@ -32,7 +32,7 @@ import {
 } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
 import { ProposalTemplateSchema } from './types';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
@@ -356,9 +356,9 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  const instancePhases =
-    (proposal.processInstance.instanceData as DecisionInstanceData | null)
-      ?.phases ?? [];
+  const instancePhases = getInstancePhases(
+    proposal.processInstance.instanceData,
+  );
   const isEditable =
     access.update &&
     (proposal.status === ProposalStatus.DRAFT ||

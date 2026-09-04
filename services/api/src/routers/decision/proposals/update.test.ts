@@ -1,5 +1,5 @@
 import { mockCollab } from '@op/collab/testing';
-import type { DecisionInstanceData } from '@op/common';
+import { getInstancePhases } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -46,8 +46,13 @@ async function setProposalEditingRule(
     throw new Error(`Instance ${processInstanceId} not found`);
   }
 
-  const instanceData = instanceRecord.instanceData as DecisionInstanceData;
-  const phases = instanceData.phases.map((phase) =>
+  const { instanceData } = instanceRecord;
+
+  if (instanceData === null || typeof instanceData !== 'object') {
+    throw new Error(`Instance ${processInstanceId} has no instanceData`);
+  }
+
+  const phases = getInstancePhases(instanceData).map((phase) =>
     phase.phaseId === instanceRecord.currentStateId
       ? {
           ...phase,
