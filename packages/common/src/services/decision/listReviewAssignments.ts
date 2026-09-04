@@ -206,6 +206,11 @@ export async function listReviewAssignments({
     )!;
 
   const offset = cursor ? decodeCursor<OffsetCursor>(cursor).offset : 0;
+  // decodeCursor only checks the encoding; a negative or non-integer offset
+  // would surface as a Postgres error instead of a bad-input one.
+  if (!Number.isSafeInteger(offset) || offset < 0) {
+    throw new CommonError('Invalid cursor');
+  }
 
   const [rows, countResult] = await Promise.all([
     db.query.proposalReviewAssignments.findMany({
