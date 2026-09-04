@@ -57,6 +57,36 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 - **Drizzle relations**: define new relations in `services/db/relations.ts` using the v2 `defineRelations` API (the source of truth for `db.query`). The v1 `relations()` blocks in individual `*.sql.ts` files still exist for legacy `db._query` callers but should **not** be added for new tables.
 - **Row types**: derive a table's row type with `typeof <table>.$inferSelect` (e.g. `export type Foo = typeof foos.$inferSelect;`). Prefer this over `InferModel<typeof <table>>`.
 
+### Passing a database client to a service
+
+A service that writes must be composable into a caller's transaction, so it takes the client as an optional argument instead of binding the `@op/db/client` singleton:
+
+```ts
+import { type DbClient, db as defaultDb } from '@op/db/client';
+
+export const myService = async ({
+  data,
+  user,
+  db = defaultDb,
+}: {
+  data: ...;
+  user: User;
+  db?: DbClient;
+}) => {
+  return db.transaction(async (tx) => {
+    await tx.insert(...).values(...);
+    await assertProfile(profileId, undefined, tx);
+  });
+};
+```
+
+- **Outer parameter is always `db?: DbClient`, defaulting to `defaultDb`.** `DbClient` is `DatabaseType | TransactionType`, so it accepts the pool or a transaction. Never name the outer parameter `tx` — the caller may not be passing one.
+- **Inner callback variable is always `tx`.** Inside the callback, use `tx` for every statement and pass it on to helpers (`{ db: tx }` or positionally, matching the helper).
+- **Every statement in the function body uses the parameter**, not the singleton — a read left on the pool can't see the caller's uncommitted rows. A function in the same file that is deliberately not composable should say so by calling `defaultDb` explicitly.
+- **Work deferred past the response (`waitUntil`) must use `defaultDb`.** A caller's transaction may already be committed or rolled back by the time it runs.
+- **Top-level callers pass nothing.** A composing service passes its `tx`, and the nested `db.transaction` becomes a savepoint — Drizzle handles this; it is not a deadlock.
+- **Multi-table writes belong in a transaction**, even when nobody composes the service yet. Partial failure otherwise leaves orphan rows.
+
 ## AI Assistant Guidelines
 
 ### File Search Scope

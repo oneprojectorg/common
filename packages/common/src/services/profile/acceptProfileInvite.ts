@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import {
   EntityType,
   profileInvites,
@@ -22,9 +22,11 @@ import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionM
 export const acceptProfileInvite = async ({
   inviteId,
   user,
+  db = defaultDb,
 }: {
   inviteId: string;
   user: User;
+  db?: DbClient;
 }) => {
   // 1. Find the invite
   const invite = await db.query.profileInvites.findFirst({

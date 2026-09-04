@@ -1,5 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
@@ -15,7 +15,7 @@ import { assertProfileAdmin } from '../assert';
 import { profileUserCacheKey } from './cacheKeys';
 
 export async function invalidateProfileUserCacheForRole(roleId: string) {
-  const affectedUsers = await db
+  const affectedUsers = await defaultDb
     .select({
       profileId: profileUsers.profileId,
       authUserId: profileUsers.authUserId,
@@ -95,6 +95,7 @@ export async function createRole({
   description,
   profileId,
   user,
+  db = defaultDb,
 }: {
   name: string;
   zoneName: string;
@@ -102,6 +103,7 @@ export async function createRole({
   description?: string;
   profileId: string;
   user: { id: string };
+  db?: DbClient;
 }) {
   const [zone] = await Promise.all([
     db.query.accessZones.findFirst({
@@ -188,10 +190,10 @@ export async function updateRolePermissions({
   profileId?: string;
 }) {
   const [zone, role] = await Promise.all([
-    db.query.accessZones.findFirst({
+    defaultDb.query.accessZones.findFirst({
       where: { name: zoneName },
     }),
-    db.query.accessRoles.findFirst({
+    defaultDb.query.accessRoles.findFirst({
       where: { id: roleId },
     }),
   ]);
@@ -212,21 +214,22 @@ export async function updateRolePermissions({
 
   const bitfield = toBitField(permissions);
 
-  const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
-    where: {
-      accessRoleId: roleId,
-      accessZoneId: zone.id,
-      profileId: rowProfileId ?? { isNull: true },
-    },
-  });
+  const existing =
+    await defaultDb.query.accessRolePermissionsOnAccessZones.findFirst({
+      where: {
+        accessRoleId: roleId,
+        accessZoneId: zone.id,
+        profileId: rowProfileId ?? { isNull: true },
+      },
+    });
 
   if (existing) {
-    await db
+    await defaultDb
       .update(accessRolePermissionsOnAccessZones)
       .set({ permission: bitfield })
       .where(eq(accessRolePermissionsOnAccessZones.id, existing.id));
   } else {
-    await db.insert(accessRolePermissionsOnAccessZones).values({
+    await defaultDb.insert(accessRolePermissionsOnAccessZones).values({
       accessRoleId: roleId,
       accessZoneId: zone.id,
       permission: bitfield,
@@ -251,7 +254,7 @@ export async function updateRole({
   name: string;
   user: { id: string };
 }) {
-  const role = await db.query.accessRoles.findFirst({
+  const role = await defaultDb.query.accessRoles.findFirst({
     where: { id: roleId },
   });
 
@@ -265,7 +268,7 @@ export async function updateRole({
 
   await assertProfileAdmin({ user, profileId: role.profileId });
 
-  const [updated] = await db
+  const [updated] = await defaultDb
     .update(accessRoles)
     .set({ name })
     .where(eq(accessRoles.id, roleId))
@@ -289,7 +292,7 @@ export async function deleteRole({
   user: { id: string };
 }) {
   // First check if the role is a global role (profileId IS NULL)
-  const role = await db.query.accessRoles.findFirst({
+  const role = await defaultDb.query.accessRoles.findFirst({
     where: { id: roleId },
   });
 
@@ -307,7 +310,7 @@ export async function deleteRole({
   await invalidateProfileUserCacheForRole(roleId);
 
   // Delete the role (cascade will handle permissions)
-  await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
+  await defaultDb.delete(accessRoles).where(eq(accessRoles.id, roleId));
 
   return { deletedId: roleId };
 }
@@ -316,7 +319,7 @@ export async function assignRoleToUser(
   organizationUserId: string,
   roleId: string,
 ) {
-  return await db
+  return await defaultDb
     .insert(organizationUserToAccessRoles)
     .values({
       organizationUserId,
@@ -332,7 +335,7 @@ export async function removeRoleFromUser(
   organizationUserId: string,
   roleId: string,
 ) {
-  return await db
+  return await defaultDb
     .delete(organizationUserToAccessRoles)
     .where(
       and(

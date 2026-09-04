@@ -1,5 +1,5 @@
 import { trackReviewStarted } from '@op/analytics';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   type ProposalReview,
   ProposalReviewAssignmentStatus,
@@ -29,11 +29,13 @@ export async function saveReviewDraft({
   reviewData,
   overallComment,
   user,
+  db = defaultDb,
 }: {
   assignmentId: string;
   reviewData: RubricReviewData;
   overallComment?: string | null;
   user: User;
+  db?: DbClient;
 }): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
