@@ -1,5 +1,6 @@
 import {
   Channels,
+  MAX_PAGE_LIMIT,
   listProfilePosts as listProfilePostsService,
 } from '@op/common';
 import { z } from 'zod';
@@ -9,7 +10,7 @@ import { openProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string(),
-  limit: z.number().int().positive().max(100).optional(),
+  limit: z.number().int().positive().max(MAX_PAGE_LIMIT).optional(),
   cursor: z.string().nullish(),
 });
 

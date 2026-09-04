@@ -218,6 +218,9 @@ export {
   type AllowedUploadMimeType,
 } from './utils/storage';
 
+// Shared pagination bound (no server dependencies)
+export { MAX_PAGE_LIMIT } from './utils/pagination';
+
 // Resource constants (no server dependencies)
 export {
   MAX_RESOURCE_FILE_SIZE,
