@@ -24,8 +24,10 @@ export const dynamic = 'force-dynamic';
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  await assertWalledGardenAccess(user);
-
+  // Onboarding is asked first, because /start admits a non-member and this
+  // gate does not. Gating first met a not-yet-onboarded account with a 403 it
+  // could never clear — the flow built for that account was on the other side
+  // of the wall.
   if (shouldRedirectToOnboarding(user)) {
     const requestHeaders = await headers();
     redirect(
@@ -35,6 +37,8 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
       ),
     );
   }
+
+  await assertWalledGardenAccess(user);
 
   return (
     <div className="flex size-full max-h-full flex-col">
