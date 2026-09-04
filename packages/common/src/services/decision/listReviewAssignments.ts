@@ -5,11 +5,7 @@ import {
   db,
   eq,
   exists,
-  gt,
   inArray,
-  isNull,
-  lt,
-  or,
   sql,
 } from '@op/db/client';
 import {
@@ -67,16 +63,12 @@ const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 // small because each row renders the proposal document.
 const DEFAULT_PAGE_LIMIT = 24;
 
-/** Keyset position for the date sorts; `assignedAt` is the driver's text form. */
-type DateCursor = { assignedAt: string | null; id: string };
-
-/** Keyset position for `leastReviewed`: the computed sort keys plus the id tie-break. */
-type CoverageCursor = {
-  completedReviewCount: number;
-  statusRank: number;
-  reviewerShuffle: string;
-  id: string;
-};
+/**
+ * Offset pagination behind an opaque cursor. The queue is bounded to one
+ * reviewer's assignments, and the `leastReviewed` keys move under the reader
+ * whenever anyone completes a review, so keyset would not stop skips either.
+ */
+type OffsetCursor = { offset: number };
 
 /**
  * Returns one page of the reviewer's authorized review assignments in `phaseId`.
@@ -101,7 +93,7 @@ export async function listReviewAssignments({
   /** Profile id of a single proposal — limits results to that proposal's assignments. */
   proposalProfileId?: string;
   sort?: ReviewAssignmentSort;
-  /** Keyset position from the previous page's `next`. */
+  /** Opaque position from the previous page's `next`. */
   cursor?: string | null;
   limit?: number;
   user: User;
@@ -218,88 +210,13 @@ export async function listReviewAssignments({
       notSuperseded({ proposalId: t.proposalId, processInstanceId }),
     )!;
 
-  const buildKeysetCondition = (
-    t: typeof proposalReviewAssignments,
-  ): SQL | undefined => {
-    if (!cursor) {
-      return undefined;
-    }
-
-    // NULLS LAST on both directions: a cursor inside the trailing NULL block
-    // continues by id only.
-    if (sort === 'newest') {
-      const position = decodeCursor<DateCursor>(cursor);
-      if (position.assignedAt === null) {
-        return and(isNull(t.assignedAt), lt(t.id, position.id))!;
-      }
-      return or(
-        lt(t.assignedAt, position.assignedAt),
-        isNull(t.assignedAt),
-        and(eq(t.assignedAt, position.assignedAt), lt(t.id, position.id)),
-      )!;
-    }
-
-    if (sort === 'oldest') {
-      const position = decodeCursor<DateCursor>(cursor);
-      if (position.assignedAt === null) {
-        return and(isNull(t.assignedAt), gt(t.id, position.id))!;
-      }
-      return or(
-        gt(t.assignedAt, position.assignedAt),
-        isNull(t.assignedAt),
-        and(eq(t.assignedAt, position.assignedAt), gt(t.id, position.id)),
-      )!;
-    }
-
-    // 'leastReviewed': lexicographic comparison over the four sort keys.
-    const position = decodeCursor<CoverageCursor>(cursor);
-    const completed = completedReviewCount(t);
-    const rank = statusRank(t);
-    const shuffle = reviewerShuffle(t);
-
-    return or(
-      gt(completed, position.completedReviewCount),
-      and(
-        eq(completed, position.completedReviewCount),
-        or(
-          gt(rank, position.statusRank),
-          and(
-            eq(rank, position.statusRank),
-            or(
-              gt(shuffle, position.reviewerShuffle),
-              and(eq(shuffle, position.reviewerShuffle), gt(t.id, position.id)),
-            ),
-          ),
-        ),
-      ),
-    )!;
-  };
+  const offset = cursor ? decodeCursor<OffsetCursor>(cursor).offset : 0;
 
   const [rows, countResult] = await Promise.all([
     db.query.proposalReviewAssignments.findMany({
-      where: {
-        RAW: (table) =>
-          and(buildFilterConditions(table), buildKeysetCondition(table))!,
-      },
+      where: { RAW: buildFilterConditions },
       with: reviewAssignmentWithConfig,
-      // The `leastReviewed` cursor needs the computed sort keys back with the
-      // row. Constants for the date sorts keep the row type narrow.
-      extras: {
-        completedReviewCount: (table, { sql: sqlOp }) =>
-          sort === 'leastReviewed'
-            ? sqlOp<number>`${completedReviewCount(table)}`.as(
-                'completed_review_count',
-              )
-            : sqlOp<number>`0`.as('completed_review_count'),
-        statusRank: (table, { sql: sqlOp }) =>
-          sort === 'leastReviewed'
-            ? sqlOp<number>`${statusRank(table)}`.as('status_rank')
-            : sqlOp<number>`0`.as('status_rank'),
-        reviewerShuffle: (table, { sql: sqlOp }) =>
-          sort === 'leastReviewed'
-            ? sqlOp<string>`${reviewerShuffle(table)}`.as('reviewer_shuffle')
-            : sqlOp<string>`''`.as('reviewer_shuffle'),
-      },
+      offset,
       limit: limit + 1,
       // The `id` tie-break keeps page boundaries stable between equal keys.
       orderBy: (table, { asc, desc }) => {
@@ -394,22 +311,9 @@ export async function listReviewAssignments({
     };
   });
 
-  const lastRow = assignments[assignments.length - 1];
-  let next: string | null = null;
-  if (hasMore && lastRow) {
-    next =
-      sort === 'leastReviewed'
-        ? encodeCursor<CoverageCursor>({
-            completedReviewCount: lastRow.completedReviewCount,
-            statusRank: lastRow.statusRank,
-            reviewerShuffle: lastRow.reviewerShuffle,
-            id: lastRow.id,
-          })
-        : encodeCursor<DateCursor>({
-            assignedAt: lastRow.assignedAt,
-            id: lastRow.id,
-          });
-  }
+  const next = hasMore
+    ? encodeCursor<OffsetCursor>({ offset: offset + limit })
+    : null;
 
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
