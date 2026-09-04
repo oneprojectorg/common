@@ -11,6 +11,7 @@ import {
   REVIEW_ASSIGNMENT_SORTS,
   getPhaseReviewSettings,
 } from '@op/common/client';
+import { useInfiniteScroll } from '@op/hooks';
 import { Card } from '@op/sense/Card';
 import {
   Empty,
@@ -22,7 +23,7 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useCallback, useMemo } from 'react';
+import { type ReactNode, Suspense, useCallback, useMemo } from 'react';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -40,7 +41,7 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ProposalViewToggle } from './ProposalViewToggle';
-import { ProposalsMapView } from './ProposalsMapView';
+import { ReviewAssignmentsMapWithLocations } from './ProposalsMapView';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { StickyFilterBar } from './StickyFilterBar';
@@ -95,18 +96,50 @@ export function ReviewAssignmentsList({
     (phase) => phase.phaseId === instance.currentStateId,
   );
 
-  const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
+  // The queue is this phase's work, and both reads below require a phase. The
+  // tab is only mounted on a review phase; throw rather than invent a fallback
+  // so a stateless instance surfaces on the surrounding error boundary instead
+  // of quietly listing every phase (same guard as ManualSelectionList).
+  if (!instance.currentStateId) {
+    throw new Error('ReviewAssignmentsList: instance has no currentStateId');
+  }
+  const phaseId = instance.currentStateId;
+
+  // Status and sort stay part of the query input, so changing either starts a
+  // fresh first page rather than appending to the old one.
+  const queueInput = {
     processInstanceId,
-    // The queue is this phase's work; omitting phaseId would list every phase.
-    ...(instance.currentStateId && { phaseId: instance.currentStateId }),
+    phaseId,
     ...(statusFilter && {
       status: statusFilter as ProposalReviewAssignmentStatus,
     }),
     sort,
-  });
+  };
 
-  const assignments = data?.assignments ?? [];
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    trpc.decision.listReviewAssignments.useInfiniteQuery(queueInput, {
+      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+    });
+
+  const assignments = useMemo(
+    () => data?.pages.flatMap((page) => page.assignments) ?? [],
+    [data?.pages],
+  );
+  // Server-side count for the active filters, not just the loaded pages.
+  const total = data?.pages[0]?.total ?? 0;
   const proposalIds = assignments.map((a) => a.assignment.proposal.id);
+
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref: infiniteScrollRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+      threshold: 0.1,
+      rootMargin: '50px',
+    });
 
   // The reviewer's queue renders the same proposal cards as the "Other
   // proposals" tab, so it gets the same translation wiring — without it the two
@@ -242,6 +275,22 @@ export function ReviewAssignmentsList({
     ],
   );
 
+  // One sentinel definition for both views — map mode renders it inside the
+  // list column (via listFooter), grid mode below the grid. `aria-hidden` and
+  // no tabindex keep the bare trigger out of the tab order; the `aria-live`
+  // line at the end of the component is what a screen reader gets instead.
+  const renderScrollSentinel = (skeleton: ReactNode) =>
+    shouldShowTrigger ? (
+      <div
+        ref={infiniteScrollRef}
+        aria-hidden
+        className="py-4"
+        data-testid="review-assignments-infinite-scroll-sentinel"
+      >
+        {isFetchingNextPage ? skeleton : null}
+      </div>
+    ) : null;
+
   // Match the "Other proposals" tab: no toolbar when the queue is genuinely
   // empty. A filtered-to-empty result keeps it so the filter can be cleared.
   const showToolbar = assignments.length > 0 || Boolean(statusFilter);
@@ -304,7 +353,7 @@ export function ReviewAssignmentsList({
         <StickyFilterBar pinOffset={pinOffset}>
           {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
           <div className="flex min-w-0 flex-1 items-baseline gap-1">
-            <ProposalCount count={assignments.length} />
+            <ProposalCount count={total} />
             {/* decorative — a failed lookup must not take down the queue */}
             <APIErrorBoundary fallbacks={{ default: () => null }}>
               <Suspense fallback={null}>
@@ -387,17 +436,43 @@ export function ReviewAssignmentsList({
           translations={translation.translationState?.translations ?? {}}
         >
           {isMapMode ? (
-            // Same array for the list column and the pins — the queue is
-            // unpaginated, so there is no wider pin set to fetch.
-            <ProposalsMapView
-              proposals={assignedProposals}
-              pinProposals={assignedProposals}
-              renderCard={renderCard}
-              hrefFor={reviewsHref}
-              mapView={mapView}
-            />
+            // Local boundaries keep the pin query from suspending / erroring
+            // the whole list subtree (filter bar + view toggle stay mounted).
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <div className="py-8 text-center text-base">
+                    {t("Couldn't load the map. Refresh to try again.")}
+                  </div>
+                ),
+              }}
+            >
+              <Suspense fallback={<ReviewAssignmentListSkeletonGrid />}>
+                {/* Pins come from a dedicated assignment-scoped query rather
+                    than the loaded pages, so the map isn't capped by the page
+                    size; the list column beside it stays paginated and pages
+                    through `listFooter`. */}
+                <ReviewAssignmentsMapWithLocations
+                  proposals={assignedProposals}
+                  renderCard={renderCard}
+                  hrefFor={reviewsHref}
+                  mapView={mapView}
+                  // The queue's own filters, so the pins describe the same set
+                  // as the cards and the count. Strip the list-only pagination
+                  // fields — the map returns every located assignment.
+                  locationFilter={{
+                    processInstanceId: queueInput.processInstanceId,
+                    phaseId: queueInput.phaseId,
+                    status: queueInput.status,
+                  }}
+                  listFooter={renderScrollSentinel(
+                    <ReviewAssignmentCardSkeleton />,
+                  )}
+                />
+              </Suspense>
+            </APIErrorBoundary>
           ) : (
-            <ProposalMasonry>
+            <ProposalMasonry loadingMore={isFetchingNextPage}>
               {assignments.map((item) => (
                 <ReviewAssignmentCard
                   key={item.assignment.id}
@@ -415,6 +490,15 @@ export function ReviewAssignmentsList({
           )}
         </ProposalTranslationProvider>
       )}
+
+      {/* Grid mode: the load-more skeletons render inside the masonry (see
+          ProposalMasonry `loadingMore`), so the sentinel is just the trigger.
+          Map mode renders it inside the list column via `listFooter`. */}
+      {!isMapMode && renderScrollSentinel(null)}
+
+      <p aria-live="polite" className="sr-only">
+        {isFetchingNextPage ? t('Loading more proposals') : ''}
+      </p>
 
       {translation.showBanner && (
         <TranslateBanner

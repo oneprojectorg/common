@@ -3,6 +3,7 @@
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { trpc } from '@op/api/client';
 import type { ProposalStatus } from '@op/api/encoders';
+import type { ProposalReviewAssignmentStatus } from '@op/common/client';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
@@ -25,6 +26,14 @@ interface ProposalLocationFilter {
   status?: ProposalStatus;
   excludeAssignedForReview?: boolean;
   phase?: 'results';
+}
+
+/** Filter for the reviewer queue's pin query — the queue's own filters, minus
+ * the list-only pagination fields (the map returns every located assignment). */
+interface ReviewAssignmentLocationFilter {
+  processInstanceId: string;
+  phaseId: string;
+  status?: ProposalReviewAssignmentStatus;
 }
 
 /** Renders one proposal in the desktop list column. The view owns the active
@@ -247,6 +256,33 @@ export function ProposalsMapWithLocations({
       // channel via the client link (same pattern as the list query).
       refetchOnMount: 'always',
     });
+
+  return <ProposalsMapView {...props} pinProposals={pinProposals} />;
+}
+
+/**
+ * The reviewer queue's pin source: every located proposal the caller is
+ * assigned to review, which is a different question than
+ * `listProposalLocations` answers — asked from the assignment side so the map
+ * can never plot a proposal this reviewer wasn't assigned. Same output shape,
+ * so the view below consumes it unchanged.
+ */
+export function ReviewAssignmentsMapWithLocations({
+  locationFilter,
+  ...props
+}: Omit<ProposalsMapViewProps, 'pinProposals'> & {
+  locationFilter: ReviewAssignmentLocationFilter;
+}) {
+  const [{ proposals: pinProposals }] =
+    trpc.decision.listReviewAssignmentLocations.useSuspenseQuery(
+      locationFilter,
+      {
+        staleTime: 30 * 1000,
+        // Force a client-side fetch so the query registers its invalidation
+        // channel via the client link (same pattern as the list query).
+        refetchOnMount: 'always',
+      },
+    );
 
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
