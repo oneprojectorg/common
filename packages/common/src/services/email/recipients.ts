@@ -60,7 +60,8 @@ export async function listProfileRecipients({
     .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
     .where(eq(profileUsers.profileId, profileId));
 
-  // With the address sourced per authUserId, UNION's row dedupe *is* the
-  // identity dedupe: one person cannot surface under two addresses.
+  // An individual profile has one owner in `users` and no `profile_users`
+  // rows. A shared profile (org, proposal, process) has the reverse. Only one
+  // half returns rows, so UNION selects the right source without a type check.
   return union(owner, members);
 }
