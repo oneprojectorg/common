@@ -15,9 +15,12 @@
  * `Header*` design-system components.
  */
 export const viewerProseStyles = [
-  'prose prose-lg !text-base text-foreground',
+  'prose text-foreground',
   '[&_a:hover]:underline [&_a]:text-primary [&_a]:no-underline',
-  '[&_li_p]:my-0',
+  // Single-paragraph list items only: prose already spaces the `li` itself, so
+  // keeping the `p` margins there doubles the gap. A multi-paragraph item still
+  // needs them.
+  '[&_li>p:only-child]:my-0',
   '[&_blockquote]:font-normal',
   '[&_:is(h1,h2,h3)]:my-4',
   // Per-block bidi: each paragraph/heading/list-item resolves its own
@@ -36,7 +39,7 @@ export const viewerProseStyles = [
   // hack node ProseMirror puts in an empty textblock and a block holding only a
   // hard break (Shift+Enter), which serialises to a bare `<br>` in the viewer.
   '[&_:is(p,h1,h2,h3,h4,li,blockquote):has(>br:only-child)]:[unicode-bidi:normal]',
-  'leading-5 max-w-none break-words overflow-wrap-anywhere',
+  'max-w-none break-words',
   // Details/Summary (collapsible) chrome lives in one raw-CSS block in
   // `@op/styles` (`.details` in theme.css), shared by the editor's
   // built-in node view AND the viewer's native <details>. Nothing here.
@@ -83,4 +86,4 @@ const detailsSummaryPlaceholderStyles = [
 // Without it Firefox takes the `requiresGeckoHackNode` path and appends a
 // trailing <br> to any block whose text ends in a space, which would match the
 // empty-block selector above and drop that paragraph out of per-line bidi.
-export const baseEditorStyles = `${viewerProseStyles} whitespace-pre-wrap rounded-lg outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50 in-data-[slot=rich-text-editor-field]:focus-visible:ring-0 placeholder:text-muted-foreground ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;
+export const baseEditorStyles = `${viewerProseStyles} whitespace-pre-wrap rounded-lg outline-hidden focus-visible:ring-3 focus-visible:ring-ring/50 in-data-[slot=rich-text-editor-field]:focus-visible:ring-0 ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;
