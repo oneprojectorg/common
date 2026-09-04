@@ -1,9 +1,6 @@
-import { and, db, eq } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
-  accessRoles,
-  authUsers,
-  organizationUserToAccessRoles,
-  organizationUsers,
+  authUsers as authUsersTable,
   profileUsers,
   users,
 } from '@op/db/schema';
@@ -14,7 +11,7 @@ import { alias, union } from 'drizzle-orm/pg-core';
  * joins the two must alias one of them or Postgres rejects the reference as
  * ambiguous.
  */
-const account = alias(authUsers, 'account');
+const authUsers = alias(authUsersTable, 'auth_users');
 
 export type EmailRecipient = {
   authUserId: string;
@@ -52,73 +49,18 @@ export async function listProfileRecipients({
   profileId: string;
 }): Promise<Array<EmailRecipient>> {
   const owner = db
-    .select({ authUserId: users.authUserId, email: account.email })
+    .select({ authUserId: users.authUserId, email: authUsers.email })
     .from(users)
-    .innerJoin(account, eq(account.id, users.authUserId))
+    .innerJoin(authUsers, eq(authUsers.id, users.authUserId))
     .where(eq(users.profileId, profileId));
 
   const members = db
-    .select({ authUserId: profileUsers.authUserId, email: account.email })
+    .select({ authUserId: profileUsers.authUserId, email: authUsers.email })
     .from(profileUsers)
-    .innerJoin(account, eq(account.id, profileUsers.authUserId))
+    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
     .where(eq(profileUsers.profileId, profileId));
 
   // With the address sourced per authUserId, UNION's row dedupe *is* the
   // identity dedupe: one person cannot surface under two addresses.
   return union(owner, members);
-}
-
-/**
- * The account behind one `users` row. Only the moderation notifier needs
- * this shape: it is handed a `users.id` rather than a profile.
- */
-export async function listUserRecipient({
-  userId,
-}: {
-  userId: string;
-}): Promise<EmailRecipient | null> {
-  const [recipient] = await db
-    .select({ authUserId: users.authUserId, email: account.email })
-    .from(users)
-    .innerJoin(account, eq(account.id, users.authUserId))
-    .where(eq(users.id, userId))
-    .limit(1);
-
-  return recipient ?? null;
-}
-
-/**
- * Admins of an organization. The audience for mail addressed to an org that
- * has no individual author to reach — the org's own contact address is a
- * public field, not an account we may deliver to.
- */
-export async function listOrganizationAdminRecipients({
-  organizationId,
-}: {
-  organizationId: string;
-}): Promise<Array<EmailRecipient>> {
-  return db
-    .selectDistinct({
-      authUserId: organizationUsers.authUserId,
-      email: account.email,
-    })
-    .from(organizationUsers)
-    .innerJoin(account, eq(account.id, organizationUsers.authUserId))
-    .innerJoin(
-      organizationUserToAccessRoles,
-      eq(
-        organizationUserToAccessRoles.organizationUserId,
-        organizationUsers.id,
-      ),
-    )
-    .innerJoin(
-      accessRoles,
-      eq(accessRoles.id, organizationUserToAccessRoles.accessRoleId),
-    )
-    .where(
-      and(
-        eq(organizationUsers.organizationId, organizationId),
-        eq(accessRoles.name, 'Admin'),
-      ),
-    );
 }

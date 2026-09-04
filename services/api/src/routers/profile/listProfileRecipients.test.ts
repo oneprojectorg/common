@@ -1,14 +1,9 @@
-import {
-  listOrganizationAdminRecipients,
-  listProfileRecipients,
-  listUserRecipient,
-} from '@op/common';
+import { listProfileRecipients } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProcessStatus, authUsers, profileUsers, users } from '@op/db/schema';
+import { ProcessStatus, authUsers, profileUsers } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import { schemaWithoutPipeline } from '../../test/helpers/pipelineSchemas';
 
 /**
@@ -151,57 +146,5 @@ describe.concurrent('listProfileRecipients', () => {
     ).resolves.toEqual([
       { authUserId: member.authUserId, email: member.email },
     ]);
-  });
-});
-
-describe.concurrent('listUserRecipient', () => {
-  it("resolves a users row to its account's sign-in address", async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup();
-
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-    });
-    // public.users.email is a mirror whose trigger has never fired.
-    const [userRow] = await db
-      .update(users)
-      .set({ email: `stale-${member.email}` })
-      .where(eq(users.authUserId, member.authUserId))
-      .returning({ id: users.id });
-
-    if (!userRow) {
-      throw new Error(`No users row for ${member.email}`);
-    }
-
-    await expect(listUserRecipient({ userId: userRow.id })).resolves.toEqual({
-      authUserId: member.authUserId,
-      email: member.email,
-    });
-  });
-});
-
-describe.concurrent('listOrganizationAdminRecipients', () => {
-  it('addresses the admins of an organization and no one else', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-    const { organization, adminUsers, memberUsers } =
-      await testData.createOrganization({ users: { admin: 1, member: 1 } });
-
-    const recipients = await listOrganizationAdminRecipients({
-      organizationId: organization.id,
-    });
-    const addresses = recipients.map(({ email }) => email);
-
-    for (const admin of adminUsers) {
-      expect(addresses).toContain(admin.email);
-    }
-    for (const member of memberUsers) {
-      expect(addresses).not.toContain(member.email);
-    }
   });
 });

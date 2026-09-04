@@ -135,9 +135,5 @@ export const sendRelationshipRequestEmail = async ({
   });
 };
 
-export {
-  listOrganizationAdminRecipients,
-  listProfileRecipients,
-  listUserRecipient,
-} from './recipients';
+export { listProfileRecipients } from './recipients';
 export type { EmailRecipient } from './recipients';

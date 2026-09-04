@@ -1,8 +1,4 @@
-import {
-  type EmailRecipient,
-  listProfileRecipients,
-  listUserRecipient,
-} from '@op/common';
+import { type EmailRecipient, listProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { db, eq } from '@op/db/client';
 import { posts, profiles, proposals, users } from '@op/db/schema';
@@ -71,19 +67,21 @@ const resolveRecipient = async (
   }
 
   if (itemType === 'user') {
-    // Flagged accounts arrive as a `users.id`, not a profile.
+    // Flagged accounts arrive as a `users.id`; their individual profile is the
+    // owner path of the resolver.
     const [row] = await db
-      .select({ name: users.name })
+      .select({ name: users.name, profileId: users.profileId })
       .from(users)
       .where(eq(users.id, itemId))
       .limit(1);
     if (!row) {
       return null;
     }
-    const recipient = await listUserRecipient({ userId: itemId });
 
     return {
-      candidates: recipient ? [recipient] : [],
+      candidates: row.profileId
+        ? await listProfileRecipients({ profileId: row.profileId })
+        : [],
       name: row.name,
       contentType: 'account',
     };

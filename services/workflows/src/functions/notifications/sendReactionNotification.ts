@@ -1,7 +1,4 @@
-import {
-  listOrganizationAdminRecipients,
-  listProfileRecipients,
-} from '@op/common';
+import { listProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -52,9 +49,9 @@ export const sendReactionNotification = inngest.createFunction(
 
           postAuthorName: postAuthorProfile.name,
 
-          organizationId: organizations.id,
           orgProfileSlug: orgProfile.slug,
           orgProfileName: orgProfile.name,
+          orgProfileEmail: orgProfile.email,
 
           parentPostContent: parentPost.content,
         })
@@ -102,10 +99,10 @@ export const sendReactionNotification = inngest.createFunction(
       return;
     }
 
-    // The post's own author when it has one, otherwise the org's admins: an
-    // org-attached post with no author profile has no account behind it, and
-    // the org's contact address is a public field rather than an inbox we may
-    // deliver to.
+    // The post's own author when it has one, otherwise the org's contact
+    // address. An org-attached post with no author profile has no account
+    // behind it, so the org's public contact field is the only address there
+    // is — the one place a sender still reads `profiles.email`.
     const audience = await step.run('get-recipients', async () => {
       if (data.postProfileId) {
         return {
@@ -118,11 +115,7 @@ export const sendReactionNotification = inngest.createFunction(
 
       return {
         recipientName: data.orgProfileName,
-        candidates: data.organizationId
-          ? await listOrganizationAdminRecipients({
-              organizationId: data.organizationId,
-            })
-          : [],
+        candidates: [{ email: data.orgProfileEmail }],
       };
     });
 
