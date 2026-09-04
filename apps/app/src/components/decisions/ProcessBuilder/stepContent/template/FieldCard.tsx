@@ -57,20 +57,20 @@ interface FieldCardProps {
     updates: Partial<XFormatPropertySchema>,
   ) => void;
   onChangeFieldType?: (fieldId: string, newType: FieldType) => void;
+  /** Types this card can't switch to (e.g. a single-instance type already in use). */
+  disabledTypes?: FieldType[];
   isNew?: boolean;
   onNewComplete?: (fieldId: string) => void;
 }
 
 const DESCRIPTION_MAX_LENGTH = 250;
 
-// Location is excluded: it's single-instance with a fixed key, so existing
-// fields can't switch to it (and it can't switch away).
 const FIELD_TYPE_OPTIONS = FIELD_CATEGORIES.flatMap((category) =>
   category.types.map((type) => ({
     type,
     labelKey: FIELD_TYPE_REGISTRY[type].labelKey,
   })),
-).filter((option) => option.type !== 'location');
+);
 
 /**
  * A collapsible card representing a form field in the builder.
@@ -90,6 +90,7 @@ export function FieldCard({
   onUpdateRequired,
   onUpdateJsonSchema,
   onChangeFieldType,
+  disabledTypes,
   isNew,
   onNewComplete,
 }: FieldCardProps) {
@@ -179,29 +180,31 @@ export function FieldCard({
               className="bg-white"
             />
           </Field>
-          {!isLocation && (
-            <Field className="w-40">
-              <FieldLabel htmlFor={fieldTypeId}>{t('Type')}</FieldLabel>
-              <Select
-                value={field.fieldType}
-                onValueChange={(value) => handleTypeChange(value)}
-                items={typeItems}
-              >
-                <SelectTrigger id={fieldTypeId} className="w-full bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {FIELD_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.type} value={opt.type}>
-                        {t(opt.labelKey)}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-          )}
+          <Field className="w-40">
+            <FieldLabel htmlFor={fieldTypeId}>{t('Type')}</FieldLabel>
+            <Select
+              value={field.fieldType}
+              onValueChange={(value) => handleTypeChange(value)}
+              items={typeItems}
+            >
+              <SelectTrigger id={fieldTypeId} className="w-full bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {FIELD_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem
+                      key={opt.type}
+                      value={opt.type}
+                      disabled={disabledTypes?.includes(opt.type)}
+                    >
+                      {t(opt.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
         </div>
 
         {/* Description */}

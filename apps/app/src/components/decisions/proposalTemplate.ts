@@ -27,6 +27,7 @@ import {
   getPropertyOrder,
   isPropertyRequired,
   removeProperty,
+  renameProperty,
   reorderProperties,
   setPropertyRequired,
   updateProperty,
@@ -367,11 +368,47 @@ export function changeFieldType(
       ...fresh,
       title: existing.title,
       ...(existing.description ? { description: existing.description } : {}),
-      // Carry forward dropdown options so switching away and back doesn't lose them.
-      // Non-dropdown types ignore `oneOf`; dropdown restores it.
-      ...(existing.oneOf ? { oneOf: existing.oneOf } : {}),
+      // Carry forward dropdown options so switching away and back doesn't lose
+      // them. Only string-valued types can round-trip `oneOf` — location stores
+      // an object, and a leftover `oneOf` of string consts there rejects every
+      // value the field collects.
+      ...(existing.oneOf && fresh.type === 'string'
+        ? { oneOf: existing.oneOf }
+        : {}),
     };
   });
+}
+
+/**
+ * Move a field to a new key, preserving its schema, order and required flag.
+ *
+ * Only the location field needs this, because the codebase identifies it two
+ * different ways. Most callers scan for the `location` x-format and don't care
+ * what the property is called (`templateCollectsLocation`,
+ * `getLocationFieldMapView`, `assembleProposalData`). The CSV export instead
+ * addresses it by the literal `location` property key, in three places: it
+ * fills the Address/Latitude/Longitude columns from `proposalData.location`,
+ * it lists `location` in `OVERRIDABLE_FIELD_KEYS` so a live edit can override
+ * the stored snapshot, and it excludes `location` from the per-field columns
+ * because those three dedicated ones already cover it.
+ *
+ * So the key has to follow the type, both ways. A field retyped *to* location
+ * that kept its generated id would export blank Address/Lat/Lng — the export
+ * looks under `location` and finds nothing — plus a stray extra column. A
+ * field retyped *away* from location that kept the `location` key would be
+ * dropped from the export entirely, since that key is filtered out of the
+ * per-field columns.
+ *
+ * Nothing else breaks in either case, which is what makes it easy to miss:
+ * the editor, submit validation and the map view all key off x-format and
+ * carry on working.
+ */
+export function renameField(
+  template: ProposalTemplateSchema,
+  fromId: string,
+  toId: string,
+): ProposalTemplateSchema {
+  return renameProperty(template, fromId, toId);
 }
 
 export function setFieldRequired(

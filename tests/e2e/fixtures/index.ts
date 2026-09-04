@@ -7,3 +7,4 @@ export {
   createSupabaseAdminClient,
 } from './auth';
 export { createOrganization, createUser } from '@op/test';
+export { waitForAutoSave } from './autosave';
