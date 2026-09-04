@@ -500,8 +500,6 @@
   "Add Image": "Adicionar imagem",
   "Add Horizontal Rule": "Adicionar linha horizontal",
   "Content could not be loaded": "Não foi possível carregar o conteúdo",
-  "Loading comments": "Carregando comentários",
-  "No comments": "Sem comentários",
   "Filter proposals by category": "Filtrar propostas por categoria",
   "Filter proposals by district": "Filtrar propostas por distrito",
   "Filter proposals": "Filtrar propostas",
@@ -1618,6 +1616,7 @@
   "Contributing ideas": "Ideias que contribuíram",
   "These participant ideas were merged into this proposal.": "Estas ideias de participantes foram combinadas com esta proposta.",
   "Contributing ideas could not be loaded": "Não foi possível carregar as ideias que contribuíram",
+  "Comment originally appeared in <proposal>{name}</proposal>": "O comentário apareceu originalmente em <proposal>{name}</proposal>",
   "Feedback": "Comentários",
   "Notes reviewers shared while this proposal was under review": "Notas que os avaliadores compartilharam enquanto esta proposta estava em revisão",
   "Reviewer · {timeAgo}": "Avaliador · {timeAgo}",
@@ -1719,4 +1718,7 @@
   "No proposal IDs found in what you pasted.": "Não foi encontrado nenhum ID de proposta no que colou.",
   "Add to selection": "Adicionar à seleção",
   "Check all that apply": "Marque todas as opções aplicáveis",
-  "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções"}
+  "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções",
+  "Comments could not be loaded": "Não foi possível carregar os comentários",
+  "(opens in a new tab)": "(abre num novo separador)"
+}

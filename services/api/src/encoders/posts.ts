@@ -46,6 +46,19 @@ export type Post = z.infer<typeof basePostsEncoder> & {
 
 // export type Post = z.infer<typeof postsEncoder>;
 
+export const proposalCommentEncoder = z.object({
+  post: postsEncoder,
+  /**
+   * Set when the comment was written on a proposal that was later merged into
+   * the one being read; null for the proposal's own comments.
+   */
+  originProposal: z
+    .object({ profileId: z.string(), name: z.string() })
+    .nullable(),
+});
+
+export type ProposalComment = z.infer<typeof proposalCommentEncoder>;
+
 export const postsToOrganizationsEncoder = createSelectSchema(
   postsToOrganizations,
 ).extend({
