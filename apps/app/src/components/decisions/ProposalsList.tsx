@@ -11,6 +11,7 @@ import {
   ProposalStatus,
 } from '@op/api/encoders';
 import {
+  PROPOSAL_PAGE_LIMIT,
   PROPOSAL_SEARCH_MAX_LENGTH,
   type Proposal,
   ProposalReviewRequestState,
@@ -94,11 +95,6 @@ export interface ProposalsListProps {
    */
   pinOffset?: number;
 }
-
-// A multiple of three so a full page fills the three-per-row grid evenly.
-// Kept small — every server-side cost of listProposals scales with this
-// number, and infinite scroll pulls further pages as needed.
-const PROPOSALS_PAGE_LIMIT = 24;
 
 const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
 
@@ -336,7 +332,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
     const params: ProposalQueryParams = {
       processInstanceId: instanceId,
       dir: appliedSortOrder === 'newest' ? 'desc' : 'asc',
-      limit: PROPOSALS_PAGE_LIMIT,
+      limit: PROPOSAL_PAGE_LIMIT,
       phase,
       excludeAssignedForReview,
     };

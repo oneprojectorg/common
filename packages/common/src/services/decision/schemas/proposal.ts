@@ -177,6 +177,19 @@ export type ProposalList = z.infer<typeof proposalListSchema>;
 export const PROPOSAL_SEARCH_MAX_LENGTH = PROPOSAL_TITLE_MAX_LENGTH;
 
 /**
+ * Page size for every infinite proposal-card list — the browse grid and the
+ * reviewer's queue. A multiple of three so a full page fills the
+ * three-per-row grid evenly, and kept small because the server-side cost of a
+ * page scales with it (the reviewer's queue renders each proposal's document,
+ * which is what ran the function out of memory unpaginated).
+ *
+ * One constant so the two lists cannot drift; lives here rather than in the
+ * client component because the reviewer's queue defaults to it server-side and
+ * a client that sends no `limit` must land on the same number.
+ */
+export const PROPOSAL_PAGE_LIMIT = 24;
+
+/**
  * Free-text proposal title search, shared by every list endpoint's filter.
  * Truncated rather than rejected: an over-long paste is normal in a search
  * field, and the tail past a full title's length could not have matched.

@@ -137,6 +137,10 @@ export const reviewAssignmentExtendedSchema = z.object({
 
 export const reviewAssignmentListSchema = z.object({
   assignments: z.array(reviewAssignmentExtendedSchema),
+  /** Keyset cursor for the next page, or `null` on the last one. */
+  next: z.string().nullable(),
+  /** Assignments matching the request's filters, independent of the page. */
+  total: z.number().int(),
 });
 
 // ── Proposal-scoped revision request schemas ──────────────────────────

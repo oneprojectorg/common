@@ -1,6 +1,7 @@
 import {
   Channels,
   REVIEW_ASSIGNMENT_SORTS,
+  instancePhaseRefSchema,
   listReviewAssignments,
   reviewAssignmentListSchema,
 } from '@op/common';
@@ -12,15 +13,16 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 export const listReviewAssignmentsRouter = router({
   listReviewAssignments: networkAuthenticatedProcedure()
     .input(
-      z.object({
-        processInstanceId: z.uuid(),
-        /** Omit for all phases. */
-        phaseId: z.string().optional(),
+      instancePhaseRefSchema.extend({
         status: z.enum(ProposalReviewAssignmentStatus).optional(),
         categoryIds: z.array(z.string()).optional(),
         /** Limits results to one proposal's assignments. */
         proposalProfileId: z.uuid().optional(),
         sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
+        /** Keyset cursor from the previous page's `next`. */
+        cursor: z.string().nullish(),
+        /** Omit to take the service's page size, which the client relies on. */
+        limit: z.number().int().min(1).max(100).optional(),
       }),
     )
     .output(reviewAssignmentListSchema)
@@ -36,6 +38,8 @@ export const listReviewAssignmentsRouter = router({
         categoryIds: input.categoryIds,
         proposalProfileId: input.proposalProfileId,
         sort: input.sort,
+        cursor: input.cursor,
+        limit: input.limit,
         user: ctx.user,
       });
     }),
