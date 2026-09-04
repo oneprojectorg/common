@@ -1,9 +1,11 @@
 import { aliasedTable, db, eq, getTableColumns, sql } from '@op/db/client';
 import { objectsInStorage, organizations, profiles } from '@op/db/schema';
 
+import { PAGE_LIMIT } from '../../utils/pagination';
+
 export const searchOrganizations = async ({
   query = '',
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
 }: {
   query?: string;
   limit?: number;

@@ -1,5 +1,6 @@
 import { EntityType } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
+import { PAGE_LIMIT } from '@op/common/client';
 import { Header1 } from '@op/sense/Header';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -39,7 +40,7 @@ const ProfileListingPage = async ({
         <AllOrganizations
           initialData={organizations}
           types={[EntityType.INDIVIDUAL]}
-          limit={20}
+          limit={PAGE_LIMIT.md}
         />
       </ListPageLayout>
     );
@@ -50,7 +51,7 @@ const ProfileListingPage = async ({
         <AllOrganizations
           initialData={{ items: [], next: null }}
           types={[EntityType.USER]}
-          limit={20}
+          limit={PAGE_LIMIT.md}
         />
       </ListPageLayout>
     );

@@ -1,3 +1,4 @@
+import { PAGE_LIMIT } from '../../utils';
 import { type AccessUser } from '../access';
 import { assertPostReadAccess } from './access';
 import { getPostsPageForProfiles } from './getPostsPageForProfiles';
@@ -5,7 +6,7 @@ import { getPostsPageForProfiles } from './getPostsPageForProfiles';
 export const listProfilePosts = async ({
   user,
   profileId,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   user: AccessUser | undefined;

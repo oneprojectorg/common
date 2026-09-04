@@ -1,12 +1,14 @@
+import { PAGE_LIMIT } from '@op/common/client';
+
 // Centralized query key constants to prevent cache misses
 export const QUERY_KEYS = {
   COMMENTS: {
-    LIMIT: 50,
+    LIMIT: PAGE_LIMIT.lg,
     OFFSET: 0,
     INCLUDE_CHILDREN: false,
   },
   POSTS: {
-    DEFAULT_LIMIT: 20,
+    DEFAULT_LIMIT: PAGE_LIMIT.md,
   },
 } as const;
 

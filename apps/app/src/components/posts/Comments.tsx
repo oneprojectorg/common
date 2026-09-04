@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
@@ -47,7 +48,7 @@ export function Comments({
 
   const [comments] = trpc.posts.getPosts.useSuspenseQuery({
     parentPostId: postId,
-    limit: 50,
+    limit: PAGE_LIMIT.lg,
     offset: 0,
     includeChildren: false,
   });

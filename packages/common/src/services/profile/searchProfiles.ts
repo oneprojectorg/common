@@ -7,9 +7,11 @@ import {
   users,
 } from '@op/db/schema';
 
+import { PAGE_LIMIT } from '../../utils/pagination';
+
 export const searchProfiles = async ({
   query = '',
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
   types,
 }: {
   query?: string;

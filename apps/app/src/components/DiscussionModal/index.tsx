@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import {
   Dialog,
   DialogContent,
@@ -47,7 +48,7 @@ export function DiscussionModal({
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
       parentPostId: post.id,
-      limit: 50,
+      limit: PAGE_LIMIT.lg,
       offset: 0,
       includeChildren: false,
     },

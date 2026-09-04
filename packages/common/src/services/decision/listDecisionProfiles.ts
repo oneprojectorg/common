@@ -10,6 +10,7 @@ import { User } from '@op/supabase/lib';
 import { collapseRoles } from 'access-zones';
 
 import {
+  PAGE_LIMIT,
   type PaginatedResult,
   constructTextSearch,
   decodeCursor,
@@ -26,7 +27,7 @@ export const listDecisionProfiles = async ({
   user,
   search,
   status,
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
   orderBy = 'updatedAt',
   dir = 'desc',
   cursor,

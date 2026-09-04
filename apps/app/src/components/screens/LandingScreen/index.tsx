@@ -5,6 +5,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { PAGE_LIMIT } from '@op/common/client';
 import { logger } from '@op/logging';
 import { Card } from '@op/sense/Card';
 import { Header1, Header3 } from '@op/sense/Header';
@@ -141,7 +142,9 @@ const PostFeedSection = async ({
   // If this fails, the client will fetch instead
   const { utils, queryClient } = await createServerUtils();
   try {
-    await utils.organization.listAllPosts.fetchInfinite({ limit: 10 });
+    await utils.organization.listAllPosts.fetchInfinite({
+      limit: PAGE_LIMIT.sm,
+    });
   } catch (e) {
     logger.error('Homepage post prefetch failed', { error: e });
   }

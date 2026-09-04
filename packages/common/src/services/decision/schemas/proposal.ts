@@ -1,6 +1,7 @@
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
+import { PAGE_LIMIT } from '../../../utils/pagination';
 import {
   PROPOSAL_TITLE_MAX_LENGTH,
   proposalDataSchema,
@@ -214,7 +215,7 @@ export const allProposalsFilterSchema = z.object({
   dir: z.enum(['asc', 'desc']).optional(),
   orderBy: z.enum(['createdAt', 'updatedAt']).optional(),
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(50),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.lg),
 });
 
 export type AllProposalsFilter = z.infer<typeof allProposalsFilterSchema>;

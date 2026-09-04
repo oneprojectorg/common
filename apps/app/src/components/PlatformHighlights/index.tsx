@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { PAGE_LIMIT } from '@op/common/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Card } from '@op/sense/Card';
 import { GrowingFacePile } from '@op/sense/FacePile';
@@ -117,7 +118,7 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
 
 const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
   const [[{ items: organizations }, stats]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({ limit: 100 }),
+    t.organization.list({ limit: PAGE_LIMIT.max }),
     t.platform.getStats(),
   ]);
 

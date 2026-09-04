@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { match } from '@op/core';
 import {
   Empty,
@@ -22,7 +23,7 @@ import { ProfileListSkeleton, ProfileSummaryList } from '../ProfileList';
 
 export const ProfileSearchResultsSuspense = ({
   query,
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
 }: {
   query: string;
   limit?: number;

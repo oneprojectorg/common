@@ -3,6 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { match } from '@op/core';
 import { useInfiniteScroll } from '@op/hooks';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -65,7 +66,7 @@ const DecisionsListSuspense = ({
     isFetchingNextPage,
   } = trpc.decision.listDecisionProfiles.useInfiniteQuery(
     {
-      limit: 20,
+      limit: PAGE_LIMIT.md,
       status,
       ownerProfileId,
     },

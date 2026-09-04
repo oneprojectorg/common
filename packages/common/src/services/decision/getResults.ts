@@ -11,6 +11,7 @@ import { permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   NotFoundError,
   type PaginatedResult,
   decodeCursor,
@@ -33,7 +34,7 @@ type ResultProposalItem = Awaited<
 export const getLatestResultWithProposals = async ({
   processInstanceId,
   user,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   processInstanceId: string;

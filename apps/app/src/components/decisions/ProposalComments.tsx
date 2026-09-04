@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
-import type { Proposal } from '@op/common/client';
+import { PAGE_LIMIT, type Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -59,7 +59,7 @@ export function ProposalComments({
     // older comments can be pushed out by carried-over ones with no
     // indication. The header count below reads from the loaded page, so it
     // reports 50 rather than the true total once truncated.
-    limit: 50,
+    limit: PAGE_LIMIT.lg,
   });
 
   const comments = commentsData?.items ?? [];

@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonText } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
@@ -15,7 +16,7 @@ type ProfileListResponse = {
 };
 
 export const AllOrganizationsSuspense = ({
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   initialData,
   types,
 }: {

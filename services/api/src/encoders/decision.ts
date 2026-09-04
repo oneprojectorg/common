@@ -1,4 +1,5 @@
 import {
+  PAGE_LIMIT,
   proposalSearchSchema,
   PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
@@ -384,7 +385,7 @@ export const VISIBLE_DECISION_STATUSES = [
 /** Decision profile filter schema */
 export const decisionProfileWithSchemaFilterSchema = z.object({
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(10),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.sm),
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),
@@ -682,7 +683,7 @@ export const transitionCheckResultEncoder = z.object({
 
 // Pagination Schema
 export const paginationInputSchema = z.object({
-  limit: z.number().min(1).max(100).prefault(20),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.md),
   offset: z.number().min(0).prefault(0),
 });
 
@@ -726,7 +727,7 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   phase: z.enum(['results']).optional(),
   /** Keyset pagination cursor from the previous page's `next`. */
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(20),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.md),
 });
 
 /**
@@ -759,7 +760,7 @@ export const decisionProfileListEncoder = z.object({
 // Decision Profile Filter Schema
 export const decisionProfileFilterSchema = z.object({
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(10),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.sm),
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),

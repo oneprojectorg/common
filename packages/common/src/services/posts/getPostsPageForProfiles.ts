@@ -4,6 +4,7 @@ import { checkPermission, permission } from 'access-zones';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -37,7 +38,7 @@ export const getPostsPageForProfiles = async ({
   user,
   profileIds,
   moderationProfileId,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   user: AccessUser | undefined;

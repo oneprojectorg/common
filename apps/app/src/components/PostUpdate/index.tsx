@@ -8,6 +8,7 @@ import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -198,7 +199,7 @@ const PostUpdateWithUser = ({
         const queryKey = {
           profileId,
           parentPostId: null,
-          limit: 50,
+          limit: PAGE_LIMIT.lg,
           offset: 0,
           includeChildren: false,
         };
@@ -273,7 +274,7 @@ const PostUpdateWithUser = ({
           const queryKey = {
             profileId,
             parentPostId: null,
-            limit: 50,
+            limit: PAGE_LIMIT.lg,
             offset: 0,
             includeChildren: false,
           };
@@ -377,7 +378,7 @@ const PostUpdateWithUser = ({
           const queryKey = {
             profileId,
             parentPostId: null,
-            limit: 50,
+            limit: PAGE_LIMIT.lg,
             offset: 0,
             includeChildren: false,
           };
@@ -431,7 +432,7 @@ const PostUpdateWithUser = ({
             const queryKey = {
               profileId,
               parentPostId: null,
-              limit: 50,
+              limit: PAGE_LIMIT.lg,
               offset: 0,
               includeChildren: false,
             };

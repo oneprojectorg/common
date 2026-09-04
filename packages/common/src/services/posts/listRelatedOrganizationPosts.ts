@@ -8,6 +8,7 @@ import {
   getRelatedOrganizations,
 } from '../';
 import {
+  PAGE_LIMIT,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -34,7 +35,7 @@ export const listAllRelatedOrganizationPosts = async (
   authUserId: string,
   options: ListAllPostsOptions = {},
 ) => {
-  const { limit = 20, cursor } = options;
+  const { limit = PAGE_LIMIT.md, cursor } = options;
 
   const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
 

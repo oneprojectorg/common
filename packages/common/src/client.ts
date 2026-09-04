@@ -258,6 +258,7 @@ export type {
 // Re-exported from utils so client components can import it without pulling in
 // the server-only utils barrel (which depends on drizzle).
 export { hasEmail, selectEmailRecipients } from './utils/email';
+export { PAGE_LIMIT } from './utils/pagination';
 
 // Whitelist of safe redirect-path prefixes. Every legitimate app route lives
 // under a locale segment (en/es/fr/…) or under `/info`. Anything else —
