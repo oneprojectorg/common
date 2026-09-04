@@ -5,17 +5,9 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { getPhaseReviewSettings } from '@op/common/client';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { Suspense, useMemo } from 'react';
-import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
@@ -26,6 +18,7 @@ import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
+import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
@@ -161,19 +154,7 @@ export function ReviewPage({
   );
 
   const proposalsLoadErrorFallback = {
-    default: () => (
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LuLeaf className="size-6" />
-          </EmptyMedia>
-          <EmptyTitle>{t("We couldn't load proposals")}</EmptyTitle>
-          <EmptyDescription>
-            {t('Please refresh the page to try again.')}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    ),
+    default: () => <ProposalsLoadError />,
   };
 
   return (

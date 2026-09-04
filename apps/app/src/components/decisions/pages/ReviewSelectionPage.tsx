@@ -5,19 +5,12 @@ import {
   getRubricScoringInfo,
   templateCollectsBudget,
 } from '@op/common/client';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
 import { Suspense } from 'react';
-import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionHero } from '../DecisionHero';
+import { ProposalsLoadError } from '../ProposalsLoadError';
 import {
   ReviewSelectionList,
   ReviewSelectionListSkeleton,
@@ -67,21 +60,7 @@ export function ReviewSelectionPage({
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4 sm:p-8">
           <APIErrorBoundary
-            fallbacks={{
-              default: () => (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <LuLeaf className="size-6" />
-                    </EmptyMedia>
-                    <EmptyTitle>{t("We couldn't load proposals")}</EmptyTitle>
-                    <EmptyDescription>
-                      {t('Please refresh the page to try again.')}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              ),
-            }}
+            fallbacks={{ default: () => <ProposalsLoadError /> }}
           >
             <Suspense
               fallback={
