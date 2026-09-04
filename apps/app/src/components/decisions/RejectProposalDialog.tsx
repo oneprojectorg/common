@@ -60,14 +60,18 @@ export const RejectProposalDialog = ({
   isPending: boolean;
 }) => {
   const t = useTranslations();
-  // One dialog per proposal card, so the radio and textarea ids must not collide.
+  // Ids are per instance rather than per file, so two of these on one page
+  // (the card list's hosted one and the proposal page's) can't collide.
   const fieldId = useId();
   const [reason, setReason] = useState<RejectionReason | null>(null);
   const [note, setNote] = useState('');
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      // The content unmounts, so state would otherwise survive into the next open.
+      // The content unmounts but this component does not, so the reason and
+      // note would survive into the next open — and the card list hosts one
+      // instance for every proposal, so that next open is usually a different
+      // proposal.
       setReason(null);
       setNote('');
     }
