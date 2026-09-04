@@ -3,7 +3,7 @@ import {
   instancePhaseRefSchema,
   listPhaseReviewerSummaries,
 } from '@op/common';
-import { phaseReviewerSummariesSchema } from '@op/common/client';
+import { PAGE_LIMIT, phaseReviewerSummariesSchema } from '@op/common/client';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -13,7 +13,7 @@ export const listPhaseReviewerSummariesRouter = router({
     .input(
       instancePhaseRefSchema.extend({
         cursor: z.string().nullish(),
-        limit: z.number().min(1).max(100).optional(),
+        limit: z.number().min(1).max(PAGE_LIMIT.max).optional(),
       }),
     )
     .output(phaseReviewerSummariesSchema)

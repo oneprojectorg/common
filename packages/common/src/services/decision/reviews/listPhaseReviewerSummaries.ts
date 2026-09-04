@@ -22,6 +22,7 @@ import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import {
+  PAGE_LIMIT,
   UnauthorizedError,
   ValidationError,
   decodeCursor,
@@ -37,8 +38,6 @@ import {
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
 
-const DEFAULT_PHASE_REVIEWER_SUMMARY_LIMIT = 50;
-
 const phaseReviewerCursorSchema = z.object({
   assignedCount: z.number().int().nonnegative(),
   name: z.string(),
@@ -52,7 +51,7 @@ export async function listPhaseReviewerSummaries({
   processInstanceId,
   phaseId,
   cursor,
-  limit = DEFAULT_PHASE_REVIEWER_SUMMARY_LIMIT,
+  limit = PAGE_LIMIT.lg,
 }: InstancePhaseRef & {
   user: User;
   cursor?: string | null;
