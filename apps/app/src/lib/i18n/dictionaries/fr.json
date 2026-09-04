@@ -1677,6 +1677,7 @@
   "No reviewers yet": "Aucun évaluateur pour l’instant",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Donnez aux personnes le rôle d’évaluateur et elles apparaîtront ici, prêtes à recevoir des propositions.",
   "Reviewers": "Évaluateurs",
+  "Loading more reviewers...": "Chargement d’autres évaluateurs...",
   "Amount": "Montant",
   "Reviewers enter an amount": "Les évaluateurs saisissent un montant",
   "Assigned proposals ({count})": "Propositions attribuées ({count})",

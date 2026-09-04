@@ -1677,6 +1677,7 @@
   "No reviewers yet": "Még nincsenek értékelők",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "Adjon értékelő szerepkört a felhasználóknak, és itt jelennek meg, készen a javaslatok fogadására.",
   "Reviewers": "Értékelők",
+  "Loading more reviewers...": "További értékelők betöltése...",
   "Amount": "Összeg",
   "Reviewers enter an amount": "Az értékelők megadnak egy összeget",
   "Assigned proposals ({count})": "Kiosztott javaslatok ({count})",
