@@ -19,8 +19,6 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
 import { AdminReviewProposalsList } from '../AdminReviewProposalsList';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
@@ -169,11 +167,9 @@ export function ReviewPage({
           <EmptyMedia variant="icon">
             <LuLeaf className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>
-            <TranslatedText text="We couldn't load proposals" />
-          </EmptyTitle>
+          <EmptyTitle>{t("We couldn't load proposals")}</EmptyTitle>
           <EmptyDescription>
-            <TranslatedText text="Please refresh the page to try again." />
+            {t('Please refresh the page to try again.')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -186,11 +182,9 @@ export function ReviewPage({
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
           <DecisionHero
             title={
-              isAdmin ? (
-                <TranslatedText text="Review Progress" />
-              ) : (
-                (heroHeadline ?? <TranslatedText text="Review proposals." />)
-              )
+              isAdmin
+                ? t('Review Progress')
+                : (heroHeadline ?? t('Review proposals.'))
             }
             description={
               !isAdmin && heroDescription ? <p>{heroDescription}</p> : undefined

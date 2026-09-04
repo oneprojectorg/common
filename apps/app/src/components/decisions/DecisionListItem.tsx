@@ -28,7 +28,6 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 
-import { TranslatedText } from '../TranslatedText';
 import { DecisionCardHeader } from './DecisionCardHeader';
 import { DuplicateProcessModal } from './DuplicateProcessModal';
 
@@ -328,16 +327,19 @@ const DecisionStat = ({
   number: number;
   label: TranslationKey;
   className?: string;
-}) => (
-  <div className={cn('flex items-center gap-1 sm:flex-col', className)}>
-    <span className="font-serif text-title">{number}</span>
-    <span className="text-sm text-muted-foreground">
-      <TranslatedText text={label} />
-    </span>
-  </div>
-);
+}) => {
+  const t = useTranslations();
+
+  return (
+    <div className={cn('flex items-center gap-1 sm:flex-col', className)}>
+      <span className="font-serif text-title">{number}</span>
+      <span className="text-sm text-muted-foreground">{t(label)}</span>
+    </div>
+  );
+};
 
 const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
+  const t = useTranslations();
   const locale = useLocale();
   const closingSoon = isClosingSoon(closingDate);
 
@@ -349,10 +351,7 @@ const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
       )}
     >
       <LuCalendar className="size-4" aria-hidden />
-      <TranslatedText
-        text="Closes on {date}"
-        values={{ date: formatDateShort(closingDate, locale) }}
-      />
+      {t('Closes on {date}', { date: formatDateShort(closingDate, locale) })}
     </div>
   );
 };

@@ -1,19 +1,20 @@
 import { createClient } from '@op/api/serverClient';
 import { Suspense } from 'react';
 
-import { Link } from '@/lib/i18n';
+import { Link, getTranslations } from '@/lib/i18n';
 
 import {
   OrganizationList,
   OrganizationListSkeleton,
 } from '../OrganizationList';
-import { TranslatedText } from '../TranslatedText';
 
 export const NewOrganizationsSuspense = async ({
   limit = 5,
 }: {
   limit?: number;
 }) => {
+  const t = await getTranslations();
+
   try {
     const client = await createClient();
 
@@ -28,7 +29,7 @@ export const NewOrganizationsSuspense = async ({
         <OrganizationList organizations={organizations} />
         <div className="px-4 sm:px-0">
           <Link href="/org" className="text-primary">
-            <TranslatedText text="See more" />
+            {t('See more')}
           </Link>
         </div>
       </div>

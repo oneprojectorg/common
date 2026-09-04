@@ -76,7 +76,7 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 
 - **Translation files location**: `apps/app/src/lib/i18n/dictionaries/` — every `.json` file there is a supported language; keep them all in sync
 - **Use `useTranslations` hook for client components**: `const t = useTranslations()` then `t('Key string')`
-- **Use `getTranslations` for server components**: `const t = await getTranslations({ locale })`. Import it from `@/lib/i18n`, never from `next-intl/server` — ours applies the dot-to-underscore key substitution that `request.ts` applied to the dictionary, and the unwrapped one returns the raw English string for any key containing a period. (`TranslatedText` predates this and is deprecated.)
+- **Use `getTranslations` for server components**: `const t = await getTranslations({ locale })`. Import it from `@/lib/i18n`, never from `next-intl/server` — ours applies the dot-to-underscore key substitution that `request.ts` applied to the dictionary, and the unwrapped one returns the raw English string for any key containing a period.
 - **ALWAYS** wrap user-facing strings with `t('...')` — never hardcode user-facing text
 - **For dynamic values**, use interpolation: `t('Hello {name}', { name: userName })` and `t.rich()` for strings that are broken up with styles/components
 

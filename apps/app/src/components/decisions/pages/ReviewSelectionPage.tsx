@@ -15,7 +15,7 @@ import {
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
-import { TranslatedText } from '@/components/TranslatedText';
+import { useTranslations } from '@/lib/i18n';
 
 import { DecisionHero } from '../DecisionHero';
 import {
@@ -31,6 +31,7 @@ export function ReviewSelectionPage({
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
 }) {
+  const t = useTranslations();
   const phases = instance.instanceData?.phases ?? [];
   const previousPhase = phases.find(
     (phase): phase is InstancePhaseData => phase.phaseId === previousPhaseId,
@@ -55,15 +56,9 @@ export function ReviewSelectionPage({
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
         <DecisionHero
-          title={
-            previousPhase?.headline ?? (
-              <TranslatedText text="REVIEWS COMPLETE" />
-            )
-          }
+          title={previousPhase?.headline ?? t('REVIEWS COMPLETE')}
           description={
-            <p>
-              <TranslatedText text="Select which proposals move on to the next phase" />
-            </p>
+            <p>{t('Select which proposals move on to the next phase')}</p>
           }
           variant="standard"
         />
@@ -79,11 +74,9 @@ export function ReviewSelectionPage({
                     <EmptyMedia variant="icon">
                       <LuLeaf className="size-6" />
                     </EmptyMedia>
-                    <EmptyTitle>
-                      <TranslatedText text="We couldn't load proposals" />
-                    </EmptyTitle>
+                    <EmptyTitle>{t("We couldn't load proposals")}</EmptyTitle>
                     <EmptyDescription>
-                      <TranslatedText text="Please refresh the page to try again." />
+                      {t('Please refresh the page to try again.')}
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>

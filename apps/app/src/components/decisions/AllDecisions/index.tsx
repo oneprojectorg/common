@@ -13,7 +13,6 @@ import { Fragment, Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionListItem } from '../DecisionListItem';
 
@@ -170,16 +169,11 @@ const AllDecisionsTabs = () => {
 };
 
 export const AllDecisions = () => {
+  const t = useTranslations();
   const { user } = useRequiredUser();
 
   return (
-    <ErrorBoundary
-      fallback={
-        <div>
-          <TranslatedText text="Could not load decisions" />
-        </div>
-      }
-    >
+    <ErrorBoundary fallback={<div>{t('Could not load decisions')}</div>}>
       <Suspense fallback={<DecisionsListSkeleton />}>
         <AllDecisionsTabs key={user.currentProfile?.id} />
       </Suspense>

@@ -1,13 +1,13 @@
 import { getUser } from '@/utils/getUser';
 import { assertWalledGardenAccess } from '@/utils/walledGarden';
 
+import { getTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
-import { TranslatedText } from '@/components/TranslatedText';
 
 const StartLayout = async ({ children }: { children: React.ReactNode }) => {
-  const user = await getUser();
+  const [t, user] = await Promise.all([getTranslations(), getUser()]);
 
   // Admit any real account: non-members belong in onboarding, and gating them
   // out only deadlocks returning users. Real protection is in the service layer.
@@ -23,9 +23,7 @@ const StartLayout = async ({ children }: { children: React.ReactNode }) => {
               href="/"
               className="flex items-center gap-2 hover:no-underline"
             >
-              <span className="sr-only">
-                <TranslatedText text="Home" />
-              </span>
+              <span className="sr-only">{t('Home')}</span>
               <CommonLogo />
             </Link>
           </div>

@@ -11,9 +11,8 @@ import {
   LuTimer,
 } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
-
-import { TranslatedText } from '@/components/TranslatedText';
 
 import type { AssignmentStatusValue } from './ReviewAssignments/assignmentStatusSpecs';
 
@@ -34,11 +33,12 @@ export function ReviewStatusBadge({
 }: {
   status: AssignmentStatusValue;
 }) {
+  const t = useTranslations();
   const { variant, icon, label } = assignmentBadges[status];
 
   return (
     <StatusBadge variant={variant} icon={icon}>
-      <TranslatedText text={label} />
+      {t(label)}
     </StatusBadge>
   );
 }

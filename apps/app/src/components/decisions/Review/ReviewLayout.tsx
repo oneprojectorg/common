@@ -13,7 +13,7 @@ import {
 import { SplitPane } from '@op/sense/SplitPane';
 import { forbidden, notFound } from 'next/navigation';
 
-import { TranslatedText } from '@/components/TranslatedText';
+import { getTranslations } from '@/lib/i18n';
 
 import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
@@ -31,7 +31,8 @@ export async function ReviewLayout({
   decisionSlug,
   assignmentId,
 }: ReviewLayoutProps) {
-  const [client, { utils, queryClient }] = await Promise.all([
+  const [t, client, { utils, queryClient }] = await Promise.all([
+    getTranslations(),
     createClient(),
     createServerUtils(),
   ]);
@@ -101,18 +102,12 @@ export async function ReviewLayout({
               className="mx-auto max-w-6xl"
               defaultMobileTabId="review"
             >
-              <SplitPane.Pane
-                id="proposal"
-                label={<TranslatedText text="Proposal" />}
-              >
+              <SplitPane.Pane id="proposal" label={t('Proposal')}>
                 <ReviewProposalPane
                   decisionRoot={`/decisions/${decisionSlug}`}
                 />
               </SplitPane.Pane>
-              <SplitPane.Pane
-                id="review"
-                label={<TranslatedText text="Review" />}
-              >
+              <SplitPane.Pane id="review" label={t('Review')}>
                 <ReviewRubricForm previousReviewPhases={previousReviewPhases} />
               </SplitPane.Pane>
             </SplitPane>
