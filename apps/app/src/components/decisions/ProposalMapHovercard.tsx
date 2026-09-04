@@ -6,9 +6,7 @@ import {
   normalizeProposalCategories,
   parseProposalData,
 } from '@op/common/client';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import Image from 'next/image';
+import { ProposalCard, type ProposalCardAuthor } from '@op/sense/ProposalCard';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -35,67 +33,43 @@ export function ProposalMapHovercard({
   // The boundary-import job tags each proposal with the boundary (council
   // district) it falls inside as a category — see `decision_boundaries`.
   const districts = normalizeProposalCategories(category);
+  const authors = getHovercardAuthors(proposal.submittedBy);
 
   return (
     <Link
       href={href}
       // `w-fit` + min/max-w clamps the card between 13rem and 20rem so
-      // short titles don't stretch and long titles wrap.
-      className="block w-fit max-w-80 min-w-52 cursor-pointer rounded-lg border border-neutral-gray1 bg-white p-4 text-neutral-black no-underline shadow-md hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
+      // short titles don't stretch and long titles wrap. The card chrome
+      // (border/bg/padding) comes from the pin-variant ProposalCard; the
+      // Link only carries the hit area, focus ring, and floating shadow.
+      className="block w-fit max-w-80 min-w-52 rounded-lg no-underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
     >
-      <p className="line-clamp-2 font-serif text-title-sm14 text-neutral-black">
-        {titleText}
-      </p>
-      <HovercardMeta author={proposal.submittedBy} districts={districts} />
+      <ProposalCard
+        variant="pin"
+        title={titleText}
+        authors={authors}
+        tags={districts}
+        className="shadow-md"
+      />
     </Link>
   );
 }
 
 type HovercardAuthorData = NonNullable<Proposal['submittedBy']>;
 
-function HovercardMeta({
-  author,
-  districts,
-}: {
-  author?: HovercardAuthorData;
-  districts: string[];
-}) {
-  // `empty:hidden` collapses the row when both children render null so the
-  // title doesn't get a ghost margin.
-  return (
-    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 empty:mt-0 empty:hidden">
-      <HovercardAuthor author={author} />
-      <HovercardDistricts districts={districts} />
-    </div>
-  );
-}
-
-function HovercardAuthor({ author }: { author?: HovercardAuthorData }) {
+/** The single submitter as a facepile author, unless anonymous or absent. */
+function getHovercardAuthors(
+  author?: HovercardAuthorData,
+): ProposalCardAuthor[] | undefined {
   if (!author || author.isAnonymous) {
-    return null;
+    return undefined;
   }
-  return (
-    <span className="flex min-w-0 items-center gap-2">
-      <HovercardAvatar author={author} />
-      <span className="truncate text-sm text-neutral-charcoal">
-        {author.name}
-      </span>
-    </span>
-  );
-}
-
-function HovercardAvatar({ author }: { author: HovercardAuthorData }) {
-  const avatarUrl = resolveAvatarUrl(author);
-  return (
-    <Avatar
-      placeholder={author.name || author.slug}
-      className="size-4 min-h-4 min-w-4"
-    >
-      {avatarUrl ? (
-        <Image src={avatarUrl} alt="" fill className="object-cover" />
-      ) : null}
-    </Avatar>
-  );
+  return [
+    {
+      name: author.name || author.slug,
+      avatarSrc: resolveAvatarUrl(author) ?? undefined,
+    },
+  ];
 }
 
 function resolveAvatarUrl(author: HovercardAuthorData): string | null {
@@ -104,19 +78,4 @@ function resolveAvatarUrl(author: HovercardAuthorData): string | null {
     return null;
   }
   return getPublicUrl(name) ?? null;
-}
-
-function HovercardDistricts({ districts }: { districts: string[] }) {
-  if (districts.length === 0) {
-    return null;
-  }
-  return (
-    <span className="flex min-w-0 flex-wrap items-center gap-1">
-      {districts.map((district) => (
-        <Chip key={district} className="block max-w-full truncate">
-          {district}
-        </Chip>
-      ))}
-    </span>
-  );
 }

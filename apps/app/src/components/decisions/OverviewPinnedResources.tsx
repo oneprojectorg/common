@@ -1,13 +1,16 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Header3 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';
-import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
+import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
+
+import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 
 /**
  * Read-only "Pinned Resources" list for the decision overview sidebar. There is
@@ -28,6 +31,15 @@ export const OverviewPinnedResourcesSuspense = ({
     profileId,
   });
 
+  // The overview reads resources itself rather than through the side panel's
+  // list, so it has to register its own samples — a reader who never opens the
+  // panel would otherwise have no way to translate the text shown here.
+  const resourceSamples = useMemo(
+    () => items.flatMap((item) => [item.title, item.description ?? '']),
+    [items],
+  );
+  useRegisterTranslationSamples('overview-resources', resourceSamples);
+
   if (items.length === 0) {
     return null;
   }
@@ -38,7 +50,7 @@ export const OverviewPinnedResourcesSuspense = ({
           actual resources — an empty list returns null above, no orphan rule. */}
       <Separator />
       <section className="flex flex-col gap-2">
-        <Header3 className="font-sans text-sm text-neutral-gray4">
+        <Header3 className="font-sans text-sm text-muted-foreground">
           {t('Pinned Resources')}
         </Header3>
         {items.map((resource) => (
@@ -70,12 +82,10 @@ export const PinnedResourcesError = () => {
     <>
       <Separator />
       <section className="flex flex-col gap-2">
-        <Header3 className="font-sans text-sm text-neutral-gray4">
+        <Header3 className="font-sans text-sm text-muted-foreground">
           {t('Pinned Resources')}
         </Header3>
-        <p className="text-neutral-charcoal">
-          {t("Couldn't load pinned resources.")}
-        </p>
+        <p>{t("Couldn't load pinned resources.")}</p>
       </section>
     </>
   );

@@ -14,10 +14,12 @@ export const listReviewAssignmentsRouter = router({
     .input(
       z.object({
         processInstanceId: z.uuid(),
-        /** Defaults to the current phase. */
+        /** Omit for all phases. */
         phaseId: z.string().optional(),
         status: z.enum(ProposalReviewAssignmentStatus).optional(),
         categoryIds: z.array(z.string()).optional(),
+        /** Limits results to one proposal's assignments. */
+        proposalProfileId: z.uuid().optional(),
         sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
       }),
     )
@@ -32,6 +34,7 @@ export const listReviewAssignmentsRouter = router({
         phaseId: input.phaseId,
         status: input.status,
         categoryIds: input.categoryIds,
+        proposalProfileId: input.proposalProfileId,
         sort: input.sort,
         user: ctx.user,
       });

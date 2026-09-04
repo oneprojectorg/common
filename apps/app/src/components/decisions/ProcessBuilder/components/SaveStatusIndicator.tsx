@@ -1,6 +1,6 @@
 'use client';
 
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Spinner } from '@op/sense/Spinner';
 import { LuCheck, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,14 +29,14 @@ export function SaveStatusIndicator({
     <div className="flex items-center gap-2 text-sm">
       {status === 'saving' && (
         <>
-          <LoadingSpinner className="size-4" />
-          <span className="text-neutral-gray4">{t('Saving...')}</span>
+          <Spinner className="size-4" />
+          <span className="text-muted-foreground">{t('Saving...')}</span>
         </>
       )}
       {status === 'saved' && (
         <>
-          <LuCheck className="size-4 text-functional-green" />
-          <span className="text-neutral-gray4">
+          <LuCheck className="size-4 text-success" />
+          <span className="text-muted-foreground">
             {savedAt
               ? t('Saved at {time}', { time: formatTime(savedAt) })
               : t('Saved')}
@@ -45,8 +45,8 @@ export function SaveStatusIndicator({
       )}
       {status === 'error' && (
         <>
-          <LuX className="size-4 text-functional-red" />
-          <span className="text-functional-red">{t('Failed to save')}</span>
+          <LuX className="size-4 text-destructive" />
+          <span className="text-destructive">{t('Failed to save')}</span>
         </>
       )}
     </div>

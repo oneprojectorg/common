@@ -1,53 +1,46 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
-import { userCanInteract } from '@/utils/userCanInteract';
-import { Button } from '@op/ui/Button';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import type { Proposal } from '@op/common/client';
+import { Button } from '@op/sense/Button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@op/sense/Tooltip';
 import { ReactNode } from 'react';
 import {
   LuArrowLeft,
-  LuBookmark,
-  LuHeart,
+  LuMessageCircle,
+  LuMessageSquareText,
   LuPencil,
-  LuStickyNote,
 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
 
+import { ButtonLink } from '../ButtonLink';
 import { LocaleChooser } from '../LocaleChooser';
 import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
+import { ProposalAdminMenu } from './ProposalAdminMenu';
+import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ReportProposalDialog } from './ReportProposalDialog';
 
 export function ProposalViewLayout({
   children,
   backHref,
-  title,
-  onLike,
-  onFollow,
-  isLiked = false,
-  isFollowing = false,
-  isLoading = false,
   editHref,
   canEdit = false,
-  canEngage = false,
   canJoin = false,
   reportProposalId,
-  revisionToggle,
+  feedbackToggle,
+  moderationProposal,
+  notices,
 }: {
   children: ReactNode;
   backHref: string;
-  title?: string;
-  onLike?: () => void;
-  onFollow?: () => void;
-  isLiked?: boolean;
-  isFollowing?: boolean;
-  isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
-  /** Mirrors the server-side engagement gate — hides Like/Follow otherwise. */
-  canEngage?: boolean;
   /**
    * Public process (viewer can submit proposals without an account): the
    * header offers "Join" (account claim, see JoinAccountModal) instead of
@@ -58,111 +51,122 @@ export function ProposalViewLayout({
    *  proposal with this id. */
   reportProposalId?: string;
   /**
-   * When provided, renders a sticky-note toggle button in the header with an
-   * orange indicator dot. `isActive` reflects the aria-pressed state.
+   * The header's "Feedback" disclosure; the owner decides which pane it opens.
+   * Its dot is static — Figma's red dot means "unread" and we hold no
+   * read-state for reviewer notes.
    */
-  revisionToggle?: {
+  feedbackToggle?: {
     onToggle: () => void;
     isActive: boolean;
   };
+  /**
+   * Admin overflow menu (hide / delete). Gates itself on
+   * `proposal.access.admin`, so it's safe to pass for any viewer.
+   */
+  moderationProposal?: Proposal;
+  /**
+   * Read-only status shown at the head of the action cluster. Pass a fragment
+   * for more than one; each renders nothing when it has nothing to say.
+   */
+  notices?: ReactNode;
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const { user } = useUser();
-  const revisionRequestLabel = t('Revision request');
+  const feedbackLabel = t('Feedback');
+  const backLabel = t('Back to Proposals');
 
   return (
     <div className="grid h-screen min-h-0 min-w-0 grid-cols-1 grid-rows-[auto_1fr] bg-white">
-      {/* Header (pinned — fixed grid row above the scrolling body) */}
-      <div className="grid grid-cols-3 items-center border-b px-6 py-4">
-        <button
-          onClick={() => router.push(backHref)}
-          className="flex cursor-pointer items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
-        >
-          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal rtl:-scale-x-100" />
-          <span className="hidden sm:block">{t('Back to Proposals')}</span>
-        </button>
-
-        <div className="flex justify-center text-lg font-medium text-neutral-black">
-          {title ?? null}
+      {/* Header (pinned — fixed grid row above the scrolling body). Figma has no
+          centred title on the read bar: the title is the body's H1, so the bar
+          is a simple left cluster / action cluster split. */}
+      <div className="flex h-15 items-center justify-between gap-3 border-b px-4 py-2 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <Button
+            variant="link"
+            onClick={() => router.push(backHref)}
+            aria-label={backLabel}
+            className="px-0"
+          >
+            <LuArrowLeft className="size-4 rtl:-scale-x-100" />
+            <span className="hidden sm:inline">{backLabel}</span>
+          </Button>
         </div>
 
-        <div className="flex items-center justify-end gap-4">
-          {canEdit && editHref && (
-            <Button
-              color="secondary"
-              surface="outline"
-              size="small"
-              onPress={() => router.push(editHref)}
-              className="px-4 py-2"
-            >
-              <LuPencil className="h-4 w-4" />
-              {t('Edit')}
-            </Button>
-          )}
-          {/* Report is a safety action the moderation API accepts from any
+        {/* One tooltip group for the row — `delay` exists on Provider alone. */}
+        <TooltipProvider delay={500}>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {notices}
+            {canEdit && editHref && (
+              <Button
+                variant="outline"
+                onClick={() => router.push(editHref)}
+                className="max-sm:size-11"
+                aria-label={t('Edit')}
+              >
+                <LuPencil className="size-4" />
+                <span className="hidden sm:inline">{t('Edit')}</span>
+              </Button>
+            )}
+            {/* Report is a safety action the moderation API accepts from any
               caller (signed-in, anonymous, or sessionless). Offer it to any
               viewer so inappropriate content is always flaggable. */}
-          {reportProposalId && (
-            <ReportProposalDialog proposalId={reportProposalId} />
-          )}
-          {/* Like/Follow are user-scoped writes gated at the API — only offer
-              them to a signed-in, non-anonymous member with engagement
-              access. */}
-          {userCanInteract(user) && canEngage ? (
-            <>
-              <Button
-                surface="outline"
-                color={isLiked ? 'verified' : 'secondary'}
-                size="small"
-                onPress={onLike}
-                isDisabled={isLoading}
-              >
-                <LuHeart className="size-4" />
-                {isLiked ? t('Liked') : t('Like')}
-              </Button>
-              <Button
-                surface="outline"
-                color={isFollowing ? 'verified' : 'secondary'}
-                size="small"
-                onPress={onFollow}
-              >
-                <LuBookmark className="size-4" />
-
-                {isFollowing ? t('Following') : t('Follow')}
-              </Button>
-            </>
-          ) : null}
-          {revisionToggle && (
-            <TooltipTrigger>
-              <Button
-                color="secondary"
-                variant="icon"
-                size="small"
-                onPress={revisionToggle.onToggle}
-                aria-label={revisionRequestLabel}
-                aria-pressed={revisionToggle.isActive}
-                className="relative size-8 min-w-8 rounded-sm p-0"
-              >
-                <LuStickyNote className="size-4" />
-                <span
-                  aria-hidden
-                  className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
+            {reportProposalId && (
+              <ReportProposalDialog proposalId={reportProposalId} />
+            )}
+            {/* Mobile-only jump to the comments section (Figma's speech-bubble
+              icon). A plain fragment link — no scroll scripting needed. */}
+            <ButtonLink
+              href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+              variant="outline"
+              size="icon"
+              aria-label={t('View comments')}
+              className="sm:hidden"
+            >
+              <LuMessageCircle className="size-4" />
+            </ButtonLink>
+            {/* Like/Follow live in the proposal's engagement row, not here — see
+              ProposalPreview's `engagement` prop. */}
+            {feedbackToggle && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={feedbackToggle.onToggle}
+                      aria-label={feedbackLabel}
+                      aria-expanded={feedbackToggle.isActive}
+                      className="relative"
+                    >
+                      <LuMessageSquareText className="size-4" />
+                      <span
+                        aria-hidden
+                        className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
+                      />
+                    </Button>
+                  }
                 />
-              </Button>
-              <Tooltip>{revisionRequestLabel}</Tooltip>
-            </TooltipTrigger>
-          )}
-          <div className="hidden sm:block">
-            <LocaleChooser />
-          </div>
-          {/* Outside the sm-only cluster: Join stays visible on mobile (the
+                <TooltipContent>{feedbackLabel}</TooltipContent>
+              </Tooltip>
+            )}
+            {moderationProposal ? (
+              <ProposalAdminMenu
+                proposal={moderationProposal}
+                backHref={backHref}
+              />
+            ) : null}
+            <div className="hidden sm:block">
+              <LocaleChooser />
+            </div>
+            {/* Outside the sm-only cluster: Join stays visible on mobile (the
               avatar keeps its desktop-only treatment via userMenuClassName). */}
-          <JoinOrUserMenu
-            canJoin={canJoin}
-            userMenuClassName="hidden sm:block"
-          />
-        </div>
+            <JoinOrUserMenu
+              canJoin={canJoin}
+              userMenuClassName="hidden sm:block"
+            />
+          </div>
+        </TooltipProvider>
       </div>
 
       <div className="relative min-h-0 overflow-y-auto">{children}</div>

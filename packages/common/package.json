@@ -26,6 +26,7 @@
     "@op/analytics": "workspace:*",
     "@op/cache": "workspace:*",
     "@op/collab": "workspace:*",
+    "@op/core": "workspace:*",
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
@@ -60,13 +61,13 @@
   },
   "devDependencies": {
     "@op/cache": "workspace:*",
-    "@op/core": "workspace:*",
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@types/json-schema": "^7.0.15",
+    "csv-parse": "^7.0.2",
     "vitest": "^4.0.18"
   }
 }

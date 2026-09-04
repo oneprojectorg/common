@@ -1,6 +1,10 @@
 'use client';
 
-import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
+import {
+  RichTextEditor,
+  type RichTextEditorRef,
+} from '@op/sense/RichTextEditor';
+import { cn } from '@op/sense/lib/utils';
 import type { Editor } from '@tiptap/react';
 import { forwardRef, useMemo, useRef, useState } from 'react';
 
@@ -60,7 +64,16 @@ export const RichTextEditorWithToolbar = forwardRef<
     };
 
     return (
-      <div className={className}>
+      // Field container: rings via focus-within so the whole box (toolbar +
+      // editable) shows the standard sense focus. The data-slot suppresses the
+      // editable's own ring (see @op/sense baseEditorStyles).
+      <div
+        data-slot="rich-text-editor-field"
+        className={cn(
+          'transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
+          className,
+        )}
+      >
         {showToolbar && toolbarPosition === 'top' && (
           <RichTextEditorToolbar editor={editor} />
         )}
@@ -79,7 +92,7 @@ export const RichTextEditorWithToolbar = forwardRef<
         {showToolbar && toolbarPosition === 'bottom' && (
           <RichTextEditorToolbar
             editor={editor}
-            className="border-t border-b-0"
+            className="border-t border-b-0 border-input"
           />
         )}
       </div>

@@ -1,4 +1,4 @@
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
 export const ListPageLayout = ({
@@ -11,32 +11,11 @@ export const ListPageLayout = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-5 px-4 pt-5 pb-12 sm:gap-8 sm:pt-8',
+        'mx-auto flex w-full max-w-140 flex-col gap-5 px-4 pt-6 pb-12 sm:gap-8 sm:pt-13',
         className,
       )}
     >
       {children}
-    </div>
-  );
-};
-
-export const ListPageLayoutHeader = ({
-  className,
-  children,
-}: {
-  className?: string;
-  children?: ReactNode;
-}) => {
-  return (
-    <div className="flex flex-col px-0">
-      <div
-        className={cn(
-          'font-serif !text-title-md text-neutral-black sm:!text-title-lg',
-          className,
-        )}
-      >
-        {children}
-      </div>
     </div>
   );
 };

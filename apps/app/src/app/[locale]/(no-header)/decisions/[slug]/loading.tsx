@@ -1,6 +1,6 @@
 import {
+  DecisionContentSkeleton,
   DecisionHeaderBarSkeleton,
-  OverviewSkeleton,
 } from '@/components/skeletons/DecisionSkeleton';
 
 // First-load skeleton for /decisions/[slug]: header bar (no stepper — the
@@ -17,7 +17,7 @@ export default function Loading() {
     <div className="grid h-dvh grid-rows-[auto_1fr]">
       <DecisionHeaderBarSkeleton />
       <div className="overflow-x-clip overflow-y-auto">
-        <OverviewSkeleton />
+        <DecisionContentSkeleton />
       </div>
     </div>
   );

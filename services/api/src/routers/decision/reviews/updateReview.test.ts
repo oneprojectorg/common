@@ -46,15 +46,8 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Submits a valid review and moves the instance to the assignment's phase so
- * the submitted review is editable. Returns the reviewer caller + ids.
- */
-async function submitEditableReview(
-  testData: TestReviewsDataManager,
-  opts: { setCurrentPhaseToReview?: boolean } = {},
-) {
-  const { setCurrentPhaseToReview = true } = opts;
+/** Submits a valid review (writable — the fixture leaves the instance on the assignment's phase). */
+async function submitEditableReview(testData: TestReviewsDataManager) {
   const created = await testData.createReviewAssignment();
   await testData.setRubricTemplate(created.context, rubricTemplate);
 
@@ -70,15 +63,6 @@ async function submitEditableReview(
     },
     overallComment: 'Ready to move forward',
   });
-
-  if (setCurrentPhaseToReview) {
-    // Assignments default to phase 'review'; the instance starts on the first
-    // phase ('submission'), so stamp the current phase to make edits allowed.
-    await testData.setCurrentPhase(
-      created.context.instance.instance.id,
-      'review',
-    );
-  }
 
   return { created, reviewerCaller };
 }
@@ -132,10 +116,6 @@ describe.concurrent('updateReview', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment();
     await testData.setRubricTemplate(created.context, rubricTemplate);
-    await testData.setCurrentPhase(
-      created.context.instance.instance.id,
-      'review',
-    );
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -160,9 +140,7 @@ describe.concurrent('updateReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const { created, reviewerCaller } = await submitEditableReview(testData, {
-      setCurrentPhaseToReview: false,
-    });
+    const { created, reviewerCaller } = await submitEditableReview(testData);
 
     // Advance the instance to a later phase than the assignment's 'review'.
     await testData.setCurrentPhase(

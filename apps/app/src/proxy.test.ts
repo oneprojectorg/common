@@ -103,6 +103,10 @@ describe('proxy matcher', () => {
       '/manifest.json',
       '/feed.xml',
       '/notes.txt',
+      // static html dropped in public/ (e.g. domain-verification tokens,
+      // which the issuer fetches anonymously and must receive verbatim —
+      // a locale redirect fails the check)
+      '/a05c2b9e2ee552f2a38181aa7c510bdd.html',
       // build assets
       '/styles.css',
       '/bundle.js',

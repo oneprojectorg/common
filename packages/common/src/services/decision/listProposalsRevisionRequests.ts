@@ -4,6 +4,7 @@ import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { notSuperseded } from './proposalSupersession';
 import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
 
 /**
@@ -28,7 +29,16 @@ export async function listProposalsRevisionRequests({
   }
 
   const proposals = await db.query.proposals.findMany({
-    where: { submittedByProfileId: commonUser.profileId },
+    where: {
+      submittedByProfileId: commonUser.profileId,
+      // A merged-away proposal is out of the review process, so its author has
+      // nothing left to action.
+      RAW: (table) =>
+        notSuperseded({
+          proposalId: table.id,
+          processInstanceId: table.processInstanceId,
+        }),
+    },
     with: proposalWithRevisionRequestsConfig(states),
   });
 

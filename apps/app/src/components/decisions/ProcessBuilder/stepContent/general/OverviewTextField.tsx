@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/sense/lib/utils';
 
 // Borderless, document-style text inputs for the Overview page (headline +
-// short description). Not @op/ui TextField — those are labeled/bordered; these
+// short description). Deliberately not a labelled, bordered Field; these
 // are chromeless to read as page content, per the Figma design.
 interface OverviewTextFieldProps {
   variant: 'headline' | 'description';
@@ -51,13 +51,9 @@ export function OverviewTextField({
       className={cn(
         // field-sizing-content grows the textarea with its content so long
         // headlines/descriptions wrap instead of getting cut off.
-        // neutral-black (not charcoal) so the description matches the headline:
-        // twMerge misreads the headline's custom `text-title-lg` as a color and
-        // strips this class, letting the headline inherit neutral-black, while
-        // the description keeps it — charcoal here made the subhead too light.
-        'field-sizing-content resize-none overflow-hidden bg-transparent text-neutral-black placeholder:text-neutral-gray3 focus:outline-none',
+        'field-sizing-content resize-none overflow-hidden bg-transparent placeholder:text-muted-foreground focus:outline-none',
         showCount ? 'min-w-0 flex-1' : 'w-full',
-        variant === 'headline' && 'font-serif text-title-lg',
+        variant === 'headline' && 'font-serif text-headline font-light',
         variant === 'description' && 'text-base',
       )}
     />
@@ -76,9 +72,7 @@ export function OverviewTextField({
         className={cn(
           'shrink-0 text-sm transition-opacity',
           value.length > 0 ? 'opacity-100' : 'opacity-0',
-          value.length >= maxLength
-            ? 'text-functional-red'
-            : 'text-neutral-charcoal',
+          value.length >= maxLength ? 'text-destructive' : 'text-foreground',
         )}
       >
         {value.length}/{maxLength}

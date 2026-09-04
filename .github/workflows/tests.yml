@@ -9,7 +9,11 @@ permissions:
 jobs:
   test:
     name: Tests
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    # Every observed `socket hang up` fetching the Supabase CLI has been on the
+    # 2vcpu pool, across two different CLI versions, while the 4vcpu jobs
+    # pulling the same archive succeeded in the same runs. The pool is the only
+    # variable that tracks, so this job joins the one that is not failing.
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     # Fork PRs route through the `fork-ci` environment so a maintainer must
     # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
     # Internal PRs (and pushes) evaluate to an empty string and skip the gate.

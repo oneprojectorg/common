@@ -24,6 +24,7 @@ import { assertUserByAuthId } from '../assert';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { assertReviewAssignmentPhaseIsCurrent } from './reviewHelpers';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 /** Resubmits a proposal after the author addresses reviewer feedback. */
@@ -84,6 +85,12 @@ export async function submitRevisionResponse({
       'Only assignments awaiting author revision can be resubmitted',
     );
   }
+
+  // A past-phase response would strand the assignment in READY_FOR_RE_REVIEW.
+  assertReviewAssignmentPhaseIsCurrent(
+    request.assignment.proposal.processInstance,
+    request.assignment.phaseId,
+  );
 
   const normalizedResubmitComment = resubmitComment?.trim() || null;
   const proposalData = parseProposalData(proposal.proposalData);

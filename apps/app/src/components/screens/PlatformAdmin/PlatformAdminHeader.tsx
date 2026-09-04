@@ -1,8 +1,8 @@
 'use client';
 
 import { posthogUIHost } from '@op/core';
-import { Button } from '@op/ui/Button';
-import { Header1 } from '@op/ui/Header';
+import { Button } from '@op/sense/Button';
+import { Header1 } from '@op/sense/Header';
 import { LuArrowUpRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -14,19 +14,19 @@ export const PlatformAdminHeader = () => {
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
-        <Header1 className="text-title-md text-neutral-black">
+        <Header1 className="text-headline text-foreground">
           {t('Platform admin')}
         </Header1>
       </div>
       <Button
-        onPress={() => {
+        variant="outline"
+        size="sm"
+        className="gap-2"
+        onClick={() => {
           window.open(posthogUIHost, '_blank');
         }}
-        color="secondary"
-        size="small"
-        className="gap-2"
       >
-        <LuArrowUpRight className="size-4" />
+        <LuArrowUpRight className="size-4 rtl:-scale-x-100" />
         {t('View all analytics')}
       </Button>
     </div>

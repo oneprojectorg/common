@@ -2,17 +2,21 @@
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
-import { MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { TableCell } from '@op/ui/ui/table';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { TableCell } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
-import { useState } from 'react';
-import { Button } from 'react-aria-components';
+import { LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
+
+import { TimestampTooltip } from './TimestampTooltip';
 
 const STATUS_DISPLAY: Record<string, string> = {
   draft: 'Draft',
@@ -34,21 +38,19 @@ export const DecisionsRowCells = ({
   const phaseEndDate = decision.currentPhase?.endDate
     ? new Date(decision.currentPhase.endDate)
     : null;
-  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
-
   return (
     <>
       <TableCell>
         <bdi>{decision.name}</bdi>
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-muted-foreground">
         {decision.currentPhase ? (
           <div className="flex flex-col">
             <span>
               {decision.currentPhase.name ?? decision.currentPhase.id}
             </span>
             {phaseEndDate ? (
-              <span className="text-xs text-neutral-gray4">
+              <span className="text-xs text-muted-foreground">
                 {t('Ends {date}', {
                   date: format.dateTime(phaseEndDate, { dateStyle: 'medium' }),
                 })}
@@ -59,107 +61,69 @@ export const DecisionsRowCells = ({
           '—'
         )}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-muted-foreground">
         {decision.stewardName ?? '—'}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-muted-foreground">
         {decision.totalProposalCount > decision.proposalCount ? (
-          <TooltipTrigger>
-            <Button className="underline decoration-dotted underline-offset-2 outline-hidden">
-              {decision.proposalCount} ({decision.totalProposalCount})
-            </Button>
-            <Tooltip>
-              {t(
-                '{nonDraft} non-draft proposals, {total} total including drafts',
-                {
-                  nonDraft: decision.proposalCount,
-                  total: decision.totalProposalCount,
-                },
-              )}
-            </Tooltip>
-          </TooltipTrigger>
+          <TimestampTooltip
+            title={t(
+              '{nonDraft} non-draft proposals, {total} total including drafts',
+              {
+                nonDraft: decision.proposalCount,
+                total: decision.totalProposalCount,
+              },
+            )}
+          >
+            {decision.proposalCount} ({decision.totalProposalCount})
+          </TimestampTooltip>
         ) : (
           decision.proposalCount
         )}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-muted-foreground">
         {decision.participantCount}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-muted-foreground">
         {decision.status
           ? (STATUS_DISPLAY[decision.status] ?? decision.status)
           : '—'}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-muted-foreground">
         {createdAt ? (
-          <TooltipTrigger>
-            <Button className="underline decoration-dotted underline-offset-2 outline-hidden">
-              {format.dateTime(createdAt, { dateStyle: 'medium' })}
-            </Button>
-            <Tooltip>
-              {format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
-            </Tooltip>
-          </TooltipTrigger>
+          <TimestampTooltip
+            title={format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
+          >
+            {format.dateTime(createdAt, { dateStyle: 'medium' })}
+          </TimestampTooltip>
         ) : (
           '—'
         )}
       </TableCell>
       <TableCell>
         <div className="flex justify-end">
-          <OptionMenu
-            aria-label={t('Decision options')}
-            variant="outline"
-            size="medium"
-            menuClassName="min-w-48 p-2"
-          >
-            <MenuItem
-              key="view-details"
-              onAction={() => router.push(`/admin/decisions/${decision.id}`)}
-              className="px-3 py-1"
-            >
-              {t('View details')}
-            </MenuItem>
-            <MenuItem
-              key="view-instance-data"
-              onAction={() => setIsDataModalOpen(true)}
-              className="px-3 py-1"
-            >
-              {t('View instance data')}
-            </MenuItem>
-          </OptionMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t('Decision options')}
+                >
+                  <LuEllipsis />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="min-w-48">
+              <DropdownMenuItem
+                onClick={() => router.push(`/admin/decisions/${decision.id}`)}
+              >
+                {t('View details')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <InstanceDataModal
-          name={decision.name}
-          instanceData={decision.instanceData}
-          isOpen={isDataModalOpen}
-          onOpenChange={setIsDataModalOpen}
-        />
       </TableCell>
     </>
-  );
-};
-
-const InstanceDataModal = ({
-  name,
-  instanceData,
-  isOpen,
-  onOpenChange,
-}: {
-  name: string;
-  instanceData: unknown;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-}) => {
-  const t = useTranslations();
-
-  return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <ModalHeader>{t('Instance data for {name}', { name })}</ModalHeader>
-      <ModalBody className="pb-6">
-        <pre className="max-h-[60vh] overflow-auto rounded-lg bg-neutral-gray-1 p-4 text-xs">
-          {JSON.stringify(instanceData, null, 2)}
-        </pre>
-      </ModalBody>
-    </Modal>
   );
 };

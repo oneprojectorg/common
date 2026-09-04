@@ -2,8 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/sense/Button';
 import { useState } from 'react';
 import { LuCheck, LuPencil } from 'react-icons/lu';
 
@@ -41,26 +40,28 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
     <>
       <DecisionSubpageHeader
         backHref={`/decisions/${decisionSlug}/current`}
-        backLabel={t('Back to proposals')}
+        backLabel={
+          // Figma shortens the visible label to "Back"; the full destination
+          // stays in the accessible name so screen readers keep the context.
+          <>
+            <span aria-hidden="true">{t('Back')}</span>
+            <span className="sr-only">{t('Back to proposals')}</span>
+          </>
+        }
       >
         <div className="flex items-center gap-4">
           {isEditing ? (
             <Button
-              color="primary"
-              size="medium"
-              onPress={handleUpdate}
-              isDisabled={!canUpdate || isUpdating}
+              onClick={handleUpdate}
+              disabled={!canUpdate}
+              loading={isUpdating}
             >
-              {isUpdating ? (
-                <LoadingSpinner className="size-4" />
-              ) : (
-                <LuCheck className="size-4" />
-              )}
+              <LuCheck className="size-4" />
               {t('Update review')}
             </Button>
           ) : isSubmitted ? (
             canEditReview && (
-              <Button color="secondary" size="medium" onPress={startEditing}>
+              <Button variant="outline" onClick={startEditing}>
                 <LuPencil className="size-4" />
                 {t('Edit review')}
               </Button>
@@ -69,24 +70,18 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             <>
               {canRequestRevision && (
                 <Button
-                  color="secondary"
-                  size="small"
-                  onPress={() => setIsRequestModalOpen(true)}
+                  variant="outline"
+                  onClick={() => setIsRequestModalOpen(true)}
                 >
                   {t('Request revision')}
                 </Button>
               )}
               <Button
-                color="primary"
-                size="small"
-                onPress={handleSubmit}
-                isDisabled={!canSubmit || isSubmitting}
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                loading={isSubmitting}
               >
-                {isSubmitting ? (
-                  <LoadingSpinner className="size-4" />
-                ) : (
-                  <LuCheck className="size-4" />
-                )}
+                <LuCheck className="size-4" />
                 {t('Submit review')}
               </Button>
             </>

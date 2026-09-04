@@ -69,7 +69,8 @@ export const moderationSubmissions = pgTable(
 
     // The shared `timestamps` helper minus `deletedAt`: submission rows are
     // bookkeeping for in-flight provider rounds and are deleted outright when
-    // superseded or resolved — no soft delete.
+    // a later round supersedes them, or a failed submit is rolled back — no
+    // soft delete. Resolving a flag deliberately does not delete them.
     createdAt: timestamp({
       withTimezone: true,
       mode: 'string',

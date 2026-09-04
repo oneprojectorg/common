@@ -4,7 +4,7 @@ import type { User } from '@op/supabase/lib';
 
 import {
   getCurrentProfileId,
-  getItemsWithReactionsAndComments,
+  getItemsWithLikesAndComments,
   getRelatedOrganizations,
 } from '../';
 import {
@@ -119,12 +119,12 @@ export const listAllRelatedOrganizationPosts = async (
         })
       : null;
 
-  const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
+  const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
     items,
     profileId,
   });
 
-  return { items: itemsWithReactionsAndComments, next: nextCursor };
+  return { items: itemsWithLikesAndComments, next: nextCursor };
 };
 
 export const listRelatedOrganizationPosts = async (

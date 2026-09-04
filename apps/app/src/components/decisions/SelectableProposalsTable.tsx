@@ -2,15 +2,15 @@
 
 import type { Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/sense/Table';
+import { screens } from '@op/styles/constants';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -26,6 +26,8 @@ interface SelectableProposalsTableProps {
   getProposalHref?: (proposal: Proposal) => string;
   /** Show the per-proposal vote count column. Only used by the final-phase view. */
   showVotes?: boolean;
+  /** Show the budget column. False when the proposal template collects no budget. */
+  showBudget?: boolean;
 }
 
 export const SelectableProposalsTable = ({
@@ -34,6 +36,7 @@ export const SelectableProposalsTable = ({
   onToggle,
   getProposalHref,
   showVotes = false,
+  showBudget = true,
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -50,6 +53,7 @@ export const SelectableProposalsTable = ({
               onToggle={onToggle}
               href={getProposalHref?.(proposal)}
               showVotes={showVotes}
+              showBudget={showBudget}
             />
           </li>
         ))}
@@ -58,17 +62,17 @@ export const SelectableProposalsTable = ({
   }
 
   return (
-    <Table aria-label={t('Eligible proposals')} bleed>
+    <Table aria-label={t('Eligible proposals')} className="w-full">
       <TableHeader>
-        <TableColumn id="proposal" isRowHeader>
-          {t('Proposal')}
-        </TableColumn>
-        <TableColumn id="budget">{t('Budget')}</TableColumn>
-        <TableColumn id="category">{t('Category')}</TableColumn>
-        {showVotes ? <TableColumn id="votes">{t('Votes')}</TableColumn> : null}
-        <TableColumn id="select" className="w-32 text-end">
-          <span className="sr-only">{t('Select proposal')}</span>
-        </TableColumn>
+        <TableRow>
+          <TableHead>{t('Proposal')}</TableHead>
+          {showBudget ? <TableHead>{t('Budget')}</TableHead> : null}
+          <TableHead>{t('Category')}</TableHead>
+          {showVotes ? <TableHead>{t('Votes')}</TableHead> : null}
+          <TableHead className="w-32 text-end">
+            <span className="sr-only">{t('Select proposal')}</span>
+          </TableHead>
+        </TableRow>
       </TableHeader>
       <TableBody>
         {proposals.map((proposal) => {
@@ -80,43 +84,41 @@ export const SelectableProposalsTable = ({
           const href = getProposalHref?.(proposal);
 
           return (
-            <TableRow key={proposal.id} id={proposal.id}>
+            <TableRow key={proposal.id}>
               <TableCell>
                 <div className="flex flex-col">
                   {href ? (
                     <Link
                       href={href}
-                      className="text-base text-neutral-black hover:underline"
+                      className="text-base text-foreground hover:underline"
                     >
                       {fields.title}
                     </Link>
                   ) : (
-                    <span className="text-base text-neutral-black">
-                      {fields.title}
-                    </span>
+                    <span className="text-base">{fields.title}</span>
                   )}
                   {fields.submitterName ? (
-                    <span className="text-sm text-neutral-gray4">
+                    <span className="text-sm text-muted-foreground">
                       {fields.submitterName}
                     </span>
                   ) : null}
                 </div>
               </TableCell>
-              <TableCell>
-                {fields.budget ? (
-                  <span className="text-base text-neutral-black">
-                    {fields.budget}
-                  </span>
-                ) : (
-                  <span className="text-sm text-neutral-gray4">—</span>
-                )}
-              </TableCell>
+              {showBudget ? (
+                <TableCell>
+                  {fields.budget ? (
+                    <span className="text-base">{fields.budget}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              ) : null}
               <TableCell>
                 <SelectionCategoryChips labels={fields.categories} />
               </TableCell>
               {showVotes ? (
                 <TableCell>
-                  <span className="text-base text-neutral-black">
+                  <span className="text-base">
                     {t('{count} votes', { count: proposal.voteCount ?? 0 })}
                   </span>
                 </TableCell>
@@ -143,12 +145,14 @@ const SelectableProposalCard = ({
   onToggle,
   href,
   showVotes,
+  showBudget,
 }: {
   proposal: Proposal;
   isSelected: boolean;
   onToggle: (proposalId: string) => void;
   href?: string;
   showVotes: boolean;
+  showBudget: boolean;
 }) => {
   const t = useTranslations();
   const fields = resolvePresentationFields({
@@ -162,27 +166,27 @@ const SelectableProposalCard = ({
         {href ? (
           <Link
             href={href}
-            className="text-base text-neutral-black hover:underline"
+            className="text-base text-foreground hover:underline"
           >
             {fields.title}
           </Link>
         ) : (
-          <span className="text-base text-neutral-black">{fields.title}</span>
+          <span className="text-base">{fields.title}</span>
         )}
         {fields.submitterName ? (
-          <span className="text-sm text-neutral-gray4">
+          <span className="text-sm text-muted-foreground">
             {fields.submitterName}
           </span>
         ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {fields.budget ? (
-          <span className="text-base text-neutral-black">{fields.budget}</span>
+        {showBudget && fields.budget ? (
+          <span className="text-base">{fields.budget}</span>
         ) : null}
         <SelectionCategoryChips labels={fields.categories} />
         {showVotes ? (
-          <span className="text-sm text-neutral-charcoal">
+          <span className="text-sm text-muted-foreground">
             {t('{count} votes', { count: proposal.voteCount ?? 0 })}
           </span>
         ) : null}

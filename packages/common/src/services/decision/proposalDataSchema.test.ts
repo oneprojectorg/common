@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { assembleProposalData } from './assembleProposalData';
 import {
+  getPlaceCoordinates,
+  getSchemaFieldTitle,
   isDistrictCategoryLabel,
   normalizeLocation,
   normalizeProposalCategories,
@@ -177,5 +179,57 @@ describe('assembleProposalData location fields', () => {
   it('omits the key for empty fragments', () => {
     expect(assembleProposalData(template, { location: '' })).toEqual({});
     expect(assembleProposalData(template, {})).toEqual({});
+  });
+});
+
+describe('getPlaceCoordinates', () => {
+  it('prefers the geocoded place over the submitted pin', () => {
+    expect(
+      getPlaceCoordinates({
+        lat: 39.9612,
+        lng: -82.9988,
+        placeLat: 39.9,
+        placeLng: -83.0,
+      }),
+    ).toEqual({ lat: 39.9, lng: -83.0 });
+  });
+
+  // The geocoder returns no match for a pin in open water, or anywhere its
+  // lookup misses, and `placeLat`/`placeLng` stay unset. Returning nothing here
+  // would drop those proposals off a map export entirely, so the pin stands in.
+  it('falls back to the pin when no place was geocoded', () => {
+    expect(getPlaceCoordinates({ lat: 39.9612, lng: -82.9988 })).toEqual({
+      lat: 39.9612,
+      lng: -82.9988,
+    });
+  });
+
+  // Guards `??` against `||`: a proposal on the equator or the prime meridian
+  // has a legitimate 0 that must not be mistaken for an absent coordinate.
+  it('treats a zero place coordinate as present', () => {
+    expect(
+      getPlaceCoordinates({ lat: 12, lng: 34, placeLat: 0, placeLng: 0 }),
+    ).toEqual({ lat: 0, lng: 0 });
+  });
+});
+
+describe('getSchemaFieldTitle', () => {
+  it('returns an author-set title exactly as written, case untouched', () => {
+    // A process author may deliberately leave a title lowercase (e.g. a
+    // stylistic or personal-branding choice) — this must never impose its
+    // own capitalization on top of what they wrote.
+    expect(
+      getSchemaFieldTitle({ type: 'string', title: 'trees planted' }, 'trees'),
+    ).toBe('trees planted');
+  });
+
+  it('falls back to the field key, uncapitalized, when there is no title', () => {
+    expect(getSchemaFieldTitle({ type: 'string' }, 'budget')).toBe('budget');
+  });
+
+  it('falls back to the field key when the title is an empty string', () => {
+    expect(getSchemaFieldTitle({ type: 'string', title: '' }, 'budget')).toBe(
+      'budget',
+    );
   });
 });

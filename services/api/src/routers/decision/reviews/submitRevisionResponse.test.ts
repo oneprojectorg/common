@@ -177,6 +177,48 @@ describe.concurrent('submitRevisionResponse', () => {
     expect(assignedSnapshotVersion).toBe(liveVersion);
   });
 
+  it('rejects a resubmission once the instance advances past the assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Revision Crossed the Advance',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add budget details.',
+    });
+
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+
+    await expect(
+      authorCaller.decision.submitRevisionResponse({
+        revisionRequestId: revisionRequest.id,
+        resubmitComment: 'Too late.',
+      }),
+    ).rejects.toThrow('the review phase has ended');
+
+    const request = await db.query.proposalReviewRequests.findFirst({
+      where: { id: revisionRequest.id },
+    });
+    expect(request?.state).toBe(ProposalReviewRequestState.REQUESTED);
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(
+      ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    );
+  });
+
   it('rejects when the assignment is not awaiting author revision', async ({
     task,
     onTestFinished,

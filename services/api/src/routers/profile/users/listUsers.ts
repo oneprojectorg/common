@@ -1,4 +1,4 @@
-import { listProfileUsers } from '@op/common';
+import { Channels, listProfileUsers } from '@op/common';
 import { profileUserWithRolesSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -14,6 +14,7 @@ export const listUsersRouter = router({
         .object({
           profileId: z.uuid(),
           query: z.string().min(2).optional(),
+          roleId: z.uuid().optional(),
           cursor: z.string().nullish(),
           limit: z.number().min(1).max(100).optional(),
         })
@@ -27,16 +28,21 @@ export const listUsersRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { profileId, orderBy, dir, query, cursor, limit } = input;
+      const { profileId, orderBy, dir, query, roleId, cursor, limit } = input;
 
-      return listProfileUsers({
+      const result = await listProfileUsers({
         profileId,
         user,
         orderBy,
         dir,
         query,
+        roleId,
         cursor,
         limit,
       });
+
+      ctx.registerQueryChannels([Channels.profileMembers(profileId)]);
+
+      return result;
     }),
 });

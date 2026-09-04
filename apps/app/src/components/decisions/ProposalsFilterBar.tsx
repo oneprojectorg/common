@@ -6,85 +6,173 @@ import { useTranslations } from '@/lib/i18n';
 
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ProposalCount } from './ProposalCount';
+import { ProposalSearchField } from './ProposalSearchField';
+import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
-import { useProposalFilterItems } from './useProposalFilters';
+
+/** The filter state the bar reads and writes, owned by `ProposalsList`. */
+export interface ProposalControls {
+  search: string;
+  setSearch: (value: string) => void;
+  /** A query is in flight — results on screen are for an earlier term. */
+  isSearchPending: boolean;
+  proposalFilter: ProposalFilter;
+  setProposalFilter: (filter: ProposalFilter) => void;
+  selectedCategory: string;
+  setSelectedCategory: (category: string) => void;
+  sortOrder: string;
+  setSortOrder: (sort: string) => void;
+  categories: { id: string; name: string }[];
+  hasVoted: boolean;
+  currentProfileId: string | undefined;
+  decisionSlug: string | undefined;
+}
+
+/** Grid/map switch, present only when the process collects a location. */
+export interface ProposalViewControls {
+  value: ProposalView;
+  onChange: (next: ProposalView) => void;
+}
 
 export const ProposalsListHeader = ({
-  hideFilters,
   count,
   total,
 }: {
-  hideFilters: boolean;
   count: number;
   total: number;
-}) => {
+}) => (
+  // Filtering swaps the results in place, so the count is the only feedback a
+  // screen reader gets that a search or filter landed. Announce it.
+  <span role="status" aria-live="polite">
+    <ProposalCount count={count} total={total} />
+  </span>
+);
+
+/**
+ * Stands in for the count where the phase hides proposals from non-admins:
+ * there is nothing to count that the reader is allowed to see, and no filters
+ * to change it, so it is a plain label rather than a live region.
+ */
+export const MyProposalsHeader = () => {
   const t = useTranslations();
-  if (hideFilters) {
-    return (
-      <span className="font-serif text-title-base text-neutral-black">
-        {t('My proposals')}
-      </span>
-    );
-  }
-  return <ProposalCount count={count} total={total} />;
+
+  return <span className="font-serif text-title">{t('My proposals')}</span>;
 };
 
-// fallow-ignore-next-line complexity
+/**
+ * The count and search on one side, the three filter selects and the view
+ * toggle on the other.
+ *
+ * Two boxes rather than one wrapping row, so the split is an element boundary
+ * and not a measurement: below `2xl` the count/search box takes a full row and
+ * the selects drop beneath it, right-aligned by `ms-auto`; from `2xl` it grows
+ * instead, putting everything on one line with search against the selects.
+ * Inside the box, `ms-auto` holds search to the end, and below `md` the field's
+ * `w-full` wraps it under the count while the selects break out edge-to-edge
+ * and scroll. One search instance at every width, so focus survives a
+ * breakpoint change.
+ */
 export const ProposalsFilterBar = ({
-  hasVoted,
-  currentProfileId,
-  proposalFilter,
-  setProposalFilter,
-  decisionSlug,
-  categories,
-  selectedCategory,
-  onSelectCategory,
-  sortOrder,
-  onSelectSort,
+  controls,
+  view,
+  count,
+  total,
+  header,
+  exportControl,
 }: {
-  hasVoted: boolean;
-  currentProfileId: string | undefined;
-  proposalFilter: ProposalFilter;
-  setProposalFilter: (filter: ProposalFilter) => void;
-  decisionSlug: string | undefined;
-  categories: { id: string; name: string }[];
-  selectedCategory: string;
-  onSelectCategory: (category: string) => void;
-  sortOrder: string;
-  onSelectSort: (sort: string) => void;
+  controls: ProposalControls;
+  view?: ProposalViewControls;
+  /** Server count for the active filter. */
+  count: number;
+  /** Unfiltered count for the phase — the "of N" pool. */
+  total: number;
+  /** Replaces the count — e.g. the admin review title. */
+  header?: React.ReactNode;
+  /** Admin-only CSV export control; omitted entirely for non-admins. */
+  exportControl?: React.ReactNode;
 }) => {
   const t = useTranslations();
-  const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
+  // Every option maps to a server-side query param in ProposalsList's
+  // queryParams, so pagination and counts stay accurate.
+  const filterItems = [
+    { id: ProposalFilter.ALL, label: t('All proposals') },
+    {
+      id: ProposalFilter.MY_PROPOSALS,
+      label: t('My proposals'),
+      isDisabled: !controls.currentProfileId,
+    },
+    ...(controls.hasVoted
+      ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
+      : []),
+    { id: ProposalFilter.REJECTED, label: t('Not advanced') },
+  ];
 
   return (
     <>
-      <ResponsiveSelect
-        selectedKey={proposalFilter}
-        onSelectionChange={(key) => {
-          if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-            return;
-          }
-          setProposalFilter(key);
-        }}
-        aria-label={t('Filter proposals')}
-        items={filterItems}
-      />
-      <CategoryFilterSelect
-        decisionSlug={decisionSlug}
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={onSelectCategory}
-      />
-      <ResponsiveSelect
-        selectedKey={sortOrder}
-        onSelectionChange={onSelectSort}
-        aria-label={t('Sort proposals')}
-        className="min-w-32"
-        items={[
-          { id: 'newest', label: t('Newest First') },
-          { id: 'oldest', label: t('Oldest First') },
-        ]}
-      />
+      {/* `w-full` claims a row of its own, so the selects always wrap beneath;
+          from 2xl it grows instead, taking the slack that pushes search to the
+          end and putting both boxes on one line. */}
+      <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
+        {header ?? <ProposalsListHeader count={count} total={total} />}
+        <ProposalSearchField
+          className="ms-auto"
+          value={controls.search}
+          onChange={controls.setSearch}
+          isPending={controls.isSearchPending}
+        />
+      </div>
+      {/* Grows to claim its row below 2xl, so the selects' own `ms-auto` has
+          slack to push against; at 2xl it's content-width beside the count.
+          `grow`, not `w-full`: the negative margins bleed this box past the
+          container, and only an auto width grows to absorb them — a fixed 100%
+          would leave the padding stranding the last select short of the edge. */}
+      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8">
+        <ResponsiveSelect
+          selectedKey={controls.proposalFilter}
+          onSelectionChange={(key) => {
+            // "My proposals" needs a profile; ignore the pick without one.
+            if (
+              key === ProposalFilter.MY_PROPOSALS &&
+              !controls.currentProfileId
+            ) {
+              return;
+            }
+            controls.setProposalFilter(key);
+          }}
+          aria-label={t('Filter proposals')}
+          items={filterItems}
+          className="ms-auto min-w-40 shrink-0"
+        />
+        <CategoryFilterSelect
+          decisionSlug={controls.decisionSlug}
+          categories={controls.categories}
+          selectedCategory={controls.selectedCategory}
+          onSelectCategory={controls.setSelectedCategory}
+          className="min-w-40 shrink-0"
+        />
+        <ResponsiveSelect
+          selectedKey={controls.sortOrder}
+          onSelectionChange={controls.setSortOrder}
+          aria-label={t('Sort proposals')}
+          className="min-w-40 shrink-0"
+          items={[
+            { id: 'newest', label: t('Newest First') },
+            { id: 'oldest', label: t('Oldest First') },
+          ]}
+        />
+        {view && (
+          <div className="hidden items-center gap-4 sm:flex">
+            <span aria-hidden className="h-6 w-px bg-border" />
+            <ProposalViewToggle value={view.value} onChange={view.onChange} />
+          </div>
+        )}
+        {exportControl && (
+          <div className="flex items-center gap-4">
+            <span aria-hidden className="h-6 w-px bg-border" />
+            {exportControl}
+          </div>
+        )}
+      </div>
     </>
   );
 };

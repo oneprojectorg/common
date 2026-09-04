@@ -7,20 +7,21 @@ import {
   type RecommendationValue,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Link } from '@op/ui/Link';
-import { Skeleton } from '@op/ui/Skeleton';
-import { StatusDot, type StatusDotIntent } from '@op/ui/StatusDot';
+import { Skeleton } from '@op/sense/Skeleton';
+import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+  TableRowHeader,
+} from '@op/sense/Table';
+import { cn } from '@op/sense/lib/utils';
+import { screens } from '@op/styles/constants';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from '../selection/AdvanceToggleButton';
 import { SelectionCard } from '../selection/SelectionCard';
@@ -35,17 +36,23 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 export function ReviewSelectionTable({
   items,
   totalPoints,
+  showScore,
   onAdvance,
   advancingIds,
   decisionSlug,
+  showBudget,
 }: {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
   totalPoints: number;
+  /** Rubrics without scored criteria always aggregate to 0, so hide the column. */
+  showScore: boolean;
   onAdvance: (proposalId: string) => void;
   advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
   decisionSlug: string;
+  /** Show the budget column. False when the proposal template collects no budget. */
+  showBudget: boolean;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -60,8 +67,10 @@ export function ReviewSelectionTable({
               <ProposalCard
                 item={item}
                 advancing={advancing}
+                showScore={showScore}
                 onAdvance={() => onAdvance(item.proposal.id)}
                 decisionSlug={decisionSlug}
+                showBudget={showBudget}
               />
             </li>
           );
@@ -71,24 +80,26 @@ export function ReviewSelectionTable({
   }
 
   return (
-    <Table aria-label={t('All proposals')} bleed>
+    <Table aria-label={t('All proposals')}>
       <TableHeader>
-        <TableColumn id="proposal" isRowHeader className="w-56">
-          {t('Proposal')}
-        </TableColumn>
-        <TableColumn id="budget">{t('Budget')}</TableColumn>
-        <TableColumn id="category">{t('Category')}</TableColumn>
-        <TableColumn id="recommendation">
-          {t('Overall recommendation')}
-        </TableColumn>
-        <TableColumn id="score">
-          <span className="underline decoration-dotted">
-            {t('Score ({pts}pts)', { pts: totalPoints })}
-          </span>
-        </TableColumn>
-        <TableColumn id="action" className="w-28">
-          <span className="sr-only">{t('Advance')}</span>
-        </TableColumn>
+        <TableRow>
+          <TableHead scope="col" className="w-56">
+            {t('Proposal')}
+          </TableHead>
+          {showBudget ? <TableHead scope="col">{t('Budget')}</TableHead> : null}
+          <TableHead scope="col">{t('Category')}</TableHead>
+          <TableHead scope="col">{t('Overall recommendation')}</TableHead>
+          {showScore && (
+            <TableHead scope="col">
+              <span className="underline decoration-dotted">
+                {t('Score ({pts}pts)', { pts: totalPoints })}
+              </span>
+            </TableHead>
+          )}
+          <TableHead scope="col" className="w-28">
+            <span className="sr-only">{t('Advance')}</span>
+          </TableHead>
+        </TableRow>
       </TableHeader>
       <TableBody>
         {items.map((item) => {
@@ -98,30 +109,40 @@ export function ReviewSelectionTable({
           const budget = item.proposal.proposalData.budget;
 
           return (
-            <TableRow key={item.proposal.id} id={item.proposal.id}>
-              <TableCell>
+            <TableRow
+              key={item.proposal.id}
+              data-state={advancing ? 'selected' : undefined}
+            >
+              {/* The cell that names the row, so grid navigation can announce
+                  which proposal a value belongs to. */}
+              <TableRowHeader>
                 <div className="flex flex-col">
                   <Link
                     href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-                    variant="neutral"
-                    className="line-clamp-1 text-base text-neutral-black hover:underline"
+                    className="line-clamp-1 text-base text-foreground"
                   >
                     <bdi>{title}</bdi>
                   </Link>
                   {submitterName && (
-                    <span className="line-clamp-1 text-sm text-neutral-gray4">
+                    <span className="line-clamp-1 text-sm text-muted-foreground">
                       <bdi>{submitterName}</bdi>
                     </span>
                   )}
                 </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-base text-neutral-black">
-                  {budget
-                    ? formatCurrency(budget.amount, undefined, budget.currency)
-                    : '—'}
-                </span>
-              </TableCell>
+              </TableRowHeader>
+              {showBudget ? (
+                <TableCell>
+                  <span className="text-base">
+                    {budget
+                      ? formatCurrency(
+                          budget.amount,
+                          undefined,
+                          budget.currency,
+                        )
+                      : '—'}
+                  </span>
+                </TableCell>
+              ) : null}
               <TableCell>
                 <SelectionCategoryChips
                   labels={item.categories.map((c) => c.label)}
@@ -132,11 +153,13 @@ export function ReviewSelectionTable({
                   counts={item.aggregates.overallRecommendationCount}
                 />
               </TableCell>
-              <TableCell>
-                <span className="text-base text-neutral-black">
-                  <ScoreText value={item.aggregates.averageScore} />
-                </span>
-              </TableCell>
+              {showScore && (
+                <TableCell>
+                  <span className="text-base">
+                    <ScoreText value={item.aggregates.averageScore} />
+                  </span>
+                </TableCell>
+              )}
               <TableCell>
                 <AdvanceToggleButton
                   isSelected={advancing}
@@ -153,32 +176,40 @@ export function ReviewSelectionTable({
   );
 }
 
-export function ReviewSelectionTableSkeleton() {
+export function ReviewSelectionTableSkeleton({
+  showScore = true,
+  showBudget = true,
+}: {
+  showScore?: boolean;
+  showBudget?: boolean;
+}) {
   return (
     <div className="flex w-full flex-col gap-2">
-      <div className="flex w-full items-center justify-between border-b border-neutral-gray1 py-2">
+      <div className="flex w-full items-center justify-between border-b border-border py-2">
         <Skeleton className="h-4 w-20" />
         <div className="hidden gap-8 md:flex">
-          <Skeleton className="h-4 w-12" />
+          {showBudget ? <Skeleton className="h-4 w-12" /> : null}
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-20" />
+          {showScore && <Skeleton className="h-4 w-20" />}
           <Skeleton className="h-4 w-16" />
         </div>
       </div>
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="flex w-full items-center justify-between gap-4 border-b border-neutral-gray1 py-2"
+          className="flex w-full items-center justify-between gap-4 border-b border-border py-2"
         >
           <div className="flex flex-col gap-1">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-24" />
           </div>
-          <Skeleton className="hidden h-4 w-12 md:block" />
+          {showBudget ? (
+            <Skeleton className="hidden h-4 w-12 md:block" />
+          ) : null}
           <Skeleton className="hidden h-5 w-32 md:block" />
           <Skeleton className="hidden h-4 w-32 md:block" />
-          <Skeleton className="hidden h-4 w-12 md:block" />
+          {showScore && <Skeleton className="hidden h-4 w-12 md:block" />}
           <Skeleton className="h-8 w-28" />
         </div>
       ))}
@@ -189,13 +220,17 @@ export function ReviewSelectionTableSkeleton() {
 function ProposalCard({
   item,
   advancing,
+  showScore,
   onAdvance,
   decisionSlug,
+  showBudget,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
+  showScore: boolean;
   onAdvance: () => void;
   decisionSlug: string;
+  showBudget: boolean;
 }) {
   const t = useTranslations();
   const title = item.proposal.profile.name || t('Untitled Proposal');
@@ -207,19 +242,18 @@ function ProposalCard({
       <div className="flex flex-col gap-1">
         <Link
           href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-          variant="neutral"
-          className="text-base text-neutral-black hover:underline"
+          className="text-base text-foreground"
         >
           {title}
         </Link>
         {submitterName && (
-          <span className="text-sm text-neutral-gray4">{submitterName}</span>
+          <span className="text-sm text-muted-foreground">{submitterName}</span>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {budget && (
-          <span className="text-base text-neutral-black">
+        {showBudget && budget && (
+          <span className="text-base">
             {formatCurrency(budget.amount, undefined, budget.currency)}
           </span>
         )}
@@ -230,10 +264,17 @@ function ProposalCard({
         counts={item.aggregates.overallRecommendationCount}
       />
 
-      <div className="flex items-center justify-between">
-        <span className="text-base text-neutral-black">
-          <ScoreText value={item.aggregates.averageScore} />
-        </span>
+      <div
+        className={cn(
+          'flex items-center',
+          showScore ? 'justify-between' : 'justify-end',
+        )}
+      >
+        {showScore && (
+          <span className="text-base">
+            <ScoreText value={item.aggregates.averageScore} />
+          </span>
+        )}
         <AdvanceToggleButton
           isSelected={advancing}
           onPress={onAdvance}
@@ -252,7 +293,7 @@ function RecommendationCounts({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-wrap items-center gap-4 text-base text-neutral-black">
+    <div className="flex flex-wrap items-center gap-4 text-base">
       {Object.values(RECOMMENDATION_OPTION).map((opt) => (
         <CountLabel
           key={opt.value}
@@ -275,7 +316,7 @@ function CountLabel({
   intent: StatusDotIntent;
 }) {
   return (
-    <StatusDot intent={intent} className="text-base text-neutral-black">
+    <StatusDot intent={intent} className="text-base text-foreground">
       {value} {label}
     </StatusDot>
   );

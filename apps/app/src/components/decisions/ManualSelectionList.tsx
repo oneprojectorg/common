@@ -1,13 +1,18 @@
 'use client';
 
-import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { toast } from '@op/ui/Toast';
+import { templateCollectsBudget } from '@op/common/client';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { toast } from '@op/sense/Toast';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
@@ -23,10 +28,6 @@ import {
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { StandardSelectionFooter } from './StandardSelectionFooter';
 import { useManualSelection } from './useManualSelection';
-import { useProposalFilters } from './useProposalFilters';
-
-// Stable reference: useProposalFilters memoizes on `votedProposalIds`.
-const EMPTY_VOTED_IDS: string[] = [];
 
 interface ManualSelectionListProps {
   instanceId: string;
@@ -37,15 +38,17 @@ interface ManualSelectionListProps {
    * the standard advance-to-next-phase layout used for mid-process selection.
    */
   confirmVariant?: 'standard' | 'finalPhase';
+  /** Px offset where the filter bar pins (clears the floating phase toggle). */
+  pinOffset?: number;
 }
 
 export const ManualSelectionList = ({
   instanceId,
   decisionSlug,
   confirmVariant = 'standard',
+  pinOffset,
 }: ManualSelectionListProps) => {
   const t = useTranslations();
-  const { user } = useRequiredUser();
   const posthog = usePostHog();
   const router = useRouter();
   const pathname = usePathname();
@@ -105,15 +108,6 @@ export const ManualSelectionList = ({
     [selectedIds, proposalCache],
   );
 
-  const { filteredProposals, proposalFilter, setProposalFilter } =
-    useProposalFilters({
-      proposals: candidates?.proposals ?? [],
-      currentProfileId: user.currentProfile?.id,
-      votedProposalIds: EMPTY_VOTED_IDS,
-      hasVoted: false,
-      initialFilter: ProposalFilter.ALL,
-    });
-
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       // Channel-based invalidation flips selectionsAreConfirmed in the client
@@ -131,7 +125,7 @@ export const ManualSelectionList = ({
     },
     onError: (error) => {
       setIsConfirmOpen(false);
-      toast.error({ message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -156,15 +150,12 @@ export const ManualSelectionList = ({
   );
 
   const toolbarFilters = useMemo<SelectionFilters>(
-    () => ({ proposalFilter, selectedCategory, sortOrder }),
-    [proposalFilter, selectedCategory, sortOrder],
+    () => ({ selectedCategory, sortOrder }),
+    [selectedCategory, sortOrder],
   );
 
   const handleToolbarChange = useCallback(
     (patch: Partial<SelectionFilters>) => {
-      if (patch.proposalFilter !== undefined) {
-        setProposalFilter(patch.proposalFilter);
-      }
       if (patch.selectedCategory !== undefined) {
         setSelectedCategory(patch.selectedCategory);
       }
@@ -172,7 +163,7 @@ export const ManualSelectionList = ({
         setSortOrder(patch.sortOrder);
       }
     },
-    [setProposalFilter],
+    [],
   );
 
   const handleConfirmSelection = useCallback(() => {
@@ -188,18 +179,23 @@ export const ManualSelectionList = ({
 
   if (candidatesQuery.isError) {
     return (
-      <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-        <Header3 className="font-serif font-light">
-          {t('Failed to load proposals')}
-        </Header3>
-        <Button
-          onPress={() => candidatesQuery.refetch()}
-          color="secondary"
-          size="small"
-        >
-          {t('Try again')}
-        </Button>
-      </EmptyState>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuTriangleAlert className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{t('Failed to load proposals')}</EmptyTitle>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => candidatesQuery.refetch()}
+          >
+            {t('Try again')}
+          </Button>
+        </EmptyContent>
+      </Empty>
     );
   }
 
@@ -207,19 +203,21 @@ export const ManualSelectionList = ({
     return null;
   }
 
-  // Full pool empty → dead end, no toolbar. Any narrowing filter keeps
+  // Full pool empty → dead end, no toolbar. A narrowing category filter keeps
   // the toolbar (below) so the admin can loosen it.
-  const isUnfiltered = !categoryId && proposalFilter === ProposalFilter.ALL;
-  if (isUnfiltered && candidates.proposals.length === 0) {
+  if (!categoryId && candidates.proposals.length === 0) {
     return (
-      <EmptyState icon={<LuLeaf className="size-6" />}>
-        <Header3 className="font-serif font-light">
-          {t('No proposals available to select')}
-        </Header3>
-        <p className="text-base text-neutral-charcoal">
-          {t('The previous phase did not leave any eligible proposals.')}
-        </p>
-      </EmptyState>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuLeaf className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{t('No proposals available to select')}</EmptyTitle>
+          <EmptyDescription>
+            {t('The previous phase did not leave any eligible proposals.')}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -231,30 +229,39 @@ export const ManualSelectionList = ({
     );
   };
 
-  const proposals = filteredProposals;
+  const proposals = candidates.proposals;
   const numSelected = selectedIds.length;
+  // No budget key in the instance's proposal template means the process
+  // collects no budgets, so the column would only ever show "—".
+  const showBudget = templateCollectsBudget(
+    instance.instanceData?.proposalTemplate,
+  );
   const currentPhaseName =
     instance.instanceData?.phases?.find(
       (p) => p.phaseId === instance.currentStateId,
     )?.name ?? '';
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
+    <div className="relative flex flex-col gap-6 pb-20">
       <ManualSelectionToolbar
         count={proposals.length}
-        total={candidates.proposals.length}
-        currentProfileId={user.currentProfile?.id}
         categories={categoriesData.categories}
         filters={toolbarFilters}
         onChange={handleToolbarChange}
+        pinOffset={pinOffset}
       />
 
       {proposals.length === 0 ? (
-        <EmptyState icon={<LuLeaf className="size-6" />}>
-          <Header3 className="font-serif font-light">
-            {t('No proposals match the current filter')}
-          </Header3>
-        </EmptyState>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LuLeaf className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle>
+              {t('No proposals match the current filter')}
+            </EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <SelectableProposalsTable
           proposals={proposals}
@@ -264,6 +271,7 @@ export const ManualSelectionList = ({
             `/decisions/${decisionSlug}/proposal/${p.profileId}`
           }
           showVotes={isFinalPhase}
+          showBudget={showBudget}
         />
       )}
 

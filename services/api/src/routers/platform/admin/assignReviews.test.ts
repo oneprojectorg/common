@@ -241,6 +241,74 @@ describe.concurrent('platform.admin.assignReviews', () => {
     expect(result.createdCount).toBe(0);
   });
 
+  // The phase-pool invariant lives in `assignReviewsToReviewer`, so the
+  // platform path enforces it too — a row hidden from the read model can no
+  // longer be created here.
+
+  it('rejects a draft proposal', async ({ task, onTestFinished }) => {
+    const { instanceId, proposal, phaseId, caller, reviewer } =
+      await createSetupWithProposal(task.id, onTestFinished);
+
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.DRAFT })
+      .where(eq(proposals.id, proposal.id));
+
+    await expect(
+      caller.assignReviews({
+        instanceId,
+        phaseId,
+        reviewerProfileId: reviewer.profileId,
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('rejects a moderation-detached proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, proposal, phaseId, caller, reviewer } =
+      await createSetupWithProposal(task.id, onTestFinished);
+
+    await db
+      .update(proposals)
+      .set({ moderationDetachedAt: new Date().toISOString() })
+      .where(eq(proposals.id, proposal.id));
+
+    await expect(
+      caller.assignReviews({
+        instanceId,
+        phaseId,
+        reviewerProfileId: reviewer.profileId,
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('rejects the whole request when only some ids are valid', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, proposal, phaseId, caller, reviewer } =
+      await createSetupWithProposal(task.id, onTestFinished);
+
+    await expect(
+      caller.assignReviews({
+        instanceId,
+        phaseId,
+        reviewerProfileId: reviewer.profileId,
+        proposalIds: [proposal.id, crypto.randomUUID()],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const listing = await caller.listDecisionReviewAssignments({
+      instanceId,
+      phaseId,
+    });
+    expect(listing.totalAssignments).toBe(0);
+  });
+
   it('rejects a reviewer without the REVIEW capability', async ({
     task,
     onTestFinished,

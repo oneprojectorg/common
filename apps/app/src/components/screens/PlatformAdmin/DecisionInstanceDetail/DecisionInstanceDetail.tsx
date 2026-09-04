@@ -6,7 +6,7 @@ import type {
   AdminDecisionPhase,
 } from '@op/common/client';
 import { Badge } from '@op/sense/Badge';
-import { buttonVariants } from '@op/sense/Button';
+import { Button, buttonVariants } from '@op/sense/Button';
 import {
   Card,
   CardAction,
@@ -17,13 +17,15 @@ import {
 } from '@op/sense/Card';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { toast } from '@op/sense/Toast';
 import { useFormatter } from 'next-intl';
-import { Suspense } from 'react';
-import { LuArrowLeft, LuArrowUpRight } from 'react-icons/lu';
+import { Suspense, useState } from 'react';
+import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
 
 const STATUS_DISPLAY: Record<string, string> = {
@@ -66,11 +68,11 @@ const DecisionInstanceDetailContent = ({
           href="/admin/decisions"
           className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
-          <LuArrowLeft className="size-3.5 rtl:rotate-180" />
+          <LuArrowLeft className="size-3.5 rtl:-scale-x-100" />
           {t('All Decisions')}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-serif text-title-lg">{detail.name}</h1>
+          <h1 className="font-serif text-headline font-light">{detail.name}</h1>
           {detail.status ? (
             <Badge variant="secondary">
               {STATUS_DISPLAY[detail.status] ?? detail.status}
@@ -82,7 +84,10 @@ const DecisionInstanceDetailContent = ({
               className={`${buttonVariants({ variant: 'outline', size: 'sm' })} ms-auto`}
             >
               {t('View decision')}
-              <LuArrowUpRight data-icon="inline-end" />
+              <LuArrowUpRight
+                data-icon="inline-end"
+                className="rtl:-scale-x-100"
+              />
             </Link>
           ) : null}
         </div>
@@ -126,6 +131,7 @@ const DecisionInstanceDetailContent = ({
               key={phase.phaseId}
               instanceId={instanceId}
               phase={phase}
+              previousPhase={detail.phases[index - 1]}
               index={index}
               total={detail.phases.length}
               currentIndex={detail.phases.findIndex((p) => p.isCurrent)}
@@ -133,7 +139,10 @@ const DecisionInstanceDetailContent = ({
           ))}
         </TabsContent>
         <TabsContent value="configuration" className="pt-4">
-          <ConfigurationCard config={detail.config} />
+          <ConfigurationCard
+            config={detail.config}
+            instanceData={detail.instanceData}
+          />
         </TabsContent>
         <TabsContent value="members" className="pt-4">
           <Card>
@@ -167,12 +176,15 @@ const MetaItem = ({ label, value }: { label: string; value: string }) => {
 const PhaseCard = ({
   instanceId,
   phase,
+  previousPhase,
   index,
   total,
   currentIndex,
 }: {
   instanceId: string;
   phase: AdminDecisionPhase;
+  /** The phase before this one, undefined for the first phase. */
+  previousPhase: AdminDecisionPhase | undefined;
   index: number;
   total: number;
   /** Index of the current phase, -1 when the process has no current phase. */
@@ -277,13 +289,34 @@ const PhaseCard = ({
             {t('Nothing to manage in this phase.')}
           </p>
         ) : null}
+        {phase.isCurrent && previousPhase ? (
+          <PhaseSection title={t('Danger zone')}>
+            <div className="w-fit">
+              <RevertPhaseButton
+                instanceId={instanceId}
+                phaseId={phase.phaseId}
+                previousPhaseName={
+                  previousPhase.name ?? t('Phase {number}', { number: index })
+                }
+              />
+            </div>
+          </PhaseSection>
+        ) : null}
       </CardContent>
     </Card>
   );
 };
 
-const ConfigurationCard = ({ config }: { config: AdminDecisionConfig }) => {
+const ConfigurationCard = ({
+  config,
+  instanceData,
+}: {
+  config: AdminDecisionConfig;
+  instanceData: unknown;
+}) => {
   const t = useTranslations();
+  const [isRawShown, setIsRawShown] = useState(false);
+  const rawConfig = JSON.stringify(instanceData, null, 2);
 
   const settings: Array<{ label: string; value: string | boolean }> = [
     { label: t('Private process'), value: config.isPrivate },
@@ -318,8 +351,20 @@ const ConfigurationCard = ({ config }: { config: AdminDecisionConfig }) => {
         <CardDescription>
           {t('Process-level settings for this decision')}
         </CardDescription>
+        <CardAction className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-expanded={isRawShown}
+            aria-controls="raw-config"
+            onClick={() => setIsRawShown((shown) => !shown)}
+          >
+            {isRawShown ? t('Hide raw config') : t('View raw config')}
+          </Button>
+          <CopyRawConfigButton value={rawConfig} />
+        </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-6">
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
           {settings.map((setting) => (
             <div
@@ -341,8 +386,40 @@ const ConfigurationCard = ({ config }: { config: AdminDecisionConfig }) => {
             </div>
           ))}
         </dl>
+        {isRawShown ? (
+          <pre
+            id="raw-config"
+            className="max-h-[60vh] overflow-y-auto rounded-lg bg-muted p-4 text-xs break-words whitespace-pre-wrap"
+          >
+            {rawConfig}
+          </pre>
+        ) : null}
       </CardContent>
     </Card>
+  );
+};
+
+const CopyRawConfigButton = ({ value }: { value: string }) => {
+  const t = useTranslations();
+  const [hasCopied, setHasCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setHasCopied(true);
+      toast.success(t('Raw config copied to your clipboard.'));
+      // Revert the icon so a second copy still reads as a fresh action
+      setTimeout(() => setHasCopied(false), 2000);
+    } catch {
+      toast.error(t('Failed to copy'));
+    }
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={handleCopy}>
+      {hasCopied ? <LuCheck /> : <LuCopy />}
+      {t('Copy')}
+    </Button>
   );
 };
 

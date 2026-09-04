@@ -231,9 +231,9 @@ describe.concurrent('per-phase rubric templates', () => {
       properties: { viability: { title: 'Viability' } },
     });
 
-    // Community is current, so the default scope lands there.
     const communityList = await reviewerCaller.decision.listReviewAssignments({
       processInstanceId: context.instance.instance.id,
+      phaseId: COMMUNITY_PHASE,
     });
     expect(communityList.assignments.map((a) => a.assignment.id)).toEqual([
       communityAssignment.id,
@@ -256,6 +256,9 @@ describe.concurrent('per-phase rubric templates', () => {
       title: 'Phase-scoped rubric aggregates',
       phaseId: FEASIBILITY_PHASE,
     });
+    // createReviewAssignment stamped feasibility as current; this test reads
+    // the feasibility reviews as a PAST phase, with community current.
+    await testData.setCurrentPhase(instanceId, COMMUNITY_PHASE);
     await createProposalReview({
       assignmentId: feasibilityScenario.assignment.id,
       state: ProposalReviewState.SUBMITTED,
@@ -318,18 +321,36 @@ describe.concurrent('per-phase rubric templates', () => {
     expect(communityResult.aggregates.averageScore).toBe(11);
     expect(communityResult.reviews[0]!.overallRecommendation).toBe('yes');
 
-    // Admin omitting phaseId blends phases; the documented behavior is the
-    // instance-level rubric, so the feasibility review scores 0 against it.
-    const blendedResult =
+    // Admin omitting phaseId defaults to the current (community) phase:
+    // its rubric (instance fallback) and only its review — never a blend
+    // across phases.
+    const defaultPhaseResult =
       await adminCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: instanceId,
         proposalId: feasibilityScenario.proposal.id,
       });
-    expect(blendedResult.rubricTemplate).toMatchObject({
+    expect(defaultPhaseResult.rubricTemplate).toMatchObject({
       properties: { impact: { title: 'Impact' } },
     });
-    expect(blendedResult.aggregates.reviewsSubmittedCount).toBe(2);
-    expect(blendedResult.aggregates.averageScore).toBe(5.5);
+    expect(defaultPhaseResult.aggregates.reviewsSubmittedCount).toBe(1);
+    expect(defaultPhaseResult.aggregates.averageScore).toBe(11);
+    expect(defaultPhaseResult.reviews).toHaveLength(1);
+
+    // Wind back to feasibility: the omitted-phase default follows the
+    // current phase, picking up its rubric override.
+    await testData.setCurrentPhase(instanceId, FEASIBILITY_PHASE);
+    const feasibilityDefaultResult =
+      await adminCaller.decision.getProposalWithReviewAggregates({
+        processInstanceId: instanceId,
+        proposalId: feasibilityScenario.proposal.id,
+      });
+    expect(feasibilityDefaultResult.rubricTemplate).toMatchObject({
+      properties: { viability: { title: 'Viability' } },
+    });
+    expect(feasibilityDefaultResult.aggregates.reviewsSubmittedCount).toBe(1);
+    expect(feasibilityDefaultResult.aggregates.averageScore).toBe(3);
+    // Restore the current phase for the list-endpoint assertions below.
+    await testData.setCurrentPhase(instanceId, COMMUNITY_PHASE);
 
     // The list endpoint carries the same phase-resolved rubric, so clients
     // never resolve one themselves (e.g. shortlist total points).
@@ -365,6 +386,11 @@ describe.concurrent('per-phase rubric templates', () => {
       title: 'Submit against phase rubric',
       phaseId: FEASIBILITY_PHASE,
     });
+    // Reviews can only be written while the assignment's phase is current.
+    await testData.setCurrentPhase(
+      context.instance.instance.id,
+      FEASIBILITY_PHASE,
+    );
     const reviewerCaller = await createAuthenticatedCaller(
       scenario.reviewer.email,
     );

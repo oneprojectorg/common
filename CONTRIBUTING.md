@@ -49,6 +49,9 @@ We use a feature branch workflow based on the `dev` branch:
 - Keep commits focused and atomic
 - Follow conventional commit format when possible
 
+Some decisions also need an [ADR](#architecture-decision-records). A PR is not a
+durable home for the "why".
+
 ## Architecture Overview
 
 This is a **Turborepo monorepo** using **pnpm workspaces**:
@@ -60,7 +63,8 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 
 ### Packages (`packages/`)
 
-- **`@op/ui`**: React Aria Components library
+- **`@op/sense`**: Design system — shadcn/ui in its Base UI style
+- **`@op/styles`**: Tailwind theme and design tokens
 - **`@op/core`**: Core utilities and configuration
 - **`@op/hooks`**: Reusable React hooks
 - **`@op/common`**: Shared business logic
@@ -73,6 +77,11 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 - **`@op/emails`**: React Email templates
 - **`@op/cache`**: Caching utilities
 
+### Architecture Decision Records
+
+Architecture decisions are recorded as ADRs in [`docs/adr/`](./docs/adr/).
+[`docs/adr/README.md`](./docs/adr/README.md) defines when to write one and how.
+
 ## Code Style and Standards
 
 ### General Guidelines
@@ -80,13 +89,14 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 - Follow existing code conventions in the file you're editing
 - Use TypeScript strictly (no `any` types)
 - Write "self-documenting" code with clear variable names
-- Only use colors present in the tailwind.shared config
+- Only use the design tokens defined in `@op/styles` — never arbitrary Tailwind values
 
 ### UI Components
 
-- Use React Aria Components for accessibility
-- Import components like: `import { Button } from "@op/ui/Button"`
-- Follow the component patterns in `@op/ui`
+- Prefer an existing `@op/sense` component over a vanilla HTML element
+- Import per component: `import { Button } from '@op/sense/Button'`
+- Get `cn` from `@op/sense/lib/utils` — stock `twMerge` drops our custom type tokens
+- Read [`packages/sense/CLAUDE.md`](./packages/sense/CLAUDE.md) before adding one
 
 ### Database Changes
 
@@ -109,7 +119,7 @@ Use these shortcuts for common operations:
 pnpm w:app      # Work with apps/app
 pnpm w:api      # Work with apps/api
 pnpm w:db       # Work with services/db
-pnpm w:ui       # Work with packages/ui (usually Storybook)
+pnpm w:sense    # Work with packages/sense (the design system + its Storybook)
 pnpm w:emails   # Work with services/emails
 ```
 

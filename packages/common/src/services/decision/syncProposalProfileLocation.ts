@@ -1,7 +1,7 @@
 import { type DbClient, eq, sql } from '@op/db/client';
 import { locations, profilesLocations } from '@op/db/schema';
 
-import { normalizeLocation } from './proposalDataSchema';
+import { getPlaceCoordinates, normalizeLocation } from './proposalDataSchema';
 
 /**
  * Projects `proposalData.location` ({ lat, lng }) onto the proposal's profile
@@ -53,8 +53,7 @@ export async function syncProposalProfileLocation(
 
   // Store the canonical place coordinate on the shared row, falling back to the
   // exact pin when there's no geocoded place.
-  const placeLng = location.placeLng ?? location.lng;
-  const placeLat = location.placeLat ?? location.lat;
+  const { lat: placeLat, lng: placeLng } = getPlaceCoordinates(location);
 
   const [row] = await tx
     .insert(locations)

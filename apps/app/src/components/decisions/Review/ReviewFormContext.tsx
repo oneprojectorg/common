@@ -8,12 +8,13 @@ import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
   ProposalReviewState,
+  type ReviewSettings,
   type RubricReviewData,
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
 import {
   type ReactNode,
@@ -28,9 +29,13 @@ import {
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { withYesNoDefaults } from '../rubricTemplate';
+
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
+  /** Resolved review settings for the assignment's phase. */
+  reviewSettings: ReviewSettings;
   /** Rubric answers keyed by criterion id; validated against the rubricTemplate. */
   values: RubricReviewData['answers'];
   /** Optional free-text rationale per criterion id (always optional). */
@@ -57,9 +62,9 @@ interface ReviewFormState {
   handleValueChange: (key: string, value: unknown) => void;
   handleRationaleChange: (key: string, value: string) => void;
   handleOverallCommentChange: (value: string) => void;
-  handleSubmit: () => void;
+  handleSubmit: () => Promise<void>;
   startEditing: () => void;
-  handleUpdate: () => void;
+  handleUpdate: () => Promise<void>;
   requestRevision: (comment: string) => void;
   cancelRevisionRequest: () => void;
   isRequestingRevision: boolean;
@@ -76,10 +81,22 @@ export function useReviewForm(): ReviewFormState {
   return ctx;
 }
 
+/** What a host rendering the form's primary action outside it needs. */
+export interface ReviewFormStatus {
+  /** Resolves once the write settles, whether it succeeded or not. */
+  submit: () => Promise<void>;
+  canSubmit: boolean;
+}
+
 export function ReviewFormProvider(props: {
   assignmentId: string;
   decisionSlug: string;
-  allowRevisions: boolean;
+  reviewSettings: ReviewSettings;
+  /** Runs after a submit or an update instead of leaving for the decision page. */
+  onCompleted?: () => void;
+  /** Lets a host render the primary action outside the form. */
+  onStatusChange?: (status: ReviewFormStatus) => void;
+  initiallyEditing?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -92,12 +109,18 @@ export function ReviewFormProvider(props: {
 function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
-  allowRevisions,
+  reviewSettings,
+  onCompleted,
+  onStatusChange,
+  initiallyEditing = false,
   children,
 }: {
   assignmentId: string;
   decisionSlug: string;
-  allowRevisions: boolean;
+  reviewSettings: ReviewSettings;
+  onCompleted?: () => void;
+  onStatusChange?: (status: ReviewFormStatus) => void;
+  initiallyEditing?: boolean;
   children: ReactNode;
 }) {
   const t = useTranslations();
@@ -145,8 +168,11 @@ function ReviewFormProviderInner({
     null;
   const isOwnRevisionRequest = !!ownRevisionRequest;
 
-  const [values, setValues] = useState<RubricReviewData['answers']>(
-    review?.reviewData.answers ?? {},
+  // Seed 'no' for untouched yes/no criteria — the switch already shows "No"
+  // before it is touched, so a required criterion must not need a Yes→No
+  // double-tap just to record that.
+  const [values, setValues] = useState<RubricReviewData['answers']>(() =>
+    withYesNoDefaults(rubricTemplate, review?.reviewData.answers ?? {}),
   );
   const [rationales, setRationales] = useState<RubricReviewData['rationales']>(
     review?.reviewData.rationales ?? {},
@@ -157,20 +183,22 @@ function ReviewFormProviderInner({
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
   const isPausedForRevision = hasAnyOpenRevisionRequest;
   const canRequestRevision =
-    allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
+    reviewSettings.allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
 
   // Local: unsaved until "Update review", so navigating away discards edits.
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(initiallyEditing);
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Review submitted successfully') });
+      toast.success(t('Review submitted successfully'));
+      if (onCompleted) {
+        onCompleted();
+        return;
+      }
       router.push(`/decisions/${decisionSlug}/current`);
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to submit review'),
-      });
+      toast.error(error.message || t('Failed to submit review'));
     },
   });
 
@@ -179,12 +207,11 @@ function ReviewFormProviderInner({
       // The mutation's review channels invalidate getReviewAssignment locally,
       // refreshing the read-only view in place (as requestRevision does).
       setIsEditing(false);
-      toast.success({ message: t('Review updated successfully') });
+      toast.success(t('Review updated successfully'));
+      onCompleted?.();
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update review'),
-      });
+      toast.error(error.message || t('Failed to update review'));
     },
   });
 
@@ -200,24 +227,20 @@ function ReviewFormProviderInner({
 
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('Revision requested') });
+      toast.success(t('Revision requested'));
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to request revision'),
-      });
+      toast.error(error.message || t('Failed to request revision'));
     },
   });
 
   const cancelRevisionMutation =
     trpc.decision.cancelRevisionRequest.useMutation({
       onSuccess: () => {
-        toast.success({ message: t('Revision request cancelled') });
+        toast.success(t('Revision request cancelled'));
       },
       onError: (error) => {
-        toast.error({
-          message: error.message || t('Failed to cancel revision request'),
-        });
+        toast.error(error.message || t('Failed to cancel revision request'));
       },
     });
 
@@ -228,7 +251,14 @@ function ReviewFormProviderInner({
 
   const handleValueChange = useCallback(
     (key: string, value: unknown) => {
-      setValues((current) => ({ ...current, [key]: value }));
+      setValues((current) => {
+        // `undefined` = unanswered: drop the key so the criterion validates as absent.
+        if (value === undefined) {
+          const { [key]: _cleared, ...rest } = current;
+          return rest;
+        }
+        return { ...current, [key]: value };
+      });
       scheduleAutosave();
     },
     [scheduleAutosave],
@@ -250,58 +280,82 @@ function ReviewFormProviderInner({
     [scheduleAutosave],
   );
 
-  const handleSubmit = useCallback(() => {
-    submitReview.mutate({
+  // `.mutate` is stable; the mutation object is a new snapshot every render and
+  // would give every handler, and the context value, a new identity each time.
+  const submitMutate = submitReview.mutateAsync;
+  const updateMutate = updateReview.mutateAsync;
+  const requestRevisionMutate = requestRevisionMutation.mutate;
+  const cancelRevisionMutate = cancelRevisionMutation.mutate;
+
+  // Rejections are swallowed: the mutation's onError owns the message, and
+  // callers only await settlement.
+  const handleSubmit = useCallback(async () => {
+    await submitMutate({
       assignmentId,
       reviewData: { answers: values, rationales },
       overallComment: overallComment.trim() ? overallComment : null,
-    });
-  }, [assignmentId, values, rationales, overallComment, submitReview]);
+    }).catch(() => {});
+  }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
   const startEditing = useCallback(() => {
     setIsEditing(true);
   }, []);
 
-  const handleUpdate = useCallback(() => {
-    updateReview.mutate({
+  const handleUpdate = useCallback(async () => {
+    await updateMutate({
       assignmentId,
       reviewData: { answers: values, rationales },
       overallComment: overallComment.trim() ? overallComment : null,
-    });
-  }, [assignmentId, values, rationales, overallComment, updateReview]);
+    }).catch(() => {});
+  }, [assignmentId, values, rationales, overallComment, updateMutate]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
-      requestRevisionMutation.mutate({
+      requestRevisionMutate({
         assignmentId,
         requestComment: comment,
       });
     },
-    [assignmentId, requestRevisionMutation],
+    [assignmentId, requestRevisionMutate],
   );
 
   const handleCancelRevision = useCallback(() => {
     if (!ownRevisionRequest) {
       return;
     }
-    cancelRevisionMutation.mutate({
+    cancelRevisionMutate({
       assignmentId,
       revisionRequestId: ownRevisionRequest.id,
     });
-  }, [assignmentId, ownRevisionRequest, cancelRevisionMutation]);
+  }, [assignmentId, ownRevisionRequest, cancelRevisionMutate]);
+
+  const canSubmit = isRubricValid && !isSubmitted && !isPausedForRevision;
+  const canUpdate = isRubricValid && isEditing;
+
+  // What a host outside the form needs to drive its primary action.
+  const primaryAction = isEditing ? handleUpdate : handleSubmit;
+  const primaryActionEnabled = isEditing ? canUpdate : canSubmit;
+
+  useEffect(() => {
+    onStatusChange?.({
+      submit: primaryAction,
+      canSubmit: primaryActionEnabled,
+    });
+  }, [onStatusChange, primaryAction, primaryActionEnabled]);
 
   const state = useMemo<ReviewFormState>(
     () => ({
+      reviewSettings,
       values,
       rationales,
       overallComment,
-      canSubmit: isRubricValid && !isSubmitted && !isPausedForRevision,
+      canSubmit,
       isSubmitting: submitReview.isPending,
       isSubmitted,
       canEditReview,
       isEditing,
       isUpdating: updateReview.isPending,
-      canUpdate: isRubricValid && isEditing,
+      canUpdate,
       isPausedForRevision,
       revisionRequest: effectiveRevisionRequest,
       isOwnRevisionRequest,
@@ -321,10 +375,12 @@ function ReviewFormProviderInner({
       isCancellingRevision: cancelRevisionMutation.isPending,
     }),
     [
+      reviewSettings,
       values,
       rationales,
       overallComment,
-      isRubricValid,
+      canSubmit,
+      canUpdate,
       isSubmitted,
       canEditReview,
       isEditing,

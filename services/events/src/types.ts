@@ -1,5 +1,4 @@
-import { ProposalFilter } from '@op/core';
-import { ProposalStatus } from '@op/db/schema';
+import { RejectionReason } from '@op/core/decisions';
 import { z } from 'zod';
 
 // Mirrors the db `moderation_item_type` enum values; kept as a plain string
@@ -34,6 +33,10 @@ export const Events = {
       reactionType: z.string(),
     }),
   },
+  // Carries no filters. An export used to inherit whatever the list had been
+  // narrowed to, which made the same button produce a different file depending
+  // on state the admin could not see from the CSV. What it covers is now fixed
+  // by the job: every non-draft proposal in the instance's current phase.
   proposalExportRequested: {
     name: 'proposal/export-requested' as const,
     schema: z.object({
@@ -41,13 +44,6 @@ export const Events = {
       processInstanceId: z.string().uuid(),
       userId: z.string().uuid(),
       format: z.enum(['csv']),
-      filters: z.object({
-        categoryId: z.string().optional(),
-        submittedByProfileId: z.string().optional(),
-        status: z.enum(ProposalStatus).optional(),
-        dir: z.enum(['asc', 'desc']),
-        proposalFilter: z.enum(ProposalFilter).optional(),
-      }),
     }),
   },
   profileInviteSent: {
@@ -142,6 +138,30 @@ export const Events = {
       postId: z.string().uuid(),
       proposalId: z.string().uuid(),
       authorProfileId: z.string().uuid(),
+    }),
+  },
+  // Keyed on the edge, not the proposal pair: the edge soft-deletes on unmerge,
+  // so the notification can re-check the merge before announcing it.
+  proposalMerged: {
+    name: 'proposal/merged' as const,
+    schema: z.object({
+      relationshipId: z.string().uuid(),
+      // Dropped from the recipient lists.
+      actorAuthUserId: z.string().uuid(),
+    }),
+  },
+  // Unlike every other notification here, the payload is the carrier rather than
+  // a ref to re-read: nothing stores the reason or the note, so the email can
+  // only get them from the event. Everything else about the rejection — whether
+  // it still stands, who hears about it — is still re-read at send time.
+  proposalRejected: {
+    name: 'proposal/rejected' as const,
+    schema: z.object({
+      proposalId: z.string().uuid(),
+      reason: z.enum(RejectionReason),
+      note: z.string().optional(),
+      // Dropped from the recipient list.
+      actorAuthUserId: z.string().uuid(),
     }),
   },
 } as const;

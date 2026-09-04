@@ -1,6 +1,6 @@
 'use client';
 
-import { Header4 } from '@op/ui/Header';
+import { Header4 } from '@op/sense/Header';
 import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -36,13 +36,13 @@ export function FieldConfigLocation({
   return (
     <div className="space-y-2">
       <Header4>{t('Map view')}</Header4>
-      <p className="text-sm text-neutral-gray4">
+      <p className="text-sm text-muted-foreground">
         {t(
           'Pan and zoom to set the starting map position participants see before they add a location.',
         )}
       </p>
 
-      <div className="overflow-hidden rounded-lg border border-neutral-gray1">
+      <div className="overflow-hidden rounded-lg border border-border">
         <MapCanvas
           styleUrl={styleUrl}
           center={initialView.current.center}

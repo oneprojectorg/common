@@ -1,5 +1,6 @@
 'use client';
 
+import { formatFileSize } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,
@@ -8,12 +9,15 @@ import {
   RESOURCE_TITLE_MAX_LEN,
   isAllowedUploadMimeType,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Skeleton } from '@op/ui/Skeleton';
-import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
-import { cn, formatFileSize } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Spinner } from '@op/sense/Spinner';
+import { Textarea } from '@op/sense/Textarea';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { LuFilePlus2, LuFileText, LuX } from 'react-icons/lu';
@@ -37,8 +41,8 @@ export const AddResourceDocumentForm = ({
 }) => {
   const t = useTranslations();
   const createDocument = trpc.resources.createDocument.useMutation({
-    onSuccess: () => toast.success({ message: t('Resource added') }),
-    onError: () => toast.error({ message: t('Could not add resource') }),
+    onSuccess: () => toast.success(t('Resource added')),
+    onError: () => toast.error(t('Could not add resource')),
   });
   const { upload, uploading, uploaded, reset } = useResourceUpload(profileId);
 
@@ -70,15 +74,15 @@ export const AddResourceDocumentForm = ({
     // rejected.
     if (selected) {
       if (!isAllowedUploadMimeType(selected.type)) {
-        toast.error({ message: t('Unsupported file type') });
+        toast.error(t('Unsupported file type'));
         return;
       }
       if (selected.size > MAX_RESOURCE_FILE_SIZE) {
-        toast.error({
-          message: t('File is too large (max {size} MB)', {
+        toast.error(
+          t('File is too large (max {size} MB)', {
             size: MAX_SIZE_MB,
           }),
-        });
+        );
         return;
       }
     }
@@ -141,7 +145,7 @@ export const AddResourceDocumentForm = ({
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:px-6">
         <div className="flex flex-col gap-1">
-          <span className="text-sm text-neutral-black">{t('Upload file')}</span>
+          <span className="text-sm">{t('Upload file')}</span>
           <input
             ref={inputRef}
             type="file"
@@ -151,7 +155,7 @@ export const AddResourceDocumentForm = ({
           />
           {file ? (
             isImage ? (
-              <div className="relative h-44 w-full overflow-hidden rounded-lg border border-neutral-gray1 bg-neutral-offWhite">
+              <div className="relative h-44 w-full overflow-hidden rounded-lg border border-border bg-muted">
                 {previewUrl ? (
                   <img
                     src={previewUrl}
@@ -161,14 +165,14 @@ export const AddResourceDocumentForm = ({
                 ) : null}
                 {uploading ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-                    <LoadingSpinner />
+                    <Spinner className="size-6" />
                   </div>
                 ) : null}
                 <Button
-                  color="ghost"
-                  size="small"
-                  onPress={handleRemoveFile}
-                  isDisabled={uploading}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveFile}
+                  disabled={uploading}
                   className="absolute end-2 top-2 bg-white/90 shadow-sm hover:bg-white"
                   aria-label={t('Remove file')}
                 >
@@ -176,9 +180,9 @@ export const AddResourceDocumentForm = ({
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-4 rounded-lg border border-neutral-gray1 bg-white p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-tealWhite">
-                  <LuFileText className="size-5 text-neutral-gray4" />
+              <div className="flex items-center gap-4 rounded-lg border border-border bg-white p-4">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent">
+                  <LuFileText className="size-5 text-muted-foreground" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
                   {uploading ? (
@@ -188,20 +192,20 @@ export const AddResourceDocumentForm = ({
                     </>
                   ) : (
                     <>
-                      <span className="truncate text-base font-medium text-neutral-charcoal">
+                      <span className="truncate text-base font-medium">
                         {file.name}
                       </span>
-                      <span className="text-sm text-neutral-gray4">
+                      <span className="text-sm text-muted-foreground">
                         {fileMetaLabel(file)}
                       </span>
                     </>
                   )}
                 </div>
                 <Button
-                  color="ghost"
-                  size="small"
-                  onPress={handleRemoveFile}
-                  isDisabled={uploading}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveFile}
+                  disabled={uploading}
                   className="shrink-0"
                   aria-label={t('Remove file')}
                 >
@@ -227,26 +231,24 @@ export const AddResourceDocumentForm = ({
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={cn(
-                'flex min-h-52 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-neutral-offWhite px-12 py-6 text-center transition-colors',
+                'flex min-h-52 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-muted px-12 py-6 text-center transition-colors',
                 isDragging
-                  ? 'bg-primary-teal50 border-primary-teal'
-                  : 'border-neutral-gray2 hover:border-neutral-gray3',
+                  ? 'border-primary bg-accent'
+                  : 'border-input hover:border-input',
               )}
             >
-              <div className="flex size-20 items-center justify-center rounded-full bg-neutral-gray1 text-neutral-charcoal">
+              <div className="flex size-20 items-center justify-center rounded-full bg-secondary">
                 <LuFilePlus2 className="size-10" />
               </div>
               <div className="flex flex-col gap-2 text-base">
-                <p className="text-neutral-black">
+                <p>
                   {t.rich('Drag a file here or <browse>browse</browse>', {
                     browse: (chunks: ReactNode) => (
-                      <span className="text-primary-teal underline">
-                        {chunks}
-                      </span>
+                      <span className="text-primary underline">{chunks}</span>
                     ),
                   })}
                 </p>
-                <p className="text-neutral-gray4">
+                <p className="text-muted-foreground">
                   {t('Accepts PDF, DOCX, XLSX, and images up to {size} MB', {
                     size: MAX_SIZE_MB,
                   })}
@@ -255,41 +257,47 @@ export const AddResourceDocumentForm = ({
             </div>
           )}
         </div>
-        <TextField
-          label={t('Title')}
-          value={title}
-          onChange={setTitleInput}
-          isRequired
-          maxLength={RESOURCE_TITLE_MAX_LEN}
-          isDisabled={!uploaded}
-          inputProps={{ placeholder: t('Resource name') }}
-        />
-        <TextField
-          label={t('Description')}
-          value={description}
-          onChange={setDescription}
-          maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
-          useTextArea
-          isDisabled={!uploaded}
-          textareaProps={{
-            placeholder: t('Brief description of this resource'),
-          }}
-        />
+        <Field>
+          <FieldLabel htmlFor="document-title">
+            {t('Title')}
+            <RequiredAsterisk />
+          </FieldLabel>
+          <Input
+            id="document-title"
+            value={title}
+            onChange={(event) => setTitleInput(event.target.value)}
+            required
+            maxLength={RESOURCE_TITLE_MAX_LEN}
+            disabled={!uploaded}
+            placeholder={t('Resource name')}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="document-description">
+            {t('Description')}
+          </FieldLabel>
+          <Textarea
+            id="document-description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
+            disabled={!uploaded}
+            placeholder={t('Brief description of this resource')}
+          />
+        </Field>
       </div>
-      <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 bg-white px-4 py-4 sm:px-6">
+      <div className="sticky bottom-0 flex shrink-0 gap-2 bg-white px-4 py-4 sm:px-6">
         <Button
-          color="secondary"
-          size="small"
-          onPress={onCancel}
-          isDisabled={submitting}
+          variant="outline"
+          onClick={onCancel}
+          disabled={submitting}
           className="flex-1 justify-center"
         >
           {t('Cancel')}
         </Button>
         <Button
           type="submit"
-          size="small"
-          isDisabled={!uploaded || !title.trim() || submitting}
+          disabled={!uploaded || !title.trim() || submitting}
           className="flex-1 justify-center"
         >
           {submitting ? t('Adding...') : t('Add resource')}

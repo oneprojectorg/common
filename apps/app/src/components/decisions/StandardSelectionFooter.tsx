@@ -1,16 +1,17 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { FooterBar } from '@op/ui/FooterBar';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
+import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  ProposalCard,
-  ProposalCardCategory,
-  ProposalCardContent,
-  ProposalCardHeader,
-} from './ProposalCard';
+import { ProposalMiniCard } from './ProposalCard';
 import { SelectionConfirmShell } from './SelectionConfirmShell';
 
 interface StandardSelectionFooterProps {
@@ -35,26 +36,27 @@ export const StandardSelectionFooter = ({
   const t = useTranslations();
 
   return (
-    <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-      <FooterBar.Start>
-        <span className="text-base text-neutral-black">
-          {t('{count} proposals advancing', { count: numSelected })}
+    <FooterBar position="fixed" className="bg-muted/95">
+      <FooterBarStart>
+        <span className="flex items-center gap-2 text-base">
+          <LuCircleCheck className="size-5 shrink-0" aria-hidden />
+          {t('{count} proposals selected', { count: numSelected })}
         </span>
-      </FooterBar.Start>
-      <FooterBar.Center />
-      <FooterBar.End>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
         <SelectionConfirmShell
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
           triggerDisabled={numSelected === 0}
-          triggerLabel={t('Confirm decisions')}
+          triggerLabel={t('Confirm selections')}
           headerLabel={t('Confirm advancing proposals')}
           confirmLabel={t('Publish')}
           isSubmitting={isSubmitting}
           onConfirm={onConfirm}
         >
           <div className="space-y-4">
-            <p className="text-base text-neutral-charcoal">
+            <p className="text-base">
               {t(
                 'These {numProposals} proposals will move on to the {phaseName} phase',
                 { numProposals: numSelected, phaseName },
@@ -62,33 +64,17 @@ export const StandardSelectionFooter = ({
             </p>
 
             <div className="space-y-2">
-              <div className="text-sm tracking-wider text-neutral-gray4 uppercase">
+              <div className="text-sm tracking-wider text-muted-foreground uppercase">
                 {t('PROPOSALS TO ADVANCE')}
               </div>
 
               {selectedProposals.map((proposal) => (
-                <ProposalCard
-                  className="bg-neutral-offWhite p-3"
-                  key={proposal.id}
-                >
-                  <ProposalCardContent>
-                    <ProposalCardHeader
-                      className="flex-row flex-wrap justify-between"
-                      proposal={proposal}
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-neutral-charcoal">
-                        {proposal.submittedBy?.name}
-                      </span>
-                      <ProposalCardCategory proposal={proposal} />
-                    </div>
-                  </ProposalCardContent>
-                </ProposalCard>
+                <ProposalMiniCard key={proposal.id} proposal={proposal} />
               ))}
             </div>
           </div>
         </SelectionConfirmShell>
-      </FooterBar.End>
+      </FooterBarEnd>
     </FooterBar>
   );
 };

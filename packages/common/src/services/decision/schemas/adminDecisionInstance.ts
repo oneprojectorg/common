@@ -5,6 +5,9 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
+import { moneyAmountSchema } from '../../../money';
+import { proposalCategorySchema } from './proposalCategory';
+
 const adminDecisionCurrentPhaseSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
@@ -21,7 +24,6 @@ export const adminDecisionInstanceSchema = z.object({
   proposalCount: z.number(),
   totalProposalCount: z.number(),
   participantCount: z.number(),
-  instanceData: z.unknown(),
 });
 
 export type AdminDecisionInstance = z.infer<typeof adminDecisionInstanceSchema>;
@@ -93,6 +95,8 @@ export const adminDecisionInstanceDetailSchema = z.object({
   processType: z.string().nullable(),
   templateVersion: z.string().nullable(),
   config: adminDecisionConfigSchema,
+  /** Raw and unparsed - admins read shapes our schemas don't model. */
+  instanceData: z.unknown(),
   phases: z.array(adminDecisionPhaseSchema),
 });
 
@@ -109,6 +113,12 @@ export const adminReviewAssignmentSchema = z.object({
   status: z.enum(ProposalReviewAssignmentStatus),
   reviewState: z.enum(ProposalReviewState).nullable(),
   submittedAt: z.string().nullable(),
+  categories: z.array(proposalCategorySchema),
+  author: adminProfileRefSchema.nullable(),
+  /** Plain-text body preview, resolved like the proposal list rows'; null when there is nothing to preview. */
+  previewText: z.string().nullable(),
+  /** Budget from the document fragments, falling back to the proposalData snapshot. */
+  budget: moneyAmountSchema.nullable(),
 });
 
 export type AdminReviewAssignment = z.infer<typeof adminReviewAssignmentSchema>;
@@ -130,13 +140,14 @@ export const adminAssignableProposalSchema = z.object({
   title: z.string().nullable(),
   submittedByProfileId: z.string().nullable(),
   author: adminProfileRefSchema.nullable(),
+  categories: z.array(proposalCategorySchema),
 });
 
 export type AdminAssignableProposal = z.infer<
   typeof adminAssignableProposalSchema
 >;
 
-/** Eligible reviewer candidate; email comes from the member's user record. */
+/** Eligible reviewer candidate; `email` is the profile contact field. */
 export const adminEligibleReviewerSchema = adminProfileRefSchema.extend({
   email: z.string().nullable(),
 });

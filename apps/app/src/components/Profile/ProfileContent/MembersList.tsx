@@ -2,11 +2,17 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
-import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/sense/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
+import { Header2 } from '@op/sense/Header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
+import { toast } from '@op/sense/Toast';
 import React, { useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
@@ -69,29 +75,25 @@ const MemberMenu = ({
         ? t('User changed to Admin successfully')
         : t('User changed to Member successfully');
 
-      toast.success({ message });
+      toast.success(message);
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to update user role'),
-      });
+      toast.error(error.message || t('Failed to update user role'));
     },
   });
 
   const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
     onSuccess: () => {
-      toast.success({
-        message: t('User removed from organization successfully'),
-      });
+      toast.success(t('User removed from organization successfully'));
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to remove user from organization'),
-      });
+      toast.error(
+        error.message || t('Failed to remove user from organization'),
+      );
     },
   });
 
@@ -108,7 +110,7 @@ const MemberMenu = ({
       );
 
       if (!memberRole) {
-        toast.error({ message: t('Member role not found') });
+        toast.error(t('Member role not found'));
         return;
       }
 
@@ -126,7 +128,7 @@ const MemberMenu = ({
       );
 
       if (!adminRole) {
-        toast.error({ message: t('Admin role not found') });
+        toast.error(t('Admin role not found'));
         return;
       }
 
@@ -154,32 +156,31 @@ const MemberMenu = ({
   };
 
   return (
-    <MenuTrigger>
-      <IconButton
-        aria-label={t('Member options')}
-        variant="ghost"
-        size="small"
-        className="aria-expanded:bg-neutral-gray1"
-      >
-        <LuEllipsis className="size-4" />
-      </IconButton>
-      <Menu className="min-w-48 p-2" placement="bottom end">
-        <MenuItem
-          key="toggle-role"
-          onAction={handleRoleToggle}
-          className="px-3 py-1"
-        >
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            aria-label={t('Member options')}
+            variant="ghost"
+            size="icon-xs"
+            className="aria-expanded:bg-secondary"
+          >
+            <LuEllipsis className="size-4" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent className="min-w-48 p-2" side="bottom" align="end">
+        <DropdownMenuItem onClick={handleRoleToggle} className="px-3 py-1">
           {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
-        </MenuItem>
-        <MenuItem
-          key="remove-from-org"
-          onAction={handleRemoveFromOrganization}
-          className="px-3 py-1 text-functional-red"
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleRemoveFromOrganization}
+          className="px-3 py-1 text-destructive"
         >
           {t('Remove from organization')}
-        </MenuItem>
-      </Menu>
-    </MenuTrigger>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
@@ -244,7 +245,7 @@ const MembersListContent = ({
                       reach it (walled garden), otherwise plain text. */}
                   {profile && canLinkToProfile ? (
                     <Link
-                      className="truncate font-semibold text-neutral-black"
+                      className="truncate font-semibold text-foreground"
                       href={
                         profile.type === 'org'
                           ? `/org/${profile.slug}`
@@ -254,9 +255,7 @@ const MembersListContent = ({
                       {displayName}
                     </Link>
                   ) : (
-                    <div className="truncate font-semibold text-neutral-black">
-                      {displayName}
-                    </div>
+                    <div className="truncate font-semibold">{displayName}</div>
                   )}
 
                   {/* Show role information */}
@@ -271,14 +270,12 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm text-neutral-charcoal">
-                      {t('Member')}
-                    </div>
+                    <div className="text-sm">{t('Member')}</div>
                   )}
 
                   {/* Show email if different from display name */}
                   {(member.name || profile?.name) && (
-                    <div className="text-sm text-neutral-charcoal">
+                    <div className="text-sm">
                       {member.profile?.email || member.email}
                     </div>
                   )}
@@ -286,7 +283,7 @@ const MembersListContent = ({
 
                 {/* Show about/bio information if available */}
                 {bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div className="line-clamp-3">
                     {bio.length > 200 ? `${bio.slice(0, 200)}...` : bio}
                   </div>
                 )}
@@ -337,13 +334,13 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
   if (!members || members.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-gray1">
-          <LuUsers className="h-6 w-6 text-neutral-gray4" />
+        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary">
+          <LuUsers className="h-6 w-6 text-muted-foreground" />
         </div>
-        <div className="mb-2 font-serif text-title-base text-neutral-black">
+        <div className="mb-2 font-serif text-title font-light">
           {t('No members found')}
         </div>
-        <p className="max-w-md text-sm text-neutral-charcoal">
+        <p className="max-w-md text-sm">
           {t("This organization doesn't have any members yet.")}
         </p>
       </div>
@@ -354,46 +351,48 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
-          <div className="w-full font-serif text-title-sm sm:text-title-lg">
+          <Header2 className="w-full">
             {t('{count, plural, =1 {1 member} other {# members}}', {
               count: members.length,
             })}
-          </div>
+          </Header2>
           <div className="w-72"></div>
         </div>
       </div>
 
-      <Tabs>
-        <TabList className="px-4 sm:px-0" variant="pill">
-          <Tab id="all" variant="pill">
-            {t('All members')}
-          </Tab>
+      <Tabs defaultValue="all">
+        <TabsList className="px-4 sm:px-0">
+          <TabsTrigger value="all">{t('All members')}</TabsTrigger>
           {rolesSegmented.map(([roleName, roleMembers]) =>
             roleMembers?.length ? (
-              <Tab id={roleName} key={roleName} variant="pill">
+              <TabsTrigger value={roleName} key={roleName}>
                 {roleName}s
-              </Tab>
+              </TabsTrigger>
             ) : null,
           )}
-        </TabList>
+        </TabsList>
 
-        <TabPanel id="all" className="px-4 sm:px-0">
+        <TabsContent value="all" className="px-4 sm:px-0">
           <MembersListContent
             members={members}
             organizationId={organizationId}
             profileId={profileId}
           />
-        </TabPanel>
+        </TabsContent>
 
         {rolesSegmented.map(([roleName, roleMembers]) =>
           roleMembers?.length ? (
-            <TabPanel id={roleName} key={roleName} className="px-4 sm:px-0">
+            <TabsContent
+              value={roleName}
+              key={roleName}
+              className="px-4 sm:px-0"
+            >
               <MembersListContent
                 members={roleMembers}
                 organizationId={organizationId}
                 profileId={profileId}
               />
-            </TabPanel>
+            </TabsContent>
           ) : null,
         )}
       </Tabs>

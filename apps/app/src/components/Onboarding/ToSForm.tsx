@@ -34,6 +34,7 @@ export const ToSForm = ({
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
@@ -42,9 +43,7 @@ export const ToSForm = ({
     >
       <FormContainer className="max-w-lg">
         <FormHeader text={t('Terms of Service Overview')}></FormHeader>
-        <span className="text-neutral-charcoal">
-          {t('Effective Date: March 15, 2025')}
-        </span>
+        <span>{t('Effective Date: March 15, 2025')}</span>
 
         <ToSContentShort />
 
@@ -52,7 +51,7 @@ export const ToSForm = ({
         <ToSContent />
 
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-          <form.Button color="secondary" onPress={onBack}>
+          <form.Button variant="secondary" onClick={onBack}>
             {t('Back')}
           </form.Button>
           <form.SubmitButton>{t('Accept & Continue')}</form.SubmitButton>

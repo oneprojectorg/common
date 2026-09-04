@@ -1,3 +1,4 @@
+import type { XFormatPropertySchema } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
 import type {
@@ -5,20 +6,29 @@ import type {
   RubricTemplateSchema,
 } from './rubricTemplate';
 import {
+  YES_NO_VALUES,
   addCriterion,
   changeCriterionType,
   createCriterionJsonSchema,
   createEmptyRubricTemplate,
   getCriteria,
   getCriterion,
+  getCriterionErrors,
   getCriterionOptions,
   getCriterionType,
+  getSelectedOptionValues,
   inferCriterionType,
+  reorderCriteria,
   setCriterionRequired,
   setSelectOptions,
+  translateRubricTemplate,
   updateCriterionDescription,
+  withYesNoDefaults,
 } from './rubricTemplate';
 
+// Every builder-creatable type. `money` and `multi_select` are
+// template-authored — `createCriterionJsonSchema` throws for both — so they are
+// excluded here and covered separately below.
 const ALL_TYPES: RubricCriterionType[] = [
   'scored',
   'yes_no',
@@ -274,5 +284,341 @@ describe('getCriteria', () => {
     expect(single?.criterionType).toBe('single_select');
     expect(single?.options).toHaveLength(2);
     expect(single?.options[0]?.title).toBe('Parks');
+  });
+
+  // `x-field-order` is ordering metadata, not the record of what exists. A
+  // rubric authored outside the builder (API, or carried in on a process
+  // template) has criteria without it, and reading order as existence rendered
+  // those as an empty rubric.
+  it('returns criteria for a rubric with no x-field-order', () => {
+    const ordered = addCriterion(
+      addCriterion(createEmptyRubricTemplate(), 'impact', 'scored', 'Impact'),
+      'notes',
+      'long_text',
+      'Notes',
+    );
+    const { 'x-field-order': _order, ...noOrder } = ordered;
+
+    expect(getCriteria(noOrder).map((c) => c.id)).toEqual(['impact', 'notes']);
+  });
+
+  it('appends criteria that x-field-order omits', () => {
+    const ordered = addCriterion(
+      addCriterion(createEmptyRubricTemplate(), 'impact', 'scored', 'Impact'),
+      'notes',
+      'long_text',
+      'Notes',
+    );
+
+    expect(
+      getCriteria({ ...ordered, 'x-field-order': ['notes'] }).map((c) => c.id),
+    ).toEqual(['notes', 'impact']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Money criteria (template-authored, not creatable in the builder)
+// ---------------------------------------------------------------------------
+
+const MONEY_SCHEMA: XFormatPropertySchema = {
+  type: 'object',
+  title: 'Estimated Cost',
+  'x-format': 'money',
+  properties: {
+    amount: { type: 'number', minimum: 0 },
+    currency: { type: 'string', const: 'USD', default: 'USD' },
+  },
+  required: ['amount', 'currency'],
+  additionalProperties: false,
+};
+
+function templateWithMoneyCriterion(): RubricTemplateSchema {
+  let template = createEmptyRubricTemplate();
+  template = addCriterion(template, 'scored1', 'scored', 'Impact');
+  template = {
+    ...template,
+    properties: { ...template.properties, cost1: { ...MONEY_SCHEMA } },
+    'x-field-order': [...(template['x-field-order'] ?? []), 'cost1'],
+  };
+  return setCriterionRequired(template, 'cost1', true);
+}
+
+describe('money criteria', () => {
+  it('infers the money type from the declared x-format', () => {
+    expect(inferCriterionType({ ...MONEY_SCHEMA })).toBe('money');
+  });
+
+  it('does not reclassify an object criterion without the declaration', () => {
+    expect(
+      inferCriterionType({
+        type: 'object',
+        properties: { amount: { type: 'number' } },
+      }),
+    ).toBeUndefined();
+  });
+
+  it('surfaces money criteria in getCriteria', () => {
+    const criteria = getCriteria(templateWithMoneyCriterion());
+    const money = criteria.find((c) => c.id === 'cost1');
+
+    expect(criteria.map((c) => c.id)).toEqual(['scored1', 'cost1']);
+    expect(money?.criterionType).toBe('money');
+    expect(money?.label).toBe('Estimated Cost');
+    expect(money?.required).toBe(true);
+    expect(money?.maxPoints).toBeUndefined();
+    expect(money?.options).toEqual([]);
+  });
+
+  it('reports no builder validation errors for a money criterion', () => {
+    const money = getCriteria(templateWithMoneyCriterion()).find(
+      (c) => c.id === 'cost1',
+    );
+
+    expect(money && getCriterionErrors(money)).toEqual([]);
+  });
+
+  // The builder can't edit money criteria, so an error would be unfixable.
+  it('reports no label error for an untitled money criterion', () => {
+    let template = templateWithMoneyCriterion();
+    template = {
+      ...template,
+      properties: {
+        ...template.properties,
+        cost1: { ...MONEY_SCHEMA, title: undefined },
+      },
+    };
+    const money = getCriteria(template).find((c) => c.id === 'cost1');
+
+    expect(money && getCriterionErrors(money)).toEqual([]);
+  });
+
+  it('refuses to change a money criterion into an editable type', () => {
+    const template = templateWithMoneyCriterion();
+
+    expect(changeCriterionType(template, 'cost1', 'scored')).toBe(template);
+    expect(getCriterionType(template, 'cost1')).toBe('money');
+  });
+
+  it('keeps money criteria in x-field-order when other criteria are reordered', () => {
+    const template = templateWithMoneyCriterion();
+    const reordered = reorderCriteria(
+      template,
+      getCriteria(template)
+        .map((c) => c.id)
+        .reverse(),
+    );
+
+    expect(reordered['x-field-order']).toEqual(['cost1', 'scored1']);
+  });
+});
+
+describe('translateRubricTemplate', () => {
+  const rubric = () => {
+    let template = createEmptyRubricTemplate();
+    template = addCriterion(template, 'impact', 'single_select', 'Impact');
+    template = updateCriterionDescription(template, 'impact', 'How many?');
+    template = setSelectOptions(template, 'impact', [
+      { value: 'high', title: 'High', description: 'Whole city' },
+      { value: 'low', title: 'Low' },
+    ]);
+    template = setCriterionRequired(template, 'impact', true);
+    return template;
+  };
+
+  const meta = {
+    fieldTitles: { impact: 'Impacto' },
+    fieldDescriptions: { impact: '¿A cuántas personas?' },
+    optionLabels: { impact: { high: 'Alto', low: 'Bajo' } },
+    optionDescriptions: { impact: { high: 'Toda la ciudad' } },
+  };
+
+  it('replaces criterion prompts, descriptions, and option copy', () => {
+    const criterion = getCriterion(
+      translateRubricTemplate(rubric(), meta),
+      'impact',
+    );
+
+    expect(criterion?.label).toBe('Impacto');
+    expect(criterion?.description).toBe('¿A cuántas personas?');
+    expect(criterion?.options.map((option) => option.title)).toEqual([
+      'Alto',
+      'Bajo',
+    ]);
+    expect(criterion?.options[0]?.description).toBe('Toda la ciudad');
+  });
+
+  // Answers are stored against the option `const`, and validation runs off the
+  // required list — translating display copy must not disturb either.
+  it('leaves option values and the required list untouched', () => {
+    const translated = translateRubricTemplate(rubric(), meta);
+    const criterion = getCriterion(translated, 'impact');
+
+    expect(criterion?.options.map((option) => option.value)).toEqual([
+      'high',
+      'low',
+    ]);
+    expect(criterion?.required).toBe(true);
+    expect(translated.required).toEqual(['impact']);
+  });
+
+  it('keeps authored copy for criteria and options with no translation', () => {
+    const translated = translateRubricTemplate(rubric(), {
+      fieldTitles: {},
+      fieldDescriptions: {},
+      optionLabels: { impact: { high: 'Alto' } },
+      optionDescriptions: {},
+    });
+    const criterion = getCriterion(translated, 'impact');
+
+    expect(criterion?.label).toBe('Impact');
+    expect(criterion?.description).toBe('How many?');
+    expect(criterion?.options.map((option) => option.title)).toEqual([
+      'Alto',
+      'Low',
+    ]);
+  });
+
+  it('returns the template unchanged with no translation', () => {
+    const template = rubric();
+    expect(translateRubricTemplate(template, null)).toBe(template);
+  });
+});
+
+describe('withYesNoDefaults', () => {
+  function template(): RubricTemplateSchema {
+    let t = templateWithCriterion('yes_no', 'boundaries');
+    t = addCriterion(t, 'impact', 'scored', 'Impact');
+    t = addCriterion(t, 'notes', 'long_text', 'Notes');
+    return t;
+  }
+
+  it('seeds a missing yes/no answer with no', () => {
+    expect(withYesNoDefaults(template(), {})).toEqual({
+      boundaries: YES_NO_VALUES.no,
+    });
+  });
+
+  it('leaves an existing yes/no answer alone', () => {
+    expect(
+      withYesNoDefaults(template(), { boundaries: YES_NO_VALUES.yes }),
+    ).toEqual({ boundaries: YES_NO_VALUES.yes });
+  });
+
+  it('never seeds non-yes/no criteria', () => {
+    const seeded = withYesNoDefaults(template(), {});
+    expect(seeded).not.toHaveProperty('impact');
+    expect(seeded).not.toHaveProperty('notes');
+  });
+
+  it('preserves already-defined values, including a stored null', () => {
+    // Only a truly absent answer is seeded; a legacy null is left for the
+    // form to surface rather than silently rewritten to "no".
+    expect(
+      withYesNoDefaults(template(), { boundaries: null, impact: 3 }),
+    ).toEqual({ boundaries: null, impact: 3 });
+  });
+
+  it('does not mutate the answers it is given', () => {
+    const answers = {};
+    withYesNoDefaults(template(), answers);
+    expect(answers).toEqual({});
+  });
+});
+
+// `multi_select` is template-authored — the builder never offers it — so these
+// exercise the shape a seed writes and the readers the renderer runs on it.
+describe('multi_select', () => {
+  /**
+   * The canonical array shape, hand-written the way a template author (or a
+   * seed) writes it — `x-format` on the property, options on `items`. This is
+   * the only place it is spelled out, since nothing builds it from a type.
+   */
+  const MULTI_SELECT_CRITERION: XFormatPropertySchema = {
+    type: 'array',
+    title: 'Which departments would this fall under?',
+    'x-format': 'dropdown',
+    minItems: 1,
+    items: {
+      type: 'string',
+      oneOf: [
+        { const: 'parks', title: 'Parks', description: 'Green space' },
+        { const: 'transit', title: 'Transportation' },
+      ],
+    },
+  };
+
+  function multiSelectTemplate(): RubricTemplateSchema {
+    return {
+      type: 'object',
+      'x-field-order': ['department'],
+      properties: { department: MULTI_SELECT_CRITERION },
+    };
+  }
+
+  it('is inferred from the authored array shape', () => {
+    expect(inferCriterionType(MULTI_SELECT_CRITERION)).toBe('multi_select');
+  });
+
+  it('is never built from a type alone, like money', () => {
+    expect(() => createCriterionJsonSchema('multi_select')).toThrow(
+      'Multi-select criteria are template-authored',
+    );
+    expect(() => createCriterionJsonSchema('money')).toThrow(
+      'Money criteria are template-authored',
+    );
+  });
+
+  it('reads options off items, descriptions included', () => {
+    expect(getCriterionOptions(multiSelectTemplate(), 'department')).toEqual([
+      { value: 'parks', title: 'Parks', description: 'Green space' },
+      { value: 'transit', title: 'Transportation' },
+    ]);
+  });
+
+  it('is not mistaken for a single-select or a scored criterion', () => {
+    expect(getCriterionType(multiSelectTemplate(), 'department')).toBe(
+      'multi_select',
+    );
+    expect(inferCriterionType(createCriterionJsonSchema('single_select'))).toBe(
+      'single_select',
+    );
+  });
+
+  it('yields no builder errors — its options are unfixable there', () => {
+    const criterion = getCriterion(multiSelectTemplate(), 'department');
+    if (!criterion) {
+      throw new Error('expected the criterion to be read back');
+    }
+
+    expect(getCriterionErrors(criterion)).toEqual([]);
+  });
+
+  it('translates option copy on items without touching option values', () => {
+    const translated = translateRubricTemplate(multiSelectTemplate(), {
+      fieldTitles: { department: '¿Qué departamentos?' },
+      fieldDescriptions: {},
+      optionLabels: { department: { parks: 'Parques' } },
+      optionDescriptions: { department: { parks: 'Zonas verdes' } },
+    });
+    const criterion = getCriterion(translated, 'department');
+
+    expect(criterion?.label).toBe('¿Qué departamentos?');
+    expect(criterion?.options).toEqual([
+      { value: 'parks', title: 'Parques', description: 'Zonas verdes' },
+      { value: 'transit', title: 'Transportation' },
+    ]);
+  });
+
+  it('reads the selected option ids off a stored array answer', () => {
+    expect(getSelectedOptionValues(['parks', 'transit'])).toEqual([
+      'parks',
+      'transit',
+    ]);
+  });
+
+  it('reads nothing off a value the criterion cannot have produced', () => {
+    expect(getSelectedOptionValues(undefined)).toEqual([]);
+    expect(getSelectedOptionValues('parks')).toEqual([]);
+    expect(getSelectedOptionValues([1, null, 'parks'])).toEqual(['parks']);
   });
 });

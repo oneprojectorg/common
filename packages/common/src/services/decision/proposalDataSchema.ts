@@ -3,6 +3,20 @@ import { z } from 'zod';
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
 import type { XFormatPropertySchema } from './types';
 
+/**
+ * Cap on a proposal title, in characters.
+ *
+ * The hard ceiling is the database: a proposal's title is its profile's name,
+ * and `profiles.name` is `varchar(256)` — past that the insert throws. 200
+ * keeps a margin under it and is a sane length for something rendered in
+ * cards, list rows, and OG images. A template may ask for less; it may not ask
+ * for more.
+ *
+ * (`extractProposalConfig` also names 200, but nothing reads the config it
+ * builds, so that value enforces nothing.)
+ */
+export const PROPOSAL_TITLE_MAX_LENGTH = 200;
+
 const categoryValueSchema = z
   .union([z.string(), z.array(z.string()), z.null()])
   .nullish()
@@ -162,6 +176,27 @@ export function normalizeBudget(raw: unknown): BudgetData | undefined {
 export function normalizeLocation(raw: unknown): LocationData | undefined {
   const result = locationValueSchema.safeParse(raw);
   return result.success ? (result.data ?? undefined) : undefined;
+}
+
+/**
+ * The canonical point for a location: the geocoded place when one was
+ * resolved, falling back to the submitted pin.
+ *
+ * `placeLat`/`placeLng` are optional because the picker only sets them when
+ * the geocoder returns a match — a pin in open water, or anywhere the lookup
+ * misses, yields a perfectly valid location carrying nothing but `lat`/`lng`.
+ * Anything needing one authoritative coordinate per proposal (deduplicating
+ * co-located proposals, plotting on a map, exporting for GIS) wants this
+ * rather than the raw `place*` fields, which would drop those proposals.
+ */
+export function getPlaceCoordinates(location: LocationData): {
+  lat: number;
+  lng: number;
+} {
+  return {
+    lat: location.placeLat ?? location.lat,
+    lng: location.placeLng ?? location.lng,
+  };
 }
 
 /**
@@ -332,17 +367,33 @@ export function parseSchemaOptions(
       : undefined;
 
   if (Array.isArray(itemSchema?.oneOf)) {
-    return itemSchema.oneOf
-      .filter(
-        (entry): entry is { const: string; title: string } =>
-          typeof entry === 'object' &&
-          entry !== null &&
-          'const' in entry &&
-          typeof (entry as Record<string, unknown>).const === 'string' &&
-          'title' in entry &&
-          typeof (entry as Record<string, unknown>).title === 'string',
-      )
-      .map((entry) => ({ value: entry.const, title: entry.title }));
+    return (
+      itemSchema.oneOf
+        .filter(
+          (
+            entry,
+          ): entry is {
+            const: string;
+            title: string;
+            description?: string;
+          } =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            'const' in entry &&
+            typeof (entry as Record<string, unknown>).const === 'string' &&
+            'title' in entry &&
+            typeof (entry as Record<string, unknown>).title === 'string',
+        )
+        // Descriptions carry through like the single-value branch above: a
+        // multi-select rubric criterion explains its options the same way.
+        .map((entry) => ({
+          value: entry.const,
+          title: entry.title,
+          ...(typeof entry.description === 'string'
+            ? { description: entry.description }
+            : {}),
+        }))
+    );
   }
 
   if (Array.isArray(itemSchema?.enum)) {
@@ -415,4 +466,23 @@ export function schemaAllowsMultipleSelection(
     schema.type === 'array' ||
     (Array.isArray(schema.type) && schema.type.includes('array'))
   );
+}
+
+/**
+ * User-friendly display name for a template field: its schema `title`,
+ * falling back to the field key as-is. Shared by anything that turns a
+ * template field key into a label a person reads (validation error
+ * messages, export column headers).
+ *
+ * Never imposes casing of its own — an author-set title (however they chose
+ * to capitalize it) is returned unchanged, and the fallback key isn't
+ * capitalized either.
+ */
+export function getSchemaFieldTitle(
+  schema: XFormatPropertySchema | null | undefined,
+  key: string,
+): string {
+  // `||`, not `??` — an explicitly empty `title` is as unusable as a missing
+  // one, and should fall back the same way.
+  return schema?.title || key;
 }

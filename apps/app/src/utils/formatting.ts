@@ -1,10 +1,6 @@
 /**
  * Shared formatting utilities for consistent display across the application
  */
-import {
-  formatDate as formatDateCore,
-  formatDateRange as formatDateRangeCore,
-} from '@op/ui/utils/formatting';
 
 /**
  * Format currency amount using locale-aware formatting
@@ -37,8 +33,7 @@ export function formatDate(
     return formatDate(new Date().toISOString(), locale, options);
   }
 
-  // Use the UI package utility for consistent timezone-safe date parsing
-  return formatDateCore(dateString, options, locale);
+  return new Date(dateString).toLocaleDateString(locale, options);
 }
 
 /**
@@ -49,8 +44,17 @@ export function formatDateRange(
   endDate?: string,
   locale: string = 'en-US',
 ): string {
-  // Use the UI package utility for consistent timezone-safe date parsing
-  return formatDateRangeCore(startDate, endDate, locale);
+  const short: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  if (startDate && endDate) {
+    return `${formatDate(startDate, locale, short)} - ${formatDate(endDate, locale, short)}`;
+  }
+  if (startDate) {
+    return formatDate(startDate, locale, short);
+  }
+  if (endDate) {
+    return formatDate(endDate, locale, short);
+  }
+  return '';
 }
 
 /**
@@ -64,6 +68,25 @@ export function calculateDaysRemaining(endDate?: string): number | null {
   const diffTime = end.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return Math.max(0, diffDays);
+}
+
+/**
+ * Format a byte count as a human-readable file size (e.g. `4.8 MB`).
+ *
+ * Lives here rather than in a design-system package so app surfaces don't have
+ * to pull in the design system just for a number formatter.
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) {
+    return '0 Bytes';
+  }
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(k)),
+    sizes.length - 1,
+  );
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
 /**

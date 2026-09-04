@@ -17,9 +17,13 @@ export {
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
+  resolveReviewSettings,
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
-export { assertInstancePhase } from './services/decision/utils/instance';
+export {
+  assertInstancePhase,
+  getInstanceCurrentPhase,
+} from './services/decision/utils/instance';
 export {
   getPhaseIndex,
   getPreviousPhases,
@@ -42,6 +46,8 @@ export {
   allProposalsFilterSchema,
   allProposalsListItemSchema,
   allProposalsListSchema,
+  PROPOSAL_SEARCH_MAX_LENGTH,
+  proposalSearchSchema,
   type Proposal,
   type ProposalList,
   type ProposalLocations,
@@ -76,6 +82,32 @@ export {
   proposalSelectionSchema,
   type ProposalSelection,
 } from './services/decision/schemas/selection';
+export {
+  MERGE_NOTE_MAX_LENGTH,
+  mergeProposalsInputSchema,
+  unmergeProposalInputSchema,
+  listProposalRelationshipsInputSchema,
+  proposalRelationshipListSchema,
+  type MergeProposalsInput,
+  type UnmergeProposalInput,
+  type ListProposalRelationshipsInput,
+  type ProposalRelationshipList,
+} from './services/decision/schemas/proposalRelationships';
+export {
+  REJECTION_NOTE_MAX_LENGTH,
+  RejectionReason,
+  rejectionReasonSchema,
+  rejectProposalInputSchema,
+  unrejectProposalInputSchema,
+  type RejectProposalInput,
+  type UnrejectProposalInput,
+} from './services/decision/schemas/rejectProposal';
+export {
+  listContributingProposalsInputSchema,
+  contributingProposalListSchema,
+  type ListContributingProposalsInput,
+  type ContributingProposalList,
+} from './services/decision/schemas/contributingProposals';
 export {
   profileUserSchema,
   profileUserWithProfileSchema,
@@ -122,6 +154,14 @@ export {
   templateCollectsLocation,
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
+export { templateCollectsBudget } from './services/decision/templateBudget';
+export {
+  buildMoneyFieldAnswer,
+  getMoneyFieldCurrency,
+  getMoneyFieldMinimum,
+  isMoneyFieldSchema,
+  resolveMoneyDisplayCurrency,
+} from './services/decision/rubric/money';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {
@@ -212,7 +252,7 @@ export type {
 
 // Re-exported from utils so client components can import it without pulling in
 // the server-only utils barrel (which depends on drizzle).
-export { hasEmail } from './utils/email';
+export { hasEmail, selectEmailRecipients } from './utils/email';
 
 // Whitelist of safe redirect-path prefixes. Every legitimate app route lives
 // under a locale segment (en/es/fr/…) or under `/info`. Anything else —

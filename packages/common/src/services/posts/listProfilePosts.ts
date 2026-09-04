@@ -15,7 +15,7 @@ import {
 } from '../access';
 import { assertPostReadAccess } from './access';
 import {
-  getItemsWithReactionsAndComments,
+  getItemsWithLikesAndComments,
   postModerationFilter,
 } from './listPosts';
 
@@ -114,13 +114,13 @@ export const listProfilePosts = async ({
         })
       : null;
 
-  const itemsWithReactions = await getItemsWithReactionsAndComments({
+  const itemsWithLikes = await getItemsWithLikesAndComments({
     items: orderedPosts.map((post) => ({ post })),
     profileId: actorProfileId,
   });
 
   return {
-    items: itemsWithReactions.map((item) => item.post),
+    items: itemsWithLikes.map((item) => item.post),
     next: nextCursor,
   };
 };

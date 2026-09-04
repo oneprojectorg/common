@@ -109,6 +109,10 @@ export const phaseReviewSettingsSchema = z.object({
    */
   policy: z.enum(REVIEWS_POLICIES).optional(),
   allowRevisions: z.boolean().optional(),
+  /**
+   * Offers the always-anonymous feedback-to-author field; `false` removes
+   * the channel rather than de-anonymizing it.
+   */
   anonymousFeedback: z.boolean().optional(),
   /**
    * The phase's submitted reviews are open: visible to peer reviewers while

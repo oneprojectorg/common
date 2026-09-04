@@ -3,8 +3,8 @@
 import { formatDate } from '@/utils/formatting';
 import type { ResourceInCollection } from '@op/api/encoders';
 import { match, sanitizeUrl } from '@op/core/utils';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Card } from '@op/sense/Card';
+import { cn } from '@op/sense/lib/utils';
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
@@ -162,22 +162,19 @@ const ResourceCardShell = ({
     <div className="flex flex-col gap-2">
       <p
         dir="auto"
-        className={cn(
-          'truncate font-serif text-title-sm text-neutral-black',
-          trailing && 'pe-8',
-        )}
+        className={cn('truncate font-serif text-label', trailing && 'pe-8')}
       >
         {title}
       </p>
       {preview}
       <div className="flex flex-col gap-0.5">
         {description ? (
-          <p dir="auto" className="line-clamp-2 text-sm text-neutral-charcoal">
+          <p dir="auto" className="line-clamp-2 text-sm">
             {description}
           </p>
         ) : null}
         {subtitle ? (
-          <p dir="auto" className="truncate text-sm text-neutral-gray4">
+          <p dir="auto" className="truncate text-sm text-muted-foreground">
             {subtitle}
           </p>
         ) : null}
@@ -186,14 +183,14 @@ const ResourceCardShell = ({
   );
 
   return (
-    <Surface className="relative rounded-lg p-4">
+    <Card className="relative rounded-lg p-4 shadow-none">
       {href ? (
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={title}
-          className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+          className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {body}
         </a>
@@ -205,7 +202,7 @@ const ResourceCardShell = ({
           {trailing}
         </div>
       ) : null}
-    </Surface>
+    </Card>
   );
 };
 
@@ -216,7 +213,7 @@ const ResourcePreviewImage = ({
   src: string;
   onError?: () => void;
 }) => (
-  <div className="h-44 w-full overflow-hidden rounded-lg border border-neutral-gray2">
+  <div className="h-44 w-full overflow-hidden rounded-lg border border-input">
     <img
       src={src}
       alt=""
@@ -228,7 +225,7 @@ const ResourcePreviewImage = ({
 );
 
 const ResourcePreviewFallback = ({ icon }: { icon: ReactNode }) => (
-  <div className="flex h-44 w-full items-center justify-center rounded-lg border border-neutral-gray2 bg-neutral-gray1 text-neutral-gray4">
+  <div className="flex h-44 w-full items-center justify-center rounded-lg border border-input bg-secondary text-muted-foreground">
     {icon}
   </div>
 );

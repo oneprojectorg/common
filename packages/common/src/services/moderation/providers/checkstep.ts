@@ -8,11 +8,15 @@ import type {
   ModerationMediaItem,
   ModerationProvider,
   ModerationProviderReference,
+  ModerationReport,
   ModerationScores,
   ModerationVerdict,
   ModerationWebhookInput,
 } from '../types';
-import { moderationFetch } from './moderationFetch';
+import {
+  type ModerationFetchOptions,
+  moderationFetch,
+} from './moderationFetch';
 import { headerValue, timingSafeStringEqual } from './verify';
 
 // External input driving DB writes: validate the shape instead of casting.
@@ -149,15 +153,20 @@ const post = async (
   url: string,
   apiKey: string,
   body: Record<string, unknown>,
+  options?: ModerationFetchOptions,
 ): Promise<{ violations?: CheckstepViolation[]; id?: string }> => {
-  const response = await moderationFetch(url, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
+  const response = await moderationFetch(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    options,
+  );
 
   if (!response.ok) {
     throw new Error(`Moderation provider returned ${response.status}`);
@@ -171,7 +180,16 @@ const post = async (
   if (!text.trim()) {
     return {};
   }
-  return JSON.parse(text);
+  // A 2xx with an unusable body is still an accepted call, and both callers
+  // tolerate a missing `id`/`violations` — reporting it as a failure would send
+  // ops chasing a report Checkstep accepted. The non-object check is not
+  // redundant: `JSON.parse('null')` succeeds and the caller throws on `.id`.
+  try {
+    const parsed: unknown = JSON.parse(text);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
 };
 
 // Checkstep field types we express per media kind. The six simple types
@@ -197,6 +215,19 @@ const CHECKSTEP_FIELD_TYPE: Record<ModerationMediaItem['kind'], string> = {
 // type here is lossless.
 const COMPLEX_TYPE = 'comment';
 
+// `reporter` is required, but the Report button is open to signed-out users.
+// One shared sentinel, not a per-report id: distinct ids would fabricate
+// distinct reporters out of a single unknown one.
+const ANONYMOUS_REPORTER = 'anonymous';
+
+// Lets the queue be filtered by origin. Checkstep requires the leading `#`.
+const USER_REPORT_TAG = '#user-report';
+
+// The only free-text field a moderator sees, and no Report entry point collects
+// one — without this every case arrives with nothing explaining why. Shown in
+// Checkstep's UI, not ours, so deliberately untranslated.
+const DEFAULT_REPORT_REASON = 'Reported from the app.';
+
 const contentBody = (
   contentId: string,
   content: string,
@@ -216,14 +247,29 @@ const contentBody = (
   ...(callbackUrl ? { callback_url: callbackUrl } : {}),
 });
 
-// Checkstep review outcomes that mean the content is disallowed.
+// Outcomes meaning the content is disallowed. `uphold` assumes it sustains an
+// original *action* — see the caveat on `overturn`, which applies here too.
 const FLAGGING_DECISIONS: readonly string[] = ['act', 'uphold', 'escalate'];
 // Outcomes that explicitly clear the content. An unrecognized or missing
 // decision is neither — it's treated as "not a verdict" (no action) rather
 // than defaulting to clear, so vendor schema drift can't silently un-hide
 // flagged content.
+//
+// `overturn` reverses the original action, so it clears; unmapped it would hit
+// the "not a verdict" branch and leave an overturned item hidden with no path
+// back. This trades fail-safe for fail-open on that one value, but a detach is
+// computed before the decision gate, so CSAM/terrorism still detaches.
+//
+// CONFIRM WITH CHECKSTEP, for `overturn` and `uphold` together: if `overturn`
+// can mean "overturn a dismissal", both mappings are backwards. `hint`
+// distinguishes same-type decisions.
+//
+// `skip` is deliberately unmapped. `allow`/`ignore`/`clear` are not in the
+// `ContentDecisionType` enum, but the webhook's vocabulary isn't pinned by the
+// spec and an extra synonym is inert.
 const CLEARING_DECISIONS: readonly string[] = [
   'dismiss',
+  'overturn',
   'allow',
   'ignore',
   'clear',
@@ -336,6 +382,35 @@ export const createCheckstepProvider = ({
         submittedRefs: [contentId],
       };
       return reference;
+    },
+
+    // Raises the human-review case. `POST /content` only feeds the classifiers,
+    // so without this a report on content they read as clean reaches no
+    // moderator. Same ref + complex type as the submission is what associates
+    // the two; an unrecognised id still creates a case, just an isolated one.
+    reportForReview: async ({
+      itemType,
+      itemId,
+      roundId,
+      reporterId,
+      reason,
+    }: ModerationReport): Promise<void> => {
+      // No retries: this endpoint is not idempotent on the id, so a 5xx after
+      // Checkstep accepted the report would file a duplicate. It also runs
+      // inside a synchronous user mutation, where the default 3x5s budget would
+      // add ~15s to a Report click. A drop is logged rather than retried.
+      await post(
+        `${apiUrl}/content/report`,
+        apiKey,
+        {
+          id: encodeContentRef(itemType, itemId, roundId),
+          type: COMPLEX_TYPE,
+          reporter: reporterId ?? ANONYMOUS_REPORTER,
+          tags: [USER_REPORT_TAG],
+          reason: reason?.trim() || DEFAULT_REPORT_REASON,
+        },
+        { retries: 0 },
+      );
     },
 
     // One verdict per callback (one combined task per submission). Checkstep

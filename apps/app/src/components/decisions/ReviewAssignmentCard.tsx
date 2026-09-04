@@ -1,34 +1,19 @@
+'use client';
+
 import { type DecisionAccess } from '@op/api/encoders';
 import {
   type ProposalReviewAggregates,
-  type ProposalReviewAssignment,
   type ReviewAssignmentExtended,
 } from '@op/common/client';
-import { cn } from '@op/ui/utils';
-import {
-  LuCircleAlert,
-  LuCircleCheck,
-  LuCircleDashed,
-  LuRefreshCw,
-  LuTimer,
-} from 'react-icons/lu';
+import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
+import { StatusBadge } from '@op/sense/StatusBadge';
+import { LuRefreshCw } from 'react-icons/lu';
 
-import type { TranslationKey } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
-import { Bullet } from '../Bullet';
-import {
-  ProposalCard,
-  ProposalCardAuthor,
-  ProposalCardCategory,
-  ProposalCardContent,
-  ProposalCardHeader,
-  ProposalCardPreview,
-} from './ProposalCard';
+import { useProposalCardData } from './ProposalCard';
 import { ProposalReviewsCount } from './ProposalReviewsCount';
-
-type AssignmentStatus = ProposalReviewAssignment['status'];
+import { ReviewStatusBadge } from './ReviewStatusBadge';
 
 type Reviewers = ProposalReviewAggregates['reviewers'];
 
@@ -41,6 +26,8 @@ interface ReviewAssignmentCardProps {
   access?: DecisionAccess;
   /** Whether to show the proposal's category tag (see ReviewAssignmentsList). */
   showCategory?: boolean;
+  /** Forwarded to the card — carries the map view's active-pin highlight. */
+  className?: string;
 }
 
 export function ReviewAssignmentCard({
@@ -50,103 +37,45 @@ export function ReviewAssignmentCard({
   reviewsHref,
   access,
   showCategory = true,
+  className,
 }: ReviewAssignmentCardProps) {
+  const t = useTranslations();
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
+  const { titleText, budgetText, displayCategories, authors, description } =
+    useProposalCardData(proposal);
 
   return (
-    <ProposalCard proposal={proposal} className="rounded-lg">
-      <ProposalCardContent>
-        <ProposalCardHeader proposal={proposal} viewHref={viewHref} />
-        <div className="flex flex-wrap items-center gap-2">
-          <ProposalCardAuthor proposal={proposal} />
-          {showCategory && <ProposalCardCategory proposal={proposal} />}
-          {isRevised && (
-            <>
-              <Bullet />
-              <div className="flex items-center gap-1">
-                <LuRefreshCw className="size-4 text-primary-orange2" />
-                <span className="text-sm text-neutral-charcoal">
-                  <TranslatedText text="Revised" />
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-        <ProposalCardPreview proposal={proposal} className="line-clamp-2" />
-      </ProposalCardContent>
-      <div className="flex items-center justify-between gap-2">
-        <ReviewStatusBadge status={status} />
-        {reviewers ? (
+    <SenseProposalCard
+      className={className}
+      title={titleText}
+      href={viewHref}
+      linkComponent={Link}
+      budget={budgetText}
+      authors={authors}
+      tags={
+        showCategory && displayCategories.length > 0
+          ? displayCategories
+          : undefined
+      }
+      description={description}
+      alert={
+        isRevised ? (
+          <StatusBadge variant="revision" icon={LuRefreshCw}>
+            {t('Revised')}
+          </StatusBadge>
+        ) : undefined
+      }
+      status={<ReviewStatusBadge status={status} />}
+      reviewedLabel={
+        reviewers ? (
           <ProposalReviewsCount
             reviewers={reviewers}
             href={reviewsHref}
             access={access}
           />
-        ) : null}
-      </div>
-    </ProposalCard>
-  );
-}
-
-const statusConfig: Record<
-  AssignmentStatus,
-  {
-    icon: typeof LuCircleDashed;
-    bgClass: string;
-    textClass: string;
-    iconClass: string;
-  }
-> = {
-  pending: {
-    icon: LuCircleDashed,
-    bgClass: 'bg-neutral-offWhite p-2',
-    textClass: 'text-neutral-gray4',
-    iconClass: 'text-neutral-gray4',
-  },
-  in_progress: {
-    icon: LuTimer,
-    bgClass: 'bg-primary-tealWhite p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-teal',
-  },
-  completed: {
-    icon: LuCircleCheck,
-    bgClass: 'bg-status-greenBg p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-status-green',
-  },
-  awaiting_author_revision: {
-    icon: LuRefreshCw,
-    bgClass: 'bg-white py-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-orange2',
-  },
-  ready_for_re_review: {
-    icon: LuCircleAlert,
-    bgClass: 'bg-functional-yellowWhite p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-orange2',
-  },
-};
-
-const statusLabels: Record<AssignmentStatus, TranslationKey> = {
-  pending: 'Not Started',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  awaiting_author_revision: 'Revision Requested',
-  ready_for_re_review: 'Needs Review',
-};
-
-function ReviewStatusBadge({ status }: { status: AssignmentStatus }) {
-  const { icon: Icon, bgClass, textClass, iconClass } = statusConfig[status];
-
-  return (
-    <div className={cn('flex w-fit items-center gap-1 rounded-lg', bgClass)}>
-      <Icon className={cn('size-4', iconClass)} />
-      <span className={cn('text-base', textClass)}>
-        <TranslatedText text={statusLabels[status]} />
-      </span>
-    </div>
+        ) : undefined
+      }
+    />
   );
 }

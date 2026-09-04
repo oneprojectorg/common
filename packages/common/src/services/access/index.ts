@@ -1,4 +1,4 @@
-import { cache } from '@op/cache';
+import { cache, invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { organizations, users } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -33,6 +33,7 @@ export {
   orgUserCacheKey,
   profileUserCacheKey,
   resolveAccessUserIds,
+  resolveAccountUserId,
 } from './cacheKeys';
 
 /**
@@ -485,6 +486,34 @@ export const getUserSession = memoize(
   },
   ({ authUserId }) => authUserId,
 );
+
+/**
+ * Drop every cache layer that can serve a caller a stale role set on a
+ * profile: the durable Redis `profileUser` and `user` entries (72h TTL) plus
+ * the request-scoped memoized lookups. Must run after ANY write that creates,
+ * changes, or removes a profileUsers membership or its roles — a missed site
+ * leaves the user on their old (e.g. visitor) roles until the TTL expires.
+ */
+export const invalidateProfileUserAccessCache = async ({
+  authUserId,
+  profileId,
+}: {
+  authUserId: string;
+  profileId: string;
+}) => {
+  await Promise.all([
+    invalidate({
+      type: 'profileUser',
+      params: profileUserCacheKey({ user: { id: authUserId }, profileId }),
+    }),
+    invalidate({
+      type: 'user',
+      params: [authUserId],
+    }),
+  ]);
+  getProfileAccessUser.invalidate({ user: { id: authUserId }, profileId });
+  getUserSession.invalidate({ authUserId });
+};
 
 export * from './assertProfileTypeAccess';
 export * from './getRoles';

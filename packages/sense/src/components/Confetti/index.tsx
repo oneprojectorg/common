@@ -64,6 +64,16 @@ function createParticles(
   });
 }
 
+/**
+ * A one-shot canvas confetti burst for a completed action (submitting a
+ * proposal, finishing a phase). Mount it to fire; it clears itself after about
+ * six seconds.
+ *
+ * Purely decorative: the canvas is `aria-hidden`, `pointer-events-none`, and
+ * behind the page at `-z-10`. It announces nothing and it renders nothing at
+ * all under `prefers-reduced-motion`, so it must never be the only signal that
+ * something succeeded — pair it with a real message in an `aria-live` region.
+ */
 export const Confetti: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<ConfettiParticle[]>([]);
@@ -172,6 +182,8 @@ export const Confetti: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
+      // Decorative: an unlabelled <canvas> is announced as a nameless graphic.
+      aria-hidden
       className="pointer-events-none fixed inset-0 -z-10"
     />
   );

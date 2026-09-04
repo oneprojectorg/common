@@ -1,6 +1,7 @@
 import { decisionPermission } from '@op/common';
 import { db } from '@op/db/client';
 import {
+  ProcessStatus,
   accessRolePermissionsOnAccessZones,
   accessRoles,
   allowList,
@@ -11,6 +12,7 @@ import { event } from '@op/events';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 
+import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   createIsolatedSession,
@@ -855,6 +857,66 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     });
+  });
+
+  // This test asserts on the global event.send mock, so it must run
+  // sequentially to avoid race conditions with other tests
+  it.sequential('should queue non-admin invites while the process is a draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const decisionData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    const setup = await decisionData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.DRAFT,
+    });
+    const profileId = setup.instance.profileId;
+
+    const memberInvitee = await testData.createStandaloneUser();
+    const adminInvitee = await testData.createStandaloneUser();
+    testData.trackProfileInvite(memberInvitee.email, profileId);
+    testData.trackProfileInvite(adminInvitee.email, profileId);
+
+    const { session } = await createIsolatedSession(setup.userEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    vi.mocked(event.send).mockClear();
+
+    const result = await caller.invite({
+      invitations: [
+        { email: memberInvitee.email, roleId: ROLES.MEMBER.id },
+        { email: adminInvitee.email, roleId: ROLES.ADMIN.id },
+      ],
+      profileId,
+    });
+
+    expect(result.success).toBe(true);
+
+    // Only the decisions-admin invite is emailed during draft; the member
+    // invite waits for publish.
+    expect(event.send).toHaveBeenCalledTimes(1);
+    expect(event.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          invitations: [
+            expect.objectContaining({
+              email: adminInvitee.email.toLowerCase(),
+            }),
+          ],
+        }),
+      }),
+    );
+
+    // The workflow stamps notifiedAt only after Resend accepts the send.
+    const invites = await db.query.profileInvites.findMany({
+      where: { profileId },
+    });
+
+    expect(invites).toHaveLength(2);
+    expect(invites.every((invite) => invite.notifiedAt === null)).toBe(true);
   });
 });
 

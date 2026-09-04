@@ -3,7 +3,6 @@ import {
   and,
   db,
   eq,
-  ilike,
   inArray,
   isNull,
   ne,
@@ -17,19 +16,19 @@ import {
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
-  profileUsers,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
 import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import {
+  type AccessUser,
   assertInstanceProfileAccess,
   getCurrentProfileId,
   resolveAccessUserIds,
+  resolveAccountUserId,
 } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
@@ -38,6 +37,9 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
+import { notSuperseded } from './proposalSupersession';
+import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
+import { isProposalProfileMember } from './proposalVisibility';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -156,6 +158,9 @@ const buildBaseConditions = (
     // including admins and even trusted background contexts. Applied in the
     // base conditions so every branch of the query builder inherits it.
     isNull(t.moderationDetachedAt),
+    // Hidden from every listing, admins included; in the base conditions so no
+    // caller-supplied filter can reach around it.
+    notSuperseded({ proposalId: t.id, processInstanceId }),
   ];
 
   if (submittedByProfileId) {
@@ -166,9 +171,9 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  if (search) {
-    // Search in proposal data (JSONB) - convert to text for searching
-    conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
+  const searchCondition = buildProposalTitleSearchCondition(t, search);
+  if (searchCondition) {
+    conditions.push(searchCondition);
   }
 
   // "Other proposals" tab: exclude proposals the caller is assigned to review
@@ -213,7 +218,8 @@ export const resolveProposalListScope = async ({
   user,
 }: {
   input: ListProposalsInput;
-  user: User | undefined;
+  // Narrow to the id the resolver actually reads — see `listProposals`.
+  user: AccessUser | undefined;
 }): Promise<ProposalListScope> => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
@@ -230,11 +236,14 @@ export const resolveProposalListScope = async ({
   }
 
   // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
-  // for the draft and HIDDEN visibility subqueries below.
+  // for the draft subquery below.
   // INVARIANT: public grants must only be placed on the process/decision
   // profile, never on an individual proposal profile — otherwise this would
-  // surface every caller's drafts/HIDDEN proposals to the public.
+  // surface every caller's drafts/HIDDEN proposals to the public. The
+  // proposal-profile checks take `accountUserId` alone for that reason: the
+  // sentinel can never match there, so unioning it in only widens the scan.
   const accessUserIds = resolveAccessUserIds(user);
+  const accountUserId = resolveAccountUserId(user);
 
   // Fetch the instance row up front and resolve the explicit ID scope in
   // parallel. The row is reused for the phase-resolution context (instead of
@@ -421,47 +430,36 @@ export const resolveProposalListScope = async ({
       phaseScope.buildDraftFilter(proposalsTable),
     )!;
 
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
-    // for non-admins. Hidden proposals stay visible to the creator and any
-    // invited collaborators on the proposal's profile — same pattern the
-    // draft filter uses, so a collaborator's view of a co-authored proposal
-    // doesn't change the moment it's submitted with HIDDEN visibility.
+    // The profile-member arm is what keeps a collaborator's view of a
+    // co-authored proposal from changing the moment it is submitted as HIDDEN.
     const nonDraftVisibilityFilter = canManageProposals
       ? phaseScopedNonDraftIdFilter
       : and(
           phaseScopedNonDraftIdFilter,
           or(
             eq(proposalsTable.visibility, Visibility.VISIBLE),
-            inArray(
-              proposalsTable.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(inArray(profileUsers.authUserId, accessUserIds)),
-            ),
+            isProposalProfileMember(proposalsTable, accountUserId),
           )!,
         )!;
 
-    // Items with an active moderation flag are hidden from everyone except
-    // members of the proposal's own profile (creator + invited collaborators);
-    // instance admins (canManageProposals) skip the filter entirely. The owner
-    // audience is proposal.profileId membership — the same set getProposal
-    // grants the flagged proposal to — so the list and detail views agree
-    // (keying on submittedByProfileId alone would diverge for group-owned
-    // proposals). Applied in SQL so pagination stays correct.
+    // Membership on the proposal's profile, not `submittedByProfileId`, is the
+    // set `getProposal` grants a flagged proposal to — keying on the submitter
+    // would diverge for a group-owned proposal. In SQL so pagination stays
+    // correct.
     const moderationFilter = canManageProposals
       ? undefined
       : or(
           noActiveModerationFlag('proposal', proposalsTable.id),
-          inArray(
-            proposalsTable.profileId,
-            db
-              .select({ profileId: profileUsers.profileId })
-              .from(profileUsers)
-              .where(inArray(profileUsers.authUserId, accessUserIds)),
-          ),
+          isProposalProfileMember(proposalsTable, accountUserId),
         )!;
 
+    // Rejected proposals carry no visibility filter of their own: a rejection
+    // is a public verdict on a public submission, and the detail page has never
+    // gated on it (`getProposal`), so hiding the row here only made the list
+    // disagree with a URL that still worked. Rejection is a pipeline rule now —
+    // the phase, review and voting reads drop them via their own predicates
+    // (`PIPELINE_INELIGIBLE_STATUSES`, `VOTING_INELIGIBLE_STATUSES`), and the
+    // card badges the status so the list stays honest about it.
     return and(
       clause,
       or(draftFilter, nonDraftVisibilityFilter)!,

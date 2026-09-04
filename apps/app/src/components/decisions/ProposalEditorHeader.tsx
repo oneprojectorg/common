@@ -2,9 +2,10 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { Button } from '@op/ui/Button';
-import { Header4 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/sense/Button';
+import { Header4 } from '@op/sense/Header';
+import { Separator } from '@op/sense/Separator';
+import { TooltipProvider } from '@op/sense/Tooltip';
 import type { ReactNode } from 'react';
 import { LuArrowLeft, LuCheck, LuUserPlus } from 'react-icons/lu';
 
@@ -24,10 +25,11 @@ interface ProposalEditorHeaderProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
-  /** Optional end-aligned status pill shown while viewing history */
+  /**
+   * Optional save/version status text rendered in the bar's left cluster,
+   * after the proposal name (Figma: "Saved 2 min ago" / "Viewing {date}").
+   */
   statusSlot?: ReactNode;
-  /** Whether action controls should be rendered in the header */
-  showHeaderActions?: boolean;
   /** When true, hide editing actions while showing a historical version. */
   readOnlyMode?: boolean;
   /** Whether the current user can share the proposal */
@@ -48,7 +50,6 @@ export function ProposalEditorHeader({
   presenceSlot,
   asideHeaderIcons,
   statusSlot,
-  showHeaderActions = true,
   readOnlyMode = false,
   canShare,
   isRevisionMode,
@@ -60,73 +61,68 @@ export function ProposalEditorHeader({
   const { user } = useUser();
 
   return (
-    <div className="sticky top-0 z-20 flex h-editor-topbar items-center justify-between gap-2 border-b bg-white px-4 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-6">
-      <button
-        onClick={() => router.push(backHref)}
-        className="flex cursor-pointer items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
-      >
-        <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal rtl:-scale-x-100" />
-        <span className="hidden sm:block">{t('Back')}</span>
-      </button>
+    <div className="sticky top-0 z-20 flex h-editor-topbar items-center justify-between gap-2 border-b bg-background px-4 sm:px-6">
+      {/* Figma's left cluster: Back · separator · proposal name · saved status. */}
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <Button
+          variant="link"
+          onClick={() => router.push(backHref)}
+          className="shrink-0 max-sm:size-11"
+        >
+          <LuArrowLeft className="size-4 rtl:-scale-x-100" />
+          <span className="hidden sm:block">{t('Back')}</span>
+        </Button>
 
-      <Header4 className="hidden min-w-0 truncate sm:block">
-        {title ? title : t('Untitled Proposal')}
-      </Header4>
+        <Separator
+          orientation="vertical"
+          className="hidden sm:block data-vertical:h-5 data-vertical:self-center"
+        />
 
-      <div className="flex items-center justify-end gap-4">
+        <Header4 className="hidden min-w-0 truncate sm:block">
+          {title ? title : t('Untitled Proposal')}
+        </Header4>
+
         {statusSlot}
-        {showHeaderActions && (
-          <>
-            {!readOnlyMode && presenceSlot}
-            {asideHeaderIcons}
-            {!readOnlyMode && canShare && (
-              <Button
-                color="secondary"
-                variant="icon"
-                size="small"
-                onPress={onShare}
-              >
-                <LuUserPlus className="size-4" />
-                <span className="hidden sm:inline">{t('Share')}</span>
-              </Button>
-            )}
-            {!readOnlyMode && (
-              <Button
-                color="primary"
-                variant="icon"
-                size="small"
-                onPress={isRevisionMode ? onResubmit : onSubmitProposal}
-                isDisabled={isSubmitting}
-                className="px-4 py-2"
-              >
-                {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-                {isRevisionMode ? (
-                  t('Resubmit')
-                ) : isEditMode && !isDraft ? (
-                  <>
-                    <span className="inline lg:hidden">{t('Update')}</span>
-                    <span className="hidden lg:inline">
-                      {t('Update Proposal')}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:block">
-                      {t('Submit Proposal')}
-                    </span>
-                    <span className="sm:hidden">{t('Submit')}</span>{' '}
-                  </>
-                )}
-              </Button>
-            )}
-            <LocaleChooser />
-            {/* No avatar or login for visitors/anonymous. */}
-            {userCanInteract(user) ? (
-              <UserAvatarMenu className="hidden sm:block" />
-            ) : null}
-          </>
-        )}
       </div>
+
+      {/* One group for the whole action row, at the slower delay these
+          icon-only buttons want. Wrapping each icon in its own provider instead
+          would make every icon a group of one, so moving along the row would
+          re-pay the delay at each stop. */}
+      <TooltipProvider delay={500}>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {!readOnlyMode && presenceSlot}
+          {asideHeaderIcons}
+          {!readOnlyMode && canShare && (
+            <Button
+              variant="outline"
+              onClick={onShare}
+              className="max-sm:size-11"
+            >
+              <LuUserPlus className="size-4" />
+              <span className="hidden sm:inline">{t('Share')}</span>
+            </Button>
+          )}
+          {!readOnlyMode && (
+            <Button
+              onClick={isRevisionMode ? onResubmit : onSubmitProposal}
+              loading={isSubmitting}
+            >
+              <LuCheck className="size-4" />
+              {isRevisionMode
+                ? t('Resubmit')
+                : isEditMode && !isDraft
+                  ? t('Update')
+                  : t('Submit')}
+            </Button>
+          )}
+          <LocaleChooser />
+          {/* No avatar or login for visitors/anonymous. */}
+          {userCanInteract(user) ? (
+            <UserAvatarMenu className="hidden sm:block" />
+          ) : null}
+        </div>
+      </TooltipProvider>
     </div>
   );
 }

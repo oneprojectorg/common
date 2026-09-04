@@ -13,20 +13,24 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { Button } from '@op/sense/Button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
+import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useMemo } from 'react';
-import { LuHistory, LuStickyNote } from 'react-icons/lu';
+import { LuHistory, LuMessageSquareText, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
+import { FeedbackDotIconButton } from '@/components/decisions/FeedbackDotIconButton';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
+import { ProposalFeedbackPanel } from '@/components/decisions/ProposalFeedbackPanel';
+import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { ProposalEditorAsidePane } from '@/components/decisions/proposalEditor/ProposalEditorAsidePane';
+import { RevisionFeedbackPanel } from '@/components/decisions/proposalEditor/RevisionFeedbackPanel';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
@@ -41,8 +45,10 @@ import {
   proposalEditorAsideValues,
   proposalEditorReviewRevisionParser,
   proposalEditorVersionIdParser,
+  proposalFeedbackPanelParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
+import { useProposalFeedback } from '@/components/decisions/useProposalFeedback';
 
 /**
  * Route page for the proposal editor.
@@ -67,13 +73,16 @@ function EditProposalPageContent() {
     profileId: string;
     slug: string;
   }>();
-  const [{ aside, versionId, reviewRevision }, setQueryState] = useQueryStates({
+  const [
+    { aside, versionId, reviewRevision, feedback: isFeedbackPanelOpen },
+    setQueryState,
+  ] = useQueryStates({
     aside: proposalEditorAsideParser,
     versionId: proposalEditorVersionIdParser,
     reviewRevision: proposalEditorReviewRevisionParser,
+    feedback: proposalFeedbackPanelParser,
   });
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   // -- Data fetching ---------------------------------------------------------
 
@@ -100,15 +109,22 @@ function EditProposalPageContent() {
 
   const { user } = useRequiredUser();
 
-  // The server throws UnauthorizedError when the viewer lacks review access;
-  // treat any error as "no revision requests" so the editor still loads.
+  // Mirrors the server gate for both revision reads below: author standing,
+  // decision admin, or review capability. Deliberately not `review.revisions` —
+  // that adds a review-phase condition, and an author has to see a pending
+  // request whatever phase the decision is in.
+  const affordances = getProposalAffordances({ instance, proposal, user });
+
+  // Gated rather than firing for every viewer and swallowing the server's
+  // UnauthorizedError. The error-to-empty fallback stays for transport
+  // failures, so the editor still loads.
   const { data: revisionData, error: revisionError } =
     trpc.decision.listProposalRevisionRequests.useQuery(
       {
         proposalId: proposal.id,
         states: [ProposalReviewRequestState.REQUESTED],
       },
-      { throwOnError: false, retry: false },
+      { enabled: affordances.review.feedback, throwOnError: false },
     );
 
   const revisionRequests = revisionError
@@ -119,6 +135,13 @@ function EditProposalPageContent() {
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
         ?.revisionRequest ?? null)
     : null;
+
+  // Same gate: the panel keeps showing this history after the review phase
+  // ends, which is exactly when `review.revisions` would go false.
+  const feedback = useProposalFeedback({
+    proposalId: proposal.id,
+    enabled: affordances.review.feedback,
+  });
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 
@@ -172,36 +195,43 @@ function EditProposalPageContent() {
     );
   };
 
+  const toggleFeedbackPanel = () => {
+    void setQueryState(
+      { feedback: isFeedbackPanelOpen ? null : true },
+      { history: 'push', scroll: false },
+    );
+  };
+
   // The version-history and revision-request controls are interactive editing
   // surfaces — hide them from anonymous accounts and logged-out visitors.
   const canInteract = userCanInteract(user);
 
-  const revisionRequestLabel = t('Revision request');
+  // One disclosure, whichever pane applies: mid-phase it opens the revision
+  // request the author must answer, and the feedback record once that is gone.
+  const feedbackDisclosure = firstRevisionRequestId ? (
+    <FeedbackDotIconButton
+      key="revision-request"
+      icon={LuStickyNote}
+      label={t('Revision request')}
+      onToggle={toggleRevisionRequest}
+      isExpanded={Boolean(reviewRevision)}
+    />
+  ) : feedback.hasFeedback ? (
+    <FeedbackDotIconButton
+      key="feedback"
+      icon={LuMessageSquareText}
+      label={t('Feedback')}
+      onToggle={toggleFeedbackPanel}
+      isExpanded={isFeedbackPanelOpen}
+    />
+  ) : null;
+
   const headerIcons = !canInteract
     ? []
-    : firstRevisionRequestId
-      ? [
-          <TooltipTrigger key="revision-request">
-            <Button
-              color="secondary"
-              variant="icon"
-              size="small"
-              onPress={toggleRevisionRequest}
-              aria-label={revisionRequestLabel}
-              aria-pressed={Boolean(reviewRevision)}
-              className="relative size-8 min-w-8 rounded-sm p-0"
-            >
-              <LuStickyNote className="size-4" />
-              <span
-                aria-hidden
-                className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
-              />
-            </Button>
-            <Tooltip>{revisionRequestLabel}</Tooltip>
-          </TooltipTrigger>,
-          ...asideHeaderIcons,
-        ]
-      : asideHeaderIcons;
+    : [
+        ...(feedbackDisclosure ? [feedbackDisclosure] : []),
+        ...asideHeaderIcons,
+      ];
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -239,9 +269,28 @@ function EditProposalPageContent() {
           asideState={asideState}
           setAsideState={setAsideState}
           asideHeaderIcons={headerIcons}
-          isMobile={isMobile}
           revisionRequest={revisionRequest}
-        />
+        >
+          {/* A revision request the author still has to answer outranks the
+              read-only record of a review that has already ended. */}
+          {revisionRequest ? (
+            <ProposalEditorAsidePane label={t('Revision feedback')}>
+              <RevisionFeedbackPanel revisionRequest={revisionRequest} />
+            </ProposalEditorAsidePane>
+          ) : isFeedbackPanelOpen && feedback.hasFeedback ? (
+            <ProposalEditorAsidePane label={t('Feedback')}>
+              <ProposalFeedbackPanel
+                feedbackItems={feedback.notes}
+                revisionRequests={feedback.revisionHistory}
+                title={t('Feedback')}
+                subtitle={t(
+                  'Notes reviewers shared while this proposal was under review',
+                )}
+                revisionRequestLabel={t('Revision request')}
+              />
+            </ProposalEditorAsidePane>
+          ) : null}
+        </ProposalEditorContent>
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
@@ -262,8 +311,8 @@ function ProposalEditorContent({
   asideState,
   setAsideState,
   asideHeaderIcons,
-  isMobile,
   revisionRequest,
+  children,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -272,8 +321,9 @@ function ProposalEditorContent({
   asideState: ProposalEditorAsideState;
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
-  isMobile: boolean;
   revisionRequest: ProposalReviewRequest | null;
+  /** The aside pane, forwarded straight to `ProposalEditor`. */
+  children: React.ReactNode;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -283,29 +333,45 @@ function ProposalEditorContent({
     fragmentNames,
   });
 
-  const asideSlot =
-    asideState.aside === 'versions' ? (
-      <ProposalVersionsAside
-        versionId={asideState.versionId}
-        onSelectVersion={(nextVersionId) =>
-          setAsideState({
-            aside: 'versions',
-            versionId: nextVersionId,
-          })
+  // Always mounted, toggled via `open` — conditionally rendering the aside
+  // unmounts the base-ui dialog root on close, which skips its exit animation.
+  const isVersionsAsideOpen = asideState.aside === 'versions';
+
+  const asideSlot = (
+    <ProposalVersionsAside
+      open={isVersionsAsideOpen}
+      versionId={isVersionsAsideOpen ? asideState.versionId : null}
+      onSelectVersion={(nextVersionId) =>
+        setAsideState({
+          aside: 'versions',
+          versionId: nextVersionId,
+        })
+      }
+      onRestoreVersion={async (versionId) => {
+        const restored = await restoreVersion(
+          versionId,
+          versionPreview?.fragmentContents ?? {},
+        );
+
+        // Only on success, and closing rather than deselecting: it hands the
+        // editor back so the restored content is immediately editable instead
+        // of sitting behind a readonly preview. A refused restore leaves the
+        // aside open on the version the user picked.
+        if (restored) {
+          setAsideState({ aside: null });
         }
-        onRestoreVersion={async (versionId) => {
-          await restoreVersion(
-            versionId,
-            versionPreview?.fragmentContents ?? {},
-          );
-          setAsideState({ aside: 'versions', versionId: null });
-        }}
-        onClose={() => setAsideState({ aside: null })}
-      />
-    ) : undefined;
+      }}
+      onClose={() => setAsideState({ aside: null })}
+    />
+  );
 
   return (
-    <div className="flex h-screen bg-white">
+    <div
+      className={cn(
+        'flex h-screen bg-background transition-[padding]',
+        isVersionsAsideOpen && 'sm:pe-96',
+      )}
+    >
       <ProposalEditor
         instance={instance}
         backHref={`/decisions/${slug}/current`}
@@ -314,9 +380,13 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
-        showHeaderActions={isMobile || !asideSlot}
         revisionRequest={revisionRequest}
-      />
+      >
+        {children}
+      </ProposalEditor>
+      {/* Desktop: a non-modal sheet with no backdrop, so the document stays
+          visible and scrollable beside it. Mobile: a modal drawer, which covers
+          the viewport anyway. */}
       {asideSlot}
     </div>
   );
@@ -349,20 +419,22 @@ function useProposalEditorAsideHeaderIcons({
     const Icon = definition.icon;
 
     return (
-      <TooltipTrigger key={asideKey}>
-        <Button
-          color="secondary"
-          variant="icon"
-          size="small"
-          onPress={() => onToggleAside(asideKey)}
-          aria-label={definition.label}
-          aria-pressed={aside === asideKey}
-          className="size-8 min-w-8 rounded-sm p-0"
-        >
-          <Icon className="size-4" />
-        </Button>
-        <Tooltip>{definition.label}</Tooltip>
-      </TooltipTrigger>
+      <Tooltip key={asideKey}>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onToggleAside(asideKey)}
+              aria-label={definition.label}
+              aria-expanded={aside === asideKey}
+            >
+              <Icon className="size-4" />
+            </Button>
+          }
+        />
+        <TooltipContent>{definition.label}</TooltipContent>
+      </Tooltip>
     );
   });
 }

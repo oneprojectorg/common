@@ -13,6 +13,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '../../utils/error';
+import { invalidateProfileUserAccessCache } from '../access';
 import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionMemberRolesChanged';
 
 /**
@@ -90,6 +91,14 @@ export const acceptProfileInvite = async ({
     ]);
 
     return profileUser;
+  });
+
+  // The invitee may already carry a cached (e.g. visitor) role set for this
+  // profile from browsing it before accepting — drop it or the new role
+  // doesn't take effect until the cache TTL expires.
+  await invalidateProfileUserAccessCache({
+    authUserId: user.id,
+    profileId: invite.profileId,
   });
 
   if (invite.profile.type === EntityType.DECISION) {

@@ -1,13 +1,22 @@
 'use client';
 
 import { ProposalTemplateSchema } from '@op/common';
-import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
-import { NumberField } from '@op/ui/NumberField';
-import { Select, SelectItem } from '@op/ui/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
+import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { NumberField } from '@op/sense/NumberField';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
+import { useLocale } from 'next-intl';
 import type { Key } from 'react';
-import { useCallback } from 'react';
-import { LuHash } from 'react-icons/lu';
+import { useCallback, useId, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,27 +26,25 @@ import {
   setFieldRequired,
 } from '../../../proposalTemplate';
 
+// The picker's curated option list, not a validation registry — symbols are
+// derived per-viewer via the shared getCurrencySymbol.
 const CURRENCIES = [
-  { code: 'USD', symbol: '$' },
-  { code: 'EUR', symbol: '€' },
-  { code: 'GBP', symbol: '£' },
-  { code: 'JPY', symbol: '¥' },
-  { code: 'CAD', symbol: 'CA$' },
-  { code: 'AUD', symbol: 'A$' },
-  { code: 'CHF', symbol: 'CHF' },
-  { code: 'CNY', symbol: '¥' },
-  { code: 'INR', symbol: '₹' },
-  { code: 'BRL', symbol: 'R$' },
-  { code: 'KRW', symbol: '₩' },
-  { code: 'SGD', symbol: 'S$' },
-  { code: 'MXN', symbol: 'MX$' },
-  { code: 'AED', symbol: 'د.إ' },
-  { code: 'SAR', symbol: '﷼' },
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CAD',
+  'AUD',
+  'CHF',
+  'CNY',
+  'INR',
+  'BRL',
+  'KRW',
+  'SGD',
+  'MXN',
+  'AED',
+  'SAR',
 ] as const;
-
-const CURRENCY_SYMBOL_MAP = new Map<string, string>(
-  CURRENCIES.map((c) => [c.code, c.symbol]),
-);
 
 export function BudgetFieldConfig({
   template,
@@ -49,13 +56,32 @@ export function BudgetFieldConfig({
   >;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
+  const showInTemplateId = useId();
+  const requiredId = useId();
+
+  // Localized currency display name, e.g. "US Dollar (USD $)".
+  const currencyName = useMemo(
+    () => new Intl.DisplayNames([locale], { type: 'currency' }),
+    [locale],
+  );
+  const currencyLabel = useCallback(
+    (code: string) =>
+      `${currencyName.of(code) ?? code} (${code} ${getCurrencySymbol(code)})`,
+    [currencyName],
+  );
+  const currencyItems = useMemo(
+    () =>
+      Object.fromEntries(CURRENCIES.map((code) => [code, currencyLabel(code)])),
+    [currencyLabel],
+  );
 
   const budgetSchema = getFieldSchema(template, 'budget');
   const showBudget = !!budgetSchema;
   const budgetCurrency =
     (budgetSchema?.properties?.currency as { default?: string } | undefined)
-      ?.default ?? 'USD';
-  const budgetCurrencySymbol = CURRENCY_SYMBOL_MAP.get(budgetCurrency) ?? '$';
+      ?.default ?? DEFAULT_MONEY_CURRENCY;
+  const budgetCurrencySymbol = getCurrencySymbol(budgetCurrency);
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
 
@@ -78,7 +104,7 @@ export function BudgetFieldConfig({
               'x-format': 'money',
               properties: {
                 amount: { type: 'number' },
-                currency: { type: 'string', default: 'USD' },
+                currency: { type: 'string', default: DEFAULT_MONEY_CURRENCY },
               },
             },
           },
@@ -166,61 +192,75 @@ export function BudgetFieldConfig({
 
   return (
     <CollapsibleConfigCard
-      icon={LuHash}
-      label={t('Budget')}
+      label={t('Funding amount')}
       badgeLabel={badgeLabel}
       isCollapsible
       locked
     >
-      <div className="space-y-4 px-8">
+      <div className="space-y-4">
         {showBudget && (
           <>
-            <Select
-              label={t('Currency')}
-              selectedKey={budgetCurrency}
-              onSelectionChange={handleBudgetCurrencyChange}
-              buttonClassName="bg-white"
-            >
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.code} id={c.code}>
-                  {c.code} {c.symbol}
-                </SelectItem>
-              ))}
-            </Select>
+            <Field>
+              <FieldLabel htmlFor="budget-currency">{t('Currency')}</FieldLabel>
+              <Select
+                value={budgetCurrency}
+                onValueChange={(currency) =>
+                  handleBudgetCurrencyChange(currency)
+                }
+                items={currencyItems}
+              >
+                <SelectTrigger id="budget-currency" className="w-full bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {CURRENCIES.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {currencyLabel(code)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
             <NumberField
-              label={t('Max budget')}
+              id="budget-max"
+              label={t('Max amount')}
+              prefixText={budgetCurrencySymbol}
+              placeholder={t('Set maximum amount')}
               value={budgetMaxAmount ?? null}
               onChange={handleBudgetMaxChange}
-              prefixText={budgetCurrencySymbol}
-              inputProps={{
-                placeholder: t('Set maximum budget'),
-              }}
             />
           </>
         )}
-        <div className="flex items-center justify-between">
-          <span className="text-neutral-charcoal">
-            {t('Show in template?')}
-          </span>
-          <ToggleButton
-            size="small"
-            isSelected={showBudget}
-            onChange={handleShowBudgetChange}
-            aria-label={t('Show in template?')}
-            data-testid="budget-show-in-template-toggle"
-          />
-        </div>
-        {showBudget && (
-          <div className="flex items-center justify-between">
-            <span className="text-neutral-charcoal">{t('Required?')}</span>
-            <ToggleButton
-              size="small"
-              isSelected={budgetRequired}
-              onChange={handleBudgetRequiredChange}
-              aria-label={t('Required?')}
+        {/* Required? (left) and Show in template? (right) share one row. */}
+        <div className="flex items-center justify-between gap-4 pt-2">
+          {showBudget ? (
+            <Field orientation="horizontal" className="w-auto">
+              <FieldLabel htmlFor={requiredId}>{t('Required?')}</FieldLabel>
+              <Switch
+                id={requiredId}
+                checked={budgetRequired}
+                onCheckedChange={handleBudgetRequiredChange}
+                aria-label={t('Required?')}
+              />
+            </Field>
+          ) : (
+            <span />
+          )}
+          <Field orientation="horizontal" className="w-auto">
+            <FieldLabel htmlFor={showInTemplateId}>
+              {t('Show in template?')}
+            </FieldLabel>
+            <Switch
+              id={showInTemplateId}
+              checked={showBudget}
+              onCheckedChange={handleShowBudgetChange}
+              aria-label={t('Show in template?')}
+              data-testid="budget-show-in-template-toggle"
             />
-          </div>
-        )}
+          </Field>
+        </div>
       </div>
     </CollapsibleConfigCard>
   );

@@ -23,7 +23,7 @@ const createCaller = createCallerFactory(appRouter);
 
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
-  'x-field-order': ['impact'],
+  'x-field-order': ['impact', 'departments'],
   properties: {
     impact: {
       type: 'integer',
@@ -36,6 +36,23 @@ const rubricTemplate: RubricTemplateSchema = {
         { const: 2, title: 'Medium' },
         { const: 3, title: 'High' },
       ],
+    },
+    // "Check all that apply": `x-format` stays on the array and the options
+    // move to `items`. Optional, so the criteria-specific tests below can
+    // leave it out — the required path is `impact`'s.
+    departments: {
+      type: 'array',
+      title: 'Which departments would this fall under?',
+      'x-format': 'dropdown',
+      minItems: 1,
+      items: {
+        type: 'string',
+        oneOf: [
+          { const: 'a1b2c3d4', title: 'Parks' },
+          { const: 'e5f6a7b8', title: 'Transportation' },
+          { const: 'c9d0e1f2', title: 'Public Health' },
+        ],
+      },
     },
   },
   required: ['impact'],
@@ -59,9 +76,49 @@ const singleSelectRubricTemplate: RubricTemplateSchema = {
   required: ['department'],
 };
 
+const moneyRubricTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['cost', 'impact'],
+  properties: {
+    cost: {
+      type: 'object',
+      title: 'Estimated cost',
+      'x-format': 'money',
+      properties: {
+        amount: { type: 'number', minimum: 0 },
+        currency: { type: 'string', const: 'USD', default: 'USD' },
+      },
+      required: ['amount', 'currency'],
+      additionalProperties: false,
+    },
+    impact: {
+      type: 'integer',
+      title: 'Impact',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 5,
+      oneOf: [
+        { const: 1, title: 'Low' },
+        { const: 5, title: 'High' },
+      ],
+    },
+  },
+  required: ['cost', 'impact'],
+};
+
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** Creates an assignment (in its current phase) with the rubric set. */
+async function createAssignmentWithRubric(
+  testData: TestReviewsDataManager,
+  rubric: RubricTemplateSchema = rubricTemplate,
+) {
+  const created = await testData.createReviewAssignment();
+  await testData.setRubricTemplate(created.context, rubric);
+  return created;
 }
 
 describe.concurrent('submitReview', () => {
@@ -70,8 +127,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -79,7 +135,7 @@ describe.concurrent('submitReview', () => {
     const result = await reviewerCaller.decision.submitReview({
       assignmentId: created.assignment.id,
       reviewData: {
-        answers: { impact: 3 },
+        answers: { impact: 3, departments: ['a1b2c3d4', 'c9d0e1f2'] },
         rationales: { impact: 'Solid execution plan' },
       },
       overallComment: 'Ready to move forward',
@@ -87,7 +143,12 @@ describe.concurrent('submitReview', () => {
 
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);
     expect(result.submittedAt).toBeTruthy();
-    expect(result.reviewData.answers).toEqual({ impact: 3 });
+    // The multi-select answer keeps its array shape and its option order —
+    // `coerceToSchema` leaves an array alone when the schema wants one.
+    expect(result.reviewData.answers).toEqual({
+      impact: 3,
+      departments: ['a1b2c3d4', 'c9d0e1f2'],
+    });
     expect(result.reviewData.rationales).toEqual({
       impact: 'Solid execution plan',
     });
@@ -103,7 +164,7 @@ describe.concurrent('submitReview', () => {
     expect(assignment?.completedAt).toBeTruthy();
     expect(assignment?.reviews[0]?.state).toBe(ProposalReviewState.SUBMITTED);
     expect(assignment?.reviews[0]?.reviewData).toMatchObject({
-      answers: { impact: 3 },
+      answers: { impact: 3, departments: ['a1b2c3d4', 'c9d0e1f2'] },
       rationales: { impact: 'Solid execution plan' },
     });
   });
@@ -113,8 +174,7 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -137,9 +197,8 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(
-      created.context,
+    const created = await createAssignmentWithRubric(
+      testData,
       singleSelectRubricTemplate,
     );
 
@@ -163,9 +222,8 @@ describe.concurrent('submitReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(
-      created.context,
+    const created = await createAssignmentWithRubric(
+      testData,
       singleSelectRubricTemplate,
     );
 
@@ -193,9 +251,8 @@ describe.concurrent('submitReview', () => {
     // keeps its original array shape since only the validation copy is
     // coerced.
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(
-      created.context,
+    const created = await createAssignmentWithRubric(
+      testData,
       singleSelectRubricTemplate,
     );
 
@@ -214,10 +271,177 @@ describe.concurrent('submitReview', () => {
     expect(result.reviewData.answers).toEqual({ department: ['e5f6a7b8'] });
   });
 
+  it('rejects a multi-select answer containing an option outside oneOf', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: {
+          answers: { impact: 3, departments: ['a1b2c3d4', 'not-an-option'] },
+          rationales: {},
+        },
+      }),
+    ).rejects.toThrow('Rubric validation failed');
+  });
+
+  it('rejects an empty multi-select answer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // `minItems: 1` — an empty selection is "unanswered", which the form
+    // expresses by dropping the key, so `[]` must never validate.
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: {
+          answers: { impact: 3, departments: [] },
+          rationales: {},
+        },
+      }),
+    ).rejects.toThrow('Rubric validation failed');
+  });
+
+  it('rejects a non-array multi-select answer that is not a known option', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // A bare scalar is not rejected for being scalar: `coerceToSchema` wraps
+    // it to `[value]` when the schema wants an array (the mirror of the
+    // single-select case above). What it then validates against is the option
+    // list, which is what rejects this one.
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: {
+          answers: { impact: 3, departments: 'not-an-option' },
+          rationales: {},
+        },
+      }),
+    ).rejects.toThrow('Rubric validation failed');
+  });
+
+  it('accepts a money answer and stores it verbatim', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(
+      testData,
+      moneyRubricTemplate,
+    );
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'review',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const answers = { cost: { amount: 120000.5, currency: 'USD' }, impact: 5 };
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers, rationales: {} },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(result.reviewData.answers).toEqual(answers);
+
+    // Only `impact` scores: 5, not 5 + 120000.5.
+    const aggregates = await reviewerCaller.decision.listWithReviewAggregates({
+      processInstanceId: created.context.instance.instance.id,
+      proposalIds: [created.proposal.id],
+    });
+    expect(aggregates.items[0]?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      averageScore: 5,
+    });
+  });
+
+  it('allows a first submit while the assignment phase is the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    // createReviewAssignment leaves the instance on the assignment's phase.
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+  });
+
+  it('rejects a first submit once the instance advances past the assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    // Assignments survive a phase advance, so a never-submitted assignment
+    // from an earlier phase is still loadable — it just can't be written.
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: { answers: { impact: 3 }, rationales: {} },
+      }),
+    ).rejects.toThrow('the review phase has ended');
+
+    // Nothing was written.
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(review).toBeUndefined();
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).not.toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
+  });
+
   it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,

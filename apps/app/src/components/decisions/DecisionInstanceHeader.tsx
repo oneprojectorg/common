@@ -2,17 +2,17 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { ButtonLink } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { Header2 } from '@op/sense/Header';
+import { MegaphoneIcon } from '@op/sense/icons';
+import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-import { Link } from '@/lib/i18n/routing';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { SupportLink } from '../SupportLink';
@@ -67,25 +67,26 @@ export const DecisionInstanceHeader = ({
   // and matches DecisionSidePanel's sm:top-12 md:top-14 so the panel meets it.
   return (
     <header className="sticky top-0 z-30 border-b bg-white">
-      <div className="grid h-12 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:h-14 md:px-6">
+      <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           {canInteract && (
-            <Link
+            <ButtonLink
               href={backTo.href}
-              className="flex shrink-0 items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+              variant="link"
+              className="max-md:size-11"
             >
-              <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
+              <LuArrowLeft className="size-4 rtl:-scale-x-100" />
               <span className="hidden md:flex">
                 {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
               </span>
-            </Link>
+            </ButtonLink>
           )}
           {centerSlot ? (
             <>
               {canInteract && (
                 <span
                   aria-hidden
-                  className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
+                  className="hidden h-6 w-px shrink-0 bg-border md:block"
                 />
               )}
               <DecisionTitle title={title} className="hidden md:block" />
@@ -104,7 +105,7 @@ export const DecisionInstanceHeader = ({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 md:gap-4">
+        <div className="flex items-center justify-end gap-2 md:gap-3">
           {/*
            * The toggle reads the `panel` search param via nuqs (useSearchParams).
            * When this header renders inside the decision-view layout — which Next
@@ -113,23 +114,23 @@ export const DecisionInstanceHeader = ({
            * boundary defers it out of the shell. Fallback is null because the
            * toggle is non-critical chrome and may itself render null.
            */}
+          {isAdmin && decisionSlug && (
+            <ButtonLink
+              href={`/decisions/${decisionSlug}/edit`}
+              variant="outline"
+              aria-label={t('Settings')}
+              className="max-sm:size-11"
+            >
+              <LuSettings className="size-4" />
+              <span className="hidden sm:inline-block">{t('Settings')}</span>
+            </ButtonLink>
+          )}
           <Suspense fallback={null}>
             <DecisionUpdatesToggle
               ariaLabel={t('Toggle updates panel')}
               canReadUpdates={canReadUpdates}
             />
           </Suspense>
-          {isAdmin && decisionSlug && (
-            <ButtonLink
-              href={`/decisions/${decisionSlug}/edit`}
-              color="secondary"
-              size="small"
-              className="p-2"
-              aria-label={t('Settings')}
-            >
-              <LuSettings className="size-4" />
-            </ButtonLink>
-          )}
           <SupportLink />
           <LocaleChooser />
           <JoinOrUserMenu canJoin={canJoin} />
@@ -155,10 +156,7 @@ const DecisionTitle = ({
   className?: string;
 }) => (
   <Header2
-    className={cn(
-      'truncate font-serif text-title-sm text-neutral-charcoal',
-      className,
-    )}
+    className={cn('truncate text-label leading-5 font-normal', className)}
   >
     <bdi>{title}</bdi>
   </Header2>
@@ -180,17 +178,15 @@ const DecisionUpdatesToggle = ({
   const isOpen = panel !== null;
 
   return (
-    <IconButton
+    <Button
       variant="outline"
-      size="medium"
-      onPress={() => setPanel(isOpen ? null : 'updates')}
+      size="icon"
+      onClick={() => setPanel(isOpen ? null : 'updates')}
       aria-label={ariaLabel}
       aria-pressed={isOpen}
-      className={
-        isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-neutral-black'
-      }
+      className={isOpen ? 'bg-accent text-primary' : 'text-foreground'}
     >
-      <MegaphoneIcon className="size-4" />
-    </IconButton>
+      <MegaphoneIcon className="size-4 stroke-[1.5]" />
+    </Button>
   );
 };

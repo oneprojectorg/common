@@ -19,7 +19,6 @@
   "dependencies": {
     "@formity/react": "^1.0.0",
     "@hocuspocus/transformer": "^3.4.3",
-    "@internationalized/date": "catalog:",
     "@mailchimp/mailchimp_marketing": "^3.0.80",
     "@next/bundle-analyzer": "^16.0.0",
     "@op/analytics": "workspace:^",
@@ -34,7 +33,6 @@
     "@op/styles": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
-    "@op/ui": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-web": "^0.56.0",
     "@opentelemetry/context-zone": "^2.5.0",
@@ -82,7 +80,6 @@
     "dotenv": "^16.4.7",
     "franc": "^6.2.0",
     "he": "^1.2.0",
-    "immer": "^10.1.1",
     "js.foresight": "^4.2.0",
     "next": "catalog:",
     "next-intl": "^4.8.3",
@@ -90,12 +87,10 @@
     "posthog-js": "^1.236.4",
     "posthog-node": "^4.13.0",
     "react": "^19.2.0",
-    "react-aria-carousel": "^0.2.0",
     "react-dom": "^19.2.0",
     "react-error-boundary": "^6.0.0",
     "react-icons": "^5.5.0",
     "react-masonry-css": "^1.0.16",
-    "sonner": "^1.7.1",
     "tiptap-extension-iframely": "^1.0.4",
     "use-debounce": "^10.0.4",
     "y-protocols": "^1.0.7",
@@ -117,5 +112,8 @@
     "tailwindcss": "4.1.18",
     "typescript": "7.0.2",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

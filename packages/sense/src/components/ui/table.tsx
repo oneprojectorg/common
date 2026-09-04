@@ -1,8 +1,13 @@
 'use client';
 
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
+
+const tableCellClassName =
+  'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0';
 
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
@@ -70,7 +75,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'h-10 px-3 text-start align-middle text-sm font-strong whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pe-0',
+        'h-10 px-2 text-start align-middle text-sm font-strong whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pe-0',
         className,
       )}
       {...props}
@@ -78,15 +83,35 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
   );
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
+function TableCell({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<'td'>) {
+  return useRender({
+    defaultTagName: 'td',
+    render,
+    props: mergeProps<'td'>(
+      {
+        className: cn(tableCellClassName, className),
+      },
+      props,
+    ),
+    state: { slot: 'table-cell' },
+  });
+}
+
+/** A row's identifying cell, rendered as a start-aligned `th scope="row"`. */
+function TableRowHeader({
+  className,
+  ...props
+}: Omit<React.ComponentProps<'th'>, 'scope'>) {
   return (
-    <td
+    <th
       data-slot="table-cell"
-      className={cn(
-        'p-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0',
-        className,
-      )}
+      className={cn(tableCellClassName, 'text-start font-normal', className)}
       {...props}
+      scope="row"
     />
   );
 }
@@ -112,5 +137,6 @@ export {
   TableHead,
   TableRow,
   TableCell,
+  TableRowHeader,
   TableCaption,
 };

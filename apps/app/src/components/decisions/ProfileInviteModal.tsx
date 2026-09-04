@@ -4,32 +4,52 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
-import { useDebounce } from '@op/hooks';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { IconButton } from '@op/ui/IconButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { SearchField } from '@op/ui/SearchField';
-import { toast } from '@op/ui/Toast';
-import Image from 'next/image';
+import { useDebounce, useInfiniteScroll } from '@op/hooks';
+import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { Button } from '@op/sense/Button';
 import {
-  Key,
+  Combobox,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+} from '@op/sense/Combobox';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@op/sense/Dialog';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyDescription,
+} from '@op/sense/Empty';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from '@op/sense/Item';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Spinner } from '@op/sense/Spinner';
+import { toast } from '@op/sense/Toast';
+import {
   type ReactNode,
   Suspense,
-  useEffect,
   useMemo,
   useOptimistic,
-  useRef,
   useState,
   useTransition,
 } from 'react';
-import { ListBox, ListBoxItem } from 'react-aria-components';
-import { createPortal } from 'react-dom';
-import { LuLeaf, LuX } from 'react-icons/lu';
+import { LuLeaf, LuSearch, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -62,40 +82,35 @@ export const ProfileInviteModal = ({
 }) => {
   const t = useTranslations();
 
-  const handleClose = () => {
-    onOpenChange(false);
-  };
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={handleClose}
-      isDismissable
-      className="sm:max-w-xl"
-    >
-      <ModalHeader className="truncate">
-        {t('Invite participants to your decision-making process')}
-      </ModalHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
+      <DialogContent className="overflow-hidden sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>
+            {t('Invite participants to your decision-making process')}
+          </DialogTitle>
+        </DialogHeader>
 
-      <ErrorBoundary>
-        <Suspense
-          fallback={
-            <ModalBody className="space-y-6">
-              <RoleSelectorSkeleton />
-              <div className="flex items-center justify-center p-8">
-                <LoadingSpinner className="size-6" />
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="space-y-6 px-6 py-4">
+                <RoleSelectorSkeleton />
+                <div className="flex items-center justify-center p-8">
+                  <Spinner className="size-6" />
+                </div>
               </div>
-            </ModalBody>
-          }
-        >
-          <ProfileInviteModalContent
-            profileId={profileId}
-            isDraft={isDraft}
-            onOpenChange={onOpenChange}
-          />
-        </Suspense>
-      </ErrorBoundary>
-    </Modal>
+            }
+          >
+            <ProfileInviteModalContent
+              profileId={profileId}
+              isDraft={isDraft}
+              onOpenChange={onOpenChange}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -112,40 +127,52 @@ function ProfileInviteModalContent({
   const utils = trpc.useUtils();
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
-  const [selectedRoleName, setSelectedRoleName] = useState<string>('');
+  const [requestedRoleId, setRequestedRoleId] = useState<string>();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [isSubmitting, startSendTransition] = useTransition();
   const [, startOptimisticTransition] = useTransition();
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
 
-  // Fetch roles with decisions zone permissions to identify admin roles
-  const { data: rolesWithPerms } = trpc.profile.listRoles.useQuery(
-    { profileId, zoneName: 'decisions' },
-    { enabled: isDraft },
-  );
-  const adminRoleIds = useMemo(() => {
-    if (!rolesWithPerms) {
-      return new Set<string>();
-    }
-    return new Set(
-      rolesWithPerms.items.filter((r) => r.permissions?.admin).map((r) => r.id),
-    );
-  }, [rolesWithPerms]);
-
-  const showDraftBanner = isDraft && !adminRoleIds.has(selectedRoleId);
-
-  // Fetch existing pending invites and members
-  const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
+  const rolesQueryInput = {
     profileId,
-  });
-  const [usersData] = trpc.profile.listUsers.useSuspenseQuery({ profileId });
+    zoneName: 'decisions',
+    includeMemberCounts: true,
+    limit: 100,
+  };
+  // Batched so the roles and pending-invites fetches fire together — two
+  // separate useSuspenseQuery calls would suspend one after the other.
+  const [[{ items: roles }, serverInvites]] = trpc.useSuspenseQueries((t) => [
+    t.profile.listRoles(rolesQueryInput),
+    t.profile.listProfileInvites({ profileId }),
+  ]);
+  const selectedRole =
+    roles.find((role) => role.id === requestedRoleId) ?? roles[0];
+  const selectedRoleId = selectedRole?.id ?? '';
+  const selectedRoleName = selectedRole?.name ?? '';
+  const showDraftBanner =
+    isDraft && !!selectedRole && !selectedRole.permissions?.admin;
+
+  // Members for the selected role, paginated server-side. React Query caches
+  // per input key, so each role tab paginates independently and switching
+  // tabs preserves already-loaded pages.
+  const {
+    data: usersData,
+    isPending: isMembersPending,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = trpc.profile.listUsers.useInfiniteQuery(
+    { profileId, roleId: selectedRoleId, limit: 25 },
+    {
+      getNextPageParam: (lastPage) => lastPage.next,
+      enabled: !!selectedRoleId,
+    },
+  );
+
+  const loadedMembers = useMemo(
+    () => usersData?.pages.flatMap((page) => page.items) ?? [],
+    [usersData],
+  );
 
   const [optimisticInvites, dispatchRemoveInvite] = useOptimistic(
     serverInvites,
@@ -153,7 +180,7 @@ function ProfileInviteModalContent({
   );
 
   const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
-    usersData.items,
+    loadedMembers,
     (state, profileUserId: string) =>
       state.filter((u) => u.id !== profileUserId),
   );
@@ -161,10 +188,35 @@ function ProfileInviteModalContent({
   // Get items for current role
   const currentRoleItems = selectedItemsByRole[selectedRoleId] ?? [];
 
+  // Roles staged items were added under can vanish mid-session (e.g. another
+  // admin deletes a custom role while this modal is open); dropping their
+  // entries here keeps a deleted role's leftovers out of counts and payloads.
+  const validRoleIds = useMemo(
+    () => new Set(roles.map((role) => role.id)),
+    [roles],
+  );
+
   // Get all selected items across all roles (for filtering duplicates)
   const allSelectedItems = useMemo(
-    () => Object.values(selectedItemsByRole).flat(),
-    [selectedItemsByRole],
+    () =>
+      Object.entries(selectedItemsByRole)
+        .filter(([roleId]) => validRoleIds.has(roleId))
+        .flatMap(([, items]) => items),
+    [selectedItemsByRole, validRoleIds],
+  );
+
+  // Member emails cover the loaded pages for the selected role; the invite
+  // service remains authoritative for members on other roles or pages.
+  const takenEmails = useMemo(
+    () =>
+      new Set([
+        ...allSelectedItems.map((item) => item.email.toLowerCase()),
+        ...optimisticUsers
+          .filter(hasEmail)
+          .map((user) => user.email.toLowerCase()),
+        ...optimisticInvites.map((invite) => invite.email.toLowerCase()),
+      ]),
+    [allSelectedItems, optimisticUsers, optimisticInvites],
   );
 
   // Filter server invites by current role
@@ -173,26 +225,18 @@ function ProfileInviteModalContent({
     [optimisticInvites, selectedRoleId],
   );
 
-  // Filter members by current role
-  const currentRoleMembers = useMemo(
-    () =>
-      optimisticUsers.filter((u) =>
-        u.roles.some((r) => r.id === selectedRoleId),
-      ),
-    [optimisticUsers, selectedRoleId],
-  );
+  // Members are already filtered to the selected role by the server query
+  const currentRoleMembers = optimisticUsers;
 
-  // Update dropdown position when search query changes
-  useEffect(() => {
-    if (debouncedQuery.length >= 2 && searchContainerRef.current) {
-      const rect = searchContainerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-  }, [debouncedQuery]);
+  // State rather than a ref: the observer effect below needs a re-render once
+  // the container attaches to pick it up as its root.
+  const [memberListRoot, setMemberListRoot] = useState<HTMLDivElement | null>(
+    null,
+  );
+  const { ref: scrollTriggerRef, shouldShowTrigger } = useInfiniteScroll(
+    fetchNextPage,
+    { hasNextPage, isFetchingNextPage, root: memberListRoot },
+  );
 
   // Search for individuals
   const { data: searchResults, isFetching: isSearching } =
@@ -217,41 +261,61 @@ function ProfileInviteModalContent({
       .sort((a, b) => b.rank - a.rank);
   }, [searchResults]);
 
-  // Filter out already selected, already invited, and existing members
+  // Filter out already selected, already invited, and loaded members.
   const filteredResults = useMemo(() => {
     const selectedIds = new Set(allSelectedItems.map((item) => item.profileId));
-    const selectedEmails = new Set(
-      allSelectedItems.map((item) => item.email.toLowerCase()),
-    );
-    const existingUserEmails = new Set(
-      optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
-    );
-    const invitedEmails = new Set(
-      optimisticInvites.map((i) => i.email.toLowerCase()),
-    );
     return flattenedResults.filter(
       (result) =>
         !selectedIds.has(result.id) &&
         (!result.user?.email ||
-          (!selectedEmails.has(result.user.email.toLowerCase()) &&
-            !existingUserEmails.has(result.user.email.toLowerCase()) &&
-            !invitedEmails.has(result.user.email.toLowerCase()))),
+          !takenEmails.has(result.user.email.toLowerCase())),
     );
-  }, [flattenedResults, allSelectedItems, optimisticUsers, optimisticInvites]);
+  }, [flattenedResults, allSelectedItems, takenEmails]);
 
-  // Check if query is a valid email that hasn't been selected yet (across all roles)
+  // Check if query is a valid email that hasn't been selected yet.
   const canAddEmail = useMemo(() => {
     if (!isValidEmail(debouncedQuery)) {
       return false;
     }
-    const lowerQuery = debouncedQuery.toLowerCase();
-    const takenEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    return !takenEmails.has(lowerQuery);
-  }, [debouncedQuery, allSelectedItems, optimisticUsers, optimisticInvites]);
+    return !takenEmails.has(debouncedQuery.toLowerCase());
+  }, [debouncedQuery, takenEmails]);
+
+  // Combobox options: server-filtered people plus a synthetic "invite this
+  // email" row. Server already filters, so base-ui's local filter is disabled.
+  const pickerOptions = useMemo(
+    () => [
+      ...(canAddEmail
+        ? [
+            {
+              value: 'add-email',
+              label: debouncedQuery,
+              addEmail: true as const,
+              result: undefined,
+            },
+          ]
+        : []),
+      ...filteredResults.map((result) => ({
+        value: result.id,
+        label: result.name,
+        addEmail: false as const,
+        result,
+      })),
+    ],
+    [canAddEmail, debouncedQuery, filteredResults],
+  );
+  type PickerOption = (typeof pickerOptions)[number];
+
+  const handlePickOption = (selected: PickerOption[]) => {
+    const added = selected[selected.length - 1];
+    if (!added) {
+      return;
+    }
+    if (added.addEmail) {
+      handleAddEmail(debouncedQuery);
+    } else {
+      handleSelectItem(added.result);
+    }
+  };
 
   // Mutations
   const inviteMutation = trpc.profile.invite.useMutation();
@@ -261,22 +325,21 @@ function ProfileInviteModalContent({
   // Calculate total people count across all roles (staged only)
   const totalPeople = allSelectedItems.length;
 
-  // Calculate counts by role for the tab badges (staged + server invites + members)
+  // Merge authoritative member counts with staged items and pending invites so
+  // each badge has one final count.
   const countsByRole = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number> = Object.fromEntries(
+      roles.map((role) => [role.id, role.memberCount ?? 0]),
+    );
     for (const [roleId, items] of Object.entries(selectedItemsByRole)) {
-      counts[roleId] = items.length;
+      counts[roleId] = (counts[roleId] ?? 0) + items.length;
     }
     for (const invite of optimisticInvites) {
       counts[invite.accessRoleId] = (counts[invite.accessRoleId] ?? 0) + 1;
     }
-    for (const user of optimisticUsers) {
-      for (const role of user.roles) {
-        counts[role.id] = (counts[role.id] ?? 0) + 1;
-      }
-    }
+
     return counts;
-  }, [selectedItemsByRole, optimisticInvites, optimisticUsers]);
+  }, [roles, selectedItemsByRole, optimisticInvites]);
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     if (!result.user?.email || !selectedRoleId) {
@@ -331,21 +394,23 @@ function ProfileInviteModalContent({
       try {
         await deleteInviteMutation.mutateAsync({ inviteId });
       } catch {
-        toast.error({ message: t('Failed to cancel invite') });
+        toast.error(t('Failed to cancel invite'));
       }
       await utils.profile.listProfileInvites.invalidate({ profileId });
     });
   };
 
-  const handleRemoveUser = (profileUserId: string) => {
+  const handleRemoveUser = ({ id }: { id: string }) => {
     startOptimisticTransition(async () => {
-      dispatchRemoveUser(profileUserId);
+      dispatchRemoveUser(id);
       try {
-        await removeUserMutation.mutateAsync({ profileUserId });
+        // Server broadcasts on the profileMembers channel, which listRoles
+        // and listUsers both subscribe to — their caches refresh from that,
+        // no manual cache patching needed here.
+        await removeUserMutation.mutateAsync({ profileUserId: id });
       } catch {
-        toast.error({ message: t('Failed to remove user') });
+        toast.error(t('Failed to remove user'));
       }
-      await utils.profile.listUsers.invalidate({ profileId });
     });
   };
 
@@ -354,7 +419,9 @@ function ProfileInviteModalContent({
       try {
         // Collect all invitations across all roles into a single array
         const invitations = Object.entries(selectedItemsByRole)
-          .filter(([, items]) => items.length > 0)
+          .filter(
+            ([roleId, items]) => validRoleIds.has(roleId) && items.length > 0,
+          )
           .flatMap(([roleId, items]) =>
             items.map((item) => ({ email: item.email, roleId })),
           );
@@ -363,23 +430,53 @@ function ProfileInviteModalContent({
           return;
         }
 
-        await inviteMutation.mutateAsync({
+        const result = await inviteMutation.mutateAsync({
           invitations,
           profileId,
         });
 
-        toast.success({ message: t('Invite sent successfully') });
+        if (result.details.failed.length > 0) {
+          const successfulEmails = new Set(result.details.successful);
+          setSelectedItemsByRole((selectedItems) =>
+            Object.fromEntries(
+              Object.entries(selectedItems).map(([roleId, items]) => [
+                roleId,
+                items.filter(
+                  (item) => !successfulEmails.has(item.email.toLowerCase()),
+                ),
+              ]),
+            ),
+          );
+          setSearchQuery('');
+          // The server's reason strings aren't translated (same as the raw
+          // error.message surfaced in the catch block below), but they're
+          // the only way this toast explains why a retry would fail again.
+          const failureDetail = result.details.failed
+            .map((failure) => `${failure.email}: ${failure.reason}`)
+            .join('; ');
+          toast.error(`${t('Failed to send invite')}: ${failureDetail}`);
+
+          if (result.details.successful.length > 0) {
+            utils.profile.listUsers.invalidate({ profileId });
+            utils.profile.listProfileInvites.invalidate({ profileId });
+            utils.profile.listRoles.invalidate({ profileId });
+          }
+          return;
+        }
+
+        toast.success(t('Invite sent successfully'));
         setSelectedItemsByRole({});
         setSearchQuery('');
         onOpenChange(false);
 
-        // Invalidate both lists
+        // Invalidate the lists and the per-role member counts (tab badges)
         utils.profile.listUsers.invalidate({ profileId });
         utils.profile.listProfileInvites.invalidate({ profileId });
+        utils.profile.listRoles.invalidate({ profileId });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to send invite');
-        toast.error({ message });
+        toast.error(message);
       }
     });
   };
@@ -390,12 +487,7 @@ function ProfileInviteModalContent({
       return;
     }
 
-    const existingEmails = new Set([
-      ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
-      ...optimisticInvites.map((i) => i.email.toLowerCase()),
-    ]);
-    const emails = parseEmailPaste(pastedText, existingEmails);
+    const emails = parseEmailPaste(pastedText, takenEmails);
     if (!emails) {
       return;
     }
@@ -417,146 +509,103 @@ function ProfileInviteModalContent({
     setSearchQuery('');
   };
 
-  const handleTabChange = (key: Key) => {
-    setSelectedRoleId(String(key));
-  };
-
   const hasNoItems =
+    !isMembersPending &&
     currentRoleItems.length === 0 &&
     currentRoleInvites.length === 0 &&
     currentRoleMembers.length === 0;
 
   return (
     <>
-      <ModalBody className="space-y-6">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-4">
         {/* Role Tabs */}
         <RoleSelector
-          profileId={profileId}
+          roles={roles}
           selectedRoleId={selectedRoleId}
-          onSelectionChange={handleTabChange}
+          onSelectionChange={setRequestedRoleId}
           countsByRole={countsByRole}
-          onRolesLoaded={(roleId, roleName) => {
-            setSelectedRoleId(roleId);
-            setSelectedRoleName(roleName);
-          }}
-          onRoleNameChange={setSelectedRoleName}
         />
 
         {showDraftBanner && (
-          <AlertBanner variant="banner" intent="warning">
-            {t(
-              'This process is still in draft. Participant invites will be sent when the process launches.',
-            )}
-          </AlertBanner>
+          <Alert variant="warning">
+            <AlertDescription>
+              {t(
+                'This process is still in draft. Participant invites will be sent when the process launches.',
+              )}
+            </AlertDescription>
+          </Alert>
         )}
 
-        {/* Search Input */}
-        <div ref={searchContainerRef} onPaste={handlePaste}>
-          <SearchField
-            placeholder={t('Search by name or email...')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-            className="w-full"
-          />
-        </div>
-
-        {/* Search Results Dropdown - rendered via portal to escape modal overflow */}
-        {debouncedQuery.length >= 2 &&
-          typeof document !== 'undefined' &&
-          createPortal(
-            <div
-              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg"
-              style={{
-                top: dropdownPosition.top,
-                left: dropdownPosition.left,
-                width: dropdownPosition.width,
-              }}
-              // Mark as top-layer overlay so React Aria doesn't treat clicks as "outside"
-              data-react-aria-top-layer="true"
-              // Prevent clicks from bubbling to modal overlay and dismissing it
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {isSearching ? (
-                <div className="flex items-center justify-center p-4">
-                  <LoadingSpinner className="size-4" />
-                </div>
-              ) : filteredResults.length > 0 || canAddEmail ? (
-                <ListBox
-                  aria-label={t('Search results')}
-                  onAction={(key) => {
-                    if (key === 'add-email') {
-                      handleAddEmail(debouncedQuery);
-                    } else {
-                      const result = filteredResults.find((r) => r.id === key);
-                      if (result) {
-                        handleSelectItem(result);
-                      }
-                    }
-                  }}
-                  className="outline-none"
-                >
-                  {canAddEmail && (
-                    <ListBoxItem
-                      id="add-email"
-                      textValue={debouncedQuery}
-                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
-                    >
-                      <div className="text-sm">
+        {/* People search — server-filtered picker; each pick adds to the
+            role's list below and clears the input (value stays empty). */}
+        <Combobox
+          items={pickerOptions}
+          value={[]}
+          onValueChange={handlePickOption}
+          filter={null}
+          onInputValueChange={(value) => setSearchQuery(value)}
+          itemToStringLabel={(option: PickerOption) => option.label}
+          isItemEqualToValue={(a: PickerOption, b: PickerOption) =>
+            a.value === b.value
+          }
+          multiple
+        >
+          <ComboboxChips className="w-full" onPaste={handlePaste}>
+            <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
+            <ComboboxChipsInput placeholder={t('Search by name or email...')} />
+          </ComboboxChips>
+          {debouncedQuery.length >= 2 && (
+            <ComboboxContent>
+              <ComboboxEmpty>
+                {isSearching ? <Spinner className="size-4" /> : t('No results')}
+              </ComboboxEmpty>
+              <ComboboxList>
+                {(option: PickerOption) => (
+                  <ComboboxItem key={option.value} value={option}>
+                    {option.addEmail ? (
+                      <span className="text-sm">
                         {t('Invite {email}', { email: debouncedQuery })}
-                      </div>
-                    </ListBoxItem>
-                  )}
-                  {filteredResults.map((result) => (
-                    <ListBoxItem
-                      key={result.id}
-                      id={result.id}
-                      textValue={result.name}
-                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
-                    >
+                      </span>
+                    ) : (
                       <ProfileItem
-                        size="small"
                         avatar={
-                          <Avatar
-                            placeholder={result.name}
-                            className="size-8 shrink-0"
-                          >
-                            {result.avatarImage?.name ? (
-                              <Image
+                          <Avatar className="size-8 shrink-0">
+                            {option.result.avatarImage?.name ? (
+                              <AvatarImage
                                 src={
-                                  getPublicUrl(result.avatarImage.name) ?? ''
+                                  getPublicUrl(
+                                    option.result.avatarImage.name,
+                                  ) ?? ''
                                 }
-                                alt={result.name}
-                                fill
-                                className="object-cover"
+                                alt={option.result.name}
                               />
                             ) : null}
+                            <AvatarFallback>
+                              {option.result.name.slice(0, 1).toUpperCase()}
+                            </AvatarFallback>
                           </Avatar>
                         }
-                        title={result.name}
+                        title={option.result.name}
+                        description={option.result?.user?.email || undefined}
                       />
-                    </ListBoxItem>
-                  ))}
-                </ListBox>
-              ) : (
-                <div className="p-4 text-center text-sm text-neutral-gray4">
-                  {t('No results')}
-                </div>
-              )}
-            </div>,
-            document.body,
+                    )}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
           )}
+        </Combobox>
 
         {/* People list for current role */}
         <div className="flex flex-col gap-2">
           {!hasNoItems && (
-            <span className="text-sm text-neutral-black">
-              {t('People with access')}
-            </span>
+            <span className="text-sm">{t('People with access')}</span>
           )}
 
-          <div className="flex flex-col gap-2">
+          <div
+            ref={setMemberListRoot}
+            className="flex max-h-80 flex-col gap-2 overflow-y-auto"
+          >
             {/* Staged items (not yet sent) */}
             {currentRoleItems.map((item) => (
               <PersonRow
@@ -565,7 +614,7 @@ function ProfileInviteModalContent({
                 avatarUrl={item.avatarUrl}
                 subtitle={
                   item.name !== item.email ? (
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="truncate text-sm text-muted-foreground">
                       {item.email}
                     </div>
                   ) : undefined
@@ -588,13 +637,13 @@ function ProfileInviteModalContent({
                   name={displayName}
                   avatarUrl={avatarUrl}
                   subtitle={
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="truncate text-sm text-muted-foreground">
                       {invite.inviteeProfile?.name && (
                         <>
                           {invite.email} <Bullet />{' '}
                         </>
                       )}
-                      <span className="text-sm text-neutral-gray4">
+                      <span className="text-sm text-muted-foreground">
                         {t('Invited')}
                       </span>
                     </div>
@@ -605,7 +654,9 @@ function ProfileInviteModalContent({
               );
             })}
 
-            {/* Existing members */}
+            {/* Existing members (loading skeletons while the first page of
+                the selected role is pending) */}
+            {isMembersPending && <MemberRowsSkeleton />}
             {currentRoleMembers.map((user) => (
               <PersonRow
                 key={user.id}
@@ -617,13 +668,13 @@ function ProfileInviteModalContent({
                 }
                 subtitle={
                   user.name ? (
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="truncate text-sm text-muted-foreground">
                       {user.email}
                     </div>
                   ) : undefined
                 }
                 onRemove={
-                  !user.isOwner ? () => handleRemoveUser(user.id) : undefined
+                  !user.isOwner ? () => handleRemoveUser(user) : undefined
                 }
                 removeLabel={t('Remove {name}', {
                   name: user.name ?? user.email,
@@ -631,20 +682,38 @@ function ProfileInviteModalContent({
               />
             ))}
 
+            {/* Infinite-scroll trigger: loads more members as the user
+                scrolls inside the bounded list container */}
+            {shouldShowTrigger && (
+              <div
+                ref={scrollTriggerRef}
+                className="flex shrink-0 justify-center py-2"
+              >
+                {isFetchingNextPage && <Spinner className="size-4" />}
+              </div>
+            )}
+
             {/* Empty state */}
             {hasNoItems && selectedRoleName ? (
-              <EmptyState icon={<LuLeaf />}>
-                {t('No {roleName}s have been added', {
-                  roleName: selectedRoleName,
-                })}
-              </EmptyState>
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <LuLeaf />
+                  </EmptyMedia>
+                  <EmptyDescription>
+                    {t('No {roleName}s have been added', {
+                      roleName: selectedRoleName,
+                    })}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : null}
           </div>
         </div>
-      </ModalBody>
+      </div>
 
-      <ModalFooter className="flex-row items-center justify-between">
-        <div className="text-base text-neutral-black">
+      <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+        <div className="text-base">
           {totalPeople > 0
             ? t('{count, plural, =1 {1 person} other {# people}}', {
                 count: totalPeople,
@@ -652,14 +721,23 @@ function ProfileInviteModalContent({
             : null}
         </div>
         <Button
-          color="primary"
-          onPress={handleSend}
-          isDisabled={allSelectedItems.length === 0}
-          isPending={isSubmitting}
+          onClick={handleSend}
+          disabled={allSelectedItems.length === 0}
+          loading={isSubmitting}
         >
           {isSubmitting ? t('Adding...') : t('Add')}
         </Button>
-      </ModalFooter>
+      </DialogFooter>
+    </>
+  );
+}
+
+function MemberRowsSkeleton() {
+  return (
+    <>
+      {[0, 1, 2].map((row) => (
+        <Skeleton key={row} className="h-14 w-full shrink-0 rounded-lg" />
+      ))}
     </>
   );
 }
@@ -678,25 +756,29 @@ function PersonRow({
   removeLabel: string;
 }) {
   return (
-    <div className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
-      <ProfileItem
-        size="small"
-        avatar={
-          <Avatar placeholder={name} className="size-6 shrink-0">
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt={name} fill className="object-cover" />
-            ) : null}
-          </Avatar>
-        }
-        title={name}
-      >
+    <Item variant="outline" className="flex-nowrap px-3 py-2 sm:p-3">
+      <ItemMedia>
+        <Avatar className="size-6 shrink-0 sm:size-10">
+          {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
+          <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </ItemMedia>
+      <ItemContent className="min-w-0 gap-0">
+        <ItemTitle>{name}</ItemTitle>
         {subtitle}
-      </ProfileItem>
+      </ItemContent>
       {onRemove && (
-        <IconButton size="small" onPress={onRemove} aria-label={removeLabel}>
-          <LuX className="size-4" />
-        </IconButton>
+        <ItemActions className="shrink-0">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onRemove}
+            aria-label={removeLabel}
+          >
+            <LuX className="size-4" />
+          </Button>
+        </ItemActions>
       )}
-    </div>
+    </Item>
   );
 }

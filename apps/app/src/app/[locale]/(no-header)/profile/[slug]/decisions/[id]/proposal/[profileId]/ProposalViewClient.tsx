@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
+import { NO_PROPOSAL_AFFORDANCES } from '@/components/decisions/getProposalAffordances';
 
 function ProposalViewPageContent({
   profileId,
@@ -31,7 +32,7 @@ function ProposalViewPageContent({
   return (
     <ProposalView
       proposal={proposal}
-      canSeeRevisions={false}
+      affordances={NO_PROPOSAL_AFFORDANCES}
       decisionRoot={decisionRoot}
       selection={null}
     />

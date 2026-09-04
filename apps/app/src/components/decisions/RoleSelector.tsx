@@ -1,74 +1,46 @@
 'use client';
 
-import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, Tabs } from '@op/ui/Tabs';
-import { Key, useEffect, useMemo, useRef } from 'react';
+import { BadgeNumber } from '@op/sense/Badge';
+import { Skeleton } from '@op/sense/Skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@op/sense/Tabs';
 
 import { useTranslations } from '@/lib/i18n';
 
+interface RoleSelectorProps {
+  roles: Array<{ id: string; name: string }>;
+  selectedRoleId: string;
+  onSelectionChange: (roleId: string) => void;
+  countsByRole: Record<string, number>;
+}
+
+/** Displays role tabs and their participant counts. */
 export const RoleSelector = ({
-  profileId,
+  roles,
   selectedRoleId,
   onSelectionChange,
   countsByRole,
-  onRolesLoaded,
-  onRoleNameChange,
-}: {
-  profileId: string;
-  selectedRoleId: string;
-  onSelectionChange: (key: Key) => void;
-  countsByRole: Record<string, number>;
-  onRolesLoaded: (roleId: string, roleName: string) => void;
-  onRoleNameChange: (roleName: string) => void;
-}) => {
+}: RoleSelectorProps) => {
   const t = useTranslations();
-  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({ profileId });
-
-  const roles = useMemo(() => {
-    return rolesData.items ?? [];
-  }, [rolesData]);
-
-  // Set default role on mount if none selected
-  const hasInitialized = useRef(false);
-  const firstRole = roles[0];
-  useEffect(() => {
-    if (!hasInitialized.current && firstRole && !selectedRoleId) {
-      hasInitialized.current = true;
-      onRolesLoaded(firstRole.id, firstRole.name);
-    }
-  }, [firstRole, selectedRoleId, onRolesLoaded]);
-
-  const handleSelectionChange = (key: Key) => {
-    const role = roles.find((r) => r.id === key);
-    if (role) {
-      onRoleNameChange(role.name);
-    }
-    onSelectionChange(key);
-  };
 
   return (
     <Tabs
-      selectedKey={selectedRoleId}
-      onSelectionChange={handleSelectionChange}
+      className="scrollbar-none w-full overflow-x-auto border-b"
+      value={selectedRoleId}
+      onValueChange={onSelectionChange}
     >
-      <TabList aria-label={t('Select a role')}>
+      <TabsList variant="line" aria-label={t('Select a role')}>
         {roles.map((role) => {
           const count = countsByRole[role.id] ?? 0;
           return (
-            <Tab key={role.id} id={role.id}>
-              <span className="flex items-center gap-1">
+            <TabsTrigger key={role.id} value={role.id}>
+              <span className="flex items-center gap-2">
                 {t('{roleName} plural', { roleName: role.name })}
-                {count > 0 && (
-                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-teal px-1 text-xs text-neutral-offWhite">
-                    {count}
-                  </span>
-                )}
+                {count > 0 && <BadgeNumber>{count}</BadgeNumber>}
               </span>
-            </Tab>
+            </TabsTrigger>
           );
         })}
-      </TabList>
+      </TabsList>
     </Tabs>
   );
 };

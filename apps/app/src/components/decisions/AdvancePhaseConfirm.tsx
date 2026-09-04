@@ -1,12 +1,18 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Sheet, SheetBody } from '@op/ui/Sheet';
-import { toast } from '@op/ui/Toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@op/sense/AlertDialog';
+import { Spinner } from '@op/sense/Spinner';
+import { toast } from '@op/sense/Toast';
 import { useRef } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -25,11 +31,10 @@ interface AdvancePhaseConfirmProps {
 }
 
 /**
- * Confirmation Modal (desktop) / Sheet (mobile) for the admin "advance to the
- * next phase" flow: owns the `transitionFromPhase` mutation and the toast +
- * refresh on success. Loaded lazily by useAdvancePhase on the first advance
- * request, so this chunk (Modal/Sheet/Toast machinery) never ships to the
- * non-admin viewers who make up nearly all decision-page traffic.
+ * Confirmation AlertDialog for the admin "advance to the next phase" flow: owns
+ * the `transitionFromPhase` mutation and the toast + refresh on success. Loaded
+ * lazily by useAdvancePhase on the first advance request, so this chunk never
+ * ships to the non-admin viewers who make up nearly all decision-page traffic.
  */
 export function AdvancePhaseConfirm({
   instanceId,
@@ -42,7 +47,6 @@ export function AdvancePhaseConfirm({
 }: AdvancePhaseConfirmProps) {
   const t = useTranslations();
   const router = useRouter();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   const advanceInitiatedRef = useRef(false);
 
@@ -50,13 +54,11 @@ export function AdvancePhaseConfirm({
     onSuccess: () => {
       advanceInitiatedRef.current = false;
       onClose();
-      toast.success({ message: t('Phase advanced successfully') });
+      toast.success(t('Phase advanced successfully'));
       router.refresh();
     },
     onError: (error) => {
-      toast.error({
-        message: error.message || t('Failed to advance phase'),
-      });
+      toast.error(error.message || t('Failed to advance phase'));
     },
   });
 
@@ -73,18 +75,15 @@ export function AdvancePhaseConfirm({
 
   // Every close path resets the ref so the next open starts a fresh "was the
   // advance initiated?" cycle — the component stays mounted between opens.
-  const closeAndReset = () => {
+  const handleOpenChange = (open: boolean) => {
+    if (open || transitionMutation.isPending) {
+      return;
+    }
+    if (!advanceInitiatedRef.current) {
+      onDismissWithoutAdvance();
+    }
     advanceInitiatedRef.current = false;
     onClose();
-  };
-
-  const handleDismiss = (open: boolean) => {
-    if (!open && !transitionMutation.isPending) {
-      if (!advanceInitiatedRef.current) {
-        onDismissWithoutAdvance();
-      }
-      closeAndReset();
-    }
   };
 
   const title = t('Advance to {phaseName}?', { phaseName: nextPhaseName });
@@ -93,71 +92,28 @@ export function AdvancePhaseConfirm({
     { currentPhase: currentPhaseName, nextPhase: nextPhaseName },
   );
 
-  return isMobile ? (
-    <Sheet
-      isOpen={isOpen}
-      onOpenChange={handleDismiss}
-      isDismissable={!transitionMutation.isPending}
-      side="bottom"
-    >
-      <SheetBody className="flex flex-col gap-4 p-4 text-start">
-        <div className="font-serif text-title-sm">
-          <bdi>{title}</bdi>
-        </div>
-        <p dir="auto" className="text-sm text-neutral-charcoal">
-          {body}
-        </p>
-        <div className="flex flex-col gap-4">
-          <Button
-            color="primary"
-            isLoading={transitionMutation.isPending}
-            onPress={handleAdvancePhase}
-            className="w-full"
-          >
-            {t('Advance Phase')}
-          </Button>
-          <Button
-            color="secondary"
-            isDisabled={transitionMutation.isPending}
-            onPress={closeAndReset}
-            className="w-full"
-          >
+  return (
+    <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            <bdi>{title}</bdi>
+          </AlertDialogTitle>
+          <AlertDialogDescription dir="auto">{body}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={transitionMutation.isPending}>
             {t('Cancel')}
-          </Button>
-        </div>
-      </SheetBody>
-    </Sheet>
-  ) : (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={handleDismiss}
-      isDismissable={false}
-      surface="flat"
-    >
-      <ModalHeader className="px-6 pb-6 text-start">
-        <bdi>{title}</bdi>
-      </ModalHeader>
-      <ModalBody className="px-6 py-6">
-        <p dir="auto" className="text-sm text-neutral-charcoal">
-          {body}
-        </p>
-      </ModalBody>
-      <ModalFooter className="px-6 py-6">
-        <Button
-          color="secondary"
-          isDisabled={transitionMutation.isPending}
-          onPress={onClose}
-        >
-          {t('Cancel')}
-        </Button>
-        <Button
-          color="primary"
-          isLoading={transitionMutation.isPending}
-          onPress={handleAdvancePhase}
-        >
-          {t('Advance Phase')}
-        </Button>
-      </ModalFooter>
-    </Modal>
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleAdvancePhase}
+            disabled={transitionMutation.isPending}
+          >
+            {transitionMutation.isPending ? <Spinner /> : null}
+            {t('Advance Phase')}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

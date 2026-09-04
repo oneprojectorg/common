@@ -1,7 +1,15 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@op/sense/Breadcrumb';
+import { Header2 } from '@op/sense/Header';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -34,18 +42,27 @@ export const ProfileOrganizationsSuspense = ({
     <>
       <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
-          <Breadcrumbs className="hidden sm:flex">
-            <Breadcrumb href={`/org/${slug}`}>{profile.name}</Breadcrumb>
-            <Breadcrumb>Organizations</Breadcrumb>
-          </Breadcrumbs>
+          <Breadcrumb className="hidden sm:flex">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink render={<Link href={`/org/${slug}`} />}>
+                  {profile.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Organizations</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="font-serif text-title-sm sm:text-title-lg">
+          <Header2>
             {t(
               'Member of {count, plural, =1 {# Organization} other {# Organizations}}',
               { count: organizations.length },
             )}
-          </div>
+          </Header2>
         </div>
       </div>
       <OrganizationCardList organizations={organizations} />
@@ -63,8 +80,8 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
       href={`/org/${organization.profile.slug}`}
       className="flex items-center gap-2"
     >
-      <LuArrowLeft className="size-6 text-neutral-black rtl:-scale-x-100" />
-      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-black">
+      <LuArrowLeft className="size-6 text-foreground rtl:-scale-x-100" />
+      <div className="flex items-center gap-1 text-sm font-semibold">
         <OrganizationAvatar profile={organization.profile} className="size-6" />
         {organization.profile.name}
       </div>

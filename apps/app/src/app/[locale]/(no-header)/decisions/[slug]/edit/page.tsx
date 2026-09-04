@@ -7,7 +7,7 @@ import { forbidden, notFound } from 'next/navigation';
 import { ProcessBuilderAutosaveProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { ProcessBuilderEditArea } from '@/components/decisions/ProcessBuilder/ProcessBuilderEditArea';
 import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
-import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
+import { ProcessBuilderMobileNav } from '@/components/decisions/ProcessBuilder/ProcessBuilderMobileNav';
 import { ProcessBuilderShell } from '@/components/decisions/ProcessBuilder/ProcessBuilderShell';
 import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
 import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
@@ -84,7 +84,7 @@ const EditDecisionPage = async ({
             decisionProfileId={decisionProfile.id}
             serverData={serverData}
           />
-          <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
+          <ProcessBuilderMobileNav instanceId={instanceId} slug={slug} />
           <ProcessBuilderEditArea
             decisionProfileId={decisionProfile.id}
             instanceId={instanceId}

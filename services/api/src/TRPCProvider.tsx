@@ -81,6 +81,11 @@ export function TRPCProvider({
           client={queryClient}
           persistOptions={{
             persister,
+            // Bump whenever a persisted payload's shape changes. Entries are
+            // kept for 24h, so without this a returning user restores posts
+            // shaped for the previous release and renders undefined counts.
+            // Last bumped: posts moved from reaction fields to like fields.
+            buster: 'post-likes-1',
             dehydrateOptions: {
               shouldDehydrateQuery: (query) => {
                 const queryIsReadyForPersistance =

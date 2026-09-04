@@ -79,7 +79,7 @@ test.describe('Onboarding resume', () => {
     await expect(page).toHaveURL(/\/en\/start\?redirect=/, { timeout: 15000 });
     expect(new URL(page.url()).searchParams.get('redirect')).toBe(target);
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
     await expect(
       page.getByText('You do not have permission to view this page'),
@@ -100,7 +100,7 @@ test.describe('Onboarding resume', () => {
       '/en/decisions',
     );
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
   });
 
@@ -112,7 +112,7 @@ test.describe('Onboarding resume', () => {
     await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
 
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
 
     await page.getByLabel('Full Name').fill('Resume NonMember');
@@ -137,7 +137,7 @@ test.describe('Onboarding resume', () => {
     await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
 
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
 
     await page.getByLabel('Full Name').fill('Resume Member');
@@ -164,7 +164,7 @@ test.describe('Onboarding resume', () => {
     });
 
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
     await page.getByLabel('Full Name').fill('Resume Return');
     await page.getByLabel('Headline').fill('Tester');
@@ -231,7 +231,7 @@ test.describe('Onboarding resume', () => {
     });
     expect(startResponse?.status()).not.toBe(403);
     await expect(
-      page.getByRole('heading', { name: 'Set up your individual profile.' }),
+      page.getByRole('heading', { name: 'Add your personal details' }),
     ).toBeVisible({ timeout: 15000 });
 
     // The walled garden still forbids non-members in the (main) route group.

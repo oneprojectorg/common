@@ -18,6 +18,14 @@ export interface RubricSummary {
   hasOverallRecommendation: boolean;
 }
 
+/** The viewer's own assignment for this proposal, when they hold one. */
+export interface OwnReviewEntry {
+  /** Matched against each row's reviewer to mark it "(You)". */
+  profileId: string;
+  hasSubmitted: boolean;
+  onOpenForm: () => void;
+}
+
 interface ReviewsPanelProps {
   proposalWithReviews: ProposalWithSubmittedReviews;
   rubricTemplate: RubricTemplateSchema | null;
@@ -29,6 +37,7 @@ interface ReviewsPanelProps {
   hideSummaryHeader?: boolean;
   /** Header text; defaults to "Review Summary". */
   title?: string;
+  ownReview?: OwnReviewEntry;
 }
 
 export function ReviewsPanel({
@@ -39,6 +48,7 @@ export function ReviewsPanel({
   excludeProfileId,
   hideSummaryHeader,
   title,
+  ownReview,
 }: ReviewsPanelProps) {
   const rubricSummary = useMemo<RubricSummary>(() => {
     if (!rubricTemplate) {
@@ -95,6 +105,7 @@ export function ReviewsPanel({
       onSelectAssignment={onSelectAssignment}
       hideSummaryHeader={hideSummaryHeader}
       title={title}
+      ownReview={ownReview}
     />
   );
 }

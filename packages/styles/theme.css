@@ -1,0 +1,841 @@
+@import 'tailwindcss';
+@import './tokens.css';
+@import './tw-animate.css';
+
+/* ==== SENSE LAYER ==== */
+
+/*
+ * Sense (shadcn/ui) Theme
+ * Maps shadcn/ui's semantic CSS variables to @op/styles tokens.
+ *
+ * Shadcn components reference Tailwind utilities like `bg-background`,
+ * `text-foreground`, `border-input`, etc. Those resolve through the
+ * Tailwind v4 `@theme` layer below, which points the semantic names at
+ * the OP brand tokens defined in tokens.css.
+ *
+ * This file is the @op/styles entry point, so shadcn components
+ * "just work" with OP branding without modifying any component file.
+ */
+
+/* shadcn primitives (especially base-ui slider, scroll-area, tabs) use
+ * `data-horizontal:` / `data-vertical:` shorthand variants. base-ui actually
+ * ships these as `data-orientation="horizontal" | "vertical"` attributes, so
+ * we map the shadcn convention onto the real attribute. Without this, slider
+ * tracks render at 0px etc. */
+@custom-variant data-horizontal (&[data-orientation='horizontal']);
+@custom-variant data-vertical (&[data-orientation='vertical']);
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-muted: var(--destructive-muted);
+  --color-destructive-muted-foreground: var(--destructive-muted-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-muted-foreground: var(--warning-muted-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-success-muted-foreground: var(--success-muted-foreground);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+  --color-mark: var(--mark);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Chart palette */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Strong text weight — the Common Sense "-strong" text styles (labels,
+   * buttons, kbd) sit at 450, between normal and medium. Requires Roboto
+   * loaded as a variable font (apps/app root layout). Use `font-strong`. */
+  --font-weight-strong: 450;
+
+  /* Animations (used by accordion, collapsible, etc.) */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  /* A count ticking over: the old number slides out as the new one slides in,
+   * both moving the same way. Tune the pair here — the four animations share
+   * them. (Tailwind also mints `duration-count` / `ease-count` from these.) */
+  --duration-count: 0.3s;
+  --ease-count: cubic-bezier(0.08,0.82,0.17,1);
+  --distance-count: 0.75em;
+  --animate-count-in: count-in var(--duration-count) var(--ease-count);
+  --animate-count-out: count-out var(--duration-count) var(--ease-count)
+    forwards;
+}
+
+/* The sense radius and text scales are now the global defaults (declared in
+ * the @theme in tokens.css), so the former `.sense`-scoped overrides are
+ * gone. The remaining rules below apply globally. */
+
+/* Thin, muted scrollbars for scrollable regions (menus, popups, dialog
+ * bodies). Chrome 121+ and Firefox honor these;
+ * Safari ignores them and keeps its overlay scrollbars, which already look
+ * fine. Thumb uses --input (gray-300) — the "visible line" gray, close to
+ * the native thumb but flat and gutterless. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    scrollbar-width: thin;
+    scrollbar-color: var(--input) transparent;
+  }
+}
+
+/* Scrollbar-hiding utility that upstream shadcn defines in its globals.css;
+ * command, combobox, and sidebar reference it. */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* The height a dialog may grow to before its body scrolls, leaving a margin so
+ * the card never touches the viewport edge. v4 has no `--max-height-*` theme
+ * namespace, so this is a utility rather than a token. Registered with
+ * tailwind-merge in sense's `cn`, or call sites can't override it. */
+@utility max-h-dialog {
+  max-height: calc(100dvh - 2rem);
+}
+
+/* Bare `border` (no color utility) defaults to the sense border token,
+ * mirroring the app-wide rule below (which hardcodes the legacy neutral and is
+ * retired with it). Explicit utilities like border-input still win — they live
+ * in the utilities layer. */
+@layer base {
+  *,
+  ::before,
+  ::after,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+}
+
+/* @layer base so Tailwind utilities still win: an element carrying its own
+ * utility (e.g. a portaled tooltip with `text-background`) must keep the
+ * utility — unlayered rules would beat it. */
+@layer base {
+  :root {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Body text re-baselines to the sense foreground token so components
+     * without an explicit text class resolve the sense color globally. */
+    color: var(--foreground);
+  }
+}
+
+/* Semantic type scale from the Figma "Typography" collection. The collection
+ * has Default and Mobile modes; these are mobile-first with the Default
+ * (desktop) values applied from `md` up — breakpoint is our assumption, the
+ * collection doesn't name one. xs/sm/base in the modes match the scale
+ * above; lg/xl/2xl have no Figma equivalent and stay Tailwind defaults for
+ * stock shadcn internals. */
+@theme {
+  /* `label` and `title` are the small serif heading styles (popover /
+   * small-card titles, dialog / sheet / card titles) — NOT sans control
+   * labels, which use the generic scale (text-base etc., tracking 0).
+   * All four serif headings track tight per the Figma Headings/* text
+   * styles (authored in em, so one value covers both breakpoints):
+   * label -0.01em, title/headline -0.015em, display -0.025em. */
+  --text-label: 1rem;
+  --text-label--line-height: 1.125rem;
+  --text-label--letter-spacing: -0.01em;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--letter-spacing: -0.015em;
+  --text-headline: 1.25rem;
+  --text-headline--line-height: 1.75rem;
+  --text-headline--letter-spacing: -0.015em;
+  --text-display: 1.5rem;
+  --text-display--line-height: 2rem;
+  --text-display--letter-spacing: -0.025em;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --text-title: 1.25rem;
+    --text-title--line-height: 1.75rem;
+    --text-headline: 1.875rem;
+    --text-headline--line-height: 2.25rem;
+    --text-display: 3rem;
+    --text-display--line-height: 3.625rem;
+  }
+}
+
+/* One pair of keyframes for both directions: `--count-travel` decides which
+ * way, so a decrement is the increment's mirror rather than its own copy.
+ * Offsets are in em, so the slide tracks the text size it inherits. No
+ * clipping: the travel is small enough to read as a tick without a
+ * fixed-height, overflow-hidden box that could misalign against the line. */
+@utility count-rising {
+  --count-travel: var(--distance-count);
+}
+
+@utility count-falling {
+  --count-travel: calc(var(--distance-count) * -1);
+}
+
+@keyframes count-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--count-travel));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The outgoing half travels the way the incoming one came from, so the pair
+ * reads as one movement rather than two. */
+@keyframes count-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--count-travel) * -1));
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* PhaseStepper active-step ripple (was injected inline per-instance). */
+@keyframes phase-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Semantic theme — values from the Common Sense Figma "Mode/Light" theme
+ * collection, expressed against the Colors Scale ramps above. Dark mode is
+ * unsupported (the Figma dark mode is unpopulated), so no dark block. */
+:root {
+  /* Core surfaces */
+  --background: var(--color-white);
+  --foreground: var(--color-gray-900);
+
+  /* Card / popover */
+  --card: var(--color-white);
+  --card-foreground: var(--color-gray-900);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-gray-900);
+
+  /* Primary. Declared against the Colors Scale directly — it used to resolve
+   * through a pre-sense alias, which made every `bg-primary` / `text-primary`
+   * in @op/sense depend on the retired layer. Same value: teal-500 #387582. */
+  --primary: var(--color-teal-500);
+  --primary-foreground: var(--color-gray-50);
+
+  /* Secondary (neutral). `--secondary` is defined here rather than inherited:
+   * `--color-secondary` upstream resolves through intent-ui-theme.css (the
+   * pre-sense theme), so `bg-secondary` would lose its background when that
+   * file is retired. Same value as the Figma spec's gray-100. */
+  --secondary: var(--color-gray-100);
+  --secondary-foreground: var(--color-gray-900);
+
+  /* Muted */
+  /* Nudged darker than gray-50 so muted surfaces read against white
+   * (design-approved deviation from the ramp). */
+  --muted: #fafbfb;
+  --muted-foreground: var(--color-gray-600);
+
+  /* Accent */
+  --accent: var(--color-teal-50);
+  --accent-foreground: var(--color-teal-600);
+
+  /* Status: destructive / warning / success (+ muted surfaces) */
+  --destructive: var(--color-red-500);
+  --destructive-foreground: var(--color-white);
+  --destructive-muted: var(--color-red-50);
+  --destructive-muted-foreground: var(--color-gray-900);
+  --warning: var(--color-orange-500);
+  --warning-foreground: var(--color-gray-900);
+  --warning-muted: var(--color-orange-50);
+  --warning-muted-foreground: var(--color-gray-900);
+  --success: var(--color-green-500);
+  --success-foreground: var(--color-gray-900);
+  --success-muted: var(--color-green-50);
+  --success-muted-foreground: var(--color-gray-900);
+
+  /* Borders / inputs / focus ring.
+   * shadcn components read these via `var(--border)` etc. directly (not via
+   * the Tailwind `--color-*` layer), so sense needs them declared regardless.
+   * Components apply the focus ring at 50% opacity. */
+  --border: var(--color-gray-100);
+  --input: var(--color-gray-300);
+  --ring: var(--color-gray-400);
+  --ring-offset: var(--color-white);
+
+  /* Modal/drawer scrim. Same value the `bg-black/15` overlays used before —
+   * gray-900, not true black — but named for the job it does. */
+  --overlay: var(--color-gray-900);
+
+  /* Rich-text highlight mark. Off-ramp: #dceff1 sits between teal-50
+   * (#eff7f9) and teal-100 (#d7ebef), so it has no Colors Scale equivalent.
+   * Kept at its original value pending a design decision. */
+  --mark: #dceff1;
+
+  /* `--radius` is the base radius shadcn primitives derive their scale from
+   * (and consume directly, e.g. `rounded-[var(--radius)]`). */
+  --radius: 0.5rem;
+
+  /* Sidebar */
+  --sidebar: var(--color-gray-50);
+  --sidebar-foreground: var(--color-gray-900);
+  --sidebar-primary: var(--color-teal-500);
+  --sidebar-primary-foreground: var(--color-gray-50);
+  --sidebar-accent: var(--color-teal-50);
+  --sidebar-accent-foreground: var(--color-teal-600);
+  --sidebar-border: var(--color-gray-100);
+  --sidebar-ring: var(--color-gray-400);
+
+  /* Chart palette */
+  --chart-1: var(--color-orange-500);
+  --chart-2: var(--color-teal-500);
+  --chart-3: var(--color-blue-500);
+  --chart-4: var(--color-yellow-500);
+  --chart-5: var(--color-purple-500);
+}
+
+/* Tell Tailwind where to scan for classes */
+@source '../sense/src/**/*.{js,ts,jsx,tsx}';
+@source '../sense/.storybook/**/*.{js,ts,jsx,tsx}';
+@source '../../apps/app/src/**/*.{js,ts,jsx,tsx}';
+@source './constants.ts';
+
+@plugin '@tailwindcss/typography';
+
+/* ============================================================================
+ * PRE-SENSE HEADING SCALE — deliberately kept
+ *
+ * The rest of the pre-sense layer is gone. These four survive because
+ * `headingClasses` in ./constants.ts still names them, and that object is not
+ * a normal call site: its class strings are baked into server-rendered HTML by
+ * @op/common's StyledHeading extension, and that HTML is the source text
+ * hashed into `content_translations.contentHash`. Changing these strings
+ * invalidates every cached translation of every decision and proposal body in
+ * every locale — paid re-translation plus orphaned rows — and restyles already
+ * published proposals. Proposals can also be stored as raw HTML, so the class
+ * names live in rows no grep can see.
+ *
+ * Moving `headingClasses` onto the sense scale is its own task, with a design
+ * decision and a call on purging vs letting the cache re-fill. Until then these
+ * stay, and nothing new should reference them.
+ * ========================================================================= */
+@theme {
+  --text-title-lg: 1.75rem;
+  --text-title-lg--line-height: 120%;
+  --text-title-lg--font-weight: 300;
+  --text-title-lg--letter-spacing: -0.02625rem;
+  --text-title-base: 1.25rem;
+  --text-title-base--line-height: 120%;
+  --text-title-base--font-weight: 300;
+  --text-title-base--letter-spacing: -0.01875rem;
+  --text-title-sm14: 0.875rem;
+  --text-title-sm14--line-height: 130%;
+  --text-title-sm14--font-weight: 400;
+  --text-title-sm14--letter-spacing: -0.01313rem;
+  --color-neutral-black: var(--color-gray-900);
+}
+
+/*
+ * Shared Tailwind v4 theme configuration. Animation utilities come from
+ * tw-animate.css (vendored).
+ *
+ * Safelist (composed dynamically, so no @source can see them):
+ * - bg-gradient, bg-tealGreen, bg-redTeal, bg-blueGreen, bg-orangePurple,
+ *   bg-yellowOrange (avatar gradients, built in ./constants.ts)
+ */
+
+/* Default border color - in Tailwind v4, `border` no longer defaults to currentColor */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, currentColor);
+  }
+
+  /*
+   * Tailwind v4 Preflight resets buttons to `cursor: default`. Restore the
+   * v3 behavior so all enabled buttons (incl. raw <button> elements) show a
+   * pointer cursor. See https://tailwindcss.com/docs/upgrade-guide#buttons-use-the-default-cursor
+   */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+  
+  /* Selection color */
+  ::selection {
+    background-color: rgba(from var(--color-primary) r g b / 0.4);
+  }
+}
+
+
+
+/* ============================================
+ * Custom Utilities
+ * ============================================ */
+
+/* Grid columns 15 */
+@utility grid-cols-15 {
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+}
+
+/* Background gradients */
+@utility bg-gradient {
+  background-image: radial-gradient(
+    154% 99.31% at 0% 0%,
+    #7CCC4F 0%,
+    #387582 51.56%
+  );
+}
+
+@utility bg-tealGreen {
+  background-image: radial-gradient(
+    154% 99.31% at 0% 0%,
+    #7CCC4F 0%,
+    var(--color-primary) 51.56%
+  );
+}
+
+@utility bg-redTeal {
+  background-image: radial-gradient(
+    96.92% 140.1% at 72.02% 100%,
+    var(--brand-teal-500) 0%,
+    var(--color-red-500) 92%,
+    #fafbfb 100%
+  );
+}
+
+@utility bg-redPurple {
+  background-image: radial-gradient(
+    70.56% 70.56% at 72.75% 33.21%,
+    var(--color-purple-500) 0%,
+    var(--color-red-500) 100%
+  );
+}
+
+@utility bg-orange {
+  background-image: radial-gradient(
+    96.92% 140.1% at 72.02% 100%,
+    #e35f00 0%,
+    #de8d00 48.44%,
+    #ff9739 99.99%
+  );
+}
+/* background: radial-gradient(96.92% 140.1% at 72.02% 100%, #DB862A 0%, #DB862A 48.44%, #F2B705 99.99%); */
+
+@utility bg-blueGreen {
+  background-image: radial-gradient(
+    91.78% 91.78% at 89.17% 4.38%,
+    var(--brand-green-500) 0%,
+    var(--brand-blue-500) 100%
+  );
+}
+
+@utility bg-orangePurple {
+  background-image: radial-gradient(
+    70.56% 70.56% at 72.75% 33.21%,
+    var(--color-purple-500) 0%,
+    #e35f00 100%
+  );
+}
+
+@utility bg-yellowOrange {
+  background-image: radial-gradient(
+    74.88% 74.88% at 42.58% 76.89%,
+    #DB862A 0%,
+    #F2B705 100%
+  );
+}
+
+@utility bg-coralCoral {
+  background-image: radial-gradient(
+    96.92% 140.1% at 72.02% 100%,
+    #DD2D1E 0%,
+    #DB862A 92.19%,
+    #FAFBFB 99.99%
+  );
+}
+
+/* ============================================
+ * Dark Mode Configuration
+ * Tailwind v4 uses @variant for custom dark mode selectors
+ * Original: darkMode: ['class', 'data-theme']
+ * ============================================ */
+@custom-variant dark (&:where(.dark, [data-theme="dark"] *));
+
+/* ============================================
+ * Base Layer Styles
+ * ============================================ */
+
+@layer base {
+  /* Root element configuration */
+  :root {
+    touch-action: pan-x pan-y;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Prevent horizontal overscroll */
+  html,
+  body {
+    overscroll-behavior-x: none;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  /* Base body styles */
+  body {
+    background-color: var(--color-white);
+    font-family: var(--font-sans);
+    color: var(--color-gray-700);
+  }
+
+  /* Placeholder styles */
+  input::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  /* Hide Google extension bubble */
+  #gdx-bubble-host {
+    display: none !important;
+  }
+
+  /* Hide Video Speed Controller extension */
+  .vsc-controller {
+    display: none !important;
+  }
+
+  /* Default hr styling - Tailwind v4 reset removes borders */
+  hr {
+    border-top-width: 1px;
+  }
+
+  /* Only show focus outlines for keyboard navigation, not mouse clicks */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* ============================================
+ * Additional Custom Utilities
+ * ============================================ */
+
+/* Scrollbar utilities */
+@utility better-scrollbar {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-600) transparent;
+}
+
+@utility scrollable-hidden-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    width: 0;
+  }
+}
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Inset shadow utilities */
+@utility inset-shadow {
+  box-shadow:
+    0px 1px 3px rgba(0, 0, 0, 0.4),
+    0px 0px 4px rgba(0, 0, 0, 0.5),
+    inset 0px 0px 2px rgba(255, 255, 255, 0.3),
+    inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+}
+
+@utility inset-shadow-sm {
+  box-shadow:
+    0px 1px 3px rgba(0, 0, 0, 0.4),
+    0px 0px 4px rgba(0, 0, 0, 0.5),
+    inset 0px 0px 2px rgba(255, 255, 255, 0.3),
+    inset 0px 0px 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Border glow utility */
+@utility border-glow {
+  border: 1px solid
+    color-mix(in srgb, var(--color-gray-400) 50%, transparent);
+  background-clip: padding-box;
+  backdrop-filter: blur(40px) contrast(1.5) saturate(3);
+  box-shadow:
+    0px 1px 3px rgba(0, 0, 0, 0.4),
+    0px 0px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+ * Component-specific styles
+ * ============================================ */
+
+@layer components {
+  /* Grid centered layout */
+  .gridCentered {
+    grid-template-columns: min-content 1fr min-content;
+  }
+
+  /* Menu item grid layout */
+  .op-ui-MenuItem {
+    grid-template-areas: 'label kbd' 'desc kbd';
+  }
+
+  .op-ui-MenuItem [slot='label'] {
+    grid-area: label;
+  }
+
+  .op-ui-MenuItem [slot='description'] {
+    grid-area: desc;
+  }
+
+  .op-ui-MenuItem [slot='kbd'] {
+    grid-area: kbd;
+  }
+
+  /* Tooltip grid layout */
+  .op-ui-Tooltip {
+    grid-template-areas: 'label kbd' 'desc kbd';
+  }
+
+  .op-ui-Tooltip [slot='label'] {
+    grid-area: label;
+  }
+
+  .op-ui-Tooltip [slot='description'] {
+    grid-area: desc;
+  }
+
+  .op-ui-Tooltip [slot='kbd'] {
+    grid-area: kbd;
+    transform: translateY(0.135em);
+  }
+}
+
+/* ============================================
+ * Custom Animation Keyframes
+ * (tw-animate.css provides standard animation utilities)
+ * ============================================ */
+
+@keyframes border-highlight {
+  0%,
+  40% {
+    border-color: var(--color-teal-500);
+  }
+
+  100% {
+    border-color: var(--border);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes sweep {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+}
+
+/* Custom animation utilities */
+@utility animate-border-highlight {
+  animation: border-highlight 5s ease-out forwards;
+}
+
+@utility animate-wiggle {
+  animation: wiggle 1s ease-in-out infinite;
+}
+
+@utility animate-sweep {
+  animation: sweep 2s ease-in-out infinite;
+}
+
+/* ============================================
+ * Tiptap Collaboration Cursor Styles
+ * Renders other users' cursor positions and selections
+ * ============================================ */
+
+@layer components {
+  /* Collaboration cursor caret - border-color set inline by tiptap */
+  .collaboration-carets__caret {
+    @apply pointer-events-none relative -mx-px border-e border-s break-normal;
+  }
+
+  /* Collaboration cursor name label - background-color set inline by tiptap */
+  .collaboration-carets__label {
+    @apply absolute -top-5 -start-px rounded-t rounded-ee px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white select-none;
+  }
+}
+
+/* ============================================
+ * Details / summary (collapsible "FAQ" disclosure)
+ * One source of truth for BOTH render paths:
+ *  - Editor: @tiptap/extension-details' built-in node view renders
+ *    `div.details(.is-open) > button + div > (summary, div[data-type=detailsContent])`,
+ *    toggling `is-open` on the root and `hidden` on the content (collapse is automatic).
+ *  - Viewer: the static renderer emits a native `details.details[open] > summary +
+ *    div[data-type=detailsContent]` (collapsible with zero JS).
+ * The chevron lives on the editor's toggle <button> and the native <summary>::before.
+ * ============================================ */
+@layer components {
+  /* Shared, non-conflicting bits only. No `display` here: the editor sets it on
+   * `div.details`; the native viewer <details> is `block` by default. */
+  .details {
+    --rt-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+  }
+  .details summary {
+    @apply py-2 font-serif text-lg text-foreground tracking-[-0.0125em];
+    list-style: none;
+  }
+  .details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* The chevron glyph — the editor's toggle <button>, the viewer's native
+   * <summary>::before. (`content` is inert on the real <button>.) */
+  div.details > button,
+  details.details > summary::before {
+    @apply size-4 flex-none bg-gray-400 transition-transform;
+    content: '';
+    -webkit-mask: var(--rt-chevron) center / contain no-repeat;
+    mask: var(--rt-chevron) center / contain no-repeat;
+  }
+  div.details.is-open > button,
+  details.details[open] > summary::before {
+    @apply rotate-90;
+  }
+
+  /* Editor (div.details): chevron in a left gutter, content in the column. */
+  div.details {
+    @apply flex items-start gap-2;
+  }
+  /* Highlight the details the caret is in. ProseMirror is one contentEditable
+   * host, so DOM :focus can't target an inner node — the `detailsFocus` plugin
+   * tags it with `is-focused`; gate on `.ProseMirror-focused` so it only paints
+   * while the editor is focused. */
+  div.details.is-focused {
+    @apply bg-border/60 shadow-[12px_0_0_hsla(180,2.9%,93.1%,0.6),-8px_0_0_hsla(180,2.9%,93.1%,0.6)];
+  }
+  div.details > button {
+    @apply mt-3 cursor-pointer border-0 p-0;
+  }
+  div.details > div {
+    @apply min-w-0 flex-1;
+  }
+  /* Drop the first child's top margin inside the body. `!` is required: prose's
+   * paragraph margins live in @layer utilities (later than components), so they
+   * win on layer order over a plain rule here regardless of specificity. */
+  .details [data-type='detailsContent'] > :first-child {
+    @apply mt-2!;
+  }
+
+  /* Viewer (native details.details): the chevron is an inline ::before so the
+   * summary's own inline content (text + <strong>/<em> spans) flows normally.
+   * (A flex summary turns every inline node into a flex item and the gap pushes
+   * the words apart.) Hanging indent: pad the summary `ps-6` and pull the
+   * chevron back into that gutter with `-ms-6`, so wrapped lines align under the
+   * first line's text instead of under the chevron. */
+  details.details > summary {
+    @apply cursor-pointer ps-6 hover:underline;
+  }
+  details.details > summary::before {
+    @apply -ms-6 me-2 inline-block align-middle;
+  }
+  details.details > [data-type='detailsContent'] {
+    @apply ps-6 pb-3;
+  }
+}

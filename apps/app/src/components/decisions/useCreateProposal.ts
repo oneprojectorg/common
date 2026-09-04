@@ -3,8 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { useMount } from '@op/hooks';
+import { toast } from '@op/sense/Toast';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { toast } from '@op/ui/Toast';
 import { useTransition } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -31,7 +31,9 @@ export function useCreateProposal({
   const t = useTranslations();
   const router = useRouter();
   const { user } = useUser();
-  // Gate the CTA until mount so React Aria's onPress handler is bound.
+  // Gate the CTA until mount: creating a proposal is entirely client-side, and
+  // React does not replay a click that lands before hydration, so an enabled
+  // button would be a silent no-op.
   const { mounted } = useMount();
   const [isCreating, startCreating] = useTransition();
   const supabase = createSBBrowserClient();
@@ -64,9 +66,8 @@ export function useCreateProposal({
 
         router.push(navigateTo(proposal));
       } catch (error) {
-        toast.error({
-          title: t('Failed to create proposal'),
-          message: error instanceof Error ? error.message : undefined,
+        toast.error(t('Failed to create proposal'), {
+          description: error instanceof Error ? error.message : undefined,
         });
       }
     });

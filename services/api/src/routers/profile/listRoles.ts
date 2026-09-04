@@ -1,4 +1,4 @@
-import { getRoles } from '@op/common';
+import { Channels, getRoles } from '@op/common';
 import { z } from 'zod';
 
 import { roleEncoder } from '../../encoders/roles';
@@ -15,6 +15,7 @@ const inputSchema = z
   .object({
     profileId: z.string().uuid().optional(),
     zoneName: z.string().optional(),
+    includeMemberCounts: z.boolean().optional(),
   })
   .merge(paginationSchema)
   .merge(roleSortableSchema);
@@ -23,15 +24,23 @@ export const listRolesRouter = router({
   listRoles: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(createPaginatedOutput(roleEncoder))
-    .query(async ({ input }) => {
-      const { profileId, zoneName, cursor, limit, dir } = input;
+    .query(async ({ ctx, input }) => {
+      const { profileId, zoneName, includeMemberCounts, cursor, limit, dir } =
+        input;
 
-      return getRoles({
+      const result = await getRoles({
         profileId,
         zoneName,
+        includeMemberCounts,
         cursor,
         limit,
         dir,
       });
+
+      if (profileId) {
+        ctx.registerQueryChannels([Channels.profileMembers(profileId)]);
+      }
+
+      return result;
     }),
 });

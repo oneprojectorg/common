@@ -5,15 +5,20 @@ import {
   decisionsVoteSubmissions,
   proposals,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { decodeCursor, encodeCursor, getCursorCondition } from '../../utils';
+import type { AccessUser } from '../access';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
@@ -58,6 +63,8 @@ export interface ListProposalsInput {
    * When true, each returned proposal carries a `voteCount` aggregated from
    * vote submissions on `processInstanceId`. Pair with `orderBy: 'votes'` to
    * have the database drive the sort (descending count, createdAt tiebreak).
+   * When used with `votedByProfileId`, counts are only returned after results
+   * are formally published (gate prevents live-tally exposure during voting).
    */
   includeVoteCounts?: boolean;
   /**
@@ -69,33 +76,17 @@ export interface ListProposalsInput {
   includeDocumentContent?: boolean;
 }
 
-/**
- * Column picks for the `submittedBy`/`profile` relations on list rows. Covers
- * the fields the widest consumer needs — the legacy results encoder
- * (`baseProfileEncoder`, via `getInstanceResults`) requires the full profile
- * shape, while the non-legacy `proposalSchema` encoder narrows further on the
- * wire. Keeps only the generated `search` tsvector and other never-encoded
- * columns out of the lateral joins.
- */
-export const proposalProfileColumns = {
-  id: true,
-  type: true,
-  slug: true,
-  name: true,
-  city: true,
-  state: true,
-  bio: true,
-  mission: true,
-  email: true,
-  website: true,
-} satisfies Record<string, true>;
-
 export const listProposals = async ({
   input,
   user,
 }: {
   input: ListProposalsInput;
-  user: User | undefined;
+  // Only the auth-user id is ever read from the caller (see
+  // `resolveProposalListScope`), so this takes the narrow `AccessUser` rather
+  // than a full Supabase `User`. Trusted server-side callers — the proposals
+  // export workflow — hold an auth id but no session object, and widening here
+  // lets them pass it without fabricating a `User`.
+  user: AccessUser | undefined;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
@@ -150,6 +141,26 @@ export const listProposals = async ({
 
   const { includeVoteCounts = false } = input;
 
+  // Voter-filtered queries (votedByProfileId) always return a voteCount field,
+  // but the count is gated on a successful results record so live tallies are
+  // never exposed during voting: null until results are published, after which
+  // 0 always means zero recorded votes.
+  let resultsPublished = false;
+  if (input.votedByProfileId) {
+    const publishedResult = await db.query.decisionProcessResults.findFirst({
+      where: {
+        processInstanceId,
+        success: true,
+      },
+      columns: { id: true },
+    });
+    resultsPublished = !!publishedResult;
+  }
+
+  const effectiveIncludeVoteCounts = input.votedByProfileId
+    ? resultsPublished
+    : includeVoteCounts;
+
   // Vote-count correlated subquery factory. Called by both the `extras`
   // callback and the `orderBy` callback so each receives the v2-aliased
   // `table` and embeds the correct outer-column reference.
@@ -184,21 +195,12 @@ export const listProposals = async ({
           )!,
       },
       with: {
-        submittedBy: {
-          columns: proposalProfileColumns,
-          with: {
-            avatarImage: true,
-            profileUsers: {
-              columns: {},
-              with: { authUser: { columns: { isAnonymous: true } } },
-            },
-          },
-        },
+        submittedBy: proposalAuthorRelation,
         profile: { columns: proposalProfileColumns },
       },
       // Fetch one extra to detect whether a next page exists.
       limit: limit + 1,
-      ...(includeVoteCounts && {
+      ...(effectiveIncludeVoteCounts && {
         extras: {
           voteCount: (table, { sql: sqlOp }) =>
             sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
@@ -291,15 +293,7 @@ export const listProposals = async ({
     const submittedBy = rawSubmittedBy
       ? (() => {
           const { profileUsers, ...author } = rawSubmittedBy;
-          return {
-            ...author,
-            isAnonymous: Boolean(
-              profileUsers?.some(
-                (pu: { authUser: { isAnonymous: boolean } | null }) =>
-                  pu.authUser?.isAnonymous,
-              ),
-            ),
-          };
+          return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
         })()
       : rawSubmittedBy;
     const profile = Array.isArray(proposal.profile)
@@ -318,16 +312,23 @@ export const listProposals = async ({
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
     const documentContent = documentContentMap.get(proposal.id);
+    const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent,
       proposalTemplate,
+      existingBudget: parsedProposalData.budget,
     });
+
+    // `voteCount` only rides along as an extra when the count was requested.
+    const voteCount = effectiveIncludeVoteCounts
+      ? Number('voteCount' in proposal ? (proposal.voteCount ?? 0) : 0)
+      : null;
 
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
       proposalData: {
-        ...parseProposalData(proposal.proposalData),
+        ...parsedProposalData,
         ...systemFieldOverrides,
       },
       status: proposal.status,
@@ -350,12 +351,12 @@ export const listProposals = async ({
         ? documentContent
         : undefined,
       proposalTemplate,
-      ...(includeVoteCounts && {
-        voteCount: Number(
-          (proposal as ProposalListItem & { voteCount?: number | string })
-            .voteCount ?? 0,
-        ),
-      }),
+      // Ballot reads always carry the field: `null` until results are
+      // published (so no live tally leaks), a real count afterwards — where
+      // `0` unambiguously means zero recorded votes.
+      ...(input.votedByProfileId
+        ? { voteCount }
+        : effectiveIncludeVoteCounts && { voteCount }),
     };
   });
 

@@ -1,6 +1,6 @@
 import { OPURLConfig, getTextPreview } from '@op/core';
 import { logger } from '@op/logging';
-import { getAvatarColorForString } from '@op/ui/utils';
+import { getAvatarColorForString } from '@op/styles/constants';
 import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 
@@ -15,7 +15,7 @@ export const alt = 'A decision on One Project';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-// Brand palette (mirrors --op-primary-{600,700}); ImageResponse can't read
+// Brand palette (mirrors the teal ramp); ImageResponse can't read
 // Tailwind tokens, so the hex values live here.
 const TEAL = '#387582';
 const TEAL_DARK = '#32606C';
@@ -24,7 +24,7 @@ const TEAL_GRADIENT = `linear-gradient(135deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`;
 // satori can't read Tailwind tokens or var(), so the four avatar gradients
 // (getAvatarColorForString) are inlined here as resolved hex. Values mirror the
 // bg-gradient / bg-redTeal / bg-blueGreen / bg-orangePurple @utility blocks in
-// shared-styles.css, keyed by the class name the shared helper returns, giving
+// theme.css, keyed by the class name the shared helper returns, giving
 // each decision a stable brand-palette background. Typing the table by the
 // helper's return union makes a new avatar gradient a compile error here, not a
 // silent miss.

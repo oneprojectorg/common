@@ -38,7 +38,8 @@ export interface SubmitUserFlagInput {
  * User-initiated report. Verifies the reporter can read the item (flagging
  * ships its content to the external provider), records a `pending` flag and,
  * when a provider + webhook secret are configured, submits the item (text +
- * media) for an async verdict. Idempotent on an item's open flag.
+ * media) for an async verdict and files the report that puts it in the
+ * provider's human-review queue. Idempotent on an item's open flag.
  */
 export const submitUserFlag = async (
   input: SubmitUserFlagInput,
@@ -69,6 +70,16 @@ export const submitUserFlag = async (
 
   const provider = getModerationProvider();
   const callbackUrl = getModerationCallbackUrl();
+  // One gate for both calls so they can't drift: a report can only attach to
+  // content we ingested, and a case whose decision webhook we can't receive
+  // can't be enforced. Without both, the flag stays local.
+  const asyncReview =
+    provider?.submitForReview && provider.planReviewRefs && callbackUrl
+      ? {
+          submitForReview: provider.submitForReview,
+          reportForReview: provider.reportForReview,
+        }
+      : undefined;
   // Fresh round per report: encoded into the provider refs, so only this
   // round's verdicts can land on the rows recorded below.
   const roundId = crypto.randomUUID();
@@ -91,13 +102,8 @@ export const submitUserFlag = async (
     {
       findOpenFlag: findOpenModerationFlag,
       createPendingFlag,
-      // Submit only when a provider with the full async surface and a callback
-      // URL are configured; otherwise the flag stays pending for manual/admin
-      // handling.
-      submitForReview:
-        provider?.submitForReview && provider.planReviewRefs && callbackUrl
-          ? provider.submitForReview
-          : undefined,
+      submitForReview: asyncReview?.submitForReview,
+      reportForReview: asyncReview?.reportForReview,
       planRefs: provider?.planReviewRefs,
       recordRound: (itemType, itemId, round, refs) =>
         recordSubmissionRound(

@@ -1,17 +1,16 @@
 'use client';
 
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { trpc } from '@op/api/client';
-import type { DecisionAccess, ProposalStatus } from '@op/api/encoders';
+import type { ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { useCallback, useMemo, useState } from 'react';
+import { cn } from '@op/sense/lib/utils';
+import { type ReactNode, memo, useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { ProposalMapHovercard } from './ProposalMapHovercard';
-import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
 
@@ -20,6 +19,7 @@ import { useMapStyleUrl } from './location/mapConfig';
 interface ProposalLocationFilter {
   processInstanceId: string;
   categoryId?: string;
+  search?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
   status?: ProposalStatus;
@@ -27,19 +27,25 @@ interface ProposalLocationFilter {
   phase?: 'results';
 }
 
+/** Renders one proposal in the desktop list column. The view owns the active
+ * highlight, so it hands the card the `className` carrying that policy. */
+type RenderProposalCard = (
+  proposal: Proposal,
+  opts: { className: string },
+) => ReactNode;
+
 interface ProposalsMapViewProps {
   /** Loaded list pages — drives the desktop list column (stays paginated). */
   proposals: Proposal[];
   /** Marker source. Every located proposal the pins should plot, which can be
    * a wider set than `proposals` (the loaded list pages). */
   pinProposals: Proposal[];
-  instanceId: string;
-  slug: string;
-  /** Decision profile slug for building proposal links. */
-  decisionSlug?: string;
-  /** Role-based capabilities for the current user — drives the admin
-   * proposal menu on each list-column card (same logic as the grid view). */
-  permissions?: DecisionAccess | null;
+  /** The list column's card. MUST be `useCallback`'d by the call site — the
+   * memoized rows compare on it, and a fresh function re-renders every row. */
+  renderCard: RenderProposalCard;
+  /** Where a proposal leads. Feeds both pin-click navigation and the
+   * hovercard, so the two can't disagree. */
+  hrefFor: (proposal: Proposal) => string;
   /** Fallback camera — the process's default view, used only when no proposal
    * has a location to fit. */
   mapView: MapDefaultView;
@@ -47,12 +53,20 @@ interface ProposalsMapViewProps {
    * sentinel inside the list column so loading more never adds space below
    * the sticky map. Mobile (map only, no list) never renders it. */
   listFooter?: React.ReactNode;
+  /**
+   * Takes the list column's place when a filter matched nothing. The map stays
+   * — it's the other half of the answer, and its pins are gone too.
+   */
+  emptyState?: React.ReactNode;
 }
 
 /**
- * Map browse view for a process's proposals. Desktop = list + sticky map
- * with hover-driven active state; mobile = map only, first tap shows the
- * preview and a second tap navigates.
+ * Map view for a set of proposals. Desktop = list + sticky map with
+ * hover-driven active state; mobile = map only, first tap shows the preview
+ * and a second tap navigates.
+ *
+ * The list column is pluggable (`renderCard`) so surfaces with their own card
+ * — browse, the review queue — share this machinery instead of copying it.
  *
  * Map fits all proposal markers (with a buffer) and falls back to the
  * process's default view (`x-map-default`) when no proposal has a location.
@@ -61,28 +75,18 @@ interface ProposalsMapViewProps {
 export function ProposalsMapView({
   proposals,
   pinProposals,
-  instanceId,
-  slug,
-  decisionSlug,
-  permissions,
+  renderCard,
+  hrefFor,
   mapView,
   listFooter,
+  emptyState,
 }: ProposalsMapViewProps) {
-  const canManageProposals = permissions?.admin ?? false;
   const t = useTranslations();
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
+  const isMobile = useIsMobile();
 
   const [activeId, setActiveId] = useState<string | null>(null);
-
-  const hrefFor = useCallback(
-    (proposal: Proposal) =>
-      decisionSlug
-        ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-        : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`,
-    [decisionSlug, slug, instanceId],
-  );
 
   // One marker per proposal with coordinates (drafts may lack one).
   const points = useMemo(
@@ -128,6 +132,16 @@ export function ProposalsMapView({
 
   // Mobile: tapping the map background dismisses the open preview.
   const handleMapClick = useCallback(() => {
+    setActiveId(null);
+  }, []);
+
+  // Stable so the memoized rows survive an `activeId` change: a hover then
+  // re-renders the two rows whose `isActive` flipped, not the whole column.
+  const handleRowEnter = useCallback((id: string) => {
+    setActiveId(id);
+  }, []);
+
+  const handleRowLeave = useCallback(() => {
     setActiveId(null);
   }, []);
 
@@ -179,29 +193,34 @@ export function ProposalsMapView({
   // margin break out of the page container's horizontal padding.
   if (isMobile) {
     return (
-      <div className="-mb-4 ml-[calc(50%_-_50vw)] h-[calc(100dvh_-_3.5rem)] w-screen overflow-hidden">
+      <div className="ms-[calc(50%_-_50vw)] -mb-4 h-[calc(100dvh_-_3.5rem)] w-screen overflow-hidden">
         {map}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-      <ul className="flex min-w-0 flex-col gap-6">
-        {proposals.map((proposal) => (
-          <ProposalMapListItem
-            key={proposal.id}
-            proposal={proposal}
-            href={hrefFor(proposal)}
-            isActive={activeId === proposal.id}
-            canManage={canManageProposals || Boolean(proposal.isEditable)}
-            onActivate={() => setActiveId(proposal.id)}
-            onDeactivate={() => setActiveId(null)}
-          />
-        ))}
-        {listFooter && <li>{listFooter}</li>}
-      </ul>
-      <aside className="sticky top-20 hidden h-[calc(100dvh_-_10rem)] overflow-hidden rounded-lg border border-neutral-gray1 sm:block">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(320px,720px)_minmax(60%,1fr)]">
+      {emptyState && proposals.length === 0 ? (
+        // `items-start` so the state sits at the top of the column rather than
+        // centring itself against the full height of the map beside it.
+        <div className="flex min-w-0 items-start">{emptyState}</div>
+      ) : (
+        <ul className="flex min-w-0 flex-col gap-6">
+          {proposals.map((proposal) => (
+            <MapListRow
+              key={proposal.id}
+              proposal={proposal}
+              isActive={activeId === proposal.id}
+              onEnter={handleRowEnter}
+              onLeave={handleRowLeave}
+              renderCard={renderCard}
+            />
+          ))}
+          {listFooter && <li>{listFooter}</li>}
+        </ul>
+      )}
+      <aside className="sticky top-20 hidden h-[calc(100dvh_-_10rem)] overflow-hidden rounded-lg border border-border sm:block">
         {map}
       </aside>
     </div>
@@ -231,3 +250,42 @@ export function ProposalsMapWithLocations({
 
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
+
+interface MapListRowProps {
+  proposal: Proposal;
+  /** The map is pointing at this row — either a pin hover or its own. */
+  isActive: boolean;
+  onEnter: (id: string) => void;
+  onLeave: () => void;
+  renderCard: RenderProposalCard;
+}
+
+/**
+ * One row of the desktop list column. Memoized because `activeId` lives in
+ * `ProposalsMapView`: without this, hovering one pin re-renders every card in
+ * the column. Holds the active-highlight class policy so a call site's
+ * `renderCard` only has to spread the `className` it is handed.
+ */
+const MapListRow = memo(function MapListRow({
+  proposal,
+  isActive,
+  onEnter,
+  onLeave,
+  renderCard,
+}: MapListRowProps) {
+  return (
+    <li onMouseEnter={() => onEnter(proposal.id)} onMouseLeave={onLeave}>
+      {renderCard(proposal, {
+        className: cn(
+          // `min-w-0` so a long title can't widen the list column.
+          'min-w-0 transition-colors',
+          // Hovering a row highlights its pin, so `activeId` is set from
+          // either end. `not-[:hover]` is what keeps the two apart: the
+          // tint means "the map is pointing at this", and the pointer
+          // doesn't repaint the row it's already on.
+          isActive && 'border-input not-[:hover]:bg-muted',
+        ),
+      })}
+    </li>
+  );
+});

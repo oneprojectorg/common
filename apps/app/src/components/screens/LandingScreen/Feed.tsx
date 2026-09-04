@@ -62,7 +62,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -82,7 +82,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
             organization={postToOrg.organization ?? null}
             user={user}
             withLinks={true}
-            onReactionClick={handleReactionClick}
+            onLikeClick={handleLikeClick}
             onCommentClick={handleCommentClick}
           />
           <hr />
@@ -96,7 +96,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
       )}
 
       {allPosts.length > 0 && !shouldShowTrigger && (
-        <p className="w-full p-4 text-center text-sm text-neutral-gray3">
+        <p className="w-full p-4 text-center text-sm text-muted-foreground">
           {t('No more updates.')}
         </p>
       )}

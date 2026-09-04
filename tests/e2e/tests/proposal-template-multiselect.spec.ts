@@ -79,16 +79,16 @@ test.describe('Proposal template — multi-select category', () => {
     await expect(page.getByText('Health', { exact: true })).toBeVisible();
     await saved;
 
-    // 4. Enable "Allow multiple categories" (the toggle is unlabeled, so scope
-    //    by the row that contains the label text).
-    const multiRow = page.locator('div.flex.items-center.justify-between', {
-      has: page.getByText('Allow multiple categories', { exact: true }),
+    // 4. Enable "Allow multiple categories" (ToggleRow labels the switch, so
+    //    target it by role + accessible name).
+    const multiToggle = page.getByRole('switch', {
+      name: 'Allow multiple categories',
     });
-    const multiToggle = multiRow.getByRole('button');
     const multiSaved = waitForAutoSave(page, 'allowMultipleCategories');
     await multiToggle.click();
     await multiSaved;
-    await expect(multiToggle).toHaveAttribute('aria-pressed', 'true');
+    // sense Switch exposes role="switch" + aria-checked (not aria-pressed).
+    await expect(multiToggle).toBeChecked();
 
     // 5. Open the Proposal Template editor and make one edit so the normalized
     //    template (now carrying the multi-select category) is persisted — the
@@ -100,24 +100,30 @@ test.describe('Proposal template — multi-select category', () => {
 
     const addFieldButton = page.getByRole('button', { name: 'Add field' });
     await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
-    await addFieldButton.click();
+    // "Add field" adds a short-text field directly (no type menu).
     const fieldSaved = waitForAutoSave(page);
-    await page.getByRole('menuitem', { name: 'Short text' }).click();
+    await addFieldButton.click();
     await fieldSaved;
 
     // 6. Positive control: Process Settings was left blank (no name/description
     //    entered), so its section MUST show the incomplete dot. This proves the
     //    selector matches real indicators, so the assertion below is meaningful
     //    rather than a never-matching selector.
+    // Sidebar nav item is labeled "General Information" (page heading is still
+    // "Process Settings"). Left blank, so its section shows the incomplete dot.
     const settingsNav = sidebarNav.getByRole('button', {
-      name: 'Process Settings',
+      name: 'General Information',
     });
-    await expect(settingsNav.locator('span.bg-primary-teal')).toHaveCount(1);
+    await expect(settingsNav.getByTestId('section-incomplete-dot')).toHaveCount(
+      1,
+    );
 
     // 7. The Proposal Template section must NOT show the incomplete dot.
     const templateNav = sidebarNav.getByRole('button', {
       name: 'Proposal Template',
     });
-    await expect(templateNav.locator('span.bg-primary-teal')).toHaveCount(0);
+    await expect(templateNav.getByTestId('section-incomplete-dot')).toHaveCount(
+      0,
+    );
   });
 });

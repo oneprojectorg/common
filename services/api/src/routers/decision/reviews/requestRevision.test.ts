@@ -60,6 +60,38 @@ describe.concurrent('requestRevision', () => {
     );
   });
 
+  it('rejects a revision request once the instance advances past the assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Phase Moved On',
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.requestRevision({
+        assignmentId: created.assignment.id,
+        requestComment: 'Too late for revisions',
+      }),
+    ).rejects.toThrow('the review phase has ended');
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.IN_PROGRESS);
+  });
+
   it('rejects when a revision is already pending', async ({
     task,
     onTestFinished,

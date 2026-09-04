@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/sense/Button';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,9 +21,7 @@ export const ForbiddenScreen = () => {
         </p>
       }
       actions={
-        <Button color="primary" onPress={() => window.history.back()}>
-          {t('Go back')}
-        </Button>
+        <Button onClick={() => window.history.back()}>{t('Go back')}</Button>
       }
     />
   );

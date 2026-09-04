@@ -40,6 +40,7 @@
   "globalEnv": [
     "🔑 ------ PRIVATE VARS ------ 🔑",
     "RESEND_PASSWORD",
+    "EMAIL_SMTP_URL",
     "SUPABASE_SERVICE_ROLE",
     "DATABASE_URL",
     "IFRAMELY_KEY",
@@ -75,6 +76,7 @@
     "DB_MIGRATING",
     "DB_SEEDING",
     "E2E",
+    "INNGEST_DEV",
     "REDIS_URL",
     "TIPTAP_SECRET",
     "NEXT_PUBLIC_TIPTAP_APP_ID"

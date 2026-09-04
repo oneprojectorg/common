@@ -12,7 +12,10 @@ import { waitUntil } from '@vercel/functions';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  assertReviewAssignmentPhaseIsCurrent,
+} from './reviewHelpers';
 
 /** Creates a revision request and pauses the assignment until the author revises. */
 export async function requestRevision({
@@ -42,6 +45,12 @@ export async function requestRevision({
         'Cannot request a revision for a completed assignment',
       );
   }
+
+  // A past-phase request would open a revision cycle nobody may complete.
+  assertReviewAssignmentPhaseIsCurrent(
+    context.instance,
+    context.assignment.phaseId,
+  );
 
   const request = await db.transaction(async (tx) => {
     const [revisionRequest] = await tx

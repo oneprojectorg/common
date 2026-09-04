@@ -4,13 +4,13 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
-import { Button } from '@op/ui/Button';
-import { Header2, Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, TabPanel } from '@op/ui/Tabs';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { Header2, Header3 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
+import { TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { Fragment, ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
@@ -50,11 +50,15 @@ const FocusAreas = ({
   const t = useTranslations();
 
   return (
-    <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3 className="font-sans">{t('Focus Areas')}</Header3>
+    <section className="flex flex-col gap-2">
+      <Header3 className="font-sans text-base font-strong">
+        {t('Focus Areas')}
+      </Header3>
       <TagGroup>
         {focusAreas.map((term) => (
-          <Tag key={term.label}>{term.label}</Tag>
+          <Tag key={term.label} variant="secondary">
+            {term.label}
+          </Tag>
         ))}
       </TagGroup>
     </section>
@@ -96,11 +100,15 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
   if (!communitiesServed?.length) return null;
 
   return (
-    <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3 className="font-sans">{t('Communities We Serve')}</Header3>
+    <section className="flex flex-col gap-2">
+      <Header3 className="font-sans text-base font-strong">
+        {t('Communities We Serve')}
+      </Header3>
       <TagGroup>
         {communitiesServed.map((term) => (
-          <Tag key={term.label}>{term.label}</Tag>
+          <Tag key={term.label} variant="secondary">
+            {term.label}
+          </Tag>
         ))}
       </TagGroup>
     </section>
@@ -121,15 +129,15 @@ const ProfileAbout = ({
   return (
     <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
       {orgType ? (
-        <Header2 className="font-serif text-title-sm leading-normal">
-          {t('About')}
-        </Header2>
+        <Header2 className="text-label leading-normal">{t('About')}</Header2>
       ) : null}
-      <div className="flex flex-col gap-4 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
+      <div className="flex flex-col gap-10 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
-            <Header3 className="font-sans">{t('Contact')}</Header3>
-            <div className="flex flex-col text-teal">
+            <Header3 className="font-sans text-base font-strong">
+              {t('Contact')}
+            </Header3>
+            <div className="flex flex-col gap-2 text-primary">
               {website ? (
                 <ContactLink>
                   <LuGlobe />
@@ -146,16 +154,16 @@ const ProfileAbout = ({
                 <ContactLink
                   button={
                     <Button
-                      color="secondary"
-                      size="small"
-                      onPress={() => {
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
                         navigator.clipboard.writeText(email);
-                        toast.success({
-                          message: t(
+                        toast.success(
+                          t(
                             'This email address has been copied to your clipboard.',
                           ),
-                          dismissable: false,
-                        });
+                          { dismissible: false },
+                        );
                       }}
                     >
                       <LuCopy /> {t('Copy')}
@@ -176,30 +184,36 @@ const ProfileAbout = ({
         ) : null}
 
         {orgType ? (
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3 className="font-sans">
+          <section className="flex flex-col gap-2">
+            <Header3 className="font-sans text-base font-strong">
               {t('Organizational Status')}
             </Header3>
             <TagGroup>
-              <Tag className="capitalize">{orgType}</Tag>
+              <Tag className="capitalize" variant="secondary">
+                {orgType}
+              </Tag>
             </TagGroup>
           </section>
         ) : null}
 
         {mission ? (
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3 className="font-sans">{t('Mission Statement')}</Header3>
+          <section className="flex flex-col gap-2">
+            <Header3 className="font-sans text-base font-strong">
+              {t('Mission Statement')}
+            </Header3>
             <p>{mission}</p>
           </section>
         ) : null}
 
         {strategies?.length > 0 ? (
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3 className="font-sans">{t('Strategies')}</Header3>
+          <section className="flex flex-col gap-2">
+            <Header3 className="font-sans text-base font-strong">
+              {t('Strategies')}
+            </Header3>
             <TagGroup>
               {strategies.map((strategy) =>
                 strategy ? (
-                  <Tag key={strategy.id}>
+                  <Tag key={strategy.id} variant="secondary">
                     {/* @ts-ignore - odd TS bug that only shows in CI */}
                     {strategy.label}
                   </Tag>
@@ -212,8 +226,10 @@ const ProfileAbout = ({
         <ErrorBoundary fallback={null}>
           <Suspense
             fallback={
-              <section className="flex flex-col gap-2 text-neutral-charcoal">
-                <Header3 className="font-sans">{t('Focus Areas')}</Header3>
+              <section className="flex flex-col gap-2">
+                <Header3 className="font-sans text-base font-strong">
+                  {t('Focus Areas')}
+                </Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-16" />
                   <Skeleton className="h-6 w-20" />
@@ -233,8 +249,8 @@ const ProfileAbout = ({
         <ErrorBoundary fallback={null}>
           <Suspense
             fallback={
-              <section className="flex flex-col gap-2 text-neutral-charcoal">
-                <Header3 className="font-sans">
+              <section className="flex flex-col gap-2">
+                <Header3 className="font-sans text-base font-strong">
                   {t('Communities We Serve')}
                 </Header3>
                 <div className="flex flex-wrap gap-2">
@@ -267,17 +283,17 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-2 px-4 pt-0 pb-2 sm:gap-0 sm:border-b sm:p-0 sm:pt-4">
-      <Header2 className="px-6 font-serif text-title-sm leading-normal">
+    <div className="flex flex-col gap-2 py-6 pb-2 sm:gap-0 sm:border-b sm:pt-4">
+      <Header2 className="text-label leading-normal sm:px-6">
         {t('Decisions')}
       </Header2>
       {data.items.map((item, index) => (
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
-            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 hover:sm:bg-primary-tealWhite"
+            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:p-6 hover:sm:bg-accent"
           />
-          {index < data.items.length - 1 && <hr />}
+          {index < data.items.length - 1 && <hr className="hidden sm:block" />}
         </Fragment>
       ))}
     </div>
@@ -311,13 +327,13 @@ export const OrganizationProfileGrid = ({
 
   return (
     <ProfileGridWrapper>
-      <div className="col-span-9 flex flex-col gap-8">
+      <div className="col-span-9 flex flex-col">
         {isOrg ? (
           <Suspense fallback={null}>
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="border-b px-4 pt-6 pb-8"
+              className="rounded-none border-x-0 border-t-0 border-b px-4 pt-6 pb-8"
             />
           </Suspense>
         ) : (
@@ -342,7 +358,9 @@ export const OrganizationProfileGrid = ({
 };
 
 export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
-  <TabList className="shrink-0 px-4 sm:px-6">{children}</TabList>
+  <TabsList variant="line" className="shrink-0 px-4 sm:px-6">
+    {children}
+  </TabsList>
 );
 
 export const ProfileTabs = ({
@@ -417,33 +435,39 @@ export const ProfileTabsMobile = ({
       defaultTab={defaultTab}
       validTabs={validTabs}
     >
-      <TabList className="overflow-x-auto px-4">
-        {!isIndividual && <Tab id="home">{t('Home')}</Tab>}
-        {!isIndividual ? (
-          <>
-            <Tab id="updates">{t('Updates')}</Tab>
-            <FollowersTab />
-            <MembersTab profileId={profile.profile.id} />
-            <DecisionsTab profileId={profile.profile.id} />
-          </>
-        ) : (
-          <>
-            <Tab id="about">{t('About')}</Tab>
-            <Tab id="organizations">{t('Organizations')}</Tab>
-            <Tab id="following">{t('Following')}</Tab>
-          </>
-        )}
-      </TabList>
+      <div className="scrollbar-none w-full overflow-x-auto border-b px-4">
+        <TabsList variant="line">
+          {!isIndividual && <TabsTrigger value="home">{t('Home')}</TabsTrigger>}
+          {!isIndividual ? (
+            <>
+              <TabsTrigger value="updates">{t('Updates')}</TabsTrigger>
+              <FollowersTab />
+              <MembersTab profileId={profile.profile.id} />
+              <DecisionsTab profileId={profile.profile.id} />
+            </>
+          ) : (
+            <>
+              <TabsTrigger value="about">{t('About')}</TabsTrigger>
+              <TabsTrigger value="organizations">
+                {t('Organizations')}
+              </TabsTrigger>
+              <TabsTrigger value="following">{t('Following')}</TabsTrigger>
+            </>
+          )}
+        </TabsList>
+      </div>
       {!isIndividual && (
         <>
-          <TabPanel id="home" className="px-0">
+          <TabsContent value="home" className="flex flex-col gap-6 px-4">
             <Suspense fallback={null}>
               <ProfileDecisions profileId={profile.profile.id} />
             </Suspense>
-            <ProfileAbout profile={profile} className="px-4 py-2" />
+            <hr />
+            <ProfileAbout profile={profile} />
+            <hr />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-              <div>
-                <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
+              <div className="-mx-4">
+                <Header2 className="px-4 py-2 text-label leading-normal">
                   {t('Posts')}
                 </Header2>
                 <ProfileFeedProvider profile={profile}>
@@ -451,37 +475,37 @@ export const ProfileTabsMobile = ({
                 </ProfileFeedProvider>
               </div>
             </Suspense>
-          </TabPanel>
-          <TabPanel id="updates">
+          </TabsContent>
+          <TabsContent value="updates">
             <Suspense fallback={<Skeleton className="w-full" />}>
               <PostUpdate
                 organization={profile}
                 label={t('Post')}
-                className="border-b px-4 pt-2 pb-6"
+                className="rounded-none border-x-0 border-t-0 border-b px-4 pt-2 pb-6"
               />
             </Suspense>
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <ProfileFeedProvider profile={profile}>
                 {(props) => (
-                  <ProfileFeedList {...props} className="p-4 sm:py-6" />
+                  <ProfileFeedList {...props} className="sm:p-4 sm:py-6" />
                 )}
               </ProfileFeedProvider>
             </Suspense>
-          </TabPanel>
+          </TabsContent>
         </>
       )}
 
       {isIndividual && (
         <>
-          <TabPanel id="about">
+          <TabsContent value="about">
             <ProfileAbout profile={profile} className="px-4 py-2" />
-          </TabPanel>
-          <TabPanel id="organizations" className="px-4 py-2">
+          </TabsContent>
+          <TabsContent value="organizations" className="px-4 py-2">
             <div className="flex flex-col gap-4">{children}</div>
-          </TabPanel>
-          <TabPanel id="following" className="px-4 py-2">
+          </TabsContent>
+          <TabsContent value="following" className="px-4 py-2">
             {followingContent}
-          </TabPanel>
+          </TabsContent>
         </>
       )}
       {!isIndividual && (

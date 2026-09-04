@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/sense/Skeleton';
 import dynamic from 'next/dynamic';
 
 /**

@@ -3,13 +3,15 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/sense/Button';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { Suspense, useTransition } from 'react';
 import { LuCheck, LuPlus } from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+
+import { relationshipActiveButtonClass } from './relationshipButton';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
   const { user } = useRequiredUser();
@@ -40,9 +42,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             relationshipType: ProfileRelationshipType.FOLLOWING,
           });
 
-          toast.success({
-            message: `Unfollowed ${profile.profile.name}`,
-          });
+          toast.success(`Unfollowed ${profile.profile.name}`);
         } else {
           await addRelationship.mutateAsync({
             targetProfileId: profile.profile.id,
@@ -50,9 +50,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             pending: false,
           });
 
-          toast.success({
-            message: `Now following ${profile.profile.name}`,
-          });
+          toast.success(`Now following ${profile.profile.name}`);
         }
 
         // Invalidate all relationship-related queries
@@ -72,23 +70,22 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
           utils.profile.getRelationships.invalidate(),
         ]);
       } catch (error) {
-        toast.error({
-          message: isFollowing ? 'Failed to unfollow' : 'Failed to follow',
-        });
+        toast.error(isFollowing ? 'Failed to unfollow' : 'Failed to follow');
       }
     });
   };
 
   return (
     <Button
-      onPress={handleFollowToggle}
-      isPending={isPending}
-      color={isFollowing ? 'verified' : 'primary'}
-      className="min-w-full sm:min-w-fit"
+      onClick={handleFollowToggle}
+      loading={isPending}
+      variant={isFollowing ? 'outline' : 'default'}
+      className={cn(
+        'min-w-full sm:min-w-fit',
+        isFollowing && relationshipActiveButtonClass,
+      )}
     >
-      {isPending ? (
-        <LoadingSpinner />
-      ) : isFollowing ? (
+      {isFollowing ? (
         <>
           <LuCheck className="size-4" />
           Following
@@ -106,13 +103,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
 export const FollowButton = ({ profile }: { profile: Organization }) => {
   return (
     <ErrorBoundary>
-      <Suspense
-        fallback={
-          <Button isDisabled={true}>
-            <LoadingSpinner />
-          </Button>
-        }
-      >
+      <Suspense fallback={<Button disabled loading />}>
         <FollowButtonSuspense profile={profile} />
       </Suspense>
     </ErrorBoundary>

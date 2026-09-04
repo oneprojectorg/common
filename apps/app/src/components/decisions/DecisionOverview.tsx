@@ -1,24 +1,30 @@
 'use client';
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { Avatar } from '@op/ui/Avatar';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { GradientHeader, Header1, Header3 } from '@op/ui/Header';
-import { Link } from '@op/ui/Link';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { cn } from '@op/ui/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { GradientHeader, Header1, Header3 } from '@op/sense/Header';
+import { Spinner } from '@op/sense/Spinner';
+import { cn } from '@op/sense/lib/utils';
 import he from 'he';
-import Image from 'next/image';
 import { Suspense, type ReactNode, useMemo } from 'react';
 import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { Link } from '@/lib/i18n/routing';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import { DecisionHeroBackgroundImage } from './DecisionHeroBanner';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
@@ -31,6 +37,10 @@ import {
 } from './OverviewPinnedResources';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslateBanner } from './TranslateBanner';
+import {
+  useDecisionNeedsTranslation,
+  useRegisterTranslationSamples,
+} from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
 import { getOverviewDetectionText } from './translationDetectionText';
 import { useCreateProposal } from './useCreateProposal';
@@ -90,14 +100,19 @@ export function DecisionOverview({
     <APIErrorBoundary
       fallbacks={{
         default: () => (
-          <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-            <Header3 className="font-serif font-light">
-              {t("Couldn't load the overview")}
-            </Header3>
-            <p className="text-base text-neutral-charcoal">
-              {t('Refresh the page to try again.')}
-            </p>
-          </EmptyState>
+          <Empty className="border-0">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuTriangleAlert className="size-6" />
+              </EmptyMedia>
+              <EmptyTitle className="font-light">
+                {t("Couldn't load the overview")}
+              </EmptyTitle>
+              <EmptyDescription className="text-base text-foreground">
+                {t('Refresh the page to try again.')}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ),
       }}
     >
@@ -129,19 +144,22 @@ function DecisionOverviewContent({
 
   const overview = instance.instanceData?.overview;
 
-  // Detection sample from the authored overview so the banner only appears when
-  // the content is in a language other than the reader's locale.
-  const detectionText = useMemo(
-    () =>
+  // Register the authored overview as this screen's own detection sample. The
+  // side panel's updates and resources register separately, so the banner
+  // appears when any of them is in a language other than the reader's locale.
+  const detectionSamples = useMemo(
+    () => [
       getOverviewDetectionText({
         headline: overview?.headline ?? instance.name,
         description: overview?.description ?? instance.description ?? undefined,
         body: overview?.body,
       }),
+    ],
     [overview, instance.name, instance.description],
   );
 
-  const needsTranslation = useContentNeedsTranslation(detectionText);
+  useRegisterTranslationSamples('overview', detectionSamples);
+  const needsTranslation = useDecisionNeedsTranslation();
 
   const decisionTranslation = useTranslateDecision({
     proposals: NO_PROPOSALS,
@@ -208,12 +226,18 @@ function DecisionOverviewContent({
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
         <div className="flex flex-col gap-6 md:col-span-4">
           <div className="flex flex-col gap-4">
-            <Header3 className="font-sans text-sm text-neutral-gray4">
+            <Header3 className="font-sans text-sm text-muted-foreground">
               {t('Process Overview')}
             </Header3>
             <DecisionPhaseTimeline
               phases={phases}
-              currentPhaseId={isActive ? currentPhaseId : ''}
+              // Always the real current phase — the advance flow derives the
+              // next phase from it. `hasStarted` decides presentation: before the
+              // first phase begins nothing reads as current, but an admin can
+              // still advance. (Blanking the id here instead made `currentIndex`
+              // -1, so nothing was advanceable at all.)
+              currentPhaseId={currentPhaseId}
+              hasStarted={isActive}
               instanceId={instanceId}
               isAdmin={instance.access?.admin}
               decisionSlug={decisionSlug}
@@ -307,7 +331,7 @@ const OverviewHero = ({
   return (
     // Admin-uploaded background sits behind the content as an <Image fill>; the
     // offWhite gradient is the empty-state fallback when no image is set.
-    <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-neutral-offWhite md:grid-cols-12">
+    <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-muted md:grid-cols-12">
       {heroImageUrl ? (
         <DecisionHeroBackgroundImage imageUrl={heroImageUrl} />
       ) : null}
@@ -317,7 +341,7 @@ const OverviewHero = ({
           heroImagePath={heroImagePath}
         />
       ) : null}
-      <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
+      <div className="relative z-10 mx-auto flex flex-col items-center gap-8 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
         <div className="flex flex-col items-center gap-3">
           {/* Brand teal→green gradient clipped to the title text. This hero is
               the page's <h1>; the sticky DecisionInstanceHeader carries a
@@ -326,17 +350,12 @@ const OverviewHero = ({
               Over a banner image the clipped gradient loses contrast against
               the dark scrim, so switch to plain white text instead. */}
           {hasImage ? (
-            // White comes from the wrapper, not Header1's className: twMerge
-            // misreads the custom text-title-lg size as a color and drops it
-            // when text-white is merged in, leaving the h1 unsized on mobile.
-            <div className="text-white">
-              <Header1 className="md:text-title-xxl">
-                <bdi>{headline}</bdi>
-              </Header1>
-            </div>
+            <Header1 className="text-white">
+              <bdi>{headline}</bdi>
+            </Header1>
           ) : (
             <GradientHeader>
-              <Header1 className="md:text-title-xxl">
+              <Header1>
                 <bdi>{headline}</bdi>
               </Header1>
             </GradientHeader>
@@ -345,20 +364,20 @@ const OverviewHero = ({
             <div
               className={cn(
                 'flex flex-wrap items-center justify-center gap-x-2 gap-y-1',
-                hasImage ? 'text-white' : 'text-neutral-charcoal',
+                hasImage ? 'text-white' : 'text-foreground',
               )}
             >
               {stewardName ? (
                 <span className="flex items-center gap-1.5">
-                  <Avatar placeholder={stewardName} className="size-5">
+                  <Avatar className="size-5">
                     {steward?.avatarImage?.name ? (
-                      <Image
+                      <AvatarImage
                         src={getPublicUrl(steward.avatarImage.name) ?? ''}
                         alt={stewardName}
-                        fill
                         className="object-cover"
                       />
                     ) : null}
+                    <AvatarFallback name={stewardName} />
                   </Avatar>
                   <span>
                     {t('Stewarded by')}{' '}
@@ -381,7 +400,9 @@ const OverviewHero = ({
               {stewardName && isPublic ? (
                 <span
                   aria-hidden="true"
-                  className={hasImage ? 'text-white/80' : 'text-neutral-gray4'}
+                  className={
+                    hasImage ? 'text-white/80' : 'text-muted-foreground'
+                  }
                 >
                   •
                 </span>
@@ -399,7 +420,7 @@ const OverviewHero = ({
               dir="auto"
               className={cn(
                 'text-base text-balance',
-                hasImage ? 'text-white' : 'text-neutral-charcoal',
+                hasImage ? 'text-white' : 'text-foreground',
               )}
             >
               {subhead}
@@ -409,20 +430,19 @@ const OverviewHero = ({
         {showCtas ? (
           <div className="align-stretch flex w-full flex-col gap-4 md:flex-row md:justify-center">
             <ButtonLink
-              color="secondary"
               href={currentPhaseHref}
+              variant="outline"
               className="w-auto"
             >
               {t('Browse proposals')}
             </ButtonLink>
             {canSubmitProposal ? (
               <Button
-                color="primary"
                 className="w-auto"
-                isDisabled={!isReady || isCreating}
-                onPress={createProposal}
+                disabled={!isReady || isCreating}
+                onClick={createProposal}
               >
-                {isCreating ? <LoadingSpinner /> : null}
+                {isCreating ? <Spinner /> : null}
                 {t('Start a proposal')}
               </Button>
             ) : null}

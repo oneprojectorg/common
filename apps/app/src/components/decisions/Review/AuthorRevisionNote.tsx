@@ -1,7 +1,7 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
-import { Link } from '@op/ui/Link';
+import { Button } from '@op/sense/Button';
 import { useState } from 'react';
 import { LuRefreshCw } from 'react-icons/lu';
 
@@ -13,36 +13,42 @@ export function RevisedOnBadge({ respondedAt }: { respondedAt: string }) {
   const t = useTranslations();
   return (
     <span className="flex items-center gap-1">
-      <LuRefreshCw className="size-4 text-primary-orange2" />
+      <LuRefreshCw className="size-4 text-warning" />
       {t('Revised on')} {formatDate(respondedAt)}
     </span>
   );
 }
 
-export function AuthorRevisionNote({ comment }: { comment: string }) {
+export function AuthorRevisionNote({
+  comment,
+  respondedAt,
+}: {
+  comment: string;
+  /** Resubmission date — rendered in the note's own footer row. */
+  respondedAt?: string | null;
+}) {
   const t = useTranslations();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <>
-      <div className="flex flex-col gap-3 rounded-lg border border-neutral-gray1 bg-neutral-offWhite p-4">
-        <span className="font-serif text-title-sm14 text-neutral-black">
-          {t("Author's revision note")}
-        </span>
+      <div className="flex flex-col gap-3 rounded-lg bg-muted p-4">
+        <span className="font-serif text-sm">{t("Author's note")}</span>
         <div className="flex flex-col gap-2">
-          <p
-            dir="auto"
-            className="text-base whitespace-pre-wrap text-neutral-charcoal"
-          >
+          <p dir="auto" className="text-base whitespace-pre-wrap">
             {comment}
           </p>
-          <Link
-            variant="secondary"
-            onPress={() => setIsModalOpen(true)}
-            className="cursor-pointer self-start text-sm"
-          >
-            {t('View revision request')}
-          </Link>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            {respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : null}
+            <Button
+              variant="link"
+              size="inline"
+              onClick={() => setIsModalOpen(true)}
+              className="text-sm underline"
+            >
+              {t('View revision request')}
+            </Button>
+          </div>
         </div>
       </div>
       <ViewRevisionRequestModal

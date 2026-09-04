@@ -6,6 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // imports) can close over it.
 type FakeRedis = {
   isOpen: boolean;
+  // node-redis exposes both: `isOpen` is the socket, `isReady` means the client
+  // accepts commands. `tryGetFromRedis` gates on `isReady`.
+  isReady: boolean;
   on: Mock;
   connect: Mock;
   get: Mock<(key: string) => Promise<string | null>>;
@@ -20,6 +23,7 @@ type FakeRedis = {
 
 const fakeRedis: FakeRedis = {
   isOpen: true,
+  isReady: true,
   on: vi.fn(),
   connect: vi.fn(),
   get: vi.fn<(key: string) => Promise<string | null>>(),
@@ -62,7 +66,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, set } = await import('./kv');
+const { cache, get, getWithStatus, set } = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -94,6 +98,7 @@ describe('cache() — Redis tier metrics', () => {
   let recordError: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    fakeRedis.isReady = true;
     fakeRedis.get.mockReset();
     fakeRedis.setEx.mockReset();
     fakeRedis.del.mockReset();
@@ -222,6 +227,7 @@ describe('cache() — Redis tier metrics', () => {
 
 describe('cache() — in-process LRU (L1)', () => {
   beforeEach(() => {
+    fakeRedis.isReady = true;
     fakeRedis.get.mockReset();
     fakeRedis.setEx.mockReset();
   });
@@ -262,6 +268,7 @@ describe('cache() — in-process LRU (L1)', () => {
 
 describe('get()', () => {
   beforeEach(() => {
+    fakeRedis.isReady = true;
     fakeRedis.get.mockReset();
   });
 
@@ -287,6 +294,51 @@ describe('get()', () => {
   it('returns null on a non-timeout error (does not throw)', async () => {
     fakeRedis.get.mockRejectedValue(new Error('boom'));
     await expect(get('some-key')).resolves.toBeNull();
+  });
+});
+
+describe('getWithStatus()', () => {
+  beforeEach(() => {
+    fakeRedis.isReady = true;
+    fakeRedis.get.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('reports a hit with the parsed value', async () => {
+    fakeRedis.get.mockResolvedValue(JSON.stringify({ id: 1 }));
+    await expect(getWithStatus('k')).resolves.toEqual({
+      status: 'hit',
+      data: { id: 1 },
+    });
+  });
+
+  it('reports a miss when Redis answers and holds nothing', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+    await expect(getWithStatus('k')).resolves.toEqual({ status: 'miss' });
+  });
+
+  // The distinction this function exists for. A caller holding cache-only state
+  // must not read either of the next two as "the key is absent".
+  it('reports a timeout when the command outruns its signal', async () => {
+    fakeRedis.get.mockImplementation(() => new Promise<string>(() => {}));
+    await expect(getWithStatus('k')).resolves.toEqual({ status: 'timeout' });
+  });
+
+  it('reports an error when the command rejects on a ready client', async () => {
+    fakeRedis.get.mockRejectedValue(new Error('boom'));
+    await expect(getWithStatus('k')).resolves.toEqual({ status: 'error' });
+  });
+
+  // A client that never became ready means this deployment has no working
+  // cache. That supports no claim about one key, so it answers as a miss and
+  // the caller degrades instead of reporting an error for every read.
+  it('reports a miss when the client is not ready', async () => {
+    fakeRedis.isReady = false;
+    await expect(getWithStatus('k')).resolves.toEqual({ status: 'miss' });
+    expect(fakeRedis.get).not.toHaveBeenCalled();
   });
 });
 

@@ -5,8 +5,12 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { getPhaseReviewSettings, getPreviousPhases } from '@op/common/client';
-import { SplitPane } from '@op/ui/SplitPane';
+import {
+  getPhaseReviewSettings,
+  getPreviousPhases,
+  type ReviewSettings,
+} from '@op/common/client';
+import { SplitPane } from '@op/sense/SplitPane';
 import { forbidden, notFound } from 'next/navigation';
 
 import { TranslatedText } from '@/components/TranslatedText';
@@ -16,6 +20,7 @@ import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewProposalPane } from './ReviewProposalPane';
 import { ReviewRubricForm } from './ReviewRubricForm';
 import type { PreviousReviewPhase } from './ReviewTabs';
+import { ReviewTranslationProvider } from './ReviewTranslationContext';
 
 interface ReviewLayoutProps {
   decisionSlug: string;
@@ -31,8 +36,7 @@ export async function ReviewLayout({
     createServerUtils(),
   ]);
 
-  let allowRevisions: boolean;
-  let openReviews: boolean;
+  let reviewSettings: ReviewSettings;
   let previousReviewPhases: PreviousReviewPhase[];
   try {
     const [decisionProfile, reviewAssignment] = await Promise.all([
@@ -45,10 +49,7 @@ export async function ReviewLayout({
 
     // Throws NotFoundError when the assignment's phase is no longer in the
     // instance's phase list (stale assignment) — mapped to notFound() below.
-    ({ allowRevisions, openReviews } = getPhaseReviewSettings(
-      instanceData,
-      assignmentPhaseId,
-    ));
+    reviewSettings = getPhaseReviewSettings(instanceData, assignmentPhaseId);
 
     // Earlier review phases whose `openReviews` keeps their reviews readable
     // from this screen. Strictly before the assignment's phase in the
@@ -88,29 +89,33 @@ export async function ReviewLayout({
       <ReviewFormProvider
         assignmentId={assignmentId}
         decisionSlug={decisionSlug}
-        allowRevisions={allowRevisions}
+        reviewSettings={reviewSettings}
       >
-        <div className="flex h-dvh flex-col overflow-hidden bg-white">
-          <ReviewNavbar decisionSlug={decisionSlug} />
+        {/* Inside ReviewFormProvider: the proposal and the rubric it translates
+            both come from the assignment that provider loads. */}
+        <ReviewTranslationProvider assignmentId={assignmentId}>
+          <div className="flex h-dvh flex-col overflow-hidden bg-white">
+            <ReviewNavbar decisionSlug={decisionSlug} />
 
-          <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="review">
-            <SplitPane.Pane
-              id="proposal"
-              label={<TranslatedText text="Proposal" />}
+            <SplitPane
+              className="mx-auto max-w-6xl"
+              defaultMobileTabId="review"
             >
-              <ReviewProposalPane />
-            </SplitPane.Pane>
-            <SplitPane.Pane
-              id="review"
-              label={<TranslatedText text="Review" />}
-            >
-              <ReviewRubricForm
-                openReviews={openReviews}
-                previousReviewPhases={previousReviewPhases}
-              />
-            </SplitPane.Pane>
-          </SplitPane>
-        </div>
+              <SplitPane.Pane
+                id="proposal"
+                label={<TranslatedText text="Proposal" />}
+              >
+                <ReviewProposalPane />
+              </SplitPane.Pane>
+              <SplitPane.Pane
+                id="review"
+                label={<TranslatedText text="Review" />}
+              >
+                <ReviewRubricForm previousReviewPhases={previousReviewPhases} />
+              </SplitPane.Pane>
+            </SplitPane>
+          </div>
+        </ReviewTranslationProvider>
       </ReviewFormProvider>
     </HydrationBoundary>
   );

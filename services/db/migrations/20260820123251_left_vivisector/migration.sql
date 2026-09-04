@@ -1,0 +1,1 @@
+ALTER TABLE "decision_proposal_relationships" ADD COLUMN "note" text;

@@ -29,10 +29,10 @@ All development work MUST follow the rules and guidelines specified in AGENTS.md
 Database commands MUST NEVER be executed during development workflows. This includes but is not limited to migrations, schema changes, direct database queries, or any operations that modify database state. Database operations are restricted to designated database administrators and controlled deployment processes only.
 
 ### III. UI Component Consistency
-All user interface components MUST use the @op/ui library whenever possible. Custom components are only permitted when equivalent functionality does not exist in @op/ui. When creating new UI elements, developers MUST first search for existing components in the library and follow established patterns for component usage and integration.
+All user interface components MUST use the @op/sense library whenever possible. Custom components are only permitted when equivalent functionality does not exist in @op/sense. When creating new UI elements, developers MUST first search for existing components in the library and follow established patterns for component usage and integration. New primitives are added inside packages/sense via `shadcn add`, never in apps/app.
 
 ### IV. Color System Compliance
-All color definitions MUST use colors that are present in the tailwind.shared.ts configuration file. Developers are prohibited from inventing or defining new colors outside of this system. The shared color palette ensures visual consistency across the entire monorepo and MUST be respected in all styling decisions.
+All color definitions MUST use the design tokens defined in @op/styles — raw values in packages/styles/tokens.css, semantic names in packages/styles/theme.css. Developers are prohibited from inventing or defining new colors outside of this system, and MUST NOT use arbitrary Tailwind values (e.g. `bg-[#333]`, `text-[14px]`). The shared token layer ensures visual consistency across the entire monorepo and MUST be respected in all styling decisions.
 
 ### V. Code Clarity
 Code MUST NOT include comments unless explicitly requested. Code should be self-documenting through clear naming conventions, proper structure, and idiomatic patterns. The focus is on writing clean, readable code that communicates intent through implementation rather than documentation.

@@ -7,13 +7,18 @@ import { logger } from '@op/logging';
 // Import from the viewerStyles subpath (not editorConfig or the barrel) so
 // this server component pulls neither the client editor nor the TipTap
 // extension set into the RSC graph — viewerProseStyles is a plain style string.
-import { viewerProseStyles } from '@op/ui/RichTextEditor/viewerStyles';
+import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import type { JSONContent } from '@tiptap/core';
 import { renderToReactElement } from '@tiptap/static-renderer/pm/react';
 import type { ReactNode } from 'react';
 
 import { LinkPreview } from '../LinkPreview';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
+import {
+  ViewerCollapsible,
+  ViewerCollapsibleContent,
+  ViewerCollapsibleSummary,
+} from './ViewerCollapsible';
 
 /**
  * Static (SSR-friendly) renderer for stored TipTap rich-text content.
@@ -102,7 +107,18 @@ const nodeMapping = {
     const src = node.attrs?.src;
     return src ? <LinkPreview url={src} className="my-4" /> : null;
   },
-  // Details/summary need no entry: they render via their renderHTML to a native
-  // `<details><summary>…` (collapsible with zero JS), styled by the shared
-  // `.details` CSS in @op/styles — the same block that styles the editor.
+  // Details renders on sense `Collapsible` rather than a native `<details>`, so
+  // the viewer gets the design system's disclosure (hover, focus ring, animated
+  // panel) that native markup can't do without JS. Mapped per sub-node so each
+  // piece lands in the right slot: root → Collapsible, summary → trigger,
+  // content → panel.
+  details: ({ children }: { children?: ReactNode | ReactNode[] }) => (
+    <ViewerCollapsible>{children}</ViewerCollapsible>
+  ),
+  detailsSummary: ({ children }: { children?: ReactNode | ReactNode[] }) => (
+    <ViewerCollapsibleSummary>{children}</ViewerCollapsibleSummary>
+  ),
+  detailsContent: ({ children }: { children?: ReactNode | ReactNode[] }) => (
+    <ViewerCollapsibleContent>{children}</ViewerCollapsibleContent>
+  ),
 };

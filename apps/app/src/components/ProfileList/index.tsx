@@ -2,11 +2,11 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { cn } from '@op/ui/utils';
-import Image from 'next/image';
+import { Skeleton } from '@op/sense/Skeleton';
 
 import { Link } from '@/lib/i18n';
+
+import { ProfileAvatarLink } from '../ProfileAvatarLink';
 
 type Profiles = RouterOutput['profile']['list']['items'];
 
@@ -27,7 +27,7 @@ export const ProfileSummaryList = ({
   // avatars as plain text/images without links.
   const canLinkToProfile = useCanLinkToProfile();
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
       {profiles.map((profile) => {
         const whereWeWork =
           profile.organization?.whereWeWork
@@ -44,60 +44,42 @@ export const ProfileSummaryList = ({
             ? `/profile/${profile.slug}`
             : `/org/${profile.slug}`;
 
-        const avatar = (
-          <Avatar
-            placeholder={profile.name}
-            className={cn(
-              'size-8 sm:size-12',
-              canLinkToProfile && 'hover:opacity-80',
-            )}
-          >
-            {profile.avatarImage?.name ? (
-              <Image
-                src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                alt={`${profile.name} avatar`}
-                fill
-                className="object-cover"
-              />
-            ) : null}
-          </Avatar>
-        );
-
         return (
           <div key={profile.id}>
-            <div className="flex items-start gap-2 py-2 sm:gap-6">
-              {canLinkToProfile ? (
-                <Link href={profileHref} className="hover:no-underline">
-                  {avatar}
-                </Link>
-              ) : (
-                avatar
-              )}
+            <div className="flex items-start gap-2 py-2 sm:gap-4">
+              <ProfileAvatarLink
+                href={canLinkToProfile ? profileHref : undefined}
+                name={profile.name}
+                src={getPublicUrl(profile.avatarImage?.name) ?? ''}
+                alt={profile.name}
+                size="lg"
+                className="size-8 sm:size-12"
+              />
 
-              <div className="flex flex-col gap-3 text-neutral-black">
-                <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1">
                   {canLinkToProfile ? (
                     <Link
                       href={`/profile/${profile.slug}`}
-                      className="leading-base font-semibold"
+                      className="leading-5 font-strong"
                     >
                       <bdi>{profile.name}</bdi>
                     </Link>
                   ) : (
-                    <span className="leading-base font-semibold">
+                    <span className="leading-5 font-strong">
                       <bdi>{profile.name}</bdi>
                     </span>
                   )}
                   {whereWeWork?.length > 0 ? (
                     <span
                       dir="auto"
-                      className="text-sm text-neutral-gray4 sm:text-base"
+                      className="text-sm text-muted-foreground sm:text-base"
                     >
                       {whereWeWork}
                     </span>
                   ) : null}
                 </div>
-                <span dir="auto" className="text-neutral-charcoal">
+                <span dir="auto" className="leading-5">
                   {trimmedBio}
                 </span>
               </div>
@@ -111,16 +93,16 @@ export const ProfileSummaryList = ({
 
 export const ProfileListSkeleton = () => {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="rounded-lg border bg-white p-4 shadow-xs">
+        <div key={index} className="rounded-lg border bg-card p-4 shadow-xs">
           <div className="flex items-start gap-4">
-            <div className="size-12 shrink-0 animate-pulse rounded-full bg-gray-200" />
+            <Skeleton className="size-12 shrink-0 rounded-full" />
             <div className="min-w-0 flex-1">
-              <div className="mb-2 h-4 animate-pulse rounded bg-gray-200" />
-              <div className="mb-2 h-3 w-2/3 animate-pulse rounded bg-gray-200" />
-              <div className="mb-1 h-3 w-full animate-pulse rounded bg-gray-200" />
-              <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" />
+              <Skeleton className="mb-2 h-4" />
+              <Skeleton className="mb-2 h-3 w-2/3" />
+              <Skeleton className="mb-1 h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
             </div>
           </div>
         </div>

@@ -5,7 +5,11 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { assertInstancePhase, isReviewPhase } from '@op/common/client';
+import {
+  assertInstancePhase,
+  isReviewPhase,
+  resolveReviewSettings,
+} from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
 
 import { ReviewSummaryView } from './ReviewSummaryView';
@@ -81,6 +85,12 @@ export async function ReviewSummaryLayout({
   const proposalId = proposal.id;
   const phaseId = resolveReviewPhaseId(instance);
 
+  // Keyed to the resolved review phase, like the aggregates below.
+  const reviewSettings = resolveReviewSettings(
+    instance.instanceData ?? {},
+    phaseId,
+  );
+
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
   const isPhaseInProgress =
@@ -88,11 +98,21 @@ export async function ReviewSummaryLayout({
     phaseId === instance.currentStateId &&
     isReviewPhase(assertInstancePhase({ instance, phaseId }));
 
-  await utils.decision.getProposalWithReviewAggregates.prefetch({
-    processInstanceId: instanceId,
-    proposalId,
-    phaseId,
-  });
+  await Promise.all([
+    utils.decision.getProposalWithReviewAggregates.prefetch({
+      processInstanceId: instanceId,
+      proposalId,
+      phaseId,
+    }),
+    // Same key as the query in ReviewSummaryView, `sort` included, or the
+    // client refetches on mount.
+    utils.decision.listReviewAssignments.prefetch({
+      processInstanceId: instanceId,
+      proposalProfileId,
+      phaseId,
+      sort: 'newest',
+    }),
+  ]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
@@ -103,6 +123,7 @@ export async function ReviewSummaryLayout({
         proposalProfileId={proposalProfileId}
         phaseId={phaseId}
         isPhaseInProgress={isPhaseInProgress}
+        reviewSettings={reviewSettings}
       />
     </HydrationBoundary>
   );

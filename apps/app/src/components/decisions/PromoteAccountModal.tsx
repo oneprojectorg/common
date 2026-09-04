@@ -1,11 +1,12 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { Button } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { Checkbox } from '@op/ui/Checkbox';
-import { Header1 } from '@op/ui/Header';
-import { Modal } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
+import { Dialog, DialogContent } from '@op/sense/Dialog';
+import { Field, FieldLabel } from '@op/sense/Field';
+import { Header2 } from '@op/sense/Header';
+import { CheckIcon } from '@op/sense/icons';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
 import { LuUserRoundMinus, LuUserRoundPlus } from 'react-icons/lu';
@@ -38,18 +39,17 @@ export const PromoteAccountModal = () => {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={(open) => (open ? null : close())}
-      isDismissable={false}
-      isKeyboardDismissDisabled
-      className="sm:max-w-[29rem]"
-    >
-      <PromoteAccountModalContent
-        onContinueAsGuest={close}
-        proposalId={proposalId}
-      />
-    </Modal>
+    <Dialog open={isOpen}>
+      <DialogContent
+        showCloseButton={false}
+        className="justify-center sm:max-w-lg"
+      >
+        <PromoteAccountModalContent
+          onContinueAsGuest={close}
+          proposalId={proposalId}
+        />
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -86,71 +86,70 @@ const PromoteAccountModalContent = ({
       <div className="flex flex-col items-center gap-4 text-center">
         <CheckIcon />
         <div className="flex flex-col gap-2">
-          <Header1>{t('Your idea was submitted.')}</Header1>
-          <p className="text-base text-neutral-charcoal">
-            {t('Want to follow what happens next?')}
-          </p>
+          <Header2>{t('Your idea was submitted.')}</Header2>
+          <p className="text-base">{t('Want to follow what happens next?')}</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-white p-4 text-start">
+        <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-white p-4 text-start">
           <div className="flex items-center gap-1">
-            <LuUserRoundMinus
-              className="size-4 text-neutral-charcoal"
-              aria-hidden
-            />
-            <span className="font-serif text-title-sm text-neutral-charcoal">
+            <LuUserRoundMinus className="size-4 text-foreground" aria-hidden />
+            <span className="font-serif text-label">
               {t('Continue as a guest')}
             </span>
           </div>
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base">
             {t('Stay anonymous. React to comments with emoji.')}
           </p>
           {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
               acceptance isn't persisted for the anon account. Pending team
               decision on what accepting terms means for an anonymous user. */}
-          <Checkbox size="small" isSelected={agreed} onChange={setAgreed}>
-            <span className="text-sm">
-              {t.rich(
-                'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
-                {
-                  tos: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/tos">{chunks}</PolicyLink>
-                  ),
-                  privacy: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
-                  ),
-                },
-              )}
-            </span>
-          </Checkbox>
+          <Field orientation="horizontal">
+            <Checkbox
+              id="promote-tos"
+              checked={agreed}
+              onCheckedChange={setAgreed}
+            />
+            <FieldLabel htmlFor="promote-tos">
+              <span className="text-sm">
+                {t.rich(
+                  'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
+                  {
+                    tos: (chunks: ReactNode) => (
+                      <PolicyLink href="/info/tos">{chunks}</PolicyLink>
+                    ),
+                    privacy: (chunks: ReactNode) => (
+                      <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
+                    ),
+                  },
+                )}
+              </span>
+            </FieldLabel>
+          </Field>
           <Button
-            color="secondary"
+            variant="outline"
             className="w-full"
-            isDisabled={!agreed}
-            onPress={onContinueAsGuest}
+            disabled={!agreed}
+            onClick={onContinueAsGuest}
           >
             {t('Continue as guest')}
           </Button>
         </section>
 
-        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-neutral-off-white p-4 text-start">
+        <section className="flex flex-col gap-2.5 rounded-xl border border-border bg-muted p-4 text-start">
           <div className="flex items-center gap-1">
-            <LuUserRoundPlus
-              className="size-4 text-neutral-charcoal"
-              aria-hidden
-            />
-            <span className="font-serif text-title-sm text-neutral-charcoal">
+            <LuUserRoundPlus className="size-4 text-foreground" aria-hidden />
+            <span className="font-serif text-label">
               {t('With an account')}
             </span>
           </div>
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base">
             {t(
               'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
             )}
           </p>
-          <Button className="w-full" onPress={goToLogin}>
+          <Button className="w-full" onClick={goToLogin}>
             {t('Create account')}
           </Button>
         </section>
@@ -163,8 +162,7 @@ const PromoteAccountModalContent = ({
 };
 
 // Opens a policy page in a new tab without toggling the consent checkbox it
-// sits inside (stop the press from reaching the surrounding React Aria
-// Checkbox).
+// sits inside (stop the click from reaching the surrounding Checkbox).
 const PolicyLink = ({
   href,
   children,
@@ -176,7 +174,7 @@ const PolicyLink = ({
     href={href}
     target="_blank"
     rel="noreferrer"
-    className="text-primary-teal underline"
+    className="text-primary underline"
     onClick={(e) => e.stopPropagation()}
     onPointerDown={(e) => e.stopPropagation()}
   >

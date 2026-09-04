@@ -1,4 +1,4 @@
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/sense/Header';
 
 import { FormalSection } from '../FormalSection';
 
@@ -12,7 +12,7 @@ export const ToSContentShort = () => {
         </p>
       </FormalSection>
       <FormalSection>
-        <Header3 className="font-serif">Who We Are</Header3>
+        <Header3>Who We Are</Header3>
         <p className="mb-4">
           Common is a digital platform that connects people, organizations, and
           resources to coordinate and grow economic democracy to global scale.
@@ -30,7 +30,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Welcome to Common</Header3>
+        <Header3>Welcome to Common</Header3>
         <p className="mb-4">
           These terms are an agreement between you and One Project that govern
           your use of our website (oneproject.org) and the Common platform.
@@ -41,7 +41,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Who Can Use Common</Header3>
+        <Header3>Who Can Use Common</Header3>
         <p className="mb-4">
           You must be at least 13 years old to use Common, and if you are under
           18 you may use Common only under the supervision of a parent or
@@ -52,7 +52,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Your Account</Header3>
+        <Header3>Your Account</Header3>
         <p className="mb-4">
           When creating your account, provide accurate information and keep your
           password secure. Don't use fake details or pretend to be someone else.
@@ -66,14 +66,14 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Our Community Commitments</Header3>
+        <Header3>Our Community Commitments</Header3>
         <p className="mb-4">
           All users of the Platform must comply with our{' '}
           <a
             href="/info/community-commitments"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-teal hover:underline"
+            className="text-primary hover:underline"
           >
             Community Commitments
           </a>
@@ -125,7 +125,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">What You Can Do</Header3>
+        <Header3>What You Can Do</Header3>
         <p className="mb-4">
           You can use the platform for collaboration and connection, share your
           organization's information and resources, and connect with other users
@@ -134,7 +134,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">What You Can't Do</Header3>
+        <Header3>What You Can't Do</Header3>
         <p className="mb-4">
           You can't copy, modify, distribute, or create new versions of our
           platform without our written permission. You can't try to reverse
@@ -150,7 +150,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Your Content</Header3>
+        <Header3>Your Content</Header3>
         <p className="mb-4">
           You own the content you post, but by posting, you give us permission
           to display and share it on the platform. Make sure you have the right
@@ -160,7 +160,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Prohibited Content</Header3>
+        <Header3>Prohibited Content</Header3>
         <p className="mb-4">
           You agree to not post content that is abusive, insulting, threatening,
           or discriminatory, or that promotes hatred, racism, sexism, or
@@ -175,7 +175,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Our Code</Header3>
+        <Header3>Our Code</Header3>
         <p className="mb-4">
           The software code that runs our platform is open source, meaning it's
           freely available for you to use and contribute to under specific
@@ -188,7 +188,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Ending Your Account</Header3>
+        <Header3>Ending Your Account</Header3>
         <p className="mb-4">
           You can stop using the platform anytime, and we may terminate accounts
           that violate these terms.
@@ -196,7 +196,7 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Disputes and Governing Law</Header3>
+        <Header3>Disputes and Governing Law</Header3>
         <p className="mb-4">
           These terms of use are governed by the laws of the State of
           California. Most disputes must be resolved through individual
@@ -205,12 +205,12 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Contact Us</Header3>
+        <Header3>Contact Us</Header3>
         <p className="mb-4">
           Questions? Email us at{' '}
           <a
             href="mailto:support@oneproject.org"
-            className="text-primary-teal hover:underline"
+            className="text-primary hover:underline"
           >
             support@oneproject.org
           </a>

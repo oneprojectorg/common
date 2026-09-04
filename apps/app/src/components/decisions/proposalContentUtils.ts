@@ -86,6 +86,12 @@ export function getProposalContentPreview(
   return null;
 }
 
+/** The proposal fields {@link resolveProposalSystemFields} reads. */
+export type ProposalSystemFieldSource = Pick<
+  Proposal,
+  'proposalData' | 'proposalTemplate' | 'documentContent'
+>;
+
 /**
  * Resolves system field values (title, budget, category) from the pinned
  * TipTap version in `documentContent`, falling back to `proposalData`.
@@ -94,7 +100,9 @@ export function getProposalContentPreview(
  * the version that was actually submitted; the document fragments are
  * the source of truth for submitted proposals.
  */
-export function resolveProposalSystemFields(proposal: Proposal) {
+export function resolveProposalSystemFields(
+  proposal: ProposalSystemFieldSource,
+) {
   const fallback = parseProposalData(proposal.proposalData);
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;

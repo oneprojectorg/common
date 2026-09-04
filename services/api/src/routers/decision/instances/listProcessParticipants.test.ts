@@ -1,0 +1,308 @@
+import { listProcessParticipants } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
+import { and, db, eq } from '@op/db/client';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  Visibility,
+  authUsers,
+  profileUsers,
+  proposals,
+} from '@op/db/schema';
+import { describe, expect, it } from 'vitest';
+
+import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
+
+/**
+ * Reproduces a public submitter: production grants them submit rights through
+ * a role rather than a profileUsers row on the process profile, which is why
+ * the members-only query missed them.
+ */
+async function detachFromMembersPanel({
+  processProfileId,
+  authUserId,
+}: {
+  processProfileId: string;
+  authUserId: string;
+}): Promise<void> {
+  await db
+    .delete(profileUsers)
+    .where(
+      and(
+        eq(profileUsers.profileId, processProfileId),
+        eq(profileUsers.authUserId, authUserId),
+      ),
+    );
+}
+
+/** Attaches an extra person to a proposal's profile, as an accepted invite does. */
+async function addProposalCollaborator({
+  proposalProfileId,
+  authUserId,
+  email,
+}: {
+  proposalProfileId: string;
+  authUserId: string;
+  email: string | null;
+}): Promise<void> {
+  await db.insert(profileUsers).values({
+    profileId: proposalProfileId,
+    authUserId,
+    email,
+  });
+}
+
+async function createInstance(testData: TestDecisionsDataManager) {
+  const setup = await testData.createDecisionSetup({
+    processSchema: schemaWithoutPipeline,
+    instanceCount: 1,
+    status: ProcessStatus.PUBLISHED,
+  });
+
+  return {
+    setup,
+    instanceId: setup.instance.instance.id,
+    processProfileId: setup.instance.profileId,
+  };
+}
+
+describe.concurrent('listProcessParticipants', () => {
+  it('unions Members-panel members with proposal submitters who are not members', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, processProfileId } =
+      await createInstance(testData);
+
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [processProfileId],
+    });
+
+    await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instanceId,
+      proposalData: { title: `Public submission ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    // After the proposal exists, so its author's only tie is the proposal.
+    await detachFromMembersPanel({
+      processProfileId,
+      authUserId: submitter.authUserId,
+    });
+
+    const emails = (
+      await listProcessParticipants({
+        processInstanceId: instanceId,
+      })
+    ).map(({ email }) => email);
+
+    expect(emails).toContain(setup.userEmail);
+    expect(emails).toContain(submitter.email);
+  });
+
+  it('includes a collaborator invited onto a proposal, under their sign-in email', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId } = await createInstance(testData);
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Collaborative proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const collaborator = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+
+    // The snapshot column is stale by design (nothing syncs it after an email
+    // change); the participant list must ignore it in favor of auth.users.
+    const staleEmail = `stale-${collaborator.email}`;
+    await addProposalCollaborator({
+      proposalProfileId: proposal.profileId,
+      authUserId: collaborator.authUserId,
+      email: staleEmail,
+    });
+
+    const emails = (
+      await listProcessParticipants({
+        processInstanceId: instanceId,
+      })
+    ).map(({ email }) => email);
+
+    expect(emails).toContain(collaborator.email);
+    expect(emails).not.toContain(staleEmail);
+  });
+
+  it('returns a member who also submitted exactly once', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId } = await createInstance(testData);
+
+    // Two proposals, so a UNION ALL would surface the author three times.
+    for (const index of [1, 2]) {
+      await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${index} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+    }
+
+    const participants = await listProcessParticipants({
+      processInstanceId: instanceId,
+    });
+
+    expect(
+      participants.filter(({ email }) => email === setup.userEmail),
+    ).toHaveLength(1);
+  });
+
+  it('includes a draft author but excludes an author whose only proposal is deleted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, processProfileId } =
+      await createInstance(testData);
+
+    const draftAuthor = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [processProfileId],
+    });
+    const deletedAuthor = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [processProfileId],
+    });
+
+    // A draft author has started taking part, so they are in the audience.
+    await testData.createProposal({
+      userEmail: draftAuthor.email,
+      processInstanceId: instanceId,
+      proposalData: { title: `Draft proposal ${task.id}` },
+      status: ProposalStatus.DRAFT,
+    });
+
+    const deletedProposal = await testData.createProposal({
+      userEmail: deletedAuthor.email,
+      processInstanceId: instanceId,
+      proposalData: { title: `Deleted proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await db
+      .update(proposals)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(proposals.id, deletedProposal.id));
+
+    await detachFromMembersPanel({
+      processProfileId,
+      authUserId: draftAuthor.authUserId,
+    });
+    await detachFromMembersPanel({
+      processProfileId,
+      authUserId: deletedAuthor.authUserId,
+    });
+
+    const emails = (
+      await listProcessParticipants({
+        processInstanceId: instanceId,
+      })
+    ).map(({ email }) => email);
+
+    expect(emails).toContain(draftAuthor.email);
+    expect(emails).not.toContain(deletedAuthor.email);
+  });
+
+  it('includes the author of a hidden proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, processProfileId } =
+      await createInstance(testData);
+
+    const hiddenAuthor = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [processProfileId],
+    });
+
+    const hiddenProposal = await testData.createProposal({
+      userEmail: hiddenAuthor.email,
+      processInstanceId: instanceId,
+      proposalData: { title: `Hidden proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, hiddenProposal.id));
+
+    await detachFromMembersPanel({
+      processProfileId,
+      authUserId: hiddenAuthor.authUserId,
+    });
+
+    const emails = (
+      await listProcessParticipants({
+        processInstanceId: instanceId,
+      })
+    ).map(({ email }) => email);
+
+    expect(emails).toContain(hiddenAuthor.email);
+  });
+
+  it('returns address-less participants, which the email sender then filters out', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId } = await createInstance(testData);
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Anonymous collaboration ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    // Anonymous accounts carry a NULL email in auth.users but stay in the
+    // participant set; the address filter belongs to the sender.
+    const anonymous = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    await db
+      .update(authUsers)
+      .set({ email: null, isAnonymous: true })
+      .where(eq(authUsers.id, anonymous.authUserId));
+    await addProposalCollaborator({
+      proposalProfileId: proposal.profileId,
+      authUserId: anonymous.authUserId,
+      email: null,
+    });
+
+    const participants = await listProcessParticipants({
+      processInstanceId: instanceId,
+    });
+
+    expect(
+      participants.find(
+        ({ authUserId }) => authUserId === anonymous.authUserId,
+      ),
+    ).toEqual({ authUserId: anonymous.authUserId, email: null });
+
+    // The same helper the sender calls, so dropping its filter breaks this.
+    const recipients = selectEmailRecipients(participants);
+
+    expect(recipients).toContain(setup.userEmail);
+    expect(recipients.every((email) => email.length > 0)).toBe(true);
+  });
+});

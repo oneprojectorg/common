@@ -4,17 +4,20 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
-import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
-import { Surface } from '@op/ui/Surface';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { useDirection } from '@op/sense/Direction';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { MegaphoneIcon } from '@op/sense/icons';
 import { useQueryState } from 'nuqs';
-import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
-import { type Key, useLocale } from 'react-aria-components';
+import { Fragment, Suspense, useCallback, useMemo } from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,12 +33,13 @@ import {
 import { PostUpdate } from '@/components/PostUpdate';
 import { ResourcesTabContent } from '@/components/Resources/ResourcesTabContent';
 
+import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
 
 const UPDATES_PAGE_SIZE = 20;
 
-const isPanelTab = (key: Key): key is PanelTab =>
-  typeof key === 'string' && (PANEL_TABS as readonly string[]).includes(key);
+const isPanelTab = (key: string): key is PanelTab =>
+  (PANEL_TABS as readonly string[]).includes(key);
 
 export const DecisionSidePanel = ({
   decisionProfileId,
@@ -46,40 +50,11 @@ export const DecisionSidePanel = ({
 }) => {
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
-  // Sidebar's `side` is direction-aware (Arabic locale PR): `side="right"`
-  // resolves to the visual left in RTL. The decision panel is meant to anchor
-  // to the visual right regardless of reading direction, so flip the prop in
-  // RTL to cancel the Sidebar's flip.
-  const { direction } = useLocale();
-  const sidebarSide = direction === 'rtl' ? 'left' : 'right';
+  // Sheet's side is physical, so it has to be mirrored to stay at inline-end.
+  const isRtl = useDirection() === 'rtl';
 
   const isOpen = panel !== null;
   const close = useCallback(() => setPanel(null), [setPanel]);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        close();
-      }
-    },
-    [close],
-  );
-
-  // Sidebar's mobile branch (React Aria Modal) handles Escape + scroll lock
-  // for small screens; the desktop overlay branch is just a fixed div, so
-  // wire Escape ourselves for that case.
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        close();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, close]);
 
   const canPostUpdate = access?.admin === true;
   const canReadUpdates = canPostUpdate || access?.read === true;
@@ -90,17 +65,28 @@ export const DecisionSidePanel = ({
   }
 
   return (
-    <SidebarProvider isOpen={isOpen} onOpenChange={handleOpenChange}>
-      <Sidebar
-        side={sidebarSide}
-        variant="overlay"
-        label={t('Decision updates panel')}
-        className={cn(
-          'w-full max-w-full border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-12 sm:w-[22.5rem] md:top-14',
-          // Border faces the content: visual left of the panel, regardless of locale.
-          direction === 'rtl' ? 'border-e' : 'border-s',
-        )}
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open, details) => {
+        // Modal side panel (matches the Figma scrim). Dismisses on outside
+        // press and the close button, but deliberately NOT on Escape — the
+        // open state lives in the URL, so we just ignore the escape-key reason.
+        if (open || details.reason === 'escape-key') {
+          return;
+        }
+        close();
+      }}
+    >
+      <SheetContent
+        side={isRtl ? 'left' : 'right'}
+        showCloseButton={false}
+        // Desktop: sit below the fixed decision header (h-12/h-14) instead of
+        // running full-height under it. Mobile stays full-screen.
+        className="gap-0 p-0 sm:max-w-[22.5rem]"
       >
+        <SheetTitle className="sr-only">
+          {t('Decision updates panel')}
+        </SheetTitle>
         <PanelContents
           isOpen={isOpen}
           decisionProfileId={decisionProfileId}
@@ -108,9 +94,10 @@ export const DecisionSidePanel = ({
           canReadUpdates={canReadUpdates}
           activeTab={activeTab}
           onSelectTab={setPanel}
+          onClose={close}
         />
-      </Sidebar>
-    </SidebarProvider>
+      </SheetContent>
+    </Sheet>
   );
 };
 
@@ -121,6 +108,7 @@ const PanelContents = ({
   canReadUpdates,
   activeTab,
   onSelectTab,
+  onClose,
 }: {
   isOpen: boolean;
   decisionProfileId: string;
@@ -128,45 +116,45 @@ const PanelContents = ({
   canReadUpdates: boolean;
   activeTab: PanelTab;
   onSelectTab: (tab: PanelTab) => void;
+  onClose: () => void;
 }) => {
   const t = useTranslations();
-  const { setOpen } = useSidebar();
 
   return (
     <Tabs
-      selectedKey={activeTab}
-      onSelectionChange={(key) => {
-        if (isPanelTab(key)) {
-          onSelectTab(key);
+      value={activeTab}
+      onValueChange={(value) => {
+        if (isPanelTab(value)) {
+          onSelectTab(value);
         }
       }}
       className="min-h-0 flex-1 gap-0"
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pe-4 sm:pe-0 sm:pt-4">
-        <TabList
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border pe-4 sm:pt-4">
+        <TabsList
+          variant="line"
           aria-label={t('Decision side panel tabs')}
-          className="grow border-b-0 px-4 sm:px-6"
+          className="grow justify-start border-b-0 px-4 sm:px-6"
         >
-          <Tab id="updates" className="h-auto px-0">
+          <TabsTrigger value="updates" className="h-auto flex-none">
             {t('Updates')}
-          </Tab>
-          <Tab id="resources" className="h-auto px-0">
+          </TabsTrigger>
+          <TabsTrigger value="resources" className="h-auto flex-none">
             {t('Resources')}
-          </Tab>
-        </TabList>
-        <IconButton
+          </TabsTrigger>
+        </TabsList>
+        <Button
           variant="ghost"
-          size="small"
-          onPress={() => setOpen(false)}
+          size="icon-sm"
+          onClick={onClose}
           aria-label={t('Close')}
-          className="sm:hidden"
         >
           <LuX className="size-5" />
-        </IconButton>
+        </Button>
       </div>
 
-      <TabPanel
-        id="updates"
+      <TabsContent
+        value="updates"
         className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
       >
         {isOpen ? (
@@ -176,9 +164,9 @@ const PanelContents = ({
             canReadUpdates={canReadUpdates}
           />
         ) : null}
-      </TabPanel>
-      <TabPanel
-        id="resources"
+      </TabsContent>
+      <TabsContent
+        value="resources"
         className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
       >
         {isOpen ? (
@@ -188,7 +176,7 @@ const PanelContents = ({
             canRead={canReadUpdates}
           />
         ) : null}
-      </TabPanel>
+      </TabsContent>
     </Tabs>
   );
 };
@@ -213,17 +201,14 @@ const UpdatesTabContent = ({
 
   return (
     <div className="flex flex-col px-4 pt-4 pb-8 sm:px-6">
-      <Header2 className="font-serif text-title-base">{t('Updates')}</Header2>
       <div className="mt-4 flex flex-col gap-6">
         {canPostUpdate ? (
-          <Surface className="rounded-lg p-4 pt-5">
-            <PostUpdate
-              profileId={decisionProfileId}
-              placeholder={t('Share an update with participants…')}
-              label={t('Post')}
-              onSuccess={handlePostSuccess}
-            />
-          </Surface>
+          <PostUpdate
+            profileId={decisionProfileId}
+            placeholder={t('Share an update with participants…')}
+            label={t('Post')}
+            onSuccess={handlePostSuccess}
+          />
         ) : null}
         {canReadUpdates ? (
           <ErrorBoundary>
@@ -232,9 +217,16 @@ const UpdatesTabContent = ({
             </Suspense>
           </ErrorBoundary>
         ) : (
-          <EmptyState icon={<MegaphoneIcon />}>
-            {t("You don't have access to updates for this decision.")}
-          </EmptyState>
+          <Empty className="border-0">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <MegaphoneIcon />
+              </EmptyMedia>
+              <EmptyDescription>
+                {t("You don't have access to updates for this decision.")}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </div>
     </div>
@@ -259,6 +251,16 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
     [paginatedData.pages],
   );
 
+  // `handleTranslate` already sends this decision's updates to translatePosts.
+  // Register them so the Translate control appears for a reader whose only
+  // unreadable content is an update — the proposals and the overview may well
+  // be in their language.
+  const postSamples = useMemo(
+    () => posts.map((post) => post.content ?? ''),
+    [posts],
+  );
+  useRegisterTranslationSamples('updates', postSamples);
+
   const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
     fetchNextPage,
     {
@@ -271,14 +273,24 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
 
   if (posts.length === 0) {
     return (
-      <EmptyState icon={<MegaphoneIcon />}>{t('No updates yet')}</EmptyState>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <MegaphoneIcon />
+          </EmptyMedia>
+          <EmptyTitle>{t('No updates yet')}</EmptyTitle>
+          <EmptyDescription className="max-w-72">
+            {t("The organizers haven't posted any updates yet")}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -292,7 +304,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
               organization={null}
               user={user}
               withLinks={false}
-              onReactionClick={handleReactionClick}
+              onLikeClick={handleLikeClick}
               onCommentClick={handleCommentClick}
               className="sm:px-0"
             />

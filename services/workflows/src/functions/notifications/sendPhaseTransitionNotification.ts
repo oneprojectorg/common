@@ -1,15 +1,16 @@
 import {
   type DecisionInstanceData,
+  listProcessParticipants,
   resolveManualSelectionStatus,
 } from '@op/common';
-import { hasEmail } from '@op/common/client';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { processInstances, profileUsers, profiles } from '@op/db/schema';
+import { processInstances, profiles } from '@op/db/schema';
 import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const { phaseTransitioned, manualSelectionsConfirmed } = Events;
 
@@ -26,7 +27,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     { event: phaseTransitioned.name },
     { event: manualSelectionsConfirmed.name },
   ],
-  async ({ event, step }) => {
+  async ({ event, step, runId }) => {
     const { processInstanceId, toPhaseId } = phaseTransitioned.schema.parse(
       event.data,
     );
@@ -91,23 +92,17 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     const phaseNumber = toPhaseIndex !== -1 ? toPhaseIndex + 1 : 1;
     const totalPhases = phases.length;
 
-    const participants = await step.run('get-participants', async () => {
-      const rows = await db
-        .select({
-          email: profileUsers.email,
-        })
-        .from(profileUsers)
-        .where(
-          and(
-            eq(profileUsers.profileId, processData.profileId!),
-            isNotNull(profileUsers.email),
-          ),
-        );
+    // The Members panel alone misses public submitters, who are the majority
+    // of an open process.
+    const participants = await step.run('get-participants', async () =>
+      listProcessParticipants({ processInstanceId }),
+    );
 
-      return rows.filter(hasEmail);
-    });
+    // The service is channel-agnostic, so address filtering is this sender's
+    // own concern.
+    const recipientEmails = selectEmailRecipients(participants);
 
-    if (participants.length === 0) {
+    if (recipientEmails.length === 0) {
       logger.warn('No participants found for process instance', {
         processInstanceId,
         profileId: processData.profileId,
@@ -119,7 +114,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
 
     const result = await step.run('send-emails', async () => {
       try {
-        const emails = participants.map(({ email }) => ({
+        const emails = recipientEmails.map((email) => ({
           to: email,
           subject: PhaseTransitionEmail.subject(processData.name, toPhaseName),
           component: () =>
@@ -132,15 +127,29 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
             }),
         }));
 
-        const { data, errors } = await OPBatchSend(emails);
+        const { errors } = await OPBatchSend(emails, {
+          // Stable across retries, unique per run: a retry replays delivered
+          // chunks and only the failed ones go out again.
+          idempotencyKeyPrefix: `phase-transition/${runId}`,
+        });
 
         if (errors.length > 0) {
-          throw Error(`Email batch failed: ${JSON.stringify(errors)}`);
+          logger.error('Some phase transition notifications failed to send', {
+            processInstanceId,
+            failedCount: errors.length,
+          });
+          throw new Error(
+            `Phase transition email batch failed for ${errors.length} recipient(s)`,
+          );
         }
 
-        return {
-          sent: data.length,
-        };
+        logger.info('Phase transition notifications sent', {
+          processInstanceId,
+          toPhaseId,
+          sent: emails.length,
+          idempotencyKeyPrefix: `phase-transition/${runId}`,
+        });
+        return { sent: emails.length };
       } catch (error) {
         logger.error('Failed to send phase transition notifications', {
           error,
@@ -151,6 +160,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     });
 
     return {
+      sent: result.sent,
       message: `${result.sent} phase transition notification(s) sent`,
     };
   },

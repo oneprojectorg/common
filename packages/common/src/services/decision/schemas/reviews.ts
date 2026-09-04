@@ -15,6 +15,10 @@ import {
   instancePhaseRefSchema,
 } from './instance';
 import { proposalProfileSchema, proposalSchema } from './proposal';
+import {
+  type ProposalCategoryItem,
+  proposalCategorySchema,
+} from './proposalCategory';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -147,6 +151,24 @@ export const proposalRevisionRequestListSchema = z.object({
   revisionRequests: z.array(proposalRevisionRequestItemSchema),
 });
 
+// ── Proposal-scoped author feedback schemas ───────────────────────────
+
+/**
+ * One anonymized reviewer note released to the proposal author. Deliberately
+ * narrower than `proposalReviewSchema`: no `reviewData`, and never a reviewer
+ * identity — anonymity is structural, not a runtime setting.
+ */
+export const proposalFeedbackItemSchema = z.object({
+  id: z.uuid(),
+  comment: z.string(),
+  phaseId: z.string(),
+  submittedAt: z.string().nullable(),
+});
+
+export const proposalFeedbackListSchema = z.object({
+  items: z.array(proposalFeedbackItemSchema),
+});
+
 // ── Per-proposal review aggregates ─────────────────────────────────────
 
 /**
@@ -174,13 +196,6 @@ export const proposalReviewAggregatesSchema = z.object({
   ),
 });
 
-/** Taxonomy-backed category attached to a proposal. */
-export const proposalCategorySchema = z.object({
-  id: z.uuid(),
-  label: z.string(),
-  termUri: z.string(),
-});
-
 export const proposalWithAggregatesSchema = z.object({
   proposal: proposalSchema,
   aggregates: proposalReviewAggregatesSchema,
@@ -188,14 +203,11 @@ export const proposalWithAggregatesSchema = z.object({
 });
 
 /**
- * Single response shape for both filtered and paginated modes. In
- * filtered mode `total` is just `items.length` and `next` is null —
- * one shape is simpler than a union and clients can ignore the extras.
+ * Single response shape for both modes. A caller that wants a count reads
+ * `items.length`.
  */
 export const proposalsWithReviewAggregatesListSchema = z.object({
   items: z.array(proposalWithAggregatesSchema),
-  total: z.number().int(),
-  next: z.string().nullable(),
   /** The phase-resolved rubric the items' aggregates were scored against. */
   rubricTemplate: rubricTemplateSchema.nullable(),
 });
@@ -253,10 +265,12 @@ export type ProposalRevisionRequestItem = z.infer<
 export type ProposalRevisionRequestList = z.infer<
   typeof proposalRevisionRequestListSchema
 >;
+export type ProposalFeedbackItem = z.infer<typeof proposalFeedbackItemSchema>;
+export type ProposalFeedbackList = z.infer<typeof proposalFeedbackListSchema>;
 export type ProposalReviewAggregates = z.infer<
   typeof proposalReviewAggregatesSchema
 >;
-export type ProposalCategoryItem = z.infer<typeof proposalCategorySchema>;
+export { proposalCategorySchema, type ProposalCategoryItem };
 export type ProposalWithAggregates = z.infer<
   typeof proposalWithAggregatesSchema
 >;

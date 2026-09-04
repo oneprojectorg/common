@@ -6,7 +6,7 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 ## Quick Start & Setup
 
 1.  **Prerequisites**:
-    - Ensure you have **Node.js v22+** installed. You can use [nvm](https://github.com/nvm-sh/nvm) for easy Node.js version management: `nvm use`
+    - Ensure you have **Node.js v24** installed. You can use [nvm](https://github.com/nvm-sh/nvm) for easy Node.js version management: `nvm use`
     - Enable [Corepack](https://nodejs.org/api/corepack.html) (Node.js's built-in package manager manager) by running: `corepack enable` (This ensures you use the `pnpm` version specified in the root `package.json`).
 2.  **Install Dependencies**: Run `pnpm install` in the project root. This will install dependencies for all workspaces.
 3.  **Environment Variables**:
@@ -18,7 +18,7 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 5.  **Run Applications** (using your `w:` shorthand):
     - **Frontend App (`apps/app`)**: `pnpm w:app dev` (Usually runs on [http://localhost:3100](http://localhost:3100))
     - **API Server (`apps/api`)**: `pnpm w:api dev` (Usually runs on [http://localhost:3300](http://localhost:3300))
-    - **UI Storybook (`packages/ui`)**: `pnpm w:ui dev` (Usually runs on [http://localhost:3600](http://localhost:3600))
+    - **Design System Storybook (`packages/sense`)**: `pnpm w:sense dev` (Usually runs on [http://localhost:3600](http://localhost:3600))
     - **Email Previews (`services/emails`)**: `pnpm w:emails dev` (Usually runs on [http://localhost:3883](http://localhost:3883))
 
 ## Docker Dev Environment
@@ -30,15 +30,15 @@ A fully containerised dev environment is available via `docker-compose.dev.yml`.
 On a fresh machine, you can install everything below with one of the bootstrap scripts:
 
 ```bash
-scripts/bootstrap-macos.sh    # Homebrew + OrbStack + Node 22 + pnpm
-scripts/bootstrap-linux.sh    # Docker engine + Node 22 + pnpm (Debian/Ubuntu)
+scripts/bootstrap-macos.sh    # Homebrew + OrbStack + Node 24 + pnpm
+scripts/bootstrap-linux.sh    # Docker engine + Node 24 + pnpm (Debian/Ubuntu)
 ```
 
 Otherwise, install these manually:
 
 - **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the Next.js app + API + Redis).
 - **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and Next.js build caches.
-- **Node.js 22+** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
+- **Node.js 24** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
 - **`TIPTAP_PRO_TOKEN`** — set it in your shell before running, or put it in `.env.local` at the repo root (`.env.local` is sourced by your workflow; `.env.docker` is tracked and must not contain the real token).
 - **Platform** — tested on arm64 macOS. amd64 Linux should work but isn't verified in CI.
 
@@ -193,7 +193,8 @@ Shared libraries used across different applications and services.
 
 - **[`packages/core`](./packages/core/README.md)**: Foundational layer providing shared configuration (`config.ts`), constants, environment logic, URL generation, and a custom logger (`fulog.ts`).
 - **[`packages/hooks`](./packages/hooks/README.md)**: Reusable React hooks, including authentication hooks (`useAuthUser`, `useAuthLogout`) interacting with Supabase, and potentially data fetching hooks using `@tanstack/react-query`.
-- **[`packages/ui`](./packages/ui/README.md)**: The core UI component library built with React Aria Components, styled with Tailwind CSS and `tailwind-variants`. Includes a Storybook setup for component development and documentation.
+- **[`packages/sense`](./packages/sense/README.md)**: The design system — shadcn/ui in its Base UI style, with a colocated Storybook for component development and documentation.
+- **`packages/styles`**: The shared Tailwind theme — `tokens.css` holds raw values, `theme.css` holds the semantic layer and is the package entry.
 
 ### Services (`services/`)
 
@@ -224,13 +225,14 @@ _(Commands below assume usage of the `w:<workspace>` shorthand)_
 
 ## Tailwind Integration Details
 
-This monorepo utilizes a shared Tailwind configuration strategy managed primarily by the `@op/ui` package.
+Tailwind configuration is centralized in the `@op/styles` package. There is no per-app Tailwind config and no preset wrapper.
 
-- **Shared Config**: `@op/ui` exports a base Tailwind configuration (`@op/ui/tailwind-config`) and shared color definitions from `@op/core`.
-- **Utilities**: `@op/ui` provides utilities (`@op/ui/tailwind-utils`) like `withUITailwindPreset` and `withTranspiledWorkspacesForNext`.
-- **App Consumption**: Applications (`apps/app`, `apps/api`) wrap their `tailwind.config.ts` with `withUITailwindPreset` and their `next.config.mjs` with `withTranspiledWorkspacesForNext`. This automatically includes the shared preset and ensures Next.js transpiles the necessary packages (`@op/ui` and any others listed in `@op/ui/tailwind-utils`) so Tailwind can scan their class usage directly from source.
+- **Raw values**: `packages/styles/tokens.css` holds the palette and scales as CSS custom properties.
+- **Semantic layer**: `packages/styles/theme.css` maps those to the semantic tokens components use (`bg-primary`, `text-muted-foreground`, `border-input`, the sense type scale) and is the package entry.
+- **Scanning**: `theme.css` declares its own `@source` globs covering `packages/sense` and `apps/app`, and the package builds to `dist/styles.css` via the Tailwind CLI.
+- **App consumption**: `apps/app` imports the built stylesheet once (`import '@op/styles'` in `src/app/layout.tsx`); it ships no CSS of its own.
 
-This setup allows components in `@op/ui` (and potentially other packages) to use Tailwind classes without having Tailwind as a direct dependency, centralizing the configuration and build process in the consuming applications. See the [`@op/ui` README](./packages/ui/README.md) and the utilities in `@op/ui/tailwind-utils` for more details if adding new Tailwind-dependent packages.
+Adding a new Tailwind-consuming package means adding an `@source` glob to `theme.css`, nothing more.
 
 ## Dependency Management Scripts
 

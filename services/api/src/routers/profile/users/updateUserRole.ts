@@ -1,4 +1,4 @@
-import { updateProfileUserRoles } from '@op/common';
+import { Channels, updateProfileUserRoles } from '@op/common';
 import { profileUserWithRolesSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -25,6 +25,13 @@ export const updateUserRolesRouter = router({
         user,
       });
 
-      return profileUserWithRolesSchema.parse(result);
+      const profileUser = profileUserWithRolesSchema.parse(result);
+
+      // A role change moves one member between two role counts.
+      ctx.registerMutationChannels([
+        Channels.profileMembers(profileUser.profileId),
+      ]);
+
+      return profileUser;
     }),
 });

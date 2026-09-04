@@ -6,6 +6,7 @@ import { DecisionTranslationProvider } from '@/components/decisions/DecisionTran
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 import { JoinAccountModal } from '@/components/decisions/JoinAccountModal';
 import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
+import { TranslationDetectionProvider } from '@/components/decisions/TranslationDetectionContext';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
 import { loadDecision } from './loadDecision';
@@ -42,65 +43,70 @@ const DecisionViewLayout = async ({
 
   return (
     <DecisionTranslationProvider>
-      {/* Fixed header + scrolling content: the grid keeps the header in place
+      {/* Detection spans the whole screen — the side panel's updates and
+          resources register alongside the proposals and the phase copy, so one
+          Translate control covers everything the screen can translate. */}
+      <TranslationDetectionProvider>
+        {/* Fixed header + scrolling content: the grid keeps the header in place
           and confines the scrollbar to the content row. The content row is the
           scroll container the proposals filter bar pins inside. */}
-      <div className="grid h-dvh grid-rows-[auto_1fr]">
-        <DecisionHeader
-          instanceId={instanceId}
-          decisionSlug={slug}
-          isAdmin={access?.admin}
-          canReadUpdates={access?.admin === true || access?.read === true}
-          profileName={decisionProfile.name}
-          // Pass the instance so the header renders from props (no client
-          // getInstance query on this route).
-          processInstance={instance}
-          showStepper={false}
-          // Hidden until the first phase begins.
-          centerSlot={
-            isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
-          }
-        />
-        {/* overflow-x-clip: the bar's full-bleed `w-screen` chrome is 100vw,
+        <div className="grid h-dvh grid-rows-[auto_1fr]">
+          <DecisionHeader
+            instanceId={instanceId}
+            decisionSlug={slug}
+            isAdmin={access?.admin}
+            canReadUpdates={access?.admin === true || access?.read === true}
+            profileName={decisionProfile.name}
+            // Pass the instance so the header renders from props (no client
+            // getInstance query on this route).
+            processInstance={instance}
+            showStepper={false}
+            // Hidden until the first phase begins.
+            centerSlot={
+              isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
+            }
+          />
+          {/* overflow-x-clip: the bar's full-bleed `w-screen` chrome is 100vw,
             which exceeds the content width by the scrollbar on desktop and would
             otherwise add a few px of horizontal scroll. */}
-        <div className="overflow-x-clip overflow-y-auto">{children}</div>
-      </div>
-      {/*
-       * Like the header's updates toggle, the side panel reads the `panel`
-       * search param (nuqs/useSearchParams). It lives in this layout, which
-       * Next prerenders as the route's static shell (see loading.tsx), so the
-       * read would happen outside a request scope and throw. Suspense defers
-       * it out of the shell; the panel is closed by default, so null fallback.
-       */}
-      <Suspense fallback={null}>
-        <DecisionSidePanel
-          decisionProfileId={decisionProfile.id}
-          access={access}
-        />
-      </Suspense>
-      {/*
-       * Post-anon-submit promote modal. Mounted here (not on the deleted
-       * `/decisions/[slug]/page.tsx` from #1458) so the `?promote=1` redirect
-       * the proposal editor issues still opens the modal regardless of whether
-       * the user lands on the overview or the current-phase tab. Reads
-       * `?promote=` via nuqs and renders null when the param is absent.
-       */}
-      <Suspense fallback={null}>
-        <PromoteAccountModal />
-      </Suspense>
-      {/*
-       * Header "Join" modal (account claim on public processes). Mounted in the
-       * layout like PromoteAccountModal so `?join=1` works on both tabs; reads
-       * the param via nuqs, hence the Suspense (see the side panel comment).
-       * Only mounted when the process is public — non-public pages hydrate
-       * nothing.
-       */}
-      {canJoin ? (
+          <div className="overflow-x-clip overflow-y-auto">{children}</div>
+        </div>
+        {/*
+         * Like the header's updates toggle, the side panel reads the `panel`
+         * search param (nuqs/useSearchParams). It lives in this layout, which
+         * Next prerenders as the route's static shell (see loading.tsx), so the
+         * read would happen outside a request scope and throw. Suspense defers
+         * it out of the shell; the panel is closed by default, so null fallback.
+         */}
         <Suspense fallback={null}>
-          <JoinAccountModal />
+          <DecisionSidePanel
+            decisionProfileId={decisionProfile.id}
+            access={access}
+          />
         </Suspense>
-      ) : null}
+        {/*
+         * Post-anon-submit promote modal. Mounted here (not on the deleted
+         * `/decisions/[slug]/page.tsx` from #1458) so the `?promote=1` redirect
+         * the proposal editor issues still opens the modal regardless of whether
+         * the user lands on the overview or the current-phase tab. Reads
+         * `?promote=` via nuqs and renders null when the param is absent.
+         */}
+        <Suspense fallback={null}>
+          <PromoteAccountModal />
+        </Suspense>
+        {/*
+         * Header "Join" modal (account claim on public processes). Mounted in the
+         * layout like PromoteAccountModal so `?join=1` works on both tabs; reads
+         * the param via nuqs, hence the Suspense (see the side panel comment).
+         * Only mounted when the process is public — non-public pages hydrate
+         * nothing.
+         */}
+        {canJoin ? (
+          <Suspense fallback={null}>
+            <JoinAccountModal />
+          </Suspense>
+        ) : null}
+      </TranslationDetectionProvider>
     </DecisionTranslationProvider>
   );
 };

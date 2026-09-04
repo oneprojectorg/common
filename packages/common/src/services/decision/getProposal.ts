@@ -30,6 +30,7 @@ import {
   decisionPermission,
   fromDecisionBitField,
 } from './permissions';
+import { isAnonymousAuthor } from './proposalAuthor';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
@@ -290,9 +291,7 @@ export const getProposal = async ({
     ...proposal,
     submittedBy: {
       ...submittedByProfile,
-      isAnonymous: Boolean(
-        profileUsers?.some((pu) => pu.authUser?.isAnonymous),
-      ),
+      isAnonymous: isAnonymousAuthor(profileUsers),
     },
     proposalData: parsedProposalData,
     proposalTemplate,

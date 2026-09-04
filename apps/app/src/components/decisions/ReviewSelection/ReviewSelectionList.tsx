@@ -3,9 +3,14 @@
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import { getRubricScoringInfo } from '@op/common/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { toast } from '@op/ui/Toast';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -24,10 +29,13 @@ import {
 export function ReviewSelectionList({
   instance,
   previousPhaseId,
+  showBudget,
 }: {
   instance: ProcessInstance;
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
+  /** Show the budget column. Derived by the page so the skeleton agrees. */
+  showBudget: boolean;
 }) {
   const t = useTranslations();
   const processInstanceId = instance.id;
@@ -46,18 +54,23 @@ export function ReviewSelectionList({
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const [{ items, total, rubricTemplate }] =
+  const [{ items, rubricTemplate }] =
     trpc.decision.listWithReviewAggregates.useSuspenseQuery({
       processInstanceId,
       phaseId: previousPhaseId,
     });
   const utils = trpc.useUtils();
 
-  const totalPoints = useMemo(
-    () =>
-      rubricTemplate ? getRubricScoringInfo(rubricTemplate).totalPoints : 0,
-    [rubricTemplate],
-  );
+  const { totalPoints, hasScoring } = useMemo(() => {
+    if (!rubricTemplate) {
+      return { totalPoints: 0, hasScoring: false };
+    }
+    const info = getRubricScoringInfo(rubricTemplate);
+    return {
+      totalPoints: info.totalPoints,
+      hasScoring: info.criteria.some((c) => c.scored),
+    };
+  }, [rubricTemplate]);
 
   const selectedProposals = useMemo(
     () =>
@@ -80,7 +93,7 @@ export function ReviewSelectionList({
     },
     onError: (error) => {
       setIsConfirmOpen(false);
-      toast.error({ message: error.message });
+      toast.error(error.message);
     },
   });
 
@@ -96,32 +109,39 @@ export function ReviewSelectionList({
     <div className="flex flex-col gap-6 pb-20">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <span className="font-serif text-title-base text-neutral-black">
+          <span className="font-serif text-title font-light">
             {t('All proposals')}
           </span>
           <Bullet />
-          <span className="font-serif text-title-base text-neutral-black">
-            {total}
+          <span className="font-serif text-title font-light">
+            {items.length}
           </span>
         </div>
       </div>
 
       {items.length === 0 ? (
-        <EmptyState icon={<LuLeaf className="size-6" />}>
-          <Header3 className="font-serif font-light">
-            {t('No proposals to review yet')}
-          </Header3>
-          <p className="text-base text-neutral-charcoal">
-            {t('Proposals will appear here once they are submitted.')}
-          </p>
-        </EmptyState>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LuLeaf className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle render={<h3 />}>
+              {t('No proposals to review yet')}
+            </EmptyTitle>
+            <EmptyDescription>
+              {t('Proposals will appear here once they are submitted.')}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ReviewSelectionTable
           items={items}
           totalPoints={totalPoints}
+          showScore={hasScoring}
           onAdvance={handleAdvanceToggle}
           advancingIds={advancing}
           decisionSlug={decisionSlug}
+          showBudget={showBudget}
         />
       )}
 
@@ -143,11 +163,20 @@ export function ReviewSelectionList({
   );
 }
 
-export function ReviewSelectionListSkeleton() {
+export function ReviewSelectionListSkeleton({
+  showScore = true,
+  showBudget = true,
+}: {
+  showScore?: boolean;
+  showBudget?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="h-8 w-32 animate-pulse rounded bg-neutral-gray1" />
-      <ReviewSelectionTableSkeleton />
+      <div className="h-8 w-32 animate-pulse rounded bg-secondary" />
+      <ReviewSelectionTableSkeleton
+        showScore={showScore}
+        showBudget={showBudget}
+      />
     </div>
   );
 }

@@ -1,8 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { MenuItem, MenuList } from '@op/ui/Menu';
-import { Sheet, SheetBody } from '@op/ui/Sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuEye } from 'react-icons/lu';
@@ -48,62 +46,63 @@ export function AdminOverviewBar({
 
   return (
     <>
-      {/* Bespoke full-width tinted admin bar — no Button variant matches this
-          shape, so render an unstyled Button for RAC press/focus a11y. */}
-      <Button
-        unstyled
-        onPress={() => setSheetOpen(true)}
-        className="flex w-full items-center justify-center gap-2 bg-primary-tealWhite px-4 py-2 text-base md:hidden"
+      {/* Bespoke full-width tinted admin bar — no @op/sense Button variant
+          matches this shape (there is no `unstyled` variant), so
+          render a native <button> for press/focus a11y. */}
+      <button
+        type="button"
+        onClick={() => setSheetOpen(true)}
+        className="flex w-full items-center justify-center gap-2 bg-accent px-4 py-2 text-base md:hidden"
       >
-        <span className="flex items-center gap-1.5 text-neutral-charcoal">
+        <span className="flex items-center gap-1.5">
           <LuEye className="size-4" aria-hidden="true" />
           {t('Admin')}
         </span>
         {phaseName ? (
           <>
-            <span aria-hidden="true" className="text-neutral-black">
-              |
-            </span>
+            <span aria-hidden="true">|</span>
             <span className="flex items-end gap-1.5">
-              <span className="text-neutral-black">{phaseName}</span>
+              <span>{phaseName}</span>
               {endsLabel ? (
-                <span className="text-sm text-neutral-gray4">{endsLabel}</span>
+                <span className="text-sm text-muted-foreground">
+                  {endsLabel}
+                </span>
               ) : null}
             </span>
           </>
         ) : null}
-      </Button>
+      </button>
 
-      <Sheet
-        isOpen={sheetOpen}
-        onOpenChange={setSheetOpen}
-        side="bottom"
-        className="md:hidden"
-      >
-        <SheetBody>
-          <MenuList
-            aria-label={t('Admin options')}
-            className="flex min-w-full flex-col border-0 p-0 shadow-none"
-          >
-            <MenuItem
-              id="edit-banner"
-              className="px-6 py-4"
-              onAction={() => {
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="bottom" className="md:hidden">
+          <SheetHeader className="sr-only">
+            <SheetTitle>{t('Admin options')}</SheetTitle>
+          </SheetHeader>
+          {/* TODO(sense-migration): this was an inline action list inside the
+              sheet (no trigger/popover). @op/sense
+              DropdownMenu requires a DropdownMenuTrigger + portaled
+              DropdownMenuContent, so it can't render inline here. Rebuilt as a
+              native <button> list to preserve the bottom-sheet action rows. */}
+          <div className="flex min-w-full flex-col">
+            <button
+              type="button"
+              className="px-6 py-4 text-start text-base hover:bg-secondary"
+              onClick={() => {
                 setSheetOpen(false);
                 setBannerOpen(true);
               }}
             >
               {t('Edit banner')}
-            </MenuItem>
-            <MenuItem
-              id="process-settings"
-              className="px-6 py-4"
-              onAction={() => router.push(`/decisions/${decisionSlug}/edit`)}
+            </button>
+            <button
+              type="button"
+              className="px-6 py-4 text-start text-base hover:bg-secondary"
+              onClick={() => router.push(`/decisions/${decisionSlug}/edit`)}
             >
               {t('Process settings')}
-            </MenuItem>
-          </MenuList>
-        </SheetBody>
+            </button>
+          </div>
+        </SheetContent>
       </Sheet>
 
       <BannerUploadModal

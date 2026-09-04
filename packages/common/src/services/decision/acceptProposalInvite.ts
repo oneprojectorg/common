@@ -12,6 +12,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '../../utils/error';
+import { invalidateProfileUserAccessCache } from '../access';
 import { assertGlobalRole } from '../assert';
 import { emitDecisionMemberRolesChanged } from './events/emitDecisionMemberRolesChanged';
 
@@ -164,6 +165,22 @@ export const acceptProposalInvite = async ({
 
     return proposalProfileUser;
   });
+
+  // A signed-in invitee may have cached effective access from the decision's
+  // GLOBAL_USER_PUBLIC grant. Accepting creates personal memberships without
+  // changing the cache keys, so clear both affected profiles before returning.
+  await Promise.all([
+    invalidateProfileUserAccessCache({
+      authUserId: user.id,
+      profileId: invite.profileId,
+    }),
+    decisionProfileIdToAdd
+      ? invalidateProfileUserAccessCache({
+          authUserId: user.id,
+          profileId: decisionProfileIdToAdd,
+        })
+      : null,
+  ]);
 
   // Only the decision-profile grant is relevant to decision-side consumers.
   if (decisionProfileIdToAdd) {

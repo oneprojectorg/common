@@ -1,16 +1,15 @@
 'use client';
 
 import type { PostFeedUser } from '@/utils/optimisticUpdates';
-import { createOptimisticUpdater } from '@/utils/optimisticUpdates';
+import { togglePostLike } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
-import { REACTION_OPTIONS } from '@op/types';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 
 import { useTranslations } from '@/lib/i18n';
 
 /**
- * Hook for handling reactions on the post detail page.
+ * Hook for handling likes on the post detail page.
  * Manages optimistic updates for both the main post and its comments.
  * Isolates the complexity of the optimistic updates to a single hook.
  */
@@ -24,8 +23,8 @@ export const usePostDetailActions = ({
   const utils = trpc.useUtils();
   const t = useTranslations();
 
-  const toggleReaction = trpc.organization.toggleReaction.useMutation({
-    onMutate: async ({ postId: reactionPostId, reactionType }) => {
+  const toggleLike = trpc.organization.toggleLike.useMutation({
+    onMutate: async ({ postId: likedPostId }) => {
       // Query keys for the detail page
       const mainPostQueryKey = {
         postId,
@@ -41,21 +40,17 @@ export const usePostDetailActions = ({
       const previousMainPost = utils.posts.getPost.getData(mainPostQueryKey);
       const previousComments = utils.posts.getPosts.getData(commentsQueryKey);
 
-      // Create optimistic updater
-      const optimisticUpdater = createOptimisticUpdater(user);
-
       // Optimistically update main post
       utils.posts.getPost.setData(mainPostQueryKey, (old) => {
         if (!old) {
           return old;
         }
 
-        const updated = optimisticUpdater.updatePostReactions(
-          { post: old },
-          reactionPostId,
-          reactionType,
-        );
-        return updated.post;
+        return togglePostLike({
+          item: { post: old },
+          postId: likedPostId,
+          user,
+        }).post;
       });
 
       // Optimistically update comments
@@ -64,14 +59,14 @@ export const usePostDetailActions = ({
           return old;
         }
 
-        return old.map((comment) => {
-          const updated = optimisticUpdater.updatePostReactions(
-            { post: comment },
-            reactionPostId,
-            reactionType,
-          );
-          return updated.post;
-        });
+        return old.map(
+          (comment) =>
+            togglePostLike({
+              item: { post: comment },
+              postId: likedPostId,
+              user,
+            }).post,
+        );
       });
 
       return { previousMainPost, previousComments };
@@ -94,24 +89,20 @@ export const usePostDetailActions = ({
         );
       }
 
-      toast.error({ message: err.message || t('Failed to update reaction') });
+      toast.error(err.message || t('Failed to update like'));
+    },
+    // The detail page never refetches on its own (`refetchOnWindowFocus` is
+    // off), so without this a batched double-click — where both requests race
+    // to "added" and the two optimistic flips cancel out — leaves the button
+    // disagreeing with the server until a full reload.
+    onSettled: () => {
+      void utils.posts.getPost.invalidate();
+      void utils.posts.getPosts.invalidate();
     },
   });
 
-  const handleReactionClick = (reactionPostId: string, emoji: string) => {
-    // Convert emoji to reaction type
-    const reactionOption = REACTION_OPTIONS.find(
-      (option) => option.emoji === emoji,
-    );
-    const reactionType = reactionOption?.key;
+  const handleLikeClick = (likedPostId: string) =>
+    toggleLike.mutateAsync({ postId: likedPostId });
 
-    if (!reactionType) {
-      console.error('Unknown emoji:', emoji);
-      return;
-    }
-
-    toggleReaction.mutate({ postId: reactionPostId, reactionType });
-  };
-
-  return { handleReactionClick };
+  return { handleLikeClick };
 };

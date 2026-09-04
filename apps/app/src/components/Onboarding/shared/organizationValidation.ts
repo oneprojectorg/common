@@ -28,7 +28,7 @@ export const createOrganizationFormValidator = (t: TranslateFn) =>
     }),
     email: z
       .email({
-        error: t('Invalid email'),
+        error: t('Enter a valid email address'),
       })
       .max(200, {
         error: t('Must be at most 200 characters'),

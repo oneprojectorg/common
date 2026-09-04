@@ -65,7 +65,7 @@ export function PhaseConfigRow({
     >
       {showDragHandle ? <DragHandle {...dragHandleProps} /> : null}
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-serif text-title-sm text-foreground">
+        <span className="truncate font-serif text-label text-foreground">
           {name}
         </span>
         {configured ? (

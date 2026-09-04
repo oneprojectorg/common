@@ -4,9 +4,14 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { Surface } from '@op/ui/Surface';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+} from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { useCallback, useRef } from 'react';
 import { LuUserRoundPlus } from 'react-icons/lu';
 
@@ -15,6 +20,13 @@ import { useTranslations } from '@/lib/i18n';
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { JoinDecisionButton } from './JoinAccountModal';
+
+/**
+ * Fragment id on the comments section. The proposal-view action row links to it
+ * (`#proposal-comments`) so the mobile "Comments" icon button jumps here without
+ * any scroll scripting.
+ */
+export const PROPOSAL_COMMENTS_ANCHOR_ID = 'proposal-comments';
 
 export function ProposalComments({
   proposal,
@@ -34,7 +46,7 @@ export function ProposalComments({
     });
 
   const comments = commentsData?.items ?? [];
-  const { handleReactionClick } = usePostFeedActions();
+  const { handleLikeClick } = usePostFeedActions();
 
   // Mirror the server-side comment gate (`assertPostWriteAccess` →
   // SUBMIT_PROPOSALS on the decision profile). Showing the post box to users
@@ -61,45 +73,44 @@ export function ProposalComments({
   }, []);
 
   return (
-    <div ref={containerRef}>
-      <div className="border-t pt-8">
-        <Header3 className="mb-6 font-sans">
+    <div id={PROPOSAL_COMMENTS_ANCHOR_ID} ref={containerRef}>
+      <div className="space-y-4 border-t pt-6 sm:pt-10">
+        <Header3 className="text-label">
           {t('Comments')} ({comments.length})
         </Header3>
 
         {!readOnly && (
           <div className="mb-8">
-            <Surface className="border-0 p-0 sm:border sm:p-4">
-              <PostUpdate
-                profileId={proposal.profileId || undefined}
-                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
-                label={t('Comment')}
-                onSuccess={scrollToComments}
-                proposalId={proposal.id}
-                processInstanceId={proposal.processInstanceId}
-              />
-            </Surface>
+            <PostUpdate
+              profileId={proposal.profileId || undefined}
+              placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+              label={t('Comment')}
+              onSuccess={scrollToComments}
+              proposalId={proposal.id}
+              processInstanceId={proposal.processInstanceId}
+            />
           </div>
         )}
 
         {showJoinPrompt && (
-          <EmptyState
-            icon={<LuUserRoundPlus className="size-6" />}
-            className="mb-8"
-          >
-            <p
-              id="join-to-comment-prompt"
-              className="text-base text-neutral-charcoal"
-            >
-              {t('Join Common to comment on this proposal.')}
-            </p>
-            <JoinDecisionButton ariaDescribedBy="join-to-comment-prompt" />
-          </EmptyState>
+          <Empty className="mb-8">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuUserRoundPlus />
+              </EmptyMedia>
+              <EmptyDescription id="join-to-comment-prompt">
+                {t('Join Common to comment on this proposal.')}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <JoinDecisionButton ariaDescribedBy="join-to-comment-prompt" />
+            </EmptyContent>
+          </Empty>
         )}
 
         {commentsLoading ? (
           <div
-            className="py-8 text-center text-gray-500"
+            className="py-8 text-center text-base text-muted-foreground"
             role="status"
             aria-label={t('Loading comments')}
           >
@@ -115,7 +126,7 @@ export function ProposalComments({
                     organization={null}
                     user={user}
                     withLinks={true}
-                    onReactionClick={handleReactionClick}
+                    onLikeClick={handleLikeClick}
                     className="sm:px-0"
                   />
                   {comments.length !== i + 1 && <hr className="my-4" />}
@@ -125,7 +136,7 @@ export function ProposalComments({
           </div>
         ) : (
           <div
-            className="py-8 text-center text-gray-500"
+            className="py-8 text-center text-base text-muted-foreground"
             role="status"
             aria-label={t('No comments')}
           >

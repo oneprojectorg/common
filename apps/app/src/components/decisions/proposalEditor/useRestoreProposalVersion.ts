@@ -2,11 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import {
+  PROPOSAL_TITLE_MAX_LENGTH,
   normalizeProposalCategories,
   parseProposalData,
 } from '@op/common/client';
 import type { ProposalData } from '@op/common/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import type { JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -36,14 +37,11 @@ export function useRestoreProposalVersion({
   const { provider } = useCollaborativeDoc();
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: () => {
-      toast.success({
-        message: t('Proposal version restored'),
-      });
+      toast.success(t('Proposal version restored'));
     },
     onError: (error) => {
-      toast.error({
-        title: t('Failed to restore proposal version'),
-        message: error.message || t('An unexpected error occurred'),
+      toast.error(t('Failed to restore proposal version'), {
+        description: error.message || t('An unexpected error occurred'),
       });
     },
   });
@@ -56,7 +54,13 @@ export function useRestoreProposalVersion({
     fragmentContents: Record<string, JSONContent | null>,
   ): { title: string; proposalData: ProposalData } {
     const currentProposalData = parseProposalData(proposalData);
-    const nextTitle = getFragmentText(fragmentContents.title);
+    // Clamped to what the API accepts: versions predate the cap, and the
+    // document is reverted before this is persisted, so a title the schema
+    // rejects would leave the body restored and the metadata not.
+    const nextTitle = getFragmentText(fragmentContents.title).slice(
+      0,
+      PROPOSAL_TITLE_MAX_LENGTH,
+    );
     const nextCategory = normalizeProposalCategories(
       getFragmentText(fragmentContents.category),
     );
@@ -74,28 +78,44 @@ export function useRestoreProposalVersion({
   }
 
   /**
-   * Restores the proposal to the specified version using the provided
-   * fragment contents. Reverts the collaborative document and persists
-   * the extracted field values.
+   * Restores the proposal to the specified version using the provided fragment
+   * contents: reverts the collaborative document and persists the extracted
+   * field values.
+   *
+   * Returns false without touching anything when the version's contents aren't
+   * available — the preview arrives asynchronously, and reverting on an empty
+   * map would blank the title, category and budget.
    */
   async function restoreVersion(
     versionId: number,
     fragmentContents: Record<string, JSONContent | null>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (Object.keys(fragmentContents).length === 0) {
-      return;
+      toast.error(t('That version is still loading'), {
+        description: t('Wait for the preview to appear, then try again.'),
+      });
+      return false;
     }
 
     const restoredData = buildRestoredProposalData(fragmentContents);
 
     provider.revertToVersion(versionId, {
       fields: fragmentNames,
+      // TipTap snapshots twice by default: the content before the revert, and
+      // the reverted content. The second one duplicates the list's synthetic
+      // "Current version" row — it *is* the current document — so suppress it.
+      // The pre-revert snapshot stays: it's the only copy of what the restore
+      // replaced, and the auto-versioner will capture the restored state on the
+      // next edit anyway.
+      newVersionName: false,
     });
 
     await updateProposalMutation.mutateAsync({
       proposalId,
       data: restoredData,
     });
+
+    return true;
   }
 
   return {

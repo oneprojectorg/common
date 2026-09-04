@@ -81,7 +81,7 @@ function MenubarContent({
       alignOffset={alignOffset}
       sideOffset={sideOffset}
       className={cn(
-        'min-w-36 rounded-md border bg-popover px-1 py-2 text-popover-foreground shadow-md duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-end]:rtl:slide-in-from-right-2 data-[side=inline-start]:rtl:slide-in-from-left-2',
+        'min-w-36 rounded-md border bg-popover px-1 py-2 text-popover-foreground shadow-md duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-start-2 data-[side=inline-start]:slide-in-from-end-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
         className,
       )}
       {...props}
@@ -101,7 +101,7 @@ function MenubarItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "group/menubar-item gap-1.5 rounded-md px-3 py-2 text-base focus:bg-muted data-disabled:opacity-50 data-inset:ps-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive-muted data-[variant=destructive]:focus:text-destructive [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive!",
+        "group/menubar-item gap-1.5 rounded-md px-3 py-2 text-base focus:bg-accent data-disabled:opacity-50 data-inset:ps-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive-muted data-[variant=destructive]:focus:text-destructive [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive!",
         className,
       )}
       {...props}
@@ -123,7 +123,7 @@ function MenubarCheckboxItem({
       data-slot="menubar-checkbox-item"
       data-inset={inset}
       className={cn(
-        'relative flex cursor-default items-center gap-1.5 rounded-md py-2 ps-7 pe-1.5 text-base outline-hidden select-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:ps-7 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+        'relative flex cursor-default items-center gap-1.5 rounded-md py-2 ps-7 pe-1.5 text-base outline-hidden select-none focus:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:ps-7 [&_svg]:pointer-events-none [&_svg]:shrink-0',
         className,
       )}
       checked={checked}
@@ -158,7 +158,7 @@ function MenubarRadioItem({
       data-slot="menubar-radio-item"
       data-inset={inset}
       className={cn(
-        "relative flex cursor-default items-center gap-1.5 rounded-md py-2 ps-7 pe-1.5 text-base outline-hidden select-none focus:bg-muted data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:ps-7 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex cursor-default items-center gap-1.5 rounded-md py-2 ps-7 pe-1.5 text-base outline-hidden select-none focus:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:ps-7 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -237,7 +237,7 @@ function MenubarSubTrigger({
       data-slot="menubar-sub-trigger"
       data-inset={inset}
       className={cn(
-        "gap-1.5 rounded-md px-3 py-2 text-base focus:bg-muted data-inset:ps-7 data-open:bg-muted [&_svg:not([class*='size-'])]:size-4",
+        "gap-1.5 rounded-md px-3 py-2 text-base focus:bg-accent data-inset:ps-7 data-open:bg-accent [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

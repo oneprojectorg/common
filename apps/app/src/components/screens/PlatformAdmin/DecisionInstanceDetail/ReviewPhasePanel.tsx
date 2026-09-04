@@ -228,7 +228,7 @@ const ReviewerRow = ({
           {isExpanded ? (
             <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
-            <LuChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:rotate-180" />
+            <LuChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:-scale-x-100" />
           )}
           {reviewer.profile.name ?? reviewer.profile.slug}
         </span>
@@ -278,7 +278,7 @@ const AssignmentsList = ({
             className="flex items-center justify-between gap-3 text-sm"
           >
             <span className="truncate">
-              {assignment.proposalTitle ?? t('Untitled proposal')}
+              {assignment.proposalTitle ?? t('Untitled Proposal')}
             </span>
             <Badge variant={statusBadgeVariant(assignment.reviewState)}>
               {STATUS_LABEL[state] ?? state}

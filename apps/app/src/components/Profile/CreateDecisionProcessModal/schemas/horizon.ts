@@ -221,7 +221,6 @@ export const stepSchemas: {
     },
     uiSchema: {
       categories: {
-        'ui:widget': 'CategoryList',
         'ui:options': {
           addable: true,
           removable: true,

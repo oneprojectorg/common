@@ -1,9 +1,10 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Form } from '@op/ui/Form';
-import { Header1 } from '@op/ui/Header';
-import { TextField } from '@op/ui/TextField';
+import { Button } from '@op/sense/Button';
+import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { Header1 } from '@op/sense/Header';
+import { Input } from '@op/sense/Input';
+import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import React from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { create } from 'zustand';
@@ -83,13 +84,11 @@ export const AuthPanelShell = ({
   return (
     // TODO: using a tailwind v4 class here "min-w-xs"
     <div className="flex items-center justify-center sm:block">
-      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-gray4 xs:w-96 sm:border-0">
+      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-border bg-white bg-clip-padding px-4 py-8 font-sans xs:w-96 sm:border-0 sm:px-0">
         <div className="flex flex-col gap-12 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
-            <Header1 className="text-center text-neutral-black">
-              {title}
-            </Header1>
-            <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
+            <Header1 className="text-center sm:text-headline">{title}</Header1>
+            <div className="px-4 text-center text-sm leading-[130%] text-muted-foreground sm:text-base">
               {subtitle}
             </div>
           </section>
@@ -106,12 +105,7 @@ export const AuthGoogleButton = ({ onPress }: { onPress: () => void }) => {
   const t = useTranslations();
 
   return (
-    <Button
-      color="secondary"
-      variant="icon"
-      className="w-full text-neutral-charcoal"
-      onPress={onPress}
-    >
+    <Button variant="outline" className="w-full" onClick={onPress}>
       <GoogleIcon className="size-4 stroke-none" />
       {t('Continue with Google')}
     </Button>
@@ -124,9 +118,9 @@ export const AuthDivider = () => {
 
   return (
     <div className="flex w-full items-center justify-center gap-4">
-      <div className="h-px grow bg-neutral-gray1" />
-      <span className="text-sm text-neutral-gray4">{t('or')}</span>
-      <div className="h-px grow bg-neutral-gray1" />
+      <div className="h-px grow bg-secondary" />
+      <span className="text-sm text-muted-foreground">{t('or')}</span>
+      <div className="h-px grow bg-secondary" />
     </div>
   );
 };
@@ -134,6 +128,7 @@ export const AuthDivider = () => {
 /** Email entry field wrapped in a submit-on-enter form. */
 export const AuthEmailField = ({
   label,
+  description,
   value,
   isDisabled,
   onChange,
@@ -141,6 +136,7 @@ export const AuthEmailField = ({
   placeholder = 'admin@yourorganization.org',
 }: {
   label: string;
+  description?: string;
   value: string;
   isDisabled: boolean;
   onChange: (value: string) => void;
@@ -151,29 +147,33 @@ export const AuthEmailField = ({
 
   return (
     <div className="flex flex-col">
-      <Form
+      <form
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
           onSubmit();
         }}
       >
-        <TextField
-          aria-label={t('Email')}
-          label={label}
-          isRequired
-          type="email"
-          inputProps={{
-            placeholder,
-            spellCheck: false,
-          }}
-          autoFocus
-          defaultValue={undefined}
-          isDisabled={isDisabled}
-          value={value}
-          onChange={onChange}
-        />
-      </Form>
+        <Field>
+          <FieldLabel htmlFor="auth-email">
+            {label}
+            <RequiredAsterisk />
+          </FieldLabel>
+          <Input
+            id="auth-email"
+            aria-label={t('Email')}
+            aria-required
+            type="email"
+            placeholder={placeholder}
+            spellCheck={false}
+            autoFocus
+            disabled={isDisabled}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          {description && <FieldDescription>{description}</FieldDescription>}
+        </Field>
+      </form>
     </div>
   );
 };
@@ -194,7 +194,7 @@ export const AuthCodeField = ({
 
   return (
     <div className="flex flex-col">
-      <Form
+      <form
         onSubmit={async (e) => {
           if (isValidOtpLength(value)) {
             e.preventDefault();
@@ -203,20 +203,18 @@ export const AuthCodeField = ({
           }
         }}
       >
-        <TextField
-          aria-label={t('Code')}
-          inputProps={{
-            placeholder: '1234567890',
-            spellCheck: false,
-          }}
-          fieldClassName="h-auto"
-          autoFocus
-          defaultValue={undefined}
-          isDisabled={isDisabled}
-          value={value}
-          onChange={(val) => onChange(val.trim())}
-        />
-      </Form>
+        <Field>
+          <Input
+            aria-label={t('Code')}
+            placeholder="1234567890"
+            spellCheck={false}
+            autoFocus
+            disabled={isDisabled}
+            value={value ?? ''}
+            onChange={(e) => onChange(e.target.value.trim())}
+          />
+        </Field>
+      </form>
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { ReviewSummaryLayout } from '@/components/decisions/ReviewSummary/ReviewSummaryLayout';
+import { ProposalReviewsLayout } from '@/components/decisions/ProposalReviews/ProposalReviewsLayout';
 
 export async function generateMetadata({
   params,
@@ -28,7 +28,7 @@ export async function generateMetadata({
   }
 }
 
-export default async function ReviewSummaryPage({
+export default async function ProposalReviewsPage({
   params,
 }: {
   params: Promise<{ slug: string; profileId: string }>;
@@ -36,7 +36,7 @@ export default async function ReviewSummaryPage({
   const { slug, profileId: proposalProfileId } = await params;
 
   return (
-    <ReviewSummaryLayout
+    <ProposalReviewsLayout
       decisionSlug={slug}
       proposalProfileId={proposalProfileId}
     />

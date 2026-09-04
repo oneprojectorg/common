@@ -4,6 +4,9 @@ export * from './updateProcess';
 export * from './getTemplate';
 export * from './listProcesses';
 
+// Notification audiences
+export * from './listProcessParticipants';
+
 // Instance cache invalidation
 export * from './decisionCache';
 
@@ -31,6 +34,9 @@ export * from './onPhaseAdvanced';
 
 // Manual transition
 export * from './triggerPhaseAdvancement';
+
+// Platform-admin reversal of the most recent advancement
+export * from './revertPhase';
 
 // Transition management
 export * from './buildExpectedTransitions';
@@ -60,13 +66,29 @@ export * from './getProposalsForPhase';
 export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';
+export * from './rejectProposal';
+export * from './unrejectProposal';
+export * from './listProposalRejectionRecipients';
 export * from './getProposal';
 export * from './assertProposalEngagementAccess';
+
+// Proposal relationships (merge / unmerge / list)
+export * from './mergeProposals';
+export * from './unmergeProposal';
+export * from './listProposalRelationships';
+export * from './listContributingProposals';
+export * from './listProposalMergeRecipients';
+
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
+export * from './proposalAuthor';
 export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './assignReviewsToReviewer';
+export * from './assignPhaseReviews';
+export * from './removeReviewAssignments';
+export * from './getDecisionReviewAssignments';
+export * from './getPhaseReviewAssignments';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';
 export * from './backfillReviewAssignments';
@@ -84,6 +106,7 @@ export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
 export * from './getPhaseReviewProgress';
 export * from './listProposalsRevisionRequests';
+export * from './listProposalFeedback';
 export * from './listProposalRevisionRequests';
 export * from './submitRevisionResponse';
 export * from './submitReview';
@@ -112,6 +135,7 @@ export * from './resolveBoundary';
 export * from './listBoundaryShapes';
 export * from './reverseGeocode';
 export * from './templateLocation';
+export * from './rubric/money';
 export * from './extractProposalText';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';

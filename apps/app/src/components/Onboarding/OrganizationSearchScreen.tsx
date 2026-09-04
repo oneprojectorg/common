@@ -3,10 +3,14 @@
 import { trpc } from '@op/api/client';
 import type { Organization, OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { TextField } from '@op/ui/TextField';
+import { Button } from '@op/sense/Button';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@op/sense/InputGroup';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Spinner } from '@op/sense/Spinner';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { LuPlus, LuSearch, LuX } from 'react-icons/lu';
 
@@ -130,18 +134,20 @@ export const OrganizationSearchScreen = ({
       <div className="flex w-full flex-col gap-6">
         <div className="flex flex-col gap-4">
           <div ref={containerRef} className="relative">
-            <TextField
-              value={searchQuery}
-              onChange={setSearchQuery}
-              inputProps={{
-                placeholder: t('Search or add your organization...'),
-                icon: <LuSearch className="size-4 text-neutral-gray4" />,
-              }}
-              aria-label={t('Search or add your organization...')}
-            />
+            <InputGroup>
+              <InputGroupAddon align="inline-start">
+                <LuSearch className="size-4 text-muted-foreground" />
+              </InputGroupAddon>
+              <InputGroupInput
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('Search or add your organization...')}
+                aria-label={t('Search or add your organization...')}
+              />
+            </InputGroup>
 
             {isDropdownOpen && (
-              <div className="absolute start-0 end-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg">
+              <div className="absolute start-0 end-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-white shadow-lg">
                 <SearchDropdown
                   searchResults={searchResults}
                   isFetching={isFetching}
@@ -167,13 +173,17 @@ export const OrganizationSearchScreen = ({
         </div>
 
         {hasSelectedOrgs ? (
-          <Button className="w-full" onPress={handleShowToS}>
+          <Button className="w-full" onClick={handleShowToS}>
             {continueLabel}
           </Button>
         ) : (
           <>
             <OrDivider />
-            <Button className="w-full" color="neutral" onPress={handleShowToS}>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={handleShowToS}
+            >
               {t('Skip for now')}
             </Button>
           </>
@@ -203,7 +213,7 @@ function SearchDropdown({
   if (isFetching && !searchResults) {
     return (
       <div className="flex items-center justify-center py-4">
-        <LoadingSpinner />
+        <Spinner className="size-6" />
       </div>
     );
   }
@@ -219,7 +229,7 @@ function SearchDropdown({
               key={org.id}
               type="button"
               disabled={isMember}
-              className="flex w-full items-center px-4 py-3 text-start hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+              className="flex w-full items-center px-4 py-3 text-start hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
               onClick={() => onSelect(result)}
             >
               <ProfileItem
@@ -234,14 +244,16 @@ function SearchDropdown({
                 title={org.profile?.name ?? ''}
               >
                 {location && (
-                  <div className="text-xs text-neutral-gray4">{location}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {location}
+                  </div>
                 )}
               </ProfileItem>
             </button>
           );
         })
       ) : (
-        <div className="px-4 py-3 text-sm text-neutral-gray4">
+        <div className="px-4 py-3 text-sm text-muted-foreground">
           {t('No results')}
         </div>
       )}
@@ -249,7 +261,7 @@ function SearchDropdown({
       {onAddOrganization && searchQuery && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 border-t border-neutral-gray1 px-4 py-3 text-start text-primary-teal hover:bg-neutral-offWhite"
+          className="flex w-full items-center gap-2 border-t border-border px-4 py-3 text-start text-primary hover:bg-muted"
           onClick={() => onAddOrganization(searchQuery)}
         >
           <LuPlus className="size-4" />
@@ -273,7 +285,7 @@ function SelectedOrgChip({
   const location = getOrgLocation(org);
 
   return (
-    <div className="flex items-center gap-6 rounded-lg border border-neutral-gray1 bg-white px-3 py-2">
+    <div className="flex items-center gap-6 rounded-lg border border-border bg-white px-3 py-2">
       <div className="flex items-center gap-2">
         <OrganizationAvatar
           profile={org.profile}
@@ -281,17 +293,15 @@ function SelectedOrgChip({
           className="size-6"
         />
         <div className="flex flex-col leading-normal">
-          <span className="text-sm text-neutral-charcoal">
-            {org.profile?.name}
-          </span>
+          <span className="text-sm text-foreground">{org.profile?.name}</span>
           {location && (
-            <span className="text-xs text-neutral-gray4">{location}</span>
+            <span className="text-xs text-muted-foreground">{location}</span>
           )}
         </div>
       </div>
       <button
         type="button"
-        className="rounded-full p-1 text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal"
+        className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
         onClick={onRemove}
         aria-label={t('Remove')}
       >
@@ -305,9 +315,9 @@ function OrDivider() {
   const t = useTranslations();
   return (
     <div className="flex items-center gap-4">
-      <div className="h-px flex-1 bg-neutral-gray1" />
-      <span className="text-sm text-neutral-gray3">{t('or')}</span>
-      <div className="h-px flex-1 bg-neutral-gray1" />
+      <div className="h-px flex-1 bg-secondary" />
+      <span className="text-sm text-muted-foreground">{t('or')}</span>
+      <div className="h-px flex-1 bg-secondary" />
     </div>
   );
 }

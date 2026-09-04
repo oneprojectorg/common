@@ -10,13 +10,13 @@ export const screens = {
 
 /**
  * Canonical heading class strings shared between the `Header1/2/3/4` components
- * in `@op/ui` and the TipTap rich text editor's `StyledHeading` extension.
+ * in `@op/sense` and the TipTap rich text editor's `StyledHeading` extension.
  * Keeping these as literal Tailwind class strings ensures the build-time
  * scanner picks them up.
  */
 /**
  * Avatar fallback gradients. The `gradient` values are Tailwind utility
- * classes defined in shared-styles.css; the hex is a flat approximation for
+ * classes defined in theme.css; the hex is a flat approximation for
  * contexts that can't use a class (e.g. remote cursors). Literal class
  * strings keep the build-time scanner happy.
  */

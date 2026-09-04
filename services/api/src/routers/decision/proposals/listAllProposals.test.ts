@@ -117,7 +117,49 @@ describe.concurrent('listAllProposals', () => {
     expect(allValid.next).toBeNull();
   });
 
-  it('excludes REJECTED and DUPLICATE proposals for non-admin viewers', async ({
+  it('filters by title search, matching the phase-scoped list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const { userEmail } = setup;
+
+    const [matching] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Riverside Bike Path' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Downtown Mural' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.listAllProposals({
+      processInstanceId: instanceId,
+      search: 'bike',
+    });
+    expect(result.items.map((p) => p.id)).toEqual([matching.id]);
+
+    // Same word-order independence as the phase-scoped list.
+    const reversed = await caller.decision.listAllProposals({
+      processInstanceId: instanceId,
+      search: 'path riverside',
+    });
+    expect(reversed.items.map((p) => p.id)).toEqual([matching.id]);
+  });
+
+  it('includes REJECTED but excludes DUPLICATE proposals for non-admin viewers', async ({
     task,
     onTestFinished,
   }) => {
@@ -173,12 +215,19 @@ describe.concurrent('listAllProposals', () => {
     });
 
     const ids = result.items.map((p) => p.id);
+    // Rejection is a pipeline rule, not a visibility one, so this listing
+    // carries a rejected proposal the same way the phase-scoped list does.
+    // A merged-away duplicate has no page of its own, so it stays out.
     expect(ids).toEqual(
-      expect.arrayContaining([submitted.id, approved.id, selected.id]),
+      expect.arrayContaining([
+        submitted.id,
+        approved.id,
+        selected.id,
+        rejected.id,
+      ]),
     );
-    expect(ids).not.toContain(rejected.id);
     expect(ids).not.toContain(duplicate.id);
-    expect(result.items).toHaveLength(3);
+    expect(result.items).toHaveLength(4);
   });
 
   it('excludes DRAFT proposals from non-admin viewers', async ({
@@ -313,7 +362,7 @@ describe.concurrent('listAllProposals', () => {
     expect(memberResult.items.map((p) => p.id)).toEqual([visible.id]);
   });
 
-  it('shows HIDDEN proposals to admin viewers but still hides DRAFT, REJECTED, DUPLICATE, and soft-deleted', async ({
+  it('shows HIDDEN and REJECTED proposals to admin viewers but still hides DRAFT, DUPLICATE, and soft-deleted', async ({
     task,
     onTestFinished,
   }) => {
@@ -380,12 +429,13 @@ describe.concurrent('listAllProposals', () => {
     });
 
     const ids = result.items.map((p) => p.id);
-    expect(ids).toEqual(expect.arrayContaining([submitted.id, hidden.id]));
+    expect(ids).toEqual(
+      expect.arrayContaining([submitted.id, hidden.id, rejected.id]),
+    );
     expect(ids).not.toContain(draft.id);
-    expect(ids).not.toContain(rejected.id);
     expect(ids).not.toContain(duplicate.id);
     expect(ids).not.toContain(deleted.id);
-    expect(result.items).toHaveLength(2);
+    expect(result.items).toHaveLength(3);
   });
 
   it('paginates proposals filtered by category with a cursor', async ({

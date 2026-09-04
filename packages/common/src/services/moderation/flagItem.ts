@@ -1,9 +1,11 @@
 import type { ModerationFlag } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import type {
   ModerationItemType,
   ModerationMediaItem,
   ModerationProviderReference,
+  ModerationReport,
   ModerationSubmission,
 } from './types';
 
@@ -39,6 +41,9 @@ export interface FlagItemDeps {
   submitForReview?: (
     input: ModerationSubmission,
   ) => Promise<ModerationProviderReference>;
+  /** Files the user's report against the just-submitted content — this, not
+   *  the submit, is what raises a human-review case. */
+  reportForReview?: (input: ModerationReport) => Promise<void>;
   /** The refs `submitForReview` will create, known before the provider is
    *  called. Required alongside `submitForReview`. */
   planRefs?: (
@@ -63,13 +68,15 @@ export interface FlagItemDeps {
 
 /**
  * User-initiated flag. Records a `pending` flag (manual source), records the
- * round of tasks the submission fans out into, then submits the content to the
- * provider; the provider's webhook later confirms it (→ flagged) or clears it
+ * round of tasks the submission fans out into, submits the content to the
+ * provider, then files the user's report against it so a human moderator gets
+ * a case; the provider's webhook later confirms it (→ flagged) or clears it
  * (→ dismissed). Idempotent: if the item already has an open flag, returns it
  * without a second record or submission. If the provider submit fails, the
  * pending flag and round are rolled back and the error propagates — otherwise
  * the flag would sit `pending` forever (nothing left to resolve it) and the
- * idempotency check would swallow every retry.
+ * idempotency check would swallow every retry. A failed *report* is logged and
+ * swallowed instead — see below.
  */
 export const flagItem = async (
   input: FlagItemInput,
@@ -93,6 +100,10 @@ export const flagItem = async (
     return { flag };
   }
 
+  // Both early returns above skip the provider, so at most one report is filed
+  // per item no matter how many users report it — report count is not a
+  // brigade signal.
+
   if (deps.submitForReview && deps.planRefs) {
     const planned = deps.planRefs({
       itemType: input.itemType,
@@ -102,8 +113,13 @@ export const flagItem = async (
       media: input.media,
     });
 
-    // Nothing the provider would review (no text, no media): keep the flag
-    // pending for manual/admin handling rather than submitting an empty round.
+    // Nothing to review (no text, no media): record the flag and stop. The
+    // report is gated with it — a decision webhook carrying a round we never
+    // recorded is dropped, so the moderator's ruling would do nothing.
+    //
+    // KNOWN GAP: `itemType: 'user'` is always here (profiles carry no reviewable
+    // content), so profile reports never queue, and the inert `pending` flag
+    // blocks every later report on that profile.
     if (planned.length > 0) {
       try {
         await deps.recordRound?.(
@@ -123,6 +139,35 @@ export const flagItem = async (
       } catch (error) {
         await deps.rollback?.(flag);
         throw error;
+      }
+
+      // After the submit: the provider only associates a report with content of
+      // the same ref it already ingested.
+      //
+      // Outside the rollback and swallowed on purpose — the content is ingested
+      // either way, and dropping the round would leave the classifier verdict
+      // unmatched, which also skips the mandatory CSAM/terrorism detach.
+      //
+      // KNOWN GAP: an edit after a report mints a new round and deletes this
+      // one's rows, losing the moderator's ruling.
+      try {
+        await deps.reportForReview?.({
+          itemType: input.itemType,
+          itemId: input.itemId,
+          roundId: input.roundId,
+          reporterId: input.flaggedByProfileId,
+          reason: input.reason,
+        });
+      } catch (error) {
+        logger.error(
+          'Moderation content was submitted but the user report failed to file — no human-review case was raised',
+          {
+            error,
+            itemType: input.itemType,
+            itemId: input.itemId,
+            roundId: input.roundId,
+          },
+        );
       }
     }
   }

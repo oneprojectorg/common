@@ -9,7 +9,6 @@ import {
 } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { REACTION_OPTIONS } from '@op/types';
 import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
@@ -31,15 +30,6 @@ export const sendReactionNotification = inngest.createFunction(
     const { sourceProfileId, postId, reactionType } =
       postReactionAdded.schema.parse(event.data);
 
-    const reactionEmoji = REACTION_OPTIONS.find(
-      (option) => option.key === reactionType,
-    );
-
-    if (!reactionEmoji) {
-      logger.info('Invalid reaction type', { reactionType });
-      return;
-    }
-
     await step.run('send-email-notification', async () => {
       try {
         const postAuthorProfile = alias(profiles, 'post_author_profile');
@@ -48,9 +38,7 @@ export const sendReactionNotification = inngest.createFunction(
 
         const result = await db
           .select({
-            reactionType: postReactions.reactionType,
-
-            // Source profile (person who reacted)
+            // Source profile (person who liked)
             sourceProfileName: profiles.name,
 
             postContent: posts.content,
@@ -136,13 +124,12 @@ export const sendReactionNotification = inngest.createFunction(
         await OPNodemailer({
           to: authorProfile.email,
           from: `${reactorName} via Common`,
-          subject: `${reactorName} reacted to your ${contentType}`,
+          subject: `${reactorName} liked your ${contentType}`,
           component: () =>
             ReactionNotificationEmail({
               reactorName,
               postContent: data.postContent,
               recipientName: authorProfile.name,
-              reactionType: reactionEmoji.emoji,
               contentType,
               postUrl,
               content,

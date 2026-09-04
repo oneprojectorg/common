@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/sense/Toast';
 import {
   createContext,
   useCallback,
@@ -15,6 +15,7 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { toOverviewInput, toPhasesInput } from './headlinePatch';
 import {
   type ProcessBuilderInstanceData,
   type SaveStatus,
@@ -127,9 +128,8 @@ export function ProcessBuilderAutosaveProvider({
     onSuccess: () => markSaved(decisionProfileId),
     onError: (error) => {
       setSaveStatus(decisionProfileId, 'error');
-      toast.error({
-        title: t('Failed to save changes'),
-        message: error.message,
+      toast.error(t('Failed to save changes'), {
+        description: error.message,
       });
     },
     onSettled: () => {
@@ -160,6 +160,12 @@ export function ProcessBuilderAutosaveProvider({
       const promise = updateInstance.mutateAsync({
         instanceId,
         ...payload,
+        // An emptied headline field goes out as an explicit clear; `''` is
+        // rejected by the endpoint.
+        ...(payload.overview && {
+          overview: toOverviewInput(payload.overview),
+        }),
+        ...(payload.phases && { phases: toPhasesInput(payload.phases) }),
       });
       inflightRef.current = promise;
       promise

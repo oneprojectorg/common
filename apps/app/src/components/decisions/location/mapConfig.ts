@@ -1,7 +1,7 @@
 'use client';
 
 import type { MapDefaultView } from '@op/common/client';
-import type { LngLat } from '@op/ui/Map';
+import type { LngLat } from '@op/sense/Map';
 import { useEffect, useState } from 'react';
 
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;

@@ -54,6 +54,8 @@ interface CreateReviewAssignmentOptions {
   status?: ProposalReviewAssignmentStatus;
   /** Phase the assignment is pinned to (defaults to `'review'`). */
   phaseId?: string;
+  /** Assignment timestamp (defaults to `now()`) — pin it to control ordering. */
+  assignedAt?: string;
 }
 
 /** Creates review-focused test fixtures on top of the decision test setup. */
@@ -365,9 +367,18 @@ export class TestReviewsDataManager {
       },
       assignmentStatus: opts.status,
       phaseId: opts.phaseId,
+      assignedAt: opts.assignedAt,
     });
 
     this.decisions.trackProfileForCleanup(proposal.profileId);
+
+    // Review writes and the revision cycle only run while the assignment's
+    // phase is current, so start there; tests exercising a stale assignment
+    // advance the instance afterwards with setCurrentPhase.
+    await this.setCurrentPhase(
+      context.instance.instance.id,
+      opts.phaseId ?? 'review',
+    );
 
     return {
       context,

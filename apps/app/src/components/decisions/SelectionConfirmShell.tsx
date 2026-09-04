@@ -1,8 +1,14 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
 import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -38,25 +44,28 @@ export const SelectionConfirmShell = ({
   const t = useTranslations();
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>
-      <Button isDisabled={triggerDisabled} variant="primary">
-        {triggerLabel}
-      </Button>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogTrigger
+        render={<Button disabled={triggerDisabled}>{triggerLabel}</Button>}
+      />
 
-      <Modal isDismissable>
-        <ModalHeader>{headerLabel}</ModalHeader>
-        <ModalBody>{children}</ModalBody>
-        <ModalFooter>
+      {/* 32rem — the sense default (sm:max-w-sm) is narrower than these
+          lists need. */}
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{headerLabel}</DialogTitle>
+        </DialogHeader>
+        <div className="px-6 py-4">{children}</div>
+        <DialogFooter>
           <Button
             className="w-full"
-            color="primary"
-            onPress={onConfirm}
-            isDisabled={isSubmitting}
+            onClick={onConfirm}
+            disabled={isSubmitting}
           >
             {isSubmitting ? t('Submitting...') : confirmLabel}
           </Button>
-        </ModalFooter>
-      </Modal>
-    </DialogTrigger>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

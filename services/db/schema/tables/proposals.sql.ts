@@ -29,6 +29,12 @@ export enum ProposalStatus {
   REJECTED = 'rejected',
   DUPLICATE = 'duplicate',
   SELECTED = 'selected',
+  /**
+   * @deprecated Never written. Supersession is a `merged` edge in
+   * `decision_proposal_relationships`, not a status. Kept because dropping an
+   * enum value requires recreating the type.
+   */
+  MERGED = 'merged',
 }
 
 export const proposalStatusEnum = pgEnum(

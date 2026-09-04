@@ -1,6 +1,6 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
+import { accessRoles, profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -689,6 +689,134 @@ describe.concurrent('profile.users.listUsers', () => {
       // Admin should be first (A < M alphabetically)
       expect(allEmails[0]).toBe(adminUser.email);
     });
+  });
+
+  describe('roleId filter', () => {
+    it('should return only members holding the given role', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 2 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const membersResult = await caller.listUsers({
+        profileId: profile.id,
+        roleId: ROLES.MEMBER.id,
+      });
+
+      expect(membersResult.items).toHaveLength(2);
+      const memberEmails = membersResult.items.map((u) => u.email);
+      expect(memberEmails).toContain(memberUsers[0]?.email);
+      expect(memberEmails).toContain(memberUsers[1]?.email);
+      expect(memberEmails).not.toContain(adminUser.email);
+
+      const adminsResult = await caller.listUsers({
+        profileId: profile.id,
+        roleId: ROLES.ADMIN.id,
+      });
+
+      expect(adminsResult.items).toHaveLength(1);
+      expect(adminsResult.items[0]?.email).toBe(adminUser.email);
+    });
+
+    it('should return empty results for a role no member holds', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      // A custom role for this profile that nobody holds
+      const [customRole] = await db
+        .insert(accessRoles)
+        .values({
+          name: `Unassigned Role ${task.id}`,
+          profileId: profile.id,
+        })
+        .returning();
+
+      if (!customRole) {
+        throw new Error('Failed to create custom role');
+      }
+
+      onTestFinished(async () => {
+        await db.delete(accessRoles).where(eq(accessRoles.id, customRole.id));
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+        roleId: customRole.id,
+      });
+
+      expect(result.items).toHaveLength(0);
+      expect(result.next).toBeNull();
+    });
+
+    it(
+      'should paginate with roleId across multiple pages without duplicates or gaps',
+      { timeout: 120_000 },
+      async ({ task, onTestFinished }) => {
+        const testData = new TestProfileUserDataManager(
+          task.id,
+          onTestFinished,
+        );
+        const { profile, adminUser, memberUsers } =
+          await testData.createProfile({
+            users: { admin: 1, member: 28 },
+          });
+
+        const { session } = await createIsolatedSession(adminUser.email);
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        // Collect all member emails across pages
+        const allEmails: string[] = [];
+        let cursor: string | null | undefined;
+        let pageCount = 0;
+
+        do {
+          const page = await caller.listUsers({
+            profileId: profile.id,
+            roleId: ROLES.MEMBER.id,
+            limit: 25,
+            cursor: cursor ?? undefined,
+            orderBy: 'email',
+            dir: 'asc',
+          });
+
+          allEmails.push(...page.items.map((u) => u.email!));
+          cursor = page.next;
+          pageCount++;
+
+          // Safety check to prevent infinite loops
+          if (pageCount > 10) {
+            throw new Error('Too many pages - possible infinite loop');
+          }
+        } while (cursor);
+
+        // All 28 members returned exactly once; the admin is filtered out
+        expect(allEmails).toHaveLength(28);
+        expect(new Set(allEmails).size).toBe(28);
+        expect(allEmails).not.toContain(adminUser.email);
+        memberUsers.forEach((m) => {
+          expect(allEmails).toContain(m.email);
+        });
+
+        // 28 members with limit 25 -> exactly 2 pages
+        expect(pageCount).toBe(2);
+      },
+    );
   });
 });
 

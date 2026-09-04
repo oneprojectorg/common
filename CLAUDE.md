@@ -19,15 +19,36 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 - **`@op/common`** (`packages/common`): shared business logic and service layer
 - **`@op/db`** (`services/db`): Drizzle ORM schema, migrations, and database client
 
+Architecture decisions are recorded as ADRs — the numbered files matching `docs/adr/[0-9]*.md`. Read them before you propose a structural change. Say so when one contradicts your task; do not work around it. An absent ADR does not mean the area is unconstrained: the set is still filling up, and the rules in this file stay binding. [`docs/adr/README.md`](docs/adr/README.md) defines when to write one and in what format. Follow it, not an ADR convention from a skill.
+
 ## Key Technical Details
 
 ### UI Component System
 
-- **Always prefer existing `@op/ui` components over vanilla html elements such as `<button>` or `<h2>`**
+`@op/sense` (`packages/sense`) is the design system — shadcn/ui in its Base UI style, themed by `@op/styles`.
+
+- **Read [`packages/sense/CLAUDE.md`](packages/sense/CLAUDE.md) before building UI.** It covers the accessibility obligations, how to add a primitive or composite, and the Base UI behaviours that bite.
+- **Always prefer an existing `@op/sense` component over a vanilla html element** such as `<button>` or `<h2>`. Browse them with `pnpm w:sense dev` (Storybook, http://localhost:3600).
+- **Import per component** — `import { Button } from '@op/sense/Button'` — and get `cn` from `@op/sense/lib/utils` (ours registers the custom type tokens with `tailwind-merge`; stock `twMerge` drops them).
 - **Always use design tokens** — never arbitrary Tailwind values (e.g. `text-[14px]`, `bg-[#333]`):
-  - Colors: token-mapped Tailwind classes (e.g. `text-primary-teal`, `bg-neutral-gray1`) — source tokens in `packages/styles/tokens.css` (`--op-*`) mapped via `shared-styles.css`
-  - Text sizes: the custom type scale (e.g. `text-title-lg`, `text-sm`) defined in `packages/styles/shared-styles.css` — no raw Tailwind size utilities we haven't defined
-- Tailwind configuration is centralized in `@op/styles` (`packages/styles/shared-styles.css`)
+  - Colors: semantic classes (e.g. `bg-primary`, `text-muted-foreground`, `border-input`) — raw values in `packages/styles/tokens.css`, semantic names in `packages/styles/theme.css`
+  - Text sizes: the sense type scale (`text-label`, `text-title`, `text-headline`, `text-display`) — no raw Tailwind size utilities we haven't defined, and never the legacy `text-title-*` scale
+- **Always use logical properties** — `ms-`/`me-`, `ps-`/`pe-`, `start-`/`end-`, `text-start`/`text-end` — never `ml-`/`pl-`/`left-`. The app ships Arabic.
+- Tailwind configuration is centralized in `@op/styles`: `tokens.css` holds raw values, `theme.css` holds semantics and is the package entry
+
+### Accessibility
+
+Treat accessibility as a correctness property, not a polish pass. Base UI gives us focus management, keyboard navigation and `aria-*` wiring for free — don't reimplement or work around it. Four things it can't infer, which are on you:
+
+1. **An accessible name on every icon-only control** (`aria-label` on `<Button size="icon-*">`) — the most common defect in this codebase
+2. **A real label on every input** (`Field` + `FieldLabel`, or `htmlFor`) — a placeholder is not a label
+3. **`aria-live="polite"` on content that changes without a navigation** — async results, counts, validation errors, save states
+4. **Real controls for anything clickable** — never `onClick` on a `div`
+
+Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an unlisted violation *and* on a listed one that no longer fires):
+
+- **Components**: the **A11y** panel in Storybook (`pnpm w:sense dev`) runs axe against the story you are looking at. Not yet CI-enforced — the headless gate is blocked upstream; see `packages/sense/README.md`
+- **Routes**: `pnpm a11y:baseline` runs axe over every committed route — see `tests/e2e/a11y-baseline/README.md`
 
 ### Database & tRPC
 
@@ -69,5 +90,6 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 ## Workflow Notes
 
 - If you need to check interactions in the browser, you can use the Playwright MCP server and open http://localhost:3100 to open the dev server
+- **Storybook**: `pnpm w:sense dev` serves the `@op/sense` design system on http://localhost:3600.
 - **Never start or kill the dev server on :3100** — it is shared with other agents and managed externally; verify changes statically or in the browser against the already-running server
 - Authorization checks are achieved by our access-zones library. We usually get the profileUser and pass the user's roles to `assertAccess`

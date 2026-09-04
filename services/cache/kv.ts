@@ -25,10 +25,17 @@ const RACE_TIMEOUT: unique symbol = Symbol('cache.race-timeout');
 // Discriminated result of an attempted Redis read. `cache()` uses it to
 // record `hit` / `miss` / `timeout` separately so a Redis slowdown does
 // not masquerade as a cold cache.
-type RedisGetResult =
+//
+// `miss` means Redis answered and held nothing. `timeout` and `error` mean
+// Redis did not answer, which is a different claim. A caller that treats them
+// as a miss states the key is absent, when it only knows it could not look.
+// A caller that holds cache-only state needs that distinction. See
+// `getWithStatus`.
+export type RedisGetResult =
   | { status: 'hit'; data: unknown }
   | { status: 'miss' }
-  | { status: 'timeout' };
+  | { status: 'timeout' }
+  | { status: 'error' };
 
 // Create Redis client only if REDIS_URL is provided
 let redis: ReturnType<typeof createClient> | null = null;
@@ -308,7 +315,15 @@ export const invalidateMultiple = async ({
 // / timeout into different metrics. Public `get()` still maps everything
 // non-hit to `null` for back-compat.
 const tryGetFromRedis = async (key: string): Promise<RedisGetResult> => {
-  if (!redis) {
+  // No cache configured, or a client that never reached a ready state. Both
+  // mean this deployment has no working cache, so they answer the same way.
+  //
+  // The distinction that matters is narrower: a command that fails on a ready
+  // client. Redis is serving other keys in that case, so a caller cannot read
+  // the failure as "this key is absent". A client that is not ready supports no
+  // such inference, and reporting an error for it would turn a deployment
+  // without Redis into a deployment that answers 500.
+  if (!redis || !redis.isReady) {
     return { status: 'miss' };
   }
 
@@ -334,7 +349,7 @@ const tryGetFromRedis = async (key: string): Promise<RedisGetResult> => {
     logger.error('CACHE: error getting from Redis', { error: e });
     cacheMetrics.recordError('get');
 
-    return { status: 'miss' };
+    return { status: 'error' };
   }
 };
 
@@ -342,6 +357,25 @@ export const get = async (key: string) => {
   const result = await tryGetFromRedis(key);
   return result.status === 'hit' ? result.data : null;
 };
+
+/**
+ * Reads a key. Keeps "Redis held nothing" apart from "Redis did not answer".
+ *
+ * {@link get} collapses both to `null`. That suits any caller that can
+ * re-derive its value from the source on a miss.
+ *
+ * It does not suit cache-only state, where absence carries meaning. A caller
+ * that reads "no such record" after a command timed out can discard a record
+ * that is still there. Use this function when a false miss costs the user data
+ * instead of one round trip.
+ *
+ * @param key - Key to read.
+ * @returns A {@link RedisGetResult}. `hit` carries the parsed value. `miss` means
+ *   Redis answered and held nothing, or this deployment has no working cache.
+ *   `timeout` and `error` mean Redis did not answer, so absence is not known.
+ */
+export const getWithStatus = async (key: string): Promise<RedisGetResult> =>
+  tryGetFromRedis(key);
 
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing

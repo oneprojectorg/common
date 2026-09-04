@@ -1,12 +1,10 @@
 'use client';
 
-import { ProposalFilter } from '@op/api/encoders';
-
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCount } from './ProposalCount';
 import { ResponsiveSelect } from './ResponsiveSelect';
-import { useProposalFilterItems } from './useProposalFilters';
+import { StickyFilterBar } from './StickyFilterBar';
 
 interface Category {
   id: string;
@@ -16,55 +14,38 @@ interface Category {
 export type SortOrder = 'votes' | 'newest' | 'oldest';
 
 export interface SelectionFilters {
-  proposalFilter: ProposalFilter;
   selectedCategory: string;
   sortOrder: SortOrder;
 }
 
 interface ManualSelectionToolbarProps {
   count: number;
-  total: number;
-  currentProfileId: string | undefined;
   categories: Category[];
   filters: SelectionFilters;
   onChange: (patch: Partial<SelectionFilters>) => void;
+  /** Px offset where the bar pins (clears the floating phase toggle). */
+  pinOffset?: number;
 }
 
 export const ManualSelectionToolbar = ({
   count,
-  total,
-  currentProfileId,
   categories,
   filters,
   onChange,
+  pinOffset,
 }: ManualSelectionToolbarProps) => {
   const t = useTranslations();
-  const { proposalFilter, selectedCategory, sortOrder } = filters;
-  // hasVoted=false: the toolbar never surfaces "My ballot" (only the live list does).
-  const filterItems = useProposalFilterItems({
-    hasVoted: false,
-    currentProfileId,
-  });
+  const { selectedCategory, sortOrder } = filters;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <ProposalCount count={count} total={total} />
-      <div className="flex flex-wrap items-center gap-2">
-        <ResponsiveSelect
-          selectedKey={proposalFilter}
-          onSelectionChange={(key) => {
-            if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-              return;
-            }
-            onChange({ proposalFilter: key });
-          }}
-          aria-label={t('Filter proposals')}
-          items={filterItems}
-        />
+    <StickyFilterBar pinOffset={pinOffset}>
+      <ProposalCount count={count} />
+      <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
         <ResponsiveSelect
           selectedKey={selectedCategory}
           onSelectionChange={(key) => onChange({ selectedCategory: key })}
           aria-label={t('Filter proposals by category')}
+          className="min-w-40"
           items={[
             { id: 'all-categories', label: t('All categories') },
             ...categories.map((category) => ({
@@ -77,6 +58,7 @@ export const ManualSelectionToolbar = ({
           selectedKey={sortOrder}
           onSelectionChange={(key) => onChange({ sortOrder: key })}
           aria-label={t('Sort proposals')}
+          className="min-w-40"
           items={[
             { id: 'votes', label: t('Most votes') },
             { id: 'newest', label: t('Newest First') },
@@ -84,6 +66,6 @@ export const ManualSelectionToolbar = ({
           ]}
         />
       </div>
-    </div>
+    </StickyFilterBar>
   );
 };

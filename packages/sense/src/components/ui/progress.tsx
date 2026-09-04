@@ -29,7 +29,10 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       className={cn(
-        'relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-accent',
+        // Figma `Progress` (296:4740) stacks two fills on the track: accent,
+        // then primary at 10%. Mixed in srgb to match how Figma composites the
+        // alpha — a plain bg-accent reads too light against the indicator.
+        'relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,var(--accent))]',
         className,
       )}
       data-slot="progress-track"

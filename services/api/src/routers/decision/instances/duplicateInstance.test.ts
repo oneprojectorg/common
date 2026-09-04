@@ -1,7 +1,12 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { decisionProcesses, users } from '@op/db/schema';
+import {
+  ProcessStatus,
+  decisionProcesses,
+  processInstances,
+  users,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -76,17 +81,20 @@ async function createSimpleTemplate(
     })
     .returning();
 
-  return { templateId: template!.id, userEmail: setup.userEmail };
+  return {
+    templateId: template!.id,
+    userEmail: setup.userEmail,
+    // The setup makes this user an admin of a fresh organization.
+    organizationProfileId: setup.organization.profileId,
+  };
 }
 
 async function createSourceInstance(
   testData: TestDecisionsDataManager,
   taskId: string,
 ) {
-  const { templateId, userEmail } = await createSimpleTemplate(
-    testData,
-    taskId,
-  );
+  const { templateId, userEmail, organizationProfileId } =
+    await createSimpleTemplate(testData, taskId);
   const caller = await createAuthenticatedCaller(userEmail);
 
   const result = await caller.decision.createInstanceFromTemplate({
@@ -96,7 +104,7 @@ async function createSourceInstance(
 
   testData.trackProfileForCleanup(result.id);
 
-  return { result, caller, templateId, userEmail };
+  return { result, caller, templateId, userEmail, organizationProfileId };
 }
 
 describe.concurrent('duplicateInstance', () => {
@@ -369,6 +377,87 @@ describe.concurrent('duplicateInstance', () => {
     }
   });
 
+  // The reported bug was a duplicate arriving with an empty rubric, and that
+  // rubric lives at the instance level, not on a phase.
+  it('should copy the instance-level rubric when include.reviewRubric is true', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const rubric = {
+      type: 'object' as const,
+      properties: {
+        impact: { type: 'integer' as const, title: 'Impact', maximum: 5 },
+        feasibility: {
+          type: 'integer' as const,
+          title: 'Feasibility',
+          maximum: 3,
+        },
+        notes: { type: 'string' as const, title: 'Notes' },
+      },
+      required: ['impact', 'feasibility'],
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      rubricTemplate: rubric,
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Instance Rubric Copy ${task.id}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    // Whole schema, not just presence — a rubric that loses its criteria,
+    // their scoring maxima, or its required list is the same bug.
+    expect(instanceData.rubricTemplate).toEqual(rubric);
+  });
+
+  it('should not copy the instance-level rubric when include.reviewRubric is false', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      rubricTemplate: {
+        type: 'object',
+        properties: { impact: { type: 'integer', title: 'Impact' } },
+      },
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `No Instance Rubric ${task.id}`,
+      include: { ...ALL_INCLUDED, reviewRubric: false },
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    expect(instanceData.rubricTemplate).toBeUndefined();
+  });
+
   it('should not copy proposalTemplate when include.proposalTemplate is false', async ({
     task,
     onTestFinished,
@@ -607,7 +696,7 @@ describe.concurrent('duplicateInstance', () => {
     expect(instanceData.rubricTemplate).toBeUndefined();
   });
 
-  it('should default ownerProfileId to individual and stewardProfileId to currentProfileId when steward not provided', async ({
+  it('should default both ownerProfileId and stewardProfileId to the duplicating individual when steward not provided', async ({
     task,
     onTestFinished,
   }) => {
@@ -640,7 +729,227 @@ describe.concurrent('duplicateInstance', () => {
     });
 
     expect(instance!.ownerProfileId).toBe(userRecord!.profileId);
-    expect(instance!.stewardProfileId).toBe(userRecord!.currentProfileId);
+    expect(instance!.stewardProfileId).toBe(userRecord!.profileId);
+  });
+
+  it('should list the duplicate under the duplicating user own process list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      result: source,
+      caller,
+      userEmail,
+    } = await createSourceInstance(testData, task.id);
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, userEmail));
+
+    const duplicateName = `Listed Duplicate ${task.id}`;
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: duplicateName,
+      include: ALL_INCLUDED,
+    });
+
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const listed = await caller.decision.listDecisionProfiles({
+      stewardProfileId: userRecord!.profileId!,
+      status: [ProcessStatus.DRAFT],
+    });
+
+    expect(listed.items.map((item) => item.id)).toContain(duplicate.id);
+  });
+
+  it('should reject a steward profile the caller does not administer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const otherSetup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const [otherUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, otherSetup.userEmail));
+
+    await expect(
+      caller.decision.duplicateInstance({
+        instanceId: source.processInstance.id,
+        name: `Foreign Steward ${task.id}`,
+        stewardProfileId: otherUser!.profileId!,
+        include: ALL_INCLUDED,
+      }),
+    ).rejects.toThrow(/steward/i);
+  });
+
+  it('should accept an org profile the caller administers as steward', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      result: source,
+      caller,
+      organizationProfileId,
+    } = await createSourceInstance(testData, task.id);
+
+    // Org grants live on organizationUsers, so a profileUsers-only admin check
+    // would reject this.
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Org Steward Copy ${task.id}`,
+      stewardProfileId: organizationProfileId,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+
+    expect(instance!.stewardProfileId).toBe(organizationProfileId);
+  });
+
+  it('should carry every instanceData field the source has when all includes are on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    // Populate every DecisionInstanceData field the API can set.
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      // No `categories` — they create global taxonomy terms this test would
+      // have to clean up, and config is copied wholesale, so any key proves it.
+      config: { hideBudget: true, requireCategorySelection: true },
+      overview: {
+        headline: 'Cycle 1 headline',
+        description: 'Cycle 1 overview description',
+      },
+      phases: [{ phaseId: 'submission', name: 'Submission' }],
+      proposalTemplate: {
+        type: 'object',
+        properties: { title: { type: 'string', title: 'Title' } },
+      },
+      rubricTemplate: {
+        type: 'object',
+        properties: {
+          impact: { type: 'integer', title: 'Impact', maximum: 5 },
+        },
+      },
+    });
+
+    // `fieldValues` has no update endpoint and `heroImage` is deliberately
+    // rejected by the generic update, so seed both straight onto the row.
+    const seeded = await db.query.processInstances.findFirst({
+      where: { id: source.processInstance.id },
+    });
+    const seededData = seeded!.instanceData as DecisionInstanceData;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...seededData,
+          fieldValues: { proposalInfoTitle: 'How to apply' },
+          overview: {
+            ...seededData.overview,
+            heroImage: `${source.processInstance.id}/overview/banner.png`,
+          },
+        },
+      })
+      .where(eq(processInstances.id, source.processInstance.id));
+
+    const sourceRow = await db.query.processInstances.findFirst({
+      where: { id: source.processInstance.id },
+    });
+    const sourceData = sourceRow!.instanceData as DecisionInstanceData;
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Full Copy ${task.id}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const duplicateRow = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const duplicateData = duplicateRow!.instanceData as DecisionInstanceData;
+
+    // A new DecisionInstanceData field that buildInstanceData forgets fails
+    // here. If one is meant not to carry, subtract it with the reason rather
+    // than dropping the assertion.
+    expect(Object.keys(duplicateData).sort()).toEqual(
+      Object.keys(sourceData).sort(),
+    );
+
+    expect(duplicateData.rubricTemplate).toEqual(sourceData.rubricTemplate);
+    expect(duplicateData.proposalTemplate).toEqual(sourceData.proposalTemplate);
+    expect(duplicateData.config).toEqual(sourceData.config);
+    expect(duplicateData.fieldValues).toEqual(sourceData.fieldValues);
+    expect(duplicateData.overview).toMatchObject({
+      headline: 'Cycle 1 headline',
+      description: 'Cycle 1 overview description',
+    });
+    // Shared storage object; see buildInstanceData.
+    expect(duplicateData.overview?.heroImage).toBeUndefined();
+  });
+
+  it('should not copy overview or fieldValues when include.processSettings is false', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      overview: { headline: 'Should not carry' },
+    });
+
+    const seeded = await db.query.processInstances.findFirst({
+      where: { id: source.processInstance.id },
+    });
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(seeded!.instanceData as DecisionInstanceData),
+          fieldValues: { proposalInfoTitle: 'Should not carry' },
+        },
+      })
+      .where(eq(processInstances.id, source.processInstance.id));
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `No Settings Copy ${task.id}`,
+      include: { ...ALL_INCLUDED, processSettings: false },
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const duplicateRow = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const duplicateData = duplicateRow!.instanceData as DecisionInstanceData;
+
+    expect(duplicateData.overview).toBeUndefined();
+    expect(duplicateData.fieldValues).toBeUndefined();
   });
 });
 

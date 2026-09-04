@@ -2,7 +2,6 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Surface } from '@op/ui/Surface';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import React from 'react';
@@ -30,7 +29,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
     notFound();
   }
 
-  const { handleReactionClick } = usePostDetailActions({
+  const { handleLikeClick } = usePostDetailActions({
     postId: post.id,
     user,
   });
@@ -47,20 +46,18 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
               organization={organization}
               user={user}
               withLinks={false}
-              onReactionClick={handleReactionClick}
+              onLikeClick={handleLikeClick}
               commentCount={0}
             />
           </PostFeed>
 
           {/* Comment Input */}
-          <div className="border-y">
-            <Surface className="border-0 px-0 py-4">
-              <PostUpdate
-                parentPostId={post.id}
-                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
-                label={t('Comment')}
-              />
-            </Surface>
+          <div className="border-y py-4">
+            <PostUpdate
+              parentPostId={post.id}
+              placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
+              label={t('Comment')}
+            />
           </div>
 
           {/* Comments Section */}
@@ -71,7 +68,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
                   postId={post.id}
                   organization={organization}
                   user={user}
-                  onReactionClick={handleReactionClick}
+                  onLikeClick={handleLikeClick}
                 />
               </Suspense>
             </ErrorBoundary>

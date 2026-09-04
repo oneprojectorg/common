@@ -1,13 +1,15 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { getProfileAccessRolesWithOrgFallback } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
 import type {
   DecisionInstanceData,
+  InstanceOverview,
   PhaseInstanceData,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -47,14 +49,15 @@ export const duplicateInstance = async ({
     new UnauthorizedError('User must be authenticated'),
   );
 
-  // Owner is always the individual creator. Steward defaults to the profile the
-  // user is acting as (an org when in org context, otherwise the individual).
+  // Owner is always the individual creator.
   const ownerProfileId = dbUser.profileId;
   if (!ownerProfileId) {
     throw new UnauthorizedError('User must have a profile');
   }
-  const resolvedStewardProfileId =
-    stewardProfileId ?? dbUser.currentProfileId ?? ownerProfileId;
+
+  // Not `currentProfileId`: that is a last-viewed pointer, so the copy could
+  // land off the duplicating user's process list.
+  const resolvedStewardProfileId = stewardProfileId ?? ownerProfileId;
 
   if (!user.email) {
     throw new CommonError(
@@ -85,6 +88,21 @@ export const duplicateInstance = async ({
     profileId: sourceInstance.profileId,
     permissions: { decisions: permission.ADMIN },
   });
+
+  // Org-fallback because org grants live on organizationUsers, not
+  // profileUsers; the caller's own profile skips the check, having no role row.
+  if (resolvedStewardProfileId !== ownerProfileId) {
+    const stewardRoles = await getProfileAccessRolesWithOrgFallback({
+      user,
+      profileId: resolvedStewardProfileId,
+    });
+
+    if (!checkPermission({ profile: permission.ADMIN }, stewardRoles)) {
+      throw new UnauthorizedError(
+        'Not authorized to steward a process to this profile',
+      );
+    }
+  }
 
   const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
   if (!sourceData) {
@@ -164,6 +182,23 @@ function buildInstanceData(
       }
     }
     base.config = config;
+  }
+
+  if (include.processSettings) {
+    if (source.overview) {
+      const overview: InstanceOverview = { ...source.overview };
+      // Storage object under the source instance's prefix, and clearing it
+      // there deletes the object — sharing the path breaks the other's banner.
+      delete overview.heroImage;
+
+      if (Object.keys(overview).length > 0) {
+        base.overview = overview;
+      }
+    }
+
+    if (source.fieldValues) {
+      base.fieldValues = source.fieldValues;
+    }
   }
 
   // Phases

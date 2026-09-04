@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./decisions": "./src/decisions.ts",
     "./fulog": "./src/fulog.ts",
     "./previews": "./previews.mjs",
     "./utils": "./src/utils.ts"
@@ -23,7 +24,7 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/he": "^1.2.3",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.13.3",
     "tailwindcss": "4.1.18",
     "typescript": "7.0.2",
     "vitest": "^4.0.18"

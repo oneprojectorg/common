@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-# Base image: Node.js 22 LTS (slim variant for smaller image size).
-# NOTE: An earlier attempt to use node:22-alpine failed on arm64 because
+# Base image: Node.js 24 LTS (slim variant for smaller image size).
+# NOTE: An earlier attempt to use the alpine variant failed on arm64 because
 # @posthog/cli does not publish an aarch64-unknown-linux-musl binary. If that
 # changes (or if the team standardises on amd64 only), revisit alpine for a
 # ~300 MB image size win.
-FROM node:22-slim
+FROM node:24-slim
 
 # Install system dependencies needed by pnpm, Supabase CLI, and the app
 RUN apt-get update && apt-get install -y \
@@ -53,7 +53,6 @@ COPY packages/hooks/package.json ./packages/hooks/
 COPY packages/logging/package.json ./packages/logging/
 COPY packages/styles/package.json ./packages/styles/
 COPY packages/types/package.json ./packages/types/
-COPY packages/ui/package.json ./packages/ui/
 COPY services/api/package.json ./services/api/
 COPY services/cache/package.json ./services/cache/
 COPY services/collab/package.json ./services/collab/

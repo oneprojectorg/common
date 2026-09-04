@@ -1,9 +1,9 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { Card } from '@op/sense/Card';
+import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { Suspense } from 'react';
 
 import { Link, usePathname, useTranslations } from '@/lib/i18n';
@@ -72,19 +72,14 @@ const StatCard = ({
   const isActive = href ? pathname.startsWith(href) : false;
 
   const content = (
-    <Surface
-      className={cn(
-        'p-8',
-        isActive && 'border-primary-teal ring-1 ring-primary-teal',
-      )}
+    <Card
+      className={cn('p-8', isActive && 'border-primary ring-1 ring-primary')}
     >
       <div className="flex flex-col gap-2">
-        <div className="text-neutral-charcoal">{label}</div>
-        <div className="font-serif text-title-xxl text-neutral-black">
-          {value}
-        </div>
+        <div className="text-muted-foreground">{label}</div>
+        <div className="font-serif text-display font-light">{value}</div>
       </div>
-    </Surface>
+    </Card>
   );
 
   if (href) {
@@ -106,9 +101,9 @@ const PlatformStatsSkeleton = () => {
   return (
     <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
       {[...Array(3)].map((_, i) => (
-        <Surface key={i} className="p-8">
+        <Card key={i} className="p-8">
           <Skeleton className="h-24 w-40" />
-        </Surface>
+        </Card>
       ))}
     </div>
   );

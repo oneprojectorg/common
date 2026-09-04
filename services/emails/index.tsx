@@ -1,10 +1,33 @@
-import { APP_NAME, genericEmail } from '@op/core';
+import { APP_NAME, noReplyEmail } from '@op/core';
 import nodemailer from 'nodemailer';
 import { render } from 'react-email';
 import { Resend } from 'resend';
 import z from 'zod';
 
 type RenderParameter = Parameters<typeof render>;
+
+export interface BatchEmailItem {
+  to: string;
+  subject: string;
+  /**
+   * Display name only — the recipient-facing sender ("<admin> via Common").
+   * The mailbox is not caller-controlled; see `formatFromAddress`.
+   */
+  from?: string;
+  component: () => React.JSX.Element;
+}
+
+/**
+ * Builds the From header for every outbound email. The display name is the
+ * sender we want the recipient to recognise ("<admin> via Common"), which
+ * reads enough like a direct message that recipients reply to it. The mailbox
+ * therefore has to be the unmonitored no-reply address: sending from support
+ * routed those replies to staff who could not answer them, while the admin the
+ * recipient meant to reach never saw them. A no-reply mailbox bounces instead,
+ * telling the recipient to contact the admin directly.
+ */
+export const formatFromAddress = (displayName?: string) =>
+  `${displayName ?? APP_NAME} <${noReplyEmail}>`;
 
 // Reject CR/LF before passing addresses to nodemailer/Resend — prevents
 // SMTP header injection (extra Bcc:, Subject:, etc.) since z.string().email()
@@ -20,7 +43,14 @@ const safeEmailSchema = z
 // TLS handshake and kept Vercel waitUntil alive through the full SMTP
 // round-trip.
 const createPooledTransporter = () => {
-  const { RESEND_PASSWORD } = process.env;
+  const { EMAIL_SMTP_URL, RESEND_PASSWORD } = process.env;
+
+  // Local/self-hosted override: nodemailer accepts a connection URL directly,
+  // so a dev inbox (mailpit/inbucket) can stand in for Resend SMTP.
+  if (EMAIL_SMTP_URL) {
+    return nodemailer.createTransport(EMAIL_SMTP_URL);
+  }
+
   return nodemailer.createTransport({
     host: 'smtp.resend.com',
     port: 465,
@@ -44,6 +74,24 @@ const getTransporter = () => {
   return cachedTransporter;
 };
 
+/** Renders and sends one email through the configured SMTP transport. */
+const sendSmtpEmail = async ({
+  to,
+  from,
+  component,
+  subject,
+  renderOptions,
+}: BatchEmailItem & { renderOptions?: RenderParameter[1] }) => {
+  const html = await render(component(), renderOptions);
+
+  return getTransporter().sendMail({
+    from: formatFromAddress(from),
+    to: safeEmailSchema.parse(to),
+    subject,
+    html,
+  });
+};
+
 export const OPNodemailer = async ({
   to,
   from,
@@ -59,18 +107,7 @@ export const OPNodemailer = async ({
   };
   renderOptions?: RenderParameter[1];
 }) => {
-  const safeEmail = safeEmailSchema.parse(to);
-
-  const htmlString = await render(component(), renderOptions);
-
-  const sendMailOptions = {
-    from: `${from ?? APP_NAME} <${genericEmail}>`,
-    to: safeEmail,
-    subject,
-    html: htmlString,
-  };
-
-  await getTransporter().sendMail(sendMailOptions);
+  await sendSmtpEmail({ to, from, component, subject, renderOptions });
 };
 
 // Initialize Resend client
@@ -87,22 +124,41 @@ const getResendClient = () => {
   return resendClient;
 };
 
-export interface BatchEmailItem {
-  to: string;
-  subject: string;
-  from?: string;
-  component: () => React.JSX.Element;
-}
-
-export const OPBatchSend = async (emails: BatchEmailItem[]) => {
+export const OPBatchSend = async (
+  emails: BatchEmailItem[],
+  {
+    idempotencyKeyPrefix,
+  }: {
+    /**
+     * Makes a retry replay instead of re-deliver. Scope it to one attempt-set
+     * (an Inngest run id): Resend keeps a key for 24h and answers a reused key
+     * with a different payload with a 409.
+     */
+    idempotencyKeyPrefix?: string;
+  } = {},
+) => {
   if (emails.length === 0) {
     return { data: [], errors: [] };
   }
 
+  const results: { id: string }[] = [];
+  const errors: { email: string; error: any }[] = [];
+
+  if (process.env.EMAIL_SMTP_URL) {
+    for (const email of emails) {
+      try {
+        const info = await sendSmtpEmail(email);
+        results.push({ id: info.messageId });
+      } catch (error) {
+        errors.push({ email: email.to, error });
+      }
+    }
+
+    return { data: results, errors };
+  }
+
   const resend = getResendClient();
   const batchSize = 100; // Resend's limit
-  const results: any[] = [];
-  const errors: { email: string; error: any }[] = [];
 
   // Process emails in chunks of 100
   for (let i = 0; i < emails.length; i += batchSize) {
@@ -110,13 +166,18 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
 
     try {
       const batchPayload = batch.map(({ to, subject, from, component }) => ({
-        from: `${from ?? APP_NAME} <${genericEmail}>`,
+        from: formatFromAddress(from),
         to: safeEmailSchema.parse(to),
         subject,
         react: component(),
       }));
 
-      const { data, error } = await resend.batch.send(batchPayload);
+      const { data, error } = await resend.batch.send(
+        batchPayload,
+        idempotencyKeyPrefix
+          ? { idempotencyKey: `${idempotencyKeyPrefix}/chunk-${i / batchSize}` }
+          : {},
+      );
 
       if (error) {
         // If batch fails, mark all emails in this batch as failed
@@ -124,7 +185,12 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
           errors.push({ email: email.to, error });
         });
       } else {
-        results.push(...(Array.isArray(data) ? data : data ? [data] : []));
+        // The batch endpoint responds { data: [{ id }, ...] } and the SDK
+        // hands that body back as `data`, so the per-email ids sit at
+        // data.data — pushing `data` itself would count 100-email chunks,
+        // making "N sent" logs lie for any send over one email.
+        // https://resend.com/docs/api-reference/emails/send-batch-emails
+        results.push(...(data?.data ?? []));
       }
     } catch (error) {
       // If batch fails, mark all emails in this batch as failed
@@ -148,5 +214,8 @@ export * from './emails/RevisionResubmittedEmail';
 export * from './emails/RevisionRequestedEmail';
 export * from './emails/DecisionUpdateNotificationEmail';
 export * from './emails/ContentFlaggedEmail';
+export * from './emails/ProposalMergedEmail';
+export * from './emails/ProposalMergedIntoYoursEmail';
+export * from './emails/ProposalRejectedEmail';
 
 export { render } from 'react-email';

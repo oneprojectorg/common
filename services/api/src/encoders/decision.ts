@@ -1,4 +1,6 @@
 import {
+  proposalSearchSchema,
+  PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
   checkpointVersionSchema,
   instanceOptionalPhaseRefSchema,
@@ -185,12 +187,39 @@ export const decisionProcessWithSchemaListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
+/**
+ * A stored headline, read back. Writes reject an empty title, so a blank value
+ * here is a row from before that: decode it as absent, and the fallback chains
+ * that render it (`currentPhase?.headline ?? t('...')`) take the default copy
+ * instead of rendering a blank heading.
+ */
+const storedHeadlineEncoder = z
+  .string()
+  .transform((headline) => (headline.trim() ? headline : undefined))
+  .optional();
+
+/**
+ * A headline on the way in. An empty (or whitespace-only) title is not valid
+ * content, so it is rejected rather than coerced. `null` is how a caller says
+ * "clear this headline" — the stored value is deleted and the page falls back
+ * to its default copy — and `undefined` leaves it unchanged.
+ */
+const nonBlankHeadline = z.string().trim().min(1, 'Headline cannot be empty');
+
+const phaseHeadlineInputEncoder = nonBlankHeadline.nullable().optional();
+
+/** Capped at the length the overview editor's character counter enforces. */
+const overviewHeadlineInputEncoder = nonBlankHeadline
+  .max(50)
+  .nullable()
+  .optional();
+
 /** Instance-specific phase data (overrides for dates, rules, settings) */
 export const instancePhaseDataEncoder = z.object({
   phaseId: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),
-  headline: z.string().optional(),
+  headline: storedHeadlineEncoder,
   additionalInfo: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -253,7 +282,7 @@ const overviewBodyInputEncoder = z.union([
  * Length is enforced only on the input encoder below.
  */
 const instanceOverviewEncoder = z.object({
-  headline: z.string().optional(),
+  headline: storedHeadlineEncoder,
   description: z.string().optional(),
   // Scope the read-path degradation to `body` alone: a malformed stored body
   // becomes undefined without taking headline/description down with it.
@@ -266,7 +295,7 @@ const instanceOverviewEncoder = z.object({
  * writes.
  */
 const instanceOverviewInputEncoder = z.object({
-  headline: z.string().max(50).optional(),
+  headline: overviewHeadlineInputEncoder,
   description: z.string().max(500).optional(),
   body: overviewBodyInputEncoder.optional(),
   // `heroImage` is intentionally NOT accepted here: it's a storage path that
@@ -529,6 +558,9 @@ export const createInstanceFromTemplateInputSchema = z.object({
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
+  // Overrides the read-path encoder: `''` is rejected here rather than decoded
+  // as absent, and `null` is the explicit "clear this headline".
+  headline: phaseHeadlineInputEncoder,
   // `null` clears the phase-level rubric; omitted leaves it unchanged.
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });
@@ -583,7 +615,11 @@ export const updateProposalInputSchema = createProposalInputSchema
   .omit({ processInstanceId: true })
   .partial()
   .extend({
-    title: z.string().optional(),
+    // The title becomes the proposal profile's name, and `profiles.name` is
+    // varchar(256) — past it the insert throws a raw Postgres error on every
+    // autosave. The editor caps typing, but a remote collaborator, a version
+    // restore, or a direct call to this endpoint doesn't go through it.
+    title: z.string().max(PROPOSAL_TITLE_MAX_LENGTH).optional(),
     visibility: z.enum(Visibility).optional(),
     /**
      * Evaluation status for the proposal. This update endpoint handles evaluation
@@ -672,6 +708,7 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   submittedByProfileId: z.uuid().optional(),
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
+  search: proposalSearchSchema,
   dir: z.enum(['asc', 'desc']).optional(),
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
@@ -702,6 +739,7 @@ export const proposalLocationsFilterSchema =
     submittedByProfileId: z.uuid().optional(),
     status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
+    search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
     excludeAssignedForReview: z.boolean().optional(),
     phase: z.enum(['results']).optional(),

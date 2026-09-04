@@ -1,5 +1,5 @@
 import { trpc } from '@op/api/client';
-import type { LngLat } from '@op/ui/Map';
+import type { LngLat } from '@op/sense/Map';
 
 interface ProjectAreaCheck {
   /** True while no point is set, while resolving, or when inside a boundary. */

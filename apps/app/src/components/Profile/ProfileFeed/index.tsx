@@ -9,9 +9,9 @@ import type {
   PostToOrganization,
 } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
-import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
-import { SkeletonLine } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
+import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
+import { SkeletonText } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { Fragment, type RefCallback, useCallback } from 'react';
 
 import {
@@ -35,7 +35,7 @@ export type ProfileFeedRenderProps = {
   infiniteScrollRef: RefCallback<HTMLElement>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;
-  handleReactionClick: (postId: string, emoji: string) => void;
+  handleLikeClick: (postId: string) => Promise<unknown>;
   handleCommentClick: (post: Post, organization: Organization | null) => void;
   discussionModal: DiscussionModalState;
   handleModalClose: () => void;
@@ -74,7 +74,7 @@ export const ProfileFeedProvider = ({
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -103,7 +103,7 @@ export const ProfileFeedProvider = ({
     infiniteScrollRef: ref,
     shouldShowTrigger,
     isFetchingNextPage,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     discussionModal,
     handleModalClose,
@@ -116,7 +116,7 @@ export const ProfileFeedCards = ({
   infiniteScrollRef,
   shouldShowTrigger,
   isFetchingNextPage,
-  handleReactionClick: onReactionClick,
+  handleLikeClick: onLikeClick,
   handleCommentClick: onCommentClick,
   discussionModal,
   handleModalClose: onModalClose,
@@ -142,7 +142,7 @@ export const ProfileFeedCards = ({
                 organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
-                onReactionClick={onReactionClick}
+                onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
               />
             </HorizontalListItem>
@@ -155,11 +155,7 @@ export const ProfileFeedCards = ({
         {shouldShowTrigger && (
           <HorizontalListItem>
             <div ref={infiniteScrollRef}>
-              {isFetchingNextPage ? (
-                <div className="text-sm text-neutral-gray4">
-                  <SkeletonLine lines={2} />
-                </div>
-              ) : null}
+              {isFetchingNextPage ? <SkeletonText lines={2} /> : null}
             </div>
           </HorizontalListItem>
         )}
@@ -178,7 +174,7 @@ export const ProfileFeedList = ({
   infiniteScrollRef,
   shouldShowTrigger,
   isFetchingNextPage,
-  handleReactionClick: onReactionClick,
+  handleLikeClick: onLikeClick,
   handleCommentClick: onCommentClick,
   discussionModal,
   handleModalClose: onModalClose,
@@ -186,7 +182,7 @@ export const ProfileFeedList = ({
 }: ProfileFeedRenderProps & { className?: string }) => {
   return (
     <div className={className}>
-      <PostFeed>
+      <PostFeed className="gap-0">
         {posts.length > 0 ? (
           posts.map((postToOrg) => (
             <Fragment key={postToOrg.postId}>
@@ -195,8 +191,9 @@ export const ProfileFeedList = ({
                 organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
-                onReactionClick={onReactionClick}
+                onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
+                className="p-4"
               />
               <hr />
             </Fragment>
@@ -212,11 +209,7 @@ export const ProfileFeedList = ({
       </PostFeed>
       {shouldShowTrigger && (
         <div ref={infiniteScrollRef} className="flex justify-center py-4">
-          {isFetchingNextPage ? (
-            <div className="text-sm text-neutral-gray4">
-              <SkeletonLine lines={2} />
-            </div>
-          ) : null}
+          {isFetchingNextPage ? <SkeletonText lines={2} /> : null}
         </div>
       )}
     </div>

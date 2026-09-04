@@ -2,15 +2,16 @@
 
 import { trpc } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
-import { Sortable } from '@op/ui/Sortable';
-import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { Sortable } from '@op/sense/Sortable';
+import { toast } from '@op/sense/Toast';
+import { useMemo, useState } from 'react';
 import { LuUpload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
+import { useRegisterTranslationSamples } from '@/components/decisions/TranslationDetectionContext';
 
 import { ResourceCard } from './ResourceCard';
 import { ResourceDropZone } from './ResourceDropZone';
@@ -44,6 +45,24 @@ export const ResourcesList = ({
     setItems(data.items);
   }
 
+  // `handleTranslate` already sends this profile's resources to
+  // translateResources. Register their text so the Translate control appears
+  // for a reader whose only unreadable content is a resource. No-ops outside a
+  // decision screen, where no detection provider is mounted.
+  //
+  // Keyed per collection because a decision with more than one renders a list
+  // per collection, all mounted together in the open accordion. A shared key
+  // would let the last one registered drop every other collection's samples,
+  // hiding the control on a foreign-language resource in an earlier section.
+  const resourceSamples = useMemo(
+    () => items.flatMap((item) => [item.title, item.description ?? '']),
+    [items],
+  );
+  useRegisterTranslationSamples(
+    `resources:${data.collectionId ?? profileId}`,
+    resourceSamples,
+  );
+
   const reorder = trpc.resources.reorder.useMutation({
     onMutate: async (vars) => {
       const key = { collectionId: vars.collectionId };
@@ -61,13 +80,13 @@ export const ResourcesList = ({
       if (ctx?.previous && ctx?.key) {
         utils.resources.listByCollection.setData(ctx.key, ctx.previous);
       }
-      toast.error({ message: t('Could not reorder resource') });
+      toast.error(t('Could not reorder resource'));
     },
   });
 
   const remove = trpc.resources.delete.useMutation({
-    onSuccess: () => toast.success({ message: t('Resource deleted') }),
-    onError: () => toast.error({ message: t('Could not delete resource') }),
+    onSuccess: () => toast.success(t('Resource deleted')),
+    onError: () => toast.error(t('Could not delete resource')),
   });
 
   const collectionId = data.collectionId ?? null;
@@ -120,7 +139,7 @@ export const ResourcesList = ({
         renderItem={renderItem}
       >
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-gray2 px-6 py-10 text-center text-neutral-gray4">
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input px-6 py-10 text-center text-muted-foreground">
             <LuUpload className="size-6" />
             <p className="text-sm">{t('Drag a file or link here to add it')}</p>
           </div>

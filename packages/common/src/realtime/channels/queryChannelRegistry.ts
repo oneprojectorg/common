@@ -20,10 +20,15 @@ export type ChannelRemovedEvent = {
   channel: ChannelName;
 };
 
+export type ChannelSubscribedEvent = {
+  channel: ChannelName;
+};
+
 export type RegistryEvents = {
   'query:added': QueryAddedEvent;
   'mutation:added': MutationAddedEvent;
   'channel:removed': ChannelRemovedEvent;
+  'channel:subscribed': ChannelSubscribedEvent;
 };
 
 /**
@@ -123,7 +128,25 @@ class QueryChannelRegistry {
   }
 
   /**
-   * Subscribe to registry events (query:added, mutation:added, channel:removed).
+   * Report that a channel's socket join is confirmed.
+   *
+   * Emits 'channel:subscribed', which the realtime subscriber treats as a cue
+   * to re-read every query on that channel. Broadcasts are not replayed, so
+   * whatever was published before the join is unrecoverable otherwise: on a
+   * first subscribe that is the gap between a query answering and its channel
+   * going live, and on a rejoin it is everything that happened while the
+   * connection was down.
+   *
+   * Fires per join rather than per channel, so a reconnect re-reads rather
+   * than leaving a tab showing what it held when the socket died.
+   */
+  notifyChannelSubscribed(channel: ChannelName): void {
+    this.emitter.emit('channel:subscribed', { channel });
+  }
+
+  /**
+   * Subscribe to registry events (query:added, mutation:added, channel:removed,
+   * channel:subscribed).
    */
   on<K extends keyof RegistryEvents>(
     event: K,

@@ -6,6 +6,7 @@ import {
   isPostSubmissionEditingAllowed,
   isReviewPhase,
   isVotingPhase,
+  resolveReviewSettings,
 } from './phaseSettings';
 
 describe('isReviewPhase', () => {
@@ -120,7 +121,7 @@ describe('getPhaseReviewSettings', () => {
       policy: 'full_coverage',
       scope: 'all',
       allowRevisions: true,
-      anonymousFeedback: undefined,
+      anonymousFeedback: true,
       openReviews: false,
     });
   });
@@ -233,6 +234,35 @@ describe('getPhaseReviewSettings', () => {
     expect(result.allowRevisions).toBe(false);
   });
 
+  it('turns anonymousFeedback off from the phase rules, over a truthy config', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: { reviewsAnonymousFeedback: true },
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { anonymousFeedback: false } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
+  });
+
+  it('turns anonymousFeedback off from the legacy config alone', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: { reviewsAnonymousFeedback: false },
+        phases: [{ phaseId: 'review' }],
+      },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
+  });
+
   it('reads the matching phase, not the first one', () => {
     const result = getPhaseReviewSettings(
       {
@@ -342,5 +372,55 @@ describe('getPhaseReviewSettings', () => {
     );
 
     expect(result.openReviews).toBe(false);
+  });
+});
+
+describe('resolveReviewSettings', () => {
+  it('matches the throwing variant when the phase exists', () => {
+    const instanceData = {
+      config: { reviewsAllowRevisions: false },
+      phases: [
+        {
+          phaseId: 'review',
+          rules: { reviews: { submit: true, anonymousFeedback: false } },
+        },
+      ],
+    };
+
+    expect(resolveReviewSettings(instanceData, 'review')).toEqual(
+      getPhaseReviewSettings(instanceData, 'review'),
+    );
+  });
+
+  it('falls back to defaults with no phaseId', () => {
+    const result = resolveReviewSettings({}, undefined);
+
+    expect(result).toEqual({
+      submit: false,
+      policy: 'full_coverage',
+      scope: 'all',
+      allowRevisions: true,
+      anonymousFeedback: true,
+      openReviews: false,
+    });
+  });
+
+  it('falls back instead of throwing when the phase is off the list', () => {
+    const result = resolveReviewSettings(
+      { phases: [{ phaseId: 'submission' }] },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(true);
+    expect(result.submit).toBe(false);
+  });
+
+  it('still honors legacy config in the phaseless fallback', () => {
+    const result = resolveReviewSettings(
+      { config: { reviewsAnonymousFeedback: false } },
+      undefined,
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
   });
 });

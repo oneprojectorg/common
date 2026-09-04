@@ -2,11 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Header1 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/sense/Button';
+import { Header1 } from '@op/sense/Header';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -65,9 +64,7 @@ export const DecisionInvitesForm = ({
     try {
       await declineInvite.mutateAsync({ inviteId });
     } catch (error) {
-      toast.error({
-        message: t('Failed to decline invitation'),
-      });
+      toast.error(t('Failed to decline invitation'));
     }
   };
 
@@ -90,9 +87,7 @@ export const DecisionInvitesForm = ({
       onComplete();
     } catch (error) {
       setIsLoading(false);
-      toast.error({
-        message: t('Failed to accept invitations'),
-      });
+      toast.error(t('Failed to accept invitations'));
     }
   };
 
@@ -110,10 +105,10 @@ export const DecisionInvitesForm = ({
       <FormContainer className="gap-6">
         {/* Header section - gap-2 (8px) between title and subtitle */}
         <div className="flex flex-col gap-2 text-center">
-          <Header1 className="text-neutral-black">
+          <Header1 className="text-foreground">
             {t('Join decision-making processes')}
           </Header1>
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t(
               "You've been invited to join the following decision-making processes",
             )}
@@ -138,22 +133,19 @@ export const DecisionInvitesForm = ({
         <div className="flex flex-col items-center gap-2">
           <Button
             className="w-full"
-            onPress={handleAcceptAll}
-            isDisabled={isLoading || acceptInvite.isPending}
+            onClick={handleAcceptAll}
+            loading={isLoading || acceptInvite.isPending}
           >
-            {isLoading || acceptInvite.isPending ? (
-              <LoadingSpinner />
-            ) : (
-              t('Continue')
-            )}
+            {t('Continue')}
           </Button>
           {/* Show single decline link at bottom only for single invite */}
           {invites.length === 1 && invites[0] && (
             <Button
-              unstyled
-              className="h-10 px-2 py-2.5 text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
-              onPress={() => handleDecline(invites[0]!.id)}
-              isDisabled={declineInvite.isPending}
+              variant="link"
+              size="sm"
+              className="font-normal underline hover:text-primary/80"
+              onClick={() => handleDecline(invites[0]!.id)}
+              disabled={declineInvite.isPending}
             >
               {t("I don't want to participate")}
             </Button>

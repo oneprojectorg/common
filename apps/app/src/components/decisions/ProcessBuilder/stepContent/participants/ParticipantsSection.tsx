@@ -8,8 +8,8 @@ export default function ParticipantsSection({
   decisionName,
 }: SectionProps) {
   return (
-    <div className="px-4 md:px-24 md:py-16">
-      <div className="mx-auto max-w-5xl">
+    <div className="p-4 md:p-8">
+      <div className="w-full">
         <ProfileUsersAccess
           profileId={decisionProfileId}
           instanceId={instanceId}

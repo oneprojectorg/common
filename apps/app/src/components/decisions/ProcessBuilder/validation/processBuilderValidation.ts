@@ -59,8 +59,12 @@ function hasReviewPhase(data: ProcessBuilderInstanceData | undefined): boolean {
 function hasRubricCriteria(
   data: ProcessBuilderInstanceData | undefined,
 ): boolean {
-  const order = data?.rubricTemplate?.['x-field-order'];
-  return Array.isArray(order) && order.length > 0;
+  if (!data?.rubricTemplate) {
+    return false;
+  }
+  // Through getCriteria so the launch checklist and the editor can't disagree
+  // about whether a rubric has criteria.
+  return getCriteria(data.rubricTemplate).length > 0;
 }
 
 /** Returns true when every rubric criterion has all required fields filled in. */
@@ -96,7 +100,7 @@ function validateTemplateEditor(
 }
 
 const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
-  processSettings: (data) => processSettingsSchema.safeParse(data).success,
+  generalInformation: (data) => processSettingsSchema.safeParse(data).success,
   // Overview content (headline, description, body) is optional
   overview: () => true,
   phases: (data) => phasesSchema.safeParse(data).success,

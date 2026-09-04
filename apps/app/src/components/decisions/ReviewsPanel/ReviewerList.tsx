@@ -7,9 +7,9 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
-import { StatusDot } from '@op/ui/StatusDot';
+import { Button } from '@op/sense/Button';
+import { Header3 } from '@op/sense/Header';
+import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
@@ -17,7 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
 import { AverageScoreBar } from './AverageScoreBar';
-import type { RubricSummary } from './ReviewsPanel';
+import type { OwnReviewEntry, RubricSummary } from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
 
 interface ReviewerListProps {
@@ -28,6 +28,7 @@ interface ReviewerListProps {
   onSelectAssignment: (assignmentId: string) => void;
   hideSummaryHeader?: boolean;
   title?: string;
+  ownReview?: OwnReviewEntry;
 }
 
 export function ReviewerList({
@@ -38,6 +39,7 @@ export function ReviewerList({
   onSelectAssignment,
   hideSummaryHeader,
   title,
+  ownReview,
 }: ReviewerListProps) {
   const t = useTranslations();
   const { reviewsSubmittedCount, assignmentsCount, averageScore } =
@@ -65,10 +67,8 @@ export function ReviewerList({
     <div className="flex flex-col gap-6">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
-          <Header3 className="font-serif">
-            {title ?? t('Review Summary')}
-          </Header3>
-          <p className="text-base text-neutral-charcoal">
+          <Header3>{title ?? t('Review Summary')}</Header3>
+          <p className="text-base">
             {t(
               '{submitted} out of {total} reviewers submitted a review for this proposal',
               { submitted: reviewsSubmittedCount, total: assignmentsCount },
@@ -77,7 +77,7 @@ export function ReviewerList({
         </header>
       )}
 
-      {hasScoring && (
+      {hasScoring && reviewsSubmittedCount > 0 && (
         <AverageScoreBar
           averageScore={averageScore}
           totalPoints={totalPoints}
@@ -100,6 +100,7 @@ export function ReviewerList({
                   showScore={hasScoring}
                   totalPoints={totalPoints}
                   onSelect={onSelectAssignment}
+                  isOwn={item.reviewer.id === ownReview?.profileId}
                 />
               ))}
             </RecommendationGroup>
@@ -107,9 +108,7 @@ export function ReviewerList({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <Header3 className="font-serif !text-title-sm">
-            {t('Submitted Reviews')}
-          </Header3>
+          <Header3 className="text-label">{t('Submitted Reviews')}</Header3>
           <div className="flex flex-col gap-2">
             {reviews.map((item) => (
               <ReviewerRow
@@ -118,10 +117,22 @@ export function ReviewerList({
                 showScore={hasScoring}
                 totalPoints={totalPoints}
                 onSelect={onSelectAssignment}
+                isOwn={item.reviewer.id === ownReview?.profileId}
               />
             ))}
           </div>
         </div>
+      )}
+
+      {ownReview && !ownReview.hasSubmitted && (
+        <Button
+          variant="link"
+          size="inline"
+          onClick={ownReview.onOpenForm}
+          className="self-start text-base"
+        >
+          {t('+ Add review')}
+        </Button>
       )}
     </div>
   );
@@ -176,7 +187,7 @@ function RecommendationGroup({
   return (
     <div className="flex flex-col gap-4">
       <StatusDot intent={recommendationIntent(value)} className="gap-2">
-        <span className="font-serif !text-title-sm14 text-neutral-black">
+        <span className="font-serif text-sm">
           {label} ({count})
         </span>
       </StatusDot>
@@ -190,21 +201,28 @@ function ReviewerRow({
   showScore,
   totalPoints,
   onSelect,
+  isOwn,
 }: {
   item: SubmittedReviewItem;
   showScore: boolean;
   totalPoints: number;
   onSelect: (assignmentId: string) => void;
+  isOwn?: boolean;
 }) {
   const t = useTranslations();
+  const reviewerName = item.reviewer.name ?? item.reviewer.slug;
+  const rowLabel = isOwn
+    ? t('{name} (You)', { name: reviewerName })
+    : reviewerName;
+
   return (
+    // `bare`: the row keeps its card look and picks up the sense focus ring,
+    // which the hand-rolled outline it used to carry never matched.
     <Button
-      unstyled
-      onPress={() => onSelect(item.review.assignmentId)}
-      className="flex h-14 w-full cursor-pointer items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-start outline-0 outline-transparent transition-colors duration-200 hover:bg-neutral-offWhite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
-      aria-label={t('View review by {name}', {
-        name: item.reviewer.name ?? item.reviewer.slug,
-      })}
+      variant="bare"
+      onClick={() => onSelect(item.review.assignmentId)}
+      className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
+      aria-label={t('View review by {name}', { name: rowLabel })}
     >
       <div className="flex items-center gap-2">
         <ProfileAvatar
@@ -213,18 +231,16 @@ function ReviewerRow({
           className="size-6"
         />
         <div className="flex flex-col">
-          <span className="text-base text-neutral-black">
-            {item.reviewer.name ?? item.reviewer.slug}
-          </span>
+          <span className="text-base">{rowLabel}</span>
           {showScore && (
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm">
               {item.score}
-              <span className="text-neutral-gray4">/{totalPoints}pts</span>
+              <span className="text-muted-foreground">/{totalPoints}pts</span>
             </span>
           )}
         </div>
       </div>
-      <LuChevronRight className="size-4 text-neutral-gray4 rtl:-scale-x-100" />
+      <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
     </Button>
   );
 }

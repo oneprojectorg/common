@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
 import type { ListProposalsInput } from './listProposals';
+import { isAnonymousAuthor } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalListScope } from './resolveProposalListScope';
 
@@ -74,15 +75,7 @@ export const listProposalLocations = async ({
     const submittedBy = rawSubmittedBy
       ? (() => {
           const { profileUsers, ...author } = rawSubmittedBy;
-          return {
-            ...author,
-            isAnonymous: Boolean(
-              profileUsers?.some(
-                (pu: { authUser: { isAnonymous: boolean } | null }) =>
-                  pu.authUser?.isAnonymous,
-              ),
-            ),
-          };
+          return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
         })()
       : rawSubmittedBy;
     const profile = Array.isArray(proposal.profile)

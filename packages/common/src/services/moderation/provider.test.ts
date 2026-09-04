@@ -35,6 +35,9 @@ describe('getModerationProvider', () => {
     expect(provider).not.toBeNull();
     expect(provider!.submitForReview).toBeInstanceOf(Function);
     expect(provider!.parseWebhook).toBeInstanceOf(Function);
+    // Optional on the interface and called with `?.()`, so dropping it here
+    // would typecheck and silently stop raising cases. Asserts the wiring.
+    expect(provider!.reportForReview).toBeInstanceOf(Function);
   });
 
   it('accepts MODERATION_PROVIDER=checkstep as an explicit no-op', () => {

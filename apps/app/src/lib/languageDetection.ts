@@ -13,6 +13,7 @@ const SUPPORTED_LANGUAGE_CODES: Record<string, SupportedLocale> = {
   ben: 'bn',
   som: 'so',
   arb: 'ar',
+  hun: 'hu',
 };
 
 const FRANC_ONLY = Object.keys(SUPPORTED_LANGUAGE_CODES);

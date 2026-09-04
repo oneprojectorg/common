@@ -45,6 +45,36 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
 
+  /**
+   * Inngest dev server, for specs that exercise a background workflow.
+   *
+   * `apps/api` already serves the workflow handler at /api/v1/workflows; this
+   * is the piece that relays a sent event back to it. Without it an export is
+   * accepted and then never runs.
+   *
+   * Owned here rather than by a CI step on purpose: the e2e workflow triggers
+   * on `pull_request_target`, so GitHub runs the workflow file from the base
+   * branch. A step added on a feature branch does not execute until it has
+   * merged, which would leave any PR introducing one red for a reason that has
+   * nothing to do with its changes. This config is checked out from the PR, so
+   * it takes effect immediately.
+   *
+   * Reused when one is already listening. Locally that is the only option — a
+   * second dev server cannot start beside the one the `:3300` stack uses,
+   * because the executor's gRPC ports are fixed — and specs sync themselves
+   * into whichever server answers rather than assuming they own it.
+   */
+  webServer: {
+    command:
+      'pnpm exec inngest-cli dev --no-discovery -u http://localhost:4300/api/v1/workflows',
+    cwd: path.resolve(__dirname, '../../services/workflows'),
+    url: 'http://127.0.0.1:8288/health',
+    reuseExistingServer: true,
+    timeout: 120_000,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  },
+
   projects: [
     {
       name: 'e2e',

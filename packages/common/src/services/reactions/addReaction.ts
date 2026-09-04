@@ -24,12 +24,17 @@ export const addReaction = async (options: AddReactionOptions) => {
         ),
       );
 
-    // Then add the new reaction
-    await tx.insert(postReactions).values({
-      postId,
-      profileId,
-      reactionType,
-    });
+    // Then add the new reaction. Two concurrent likes both delete nothing and
+    // both insert the same (post, profile, 'like') key, so the loser of that
+    // race would hit the unique index — it already has what it wanted.
+    await tx
+      .insert(postReactions)
+      .values({
+        postId,
+        profileId,
+        reactionType,
+      })
+      .onConflictDoNothing();
   });
 
   // Defer to the platform's post-response work queue so notification

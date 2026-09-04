@@ -6,19 +6,18 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
-import { AvatarUploader } from '@op/ui/AvatarUploader';
-import { BannerUploader } from '@op/ui/BannerUploader';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ModalFooter } from '@op/ui/Modal';
-import type { Option } from '@op/ui/MultiSelectComboBox';
-import { SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { AvatarUploader } from '@op/sense/AvatarUploader';
+import { BannerUploader } from '@op/sense/BannerUploader';
+import { DialogFooter } from '@op/sense/Dialog';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { createOrganizationFormValidator } from '@/components/Onboarding/shared/organizationValidation';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { type ImageData } from '../../Onboarding/shared/OrganizationFormFields';
@@ -26,6 +25,7 @@ import { TermsMultiSelect } from '../../TermsMultiSelect';
 import { FormContainer } from '../../form/FormContainer';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
 import { ToggleRow } from '../../layout/split/form/ToggleRow';
+import type { Option } from '../../multiSelectOption';
 
 interface UpdateOrganizationFormProps {
   profile: Organization;
@@ -138,9 +138,8 @@ export const UpdateOrganizationForm = forwardRef<
 
   const submitUpdate = async (formData: any) => {
     if (!isOnline) {
-      toast.error({
-        title: t('No connection'),
-        message: t('Please check your internet connection and try again.'),
+      toast.error(t('No connection'), {
+        description: t('Please check your internet connection and try again.'),
       });
       return;
     }
@@ -177,14 +176,12 @@ export const UpdateOrganizationForm = forwardRef<
       const errorInfo = analyzeError(error);
 
       if (errorInfo.isConnectionError) {
-        toast.error({
-          title: t('Connection issue'),
-          message: t('Please try submitting the form again.'),
+        toast.error(t('Connection issue'), {
+          description: t('Please try submitting the form again.'),
         });
       } else {
-        toast.error({
-          title: t('Update failed'),
-          message: errorInfo.message,
+        toast.error(t('Update failed'), {
+          description: errorInfo.message,
         });
       }
     }
@@ -192,6 +189,12 @@ export const UpdateOrganizationForm = forwardRef<
 
   const form = useAppForm({
     defaultValues: initialData,
+    validators: {
+      // @ts-expect-error - zodUrl is not returning the right type here
+      onChange: createOrganizationFormValidator(t),
+      // @ts-expect-error - zodUrl is not returning the right type here
+      onSubmit: createOrganizationFormValidator(t),
+    },
     onSubmit: async ({ value }) => {
       await submitUpdate(value);
     },
@@ -218,24 +221,21 @@ export const UpdateOrganizationForm = forwardRef<
         'image/webp',
       ];
       if (!acceptedTypes.includes(file.type)) {
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            {
-              types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
-            },
-          ),
-        });
+        toast.error(
+          t('That file type is not supported. Accepted types: {types}', {
+            types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
+          }),
+        );
         return;
       }
 
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
+        toast.error(
+          t('File too large. Maximum size: {size}MB', {
             size: maxSizeMB,
           }),
-        });
+        );
         return;
       }
 
@@ -258,15 +258,18 @@ export const UpdateOrganizationForm = forwardRef<
 
   return (
     <form
+      noValidate
       ref={ref}
       id="update-organization-form"
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
       }}
-      className="w-full"
+      className="flex min-h-0 w-full flex-1 flex-col"
     >
-      <FormContainer className={className}>
+      <FormContainer
+        className={cn('min-h-0 flex-1 overflow-y-auto', className)}
+      >
         {/* Header Images */}
         <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
@@ -292,14 +295,7 @@ export const UpdateOrganizationForm = forwardRef<
         <form.AppField
           name="name"
           children={(field) => (
-            <field.TextField
-              label={t('Organization Name')}
-              isRequired
-              value={field.state.value as string}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-            />
+            <field.TextField label={t('Organization Name')} isRequired />
           )}
         />
 
@@ -309,20 +305,14 @@ export const UpdateOrganizationForm = forwardRef<
             <field.TextField
               label={t('Website')}
               isRequired
-              value={field.state.value as string}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              inputProps={{
-                icon: <LuLink className="size-4 text-neutral-black" />,
-                placeholder: t("Enter your organization's website here"),
-                // Not `type="url"`: our zodUrl validation accepts a bare domain
-                // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
-                // browser's native URL validation rejects the scheme-less value
-                // and silently blocks form submission. `inputMode` keeps the
-                // URL-optimized keyboard without that native constraint.
-                inputMode: 'url',
-              }}
-              errorMessage={getFieldErrorMessage(field)}
+              icon={<LuLink className="size-4 text-foreground" />}
+              placeholder={t("Enter your organization's website here")}
+              // Not `type="url"`: our zodUrl validation accepts a bare domain
+              // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
+              // browser's native URL validation rejects the scheme-less value
+              // and silently blocks form submission. `inputMode` keeps the
+              // URL-optimized keyboard without that native constraint.
+              inputMode="url"
             />
           )}
         />
@@ -330,15 +320,7 @@ export const UpdateOrganizationForm = forwardRef<
         <form.AppField
           name="email"
           children={(field) => (
-            <field.TextField
-              label={t('Email')}
-              isRequired
-              type="email"
-              value={field.state.value as string}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-            />
+            <field.TextField label={t('Email')} isRequired type="email" />
           )}
         />
 
@@ -378,36 +360,24 @@ export const UpdateOrganizationForm = forwardRef<
               label={t('Organizational Status')}
               isRequired
               placeholder={t('Select')}
-              selectedKey={field.state.value as string}
-              onSelectionChange={(key) => field.handleChange(key as string)}
-              onBlur={field.handleBlur}
-              errorMessage={getFieldErrorMessage(field)}
               className="w-full"
-            >
-              <SelectItem id="nonprofit">{t('Nonprofit')}</SelectItem>
-              <SelectItem id="forprofit">{t('Forprofit')}</SelectItem>
-              <SelectItem id="government">{t('Government Entity')}</SelectItem>
-            </field.Select>
+              options={[
+                { value: 'nonprofit', label: t('Nonprofit') },
+                { value: 'forprofit', label: t('Forprofit') },
+                { value: 'government', label: t('Government Entity') },
+              ]}
+            />
           )}
         />
 
         <form.AppField
           name="bio"
           children={(field) => (
-            <field.TextField
-              useTextArea
+            <field.TextArea
               isRequired
               label={t('Organization headline')}
-              value={field.state.value as string}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              textareaProps={{
-                className: 'min-h-28',
-                placeholder: t(
-                  'Enter a brief description for your organization',
-                ),
-              }}
+              className="min-h-28"
+              placeholder={t('Enter a brief description for your organization')}
             />
           )}
         />
@@ -415,18 +385,10 @@ export const UpdateOrganizationForm = forwardRef<
         <form.AppField
           name="mission"
           children={(field) => (
-            <field.TextField
-              useTextArea
+            <field.TextArea
               label={t('Mission statement')}
-              value={field.state.value as string}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              className="min-h-24"
-              textareaProps={{
-                className: 'min-h-28',
-                placeholder: t('Enter your mission statement or a brief bio'),
-              }}
+              className="min-h-28"
+              placeholder={t('Enter your mission statement or a brief bio')}
             />
           )}
         />
@@ -474,17 +436,12 @@ export const UpdateOrganizationForm = forwardRef<
         <form.AppField
           name="networkOrganization"
           children={(field) => (
-            <ToggleRow>
-              {t(
+            <ToggleRow
+              label={t(
                 'Does your organization serve as a network or coalition with member organizations?',
               )}
-              <field.ToggleButton
-                isSelected={field.state.value as boolean}
-                onChange={field.handleChange}
-                aria-label={t(
-                  'Does your organization serve as a network or coalition with member organizations?',
-                )}
-              />
+            >
+              <field.Switch />
             </ToggleRow>
           )}
         />
@@ -496,12 +453,8 @@ export const UpdateOrganizationForm = forwardRef<
             name="isReceivingFunds"
             children={(field) => (
               <>
-                <ToggleRow>
-                  <span>{t('Is your organization seeking funding?')}</span>
-                  <ToggleButton
-                    isSelected={field.state.value as boolean}
-                    onChange={field.handleChange}
-                  />
+                <ToggleRow label={t('Is your organization seeking funding?')}>
+                  <field.Switch />
                 </ToggleRow>
                 {field.state.value ? (
                   <div className="flex flex-col gap-4">
@@ -526,18 +479,10 @@ export const UpdateOrganizationForm = forwardRef<
                             label={t(
                               'Where can people contribute to your organization?',
                             )}
-                            value={field.state.value as string}
-                            onBlur={field.handleBlur}
-                            onChange={field.handleChange}
-                            errorMessage={getFieldErrorMessage(field)}
-                            inputProps={{
-                              icon: (
-                                <LuLink className="size-4 text-neutral-black" />
-                              ),
-                              placeholder: t('Add your contribution page here'),
-                            }}
+                            icon={<LuLink className="size-4 text-foreground" />}
+                            placeholder={t('Add your contribution page here')}
                           />
-                          <span className="text-start text-sm text-neutral-gray4">
+                          <span className="text-start text-sm text-muted-foreground">
                             {t(
                               'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
                             )}
@@ -557,12 +502,8 @@ export const UpdateOrganizationForm = forwardRef<
             name="isOfferingFunds"
             children={(field) => (
               <>
-                <ToggleRow>
-                  <span>{t('Does your organization offer funding?')}</span>
-                  <ToggleButton
-                    isSelected={field.state.value as boolean}
-                    onChange={field.handleChange}
-                  />
+                <ToggleRow label={t('Does your organization offer funding?')}>
+                  <field.Switch />
                 </ToggleRow>
 
                 {field.state.value ? (
@@ -570,35 +511,24 @@ export const UpdateOrganizationForm = forwardRef<
                     name="acceptingApplications"
                     children={(acceptingApplicationsField) => (
                       <>
-                        <ToggleRow>
-                          {t(
+                        <ToggleRow
+                          label={t(
                             'Are organizations currently able to apply for funding?',
                           )}
-                          <ToggleButton
-                            isSelected={
-                              acceptingApplicationsField.state.value as boolean
-                            }
-                            onChange={acceptingApplicationsField.handleChange}
-                          />
+                        >
+                          <acceptingApplicationsField.Switch />
                         </ToggleRow>
                         <div className="flex flex-col gap-4">
                           {!acceptingApplicationsField.state.value ? (
                             <form.AppField
                               name="offeringFundsDescription"
                               children={(field) => (
-                                <field.TextField
-                                  useTextArea
+                                <field.TextArea
                                   label={t('What is your funding process?')}
-                                  value={field.state.value as string}
-                                  onBlur={field.handleBlur}
-                                  onChange={field.handleChange}
-                                  errorMessage={getFieldErrorMessage(field)}
-                                  textareaProps={{
-                                    className: 'min-h-32',
-                                    placeholder: t(
-                                      "Enter a description of the type of funding you're seeking (e.g., grants, integrated capital, etc.)",
-                                    ),
-                                  }}
+                                  className="min-h-32"
+                                  placeholder={t(
+                                    "Enter a description of the type of funding you're seeking (e.g., grants, integrated capital, etc.)",
+                                  )}
                                 />
                               )}
                             />
@@ -614,25 +544,20 @@ export const UpdateOrganizationForm = forwardRef<
                                       ? t('Where can organizations apply?')
                                       : t('Where can organizations learn more?')
                                   }
-                                  value={field.state.value as string}
-                                  onBlur={field.handleBlur}
-                                  onChange={field.handleChange}
-                                  errorMessage={getFieldErrorMessage(field)}
-                                  inputProps={{
-                                    placeholder: acceptingApplicationsField
-                                      .state.value
+                                  icon={
+                                    <LuLink className="size-4 text-foreground" />
+                                  }
+                                  placeholder={
+                                    acceptingApplicationsField.state.value
                                       ? t(
                                           'Add a link where organizations can apply for funding',
                                         )
                                       : t(
                                           'Add a link to learn more about your funding process',
-                                        ),
-                                    icon: (
-                                      <LuLink className="size-4 text-neutral-black" />
-                                    ),
-                                  }}
+                                        )
+                                  }
                                 />
-                                <span className="text-sm text-neutral-gray4">
+                                <span className="text-sm text-muted-foreground">
                                   {acceptingApplicationsField.state.value
                                     ? null
                                     : t(
@@ -653,20 +578,15 @@ export const UpdateOrganizationForm = forwardRef<
         </div>
       </FormContainer>
 
-      <ModalFooter className="sticky">
-        <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row sm:gap-2">
-          <form.SubmitButton
-            className="w-full sm:max-w-fit"
-            isDisabled={form.state.isSubmitting || updateOrganization.isPending}
-          >
-            {form.state.isSubmitting || updateOrganization.isPending ? (
-              <LoadingSpinner />
-            ) : (
-              t('Save')
-            )}
-          </form.SubmitButton>
-        </div>
-      </ModalFooter>
+      <DialogFooter>
+        <form.SubmitButton
+          className="w-full sm:max-w-fit"
+          disabled={form.state.isSubmitting || updateOrganization.isPending}
+          loading={form.state.isSubmitting || updateOrganization.isPending}
+        >
+          {t('Save')}
+        </form.SubmitButton>
+      </DialogFooter>
     </form>
   );
 });

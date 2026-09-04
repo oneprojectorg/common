@@ -2,8 +2,10 @@
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { cn, getGradientForString } from '@op/ui/utils';
+import { Header2 } from '@op/sense/Header';
+import { Tag, TagGroup } from '@op/sense/TagGroup';
+import { cn } from '@op/sense/lib/utils';
+import { getGradientForString } from '@op/styles/constants';
 import Image from 'next/image';
 import React from 'react';
 
@@ -83,7 +85,7 @@ const RelationshipListContent = ({
                   {/* Public/non-member viewers can't reach the profile page. */}
                   {canLinkToProfile ? (
                     <Link
-                      className="truncate font-semibold text-neutral-black"
+                      className="truncate font-semibold text-foreground"
                       href={
                         profile.type === 'org'
                           ? `/org/${profile.slug}`
@@ -93,14 +95,14 @@ const RelationshipListContent = ({
                       <bdi>{profile.name}</bdi>
                     </Link>
                   ) : (
-                    <span className="truncate font-semibold text-neutral-black">
+                    <span className="truncate font-semibold">
                       <bdi>{profile.name}</bdi>
                     </span>
                   )}
 
                   {/* Show relationship types if available */}
                   {profile.relationships && relationshipMap ? (
-                    <div className="text-neutral-black">
+                    <div>
                       {profile.relationships.map((relationship, i, arr) => (
                         <React.Fragment key={relationship.relationshipType}>
                           {relationshipMap[relationship.relationshipType]
@@ -120,7 +122,7 @@ const RelationshipListContent = ({
                     </div>
                   ) : (
                     /* Show profile type if no relationships */
-                    <div className="text-sm text-neutral-charcoal capitalize">
+                    <div className="text-sm capitalize">
                       {profile.type === 'org'
                         ? t('Organization')
                         : t('Individual')}
@@ -129,10 +131,7 @@ const RelationshipListContent = ({
                 </div>
 
                 {profile.bio && (
-                  <div
-                    dir="auto"
-                    className="line-clamp-3 text-neutral-charcoal"
-                  >
+                  <div dir="auto" className="line-clamp-3">
                     {profile.bio.length > 200
                       ? `${profile.bio.slice(0, 200)}...`
                       : profile.bio}
@@ -184,9 +183,7 @@ export const RelationshipList = ({
       {title && (
         <div className="flex flex-col gap-4 px-0">
           <div className="flex items-center justify-between">
-            <div className="w-full font-serif text-title-sm sm:text-title-lg">
-              {title}
-            </div>
+            <Header2 className="w-full">{title}</Header2>
           </div>
         </div>
       )}

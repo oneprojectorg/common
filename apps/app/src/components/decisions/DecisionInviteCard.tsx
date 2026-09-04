@@ -1,11 +1,11 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ProfileItem } from '@op/ui/ProfileItem';
+import { Button } from '@op/sense/Button';
+import { Header2 } from '@op/sense/Header';
+import { ProfileAvatar } from '@op/sense/ProfileAvatar';
+import { ProfileItem } from '@op/sense/ProfileItem';
+import { Spinner } from '@op/sense/Spinner';
 import Image from 'next/image';
 
 import { useTranslations } from '@/lib/i18n';
@@ -54,31 +54,36 @@ export const DecisionInviteCard = ({
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-4 rounded-lg border p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-2">
-          <Header2 className="font-serif text-title-base">
-            {profile.name}
-          </Header2>
+          <Header2 className="text-title">{profile.name}</Header2>
           <ProfileItem
             size="small"
-            className="items-center gap-1"
+            className="gap-1"
             avatar={
-              <Avatar
-                placeholder={steward?.name ?? ''}
+              <ProfileAvatar
+                name={steward?.name ?? ''}
+                src={
+                  steward?.avatarImage?.name
+                    ? getPublicUrl(steward.avatarImage.name)
+                    : undefined
+                }
+                alt={steward?.name ?? 'Steward avatar'}
                 className="size-4 shrink-0"
-              >
-                {steward?.avatarImage?.name ? (
-                  <Image
-                    src={getPublicUrl(steward.avatarImage.name) ?? ''}
-                    alt={steward.name ?? 'Steward avatar'}
-                    fill
-                    className="object-cover"
-                  />
-                ) : null}
-              </Avatar>
+                imageRender={
+                  steward?.avatarImage?.name ? (
+                    <Image
+                      src={getPublicUrl(steward.avatarImage.name) ?? ''}
+                      alt={steward.name ?? 'Steward avatar'}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : undefined
+                }
+              />
             }
             title={steward?.name ?? ''}
           />
         </div>
-        <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+        <div className="flex items-end gap-4 sm:items-center sm:gap-12">
           <DecisionStat
             number={invite.participantCount}
             label={t('Participants')}
@@ -89,12 +94,17 @@ export const DecisionInviteCard = ({
 
       {showDecline && (
         <Button
-          unstyled
-          className="self-center text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
-          onPress={() => onDecline(invite.id)}
-          isDisabled={isDeclining || isAccepting}
+          variant="link"
+          size="inline"
+          className="self-center text-sm font-normal text-primary underline hover:text-primary/80"
+          onClick={() => onDecline(invite.id)}
+          disabled={isDeclining || isAccepting}
         >
-          {isDeclining ? <LoadingSpinner /> : t("I don't want to participate")}
+          {isDeclining ? (
+            <Spinner className="size-4" />
+          ) : (
+            t("I don't want to participate")
+          )}
         </Button>
       )}
     </div>
@@ -103,7 +113,7 @@ export const DecisionInviteCard = ({
 
 const DecisionStat = ({ number, label }: { number: number; label: string }) => (
   <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
-    <span className="font-serif text-title-base">{number}</span>
+    <span className="font-serif text-title font-light">{number}</span>
     <span className="text-sm">{label}</span>
   </div>
 );

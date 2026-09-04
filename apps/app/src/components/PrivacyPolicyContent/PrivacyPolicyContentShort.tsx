@@ -1,4 +1,4 @@
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/sense/Header';
 
 import { FormalSection } from '../FormalSection';
 
@@ -12,7 +12,7 @@ export const PrivacyPolicyContentShort = () => {
         </p>
       </FormalSection>
       <FormalSection>
-        <Header3 className="font-serif">Who We Are</Header3>
+        <Header3>Who We Are</Header3>
         <p className="mb-4">
           Common is a digital platform that connects people, organizations, and
           resources to coordinate and grow economic democracy to global scale.
@@ -31,7 +31,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">What Data We Collect</Header3>
+        <Header3>What Data We Collect</Header3>
         <p className="mb-4">
           All of the information we collect is in service of running the
           platform. We aim to collect the bare minimum to run the platform. The
@@ -62,7 +62,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Where We Get the Data</Header3>
+        <Header3>Where We Get the Data</Header3>
         <p className="mb-4">
           We get most of this data from you directly. As a user, you provide
           this data when you create an account on Common. We will also get some
@@ -72,7 +72,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">How We Use Data</Header3>
+        <Header3>How We Use Data</Header3>
         <p className="mb-4">
           All of the data we collect is in service of running the platform and
           improving the offerings and functionality.
@@ -92,7 +92,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Your Rights</Header3>
+        <Header3>Your Rights</Header3>
         <p className="mb-4">
           You have full control over your personal information on Common.
         </p>
@@ -109,7 +109,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Data Security</Header3>
+        <Header3>Data Security</Header3>
         <p className="mb-4">
           While no digital service can guarantee absolute security, securing the
           data collected on the platform is a top priority. Here are some of the
@@ -143,7 +143,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Third-Party Sharing</Header3>
+        <Header3>Third-Party Sharing</Header3>
         <p className="mb-4">
           We take a strict approach to sharing your personal information and
           only do so with your consent.
@@ -161,7 +161,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Legal Protection</Header3>
+        <Header3>Legal Protection</Header3>
         <p className="mb-4">
           We will not share your data with a legal authority unless we are
           legally compelled to via a legal subpoena. We will notify you if this
@@ -170,7 +170,7 @@ export const PrivacyPolicyContentShort = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">Changes to This Policy</Header3>
+        <Header3>Changes to This Policy</Header3>
         <ul className="mb-4 list-disc ps-6">
           <li className="mb-2">
             We'll notify you 30 days before any significant changes

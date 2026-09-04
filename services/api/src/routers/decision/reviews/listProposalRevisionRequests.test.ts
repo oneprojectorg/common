@@ -2,7 +2,7 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
-import { createRevisionRequest } from '@op/test';
+import { createRevisionRequest, grantDecisionProfileAccess } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -145,6 +145,43 @@ describe.concurrent('listProposalRevisionRequests', () => {
     expect(result.revisionRequests).toHaveLength(1);
     expect(result.revisionRequests[0]?.revisionRequest.state).toBe(
       ProposalReviewRequestState.RESUBMITTED,
+    );
+  });
+
+  it('returns the proposal revision requests to an invited co-author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Co-authored Proposal',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Both authors need to act on this.',
+    });
+
+    // A collaborator invited onto the proposal's own profile — what
+    // `acceptProposalInvite` produces. Member role, not admin: plain
+    // proposal-profile membership is what makes them an author here.
+    const coAuthor = await testData.createInstanceMember(created.context);
+    await grantDecisionProfileAccess({
+      profileId: created.proposal.profileId,
+      authUserId: coAuthor.authUserId,
+      email: coAuthor.email,
+      isAdmin: false,
+    });
+
+    const coAuthorCaller = await createAuthenticatedCaller(coAuthor.email);
+    const result = await coAuthorCaller.decision.listProposalRevisionRequests({
+      proposalId: created.proposal.id,
+    });
+
+    expect(result.revisionRequests).toHaveLength(1);
+    expect(result.revisionRequests[0]?.revisionRequest.id).toBe(
+      revisionRequest.id,
     );
   });
 

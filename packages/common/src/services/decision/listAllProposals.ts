@@ -41,18 +41,27 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
-import { proposalProfileColumns } from './listProposals';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import { notSuperseded } from './proposalSupersession';
+import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
 /**
  * Returns proposals on the instance for the "All proposals" tab on the
- * results page. Drafts, rejected, duplicate, and soft-deleted proposals
- * are excluded for everyone. Non-admin members additionally see only
- * visible proposals; decision admins also see hidden proposals so they
- * can audit and report on what was submitted to the process.
+ * results page. Drafts, duplicate, merged, and soft-deleted proposals are
+ * excluded for everyone. Rejected proposals are NOT excluded: this is a
+ * listing, it matches the phase-scoped proposal list, and because that list is
+ * phase-scoped it is the only browse surface that still reaches a proposal
+ * rejected in an earlier phase. Non-admin members additionally see only visible
+ * proposals; decision admins also see hidden proposals so they can audit and
+ * report on what was submitted to the process.
  */
 export const listAllProposals = async ({
   input,
@@ -149,6 +158,7 @@ export const listAllProposals = async ({
   const buildBaseConditions = (t: typeof proposals): SQL =>
     and(
       eq(t.processInstanceId, processInstanceId),
+      buildProposalTitleSearchCondition(t, input.search),
       status ? eq(t.status, status) : undefined,
       input.submittedByProfileId
         ? eq(t.submittedByProfileId, input.submittedByProfileId)
@@ -171,11 +181,8 @@ export const listAllProposals = async ({
               ),
           )
         : undefined,
-      notInArray(t.status, [
-        ProposalStatus.DRAFT,
-        ProposalStatus.REJECTED,
-        ProposalStatus.DUPLICATE,
-      ]),
+      notInArray(t.status, [ProposalStatus.DRAFT, ProposalStatus.DUPLICATE]),
+      notSuperseded({ proposalId: t.id, processInstanceId }),
       isNull(t.deletedAt),
       // Moderation-detached (CSAM) proposals are invisible to everyone —
       // admins included. No source of proposal-facing UI shows detached rows.
@@ -215,16 +222,7 @@ export const listAllProposals = async ({
           )!,
       },
       with: {
-        submittedBy: {
-          columns: proposalProfileColumns,
-          with: {
-            avatarImage: true,
-            profileUsers: {
-              columns: {},
-              with: { authUser: { columns: { isAnonymous: true } } },
-            },
-          },
-        },
+        submittedBy: proposalAuthorRelation,
         profile: { columns: proposalProfileColumns },
       },
       limit: limit + 1, // Fetch one extra to check whether there's a next page.
@@ -284,15 +282,7 @@ export const listAllProposals = async ({
     const submittedBy = rawSubmittedBy
       ? (() => {
           const { profileUsers, ...author } = rawSubmittedBy;
-          return {
-            ...author,
-            isAnonymous: Boolean(
-              profileUsers?.some(
-                (pu: { authUser: { isAnonymous: boolean } | null }) =>
-                  pu.authUser?.isAnonymous,
-              ),
-            ),
-          };
+          return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
         })()
       : rawSubmittedBy;
     const profile = Array.isArray(proposal.profile)
@@ -302,16 +292,18 @@ export const listAllProposals = async ({
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments.
+    const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
+      existingBudget: parsedProposalData.budget,
     });
 
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
       proposalData: {
-        ...parseProposalData(proposal.proposalData),
+        ...parsedProposalData,
         ...systemFieldOverrides,
       },
       status: proposal.status,
