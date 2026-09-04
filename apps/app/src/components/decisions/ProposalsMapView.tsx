@@ -34,7 +34,7 @@ type RenderProposalCard = (
   opts: { className: string },
 ) => ReactNode;
 
-interface ProposalsMapViewProps {
+export interface ProposalsMapViewProps {
   /** Loaded list pages — drives the desktop list column (stays paginated). */
   proposals: Proposal[];
   /** Marker source. Every located proposal the pins should plot, which can be

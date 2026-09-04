@@ -11,6 +11,7 @@ import {
   REVIEW_ASSIGNMENT_SORTS,
   getPhaseReviewSettings,
 } from '@op/common/client';
+import { useInfiniteScroll } from '@op/hooks';
 import { Card } from '@op/sense/Card';
 import {
   Empty,
@@ -22,7 +23,7 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useCallback, useMemo } from 'react';
+import { type ReactNode, Suspense, useCallback, useMemo } from 'react';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -40,9 +41,9 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ProposalViewToggle } from './ProposalViewToggle';
-import { ProposalsMapView } from './ProposalsMapView';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
+import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
 import { StickyFilterBar } from './StickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import {
@@ -95,18 +96,45 @@ export function ReviewAssignmentsList({
     (phase) => phase.phaseId === instance.currentStateId,
   );
 
-  const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
+  // The tab is only mounted on a review phase; a stateless instance is a bug
+  // for the error boundary, not a fallback (same guard as ManualSelectionList).
+  if (!instance.currentStateId) {
+    throw new Error('ReviewAssignmentsList: instance has no currentStateId');
+  }
+  const phaseId = instance.currentStateId;
+
+  const queueInput = {
     processInstanceId,
-    // The queue is this phase's work; omitting phaseId would list every phase.
-    ...(instance.currentStateId && { phaseId: instance.currentStateId }),
+    phaseId,
     ...(statusFilter && {
       status: statusFilter as ProposalReviewAssignmentStatus,
     }),
     sort,
-  });
+  };
 
-  const assignments = data?.assignments ?? [];
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    trpc.decision.listReviewAssignments.useInfiniteQuery(queueInput, {
+      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+    });
+
+  const assignments = useMemo(
+    () => data?.pages.flatMap((page) => page.assignments) ?? [],
+    [data?.pages],
+  );
+  const total = data?.pages[0]?.total ?? 0;
   const proposalIds = assignments.map((a) => a.assignment.proposal.id);
+
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref: infiniteScrollRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+      threshold: 0.1,
+      rootMargin: '50px',
+    });
 
   // The reviewer's queue renders the same proposal cards as the "Other
   // proposals" tab, so it gets the same translation wiring — without it the two
@@ -242,6 +270,20 @@ export function ReviewAssignmentsList({
     ],
   );
 
+  // Shared by both views. `aria-hidden` keeps the trigger out of the a11y
+  // tree; the `aria-live` line at the bottom announces loading instead.
+  const renderScrollSentinel = (skeleton: ReactNode) =>
+    shouldShowTrigger ? (
+      <div
+        ref={infiniteScrollRef}
+        aria-hidden
+        className="py-4"
+        data-testid="review-assignments-infinite-scroll-sentinel"
+      >
+        {isFetchingNextPage ? skeleton : null}
+      </div>
+    ) : null;
+
   // Match the "Other proposals" tab: no toolbar when the queue is genuinely
   // empty. A filtered-to-empty result keeps it so the filter can be cleared.
   const showToolbar = assignments.length > 0 || Boolean(statusFilter);
@@ -304,7 +346,7 @@ export function ReviewAssignmentsList({
         <StickyFilterBar pinOffset={pinOffset}>
           {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
           <div className="flex min-w-0 flex-1 items-baseline gap-1">
-            <ProposalCount count={assignments.length} />
+            <ProposalCount count={total} />
             {/* decorative — a failed lookup must not take down the queue */}
             <APIErrorBoundary fallbacks={{ default: () => null }}>
               <Suspense fallback={null}>
@@ -387,17 +429,37 @@ export function ReviewAssignmentsList({
           translations={translation.translationState?.translations ?? {}}
         >
           {isMapMode ? (
-            // Same array for the list column and the pins — the queue is
-            // unpaginated, so there is no wider pin set to fetch.
-            <ProposalsMapView
-              proposals={assignedProposals}
-              pinProposals={assignedProposals}
-              renderCard={renderCard}
-              hrefFor={reviewsHref}
-              mapView={mapView}
-            />
+            // Local boundaries keep the filter bar mounted while pins load or fail.
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <div className="py-8 text-center text-base">
+                    {t("Couldn't load the map. Refresh to try again.")}
+                  </div>
+                ),
+              }}
+            >
+              <Suspense fallback={<ReviewAssignmentListSkeletonGrid />}>
+                {/* Pins come from their own query so the map isn't capped by
+                    the page size; the list column still pages via listFooter. */}
+                <ReviewAssignmentsMapWithLocations
+                  proposals={assignedProposals}
+                  renderCard={renderCard}
+                  hrefFor={reviewsHref}
+                  mapView={mapView}
+                  locationFilter={{
+                    processInstanceId: queueInput.processInstanceId,
+                    phaseId: queueInput.phaseId,
+                    status: queueInput.status,
+                  }}
+                  listFooter={renderScrollSentinel(
+                    <ReviewAssignmentCardSkeleton />,
+                  )}
+                />
+              </Suspense>
+            </APIErrorBoundary>
           ) : (
-            <ProposalMasonry>
+            <ProposalMasonry loadingMore={isFetchingNextPage}>
               {assignments.map((item) => (
                 <ReviewAssignmentCard
                   key={item.assignment.id}
@@ -415,6 +477,13 @@ export function ReviewAssignmentsList({
           )}
         </ProposalTranslationProvider>
       )}
+
+      {/* Grid mode: the masonry renders its own load-more skeletons. */}
+      {!isMapMode && renderScrollSentinel(null)}
+
+      <p aria-live="polite" className="sr-only">
+        {isFetchingNextPage ? t('Loading more proposals') : ''}
+      </p>
 
       {translation.showBanner && (
         <TranslateBanner

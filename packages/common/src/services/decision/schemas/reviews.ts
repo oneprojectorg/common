@@ -137,6 +137,9 @@ export const reviewAssignmentExtendedSchema = z.object({
 
 export const reviewAssignmentListSchema = z.object({
   assignments: z.array(reviewAssignmentExtendedSchema),
+  next: z.string().nullable(),
+  /** Count for the request's filters, independent of the page. */
+  total: z.number().int(),
 });
 
 // ── Proposal-scoped revision request schemas ──────────────────────────
