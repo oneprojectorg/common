@@ -2,22 +2,13 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type DecisionAccess, type InstancePhaseData } from '@op/api/encoders';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
 import { Suspense } from 'react';
-import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
 import { ProposalListSkeleton } from './ProposalListSkeleton';
 import { ProposalsList } from './ProposalsList';
+import { ProposalsLoadError } from './ProposalsLoadError';
 import { ProposalReviewDecorationProvider } from './proposalReviewDecoration';
 
 interface AdminReviewProposalsListProps {
@@ -60,9 +51,7 @@ export function AdminReviewProposalsList({
   pinOffset,
 }: AdminReviewProposalsListProps) {
   return (
-    <APIErrorBoundary
-      fallbacks={{ default: () => <AdminReviewProposalsError /> }}
-    >
+    <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
       {/* Outside the Suspense boundary so the reported-proposals state survives
           a re-suspend (a filter change refetches the list, not the aggregates
           the provider already holds). The gate is this surface's: an admin
@@ -101,19 +90,3 @@ const AdminReviewHeader = ({ count }: { count: number }) => {
     </h2>
   );
 };
-
-const AdminReviewProposalsError = () => (
-  <Empty>
-    <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <LuLeaf className="size-6" />
-      </EmptyMedia>
-      <EmptyTitle>
-        <TranslatedText text="We couldn't load proposals" />
-      </EmptyTitle>
-      <EmptyDescription>
-        <TranslatedText text="Please refresh the page to try again." />
-      </EmptyDescription>
-    </EmptyHeader>
-  </Empty>
-);

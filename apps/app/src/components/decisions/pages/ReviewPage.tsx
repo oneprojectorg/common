@@ -5,21 +5,11 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { getPhaseReviewSettings } from '@op/common/client';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { Suspense, useMemo } from 'react';
-import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
-
-import { TranslatedText } from '@/components/TranslatedText';
 
 import { AdminReviewProposalsList } from '../AdminReviewProposalsList';
 import { DecisionActionBar } from '../DecisionActionBar';
@@ -28,6 +18,7 @@ import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
+import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
@@ -163,21 +154,7 @@ export function ReviewPage({
   );
 
   const proposalsLoadErrorFallback = {
-    default: () => (
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LuLeaf className="size-6" />
-          </EmptyMedia>
-          <EmptyTitle>
-            <TranslatedText text="We couldn't load proposals" />
-          </EmptyTitle>
-          <EmptyDescription>
-            <TranslatedText text="Please refresh the page to try again." />
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    ),
+    default: () => <ProposalsLoadError />,
   };
 
   return (
@@ -186,11 +163,9 @@ export function ReviewPage({
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
           <DecisionHero
             title={
-              isAdmin ? (
-                <TranslatedText text="Review Progress" />
-              ) : (
-                (heroHeadline ?? <TranslatedText text="Review proposals." />)
-              )
+              isAdmin
+                ? t('Review Progress')
+                : (heroHeadline ?? t('Review proposals.'))
             }
             description={
               !isAdmin && heroDescription ? <p>{heroDescription}</p> : undefined
