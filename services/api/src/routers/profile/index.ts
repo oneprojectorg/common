@@ -9,6 +9,7 @@ import { getProfileRouter } from './getProfile';
 import { inviteProfileUserRouter } from './invite';
 import { listProfileInvitesRouter } from './listProfileInvites';
 import { listRolesRouter } from './listRoles';
+import { profilePublicAccessRouter } from './publicAccess';
 import { profileRelationshipRouter } from './relationships';
 import {
   createJoinRequestRouter,
@@ -45,6 +46,7 @@ const profileRouter = mergeRouters(
   createRoleRouter,
   updateRoleRouter,
   updateRolePermissionRouter,
+  profilePublicAccessRouter,
   deleteRoleRouter,
   createJoinRequestRouter,
   deleteJoinRequestRouter,

@@ -521,3 +521,4 @@ export * from './permissions';
 export * from './requestCache';
 export * from './utils';
 export * from './platformAdmin';
+export * from './publicAccess';
