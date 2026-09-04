@@ -59,10 +59,6 @@ const STATUS_SORT_RANK: Record<string, number> = {
 /** Any unmapped (future) status sorts after all known ones. */
 const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
-// Matches the browse grid's page size: a multiple of three for the grid, kept
-// small because each row renders the proposal document.
-const DEFAULT_PAGE_LIMIT = 24;
-
 /**
  * Offset pagination behind an opaque cursor. The queue is bounded to one
  * reviewer's assignments, and the `leastReviewed` keys move under the reader
@@ -81,8 +77,7 @@ export async function listReviewAssignments({
   proposalProfileId,
   sort = 'leastReviewed',
   cursor,
-  // Defaulted here, not on the router, so SSR and client query keys match.
-  limit = DEFAULT_PAGE_LIMIT,
+  limit,
   user,
 }: {
   processInstanceId: string;
@@ -95,7 +90,7 @@ export async function listReviewAssignments({
   sort?: ReviewAssignmentSort;
   /** Opaque position from the previous page's `next`. */
   cursor?: string | null;
-  limit?: number;
+  limit: number;
   user: User;
 }): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([

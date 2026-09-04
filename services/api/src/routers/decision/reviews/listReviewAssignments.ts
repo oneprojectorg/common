@@ -9,19 +9,20 @@ import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { paginationSchema } from '../../../utils';
 
 export const listReviewAssignmentsRouter = router({
   listReviewAssignments: networkAuthenticatedProcedure()
     .input(
-      instancePhaseRefSchema.extend({
-        status: z.enum(ProposalReviewAssignmentStatus).optional(),
-        categoryIds: z.array(z.string()).optional(),
-        /** Limits results to one proposal's assignments. */
-        proposalProfileId: z.uuid().optional(),
-        sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
-        cursor: z.string().nullish(),
-        limit: z.number().int().min(1).max(100).optional(),
-      }),
+      instancePhaseRefSchema
+        .extend({
+          status: z.enum(ProposalReviewAssignmentStatus).optional(),
+          categoryIds: z.array(z.string()).optional(),
+          /** Limits results to one proposal's assignments. */
+          proposalProfileId: z.uuid().optional(),
+          sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
+        })
+        .merge(paginationSchema),
     )
     .output(reviewAssignmentListSchema)
     .query(async ({ ctx, input }) => {

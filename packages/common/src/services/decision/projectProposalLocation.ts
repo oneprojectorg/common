@@ -1,9 +1,6 @@
 import { isAnonymousAuthor } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 
-/** A v2 relational `with` branch can arrive as the row or a one-element array. */
-type MaybeSingle<T> = T | T[] | null | undefined;
-
 type AuthorProfileUsers = Parameters<typeof isAnonymousAuthor>[0];
 
 /** The columns a pin needs. */
@@ -49,21 +46,24 @@ export const projectProposalLocation = <
   status: string | null;
   visibility: string | null;
   profileId: string;
-  submittedBy: MaybeSingle<TAuthor>;
-  profile: MaybeSingle<TProfile>;
+  submittedBy: TAuthor | TAuthor[] | null | undefined;
+  profile: TProfile | TProfile[] | null | undefined;
 }) => {
   const proposalData = parseProposalData(row.proposalData);
   if (!proposalData.location) {
     return [];
   }
 
-  const rawSubmittedBy = single(row.submittedBy);
+  const rawSubmittedBy = Array.isArray(row.submittedBy)
+    ? row.submittedBy[0]
+    : row.submittedBy;
   const submittedBy = rawSubmittedBy
     ? (() => {
         const { profileUsers, ...author } = rawSubmittedBy;
         return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
       })()
     : rawSubmittedBy;
+  const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
 
   return [
     {
@@ -74,10 +74,7 @@ export const projectProposalLocation = <
       visibility: row.visibility,
       profileId: row.profileId,
       submittedBy,
-      profile: single(row.profile),
+      profile,
     },
   ];
 };
-
-const single = <T>(value: MaybeSingle<T>): T | null | undefined =>
-  Array.isArray(value) ? value[0] : value;
