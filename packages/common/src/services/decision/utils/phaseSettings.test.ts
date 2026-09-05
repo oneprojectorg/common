@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getPhaseReviewSettings,
   hasVotingPhase,
+  isPostSubmissionEditingAllowed,
   isReviewPhase,
   isVotingPhase,
   resolveReviewSettings,
@@ -38,6 +39,51 @@ describe('isVotingPhase', () => {
     expect(isVotingPhase({ rules: { voting: { submit: true } } })).toBe(true);
     expect(isVotingPhase({ rules: { voting: { submit: false } } })).toBe(false);
     expect(isVotingPhase({})).toBe(false);
+  });
+});
+
+describe('isPostSubmissionEditingAllowed', () => {
+  const phases = [
+    {
+      phaseId: 'submission',
+      rules: { proposals: { submit: true, edit: true } },
+    },
+    { phaseId: 'review', rules: { proposals: { edit: false } } },
+    { phaseId: 'voting', rules: { proposals: { submit: true } } },
+    { phaseId: 'results', rules: {} },
+  ];
+
+  it('follows the current phase rule', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'submission' }),
+    ).toBe(true);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'review' }),
+    ).toBe(false);
+  });
+
+  it('denies when the current phase leaves the rule unset', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'voting' }),
+    ).toBe(false);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'results' }),
+    ).toBe(false);
+  });
+
+  it('denies when the current phase is not configured on the instance', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'unknown' }),
+    ).toBe(false);
+  });
+
+  it('denies when there is no resolvable current phase', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases: [], currentPhaseId: 'review' }),
+    ).toBe(false);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: null }),
+    ).toBe(false);
   });
 });
 
