@@ -1,4 +1,4 @@
-import { listProcessParticipants, listProfileRecipients } from '@op/common';
+import { listProcessParticipants } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -30,7 +30,6 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       step.run('get-post', async () => {
         const [row] = await db
           .select({
-            authorProfileId: profiles.id,
             authorName: profiles.name,
             postContent: posts.content,
           })
@@ -78,26 +77,13 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
 
     // Process-profile members alone miss public submitters, who are the
     // majority of an open process — same audience as phase transitions.
-    const [participants, author] = await Promise.all([
-      step.run('get-participants', async () =>
-        listProcessParticipants({ processInstanceId }),
-      ),
-      step.run('get-author', async () =>
-        listProfileRecipients({ profileId: post.authorProfileId }),
-      ),
-    ]);
+    const participants = await step.run('get-participants', async () =>
+      listProcessParticipants({ processInstanceId }),
+    );
 
-    // Excluded by identity: the participant list is keyed on authUserId, and
-    // comparing a profile's contact address against a sign-in address used to
-    // mail the author their own update whenever the two differed.
-    const authorAuthUserIds = new Set(
-      author.map(({ authUserId }) => authUserId),
-    );
-    const recipients = selectEmailRecipients(
-      participants.filter(
-        ({ authUserId }) => !authorAuthUserIds.has(authUserId),
-      ),
-    );
+    // Include the author when they are a participant so they also receive
+    // confirmation that their update went out to the process audience.
+    const recipients = selectEmailRecipients(participants);
 
     if (recipients.length === 0) {
       logger.warn('No participants to notify for decision update', {
