@@ -1661,7 +1661,6 @@
   "No proposals match \"{query}\".": "No proposals match \"{query}\".",
   "Already assigned": "Already assigned",
   "{count, plural, one {# reviewer} other {# reviewers}}": "{count, plural, one {# reviewer} other {# reviewers}}",
-  "Filter by title or category…": "Filter by title or category…",
   "Unassign": "Unassign",
   "Could not unassign — the assignment has changed.": "Could not unassign — the assignment has changed.",
   "{count, plural, one {# review assignment created} other {# review assignments created}}": "{count, plural, one {# review assignment created} other {# review assignments created}}",
@@ -1681,7 +1680,6 @@
   "Amount": "Amount",
   "Reviewers enter an amount": "Reviewers enter an amount",
   "Assigned proposals ({count})": "Assigned proposals ({count})",
-  "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
   "Could not save the changes. Please try again.": "Could not save the changes. Please try again.",
   "Assignments were saved, but unassigning failed — try again.": "Assignments were saved, but unassigning failed — try again.",
   "Manage assignments": "Manage assignments",
@@ -1690,7 +1688,6 @@
   "Nothing assigned to this reviewer yet.": "Nothing assigned to this reviewer yet.",
   "Open": "Open",
   "Open {name}'s assignments": "Open {name}'s assignments",
-  "Proposals ({count} assigned)": "Proposals ({count} assigned)",
   "Review assignments": "Review assignments",
   "Reviewer not found": "Reviewer not found",
   "This person does not review in this phase.": "This person does not review in this phase.",
@@ -1722,5 +1719,12 @@
   "Check all that apply": "Check all that apply",
   "Reviewers select one or more options": "Reviewers select one or more options",
   "Comments could not be loaded": "Comments could not be loaded",
-  "(opens in a new tab)": "(opens in a new tab)"
+  "(opens in a new tab)": "(opens in a new tab)",
+  "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.": "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.",
+  "Assigned ({count})": "Assigned ({count})",
+  "Add proposals": "Add proposals",
+  "Search by title": "Search by title",
+  "Loading more proposals…": "Loading more proposals…",
+  "Keep {title} assigned": "Keep {title} assigned",
+  "Remove {title}": "Remove {title}"
 }

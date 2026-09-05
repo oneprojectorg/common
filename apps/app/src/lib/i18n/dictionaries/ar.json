@@ -1595,7 +1595,6 @@
   "Already assigned": "معيَّنة بالفعل",
   "{count, plural, one {# reviewer} other {# reviewers}}": "{count, plural, one {مراجع #} other {# مراجعين}}",
   "No proposals in this phase yet.": "لا توجد مقترحات في هذه المرحلة بعد.",
-  "Filter by title or category…": "التصفية بحسب العنوان أو الفئة…",
   "Unassign": "إلغاء التعيين",
   "Could not unassign — the assignment has changed.": "لا يمكن إلغاء التعيين — فقد تغيّر التعيين.",
   "Assigned": "المعيَّنة",
@@ -1681,7 +1680,6 @@
   "Amount": "المبلغ",
   "Reviewers enter an amount": "يُدخل المراجعون مبلغًا",
   "Assigned proposals ({count})": "المقترحات المعيّنة ({count})",
-  "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.": "حدِّد مقترحًا لتعيينه؛ وأزل التحديد عن مقترح معلّق لإلغاء تعيينه. لا يمكن إزالة المراجعات التي بدأت.",
   "Could not save the changes. Please try again.": "لم نتمكن من حفظ التغييرات. يُرجى المحاولة مرة أخرى.",
   "Assignments were saved, but unassigning failed — try again.": "تم حفظ التعيينات، لكن إلغاء التعيين فشل — حاول مرة أخرى.",
   "Manage assignments": "إدارة التعيينات",
@@ -1690,7 +1688,6 @@
   "Nothing assigned to this reviewer yet.": "لم يُعيَّن أي مقترح لهذا المراجع بعد.",
   "Open": "فتح",
   "Open {name}'s assignments": "فتح تعيينات {name}",
-  "Proposals ({count} assigned)": "المقترحات ({count} معيّن)",
   "Review assignments": "تعيينات المراجعة",
   "Reviewer not found": "لم يُعثر على المراجع",
   "This person does not review in this phase.": "هذا الشخص لا يراجع في هذه المرحلة.",
@@ -1722,5 +1719,12 @@
   "Check all that apply": "اختر كل ما ينطبق",
   "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر",
   "Comments could not be loaded": "تعذّر تحميل التعليقات",
-  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)"
+  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)",
+  "Remove a pending assignment, or check a proposal to add it. Started reviews can't be removed.": "أزل تعيينًا معلقًا، أو حدد مقترحًا لإضافته. لا يمكن إزالة المراجعات التي بدأت.",
+  "Assigned ({count})": "المعيَّنة ({count})",
+  "Add proposals": "إضافة مقترحات",
+  "Search by title": "البحث بالعنوان",
+  "Loading more proposals…": "جارٍ تحميل مزيد من المقترحات…",
+  "Keep {title} assigned": "أبقِ {title} معيَّنًا",
+  "Remove {title}": "أزل {title}"
 }

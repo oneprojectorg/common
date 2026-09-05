@@ -29,6 +29,7 @@ export function ImportProposalIdsDialog({
   poolIds,
   assignableIds,
   onImport,
+  disabled = false,
 }: {
   /** Every proposal in the phase — an ID outside it is "not found". */
   poolIds: ReadonlySet<string>;
@@ -36,6 +37,11 @@ export function ImportProposalIdsDialog({
   assignableIds: ReadonlySet<string>;
   /** Merged into the parent's selection, additively. */
   onImport: (proposalIds: Array<string>) => void;
+  /**
+   * Held closed while the pool is still loading: an incomplete `poolIds` would
+   * report a live proposal as "not found".
+   */
+  disabled?: boolean;
 }) {
   const t = useTranslations();
   const pasteId = useId();
@@ -91,7 +97,7 @@ export function ImportProposalIdsDialog({
         }
       }}
     >
-      <DialogTrigger render={<Button variant="outline" />}>
+      <DialogTrigger render={<Button variant="outline" disabled={disabled} />}>
         {/* Clipboard rather than an upload glyph: this opens a paste box, and a
             file icon would promise a file picker that isn't there. */}
         <LuClipboardPaste data-icon="inline-start" />

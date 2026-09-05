@@ -93,16 +93,14 @@ describe.concurrent('decision.assignReviews', () => {
     });
     expect(second.createdCount).toBe(0);
 
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const queue = await adminCaller.decision.listReviewerAssignments({
       processInstanceId,
       phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
     });
 
-    const rollup = listing.reviewers.find(
-      (candidate) => candidate.profile.id === reviewer.profileId,
-    );
-    expect(rollup?.assignedCount).toBe(1);
-    expect(rollup?.assignments[0]?.proposalId).toBe(proposal.id);
+    expect(queue.assignedCount).toBe(1);
+    expect(queue.assignments[0]?.assignment.proposal.id).toBe(proposal.id);
   });
 
   it('rejects a reviewer who is not an instance admin', async ({
@@ -216,7 +214,9 @@ describe.concurrent('decision.assignReviews', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    // The manage dialog picks from `listProposals`, so the row it would offer
+    // has to be gone from there too — not just rejected by the mutation.
+    const listing = await adminCaller.decision.listProposals({
       processInstanceId,
       phaseId: 'review',
     });
@@ -269,14 +269,12 @@ describe.concurrent('decision.assignReviews', () => {
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
     // Atomic: the valid id must not have been assigned either.
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const queue = await adminCaller.decision.listReviewerAssignments({
       processInstanceId,
       phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
     });
-    const rollup = listing.reviewers.find(
-      (candidate) => candidate.profile.id === reviewer.profileId,
-    );
-    expect(rollup).toBeUndefined();
+    expect(queue.assignments).toEqual([]);
   });
 
   it('rejects a phaseId that does not exist on the instance', async ({
