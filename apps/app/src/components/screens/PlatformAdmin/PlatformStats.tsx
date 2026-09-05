@@ -1,26 +1,22 @@
-'use client';
-
-import { trpc } from '@op/api/client';
+import { createServerUtils } from '@op/api/server';
 import { Card } from '@op/sense/Card';
 import { Skeleton } from '@op/sense/Skeleton';
-import { cn } from '@op/sense/lib/utils';
-import { Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
 
-import { Link, usePathname, useTranslations } from '@/lib/i18n';
+import { StatCard } from './StatCard';
 
-/** Main platform stats component with suspense boundary */
-export const PlatformStats = () => {
-  return (
-    <Suspense fallback={<PlatformStatsSkeleton />}>
-      <PlatformStatsWithData />
-    </Suspense>
-  );
-};
-
-/** Renders platform statistics grid with live data */
-const PlatformStatsWithData = () => {
-  const t = useTranslations();
-  const [stats] = trpc.platform.admin.getStats.useSuspenseQuery();
+/**
+ * Platform statistics grid. Reads through `createServerUtils` on the server —
+ * the numbers are not interactive, so the only thing that has to stay on the
+ * client is {@link StatCard}'s active-route ring. Callers wrap this in their
+ * own `Suspense` with {@link PlatformStatsSkeleton}.
+ */
+export const PlatformStats = async () => {
+  const [t, { utils }] = await Promise.all([
+    getTranslations(),
+    createServerUtils(),
+  ]);
+  const stats = await utils.platform.admin.getStats.fetch();
 
   const statItems: Array<{
     label: string;
@@ -58,46 +54,8 @@ const PlatformStatsWithData = () => {
   );
 };
 
-/** Individual stat card displaying label and numeric value */
-const StatCard = ({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: number;
-  href?: string;
-}) => {
-  const pathname = usePathname();
-  const isActive = href ? pathname.startsWith(href) : false;
-
-  const content = (
-    <Card
-      className={cn('p-8', isActive && 'border-primary ring-1 ring-primary')}
-    >
-      <div className="flex flex-col gap-2">
-        <div className="text-muted-foreground">{label}</div>
-        <div className="font-serif text-display font-light">{value}</div>
-      </div>
-    </Card>
-  );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className="no-underline hover:no-underline hover:opacity-80"
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  return content;
-};
-
 /** Loading skeleton for platform stats */
-const PlatformStatsSkeleton = () => {
+export const PlatformStatsSkeleton = () => {
   return (
     <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
       {[...Array(3)].map((_, i) => (

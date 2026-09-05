@@ -29,15 +29,22 @@ import { TranslatedText } from '@/components/TranslatedText';
 import { Feed } from './Feed';
 import { Welcome } from './Welcome';
 
+/** The page's search params, forwarded to {@link WelcomeSection}. */
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
 /**
  * Main landing screen component - renders page shell immediately and
  * streams in user-dependent content via Suspense boundaries.
  */
-export const LandingScreen = () => {
+export const LandingScreen = ({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) => {
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-[1400px] grow flex-col gap-4 px-4 pt-8 sm:gap-10 sm:px-8 sm:pt-14">
       <Suspense fallback={<WelcomeSkeleton />}>
-        <WelcomeSection />
+        <WelcomeSection searchParams={searchParams} />
       </Suspense>
       <ErrorBoundary fallback={null}>
         <Suspense
@@ -214,12 +221,20 @@ const LandingScreenFeeds = ({
 /**
  * Async component that fetches user data and renders user-dependent content.
  */
-const WelcomeSection = async () => {
-  const user = await getRequiredUser();
+const WelcomeSection = async ({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) => {
+  const [user, params] = await Promise.all([getRequiredUser(), searchParams]);
+  // `?new=1` marks the first visit after onboarding. Match the first value the
+  // way `URLSearchParams.get` did when this read lived in the client.
+  const newParam = params.new;
+  const isNew = (Array.isArray(newParam) ? newParam[0] : newParam) === '1';
 
   return (
     <div className="flex flex-col gap-2">
-      <Welcome user={user} />
+      <Welcome user={user} isNew={isNew} />
       <span className="text-center">
         <TranslatedText text="Explore new connections and strengthen existing relationships." />
       </span>

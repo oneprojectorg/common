@@ -1,18 +1,21 @@
-'use client';
-
 import type { CommonUser } from '@op/api/encoders';
 import { Header1 } from '@op/sense/Header';
-import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { getTranslations } from 'next-intl/server';
 
-export const Welcome = ({ user }: { user: CommonUser }) => {
-  const searchParams = useSearchParams();
-  const t = useTranslations();
-
-  const isNew = useMemo(() => {
-    return searchParams.get('new') === '1';
-  }, []);
+/**
+ * The landing headline. `isNew` comes from the page's `?new=1` search param
+ * rather than a `useSearchParams()` hook so this stays on the server — nothing
+ * here is interactive, and every key below is period-free, so the
+ * dot-to-underscore lookup `useTranslations` applies is a no-op for them.
+ */
+export const Welcome = async ({
+  user,
+  isNew,
+}: {
+  user: CommonUser;
+  isNew: boolean;
+}) => {
+  const t = await getTranslations();
 
   const orgName = user.currentProfile?.name;
   const name = orgName ? `, ${orgName}` : t(' to Common');
