@@ -16,6 +16,7 @@ import { listAssignmentsForReviewer } from '../listReviewAssignments';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type ReviewerAssignments,
+  type ReviewerQueueStatus,
   reviewerAssignmentsSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
@@ -25,20 +26,27 @@ interface ReviewerQueueTotals {
   submittedCount: number;
   draftCount: number;
   lastSubmittedAt: string | null;
+  statusBreakdown: Array<{ status: ReviewerQueueStatus; count: number }>;
 }
 
 /**
- * One reviewer's queue for the admin screen. The assignments come off the same
- * query, in the same shape, as the reviewer's own "Proposals to review" list.
+ * One page of a reviewer's queue for the admin screen, with whole-queue totals.
+ * The assignments come off the same query, in the same shape, as the
+ * reviewer's own "Proposals to review" list.
  */
 export async function listReviewerAssignments({
   user,
   processInstanceId,
   phaseId,
   reviewerProfileId,
+  cursor,
+  limit,
 }: InstancePhaseRef & {
   user: User;
   reviewerProfileId: string;
+  /** Opaque position from the previous page's `next`. */
+  cursor?: string | null;
+  limit: number;
 }): Promise<ReviewerAssignments> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
@@ -72,6 +80,8 @@ export async function listReviewerAssignments({
       phaseId,
       // A worklist, not the reviewer's own coverage-spreading order.
       sort: 'oldest',
+      cursor,
+      limit,
       excludeUnreachableProposals: true,
     }),
     getReviewerQueueTotals({ processInstanceId, phaseId, reviewerProfileId }),
@@ -88,12 +98,15 @@ export async function listReviewerAssignments({
     isEligible,
     ...totals,
     assignments: queue.assignments,
+    next: queue.next,
+    total: queue.total,
   });
 }
 
 /**
- * Not derived from the returned list: that drops merged-away proposals, while a
- * reviewer's progress should still count the work they did on one.
+ * Not derived from the returned page: a page is a window, and the list drops
+ * merged-away proposals while a reviewer's progress should still count the
+ * work they did on one.
  */
 async function getReviewerQueueTotals({
   processInstanceId,
@@ -104,48 +117,63 @@ async function getReviewerQueueTotals({
   phaseId: string;
   reviewerProfileId: string;
 }): Promise<ReviewerQueueTotals> {
-  const [row] = await db
-    .select({
-      assignedCount: count(proposalReviewAssignments.id),
-      submittedCount:
-        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`.mapWith(
-          Number,
-        ),
-      draftCount:
-        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`.mapWith(
-          Number,
-        ),
-      lastSubmittedAt: sql<
-        string | null
-      >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
-    })
-    .from(proposalReviewAssignments)
-    // Deleted and moderation-detached proposals are invisible even to admins,
-    // so this join is the filter as well as the lookup.
-    .innerJoin(
-      proposals,
-      and(
-        eq(proposals.id, proposalReviewAssignments.proposalId),
-        isNull(proposals.deletedAt),
-        isNull(proposals.moderationDetachedAt),
-      ),
-    )
-    .leftJoin(
-      proposalReviews,
-      eq(proposalReviews.assignmentId, proposalReviewAssignments.id),
-    )
-    .where(
-      and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
-        eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
-      ),
-    );
+  // Deleted and moderation-detached proposals are invisible even to admins,
+  // so this join is the filter as well as the lookup.
+  const reachableProposal = and(
+    eq(proposals.id, proposalReviewAssignments.proposalId),
+    isNull(proposals.deletedAt),
+    isNull(proposals.moderationDetachedAt),
+  );
+  const reviewOfAssignment = eq(
+    proposalReviews.assignmentId,
+    proposalReviewAssignments.id,
+  );
+  const reviewerQueue = and(
+    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+    eq(proposalReviewAssignments.phaseId, phaseId),
+    eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
+  );
+
+  // The same `review.state ?? assignment.status` the cards show.
+  const statusKey = sql<ReviewerQueueStatus>`COALESCE(${proposalReviews.state}::text, ${proposalReviewAssignments.status}::text)`;
+
+  const [[row], breakdownRows] = await Promise.all([
+    db
+      .select({
+        assignedCount: count(proposalReviewAssignments.id),
+        submittedCount:
+          sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`.mapWith(
+            Number,
+          ),
+        draftCount:
+          sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`.mapWith(
+            Number,
+          ),
+        lastSubmittedAt: sql<
+          string | null
+        >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
+      })
+      .from(proposalReviewAssignments)
+      .innerJoin(proposals, reachableProposal)
+      .leftJoin(proposalReviews, reviewOfAssignment)
+      .where(reviewerQueue),
+    db
+      .select({
+        status: statusKey.as('status'),
+        count: count(proposalReviewAssignments.id),
+      })
+      .from(proposalReviewAssignments)
+      .innerJoin(proposals, reachableProposal)
+      .leftJoin(proposalReviews, reviewOfAssignment)
+      .where(reviewerQueue)
+      .groupBy(statusKey),
+  ]);
 
   return {
     assignedCount: row?.assignedCount ?? 0,
     submittedCount: row?.submittedCount ?? 0,
     draftCount: row?.draftCount ?? 0,
     lastSubmittedAt: row?.lastSubmittedAt ?? null,
+    statusBreakdown: breakdownRows,
   };
 }

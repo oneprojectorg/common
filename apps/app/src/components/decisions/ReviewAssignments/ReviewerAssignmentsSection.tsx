@@ -3,10 +3,8 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
-import type {
-  ReviewAssignmentExtended,
-  ReviewerAssignments,
-} from '@op/common/client';
+import type { ReviewerAssignments } from '@op/common/client';
+import { useInfiniteScroll } from '@op/hooks';
 import {
   Empty,
   EmptyDescription,
@@ -16,9 +14,10 @@ import {
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { Item, ItemContent, ItemTitle } from '@op/sense/Item';
+import { Skeleton } from '@op/sense/Skeleton';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useFormatter } from 'next-intl';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useCallback, useMemo } from 'react';
 import { LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -31,7 +30,6 @@ import {
 } from './ReviewAssignmentsSkeletons';
 import { ReviewerHeader } from './ReviewerHeader';
 import {
-  type AssignmentStatusValue,
   assignmentStatusRank,
   assignmentStatusSpecs,
 } from './assignmentStatusSpecs';
@@ -94,21 +92,44 @@ function ReviewerAssignmentsContent({
 }: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listReviewerAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId, reviewerProfileId },
-    // An SSR-seeded entry never registers the realtime channel; refetch.
-    { refetchOnMount: 'always' },
+  const [data, query] =
+    trpc.decision.listReviewerAssignments.useSuspenseInfiniteQuery(
+      { processInstanceId, phaseId, reviewerProfileId },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+        // An SSR-seeded entry never registers the realtime channel; refetch.
+        refetchOnMount: 'always',
+      },
+    );
+
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref: scrollTriggerRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+    });
+
+  // Header, totals and breakdown describe the whole queue, so any page
+  // carries them; the first is always present.
+  const summary = data.pages[0];
+  const assignments = useMemo(
+    () => data.pages.flatMap((page) => page.assignments),
+    [data.pages],
   );
 
   const reviewersByProposalId = useReviewersByProposalId({
     processInstanceId,
     phaseId,
-    proposalIds: data.assignments.map((item) => item.assignment.proposal.id),
+    proposalIds: assignments.map((item) => item.assignment.proposal.id),
     enabled: access.admin,
   });
 
   // No identity means no tie to this process: a dead link, not an error.
-  if (!data.reviewer) {
+  if (!summary?.reviewer) {
     return (
       <Empty className="rounded-md border border-dashed">
         <EmptyHeader>
@@ -124,7 +145,7 @@ function ReviewerAssignmentsContent({
     );
   }
 
-  const { reviewer } = data;
+  const { reviewer } = summary;
   const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
 
   return (
@@ -134,18 +155,16 @@ function ReviewerAssignmentsContent({
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           <Header3 className="font-light">
-            {t('Assigned proposals ({count})', {
-              count: data.assignments.length,
-            })}
+            {t('Assigned proposals ({count})', { count: summary.total })}
           </Header3>
 
-          {data.assignments.length === 0 ? (
+          {assignments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t('Nothing assigned to this reviewer yet.')}
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {data.assignments.map((item) => {
+              {assignments.map((item) => {
                 const href = `/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`;
 
                 return (
@@ -164,9 +183,22 @@ function ReviewerAssignmentsContent({
               })}
             </ul>
           )}
+
+          {/* `aria-hidden` keeps the trigger out of the a11y tree; the
+              `aria-live` line below announces loading instead. */}
+          {shouldShowTrigger ? (
+            <div ref={scrollTriggerRef} aria-hidden>
+              {isFetchingNextPage ? (
+                <Skeleton className="h-40 w-full rounded-lg" />
+              ) : null}
+            </div>
+          ) : null}
+          <p aria-live="polite" className="sr-only">
+            {isFetchingNextPage ? t('Loading more proposals') : ''}
+          </p>
         </div>
 
-        <ReviewProgressRail reviewer={data} />
+        <ReviewProgressRail reviewer={summary} />
       </div>
     </>
   );
@@ -176,9 +208,14 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
   const t = useTranslations();
   const format = useFormatter();
 
+  // Counted server-side over the whole queue; only the reading order is ours.
   const breakdown = useMemo(
-    () => statusBreakdown(reviewer.assignments),
-    [reviewer.assignments],
+    () =>
+      [...reviewer.statusBreakdown].sort(
+        (a, b) =>
+          assignmentStatusRank[a.status] - assignmentStatusRank[b.status],
+      ),
+    [reviewer.statusBreakdown],
   );
 
   const lastSubmittedAt = reviewer.lastSubmittedAt
@@ -237,21 +274,4 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <span className="font-strong">{value}</span>
     </Item>
   );
-}
-
-function statusBreakdown(
-  assignments: ReviewAssignmentExtended[],
-): Array<{ status: AssignmentStatusValue; count: number }> {
-  const counts = new Map<AssignmentStatusValue, number>();
-
-  for (const item of assignments) {
-    const status = item.review?.state ?? item.assignment.status;
-    counts.set(status, (counts.get(status) ?? 0) + 1);
-  }
-
-  return [...counts.entries()]
-    .map(([status, count]) => ({ status, count }))
-    .sort(
-      (a, b) => assignmentStatusRank[a.status] - assignmentStatusRank[b.status],
-    );
 }

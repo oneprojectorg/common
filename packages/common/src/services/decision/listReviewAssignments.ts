@@ -191,8 +191,7 @@ export async function listAssignmentsForReviewer({
   sort?: ReviewAssignmentSort;
   /** Opaque position from the previous page's `next`. */
   cursor?: string | null;
-  /** Omit for the whole queue: the admin detail read is not paged yet. */
-  limit?: number;
+  limit: number;
   /**
    * Drops deleted and moderation-detached proposals, which are unreachable even
    * to an admin. Off by default: the reviewer's own queue never filtered them.
@@ -341,7 +340,7 @@ export async function listAssignmentsForReviewer({
         shuffle: (table, { sql: sqlOp }) =>
           sqlOp<string>`${reviewerShuffle(table)}`.as('shuffle'),
       },
-      limit: limit === undefined ? undefined : limit + 1,
+      limit: limit + 1,
       // The `id` tie-break keeps page boundaries stable between equal keys.
       orderBy: (table, { asc, desc }) => {
         if (sort === 'newest') {
@@ -365,7 +364,7 @@ export async function listAssignmentsForReviewer({
   ]);
 
   const total = Number(countResult[0]?.count ?? 0);
-  const hasMore = limit !== undefined && rows.length > limit;
+  const hasMore = rows.length > limit;
   const assignments = hasMore ? rows.slice(0, limit) : rows;
 
   const proposalTemplate = await resolveProposalTemplate(

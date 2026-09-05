@@ -39,7 +39,7 @@ export default async function ReviewerAssignmentsPage({
   // hydrated entry the SSR render reaches for the browser client's relative URL.
   const { utils, queryClient } = await createServerUtils();
   try {
-    await utils.decision.listReviewerAssignments.fetch({
+    await utils.decision.listReviewerAssignments.fetchInfinite({
       processInstanceId,
       phaseId,
       reviewerProfileId: profileId,
