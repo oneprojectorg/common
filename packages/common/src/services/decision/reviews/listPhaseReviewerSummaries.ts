@@ -245,9 +245,8 @@ function decodePhaseReviewerCursor(
     return undefined;
   }
 
-  // `decodeCursor` raises a bare CommonError (500) on unreadable base64/JSON,
-  // and its generic is an unchecked cast. Funnelling both failure modes into
-  // the schema check keeps every bad cursor a 400 with one message.
+  // `decodeCursor` throws a bare CommonError (500) on unreadable input; route
+  // that through the schema check so every bad cursor is one 400.
   const decoded = ((): unknown => {
     try {
       return decodeCursor<unknown>(cursor);

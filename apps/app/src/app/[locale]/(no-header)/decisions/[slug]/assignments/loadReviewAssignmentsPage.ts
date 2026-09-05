@@ -1,3 +1,4 @@
+import type { DecisionAccess } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import { forbidden, notFound } from 'next/navigation';
@@ -5,6 +6,7 @@ import { forbidden, notFound } from 'next/navigation';
 export interface ReviewAssignmentsPageContext {
   processInstanceId: string;
   phaseId: string;
+  access: DecisionAccess;
 }
 
 /** The admin gate both screens share. */
@@ -25,7 +27,8 @@ export async function loadReviewAssignmentsPage(
     notFound();
   }
 
-  if (!decisionProfile.processInstance.access?.admin) {
+  const access = decisionProfile.processInstance.access;
+  if (!access?.admin) {
     forbidden();
   }
 
@@ -38,6 +41,7 @@ export async function loadReviewAssignmentsPage(
   return {
     processInstanceId: decisionProfile.processInstance.id,
     phaseId,
+    access,
   };
 }
 

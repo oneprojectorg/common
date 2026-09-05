@@ -6,6 +6,7 @@ import {
   eq,
   exists,
   inArray,
+  isNull,
   sql,
 } from '@op/db/client';
 import {
@@ -43,6 +44,8 @@ import {
 } from './schemas/reviews';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
+
+type LoadedInstance = Awaited<ReturnType<typeof getInstance>>;
 
 /**
  * Status priority for the "least reviewed" secondary sort — lower ranks first,
@@ -147,6 +150,56 @@ export async function listReviewAssignments({
 
   assertInstancePhase({ instance, phaseId });
 
+  return await listAssignmentsForReviewer({
+    instance,
+    reviewerProfileId,
+    phaseId,
+    status,
+    categoryIds,
+    proposalProfileId,
+    sort,
+    cursor,
+    limit,
+  });
+}
+
+/**
+ * One page of the queue itself, for whichever reviewer is named. No access
+ * check; callers gate — see `listReviewAssignments` above and
+ * `reviews/listReviewerAssignments`.
+ */
+export async function listAssignmentsForReviewer({
+  instance,
+  reviewerProfileId,
+  phaseId,
+  status,
+  categoryIds,
+  proposalProfileId,
+  sort = 'leastReviewed',
+  cursor,
+  limit,
+  excludeUnreachableProposals = false,
+}: {
+  instance: LoadedInstance;
+  reviewerProfileId: string;
+  phaseId: string;
+  status?: ProposalReviewAssignmentStatus;
+  /** Taxonomy term ids — limits results to assignments whose proposal is in any of the categories. */
+  categoryIds?: string[];
+  /** Profile id of a single proposal — limits results to that proposal's assignments. */
+  proposalProfileId?: string;
+  sort?: ReviewAssignmentSort;
+  /** Opaque position from the previous page's `next`. */
+  cursor?: string | null;
+  limit: number;
+  /**
+   * Drops deleted and moderation-detached proposals, which are unreachable even
+   * to an admin. Off by default: the reviewer's own queue never filtered them.
+   */
+  excludeUnreachableProposals?: boolean;
+}): Promise<ReviewAssignmentList> {
+  const processInstanceId = instance.id;
+
   // Resolve the categories' proposal IDs up front (same approach as
   // resolveProposalListScope): assignments have no category column, so the
   // filter is an ID-set constraint on the snapshot's proposal, matching any
@@ -244,7 +297,9 @@ export async function listReviewAssignments({
       categoryProposalIds
         ? inArray(t.proposalId, categoryProposalIds)
         : undefined,
-      proposalProfileId
+      // Both proposal-row filters share one EXISTS so the count query and the
+      // page query stay on the same set.
+      proposalProfileId || excludeUnreachableProposals
         ? exists(
             db
               .select({ id: proposals.id })
@@ -252,7 +307,15 @@ export async function listReviewAssignments({
               .where(
                 and(
                   eq(proposals.id, t.proposalId),
-                  eq(proposals.profileId, proposalProfileId),
+                  proposalProfileId
+                    ? eq(proposals.profileId, proposalProfileId)
+                    : undefined,
+                  excludeUnreachableProposals
+                    ? isNull(proposals.deletedAt)
+                    : undefined,
+                  excludeUnreachableProposals
+                    ? isNull(proposals.moderationDetachedAt)
+                    : undefined,
                 ),
               ),
           )
