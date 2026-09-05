@@ -35,9 +35,9 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
-import { MergeProposalDialogProvider } from './MergeProposalDialogContext';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
+import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
@@ -398,9 +398,10 @@ export const ProposalsList = (props: ProposalsListProps) => {
   );
 
   // The provider sits above the loaders, so a refreshed list re-parenting its
-  // cards can't close a merge the admin is halfway through.
+  // cards can't close a merge, rejection or delete the admin is halfway
+  // through.
   return (
-    <MergeProposalDialogProvider>
+    <ProposalCardDialogProvider>
       {phase === 'results' ? (
         <ResultsPhaseProposalsLoader queryParams={queryParams}>
           {renderContent}
@@ -410,7 +411,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
           {renderContent}
         </CurrentPhaseProposalsLoader>
       )}
-    </MergeProposalDialogProvider>
+    </ProposalCardDialogProvider>
   );
 };
 
