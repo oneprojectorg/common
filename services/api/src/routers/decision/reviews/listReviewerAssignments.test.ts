@@ -178,7 +178,66 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(new Date(result.lastSubmittedAt ?? '').toISOString()).toBe(
       submittedAt,
     );
+    // The review's state wins over the assignment's status, as on the cards.
+    expect(result.statusBreakdown).toEqual(
+      expect.arrayContaining([
+        { status: ProposalReviewState.SUBMITTED, count: 1 },
+        { status: ProposalReviewState.DRAFT, count: 1 },
+        { status: ProposalReviewAssignmentStatus.PENDING, count: 1 },
+      ]),
+    );
+    expect(result.statusBreakdown).toHaveLength(3);
     expect(result.assignments).toHaveLength(3);
+    expect(result.total).toBe(3);
+    expect(result.next).toBeNull();
+  });
+
+  it('pages the queue by cursor while the totals describe the whole queue', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const first = await testData.createReviewAssignment({
+      title: `Paged proposal 1 ${task.id}`,
+    });
+    const context = first.context;
+    await testData.createReviewAssignment({
+      context,
+      title: `Paged proposal 2 ${task.id}`,
+    });
+    await testData.createReviewAssignment({
+      context,
+      title: `Paged proposal 3 ${task.id}`,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+      limit: 2,
+    };
+
+    const page1 = await adminCaller.decision.listReviewerAssignments(input);
+    expect(page1.assignments).toHaveLength(2);
+    expect(page1.total).toBe(3);
+    expect(page1.assignedCount).toBe(3);
+    expect(page1.next).not.toBeNull();
+
+    const page2 = await adminCaller.decision.listReviewerAssignments({
+      ...input,
+      cursor: page1.next,
+    });
+    expect(page2.assignments).toHaveLength(1);
+    expect(page2.total).toBe(3);
+    expect(page2.next).toBeNull();
+
+    const ids = [...page1.assignments, ...page2.assignments].map(
+      (item) => item.assignment.id,
+    );
+    expect(new Set(ids).size).toBe(3);
   });
 
   it('hides assignments whose proposal was moderation-detached', async ({
