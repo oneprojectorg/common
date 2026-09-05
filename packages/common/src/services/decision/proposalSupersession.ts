@@ -7,7 +7,25 @@ import {
   isNull,
   notExists,
 } from '@op/db/client';
-import { ProposalRelationshipType, proposalRelationships } from '@op/db/schema';
+import {
+  ProposalRelationshipType,
+  profiles,
+  proposalRelationships,
+  proposals,
+} from '@op/db/schema';
+
+import {
+  type ProposalReadContext,
+  isProposalReadable,
+} from './proposalVisibility';
+
+/** A live `merged` edge pointing *at* `targetProposalId`. */
+const liveMergeInto = (targetProposalId: string): SQL =>
+  and(
+    eq(proposalRelationships.targetProposalId, targetProposalId),
+    eq(proposalRelationships.relationshipType, ProposalRelationshipType.MERGED),
+    isNull(proposalRelationships.deletedAt),
+  )!;
 
 // Both ends take a literal id or a correlated column, so the read predicate and
 // the lookup below share one definition.
@@ -40,6 +58,68 @@ export const notSuperseded = ({
       .from(proposalRelationships)
       .where(liveMergedEdge(processInstanceId, proposalId)),
   );
+
+/**
+ * The proposals merged into `targetProposalId`, in merge order. That order
+ * lives on the edge rather than on `proposals`, so every caller that wants it
+ * has to read it from here.
+ *
+ * Returns ids only — the rows they name still need the caller's own visibility
+ * filter before anything derived from them is surfaced.
+ */
+export async function getMergedSourceProposalIds({
+  targetProposalId,
+}: {
+  targetProposalId: string;
+}): Promise<string[]> {
+  const edges = await db
+    .select({ sourceProposalId: proposalRelationships.sourceProposalId })
+    .from(proposalRelationships)
+    .where(liveMergeInto(targetProposalId))
+    .orderBy(proposalRelationships.createdAt, proposalRelationships.id);
+
+  return edges.map((edge) => edge.sourceProposalId);
+}
+
+/**
+ * The proposals merged into `targetProposalId` that the caller could open,
+ * with the profile each one is named by, in merge order.
+ *
+ * One statement rather than an id read followed by a lookup: the ids are only
+ * ever used to fetch these rows, and the two-step made the round trips serial.
+ *
+ * Gated on `isProposalReadable`, the same predicate `listContributingProposals`
+ * applies to the far end of every edge — so the comments that carry over come
+ * from exactly the proposals the "Contributing ideas" section lists, including
+ * the hidden ones an admin or the proposal's own authors can still open.
+ */
+export async function getVisibleMergedSourceProfiles({
+  targetProposalId,
+  readContext,
+}: {
+  targetProposalId: string;
+  readContext: ProposalReadContext;
+}): Promise<Array<{ profileId: string; name: string }>> {
+  return (
+    db
+      .select({ profileId: profiles.id, name: profiles.name })
+      .from(proposalRelationships)
+      // Inner joins: the composite foreign key guarantees the source is a
+      // proposal in this decision, and every proposal owns a profile.
+      .innerJoin(
+        proposals,
+        eq(proposals.id, proposalRelationships.sourceProposalId),
+      )
+      .innerJoin(profiles, eq(profiles.id, proposals.profileId))
+      .where(
+        and(
+          liveMergeInto(targetProposalId),
+          isProposalReadable(proposals, readContext),
+        ),
+      )
+      .orderBy(proposalRelationships.createdAt, proposalRelationships.id)
+  );
+}
 
 /**
  * The live `merged` edge leading away from a proposal, or `undefined` when it

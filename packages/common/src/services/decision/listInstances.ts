@@ -4,7 +4,7 @@ import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
+import { PAGE_LIMIT, UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 
 export interface ListInstancesInput {
@@ -27,7 +27,7 @@ export const listInstances = async ({
   processId,
   status,
   search,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   offset = 0,
   orderBy = 'createdAt',
   orderDirection = 'desc',

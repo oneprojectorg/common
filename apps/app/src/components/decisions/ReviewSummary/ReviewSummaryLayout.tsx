@@ -83,7 +83,11 @@ export async function ReviewSummaryLayout({
   }
 
   const proposalId = proposal.id;
+  // Every read below is phase-scoped; no phase means no review to summarize.
   const phaseId = resolveReviewPhaseId(instance);
+  if (!phaseId) {
+    notFound();
+  }
 
   // Keyed to the resolved review phase, like the aggregates below.
   const reviewSettings = resolveReviewSettings(
@@ -94,7 +98,6 @@ export async function ReviewSummaryLayout({
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
   const isPhaseInProgress =
-    !!phaseId &&
     phaseId === instance.currentStateId &&
     isReviewPhase(assertInstancePhase({ instance, phaseId }));
 

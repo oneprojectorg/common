@@ -475,8 +475,7 @@
   "Add Image": "Kép beszúrása",
   "Add Horizontal Rule": "Vízszintes vonal beszúrása",
   "Content could not be loaded": "A tartalmat nem sikerült betölteni",
-  "Loading comments": "Hozzászólások betöltése",
-  "No comments": "Nincsenek hozzászólások",
+  "Loading more proposals": "További javaslatok betöltése",
   "Filter proposals by category": "Javaslatok szűrése kategória szerint",
   "Filter proposals by district": "Javaslatok szűrése körzet szerint",
   "Filter proposals": "Javaslatok szűrése",
@@ -1670,6 +1669,7 @@
   "Contributing ideas": "Hozzájáruló ötletek",
   "These participant ideas were merged into this proposal.": "Ezeket a résztvevői ötleteket vontuk össze ebbe a javaslatba.",
   "Contributing ideas could not be loaded": "A hozzájáruló ötleteket nem sikerült betölteni",
+  "Comment originally appeared in <proposal>{name}</proposal>": "A hozzászólás eredetileg itt jelent meg: <proposal>{name}</proposal>",
   "Feedback": "Visszajelzés",
   "Notes reviewers shared while this proposal was under review": "Az értékelők megjegyzései, amelyeket a javaslat értékelése során osztottak meg",
   "Reviewer · {timeAgo}": "Értékelő · {timeAgo}",
@@ -1719,4 +1719,7 @@
   "No proposal IDs found in what you pasted.": "A beillesztett tartalomban nem található javaslatazonosító.",
   "Add to selection": "Hozzáadás a kijelöléshez",
   "Check all that apply": "Jelöld be az összes megfelelőt",
-  "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak"}
+  "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak",
+  "Comments could not be loaded": "A hozzászólásokat nem sikerült betölteni",
+  "(opens in a new tab)": "(új lapon nyílik meg)"
+}

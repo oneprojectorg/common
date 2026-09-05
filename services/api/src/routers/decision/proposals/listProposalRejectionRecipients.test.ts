@@ -5,6 +5,8 @@ import {
   ProposalStatus,
   authUsers,
   profileUsers,
+  processInstances,
+  profiles,
   proposals,
 } from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
@@ -42,6 +44,22 @@ async function createRejectedProposal(
     status,
   });
 
+  await db
+    .update(profiles)
+    .set({ name: 'Columbus Parks Coalition' })
+    .where(eq(profiles.id, setup.organization.profileId));
+
+  await db
+    .update(processInstances)
+    .set({
+      currentStateId: 'review',
+      instanceData: {
+        phases: [{ phaseId: 'review', name: 'Review & Shortlist' }],
+      },
+      stewardProfileId: setup.organization.profileId,
+    })
+    .where(eq(processInstances.id, setup.instance.instance.id));
+
   const run = () =>
     listProposalRejectionRecipients({
       proposalId: proposal.id,
@@ -76,11 +94,50 @@ describe.concurrent('listProposalRejectionRecipients', () => {
       notification: {
         proposalName: 'Community Garden Revamp',
         proposalProfileId: proposal.profileId,
-        processTitle: setup.instance.instance.name,
+        phaseName: 'Review & Shortlist',
+        stewardName: 'Columbus Parks Coalition',
         processProfileSlug: setup.instance.slug,
         recipients: [{ email: ada.email }],
       },
     });
+  });
+
+  it.for([
+    { currentStateId: null },
+    { currentStateId: 'gone' },
+    { instanceData: { phases: [{ phaseId: 'review' }] } },
+  ])(
+    'omits an unavailable phase name (%j)',
+    async (overrides, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, run } = await createRejectedProposal(testData);
+      await db
+        .update(processInstances)
+        .set(overrides)
+        .where(eq(processInstances.id, setup.instance.instance.id));
+
+      const result = await run();
+
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.notification.phaseName).toBeUndefined();
+    },
+  );
+
+  it('omits the steward name when the process has none', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, run } = await createRejectedProposal(testData);
+    await db
+      .update(processInstances)
+      .set({ stewardProfileId: null })
+      .where(eq(processInstances.id, setup.instance.instance.id));
+
+    const result = await run();
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.notification.stewardName).toBeUndefined();
   });
 
   // The success toast puts Undo one tap away, inside the debounce window.

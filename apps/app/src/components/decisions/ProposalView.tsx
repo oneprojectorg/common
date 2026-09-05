@@ -234,7 +234,10 @@ export function ProposalView({
         decisionRoot={decisionRoot}
       />
 
-      <ProposalComments proposal={currentProposal} />
+      <ProposalComments
+        proposal={currentProposal}
+        decisionRoot={decisionRoot}
+      />
     </>
   );
 

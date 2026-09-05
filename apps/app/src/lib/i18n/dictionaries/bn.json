@@ -499,8 +499,7 @@
   "Add Image": "ছবি যোগ করুন",
   "Add Horizontal Rule": "অনুভূমিক রুল যোগ করুন",
   "Content could not be loaded": "বিষয়বস্তু লোড করা যায়নি",
-  "Loading comments": "মন্তব্য লোড করা",
-  "No comments": "কোনো মন্তব্য নেই",
+  "Loading more proposals": "আরও প্রস্তাব লোড হচ্ছে",
   "Filter proposals by category": "বিভাগ অনুসারে প্রস্তাবগুলি ফিল্টার করুন",
   "Filter proposals by district": "জেলা অনুসারে প্রস্তাবগুলি ফিল্টার করুন",
   "Filter proposals": "প্রস্তাবগুলি ফিল্টার করুন",
@@ -1618,6 +1617,7 @@
   "Contributing ideas": "অবদানকারী ধারণা",
   "These participant ideas were merged into this proposal.": "অংশগ্রহণকারীদের এই ধারণাগুলি এই প্রস্তাবের সঙ্গে একত্র করা হয়েছে।",
   "Contributing ideas could not be loaded": "অবদানকারী ধারণাগুলি লোড করা যায়নি",
+  "Comment originally appeared in <proposal>{name}</proposal>": "মন্তব্যটি মূলত <proposal>{name}</proposal>-এ প্রকাশিত হয়েছিল",
   "Feedback": "মতামত",
   "Notes reviewers shared while this proposal was under review": "এই প্রস্তাবটি পর্যালোচনার সময় পর্যালোচকরা যে নোটগুলি শেয়ার করেছেন",
   "Reviewer · {timeAgo}": "পর্যালোচক · {timeAgo}",
@@ -1719,4 +1719,7 @@
   "No proposal IDs found in what you pasted.": "আপনি যা পেস্ট করেছেন তাতে কোনো প্রস্তাবনার আইডি পাওয়া যায়নি।",
   "Add to selection": "নির্বাচনে যোগ করুন",
   "Check all that apply": "প্রযোজ্য সবগুলি নির্বাচন করুন",
-  "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন"}
+  "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন",
+  "Comments could not be loaded": "মন্তব্য লোড করা যায়নি",
+  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)"
+}

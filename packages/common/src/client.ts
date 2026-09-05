@@ -233,6 +233,11 @@ export {
 // its server-only deps) into the client bundle.
 export { MAX_PROPOSAL_ATTACHMENT_FILE_SIZE } from './services/decision/proposalAttachmentStorage';
 
+export {
+  listProposalCommentsSchema,
+  type ListProposalCommentsInput,
+} from './services/posts/schemas';
+
 // Translation constants (no server dependencies)
 import { SUPPORTED_LOCALES } from './services/translation/locales';
 
@@ -253,6 +258,7 @@ export type {
 // Re-exported from utils so client components can import it without pulling in
 // the server-only utils barrel (which depends on drizzle).
 export { hasEmail, selectEmailRecipients } from './utils/email';
+export { PAGE_LIMIT } from './utils/pagination';
 
 // Whitelist of safe redirect-path prefixes. Every legitimate app route lives
 // under a locale segment (en/es/fr/…) or under `/info`. Anything else —

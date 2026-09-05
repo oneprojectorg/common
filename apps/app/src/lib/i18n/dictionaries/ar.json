@@ -431,8 +431,7 @@
   "Add Image": "إضافة صورة",
   "Add Horizontal Rule": "إضافة خط أفقي",
   "Content could not be loaded": "تعذر تحميل المحتوى",
-  "Loading comments": "جارٍ تحميل التعليقات",
-  "No comments": "لا توجد تعليقات",
+  "Loading more proposals": "جارٍ تحميل مزيد من المقترحات",
   "Filter proposals by category": "تصفية المقترحات حسب الفئة",
   "Filter proposals by district": "تصفية المقترحات حسب المنطقة",
   "Filter proposals": "تصفية المقترحات",
@@ -1617,6 +1616,7 @@
   "Contributing ideas": "أفكار مساهِمة",
   "These participant ideas were merged into this proposal.": "تم دمج أفكار المشاركين هذه في هذا المقترح.",
   "Contributing ideas could not be loaded": "تعذر تحميل الأفكار المساهِمة",
+  "Comment originally appeared in <proposal>{name}</proposal>": "ظهر التعليق في الأصل في <proposal>{name}</proposal>",
   "Feedback": "الملاحظات",
   "Notes reviewers shared while this proposal was under review": "ملاحظات شاركها المراجعون أثناء مراجعة هذا المقترح",
   "Reviewer · {timeAgo}": "مراجع · {timeAgo}",
@@ -1719,4 +1719,7 @@
   "No proposal IDs found in what you pasted.": "لم يُعثر على أي معرّف مقترح في ما ألصقته.",
   "Add to selection": "إضافة إلى التحديد",
   "Check all that apply": "اختر كل ما ينطبق",
-  "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر"}
+  "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر",
+  "Comments could not be loaded": "تعذّر تحميل التعليقات",
+  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)"
+}

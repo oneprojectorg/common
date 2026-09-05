@@ -1,15 +1,33 @@
-import { db, sql } from '@op/db/client';
+import {
+  type SQL,
+  and,
+  count as countFn,
+  db,
+  eq,
+  exists,
+  inArray,
+  sql,
+} from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   proposalReviewAssignments,
+  proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
+import { z } from 'zod';
 
-import { UnauthorizedError } from '../../utils';
-import { assertUserByAuthId } from '../assert';
+import {
+  CommonError,
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+} from '../../utils';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { decisionPermission } from './permissions';
 import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
@@ -23,6 +41,7 @@ import {
   type ReviewAssignmentSort,
   reviewAssignmentListSchema,
 } from './schemas/reviews';
+import { assertInstancePhase } from './utils/instance';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /**
@@ -42,8 +61,39 @@ const STATUS_SORT_RANK: Record<string, number> = {
 const UNKNOWN_STATUS_RANK = Object.keys(STATUS_SORT_RANK).length;
 
 /**
- * Returns the reviewer's authorized review assignments — scoped to `phaseId`
- * when given, across every phase when it is omitted.
+ * Keyset cursor: the sort keys of the last row on the page. Each key is the
+ * same SQL expression the ORDER BY uses, so the page boundary is an exact row
+ * comparison. The `sort` tag rejects a cursor minted under another sort.
+ */
+const queueCursorSchema = z.discriminatedUnion('sort', [
+  z.object({
+    sort: z.enum(['newest', 'oldest']),
+    assignedAt: z.string().nullable(),
+    id: z.uuid(),
+  }),
+  z.object({
+    sort: z.literal('leastReviewed'),
+    completedCount: z.number().int(),
+    statusRank: z.number().int(),
+    shuffle: z.string(),
+    id: z.uuid(),
+  }),
+]);
+type QueueCursor = z.infer<typeof queueCursorSchema>;
+
+const decodeQueueCursor = (
+  cursor: string,
+  sort: ReviewAssignmentSort,
+): QueueCursor => {
+  const parsed = queueCursorSchema.safeParse(decodeCursor<unknown>(cursor));
+  if (!parsed.success || parsed.data.sort !== sort) {
+    throw new CommonError('Invalid cursor');
+  }
+  return parsed.data;
+};
+
+/**
+ * Returns one page of the reviewer's authorized review assignments in `phaseId`.
  */
 export async function listReviewAssignments({
   processInstanceId,
@@ -52,17 +102,21 @@ export async function listReviewAssignments({
   categoryIds,
   proposalProfileId,
   sort = 'leastReviewed',
+  cursor,
+  limit,
   user,
 }: {
   processInstanceId: string;
-  /** Omit for every phase. */
-  phaseId?: string;
-  status?: string;
+  phaseId: string;
+  status?: ProposalReviewAssignmentStatus;
   /** Taxonomy term ids — limits results to assignments whose proposal is in any of the categories. */
   categoryIds?: string[];
   /** Profile id of a single proposal — limits results to that proposal's assignments. */
   proposalProfileId?: string;
   sort?: ReviewAssignmentSort;
+  /** Opaque position from the previous page's `next`. */
+  cursor?: string | null;
+  limit: number;
   user: User;
 }): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([
@@ -70,13 +124,28 @@ export async function listReviewAssignments({
     assertUserByAuthId(user.id),
   ]);
 
-  if (!dbUser.profileId) {
+  const reviewerProfileId = dbUser.profileId;
+  if (!reviewerProfileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  if (!instance.access.review && !instance.access.admin) {
-    throw new UnauthorizedError("You don't have access to review proposals");
+  if (!instance.profileId) {
+    throw new CommonError(
+      'Decision instance does not have an associated profile',
+    );
   }
+
+  // No org fallback by design: that pattern is being retired.
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: [
+      { decisions: decisionPermission.REVIEW },
+      { decisions: permission.ADMIN },
+    ],
+  });
+
+  assertInstancePhase({ instance, phaseId });
 
   // Resolve the categories' proposal IDs up front (same approach as
   // resolveProposalListScope): assignments have no category column, so the
@@ -97,7 +166,11 @@ export async function listReviewAssignments({
 
     categoryProposalIds = proposalIdsInCategories.map((p) => p.proposalId);
     if (categoryProposalIds.length === 0) {
-      return reviewAssignmentListSchema.parse({ assignments: [] });
+      return reviewAssignmentListSchema.parse({
+        assignments: [],
+        next: null,
+        total: 0,
+      });
     }
   }
 
@@ -106,74 +179,130 @@ export async function listReviewAssignments({
   // correlated subquery (own `pra_completed` alias) so it isn't constrained by
   // the outer query's per-reviewer filter. Phase-scoped like the list, so the
   // badge and the sort count this phase's reviews only.
-  const completedPhaseFilter = phaseId
-    ? sql` AND pra_completed.phase_id = ${phaseId}`
-    : sql``;
   const completedReviewCount = (t: typeof proposalReviewAssignments) =>
     sql<number>`(
       SELECT COUNT(*)::int FROM ${proposalReviewAssignments} AS pra_completed
       WHERE pra_completed.proposal_id = ${t.proposalId}
         AND pra_completed.process_instance_id = ${processInstanceId}
-        AND pra_completed.status = ${ProposalReviewAssignmentStatus.COMPLETED}${completedPhaseFilter}
+        AND pra_completed.phase_id = ${phaseId}
+        AND pra_completed.status = ${ProposalReviewAssignmentStatus.COMPLETED}
     )`;
 
+  // `::int` is required: the ranks bind untyped, and a text CASE sorts lexically.
   const statusRank = (t: typeof proposalReviewAssignments) =>
-    sql<number>`CASE ${t.status} ${sql.join(
+    sql<number>`(CASE ${t.status} ${sql.join(
       Object.entries(STATUS_SORT_RANK).map(
         ([value, rank]) => sql`WHEN ${value} THEN ${rank}`,
       ),
       sql` `,
-    )} ELSE ${UNKNOWN_STATUS_RANK} END`;
+    )} ELSE ${UNKNOWN_STATUS_RANK} END)::int`;
 
   // Stable per-reviewer shuffle: the constant reviewer prefix makes equally
   // reviewed proposals order differently for each reviewer (spreading review
   // coverage), while staying stable across refetches for a given reviewer.
   const reviewerShuffle = (t: typeof proposalReviewAssignments) =>
-    sql`md5(${dbUser.profileId} || ${t.proposalId}::text)`;
+    sql<string>`md5(${reviewerProfileId} || ${t.proposalId}::text)`;
 
-  const assignments = await db.query.proposalReviewAssignments.findMany({
-    where: {
-      processInstanceId,
-      reviewerProfileId: dbUser.profileId,
-      ...(phaseId && { phaseId }),
-      ...(status && { status }),
-      ...(categoryProposalIds && {
-        proposalId: { in: categoryProposalIds },
-      }),
-      ...(proposalProfileId && {
-        proposal: { profileId: proposalProfileId },
-      }),
+  // NULLS LAST in both directions: Postgres puts NULLs first on DESC, which
+  // would let an undated assignment lead the "newest" list. Written as a
+  // COALESCE so the cursor can compare against the very same expression.
+  const assignedAtKey = (t: typeof proposalReviewAssignments) =>
+    sort === 'oldest'
+      ? sql`COALESCE(${t.assignedAt}, 'infinity'::timestamptz)`
+      : sql`COALESCE(${t.assignedAt}, '-infinity'::timestamptz)`;
+
+  const decodedCursor = cursor ? decodeQueueCursor(cursor, sort) : undefined;
+
+  // Row-value comparison against the ORDER BY keys, direction included.
+  const cursorCondition = (
+    t: typeof proposalReviewAssignments,
+  ): SQL | undefined => {
+    if (!decodedCursor) {
+      return undefined;
+    }
+    if (decodedCursor.sort === 'leastReviewed') {
+      return sql`(${completedReviewCount(t)}, ${statusRank(t)}, ${reviewerShuffle(t)}, ${t.id})
+        > (${decodedCursor.completedCount}::int, ${decodedCursor.statusRank}::int, ${decodedCursor.shuffle}::text, ${decodedCursor.id}::uuid)`;
+    }
+    const cursorAssignedAt =
+      decodedCursor.assignedAt === null
+        ? sort === 'oldest'
+          ? sql`'infinity'::timestamptz`
+          : sql`'-infinity'::timestamptz`
+        : sql`${decodedCursor.assignedAt}::timestamptz`;
+    const after = sort === 'oldest' ? sql`>` : sql`<`;
+    return sql`(${assignedAtKey(t)}, ${t.id}) ${after} (${cursorAssignedAt}, ${decodedCursor.id}::uuid)`;
+  };
+
+  // Shared by the page and the count so `total` describes the same set.
+  const buildFilterConditions = (t: typeof proposalReviewAssignments): SQL =>
+    and(
+      eq(t.processInstanceId, processInstanceId),
+      eq(t.reviewerProfileId, reviewerProfileId),
+      eq(t.phaseId, phaseId),
+      status ? eq(t.status, status) : undefined,
+      categoryProposalIds
+        ? inArray(t.proposalId, categoryProposalIds)
+        : undefined,
+      proposalProfileId
+        ? exists(
+            db
+              .select({ id: proposals.id })
+              .from(proposals)
+              .where(
+                and(
+                  eq(proposals.id, t.proposalId),
+                  eq(proposals.profileId, proposalProfileId),
+                ),
+              ),
+          )
+        : undefined,
       // Merging doesn't delete assignments, so a proposal merged mid-review
       // would otherwise stay in its reviewer's queue.
-      RAW: (table) =>
-        notSuperseded({
-          proposalId: table.proposalId,
-          processInstanceId,
-        }),
-    },
-    with: reviewAssignmentWithConfig,
-    // The `id` tie-break gives a deterministic order when the primary keys are
-    // equal (e.g. same `assignedAt`, or same coverage before the shuffle).
-    orderBy: (table, { asc, desc }) => {
-      // `assignedAt` is nullable, and Postgres puts NULLs first on DESC — which
-      // would let an undated assignment lead the "newest" list (the single-
-      // proposal resolver reads the first row as the latest one). NULLS LAST on
-      // both directions keeps an undated assignment from ever winning.
-      if (sort === 'newest') {
-        return [sql`${table.assignedAt} DESC NULLS LAST`, desc(table.id)];
-      }
-      if (sort === 'oldest') {
-        return [sql`${table.assignedAt} ASC NULLS LAST`, asc(table.id)];
-      }
-      // 'leastReviewed': fewest completed reviews, then status priority, then
-      // the stable per-reviewer shuffle.
-      return [
-        asc(completedReviewCount(table)),
-        asc(statusRank(table)),
-        asc(reviewerShuffle(table)),
-      ];
-    },
-  });
+      notSuperseded({ proposalId: t.proposalId, processInstanceId }),
+    )!;
+
+  const [rows, countResult] = await Promise.all([
+    db.query.proposalReviewAssignments.findMany({
+      // The cursor lives on the page query only, so `total` stays the full count.
+      where: { RAW: (t) => and(buildFilterConditions(t), cursorCondition(t))! },
+      with: reviewAssignmentWithConfig,
+      // The next cursor needs the last row's sort keys, read back from the
+      // same expressions the ORDER BY uses.
+      extras: {
+        completedCount: (table, { sql: sqlOp }) =>
+          sqlOp<number>`${completedReviewCount(table)}`.as('completed_count'),
+        statusRank: (table, { sql: sqlOp }) =>
+          sqlOp<number>`${statusRank(table)}`.as('status_rank'),
+        shuffle: (table, { sql: sqlOp }) =>
+          sqlOp<string>`${reviewerShuffle(table)}`.as('shuffle'),
+      },
+      limit: limit + 1,
+      // The `id` tie-break keeps page boundaries stable between equal keys.
+      orderBy: (table, { asc, desc }) => {
+        if (sort === 'newest') {
+          return [desc(assignedAtKey(table)), desc(table.id)];
+        }
+        if (sort === 'oldest') {
+          return [asc(assignedAtKey(table)), asc(table.id)];
+        }
+        return [
+          asc(completedReviewCount(table)),
+          asc(statusRank(table)),
+          asc(reviewerShuffle(table)),
+          asc(table.id),
+        ];
+      },
+    }),
+    db
+      .select({ count: countFn() })
+      .from(proposalReviewAssignments)
+      .where(buildFilterConditions(proposalReviewAssignments)),
+  ]);
+
+  const total = Number(countResult[0]?.count ?? 0);
+  const hasMore = rows.length > limit;
+  const assignments = hasMore ? rows.slice(0, limit) : rows;
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
@@ -240,7 +369,25 @@ export async function listReviewAssignments({
     };
   });
 
+  const last = assignments.at(-1);
+  const next =
+    hasMore && last
+      ? encodeCursor<QueueCursor>(
+          sort === 'leastReviewed'
+            ? {
+                sort,
+                completedCount: last.completedCount,
+                statusRank: last.statusRank,
+                shuffle: last.shuffle,
+                id: last.id,
+              }
+            : { sort, assignedAt: last.assignedAt, id: last.id },
+        )
+      : null;
+
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
+    next,
+    total,
   });
 }

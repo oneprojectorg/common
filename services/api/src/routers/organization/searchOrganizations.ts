@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import { NotFoundError, searchOrganizations } from '@op/common';
+import { PAGE_LIMIT } from '@op/common/client';
 import { db } from '@op/db/client';
 import { organizationUsers } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
@@ -18,7 +19,7 @@ export const searchOrganizationsRouter = router({
     )
     .output(z.array(searchedOrganizationEncoder))
     .query(async ({ ctx, input }) => {
-      const { q, limit = 10 } = input;
+      const { q, limit = PAGE_LIMIT.sm } = input;
 
       // Membership is fetched alongside the search (and kept outside the
       // search cache so it stays fresh when membership changes), letting the

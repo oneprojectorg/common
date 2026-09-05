@@ -8,7 +8,12 @@ import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
 import { useReviewTranslation } from './ReviewTranslationContext';
 
-export function ReviewProposalPane() {
+export function ReviewProposalPane({
+  decisionRoot,
+}: {
+  /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
+  decisionRoot: string;
+}) {
   const { assignment, revisionRequest } = useReviewForm();
   const { proposal: translation } = useReviewTranslation();
 
@@ -41,7 +46,11 @@ export function ReviewProposalPane() {
         }
       />
 
-      <ProposalComments proposal={assignment.proposal} readOnly />
+      <ProposalComments
+        proposal={assignment.proposal}
+        decisionRoot={decisionRoot}
+        readOnly
+      />
     </div>
   );
 }

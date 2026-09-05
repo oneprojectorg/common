@@ -369,7 +369,7 @@ const VotingProposalsList = ({
                 proposal={proposal}
                 href={href}
                 selected={isVotedFor}
-                showStatusBadge={false}
+                headerBadge={null}
                 aside={
                   isVotedFor ? (
                     // TODO(sense-migration): sense Checkbox has no
@@ -394,7 +394,7 @@ const VotingProposalsList = ({
                 key={proposal.id}
                 proposal={proposal}
                 selected={isSelected}
-                showStatusBadge={false}
+                headerBadge={null}
                 role="button"
                 aria-pressed={isSelected}
                 aria-label={

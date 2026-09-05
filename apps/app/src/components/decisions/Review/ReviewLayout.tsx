@@ -105,7 +105,9 @@ export async function ReviewLayout({
                 id="proposal"
                 label={<TranslatedText text="Proposal" />}
               >
-                <ReviewProposalPane />
+                <ReviewProposalPane
+                  decisionRoot={`/decisions/${decisionSlug}`}
+                />
               </SplitPane.Pane>
               <SplitPane.Pane
                 id="review"

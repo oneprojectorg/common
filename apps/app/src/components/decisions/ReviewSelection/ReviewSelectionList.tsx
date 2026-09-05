@@ -54,7 +54,7 @@ export function ReviewSelectionList({
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const [{ items, total, rubricTemplate }] =
+  const [{ items, rubricTemplate }] =
     trpc.decision.listWithReviewAggregates.useSuspenseQuery({
       processInstanceId,
       phaseId: previousPhaseId,
@@ -113,7 +113,9 @@ export function ReviewSelectionList({
             {t('All proposals')}
           </span>
           <Bullet />
-          <span className="font-serif text-title font-light">{total}</span>
+          <span className="font-serif text-title font-light">
+            {items.length}
+          </span>
         </div>
       </div>
 

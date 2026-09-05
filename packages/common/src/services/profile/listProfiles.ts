@@ -4,6 +4,7 @@ import { type EntityType, locations, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import {
+  PAGE_LIMIT,
   NotFoundError,
   decodeCursor,
   encodeCursor,
@@ -12,7 +13,7 @@ import {
 
 export const listProfiles = async ({
   cursor,
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
   orderBy = 'updatedAt',
   dir = 'desc',
   types,

@@ -16,6 +16,7 @@ import { checkPermission, permission } from 'access-zones';
 import type { SQL } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   NotFoundError,
   decodeCursor,
   encodeCursor,
@@ -51,7 +52,7 @@ export const postModerationFilter = (
 export const listPosts = async ({
   authUserId,
   slug,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   authUserId: string;
@@ -249,34 +250,36 @@ export const getItemsWithLikesAndComments = async <T extends { post: any }>({
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);
 
-  // Flagged posts only reach enrichment for their author or an admin (the read
-  // filters drop them for everyone else), so this decorates exactly the people
-  // who should see the "Flagged" indicator.
-  const flaggedIds = await getActivelyFlaggedItemIds('post', postIds);
+  // Both reads decorate the same page and neither gates the other, so they go
+  // out together — every post feed pays this cost once per request.
+  const [flaggedIds, commentCounts] = await Promise.all([
+    // Flagged posts only reach enrichment for their author or an admin (the
+    // read filters drop them for everyone else), so this decorates exactly the
+    // people who should see the "Flagged" indicator.
+    getActivelyFlaggedItemIds('post', postIds),
+    postIds.length > 0
+      ? db
+          .select({
+            parentPostId: posts.parentPostId,
+            count: count(posts.id),
+          })
+          .from(posts)
+          .where(
+            and(
+              isNotNull(posts.parentPostId),
+              inArray(posts.parentPostId, postIds),
+            ),
+          )
+          .groupBy(posts.parentPostId)
+      : [],
+  ]);
 
-  // Fetch comment counts for all posts in a single query
   const commentCountMap: Record<string, number> = {};
-  if (postIds.length > 0) {
-    const commentCounts = await db
-      .select({
-        parentPostId: posts.parentPostId,
-        count: count(posts.id),
-      })
-      .from(posts)
-      .where(
-        and(
-          isNotNull(posts.parentPostId),
-          inArray(posts.parentPostId, postIds),
-        ),
-      )
-      .groupBy(posts.parentPostId);
-
-    commentCounts.forEach((row) => {
-      if (row.parentPostId) {
-        commentCountMap[row.parentPostId] = Number(row.count);
-      }
-    });
-  }
+  commentCounts.forEach((row) => {
+    if (row.parentPostId) {
+      commentCountMap[row.parentPostId] = Number(row.count);
+    }
+  });
 
   return items.map((item) => {
     const reactions: ReactionRow[] = item.post.reactions ?? [];

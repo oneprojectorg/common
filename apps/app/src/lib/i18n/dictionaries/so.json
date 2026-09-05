@@ -446,8 +446,7 @@
   "Add Image": "Ku dar Sawir",
   "Add Horizontal Rule": "Ku dar Xariiq Toosan",
   "Content could not be loaded": "Waxa ku jira lama soo dejin karin",
-  "Loading comments": "Waa la soo rarayaa faallooyinka",
-  "No comments": "Faallo ma jirto",
+  "Loading more proposals": "Waxaa la soo rarayaa soo jeedimo dheeraad ah",
   "Filter proposals by category": "Shaandhee soo jeedimaha qaybta",
   "Filter proposals by district": "Shaandhee soo jeedimaha degmada",
   "Filter proposals": "Shaandhee soo jeedimaha",
@@ -1618,6 +1617,7 @@
   "Contributing ideas": "Fikrado wax ku darsaday",
   "These participant ideas were merged into this proposal.": "Fikradahan ka-qaybgalayaasha waxaa lala biiriyay soo jeedintan.",
   "Contributing ideas could not be loaded": "Fikradaha wax ku darsaday lama soo dejin karin",
+  "Comment originally appeared in <proposal>{name}</proposal>": "Faallada waxay markii hore ka soo muuqatay <proposal>{name}</proposal>",
   "Feedback": "Jawaab celin",
   "Notes reviewers shared while this proposal was under review": "Qoraallada dib-u-eegayaashu wadaageen inta soo jeedintan la eegayay",
   "Reviewer · {timeAgo}": "Dib-u-eege · {timeAgo}",
@@ -1719,4 +1719,7 @@
   "No proposal IDs found in what you pasted.": "Lagama helin wax aqoonsi soo jeedin ah wixii aad dhejisay.",
   "Add to selection": "Ku dar xulashada",
   "Check all that apply": "Dooro dhammaan waxa khuseeya",
-  "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan"}
+  "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan",
+  "Comments could not be loaded": "Faallooyinka lama soo bixin karin",
+  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)"
+}

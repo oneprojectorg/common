@@ -1,4 +1,5 @@
 import { Channels, listProfileJoinRequests } from '@op/common';
+import { PAGE_LIMIT } from '@op/common/client';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -25,7 +26,7 @@ export const listJoinRequestsRouter = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const { limit = 10, cursor, dir } = input;
+      const { limit = PAGE_LIMIT.sm, cursor, dir } = input;
 
       const { items, next } = await listProfileJoinRequests({
         user: ctx.user,

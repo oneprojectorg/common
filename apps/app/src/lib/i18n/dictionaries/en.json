@@ -474,8 +474,7 @@
   "Add Image": "Add Image",
   "Add Horizontal Rule": "Add Horizontal Rule",
   "Content could not be loaded": "Content could not be loaded",
-  "Loading comments": "Loading comments",
-  "No comments": "No comments",
+  "Loading more proposals": "Loading more proposals",
   "Filter proposals by category": "Filter proposals by category",
   "Filter proposals by district": "Filter proposals by district",
   "Filter proposals": "Filter proposals",
@@ -1671,6 +1670,7 @@
   "Contributing ideas": "Contributing ideas",
   "These participant ideas were merged into this proposal.": "These participant ideas were merged into this proposal.",
   "Contributing ideas could not be loaded": "Contributing ideas could not be loaded",
+  "Comment originally appeared in <proposal>{name}</proposal>": "Comment originally appeared in <proposal>{name}</proposal>",
   "Feedback": "Feedback",
   "Notes reviewers shared while this proposal was under review": "Notes reviewers shared while this proposal was under review",
   "Reviewer · {timeAgo}": "Reviewer · {timeAgo}",
@@ -1719,4 +1719,7 @@
   "No proposal IDs found in what you pasted.": "No proposal IDs found in what you pasted.",
   "Add to selection": "Add to selection",
   "Check all that apply": "Check all that apply",
-  "Reviewers select one or more options": "Reviewers select one or more options"}
+  "Reviewers select one or more options": "Reviewers select one or more options",
+  "Comments could not be loaded": "Comments could not be loaded",
+  "(opens in a new tab)": "(opens in a new tab)"
+}

@@ -19,7 +19,7 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ProposalCardView } from './ProposalCard';
+import { ProposalCardView, ProposalRestrictionBadge } from './ProposalCard';
 
 /**
  * The proposals merged into this one, listed above the comments. A merge
@@ -92,12 +92,15 @@ function ContributingIdeasSuspense({
       <ul className="mt-6 flex flex-col gap-4">
         {contributing.proposals.map((contributingProposal) => (
           <li key={contributingProposal.id}>
-            {/* No status badge: the remaining ones ("Shortlisted", "Not
-                shortlisted") describe a candidacy that ended at the merge. */}
+            {/* Restriction only: the candidacy badges describe a race that
+                ended at the merge, but a hidden idea listed here for admins
+                still has to say so. */}
             <ProposalCardView
               proposal={contributingProposal}
               href={`${decisionRoot}/proposal/${contributingProposal.profileId}`}
-              showStatusBadge={false}
+              headerBadge={
+                <ProposalRestrictionBadge proposal={contributingProposal} />
+              }
             />
           </li>
         ))}

@@ -4,6 +4,7 @@ import { User } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   type PaginatedResult,
   decodeCursor,
   encodeCursor,
@@ -26,7 +27,7 @@ export const listProfileJoinRequests = async ({
   targetProfileId,
   status,
   cursor,
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
   dir = 'desc',
 }: {
   user: User;

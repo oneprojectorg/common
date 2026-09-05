@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import {
+  PAGE_LIMIT,
   ProposalReviewRequestState,
   type ProposalRevisionRequestItem,
 } from '@op/common/client';
@@ -33,7 +34,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
     (t) => [
       t.decision.listDecisionProfiles({
         status: [ProcessStatus.PUBLISHED],
-        limit: 10,
+        limit: PAGE_LIMIT.sm,
       }),
       t.decision.listProposalsRevisionRequests({
         states: [ProposalReviewRequestState.REQUESTED],

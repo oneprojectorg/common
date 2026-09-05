@@ -8,7 +8,7 @@ import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { MergeProposalDialog } from '../MergeProposalDialog';
+import { useOpenMergeProposalDialog } from '../MergeProposalDialogContext';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
@@ -20,6 +20,9 @@ import { useProposalModerationActions } from '../useProposalModerationActions';
 import { useProposalRejectionActions } from '../useProposalRejectionActions';
 import { DeleteProposalDialog } from './DeleteProposalDialog';
 
+// Pre-existing: hoisting the merge dialog took this from CRAP 156 to 132, still
+// over the threshold. Cutting it further means restructuring the whole menu.
+// fallow-ignore-next-line complexity
 export function ProposalCardMenu({
   proposal,
   editHref,
@@ -32,8 +35,10 @@ export function ProposalCardMenu({
 }) {
   const t = useTranslations();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  // Owned above the grid, so a list refresh that re-parents this card can't
+  // close a merge in progress — see `MergeProposalDialogContext`.
+  const openMergeDialog = useOpenMergeProposalDialog();
 
   const {
     toggleVisibility: handleToggleVisibility,
@@ -62,7 +67,7 @@ export function ProposalCardMenu({
         buildMergeMenuItem({
           isDisabled: isLoading,
           mergeLabel: t('Merge with another proposal'),
-          onMerge: () => setIsMergeModalOpen(true),
+          onMerge: () => openMergeDialog(proposal),
         }),
       );
       items.push({
@@ -135,13 +140,6 @@ export function ProposalCardMenu({
           proposalId={proposal.id}
           open={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
-        />
-      )}
-      {canMerge && (
-        <MergeProposalDialog
-          proposal={proposal}
-          open={isMergeModalOpen}
-          onOpenChange={setIsMergeModalOpen}
         />
       )}
       {canRejectOrUndo && !isRejected && (

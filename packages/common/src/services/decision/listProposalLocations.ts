@@ -2,8 +2,11 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
 import type { ListProposalsInput } from './listProposals';
-import { isAnonymousAuthor } from './proposalAuthor';
-import { parseProposalData } from './proposalDataSchema';
+import {
+  projectProposalLocation,
+  proposalLocationColumns,
+  proposalLocationWith,
+} from './projectProposalLocation';
 import { resolveProposalListScope } from './resolveProposalListScope';
 
 /**
@@ -39,62 +42,12 @@ export const listProposalLocations = async ({
     where: {
       RAW: (table) => buildWhereClause(table),
     },
-    columns: {
-      id: true,
-      processInstanceId: true,
-      proposalData: true,
-      status: true,
-      visibility: true,
-      profileId: true,
-      submittedByProfileId: true,
-    },
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-          profileUsers: {
-            columns: {},
-            with: { authUser: { columns: { isAnonymous: true } } },
-          },
-        },
-      },
-      profile: true,
-    },
+    columns: proposalLocationColumns,
+    with: proposalLocationWith,
   });
 
-  const proposals = rows.flatMap((proposal) => {
-    // Drafts and any proposal without coordinates never render a pin.
-    const proposalData = parseProposalData(proposal.proposalData);
-    if (!proposalData.location) {
-      return [];
-    }
-
-    const rawSubmittedBy = Array.isArray(proposal.submittedBy)
-      ? proposal.submittedBy[0]
-      : proposal.submittedBy;
-    const submittedBy = rawSubmittedBy
-      ? (() => {
-          const { profileUsers, ...author } = rawSubmittedBy;
-          return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
-        })()
-      : rawSubmittedBy;
-    const profile = Array.isArray(proposal.profile)
-      ? proposal.profile[0]
-      : proposal.profile;
-
-    return [
-      {
-        id: proposal.id,
-        processInstanceId: proposal.processInstanceId,
-        proposalData,
-        status: proposal.status,
-        visibility: proposal.visibility,
-        profileId: proposal.profileId,
-        submittedBy,
-        profile,
-      },
-    ];
-  });
+  // Drafts and any proposal without coordinates never render a pin.
+  const proposals = rows.flatMap((row) => projectProposalLocation(row));
 
   return { proposals };
 };

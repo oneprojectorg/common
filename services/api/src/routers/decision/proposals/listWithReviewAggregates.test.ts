@@ -94,7 +94,7 @@ async function attachCategoryToProposal({
 }
 
 describe.concurrent('listWithReviewAggregates', () => {
-  it('rejects callers without admin access on the instance (paginated)', async ({
+  it('rejects callers without admin access on the instance (phase-scoped)', async ({
     task,
     onTestFinished,
   }) => {
@@ -262,7 +262,33 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items).toEqual([]);
   });
 
-  it('paginates by createdAt across pages', async ({
+  it('rejects an invalid filtered read instead of returning the whole phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Strict Branch',
+    });
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'review',
+    );
+
+    const adminCaller = await createAuthenticatedCaller(
+      created.context.defaultReviewer.email,
+    );
+
+    // Fails the filtered branch; must not fall through to the phase-scoped one.
+    await expect(
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: created.context.instance.instance.id,
+        proposalIds: [],
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('returns every proposal in the phase, well past 50', async ({
     task,
     onTestFinished,
   }) => {
@@ -270,38 +296,31 @@ describe.concurrent('listWithReviewAggregates', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    const proposals = [];
-    for (const title of ['First', 'Second', 'Third']) {
-      proposals.push(await testData.createReviewAssignment({ context, title }));
+    const created = [];
+    for (let i = 0; i < 51; i++) {
+      created.push(
+        await testData.createReviewAssignment({
+          context,
+          title: `Proposal ${i}`,
+        }),
+      );
     }
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    const page1 = await adminCaller.decision.listWithReviewAggregates({
+    const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
-      limit: 2,
     });
 
-    expect(page1.total).toBe(3);
-    expect(page1.items).toHaveLength(2);
-    expect(page1.next).not.toBeNull();
+    expect(result.items).toHaveLength(created.length);
+    expect(result.items.map((i) => i.proposal.id).sort()).toEqual(
+      created.map((p) => p.proposal.id).sort(),
+    );
 
-    const page2 = await adminCaller.decision.listWithReviewAggregates({
-      processInstanceId: context.instance.instance.id,
-      limit: 2,
-      cursor: page1.next!,
-    });
-
-    expect(page2.items).toHaveLength(1);
-    expect(page2.next).toBeNull();
-
-    // All three proposals appear exactly once across the two pages.
-    const allIds = [...page1.items, ...page2.items]
-      .map((i) => i.proposal.id)
-      .sort();
-    expect(allIds).toEqual(proposals.map((p) => p.proposal.id).sort());
+    const createdAts = result.items.map((i) => i.proposal.createdAt ?? '');
+    expect(createdAts).toEqual([...createdAts].sort().reverse());
   });
 
   it('attaches categories to response items', async ({
@@ -378,7 +397,7 @@ describe.concurrent('listWithReviewAggregates', () => {
 
 /**
  * Filtered mode is gated on `canReadPhaseReviews`: reviewers need a named
- * `openReviews` phase, admins need nothing. Paginated mode stays admin-only.
+ * `openReviews` phase, admins need nothing. Phase-scoped mode stays admin-only.
  */
 describe.concurrent('listWithReviewAggregates: openReviews gate', () => {
   /** A phase-`review` proposal carrying one COMPLETED assignment + submitted review. */
@@ -486,7 +505,7 @@ describe.concurrent('listWithReviewAggregates: openReviews gate', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('keeps the paginated mode admin-only for a reviewer on an open phase', async ({
+  it('keeps the phase-scoped mode admin-only for a reviewer on an open phase', async ({
     task,
     onTestFinished,
   }) => {

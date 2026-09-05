@@ -2,6 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { PAGE_LIMIT } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Fragment, useCallback } from 'react';
 
@@ -27,7 +28,7 @@ export const Feed = () => {
 };
 
 /** Feed content component with live data */
-const FeedContent = ({ limit = 10 }: { limit?: number }) => {
+const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
   const { user } = useRequiredUser();
   const t = useTranslations();
 

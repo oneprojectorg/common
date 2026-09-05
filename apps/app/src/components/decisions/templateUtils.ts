@@ -148,6 +148,39 @@ export function removeProperty<T extends BaseTemplateSchema>(
   };
 }
 
+/**
+ * Move a property to a new key, keeping its schema, its position in the field
+ * order and its `required` entry. No-op when the property is missing or the
+ * key is unchanged; overwrites `toId` if one already exists, so callers that
+ * can collide must check first.
+ */
+export function renameProperty<T extends BaseTemplateSchema>(
+  template: T,
+  fromId: string,
+  toId: string,
+): T {
+  const schema = getPropertySchema(template, fromId);
+  if (!schema || fromId === toId) {
+    return template;
+  }
+
+  const { [fromId]: _renamed, ...restProps } = template.properties ?? {};
+  const required = (template.required ?? []).map((id) =>
+    id === fromId ? toId : id,
+  );
+
+  return {
+    ...template,
+    properties: { ...restProps, [toId]: schema },
+    required: required.length > 0 ? required : undefined,
+    // Order is authoritative for display, so the key swaps in place rather
+    // than moving to the end the way the properties object does.
+    'x-field-order': getPropertyOrder(template).map((id) =>
+      id === fromId ? toId : id,
+    ),
+  };
+}
+
 /** Replace the property order with the given array. */
 export function reorderProperties<T extends BaseTemplateSchema>(
   template: T,

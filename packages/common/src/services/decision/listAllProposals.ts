@@ -24,6 +24,7 @@ import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
@@ -71,7 +72,7 @@ export const listAllProposals = async ({
   user: User | undefined;
 }) => {
   const { processInstanceId, status, categoryId } = input;
-  const limit = input.limit ?? 50;
+  const limit = input.limit ?? PAGE_LIMIT.lg;
   const orderBy = input.orderBy ?? 'createdAt';
   const dir = input.dir ?? 'desc';
 

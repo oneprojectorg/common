@@ -82,24 +82,46 @@ export function useProposalCardData(proposal: Proposal) {
   return { titleText, budgetText, displayCategories, authors, description };
 }
 
-/** Proposal status/visibility surfaced as the composite's `headerBadge`. */
-export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
-  const t = useTranslations();
-  const { status, visibility, isSelected, isFlagged } = proposal;
-
+/** The state that says who can see this proposal at all, if any. */
+const restrictionOf = ({ status, visibility, isFlagged }: Proposal) => {
   // DRAFT wins over HIDDEN: a draft created in a hidden-by-default phase
   // should still read as "Draft" to its author, not "Hidden".
   if (status === ProposalStatus.DRAFT) {
-    return <StatusBadge variant="inactive">{t('Draft')}</StatusBadge>;
+    return 'draft';
   }
 
   // A flagged proposal is hidden from members pending a moderation verdict.
   if (isFlagged) {
-    return <StatusBadge variant="alert">{t('Flagged')}</StatusBadge>;
+    return 'flagged';
   }
 
-  if (visibility === Visibility.HIDDEN) {
-    return <StatusBadge variant="warning">{t('Hidden')}</StatusBadge>;
+  return visibility === Visibility.HIDDEN ? 'hidden' : undefined;
+};
+
+/** Restricted visibility on its own, for surfaces the candidacy states don't fit. */
+export const ProposalRestrictionBadge = ({
+  proposal,
+}: {
+  proposal: Proposal;
+}) => {
+  const t = useTranslations();
+
+  return match(restrictionOf(proposal), {
+    draft: <StatusBadge variant="inactive">{t('Draft')}</StatusBadge>,
+    flagged: <StatusBadge variant="alert">{t('Flagged')}</StatusBadge>,
+    hidden: <StatusBadge variant="warning">{t('Hidden')}</StatusBadge>,
+    _: null,
+  });
+};
+
+/** Proposal status/visibility surfaced as the composite's `headerBadge`. */
+export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
+  const t = useTranslations();
+  const { status, isSelected } = proposal;
+
+  // Restricted visibility outranks the candidacy states below it.
+  if (restrictionOf(proposal)) {
+    return <ProposalRestrictionBadge proposal={proposal} />;
   }
 
   // "Selected" is driven by results selection, not the editable `status`.
@@ -142,8 +164,11 @@ export interface ProposalCardViewProps extends Omit<
   canEngage?: boolean;
   /** Render the "Revision requested" badge instead of the status badge. */
   revisionRequested?: boolean;
-  /** Show the proposal's status/visibility badge above the title. */
-  showStatusBadge?: boolean;
+  /**
+   * Badge above the title. Defaults to `ProposalStatusBadge`; pass `null` for
+   * no badge, or another one where the default's states don't fit.
+   */
+  headerBadge?: ReactNode;
   /** Selected treatment (teal border + title) for vote/selection phases. */
   selected?: boolean;
   /** Running vote total; renders the "N Total Votes" row when set. */
@@ -174,7 +199,9 @@ export const ProposalCardView = ({
   showMetrics = false,
   canEngage = false,
   revisionRequested = false,
-  showStatusBadge = true,
+  // A default parameter, so `null` reaches the card as "no badge" while an
+  // absent prop still gets the standard one.
+  headerBadge = <ProposalStatusBadge proposal={proposal} />,
   selected,
   totalVotes,
   awardedLabel,
@@ -220,11 +247,11 @@ export const ProposalCardView = ({
       }
     : undefined;
 
-  const headerBadge = revisionRequested ? (
+  const badge = revisionRequested ? (
     <StatusBadge variant="revision">{t('Revision requested')}</StatusBadge>
-  ) : showStatusBadge ? (
-    <ProposalStatusBadge proposal={proposal} />
-  ) : undefined;
+  ) : (
+    headerBadge
+  );
 
   return (
     <SenseProposalCard
@@ -233,7 +260,7 @@ export const ProposalCardView = ({
       linkComponent={Link}
       className={className}
       selected={selected}
-      headerBadge={headerBadge}
+      headerBadge={badge}
       aside={aside}
       budget={budgetText}
       tags={tags}

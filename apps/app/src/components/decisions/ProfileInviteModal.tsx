@@ -3,7 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { hasEmail } from '@op/common/client';
+import { PAGE_LIMIT, hasEmail } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
@@ -137,7 +137,7 @@ function ProfileInviteModalContent({
     profileId,
     zoneName: 'decisions',
     includeMemberCounts: true,
-    limit: 100,
+    limit: PAGE_LIMIT.max,
   };
   // Batched so the roles and pending-invites fetches fire together — two
   // separate useSuspenseQuery calls would suspend one after the other.

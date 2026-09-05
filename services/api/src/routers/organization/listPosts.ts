@@ -1,4 +1,5 @@
 import { listPosts } from '@op/common';
+import { PAGE_LIMIT } from '@op/common/client';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders';
@@ -24,7 +25,7 @@ export const listOrganizationPostsRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { slug, limit = 20, cursor } = input;
+      const { slug, limit = PAGE_LIMIT.md, cursor } = input;
 
       const { items, next } = await listPosts({
         authUserId: ctx.user.id,

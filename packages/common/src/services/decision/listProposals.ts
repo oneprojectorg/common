@@ -8,7 +8,12 @@ import {
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { decodeCursor, encodeCursor, getCursorCondition } from '../../utils';
+import {
+  PAGE_LIMIT,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import type { AccessUser } from '../access';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
@@ -128,7 +133,7 @@ export const listProposals = async ({
     return emptyResult;
   }
 
-  const { limit = 20, orderBy = 'createdAt', dir = 'desc' } = input;
+  const { limit = PAGE_LIMIT.md, orderBy = 'createdAt', dir = 'desc' } = input;
   const decodedCursor = input.cursor
     ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
     : undefined;
