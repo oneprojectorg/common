@@ -105,16 +105,26 @@ function ManageAssignmentsBody({
   );
 
   // Neither read suspends: the chrome paints at once and only the two lists
-  // wait. The queue shares the page body's cache entry, and no staleTime is
-  // configured, so refetchOnMount must be off or opening the dialog refires
-  // it — the body's observer owns the refetch and the channel registration.
-  const queueQuery = trpc.decision.listReviewerAssignments.useQuery(
+  // wait. The queue shares the page body's infinite cache entry, and no
+  // staleTime is configured, so refetchOnMount must be off or opening the
+  // dialog refires it — the body's observer owns the refetch and the channel
+  // registration.
+  const queueQuery = trpc.decision.listReviewerAssignments.useInfiniteQuery(
     { processInstanceId, phaseId, reviewerProfileId },
-    { refetchOnMount: false },
+    {
+      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      refetchOnMount: false,
+    },
   );
-  const queue = queueQuery.data;
+  // Header, totals and eligibility describe the whole queue; any page carries them.
+  const queue = queueQuery.data?.pages[0];
   const reviewer = queue?.reviewer ?? null;
-  const assignments = queue?.assignments ?? EMPTY_ASSIGNMENTS;
+  const assignments = useMemo(
+    () =>
+      queueQuery.data?.pages.flatMap((page) => page.assignments) ??
+      EMPTY_ASSIGNMENTS,
+    [queueQuery.data?.pages],
+  );
   // A reviewer without the role gets a frozen queue: unassign pending only.
   const canAssign = queue?.isEligible === true;
   // Loaded, and the read does not claim this profile reviews here.
@@ -163,6 +173,17 @@ function ManageAssignmentsBody({
       root: scrollRoot,
     });
 
+  const { fetchNextPage: fetchNextQueuePage } = queueQuery;
+  const loadNextQueuePage = useCallback(() => {
+    fetchNextQueuePage();
+  }, [fetchNextQueuePage]);
+  const { ref: queueSentinelRef, shouldShowTrigger: showQueueTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextQueuePage, {
+      hasNextPage: queueQuery.hasNextPage,
+      isFetchingNextPage: queueQuery.isFetchingNextPage,
+      root: scrollRoot,
+    });
+
   const assignReviews = trpc.decision.assignReviews.useMutation();
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation();
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
@@ -178,8 +199,9 @@ function ManageAssignmentsBody({
       : [],
   );
 
+  // Off the whole queue's count, not the loaded pages.
   const assignedCount =
-    assignments.length - unassignIds.length + assignIds.length;
+    (queue?.total ?? 0) - unassignIds.length + assignIds.length;
   const hasChanges = assignIds.length > 0 || unassignIds.length > 0;
 
   // Additive only, and only over what is loaded: never bulk-unassigns.
@@ -332,6 +354,12 @@ function ManageAssignmentsBody({
                 </p>
               ) : null}
 
+              <p aria-live="polite" className="sr-only">
+                {queueQuery.isFetchingNextPage
+                  ? t('Loading more proposals…')
+                  : ''}
+              </p>
+
               {queueQuery.isPending ? (
                 <RowSkeletons count={3} />
               ) : queueQuery.isError ? (
@@ -358,6 +386,14 @@ function ManageAssignmentsBody({
                   ))}
                 </ul>
               )}
+
+              {showQueueTrigger ? (
+                <div ref={queueSentinelRef} aria-hidden className="py-2">
+                  {queueQuery.isFetchingNextPage ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : null}
+                </div>
+              ) : null}
             </section>
 
             <section className="flex flex-col gap-3">
