@@ -1,16 +1,12 @@
-import { hasEmail } from '@op/common/client';
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  processInstances,
-  profileUsers,
-  profiles,
-  proposals,
-} from '@op/db/schema';
+import { processInstances, profiles, proposals } from '@op/db/schema';
 import { OPBatchSend, ProposalSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 const { proposalSubmitted } = Events;
@@ -61,24 +57,14 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // Step 2: Get all collaborator emails
-    const collaborators = await step.run('get-collaborators', async () => {
-      const rows = await db
-        .select({
-          email: profileUsers.email,
-        })
-        .from(profileUsers)
-        .where(
-          and(
-            eq(profileUsers.profileId, proposalData.proposalProfileId),
-            isNotNull(profileUsers.email),
-          ),
-        );
+    // Step 2: Get all collaborator addresses
+    const collaborators = await step.run('get-collaborators', async () =>
+      listProfileRecipients({ profileId: proposalData.proposalProfileId }),
+    );
 
-      return rows.filter(hasEmail);
-    });
+    const recipients = selectEmailRecipients(collaborators);
 
-    if (collaborators.length === 0) {
+    if (recipients.length === 0) {
       logger.info('No collaborators found for proposal', { proposalId });
       return;
     }
@@ -88,7 +74,7 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
     // Step 3: Send notification emails to all collaborators
     const result = await step.run('send-emails', async () => {
       try {
-        const emails = collaborators.map(({ email }) => ({
+        const emails = recipients.map((email) => ({
           to: email,
           subject: ProposalSubmittedEmail.subject(
             proposalData.proposalProfileName,

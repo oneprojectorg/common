@@ -1,3 +1,5 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -7,6 +9,7 @@ import {
   postsToOrganizations,
   profiles,
 } from '@op/db/schema';
+import { OPBatchSend, ReactionNotificationEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { and, eq } from 'drizzle-orm';
@@ -30,111 +33,131 @@ export const sendReactionNotification = inngest.createFunction(
     const { sourceProfileId, postId, reactionType } =
       postReactionAdded.schema.parse(event.data);
 
-    await step.run('send-email-notification', async () => {
+    const postAuthorProfile = alias(profiles, 'post_author_profile');
+    const orgProfile = alias(profiles, 'org_profile');
+    const parentPost = alias(posts, 'parent_post');
+
+    const data = await step.run('get-reaction-data', async () => {
+      const [row] = await db
+        .select({
+          // Source profile (person who liked)
+          sourceProfileName: profiles.name,
+
+          postContent: posts.content,
+          postProfileId: posts.profileId,
+          parentPostId: posts.parentPostId,
+
+          postAuthorName: postAuthorProfile.name,
+
+          orgProfileId: orgProfile.id,
+          orgProfileSlug: orgProfile.slug,
+          orgProfileName: orgProfile.name,
+
+          parentPostContent: parentPost.content,
+        })
+        .from(postReactions)
+        .innerJoin(profiles, eq(postReactions.profileId, profiles.id))
+        .innerJoin(posts, eq(postReactions.postId, posts.id))
+        .leftJoin(postAuthorProfile, eq(posts.profileId, postAuthorProfile.id))
+        .leftJoin(
+          postsToOrganizations,
+          eq(posts.id, postsToOrganizations.postId),
+        )
+        .leftJoin(
+          organizations,
+          eq(postsToOrganizations.organizationId, organizations.id),
+        )
+        .leftJoin(orgProfile, eq(organizations.profileId, orgProfile.id))
+        .leftJoin(parentPost, eq(posts.parentPostId, parentPost.id))
+        .where(
+          and(
+            eq(postReactions.postId, postId),
+            eq(postReactions.profileId, sourceProfileId),
+          ),
+        )
+        .limit(1);
+
+      return row ?? null;
+    });
+
+    if (!data) {
+      logger.info('No data found for post reaction notification', {
+        postId,
+        sourceProfileId,
+      });
+      return;
+    }
+
+    if (!data.orgProfileSlug) {
+      logger.info(
+        'Could not find profile slug for post reaction notification',
+        {
+          postId,
+          sourceProfileId,
+        },
+      );
+      return;
+    }
+
+    // The post's own author when it has one, otherwise the organization the
+    // post belongs to. The resolver turns an org profile into its admins.
+    const audience = await step.run('get-recipients', async () => {
+      if (data.postProfileId) {
+        return {
+          recipientName: data.postAuthorName,
+          candidates: await listProfileRecipients({
+            profileId: data.postProfileId,
+          }),
+        };
+      }
+
+      return {
+        recipientName: data.orgProfileName,
+        candidates: data.orgProfileId
+          ? await listProfileRecipients({ profileId: data.orgProfileId })
+          : [],
+      };
+    });
+
+    const recipients = selectEmailRecipients(audience.candidates);
+
+    if (recipients.length === 0) {
+      logger.info('No author address found for post reaction notification', {
+        postId,
+        sourceProfileId,
+      });
+      return;
+    }
+
+    const content = data.parentPostContent || data.postContent;
+    const reactorName = data.sourceProfileName;
+    const contentType = data.parentPostId ? 'comment' : 'post';
+    const postUrl = `${OPURLConfig('APP').ENV_URL}/profile/${data.orgProfileSlug}/posts/${postId}`;
+
+    const result = await step.run('send-emails', async () => {
       try {
-        const postAuthorProfile = alias(profiles, 'post_author_profile');
-        const orgProfile = alias(profiles, 'org_profile');
-        const parentPost = alias(posts, 'parent_post');
+        const { errors } = await OPBatchSend(
+          recipients.map((email) => ({
+            to: email,
+            from: `${reactorName} via Common`,
+            subject: `${reactorName} liked your ${contentType}`,
+            component: () =>
+              ReactionNotificationEmail({
+                reactorName,
+                postContent: data.postContent,
+                recipientName: audience.recipientName ?? undefined,
+                contentType,
+                postUrl,
+                content,
+              }),
+          })),
+        );
 
-        const result = await db
-          .select({
-            // Source profile (person who liked)
-            sourceProfileName: profiles.name,
-
-            postContent: posts.content,
-            postProfileId: posts.profileId,
-            parentPostId: posts.parentPostId,
-
-            postAuthorName: postAuthorProfile.name,
-            postAuthorEmail: postAuthorProfile.email,
-
-            orgProfileSlug: orgProfile.slug,
-            orgProfileName: orgProfile.name,
-            orgProfileEmail: orgProfile.email,
-
-            parentPostContent: parentPost.content,
-          })
-          .from(postReactions)
-          .innerJoin(profiles, eq(postReactions.profileId, profiles.id))
-          .innerJoin(posts, eq(postReactions.postId, posts.id))
-          .leftJoin(
-            postAuthorProfile,
-            eq(posts.profileId, postAuthorProfile.id),
-          )
-          .leftJoin(
-            postsToOrganizations,
-            eq(posts.id, postsToOrganizations.postId),
-          )
-          .leftJoin(
-            organizations,
-            eq(postsToOrganizations.organizationId, organizations.id),
-          )
-          .leftJoin(orgProfile, eq(organizations.profileId, orgProfile.id))
-          .leftJoin(parentPost, eq(posts.parentPostId, parentPost.id))
-          .where(
-            and(
-              eq(postReactions.postId, postId),
-              eq(postReactions.profileId, sourceProfileId),
-            ),
-          )
-          .limit(1);
-
-        const data = result[0];
-
-        if (!data) {
-          logger.info('No data found for post reaction notification', {
-            postId,
-            sourceProfileId,
-          });
-          return;
+        if (errors.length > 0) {
+          throw Error(`Email batch failed: ${JSON.stringify(errors)}`);
         }
 
-        if (!data.orgProfileSlug) {
-          logger.info(
-            'Could not find profile slug for post reaction notification',
-            {
-              postId,
-              sourceProfileId,
-            },
-          );
-          return;
-        }
-
-        // Determine author profile: org profile takes precedence if post has no profileId
-        const authorProfile = data.postProfileId
-          ? { name: data.postAuthorName!, email: data.postAuthorEmail! }
-          : { name: data.orgProfileName!, email: data.orgProfileEmail! };
-
-        if (!authorProfile?.email) {
-          logger.info('No author email found for post reaction notification', {
-            postId,
-            sourceProfileId,
-          });
-          return;
-        }
-
-        const content = data.parentPostContent || data.postContent;
-
-        const reactorName = data.sourceProfileName;
-        const contentType = data.parentPostId ? 'comment' : 'post';
-        const { OPNodemailer } = await import('@op/emails');
-        const { ReactionNotificationEmail } = await import('@op/emails');
-        const postUrl = `${OPURLConfig('APP').ENV_URL}/profile/${data.orgProfileSlug}/posts/${postId}`;
-
-        await OPNodemailer({
-          to: authorProfile.email,
-          from: `${reactorName} via Common`,
-          subject: `${reactorName} liked your ${contentType}`,
-          component: () =>
-            ReactionNotificationEmail({
-              reactorName,
-              postContent: data.postContent,
-              recipientName: authorProfile.name,
-              contentType,
-              postUrl,
-              content,
-            }),
-        });
+        return { sent: recipients.length };
       } catch (error) {
         // Log error and re-throw for retries
         logger.error('Failed to send reaction notification', {
@@ -147,6 +170,6 @@ export const sendReactionNotification = inngest.createFunction(
       }
     });
 
-    return { message: 'Notification email sent successfully!' };
+    return { message: `${result.sent} reaction notification(s) sent` };
   },
 );

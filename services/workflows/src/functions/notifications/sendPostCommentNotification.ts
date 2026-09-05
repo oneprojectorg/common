@@ -1,3 +1,5 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -37,11 +39,10 @@ export const sendPostCommentNotification = inngest.createFunction(
             postContent: posts.content,
             recipientId: profiles.id,
             recipientName: profiles.name,
-            recipientEmail: profiles.email,
             recipientSlug: profiles.slug,
           })
           .from(posts)
-          .innerJoin(profiles, eq(profiles.id, posts.profileId))
+          .leftJoin(profiles, eq(profiles.id, posts.profileId))
           .where(eq(posts.id, parentPostId))
           .limit(1);
         return row ?? null;
@@ -65,6 +66,7 @@ export const sendPostCommentNotification = inngest.createFunction(
       step.run('get-parent-org-link', async () => {
         const [row] = await db
           .select({
+            orgProfileId: profiles.id,
             orgProfileName: profiles.name,
             orgProfileSlug: profiles.slug,
           })
@@ -84,12 +86,23 @@ export const sendPostCommentNotification = inngest.createFunction(
       return;
     }
 
+    // Legacy org posts have no author profile; their organization owns them.
+    const recipientId = parent.recipientId ?? parentOrgLink?.orgProfileId;
+    const recipientName = parent.recipientName ?? parentOrgLink?.orgProfileName;
+
     // Don't notify the user about comments on their own post.
-    if (parent.recipientId === authorProfileId) {
+    if (!recipientId || recipientId === authorProfileId) {
       return;
     }
-    const recipientEmail = parent.recipientEmail;
-    if (!recipientEmail) {
+
+    // One address for a person's post; every admin for an org's.
+    const recipients = selectEmailRecipients(
+      await step.run('get-recipients', async () =>
+        listProfileRecipients({ profileId: recipientId }),
+      ),
+    );
+
+    if (recipients.length === 0) {
       return;
     }
 
@@ -102,15 +115,16 @@ export const sendPostCommentNotification = inngest.createFunction(
     // org-attached; otherwise fall back to the recipient (author) profile.
     const linkedProfileSlug =
       parentOrgLink?.orgProfileSlug ?? parent.recipientSlug;
-    const postedIn = parentOrgLink?.orgProfileName ?? parent.recipientName;
+    const postedIn =
+      parentOrgLink?.orgProfileName ?? parent.recipientName ?? undefined;
 
     const baseUrl = OPURLConfig('APP').ENV_URL;
     const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${parentPostId}`;
 
     const result = await step.run('send-email', async () => {
-      const { errors } = await OPBatchSend([
-        {
-          to: recipientEmail,
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
           from: `${commenter.name} via Common`,
           subject: CommentNotificationEmail.subject(commenter.name, 'post'),
           component: () =>
@@ -119,19 +133,19 @@ export const sendPostCommentNotification = inngest.createFunction(
               postContent: parent.postContent,
               commentContent: comment.content,
               postUrl: contentUrl,
-              recipientName: parent.recipientName,
+              recipientName,
               contentType: 'post',
               contextName,
               postedIn,
             }),
-        },
-      ]);
+        })),
+      );
 
       if (errors.length > 0) {
         throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
       }
 
-      return { sent: 1 };
+      return { sent: recipients.length };
     });
 
     return {

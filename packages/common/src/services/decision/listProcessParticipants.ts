@@ -1,12 +1,11 @@
 import { and, db, eq, isNull } from '@op/db/client';
-import { authUsers, profileUsers, proposals } from '@op/db/schema';
+import { profileUsers, proposals } from '@op/db/schema';
 import { union } from 'drizzle-orm/pg-core';
 
-export type ProcessParticipant = {
-  authUserId: string;
-  /** Null for anonymous accounts. */
-  email: string | null;
-};
+import {
+  type EmailRecipient,
+  profileMemberRecipients,
+} from '../email/recipients';
 
 /**
  * Everyone taking part in a decision instance: process-profile members plus
@@ -22,7 +21,7 @@ export async function listProcessParticipants({
   processInstanceId,
 }: {
   processInstanceId: string;
-}): Promise<Array<ProcessParticipant>> {
+}): Promise<Array<EmailRecipient>> {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: { profileId: true },
@@ -34,24 +33,11 @@ export async function listProcessParticipants({
     return [];
   }
 
-  // Email comes from auth.users, not profileUsers: the profileUsers copy is a
-  // snapshot taken at insert time and nothing syncs it after an email change.
-  const members = db
-    .select({
-      authUserId: profileUsers.authUserId,
-      email: authUsers.email,
-    })
-    .from(profileUsers)
-    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
-    .where(eq(profileUsers.profileId, processProfileId));
+  const members = profileMemberRecipients().where(
+    eq(profileUsers.profileId, processProfileId),
+  );
 
-  const proposalAuthors = db
-    .select({
-      authUserId: profileUsers.authUserId,
-      email: authUsers.email,
-    })
-    .from(profileUsers)
-    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
+  const proposalAuthors = profileMemberRecipients()
     .innerJoin(proposals, eq(proposals.profileId, profileUsers.profileId))
     .where(
       and(
@@ -60,7 +46,7 @@ export async function listProcessParticipants({
       ),
     );
 
-  // With the email sourced per authUserId, UNION's row dedupe is the identity
-  // dedupe — one person can no longer surface under two different addresses.
+  // Addresses are sourced per authUserId, so UNION's row dedupe is the
+  // identity dedupe: a member who also submitted appears once.
   return union(members, proposalAuthors);
 }

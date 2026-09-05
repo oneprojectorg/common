@@ -1,4 +1,5 @@
-import { hasEmail } from '@op/common/client';
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -31,13 +32,7 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
         with: {
           proposal: {
             with: {
-              profile: {
-                with: {
-                  profileUsers: {
-                    where: { email: { isNotNull: true } },
-                  },
-                },
-              },
+              profile: true,
             },
           },
           processInstance: {
@@ -85,10 +80,14 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
     }
 
     const { proposal, processInstance } = assignment;
-    const authorProfileUsers = proposal.profile.profileUsers.filter(hasEmail);
 
-    if (authorProfileUsers.length === 0) {
-      logger.warn('No author profile users found for proposal profile', {
+    const authors = await step.run('get-author-recipients', async () =>
+      listProfileRecipients({ profileId: proposal.profileId }),
+    );
+    const recipients = selectEmailRecipients(authors);
+
+    if (recipients.length === 0) {
+      logger.warn('No author addresses found for proposal profile', {
         profileId: proposal.profileId,
       });
       return;
@@ -108,7 +107,7 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
 
     const result = await step.run('send-emails', async () => {
       try {
-        const emails = authorProfileUsers.map(({ email }) => ({
+        const emails = recipients.map((email) => ({
           to: email,
           subject: RevisionRequestedEmail.subject(proposalName),
           component: () =>
