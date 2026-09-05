@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import {
   profileInvites,
   profileUserToAccessRoles,
@@ -23,9 +23,11 @@ import { emitDecisionMemberRolesChanged } from './events/emitDecisionMemberRoles
 export const acceptProposalInvite = async ({
   profileId: proposalProfileId,
   user,
+  db = defaultDb,
 }: {
   profileId: string;
   user: User;
+  db?: DbClient;
 }) => {
   const email = user.email;
   if (!email) {
@@ -64,7 +66,7 @@ export const acceptProposalInvite = async ({
       where: { profileId: invite.profileId },
       with: { processInstance: true },
     }),
-    assertGlobalRole('Member'),
+    assertGlobalRole('Member', db),
   ]);
 
   // Check if we need to add the user to the parent decision process

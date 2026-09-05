@@ -1,5 +1,5 @@
 import { trackReviewQueueCompleted, trackReviewSubmitted } from '@op/analytics';
-import { and, db, eq, ne } from '@op/db/client';
+import { type DbClient, and, db as defaultDb, eq, ne } from '@op/db/client';
 import {
   type ProposalReview,
   ProposalReviewAssignmentStatus,
@@ -27,11 +27,13 @@ export async function submitReview({
   reviewData,
   overallComment,
   user,
+  db = defaultDb,
 }: {
   assignmentId: string;
   reviewData: RubricReviewData;
   overallComment?: string | null;
   user: User;
+  db?: DbClient;
 }): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
@@ -126,7 +128,10 @@ export async function submitReview({
 
   waitUntil(
     (async () => {
-      const [remaining] = await db
+      // Deferred past the response, so a caller-supplied transaction may
+      // already be committed or rolled back by the time this runs. Always
+      // count on the pool.
+      const [remaining] = await defaultDb
         .select({ value: count() })
         .from(proposalReviewAssignments)
         .where(

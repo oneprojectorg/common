@@ -278,7 +278,7 @@ export async function submitManualSelection({
     if (isLastPhase(currentStateId, lockedPhases ?? [])) {
       await processResults({
         processInstanceId,
-        tx,
+        db: tx,
         instance: {
           id: processInstanceId,
           instanceData: lockedInstance.instanceData,

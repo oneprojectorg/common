@@ -1,4 +1,4 @@
-import { and, db, eq } from '@op/db/client';
+import { type DbClient, and, db as defaultDb, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { logger } from '@op/logging';
@@ -8,10 +8,11 @@ export interface AddReactionOptions {
   postId: string;
   profileId: string;
   reactionType: string;
+  db?: DbClient;
 }
 
 export const addReaction = async (options: AddReactionOptions) => {
-  const { postId, profileId, reactionType } = options;
+  const { postId, profileId, reactionType, db = defaultDb } = options;
 
   await db.transaction(async (tx) => {
     // First, remove any existing reaction from this user on this post

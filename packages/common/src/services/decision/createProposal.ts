@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
@@ -39,9 +39,11 @@ export interface CreateProposalInput {
 export const createProposal = async ({
   data,
   user,
+  db = defaultDb,
 }: {
   data: CreateProposalInput;
   user: User;
+  db?: DbClient;
 }) => {
   const authUserId = user.id;
 
@@ -155,7 +157,7 @@ export const createProposal = async ({
 
   const [profileId, adminRole] = await Promise.all([
     getCurrentProfileId(authUserId),
-    assertGlobalRole('Admin'),
+    assertGlobalRole('Admin', db),
   ]);
   const createdProposal = await db.transaction(async (tx) => {
     const slug = await generateUniqueProfileSlug({

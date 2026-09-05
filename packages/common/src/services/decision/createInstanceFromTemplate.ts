@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
@@ -29,6 +29,7 @@ export type CreateDecisionInstanceOptions = {
   creatorEmail: string;
   /** Defaults to DRAFT */
   status?: ProcessStatus;
+  db?: DbClient;
 };
 
 export const createDecisionInstance = async ({
@@ -41,6 +42,7 @@ export const createDecisionInstance = async ({
   creatorAuthUserId,
   creatorEmail,
   status = ProcessStatus.DRAFT,
+  db = defaultDb,
 }: CreateDecisionInstanceOptions) => {
   const instance = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
@@ -131,6 +133,7 @@ export type CreateInstanceFromTemplateOptions = {
   templateId: string;
   name: string;
   user: User;
+  db?: DbClient;
 };
 
 /**
@@ -141,10 +144,12 @@ export const createInstanceFromTemplate = async ({
   templateId,
   name,
   user,
+  db = defaultDb,
 }: CreateInstanceFromTemplateOptions) => {
   const dbUser = await assertUserByAuthId(
     user.id,
     new UnauthorizedError('User must be authenticated'),
+    db,
   );
 
   // Owner is always the individual creator. Steward is the profile the user is
@@ -174,5 +179,6 @@ export const createInstanceFromTemplate = async ({
     stewardProfileId,
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
+    db,
   });
 };

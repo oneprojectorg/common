@@ -1,6 +1,6 @@
 import { trackAdminSetProcess, trackAdminSetRubric } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
-import { db, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
@@ -43,6 +43,7 @@ export const updateDecisionInstance = async ({
   proposalTemplate,
   rubricTemplate,
   user,
+  db = defaultDb,
 }: {
   instanceId: string;
   name?: string;
@@ -60,6 +61,7 @@ export const updateDecisionInstance = async ({
   /** Rubric template (JSON Schema defining evaluation criteria) */
   rubricTemplate?: RubricTemplateSchema;
   user: User;
+  db?: DbClient;
 }) => {
   // Fetch existing instance
   const existingInstance = await db.query.processInstances.findFirst({

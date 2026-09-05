@@ -1,5 +1,5 @@
 import { trackRevisionRequested } from '@op/analytics';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   type ProposalReviewRequest,
@@ -22,10 +22,12 @@ export async function requestRevision({
   assignmentId,
   requestComment,
   user,
+  db = defaultDb,
 }: {
   assignmentId: string;
   requestComment: string;
   user: User;
+  db?: DbClient;
 }): Promise<ProposalReviewRequest & { processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
