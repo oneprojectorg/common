@@ -10,7 +10,9 @@ import { getCriteria } from '../rubricTemplate';
 
 export function FormShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-6">
+    // `data-slot` marks the whole review pane: the layout renders one copy per
+    // breakpoint, so tests need a stable handle on the visible one.
+    <div data-slot="review-form" className="flex flex-col gap-6">
       <Header3>
         <TranslatedText text="Review Proposal" />
       </Header3>

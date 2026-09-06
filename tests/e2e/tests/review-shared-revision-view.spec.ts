@@ -89,11 +89,21 @@ const RUBRIC_TEMPLATE = {
   },
 } as const satisfies RubricTemplateSchema;
 
-/** The rubric container the form marks `inert` while a reviewer is paused. */
-const RUBRIC_CONTAINER = 'div[inert]:has(h4:has-text("Innovation"))';
+/**
+ * The visible copy of the review pane. The layout renders one copy per
+ * breakpoint, so both are in the DOM and only one is on screen.
+ */
+function reviewPane(page: Page) {
+  return page.locator('[data-slot="review-form"]').filter({ visible: true });
+}
+
+/** The rubric wrapper the form marks `inert` while a reviewer is paused. */
+function pausedRubric(page: Page) {
+  return reviewPane(page).locator('[data-slot="review-rubric"][inert]');
+}
 
 test.describe('Review — shared revision request view', () => {
-  test('a second reviewer sees the pending revision, cannot cancel it, and still submits', async ({
+  test("a second reviewer sees the open request, cannot cancel it, submits anyway, and leaves the owner's pause intact", async ({
     browser,
     org,
     supabaseAdmin,
@@ -104,26 +114,33 @@ test.describe('Review — shared revision request view', () => {
       testInfo,
     });
 
-    const page = await openAs(browser, scenario.reviewerB.email);
-    await page.goto(
+    const pageB = await openAs(browser, scenario.reviewerB.email);
+    await pageB.goto(
       `/en/decisions/${scenario.slug}/reviews/${scenario.reviewerBAssignmentId}`,
       { waitUntil: 'domcontentloaded' },
     );
+    const paneB = reviewPane(pageB);
 
     // Reviewer B is told about reviewer A's open request, but is not paused by
-    // it. ReviewLayout renders the rubric pane twice (desktop + mobile
-    // responsive containers), so both copies exist in the DOM; pick the first
-    // one — the desktop copy that is visible at Playwright's default 1280px.
+    // it: the informational alert, not the owner's paused warning.
     await expect(
-      page.getByText('Another reviewer requested a revision').first(),
+      paneB.getByText('Another reviewer requested a revision'),
     ).toBeVisible({ timeout: 36_000 });
-    await expect(page.getByText('Proposal Revision Requested')).toHaveCount(0);
+    await expect(paneB.getByText('Proposal Revision Requested')).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'View feedback' }).first().click();
+    // Polite, not sense `Alert`'s default assertive `role="alert"` — it can
+    // arrive mid-rubric and must not cut off the current announcement.
+    const infoAlert = paneB.getByRole('status');
+    await expect(infoAlert).toHaveAttribute('aria-live', 'polite');
+    await expect(infoAlert).toContainText(
+      'Another reviewer asked the author to revise this proposal.',
+    );
 
-    const modal = page
+    await paneB.getByRole('button', { name: 'View feedback' }).click();
+
+    const modal = pageB
       .getByRole('dialog')
-      .and(page.locator(':not([data-slot="toast"])'));
+      .and(pageB.locator(':not([data-slot="toast"])'));
     await expect(modal).toBeVisible();
     await expect(
       modal.getByRole('heading', { name: 'Revision request' }),
@@ -147,57 +164,60 @@ test.describe('Review — shared revision request view', () => {
     // Navbar's "Request revision" is hidden — first come, first served, so
     // reviewer B cannot race into a competing request while one is open.
     await expect(
-      page.getByRole('button', { name: 'Request revision' }),
+      pageB.getByRole('button', { name: 'Request revision' }),
     ).toHaveCount(0);
 
     // The rubric is live: nothing is inert, and the review goes through.
-    await expect(page.locator(RUBRIC_CONTAINER)).toHaveCount(0);
+    await expect(pausedRubric(pageB)).toHaveCount(0);
 
-    const submitButton = page.getByRole('button', { name: 'Submit review' });
+    const submitButton = pageB.getByRole('button', { name: 'Submit review' });
     await expect(submitButton).toBeDisabled();
 
-    await page.getByRole('combobox', { name: 'Innovation' }).first().click();
-    await page.getByRole('option', { name: '2 — Good' }).click();
+    await paneB.getByRole('combobox', { name: 'Innovation' }).click();
+    await pageB.getByRole('option', { name: '2 — Good' }).click();
 
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
     await expect(
-      page
+      pageB
         .locator('[data-slot="toast"]')
         .filter({ hasText: 'Review submitted successfully' }),
     ).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('the reviewer who owns the request stays paused', async ({
-    browser,
-    org,
-    supabaseAdmin,
-  }, testInfo) => {
-    const scenario = await setUpSharedRevisionScenario({
-      org,
-      supabaseAdmin,
-      testInfo,
+    // B's submission is B's alone: it must not close A's request or move A's
+    // assignment on. This is the invariant the frontend-only pause was hiding.
+    const storedRequest = await db.query.proposalReviewRequests.findFirst({
+      where: { id: scenario.revisionRequestId },
     });
+    expect(storedRequest?.state).toBe(ProposalReviewRequestState.REQUESTED);
 
-    const page = await openAs(browser, scenario.reviewerA.email);
-    await page.goto(
+    const storedAssignmentA =
+      await db.query.proposalReviewAssignments.findFirst({
+        where: { id: scenario.reviewerAAssignmentId },
+      });
+    expect(storedAssignmentA?.status).toBe(
+      ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    );
+
+    // And reviewer A, opening their own assignment after B submitted, is still
+    // paused: warning alert, inert rubric, disabled submit.
+    const pageA = await openAs(browser, scenario.reviewerA.email);
+    await pageA.goto(
       `/en/decisions/${scenario.slug}/reviews/${scenario.reviewerAAssignmentId}`,
       { waitUntil: 'domcontentloaded' },
     );
+    const paneA = reviewPane(pageA);
 
+    await expect(paneA.getByText('Proposal Revision Requested')).toBeVisible({
+      timeout: 36_000,
+    });
     await expect(
-      page.getByText('Proposal Revision Requested').first(),
-    ).toBeVisible({ timeout: 36_000 });
-    await expect(
-      page.getByText('Another reviewer requested a revision'),
+      paneA.getByText('Another reviewer requested a revision'),
     ).toHaveCount(0);
-
-    // Paused: the rubric is inert and the primary action stays disabled until
-    // the author responds.
-    await expect(page.locator(RUBRIC_CONTAINER).first()).toBeAttached();
+    await expect(pausedRubric(pageA)).toHaveCount(1);
     await expect(
-      page.getByRole('button', { name: 'Submit review' }),
+      pageA.getByRole('button', { name: 'Submit review' }),
     ).toBeDisabled();
   });
 });
@@ -303,6 +323,7 @@ async function setUpSharedRevisionScenario({
     slug: instance.slug,
     reviewerA,
     reviewerB,
+    revisionRequestId: revisionRequest.id,
     reviewerAAssignmentId: reviewerAAssignment.id,
     reviewerBAssignmentId: reviewerBAssignment.id,
   };

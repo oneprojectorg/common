@@ -173,7 +173,10 @@ function MyReviewForm() {
               </AlertDescription>
             </Alert>
           ) : (
-            <Alert variant="info">
+            // Polite, not the `role="alert"` sense defaults to: this is
+            // information that can arrive while the reviewer is filling the
+            // rubric, and it must not cut off whatever is being announced.
+            <Alert variant="info" role="status" aria-live="polite">
               <LuInfo />
               <AlertTitle>
                 {t('Another reviewer requested a revision')}
@@ -204,6 +207,7 @@ function MyReviewForm() {
       {/* `inert` (not just pointer-events-none) so a paused form can't be
           reached or edited by keyboard either. */}
       <div
+        data-slot="review-rubric"
         inert={isPausedForRevision}
         className={
           isPausedForRevision ? 'pointer-events-none opacity-50' : undefined
