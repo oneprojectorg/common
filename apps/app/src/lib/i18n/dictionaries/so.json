@@ -1721,5 +1721,7 @@
   "Check all that apply": "Dooro dhammaan waxa khuseeya",
   "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan",
   "Comments could not be loaded": "Faallooyinka lama soo bixin karin",
-  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)"
+  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)",
+  "Another reviewer requested a revision": "Dib-eegis kale ayaa codsaday dib-u-habeyn",
+  "Another reviewer asked the author to revise this proposal. You can still complete your review.": "Dib-eegis kale ayaa weydiistay qoraaga inuu dib u habeeyo soo jeedintan. Weli waad dhammaystiri kartaa dib-u-eegistaada."
 }

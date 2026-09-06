@@ -1721,5 +1721,7 @@
   "Check all that apply": "প্রযোজ্য সবগুলি নির্বাচন করুন",
   "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন",
   "Comments could not be loaded": "মন্তব্য লোড করা যায়নি",
-  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)"
+  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)",
+  "Another reviewer requested a revision": "অন্য একজন পর্যালোচক সংশোধনের অনুরোধ করেছেন",
+  "Another reviewer asked the author to revise this proposal. You can still complete your review.": "অন্য একজন পর্যালোচক লেখককে এই প্রস্তাবটি সংশোধন করতে বলেছেন। আপনি এখনও আপনার পর্যালোচনা সম্পূর্ণ করতে পারেন।"
 }

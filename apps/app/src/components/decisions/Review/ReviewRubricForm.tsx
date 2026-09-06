@@ -39,7 +39,7 @@ import {
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { useId, useMemo, useState } from 'react';
-import { LuCircleAlert, LuPlus } from 'react-icons/lu';
+import { LuCircleAlert, LuInfo, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -114,6 +114,8 @@ function MyReviewForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     isPausedForRevision,
+    revisionRequest,
+    isOwnRevisionRequest,
     isEditing,
     review,
   } = useReviewForm();
@@ -132,6 +134,11 @@ function MyReviewForm() {
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+  // Another reviewer's open request is information, not a lock: it never
+  // pauses this form, it only tells the reviewer why the author may be
+  // editing and lets them read the feedback that was already sent.
+  const hasOtherRevisionRequest = !!revisionRequest && !isOwnRevisionRequest;
+
   // A submitted review shows the read-only result unless the reviewer has
   // switched it back into the form via "Edit review".
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
@@ -147,23 +154,45 @@ function MyReviewForm() {
 
   return (
     <>
-      {isPausedForRevision && (
+      {(isPausedForRevision || hasOtherRevisionRequest) && (
         <>
-          <Alert variant="warning">
-            <LuCircleAlert />
-            <AlertTitle>{t('Proposal Revision Requested')}</AlertTitle>
-            <AlertDescription>
-              {t('Reviewing is paused until author submits a revision.')}{' '}
-              <Button
-                variant="link"
-                size="inline"
-                className="text-sm underline"
-                onClick={() => setIsViewModalOpen(true)}
-              >
-                {t('View feedback')}
-              </Button>
-            </AlertDescription>
-          </Alert>
+          {isPausedForRevision ? (
+            <Alert variant="warning">
+              <LuCircleAlert />
+              <AlertTitle>{t('Proposal Revision Requested')}</AlertTitle>
+              <AlertDescription>
+                {t('Reviewing is paused until author submits a revision.')}{' '}
+                <Button
+                  variant="link"
+                  size="inline"
+                  className="text-sm underline"
+                  onClick={() => setIsViewModalOpen(true)}
+                >
+                  {t('View feedback')}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert variant="info">
+              <LuInfo />
+              <AlertTitle>
+                {t('Another reviewer requested a revision')}
+              </AlertTitle>
+              <AlertDescription>
+                {t(
+                  'Another reviewer asked the author to revise this proposal. You can still complete your review.',
+                )}{' '}
+                <Button
+                  variant="link"
+                  size="inline"
+                  className="text-sm underline"
+                  onClick={() => setIsViewModalOpen(true)}
+                >
+                  {t('View feedback')}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <ViewRevisionRequestModal
             isOpen={isViewModalOpen}

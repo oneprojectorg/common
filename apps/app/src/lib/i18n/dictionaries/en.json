@@ -1721,5 +1721,7 @@
   "Check all that apply": "Check all that apply",
   "Reviewers select one or more options": "Reviewers select one or more options",
   "Comments could not be loaded": "Comments could not be loaded",
-  "(opens in a new tab)": "(opens in a new tab)"
+  "(opens in a new tab)": "(opens in a new tab)",
+  "Another reviewer requested a revision": "Another reviewer requested a revision",
+  "Another reviewer asked the author to revise this proposal. You can still complete your review.": "Another reviewer asked the author to revise this proposal. You can still complete your review."
 }

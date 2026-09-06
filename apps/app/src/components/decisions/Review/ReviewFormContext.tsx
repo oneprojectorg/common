@@ -161,7 +161,7 @@ function ReviewFormProviderInner({
 
   // Prefer the reviewer's own request; otherwise surface the earliest
   // outstanding request from any other reviewer on the same proposal so
-  // every reviewer sees the same paused state + feedback.
+  // every reviewer can read the feedback that is already on the proposal.
   const effectiveRevisionRequest =
     ownRevisionRequest ??
     proposalRevisionRequestList.revisionRequests[0]?.revisionRequest ??
@@ -181,7 +181,13 @@ function ReviewFormProviderInner({
     review?.overallComment ?? '',
   );
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
-  const isPausedForRevision = hasAnyOpenRevisionRequest;
+  // Only the reviewer who owns the open request is paused: their review is
+  // waiting on the author's revision. Every other reviewer keeps a fully
+  // interactive form — the pause was never a server-side rule, and one
+  // reviewer must not be able to stall the whole panel.
+  const isPausedForRevision = isOwnRevisionRequest;
+  // First come, first served stays proposal-wide: a second reviewer cannot
+  // open a competing request while one is still outstanding.
   const canRequestRevision =
     reviewSettings.allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
 

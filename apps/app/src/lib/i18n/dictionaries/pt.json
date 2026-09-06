@@ -1721,5 +1721,7 @@
   "Check all that apply": "Marque todas as opções aplicáveis",
   "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções",
   "Comments could not be loaded": "Não foi possível carregar os comentários",
-  "(opens in a new tab)": "(abre num novo separador)"
+  "(opens in a new tab)": "(abre num novo separador)",
+  "Another reviewer requested a revision": "Outro revisor solicitou uma revisão",
+  "Another reviewer asked the author to revise this proposal. You can still complete your review.": "Outro revisor pediu ao autor que revise esta proposta. Você ainda pode concluir a sua avaliação."
 }
