@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { ProfileSearchResults } from '@/components/OrganizationsSearchResults';
 import { ListPageLayout } from '@/components/layout/ListPageLayout';
