@@ -1,5 +1,6 @@
 'use client';
 
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
 import { trpc } from '@op/api/client';
 import type {
   AdminDecisionReviewer,
@@ -213,6 +214,7 @@ const ReviewerRow = ({
 }) => {
   const t = useTranslations();
   const format = useFormatter();
+  const timeZone = useDisplayTimeZone();
   const lastSubmittedAt = reviewer.lastSubmittedAt
     ? new Date(reviewer.lastSubmittedAt)
     : null;
@@ -254,6 +256,7 @@ const ReviewerRow = ({
           ? format.dateTime(lastSubmittedAt, {
               dateStyle: 'medium',
               timeStyle: 'short',
+              timeZone,
             })
           : '—'}
       </TableCell>

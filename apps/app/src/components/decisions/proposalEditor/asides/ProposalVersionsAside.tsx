@@ -1,6 +1,7 @@
 'use client';
 
-import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { DATE_TIME_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import {
@@ -251,13 +252,14 @@ function SavedVersionItem({
   onSelect: () => void;
 }) {
   const t = useTranslations();
+  const timeZone = useDisplayTimeZone();
   const createdAt = new Date(date).toISOString();
   const relativeTime = useRelativeTime(createdAt, { style: 'long' });
   const isRecent = Date.now() - date < RELATIVE_TIME_THRESHOLD_MS;
 
   const label = isRecent
     ? relativeTime
-    : formatDate(createdAt, locale, DATE_TIME_UTC_FORMAT);
+    : formatDate(createdAt, locale, { ...DATE_TIME_FORMAT, timeZone });
 
   return (
     <VersionItem

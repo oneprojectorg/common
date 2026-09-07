@@ -1,6 +1,7 @@
 'use client';
 
-import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { DATE_TIME_FORMAT, formatDate } from '@/utils/formatting';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -34,8 +35,12 @@ export function RestoreProposalVersionModal({
 }: RestoreProposalVersionModalProps) {
   const locale = useLocale();
   const t = useTranslations();
+  const timeZone = useDisplayTimeZone();
 
-  const formattedDate = formatDate(versionDate, locale, DATE_TIME_UTC_FORMAT);
+  const formattedDate = formatDate(versionDate, locale, {
+    ...DATE_TIME_FORMAT,
+    timeZone,
+  });
 
   return (
     <Dialog

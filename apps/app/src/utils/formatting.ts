@@ -110,11 +110,13 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
- * Date-time format options for UTC timestamps
- * Used with next-intl's useFormatter().dateTime()
+ * Date-time format options for a full timestamp, with no zone of its own.
+ *
+ * Used with next-intl's `useFormatter().dateTime()`. Pair it with
+ * `useDisplayTimeZone()` at the call site so the timestamp renders in the
+ * viewer's zone after mount without breaking hydration.
  */
-export const DATE_TIME_UTC_FORMAT = {
-  timeZone: 'UTC',
+export const DATE_TIME_FORMAT = {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
