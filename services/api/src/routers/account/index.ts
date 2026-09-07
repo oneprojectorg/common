@@ -1,6 +1,8 @@
 import { mergeRouters } from '../../trpcFactory';
 import { completeOnboarding } from './completeOnboarding';
+import { exportPersonalDataRouter } from './exportPersonalData';
 import { getMyAccount } from './getMyAccount';
+import { getPersonalDataExportStatusRouter } from './getPersonalDataExportStatus';
 import { getUserProfiles } from './getUserProfiles';
 import { listUserInvitesRouter } from './listUserInvites';
 import login from './login';
@@ -19,6 +21,8 @@ const accountRouter = mergeRouters(
   switchOrganization,
   switchProfile,
   matchingDomainOrganizations,
+  exportPersonalDataRouter,
+  getPersonalDataExportStatusRouter,
 );
 
 export default accountRouter;
