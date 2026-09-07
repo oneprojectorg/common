@@ -1,6 +1,19 @@
 /**
- * Shared formatting utilities for consistent display across the application
+ * Shared formatting utilities for consistent display across the application.
+ *
+ * Every helper here names its locale and time zone rather than letting `Intl`
+ * fall back to the runtime default. The default is the server's during SSR and
+ * the browser's on the client, so an implicit one makes the two renders
+ * disagree and hydration fails (React #418).
  */
+import { APP_TIME_ZONE } from '@/lib/i18n/config';
+
+/**
+ * Format a plain number using locale-aware grouping.
+ */
+export function formatNumber(value: number, locale: string = 'en-US'): string {
+  return new Intl.NumberFormat(locale).format(value);
+}
 
 /**
  * Format currency amount using locale-aware formatting
@@ -18,7 +31,11 @@ export function formatCurrency(
 }
 
 /**
- * Format single date using locale-aware formatting
+ * Format single date using locale-aware formatting.
+ *
+ * Renders in `APP_TIME_ZONE` unless `options` names another one. Pass an
+ * explicit `timeZone` only for a value that is genuinely local to the viewer
+ * and rendered after mount.
  */
 export function formatDate(
   dateString: string | null | undefined,
@@ -33,7 +50,10 @@ export function formatDate(
     return formatDate(new Date().toISOString(), locale, options);
   }
 
-  return new Date(dateString).toLocaleDateString(locale, options);
+  return new Date(dateString).toLocaleDateString(locale, {
+    timeZone: APP_TIME_ZONE,
+    ...options,
+  });
 }
 
 /**

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { useLocale } from 'next-intl';
@@ -62,7 +63,7 @@ export function VotingPage({
       t('decisions.votingOpenHeading'));
 
   const resultsDate = nextPhase?.startDate
-    ? new Date(nextPhase.startDate).toLocaleDateString(locale, {
+    ? formatDate(nextPhase.startDate, locale, {
         month: 'long',
         day: 'numeric',
       })
