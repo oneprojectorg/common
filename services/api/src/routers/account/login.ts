@@ -36,14 +36,17 @@ const login = router({
       const { logger } = ctx;
       const emailDomain = input.email.split('@')[1];
 
+      // Logs carry the domain, never the address: the address identifies a
+      // person who may have no account here at all, and log records ship to
+      // PostHog with no retention limit. `@op/logging` redacts anything that
+      // slips through.
       logger.info('Login attempt', {
-        email: input.email,
         emailDomain,
         usingOAuth: input.usingOAuth,
       });
 
       if (!emailDomain) {
-        logger.warn('Login failed - invalid email', { email: input.email });
+        logger.warn('Login failed - invalid email');
         throw new ValidationError('Invalid email');
       }
 
@@ -118,7 +121,7 @@ const login = router({
         if (authResponse.error) {
           logger.error('Login error', {
             error: authResponse.error,
-            email: input.email,
+            emailDomain,
           });
           throw new CommonError(
             `There was an error signing you in. We are currently investigating the issue. Please try again in a few minutes. If you need further assistance, don't hesitate to contact us at ${genericEmail}`,
@@ -163,6 +166,8 @@ const deleteRejectedOAuthSignup = async ({
   ctx: TContext & TContextWithLogger;
   email: string;
 }): Promise<void> => {
+  const emailDomain = email.split('@')[1];
+
   // Cleanup is best-effort: a failure here must not change the login
   // response, the caller still throws UnauthorizedError.
   try {
@@ -175,7 +180,9 @@ const deleteRejectedOAuthSignup = async ({
       authUser.email.toLowerCase() !== email ||
       !wasCreatedByThisSignIn(authUser)
     ) {
-      ctx.logger.warn('Skipped cleanup of rejected OAuth sign-in', { email });
+      ctx.logger.warn('Skipped cleanup of rejected OAuth sign-in', {
+        emailDomain,
+      });
       return;
     }
 
@@ -195,7 +202,7 @@ const deleteRejectedOAuthSignup = async ({
     );
     if (!(usersRowAgeMs < FIRST_SIGN_IN_WINDOW_MS)) {
       ctx.logger.warn('Skipped cleanup of rejected OAuth sign-in', {
-        email,
+        emailDomain,
         authUserId: authUser.id,
       });
       return;
@@ -210,7 +217,7 @@ const deleteRejectedOAuthSignup = async ({
     const { error } = await supabase.auth.admin.deleteUser(authUser.id);
     if (error) {
       ctx.logger.error('Failed to delete auth user of rejected OAuth sign-in', {
-        email,
+        emailDomain,
         authUserId: authUser.id,
         error,
       });
@@ -222,12 +229,12 @@ const deleteRejectedOAuthSignup = async ({
     }
 
     ctx.logger.info('Deleted account created by rejected OAuth sign-in', {
-      email,
+      emailDomain,
       authUserId: authUser.id,
     });
   } catch (error) {
     ctx.logger.error('Failed to clean up rejected OAuth sign-in', {
-      email,
+      emailDomain,
       error,
     });
   }
