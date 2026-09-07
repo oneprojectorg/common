@@ -1512,7 +1512,7 @@
   "Shared anonymously with the author and other reviewers.": "يتم مشاركتها بشكل مجهول مع المؤلف والمراجعين الآخرين.",
   "Shared anonymously with the author after the review phase": "يتم مشاركتها بشكل مجهول مع المؤلف بعد مرحلة المراجعة",
   "Before you request a revision": "قبل أن تطلب تعديلاً",
-  "Only one revision request is allowed per proposal, and reviewing will be paused for all reviewers until the author responds.": "يُسمح بطلب تعديل واحد فقط لكل مقترح، وستتوقف المراجعة مؤقتًا لجميع المراجعين حتى يرد المؤلف.",
+  "Only one revision request is allowed per proposal at a time. Your review is paused until the author responds. Other reviewers can keep reviewing in the meantime.": "يُسمح بطلب تعديل واحد فقط لكل مقترح في كل مرة. تتوقف مراجعتك مؤقتًا حتى يرد المؤلف. ويمكن لبقية المراجعين متابعة مراجعاتهم في هذه الأثناء.",
   "Author's note": "ملاحظة المؤلف",
   "Start writing...": "ابدأ الكتابة...",
   "+{count}": "+{count}",

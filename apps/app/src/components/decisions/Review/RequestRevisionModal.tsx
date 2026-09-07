@@ -71,7 +71,7 @@ export function RequestRevisionModal({
             <AlertTitle>{t('Before you request a revision')}</AlertTitle>
             <AlertDescription>
               {t(
-                'Only one revision request is allowed per proposal, and reviewing will be paused for all reviewers until the author responds.',
+                'Only one revision request is allowed per proposal at a time. Your review is paused until the author responds. Other reviewers can keep reviewing in the meantime.',
               )}
             </AlertDescription>
           </Alert>

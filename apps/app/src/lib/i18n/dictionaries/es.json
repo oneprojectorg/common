@@ -1513,7 +1513,7 @@
   "Shared anonymously with the author and other reviewers.": "Se comparte de forma anónima con el autor y los demás revisores.",
   "Shared anonymously with the author after the review phase": "Se compartirá de forma anónima con el autor después de la fase de revisión",
   "Before you request a revision": "Antes de solicitar una revisión",
-  "Only one revision request is allowed per proposal, and reviewing will be paused for all reviewers until the author responds.": "Solo se permite una solicitud de revisión por propuesta, y la revisión se pausará para todos los revisores hasta que el autor responda.",
+  "Only one revision request is allowed per proposal at a time. Your review is paused until the author responds. Other reviewers can keep reviewing in the meantime.": "Solo se permite una solicitud de revisión por propuesta a la vez. Tu evaluación queda en pausa hasta que el autor responda. Los demás revisores pueden seguir evaluando mientras tanto.",
   "Author's note": "Nota del autor",
   "Start writing...": "Empieza a escribir...",
   "+{count}": "+{count}",

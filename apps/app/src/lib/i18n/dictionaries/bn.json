@@ -1513,7 +1513,7 @@
   "Shared anonymously with the author and other reviewers.": "লেখক এবং অন্যান্য পর্যালোচকদের সাথে বেনামে শেয়ার করা হয়।",
   "Shared anonymously with the author after the review phase": "পর্যালোচনা পর্বের পরে বেনামে লেখকের সাথে শেয়ার করা হবে",
   "Before you request a revision": "সংশোধনের অনুরোধ করার আগে",
-  "Only one revision request is allowed per proposal, and reviewing will be paused for all reviewers until the author responds.": "প্রতি প্রস্তাবে কেবল একটি সংশোধনের অনুরোধ করা যায়, এবং লেখক সাড়া না দেওয়া পর্যন্ত সব পর্যালোচকের জন্য পর্যালোচনা স্থগিত থাকবে।",
+  "Only one revision request is allowed per proposal at a time. Your review is paused until the author responds. Other reviewers can keep reviewing in the meantime.": "প্রতি প্রস্তাবে একবারে কেবল একটি সংশোধনের অনুরোধ করা যায়। লেখক সাড়া না দেওয়া পর্যন্ত আপনার পর্যালোচনা স্থগিত থাকবে। এর মধ্যে অন্য পর্যালোচকেরা তাঁদের পর্যালোচনা চালিয়ে যেতে পারবেন।",
   "Author's note": "লেখকের নোট",
   "Start writing...": "লেখা শুরু করুন...",
   "+{count}": "+{count}",

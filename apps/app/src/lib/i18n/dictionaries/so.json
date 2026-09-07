@@ -1513,7 +1513,7 @@
   "Shared anonymously with the author and other reviewers.": "Si aan la aqoon la wadaagay qoraaga iyo dib-u-eegayaasha kale.",
   "Shared anonymously with the author after the review phase": "Si aan la aqoon la wadaagi doonaa qoraaga ka dib marxaladda dib-u-eegista",
   "Before you request a revision": "Ka hor inta aadan codsan dib-u-habeyn",
-  "Only one revision request is allowed per proposal, and reviewing will be paused for all reviewers until the author responds.": "Hal codsi dib-u-habeyn oo keliya ayaa la oggol yahay soo jeedin kasta, dib-u-eegistana waa la joojin doonaa dhammaan dib-u-eegayaasha ilaa qoraagu ka jawaabo.",
+  "Only one revision request is allowed per proposal at a time. Your review is paused until the author responds. Other reviewers can keep reviewing in the meantime.": "Hal codsi dib-u-habeyn oo keliya ayaa mar kasta la oggol yahay soo jeedin kasta. Dib-u-eegistaadu way joogsanaysaa ilaa qoraagu ka jawaabo. Dib-u-eegayaasha kale way sii wadi karaan dib-u-eegistooda inta lagu jiro.",
   "Author's note": "Qoraalka qoraaga",
   "Start writing...": "Bilow qorista...",
   "+{count}": "+{count}",

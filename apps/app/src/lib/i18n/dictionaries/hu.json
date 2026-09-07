@@ -1581,7 +1581,7 @@
   "Shared anonymously with the author and other reviewers.": "Névtelenül megosztva a szerzővel és a többi értékelővel.",
   "Shared anonymously with the author after the review phase": "Névtelenül megosztva a szerzővel az értékelési szakasz után",
   "Before you request a revision": "Mielőtt átdolgozást kér",
-  "Only one revision request is allowed per proposal, and reviewing will be paused for all reviewers until the author responds.": "Javaslatonként csak egy átdolgozási kérelem engedélyezett, és az értékelés minden értékelő számára szünetel, amíg a szerző nem válaszol.",
+  "Only one revision request is allowed per proposal at a time. Your review is paused until the author responds. Other reviewers can keep reviewing in the meantime.": "Javaslatonként egyszerre csak egy átdolgozási kérelem engedélyezett. A te értékelésed szünetel, amíg a szerző nem válaszol. A többi értékelő addig is folytathatja a sajátját.",
   "Author's note": "A szerző megjegyzése",
   "Start writing...": "Kezdjen el írni...",
   "+{count}": "+{count}",
