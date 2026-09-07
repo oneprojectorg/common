@@ -1,6 +1,7 @@
 'use client';
 
-import { formatDate } from '@/utils/formatting';
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { formatDeadline } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { useLocale } from 'next-intl';
@@ -31,6 +32,7 @@ export function VotingPage({
 }) {
   const t = useTranslations();
   const locale = useLocale();
+  const timeZone = useDisplayTimeZone();
   const translation = useDecisionTranslation();
 
   const [[instance, voteStatus, { submitters, total }]] =
@@ -64,10 +66,7 @@ export function VotingPage({
     : (translation?.headline ?? currentPhase?.headline ?? t('TIME TO VOTE.'));
 
   const resultsDate = nextPhase?.startDate
-    ? formatDate(nextPhase.startDate, locale, {
-        month: 'long',
-        day: 'numeric',
-      })
+    ? formatDeadline(nextPhase.startDate, locale, timeZone)
     : undefined;
 
   const heroDescription = hasVoted

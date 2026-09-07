@@ -1,7 +1,7 @@
 'use client';
 
 import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
-import { DATE_TIME_FORMAT } from '@/utils/formatting';
+import { DATE_TIME_FORMAT, DEADLINE_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -53,11 +53,11 @@ export const DecisionsRowCells = ({
             </span>
             {phaseEndDate ? (
               <span className="text-xs text-muted-foreground">
-                {/* Not viewer-local: a phase end is the calendar day the
-                    organizers picked, not a moment the reader experienced.
-                    See `useDisplayTimeZone`. */}
                 {t('Ends {date}', {
-                  date: format.dateTime(phaseEndDate, { dateStyle: 'medium' }),
+                  date: format.dateTime(phaseEndDate, {
+                    ...DEADLINE_FORMAT,
+                    timeZone,
+                  }),
                 })}
               </span>
             ) : null}
