@@ -1,4 +1,5 @@
 import { get, set } from '@op/cache';
+import { logger } from '@op/logging';
 
 import { EXPORT_CACHE_TTL_SECONDS } from './constants';
 
@@ -22,12 +23,16 @@ export const patchExportRecord = async (
 };
 
 /**
- * The record fields that report a failed run. `errorMessage` is always a string
- * because the client renders it verbatim and falls back to its own copy only
- * when the field is absent.
+ * The record fields that report a failed run. The cause is logged rather than
+ * recorded: the client renders `errorMessage` verbatim, and a driver error
+ * carries our SQL and its parameters — which, for a personal data export, are
+ * the subject's own rows. Absent, the client shows its own translated copy.
  */
-export const failedExportPatch = (error: unknown) => ({
-  status: 'failed' as const,
-  errorMessage: error instanceof Error ? error.message : 'Unknown error',
-  completedAt: new Date().toISOString(),
-});
+export const failedExportPatch = (exportId: string, error: unknown) => {
+  logger.error('Export run failed', { exportId, error });
+
+  return {
+    status: 'failed' as const,
+    completedAt: new Date().toISOString(),
+  };
+};

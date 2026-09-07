@@ -65,7 +65,7 @@ export const runExportJob = async ({
     return { exportId, status: 'completed' };
   } catch (error) {
     await step.run('update-status-failed', () =>
-      patchExportRecord(cacheKey, failedExportPatch(error)),
+      patchExportRecord(cacheKey, failedExportPatch(exportId, error)),
     );
 
     await step.run('notify-export-failed', () => notifyExportChanged(channel));

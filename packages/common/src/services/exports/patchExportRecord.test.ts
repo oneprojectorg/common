@@ -5,7 +5,12 @@ vi.mock('@op/cache', () => ({
   set: vi.fn(),
 }));
 
+vi.mock('@op/logging', () => ({
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
 import { get, set } from '@op/cache';
+import { logger } from '@op/logging';
 
 import { EXPORT_CACHE_TTL_SECONDS } from './constants';
 import { failedExportPatch, patchExportRecord } from './patchExportRecord';
@@ -62,21 +67,25 @@ describe('patchExportRecord', () => {
 });
 
 describe('failedExportPatch', () => {
-  it('carries the thrown error’s message', () => {
-    expect(failedExportPatch(new Error('Storage upload failed'))).toMatchObject(
-      {
-        status: 'failed',
-        errorMessage: 'Storage upload failed',
-      },
-    );
+  it('reports the failure', () => {
+    expect(failedExportPatch('e1', new Error('boom'))).toMatchObject({
+      status: 'failed',
+      completedAt: expect.any(String),
+    });
   });
 
-  // The client falls back to its own copy only when the field is absent, so a
-  // non-Error throw must still leave a string here.
-  it('still names a failure when the throw was not an Error', () => {
-    expect(failedExportPatch('nope')).toMatchObject({
-      status: 'failed',
-      errorMessage: 'Unknown error',
+  // The status read hands this record to the subject verbatim. A driver error
+  // carries our SQL and its parameters, which for a personal data export are the
+  // subject's own rows, so the cause goes to the log and not to the client.
+  it('keeps the cause out of the record and puts it in the log', () => {
+    const cause = new Error(
+      'Failed query: select ... params: alice@example.com',
+    );
+
+    expect(failedExportPatch('e1', cause)).not.toHaveProperty('errorMessage');
+    expect(logger.error).toHaveBeenCalledWith('Export run failed', {
+      exportId: 'e1',
+      error: cause,
     });
   });
 });
