@@ -1,11 +1,8 @@
 import { and, db, eq, isNull } from '@op/db/client';
-import { profileUsers, proposals } from '@op/db/schema';
+import { authUsers, profileUsers, proposals } from '@op/db/schema';
 import { union } from 'drizzle-orm/pg-core';
 
-import {
-  type EmailRecipient,
-  profileMemberRecipients,
-} from '../email/recipients';
+import type { EmailRecipient } from '../email/recipients';
 
 /**
  * Everyone taking part in a decision instance: process-profile members plus
@@ -33,11 +30,24 @@ export async function listProcessParticipants({
     return [];
   }
 
-  const members = profileMemberRecipients().where(
-    eq(profileUsers.profileId, processProfileId),
-  );
+  // Email comes from auth.users, not profileUsers: the profileUsers copy is a
+  // snapshot taken at insert time and nothing syncs it after an email change.
+  const members = db
+    .select({
+      authUserId: profileUsers.authUserId,
+      email: authUsers.email,
+    })
+    .from(profileUsers)
+    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
+    .where(eq(profileUsers.profileId, processProfileId));
 
-  const proposalAuthors = profileMemberRecipients()
+  const proposalAuthors = db
+    .select({
+      authUserId: profileUsers.authUserId,
+      email: authUsers.email,
+    })
+    .from(profileUsers)
+    .innerJoin(authUsers, eq(authUsers.id, profileUsers.authUserId))
     .innerJoin(proposals, eq(proposals.profileId, profileUsers.profileId))
     .where(
       and(
@@ -46,7 +56,7 @@ export async function listProcessParticipants({
       ),
     );
 
-  // Addresses are sourced per authUserId, so UNION's row dedupe is the
-  // identity dedupe: a member who also submitted appears once.
+  // With the email sourced per authUserId, UNION's row dedupe is the identity
+  // dedupe — one person can no longer surface under two different addresses.
   return union(members, proposalAuthors);
 }

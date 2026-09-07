@@ -31,6 +31,7 @@ export const sendProposalCommentNotification = inngest.createFunction(
           where: { id: proposalId },
           with: {
             profile: true,
+            submittedBy: true,
             processInstance: {
               with: {
                 profile: true,
@@ -70,24 +71,16 @@ export const sendProposalCommentNotification = inngest.createFunction(
       return;
     }
 
-    const [proposalAuthor, authorRecipients] = await Promise.all([
-      step.run('get-proposal-author', async () => {
-        const [row] = await db
-          .select({ name: profiles.name })
-          .from(profiles)
-          .where(eq(profiles.id, proposal.submittedByProfileId))
-          .limit(1);
-        return row ?? null;
-      }),
-      step.run('get-author-recipients', async () =>
-        listProfileRecipients({ profileId: proposal.submittedByProfileId }),
-      ),
-    ]);
+    const proposalAuthor = proposal.submittedBy;
 
     // One address for a person's proposal; every admin for an org's.
-    const recipients = selectEmailRecipients(authorRecipients);
+    const recipients = selectEmailRecipients(
+      await step.run('get-author-recipients', async () =>
+        listProfileRecipients(proposalAuthor),
+      ),
+    );
 
-    if (!proposalAuthor || recipients.length === 0) {
+    if (recipients.length === 0) {
       return;
     }
 

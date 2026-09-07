@@ -708,6 +708,11 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.organizationUsers.authUserId,
       to: r.users.authUserId,
     }),
+    authUser: r.one.authUsers({
+      from: r.organizationUsers.authUserId,
+      to: r.authUsers.id,
+      optional: false,
+    }),
     roles: r.many.organizationUserToAccessRoles({
       from: r.organizationUsers.id,
       to: r.organizationUserToAccessRoles.organizationUserId,

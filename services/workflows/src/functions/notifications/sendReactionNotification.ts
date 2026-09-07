@@ -1,4 +1,7 @@
-import { listProfileRecipients } from '@op/common';
+import {
+  listOrganizationProfileRecipients,
+  listProfileRecipients,
+} from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -48,6 +51,7 @@ export const sendReactionNotification = inngest.createFunction(
           parentPostId: posts.parentPostId,
 
           postAuthorName: postAuthorProfile.name,
+          postAuthorType: postAuthorProfile.type,
 
           orgProfileId: orgProfile.id,
           orgProfileSlug: orgProfile.slug,
@@ -99,14 +103,15 @@ export const sendReactionNotification = inngest.createFunction(
       return;
     }
 
-    // The post's own author when it has one, otherwise the organization the
-    // post belongs to. The resolver turns an org profile into its admins.
+    // Author profile when the post has one; otherwise the organization the
+    // post belongs to.
     const audience = await step.run('get-recipients', async () => {
-      if (data.postProfileId) {
+      if (data.postProfileId && data.postAuthorType) {
         return {
           recipientName: data.postAuthorName,
           candidates: await listProfileRecipients({
-            profileId: data.postProfileId,
+            id: data.postProfileId,
+            type: data.postAuthorType,
           }),
         };
       }
@@ -114,7 +119,7 @@ export const sendReactionNotification = inngest.createFunction(
       return {
         recipientName: data.orgProfileName,
         candidates: data.orgProfileId
-          ? await listProfileRecipients({ profileId: data.orgProfileId })
+          ? await listOrganizationProfileRecipients(data.orgProfileId)
           : [],
       };
     });

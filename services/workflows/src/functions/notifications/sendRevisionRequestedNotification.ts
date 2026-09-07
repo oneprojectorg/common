@@ -1,4 +1,4 @@
-import { listProfileRecipients } from '@op/common';
+import { listMemberProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -82,7 +82,7 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
     const { proposal, processInstance } = assignment;
 
     const authors = await step.run('get-author-recipients', async () =>
-      listProfileRecipients({ profileId: proposal.profileId }),
+      listMemberProfileRecipients(proposal.profileId),
     );
     const recipients = selectEmailRecipients(authors);
 

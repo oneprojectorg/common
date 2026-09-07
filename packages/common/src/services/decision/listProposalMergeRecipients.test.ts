@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mock: drive the edge read and the note read, assert the filtering
-// rules. Addresses come from `listProfileRecipients`, whose join onto
-// `auth.users` is proven against the database in services/api.
+// Boundary mock: drive the two reads and the recipient lookup, assert the
+// filtering rules.
 vi.mock('@op/db/client', () => ({
   db: {
     query: {
@@ -13,14 +12,14 @@ vi.mock('@op/db/client', () => ({
 }));
 
 vi.mock('../email/recipients', () => ({
-  listProfileRecipients: vi.fn(),
+  listMemberProfileRecipients: vi.fn(),
 }));
 
 import { db } from '@op/db/client';
 
 import {
   type EmailRecipient,
-  listProfileRecipients,
+  listMemberProfileRecipients,
 } from '../email/recipients';
 import { listProposalMergeRecipients } from './listProposalMergeRecipients';
 
@@ -33,7 +32,7 @@ const TARGET_PROFILE_ID = '55555555-5555-4555-8555-555555555555';
 
 const findFirst = vi.mocked(db.query.proposalRelationships.findFirst);
 const findUser = vi.mocked(db.query.users.findFirst);
-const recipientsOf = vi.mocked(listProfileRecipients);
+const recipientsOf = vi.mocked(listMemberProfileRecipients);
 
 const ADA: EmailRecipient = {
   email: 'ada@example.com',
@@ -52,7 +51,7 @@ const members = ({
   source?: Array<EmailRecipient>;
   target?: Array<EmailRecipient>;
 } = {}) => {
-  recipientsOf.mockImplementation(async ({ profileId }) => {
+  recipientsOf.mockImplementation(async (profileId) => {
     if (profileId === SOURCE_PROFILE_ID) {
       return source;
     }
@@ -135,8 +134,8 @@ describe('listProposalMergeRecipients', () => {
 
     await run();
 
-    expect(recipientsOf).toHaveBeenCalledWith({ profileId: SOURCE_PROFILE_ID });
-    expect(recipientsOf).toHaveBeenCalledWith({ profileId: TARGET_PROFILE_ID });
+    expect(recipientsOf).toHaveBeenCalledWith(SOURCE_PROFILE_ID);
+    expect(recipientsOf).toHaveBeenCalledWith(TARGET_PROFILE_ID);
   });
 
   // An admin can unmerge inside the debounce window.

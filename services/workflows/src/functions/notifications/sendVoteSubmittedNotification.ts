@@ -58,18 +58,24 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     );
 
     const processProfile = alias(profiles, 'process_profile');
+    const voterProfile = alias(profiles, 'voter_profile');
 
     // Step 1: Get voter profile, process instance details, and phase data
     const voteData = await step.run('get-vote-data', async () => {
       const result = await db
         .select({
-          voterProfileId: decisionsVoteSubmissions.submittedByProfileId,
+          voterProfileId: voterProfile.id,
+          voterProfileType: voterProfile.type,
           processProfileName: processProfile.name,
           processProfileSlug: processProfile.slug,
           instanceData: processInstances.instanceData,
           currentStateId: processInstances.currentStateId,
         })
         .from(decisionsVoteSubmissions)
+        .innerJoin(
+          voterProfile,
+          eq(decisionsVoteSubmissions.submittedByProfileId, voterProfile.id),
+        )
         .innerJoin(
           processInstances,
           eq(decisionsVoteSubmissions.processInstanceId, processInstances.id),
@@ -89,11 +95,13 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // Step 2: Get the voter's sign-in address — or, for a vote cast as an
-    // organization, the addresses of its admins.
+    // Step 2: One address for a person's vote; every admin for an org's.
     const recipients = selectEmailRecipients(
       await step.run('get-voter-recipients', async () =>
-        listProfileRecipients({ profileId: voteData.voterProfileId }),
+        listProfileRecipients({
+          id: voteData.voterProfileId,
+          type: voteData.voterProfileType,
+        }),
       ),
     );
 

@@ -1,4 +1,4 @@
-import { listProfileRecipients } from '@op/common';
+import { listMemberProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -59,7 +59,7 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
 
     // Step 2: Get all collaborator addresses
     const collaborators = await step.run('get-collaborators', async () =>
-      listProfileRecipients({ profileId: proposalData.proposalProfileId }),
+      listMemberProfileRecipients(proposalData.proposalProfileId),
     );
 
     const recipients = selectEmailRecipients(collaborators);

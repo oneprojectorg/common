@@ -1,22 +1,21 @@
 import { ProposalStatus } from '@op/db/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mock: drive the one read, assert the skip rules. Addresses come
-// from `listProfileRecipients`, whose join onto `auth.users` is proven against
-// the database in services/api.
+// Boundary mock: drive the one read and the recipient lookup, assert the skip
+// rules.
 vi.mock('@op/db/client', () => ({
   db: { query: { proposals: { findFirst: vi.fn() } } },
 }));
 
 vi.mock('../email/recipients', () => ({
-  listProfileRecipients: vi.fn(),
+  listMemberProfileRecipients: vi.fn(),
 }));
 
 import { db } from '@op/db/client';
 
 import {
   type EmailRecipient,
-  listProfileRecipients,
+  listMemberProfileRecipients,
 } from '../email/recipients';
 import { listProposalRejectionRecipients } from './listProposalRejectionRecipients';
 
@@ -26,7 +25,7 @@ const ADA_AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const PROPOSAL_PROFILE_ID = '44444444-4444-4444-8444-444444444444';
 
 const findFirst = vi.mocked(db.query.proposals.findFirst);
-const recipientsOf = vi.mocked(listProfileRecipients);
+const recipientsOf = vi.mocked(listMemberProfileRecipients);
 
 const ADA: EmailRecipient = {
   email: 'ada@example.com',
@@ -87,9 +86,7 @@ describe('listProposalRejectionRecipients', () => {
         recipients: [{ email: 'ada@example.com' }],
       },
     });
-    expect(recipientsOf).toHaveBeenCalledWith({
-      profileId: PROPOSAL_PROFILE_ID,
-    });
+    expect(recipientsOf).toHaveBeenCalledWith(PROPOSAL_PROFILE_ID);
   });
 
   // The email drops the clause rather than naming a phase that isn't there.

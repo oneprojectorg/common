@@ -40,6 +40,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
               profile: true,
             },
           },
+          reviewer: true,
           requests: true,
         },
       });
@@ -81,7 +82,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
     const { proposal, processInstance } = assignment;
 
     const reviewers = await step.run('get-reviewer-recipients', async () =>
-      listProfileRecipients({ profileId: assignment.reviewerProfileId }),
+      listProfileRecipients(assignment.reviewer),
     );
     const recipients = selectEmailRecipients(reviewers);
 

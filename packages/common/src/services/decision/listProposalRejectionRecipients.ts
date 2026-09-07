@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
-import { listProfileRecipients } from '../email/recipients';
+import { listMemberProfileRecipients } from '../email/recipients';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { isProposalReachable } from './utils/proposal';
@@ -64,9 +64,7 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'proposalUnavailable' };
   }
 
-  const authors = await listProfileRecipients({
-    profileId: proposal.profileId,
-  });
+  const authors = await listMemberProfileRecipients(proposal.profileId);
 
   // An admin rejecting their own proposal should not be emailed about it.
   const recipients = authors

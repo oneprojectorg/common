@@ -4,7 +4,7 @@ import { ProposalRelationshipType } from '@op/db/schema';
 import { hasEmail } from '../../utils/email';
 import {
   type EmailRecipient,
-  listProfileRecipients,
+  listMemberProfileRecipients,
 } from '../email/recipients';
 import { isProposalReachable } from './utils/proposal';
 
@@ -85,8 +85,8 @@ export async function listProposalMergeRecipients({
   }
 
   const [sourceCandidates, targetCandidates] = await Promise.all([
-    listProfileRecipients({ profileId: sourceProposal.profileId }),
-    listProfileRecipients({ profileId: targetProposal.profileId }),
+    listMemberProfileRecipients(sourceProposal.profileId),
+    listMemberProfileRecipients(targetProposal.profileId),
   ]);
 
   const sourceRecipients = collectRecipients({
@@ -94,9 +94,7 @@ export async function listProposalMergeRecipients({
     excludedAuthUserIds: [actorAuthUserId],
   });
 
-  // Someone on both proposals hears only the source version. Excluded by
-  // identity, so a person on both sides is dropped from the target list even
-  // if their two member rows were written at different times.
+  // Someone on both proposals hears only the source version.
   const targetRecipients = collectRecipients({
     candidates: targetCandidates,
     excludedAuthUserIds: [
