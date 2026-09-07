@@ -46,10 +46,8 @@ export const Events = {
       format: z.enum(['csv']),
     }),
   },
-  // Carries the subject and nothing else. What a personal data export covers is
-  // fixed by the job — every section of the subject's own record — so there is
-  // no parameter here through which a request could widen or narrow it, and none
-  // through which one account could name another.
+  // Carries the subject and nothing else: the job fixes what an export covers,
+  // so no parameter here can widen it or name another account.
   personalDataExportRequested: {
     name: 'user/personal-data-export-requested' as const,
     schema: z.object({

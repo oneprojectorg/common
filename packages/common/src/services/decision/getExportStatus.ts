@@ -56,9 +56,7 @@ export const getExportStatus = async ({
     schema: exportStatusRecordSchema,
   });
 
-  // No usable record, whether the cache held nothing or held something that
-  // describes no export. The client returns to idle and the admin starts a
-  // fresh run.
+  // Nothing cached, or something that describes no export.
   if (!exportStatus) {
     return { status: 'not_found' as const };
   }

@@ -16,10 +16,7 @@ const { proposalExportRequested } = Events;
 
 /**
  * Render every non-draft proposal in an instance's current phase to a CSV.
- *
- * {@link runExportJob} owns the status reporting and the broadcasts either side
- * of it. What is here is the work: read the proposals, render the file, and
- * upload it.
+ * {@link runExportJob} owns the status reporting either side of it.
  */
 export const exportProposals = inngest.createFunction(
   {
@@ -36,8 +33,8 @@ export const exportProposals = inngest.createFunction(
       exportId,
       cacheKey: exportStatusCacheKey(exportId),
       channel: Channels.proposalExport(exportId),
-      // The status contract requires all three, so a record missing any of them
-      // fails the first read instead of answering it.
+      // The status contract requires all three; a record missing any fails the
+      // first read instead of answering it.
       seed: { processInstanceId, userId, format },
       produce: async () => {
         // Read every proposal and render the file.
@@ -100,10 +97,6 @@ export const exportProposals = inngest.createFunction(
         const completion = await step.run('upload-to-storage', async () => {
           const fileName = exportFileName(extension);
 
-          // `uploadExportFile` holds the service-role client that bypasses RLS
-          // in a background job, and pins `urlExpiresAt` to the signature it
-          // returns. This step is memoized, so a retry reuses that value rather
-          // than recomputing an expiry past the real one.
           const { signedUrl, urlExpiresAt } = await uploadExportFile({
             filePath: exportFilePath(processInstanceId, fileName),
             fileName,
@@ -114,15 +107,9 @@ export const exportProposals = inngest.createFunction(
           return { fileName, signedUrl, urlExpiresAt };
         });
 
-        return {
-          ...completion,
-          // Carried to the admin so a short file is legible as short. Recorded
-          // on every completed export, not only truncated ones, so the counts
-          // are available to read back rather than inferred from their absence.
-          rowCount,
-          total,
-          truncated,
-        };
+        // Recorded on every completed export, not only truncated ones, so a
+        // short file is legible as short rather than inferred from an absence.
+        return { ...completion, rowCount, total, truncated };
       },
     });
   },
