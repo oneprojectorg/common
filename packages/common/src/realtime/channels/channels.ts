@@ -103,6 +103,18 @@ export const Channels = {
    * subscription when that query unmounts.
    */
   proposalExport: (exportId: string) => `proposalExport:${exportId}` as const,
+
+  /**
+   * Channel for a single personal data export run. Subscribed to by
+   * account.getPersonalDataExportStatus, broadcast to by the
+   * `exportPersonalData` workflow when the run starts and when it settles.
+   *
+   * Scoped per run for the same reason {@link Channels.proposalExport} is, and
+   * with more at stake: the run belongs to one data subject, so a channel shared
+   * across runs would wake other people's queries for it.
+   */
+  personalDataExport: (exportId: string) =>
+    `personalDataExport:${exportId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -142,6 +154,9 @@ export type ProfileCollectionsChannel = ReturnType<
 >;
 export type ProfileMembersChannel = ReturnType<typeof Channels.profileMembers>;
 export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
+export type PersonalDataExportChannel = ReturnType<
+  typeof Channels.personalDataExport
+>;
 
 /**
  * Union of all valid channel types
@@ -163,4 +178,5 @@ export type ChannelName =
   | CollectionResourcesChannel
   | ProfileCollectionsChannel
   | ProfileMembersChannel
-  | ProposalExportChannel;
+  | ProposalExportChannel
+  | PersonalDataExportChannel;
