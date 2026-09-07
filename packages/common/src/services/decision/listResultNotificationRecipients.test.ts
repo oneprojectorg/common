@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@op/db/client', () => {
   const selections: { rows: Array<unknown> } = { rows: [] };
   const transitions: { rows: Array<unknown> } = { rows: [] };
-  const authUserRows: { rows: Array<unknown> } = { rows: [] };
+  const authorRows: { rows: Array<unknown> } = { rows: [] };
   const filters: Array<[unknown, unknown]> = [];
 
   // One builder per `select()`, keyed on the table it reads, so concurrent
@@ -15,7 +15,7 @@ vi.mock('@op/db/client', () => {
   const rowsByTable: Record<string, { rows: Array<unknown> }> = {
     'selections.table': selections,
     'transitions.table': transitions,
-    'auth_users.table': authUserRows,
+    'users.table': authorRows,
   };
 
   const makeBuilder = () => {
@@ -25,6 +25,8 @@ vi.mock('@op/db/client', () => {
         table = source.__table ?? '';
         return builder;
       }),
+      innerJoin: vi.fn(() => builder),
+      leftJoin: vi.fn(() => builder),
       where: vi.fn(() => builder),
       orderBy: vi.fn(() => builder),
       limit: vi.fn(() => Promise.resolve(rowsByTable[table]?.rows ?? [])),
@@ -44,7 +46,7 @@ vi.mock('@op/db/client', () => {
       select: vi.fn(() => makeBuilder()),
       __selections: selections,
       __transitions: transitions,
-      __authUsers: authUserRows,
+      __authors: authorRows,
       __filters: filters,
     },
     desc: vi.fn(),
@@ -62,10 +64,16 @@ vi.mock('@op/db/client', () => {
 // Distinct sentinels per column so a query filtering on the wrong one is
 // visible in `__filters`.
 vi.mock('@op/db/schema', () => ({
-  authUsers: {
-    __table: 'auth_users.table',
-    id: 'auth_users.id',
-    email: 'auth_users.email',
+  authUsers: { id: 'auth_users.id', email: 'auth_users.email' },
+  profiles: {
+    id: 'profiles.id',
+    name: 'profiles.name',
+    email: 'profiles.email',
+  },
+  users: {
+    __table: 'users.table',
+    authUserId: 'users.auth_user_id',
+    profileId: 'users.profile_id',
   },
   decisionProcessResultSelections: {
     __table: 'selections.table',
@@ -104,7 +112,7 @@ const state = () =>
   db as unknown as {
     __selections: { rows: Array<unknown> };
     __transitions: { rows: Array<unknown> };
-    __authUsers: { rows: Array<unknown> };
+    __authors: { rows: Array<unknown> };
     __filters: Array<[unknown, unknown]>;
   };
 
@@ -125,11 +133,8 @@ const proposal = ({
   id: string;
   title: string;
   profileId: string;
-  profileUsers: Array<{
-    authUserId: string;
-    name: string | null;
-    email: string | null;
-  }>;
+  /** Access-control rows: the id is all the code may read from them. */
+  profileUsers: Array<{ authUserId: string }>;
   budget?: unknown;
   deletedAt?: string | null;
   moderationDetachedAt?: string | null;
@@ -141,6 +146,19 @@ const proposal = ({
   proposalData: { budget },
   profile: { name: title, profileUsers },
 });
+
+/** A row of the `users` → `profiles` → `auth.users` identity join. */
+const author = ({
+  authUserId,
+  name,
+  profileEmail = null as string | null,
+  accountEmail = null as string | null,
+}: {
+  authUserId: string;
+  name: string;
+  profileEmail?: string | null;
+  accountEmail?: string | null;
+}) => ({ authUserId, name, profileEmail, accountEmail });
 
 const run = () =>
   listResultNotificationRecipients({
@@ -154,7 +172,18 @@ describe('listResultNotificationRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     state().__filters.length = 0;
-    state().__authUsers.rows = [];
+    state().__authors.rows = [
+      author({
+        authUserId: 'auth-ada',
+        name: 'Ada',
+        profileEmail: 'ada@example.com',
+      }),
+      author({
+        authUserId: 'auth-bo',
+        name: 'Bo',
+        profileEmail: 'bo@example.com',
+      }),
+    ];
     state().__selections.rows = [{ proposalId: 'funded-1', allocated: '8000' }];
     state().__transitions.rows = [
       {
@@ -175,17 +204,13 @@ describe('listResultNotificationRecipients', () => {
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [
-          { authUserId: 'auth-ada', name: 'Ada', email: 'ada@example.com' },
-        ],
+        profileUsers: [{ authUserId: 'auth-ada' }],
       }),
       proposal({
         id: 'not-funded-1',
         title: 'Bike Lane Study',
         profileId: 'profile-not-funded',
-        profileUsers: [
-          { authUserId: 'auth-bo', name: 'Bo', email: 'bo@example.com' },
-        ],
+        profileUsers: [{ authUserId: 'auth-bo' }],
         budget: { amount: 3000, currency: 'USD' },
       }),
     ] as never);
@@ -211,22 +236,64 @@ describe('listResultNotificationRecipients', () => {
     });
   });
 
-  // `profileUsers.email` is an insert-time snapshot nothing syncs; an author
-  // who changed their address must hear about the outcome at the live one.
-  it('prefers the live auth.users address over the profileUsers snapshot', async () => {
-    state().__authUsers.rows = [
-      { id: 'auth-ada', email: 'ada.new@example.com' },
+  // `profileUsers` is the access-control row; the person is their profile.
+  it('takes name and email from the author profile, not the access row', async () => {
+    // Both addresses present: the profile's is the one that must win.
+    state().__authors.rows = [
+      author({
+        authUserId: 'auth-ada',
+        name: 'Ada Lovelace',
+        profileEmail: 'ada.profile@example.com',
+        accountEmail: 'ada.account@example.com',
+      }),
+      author({
+        authUserId: 'auth-bo',
+        name: 'Bo Diddley',
+        profileEmail: 'bo.profile@example.com',
+        accountEmail: 'bo.account@example.com',
+      }),
     ];
 
     const result = await run();
 
-    expect(result.ok && result.notification.recipients[0]?.email).toBe(
-      'ada.new@example.com',
-    );
-    // Bo has no auth row in this fixture, so the snapshot still carries them.
-    expect(result.ok && result.notification.recipients[1]?.email).toBe(
-      'bo@example.com',
-    );
+    expect(result.ok && result.notification.recipients).toEqual([
+      expect.objectContaining({
+        email: 'ada.profile@example.com',
+        values: expect.objectContaining({ name: 'Ada Lovelace' }),
+      }),
+      expect.objectContaining({
+        email: 'bo.profile@example.com',
+        values: expect.objectContaining({ name: 'Bo Diddley' }),
+      }),
+    ]);
+  });
+
+  // A profile carries an email only if its owner filled one in at onboarding.
+  it('falls back to the account address when the profile carries no email', async () => {
+    state().__authors.rows = [
+      author({
+        authUserId: 'auth-ada',
+        name: 'Ada',
+        accountEmail: 'ada.account@example.com',
+      }),
+      author({ authUserId: 'auth-bo', name: 'Bo', accountEmail: null }),
+    ];
+
+    const result = await run();
+
+    // Bo has neither address, so there is nowhere to write to.
+    expect(result.ok && result.notification.recipients).toEqual([
+      expect.objectContaining({ email: 'ada.account@example.com' }),
+    ]);
+  });
+
+  it('reads identities from the users table, keyed by auth user id', async () => {
+    await run();
+
+    expect(state().__filters).toContainEqual([
+      'users.auth_user_id',
+      ['auth-ada', 'auth-bo'],
+    ]);
   });
 
   it('splits the phase pool by the named result row', async () => {
@@ -268,22 +335,26 @@ describe('listResultNotificationRecipients', () => {
       { proposalId: 'late-1', allocated: null },
     ];
     mockPhaseIds.mockResolvedValue(['funded-1']);
+    state().__authors.rows = [
+      ...state().__authors.rows,
+      author({
+        authUserId: 'auth-cy',
+        name: 'Cy',
+        profileEmail: 'cy@example.com',
+      }),
+    ];
     findProposals.mockResolvedValue([
       proposal({
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [
-          { authUserId: 'auth-ada', name: 'Ada', email: 'ada@example.com' },
-        ],
+        profileUsers: [{ authUserId: 'auth-ada' }],
       }),
       proposal({
         id: 'late-1',
         title: 'Late Entry',
         profileId: 'profile-late',
-        profileUsers: [
-          { authUserId: 'auth-cy', name: 'Cy', email: 'cy@example.com' },
-        ],
+        profileUsers: [{ authUserId: 'auth-cy' }],
         budget: { amount: 500, currency: 'USD' },
       }),
     ] as never);
@@ -307,20 +378,26 @@ describe('listResultNotificationRecipients', () => {
   });
 
   it('mails every collaborator once, per proposal', async () => {
+    // `auth-ada-dup` resolves to Ada's inbox in a different case; `auth-anon`
+    // has no profile row at all, so the identity join drops them.
+    state().__authors.rows = [
+      ...state().__authors.rows,
+      author({
+        authUserId: 'auth-ada-dup',
+        name: 'Ada',
+        profileEmail: 'ADA@example.com',
+      }),
+    ];
     findProposals.mockResolvedValue([
       proposal({
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
         profileUsers: [
-          { authUserId: 'auth-ada', name: 'Ada', email: 'ada@example.com' },
-          {
-            authUserId: 'auth-ada-dup',
-            name: 'Ada (dup)',
-            email: 'ADA@example.com',
-          },
-          { authUserId: 'auth-bo', name: 'Bo', email: 'bo@example.com' },
-          { authUserId: 'auth-anon', name: 'Anon', email: null },
+          { authUserId: 'auth-ada' },
+          { authUserId: 'auth-ada-dup' },
+          { authUserId: 'auth-bo' },
+          { authUserId: 'auth-anon' },
         ],
       }),
     ] as never);
@@ -341,18 +418,14 @@ describe('listResultNotificationRecipients', () => {
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [
-          { authUserId: 'auth-ada', name: 'Ada', email: 'ada@example.com' },
-        ],
+        profileUsers: [{ authUserId: 'auth-ada' }],
         moderationDetachedAt: '2026-01-01T00:00:00Z',
       }),
       proposal({
         id: 'not-funded-1',
         title: 'Bike Lane Study',
         profileId: 'profile-not-funded',
-        profileUsers: [
-          { authUserId: 'auth-bo', name: 'Bo', email: 'bo@example.com' },
-        ],
+        profileUsers: [{ authUserId: 'auth-bo' }],
         deletedAt: '2026-01-01T00:00:00Z',
       }),
     ] as never);
@@ -402,7 +475,7 @@ describe('listResultNotificationRecipients', () => {
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [{ authUserId: 'auth-anon', name: 'Anon', email: null }],
+        profileUsers: [{ authUserId: 'auth-anon' }],
       }),
     ] as never);
     mockPhaseIds.mockResolvedValue(['funded-1']);
