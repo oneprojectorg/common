@@ -24,6 +24,16 @@ export function isReviewPhase(phase: { rules?: ReviewPhaseRules }): boolean {
   );
 }
 
+/**
+ * Authors may edit their proposals after submitting them in this phase — the
+ * Process Builder's "Proposal editing" toggle.
+ */
+export function canEditProposals(phase: {
+  rules?: { proposals?: { edit?: boolean } };
+}): boolean {
+  return phase.rules?.proposals?.edit ?? false;
+}
+
 /** Voting happens in this phase. */
 export function isVotingPhase(phase: {
   rules?: { voting?: { submit?: boolean } };

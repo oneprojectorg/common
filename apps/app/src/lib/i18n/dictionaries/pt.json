@@ -1721,5 +1721,8 @@
   "Check all that apply": "Marque todas as opções aplicáveis",
   "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções",
   "Comments could not be loaded": "Não foi possível carregar os comentários",
-  "(opens in a new tab)": "(abre num novo separador)"
+  "(opens in a new tab)": "(abre num novo separador)",
+  "Submitting is final": "O envio é definitivo",
+  "You won't be able to edit your proposal after submitting": "Você não poderá editar sua proposta depois de enviar",
+  "Keep editing": "Continuar a editar"
 }

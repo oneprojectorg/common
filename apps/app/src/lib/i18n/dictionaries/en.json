@@ -1721,5 +1721,8 @@
   "Check all that apply": "Check all that apply",
   "Reviewers select one or more options": "Reviewers select one or more options",
   "Comments could not be loaded": "Comments could not be loaded",
-  "(opens in a new tab)": "(opens in a new tab)"
+  "(opens in a new tab)": "(opens in a new tab)",
+  "Submitting is final": "Submitting is final",
+  "You won't be able to edit your proposal after submitting": "You won't be able to edit your proposal after submitting",
+  "Keep editing": "Keep editing"
 }
