@@ -813,6 +813,12 @@ export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
 
 // Re-export shared types from @op/common so consumers can import from either package
 export type { Proposal, ProposalList } from '@op/common/client';
+export type {
+  ThemeAnalysisErrorCode,
+  ThemeAnalysisOutlier,
+  ThemeAnalysisResponse,
+  ThemeAnalysisResult,
+} from '@op/common/client';
 
 // Legacy type exports (for backwards compatibility during migration)
 export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;

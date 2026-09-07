@@ -103,6 +103,20 @@ export const Channels = {
    * subscription when that query unmounts.
    */
   proposalExport: (exportId: string) => `proposalExport:${exportId}` as const,
+
+  /**
+   * Channel for a single theme-analysis run. Subscribed to by
+   * decision.getThemeAnalysisStatus, broadcast to by the
+   * `analyzeProposalThemes` workflow when it picks the job up and again when
+   * the run settles.
+   *
+   * Scoped per run for the reason `proposalExport` is: one facilitator's
+   * analysis must not invalidate another's. Same short-lived, single-subscriber
+   * shape, and the client registry drops the subscription when the query
+   * unmounts.
+   */
+  proposalThemeAnalysis: (analysisId: string) =>
+    `proposalThemeAnalysis:${analysisId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -142,6 +156,9 @@ export type ProfileCollectionsChannel = ReturnType<
 >;
 export type ProfileMembersChannel = ReturnType<typeof Channels.profileMembers>;
 export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
+export type ProposalThemeAnalysisChannel = ReturnType<
+  typeof Channels.proposalThemeAnalysis
+>;
 
 /**
  * Union of all valid channel types
@@ -163,4 +180,5 @@ export type ChannelName =
   | CollectionResourcesChannel
   | ProfileCollectionsChannel
   | ProfileMembersChannel
-  | ProposalExportChannel;
+  | ProposalExportChannel
+  | ProposalThemeAnalysisChannel;

@@ -1,6 +1,7 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { acceptProposalInviteRouter } from './acceptProposalInvite';
 import { addProposalRelationshipRouter } from './addRelationship';
+import { analyzeProposalThemesRouter } from './analyzeThemes';
 import { createProposalRouter } from './create';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
@@ -8,6 +9,7 @@ import { getProposalRouter } from './get';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
+import { getThemeAnalysisStatusRouter } from './getThemeAnalysisStatus';
 import { listProposalsRouter } from './list';
 import { listContributingProposalsRouter } from './listContributingProposals';
 import { listProposalLocationsRouter } from './listProposalLocations';
@@ -43,4 +45,6 @@ export const proposalsRouter = mergeRouters(
   deleteProposalRouter,
   exportProposalsRouter,
   getExportStatusRouter,
+  analyzeProposalThemesRouter,
+  getThemeAnalysisStatusRouter,
 );

@@ -12,3 +12,4 @@ export * from './adminDecisionInstance';
 export * from './reviewAssignments';
 export * from './transitionData';
 export * from './exportStatus';
+export * from './themeAnalysis';

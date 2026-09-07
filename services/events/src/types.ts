@@ -46,6 +46,23 @@ export const Events = {
       format: z.enum(['csv']),
     }),
   },
+  // Carries the instance, not a corpus. The workflow reads the proposals at run
+  // time, the same way `contentSubmitted` re-reads an item's text: a snapshot in
+  // the payload would analyse whatever the phase held when the button was
+  // pressed, and the proposals it names could have changed underneath it.
+  proposalThemeAnalysisRequested: {
+    name: 'proposal/theme-analysis-requested' as const,
+    schema: z.object({
+      analysisId: z.string().uuid(),
+      processInstanceId: z.string().uuid(),
+      userId: z.string().uuid(),
+      // When the facilitator asked, not when the workflow picked the job up.
+      // Carried so every record the workflow writes is complete on its own: with
+      // this, no write has to read the seed back to preserve it, and no cache
+      // read sits between a finished analysis and the record that reports it.
+      createdAt: z.string().datetime(),
+    }),
+  },
   profileInviteSent: {
     name: 'profile/invites-sent' as const,
     schema: z.object({
