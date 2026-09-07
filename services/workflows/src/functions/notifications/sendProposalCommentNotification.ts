@@ -73,7 +73,6 @@ export const sendProposalCommentNotification = inngest.createFunction(
 
     const proposalAuthor = proposal.submittedBy;
 
-    // One address for a person's proposal; every admin for an org's.
     const recipients = selectEmailRecipients(
       await step.run('get-author-recipients', async () =>
         listProfileRecipients(proposalAuthor),
