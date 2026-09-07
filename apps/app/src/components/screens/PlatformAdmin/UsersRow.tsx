@@ -1,6 +1,7 @@
 'use client';
 
-import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { DATE_TIME_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
@@ -41,6 +42,7 @@ type OrganizationUsers = User['organizationUsers'];
 /** Renders table cells for a user row - must be used inside a <TableRow> */
 export const UsersRowCells = ({ user }: { user: User }) => {
   const format = useFormatter();
+  const timeZone = useDisplayTimeZone();
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -67,7 +69,10 @@ export const UsersRowCells = ({ user }: { user: User }) => {
         {createdAt ? (
           <TimestampTooltip
             className="text-sm font-normal"
-            title={format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
+            title={format.dateTime(createdAt, {
+              ...DATE_TIME_FORMAT,
+              timeZone,
+            })}
           >
             {relativeCreatedAt}
           </TimestampTooltip>
@@ -79,7 +84,10 @@ export const UsersRowCells = ({ user }: { user: User }) => {
         {lastSignInAt ? (
           <TimestampTooltip
             className="text-sm font-normal"
-            title={format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
+            title={format.dateTime(lastSignInAt, {
+              ...DATE_TIME_FORMAT,
+              timeZone,
+            })}
           >
             {relativeLastSignIn}
           </TimestampTooltip>
