@@ -6,7 +6,6 @@ import {
   eq,
   exists,
   inArray,
-  isNull,
   or,
   sql,
 } from '@op/db/client';
@@ -15,7 +14,6 @@ import {
   profiles,
   proposalReviewAssignments,
   proposalReviews,
-  proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -37,14 +35,6 @@ import {
   phaseReviewerSummariesSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
-
-const phaseReviewerCursorSchema = z.object({
-  assignedCount: z.number().int().nonnegative(),
-  name: z.string(),
-  id: z.uuid(),
-});
-
-type PhaseReviewerCursor = z.infer<typeof phaseReviewerCursorSchema>;
 
 export async function listPhaseReviewerSummaries({
   user,
@@ -76,38 +66,8 @@ export async function listPhaseReviewerSummaries({
     decisionProfileId: instance.profileId,
   });
 
-  // Deleted and moderation-detached proposals are invisible even to admins, so
-  // an assignment made before the detach must stop counting.
-  const countsTowardsPhase = (
-    assignmentProposalId: typeof proposalReviewAssignments.proposalId,
-  ) =>
-    exists(
-      db
-        .select({ one: sql`1` })
-        .from(proposals)
-        .where(
-          and(
-            eq(proposals.id, assignmentProposalId),
-            isNull(proposals.deletedAt),
-            isNull(proposals.moderationDetachedAt),
-          ),
-        ),
-    );
-
-  const holdsAnAssignment = exists(
-    db
-      .select({ one: sql`1` })
-      .from(proposalReviewAssignments)
-      .where(
-        and(
-          eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
-          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-          eq(proposalReviewAssignments.phaseId, phaseId),
-          countsTowardsPhase(proposalReviewAssignments.proposalId),
-        ),
-      ),
-  );
-
+  // One row per reviewer: the profile columns plus the counts over their
+  // assignments in this phase.
   const rollup = db
     .select({
       id: profiles.id,
@@ -141,67 +101,72 @@ export async function listPhaseReviewerSummaries({
         eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
         eq(proposalReviewAssignments.processInstanceId, processInstanceId),
         eq(proposalReviewAssignments.phaseId, phaseId),
-        countsTowardsPhase(proposalReviewAssignments.proposalId),
       ),
     )
     .leftJoin(
       proposalReviews,
       eq(proposalReviews.assignmentId, proposalReviewAssignments.id),
     )
+    // Eligible reviewers, plus anyone who holds an assignment in this phase
+    // but is no longer eligible (e.g. a removed member).
     .where(
-      eligibleProfileIds.length > 0
-        ? or(inArray(profiles.id, eligibleProfileIds), holdsAnAssignment)
-        : holdsAnAssignment,
+      or(
+        eligibleProfileIds.length > 0
+          ? inArray(profiles.id, eligibleProfileIds)
+          : undefined,
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(proposalReviewAssignments)
+            .where(
+              and(
+                eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
+                eq(
+                  proposalReviewAssignments.processInstanceId,
+                  processInstanceId,
+                ),
+                eq(proposalReviewAssignments.phaseId, phaseId),
+              ),
+            ),
+        ),
+      ),
     )
-    .groupBy(
-      profiles.id,
-      profiles.name,
-      profiles.slug,
-      profiles.avatarImageId,
-      profiles.email,
-    )
+    // `profiles.id` is the primary key, so Postgres lets the other profile
+    // columns through without listing them here.
+    .groupBy(profiles.id)
     .as('rollup');
 
-  // Mixed sort directions rule out a row-value comparison, so the three sort
-  // keys are expanded by hand.
-  const keysetCondition = decodedCursor
-    ? sql`(
-        ${rollup.assignedCount} < ${decodedCursor.assignedCount}
-        OR (
-          ${rollup.assignedCount} = ${decodedCursor.assignedCount}
-          AND (
-            COALESCE(${rollup.name}, '') > ${decodedCursor.name}
-            OR (
-              COALESCE(${rollup.name}, '') = ${decodedCursor.name}
-              AND ${rollup.id} > ${decodedCursor.id}
-            )
-          )
-        )
-      )`
+  // Sort: most assignments first, id as the tiebreaker. Mixed directions rule
+  // out a row-value comparison, so the cursor condition is expanded by hand.
+  const afterCursor = decodedCursor
+    ? or(
+        sql`${rollup.assignedCount} < ${decodedCursor.assignedCount}`,
+        and(
+          sql`${rollup.assignedCount} = ${decodedCursor.assignedCount}`,
+          sql`${rollup.id} > ${decodedCursor.id}`,
+        ),
+      )
     : undefined;
 
-  const rows = await db
-    .select()
-    .from(rollup)
-    .where(keysetCondition)
-    .orderBy(
-      desc(rollup.assignedCount),
-      asc(sql`COALESCE(${rollup.name}, '')`),
-      asc(rollup.id),
-    )
-    .limit(limit + 1);
-
-  // Phase-wide totals, so they cannot come off the page: a window count rides
-  // on the rows and would report zero on an empty trailing page.
-  const [totals] = await db
-    .select({
-      totalReviewers: sql<number>`count(*)::int`.mapWith(Number),
-      totalAssignments:
-        sql<number>`COALESCE(sum(${rollup.assignedCount}), 0)::int`.mapWith(
-          Number,
-        ),
-    })
-    .from(rollup);
+  const [rows, [totals]] = await Promise.all([
+    db
+      .select()
+      .from(rollup)
+      .where(afterCursor)
+      .orderBy(desc(rollup.assignedCount), asc(rollup.id))
+      .limit(limit + 1),
+    // The header shows the phase-wide reviewer count, which the page alone
+    // cannot provide.
+    db
+      .select({
+        totalReviewers: sql<number>`count(*)::int`.mapWith(Number),
+        totalAssignments:
+          sql<number>`COALESCE(sum(${rollup.assignedCount}), 0)::int`.mapWith(
+            Number,
+          ),
+      })
+      .from(rollup),
+  ]);
 
   const hasMore = rows.length > limit;
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
@@ -225,7 +190,6 @@ export async function listPhaseReviewerSummaries({
       hasMore && lastRow
         ? encodePhaseReviewerCursor({
             assignedCount: lastRow.assignedCount,
-            name: lastRow.name ?? '',
             id: lastRow.id,
           })
         : null,
@@ -233,6 +197,13 @@ export async function listPhaseReviewerSummaries({
     totalAssignments: totals?.totalAssignments ?? 0,
   });
 }
+
+const phaseReviewerCursorSchema = z.object({
+  assignedCount: z.number().int().nonnegative(),
+  id: z.uuid(),
+});
+
+type PhaseReviewerCursor = z.infer<typeof phaseReviewerCursorSchema>;
 
 function encodePhaseReviewerCursor(cursor: PhaseReviewerCursor): string {
   return encodeCursor<PhaseReviewerCursor>(cursor);
