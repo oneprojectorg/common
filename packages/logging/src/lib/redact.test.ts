@@ -35,6 +35,14 @@ describe('redactEmails', () => {
     expect(redactEmails('Person@Example.COM')).toBe('[redacted]@Example.COM');
   });
 
+  it('redacts a percent-encoded address in a query string', () => {
+    // transformMiddlewareRequest logs the URL of every request, and
+    // encodeURIComponent writes `@` as `%40`.
+    expect(redactEmails('/login?email=person%40example.com&next=/')).toBe(
+      '/login?email=[redacted]%40example.com&next=/',
+    );
+  });
+
   it('leaves a version spec alone', () => {
     // The TLD must be alphabetic, so the `0.1.0` here is not a domain.
     expect(redactEmails('@op/logging@0.1.0')).toBe('@op/logging@0.1.0');

@@ -9,12 +9,17 @@
  * reversible from a dictionary of addresses, so it would carry the personal data
  * forward under a different spelling.
  *
+ * `%40` counts as a separator alongside `@`: `transformMiddlewareRequest` logs
+ * the URL and query string of every request, and `encodeURIComponent` writes an
+ * address into a query parameter as `user%40example.com`. The match keeps
+ * whichever separator it found so the logged URL still reads as a URL.
+ *
  * The TLD must be alphabetic and at least two characters so a version spec
  * (`@op/logging@0.1.0`) is not mistaken for an address. The domain segments and
- * the separator use disjoint character classes, which keeps the match linear.
+ * their separator use disjoint character classes, which keeps the match linear.
  */
 const EMAIL_PATTERN =
-  /[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})/g;
+  /[A-Za-z0-9._%+-]+(@|%40)([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})/g;
 
 const REDACTED_LOCAL_PART = '[redacted]';
 
@@ -25,12 +30,13 @@ const REDACTED_LOCAL_PART = '[redacted]';
 export function redactEmails(value: string): string {
   // Every log attribute passes through here, so skip the regex on the strings
   // that cannot contain an address.
-  if (!value.includes('@')) {
+  if (!value.includes('@') && !value.includes('%40')) {
     return value;
   }
 
   return value.replace(
     EMAIL_PATTERN,
-    (_match, domain: string) => `${REDACTED_LOCAL_PART}@${domain}`,
+    (_match, separator: string, domain: string) =>
+      `${REDACTED_LOCAL_PART}${separator}${domain}`,
   );
 }
