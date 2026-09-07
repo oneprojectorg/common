@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mocks. Reading the cached record and refreshing a lapsed URL are
-// shared delivery code with their own tests. What is under test here is what
-// this module decides between them — who may read a record, and what an
-// unreadable one means for the caller.
+// Reading the record and refreshing the URL are shared delivery code with their
+// own tests. What is under test here is who may read a record.
 vi.mock('../exports', () => ({
   readExportRecord: vi.fn(),
   refreshStaleSignedUrl: vi.fn(),
@@ -52,25 +50,20 @@ describe('getPersonalDataExportStatus authorization', () => {
     });
   });
 
-  // The file is one person's whole record, so ownership is the entire
-  // authorization question — there is no role that grants access to someone
-  // else's. An export id is a UUID a caller could hold from a shared link or a
-  // log line.
+  // No role grants access to someone else's record, and an export id is a UUID a
+  // caller could hold from a shared link or a log line.
   it('refuses a caller who is not the subject', async () => {
     await expect(readAs(OTHER_AUTH_ID)).rejects.toThrow(UnauthorizedError);
   });
 
-  // Ownership is settled before anything is signed, so a caller who does not own
-  // the export never causes a working URL to exist for it.
   it('signs nothing for a caller who is not the subject', async () => {
     await expect(readAs(OTHER_AUTH_ID)).rejects.toThrow();
 
     expect(refreshStaleSignedUrl).not.toHaveBeenCalled();
   });
 
-  // A record the cache could not supply — absent, or present but describing no
-  // export — carries no owner, so it must not reach the ownership check. That
-  // check would otherwise compare the caller against `undefined`.
+  // An unreadable record carries no owner, so it must not reach the ownership
+  // check — that would compare the caller against `undefined`.
   it('reports an unreadable record as not found rather than checking its owner', async () => {
     vi.mocked(readExportRecord).mockResolvedValue(null);
 
@@ -82,9 +75,7 @@ describe('getPersonalDataExportStatus authorization', () => {
 });
 
 describe('getPersonalDataExportStatus record reads', () => {
-  // The record schema is not strict, so a field it does not name is stripped
-  // from every parsed record. A truncation notice dropped on the way out leaves
-  // the subject holding a short file that reports success.
+  // Dropped on the way out, the subject holds a short file that reports success.
   it('carries the truncation notice through the read', async () => {
     vi.mocked(readExportRecord).mockResolvedValue({
       ...completedRecord,
@@ -96,9 +87,6 @@ describe('getPersonalDataExportStatus record reads', () => {
     });
   });
 
-  // The read is filed under this pipeline's own namespace. A key shared with the
-  // proposal export would let either status read parse the other's record
-  // against the wrong schema, and report a live export as missing.
   it('reads the record from the personal data export namespace', async () => {
     await readAs(SUBJECT_AUTH_ID);
 
@@ -112,10 +100,6 @@ describe('getPersonalDataExportStatus record reads', () => {
 });
 
 describe('getPersonalDataExportStatus download URL', () => {
-  // The record outlives any single signature, so a subject returning to a
-  // finished export must get a fresh URL rather than a dead one. This module
-  // owns only the key the refresh rebuilds from; the refresh itself is tested
-  // where it lives.
   it('rebuilds the storage key from the record it just authorized', async () => {
     await readAs(SUBJECT_AUTH_ID);
 

@@ -8,22 +8,12 @@ import { EXPORT_CACHE_TTL_SECONDS } from '../exports';
 import { personalDataExportCacheKey } from './constants';
 
 /**
- * Queue a personal data export for the calling subject.
+ * Queue a personal data export for the calling subject. Takes no id, so there is
+ * no parameter through which one account could ask for another's data.
  *
- * The subject is the caller, and nothing else. This takes no id, so there is no
- * parameter through which one account could ask for another's data — the whole
- * authorization question is "is there a session", which the procedure settles
- * before this runs.
- *
- * The account lookup is not a permission check. It confirms the auth user has a
- * `users` row before a background job goes looking for one, so a missing account
- * fails here where the caller sees it rather than inside a workflow whose only
- * report is a failed export record.
- *
- * @param user - The authenticated caller, who is the data subject.
- * @returns The id of the queued export. The caller follows it with
- *   `getPersonalDataExportStatus`.
- * @throws NotFoundError when the auth user has no `users` row.
+ * The account lookup is not a permission check: it fails a missing account here,
+ * where the caller sees it, rather than inside a job whose only report is a
+ * failed export record.
  */
 export const requestPersonalDataExport = async ({
   user,
@@ -34,11 +24,8 @@ export const requestPersonalDataExport = async ({
 
   const exportId = randomUUID();
 
-  // Seeded in full rather than as an id and a state: the status contract
-  // requires `userId`, and that field is what the first status read checks
-  // ownership against. A partial record fails that read instead of answering it.
-  // This cache is the only store of export state — no table stands behind it —
-  // so nothing else can supply what the seed omits.
+  // Seeded in full: `userId` is what the first status read checks ownership
+  // against, and this cache is the only store that could supply it.
   await set(
     personalDataExportCacheKey(exportId),
     {

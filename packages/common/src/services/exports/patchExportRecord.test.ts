@@ -18,9 +18,8 @@ beforeEach(() => {
 });
 
 describe('patchExportRecord', () => {
-  // A workflow reports progress in stages. A write that replaced the record
-  // instead of merging would drop the subject and the format on the way to
-  // `completed`, leaving a record the status read can no longer parse.
+  // A write that replaced the record would drop the subject and the format on
+  // the way to `completed`, leaving a record the status read cannot parse.
   it('merges the update over the stored record', async () => {
     vi.mocked(get).mockResolvedValue({
       exportId: 'e1',
@@ -41,9 +40,6 @@ describe('patchExportRecord', () => {
     expect(ttl).toBe(EXPORT_CACHE_TTL_SECONDS);
   });
 
-  // An eviction between the request and the first status write is how a record
-  // goes missing mid-run. The patch still lands; the reader's schema is what
-  // decides whether what survives describes an export.
   it('writes the patch alone when the cache holds no record', async () => {
     vi.mocked(get).mockResolvedValue(null);
 
@@ -52,9 +48,7 @@ describe('patchExportRecord', () => {
     expect(written()[1]).toEqual({ status: 'processing' });
   });
 
-  // `get` answers `unknown`, and no schema guards the cache on write. Spreading
-  // a string would scatter its character indices across the record, and the
-  // status read would then report a live export as missing.
+  // Spreading a string would scatter its character indices across the record.
   it.each([['a string'], [42], [true]])(
     'ignores a stored value that is not an object (%p)',
     async (stored) => {
@@ -77,9 +71,8 @@ describe('failedExportPatch', () => {
     );
   });
 
-  // The client renders `errorMessage` verbatim and reaches its own translated
-  // copy only when the field is absent. A non-Error throw must still leave a
-  // string here rather than `undefined` reading as "no failure".
+  // The client falls back to its own copy only when the field is absent, so a
+  // non-Error throw must still leave a string here.
   it('still names a failure when the throw was not an Error', () => {
     expect(failedExportPatch('nope')).toMatchObject({
       status: 'failed',

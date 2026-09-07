@@ -18,50 +18,26 @@ import { PERSONAL_DATA_EXPORT_MAX_ROWS_PER_SECTION } from './constants';
 import type { PersonalDataExportSection } from './schemas';
 
 /**
- * The file one personal data export produces.
- *
- * Article 20 covers the data the subject *provided*, so this holds what they
- * wrote, submitted, uploaded, and chose. It deliberately holds no analytics, no
- * inferred attributes, and no moderation verdicts — those are data we derived
- * about them, which the right does not reach.
- *
- * Every collection is the subject's own rows. A post they wrote is theirs; the
- * thread it sits in is not, so a reply carries its parent's id and none of its
- * parent's content.
+ * The file one personal data export produces. Article 20 covers what the subject
+ * provided, so there are no analytics, inferred attributes, or moderation
+ * verdicts here.
  */
 export interface PersonalDataExportFile {
-  /** When the read that produced this file started, as an ISO string. */
   exportedAt: string;
-  /** The subject's account. */
   user: SubjectUser;
-  /**
-   * The subject's personal profile, or null when they never completed one.
-   *
-   * Null is a real state, not a failure: a `users` row exists from the moment an
-   * auth user is created, and the profile arrives at onboarding. Every
-   * collection below is scoped to this profile, so a null here means the export
-   * is the account alone.
-   */
+  /** Null when the subject never completed onboarding. */
   profile: SubjectProfile | null;
-  /** The individual record attached to the profile, when one exists. */
   individual: SubjectIndividual | null;
   posts: SubjectPost[];
   postReactions: SubjectPostReaction[];
   proposals: SubjectProposal[];
-  /**
-   * Attachment records the subject uploaded. Metadata only — the file bytes are
-   * not in this export, and the record names each file so a subject can ask for
-   * one.
-   */
+  /** Metadata only. The stored files are not in this export. */
   attachments: SubjectAttachment[];
   customFormSubmissions: SubjectCustomFormSubmission[];
   voteSubmissions: SubjectVoteSubmission[];
   /**
-   * Sections the row ceiling cut short. Empty on a complete export.
-   *
-   * In the file rather than only on the export record, because the record lives
-   * for a day and the file outlives it. The person holding an incomplete file is
-   * the one who needs to know it is incomplete.
+   * Sections the row ceiling cut short. In the file as well as on the record,
+   * because the file outlives the record by which time only it can say so.
    */
   truncatedSections: PersonalDataExportSection[];
 }
@@ -108,9 +84,7 @@ export interface SubjectIndividual {
 export interface SubjectPost {
   id: string;
   content: string;
-  /** Post this one replies to. The parent's content is not the subject's. */
   parentPostId: string | null;
-  /** Top-level post of the thread this one sits in. */
   rootPostId: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -125,7 +99,6 @@ export interface SubjectPostReaction {
 export interface SubjectProposal {
   id: string;
   processInstanceId: string;
-  /** The proposal itself, as submitted. */
   proposalData: unknown;
   status: string | null;
   visibility: string;
@@ -145,10 +118,7 @@ export interface SubjectAttachment {
 export interface SubjectCustomFormSubmission {
   id: string;
   customFormId: string;
-  /**
-   * The entity the submission is filed against — the subject's own profile, or
-   * the profile of a proposal they submitted.
-   */
+  /** The subject's own profile, or the profile of a proposal they submitted. */
   profileId: string;
   data: Record<string, unknown>;
   createdAt: string | null;
@@ -161,12 +131,9 @@ export interface SubjectVoteSubmission {
   voteData: unknown;
   customData: Record<string, unknown> | null;
   /**
-   * The proposals this vote selected.
-   *
-   * Read from the join table, not from `voteData`. `voteData` records the schema
-   * version, a timestamp, and a signature — it does not hold the choice. A vote
-   * export without this list would be a record that someone voted with no record
-   * of what for.
+   * Read from the join table. `voteData` holds a schema version and a signature,
+   * not the choice, so an export built from it alone would record that someone
+   * voted with no record of what for.
    */
   selectedProposalIds: string[];
   createdAt: string | null;
@@ -174,39 +141,19 @@ export interface SubjectVoteSubmission {
 }
 
 /**
- * Read everything a personal data export covers for one data subject.
+ * Read everything a personal data export covers for one data subject, named by
+ * the auth user id their session resolved to. Nothing widens that.
  *
- * Scope is settled here, not by the caller: the subject is named by their auth
- * user id, and every collection is scoped to the personal profile that
- * `users.profileId` points at. No parameter widens that. A caller cannot ask for
- * someone else's data, because there is nothing to ask with.
+ * Every collection is scoped to the subject's personal profile
+ * (`users.profileId`, the profile `getIndividualProfileId` resolves). Most
+ * writers attribute a row to `getCurrentProfileId` instead, so anything written
+ * while acting as an organisation stays out. That is the only attribution
+ * available: an organisation's profile is shared by its members and no column
+ * records which of them wrote a given row, so widening would hand one member
+ * their colleagues' work.
  *
- * "Their personal profile" is a real limit, and the sharpest edge of this export.
- * Most writers attribute a row to `getCurrentProfileId` — the profile the person
- * last switched to — so someone who posts or submits a proposal while acting as
- * an organisation writes it under the organisation's profile, and it stays out
- * of this file. (Voting is the exception: it attributes to
- * `getIndividualProfileId`, which is this same personal profile.)
- *
- * Widening to every profile they can act as is not the fix. An organisation's
- * profile is shared by its members, and no column records which human wrote an
- * organisation-attributed row — so including those rows would hand one member
- * their colleagues' work. Excluding them is both the only safe reading and the
- * defensible one: what someone writes on an organisation's behalf is the
- * organisation's record.
- *
- * Soft-deleted rows stay out. The subject deleted them, and a moderation
- * takedown (`moderationDetachedAt`) is invisible to everyone including admins;
- * handing either back in an export would undo the deletion it records.
- *
- * Reads run concurrently. Each is indexed on the profile id, and none depends on
- * another's result.
- *
- * @param authUserId - The data subject, taken from the authenticated session by
- *   the caller. Never from client input.
- * @returns The complete file, including the list of sections the row ceiling cut
- *   short.
- * @throws NotFoundError when no `users` row matches the auth user id.
+ * Soft-deleted and moderation-detached rows stay out — returning them would undo
+ * the deletion they record.
  */
 export const collectPersonalData = async ({
   authUserId,
@@ -242,9 +189,8 @@ export const collectPersonalData = async ({
 
   const { profileId, ...user } = account;
 
-  // No personal profile means no authored content to scope. Returning early
-  // keeps every collection query from running against a null profile id, and the
-  // empty collections below are the honest answer rather than a degraded one.
+  // No personal profile means nothing was authored under one. The empty
+  // collections are the answer, not a degraded one.
   if (!profileId) {
     return {
       exportedAt,
@@ -307,7 +253,6 @@ export const collectPersonalData = async ({
   };
 };
 
-/** One collection, plus whether the row ceiling cut it short. */
 interface CollectedSection<T> {
   section: PersonalDataExportSection;
   rows: T[];
@@ -315,16 +260,9 @@ interface CollectedSection<T> {
 }
 
 /**
- * Run one section's query with the row ceiling applied, and report whether it
- * bound.
- *
- * The query asks for one row past the ceiling. That extra row is the only way to
- * tell "exactly at the ceiling" from "more than the ceiling" without a second
- * count query, and reporting the first as truncated would put a false warning on
- * a complete file.
- *
- * @param section - Which collection this is. Travels into `truncatedSections`.
- * @param read - Runs the query with the given limit.
+ * Run a section's query with the row ceiling applied. It asks for one row past
+ * the ceiling, which is what separates "exactly at it" from "beyond it" without
+ * a second count query.
  */
 const collectSection = async <T>({
   section,
@@ -394,9 +332,8 @@ const readIndividual = async (
   return individual ?? null;
 };
 
-// Every collection below orders by `createdAt` then `id`. The timestamp alone is
-// not unique, so two rows written in the same tick would order arbitrarily and
-// two exports of unchanged data would differ.
+// Every collection orders by `createdAt` then `id`: the timestamp alone is not
+// unique, so two exports of unchanged data could otherwise differ.
 const readPosts = (profileId: string) =>
   collectSection<SubjectPost>({
     section: 'posts',
@@ -437,15 +374,9 @@ const readPostReactions = (profileId: string) =>
         .limit(limit),
   });
 
-/**
- * The proposals this subject submitted, as a reusable condition.
- *
- * Two readers need it: the proposals section, and the custom form submissions
- * that are filed against those proposals' profiles. One definition keeps the two
- * from drifting — a submission whose proposal is deleted must not travel while
- * the proposal itself does not.
- */
-const submittedProposals = (profileId: string) =>
+// Shared by the proposals section and the form submissions filed against those
+// proposals' profiles, so a deleted proposal cannot take its submissions with it.
+const whereSubmittedBySubject = (profileId: string) =>
   and(
     eq(proposals.submittedByProfileId, profileId),
     isNull(proposals.deletedAt),
@@ -467,7 +398,7 @@ const readProposals = (profileId: string) =>
           updatedAt: proposals.updatedAt,
         })
         .from(proposals)
-        .where(submittedProposals(profileId))
+        .where(whereSubmittedBySubject(profileId))
         .orderBy(asc(proposals.createdAt), asc(proposals.id))
         .limit(limit),
   });
@@ -497,17 +428,10 @@ const readAttachments = (profileId: string) =>
   });
 
 /**
- * The subject's custom form submissions.
- *
- * `custom_form_submissions.profileId` is the *target* entity's profile, not the
- * submitter's: a proposal idea submission is filed under the proposal's own
- * profile. Reading only `profileId = <subject>` would therefore return the forms
- * attached to their profile and miss every form they filled in to submit a
- * proposal, which is the bulk of what they wrote.
- *
- * The subquery is what keeps that widening honest. It reaches only the profiles
- * of proposals this subject submitted, so a form filed against someone else's
- * proposal stays out.
+ * `custom_form_submissions.profileId` is the target entity's profile, not the
+ * submitter's, so the form someone fills in to submit a proposal is filed under
+ * the proposal. The subquery reaches those, and only for proposals this subject
+ * submitted.
  */
 const readCustomFormSubmissions = (profileId: string) =>
   collectSection<SubjectCustomFormSubmission>({
@@ -532,7 +456,7 @@ const readCustomFormSubmissions = (profileId: string) =>
                 db
                   .select({ profileId: proposals.profileId })
                   .from(proposals)
-                  .where(submittedProposals(profileId)),
+                  .where(whereSubmittedBySubject(profileId)),
               ),
             ),
             isNull(customFormSubmissions.deletedAt),
@@ -546,11 +470,8 @@ const readCustomFormSubmissions = (profileId: string) =>
   });
 
 /**
- * The subject's vote submissions, each carrying the proposals it selected.
- *
- * Two queries rather than a join: one submission selects many proposals, so a
- * join would repeat every submission per selection and the row ceiling would
- * then count selections instead of votes.
+ * Two queries rather than a join: one submission selects many proposals, and a
+ * join would make the row ceiling count selections instead of votes.
  */
 const readVoteSubmissions = async (
   profileId: string,
@@ -583,8 +504,6 @@ const readVoteSubmissions = async (
 
   const submissionIds = submissions.rows.map(({ id }) => id);
 
-  // `inArray` with an empty list builds a `false` predicate in some drivers and
-  // a syntax error in others. Nothing to look up either way.
   const selections = submissionIds.length
     ? await db
         .select({

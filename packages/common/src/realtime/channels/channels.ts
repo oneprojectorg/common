@@ -105,13 +105,8 @@ export const Channels = {
   proposalExport: (exportId: string) => `proposalExport:${exportId}` as const,
 
   /**
-   * Channel for a single personal data export run. Subscribed to by
-   * account.getPersonalDataExportStatus, broadcast to by the
-   * `exportPersonalData` workflow when the run starts and when it settles.
-   *
-   * Scoped per run for the same reason {@link Channels.proposalExport} is, and
-   * with more at stake: the run belongs to one data subject, so a channel shared
-   * across runs would wake other people's queries for it.
+   * Channel for a single personal data export run. Scoped per run, like
+   * {@link Channels.proposalExport}: the run belongs to one data subject.
    */
   personalDataExport: (exportId: string) =>
     `personalDataExport:${exportId}` as const,

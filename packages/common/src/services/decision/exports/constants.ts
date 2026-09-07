@@ -1,22 +1,9 @@
 /**
- * Configuration specific to the proposal export pipeline.
- *
- * The API service, the `@op/common` service layer, and the Inngest workflow
- * share one export record and one storage object. The key format must agree
- * across all three.
- *
- * The bucket, the two time-to-live (TTL) values, and the download options are
- * not here: every export pipeline shares those, and they live in
+ * Configuration specific to the proposal export pipeline. The bucket, the TTLs,
+ * and the download options are shared by every pipeline and live in
  * `services/exports/constants.ts`.
  */
 
-/**
- * Builds the cache key for a proposal export's status record.
- *
- * @param exportId - The export the record belongs to.
- * @returns The namespaced key. Every reader and writer of the record uses this,
- *   so no call site holds its own copy of the format.
- */
 export const exportStatusCacheKey = (exportId: string) =>
   `export:proposal:${exportId}`;
 

@@ -11,26 +11,18 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 
 /**
- * Database-backed tests for the Article 20 export read.
+ * Database-backed tests for the Article 20 export read. `collectPersonalData`
+ * lives in `@op/common`, whose Vitest project has no database, and what must be
+ * proven is which rows real SQL returns.
  *
- * `collectPersonalData` lives in `@op/common`, but that package's Vitest project
- * has no database — every test there mocks its boundaries. What has to be proven
- * here is which rows real SQL returns, so the test lives in the workspace that
- * owns the seeded test instance.
- *
- * One property carries all of them: the export holds the calling subject's rows
- * and nobody else's. This is the file where a scoping mistake stops being a bug
- * and becomes a breach, so every case pairs "the subject's row is present" with
- * "the other person's row is absent" — a filter that returns everything passes
- * the first assertion on its own.
+ * Every case pairs "the subject's row is present" with "the other person's row
+ * is absent": a filter that returns everything passes the first on its own.
  */
 describe.concurrent('collectPersonalData', () => {
-  // Posts and custom forms are written directly rather than through their
-  // services. `createPostOnProfile` authors as `getCurrentProfileId`, which is
-  // the profile the user last switched to — the organisation's, for a user who
-  // just created one — so it cannot address the personal profile this export is
-  // scoped to. The only derived write these inserts skip is the
-  // `posts_to_profiles` feed index, which the export does not read.
+  // Written directly because `createPostOnProfile` authors as
+  // `getCurrentProfileId` and so cannot address the personal profile. The only
+  // derived write skipped is the `posts_to_profiles` feed index, which the
+  // export does not read.
   const writePost = async (profileId: string, content: string) => {
     const [post] = await db
       .insert(posts)
@@ -45,14 +37,9 @@ describe.concurrent('collectPersonalData', () => {
   };
 
   /**
-   * A participant who is acting as themselves.
-   *
-   * The writers this export reads from attribute a row to `getCurrentProfileId`
-   * — the profile the person last switched to. A user who has just created an
-   * organisation is switched to it, so anything they write lands under the
-   * organisation's profile and out of their personal export by design. Pinning
-   * `currentProfileId` back to their own profile is what makes these fixtures a
-   * participant rather than an organisation, which is the case under test.
+   * A participant acting as themselves. Pinning `currentProfileId` back to their
+   * own profile is what separates this fixture from someone writing on an
+   * organisation's behalf, whose rows stay out of the export by design.
    */
   const createParticipant = async (
     testData: TestDecisionsDataManager,
@@ -157,12 +144,9 @@ describe.concurrent('collectPersonalData', () => {
     expect(exportedIds).not.toContain(theirs.id);
   });
 
-  // The subquery this pins down is the one place the read deliberately looks
-  // outside the subject's own profile. `custom_form_submissions.profileId` is
-  // the *target* entity's profile, so the form somebody fills in to submit a
-  // proposal is filed under the proposal, not under them. Reading only their own
-  // profile would drop the bulk of what they wrote; reaching one row too far
-  // would hand them somebody else's answers.
+  // The one place the read looks outside the subject's own profile: a proposal's
+  // form submission is filed under the proposal. Reading only their profile
+  // drops most of what they wrote; one row too far hands them someone else's.
   it('reaches submissions filed against the subject’s own proposals, and stops there', async ({
     task,
     onTestFinished,
@@ -203,10 +187,7 @@ describe.concurrent('collectPersonalData', () => {
     expect(exportedIds).not.toContain(onTheirProposal.id);
   });
 
-  // A `users` row exists from the moment an auth user is created; the personal
-  // profile arrives at onboarding. Someone who never finished has an account to
-  // export and nothing authored under it, and that is an answer rather than a
-  // failure — the alternative is six queries against a null profile id.
+  // The `users` row exists from sign-up; the profile arrives at onboarding.
   it('exports the account alone when the subject has no personal profile', async ({
     task,
     onTestFinished,
@@ -231,10 +212,8 @@ describe.concurrent('collectPersonalData', () => {
     expect(file.truncatedSections).toEqual([]);
   });
 
-  // Article 20 covers what the subject provided. `users` carries columns we set
-  // about them — which organisation they last opened, which profile they are
-  // acting as — and those are our records of their session, not their data. They
-  // are also internal ids that would make the file harder to read, not easier.
+  // Article 20 covers what the subject provided. Which org they last opened and
+  // which profile they act as are our records of their session, not their data.
   it('leaves our own bookkeeping out of the account section', async ({
     task,
     onTestFinished,

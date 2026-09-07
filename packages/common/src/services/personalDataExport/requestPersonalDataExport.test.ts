@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mocks: requestPersonalDataExport is orchestration over an account
-// lookup, the status cache, and the event bus. We drive those and assert what it
-// hands onward — the job it asks for, and the record the first status read will
-// find.
 vi.mock('@op/cache', () => ({
   set: vi.fn(),
 }));
@@ -31,11 +27,8 @@ beforeEach(() => {
 });
 
 describe('requestPersonalDataExport request', () => {
-  // The subject is the caller and nothing else. The payload is asserted whole
-  // rather than by naming keys that should be absent: a subject id put back by
-  // way of a spread adds a key nobody thought to write a test for, and only an
-  // exact match notices that. Article 20 makes that the difference between an
-  // export and a data breach.
+  // Asserted whole rather than by naming absent keys: a subject id put back by
+  // way of a spread is the difference between an export and a data breach.
   it('tells the job which subject and nothing else', async () => {
     const { exportId } = await requestPersonalDataExport({ user });
 
@@ -50,9 +43,8 @@ describe('requestPersonalDataExport request', () => {
     });
   });
 
-  // A background job's only report is the export record, so an auth user with no
-  // account row would surface as a failed export rather than as the missing
-  // account it is. This fails where the caller can see it.
+  // Otherwise a missing account surfaces as a failed export rather than as the
+  // missing account it is.
   it('does not queue a job for an auth user with no account', async () => {
     vi.mocked(assertUserByAuthId).mockRejectedValueOnce(new Error('User'));
 
@@ -74,10 +66,8 @@ describe('requestPersonalDataExport status record', () => {
     return record;
   };
 
-  // The first status read almost always lands while the export is still
-  // pending, so a record seeded without the fields the status contract requires
-  // fails validation on the most common read of all — reported to the subject as
-  // a broken export rather than one that has not started yet.
+  // The first status read almost always lands while the run is still pending, so
+  // an incomplete seed fails the most common read of all.
   it('seeds a record the first status read can be answered from', async () => {
     const { exportId } = await requestPersonalDataExport({ user });
 
@@ -89,19 +79,15 @@ describe('requestPersonalDataExport status record', () => {
     });
   });
 
-  // `userId` is the whole ownership check on every later read. A record seeded
-  // without it parses as malformed and the export becomes unreadable; a record
-  // seeded with the wrong one hands the file to someone else.
+  // `userId` is the whole ownership check on every later read.
   it('records the subject the status read will check against', async () => {
     await requestPersonalDataExport({ user });
 
     expect(seededRecord().userId).toBe(AUTH_USER_ID);
   });
 
-  // Three ids have to agree: the one handed back to the client, the key the
-  // record is filed under, and the one the job is told to update. Were they to
-  // diverge the client would read a record nothing ever writes to, and wait out
-  // its timeout on an export that succeeded.
+  // Diverge these and the client waits out its timeout on an export that
+  // succeeded, reading a record nothing ever writes to.
   it('files the record under the id it hands back', async () => {
     const { exportId } = await requestPersonalDataExport({ user });
 
