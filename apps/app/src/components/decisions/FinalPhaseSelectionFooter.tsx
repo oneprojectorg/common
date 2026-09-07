@@ -1,7 +1,6 @@
 'use client';
 
-import type { Proposal } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
+import type { ResultNotificationMessages } from '@op/common/client';
 import {
   FooterBar,
   FooterBarCenter,
@@ -12,22 +11,21 @@ import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
-import { SelectionConfirmShell } from './SelectionConfirmShell';
-import { resolvePresentationFields } from './selection/proposalPresentation';
+import { ComposeNotificationsDialog } from './ComposeNotificationsDialog';
 
 interface FinalPhaseSelectionFooterProps {
-  selectedProposals: Proposal[];
   numSelected: number;
+  /** Every eligible proposal in the phase, selected or not. */
+  totalCandidates: number;
   isConfirmOpen: boolean;
   onConfirmOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: (messages: ResultNotificationMessages) => void;
   isSubmitting: boolean;
 }
 
 export const FinalPhaseSelectionFooter = ({
-  selectedProposals,
   numSelected,
+  totalCandidates,
   isConfirmOpen,
   onConfirmOpenChange,
   onConfirm,
@@ -47,10 +45,16 @@ export const FinalPhaseSelectionFooter = ({
       </FooterBarStart>
       <FooterBarCenter />
       <FooterBarEnd>
-        <SelectionConfirmShell
+        <ComposeNotificationsDialog
+          fundedCount={numSelected}
+          // Selections are drawn from the candidate pool, so this can't go
+          // negative — but a stale count under an open dialog shouldn't be
+          // able to render "-1 recipients" either.
+          notFundedCount={Math.max(totalCandidates - numSelected, 0)}
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
-          triggerDisabled={numSelected === 0}
+          onConfirm={onConfirm}
+          isSubmitting={isSubmitting}
           triggerLabel={
             <>
               <span className="sm:hidden">{t('Confirm')}</span>
@@ -59,60 +63,8 @@ export const FinalPhaseSelectionFooter = ({
               </span>
             </>
           }
-          headerLabel={t('Confirm winning proposals')}
-          confirmLabel={t('Publish results')}
-          isSubmitting={isSubmitting}
-          onConfirm={onConfirm}
-        >
-          <div className="space-y-4">
-            <p className="text-base">
-              {t(
-                'These {numProposals} proposals will be funded and results will be shared with all participants.',
-                { numProposals: numSelected },
-              )}
-            </p>
-
-            <div className="space-y-2">
-              {selectedProposals.map((proposal) => (
-                <FinalPhaseProposalCard key={proposal.id} proposal={proposal} />
-              ))}
-            </div>
-          </div>
-        </SelectionConfirmShell>
+        />
       </FooterBarEnd>
     </FooterBar>
-  );
-};
-
-const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
-  const t = useTranslations();
-  const { title, budget, categories, submitterName } =
-    resolvePresentationFields({
-      proposal,
-      defaultTitle: t('Untitled Proposal'),
-    });
-  const hasCategories = categories.length > 0;
-  const voteCount = proposal.voteCount ?? 0;
-
-  return (
-    <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted p-3">
-      <div className="flex items-start justify-between gap-2">
-        <span className="truncate font-serif text-sm">
-          <bdi>{title}</bdi>
-        </span>
-        {budget ? <span className="font-serif text-sm">{budget}</span> : null}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        {submitterName ? <span>{submitterName}</span> : null}
-        {submitterName && hasCategories ? <Bullet /> : null}
-        {categories.map((category) => (
-          <Badge key={category} variant="secondary">
-            {category}
-          </Badge>
-        ))}
-        {(submitterName || hasCategories) && <Bullet />}
-        <span>{t('{count} votes', { count: voteCount })}</span>
-      </div>
-    </div>
   );
 };

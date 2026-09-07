@@ -168,6 +168,12 @@ export {
 } from './services/decision/templateLocation';
 export { templateCollectsBudget } from './services/decision/templateBudget';
 export {
+  RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
+  type ResultNotificationMessages,
+  resultNotificationMessagesSchema,
+  resultNotificationToken,
+} from './services/decision/resultNotificationTemplate';
+export {
   buildMoneyFieldAnswer,
   getMoneyFieldCurrency,
   getMoneyFieldMinimum,

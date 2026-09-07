@@ -11,3 +11,4 @@ export * from './sendPostCommentNotification';
 export * from './sendProposalCommentNotification';
 export * from './sendProposalMergedNotification';
 export * from './sendProposalRejectedNotification';
+export * from './sendDecisionResultNotifications';
