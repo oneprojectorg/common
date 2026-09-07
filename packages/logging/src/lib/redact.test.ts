@@ -43,6 +43,28 @@ describe('redactEmails', () => {
     );
   });
 
+  it('keeps sentence punctuation that trails an address', () => {
+    expect(redactEmails('Invited person@example.com.')).toBe(
+      'Invited [redacted]@example.com.',
+    );
+  });
+
+  it('leaves a run of percent signs alone in linear time', () => {
+    // The scanning regex this replaced backtracked here — CodeQL flagged it as
+    // polynomial on strings with many '%' (code-scanning/39).
+    const hostile = `${'%'.repeat(50_000)}@`;
+    const start = performance.now();
+
+    expect(redactEmails(hostile)).toBe(hostile);
+    expect(performance.now() - start).toBeLessThan(1_000);
+  });
+
+  it('leaves a candidate longer than an address can be alone', () => {
+    const overlong = `${'a'.repeat(255)}@example.com`;
+
+    expect(redactEmails(overlong)).toBe(overlong);
+  });
+
   it('leaves a version spec alone', () => {
     // The TLD must be alphabetic, so the `0.1.0` here is not a domain.
     expect(redactEmails('@op/logging@0.1.0')).toBe('@op/logging@0.1.0');

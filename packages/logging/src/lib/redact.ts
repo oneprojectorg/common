@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Email addresses are personal data, and a log record shipped to PostHog has no
  * retention limit, so an address written to one outlives every purpose it was
@@ -9,34 +11,79 @@
  * reversible from a dictionary of addresses, so it would carry the personal data
  * forward under a different spelling.
  *
- * `%40` counts as a separator alongside `@`: `transformMiddlewareRequest` logs
- * the URL and query string of every request, and `encodeURIComponent` writes an
- * address into a query parameter as `user%40example.com`. The match keeps
- * whichever separator it found so the logged URL still reads as a URL.
- *
- * The TLD must be alphabetic and at least two characters so a version spec
- * (`@op/logging@0.1.0`) is not mistaken for an address. The domain segments and
- * their separator use disjoint character classes, which keeps the match linear.
+ * Detection splits the string into candidates and asks zod whether each one is
+ * an address, rather than scanning for a pattern. A scanning regex has to leave
+ * its start position free, and the local part and the `%40` separator share the
+ * `%` character, so the two competed and the match backtracked — CodeQL flagged
+ * it as polynomial on strings with many `%` (code-scanning/39). Splitting on a
+ * plain character class is linear, and zod's own pattern is anchored and reads a
+ * candidate no longer than an address can be.
  */
-const EMAIL_PATTERN =
-  /[A-Za-z0-9._%+-]+(@|%40)([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})/g;
+const emailSchema = z.email();
 
-const REDACTED_LOCAL_PART = '[redacted]';
+/** RFC 5321 caps an address at 254 characters. */
+const MAX_EMAIL_LENGTH = 254;
 
 /**
- * Replace every email address in `value` with `[redacted]@<domain>`. Leaves a
- * string with no address untouched.
+ * Characters that cannot appear in an address zod accepts, so they end a
+ * candidate. `%` is kept inside a candidate for the percent-encoded separator.
+ */
+const CANDIDATE_BOUNDARY = /([^A-Za-z0-9_'+\-.@%]+)/;
+
+/**
+ * Legal inside an address but usually sentence punctuation when it trails one,
+ * as in "Invited person@example.com."
+ */
+const TRAILING_PUNCTUATION = new Set(['.', "'", '+', '_', '-']);
+
+const REDACTED_LOCAL_PART = '[redacted]';
+const ENCODED_SEPARATOR = '%40';
+
+/**
+ * Replace every email address in `value` with `[redacted]@<domain>`, keeping the
+ * separator as written so a percent-encoded address still reads as a URL. Leaves
+ * a string with no address untouched.
  */
 export function redactEmails(value: string): string {
-  // Every log attribute passes through here, so skip the regex on the strings
+  // Every log attribute passes through here, so skip the work on the strings
   // that cannot contain an address.
-  if (!value.includes('@') && !value.includes('%40')) {
+  if (!value.includes('@') && !value.includes(ENCODED_SEPARATOR)) {
     return value;
   }
 
-  return value.replace(
-    EMAIL_PATTERN,
-    (_match, separator: string, domain: string) =>
-      `${REDACTED_LOCAL_PART}${separator}${domain}`,
-  );
+  // The capturing group keeps the boundaries in the result, so joining the
+  // parts back together reproduces the original string.
+  return value.split(CANDIDATE_BOUNDARY).map(redactCandidate).join('');
+}
+
+function redactCandidate(candidate: string): string {
+  let end = candidate.length;
+  while (end > 0 && TRAILING_PUNCTUATION.has(candidate.charAt(end - 1))) {
+    end--;
+  }
+
+  const core = candidate.slice(0, end);
+  if (core.length > MAX_EMAIL_LENGTH) {
+    return candidate;
+  }
+
+  // `encodeURIComponent` writes `@` as `%40`, so a URL carries the address in
+  // that spelling. Normalise it for the check and keep the original for output.
+  const separatorIndex = core.includes('@')
+    ? core.indexOf('@')
+    : core.indexOf(ENCODED_SEPARATOR);
+  if (separatorIndex === -1) {
+    return candidate;
+  }
+
+  const separatorLength =
+    core.charAt(separatorIndex) === '@' ? 1 : ENCODED_SEPARATOR.length;
+  const localPart = core.slice(0, separatorIndex);
+  const domain = core.slice(separatorIndex + separatorLength);
+
+  if (!emailSchema.safeParse(`${localPart}@${domain}`).success) {
+    return candidate;
+  }
+
+  return `${REDACTED_LOCAL_PART}${candidate.slice(separatorIndex)}`;
 }

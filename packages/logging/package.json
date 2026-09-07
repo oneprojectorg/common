@@ -25,7 +25,8 @@
     "@opentelemetry/sdk-metrics": "^2.2.0",
     "@opentelemetry/semantic-conventions": "^1.39.0",
     "@vercel/otel": "^2.1.0",
-    "posthog-js": "^1.236.4"
+    "posthog-js": "^1.236.4",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
