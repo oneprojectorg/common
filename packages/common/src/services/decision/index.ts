@@ -95,6 +95,7 @@ export * from './runGenerateReviewAssignments';
 export * from './backfillReviewAssignments';
 export * from './reconcileReviewAssignments';
 export * from './getEligibleReviewerProfileIds';
+export * from './reviews';
 export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';

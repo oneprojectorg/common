@@ -1677,6 +1677,7 @@
   "No reviewers yet": "এখনও কোনো পর্যালোচক নেই",
   "Give people the reviewer role and they will appear here, ready to take proposals.": "লোকেদের পর্যালোচকের ভূমিকা দিন, তারা এখানে দেখা যাবে এবং প্রস্তাবনা নিতে প্রস্তুত থাকবে।",
   "Reviewers": "পর্যালোচকগণ",
+  "Loading more reviewers...": "আরও পর্যালোচক লোড হচ্ছে...",
   "Amount": "পরিমাণ",
   "Reviewers enter an amount": "পর্যালোচকরা একটি পরিমাণ লিখবেন",
   "Assigned proposals ({count})": "নির্ধারিত প্রস্তাব ({count})",
