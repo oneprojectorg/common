@@ -4,6 +4,7 @@ import {
   formatCurrency,
   formatDate,
   formatDateRange,
+  formatDeadline,
   formatNumber,
 } from './formatting';
 
@@ -62,6 +63,24 @@ describe('formatDate', () => {
         timeZone: 'America/Los_Angeles',
       }),
     ).toBe('Jul 5');
+  });
+});
+
+describe('formatDeadline', () => {
+  // A phase end is enforced at this exact instant: the transition is scheduled
+  // for it and the cron fires the moment it comes due. So the string has to
+  // tell each viewer the wall-clock time they actually have to beat.
+  it('gives each viewer their own wall-clock cutoff for one instant', () => {
+    expect(formatDeadline(MIDNIGHT_EASTERN, 'en-US', 'America/New_York')).toBe(
+      'Jul 6, 12:00 AM EDT',
+    );
+    expect(
+      formatDeadline(MIDNIGHT_EASTERN, 'en-US', 'America/Los_Angeles'),
+    ).toBe('Jul 5, 9:00 PM PDT');
+  });
+
+  it('names the zone so a bare date can never be read as local midnight', () => {
+    expect(formatDeadline(MIDNIGHT_EASTERN)).toContain('UTC');
   });
 });
 

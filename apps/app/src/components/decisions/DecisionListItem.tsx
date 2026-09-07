@@ -1,6 +1,7 @@
 'use client';
 
-import { formatDate } from '@/utils/formatting';
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { formatDeadline } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
@@ -334,6 +335,7 @@ const DecisionStat = ({
 const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
   const t = useTranslations();
   const locale = useLocale();
+  const timeZone = useDisplayTimeZone();
   const closingSoon = isClosingSoon(closingDate);
 
   return (
@@ -345,7 +347,7 @@ const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
     >
       <LuCalendar className="size-4" aria-hidden />
       {t('decisions.closesOnDate', {
-        date: formatDate(closingDate, locale),
+        date: formatDeadline(closingDate, locale, timeZone),
       })}
     </div>
   );

@@ -57,6 +57,39 @@ export function formatDate(
 }
 
 /**
+ * Format a moment the viewer has to act before — a phase close, a results
+ * announcement.
+ *
+ * Always carries the time and the zone, because a phase end is enforced at an
+ * exact instant: `buildExpectedTransitions` schedules the transition at the
+ * stored `endDate` and the cron in `transitionMonitor` fires it the moment it
+ * comes due. Rendering only the calendar day tells a viewer west of the zone
+ * the date was picked in that they have until the end of a day that is already
+ * over for the process.
+ *
+ * Pass `timeZone` from `useDisplayTimeZone()` so the string is the viewer's
+ * own wall-clock time once mounted.
+ */
+export const DEADLINE_FORMAT = {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+} as const;
+
+export function formatDeadline(
+  dateString: string,
+  locale: string = 'en-US',
+  timeZone: string = APP_TIME_ZONE,
+): string {
+  return new Date(dateString).toLocaleString(locale, {
+    ...DEADLINE_FORMAT,
+    timeZone,
+  });
+}
+
+/**
  * Format date range for phases and events
  */
 export function formatDateRange(
