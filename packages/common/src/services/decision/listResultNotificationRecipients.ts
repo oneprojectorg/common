@@ -241,15 +241,15 @@ function toRecipients({
 }
 
 /**
- * Resolves each author to their own profile — the identity record, which
- * always carries a name and may carry an email. `profileUsers.name` /
- * `.email` are deliberately not read: that row only records who was granted
- * access to the proposal, and its copies of both fields are snapshots nothing
- * keeps in sync.
+ * Who each author is, from the two columns that are actually authoritative:
+ * the display name from their own profile, the address from their account.
  *
- * `auth.users` is the delivery fallback when a profile has no email of its
- * own, so an author who never filled one in during onboarding still hears the
- * outcome. Same source `listProcessParticipants` uses.
+ * `profileUsers.name` / `.email` are never read — that row records who was
+ * granted access to the proposal, and its copies of both are insert-time
+ * snapshots nothing keeps in sync. `profiles.email` is not read either: it is
+ * an unverified public contact field somebody typed into a profile form, not
+ * a mailbox we know reaches them. `auth.users.email` is the address they sign
+ * in with, and the one every other notification sender delivers to.
  */
 async function readAuthorIdentities(
   authUserIds: Array<string>,
@@ -262,8 +262,7 @@ async function readAuthorIdentities(
     .select({
       authUserId: users.authUserId,
       name: profiles.name,
-      profileEmail: profiles.email,
-      accountEmail: authUsers.email,
+      email: authUsers.email,
     })
     .from(users)
     .innerJoin(profiles, eq(profiles.id, users.profileId))
@@ -271,10 +270,7 @@ async function readAuthorIdentities(
     .where(inArray(users.authUserId, [...new Set(authUserIds)]));
 
   return new Map(
-    rows.map(({ authUserId, name, profileEmail, accountEmail }) => [
-      authUserId,
-      { name, email: profileEmail ?? accountEmail },
-    ]),
+    rows.map(({ authUserId, name, email }) => [authUserId, { name, email }]),
   );
 }
 

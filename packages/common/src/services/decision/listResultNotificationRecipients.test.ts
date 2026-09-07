@@ -147,18 +147,19 @@ const proposal = ({
   profile: { name: title, profileUsers },
 });
 
-/** A row of the `users` → `profiles` → `auth.users` identity join. */
+/**
+ * A row of the `users` → `profiles` → `auth.users` identity join: the display
+ * name from the author's own profile, the address from their account.
+ */
 const author = ({
   authUserId,
   name,
-  profileEmail = null as string | null,
-  accountEmail = null as string | null,
+  email = null as string | null,
 }: {
   authUserId: string;
   name: string;
-  profileEmail?: string | null;
-  accountEmail?: string | null;
-}) => ({ authUserId, name, profileEmail, accountEmail });
+  email?: string | null;
+}) => ({ authUserId, name, email });
 
 const run = () =>
   listResultNotificationRecipients({
@@ -176,12 +177,12 @@ describe('listResultNotificationRecipients', () => {
       author({
         authUserId: 'auth-ada',
         name: 'Ada',
-        profileEmail: 'ada@example.com',
+        email: 'ada@example.com',
       }),
       author({
         authUserId: 'auth-bo',
         name: 'Bo',
-        profileEmail: 'bo@example.com',
+        email: 'bo@example.com',
       }),
     ];
     state().__selections.rows = [{ proposalId: 'funded-1', allocated: '8000' }];
@@ -236,21 +237,20 @@ describe('listResultNotificationRecipients', () => {
     });
   });
 
-  // `profileUsers` is the access-control row; the person is their profile.
-  it('takes name and email from the author profile, not the access row', async () => {
-    // Both addresses present: the profile's is the one that must win.
+  // `profileUsers` is the access-control row; the person is their profile. The
+  // address is the account's, though — `profiles.email` is an unverified
+  // contact field, not a mailbox we know reaches them.
+  it('takes the name from the author profile and the address from the account', async () => {
     state().__authors.rows = [
       author({
         authUserId: 'auth-ada',
         name: 'Ada Lovelace',
-        profileEmail: 'ada.profile@example.com',
-        accountEmail: 'ada.account@example.com',
+        email: 'ada.account@example.com',
       }),
       author({
         authUserId: 'auth-bo',
         name: 'Bo Diddley',
-        profileEmail: 'bo.profile@example.com',
-        accountEmail: 'bo.account@example.com',
+        email: 'bo.account@example.com',
       }),
     ];
 
@@ -258,32 +258,44 @@ describe('listResultNotificationRecipients', () => {
 
     expect(result.ok && result.notification.recipients).toEqual([
       expect.objectContaining({
-        email: 'ada.profile@example.com',
+        email: 'ada.account@example.com',
         values: expect.objectContaining({ name: 'Ada Lovelace' }),
       }),
       expect.objectContaining({
-        email: 'bo.profile@example.com',
+        email: 'bo.account@example.com',
         values: expect.objectContaining({ name: 'Bo Diddley' }),
       }),
     ]);
   });
 
-  // A profile carries an email only if its owner filled one in at onboarding.
-  it('falls back to the account address when the profile carries no email', async () => {
+  // Structural, because the fixtures alone can't prove a column is unread:
+  // the identity query must not so much as select `profiles.email`.
+  it('never reads the profile contact address', async () => {
+    await run();
+
+    const identitySelect = vi
+      .mocked(db.select)
+      .mock.calls.map(([columns]) => Object.values(columns ?? {}))
+      .find((columns) => columns.includes('profiles.name'));
+
+    expect(identitySelect).toContain('auth_users.email');
+    expect(identitySelect).not.toContain('profiles.email');
+  });
+
+  it('skips an author whose account carries no address', async () => {
     state().__authors.rows = [
       author({
         authUserId: 'auth-ada',
         name: 'Ada',
-        accountEmail: 'ada.account@example.com',
+        email: 'ada@example.com',
       }),
-      author({ authUserId: 'auth-bo', name: 'Bo', accountEmail: null }),
+      author({ authUserId: 'auth-bo', name: 'Bo', email: null }),
     ];
 
     const result = await run();
 
-    // Bo has neither address, so there is nowhere to write to.
     expect(result.ok && result.notification.recipients).toEqual([
-      expect.objectContaining({ email: 'ada.account@example.com' }),
+      expect.objectContaining({ email: 'ada@example.com' }),
     ]);
   });
 
@@ -340,7 +352,7 @@ describe('listResultNotificationRecipients', () => {
       author({
         authUserId: 'auth-cy',
         name: 'Cy',
-        profileEmail: 'cy@example.com',
+        email: 'cy@example.com',
       }),
     ];
     findProposals.mockResolvedValue([
@@ -385,7 +397,7 @@ describe('listResultNotificationRecipients', () => {
       author({
         authUserId: 'auth-ada-dup',
         name: 'Ada',
-        profileEmail: 'ADA@example.com',
+        email: 'ADA@example.com',
       }),
     ];
     findProposals.mockResolvedValue([
