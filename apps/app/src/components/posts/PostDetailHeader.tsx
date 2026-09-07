@@ -11,8 +11,8 @@ import { Link } from '@/lib/i18n/routing';
 import ErrorBoundary from '../ErrorBoundary';
 import { LocaleChooser } from '../LocaleChooser';
 import { SearchInput } from '../SearchInput';
-import { UserAvatarMenu } from '../SiteHeader';
 import { CreateMenu } from '../SiteHeader/CreateMenu';
+import { UserAvatarMenu } from '../SiteHeader/UserAvatarMenu';
 
 export const PostDetailHeader = () => {
   const t = useTranslations();

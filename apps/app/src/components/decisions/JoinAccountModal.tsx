@@ -23,7 +23,7 @@ import { type ReactNode, Suspense, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { AuthCodeField, AuthEmailField, isValidOtpLength } from '../AuthPanel';
-import { HeaderUserMenu } from '../SiteHeader';
+import { HeaderUserMenu } from '../SiteHeader/HeaderUserMenu';
 import { isValidEmail } from './emailUtils';
 
 /**
