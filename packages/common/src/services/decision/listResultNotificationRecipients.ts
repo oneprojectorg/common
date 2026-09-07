@@ -2,7 +2,9 @@ import { db, eq, inArray } from '@op/db/client';
 import {
   authUsers,
   decisionProcessResultSelections,
+  profiles,
   stateTransitionHistory,
+  users,
 } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
@@ -125,7 +127,7 @@ export async function listResultNotificationRecipients({
   });
 
   const reachable = proposals.filter(isProposalReachable);
-  const currentEmails = await readCurrentEmails(
+  const authors = await readAuthorIdentities(
     reachable.flatMap((proposal) =>
       proposal.profile.profileUsers.map(({ authUserId }) => authUserId),
     ),
@@ -135,7 +137,7 @@ export async function listResultNotificationRecipients({
     toRecipients({
       proposal,
       allocated: allocatedByProposalId.get(proposal.id),
-      currentEmails,
+      authors,
     }),
   );
 
@@ -162,17 +164,27 @@ export async function listResultNotificationRecipients({
   };
 }
 
+/** Who an author is, resolved from their own profile. */
+interface AuthorIdentity {
+  name: string;
+  email: string | null;
+}
+
 /**
  * One message per (author, proposal): a co-authored proposal mails every
  * collaborator, and an author with two proposals hears about each. Dedup is
- * per inbox within the proposal, so a duplicated `profileUsers` row can't
+ * per inbox within the proposal, so two access rows for one person can't
  * double up. `allocated` is `undefined` for a proposal the result row did not
  * select, and `null` for one it selected without an amount.
+ *
+ * `profileUsers` contributes nothing but the `authUserId` — it is an
+ * access-control row, and its `name`/`email` are insert-time snapshots of
+ * whoever was granted access. The person is their profile.
  */
 function toRecipients({
   proposal,
   allocated,
-  currentEmails,
+  authors,
 }: {
   proposal: {
     id: string;
@@ -180,16 +192,12 @@ function toRecipients({
     proposalData: unknown;
     profile: {
       name: string;
-      profileUsers: Array<{
-        authUserId: string;
-        name: string | null;
-        email: string | null;
-      }>;
+      profileUsers: Array<{ authUserId: string }>;
     };
   };
   allocated: string | null | undefined;
-  /** Live `auth.users` addresses, keyed by auth user id. */
-  currentEmails: Map<string, string>;
+  /** Author identities, keyed by auth user id. */
+  authors: Map<string, AuthorIdentity>;
 }): Array<ResultNotificationRecipient> {
   const outcome: ResultNotificationOutcome =
     allocated === undefined ? 'notFunded' : 'funded';
@@ -205,17 +213,13 @@ function toRecipients({
   const seen = new Set<string>();
 
   return proposal.profile.profileUsers
-    .map((profileUser) => ({
-      ...profileUser,
-      // `profileUsers.email` is an insert-time snapshot nothing syncs, so an
-      // author who changed their address would be told the outcome at the old
-      // one. Prefer the live `auth.users` row, exactly as
-      // `listProcessParticipants` does.
-      email: currentEmails.get(profileUser.authUserId) ?? profileUser.email,
-    }))
+    .flatMap(({ authUserId }) => {
+      const author = authors.get(authUserId);
+      return author ? [author] : [];
+    })
     .filter(hasEmail)
-    .flatMap((profileUser) => {
-      const key = profileUser.email.toLowerCase();
+    .flatMap((author) => {
+      const key = author.email.toLowerCase();
       if (seen.has(key)) {
         return [];
       }
@@ -223,14 +227,11 @@ function toRecipients({
 
       return [
         {
-          email: profileUser.email,
+          email: author.email,
           proposalProfileId: proposal.profileId,
           outcome,
           values: {
-            // A registered account can carry no name, and the shipped default
-            // copy opens "Hi {{name}},". Emails are English-only, so the
-            // fallback belongs here rather than in a dictionary.
-            name: profileUser.name || 'there',
+            name: author.name,
             proposal: proposal.profile.name,
             amount,
           },
@@ -239,21 +240,41 @@ function toRecipients({
     });
 }
 
-/** Live addresses for the given auth users, keyed by id. */
-async function readCurrentEmails(
+/**
+ * Resolves each author to their own profile — the identity record, which
+ * always carries a name and may carry an email. `profileUsers.name` /
+ * `.email` are deliberately not read: that row only records who was granted
+ * access to the proposal, and its copies of both fields are snapshots nothing
+ * keeps in sync.
+ *
+ * `auth.users` is the delivery fallback when a profile has no email of its
+ * own, so an author who never filled one in during onboarding still hears the
+ * outcome. Same source `listProcessParticipants` uses.
+ */
+async function readAuthorIdentities(
   authUserIds: Array<string>,
-): Promise<Map<string, string>> {
+): Promise<Map<string, AuthorIdentity>> {
   if (authUserIds.length === 0) {
     return new Map();
   }
 
   const rows = await db
-    .select({ id: authUsers.id, email: authUsers.email })
-    .from(authUsers)
-    .where(inArray(authUsers.id, [...new Set(authUserIds)]));
+    .select({
+      authUserId: users.authUserId,
+      name: profiles.name,
+      profileEmail: profiles.email,
+      accountEmail: authUsers.email,
+    })
+    .from(users)
+    .innerJoin(profiles, eq(profiles.id, users.profileId))
+    .leftJoin(authUsers, eq(authUsers.id, users.authUserId))
+    .where(inArray(users.authUserId, [...new Set(authUserIds)]));
 
   return new Map(
-    rows.flatMap(({ id, email }) => (email ? [[id, email] as const] : [])),
+    rows.map(({ authUserId, name, profileEmail, accountEmail }) => [
+      authUserId,
+      { name, email: profileEmail ?? accountEmail },
+    ]),
   );
 }
 
