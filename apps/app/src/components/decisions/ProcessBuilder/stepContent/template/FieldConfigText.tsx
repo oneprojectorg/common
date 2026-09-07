@@ -1,5 +1,6 @@
 'use client';
 
+import { formatNumber } from '@/utils/formatting';
 import { NumberField } from '@op/sense/NumberField';
 
 import { useTranslations } from '@/lib/i18n';
@@ -47,7 +48,7 @@ export function FieldConfigText({
       errorMessage={
         value < MIN_CHAR_LIMIT
           ? t('Must be at least {min}', {
-              min: MIN_CHAR_LIMIT.toLocaleString(),
+              min: formatNumber(MIN_CHAR_LIMIT),
             })
           : undefined
       }

@@ -21,6 +21,7 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
+import { formatBudget } from '../BudgetDisplay';
 import { LabeledFieldSet } from '../forms/LabeledFieldSet';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
@@ -107,12 +108,7 @@ function formatPreviewBudget(
     return text;
   }
 
-  return budget.amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: budget.currency,
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  });
+  return formatBudget(budget) ?? text;
 }
 
 // ---------------------------------------------------------------------------

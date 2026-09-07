@@ -1,7 +1,8 @@
 'use client';
 
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
 import { useRequiredUser } from '@/utils/UserProvider';
-import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
+import { DATE_TIME_FORMAT, formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
@@ -163,6 +164,7 @@ function ProposalEditorInner({
 }) {
   const router = useRouter();
   const locale = useLocale();
+  const timeZone = useDisplayTimeZone();
   const t = useTranslations();
   const { user } = useRequiredUser();
   const utils = trpc.useUtils();
@@ -225,7 +227,7 @@ function ProposalEditorInner({
         date: formatDate(
           new Date(versionPreview.tiptapVersion.date).toISOString(),
           locale,
-          DATE_TIME_UTC_FORMAT,
+          { ...DATE_TIME_FORMAT, timeZone },
         ),
       })
     : null;

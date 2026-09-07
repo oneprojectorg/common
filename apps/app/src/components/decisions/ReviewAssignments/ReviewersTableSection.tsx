@@ -1,5 +1,6 @@
 'use client';
 
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { PhaseReviewerSummary } from '@op/common/client';
@@ -179,6 +180,7 @@ function ReviewerRowCells({
 }) {
   const t = useTranslations();
   const format = useFormatter();
+  const timeZone = useDisplayTimeZone();
   const name = row.reviewer.name ?? row.reviewer.slug ?? row.reviewer.id;
   const lastSubmittedAt = row.lastSubmittedAt
     ? new Date(row.lastSubmittedAt)
@@ -232,7 +234,7 @@ function ReviewerRowCells({
       </TableCell>
       <TableCell>
         {lastSubmittedAt
-          ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
+          ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium', timeZone })
           : '—'}
       </TableCell>
       <TableCell className="text-end">

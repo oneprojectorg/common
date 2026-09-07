@@ -1,6 +1,7 @@
 'use client';
 
-import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { DATE_TIME_FORMAT, DEADLINE_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -32,6 +33,7 @@ export const DecisionsRowCells = ({
   decision: AdminDecisionInstance;
 }) => {
   const format = useFormatter();
+  const timeZone = useDisplayTimeZone();
   const t = useTranslations();
   const router = useRouter();
   const createdAt = decision.createdAt ? new Date(decision.createdAt) : null;
@@ -52,7 +54,10 @@ export const DecisionsRowCells = ({
             {phaseEndDate ? (
               <span className="text-xs text-muted-foreground">
                 {t('Ends {date}', {
-                  date: format.dateTime(phaseEndDate, { dateStyle: 'medium' }),
+                  date: format.dateTime(phaseEndDate, {
+                    ...DEADLINE_FORMAT,
+                    timeZone,
+                  }),
                 })}
               </span>
             ) : null}
@@ -92,9 +97,12 @@ export const DecisionsRowCells = ({
       <TableCell className="text-muted-foreground">
         {createdAt ? (
           <TimestampTooltip
-            title={format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
+            title={format.dateTime(createdAt, {
+              ...DATE_TIME_FORMAT,
+              timeZone,
+            })}
           >
-            {format.dateTime(createdAt, { dateStyle: 'medium' })}
+            {format.dateTime(createdAt, { dateStyle: 'medium', timeZone })}
           </TimestampTooltip>
         ) : (
           '—'

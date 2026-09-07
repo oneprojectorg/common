@@ -1,12 +1,15 @@
-// Date-only strings ("2026-06-01") parse as UTC midnight, so they must also
-// render in UTC — otherwise viewers west of UTC see the previous day.
-const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+// Phase dates are business dates, not personal moments, and they must format
+// identically on the server and in the browser or hydration fails (React #418):
+// "2026-07-06T04:00:00Z" is "Jul 6" in UTC and "Jul 5" in America/Los_Angeles.
+// An unset `timeZone` resolves to the runtime's, which differs between the two
+// passes, so pin it. Matches the app's next-intl `timeZone`.
+const DISPLAY_TIME_ZONE = 'UTC';
 
 export function formatDate(dateString: string, locale: string = 'en-US') {
   return new Date(dateString).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
-    timeZone: DATE_ONLY.test(dateString) ? 'UTC' : undefined,
+    timeZone: DISPLAY_TIME_ZONE,
   });
 }
 

@@ -1,6 +1,19 @@
 /**
- * Shared formatting utilities for consistent display across the application
+ * Shared formatting utilities for consistent display across the application.
+ *
+ * Every helper here names its locale and time zone rather than letting `Intl`
+ * fall back to the runtime default. The default is the server's during SSR and
+ * the browser's on the client, so an implicit one makes the two renders
+ * disagree and hydration fails (React #418).
  */
+import { APP_TIME_ZONE } from '@/lib/i18n/config';
+
+/**
+ * Format a plain number using locale-aware grouping.
+ */
+export function formatNumber(value: number, locale: string = 'en-US'): string {
+  return new Intl.NumberFormat(locale).format(value);
+}
 
 /**
  * Format currency amount using locale-aware formatting
@@ -18,7 +31,11 @@ export function formatCurrency(
 }
 
 /**
- * Format single date using locale-aware formatting
+ * Format single date using locale-aware formatting.
+ *
+ * Renders in `APP_TIME_ZONE` unless `options` names another one. Pass an
+ * explicit `timeZone` only for a value that is genuinely local to the viewer
+ * and rendered after mount.
  */
 export function formatDate(
   dateString: string | null | undefined,
@@ -33,7 +50,43 @@ export function formatDate(
     return formatDate(new Date().toISOString(), locale, options);
   }
 
-  return new Date(dateString).toLocaleDateString(locale, options);
+  return new Date(dateString).toLocaleDateString(locale, {
+    timeZone: APP_TIME_ZONE,
+    ...options,
+  });
+}
+
+/**
+ * Format a moment the viewer has to act before — a phase close, a results
+ * announcement.
+ *
+ * Always carries the time and the zone, because a phase end is enforced at an
+ * exact instant: `buildExpectedTransitions` schedules the transition at the
+ * stored `endDate` and the cron in `transitionMonitor` fires it the moment it
+ * comes due. Rendering only the calendar day tells a viewer west of the zone
+ * the date was picked in that they have until the end of a day that is already
+ * over for the process.
+ *
+ * Pass `timeZone` from `useDisplayTimeZone()` so the string is the viewer's
+ * own wall-clock time once mounted.
+ */
+export const DEADLINE_FORMAT = {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+} as const;
+
+export function formatDeadline(
+  dateString: string,
+  locale: string = 'en-US',
+  timeZone: string = APP_TIME_ZONE,
+): string {
+  return new Date(dateString).toLocaleString(locale, {
+    ...DEADLINE_FORMAT,
+    timeZone,
+  });
 }
 
 /**
@@ -90,11 +143,13 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
- * Date-time format options for UTC timestamps
- * Used with next-intl's useFormatter().dateTime()
+ * Date-time format options for a full timestamp, with no zone of its own.
+ *
+ * Used with next-intl's `useFormatter().dateTime()`. Pair it with
+ * `useDisplayTimeZone()` at the call site so the timestamp renders in the
+ * viewer's zone after mount without breaking hydration.
  */
-export const DATE_TIME_UTC_FORMAT = {
-  timeZone: 'UTC',
+export const DATE_TIME_FORMAT = {
   year: 'numeric',
   month: 'short',
   day: 'numeric',

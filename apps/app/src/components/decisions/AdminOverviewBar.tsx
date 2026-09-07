@@ -1,5 +1,7 @@
 'use client';
 
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { formatDeadline } from '@/utils/formatting';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
@@ -32,15 +34,13 @@ export function AdminOverviewBar({
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();
+  const timeZone = useDisplayTimeZone();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [bannerOpen, setBannerOpen] = useState(false);
 
   const endsLabel = phaseEndDate
     ? t('ends {date}', {
-        date: new Date(phaseEndDate).toLocaleDateString(locale, {
-          month: 'long',
-          day: 'numeric',
-        }),
+        date: formatDeadline(phaseEndDate, locale, timeZone),
       })
     : null;
 

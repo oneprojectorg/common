@@ -1,6 +1,7 @@
 'use client';
 
-import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { DATE_TIME_FORMAT } from '@/utils/formatting';
 import type { AdminOrg } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import {
@@ -22,6 +23,7 @@ import { TimestampTooltip } from './TimestampTooltip';
 /** Renders table cells for an organization row - must be used inside a <TableRow> */
 export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
   const format = useFormatter();
+  const timeZone = useDisplayTimeZone();
   const t = useTranslations();
   const createdAt = org.createdAt ? new Date(org.createdAt) : null;
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
@@ -41,9 +43,12 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
         {createdAt ? (
           <TimestampTooltip
             className="text-sm font-normal"
-            title={format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}
+            title={format.dateTime(createdAt, {
+              ...DATE_TIME_FORMAT,
+              timeZone,
+            })}
           >
-            {format.dateTime(createdAt, { dateStyle: 'medium' })}
+            {format.dateTime(createdAt, { dateStyle: 'medium', timeZone })}
           </TimestampTooltip>
         ) : (
           '—'

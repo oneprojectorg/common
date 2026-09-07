@@ -53,7 +53,10 @@ export function getCurrencySymbol(currency: string): string {
   if (!isValidCurrencyCode(currency)) {
     return currency;
   }
-  const part = new Intl.NumberFormat(undefined, {
+  // Named locale, not the runtime default: the default is the server's during
+  // SSR and the browser's on the client, and the two disagree on the symbol
+  // for some currency/locale pairs ("US$" vs "$"), which fails hydration.
+  const part = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     currencyDisplay: 'narrowSymbol',
