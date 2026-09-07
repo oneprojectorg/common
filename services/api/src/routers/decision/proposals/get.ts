@@ -30,7 +30,7 @@ export const getProposalRouter = router({
       });
 
       // Fetch permissions
-      const { access } = await getPermissionsOnProposal({
+      const { access, isEditable } = await getPermissionsOnProposal({
         user,
         proposal,
       }).catch((error) => {
@@ -38,7 +38,7 @@ export const getProposalRouter = router({
           error,
           profileId,
         });
-        return { access: undefined };
+        return { access: undefined, isEditable: false };
       });
 
       ctx.registerQueryChannels([
@@ -47,7 +47,7 @@ export const getProposalRouter = router({
 
       return proposalSchema.parse({
         ...proposal,
-        isEditable: access?.update,
+        isEditable,
         access,
       });
     }),

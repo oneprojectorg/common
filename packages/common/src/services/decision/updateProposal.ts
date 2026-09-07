@@ -1,9 +1,12 @@
 import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
 import { and, db, eq, isNull } from '@op/db/client';
 import {
+  ProposalReviewRequestState,
   ProposalStatus,
   type Visibility,
   profiles,
+  proposalReviewAssignments,
+  proposalReviewRequests,
   proposals,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -17,7 +20,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
+import { getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -28,9 +31,15 @@ import type {
 import { parseProposalData } from './proposalDataSchema';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import {
+  type DecisionInstanceData,
+  type PhaseInstanceData,
+  getInstancePhases,
+  isLastPhase,
+} from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 export interface UpdateProposalInput {
@@ -77,43 +86,20 @@ export const updateProposal = async ({
   const processInstance = existingProposal.processInstance;
 
   // Reject updates when the instance is in the final (results) phase
-  const instancePhases =
-    (processInstance.instanceData as DecisionInstanceData | null)?.phases ?? [];
+  const instancePhases = getInstancePhases(processInstance.instanceData);
   if (isLastPhase(processInstance.currentStateId, instancePhases)) {
     throw new ValidationError(
       'Proposals cannot be edited during the results phase',
     );
   }
 
-  // Status and visibility changes only require instance-level decisions: ADMIN
-  if (data.status || data.visibility) {
-    await assertInstanceProfileAccess({
-      user: { id: user.id },
-      instance: processInstance,
-      profilePermissions: { decisions: permission.ADMIN },
-      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-    });
-  } else {
-    // Data updates require profile-level update permission on the proposal's profile
-    const proposalRoles = await getProfileAccessRoles({
-      user: { id: user.id },
-      profileId: existingProposal.profileId,
-    });
-
-    const hasProposalUpdate = checkPermission(
-      { profile: permission.UPDATE },
-      proposalRoles,
-    );
-
-    if (!hasProposalUpdate) {
-      await assertInstanceProfileAccess({
-        user: { id: user.id },
-        instance: processInstance,
-        profilePermissions: { decisions: permission.UPDATE },
-        orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-      });
-    }
-  }
+  await assertProposalUpdateAccess({
+    user,
+    data,
+    proposal: existingProposal,
+    processInstance,
+    instancePhases,
+  });
 
   // Validate proposal data against template schema when updating non-draft proposals.
   // Drafts are inherently incomplete — validation is enforced on submission.
@@ -272,6 +258,91 @@ export const updateProposal = async ({
 
   return updatedProposal;
 };
+
+async function assertProposalUpdateAccess({
+  user,
+  data,
+  proposal,
+  processInstance,
+  instancePhases,
+}: {
+  user: User;
+  data: UpdateProposalInput;
+  proposal: { id: string; profileId: string; status: string | null };
+  processInstance: {
+    profileId: string | null;
+    currentStateId: string | null;
+  };
+  instancePhases: readonly PhaseInstanceData[];
+}): Promise<void> {
+  if (!processInstance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const instanceRoles = await getProfileAccessRoles({
+    user: { id: user.id },
+    profileId: processInstance.profileId,
+  });
+
+  if (data.status || data.visibility) {
+    if (!checkPermission({ decisions: permission.ADMIN }, instanceRoles)) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+    return;
+  }
+
+  const proposalRoles = await getProfileAccessRoles({
+    user: { id: user.id },
+    profileId: proposal.profileId,
+  });
+
+  if (
+    !checkPermission({ profile: permission.UPDATE }, proposalRoles) &&
+    !checkPermission({ decisions: permission.UPDATE }, instanceRoles)
+  ) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  if (
+    proposal.status === ProposalStatus.DRAFT ||
+    isPostSubmissionEditingAllowed({
+      phases: instancePhases,
+      currentPhaseId: processInstance.currentStateId,
+    })
+  ) {
+    return;
+  }
+
+  const isInstanceAdmin = checkPermission(
+    [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
+    instanceRoles,
+  );
+
+  // An open revision request is itself the invitation to edit, and the editor
+  // autosaves system fields through here on the way to `resubmit`.
+  if (!isInstanceAdmin && !(await hasOpenRevisionRequest(proposal.id))) {
+    throw new UnauthorizedError('Editing proposals is closed for this phase');
+  }
+}
+
+async function hasOpenRevisionRequest(proposalId: string): Promise<boolean> {
+  const [openRequest] = await db
+    .select({ id: proposalReviewRequests.id })
+    .from(proposalReviewRequests)
+    .innerJoin(
+      proposalReviewAssignments,
+      eq(proposalReviewRequests.assignmentId, proposalReviewAssignments.id),
+    )
+    .where(
+      and(
+        eq(proposalReviewAssignments.proposalId, proposalId),
+        eq(proposalReviewRequests.state, ProposalReviewRequestState.REQUESTED),
+      ),
+    )
+    .limit(1);
+
+  return openRequest !== undefined;
+}
 
 async function createCheckpointVersion(
   proposalData: unknown,

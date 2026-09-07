@@ -28,6 +28,8 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { getInstancePhases } from './schemas/instanceData';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -284,6 +286,11 @@ export const listProposals = async ({
     profileRoles,
   );
 
+  const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
+    phases: getInstancePhases(instance.instanceData),
+    currentPhaseId: instance.currentStateId,
+  });
+
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
@@ -299,10 +306,12 @@ export const listProposals = async ({
       : proposal.profile;
     const relationshipInfo = relationshipData.get(proposal.profileId);
 
-    // In results phase, proposals are never editable.
-    const isOwner = proposal.submittedByProfileId === currentProfileId;
     const isEditable =
-      input.phase === 'results' ? false : isOwner || hasAdminPermission;
+      input.phase !== 'results' &&
+      (hasAdminPermission ||
+        (proposal.submittedByProfileId === currentProfileId &&
+          (proposal.status === ProposalStatus.DRAFT ||
+            postSubmissionEditingAllowed)));
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments; the fragments

@@ -31,6 +31,23 @@ export function isVotingPhase(phase: {
   return phase.rules?.voting?.submit ?? false;
 }
 
+/** Whether an already-submitted proposal may still be edited. */
+export function isPostSubmissionEditingAllowed({
+  phases,
+  currentPhaseId,
+}: {
+  phases: readonly {
+    phaseId: string;
+    rules?: { proposals?: { edit?: boolean } };
+  }[];
+  currentPhaseId: string | null | undefined;
+}): boolean {
+  return (
+    phases.find((phase) => phase.phaseId === currentPhaseId)?.rules?.proposals
+      ?.edit ?? false
+  );
+}
+
 /**
  * True when any phase enables voting — i.e. the process has (or had) a voting
  * phase. Used to gate voting-only surfaces such as the "My Ballot" results tab.
