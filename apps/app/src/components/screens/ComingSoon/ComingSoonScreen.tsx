@@ -12,6 +12,7 @@ import { LuArrowRight } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
+import { CommonLogo } from '@/components/CommonLogo';
 
 import {
   AnimatedGradientBackground,
@@ -60,7 +61,7 @@ export const ComingSoonScreen = () => {
           initial={{ opacity: 0 }}
           className="relative flex items-center justify-between p-4 md:px-8 md:py-6"
         >
-          <img src="/logo-common.svg" alt="Common" className="h-4" />
+          <CommonLogo className="h-4 w-auto" />
           <ButtonLink href="/login" variant="outline">
             {t('Log in')}
           </ButtonLink>
