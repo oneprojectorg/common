@@ -693,6 +693,9 @@ importers:
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       typescript:
         specifier: 7.0.2
         version: 7.0.2
