@@ -2,11 +2,7 @@ import { and, db, eq, isNull } from '@op/db/client';
 import { authUsers, profileUsers, proposals } from '@op/db/schema';
 import { union } from 'drizzle-orm/pg-core';
 
-export type ProcessParticipant = {
-  authUserId: string;
-  /** Null for anonymous accounts. */
-  email: string | null;
-};
+import type { EmailRecipient } from '../email/recipients';
 
 /**
  * Everyone taking part in a decision instance: process-profile members plus
@@ -22,7 +18,7 @@ export async function listProcessParticipants({
   processInstanceId,
 }: {
   processInstanceId: string;
-}): Promise<Array<ProcessParticipant>> {
+}): Promise<Array<EmailRecipient>> {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: { profileId: true },

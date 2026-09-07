@@ -1,12 +1,13 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
   decisionsVoteSubmissions,
   processInstances,
-  profileUsers,
   profiles,
 } from '@op/db/schema';
-import { OPNodemailer, VoteSubmittedEmail } from '@op/emails';
+import { OPBatchSend, VoteSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
@@ -57,18 +58,24 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     );
 
     const processProfile = alias(profiles, 'process_profile');
+    const voterProfile = alias(profiles, 'voter_profile');
 
     // Step 1: Get voter profile, process instance details, and phase data
     const voteData = await step.run('get-vote-data', async () => {
       const result = await db
         .select({
-          voterProfileId: decisionsVoteSubmissions.submittedByProfileId,
+          voterProfileId: voterProfile.id,
+          voterProfileType: voterProfile.type,
           processProfileName: processProfile.name,
           processProfileSlug: processProfile.slug,
           instanceData: processInstances.instanceData,
           currentStateId: processInstances.currentStateId,
         })
         .from(decisionsVoteSubmissions)
+        .innerJoin(
+          voterProfile,
+          eq(decisionsVoteSubmissions.submittedByProfileId, voterProfile.id),
+        )
         .innerJoin(
           processInstances,
           eq(decisionsVoteSubmissions.processInstanceId, processInstances.id),
@@ -88,20 +95,17 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // Step 2: Get voter's email
-    const voterEmail = await step.run('get-voter-email', async () => {
-      const result = await db
-        .select({
-          email: profileUsers.email,
-        })
-        .from(profileUsers)
-        .where(eq(profileUsers.profileId, voteData.voterProfileId))
-        .limit(1);
+    // Step 2: One address for a person's vote; every admin for an org's.
+    const recipients = selectEmailRecipients(
+      await step.run('get-voter-recipients', async () =>
+        listProfileRecipients({
+          id: voteData.voterProfileId,
+          type: voteData.voterProfileType,
+        }),
+      ),
+    );
 
-      return result[0]?.email ?? null;
-    });
-
-    if (!voterEmail) {
+    if (recipients.length === 0) {
       logger.info('No email found for voter profile', {
         voterProfileId: voteData.voterProfileId,
       });
@@ -119,16 +123,22 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
     // Step 3: Send notification email
     await step.run('send-email', async () => {
       try {
-        await OPNodemailer({
-          to: voterEmail,
-          subject: VoteSubmittedEmail.subject(voteData.processProfileName),
-          component: () =>
-            VoteSubmittedEmail({
-              processTitle: voteData.processProfileName,
-              decisionUrl,
-              nextSteps,
-            }),
-        });
+        const { errors } = await OPBatchSend(
+          recipients.map((to) => ({
+            to,
+            subject: VoteSubmittedEmail.subject(voteData.processProfileName),
+            component: () =>
+              VoteSubmittedEmail({
+                processTitle: voteData.processProfileName,
+                decisionUrl,
+                nextSteps,
+              }),
+          })),
+        );
+
+        if (errors.length > 0) {
+          throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+        }
       } catch (error) {
         logger.error('Failed to send vote submitted notification', {
           error,

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mock: drive the two reads, assert the filtering rules.
+// Boundary mock: drive the two reads and the recipient lookup, assert the
+// filtering rules.
 vi.mock('@op/db/client', () => ({
   db: {
     query: {
@@ -10,8 +11,16 @@ vi.mock('@op/db/client', () => ({
   },
 }));
 
+vi.mock('../email/recipients', () => ({
+  listMemberProfileRecipients: vi.fn(),
+}));
+
 import { db } from '@op/db/client';
 
+import {
+  type EmailRecipient,
+  listMemberProfileRecipients,
+} from '../email/recipients';
 import { listProposalMergeRecipients } from './listProposalMergeRecipients';
 
 const RELATIONSHIP_ID = '11111111-1111-4111-8111-111111111111';
@@ -23,24 +32,44 @@ const TARGET_PROFILE_ID = '55555555-5555-4555-8555-555555555555';
 
 const findFirst = vi.mocked(db.query.proposalRelationships.findFirst);
 const findUser = vi.mocked(db.query.users.findFirst);
+const recipientsOf = vi.mocked(listMemberProfileRecipients);
 
-type ProfileUser = { email: string | null; authUserId: string };
+const ADA: EmailRecipient = {
+  email: 'ada@example.com',
+  authUserId: ADA_AUTH_USER_ID,
+};
+const GRACE: EmailRecipient = {
+  email: 'grace@example.com',
+  authUserId: GRACE_AUTH_USER_ID,
+};
 
-const ADA = { email: 'ada@example.com', authUserId: ADA_AUTH_USER_ID };
-const GRACE = { email: 'grace@example.com', authUserId: GRACE_AUTH_USER_ID };
+/** Who each proposal profile resolves to. */
+const members = ({
+  source = [ADA],
+  target = [GRACE],
+}: {
+  source?: Array<EmailRecipient>;
+  target?: Array<EmailRecipient>;
+} = {}) => {
+  recipientsOf.mockImplementation(async (profileId) => {
+    if (profileId === SOURCE_PROFILE_ID) {
+      return source;
+    }
+    if (profileId === TARGET_PROFILE_ID) {
+      return target;
+    }
+    return [];
+  });
+};
 
 /** A live merged edge whose ends are both healthy. */
 const edge = ({
-  sourceProfileUsers = [ADA] as Array<ProfileUser>,
-  targetProfileUsers = [GRACE] as Array<ProfileUser>,
   note = null as string | null,
   sourceDeletedAt = null,
   sourceModerationDetachedAt = null,
   targetDeletedAt = null,
   targetModerationDetachedAt = null,
 }: {
-  sourceProfileUsers?: Array<ProfileUser>;
-  targetProfileUsers?: Array<ProfileUser>;
   note?: string | null;
   sourceDeletedAt?: string | null;
   sourceModerationDetachedAt?: string | null;
@@ -53,10 +82,7 @@ const edge = ({
     deletedAt: sourceDeletedAt,
     moderationDetachedAt: sourceModerationDetachedAt,
     profileId: SOURCE_PROFILE_ID,
-    profile: {
-      name: 'Community Garden Revamp',
-      profileUsers: sourceProfileUsers,
-    },
+    profile: { name: 'Community Garden Revamp' },
     processInstance: {
       profile: { name: 'Participatory Budgeting 2026', slug: 'pb-2026' },
     },
@@ -65,10 +91,7 @@ const edge = ({
     deletedAt: targetDeletedAt,
     moderationDetachedAt: targetModerationDetachedAt,
     profileId: TARGET_PROFILE_ID,
-    profile: {
-      name: 'Neighbourhood Green Spaces',
-      profileUsers: targetProfileUsers,
-    },
+    profile: { name: 'Neighbourhood Green Spaces' },
   },
 });
 
@@ -82,6 +105,7 @@ describe('listProposalMergeRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     findUser.mockResolvedValue(undefined as never);
+    members();
   });
 
   it('addresses each side of a live merge', async () => {
@@ -105,11 +129,21 @@ describe('listProposalMergeRecipients', () => {
     });
   });
 
+  it("resolves each side through its proposal's profile", async () => {
+    findFirst.mockResolvedValue(edge() as never);
+
+    await run();
+
+    expect(recipientsOf).toHaveBeenCalledWith(SOURCE_PROFILE_ID);
+    expect(recipientsOf).toHaveBeenCalledWith(TARGET_PROFILE_ID);
+  });
+
   // An admin can unmerge inside the debounce window.
   it('sends nothing when the edge is no longer live', async () => {
     findFirst.mockResolvedValue(undefined as never);
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'edgeNotLive' });
+    expect(recipientsOf).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -133,16 +167,12 @@ describe('listProposalMergeRecipients', () => {
   });
 
   it('drops the admin who performed the merge from both sides', async () => {
-    const actor = {
+    const actor: EmailRecipient = {
       email: 'admin@example.com',
       authUserId: ACTOR_AUTH_USER_ID,
     };
-    findFirst.mockResolvedValue(
-      edge({
-        sourceProfileUsers: [actor, ADA],
-        targetProfileUsers: [actor, GRACE],
-      }) as never,
-    );
+    findFirst.mockResolvedValue(edge() as never);
+    members({ source: [actor, ADA], target: [actor, GRACE] });
 
     const result = await run();
 
@@ -156,12 +186,8 @@ describe('listProposalMergeRecipients', () => {
   });
 
   it('tells someone on both proposals only that theirs was merged away', async () => {
-    findFirst.mockResolvedValue(
-      edge({
-        sourceProfileUsers: [ADA],
-        targetProfileUsers: [ADA, GRACE],
-      }) as never,
-    );
+    findFirst.mockResolvedValue(edge() as never);
+    members({ source: [ADA], target: [ADA, GRACE] });
 
     const result = await run();
 
@@ -175,14 +201,11 @@ describe('listProposalMergeRecipients', () => {
   });
 
   it('deduplicates across sides by address, not just by account', async () => {
-    findFirst.mockResolvedValue(
-      edge({
-        sourceProfileUsers: [ADA],
-        targetProfileUsers: [
-          { email: 'Ada@Example.com', authUserId: 'a-second-account' },
-        ],
-      }) as never,
-    );
+    findFirst.mockResolvedValue(edge() as never);
+    members({
+      source: [ADA],
+      target: [{ email: 'Ada@Example.com', authUserId: 'a-second-account' }],
+    });
 
     const result = await run();
 
@@ -197,12 +220,11 @@ describe('listProposalMergeRecipients', () => {
 
   // Otherwise they'd be excluded from both sides and hear nothing.
   it('still writes to someone on both sides whose source row has no address', async () => {
-    findFirst.mockResolvedValue(
-      edge({
-        sourceProfileUsers: [{ email: null, authUserId: ADA_AUTH_USER_ID }],
-        targetProfileUsers: [ADA],
-      }) as never,
-    );
+    findFirst.mockResolvedValue(edge() as never);
+    members({
+      source: [{ email: null, authUserId: ADA_AUTH_USER_ID }],
+      target: [ADA],
+    });
 
     const result = await run();
 
@@ -216,16 +238,15 @@ describe('listProposalMergeRecipients', () => {
   });
 
   it('sends one email per address, not per collaborator row', async () => {
-    findFirst.mockResolvedValue(
-      edge({
-        sourceProfileUsers: [
-          ADA,
-          { email: 'Ada@Example.com', authUserId: ADA_AUTH_USER_ID },
-          { email: null, authUserId: ADA_AUTH_USER_ID },
-        ],
-        targetProfileUsers: [],
-      }) as never,
-    );
+    findFirst.mockResolvedValue(edge() as never);
+    members({
+      source: [
+        ADA,
+        { email: 'Ada@Example.com', authUserId: ADA_AUTH_USER_ID },
+        { email: null, authUserId: ADA_AUTH_USER_ID },
+      ],
+      target: [],
+    });
 
     const result = await run();
 
@@ -235,18 +256,34 @@ describe('listProposalMergeRecipients', () => {
     });
   });
 
+  it('skips a collaborator with no account address', async () => {
+    findFirst.mockResolvedValue(edge() as never);
+    members({
+      source: [{ email: null, authUserId: 'anonymous-account' }, ADA],
+      target: [GRACE],
+    });
+
+    const result = await run();
+
+    expect(result).toMatchObject({
+      ok: true,
+      notification: {
+        sourceRecipients: [{ email: 'ada@example.com' }],
+        targetRecipients: [{ email: 'grace@example.com' }],
+      },
+    });
+  });
+
   it('reports no recipients only when neither side is addressable', async () => {
-    findFirst.mockResolvedValue(
-      edge({ sourceProfileUsers: [], targetProfileUsers: [] }) as never,
-    );
+    findFirst.mockResolvedValue(edge() as never);
+    members({ source: [], target: [] });
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'noRecipients' });
   });
 
   it('still writes to the surviving side when the merged proposal has no addresses', async () => {
-    findFirst.mockResolvedValue(
-      edge({ sourceProfileUsers: [], targetProfileUsers: [GRACE] }) as never,
-    );
+    findFirst.mockResolvedValue(edge() as never);
+    members({ source: [], target: [GRACE] });
 
     await expect(run()).resolves.toMatchObject({
       ok: true,

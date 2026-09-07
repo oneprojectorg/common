@@ -1,3 +1,5 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { posts, profiles } from '@op/db/schema';
@@ -29,6 +31,7 @@ export const sendProposalCommentNotification = inngest.createFunction(
           where: { id: proposalId },
           with: {
             profile: true,
+            submittedBy: true,
             processInstance: {
               with: {
                 profile: true,
@@ -68,20 +71,15 @@ export const sendProposalCommentNotification = inngest.createFunction(
       return;
     }
 
-    const proposalAuthor = await step.run('get-proposal-author', async () => {
-      const [row] = await db
-        .select({
-          name: profiles.name,
-          email: profiles.email,
-        })
-        .from(profiles)
-        .where(eq(profiles.id, proposal.submittedByProfileId))
-        .limit(1);
-      return row ?? null;
-    });
+    const proposalAuthor = proposal.submittedBy;
 
-    const recipientEmail = proposalAuthor?.email;
-    if (!recipientEmail) {
+    const recipients = selectEmailRecipients(
+      await step.run('get-author-recipients', async () =>
+        listProfileRecipients(proposalAuthor),
+      ),
+    );
+
+    if (recipients.length === 0) {
       return;
     }
 
@@ -120,9 +118,9 @@ export const sendProposalCommentNotification = inngest.createFunction(
       proposal.processInstance?.name ?? 'Decision Making Process';
 
     const result = await step.run('send-email', async () => {
-      const { errors } = await OPBatchSend([
-        {
-          to: recipientEmail,
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
           from: `${commenter.name} via Common`,
           subject: CommentNotificationEmail.subject(commenter.name, 'proposal'),
           component: () =>
@@ -136,14 +134,14 @@ export const sendProposalCommentNotification = inngest.createFunction(
               contextName,
               postedIn,
             }),
-        },
-      ]);
+        })),
+      );
 
       if (errors.length > 0) {
         throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
       }
 
-      return { sent: 1 };
+      return { sent: recipients.length };
     });
 
     return {

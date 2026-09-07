@@ -31,7 +31,6 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
         const [row] = await db
           .select({
             authorName: profiles.name,
-            authorEmail: profiles.email,
             postContent: posts.content,
           })
           .from(posts)
@@ -82,10 +81,9 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       listProcessParticipants({ processInstanceId }),
     );
 
-    const authorEmail = post.authorEmail?.toLowerCase();
-    const recipients = selectEmailRecipients(participants).filter(
-      (email) => email.toLowerCase() !== authorEmail,
-    );
+    // Include the author when they are a participant so they also receive
+    // confirmation that their update went out to the process audience.
+    const recipients = selectEmailRecipients(participants);
 
     if (recipients.length === 0) {
       logger.warn('No participants to notify for decision update', {

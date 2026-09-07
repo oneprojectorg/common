@@ -1,13 +1,22 @@
 import { ProposalStatus } from '@op/db/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mock: drive the one read, assert the skip rules.
+// Boundary mock: drive the one read and the recipient lookup, assert the skip
+// rules.
 vi.mock('@op/db/client', () => ({
   db: { query: { proposals: { findFirst: vi.fn() } } },
 }));
 
+vi.mock('../email/recipients', () => ({
+  listMemberProfileRecipients: vi.fn(),
+}));
+
 import { db } from '@op/db/client';
 
+import {
+  type EmailRecipient,
+  listMemberProfileRecipients,
+} from '../email/recipients';
 import { listProposalRejectionRecipients } from './listProposalRejectionRecipients';
 
 const PROPOSAL_ID = '11111111-1111-4111-8111-111111111111';
@@ -16,12 +25,14 @@ const ADA_AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const PROPOSAL_PROFILE_ID = '44444444-4444-4444-8444-444444444444';
 
 const findFirst = vi.mocked(db.query.proposals.findFirst);
+const recipientsOf = vi.mocked(listMemberProfileRecipients);
 
-type ProfileUser = { email: string | null; authUserId: string };
+const ADA: EmailRecipient = {
+  email: 'ada@example.com',
+  authUserId: ADA_AUTH_USER_ID,
+};
 
-const ADA = { email: 'ada@example.com', authUserId: ADA_AUTH_USER_ID };
-
-const PHASES = [
+const PHASES: Array<{ phaseId: string; name?: string }> = [
   { phaseId: 'submission', name: 'Proposal Submission' },
   { phaseId: 'review', name: 'Review & Shortlist' },
   { phaseId: 'voting', name: 'Voting' },
@@ -30,7 +41,6 @@ const PHASES = [
 /** A rejected proposal whose process and profile are both healthy. */
 const rejectedProposal = ({
   status = ProposalStatus.REJECTED,
-  profileUsers = [ADA] as Array<ProfileUser>,
   deletedAt = null as string | null,
   moderationDetachedAt = null as string | null,
   currentStateId = 'review' as string | null,
@@ -41,7 +51,7 @@ const rejectedProposal = ({
   deletedAt,
   moderationDetachedAt,
   profileId: PROPOSAL_PROFILE_ID,
-  profile: { name: 'Community Garden Revamp', profileUsers },
+  profile: { name: 'Community Garden Revamp' },
   processInstance: {
     currentStateId,
     instanceData: { phases },
@@ -59,6 +69,7 @@ const run = () =>
 describe('listProposalRejectionRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    recipientsOf.mockResolvedValue([ADA]);
   });
 
   it('addresses the authors of a proposal that is still rejected', async () => {
@@ -75,6 +86,7 @@ describe('listProposalRejectionRecipients', () => {
         recipients: [{ email: 'ada@example.com' }],
       },
     });
+    expect(recipientsOf).toHaveBeenCalledWith(PROPOSAL_PROFILE_ID);
   });
 
   // The email drops the clause rather than naming a phase that isn't there.
@@ -109,6 +121,7 @@ describe('listProposalRejectionRecipients', () => {
     );
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'notRejected' });
+    expect(recipientsOf).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -132,26 +145,20 @@ describe('listProposalRejectionRecipients', () => {
 
   // An admin rejecting their own proposal should not be emailed about it.
   it('drops the actor, and sends nothing when they were the only author', async () => {
-    findFirst.mockResolvedValue(
-      rejectedProposal({
-        profileUsers: [
-          { email: 'admin@example.com', authUserId: ACTOR_AUTH_USER_ID },
-        ],
-      }) as never,
-    );
+    findFirst.mockResolvedValue(rejectedProposal() as never);
+    recipientsOf.mockResolvedValue([
+      { email: 'admin@example.com', authUserId: ACTOR_AUTH_USER_ID },
+    ]);
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'noRecipients' });
   });
 
-  it('skips co-authors who have no address', async () => {
-    findFirst.mockResolvedValue(
-      rejectedProposal({
-        profileUsers: [
-          { email: null, authUserId: '55555555-5555-4555-8555-555555555555' },
-          ADA,
-        ],
-      }) as never,
-    );
+  it('skips co-authors who have no account address', async () => {
+    findFirst.mockResolvedValue(rejectedProposal() as never);
+    recipientsOf.mockResolvedValue([
+      { email: null, authUserId: '55555555-5555-4555-8555-555555555555' },
+      ADA,
+    ]);
 
     const result = await run();
 

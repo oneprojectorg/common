@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
+import { listMemberProfileRecipients } from '../email/recipients';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { isProposalReachable } from './utils/proposal';
@@ -43,7 +44,7 @@ export async function listProposalRejectionRecipients({
   const proposal = await db.query.proposals.findFirst({
     where: { id: proposalId },
     with: {
-      profile: { with: { profileUsers: true } },
+      profile: true,
       processInstance: { with: { profile: true, steward: true } },
     },
   });
@@ -63,8 +64,10 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'proposalUnavailable' };
   }
 
+  const authors = await listMemberProfileRecipients(proposal.profileId);
+
   // An admin rejecting their own proposal should not be emailed about it.
-  const recipients = proposal.profile.profileUsers
+  const recipients = authors
     .filter(hasEmail)
     .filter(({ authUserId }) => authUserId !== actorAuthUserId)
     .map(({ email }) => ({ email }));

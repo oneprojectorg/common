@@ -2,6 +2,10 @@ import { db } from '@op/db/client';
 import { ProposalRelationshipType } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
+import {
+  type EmailRecipient,
+  listMemberProfileRecipients,
+} from '../email/recipients';
 import { isProposalReachable } from './utils/proposal';
 
 export type ProposalMergeNote = {
@@ -54,12 +58,12 @@ export async function listProposalMergeRecipients({
     with: {
       sourceProposal: {
         with: {
-          profile: { with: { profileUsers: true } },
+          profile: true,
           processInstance: { with: { profile: true } },
         },
       },
       targetProposal: {
-        with: { profile: { with: { profileUsers: true } } },
+        with: { profile: true },
       },
     },
   });
@@ -80,16 +84,19 @@ export async function listProposalMergeRecipients({
     return { ok: false, reason: 'proposalUnavailable' };
   }
 
+  const [sourceCandidates, targetCandidates] = await Promise.all([
+    listMemberProfileRecipients(sourceProposal.profileId),
+    listMemberProfileRecipients(targetProposal.profileId),
+  ]);
+
   const sourceRecipients = collectRecipients({
-    profileUsers: sourceProposal.profile.profileUsers,
+    candidates: sourceCandidates,
     excludedAuthUserIds: [actorAuthUserId],
   });
 
-  // Someone on both proposals hears only the source version. Keyed on who that
-  // email actually reached, so a source row with no address doesn't drop them
-  // from both sides.
+  // Someone on both proposals hears only the source version.
   const targetRecipients = collectRecipients({
-    profileUsers: targetProposal.profile.profileUsers,
+    candidates: targetCandidates,
     excludedAuthUserIds: [
       actorAuthUserId,
       ...sourceRecipients.map(({ authUserId }) => authUserId),
@@ -142,22 +149,22 @@ const resolveNote = async ({
 
 /** A proposal's profile carries its author and every collaborator. */
 const collectRecipients = ({
-  profileUsers,
+  candidates,
   excludedAuthUserIds,
   excludedEmails = [],
 }: {
-  profileUsers: Array<{ email: string | null; authUserId: string }>;
+  candidates: Array<EmailRecipient>;
   excludedAuthUserIds: Array<string>;
   excludedEmails?: Array<string>;
 }): Array<{ email: string; authUserId: string }> => {
   const excludedIds = new Set(excludedAuthUserIds);
   const seen = new Set(excludedEmails.map((email) => email.toLowerCase()));
 
-  return profileUsers
+  return candidates
     .filter(hasEmail)
-    .filter((profileUser) => !excludedIds.has(profileUser.authUserId))
-    .filter((profileUser) => {
-      const key = profileUser.email.toLowerCase();
+    .filter((candidate) => !excludedIds.has(candidate.authUserId))
+    .filter((candidate) => {
+      const key = candidate.email.toLowerCase();
 
       if (seen.has(key)) {
         return false;
