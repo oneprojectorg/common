@@ -1,3 +1,5 @@
+import { formatDate } from '@/utils/formatting';
+
 export interface NextStep {
   id: string;
   name: string;
@@ -47,12 +49,7 @@ export function formatStepForDisplay(step: NextStep): string {
     return step.name;
   }
 
-  const date = new Date(step.startDate);
-  const formattedDate = date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const formattedDate = formatDate(step.startDate);
 
   return `${step.name} on ${formattedDate}`;
 }

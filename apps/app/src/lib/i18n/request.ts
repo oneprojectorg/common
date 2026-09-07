@@ -2,6 +2,7 @@ import { logger } from '@op/logging';
 import { IntlErrorCode } from 'next-intl';
 import { getRequestConfig } from 'next-intl/server';
 
+import { APP_TIME_ZONE } from './config';
 import { normalizeMessageKeys } from './messageKeys';
 import { routing } from './routing';
 
@@ -21,7 +22,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale,
     messages: normalizeMessageKeys(rawMessages),
-    timeZone: 'UTC',
+    timeZone: APP_TIME_ZONE,
     onError(error: { code: string }) {
       if (error.code === IntlErrorCode.ENVIRONMENT_FALLBACK) {
         // Silently ignore — timeZone is set globally, but now/relativeTime

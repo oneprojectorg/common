@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
@@ -37,7 +38,7 @@ export function AdminOverviewBar({
 
   const endsLabel = phaseEndDate
     ? t('ends {date}', {
-        date: new Date(phaseEndDate).toLocaleDateString(locale, {
+        date: formatDate(phaseEndDate, locale, {
           month: 'long',
           day: 'numeric',
         }),

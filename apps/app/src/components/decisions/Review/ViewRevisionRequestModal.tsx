@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -8,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
+import { useLocale } from 'next-intl';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -23,6 +25,7 @@ export function ViewRevisionRequestModal({
   onOpenChange,
 }: ViewRevisionRequestModalProps) {
   const t = useTranslations();
+  const locale = useLocale();
   const {
     revisionRequest,
     isOwnRevisionRequest,
@@ -39,8 +42,8 @@ export function ViewRevisionRequestModal({
     return null;
   }
 
-  const sentDate = revisionRequest.requestedAt
-    ? new Date(revisionRequest.requestedAt)
+  const sentDateLabel = revisionRequest.requestedAt
+    ? formatDate(revisionRequest.requestedAt, locale)
     : null;
 
   return (
@@ -60,15 +63,9 @@ export function ViewRevisionRequestModal({
             <p dir="auto" className="text-base">
               {revisionRequest.requestComment}
             </p>
-            {sentDate && (
+            {sentDateLabel && (
               <p className="text-sm text-muted-foreground">
-                {t('Sent {date}', {
-                  date: sentDate.toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  }),
-                })}
+                {t('Sent {date}', { date: sentDateLabel })}
               </p>
             )}
           </div>
