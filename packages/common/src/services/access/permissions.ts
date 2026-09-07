@@ -14,8 +14,14 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import { profileUserCacheKey } from './cacheKeys';
 
-export async function invalidateProfileUserCacheForRole(roleId: string) {
-  const affectedUsers = await defaultDb
+export async function invalidateProfileUserCacheForRole({
+  roleId,
+  db = defaultDb,
+}: {
+  roleId: string;
+  db?: DbClient;
+}) {
+  const affectedUsers = await db
     .select({
       profileId: profileUsers.profileId,
       authUserId: profileUsers.authUserId,
@@ -182,18 +188,20 @@ export async function updateRolePermissions({
   permissions,
   user,
   profileId,
+  db = defaultDb,
 }: {
   roleId: string;
   zoneName: string;
   permissions: Permissions;
   user: { id: string };
   profileId?: string;
+  db?: DbClient;
 }) {
   const [zone, role] = await Promise.all([
-    defaultDb.query.accessZones.findFirst({
+    db.query.accessZones.findFirst({
       where: { name: zoneName },
     }),
-    defaultDb.query.accessRoles.findFirst({
+    db.query.accessRoles.findFirst({
       where: { id: roleId },
     }),
   ]);
@@ -214,22 +222,21 @@ export async function updateRolePermissions({
 
   const bitfield = toBitField(permissions);
 
-  const existing =
-    await defaultDb.query.accessRolePermissionsOnAccessZones.findFirst({
-      where: {
-        accessRoleId: roleId,
-        accessZoneId: zone.id,
-        profileId: rowProfileId ?? { isNull: true },
-      },
-    });
+  const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
+    where: {
+      accessRoleId: roleId,
+      accessZoneId: zone.id,
+      profileId: rowProfileId ?? { isNull: true },
+    },
+  });
 
   if (existing) {
-    await defaultDb
+    await db
       .update(accessRolePermissionsOnAccessZones)
       .set({ permission: bitfield })
       .where(eq(accessRolePermissionsOnAccessZones.id, existing.id));
   } else {
-    await defaultDb.insert(accessRolePermissionsOnAccessZones).values({
+    await db.insert(accessRolePermissionsOnAccessZones).values({
       accessRoleId: roleId,
       accessZoneId: zone.id,
       permission: bitfield,
@@ -237,7 +244,7 @@ export async function updateRolePermissions({
     });
   }
 
-  await invalidateProfileUserCacheForRole(roleId);
+  await invalidateProfileUserCacheForRole({ roleId, db });
 
   return role;
 }
@@ -249,12 +256,14 @@ export async function updateRole({
   roleId,
   name,
   user,
+  db = defaultDb,
 }: {
   roleId: string;
   name: string;
   user: { id: string };
+  db?: DbClient;
 }) {
-  const role = await defaultDb.query.accessRoles.findFirst({
+  const role = await db.query.accessRoles.findFirst({
     where: { id: roleId },
   });
 
@@ -268,7 +277,7 @@ export async function updateRole({
 
   await assertProfileAdmin({ user, profileId: role.profileId });
 
-  const [updated] = await defaultDb
+  const [updated] = await db
     .update(accessRoles)
     .set({ name })
     .where(eq(accessRoles.id, roleId))
@@ -287,12 +296,14 @@ export async function updateRole({
 export async function deleteRole({
   roleId,
   user,
+  db = defaultDb,
 }: {
   roleId: string;
   user: { id: string };
+  db?: DbClient;
 }) {
   // First check if the role is a global role (profileId IS NULL)
-  const role = await defaultDb.query.accessRoles.findFirst({
+  const role = await db.query.accessRoles.findFirst({
     where: { id: roleId },
   });
 
@@ -307,19 +318,24 @@ export async function deleteRole({
   await assertProfileAdmin({ user, profileId: role.profileId });
 
   // Invalidate before delete (cascade will remove the join rows we query)
-  await invalidateProfileUserCacheForRole(roleId);
+  await invalidateProfileUserCacheForRole({ roleId, db });
 
   // Delete the role (cascade will handle permissions)
-  await defaultDb.delete(accessRoles).where(eq(accessRoles.id, roleId));
+  await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
 
   return { deletedId: roleId };
 }
 
-export async function assignRoleToUser(
-  organizationUserId: string,
-  roleId: string,
-) {
-  return await defaultDb
+export async function assignRoleToUser({
+  organizationUserId,
+  roleId,
+  db = defaultDb,
+}: {
+  organizationUserId: string;
+  roleId: string;
+  db?: DbClient;
+}) {
+  return await db
     .insert(organizationUserToAccessRoles)
     .values({
       organizationUserId,
@@ -331,11 +347,16 @@ export async function assignRoleToUser(
 /**
  * Remove a role from an organization user
  */
-export async function removeRoleFromUser(
-  organizationUserId: string,
-  roleId: string,
-) {
-  return await defaultDb
+export async function removeRoleFromUser({
+  organizationUserId,
+  roleId,
+  db = defaultDb,
+}: {
+  organizationUserId: string;
+  roleId: string;
+  db?: DbClient;
+}) {
+  return await db
     .delete(organizationUserToAccessRoles)
     .where(
       and(

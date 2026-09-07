@@ -309,7 +309,7 @@ export async function updateDecisionRoles({
     });
   }
 
-  await invalidateProfileUserCacheForRole(roleId);
+  await invalidateProfileUserCacheForRole({ roleId });
 
   waitUntil(
     trackAdminGaveRoles(user.id, roleId, {
