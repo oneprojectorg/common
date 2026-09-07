@@ -86,6 +86,7 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
   - **Server** (services, `@op/common`, tRPC procedures, workflows): `import { logger } from '@op/logging'` — emits OpenTelemetry logs that ship to PostHog. Inside a tRPC procedure prefer `ctx.logger` (adds request context).
   - **Client / browser** (`apps/app`, `'use client'` code): `import { logger } from '@op/logging/client'` — reports to PostHog (`captureException` for `error`/`warn`) and also writes to the console.
 - Use `logger.error(message, { error })` for caught errors (pass the caught error under the `error` key), and `logger.warn` / `logger.info` for everything else.
+- **Never log a raw client IP**, or anything else that identifies a person directly (email, token, request body) — records land in PostHog and an IP is personal data. See "What not to log" in `packages/logging/README.md`.
 
 ## Workflow Notes
 

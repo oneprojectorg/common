@@ -1,6 +1,12 @@
-import { RateLimitError, UnauthorizedError } from '@op/common';
+import {
+  AccessTierError,
+  NotFoundError,
+  RateLimitError,
+  UnauthorizedError,
+} from '@op/common';
 import { POSTHOG_SESSION_ID_COOKIE } from '@op/core';
 import { logger, setLogSessionId } from '@op/logging';
+import { AccessControlException } from 'access-zones';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TContext, TContextWithLogger } from '../types';
@@ -145,33 +151,38 @@ describe('withLogger — client IP', () => {
   });
 
   it('does not attach the IP to a routine failure', async () => {
+    const cause = new NotFoundError('Organization', 'acme');
+
     await runLogger(makeCtx({ header: 'sess' }), {
       ok: false,
-      error: { code: 'NOT_FOUND', name: 'TRPCError', message: 'Missing' },
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        name: 'TRPCError',
+        message: cause.message,
+        cause,
+      },
     });
 
     expect(logger.error).toHaveBeenCalledWith(
-      'Missing',
+      cause.message,
       expect.not.objectContaining({ ip: expect.anything() }),
     );
   });
 
-  it('attaches an anonymized IP to an authorization failure', async () => {
-    await runLogger(makeCtx({ header: 'sess' }), {
-      ok: false,
-      error: { code: 'FORBIDDEN', name: 'TRPCError', message: 'Denied' },
-    });
-
-    expect(logger.error).toHaveBeenCalledWith(
-      'Denied',
-      expect.objectContaining({ ip: '203.0.113.0' }),
-    );
-  });
-
-  it('attaches an anonymized IP when a service-layer rejection is wrapped', async () => {
+  it('attaches an anonymized IP to an authorization or rate-limit failure', async () => {
     // tRPC wraps anything that isn't a TRPCError as INTERNAL_SERVER_ERROR, so
-    // the status code on the cause is what identifies the rejection.
-    for (const cause of [new UnauthorizedError(), new RateLimitError()]) {
+    // the cause is what identifies the rejection.
+    const causes = [
+      new AccessTierError('none'),
+      new UnauthorizedError(),
+      new RateLimitError(),
+      new AccessControlException({
+        message: 'Insufficient permissions',
+        status: 'forbidden',
+      }),
+    ];
+
+    for (const cause of causes) {
       await runLogger(makeCtx({ header: 'sess' }), {
         ok: false,
         error: {

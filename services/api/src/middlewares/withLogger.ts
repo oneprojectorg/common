@@ -18,12 +18,8 @@ import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 // The caller's IP is personal data, and a log line per request is not a
 // proportionate place to keep it (GDPR Art. 5(1)(c)). It stays on the events it
 // is actually needed for — a rejected or throttled caller — and even there only
-// as an anonymized network prefix.
-const SECURITY_RELEVANT_TRPC_CODES = new Set([
-  'UNAUTHORIZED',
-  'FORBIDDEN',
-  'TOO_MANY_REQUESTS',
-]);
+// as an anonymized network prefix. Unauthenticated (401), unauthorized (403)
+// and throttled (429) are those events.
 const SECURITY_RELEVANT_STATUS_CODES = new Set([401, 403, 429]);
 
 // withLogContext opens the request-scoped log context that the auth
@@ -160,23 +156,13 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
  * Was the request rejected for a reason worth recording the caller's network
  * for — a failed authorization or a tripped rate limit?
  *
- * A `CommonError` raised below the tRPC layer reaches us wrapped in an
- * `INTERNAL_SERVER_ERROR`, so its status code is the reliable signal; the tRPC
- * code alone misses every service-layer rejection.
+ * Every rejection here is raised below the tRPC layer as a `CommonError` (or
+ * the access-zones exception) and reaches us wrapped in an
+ * `INTERNAL_SERVER_ERROR`, so the cause carries the signal, not `error.code`.
  */
-const isSecurityRelevant = (error: TRPCError): boolean => {
-  if (SECURITY_RELEVANT_TRPC_CODES.has(error.code)) {
-    return true;
-  }
-
-  if (error.cause instanceof AccessControlException) {
-    return true;
-  }
-
-  return (
-    error.cause instanceof CommonError &&
-    SECURITY_RELEVANT_STATUS_CODES.has(error.cause.statusCode)
-  );
-};
+const isSecurityRelevant = (error: TRPCError): boolean =>
+  error.cause instanceof AccessControlException ||
+  (error.cause instanceof CommonError &&
+    SECURITY_RELEVANT_STATUS_CODES.has(error.cause.statusCode));
 
 export default withLogger;
