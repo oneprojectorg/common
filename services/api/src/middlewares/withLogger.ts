@@ -1,4 +1,5 @@
 // import type { User } from '@op/supabase/lib';
+import { CommonError } from '@op/common';
 import { POSTHOG_SESSION_ID_COOKIE } from '@op/core';
 import {
   getPosthogCookieName,
@@ -8,9 +9,22 @@ import {
   setLogSessionId,
   withLogContext,
 } from '@op/logging';
-import spacetime from 'spacetime';
+import type { TRPCError } from '@trpc/server';
+import { AccessControlException } from 'access-zones';
 
+import { anonymizeIp } from '../lib/anonymizeIp';
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
+
+// The caller's IP is personal data, and a log line per request is not a
+// proportionate place to keep it (GDPR Art. 5(1)(c)). It stays on the events it
+// is actually needed for — a rejected or throttled caller — and even there only
+// as an anonymized network prefix.
+const SECURITY_RELEVANT_TRPC_CODES = new Set([
+  'UNAUTHORIZED',
+  'FORBIDDEN',
+  'TOO_MANY_REQUESTS',
+]);
+const SECURITY_RELEVANT_STATUS_CODES = new Set([401, 403, 429]);
 
 // withLogContext opens the request-scoped log context that the auth
 // middlewares later stamp with the caller's PostHog distinct id — wrapping
@@ -57,7 +71,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
           requestId: ctx.requestId,
           path,
           type,
-          ip: ctx.ip,
           ...data,
         });
       },
@@ -66,7 +79,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
           requestId: ctx.requestId,
           path,
           type,
-          ip: ctx.ip,
           ...data,
         });
       },
@@ -75,7 +87,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
           requestId: ctx.requestId,
           path,
           type,
-          ip: ctx.ip,
           ...data,
         });
       },
@@ -84,7 +95,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
           requestId: ctx.requestId,
           path,
           type,
-          ip: ctx.ip,
           ...data,
         });
       },
@@ -99,7 +109,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
     const end = Date.now();
 
     const duration = end - start;
-    const logHeadline = `[${spacetime(ctx.time).format('nice')}] - ${duration}ms`;
 
     // Emit a wide record on success too (not just failures) so requests that
     // carry the caller's PostHog session id produce a log linked to their
@@ -109,7 +118,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         requestId: ctx.requestId,
         path,
         type,
-        ip: ctx.ip,
         duration,
         status: 'ok',
         timestamp: end,
@@ -122,7 +130,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         requestId: ctx.requestId,
         path,
         type,
-        ip: ctx.ip,
+        ...(isSecurityRelevant(result.error) && { ip: anonymizeIp(ctx.ip) }),
         duration,
         status: 'error',
         timestamp: end,
@@ -131,14 +139,13 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         error: result.error,
       });
     } else {
-      console.log(
-        `? UNHANDLED ERROR:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`,
-      );
+      // A failure tRPC gave us no error for — treat it as security-relevant,
+      // since we can't tell what rejected the request.
       opLogger.error('Unhandled error', {
         requestId: ctx.requestId,
         path,
         type,
-        ip: ctx.ip,
+        ip: anonymizeIp(ctx.ip),
         duration,
         status: 'unhandled_error',
         error: result.error,
@@ -148,5 +155,28 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
 
     return result;
   });
+
+/**
+ * Was the request rejected for a reason worth recording the caller's network
+ * for — a failed authorization or a tripped rate limit?
+ *
+ * A `CommonError` raised below the tRPC layer reaches us wrapped in an
+ * `INTERNAL_SERVER_ERROR`, so its status code is the reliable signal; the tRPC
+ * code alone misses every service-layer rejection.
+ */
+const isSecurityRelevant = (error: TRPCError): boolean => {
+  if (SECURITY_RELEVANT_TRPC_CODES.has(error.code)) {
+    return true;
+  }
+
+  if (error.cause instanceof AccessControlException) {
+    return true;
+  }
+
+  return (
+    error.cause instanceof CommonError &&
+    SECURITY_RELEVANT_STATUS_CODES.has(error.cause.statusCode)
+  );
+};
 
 export default withLogger;

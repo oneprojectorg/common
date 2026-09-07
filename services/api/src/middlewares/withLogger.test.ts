@@ -1,13 +1,23 @@
+import { RateLimitError, UnauthorizedError } from '@op/common';
 import { POSTHOG_SESSION_ID_COOKIE } from '@op/core';
 import { logger, setLogSessionId } from '@op/logging';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { TContext } from '../types';
+import type { TContext, TContextWithLogger } from '../types';
 import withLogger from './withLogger';
 
 type NextResult =
   | { ok: true }
-  | { ok: false; error: { code: string; name: string; message?: string } };
+  | {
+      ok: false;
+      error: {
+        code: string;
+        name: string;
+        message?: string;
+        cause?: unknown;
+      };
+    }
+  | { ok: false; error?: undefined };
 
 function makeCtx({
   header,
@@ -30,7 +40,7 @@ function makeCtx({
     registerQueryChannels: () => {},
     requestId: 'req-1',
     time: 1700000000000,
-    ip: '1.2.3.4',
+    ip: '203.0.113.42',
     reqUrl: 'http://localhost/trpc',
     req: new Request('http://localhost/trpc', { headers }),
   };
@@ -120,6 +130,90 @@ describe('withLogger — request logging', () => {
     expect(logger.error).toHaveBeenCalledWith(
       'Request failed',
       expect.objectContaining({ status: 'error' }),
+    );
+  });
+});
+
+describe('withLogger — client IP', () => {
+  it('does not attach the IP to a successful request', async () => {
+    await runLogger(makeCtx({ header: 'sess' }), { ok: true });
+
+    expect(logger.info).toHaveBeenCalledWith(
+      'organization.getBySlug OK',
+      expect.not.objectContaining({ ip: expect.anything() }),
+    );
+  });
+
+  it('does not attach the IP to a routine failure', async () => {
+    await runLogger(makeCtx({ header: 'sess' }), {
+      ok: false,
+      error: { code: 'NOT_FOUND', name: 'TRPCError', message: 'Missing' },
+    });
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Missing',
+      expect.not.objectContaining({ ip: expect.anything() }),
+    );
+  });
+
+  it('attaches an anonymized IP to an authorization failure', async () => {
+    await runLogger(makeCtx({ header: 'sess' }), {
+      ok: false,
+      error: { code: 'FORBIDDEN', name: 'TRPCError', message: 'Denied' },
+    });
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Denied',
+      expect.objectContaining({ ip: '203.0.113.0' }),
+    );
+  });
+
+  it('attaches an anonymized IP when a service-layer rejection is wrapped', async () => {
+    // tRPC wraps anything that isn't a TRPCError as INTERNAL_SERVER_ERROR, so
+    // the status code on the cause is what identifies the rejection.
+    for (const cause of [new UnauthorizedError(), new RateLimitError()]) {
+      await runLogger(makeCtx({ header: 'sess' }), {
+        ok: false,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          name: 'TRPCError',
+          message: cause.message,
+          cause,
+        },
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        cause.message,
+        expect.objectContaining({ ip: '203.0.113.0' }),
+      );
+    }
+  });
+
+  it('attaches an anonymized IP to an unhandled failure', async () => {
+    await runLogger(makeCtx({ header: 'sess' }), { ok: false });
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Unhandled error',
+      expect.objectContaining({ status: 'unhandled_error', ip: '203.0.113.0' }),
+    );
+  });
+
+  it('does not attach the IP to a log emitted from a procedure', async () => {
+    const next = vi.fn(async ({ ctx }: { ctx: TContextWithLogger }) => {
+      ctx.logger.info('did a thing');
+      return { ok: true };
+    });
+
+    await withLogger({
+      ctx: makeCtx({}),
+      path: 'organization.getBySlug',
+      type: 'query',
+      next: next as never,
+    } as never);
+
+    expect(logger.info).toHaveBeenCalledWith(
+      'did a thing',
+      expect.not.objectContaining({ ip: expect.anything() }),
     );
   });
 });

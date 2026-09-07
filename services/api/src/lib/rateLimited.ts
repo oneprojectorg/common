@@ -1,8 +1,15 @@
-// keeps track of individual users
-const idToRequestCount = new Map<
-  string,
-  { accessCount: number; windowStart: number | undefined }
->();
+// Keyed on `${ip}-${reqUrl}`, so every entry holds a caller's raw IP. That is
+// defensible while the window is open — it is what the rate limit counts
+// against — but an entry nobody sweeps is retained personal data with no
+// purpose (GDPR Art. 5(1)(c)), so expired windows are evicted rather than left
+// to accumulate for the lifetime of the process.
+const windows = new Map<string, { accessCount: number; expiresAt: number }>();
+
+// Sweeping on a cadence rather than on every call keeps the O(entries) scan off
+// the hot path; an entry survives its window by at most this long.
+const SWEEP_INTERVAL_MS = 60_000;
+
+let nextSweepAt = 0;
 
 const rateLimited = (
   ip: string,
@@ -10,49 +17,50 @@ const rateLimited = (
   windowSize = 10,
   maxRequests = 10,
 ) => {
-  // Construct a unique key based on path and IP
-  const key = `${ip}-${reqUrl}`;
-
-  // Check and update current window
   const now = Date.now();
 
-  const notAccessedBefore = !idToRequestCount.get(key)?.windowStart;
+  sweepExpiredWindows(now);
 
-  // Initialize the window if it's the first time
-  if (notAccessedBefore) {
-    idToRequestCount.set(key, { windowStart: now, accessCount: 0 });
-  }
+  // Unique key based on path and IP
+  const key = `${ip}-${reqUrl}`;
+  const openWindow = windows.get(key);
+  const currentWindow =
+    openWindow && openWindow.expiresAt > now
+      ? openWindow
+      : { accessCount: 0, expiresAt: now + windowSize * 1000 };
 
-  // Get the window start time
-  let windowStart = idToRequestCount.get(key)?.windowStart as number;
+  const timeToRefresh = currentWindow.expiresAt - now;
 
-  // Check if the current window has expired
-  const isNewWindow = now - windowStart > windowSize * 1000;
-
-  // Reset the window if it has expired
-  if (isNewWindow) {
-    idToRequestCount.set(key, { windowStart: Date.now(), accessCount: 0 });
-  }
-
-  // Get the window start time again, IN CASE IT WAS RESET
-  windowStart = idToRequestCount.get(key)?.windowStart as number;
-
-  // Calculate the time to refresh the window
-  const timeToRefresh = windowStart + windowSize * 1000 - Date.now();
-
-  const currentRequestCount = idToRequestCount.get(key)?.accessCount ?? 0;
-
-  // Check and update current request limits
-  if (currentRequestCount >= maxRequests) {
+  if (currentWindow.accessCount >= maxRequests) {
     return { status: true, timeToRefresh };
   }
 
-  idToRequestCount.set(key, {
-    windowStart,
-    accessCount: currentRequestCount + 1,
+  windows.set(key, {
+    accessCount: currentWindow.accessCount + 1,
+    expiresAt: currentWindow.expiresAt,
   });
 
   return { status: false, timeToRefresh };
+};
+
+/**
+ * How many client windows are currently held. Exposed so the retention
+ * behaviour above is testable — a caller's IP must not outlive its window.
+ */
+export const trackedWindowCount = () => windows.size;
+
+const sweepExpiredWindows = (now: number) => {
+  if (now < nextSweepAt) {
+    return;
+  }
+
+  nextSweepAt = now + SWEEP_INTERVAL_MS;
+
+  for (const [key, openWindow] of windows) {
+    if (openWindow.expiresAt <= now) {
+      windows.delete(key);
+    }
+  }
 };
 
 export default rateLimited;
