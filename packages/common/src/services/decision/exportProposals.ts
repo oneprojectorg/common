@@ -8,7 +8,8 @@ import { randomUUID } from 'crypto';
 
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { EXPORT_CACHE_TTL_SECONDS, exportStatusCacheKey } from './exports';
+import { EXPORT_CACHE_TTL_SECONDS } from '../exports';
+import { exportStatusCacheKey } from './exports';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
