@@ -7,9 +7,9 @@ import {
 } from '@op/db/schema';
 import { describe, expect, it, vi } from 'vitest';
 
-import { OPBatchSend } from '../../../emails/index';
-import { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
-import { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';
+import { OPBatchSend } from '../../../../../emails/index';
+import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 
 type WorkflowInput = {
   event: { data: Record<string, string> };
@@ -42,13 +42,13 @@ vi.mock('@op/events', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../emails/index', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../emails/index')>()),
+vi.mock('../../../../../emails/index', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../../../emails/index')>()),
   OPBatchSend: vi.fn().mockResolvedValue({ data: [], errors: [] }),
 }));
 
-import '../../../workflows/src/functions/notifications/sendDecisionUpdateNotification';
-import '../../../workflows/src/functions/notifications/sendPostCommentNotification';
+import '../../../../../workflows/src/functions/notifications/sendDecisionUpdateNotification';
+import '../../../../../workflows/src/functions/notifications/sendPostCommentNotification';
 
 async function runWorkflow(id: string, data: Record<string, string>) {
   const handler = handlers.get(id);
