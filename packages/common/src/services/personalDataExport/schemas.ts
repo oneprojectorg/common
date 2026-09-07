@@ -22,9 +22,13 @@ export type PersonalDataExportSection = z.infer<
  * run completes or fails.
  */
 export const personalDataExportRecordSchema = z.object({
-  exportId: z.string(),
-  /** Auth user id of the data subject, and the only permitted reader. */
-  userId: z.string(),
+  exportId: z.string().uuid(),
+  /**
+   * Auth user id of the data subject, and the only permitted reader. Constrained
+   * to a UUID because the status read builds the storage key from it, so a
+   * record carrying path separators would sign against a neighbouring prefix.
+   */
+  userId: z.string().uuid(),
   status: z.enum(['pending', 'processing', 'completed', 'failed']),
   fileName: z.string().optional(),
   signedUrl: z.string().optional(),
