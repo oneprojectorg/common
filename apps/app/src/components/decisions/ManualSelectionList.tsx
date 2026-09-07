@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { Proposal } from '@op/common/client';
+import type { Proposal, ResultNotificationMessages } from '@op/common/client';
 import { templateCollectsBudget } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -79,6 +79,7 @@ export const ManualSelectionList = ({
     { placeholderData: (prev) => prev },
   );
   const candidates = candidatesQuery.data?.items;
+  const totalCandidates = candidatesQuery.data?.totalCandidates ?? 0;
 
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
@@ -124,7 +125,12 @@ export const ManualSelectionList = ({
       }
     },
     onError: (error) => {
-      setIsConfirmOpen(false);
+      // The final-phase dialog stays open on failure so the toast lands beside
+      // the two hand-written messages that caused it. The standard variant has
+      // nothing to correct, so it still dismisses.
+      if (!isFinalPhase) {
+        setIsConfirmOpen(false);
+      }
       toast.error(error.message);
     },
   });
@@ -166,16 +172,20 @@ export const ManualSelectionList = ({
     [],
   );
 
-  const handleConfirmSelection = useCallback(() => {
-    posthog.capture('manual_selection_dialog_confirmed', {
-      process_instance_id: instanceId,
-      proposal_count: selectedIds.length,
-    });
-    submitMutation.mutate({
-      processInstanceId: instanceId,
-      proposalIds: selectedIds,
-    });
-  }, [instanceId, selectedIds, submitMutation, posthog]);
+  const handleConfirmSelection = useCallback(
+    (resultNotifications?: ResultNotificationMessages) => {
+      posthog.capture('manual_selection_dialog_confirmed', {
+        process_instance_id: instanceId,
+        proposal_count: selectedIds.length,
+      });
+      submitMutation.mutate({
+        processInstanceId: instanceId,
+        proposalIds: selectedIds,
+        resultNotifications,
+      });
+    },
+    [instanceId, selectedIds, submitMutation, posthog],
+  );
 
   if (candidatesQuery.isError) {
     return (
@@ -276,8 +286,8 @@ export const ManualSelectionList = ({
 
       {isFinalPhase ? (
         <FinalPhaseSelectionFooter
-          selectedProposals={selectedProposals}
           numSelected={numSelected}
+          totalCandidates={totalCandidates}
           isConfirmOpen={isConfirmOpen}
           onConfirmOpenChange={handleConfirmDialogOpenChange}
           onConfirm={handleConfirmSelection}
@@ -290,7 +300,7 @@ export const ManualSelectionList = ({
           phaseName={currentPhaseName}
           isConfirmOpen={isConfirmOpen}
           onConfirmOpenChange={handleConfirmDialogOpenChange}
-          onConfirm={handleConfirmSelection}
+          onConfirm={() => handleConfirmSelection()}
           isSubmitting={submitMutation.isPending}
         />
       )}

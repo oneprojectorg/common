@@ -10,7 +10,9 @@ const listSelectionCandidatesInputSchema = z.object({
   sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
 });
 
-const listSelectionCandidatesOutputSchema = list(proposalSchema);
+const listSelectionCandidatesOutputSchema = list(proposalSchema).extend({
+  totalCandidates: z.number().int().nonnegative(),
+});
 
 export const listSelectionCandidatesRouter = router({
   listSelectionCandidates: networkAuthenticatedProcedure()

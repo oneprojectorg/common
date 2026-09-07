@@ -13,6 +13,12 @@ import type { Proposal } from './schemas/proposal';
 
 export interface SelectionCandidates {
   items: Proposal[];
+  /**
+   * Size of the whole eligible pool, before `categoryId` narrows it. The
+   * final-phase confirm needs "how many are NOT selected", which a filtered
+   * `items.length` cannot answer.
+   */
+  totalCandidates: number;
 }
 
 interface ListSelectionCandidatesInput {
@@ -63,38 +69,42 @@ export async function listSelectionCandidates({
 
   const previousPhaseId = resolvePreviousPhaseId(instance);
   if (!previousPhaseId) {
-    return { items: [] };
+    return { items: [], totalCandidates: 0 };
   }
 
-  let categoryProposalIds: Set<string> | undefined;
-  if (categoryId) {
-    const rows = await db
-      .select({ proposalId: proposalCategories.proposalId })
-      .from(proposalCategories)
-      .where(eq(proposalCategories.taxonomyTermId, categoryId));
-    if (rows.length === 0) {
-      return { items: [] };
-    }
-    categoryProposalIds = new Set(rows.map((r) => r.proposalId));
+  // The pool is resolved unconditionally and alongside the category read:
+  // `totalCandidates` must describe the unfiltered pool even when the filter
+  // matches nothing, which is exactly the case it exists to get right.
+  const [phaseCandidateIds, categoryRows] = await Promise.all([
+    getProposalIdsForPhase({ instance, phaseId: previousPhaseId, db }),
+    categoryId
+      ? db
+          .select({ proposalId: proposalCategories.proposalId })
+          .from(proposalCategories)
+          .where(eq(proposalCategories.taxonomyTermId, categoryId))
+      : undefined,
+  ]);
+  const totalCandidates = phaseCandidateIds.length;
+
+  if (categoryRows?.length === 0) {
+    return { items: [], totalCandidates };
   }
 
-  const phaseCandidateIds = await getProposalIdsForPhase({
-    instance,
-    phaseId: previousPhaseId,
-    db,
-  });
+  const categoryProposalIds = categoryRows
+    ? new Set(categoryRows.map((r) => r.proposalId))
+    : undefined;
 
   const candidateIds = categoryProposalIds
     ? phaseCandidateIds.filter((id) => categoryProposalIds.has(id))
     : phaseCandidateIds;
 
   if (candidateIds.length === 0) {
-    return { items: [] };
+    return { items: [], totalCandidates };
   }
 
   // Single relational query: `listProposals` joins the vote-count subquery via
   // `includeVoteCounts` and lets the DB drive ordering when `orderBy: 'votes'`.
-  const { items: proposals } = await listProposals({
+  const { items } = await listProposals({
     input: {
       processInstanceId,
       proposalIds: candidateIds,
@@ -106,7 +116,7 @@ export async function listSelectionCandidates({
     user,
   });
 
-  return { items: proposals };
+  return { items, totalCandidates };
 }
 
 function resolvePreviousPhaseId(instance: {

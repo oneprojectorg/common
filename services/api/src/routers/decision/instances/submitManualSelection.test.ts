@@ -564,9 +564,17 @@ describe.concurrent('submitManualSelection', () => {
     }
     expect(initialResult.selectedCount).toBe(0);
 
+    const mockSend = event.send as unknown as MockInstance;
+
+    const resultNotifications = {
+      funded: `Funded copy ${task.id}`,
+      notFunded: `Not funded copy ${task.id}`,
+    };
+
     await caller.decision.submitManualSelection({
       processInstanceId: instanceId,
       proposalIds: [p1.id, p2.id],
+      resultNotifications,
     });
 
     const allResults = await db
@@ -606,6 +614,148 @@ describe.concurrent('submitManualSelection', () => {
     for (const row of proposalRows) {
       expect(row.status).toBe(ProposalStatus.APPROVED);
     }
+
+    // The author copy survives the jsonb round-trip on the transition row —
+    // this, not the event payload, is the durable record of what was sent.
+    const [latestTransition] = await db
+      .select({
+        id: stateTransitionHistory.id,
+        transitionData: stateTransitionHistory.transitionData,
+      })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId))
+      .orderBy(desc(stateTransitionHistory.transitionedAt))
+      .limit(1);
+    expect(latestTransition?.transitionData).toMatchObject({
+      manualSelection: { resultNotifications },
+    });
+
+    // The announcement addresses both rows by id, and both ids resolve.
+    // Filtered by instance: the mock is shared across this concurrent file.
+    const notifiedCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/results-notified' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(notifiedCalls).toHaveLength(1);
+    expect(notifiedCalls[0]![0]).toMatchObject({
+      name: 'decision/results-notified',
+      data: {
+        processInstanceId: instanceId,
+        processResultId: latestResult.id,
+        transitionHistoryId: latestTransition?.id,
+        previousPhaseId: 'review',
+      },
+    });
+  });
+
+  it('publishes without announcing when no author copy is composed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+
+    const proposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    const mockSend = event.send as unknown as MockInstance;
+
+    // `review` is the last phase of the default schema, so this publishes
+    // results — the review-selection flow reaches the same code path without
+    // composing any copy, and must stay able to.
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [proposal.id],
+    });
+
+    // Both halves of the name: it published...
+    const resultRows = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(resultRows).toHaveLength(1);
+    expect(resultRows[0]?.selectedCount).toBe(1);
+    expect(resultRows[0]?.success).toBe(true);
+
+    // ...and announced nothing. Filtered by instance, not cleared: the mock is
+    // shared across this concurrent file, so another test's event must not be
+    // able to falsify this and a `mockClear` here must not eat theirs.
+    const notifiedCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/results-notified' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(notifiedCalls).toHaveLength(0);
+  });
+
+  it('rejects author copy on a phase that publishes nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const schemaWithTrailingPhase = {
+      ...schemaWithoutPipeline,
+      phases: [
+        { id: 'submission', name: 'Submission', rules: {} },
+        { id: 'review', name: 'Review', rules: {} },
+        { id: 'final', name: 'Final', rules: {} },
+      ],
+    };
+    const { instanceId, userEmail, caller } = await seedInstance(
+      testData,
+      schemaWithTrailingPhase,
+    );
+
+    const proposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    await expect(
+      caller.decision.submitManualSelection({
+        processInstanceId: instanceId,
+        proposalIds: [proposal.id],
+        resultNotifications: { funded: 'Funded', notFunded: 'Not funded' },
+      }),
+      // Pinned to the message: four other guards on this path also throw
+      // ValidationError, so the name alone proves nothing.
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringContaining(
+          'only sent when confirming the final phase',
+        ),
+      },
+    });
   });
 
   it('dispatches a manualSelectionsConfirmed event after a successful manual selection', async ({

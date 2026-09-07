@@ -6,6 +6,8 @@ export * from './listProcesses';
 
 // Notification audiences
 export * from './listProcessParticipants';
+export * from './listResultNotificationRecipients';
+export * from './resultNotificationTemplate';
 
 // Instance cache invalidation
 export * from './decisionCache';
