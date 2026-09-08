@@ -149,6 +149,8 @@ function ReviewerAssignmentsContent({
       <ReviewerHeader name={name} email={reviewer.email} />
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+        <ReviewProgressRail reviewer={summary} />
+
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           <Header3 className="font-light">
             {t('Assigned proposals ({count})', { count: summary.total })}
@@ -192,8 +194,6 @@ function ReviewerAssignmentsContent({
             {isFetchingNextPage ? t('Loading more proposals') : ''}
           </p>
         </div>
-
-        <ReviewProgressRail reviewer={summary} />
       </div>
     </>
   );
@@ -217,7 +217,7 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
     : null;
 
   return (
-    <div className="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0">
+    <div className="flex w-full flex-col gap-3 lg:order-last lg:w-80 lg:shrink-0">
       <Header3 className="font-light">{t('Review progress')}</Header3>
       <p aria-live="polite" className="text-sm text-muted-foreground">
         {t('{submitted} out of {assigned} assigned reviews are submitted', {
