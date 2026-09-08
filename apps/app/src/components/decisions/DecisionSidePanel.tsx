@@ -81,7 +81,7 @@ export const DecisionSidePanel = ({
         showCloseButton={false}
         // Desktop: sit below the fixed decision header (h-12/h-14) instead of
         // running full-height under it. Mobile stays full-screen.
-        className="gap-0 p-0 sm:max-w-[22.5rem]"
+        className="gap-0 p-0 sm:max-w-lg"
       >
         <SheetTitle className="sr-only">
           {t('Decision updates panel')}
