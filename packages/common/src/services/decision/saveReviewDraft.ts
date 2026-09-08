@@ -12,6 +12,7 @@ import { waitUntil } from '@vercel/functions';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
+import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -57,6 +58,16 @@ export async function saveReviewDraft({
   }
 
   const review = await db.transaction(async (tx) => {
+    const currentProposalHistoryId =
+      await getCurrentProposalHistoryIdForAssignment({
+        assignment: context.assignment,
+        db: tx,
+      });
+
+    const reviewedHistoryValues = currentProposalHistoryId
+      ? { reviewedProposalHistoryId: currentProposalHistoryId }
+      : {};
+
     const [draft] = await tx
       .insert(proposalReviews)
       .values({
@@ -65,12 +76,14 @@ export async function saveReviewDraft({
         reviewData,
         overallComment: overallComment ?? null,
         submittedAt: null,
+        ...reviewedHistoryValues,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
         set: {
           reviewData,
           overallComment: overallComment ?? null,
+          ...reviewedHistoryValues,
         },
         // Atomic guard against a late-arriving draft overwriting a row that
         // was submitted after this request's early state check passed. When

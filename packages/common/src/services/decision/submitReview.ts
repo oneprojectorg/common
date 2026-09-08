@@ -14,6 +14,7 @@ import { count } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../utils';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
+import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -59,6 +60,16 @@ export async function submitReview({
   const submittedAt = new Date().toISOString();
 
   const review = await db.transaction(async (tx) => {
+    const currentProposalHistoryId =
+      await getCurrentProposalHistoryIdForAssignment({
+        assignment: context.assignment,
+        db: tx,
+      });
+
+    const reviewedHistoryValues = currentProposalHistoryId
+      ? { reviewedProposalHistoryId: currentProposalHistoryId }
+      : {};
+
     const [submittedReview] = await tx
       .insert(proposalReviews)
       .values({
@@ -67,6 +78,7 @@ export async function submitReview({
         reviewData,
         overallComment: overallComment ?? null,
         submittedAt,
+        ...reviewedHistoryValues,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
@@ -75,6 +87,7 @@ export async function submitReview({
           reviewData,
           overallComment: overallComment ?? null,
           submittedAt,
+          ...reviewedHistoryValues,
         },
       })
       .returning();
@@ -83,6 +96,7 @@ export async function submitReview({
       throw new CommonError('Failed to submit review');
     }
 
+    // The pin means "the version the reviewer was asked to review": unchanged here.
     await tx
       .update(proposalReviewAssignments)
       .set({

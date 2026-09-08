@@ -4,6 +4,11 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
+import {
+  closeOpenProposalHistory,
+  getCurrentProposalHistoryId,
+  reviseProposal,
+} from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -93,6 +98,57 @@ describe.concurrent('saveReviewDraft', () => {
     expect(assignment?.completedAt).toBeNull();
     expect(assignment?.reviews[0]?.state).toBe(ProposalReviewState.DRAFT);
     expect(assignment?.reviews[0]?.submittedAt).toBeNull();
+  });
+
+  it("anchors the draft to the proposal's current version on every save", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      { where: { id: created.assignment.id } },
+    );
+
+    await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+    });
+
+    const firstSave = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(firstSave?.reviewedProposalHistoryId).toBe(
+      await getCurrentProposalHistoryId({ proposalId: created.proposal.id }),
+    );
+
+    const revisedHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+    expect(firstSave?.reviewedProposalHistoryId).not.toBe(revisedHistoryId);
+
+    await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    const secondSave = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(secondSave?.reviewedProposalHistoryId).toBe(revisedHistoryId);
+
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
   });
 
   it('upserts a single draft row per assignment — last write wins', async ({
@@ -334,6 +390,32 @@ describe.concurrent('saveReviewDraft', () => {
     expect(assignment?.status).toBe(
       ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     );
+  });
+
+  it('saves the draft with no version anchor when the proposal has no current version', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    await closeOpenProposalHistory({ proposalId: created.proposal.id });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const result = await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.DRAFT);
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(review?.reviewedProposalHistoryId).toBeNull();
   });
 });
 
