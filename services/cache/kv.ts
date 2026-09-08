@@ -314,6 +314,64 @@ export const invalidateMultiple = async ({
 // Internal: returns a discriminated result so `cache()` can split hit / miss
 // / timeout into different metrics. Public `get()` still maps everything
 // non-hit to `null` for back-compat.
+/**
+ * How long a caller that cannot tolerate a false answer waits for the client.
+ *
+ * Sized for a cold start rather than a reconnect: the client is created at
+ * module load and `connect()` is deliberately not awaited, so the first request
+ * a fresh serverless instance serves arrives while the socket is still coming
+ * up. Two seconds covers that handshake and is still far below any caller's own
+ * budget.
+ */
+const REDIS_READY_TIMEOUT_MS = 2_000;
+
+/**
+ * Waits, briefly, for the client to start accepting commands.
+ *
+ * `redis.connect()` is fired at module load and not awaited, so on a fresh
+ * instance there is a window where the client exists and is not ready. Commands
+ * issued in it fail — `disableOfflineQueue` means they are not held — and reads
+ * in it report a miss. For a cache in front of a database that is the right
+ * trade: answer "not cached", fetch from the source, move on.
+ *
+ * It is the wrong trade for cache-only state, where a miss is not a slower path
+ * to the same answer but a different answer. Waiting out the handshake turns a
+ * confident wrong reply into a correct one a moment later.
+ *
+ * Listens for `ready` rather than awaiting the connect promise, so it also
+ * covers a client reconnecting after a drop.
+ *
+ * @returns Whether the client is accepting commands.
+ */
+const whenRedisReady = async (): Promise<boolean> => {
+  const client = redis;
+
+  if (!client) {
+    return false;
+  }
+
+  if (client.isReady) {
+    return true;
+  }
+
+  return await new Promise<boolean>((resolve) => {
+    const settle = (ready: boolean) => {
+      clearTimeout(timer);
+      client.off('ready', onReady);
+      resolve(ready);
+    };
+    const onReady = () => settle(true);
+    // Re-reads `isReady` rather than resolving false outright: the event can
+    // fire between the check above and the listener being attached.
+    const timer = setTimeout(
+      () => settle(client.isReady),
+      REDIS_READY_TIMEOUT_MS,
+    );
+
+    client.once('ready', onReady);
+  });
+};
+
 const tryGetFromRedis = async (key: string): Promise<RedisGetResult> => {
   // No cache configured, or a client that never reached a ready state. Both
   // mean this deployment has no working cache, so they answer the same way.
@@ -374,13 +432,37 @@ export const get = async (key: string) => {
  *   Redis answered and held nothing, or this deployment has no working cache.
  *   `timeout` and `error` mean Redis did not answer, so absence is not known.
  */
-export const getWithStatus = async (key: string): Promise<RedisGetResult> =>
-  tryGetFromRedis(key);
+export const getWithStatus = async (key: string): Promise<RedisGetResult> => {
+  // The wait is here rather than in `tryGetFromRedis` so it costs only the
+  // callers who need it. A cache in front of a database wants the fast miss and
+  // its own fetch; these callers have no source to fall back to, so for them a
+  // miss from a client that was never ready is a wrong answer, not a slow one.
+  if (redis && !(await whenRedisReady())) {
+    // Not `miss`. The client is configured and did not answer, which is the one
+    // thing this function exists to keep separate from absence.
+    cacheMetrics.recordTimeout({ layer: 'command' });
+
+    return { status: 'timeout' };
+  }
+
+  return await tryGetFromRedis(key);
+};
 
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing
 export const set = async (key: string, data: unknown, ttl?: number) => {
   if (!redis) {
+    return;
+  }
+
+  // Same window as the read, and worse consequences. `disableOfflineQueue` means
+  // a command issued before the client is ready is rejected rather than held, so
+  // a write on a fresh instance was landing in the catch below and being logged
+  // and dropped. For a cache that costs a repeat fetch; for cache-only state it
+  // loses the record.
+  if (!(await whenRedisReady())) {
+    cacheMetrics.recordTimeout({ layer: 'command' });
+
     return;
   }
 

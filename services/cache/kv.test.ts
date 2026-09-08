@@ -10,6 +10,8 @@ type FakeRedis = {
   // accepts commands. `tryGetFromRedis` gates on `isReady`.
   isReady: boolean;
   on: Mock;
+  once: Mock;
+  off: Mock;
   connect: Mock;
   get: Mock<(key: string) => Promise<string | null>>;
   setEx: Mock<(key: string, ttl: number, data: string) => Promise<unknown>>;
@@ -25,6 +27,10 @@ const fakeRedis: FakeRedis = {
   isOpen: true,
   isReady: true,
   on: vi.fn(),
+  // `whenRedisReady` listens for 'ready' so it covers a reconnect as well as a
+  // cold start. Tests that need the wait to succeed invoke the stored listener.
+  once: vi.fn(),
+  off: vi.fn(),
   connect: vi.fn(),
   get: vi.fn<(key: string) => Promise<string | null>>(),
   setEx: vi.fn<(key: string, ttl: number, data: string) => Promise<unknown>>(),
@@ -332,12 +338,19 @@ describe('getWithStatus()', () => {
     await expect(getWithStatus('k')).resolves.toEqual({ status: 'error' });
   });
 
-  // A client that never became ready means this deployment has no working
-  // cache. That supports no claim about one key, so it answers as a miss and
-  // the caller degrades instead of reporting an error for every read.
-  it('reports a miss when the client is not ready', async () => {
+  // Was a miss, and that was wrong. A configured client that has not come up
+  // supports no claim about one key either way — but `miss` is a claim: it says
+  // the key is absent, and a caller holding cache-only state acts on that by
+  // discarding a record that is still there. `timeout` is the honest answer,
+  // and this function exists to make exactly that distinction.
+  //
+  // Only reached after `whenRedisReady` has waited the client out, so this is a
+  // client that stayed down, not one mid-handshake.
+  it('reports a timeout rather than a miss when the client never comes up', async () => {
     fakeRedis.isReady = false;
-    await expect(getWithStatus('k')).resolves.toEqual({ status: 'miss' });
+    fakeRedis.once.mockImplementation(() => {});
+
+    await expect(getWithStatus('k')).resolves.toEqual({ status: 'timeout' });
     expect(fakeRedis.get).not.toHaveBeenCalled();
   });
 });
@@ -347,6 +360,10 @@ describe('set()', () => {
   let recordError: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    // Explicit, because `set` now waits for the client: a `false` left behind by
+    // an earlier test would make every write here time out instead of running.
+    fakeRedis.isReady = true;
+    fakeRedis.once.mockReset();
     fakeRedis.setEx.mockReset();
     fakeRedis.del.mockReset();
     recordTimeout = vi.spyOn(cacheMetrics, 'recordTimeout');
@@ -369,5 +386,64 @@ describe('set()', () => {
     await expect(set('k', { a: 1 })).resolves.toBeUndefined();
     expect(recordError).toHaveBeenCalledWith('set');
     expect(recordTimeout).not.toHaveBeenCalled();
+  });
+});
+
+describe('a client that is not ready yet', () => {
+  afterEach(() => {
+    fakeRedis.isReady = true;
+    fakeRedis.once.mockReset();
+  });
+
+  // The failure this guards against: `connect()` is fired at module load and not
+  // awaited, so the first request a fresh serverless instance serves arrives
+  // while the socket is still coming up. Reporting that as a miss told a caller
+  // holding cache-only state that its record was gone — a confident wrong answer
+  // rather than a slow one, and one no later read repaired.
+  it('does not report a cold client as a miss', async () => {
+    fakeRedis.isReady = false;
+    fakeRedis.once.mockImplementation(() => {});
+
+    const result = await getWithStatus('themeAnalysis:instance:process:run');
+
+    expect(result.status).toBe('timeout');
+    expect(fakeRedis.get).not.toHaveBeenCalled();
+  });
+
+  // Waiting is only worth anything if the read then happens.
+  it('reads once the client becomes ready', async () => {
+    fakeRedis.isReady = false;
+    fakeRedis.get.mockResolvedValue(JSON.stringify({ status: 'processing' }));
+    fakeRedis.once.mockImplementation((event: string, listener: () => void) => {
+      if (event === 'ready') {
+        fakeRedis.isReady = true;
+        setTimeout(listener, 0);
+      }
+    });
+
+    const result = await getWithStatus('themeAnalysis:instance:process:run');
+
+    expect(result).toEqual({ status: 'hit', data: { status: 'processing' } });
+  });
+
+  // `disableOfflineQueue` rejects a command issued before the client is ready
+  // rather than holding it, so a write in that window was logged and dropped.
+  it('waits for the client before writing', async () => {
+    fakeRedis.isReady = false;
+    fakeRedis.setEx.mockResolvedValue('OK');
+    fakeRedis.once.mockImplementation((event: string, listener: () => void) => {
+      if (event === 'ready') {
+        fakeRedis.isReady = true;
+        setTimeout(listener, 0);
+      }
+    });
+
+    await set(
+      'themeAnalysis:instance:process:run',
+      { status: 'completed' },
+      60,
+    );
+
+    expect(fakeRedis.setEx).toHaveBeenCalled();
   });
 });
