@@ -1722,5 +1722,8 @@
   "Check all that apply": "اختر كل ما ينطبق",
   "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر",
   "Comments could not be loaded": "تعذّر تحميل التعليقات",
-  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)"
+  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)",
+  "Submitting is final": "الإرسال نهائي",
+  "You won't be able to edit your proposal after submitting": "لن تتمكن من تعديل مقترحك بعد الإرسال",
+  "Keep editing": "متابعة التحرير"
 }

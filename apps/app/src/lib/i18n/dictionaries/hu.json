@@ -1722,5 +1722,8 @@
   "Check all that apply": "Jelöld be az összes megfelelőt",
   "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak",
   "Comments could not be loaded": "A hozzászólásokat nem sikerült betölteni",
-  "(opens in a new tab)": "(új lapon nyílik meg)"
+  "(opens in a new tab)": "(új lapon nyílik meg)",
+  "Submitting is final": "A beküldés végleges",
+  "You won't be able to edit your proposal after submitting": "A beküldés után nem szerkesztheti a javaslatát",
+  "Keep editing": "Szerkesztés folytatása"
 }

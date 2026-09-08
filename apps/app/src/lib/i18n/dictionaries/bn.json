@@ -1722,5 +1722,8 @@
   "Check all that apply": "প্রযোজ্য সবগুলি নির্বাচন করুন",
   "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন",
   "Comments could not be loaded": "মন্তব্য লোড করা যায়নি",
-  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)"
+  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)",
+  "Submitting is final": "জমা দেওয়া চূড়ান্ত",
+  "You won't be able to edit your proposal after submitting": "জমা দেওয়ার পর আপনি আপনার প্রস্তাব সম্পাদনা করতে পারবেন না",
+  "Keep editing": "সম্পাদনা চালিয়ে যান"
 }

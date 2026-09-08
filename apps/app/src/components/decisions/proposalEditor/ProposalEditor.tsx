@@ -41,9 +41,11 @@ import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
+import { SubmitProposalConfirmModal } from './SubmitProposalConfirmModal';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
+import { requiresSubmitConfirmation } from './submitConfirmation';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
 
@@ -176,8 +178,10 @@ function ProposalEditorInner({
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomFormModal, setShowCustomFormModal] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
   const pendingVersionTimeoutRef = useRef<number | null>(null);
+  const submitInFlightRef = useRef(false);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
 
@@ -314,18 +318,18 @@ function ProposalEditorInner({
     backHref,
   ]);
 
-  const handleSubmitProposal = useCallback(async () => {
-    const currentDraft = draftRef.current;
-    const template = templateRef.current;
-
-    // -- Client-side schema validation (validates ALL template fields) --------
-    const result = validate();
-    if (!result.valid) {
-      toast.error(t('Please fix the following issues:'), {
-        description: Object.values(result.errors).join(', '),
-      });
+  // Reads the refs at call time: the user can keep typing with the dialog open.
+  const performSubmit = useCallback(async () => {
+    // A ref, not `isSubmitting`: the confirm dialog's action button is a plain
+    // Button that stays clickable through its exit animation, and state read at
+    // render time would still be `false` for a second click in that window.
+    if (submitInFlightRef.current) {
       return;
     }
+    submitInFlightRef.current = true;
+
+    const currentDraft = draftRef.current;
+    const template = templateRef.current;
 
     setIsSubmitting(true);
 
@@ -379,13 +383,13 @@ function ProposalEditorInner({
     } catch (error) {
       logger.error('Failed to update proposal', {
         error,
-        context: 'ProposalEditor.handleSubmitProposal',
+        context: 'ProposalEditor.performSubmit',
       });
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   }, [
-    t,
     collaborationDocId,
     proposal,
     isDraft,
@@ -395,9 +399,52 @@ function ProposalEditorInner({
     utils,
     updateProposalMutation,
     draftRef,
-    validate,
     finalizeSubmit,
   ]);
+
+  // -- Client-side schema validation (validates ALL template fields) ----------
+  const validateWithToast = useCallback(() => {
+    const result = validate();
+    if (result.valid) {
+      return true;
+    }
+
+    toast.error(t('Please fix the following issues:'), {
+      description: Object.values(result.errors).join(', '),
+    });
+
+    return false;
+  }, [t, validate]);
+
+  const handleSubmitProposal = useCallback(() => {
+    // Validation runs ahead of the confirmation so an incomplete draft gets its
+    // errors instead of a prompt about a submission it can't reach.
+    if (!validateWithToast()) {
+      return;
+    }
+
+    if (requiresSubmitConfirmation({ instance, isDraft })) {
+      setShowSubmitConfirm(true);
+      return;
+    }
+
+    void performSubmit();
+  }, [validateWithToast, instance, isDraft, performSubmit]);
+
+  const handleConfirmSubmit = useCallback(() => {
+    // The dialog closes before the submission starts: `AlertDialogAction` is a
+    // plain Button, so nothing dismisses it for us, and leaving it open would
+    // stack it under `CustomFormModal` and outlive the redirect.
+    setShowSubmitConfirm(false);
+
+    // Re-validated because the document is collaborative: a co-author can empty
+    // a required field while the dialog sits open.
+    if (!validateWithToast()) {
+      return;
+    }
+
+    void performSubmit();
+  }, [validateWithToast, performSubmit]);
 
   const handleCustomFormSubmit = useCallback(
     async (values: CustomFormValues) => {
@@ -531,6 +578,12 @@ function ProposalEditorInner({
           content={proposalInfoContent}
         />
       )}
+
+      <SubmitProposalConfirmModal
+        isOpen={showSubmitConfirm}
+        onOpenChange={setShowSubmitConfirm}
+        onConfirm={handleConfirmSubmit}
+      />
 
       {customForm && (
         <CustomFormModal

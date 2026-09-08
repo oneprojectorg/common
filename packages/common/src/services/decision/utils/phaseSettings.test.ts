@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  canEditProposals,
   getPhaseReviewSettings,
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
@@ -31,6 +32,19 @@ describe('isReviewPhase', () => {
   it('defaults to false when neither flag is set', () => {
     expect(isReviewPhase({ rules: {} })).toBe(false);
     expect(isReviewPhase({})).toBe(false);
+  });
+});
+
+describe('canEditProposals', () => {
+  it('reads proposals.edit, defaulting to false', () => {
+    expect(canEditProposals({ rules: { proposals: { edit: true } } })).toBe(
+      true,
+    );
+    expect(canEditProposals({ rules: { proposals: { edit: false } } })).toBe(
+      false,
+    );
+    expect(canEditProposals({ rules: { proposals: {} } })).toBe(false);
+    expect(canEditProposals({})).toBe(false);
   });
 });
 
