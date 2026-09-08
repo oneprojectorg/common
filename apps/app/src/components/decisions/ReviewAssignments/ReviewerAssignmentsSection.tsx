@@ -128,7 +128,10 @@ function ReviewerAssignmentsContent({
     enabled: access.admin,
   });
 
-  // No identity means no tie to this process: a dead link, not an error.
+  // The server 404s an unknown reviewer, so the client only reaches this when
+  // the server prefetch failed, or when the reviewer's tie to the process is
+  // removed while the page is open and the realtime refetch returns
+  // `reviewer: null`.
   if (!summary?.reviewer) {
     return (
       <Empty className="rounded-md border border-dashed">

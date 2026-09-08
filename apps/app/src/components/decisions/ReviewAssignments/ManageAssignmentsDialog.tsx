@@ -95,11 +95,16 @@ export function ManageAssignmentsDialogContent({
       >
         <Suspense
           fallback={
-            <div className="flex flex-col gap-3 px-6 py-4">
-              <Skeleton className="h-6 w-64" aria-hidden />
-              <Skeleton className="h-9 w-full" aria-hidden />
-              <Skeleton className="h-64 w-full" aria-hidden />
-            </div>
+            <>
+              <DialogHeader>
+                <DialogTitle>{t('Manage assignments')}</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-3 px-6 py-4">
+                <Skeleton className="h-6 w-64" aria-hidden />
+                <Skeleton className="h-9 w-full" aria-hidden />
+                <Skeleton className="h-64 w-full" aria-hidden />
+              </div>
+            </>
           }
         >
           <ManageAssignmentsBody
