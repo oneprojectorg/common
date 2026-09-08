@@ -155,26 +155,42 @@ export const THEME_ANALYSIS_MAX_OUTPUT_TOKENS = 4_000;
 /**
  * Request fields that turn the model's extended thinking off.
  *
- * The reason this exists: on a real run the common-ground pass spent its entire
- * output budget reasoning and returned zero characters of answer — `finish
- * reason 'length'` with nothing before it. Reasoning is billed and waited for
- * out of the same budget as the reply, and at this endpoint's throughput the
- * model wanted more of it than any timeout we can justify. The two passes
- * summarise and group bounded text against a fixed output shape; that is not
- * work that needs an extended chain of thought, and it is the one part of the
- * cost that buys us nothing here.
+ * The reason this exists: on a real run a pass spent its entire output budget
+ * reasoning and wrote almost none of the answer — `finish reason 'length'` with
+ * a couple of dozen characters before it. Reasoning is billed and waited for out
+ * of the same budget as the reply, and at this endpoint's throughput the model
+ * wants more of it than any timeout we can justify. The two passes summarise and
+ * group bounded text against a fixed output shape; that is not work that needs
+ * an extended chain of thought, and it is the one part of the cost that buys us
+ * nothing here.
  *
- * `thinking` is the parameter Z.ai documents for GLM, which is the family this
- * model comes from — `zai-org` is right there in the id. Endpoints that host
- * these weights behind other stacks spell it differently: vLLM reads
- * `chat_template_kwargs: { enable_thinking: false }`, and OpenAI-style gateways
- * read `reasoning_effort: 'minimal'`. All three survive the trip to the request
- * body (there is a test), so if this endpoint ignores `thinking`, swapping the
- * spelling here is the whole change.
+ * Four fields for one switch, because the same weights are hosted behind stacks
+ * that each named it differently, and `AI_BASE_URL` does not tell us which one
+ * is answering. `thinking` is Z.ai's own spelling for GLM — `zai-org` is right
+ * there in the model id. vLLM and SGLang read `chat_template_kwargs`, some
+ * builds read a bare `enable_thinking`, and OpenAI-style gateways read
+ * `reasoning_effort`.
  *
- * An endpoint that does not recognise the field ignores it, which leaves the
- * behaviour exactly as it is today rather than breaking it.
+ * Sending all four rather than guessing one is safe here, and that is a
+ * conclusion from evidence rather than a hope: this endpoint was already sent
+ * `thinking` on its own, and answered normally instead of rejecting the
+ * request — so it ignores fields it does not recognise. Guessing one at a time
+ * costs a deploy and a run per guess, and gets the same answer.
+ *
+ * All four are known to survive the trip into the request body; there is a test.
+ * If none of them takes effect, the reasoning-token count now recorded on a
+ * truncated reply will say so plainly, and the remaining lever is the model
+ * rather than the request.
  */
 export const THEME_ANALYSIS_THINKING_OFF = {
   thinking: { type: 'disabled' },
+  chat_template_kwargs: { enable_thinking: false },
+  enable_thinking: false,
+  // camelCase, alone among these. The SDK knows this one, so it maps it to
+  // `reasoning_effort` on the wire — and drops the snake_case spelling that
+  // would collide with it. The other three it does not know, so it forwards
+  // them verbatim and they have to be written the way the endpoint reads them.
+  // The wire test asserts the body rather than this object for exactly that
+  // reason: what we set and what is sent are not the same shape.
+  reasoningEffort: 'low',
 } as const;

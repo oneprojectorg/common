@@ -140,7 +140,9 @@ describe('askForJson', () => {
   // is a bigger cap rather than a better prompt, so the record says so.
   it('names truncation when the model stopped at the output limit', async () => {
     generate.mockResolvedValue({
-      text: '{"themes": [{"title": "Street spa',
+      // Long enough to be a real answer that ran out, rather than an object
+      // that was never started.
+      text: `{"themes": [{"title": "Street space", "summary": "${'x'.repeat(200)}`,
       finishReason: 'length',
     });
 
@@ -157,7 +159,34 @@ describe('askForJson', () => {
     generate.mockResolvedValue({ text: '', finishReason: 'length' });
 
     await expect(ask()).rejects.toMatchObject({
-      message: expect.stringContaining('without writing any of the answer'),
+      message: expect.stringContaining('without writing the answer'),
+    });
+  });
+
+  // The real shape of it: the model opened an object and stopped. Counting that
+  // as a truncated answer sends the reader to raise the cap, when the budget
+  // went to reasoning and the cap is not the problem.
+  it('treats a bare opening brace as never having started the answer', async () => {
+    generate.mockResolvedValue({
+      text: '{"themes": [{"title":',
+      finishReason: 'length',
+    });
+
+    await expect(ask()).rejects.toMatchObject({
+      message: expect.stringContaining('without writing the answer'),
+    });
+  });
+
+  // The number that ends the argument about whether thinking is still on.
+  it('records how much of the budget went to reasoning', async () => {
+    generate.mockResolvedValue({
+      text: '',
+      finishReason: 'length',
+      usage: { outputTokens: 4000, reasoningTokens: 3980, totalTokens: 5000 },
+    });
+
+    await expect(ask()).rejects.toMatchObject({
+      message: expect.stringContaining('3980 of them reasoning'),
     });
   });
 

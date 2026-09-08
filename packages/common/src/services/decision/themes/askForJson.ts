@@ -187,9 +187,13 @@ export const askForJson = async <TSchema extends z.ZodTypeAny>({
     model: { modelId: THEME_ANALYSIS_MODEL_ID },
   });
 
-  const { text, finishReason } = await generateWithin(agent, prompt, name);
+  const { text, finishReason, usage } = await generateWithin(
+    agent,
+    prompt,
+    name,
+  );
 
-  return parseReply({ name, text, finishReason, schema });
+  return parseReply({ name, text, finishReason, usage, schema });
 };
 
 /**
@@ -214,15 +218,32 @@ const parseReply = <TSchema extends z.ZodTypeAny>({
   name,
   text,
   finishReason,
+  usage,
   schema,
 }: {
   name: string;
   text: string;
   finishReason: string | undefined;
+  usage: PassUsage;
   schema: TSchema;
 }): z.infer<TSchema> => {
+  // Reasoning tokens go in the description because they are what separates a
+  // model that answered badly from one that never got to the answer, and the
+  // record is where that has to be readable. A budget of 4000 that produced 21
+  // characters and 3900 reasoning tokens is not ambiguous about anything.
   const describe = () =>
-    `finish reason '${finishReason ?? 'unknown'}', ${text.length} chars`;
+    [
+      `finish reason '${finishReason ?? 'unknown'}'`,
+      `${text.length} chars`,
+      usage?.outputTokens === undefined
+        ? undefined
+        : `${usage.outputTokens} output tokens`,
+      usage?.reasoningTokens === undefined
+        ? undefined
+        : `${usage.reasoningTokens} of them reasoning`,
+    ]
+      .filter(Boolean)
+      .join(', ');
 
   const span = extractJsonSpan(text);
 
@@ -336,6 +357,21 @@ const timedOut = ({
 };
 
 /**
+ * Below this, a reply that hit the cap had not begun its answer.
+ *
+ * Sized to be shorter than any real reply and longer than the opening of an
+ * object, so `{"themes": [{"title":` counts as nothing written rather than as a
+ * truncated answer — the two need opposite fixes and only the length separates
+ * them.
+ */
+const MEANINGFUL_ANSWER_CHARS = 120;
+
+/** Token counts the provider reported, when it reported any. */
+type PassUsage =
+  | { outputTokens?: number; reasoningTokens?: number; totalTokens?: number }
+  | undefined;
+
+/**
  * How a reply with no JSON in it should be described.
  *
  * Three outcomes, because they have three different fixes: the model stopped at
@@ -358,8 +394,12 @@ const truncationMessage = ({
     return `The ${name} pass returned no complete JSON object (${describe()}).`;
   }
 
-  if (text.length === 0) {
-    return `The ${name} pass used its whole output budget without writing any of the answer, which means it went on reasoning — the model's thinking needs turning down, not the cap turning up (${describe()}).`;
+  // Any cap reached with hardly a line written is the same fault as none at
+  // all: the budget went somewhere the reply does not show. A threshold rather
+  // than an exact zero, because a model that manages `{"themes": [{"title":`
+  // before running out has not started answering either.
+  if (text.length < MEANINGFUL_ANSWER_CHARS) {
+    return `The ${name} pass used its whole output budget without writing the answer, which means it spent it reasoning — the model's thinking needs turning down, not the cap turning up (${describe()}).`;
   }
 
   return `The ${name} pass was cut off at the output limit part-way through its JSON (${describe()}).`;
@@ -391,7 +431,11 @@ const generateWithin = async (
   agent: ReturnType<typeof createAIAgent>,
   prompt: string,
   name: string,
-): Promise<{ text: string; finishReason: string | undefined }> => {
+): Promise<{
+  text: string;
+  finishReason: string | undefined;
+  usage: PassUsage;
+}> => {
   // A controller and a timer rather than `AbortSignal.timeout`, so the timer can
   // be cleared. `AbortSignal.timeout` holds its timer for the full duration
   // whatever happens, and a pending five-minute timer keeps the event loop alive

@@ -15,7 +15,6 @@ import { askForJson } from './askForJson';
 import {
   THEME_ANALYSIS_MAX_OUTPUT_TOKENS,
   THEME_ANALYSIS_MODEL_ID,
-  THEME_ANALYSIS_THINKING_OFF,
 } from './constants';
 
 /**
@@ -116,8 +115,15 @@ describe('the model call as it goes over the wire', () => {
 
     await ask();
 
+    // The body, not the options object — they are not the same shape. Three of
+    // these are forwarded verbatim because the SDK does not know them, and
+    // `reasoningEffort` is renamed because it does. Asserting the options back
+    // to themselves would pass while the endpoint received nothing.
     expect(requestBodies[0]).toMatchObject({
-      thinking: THEME_ANALYSIS_THINKING_OFF.thinking,
+      thinking: { type: 'disabled' },
+      chat_template_kwargs: { enable_thinking: false },
+      enable_thinking: false,
+      reasoning_effort: 'low',
     });
   });
 
