@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type {
   AdminAssignableProposal,
@@ -11,22 +12,21 @@ import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import {
-  Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@op/sense/Dialog';
 import { Field, FieldLabel } from '@op/sense/Field';
 import { Header3 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { Label } from '@op/sense/Label';
+import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useId, useMemo, useState } from 'react';
+import { Suspense, useId, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -34,6 +34,7 @@ import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
 import type { ReviewerRow } from './buildReviewerRows';
+import { buildReviewerRows } from './buildReviewerRows';
 
 /** How a proposal row behaves for this reviewer. */
 type RowKind = 'own' | 'locked' | 'assigned' | 'free';
@@ -46,25 +47,121 @@ interface ProposalRow {
   isOwn: boolean;
 }
 
-interface ManageAssignmentsDialogProps {
+interface ManageAssignmentsDialogContentProps {
+  processInstanceId: string;
+  phaseId: string;
+  reviewerProfileId: string;
+  onSaved: () => void;
+}
+
+interface ManageAssignmentsFormProps {
   processInstanceId: string;
   phaseId: string;
   reviewer: ReviewerRow;
   proposals: AdminAssignableProposal[];
+  onSaved: () => void;
+}
+
+/**
+ * The whole-phase read lives in a child of `DialogContent`: Base UI renders
+ * the portal's contents only while the dialog is open, so the query fires on
+ * open rather than on page load. Closing unmounts the body, which is also how
+ * the selection resets.
+ */
+export function ManageAssignmentsDialogContent({
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+  onSaved,
+}: ManageAssignmentsDialogContentProps) {
+  const t = useTranslations();
+
+  return (
+    // 34rem × 38rem — the size the design's dialog was composed at.
+    <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
+      <APIErrorBoundary
+        fallbacks={{
+          default: () => (
+            <DialogHeader>
+              <DialogTitle>
+                {t("We couldn't load review assignments")}
+              </DialogTitle>
+              <DialogDescription>
+                {t('Please refresh the page to try again.')}
+              </DialogDescription>
+            </DialogHeader>
+          ),
+        }}
+      >
+        <Suspense
+          fallback={
+            <div className="flex flex-col gap-3 px-6 py-4">
+              <Skeleton className="h-6 w-64" aria-hidden />
+              <Skeleton className="h-9 w-full" aria-hidden />
+              <Skeleton className="h-64 w-full" aria-hidden />
+            </div>
+          }
+        >
+          <ManageAssignmentsBody
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
+            reviewerProfileId={reviewerProfileId}
+            onSaved={onSaved}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+    </DialogContent>
+  );
+}
+
+function ManageAssignmentsBody({
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+  onSaved,
+}: ManageAssignmentsDialogContentProps) {
+  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
+    { processInstanceId, phaseId },
+    // Refetch through the client link on mount — the SSR-seeded cache alone
+    // never registers the `reviewAssignments` realtime channel.
+    { refetchOnMount: 'always' },
+  );
+
+  const { rows } = useMemo(
+    () =>
+      buildReviewerRows(data.reviewers, data.eligibleReviewers, data.proposals),
+    [data.reviewers, data.eligibleReviewers, data.proposals],
+  );
+
+  const reviewer = rows.find((row) => row.profile.id === reviewerProfileId);
+
+  if (!reviewer) {
+    return null;
+  }
+
+  return (
+    <ManageAssignmentsForm
+      processInstanceId={processInstanceId}
+      phaseId={phaseId}
+      reviewer={reviewer}
+      proposals={data.proposals}
+      onSaved={onSaved}
+    />
+  );
 }
 
 /** A diff (assign / unassign) Save applies in one go; the visible diff IS the confirmation. */
-export function ManageAssignmentsDialog({
+function ManageAssignmentsForm({
   processInstanceId,
   phaseId,
   reviewer,
   proposals,
-}: ManageAssignmentsDialogProps) {
+  onSaved,
+}: ManageAssignmentsFormProps) {
   const t = useTranslations();
   const filterId = useId();
   const importEnabled = useFeatureFlag('bulk_assign_import');
 
-  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [toAssign, setToAssign] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
@@ -134,12 +231,6 @@ export function ManageAssignmentsDialog({
   // rows the admin ticked by hand.
   const importProposals = (proposalIds: Array<string>) => {
     setToAssign((current) => new Set([...current, ...proposalIds]));
-  };
-
-  const reset = () => {
-    setQuery('');
-    setToAssign(new Set());
-    setToUnassign(new Set());
   };
 
   const toggleRow = (row: ProposalRow) => {
@@ -240,144 +331,126 @@ export function ManageAssignmentsDialog({
       toast.error(t('Could not unassign — the assignment has changed.'));
     }
 
-    reset();
-    setIsOpen(false);
+    onSaved();
   };
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        setIsOpen(open);
-        if (!open) {
-          reset();
-        }
-      }}
-    >
-      <DialogTrigger render={<Button />}>
-        {t('Manage assignments')}
-      </DialogTrigger>
+    <>
+      <DialogHeader>
+        <DialogTitle>{t("Manage {name}'s assignments", { name })}</DialogTitle>
+        <DialogDescription>
+          {t(
+            "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
+          )}
+        </DialogDescription>
+      </DialogHeader>
 
-      {/* 34rem × 38rem — the size the design's dialog was composed at. */}
-      <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>
-            {t("Manage {name}'s assignments", { name })}
-          </DialogTitle>
-          <DialogDescription>
-            {t(
-              "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
-            )}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
-          <div className="flex items-center justify-between gap-3">
-            {/* Not the filter's label — a moving count would rename the control. */}
-            <Header3 aria-live="polite" className="font-light">
-              {t('Proposals ({count} assigned)', { count: assignedCount })}
-            </Header3>
-            <div className="flex items-center gap-2">
-              {/* Import builds the selection like Select all does, so it lives
+      <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
+        <div className="flex items-center justify-between gap-3">
+          {/* Not the filter's label — a moving count would rename the control. */}
+          <Header3 aria-live="polite" className="font-light">
+            {t('Proposals ({count} assigned)', { count: assignedCount })}
+          </Header3>
+          <div className="flex items-center gap-2">
+            {/* Import builds the selection like Select all does, so it lives
                   beside it. Stacked on this dialog, which stays mounted
                   underneath. A frozen reviewer takes no new proposals, so
                   there is nothing to import into. */}
-              {importEnabled && canAssign ? (
-                <ImportProposalIdsDialog
-                  poolIds={poolIds}
-                  assignableIds={importableIds}
-                  onImport={importProposals}
-                />
-              ) : null}
-              <Button
-                variant="link"
-                onClick={toggleVisibleFree}
-                disabled={visibleFreeIds.length === 0}
-              >
-                {allVisibleFreeSelected ? t('Clear') : t('Select all')}
-              </Button>
-            </div>
-          </div>
-
-          {canAssign ? null : (
-            <p className="text-sm text-muted-foreground">
-              {t(
-                'This reviewer no longer has the reviewer role, so they cannot take new proposals.',
-              )}
-            </p>
-          )}
-
-          <Field>
-            <FieldLabel htmlFor={filterId} className="sr-only">
-              {t('Filter proposals')}
-            </FieldLabel>
-            <Input
-              id={filterId}
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('Filter by title or category…')}
-            />
-          </Field>
-
-          <p aria-live="polite" className="sr-only">
-            {t(
-              '{count, plural, one {# proposal shown} other {# proposals shown}}',
-              {
-                count: visibleRows.length,
-              },
-            )}
-          </p>
-
-          <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border">
-            {visibleRows.map((row) => (
-              <ProposalCheckRow
-                key={row.proposal.id}
-                row={row}
-                canAssign={canAssign}
-                isChecked={isRowChecked(row, toAssign, toUnassign)}
-                onToggle={() => toggleRow(row)}
+            {importEnabled && canAssign ? (
+              <ImportProposalIdsDialog
+                poolIds={poolIds}
+                assignableIds={importableIds}
+                onImport={importProposals}
               />
-            ))}
-            {visibleRows.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-muted-foreground">
-                {proposals.length === 0
-                  ? t('No proposals in this phase yet.')
-                  : t('No proposals match "{query}".', { query: query.trim() })}
-              </li>
             ) : null}
-          </ul>
-        </div>
-
-        <DialogFooter className="sm:justify-between">
-          <p
-            aria-live="polite"
-            className="text-sm text-muted-foreground sm:self-center"
-          >
-            {hasChanges
-              ? t('{assign} to assign · {unassign} to unassign', {
-                  assign: assignIds.length,
-                  unassign: unassignAssignmentIds.length,
-                })
-              : t('No changes yet')}
-          </p>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
-            <DialogClose render={<Button variant="outline" />}>
-              {t('Cancel')}
-            </DialogClose>
             <Button
-              disabled={!hasChanges || isSaving}
-              loading={isSaving}
-              onClick={() => {
-                void save();
-              }}
+              variant="link"
+              onClick={toggleVisibleFree}
+              disabled={visibleFreeIds.length === 0}
             >
-              {t('Save changes')}
+              {allVisibleFreeSelected ? t('Clear') : t('Select all')}
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+
+        {canAssign ? null : (
+          <p className="text-sm text-muted-foreground">
+            {t(
+              'This reviewer no longer has the reviewer role, so they cannot take new proposals.',
+            )}
+          </p>
+        )}
+
+        <Field>
+          <FieldLabel htmlFor={filterId} className="sr-only">
+            {t('Filter proposals')}
+          </FieldLabel>
+          <Input
+            id={filterId}
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('Filter by title or category…')}
+          />
+        </Field>
+
+        <p aria-live="polite" className="sr-only">
+          {t(
+            '{count, plural, one {# proposal shown} other {# proposals shown}}',
+            {
+              count: visibleRows.length,
+            },
+          )}
+        </p>
+
+        <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border">
+          {visibleRows.map((row) => (
+            <ProposalCheckRow
+              key={row.proposal.id}
+              row={row}
+              canAssign={canAssign}
+              isChecked={isRowChecked(row, toAssign, toUnassign)}
+              onToggle={() => toggleRow(row)}
+            />
+          ))}
+          {visibleRows.length === 0 ? (
+            <li className="px-3 py-2 text-sm text-muted-foreground">
+              {proposals.length === 0
+                ? t('No proposals in this phase yet.')
+                : t('No proposals match "{query}".', { query: query.trim() })}
+            </li>
+          ) : null}
+        </ul>
+      </div>
+
+      <DialogFooter className="sm:justify-between">
+        <p
+          aria-live="polite"
+          className="text-sm text-muted-foreground sm:self-center"
+        >
+          {hasChanges
+            ? t('{assign} to assign · {unassign} to unassign', {
+                assign: assignIds.length,
+                unassign: unassignAssignmentIds.length,
+              })
+            : t('No changes yet')}
+        </p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <DialogClose render={<Button variant="outline" />}>
+            {t('Cancel')}
+          </DialogClose>
+          <Button
+            disabled={!hasChanges || isSaving}
+            loading={isSaving}
+            onClick={() => {
+              void save();
+            }}
+          >
+            {t('Save changes')}
+          </Button>
+        </div>
+      </DialogFooter>
+    </>
   );
 }
 

@@ -20,7 +20,7 @@ import { useTranslations } from '@/lib/i18n';
 import { summarizeProposalIdImport } from './proposalIdImport';
 
 /**
- * Paste-a-spreadsheet shortcut for `ManageAssignmentsDialog`, stacked on top
+ * Paste-a-spreadsheet shortcut for `ManageAssignmentsForm`, stacked on top
  * of it: admins triage in Sheets and arrive with 100+ proposal IDs, which is
  * not a checkbox job. Import only adds to the parent's selection — the admin
  * still reviews the rows and presses save, so nothing here mutates.
