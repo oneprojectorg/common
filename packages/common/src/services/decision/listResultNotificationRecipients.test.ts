@@ -26,6 +26,7 @@ vi.mock('@op/db/client', () => {
         return builder;
       }),
       innerJoin: vi.fn(() => builder),
+      leftJoin: vi.fn(() => builder),
       where: vi.fn(() => builder),
       orderBy: vi.fn(() => builder),
       limit: vi.fn(() => Promise.resolve(rowsByTable[table]?.rows ?? [])),
@@ -71,6 +72,7 @@ vi.mock('@op/db/schema', () => ({
     __table: 'users.table',
     authUserId: 'users.auth_user_id',
     profileId: 'users.profile_id',
+    name: 'users.name',
   },
   decisionProcessResultSelections: {
     __table: 'selections.table',
@@ -88,7 +90,7 @@ vi.mock('@op/db/schema', () => ({
 }));
 
 vi.mock('../email/recipients', () => ({
-  listMemberProfileRecipients: vi.fn(),
+  listMemberProfileRecipientsByProfile: vi.fn(),
 }));
 
 vi.mock('./getProposalsForPhase', () => ({
@@ -99,7 +101,7 @@ import { db } from '@op/db/client';
 
 import {
   type EmailRecipient,
-  listMemberProfileRecipients,
+  listMemberProfileRecipientsByProfile,
 } from '../email/recipients';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { listResultNotificationRecipients } from './listResultNotificationRecipients';
@@ -125,7 +127,7 @@ const findResult = vi.mocked(db.query.decisionProcessResults.findFirst);
 const findInstance = vi.mocked(db.query.processInstances.findFirst);
 const findProposals = vi.mocked(db.query.proposals.findMany);
 const mockPhaseIds = vi.mocked(getProposalIdsForPhase);
-const mockAudienceOf = vi.mocked(listMemberProfileRecipients);
+const mockAudiences = vi.mocked(listMemberProfileRecipientsByProfile);
 
 const ADA: EmailRecipient = {
   authUserId: 'auth-ada',
@@ -158,7 +160,14 @@ const proposal = ({
 
 /** Routes each proposal profile to its own audience, as the resolver does. */
 const audienceByProfile = (map: Record<string, Array<EmailRecipient>>) =>
-  mockAudienceOf.mockImplementation(async (profileId) => map[profileId] ?? []);
+  mockAudiences.mockImplementation(async (profileIds) => {
+    const entries = profileIds.flatMap((id) =>
+      map[id]
+        ? ([[id, map[id]]] as Array<[string, Array<EmailRecipient>]>)
+        : [],
+    );
+    return new Map(entries);
+  });
 
 const run = () =>
   listResultNotificationRecipients({
@@ -173,8 +182,8 @@ describe('listResultNotificationRecipients', () => {
     vi.clearAllMocks();
     state().__filters.length = 0;
     state().__names.rows = [
-      { authUserId: 'auth-ada', name: 'Ada' },
-      { authUserId: 'auth-bo', name: 'Bo' },
+      { authUserId: 'auth-ada', profileName: 'Ada' },
+      { authUserId: 'auth-bo', profileName: 'Bo' },
     ];
     state().__selections.rows = [{ proposalId: 'funded-1', allocated: '8000' }];
     state().__transitions.rows = [
@@ -232,12 +241,16 @@ describe('listResultNotificationRecipients', () => {
 
   // Delivery is the shared resolver's job — it is the one place that knows
   // addresses come from `auth.users`, so this send must not resolve its own.
-  it('asks the shared resolver for each proposal profile audience', async () => {
+  it('asks the shared resolver once for every proposal profile', async () => {
     await run();
 
-    expect(mockAudienceOf).toHaveBeenCalledWith('profile-funded');
-    expect(mockAudienceOf).toHaveBeenCalledWith('profile-not-funded');
-    expect(mockAudienceOf).toHaveBeenCalledTimes(2);
+    // One call, not one per proposal: a phase-wide fan-out would otherwise put
+    // a query per proposal on the wire.
+    expect(mockAudiences).toHaveBeenCalledTimes(1);
+    expect(mockAudiences).toHaveBeenCalledWith([
+      'profile-funded',
+      'profile-not-funded',
+    ]);
   });
 
   // Structural, because fixtures alone can't prove a column goes unread: the
@@ -250,7 +263,11 @@ describe('listResultNotificationRecipients', () => {
       .mock.calls.map(([columns]) => Object.values(columns ?? {}))
       .find((columns) => columns.includes('profiles.name'));
 
-    expect(nameSelect).toEqual(['users.auth_user_id', 'profiles.name']);
+    expect(nameSelect).toEqual([
+      'users.auth_user_id',
+      'profiles.name',
+      'users.name',
+    ]);
     expect(nameSelect).not.toContain('profiles.email');
   });
 
@@ -295,7 +312,7 @@ describe('listResultNotificationRecipients', () => {
     mockPhaseIds.mockResolvedValue(['funded-1']);
     state().__names.rows = [
       ...state().__names.rows,
-      { authUserId: 'auth-cy', name: 'Cy' },
+      { authUserId: 'auth-cy', profileName: 'Cy' },
     ];
     findProposals.mockResolvedValue([
       proposal({
@@ -354,8 +371,8 @@ describe('listResultNotificationRecipients', () => {
     });
     state().__names.rows = [
       ...state().__names.rows,
-      { authUserId: 'auth-ada-dup', name: 'Ada' },
-      { authUserId: 'auth-anon', name: 'Anon' },
+      { authUserId: 'auth-ada-dup', profileName: 'Ada' },
+      { authUserId: 'auth-anon', profileName: 'Anon' },
     ];
 
     const result = await run();
@@ -366,13 +383,41 @@ describe('listResultNotificationRecipients', () => {
     ]);
   });
 
-  it('skips an author with no profile to take a name from', async () => {
-    state().__names.rows = [{ authUserId: 'auth-ada', name: 'Ada' }];
+  // A collaborator who accepted a proposal invite before finishing onboarding
+  // has no profile row. Losing their greeting beats losing the announcement on
+  // a publish that can't be redone.
+  it('still mails an author with no profile to take a name from', async () => {
+    state().__names.rows = [{ authUserId: 'auth-ada', profileName: 'Ada' }];
 
     const result = await run();
 
     expect(result.ok && result.notification.recipients).toEqual([
-      expect.objectContaining({ email: 'ada@example.com' }),
+      expect.objectContaining({
+        email: 'ada@example.com',
+        values: expect.objectContaining({ name: 'Ada' }),
+      }),
+      expect.objectContaining({
+        email: 'bo@example.com',
+        values: expect.objectContaining({ name: 'there' }),
+      }),
+    ]);
+  });
+
+  it('falls back to the account name when the profile has none', async () => {
+    state().__names.rows = [
+      { authUserId: 'auth-ada', profileName: null, userName: 'Ada A.' },
+      { authUserId: 'auth-bo', profileName: 'Bo', userName: 'ignored' },
+    ];
+
+    const result = await run();
+
+    expect(result.ok && result.notification.recipients).toEqual([
+      expect.objectContaining({
+        values: expect.objectContaining({ name: 'Ada A.' }),
+      }),
+      expect.objectContaining({
+        values: expect.objectContaining({ name: 'Bo' }),
+      }),
     ]);
   });
 
@@ -394,7 +439,7 @@ describe('listResultNotificationRecipients', () => {
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'noRecipients' });
     // A takedown must not even be looked up, let alone mailed.
-    expect(mockAudienceOf).not.toHaveBeenCalled();
+    expect(mockAudiences).toHaveBeenCalledWith([]);
   });
 
   // A revert retires the row rather than deleting it. Re-resolving "the latest

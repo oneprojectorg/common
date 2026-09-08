@@ -46,7 +46,6 @@ const isOutcomeTab = (value: string): value is OutcomeTab =>
 const TOKENS = {
   name: resultNotificationToken('name'),
   proposal: resultNotificationToken('proposal'),
-  amount: resultNotificationToken('amount'),
 };
 
 /**
@@ -70,10 +69,9 @@ export const ComposeNotificationsDialog = ({
   // Lazy: the component re-renders on every keystroke in a 4000-char textarea,
   // and these two ICU formats are only ever read once.
   const [messages, setMessages] = useState<ResultNotificationMessages>(() => ({
-    // No {amount} in the default copy: `decision_process_result_selections
-    // .allocated` is never written yet, so the token resolves to the author's
-    // own requested budget. That is the right number to show beside the
-    // published results, and the wrong number to state as an award.
+    // No amount anywhere in this copy, and no `{{amount}}` token offered:
+    // nothing writes `decision_process_result_selections.allocated`, so any
+    // figure here would either be invented or blank.
     funded: t(
       'Hi {name},\n\nGreat news — your proposal "{proposal}" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.',
       TOKENS,
@@ -170,7 +168,7 @@ export const ComposeNotificationsDialog = ({
             <LuCircleAlert aria-hidden />
             <AlertDescription>
               {t(
-                'Use {name} for the submitter’s name, {proposal} for proposal title, and {amount} for allocated amount.',
+                'Use {name} for the submitter’s name and {proposal} for proposal title.',
                 TOKENS,
               )}
             </AlertDescription>

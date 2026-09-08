@@ -9,7 +9,7 @@ import {
 import { hasEmail } from '../../utils/email';
 import {
   type EmailRecipient,
-  listMemberProfileRecipients,
+  listMemberProfileRecipientsByProfile,
 } from '../email/recipients';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
@@ -22,6 +22,9 @@ import type { TransitionData } from './schemas/transitionData';
 import { isProposalReachable } from './utils/proposal';
 
 export type ResultNotificationOutcome = 'funded' | 'notFunded';
+
+/** Emails are English-only, so the greeting fallback lives here. */
+const DEFAULT_GREETING_NAME = 'there';
 
 export interface ResultNotificationRecipient {
   email: string;
@@ -131,27 +134,25 @@ export async function listResultNotificationRecipients({
 
   const reachable = proposals.filter(isProposalReachable);
 
-  // Addresses come from the shared resolver — one call per proposal profile,
-  // the same way `listProposalMergeRecipients` does it. It is the single place
-  // that knows delivery goes to `auth.users.email`, so this send can't drift
-  // from the rest of them.
-  const audiences = await Promise.all(
-    reachable.map((proposal) =>
-      listMemberProfileRecipients(proposal.profileId),
-    ),
+  // Addresses come from the shared resolver — the single place that knows
+  // delivery goes to `auth.users.email`, so this send can't drift from the
+  // rest of them. Batched: a phase-wide fan-out would otherwise put one query
+  // per proposal on the wire.
+  const audiences = await listMemberProfileRecipientsByProfile(
+    reachable.map(({ profileId }) => profileId),
   );
 
   // Names need their own read: `EmailRecipient` carries no display name, and
   // `{{name}}` has to come from the author's own profile.
   const names = await readAuthorNames(
-    audiences.flat().map(({ authUserId }) => authUserId),
+    [...audiences.values()].flat().map(({ authUserId }) => authUserId),
   );
 
-  const recipients = reachable.flatMap((proposal, index) =>
+  const recipients = reachable.flatMap((proposal) =>
     toRecipients({
       proposal,
       allocated: allocatedByProposalId.get(proposal.id),
-      audience: audiences[index] ?? [],
+      audience: audiences.get(proposal.profileId) ?? [],
       names,
     }),
   );
@@ -218,13 +219,6 @@ function toRecipients({
   const seen = new Set<string>();
 
   return audience.filter(hasEmail).flatMap(({ authUserId, email }) => {
-    const name = names.get(authUserId);
-
-    // No profile means no name for the greeting, and the copy opens with it.
-    if (name === undefined) {
-      return [];
-    }
-
     const key = email.toLowerCase();
     if (seen.has(key)) {
       return [];
@@ -236,17 +230,29 @@ function toRecipients({
         email,
         proposalProfileId: proposal.profileId,
         outcome,
-        values: { name, proposal: proposal.profile.name, amount },
+        values: {
+          // The address decides delivery; the name is enrichment. A
+          // collaborator who accepted a proposal invite before finishing
+          // onboarding has no profile row yet, and losing their greeting
+          // beats losing the announcement on a publish that can't be redone.
+          name: names.get(authUserId) ?? DEFAULT_GREETING_NAME,
+          proposal: proposal.profile.name,
+          amount,
+        },
       },
     ];
   });
 }
 
 /**
- * The display name for each author, from their own profile — always set, and
- * the field Scott asked this to read rather than the `profileUsers` snapshot.
- * Addresses deliberately do not come from here: `profiles.email` is an
- * unverified public contact field, so delivery stays with the shared resolver.
+ * The display name for each author, from their own profile — the identity
+ * record, rather than the `profileUsers` access row. Addresses deliberately do
+ * not come from here: `profiles.email` is an unverified public contact field,
+ * so delivery stays with the shared resolver.
+ *
+ * Left-joined and best-effort. `users.profileId` is nullable and an invited
+ * collaborator may have no `users` row at all, so a missing name has to mean a
+ * generic greeting, never a dropped recipient.
  */
 async function readAuthorNames(
   authUserIds: Array<string>,
@@ -256,12 +262,21 @@ async function readAuthorNames(
   }
 
   const rows = await db
-    .select({ authUserId: users.authUserId, name: profiles.name })
+    .select({
+      authUserId: users.authUserId,
+      profileName: profiles.name,
+      userName: users.name,
+    })
     .from(users)
-    .innerJoin(profiles, eq(profiles.id, users.profileId))
+    .leftJoin(profiles, eq(profiles.id, users.profileId))
     .where(inArray(users.authUserId, [...new Set(authUserIds)]));
 
-  return new Map(rows.map(({ authUserId, name }) => [authUserId, name]));
+  return new Map(
+    rows.flatMap(({ authUserId, profileName, userName }) => {
+      const name = profileName ?? userName;
+      return name ? [[authUserId, name] as const] : [];
+    }),
+  );
 }
 
 /**

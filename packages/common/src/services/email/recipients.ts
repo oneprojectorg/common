@@ -46,13 +46,48 @@ export const listOrganizationProfileRecipients = async (
 export const listMemberProfileRecipients = async (
   profileId: string,
 ): Promise<Array<EmailRecipient>> => {
+  const byProfile = await listMemberProfileRecipientsByProfile([profileId]);
+
+  return byProfile.get(profileId) ?? [];
+};
+
+/**
+ * The same audience for many profiles at once, keyed by profile id. A
+ * phase-wide send fans out over every proposal in the pool, and calling the
+ * single-profile form in a loop would put one query per proposal on the wire.
+ * Empty and unknown ids are simply absent from the map.
+ */
+export const listMemberProfileRecipientsByProfile = async (
+  profileIds: Array<string>,
+): Promise<Map<string, Array<EmailRecipient>>> => {
+  const unique = [...new Set(profileIds)];
+
+  if (unique.length === 0) {
+    return new Map();
+  }
+
   const members = await db.query.profileUsers.findMany({
-    where: { profileId },
-    columns: { authUserId: true },
+    where: { profileId: { in: unique } },
+    columns: { authUserId: true, profileId: true },
     with: { authUser: { columns: { email: true } } },
   });
 
-  return uniqueByAccount(members.map(toRecipient));
+  const byProfile = new Map<string, Array<EmailRecipient>>();
+
+  for (const member of members) {
+    const recipients = byProfile.get(member.profileId) ?? [];
+    recipients.push(toRecipient(member));
+    byProfile.set(member.profileId, recipients);
+  }
+
+  // Dedup within a profile, not across: one person on two proposals hears
+  // about each of them.
+  return new Map(
+    [...byProfile].map(([profileId, recipients]) => [
+      profileId,
+      uniqueByAccount(recipients),
+    ]),
+  );
 };
 
 /** Dispatches on the profile type when the caller cannot know it statically. */
