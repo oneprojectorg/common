@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "prototype-vite",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "apps/prototype/node_modules/vite/bin/vite.js",
+        "apps/prototype",
+        "--port",
+        "3120"
+      ],
+      "port": 3120
+    }
+  ]
+}

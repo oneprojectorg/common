@@ -25,13 +25,20 @@ interface PhaseCardProps {
   onAdvance?: () => void;
   /** Destination for the current card — the whole row links here. */
   href?: string;
+  /**
+   * Element for the card's root. Defaults to `li`, for the `<ol>` timeline this
+   * is built for. Pass `'div'` when the consumer owns the list item — a row that
+   * wraps the card in its own list item to hang controls around it would
+   * otherwise nest one `li` inside another, which is invalid HTML.
+   */
+  as?: 'li' | 'div';
 }
 
 /**
- * A single phase row (`<li>`) in the decision Overview timeline. Dispatches to
- * one of four self-contained treatments; the consumer owns the `<ol>`, the
- * completed/current/upcoming derivation, and which phase is now open or
- * advanceable.
+ * A single phase row in the decision Overview timeline — a list item unless
+ * `as` says otherwise. Dispatches to one of four self-contained treatments; the
+ * consumer owns the `<ol>`, the completed/current/upcoming derivation, and which
+ * phase is now open or advanceable.
  */
 function PhaseCard(props: PhaseCardProps) {
   switch (props.state) {
@@ -51,7 +58,7 @@ function PhaseCard(props: PhaseCardProps) {
 /** Fields shared by every treatment. */
 type PhaseContentProps = Pick<
   PhaseCardProps,
-  'name' | 'startDate' | 'endDate' | 'locale' | 'className'
+  'name' | 'startDate' | 'endDate' | 'locale' | 'className' | 'as'
 >;
 
 /** Completed: gray rail + name with a green check, dates below. */
@@ -61,9 +68,10 @@ function CompletedPhaseCard({
   endDate,
   locale,
   className,
+  as: Root = 'li',
 }: PhaseContentProps) {
   return (
-    <li
+    <Root
       className={cn(
         'flex flex-col gap-1 border-s border-success/30 p-4',
         className,
@@ -81,7 +89,7 @@ function CompletedPhaseCard({
         locale={locale}
         className="text-muted-foreground"
       />
-    </li>
+    </Root>
   );
 }
 
@@ -98,12 +106,14 @@ function CurrentPhaseCard({
   isNowOpen,
   nowOpenLabel = 'Now open!',
   href,
+  as: Root = 'li',
 }: PhaseContentProps &
   Pick<PhaseCardProps, 'isNowOpen' | 'nowOpenLabel' | 'href'>) {
   return (
-    <li className={className}>
+    <Root className={className}>
       <a
         href={href}
+        data-slot="phase-card-current"
         className="group flex items-center justify-between gap-4 rounded-lg bg-teal-50 p-4 text-teal-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <div className="flex min-w-0 flex-col gap-2">
@@ -123,12 +133,13 @@ function CurrentPhaseCard({
         </div>
         <span
           aria-hidden
+          data-slot="phase-card-arrow"
           className="flex size-8 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         >
           <LuArrowRight className="size-4 rtl:-scale-x-100" />
         </span>
       </a>
-    </li>
+    </Root>
   );
 }
 
@@ -141,9 +152,10 @@ function AdvanceablePhaseCard({
   className,
   advanceLabel = 'Start',
   onAdvance,
+  as: Root = 'li',
 }: PhaseContentProps & Pick<PhaseCardProps, 'advanceLabel' | 'onAdvance'>) {
   return (
-    <li
+    <Root
       className={cn(
         'flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-4',
         className,
@@ -166,7 +178,7 @@ function AdvanceablePhaseCard({
         <LuPlay className="size-4 rtl:-scale-x-100" aria-hidden />
         {advanceLabel}
       </Button>
-    </li>
+    </Root>
   );
 }
 
@@ -177,9 +189,10 @@ function UpcomingPhaseCard({
   endDate,
   locale,
   className,
+  as: Root = 'li',
 }: PhaseContentProps) {
   return (
-    <li className={cn('flex flex-col gap-1 border-s p-4', className)}>
+    <Root className={cn('flex flex-col gap-1 border-s p-4', className)}>
       <PhaseName name={name} />
       <PhaseDates
         startDate={startDate}
@@ -187,7 +200,7 @@ function UpcomingPhaseCard({
         locale={locale}
         className="text-muted-foreground"
       />
-    </li>
+    </Root>
   );
 }
 
