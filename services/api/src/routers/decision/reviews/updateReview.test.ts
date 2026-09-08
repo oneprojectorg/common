@@ -110,14 +110,14 @@ describe.concurrent('updateReview', () => {
     });
   });
 
-  it("re-anchors the review to the proposal's current version, leaving the assignment pin alone", async ({
+  it('re-affirms an out-of-date review: re-anchors it and advances submittedAt', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const { created, reviewerCaller } = await submitEditableReview(testData);
 
-    const submitted = await db.query.proposalReviews.findFirst({
+    const before = await db.query.proposalReviews.findFirst({
       where: { assignmentId: created.assignment.id },
     });
     const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
@@ -126,28 +126,76 @@ describe.concurrent('updateReview', () => {
       },
     );
 
-    const revisedHistoryId = await reviseProposal({
+    // The author edits the proposal, so the submitted review falls behind.
+    const currentHistoryId = await reviseProposal({
       proposalId: created.proposal.id,
       proposalData: { title: 'Community Garden Expansion (revised)' },
     });
-    expect(submitted?.reviewedProposalHistoryId).not.toBe(revisedHistoryId);
+    expect(before?.reviewedProposalHistoryId).not.toBe(currentHistoryId);
 
-    await reviewerCaller.decision.updateReview({
+    const result = await reviewerCaller.decision.updateReview({
       assignmentId: created.assignment.id,
-      reviewData: {
-        answers: { impact: 2 },
-        rationales: { impact: 'Reassessed against the revision' },
-      },
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+      overallComment: 'Still supportive after the revision',
     });
 
-    const edited = await db.query.proposalReviews.findFirst({
+    // A re-affirm is a fresh judgement of the current version.
+    expect(result.submittedAt).not.toBe(before?.submittedAt);
+    expect(new Date(result.submittedAt ?? 0).getTime()).toBeGreaterThanOrEqual(
+      new Date(before?.submittedAt ?? 0).getTime(),
+    );
+
+    const reviewAfter = await db.query.proposalReviews.findFirst({
       where: { assignmentId: created.assignment.id },
     });
     const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
       where: { id: created.assignment.id },
     });
 
-    expect(edited?.reviewedProposalHistoryId).toBe(revisedHistoryId);
+    expect(reviewAfter?.reviewedProposalHistoryId).toBe(currentHistoryId);
+    // The pin is the reviewer's original brief; an edit does not move it.
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
+    // The review stays a normal completed review underneath.
+    expect(assignmentAfter?.status).toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+  });
+
+  it('leaves the anchor and submittedAt alone when the review is already current', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+    const before = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+
+    const result = await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 1 }, rationales: {} },
+    });
+
+    const reviewAfter = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(result.submittedAt).toBe(before?.submittedAt);
+    expect(reviewAfter?.reviewedProposalHistoryId).toBe(
+      before?.reviewedProposalHistoryId,
+    );
     expect(assignmentAfter?.assignedProposalHistoryId).toBe(
       assignmentBefore?.assignedProposalHistoryId,
     );

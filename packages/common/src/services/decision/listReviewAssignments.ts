@@ -28,8 +28,10 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { decisionPermission } from './permissions';
+import { getCurrentProposalHistoryIds } from './proposal/history';
 import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { isReviewOutOfDate } from './review/staleness';
 import {
   canEditSubmittedReview,
   getActiveRevisionRequest,
@@ -367,11 +369,18 @@ export async function listAssignmentsForReviewer({
     });
   }
 
-  const documentContentMap = await getProposalDocumentsContent(
-    docContentInputs,
-    // A single unavailable document must not break the whole list.
-    { onFetchError: 'omit' },
-  );
+  const [documentContentMap, currentHistoryIdByProposal] = await Promise.all([
+    getProposalDocumentsContent(
+      docContentInputs,
+      // A single unavailable document must not break the whole list.
+      { onFetchError: 'omit' },
+    ),
+    // One query for the whole page, so staleness costs no per-assignment read.
+    getCurrentProposalHistoryIds({
+      proposalIds: Array.from(new Set(assignments.map((a) => a.proposalId))),
+      db,
+    }),
+  ]);
 
   const assignmentList = assignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
@@ -405,6 +414,13 @@ export async function listAssignmentsForReviewer({
       review,
       revisionRequest: getActiveRevisionRequest(assignment.requests),
       canEditReview: canEditSubmittedReview({ assignment, instance, review }),
+      isReviewOutOfDate: isReviewOutOfDate({
+        assignment,
+        review,
+        currentProposalHistoryId: currentHistoryIdByProposal.get(
+          assignment.proposalId,
+        ),
+      }),
     };
   });
 

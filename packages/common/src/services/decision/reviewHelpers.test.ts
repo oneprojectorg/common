@@ -21,7 +21,6 @@ vi.mock('./assert', () => ({ assertUserByAuthId: vi.fn() }));
 vi.mock('./getInstance', () => ({ getInstance: vi.fn() }));
 
 const assignmentWith = (proposalData: unknown) => ({
-  assignedProposalHistory: null,
   proposal: { id: 'proposal-1', proposalData },
 });
 
