@@ -136,10 +136,10 @@ export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 8 * 60 * 1000;
  * against the same cap as the answer — so a default sized for a chat reply can
  * end a pass part-way through its JSON.
  *
- * Sized for the larger of the two replies: up to eight themes, or the
- * common-ground pass's three lists over a hundred-proposal corpus, plus the
- * reasoning that precedes either. Both answers are on the order of a thousand
- * tokens, so most of this is headroom for thinking.
+ * Sized to the answers, which are now bounded by the prompts themselves: at
+ * most eight themes, or at most six entries in each of the common-ground pass's
+ * three lists, a sentence or two apiece. That is well under a thousand tokens
+ * either way, so the rest of this is headroom for thinking.
  *
  * "The cost of setting it too high is nothing" was wrong, which is why this
  * came down from 16k. On a thinking model the cap bounds reasoning as well as
@@ -150,4 +150,4 @@ export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 8 * 60 * 1000;
  * itself as `finish reason 'length'` rather than reading as a model returning
  * garbage, so this is a safe direction to move in.
  */
-export const THEME_ANALYSIS_MAX_OUTPUT_TOKENS = 8_000;
+export const THEME_ANALYSIS_MAX_OUTPUT_TOKENS = 4_000;

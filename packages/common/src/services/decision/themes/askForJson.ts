@@ -294,17 +294,41 @@ const parseReply = <TSchema extends z.ZodTypeAny>({
  * is not answering, and a timeout on a large one is work that needs a smaller
  * corpus. The message says which without anyone having to reason about it.
  */
-const timedOut = (name: string, prompt: string, elapsedMs: number) => {
+const timedOut = ({
+  name,
+  prompt,
+  elapsedMs,
+  partialChars,
+}: {
+  name: string;
+  prompt: string;
+  elapsedMs: number;
+  /** Reply length at the moment of the abort, when the SDK handed one back. */
+  partialChars: number | undefined;
+}) => {
   logger.error('Theme analysis pass timed out', {
     pass: name,
     promptChars: prompt.length,
     timeoutMs: THEME_ANALYSIS_PASS_TIMEOUT_MS,
     elapsedMs,
+    partialChars,
   });
+
+  // How much had arrived when the clock ran out, which is the one thing that
+  // separates the two causes of a timeout. Some output means the model is
+  // answering, just slower than the budget allows — the levers are the prompt
+  // and the output cap. None at all, over eight minutes, means the endpoint
+  // never started producing, and no amount of trimming the prompt changes that.
+  // Without this number both look identical from here, and they have nothing in
+  // common as problems.
+  const produced =
+    partialChars === undefined
+      ? 'nothing was handed back'
+      : `${partialChars} chars produced`;
 
   return new ThemeAnalysisFailure(
     'analysis-timed-out',
-    `The ${name} pass did not answer within ${THEME_ANALYSIS_PASS_TIMEOUT_MS / 1000}s (prompt ${prompt.length} chars).`,
+    `The ${name} pass did not answer within ${THEME_ANALYSIS_PASS_TIMEOUT_MS / 1000}s (prompt ${prompt.length} chars, ${produced}).`,
   );
 };
 
@@ -375,7 +399,12 @@ const generateWithin = async (
     // like a model that answered with nothing. That is how a pass that ran out
     // of time came back reported as unusable JSON.
     if (controller.signal.aborted) {
-      throw timedOut(name, prompt, Date.now() - startedAt);
+      throw timedOut({
+        name,
+        prompt,
+        elapsedMs: Date.now() - startedAt,
+        partialChars: reply.text?.length,
+      });
     }
 
     logger.info('Theme analysis pass answered', {
@@ -401,11 +430,26 @@ const generateWithin = async (
 
     return reply;
   } catch (error) {
+    // The timeout thrown from the success path above lands here too — it is
+    // inside this same `try`. Without this it would be rebuilt by the branch
+    // below, which has no reply to measure, and the partial count the success
+    // path went to the trouble of reading would be replaced by "nothing was
+    // handed back". Anything already classified passes straight through.
+    if (error instanceof ThemeAnalysisFailure) {
+      throw error;
+    }
+
     // `signal.aborted` rather than the error's shape: what surfaces from an
     // aborted generation depends on the provider and the SDK layer that noticed
     // first, and the signal is the one thing that says why unambiguously.
     if (controller.signal.aborted) {
-      throw timedOut(name, prompt, Date.now() - startedAt);
+      // Rejected rather than resolved, so there is no partial reply to measure.
+      throw timedOut({
+        name,
+        prompt,
+        elapsedMs: Date.now() - startedAt,
+        partialChars: undefined,
+      });
     }
 
     logger.error('Theme analysis pass failed', {

@@ -15,19 +15,19 @@ import {
 
 const INSTRUCTIONS = `You help a facilitator find where a set of proposals already agrees, who is standing outside that agreement, and what small move would bring them closer.
 
-Three things, in this order.
+Three things, in this order. Be brief in each: a facilitator reads this, and every list below is capped because a long answer is a slower one, not a better one.
 
-Common ground: statements most of these proposals could accept, drawn from what they actually say rather than from what would be agreeable. Say it as a sentence a participant would recognise as their own position, and list the proposals that support it. Do not manufacture agreement. If the field is genuinely split, report the little that is shared and leave it there.
+Common ground: at most six statements most of these proposals could accept, drawn from what they actually say rather than from what would be agreeable. One sentence each, phrased so a participant would recognise it as their own position, and list the proposals that support it. Do not manufacture agreement. If the field is genuinely split, report the little that is shared and leave it there.
 
-Outliers: proposals sitting outside the common ground. Sort each one:
+Outliers: at most six proposals sitting outside the common ground — the ones that most repay a facilitator's attention, not every proposal that differs. Sort each one:
 - "high-impact": it proposes something substantial that nothing else proposes. Losing it loses the idea. This is the outlier a facilitator needs to see.
 - "low-impact": it differs in a narrow or minor way — a detail, a small scope, a variation on something already covered.
-An outlier is not a bad proposal, and being unusual is not a criticism. Give the reason it sits apart.
+An outlier is not a bad proposal, and being unusual is not a criticism. Give the reason it sits apart, in one sentence.
 
 Suggestions: concrete next moves, at most six.
 - "merge": two or more proposals close enough to become one. Say what the merged proposal would be.
 - "modify": one proposal and a small, specific change that would bring it inside the common ground without giving up what makes it worth keeping. Small means small. Do not suggest rewriting a proposal into a different proposal.
-Suggest nothing you cannot ground in the text. No suggestions is a valid answer.
+One or two sentences of rationale each. Suggest nothing you cannot ground in the text. No suggestions is a valid answer.
 
 Answer with an object holding:
 - "commonGround": array of { "statement", "proposalIndexes" }

@@ -260,6 +260,30 @@ describe('askForJson', () => {
     await asked;
   });
 
+  // The two causes of a timeout have nothing in common: a model answering
+  // slower than the budget allows is a prompt-and-cap problem, and an endpoint
+  // that never produced a byte is not. How much arrived is the only thing that
+  // tells them apart, so it goes in the message rather than being discarded
+  // with the aborted reply.
+  it('reports how much had arrived when the clock ran out', async () => {
+    generate.mockImplementation(
+      (_prompt: string, { abortSignal }: { abortSignal: AbortSignal }) =>
+        new Promise((resolve) => {
+          abortSignal.addEventListener('abort', () =>
+            resolve({ text: '{"commonGr', finishReason: 'tripwire' }),
+          );
+        }),
+    );
+
+    const asked = expect(ask()).rejects.toMatchObject({
+      message: expect.stringContaining('10 chars produced'),
+    });
+
+    await vi.advanceTimersByTimeAsync(THEME_ANALYSIS_PASS_TIMEOUT_MS + 1);
+
+    await asked;
+  });
+
   // The rules are what make "ignore the above" a proposal about ignoring things
   // rather than a command, so they have to reach every pass rather than be
   // remembered at each call site.
