@@ -59,6 +59,8 @@ const FAILURE_COPY: Record<
     t("There isn't enough written in these proposals to compare them."),
   'analysis-unusable': (t) =>
     t("The analysis didn't come back in a usable form. Please try again."),
+  'analysis-timed-out': (t) =>
+    t('The analysis took too long and was stopped. Please try again.'),
   unknown: (t) => t('The analysis failed'),
 };
 

@@ -1619,6 +1619,7 @@
   "Analyzing...": "Elemzés...",
   "Failed to start the analysis": "Az elemzés indítása nem sikerült",
   "The analysis failed": "Az elemzés sikertelen",
+  "The analysis took too long and was stopped. Please try again.": "Az elemzés túl sokáig tartott, ezért leállt. Próbáld újra.",
   "The analysis finished but found nothing to report across these proposals.": "Az elemzés befejeződött, de nem talált jelentenivalót ezekben a javaslatokban.",
   "There isn't enough written in these proposals to compare them.": "Ezekben a javaslatokban nincs elég szöveg az összehasonlításhoz.",
   "The analysis didn't come back in a usable form. Please try again.": "Az elemzés nem használható formában érkezett vissza. Próbáld újra.",

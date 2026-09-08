@@ -1553,6 +1553,7 @@
   "Analyzing...": "বিশ্লেষণ চলছে...",
   "Failed to start the analysis": "বিশ্লেষণ শুরু করা যায়নি",
   "The analysis failed": "বিশ্লেষণ ব্যর্থ হয়েছে",
+  "The analysis took too long and was stopped. Please try again.": "বিশ্লেষণে অনেক সময় লাগায় এটি বন্ধ করা হয়েছে। আবার চেষ্টা করুন।",
   "The analysis finished but found nothing to report across these proposals.": "বিশ্লেষণ শেষ হয়েছে, তবে এই প্রস্তাবগুলিতে জানানোর মতো কিছু পাওয়া যায়নি।",
   "There isn't enough written in these proposals to compare them.": "এই প্রস্তাবগুলিতে তুলনা করার মতো যথেষ্ট লেখা নেই।",
   "The analysis didn't come back in a usable form. Please try again.": "বিশ্লেষণটি ব্যবহারযোগ্য আকারে ফেরেনি। আবার চেষ্টা করুন।",

@@ -6,6 +6,7 @@
 export {
   THEME_ANALYSIS_CACHE_TTL_SECONDS,
   THEME_ANALYSIS_MIN_PROPOSALS,
+  THEME_ANALYSIS_PASS_TIMEOUT_MS,
   themeAnalysisCacheKey,
 } from './constants';
 export type { CorpusProposal } from './corpusGrounding';

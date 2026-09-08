@@ -3,7 +3,10 @@ import { logger } from '@op/logging';
 import type { z } from 'zod';
 
 import { ThemeAnalysisFailure } from './ThemeAnalysisFailure';
-import { THEME_ANALYSIS_MODEL_ID } from './constants';
+import {
+  THEME_ANALYSIS_MODEL_ID,
+  THEME_ANALYSIS_PASS_TIMEOUT_MS,
+} from './constants';
 
 /**
  * The instruction block both passes end with.
@@ -108,7 +111,7 @@ export const askForJson = async <TSchema extends z.ZodTypeAny>({
     model: { modelId: THEME_ANALYSIS_MODEL_ID },
   });
 
-  const { text } = await agent.generate(prompt);
+  const { text } = await generateWithin(agent, prompt, name);
 
   const span = extractJsonSpan(text);
 
@@ -154,4 +157,61 @@ export const askForJson = async <TSchema extends z.ZodTypeAny>({
   }
 
   return result.data;
+};
+
+/**
+ * Runs one generation, bounded by {@link THEME_ANALYSIS_PASS_TIMEOUT_MS}.
+ *
+ * Without a bound the call runs until something else stops it, and on a
+ * serverless host that something is the platform: Inngest invokes the handler
+ * once per step, so a step that outlasts the function's `maxDuration` is killed
+ * mid-flight. That kill is not an exception — the workflow's failure handler
+ * never runs, the record stays `processing`, and the facilitator sits through
+ * the client's whole wait before being told it timed out. This turns the same
+ * situation into a failure the run reports, with a code the app has copy for.
+ *
+ * Reported rather than thrown, so the step does not retry. A provider that has
+ * not answered inside the budget will not answer inside a second one, and the
+ * retry would only make the wait twice as long.
+ *
+ * @param agent - The configured agent.
+ * @param prompt - The turn to send.
+ * @param name - Pass name, for the diagnostic message.
+ * @returns What the model returned.
+ * @throws ThemeAnalysisFailure, coded `analysis-timed-out`, when the budget
+ *   elapses first.
+ */
+const generateWithin = async (
+  agent: ReturnType<typeof createAIAgent>,
+  prompt: string,
+  name: string,
+): Promise<{ text: string }> => {
+  // A controller and a timer rather than `AbortSignal.timeout`, so the timer can
+  // be cleared. `AbortSignal.timeout` holds its timer for the full duration
+  // whatever happens, and a pending five-minute timer keeps the event loop alive
+  // — on a serverless host that can hold the invocation open long after the work
+  // is done.
+  const controller = new AbortController();
+  const timer = setTimeout(
+    () => controller.abort(),
+    THEME_ANALYSIS_PASS_TIMEOUT_MS,
+  );
+
+  try {
+    return await agent.generate(prompt, { abortSignal: controller.signal });
+  } catch (error) {
+    // `signal.aborted` rather than the error's shape: what surfaces from an
+    // aborted generation depends on the provider and the SDK layer that noticed
+    // first, and the signal is the one thing that says why unambiguously.
+    if (controller.signal.aborted) {
+      throw new ThemeAnalysisFailure(
+        'analysis-timed-out',
+        `The ${name} pass did not answer within ${THEME_ANALYSIS_PASS_TIMEOUT_MS / 1000}s.`,
+      );
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 };

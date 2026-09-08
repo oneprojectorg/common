@@ -1619,6 +1619,7 @@
   "Analyzing...": "Analyzing...",
   "Failed to start the analysis": "Failed to start the analysis",
   "The analysis failed": "The analysis failed",
+  "The analysis took too long and was stopped. Please try again.": "The analysis took too long and was stopped. Please try again.",
   "The analysis finished but found nothing to report across these proposals.": "The analysis finished but found nothing to report across these proposals.",
   "There isn't enough written in these proposals to compare them.": "There isn't enough written in these proposals to compare them.",
   "The analysis didn't come back in a usable form. Please try again.": "The analysis didn't come back in a usable form. Please try again.",

@@ -252,7 +252,12 @@ export type ThemeAnalysisResult = z.infer<typeof themeAnalysisResultSchema>;
  * before this existed, still parses and still reports a failure.
  */
 export const themeAnalysisErrorCodeSchema = z
-  .enum(['not-enough-text', 'analysis-unusable', 'unknown'])
+  .enum([
+    'not-enough-text',
+    'analysis-unusable',
+    'analysis-timed-out',
+    'unknown',
+  ])
   .catch('unknown');
 
 export type ThemeAnalysisErrorCode = z.infer<

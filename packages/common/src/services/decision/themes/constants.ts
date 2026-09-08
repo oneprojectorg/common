@@ -97,3 +97,25 @@ export const THEME_ANALYSIS_MIN_PROPOSALS = 2;
  * serves.
  */
 export const THEME_ANALYSIS_MODEL_ID = 'zai-org/GLM-5.3';
+
+/**
+ * How long one model pass may take before the run gives up on it.
+ *
+ * There has to be a bound here, and it has to be well inside the serverless
+ * function's own budget. Inngest invokes the handler once per step, so a step
+ * that outruns that budget is killed by the platform — a
+ * `FUNCTION_INVOCATION_TIMEOUT`, not an exception. Nothing catches it: the
+ * failure handler never runs, the record is left saying `processing` forever,
+ * and the facilitator waits out the client's own timer for a run that is already
+ * dead. Bounding the call converts that into a reported failure with a cause.
+ *
+ * Five minutes per pass, two passes, each in its own step and so its own
+ * invocation. That fits inside `maxDuration` on the workflows route with room
+ * for the corpus read, and keeps a whole successful run inside the client's
+ * wait.
+ *
+ * A pass that hits this reports rather than throws, so it does not retry: a
+ * provider that has not answered in five minutes will not answer in five more,
+ * and a retry would only spend the budget twice on its way to the same place.
+ */
+export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 5 * 60 * 1000;

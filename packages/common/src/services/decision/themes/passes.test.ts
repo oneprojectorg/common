@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -21,7 +21,10 @@ import { createAIAgent } from '@op/ai';
 import { CommonError } from '../../../utils';
 import { analyzeThemes } from './analyzeThemes';
 import { askForJson } from './askForJson';
-import { THEME_ANALYSIS_MODEL_ID } from './constants';
+import {
+  THEME_ANALYSIS_MODEL_ID,
+  THEME_ANALYSIS_PASS_TIMEOUT_MS,
+} from './constants';
 import { findCommonGround } from './findCommonGround';
 
 const corpus = [
@@ -33,8 +36,18 @@ const replyWith = (text: string) => generate.mockResolvedValue({ text });
 
 const replyWithJson = (value: unknown) => replyWith(JSON.stringify(value));
 
+/** The prompt the agent was handed. `generate` also takes the abort signal. */
+const promptSent = () => generate.mock.calls[0]?.[0] as string;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  // `AbortSignal.timeout` is driven by the timer, so the timeout case can run
+  // instantly instead of waiting five real minutes.
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('askForJson', () => {
@@ -101,6 +114,43 @@ describe('askForJson', () => {
 
     expect(vi.mocked(createAIAgent).mock.calls[0]?.[0]?.model).toEqual({
       modelId: THEME_ANALYSIS_MODEL_ID,
+    });
+  });
+
+  // Unbounded, this call runs until the platform kills the whole invocation —
+  // a `FUNCTION_INVOCATION_TIMEOUT`, which is not an exception, so nothing
+  // records why the run died and the record is left saying `processing`.
+  it('bounds the model call with an abort signal', async () => {
+    replyWithJson({ ok: true });
+
+    await ask();
+
+    const [, options] = generate.mock.calls[0] as [
+      string,
+      { abortSignal?: AbortSignal },
+    ];
+
+    expect(options?.abortSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  // Coded, so the app can say "took too long" rather than "failed", and
+  // reported rather than thrown so the step does not spend the budget twice
+  // reaching the same conclusion.
+  it('reports a timed-out pass with its own code', async () => {
+    generate.mockImplementation(
+      (_prompt: string, { abortSignal }: { abortSignal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          abortSignal.addEventListener('abort', () =>
+            reject(new Error('The operation was aborted')),
+          );
+        }),
+    );
+
+    const asked = ask();
+    await vi.advanceTimersByTimeAsync(THEME_ANALYSIS_PASS_TIMEOUT_MS + 1);
+
+    await expect(asked).rejects.toMatchObject({
+      code: 'analysis-timed-out',
     });
   });
 
@@ -217,9 +267,7 @@ describe('analyzeThemes', () => {
 
     await analyzeThemes(corpus);
 
-    expect(generate).toHaveBeenCalledWith(
-      expect.stringContaining('<proposal index="1">'),
-    );
+    expect(promptSent()).toContain('<proposal index="1">');
   });
 });
 
@@ -321,9 +369,7 @@ describe('findCommonGround', () => {
 
     await findCommonGround({ themes, corpus });
 
-    expect(generate).toHaveBeenCalledWith(
-      expect.stringContaining('Street space: Road space.'),
-    );
+    expect(promptSent()).toContain('Street space: Road space.');
   });
 
   it('omits the theme preamble when the first pass found nothing', async () => {
@@ -331,8 +377,6 @@ describe('findCommonGround', () => {
 
     await findCommonGround({ themes: [], corpus });
 
-    expect(generate).toHaveBeenCalledWith(
-      expect.not.stringContaining('A first pass'),
-    );
+    expect(promptSent()).not.toContain('A first pass');
   });
 });
