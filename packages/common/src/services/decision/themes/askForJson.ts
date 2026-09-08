@@ -196,19 +196,51 @@ const generateWithin = async (
     () => controller.abort(),
     THEME_ANALYSIS_PASS_TIMEOUT_MS,
   );
+  const startedAt = Date.now();
+
+  // What the model was actually asked to do, before it is asked. Without this a
+  // slow run says only "the pass did not answer": it cannot tell a prompt that
+  // is genuinely large from an endpoint that never replied, and those need
+  // opposite fixes. The prompt is measured, not logged — it holds proposal text.
+  logger.info('Theme analysis pass starting', {
+    pass: name,
+    promptChars: prompt.length,
+    timeoutMs: THEME_ANALYSIS_PASS_TIMEOUT_MS,
+  });
 
   try {
-    return await agent.generate(prompt, { abortSignal: controller.signal });
+    const reply = await agent.generate(prompt, {
+      abortSignal: controller.signal,
+    });
+
+    logger.info('Theme analysis pass answered', {
+      pass: name,
+      promptChars: prompt.length,
+      elapsedMs: Date.now() - startedAt,
+    });
+
+    return reply;
   } catch (error) {
     // `signal.aborted` rather than the error's shape: what surfaces from an
     // aborted generation depends on the provider and the SDK layer that noticed
     // first, and the signal is the one thing that says why unambiguously.
     if (controller.signal.aborted) {
+      // Recorded with the prompt size: a timeout on a small prompt is an
+      // endpoint that is not answering, and a timeout on a large one is work
+      // that needs a smaller corpus. The message says which without anyone
+      // having to reason about it.
       throw new ThemeAnalysisFailure(
         'analysis-timed-out',
-        `The ${name} pass did not answer within ${THEME_ANALYSIS_PASS_TIMEOUT_MS / 1000}s.`,
+        `The ${name} pass did not answer within ${THEME_ANALYSIS_PASS_TIMEOUT_MS / 1000}s (prompt ${prompt.length} chars).`,
       );
     }
+
+    logger.error('Theme analysis pass failed', {
+      pass: name,
+      promptChars: prompt.length,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    });
 
     throw error;
   } finally {

@@ -64,6 +64,36 @@ describe('createAIAgent', () => {
     expect(agent.name).toBe('Display Name');
   });
 
+  // The SDK default is 2 — three attempts with backoff, invisible to a caller
+  // that has wrapped `generate` in its own timeout. Pinned so a run's budget
+  // covers a known number of attempts.
+  it('pins the in-call retry count rather than taking the SDK default', () => {
+    const agent = createAIAgent({
+      name: 'test-agent',
+      instructions: 'You are a test agent.',
+      model: {
+        modelId: 'model-x',
+        baseURL: 'https://inference.example.com/v1',
+      },
+    });
+
+    expect(agent.maxRetries).toBe(1);
+  });
+
+  it('lets a caller choose its own retry count', () => {
+    const agent = createAIAgent({
+      name: 'test-agent',
+      instructions: 'You are a test agent.',
+      maxRetries: 0,
+      model: {
+        modelId: 'model-x',
+        baseURL: 'https://inference.example.com/v1',
+      },
+    });
+
+    expect(agent.maxRetries).toBe(0);
+  });
+
   it('always disables Mastra telemetry, even when the env tries to enable it', async () => {
     vi.stubEnv('MASTRA_TELEMETRY_DISABLED', 'false');
     await importAgentFresh();

@@ -1,3 +1,5 @@
+import { logger } from '@op/logging';
+
 import { assertUserByAuthId } from '../../assert';
 import type {
   ThemeAnalysisErrorCode,
@@ -54,10 +56,26 @@ export const runThemesPass = async ({
   // user id, not a database key.
   await assertUserByAuthId(userId);
 
+  // Timed separately from the model call. A run that overruns is either a slow
+  // read or a slow model, and until both are measured a timeout says only that
+  // the step as a whole was slow — which is the one thing already known.
+  const readStartedAt = Date.now();
   const corpus = await collectProposalCorpus({
     processInstanceId,
     userId,
     scope,
+  });
+
+  logger.info('Theme analysis corpus read', {
+    processInstanceId,
+    scope,
+    analyzed: corpus.proposals.length,
+    total: corpus.total,
+    corpusChars: corpus.proposals.reduce(
+      (chars, proposal) => chars + proposal.text.length,
+      0,
+    ),
+    elapsedMs: Date.now() - readStartedAt,
   });
 
   // The request checked the phase's count. This checks the corpus, which is a
