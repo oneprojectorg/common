@@ -11,7 +11,7 @@ import { collapseRoles } from 'access-zones';
 
 import {
   PAGE_LIMIT,
-  type PaginatedResult,
+  type Paginated,
   constructTextSearch,
   decodeCursor,
   encodeCursor,
@@ -242,5 +242,5 @@ export const listDecisionProfiles = async ({
   return {
     items,
     next: nextCursor,
-  } satisfies PaginatedResult<DecisionProfileItem>;
+  } satisfies Paginated<DecisionProfileItem>;
 };

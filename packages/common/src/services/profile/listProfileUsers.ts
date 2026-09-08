@@ -8,12 +8,12 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import {
-  type PaginatedResult,
   type SortDir,
   decodeCursor,
   encodeCursor,
   excludeGlobalUsers,
 } from '../../utils/db';
+import { type Paginated } from '../../utils/pagination';
 import { assertProfile, assertProfileAdmin } from '../assert';
 import type {
   ProfileUserQueryResult,
@@ -57,7 +57,7 @@ export const listProfileUsers = async ({
   roleId?: string;
   cursor?: string | null;
   limit?: number;
-}): Promise<PaginatedResult<ProfileUserWithRelations>> => {
+}): Promise<Paginated<ProfileUserWithRelations>> => {
   // Check existence before access so a nonexistent profile is a 404
   // regardless of the caller's permissions.
   await assertProfile(profileId);

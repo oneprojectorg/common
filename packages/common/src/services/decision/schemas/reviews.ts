@@ -9,6 +9,7 @@ import { logger } from '@op/logging';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { list } from '../../../utils/pagination';
 import type { RubricTemplateSchema } from '../types';
 import {
   instanceOptionalPhaseRefSchema,
@@ -168,9 +169,7 @@ export const proposalFeedbackItemSchema = z.object({
   submittedAt: z.string().nullable(),
 });
 
-export const proposalFeedbackListSchema = z.object({
-  items: z.array(proposalFeedbackItemSchema),
-});
+export const proposalFeedbackListSchema = list(proposalFeedbackItemSchema);
 
 // ── Per-proposal review aggregates ─────────────────────────────────────
 
@@ -209,8 +208,9 @@ export const proposalWithAggregatesSchema = z.object({
  * Single response shape for both modes. A caller that wants a count reads
  * `items.length`.
  */
-export const proposalsWithReviewAggregatesListSchema = z.object({
-  items: z.array(proposalWithAggregatesSchema),
+export const proposalsWithReviewAggregatesListSchema = list(
+  proposalWithAggregatesSchema,
+).extend({
   /** The phase-resolved rubric the items' aggregates were scored against. */
   rubricTemplate: rubricTemplateSchema.nullable(),
 });

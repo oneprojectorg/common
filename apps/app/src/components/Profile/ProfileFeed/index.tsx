@@ -8,7 +8,7 @@ import type {
   Post,
   PostToOrganization,
 } from '@op/api/encoders';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
 import { SkeletonText } from '@op/sense/Skeleton';
@@ -63,7 +63,7 @@ export const ProfileFeedProvider = ({
       limit,
     },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
       staleTime: 30 * 1000,
       refetchOnMount: true,
       refetchOnWindowFocus: true,

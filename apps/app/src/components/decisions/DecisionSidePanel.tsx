@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { useDirection } from '@op/sense/Direction';
@@ -240,7 +240,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
       { profileId: decisionProfileId, limit: PAGE_LIMIT.md },
       {
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        getNextPageParam: nextCursor,
         staleTime: 30 * 1000,
       },
     );

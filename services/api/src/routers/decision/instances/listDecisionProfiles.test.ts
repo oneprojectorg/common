@@ -392,7 +392,7 @@ describe.concurrent('listDecisionProfiles', () => {
 
     // Collect all profile IDs across pages
     const allProfileIds: string[] = [];
-    let cursor: string | undefined;
+    let cursor: string | null | undefined;
     let pageCount = 0;
 
     // Paginate through all pages with limit of 2
@@ -403,7 +403,7 @@ describe.concurrent('listDecisionProfiles', () => {
       });
 
       allProfileIds.push(...page.items.map((item) => item.id));
-      cursor = page.next ?? undefined;
+      cursor = page.next;
       pageCount++;
 
       // Safety check to prevent infinite loops
@@ -468,7 +468,7 @@ describe.concurrent('listDecisionProfiles', () => {
 
     // Collect all names across pages, ordered by name ascending
     const allNames: string[] = [];
-    let cursor: string | undefined;
+    let cursor: string | null | undefined;
     let pageCount = 0;
 
     do {
@@ -480,7 +480,7 @@ describe.concurrent('listDecisionProfiles', () => {
       });
 
       allNames.push(...page.items.map((item) => item.name));
-      cursor = page.next ?? undefined;
+      cursor = page.next;
       pageCount++;
 
       if (pageCount > 10) {

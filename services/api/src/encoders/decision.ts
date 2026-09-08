@@ -5,6 +5,7 @@ import {
   REVIEWS_POLICIES,
   checkpointVersionSchema,
   instanceOptionalPhaseRefSchema,
+  paginated,
   phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
@@ -370,10 +371,9 @@ export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
 });
 
 /** Decision profile list encoder  */
-export const decisionProfileWithSchemaListEncoder = z.object({
-  items: z.array(decisionProfileWithSchemaEncoder),
-  next: z.string().nullish(),
-});
+export const decisionProfileWithSchemaListEncoder = paginated(
+  decisionProfileWithSchemaEncoder,
+);
 
 /** Decision statuses visible on profile pages (excludes drafts) */
 export const VISIBLE_DECISION_STATUSES = [
@@ -529,10 +529,7 @@ export const processInstanceListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
-export const instanceResultsEncoder = z.object({
-  items: z.array(proposalSchema),
-  next: z.string().nullish(),
-});
+export const instanceResultsEncoder = paginated(proposalSchema);
 
 // Input Schemas
 export const createProcessInputSchema = z.object({
@@ -752,10 +749,7 @@ export const decisionProfileEncoder = baseProfileEncoder.extend({
 });
 
 // Decision Profile List Encoder
-export const decisionProfileListEncoder = z.object({
-  items: z.array(decisionProfileEncoder),
-  next: z.string().nullish(),
-});
+export const decisionProfileListEncoder = paginated(decisionProfileEncoder);
 
 // Decision Profile Filter Schema
 export const decisionProfileFilterSchema = z.object({

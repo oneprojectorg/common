@@ -1,13 +1,10 @@
 import { Channels, getRoles } from '@op/common';
+import { paginated } from '@op/common/client';
 import { z } from 'zod';
 
 import { roleEncoder } from '../../encoders/roles';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
-import {
-  createPaginatedOutput,
-  createSortable,
-  paginationSchema,
-} from '../../utils';
+import { createSortable, paginationSchema } from '../../utils';
 
 const roleSortableSchema = createSortable(['name'] as const);
 
@@ -23,7 +20,7 @@ const inputSchema = z
 export const listRolesRouter = router({
   listRoles: networkAuthenticatedProcedure()
     .input(inputSchema)
-    .output(createPaginatedOutput(roleEncoder))
+    .output(paginated(roleEncoder))
     .query(async ({ ctx, input }) => {
       const { profileId, zoneName, includeMemberCounts, cursor, limit, dir } =
         input;

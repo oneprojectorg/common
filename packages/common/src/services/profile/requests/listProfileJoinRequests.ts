@@ -5,7 +5,7 @@ import { and, eq } from 'drizzle-orm';
 
 import {
   PAGE_LIMIT,
-  type PaginatedResult,
+  type Paginated,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
@@ -36,7 +36,7 @@ export const listProfileJoinRequests = async ({
   cursor?: string | null;
   limit?: number;
   dir?: 'asc' | 'desc';
-}): Promise<PaginatedResult<JoinProfileRequestWithProfiles>> => {
+}): Promise<Paginated<JoinProfileRequestWithProfiles>> => {
   // Build cursor condition for pagination
   const cursorCondition = cursor
     ? getCursorCondition({

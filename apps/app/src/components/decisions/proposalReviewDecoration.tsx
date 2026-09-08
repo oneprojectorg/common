@@ -92,9 +92,11 @@ export function ProposalReviewDecorationProvider({
     },
   );
 
+  const aggregates = data?.items;
+
   const itemsByProposalId = useMemo(
-    () => new Map((data?.items ?? []).map((item) => [item.proposal.id, item])),
-    [data],
+    () => new Map((aggregates ?? []).map((item) => [item.proposal.id, item])),
+    [aggregates],
   );
 
   const getDecoration = useCallback(

@@ -3,7 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { PAGE_LIMIT, hasEmail } from '@op/common/client';
+import { PAGE_LIMIT, hasEmail, nextCursor } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
@@ -164,7 +164,7 @@ function ProfileInviteModalContent({
   } = trpc.profile.listUsers.useInfiniteQuery(
     { profileId, roleId: selectedRoleId, limit: 25 },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
       enabled: !!selectedRoleId,
     },
   );

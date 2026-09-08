@@ -1,7 +1,7 @@
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { PAGE_LIMIT } from '../../../utils/pagination';
+import { PAGE_LIMIT, paginated, total } from '../../../utils/pagination';
 import {
   PROPOSAL_TITLE_MAX_LENGTH,
   proposalDataSchema,
@@ -233,13 +233,13 @@ export const allProposalsListItemSchema = proposalSchema.omit({
 
 export type AllProposalsListItem = z.infer<typeof allProposalsListItemSchema>;
 
-/** Response from `decision.listAllProposals`. */
-export const allProposalsListSchema = z.object({
-  items: z.array(allProposalsListItemSchema),
-  // Full count of all matching proposals, independent of cursor pagination.
-  total: z.number(),
-  next: z.string().nullable(),
-});
+/**
+ * Response from `decision.listAllProposals`. `total` is the full count of
+ * matching proposals, independent of cursor pagination.
+ */
+export const allProposalsListSchema = paginated(
+  allProposalsListItemSchema,
+).extend({ total });
 
 export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
 
