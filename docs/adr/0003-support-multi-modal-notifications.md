@@ -35,6 +35,18 @@ flowchart TD
   resend --> inbox["Participant email"]
 ```
 
+The diagram shows one of two recipient sources. Four functions fan
+out to a group of participants and read `profileUsers.email`. They
+are `sendDecisionUpdateNotification`, `sendVoteSubmittedNotification`,
+`sendProposalSubmittedNotification`, and `sendPhaseTransitionNotification`.
+The other functions notify one member and read `profiles.email`.
+
+The `profileUsers.email` column holds a copy of the email address.
+The system writes the copy when it creates a membership row.
+It never updates the copy. A member who changes their email receives
+fan-out mail at the old address. The column is nullable. A member
+without a copy receives no fan-out mail.
+
 The team has experience with Twilio, and Twilio has the features we
 need for both SMS and WhatsApp.
 
@@ -69,9 +81,11 @@ would put our API host in the middle of a flow GoTrue already performs,
 and would add a public route that mints sessions.
 
 After this work, the Workflow functions will determine the user's
-notification preference and send the correct notification. We will
-structure these notifications as batches. We will send each batch to
-the external provider and retry it with the Inngest Step API.
+notification preference and send the correct notification. The
+functions resolve a recipient from the stored contact and preference.
+They do not read the `profileUsers.email` copy. We will structure
+these notifications as batches. We will send each batch to the
+external provider and retry it with the Inngest Step API.
 
 We will focus on implementing multi-modal support for the signup flow
 first, and then on voting.
@@ -134,6 +148,12 @@ database.
 We will also need to store the user's phone number. Both of these
 values are new. A user already on the platform will have to add their
 phone number.
+
+The four fan-out functions keep reading `profileUsers.email` after
+this work. They send to a stale address when a member changes their
+email, and they skip a member without a copy. A separate change must
+fix that column. Track it in the
+[Asana task](https://app.asana.com/0/1215095416548883/1218263833603355).
 
 We will reuse the existing Inngest Workflow system, so a failed
 notification retries the same way it does today. An SMS or WhatsApp
