@@ -21,9 +21,11 @@ export const allowListCacheKey = ({ email }: { email: string }): [string] => [
 ];
 
 /**
- * Fetch an allow list entry by email.
+ * Fetch an allow list entry by email. Module-private on purpose: an uncached
+ * reader in the public surface is the drift this file exists to prevent, so
+ * {@link getCachedAllowListUser} is the only way out of the module.
  */
-export const getAllowListUser = async ({
+const getAllowListUser = async ({
   email,
 }: {
   email?: string;
