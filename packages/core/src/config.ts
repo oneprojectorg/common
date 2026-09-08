@@ -251,6 +251,7 @@ export const platformAdminEmails = new Set([
   'scott@oneproject.org',
   'zaana@oneproject.org',
   'valentino@oneproject.org',
+  'ivan@oneproject.org',
 ]);
 
 export const commonColors = colors.neutral;
