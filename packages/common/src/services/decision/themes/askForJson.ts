@@ -1,4 +1,4 @@
-import { createAIAgent } from '@op/ai';
+import { AI_PROVIDER_ID, createAIAgent } from '@op/ai';
 import { logger } from '@op/logging';
 import type { z } from 'zod';
 
@@ -7,6 +7,7 @@ import {
   THEME_ANALYSIS_MAX_OUTPUT_TOKENS,
   THEME_ANALYSIS_MODEL_ID,
   THEME_ANALYSIS_PASS_TIMEOUT_MS,
+  THEME_ANALYSIS_THINKING_OFF,
 } from './constants';
 
 /**
@@ -232,14 +233,16 @@ const parseReply = <TSchema extends z.ZodTypeAny>({
       replyChars: text.length,
     });
 
-    // `length` means the endpoint stopped the model at its output cap, so the
-    // object was never closed. Said plainly because the fix is a bigger cap, not
-    // a better prompt.
+    // `length` means the endpoint stopped the model at its output cap. Whether
+    // it had written any of the answer first is the whole diagnosis: some text
+    // means the answer itself is too long for the cap, and none at all means the
+    // budget went somewhere the reply never showed — reasoning — and the lever
+    // is the model's thinking rather than the cap. Saying "cut off before it
+    // finished its JSON" for the second case describes a partial answer that
+    // does not exist.
     throw new ThemeAnalysisFailure(
       'analysis-unusable',
-      finishReason === 'length'
-        ? `The ${name} pass was cut off at the output limit before it finished its JSON (${describe()}).`
-        : `The ${name} pass returned no complete JSON object (${describe()}).`,
+      truncationMessage({ name, finishReason, text, describe }),
     );
   }
 
@@ -333,6 +336,36 @@ const timedOut = ({
 };
 
 /**
+ * How a reply with no JSON in it should be described.
+ *
+ * Three outcomes, because they have three different fixes: the model stopped at
+ * the cap with part of an answer written (the answer is too long), stopped at
+ * the cap having written nothing (the budget went to reasoning), or stopped
+ * normally and simply did not answer in JSON (a prompt problem).
+ */
+const truncationMessage = ({
+  name,
+  finishReason,
+  text,
+  describe,
+}: {
+  name: string;
+  finishReason: string | undefined;
+  text: string;
+  describe: () => string;
+}): string => {
+  if (finishReason !== 'length') {
+    return `The ${name} pass returned no complete JSON object (${describe()}).`;
+  }
+
+  if (text.length === 0) {
+    return `The ${name} pass used its whole output budget without writing any of the answer, which means it went on reasoning — the model's thinking needs turning down, not the cap turning up (${describe()}).`;
+  }
+
+  return `The ${name} pass was cut off at the output limit part-way through its JSON (${describe()}).`;
+};
+
+/**
  * Runs one generation, bounded by {@link THEME_ANALYSIS_PASS_TIMEOUT_MS}.
  *
  * Without a bound the call runs until something else stops it, and on a
@@ -391,6 +424,9 @@ const generateWithin = async (
       // reply is indistinguishable from a badly-behaved one at the point where
       // it fails to parse, which is the worst kind of failure to debug.
       modelSettings: { maxOutputTokens: THEME_ANALYSIS_MAX_OUTPUT_TOKENS },
+      // Keyed by provider name, which is how the SDK decides whose request
+      // fields these are. See THEME_ANALYSIS_THINKING_OFF for why they are set.
+      providerOptions: { [AI_PROVIDER_ID]: THEME_ANALYSIS_THINKING_OFF },
     });
 
     // Checked on the way out, not only in the catch. Mastra does not reject

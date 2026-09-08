@@ -151,3 +151,30 @@ export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 8 * 60 * 1000;
  * garbage, so this is a safe direction to move in.
  */
 export const THEME_ANALYSIS_MAX_OUTPUT_TOKENS = 4_000;
+
+/**
+ * Request fields that turn the model's extended thinking off.
+ *
+ * The reason this exists: on a real run the common-ground pass spent its entire
+ * output budget reasoning and returned zero characters of answer — `finish
+ * reason 'length'` with nothing before it. Reasoning is billed and waited for
+ * out of the same budget as the reply, and at this endpoint's throughput the
+ * model wanted more of it than any timeout we can justify. The two passes
+ * summarise and group bounded text against a fixed output shape; that is not
+ * work that needs an extended chain of thought, and it is the one part of the
+ * cost that buys us nothing here.
+ *
+ * `thinking` is the parameter Z.ai documents for GLM, which is the family this
+ * model comes from — `zai-org` is right there in the id. Endpoints that host
+ * these weights behind other stacks spell it differently: vLLM reads
+ * `chat_template_kwargs: { enable_thinking: false }`, and OpenAI-style gateways
+ * read `reasoning_effort: 'minimal'`. All three survive the trip to the request
+ * body (there is a test), so if this endpoint ignores `thinking`, swapping the
+ * spelling here is the whole change.
+ *
+ * An endpoint that does not recognise the field ignores it, which leaves the
+ * behaviour exactly as it is today rather than breaking it.
+ */
+export const THEME_ANALYSIS_THINKING_OFF = {
+  thinking: { type: 'disabled' },
+} as const;

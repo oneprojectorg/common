@@ -15,6 +15,7 @@ import { askForJson } from './askForJson';
 import {
   THEME_ANALYSIS_MAX_OUTPUT_TOKENS,
   THEME_ANALYSIS_MODEL_ID,
+  THEME_ANALYSIS_THINKING_OFF,
 } from './constants';
 
 /**
@@ -103,6 +104,21 @@ describe('the model call as it goes over the wire', () => {
     // than one it quietly drops.
     expect(body?.max_tokens).toBe(THEME_ANALYSIS_MAX_OUTPUT_TOKENS);
     expect(body?.model).toBe(THEME_ANALYSIS_MODEL_ID);
+  });
+
+  // Provider-specific fields are routed by provider name and dropped in silence
+  // when the name does not match — and a camelCase key is dropped even when it
+  // does. Neither failure is visible from the call site, and both leave the
+  // model thinking exactly as much as before.
+  it('sends the thinking-off field the model family understands', async () => {
+    requestBodies = [];
+    reply = '{"themes": []}';
+
+    await ask();
+
+    expect(requestBodies[0]).toMatchObject({
+      thinking: THEME_ANALYSIS_THINKING_OFF.thinking,
+    });
   });
 
   // Logged numbers that are always undefined are worse than no numbers: they

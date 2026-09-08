@@ -14,6 +14,10 @@ const generate = vi.fn();
 
 vi.mock('@op/ai', () => ({
   createAIAgent: vi.fn(() => ({ generate })),
+  // Real value, not a stand-in: it is the `providerOptions` key, so a mock that
+  // invented one would let a genuine mismatch pass here and drop the options in
+  // production.
+  AI_PROVIDER_ID: 'op-ai',
 }));
 
 import { createAIAgent } from '@op/ai';
@@ -142,6 +146,18 @@ describe('askForJson', () => {
 
     await expect(ask()).rejects.toMatchObject({
       message: expect.stringContaining('cut off at the output limit'),
+    });
+  });
+
+  // The same finish reason with nothing written is a different fault: the
+  // budget went to reasoning the reply never shows. Calling that "cut off
+  // part-way through its JSON" describes a partial answer that never existed,
+  // and points at raising the cap when the fix is the opposite.
+  it('separates a budget spent reasoning from an answer cut short', async () => {
+    generate.mockResolvedValue({ text: '', finishReason: 'length' });
+
+    await expect(ask()).rejects.toMatchObject({
+      message: expect.stringContaining('without writing any of the answer'),
     });
   });
 

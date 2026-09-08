@@ -1,3 +1,13 @@
+/**
+ * The provider name every model here is registered under.
+ *
+ * Exported because it is also the key of `providerOptions` — the AI SDK routes
+ * provider-specific request fields by provider name, so a caller passing one
+ * has to spell this exactly or the options are silently dropped. Sharing the
+ * constant is what stops those two from drifting apart.
+ */
+export const AI_PROVIDER_ID = 'op-ai';
+
 export interface AIModelConfig {
   /**
    * Model to run on that endpoint. Required, and deliberately not defaulted from
@@ -45,7 +55,7 @@ export const resolveAIModelConfig = ({
     baseURL == null ? (apiKey ?? process.env.AI_API_KEY) : apiKey;
 
   return {
-    providerId: 'op-ai',
+    providerId: AI_PROVIDER_ID,
     modelId,
     url,
     apiKey: resolvedApiKey || undefined,
