@@ -86,9 +86,10 @@ export interface ThemeAnalysisRun {
  * `themeAnalysisState`, where a test can reach it without a DOM.
  *
  * `analysisId` is the state everything else hangs off. Setting it enables the
- * status query; clearing it returns to idle. Analysis state is cache-only, so
- * that id is the only handle on a finished run, and every path that clears it is
- * deliberate: the caller retired it, the run failed, or the wait timed out.
+ * status query; clearing it returns to idle. The analysis is a row that
+ * outlives the session, but this id is the only handle the client holds on it,
+ * so every path that clears it is deliberate: the caller retired it, the run
+ * failed, or the wait timed out.
  *
  * @param processInstanceId - Decision instance whose current phase is analysed.
  * @returns See {@link ThemeAnalysisRun}.
@@ -128,19 +129,18 @@ export const useThemeAnalysisRun = (
       // Stops once the run settles, and react-query keeps serving the settled
       // record from its cache. Without this, any later refetch — on window
       // focus, on reconnect — could answer `not_found` and undo a finished run:
-      // `getThemeAnalysisStatus` reports that for a Redis client mid-reconnect
-      // as well as for a genuine miss, and a `not_found` reads as still-pending,
-      // so the dialog the facilitator was reading would unmount, the button
-      // would go back to "Preparing...", and ten minutes later they would be
-      // told an analysis they had just read had timed out.
+      // that is what a read returns for a row it cannot see, and a `not_found`
+      // reads as still-pending — so the dialog the facilitator was reading would
+      // unmount, the button would go back to "Preparing...", and ten minutes
+      // later they would be told an analysis they had just read had timed out.
       enabled: isFollowingRun({ analysisId, hasTimedOut, isSettled }),
       // Escalate to the caller's error boundary while the run is unresolved. A
       // failed status read is not inert here: `status` stays undefined, the run
       // reads as still in flight, and the silence timer below would report a
       // timeout — a claim about the run nothing can make.
       //
-      // A completed record is exempt. It holds the only copy of the result, so
-      // discarding it over a failed background refetch costs the whole run.
+      // A completed record is exempt. Discarding it over a failed background
+      // refetch would close the dialog on a result the reader is looking at.
       throwOnError: (_error, query) => query.state.data?.status !== 'completed',
       // The provider disables retries globally, which would make a single
       // dropped request terminal: it escalates, the button remounts at idle,

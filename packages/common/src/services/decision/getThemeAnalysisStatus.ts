@@ -1,15 +1,12 @@
-import { getWithStatus } from '@op/cache';
-import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import type { ThemeAnalysisData } from './schemas/themeAnalysis';
 import { themeAnalysisRecordSchema } from './schemas/themeAnalysis';
-import { themeAnalysisCacheKey } from './themes';
 
 // Re-exported here because this module is where callers already look for it.
 // `schemas/themeAnalysis.ts` derives the type from the schema that validates the
@@ -19,26 +16,27 @@ export type { ThemeAnalysisData } from './schemas/themeAnalysis';
 /**
  * Reads one theme analysis's status, and its result once the run has finished.
  *
- * Authorization runs in a fixed order. The record's own `userId` settles
- * ownership, then `assertInstanceProfileAccess` settles `decisions: ADMIN` on
- * the profile that owns the instance — the same boundary
- * `requestThemeAnalysis` applied on the way in, re-asserted here because a
- * record outlives the role that produced it by up to a day.
+ * Authorization runs in a fixed order. The row's own `requestedByAuthUserId`
+ * settles ownership, then `assertInstanceProfileAccess` settles
+ * `decisions: ADMIN` on the profile that owns the instance — the same boundary
+ * `requestThemeAnalysis` applied on the way in, re-asserted here because a row
+ * outlives the role that produced it.
  *
- * The cache holds the only copy of the record, so this reads it with
- * {@link getWithStatus} to keep "Redis held nothing" apart from "Redis did not
- * answer", and parses what it gets rather than asserting a type.
+ * `result` is `jsonb`, so Postgres hands it back as whatever was written. It is
+ * parsed against the record schema rather than asserted: nothing between the
+ * write and this read checks its shape, and a row written by an older deploy is
+ * a real possibility. A row that does not parse is reported as `not_found`,
+ * which returns the client to idle rather than leaving it waiting on something
+ * no later read will repair.
  *
- * @param analysisId - The analysis to read. Also its cache key.
+ * @param analysisId - The analysis to read.
  * @param user - The calling user, checked for ownership and then for decision
  *   admin.
- * @returns The parsed record, or `{ status: 'not_found' }` when the cache holds
- *   no usable record.
- * @throws CommonError when the cache did not answer. Reporting that as
- *   `not_found` would make the client retire a run that is still going.
+ * @returns The parsed record, or `{ status: 'not_found' }` when no usable row
+ *   exists.
  * @throws UnauthorizedError when the caller does not own the analysis, or no
  *   longer holds `decisions: ADMIN` on the owning profile.
- * @throws NotFoundError when the record names a process instance that is gone.
+ * @throws NotFoundError when the row names a process instance that is gone.
  */
 export const getThemeAnalysisStatus = async ({
   analysisId,
@@ -47,52 +45,36 @@ export const getThemeAnalysisStatus = async ({
   analysisId: string;
   user: User;
 }): Promise<ThemeAnalysisData | { status: 'not_found' }> => {
-  const cached = await getWithStatus(themeAnalysisCacheKey(analysisId));
+  const row = await db.query.proposalThemeAnalyses.findFirst({
+    where: { id: analysisId },
+    columns: {
+      id: true,
+      processInstanceId: true,
+      requestedByAuthUserId: true,
+      status: true,
+      result: true,
+      analyzedCount: true,
+      total: true,
+      errorCode: true,
+      errorMessage: true,
+      createdAt: true,
+      completedAt: true,
+    },
+    with: {
+      processInstance: { columns: { profileId: true } },
+    },
+  });
 
-  // Keep "no such analysis" apart from "the cache did not answer". The client
-  // retires the analysis id when it reads `not_found`, so collapsing the two
-  // would let one Redis timeout discard a run that is still working, and the
-  // toast beside it would tell the facilitator to retry a control no longer on
-  // screen.
-  if (cached.status === 'timeout' || cached.status === 'error') {
-    throw new CommonError('Could not read the analysis.');
-  }
-
-  if (cached.status !== 'hit') {
+  if (!row) {
     return { status: 'not_found' as const };
   }
 
-  // Parse rather than assert. Redis holds the only copy, so nothing else checks
-  // the shape this path depends on, and a malformed record is reachable: the
-  // workflow patches by merging over the copy it reads, so an eviction between
-  // the seed and a patch leaves a record holding a status and nothing else.
-  // Such a record describes no analysis and no later read repairs it, so this
-  // reports `not_found` and the client returns to idle.
-  const parsed = themeAnalysisRecordSchema.safeParse(cached.data);
-
-  if (!parsed.success) {
-    logger.error('Cached theme analysis record does not match its schema', {
-      analysisId,
-      error: parsed.error,
-    });
-
-    return { status: 'not_found' as const };
-  }
-
-  const analysis = parsed.data;
-
-  if (analysis.userId !== user.id) {
+  if (row.requestedByAuthUserId !== user.id) {
     throw new UnauthorizedError('You do not have access to this analysis');
   }
 
-  const [instance] = await db
-    .select({ profileId: processInstances.profileId })
-    .from(processInstances)
-    .where(eq(processInstances.id, analysis.processInstanceId))
-    .limit(1);
-
-  if (!instance) {
-    throw new NotFoundError('Process instance', analysis.processInstanceId);
+  if (!row.processInstance) {
+    throw new NotFoundError('Process instance', row.processInstanceId);
   }
 
   // `ownerProfileId` is null for the reason given in `requestThemeAnalysis`:
@@ -100,10 +82,36 @@ export const getThemeAnalysisStatus = async ({
   // the decision profile rather than with org-level grant holders.
   await assertInstanceProfileAccess({
     user,
-    instance: { profileId: instance.profileId, ownerProfileId: null },
+    instance: {
+      profileId: row.processInstance.profileId,
+      ownerProfileId: null,
+    },
     profilePermissions: { decisions: permission.ADMIN },
     orgFallbackPermissions: { decisions: permission.ADMIN },
   });
 
-  return analysis;
+  const parsed = themeAnalysisRecordSchema.safeParse({
+    analysisId: row.id,
+    processInstanceId: row.processInstanceId,
+    userId: row.requestedByAuthUserId,
+    status: row.status,
+    createdAt: row.createdAt,
+    completedAt: row.completedAt ?? undefined,
+    errorCode: row.errorCode ?? undefined,
+    errorMessage: row.errorMessage ?? undefined,
+    result: row.result ?? undefined,
+    analyzedCount: row.analyzedCount ?? undefined,
+    total: row.total ?? undefined,
+  });
+
+  if (!parsed.success) {
+    logger.error('Stored theme analysis does not match its schema', {
+      analysisId,
+      error: parsed.error,
+    });
+
+    return { status: 'not_found' as const };
+  }
+
+  return parsed.data;
 };

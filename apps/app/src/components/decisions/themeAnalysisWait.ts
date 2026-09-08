@@ -16,7 +16,7 @@
  * status, or the socket dropped at the wrong moment.
  *
  * Overrunning it is not free: the client drops the analysis id, and the finished
- * record stays in the cache for a day with nothing able to address it. Erring
- * long is therefore the cheaper direction.
+ * row sits there with nothing on screen able to address it. Erring long is
+ * therefore the cheaper direction.
  */
 export const THEME_ANALYSIS_WAIT_TIMEOUT_MS = 10 * 60 * 1000;

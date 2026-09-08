@@ -4,10 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // lookup, the admin gate, a count, the status cache, and the event bus. We drive
 // those and assert what it hands onward — the job it asks for, and the record
 // the first status read will find.
-vi.mock('@op/cache', () => ({ set: vi.fn() }));
-
 vi.mock('@op/db/client', () => ({
-  db: { select: vi.fn() },
+  db: { select: vi.fn(), insert: vi.fn() },
   eq: vi.fn(),
 }));
 
@@ -15,13 +13,17 @@ vi.mock('../access', () => ({ assertInstanceProfileAccess: vi.fn() }));
 
 vi.mock('./listProposals', () => ({ listProposals: vi.fn() }));
 
-import { set } from '@op/cache';
 import { db } from '@op/db/client';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { listProposals } from './listProposals';
 import { requestThemeAnalysis } from './requestThemeAnalysis';
@@ -45,10 +47,24 @@ const phaseHolds = (total: number) => {
   vi.mocked(listProposals).mockResolvedValue({ proposals: [], total } as never);
 };
 
+const inserted = vi.fn();
+
+const insertReturns = (rows: Array<{ id: string }>) => {
+  vi.mocked(db.insert).mockReturnValue({
+    values: (row: unknown) => {
+      inserted(row);
+      return { returning: async () => rows };
+    },
+  } as never);
+};
+
+const ANALYSIS_ID = '55555555-5555-4555-8555-555555555555';
+
 beforeEach(() => {
   vi.clearAllMocks();
   instanceRowIs([{ profileId: PROFILE_ID }]);
   phaseHolds(10);
+  insertReturns([{ id: ANALYSIS_ID }]);
   vi.spyOn(event, 'send').mockImplementation(sendEvent);
 });
 
@@ -71,42 +87,33 @@ describe('requestThemeAnalysis', () => {
       analysisId,
       processInstanceId: INSTANCE_ID,
       userId: AUTH_USER_ID,
-      createdAt: expect.any(String),
     });
   });
 
-  // The workflow writes whole records rather than patching, so it needs the
-  // request's own timestamp — otherwise every record it writes would restamp
-  // `createdAt` at pickup, which is a different fact.
-  it('sends the same createdAt it seeded the record with', async () => {
-    const { analysisId } = await request();
-
-    const [, record] = vi.mocked(set).mock.calls[0] as [
-      string,
-      { createdAt: string },
-    ];
-    const [payload] = sendEvent.mock.calls[0] as [
-      { data: { createdAt: string } },
-    ];
-
-    expect(payload.data.createdAt).toBe(record.createdAt);
-    expect(analysisId).toEqual(expect.any(String));
+  // The id the caller polls on is the row's, so the workflow's updates and the
+  // client's reads cannot land on different records.
+  it('returns the id the database minted', async () => {
+    await expect(request()).resolves.toEqual({ analysisId: ANALYSIS_ID });
   });
 
-  // The cache is the only store of this record, so nothing else can supply what
-  // the seed omits — and the status read checks ownership before anything else.
-  it('seeds a record the first status read can act on', async () => {
-    const { analysisId } = await request();
+  // A row, not a cache entry: `@op/cache` writes are a silent no-op without
+  // `REDIS_URL`, so the job would run, spend two model calls, and leave the
+  // caller waiting on a record nothing had written.
+  it('inserts a pending row the status read can act on', async () => {
+    await request();
 
-    const [, record] = vi.mocked(set).mock.calls[0] as [string, unknown];
-
-    expect(record).toEqual({
-      analysisId,
+    expect(inserted).toHaveBeenCalledWith({
       processInstanceId: INSTANCE_ID,
-      userId: AUTH_USER_ID,
+      requestedByAuthUserId: AUTH_USER_ID,
       status: 'pending',
-      createdAt: expect.any(String),
     });
+  });
+
+  it('starts no job when the insert reports no row', async () => {
+    insertReturns([]);
+
+    await expect(request()).rejects.toBeInstanceOf(CommonError);
+    expect(sendEvent).not.toHaveBeenCalled();
   });
 
   // An analysis reads every proposal in the phase, including any hidden from the
@@ -131,7 +138,7 @@ describe('requestThemeAnalysis', () => {
 
     await expect(request()).rejects.toBeInstanceOf(UnauthorizedError);
     expect(sendEvent).not.toHaveBeenCalled();
-    expect(vi.mocked(set)).not.toHaveBeenCalled();
+    expect(inserted).not.toHaveBeenCalled();
   });
 
   it('reports a missing instance rather than gating on nothing', async () => {
@@ -154,9 +161,7 @@ describe('requestThemeAnalysis', () => {
   it('accepts a phase holding exactly the minimum', async () => {
     phaseHolds(THEME_ANALYSIS_MIN_PROPOSALS);
 
-    await expect(request()).resolves.toEqual({
-      analysisId: expect.any(String),
-    });
+    await expect(request()).resolves.toEqual({ analysisId: ANALYSIS_ID });
   });
 
   // The count check must not read the corpus: it runs on every press, and the

@@ -110,6 +110,17 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Proposal theme analysis relations
+   */
+  proposalThemeAnalyses: {
+    processInstance: r.one.processInstances({
+      from: r.proposalThemeAnalyses.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+  },
+
+  /**
    * State Transition History relations
    */
   stateTransitionHistory: {

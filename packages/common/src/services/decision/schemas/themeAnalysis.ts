@@ -37,9 +37,9 @@ export type ThemeAnalysisSuggestionKind = z.infer<
 /**
  * Bounds on model-written prose, applied where the reply is parsed.
  *
- * These strings go into a dialog with a fixed layout, and the record has a cache
- * entry to fit inside. The caps are generous enough that a well-behaved reply
- * never meets them.
+ * These strings go into a dialog with a fixed layout, and into a `jsonb` column
+ * nobody wants to grow without a bound. The caps are generous enough that a
+ * well-behaved reply never meets them.
  *
  * They truncate rather than reject. A model that ignores "one sentence" and
  * returns four paragraphs has not failed — and rejecting would throw away the
@@ -223,21 +223,12 @@ export const themeAnalysisResultSchema = z.object({
 export type ThemeAnalysisResult = z.infer<typeof themeAnalysisResultSchema>;
 
 /**
- * Zod object schema for the cached record of one theme analysis.
+ * Zod object schema for one theme analysis, as the client receives it.
  *
- * Redis holds the only copy. No table stands behind it, so this schema is the
- * only description of the shape and the only check on it.
- * `getThemeAnalysisStatus` parses every read against it and reports a record
- * that fails as `not_found`, which returns the client to idle rather than
- * leaving it waiting on a record no later read will repair.
- *
- * `requestThemeAnalysis` seeds the record in full, so the required fields are
- * present from the first write. The workflow then patches it, and each patch
- * merges over the record it reads. The optional fields arrive later, or never:
- * `result` and the counts when a run completes, `errorMessage` when one fails.
- *
- * The schema is not strict, so a field it does not name is stripped from every
- * parsed record. Anything a reader needs has to be listed here.
+ * A row in `proposal_theme_analyses` stands behind it. This schema is the wire
+ * contract the app reads, and `getThemeAnalysisStatus` parses each row against
+ * it — `result` is `jsonb`, so nothing between the write and the read checks
+ * its shape, and a row written by an older deploy is a real possibility.
  */
 /**
  * Why an analysis failed, as something the app can translate.

@@ -1,19 +1,13 @@
-import { set } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { processInstances, proposalThemeAnalyses } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
-import { randomUUID } from 'crypto';
 
-import { NotFoundError, ValidationError } from '../../utils';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { listProposals } from './listProposals';
-import {
-  THEME_ANALYSIS_CACHE_TTL_SECONDS,
-  THEME_ANALYSIS_MIN_PROPOSALS,
-  themeAnalysisCacheKey,
-} from './themes';
+import { THEME_ANALYSIS_MIN_PROPOSALS } from './themes';
 
 export interface RequestThemeAnalysisInput {
   processInstanceId: string;
@@ -36,7 +30,7 @@ export interface RequestThemeAnalysisInput {
  *
  * @param input - The instance to analyse.
  * @param user - The calling facilitator, checked for decision admin.
- * @returns The id of the analysis, which is also its cache key and its channel.
+ * @returns The id of the analysis — the row's primary key, and its channel.
  * @throws NotFoundError when the instance does not exist.
  * @throws UnauthorizedError when the caller does not hold `decisions: ADMIN` on
  *   the profile that owns the instance.
@@ -93,27 +87,27 @@ export const requestThemeAnalysis = async ({
     );
   }
 
-  const analysisId = randomUUID();
-  // One instant for the seed and the event, so the record the workflow writes
-  // and the record the request wrote agree about when this was asked for.
-  const createdAt = new Date().toISOString();
-
-  // Seeded in full rather than as an id and a status. The status contract
-  // requires `processInstanceId` and `userId` — the read checks ownership before
-  // it checks anything else — so a partial record fails the first read instead of
-  // answering it. This cache is the only store of analysis state; no table
-  // stands behind it, so nothing else can supply what the seed omits.
-  await set(
-    themeAnalysisCacheKey(analysisId),
-    {
-      analysisId,
+  // Inserted, not cached. The row is the only record of the run, and it has to
+  // outlive a process restart and exist in a deployment with no Redis — where
+  // `@op/cache`'s writes are a silent no-op, so the job would run, spend two
+  // model calls, and leave the caller waiting on something never written.
+  //
+  // The database mints the id, so the id the caller polls on and the row the
+  // workflow updates cannot disagree.
+  const [analysis] = await db
+    .insert(proposalThemeAnalyses)
+    .values({
       processInstanceId,
-      userId: user.id,
+      requestedByAuthUserId: user.id,
       status: 'pending',
-      createdAt,
-    },
-    THEME_ANALYSIS_CACHE_TTL_SECONDS,
-  );
+    })
+    .returning({ id: proposalThemeAnalyses.id });
+
+  if (!analysis) {
+    throw new CommonError('Could not record the analysis request.');
+  }
+
+  const analysisId = analysis.id;
 
   await event.send({
     name: Events.proposalThemeAnalysisRequested.name,
@@ -121,7 +115,6 @@ export const requestThemeAnalysis = async ({
       analysisId,
       processInstanceId,
       userId: user.id,
-      createdAt,
     },
   });
 

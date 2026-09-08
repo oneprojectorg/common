@@ -1,35 +1,9 @@
 /**
  * Shared configuration for the proposal theme analysis pipeline.
  *
- * The API service, the `@op/common` service layer, and the Inngest workflow
- * share one analysis record. The cache key format and the time-to-live (TTL)
- * must agree across all three, which is why they live here rather than at each
- * call site. The proposals export learned this the hard way: its signing TTL and
- * its recorded expiry drifted apart and it served dead URLs for 22 hours.
+ * The `@op/common` service layer, the Inngest workflow and the app read these,
+ * so they live here rather than at each call site.
  */
-
-/**
- * The lifetime of a cached theme analysis record.
- *
- * Analysis state lives only in the cache. No table backs it, so this is also how
- * long a finished analysis stays readable. A facilitator who runs one, closes
- * the tab, and comes back the next day runs it again.
- *
- * A day is the export's figure, kept for the same reason: it covers a working
- * session without holding a snapshot long enough to be mistaken for a record of
- * what the process said.
- */
-export const THEME_ANALYSIS_CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
-
-/**
- * Builds the cache key for an analysis record.
- *
- * @param analysisId - The analysis the record belongs to.
- * @returns The namespaced key. Every reader and writer uses this, so no call
- *   site holds its own copy of the format.
- */
-export const themeAnalysisCacheKey = (analysisId: string) =>
-  `themeAnalysis:proposal:${analysisId}`;
 
 /**
  * The most proposals one analysis reads.

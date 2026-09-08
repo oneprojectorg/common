@@ -1553,6 +1553,7 @@
   "Analyzing...": "Analisando...",
   "Failed to start the analysis": "Não foi possível iniciar a análise",
   "The analysis failed": "A análise falhou",
+  "The analysis finished but found nothing to report across these proposals.": "A análise terminou, mas não encontrou nada a relatar sobre estas propostas.",
   "There isn't enough written in these proposals to compare them.": "Estas propostas não têm texto suficiente para serem comparadas.",
   "The analysis didn't come back in a usable form. Please try again.": "A análise não voltou num formato utilizável. Tente novamente.",
   "The analysis timed out. Please try again.": "A análise expirou. Tente novamente.",

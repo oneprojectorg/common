@@ -56,11 +56,6 @@ export const Events = {
       analysisId: z.string().uuid(),
       processInstanceId: z.string().uuid(),
       userId: z.string().uuid(),
-      // When the facilitator asked, not when the workflow picked the job up.
-      // Carried so every record the workflow writes is complete on its own: with
-      // this, no write has to read the seed back to preserve it, and no cache
-      // read sits between a finished analysis and the record that reports it.
-      createdAt: z.string().datetime(),
     }),
   },
   profileInviteSent: {

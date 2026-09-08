@@ -56,11 +56,11 @@ export const ThemeAnalysisDialog = ({
   const t = useTranslations();
 
   return (
-    // Closing retires the run, and the result lives only in a cache entry the
-    // client can no longer address once the id is dropped. A click that lands
-    // beside the card is not a decision to throw away a two-model analysis, so
-    // it does not close this one. Escape still does, which is deliberate and
-    // what a keyboard user expects.
+    // Closing retires the run, and the client drops the id it would need to
+    // reopen it. The row survives, but nothing on screen can address it. A click
+    // that lands beside the card is not a decision to put a two-model analysis
+    // away, so it does not close this one. Escape still does, which is
+    // deliberate and what a keyboard user expects.
     <Dialog open={isOpen} onOpenChange={onOpenChange} disablePointerDismissal>
       <DialogContent className="max-h-dvh overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
@@ -82,15 +82,41 @@ export const ThemeAnalysisDialog = ({
         </DialogHeader>
 
         <div className="flex flex-col gap-6 px-6 pb-6">
-          <ThemesSection themes={result.themes} />
-          <CommonGroundSection commonGround={result.commonGround} />
-          <OutliersSection outliers={result.outliers} />
-          <SuggestionsSection suggestions={result.suggestions} />
+          {/* Every section hides itself when empty, so a run that found nothing
+              would otherwise render as a dialog with only a header — which reads
+              as a loading bug rather than as an answer. */}
+          {isEmpty(result) ? (
+            <p className="text-label text-muted-foreground">
+              {t(
+                'The analysis finished but found nothing to report across these proposals.',
+              )}
+            </p>
+          ) : (
+            <>
+              <ThemesSection themes={result.themes} />
+              <CommonGroundSection commonGround={result.commonGround} />
+              <OutliersSection outliers={result.outliers} />
+              <SuggestionsSection suggestions={result.suggestions} />
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
+/**
+ * Did the run produce anything at all?
+ *
+ * A valid outcome, not a defect: a corpus of unrelated proposals genuinely has
+ * no themes and no common ground, and the model is told to report the little
+ * that is shared rather than manufacture agreement.
+ */
+const isEmpty = (result: ThemeAnalysisResult): boolean =>
+  result.themes.length === 0 &&
+  result.commonGround.length === 0 &&
+  result.outliers.length === 0 &&
+  result.suggestions.length === 0;
 
 /**
  * A section heading with its body, or nothing when the section is empty.

@@ -1553,6 +1553,7 @@
   "Analyzing...": "Waa la falanqaynayaa...",
   "Failed to start the analysis": "Falanqaynta lama bilaabi karin",
   "The analysis failed": "Falanqayntu way fashilantay",
+  "The analysis finished but found nothing to report across these proposals.": "Falanqayntu way dhammaatay laakiin waxba lagama helin soo jeedimahan.",
   "There isn't enough written in these proposals to compare them.": "Soo jeedimahan kuma jiro qoraal ku filan oo lagu barbardhigo.",
   "The analysis didn't come back in a usable form. Please try again.": "Falanqayntu kuma soo noqon qaab la isticmaali karo. Fadlan mar kale isku day.",
   "The analysis timed out. Please try again.": "Falanqayntu waa dhacday waqtigeedii. Fadlan mar kale isku day.",

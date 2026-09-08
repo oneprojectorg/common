@@ -158,6 +158,12 @@ export {
 } from './tables/proposalRelationships.sql';
 export type { ProposalRelationship } from './tables/proposalRelationships.sql';
 
+export {
+  proposalThemeAnalyses,
+  proposalThemeAnalysisStatusEnum,
+} from './tables/proposalThemeAnalyses.sql';
+export type { ProposalThemeAnalysis } from './tables/proposalThemeAnalyses.sql';
+
 export { decisionBoundaries } from './tables/decisionBoundaries.sql';
 export type { DecisionBoundary } from './tables/decisionBoundaries.sql';
 

@@ -3,11 +3,7 @@
 // decision barrel re-exports this file wholesale, so anything named here becomes
 // `@op/common` public API and acquires a compatibility obligation it never asked
 // for.
-export {
-  THEME_ANALYSIS_CACHE_TTL_SECONDS,
-  THEME_ANALYSIS_MIN_PROPOSALS,
-  themeAnalysisCacheKey,
-} from './constants';
+export { THEME_ANALYSIS_MIN_PROPOSALS } from './constants';
 export type { CorpusProposal } from './corpusGrounding';
 export {
   collectProposalCorpus,

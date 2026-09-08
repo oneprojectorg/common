@@ -144,7 +144,8 @@ export const isFollowingRun = ({
  * `idle` is not terminal — it is the absence of a run, which a later one
  * replaces. The two real outcomes are, and once a run reaches either, nothing a
  * later read says should move it: the hook stops polling on this, so a
- * `not_found` from a cache blip cannot undo a finished analysis.
+ * `not_found` from a read that could not see the row cannot undo a finished
+ * analysis.
  *
  * @param phase - The run's phase.
  * @returns True for `completed` and `failed`.
