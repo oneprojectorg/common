@@ -20,18 +20,20 @@ export type AttachmentSummary = z.infer<typeof attachmentSummarySchema>;
 // a `z.coerce.date()` here would mistype it as a `Date`.
 const resourceSelect = createSelectSchema(resources);
 
-const resourceBaseShape = {
-  id: resourceSelect.shape.id,
-  title: resourceSelect.shape.title,
-  description: resourceSelect.shape.description,
-  addedByProfileId: resourceSelect.shape.addedByProfileId,
-  createdAt: resourceSelect.shape.createdAt,
-  updatedAt: resourceSelect.shape.updatedAt,
-  signedUrl: z.string().nullable(),
-};
+const resourceBaseSchema = resourceSelect
+  .pick({
+    id: true,
+    title: true,
+    description: true,
+    addedByProfileId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    signedUrl: z.string().nullable(),
+  });
 
-const linkResourceSchema = z.object({
-  ...resourceBaseShape,
+const linkResourceSchema = resourceBaseSchema.extend({
   type: z.literal('link'),
   linkUrl: z.string(),
   // OG / oEmbed thumbnail resolved at hydration time via the link-preview
@@ -42,8 +44,7 @@ const linkResourceSchema = z.object({
   attachment: z.null(),
 });
 
-const documentResourceSchema = z.object({
-  ...resourceBaseShape,
+const documentResourceSchema = resourceBaseSchema.extend({
   type: z.literal('document'),
   linkUrl: z.null(),
   thumbnailUrl: z.null(),
@@ -57,14 +58,12 @@ export const resourceWithSignedUrlSchema = z.discriminatedUnion('type', [
 ]);
 export type ResourceDTO = z.infer<typeof resourceWithSignedUrlSchema>;
 
-const inCollectionFields = {
+const resourceInCollectionBaseSchema = resourceBaseSchema.extend({
   collectionId: z.string().uuid(),
   sortKey: z.string(),
-};
+});
 
-const linkResourceInCollectionSchema = z.object({
-  ...resourceBaseShape,
-  ...inCollectionFields,
+const linkResourceInCollectionSchema = resourceInCollectionBaseSchema.extend({
   type: z.literal('link'),
   linkUrl: z.string(),
   thumbnailUrl: z.string().nullable(),
@@ -72,15 +71,14 @@ const linkResourceInCollectionSchema = z.object({
   attachment: z.null(),
 });
 
-const documentResourceInCollectionSchema = z.object({
-  ...resourceBaseShape,
-  ...inCollectionFields,
-  type: z.literal('document'),
-  linkUrl: z.null(),
-  thumbnailUrl: z.null(),
-  attachmentId: z.string().uuid(),
-  attachment: attachmentSummarySchema,
-});
+const documentResourceInCollectionSchema =
+  resourceInCollectionBaseSchema.extend({
+    type: z.literal('document'),
+    linkUrl: z.null(),
+    thumbnailUrl: z.null(),
+    attachmentId: z.string().uuid(),
+    attachment: attachmentSummarySchema,
+  });
 
 export const resourceInCollectionSchema = z.discriminatedUnion('type', [
   linkResourceInCollectionSchema,
@@ -103,16 +101,20 @@ export type ResourceListResult = z.infer<typeof resourceListSchema>;
 const collectionSelect = createSelectSchema(resourceCollections);
 const collectionProfileSelect = createSelectSchema(resourceCollectionProfiles);
 
-export const collectionSchema = z.object({
-  id: collectionSelect.shape.id,
-  name: collectionSelect.shape.name,
-  // `sortKey` is a custom `asciiText` column that drizzle-zod can't infer, so
-  // declare it explicitly rather than reaching into the generated shape.
-  sortKey: z.string(),
-  addedByProfileId: collectionProfileSelect.shape.addedByProfileId,
-  createdAt: collectionProfileSelect.shape.createdAt,
-  updatedAt: collectionProfileSelect.shape.updatedAt,
-});
+export const collectionSchema = collectionSelect
+  .pick({ id: true, name: true })
+  .extend({
+    // `sortKey` is a custom `asciiText` column that drizzle-zod can't infer,
+    // so declare it explicitly rather than reaching into the generated shape.
+    sortKey: z.string(),
+  })
+  .extend(
+    collectionProfileSelect.pick({
+      addedByProfileId: true,
+      createdAt: true,
+      updatedAt: true,
+    }).shape,
+  );
 export type CollectionDTO = z.infer<typeof collectionSchema>;
 
 export const collectionListSchema = z.object({
