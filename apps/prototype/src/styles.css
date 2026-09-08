@@ -1,0 +1,328 @@
+/* The real theme, compiled here rather than consumed prebuilt: Vite rebuilds it
+   on every change, so a new utility class can't silently do nothing. */
+@import '@op/styles/theme';
+
+@source './**/*.{ts,tsx}';
+
+/* The built page is committed (so anyone can grab one file and drop it on a
+   static host), which takes it out of `.gitignore` — and Tailwind's automatic
+   source detection scans everything that is not ignored. Without this, each
+   build scanned the previous build's 1.5 MB bundle and the stylesheet grew every
+   time. */
+@source not '../dist/**';
+
+/* PROTOTYPE ONLY — delete with `components/prototype`.
+ *
+ * The intro backdrop's motion. The travel has to be large to register at all:
+ * on a shape this soft a few percent of drift is invisible, and the first
+ * version animated the whole time while reading as a still image. It also can't
+ * be so large that a blob uncovers the side of the box — which is what the base
+ * layer under them is for, so the movement never has to be capped by coverage.
+ *
+ * Two tracks running opposite each other, so the blobs cross instead of sliding
+ * together — crossing is what reads as light moving through the wash rather
+ * than the wash being dragged across the page. Three waypoints, so a cycle
+ * turns rather than retracing its own path. */
+@keyframes intro-blob-a {
+  0% {
+    transform: translate3d(-40%, 22%, 0) scale(0.9);
+  }
+  33% {
+    transform: translate3d(50%, -26%, 0) scale(1.35);
+  }
+  66% {
+    transform: translate3d(18%, 30%, 0) scale(1.1);
+  }
+  100% {
+    transform: translate3d(-40%, 22%, 0) scale(0.9);
+  }
+}
+
+@keyframes intro-blob-b {
+  0% {
+    transform: translate3d(45%, -22%, 0) scale(1.3);
+  }
+  33% {
+    transform: translate3d(-45%, 26%, 0) scale(0.9);
+  }
+  66% {
+    transform: translate3d(-14%, -30%, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(45%, -22%, 0) scale(1.3);
+  }
+}
+
+/* PROTOTYPE ONLY — delete with `components/prototype`.
+ *
+ * The launch sequence. Durations come from `launchChoreography.ts` through
+ * custom properties on the page root, so the numbers live in one place and the
+ * keyframes live here.
+ *
+ * The whole point of animating heights rather than just fading things in and
+ * out: draft and live are near-identical at rest, so the only way launching
+ * reads as an event is if the page visibly rearranges itself. Anything that
+ * pops into or out of layout undoes that by jumping. */
+@keyframes launch-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes launch-fall-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* A little past the target and back, so it lands rather than arrives. */
+/* The card's own change of state, on one clock: the fill arrives, the text turns,
+   and the border goes. The border leaves as an inset shadow rather than a real
+   border, which would take a pixel of layout with it as it went. */
+@keyframes launch-tint-in {
+  from {
+    background-color: transparent;
+    color: var(--foreground);
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+
+  to {
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+}
+
+@keyframes launch-tint-out {
+  from {
+    background-color: var(--accent);
+  }
+}
+
+/* The badge's row, folded away and opened. `-1.75rem` is the badge's own height
+   plus the column's gap above the name — the whole row it occupies — and with
+   the two cards now identical in every other respect, that row is the only
+   thing that makes the live card taller. So this is the card's height change,
+   exactly, with nothing left over to step. */
+@keyframes launch-badge-space {
+  from {
+    margin-top: -1.75rem;
+  }
+}
+
+/* The trailing chevron, which the live card only shows on hover. Fading it is
+   what keeps it from simply being gone the moment the card turns over. */
+@keyframes launch-arrow-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* The badge itself, once its row is open. Separate from the space so the two can
+   be ordered — a badge that arrives with its own row still opening reads as the
+   card jolting rather than growing. */
+@keyframes launch-badge-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes launch-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* One ring leaving the check, once. A repeating pulse reads as a status. */
+@keyframes launch-ring {
+  from {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+/* Reserve the space before filling it, so the card around it never jumps. */
+@keyframes launch-grow-space {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--launch-space, 2rem);
+  }
+}
+
+@keyframes launch-collapse {
+  from {
+    height: var(--launch-space, 3rem);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/* Every beat of the page sequence, keyed off the root's `data-launching`. */
+[data-launching='true'] [data-launch='header-draft'] {
+  animation: launch-fall-out var(--launch-header) ease-in forwards;
+}
+
+[data-launching='true'] [data-launch='header-live'] {
+  animation: launch-rise-in var(--launch-header) ease-out
+    var(--launch-header-delay) backwards;
+}
+
+[data-launching='true'] [data-launch='title'] {
+  transition: color var(--launch-title) ease-out;
+}
+
+[data-launching='true'] [data-launch='hero-cta'] {
+  animation: launch-grow-space var(--launch-hero-height)
+    cubic-bezier(0.22, 0.9, 0.3, 1) var(--launch-hero-height-delay) backwards;
+  overflow: hidden;
+}
+
+[data-launching='true'] [data-launch='hero-cta-buttons'] {
+  animation: launch-rise-in var(--launch-hero-buttons) ease-out
+    var(--launch-hero-buttons-delay) backwards;
+}
+
+[data-launching='true'] [data-launch='chip-space'] {
+  animation: launch-grow-space var(--launch-chip-space) ease-out
+    var(--launch-chip-space-delay) backwards;
+  overflow: hidden;
+}
+
+[data-launching='true'] [data-launch='chip'] {
+  animation: launch-pop-in var(--launch-chip-pop) ease-out
+    var(--launch-chip-pop-delay) backwards;
+}
+
+/* The rail's fill changing hands. Both keyframes name only their start: the end
+   is whatever the card computes to, so neither has to restate a token, and the
+   card that gives its fill up lands on whatever it rests on. */
+[data-launching='true'] [data-launch='phase-tint-out'] > * {
+  animation: launch-tint-out var(--launch-phase-tint) ease-out
+    var(--launch-phase-tint-delay) backwards;
+}
+
+/* The running phase's card, in the order it reads: the fill and the text turn,
+   the chevron goes, then the row the badge sits in opens, then the badge lands.
+   Clipped while that row opens, so the badge is never seen above the card it
+   belongs to. */
+[data-launching='true'] [data-slot='phase-card-current'] {
+  animation: launch-tint-in var(--launch-phase-fill) ease backwards;
+  overflow: hidden;
+}
+
+[data-launching='true']
+  [data-slot='phase-card-current']
+  [data-slot='phase-card-arrow'] {
+  animation: launch-arrow-out var(--launch-phase-arrow) ease forwards;
+}
+
+[data-launching='true'] [data-slot='phase-card-current'] [data-slot='badge'] {
+  animation:
+    launch-badge-space var(--launch-badge-space)
+      cubic-bezier(0.22, 0.9, 0.3, 1) var(--launch-badge-space-delay) backwards,
+    launch-badge-in var(--launch-badge-in) cubic-bezier(0.3, 1.4, 0.5, 1)
+      var(--launch-badge-in-delay) backwards;
+}
+
+[data-launching='true'] [data-launch='add-phase'] {
+  animation:
+    launch-collapse var(--launch-add-phase-height) ease-in forwards,
+    launch-fall-out var(--launch-add-phase-opacity) ease-in forwards;
+  overflow: hidden;
+}
+
+[data-launching='true'] [data-launch='edit-a'] {
+  animation: launch-rise-in var(--launch-edit) ease-out var(--launch-edit-a)
+    backwards;
+}
+
+[data-launching='true'] [data-launch='edit-b'] {
+  animation: launch-rise-in var(--launch-edit) ease-out var(--launch-edit-b)
+    backwards;
+}
+
+/* A date label that just changed, seen to change. Under a second, and it lifts
+   its own colour rather than drawing a box: the label is inside a card that is
+   already the emphasis, and a second fill in there read as an error. */
+@keyframes phase-dates-pulse {
+  0% {
+    background-color: transparent;
+    color: var(--muted-foreground);
+  }
+
+  25% {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  100% {
+    background-color: transparent;
+    color: var(--muted-foreground);
+  }
+}
+
+[data-pulse='dates'] {
+  animation: phase-dates-pulse 900ms ease-out;
+}
+
+/* Same states, no choreography. */
+@media (prefers-reduced-motion: reduce) {
+  [data-launching='true'] [data-launch],
+  [data-launching='true'] [data-launch] > *,
+  [data-launching='true'] [data-slot='phase-card-current'],
+  [data-launching='true'] [data-slot='phase-card-current'] [data-slot='badge'],
+  [data-launching='true']
+    [data-slot='phase-card-current']
+    [data-slot='phase-card-arrow'] {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+
+  /* No pulse at all, rather than a fast one: a colour flashing on and off in a
+     single frame is the thing this setting is asking us not to do. */
+  [data-pulse='dates'] {
+    animation: none;
+  }
+}

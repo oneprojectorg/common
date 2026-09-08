@@ -92,6 +92,11 @@
   --animate-count-in: count-in var(--duration-count) var(--ease-count);
   --animate-count-out: count-out var(--duration-count) var(--ease-count)
     forwards;
+  /* A barely-there drift for a decorative background gradient (the
+   * create-process wizard's opening screen). Long and low-amplitude on
+   * purpose: it should read as light moving, not as motion. Callers pair it
+   * with `motion-reduce:animate-none`. */
+  --animate-gradient-drift: gradient-drift 18s ease-in-out infinite alternate;
 }
 
 /* The sense radius and text scales are now the global defaults (declared in
@@ -247,6 +252,17 @@
   }
   to {
     height: 0;
+  }
+}
+
+@keyframes gradient-drift {
+  from {
+    transform: translate3d(-2%, 2%, 0) scale(1.05);
+    opacity: 0.7;
+  }
+  to {
+    transform: translate3d(2%, -1%, 0) scale(1.15);
+    opacity: 1;
   }
 }
 

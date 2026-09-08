@@ -148,6 +148,13 @@ const PUBLIC_ROUTES: RouteScan[] = [
 const STATIC_AUTH_ROUTES: RouteScan[] = [
   { url: '/en/', label: 'Home', auth: 'authenticated' },
   { url: '/en/decisions', label: 'Decisions index', auth: 'authenticated' },
+  {
+    // First screen of the create-process wizard; it creates nothing until the
+    // last step, so scanning it has no side effects.
+    url: '/en/decisions/new',
+    label: 'Create process wizard',
+    auth: 'authenticated',
+  },
   { url: '/en/profile', label: 'Profile index', auth: 'authenticated' },
   { url: '/en/search', label: 'Search', auth: 'authenticated' },
   { url: '/en/org', label: 'Org index', auth: 'authenticated' },

@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./dist/styles.css",
+    "./theme": "./theme.css",
     "./tokens": "./tokens.css",
     "./postcss": "./postcss.config.mjs",
     "./constants": "./constants.ts"
