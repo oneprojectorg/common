@@ -8,8 +8,10 @@ import {
   resolveCompletedThemeAnalysis,
   resolveFailureCode,
   resolveRunningLabelKey,
+  resolveStatusPollInterval,
   resolveThemeAnalysisPhase,
 } from './themeAnalysisState';
+import { THEME_ANALYSIS_POLL_INTERVAL_MS } from './themeAnalysisWait';
 
 const ANALYSIS_ID = '11111111-1111-4111-8111-111111111111';
 const INSTANCE_ID = '22222222-2222-4222-8222-222222222222';
@@ -262,4 +264,29 @@ describe('resolveCompletedThemeAnalysis', () => {
       resolveCompletedThemeAnalysis({ ...completedRecord, analyzedCount: 0 }),
     ).toMatchObject({ analyzedCount: 0, total: 120 });
   });
+});
+
+describe('resolveStatusPollInterval', () => {
+  // The realtime broadcast is best-effort: `publishMany` swallows its failures
+  // because a client normally recovers on its next full fetch. This run has no
+  // next full fetch — the result has no other route to the screen — so without a
+  // poll a dropped broadcast leaves the button on "Preparing..." for a run that
+  // finished minutes ago and is sitting in the cache.
+  it.each(['idle', 'pending', 'processing'] as const)(
+    'keeps reading while the run is %s',
+    (phase) => {
+      expect(resolveStatusPollInterval(phase)).toBe(
+        THEME_ANALYSIS_POLL_INTERVAL_MS,
+      );
+    },
+  );
+
+  // An answer does not change. Re-asking costs a request per interval for as
+  // long as the dialog is open.
+  it.each(['completed', 'failed'] as const)(
+    'stops once the run is %s',
+    (phase) => {
+      expect(resolveStatusPollInterval(phase)).toBe(false);
+    },
+  );
 });

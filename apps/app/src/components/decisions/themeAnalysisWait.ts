@@ -26,3 +26,23 @@
  * therefore the cheaper direction.
  */
 export const THEME_ANALYSIS_WAIT_TIMEOUT_MS = 25 * 60 * 1000;
+
+/**
+ * How often the client re-reads a run that has not reported.
+ *
+ * A backstop, not the mechanism. The run's realtime channel is still what makes
+ * a finished analysis appear at once; this is what makes it appear at all.
+ *
+ * Broadcasts are best-effort by design — `publishMany` swallows its failures on
+ * the reasoning that a client will recover on its next full fetch. That holds
+ * for a mutation whose result the user will navigate back to. It does not hold
+ * here: this run's result has no other path to the screen, so a broadcast that
+ * is dropped, or never published because the publisher had no credentials,
+ * leaves the button saying "Preparing..." until the wait above gives up — for a
+ * run that finished minutes ago and is sitting in the cache.
+ *
+ * Five seconds because the whole run is on the order of a minute or two, and the
+ * read is a single cache lookup. Polling stops the moment the run settles: the
+ * status query disables itself, and a disabled query does not poll.
+ */
+export const THEME_ANALYSIS_POLL_INTERVAL_MS = 5 * 1000;

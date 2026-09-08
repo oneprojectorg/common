@@ -4,6 +4,8 @@ import type {
   ThemeAnalysisResult,
 } from '@op/api/encoders';
 
+import { THEME_ANALYSIS_POLL_INTERVAL_MS } from './themeAnalysisWait';
+
 /**
  * What `decision.getThemeAnalysisStatus` answers: one parsed record, or the
  * not-found arm.
@@ -226,3 +228,19 @@ export const resolveCompletedThemeAnalysis = (
     total: status.total,
   };
 };
+
+/**
+ * How often to re-read the status, given where the run has got to.
+ *
+ * `false` once the run has an outcome — polling a settled record would re-ask a
+ * question that already has an answer, and the query disables itself there
+ * anyway. Everything before that polls, because until then the client has no
+ * guaranteed way of hearing that the run finished.
+ *
+ * @param phase - The run's current phase.
+ * @returns Milliseconds between reads, or false to stop.
+ */
+export const resolveStatusPollInterval = (
+  phase: ThemeAnalysisPhase,
+): number | false =>
+  isTerminalPhase(phase) ? false : THEME_ANALYSIS_POLL_INTERVAL_MS;

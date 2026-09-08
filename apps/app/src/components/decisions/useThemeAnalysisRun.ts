@@ -23,6 +23,7 @@ import {
   resolveFailureCode,
   resolveFailureDiagnostic,
   resolveRunningLabelKey,
+  resolveStatusPollInterval,
   resolveThemeAnalysisPhase,
 } from './themeAnalysisState';
 import { THEME_ANALYSIS_WAIT_TIMEOUT_MS } from './themeAnalysisWait';
@@ -126,10 +127,19 @@ export const useThemeAnalysisRun = (
     },
   });
 
-  // No polling. The workflow broadcasts on this run's channel when it picks the
-  // job up and again when the run settles, and the subscriber re-reads once the
-  // channel is live — which covers a run reaching either of those before the
-  // socket join lands.
+  // The workflow broadcasts on this run's channel when it picks the job up and
+  // again when the run settles, and the subscriber re-reads once the channel is
+  // live — which covers a run reaching either of those before the socket join
+  // lands. That is the fast path, and it is the only one that makes a result
+  // appear the instant it exists.
+  //
+  // It is not, however, a path anything can rely on: broadcasts are published
+  // best-effort and their failures are swallowed, on the reasoning that a client
+  // recovers on its next full fetch. There is no next full fetch here — this
+  // run's result has no other way onto the screen — so a dropped or unpublished
+  // broadcast left the button saying "Preparing..." for a run that had already
+  // finished and was sitting in the cache. Hence the poll below: the fast path
+  // stays, and the slow one guarantees the result arrives.
   const { data: status } = trpc.decision.getThemeAnalysisStatus.useQuery(
     // The instance and the scope are part of the record's key, so the read
     // needs all three to name the run.
@@ -157,6 +167,22 @@ export const useThemeAnalysisRun = (
       // result nothing can reach. A blip is not the "we cannot tell" the
       // escalation above is for, so absorb it first.
       retry: 2,
+      // Reads the query's own data rather than the `phase` below, which is
+      // derived from this query and so is not in scope yet. Same pattern as
+      // `throwOnError` above, and the same reason.
+      //
+      // Stops on its own once the run settles. `enabled` goes false at the same
+      // moment, so this is belt and braces about one thing — but a poll that
+      // outlived its answer would keep asking a settled question, and that is
+      // worth being explicit about rather than leaving to a second mechanism.
+      refetchInterval: (query) =>
+        resolveStatusPollInterval(
+          resolveThemeAnalysisPhase({
+            analysisId,
+            hasTimedOut,
+            status: query.state.data,
+          }),
+        ),
     },
   );
 
