@@ -815,6 +815,7 @@ export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
 export type { Proposal, ProposalList } from '@op/common/client';
 export type {
   ThemeAnalysisErrorCode,
+  ThemeAnalysisScope,
   ThemeAnalysisOutlier,
   ThemeAnalysisResponse,
   ThemeAnalysisResult,

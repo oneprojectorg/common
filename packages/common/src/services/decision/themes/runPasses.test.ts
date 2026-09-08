@@ -39,8 +39,12 @@ const themes = [
 
 const habermas = { commonGround: [], outliers: [], suggestions: [] };
 
-const runThemes = () =>
-  runThemesPass({ processInstanceId: INSTANCE_ID, userId: AUTH_USER_ID });
+const runThemes = (scope: 'phase' | 'process' = 'phase') =>
+  runThemesPass({
+    processInstanceId: INSTANCE_ID,
+    userId: AUTH_USER_ID,
+    scope,
+  });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -54,6 +58,18 @@ describe('runThemesPass', () => {
     await runThemes();
 
     expect(vi.mocked(assertUserByAuthId)).toHaveBeenCalledWith(AUTH_USER_ID);
+  });
+
+  // The scope decides which proposals the run is about, so it has to survive the
+  // trip from the button rather than being re-derived here.
+  it('reads the scope it was asked for', async () => {
+    await runThemes('process');
+
+    expect(vi.mocked(collectProposalCorpus)).toHaveBeenCalledWith({
+      processInstanceId: INSTANCE_ID,
+      userId: AUTH_USER_ID,
+      scope: 'process',
+    });
   });
 
   // The corpus travels back because the second pass must read the same one: the

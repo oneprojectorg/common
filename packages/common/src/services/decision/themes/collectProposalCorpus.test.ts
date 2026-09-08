@@ -6,6 +6,11 @@ vi.mock('../listProposals', () => ({
   listProposals: vi.fn(),
 }));
 
+vi.mock('../listAllProposals', () => ({
+  listAllProposals: vi.fn(),
+}));
+
+import { listAllProposals } from '../listAllProposals';
 import { listProposals } from '../listProposals';
 import { collectProposalCorpus } from './collectProposalCorpus';
 import {
@@ -39,14 +44,19 @@ const answerWith = ({
   } as never);
 };
 
-const collect = () =>
+const collect = (scope: 'phase' | 'process' = 'phase') =>
   collectProposalCorpus({
     processInstanceId: INSTANCE_ID,
     userId: AUTH_USER_ID,
+    scope,
   });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(listAllProposals).mockResolvedValue({
+    items: [],
+    total: 0,
+  } as never);
 });
 
 describe('collectProposalCorpus', () => {
@@ -65,6 +75,37 @@ describe('collectProposalCorpus', () => {
         skipAccessCheck: true,
       },
       user: { id: AUTH_USER_ID },
+    });
+  });
+
+  // The two surfaces show different sets: the proposals list shows the current
+  // phase, results shows everything the instance has held. Reading the wrong one
+  // would report a synthesis of proposals the reader is not looking at.
+  it('reads every proposal the instance holds when the scope is the process', async () => {
+    vi.mocked(listAllProposals).mockResolvedValue({
+      items: [
+        {
+          id: 'a',
+          proposalData: { title: 'Dropped in an earlier phase' },
+          previewText: 'Body',
+        },
+      ],
+      total: 40,
+    } as never);
+
+    const { proposals, total } = await collect('process');
+
+    expect(vi.mocked(listProposals)).not.toHaveBeenCalled();
+    expect(vi.mocked(listAllProposals).mock.calls[0]?.[0]).toEqual({
+      input: {
+        processInstanceId: INSTANCE_ID,
+        limit: THEME_ANALYSIS_MAX_PROPOSALS,
+      },
+      user: { id: AUTH_USER_ID },
+    });
+    expect({ analyzed: proposals.length, total }).toEqual({
+      analyzed: 1,
+      total: 40,
     });
   });
 

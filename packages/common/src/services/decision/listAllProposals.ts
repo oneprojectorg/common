@@ -19,7 +19,6 @@ import {
   proposalCategories,
   proposals,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
@@ -35,6 +34,7 @@ import {
   getCurrentProfileId,
   resolveAccessUserIds,
 } from '../access';
+import type { AccessUser } from '../access/cacheKeys';
 import {
   getActivelyFlaggedItemIds,
   noActiveModerationFlag,
@@ -69,7 +69,14 @@ export const listAllProposals = async ({
   user,
 }: {
   input: AllProposalsFilter;
-  user: User | undefined;
+  /**
+   * Identity only — every path this reaches (`resolveAccessUserIds`,
+   * `getCurrentProfileId`, `assertInstanceProfileAccess`) reads `id` and nothing
+   * else. Typed as `AccessUser` rather than the full Supabase `User` so a
+   * server-side caller that holds an auth-user id can call this without
+   * fabricating the rest of a session.
+   */
+  user: AccessUser | undefined;
 }) => {
   const { processInstanceId, status, categoryId } = input;
   const limit = input.limit ?? PAGE_LIMIT.lg;

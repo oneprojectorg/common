@@ -1,6 +1,7 @@
 import { assertUserByAuthId } from '../../assert';
 import type {
   ThemeAnalysisErrorCode,
+  ThemeAnalysisScope,
   ThemeAnalysisTheme,
 } from '../schemas/themeAnalysis';
 import { ThemeAnalysisFailure } from './ThemeAnalysisFailure';
@@ -42,16 +43,22 @@ export type PassFailure = {
 export const runThemesPass = async ({
   processInstanceId,
   userId,
+  scope,
 }: {
   processInstanceId: string;
   userId: string;
+  scope: ThemeAnalysisScope;
 }) => {
   // Confirm the requester still exists, then hand the corpus read an
   // auth-shaped user. Every identity path it reaches reads `user.id` as an auth
   // user id, not a database key.
   await assertUserByAuthId(userId);
 
-  const corpus = await collectProposalCorpus({ processInstanceId, userId });
+  const corpus = await collectProposalCorpus({
+    processInstanceId,
+    userId,
+    scope,
+  });
 
   // The request checked the phase's count. This checks the corpus, which is a
   // different number: a proposal with no body text is read and dropped, so a

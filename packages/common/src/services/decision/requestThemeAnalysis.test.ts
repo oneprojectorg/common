@@ -11,7 +11,10 @@ vi.mock('@op/db/client', () => ({
 
 vi.mock('../access', () => ({ assertInstanceProfileAccess: vi.fn() }));
 
-vi.mock('./listProposals', () => ({ listProposals: vi.fn() }));
+vi.mock('./themes', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./themes')>()),
+  readProposalsInScope: vi.fn(),
+}));
 
 import { db } from '@op/db/client';
 import { Events, event } from '@op/events';
@@ -25,9 +28,8 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import { listProposals } from './listProposals';
 import { requestThemeAnalysis } from './requestThemeAnalysis';
-import { THEME_ANALYSIS_MIN_PROPOSALS } from './themes';
+import { THEME_ANALYSIS_MIN_PROPOSALS, readProposalsInScope } from './themes';
 
 const INSTANCE_ID = '22222222-2222-4222-8222-222222222222';
 const PROFILE_ID = '44444444-4444-4444-8444-444444444444';
@@ -43,8 +45,8 @@ const instanceRowIs = (rows: Array<{ profileId: string | null }>) => {
   } as never);
 };
 
-const phaseHolds = (total: number) => {
-  vi.mocked(listProposals).mockResolvedValue({ proposals: [], total } as never);
+const scopeHolds = (total: number) => {
+  vi.mocked(readProposalsInScope).mockResolvedValue({ proposals: [], total });
 };
 
 const inserted = vi.fn();
@@ -63,13 +65,16 @@ const ANALYSIS_ID = '55555555-5555-4555-8555-555555555555';
 beforeEach(() => {
   vi.clearAllMocks();
   instanceRowIs([{ profileId: PROFILE_ID }]);
-  phaseHolds(10);
+  scopeHolds(10);
   insertReturns([{ id: ANALYSIS_ID }]);
   vi.spyOn(event, 'send').mockImplementation(sendEvent);
 });
 
-const request = () =>
-  requestThemeAnalysis({ input: { processInstanceId: INSTANCE_ID }, user });
+const request = (scope?: 'phase' | 'process') =>
+  requestThemeAnalysis({
+    input: { processInstanceId: INSTANCE_ID, ...(scope && { scope }) },
+    user,
+  });
 
 describe('requestThemeAnalysis', () => {
   // The payload is asserted whole rather than by naming keys that should be
@@ -87,6 +92,30 @@ describe('requestThemeAnalysis', () => {
       analysisId,
       processInstanceId: INSTANCE_ID,
       userId: AUTH_USER_ID,
+      scope: 'phase',
+    });
+  });
+
+  // The scope decides which proposals the run reads, and the surface that
+  // launched it is the only thing that knows which set it was showing.
+  it('carries the caller"s scope to the job', async () => {
+    await request('process');
+
+    const [payload] = sendEvent.mock.calls[0] as [{ data: { scope: string } }];
+
+    expect(payload.data.scope).toBe('process');
+  });
+
+  // Counted in the scope the run will read, or a results-scoped analysis could
+  // be refused for a current phase that happens to be empty.
+  it('counts in the scope it was asked for', async () => {
+    await request('process');
+
+    expect(vi.mocked(readProposalsInScope)).toHaveBeenCalledWith({
+      processInstanceId: INSTANCE_ID,
+      userId: AUTH_USER_ID,
+      scope: 'process',
+      limit: 1,
     });
   });
 
@@ -152,14 +181,14 @@ describe('requestThemeAnalysis', () => {
   // pass costs the same as a real one. Refused here so the facilitator gets an
   // answer instead of a job that fails a minute later.
   it('refuses a phase with too few proposals to compare', async () => {
-    phaseHolds(THEME_ANALYSIS_MIN_PROPOSALS - 1);
+    scopeHolds(THEME_ANALYSIS_MIN_PROPOSALS - 1);
 
     await expect(request()).rejects.toBeInstanceOf(ValidationError);
     expect(sendEvent).not.toHaveBeenCalled();
   });
 
   it('accepts a phase holding exactly the minimum', async () => {
-    phaseHolds(THEME_ANALYSIS_MIN_PROPOSALS);
+    scopeHolds(THEME_ANALYSIS_MIN_PROPOSALS);
 
     await expect(request()).resolves.toEqual({ analysisId: ANALYSIS_ID });
   });
@@ -169,13 +198,11 @@ describe('requestThemeAnalysis', () => {
   it('reads one row for the count', async () => {
     await request();
 
-    expect(vi.mocked(listProposals).mock.calls[0]?.[0]).toEqual({
-      input: {
-        processInstanceId: INSTANCE_ID,
-        limit: 1,
-        skipAccessCheck: true,
-      },
-      user: { id: AUTH_USER_ID },
+    expect(vi.mocked(readProposalsInScope)).toHaveBeenCalledWith({
+      processInstanceId: INSTANCE_ID,
+      userId: AUTH_USER_ID,
+      scope: 'phase',
+      limit: 1,
     });
   });
 });

@@ -7,6 +7,7 @@ export { THEME_ANALYSIS_MIN_PROPOSALS } from './constants';
 export type { CorpusProposal } from './corpusGrounding';
 export {
   collectProposalCorpus,
+  readProposalsInScope,
   type ProposalCorpus,
 } from './collectProposalCorpus';
 export {

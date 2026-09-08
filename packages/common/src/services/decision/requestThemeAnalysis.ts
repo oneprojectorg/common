@@ -6,11 +6,17 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import { listProposals } from './listProposals';
-import { THEME_ANALYSIS_MIN_PROPOSALS } from './themes';
+import type { ThemeAnalysisScope } from './schemas/themeAnalysis';
+import { THEME_ANALYSIS_MIN_PROPOSALS, readProposalsInScope } from './themes';
 
 export interface RequestThemeAnalysisInput {
   processInstanceId: string;
+  /**
+   * Which proposals to analyse. The surface that launched the run decides — see
+   * {@link ThemeAnalysisScope}. Defaulted to the phase, which is what every
+   * caller before the results screen meant.
+   */
+  scope?: ThemeAnalysisScope;
 }
 
 /**
@@ -43,7 +49,7 @@ export const requestThemeAnalysis = async ({
   input: RequestThemeAnalysisInput;
   user: User;
 }): Promise<{ analysisId: string }> => {
-  const { processInstanceId } = input;
+  const { processInstanceId, scope = 'phase' } = input;
 
   const [instance] = await db
     .select({ profileId: processInstances.profileId })
@@ -69,16 +75,16 @@ export const requestThemeAnalysis = async ({
     orgFallbackPermissions: { decisions: permission.ADMIN },
   });
 
-  // One row, for the count beside it. `listProposals` runs its count query
-  // separately from the data query, so `total` is the phase's full count rather
-  // than what this page returned.
-  const { total } = await listProposals({
-    input: {
-      processInstanceId,
-      limit: 1,
-      skipAccessCheck: true,
-    },
-    user: { id: user.id },
+  // One row, for the count beside it. Both readers run their count query
+  // separately from the data query, so `total` is the scope's full count rather
+  // than what this page returned — and it has to be counted in the same scope
+  // the run will read, or a results-scoped analysis could be refused for a phase
+  // that happens to be empty.
+  const { total } = await readProposalsInScope({
+    processInstanceId,
+    userId: user.id,
+    scope,
+    limit: 1,
   });
 
   if (total < THEME_ANALYSIS_MIN_PROPOSALS) {
@@ -115,6 +121,7 @@ export const requestThemeAnalysis = async ({
       analysisId,
       processInstanceId,
       userId: user.id,
+      scope,
     },
   });
 

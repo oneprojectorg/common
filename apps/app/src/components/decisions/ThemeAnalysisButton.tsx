@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { ThemeAnalysisScope } from '@op/api/encoders';
 import { THEME_ANALYSIS_MIN_PROPOSALS } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -16,6 +17,14 @@ import { useThemeAnalysisRun } from './useThemeAnalysisRun';
 
 export interface ThemeAnalysisButtonProps {
   processInstanceId: string;
+  /**
+   * Which proposals to analyse — the surface's own set. `phase` for the
+   * proposals list, `process` for the results screen, which shows every proposal
+   * the instance has held including ones dropped in an earlier phase. Analysing
+   * the wrong one would report a synthesis of proposals the reader is not
+   * looking at.
+   */
+  scope: ThemeAnalysisScope;
   /**
    * Proposals in the phase, unfiltered. The analysis ignores the list's
    * filters, so a view narrowed to nothing still has a corpus to read — this is
@@ -121,17 +130,19 @@ const ThemeAnalysisUnreadable = ({
  * Sits behind {@link ThemeAnalysisButton}'s error boundary rather than being
  * exported, so a reset remounts it and discards the run.
  *
- * @param processInstanceId - Decision instance whose current phase is analysed.
- * @param proposalCount - The phase's unfiltered proposal count, which decides
+ * @param processInstanceId - Decision instance to analyse.
+ * @param scope - Which proposals to read. See {@link ThemeAnalysisButtonProps}.
+ * @param proposalCount - The scope's unfiltered proposal count, which decides
  *   whether there is anything to compare.
  */
 const ThemeAnalysisButtonContent = ({
   processInstanceId,
+  scope,
   proposalCount,
 }: ThemeAnalysisButtonProps) => {
   const t = useTranslations();
   const { isStarting, isRunning, runningLabel, completed, start, retire } =
-    useThemeAnalysisRun(processInstanceId);
+    useThemeAnalysisRun(processInstanceId, scope);
 
   // Closing ends the run. Each press produces one analysis, and holding on to it
   // would leave a later run indistinguishable from this one.

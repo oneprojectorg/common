@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { ThemeAnalysisErrorCode } from '@op/api/encoders';
+import type {
+  ThemeAnalysisErrorCode,
+  ThemeAnalysisScope,
+} from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -91,11 +94,13 @@ export interface ThemeAnalysisRun {
  * so every path that clears it is deliberate: the caller retired it, the run
  * failed, or the wait timed out.
  *
- * @param processInstanceId - Decision instance whose current phase is analysed.
+ * @param processInstanceId - Decision instance to analyse.
+ * @param scope - Which proposals the run reads.
  * @returns See {@link ThemeAnalysisRun}.
  */
 export const useThemeAnalysisRun = (
   processInstanceId: string,
+  scope: ThemeAnalysisScope,
 ): ThemeAnalysisRun => {
   const t = useTranslations();
   const [analysisId, setAnalysisId] = useState<string | null>(null);
@@ -174,7 +179,7 @@ export const useThemeAnalysisRun = (
     isRunning,
     runningLabel: labelKey && RUNNING_LABELS[labelKey](t),
     completed: resolveCompletedThemeAnalysis(status),
-    start: () => startAnalysis.mutate({ processInstanceId }),
+    start: () => startAnalysis.mutate({ processInstanceId, scope }),
     retire: () => {
       setAnalysisId(null);
       clearSettled();

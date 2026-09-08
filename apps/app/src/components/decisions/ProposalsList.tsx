@@ -731,8 +731,13 @@ const ProposalsListContent = ({
                 {canAnalyzeThemes && (
                   <ThemeAnalysisButton
                     processInstanceId={queryParams.processInstanceId}
-                    // Unfiltered for the same reason, and it is the count the
-                    // server checks its minimum against.
+                    // The set this list is showing. Results renders every
+                    // proposal the instance has held (`listAllProposals`);
+                    // everywhere else is the current phase. Analysing the other
+                    // one would report a synthesis of proposals not on screen.
+                    scope={phase === 'results' ? 'process' : 'phase'}
+                    // Unfiltered for the same reason as the export, and it is
+                    // the count the server checks its minimum against.
                     proposalCount={totalProposalCount}
                   />
                 )}

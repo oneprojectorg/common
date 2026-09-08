@@ -95,7 +95,7 @@ export const analyzeProposalThemes = inngest.createFunction(
   },
   { event: proposalThemeAnalysisRequested.name },
   async ({ event, step }) => {
-    const { analysisId, processInstanceId, userId } =
+    const { analysisId, processInstanceId, userId, scope } =
       proposalThemeAnalysisRequested.schema.parse(event.data);
 
     await step.run('update-status-processing', () =>
@@ -140,7 +140,7 @@ export const analyzeProposalThemes = inngest.createFunction(
       );
 
       const analysed = await step.run('analyze-themes', () =>
-        runThemesPass({ processInstanceId, userId }),
+        runThemesPass({ processInstanceId, userId, scope }),
       );
 
       // A reported failure, not a thrown one: this is the corpus telling us

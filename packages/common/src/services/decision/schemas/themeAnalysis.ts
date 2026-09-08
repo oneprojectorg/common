@@ -1,6 +1,24 @@
 import { z } from 'zod';
 
 /**
+ * Which proposals an analysis covers.
+ *
+ * `phase` is the instance's current phase — the set the proposals list shows,
+ * and what a facilitator running this mid-process means. `process` is every
+ * proposal the instance has ever held, including those rejected or dropped in an
+ * earlier phase, which is what the results screen shows and what "what did
+ * people propose" asks at the end.
+ *
+ * The two genuinely differ once an instance advances: a phase holds what
+ * transitioned into it. Launching an analysis from a surface showing one set
+ * while it reads the other would report a synthesis of proposals the reader is
+ * not looking at, and the coverage line would not give it away.
+ */
+export const themeAnalysisScopeSchema = z.enum(['phase', 'process']);
+
+export type ThemeAnalysisScope = z.infer<typeof themeAnalysisScopeSchema>;
+
+/**
  * How far a proposal sits from the rest of the field.
  *
  * `high-impact` is an outlier the process should look at: it proposes something

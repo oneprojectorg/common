@@ -99,6 +99,7 @@ export { THEME_ANALYSIS_MIN_PROPOSALS } from './services/decision/themes/constan
 // able to reach for.
 export type {
   ThemeAnalysisErrorCode,
+  ThemeAnalysisScope,
   ThemeAnalysisOutlier,
   ThemeAnalysisResponse,
   ThemeAnalysisResult,

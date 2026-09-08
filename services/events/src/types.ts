@@ -56,6 +56,11 @@ export const Events = {
       analysisId: z.string().uuid(),
       processInstanceId: z.string().uuid(),
       userId: z.string().uuid(),
+      // Which proposals to read — the current phase, or every one the instance
+      // holds. The surface that launched the run decides, because the two sets
+      // diverge once an instance advances and a synthesis of the wrong one
+      // would not give itself away.
+      scope: z.enum(['phase', 'process']),
     }),
   },
   profileInviteSent: {
