@@ -6,10 +6,7 @@ import { useMemo } from 'react';
 
 type Reviewers = ProposalReviewAggregates['reviewers'];
 
-/**
- * Per-proposal reviewers behind the review-count label on assignment cards.
- * `enabled` is the caller's gate: the endpoint only admits admins here.
- */
+/** Per-proposal reviewers behind the review-count label on assignment cards. */
 export function useReviewersByProposalId({
   processInstanceId,
   proposalIds,
@@ -18,7 +15,6 @@ export function useReviewersByProposalId({
 }: {
   processInstanceId: string;
   proposalIds: string[];
-  /** Defaults to the instance's current phase when omitted. */
   phaseId?: string;
   enabled: boolean;
 }): Map<string, Reviewers> {

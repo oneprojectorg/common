@@ -5,7 +5,6 @@ import {
   profileUserToAccessRoles,
   profiles,
   proposalRelationships,
-  proposals,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
@@ -240,37 +239,6 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(ids).toEqual(
       [first, second, third].map((created) => created.assignment.id),
     );
-  });
-
-  it('hides assignments whose proposal was moderation-detached', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
-      title: `Detached proposal ${task.id}`,
-      status: ProposalReviewAssignmentStatus.PENDING,
-    });
-    const context = created.context;
-
-    await db
-      .update(proposals)
-      .set({ moderationDetachedAt: new Date().toISOString() })
-      .where(eq(proposals.id, created.proposal.id));
-
-    const adminCaller = await createAuthenticatedCaller(
-      context.defaultReviewer.email,
-    );
-
-    const result = await adminCaller.decision.listReviewerAssignments({
-      processInstanceId: context.instance.instance.id,
-      phaseId: 'review',
-      reviewerProfileId: context.defaultReviewer.profileId,
-    });
-
-    expect(result.assignedCount).toBe(0);
-    expect(result.assignments).toEqual([]);
-    expect(result.total).toBe(0);
   });
 
   it('keeps a merged-away assignment in the totals while the page drops it', async ({

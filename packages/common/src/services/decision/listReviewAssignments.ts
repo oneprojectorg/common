@@ -6,7 +6,6 @@ import {
   eq,
   exists,
   inArray,
-  isNull,
   sql,
 } from '@op/db/client';
 import {
@@ -163,11 +162,7 @@ export async function listReviewAssignments({
   });
 }
 
-/**
- * One page of the queue itself, for whichever reviewer is named. No access
- * check; callers gate — see `listReviewAssignments` above and
- * `reviews/listReviewerAssignments`.
- */
+/** One page of a reviewer's queue. No access check: callers gate. */
 export async function listAssignmentsForReviewer({
   instance,
   reviewerProfileId,
@@ -178,25 +173,16 @@ export async function listAssignmentsForReviewer({
   sort = 'leastReviewed',
   cursor,
   limit,
-  excludeUnreachableProposals = false,
 }: {
   instance: LoadedInstance;
   reviewerProfileId: string;
   phaseId: string;
   status?: ProposalReviewAssignmentStatus;
-  /** Taxonomy term ids — limits results to assignments whose proposal is in any of the categories. */
   categoryIds?: string[];
-  /** Profile id of a single proposal — limits results to that proposal's assignments. */
   proposalProfileId?: string;
   sort?: ReviewAssignmentSort;
-  /** Opaque position from the previous page's `next`. */
   cursor?: string | null;
   limit: number;
-  /**
-   * Drops deleted and moderation-detached proposals, which are unreachable even
-   * to an admin. Off by default: the reviewer's own queue never filtered them.
-   */
-  excludeUnreachableProposals?: boolean;
 }): Promise<ReviewAssignmentList> {
   const processInstanceId = instance.id;
 
@@ -297,9 +283,7 @@ export async function listAssignmentsForReviewer({
       categoryProposalIds
         ? inArray(t.proposalId, categoryProposalIds)
         : undefined,
-      // Both proposal-row filters share one EXISTS so the count query and the
-      // page query stay on the same set.
-      proposalProfileId || excludeUnreachableProposals
+      proposalProfileId
         ? exists(
             db
               .select({ id: proposals.id })
@@ -307,15 +291,7 @@ export async function listAssignmentsForReviewer({
               .where(
                 and(
                   eq(proposals.id, t.proposalId),
-                  proposalProfileId
-                    ? eq(proposals.profileId, proposalProfileId)
-                    : undefined,
-                  excludeUnreachableProposals
-                    ? isNull(proposals.deletedAt)
-                    : undefined,
-                  excludeUnreachableProposals
-                    ? isNull(proposals.moderationDetachedAt)
-                    : undefined,
+                  eq(proposals.profileId, proposalProfileId),
                 ),
               ),
           )

@@ -38,9 +38,7 @@ interface ReviewerAssignmentsSectionProps {
   processInstanceId: string;
   phaseId: string;
   reviewerProfileId: string;
-  /** Builds the per-proposal review-progress links on the cards. */
   decisionSlug: string;
-  /** Decides whether the review count links to the progress screen. */
   access: DecisionAccess;
 }
 
@@ -113,8 +111,6 @@ function ReviewerAssignmentsContent({
       isFetchingNextPage,
     });
 
-  // Header, totals and breakdown describe the whole queue, so any page
-  // carries them; the first is always present.
   const summary = data.pages[0];
   const assignments = useMemo(
     () => data.pages.flatMap((page) => page.assignments),
@@ -128,10 +124,7 @@ function ReviewerAssignmentsContent({
     enabled: access.admin,
   });
 
-  // The server 404s an unknown reviewer, so the client only reaches this when
-  // the server prefetch failed, or when the reviewer's tie to the process is
-  // removed while the page is open and the realtime refetch returns
-  // `reviewer: null`.
+  // Reached only when the server prefetch failed, or the tie was removed since.
   if (!summary?.reviewer) {
     return (
       <Empty className="rounded-md border border-dashed">
@@ -187,8 +180,7 @@ function ReviewerAssignmentsContent({
             </ul>
           )}
 
-          {/* `aria-hidden` keeps the trigger out of the a11y tree; the
-              `aria-live` line below announces loading instead. */}
+          {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
           {shouldShowTrigger ? (
             <div ref={scrollTriggerRef} aria-hidden>
               {isFetchingNextPage ? (
@@ -211,7 +203,6 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
   const t = useTranslations();
   const format = useFormatter();
 
-  // Counted server-side over the whole queue; only the reading order is ours.
   const breakdown = useMemo(
     () =>
       [...reviewer.statusBreakdown].sort(

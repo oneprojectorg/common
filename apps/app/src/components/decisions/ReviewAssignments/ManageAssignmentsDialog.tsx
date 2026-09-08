@@ -62,12 +62,7 @@ interface ManageAssignmentsFormProps {
   onSaved: () => void;
 }
 
-/**
- * The whole-phase read lives in a child of `DialogContent`: Base UI renders
- * the portal's contents only while the dialog is open, so the query fires on
- * open rather than on page load. Closing unmounts the body, which is also how
- * the selection resets.
- */
+/** Rendered only while open, so the read runs on open and unmounting resets the selection. */
 export function ManageAssignmentsDialogContent({
   processInstanceId,
   phaseId,
@@ -77,7 +72,6 @@ export function ManageAssignmentsDialogContent({
   const t = useTranslations();
 
   return (
-    // 34rem × 38rem — the size the design's dialog was composed at.
     <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
       <APIErrorBoundary
         fallbacks={{
@@ -127,8 +121,7 @@ function ManageAssignmentsBody({
 }: ManageAssignmentsDialogContentProps) {
   const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
     { processInstanceId, phaseId },
-    // Refetch through the client link on mount — the SSR-seeded cache alone
-    // never registers the `reviewAssignments` realtime channel.
+    // An SSR-seeded entry never registers the realtime channel; refetch.
     { refetchOnMount: 'always' },
   );
 
@@ -357,10 +350,7 @@ function ManageAssignmentsForm({
             {t('Proposals ({count} assigned)', { count: assignedCount })}
           </Header3>
           <div className="flex items-center gap-2">
-            {/* Import builds the selection like Select all does, so it lives
-                  beside it. Stacked on this dialog, which stays mounted
-                  underneath. A frozen reviewer takes no new proposals, so
-                  there is nothing to import into. */}
+            {/* Import builds the selection like Select all does, so it sits beside it. */}
             {importEnabled && canAssign ? (
               <ImportProposalIdsDialog
                 poolIds={poolIds}

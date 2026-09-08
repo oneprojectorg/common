@@ -1,9 +1,8 @@
-import { and, count, db, eq, isNull, sql } from '@op/db/client';
+import { and, count, db, eq, sql } from '@op/db/client';
 import {
   ProposalReviewState,
   proposalReviewAssignments,
   proposalReviews,
-  proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -29,11 +28,7 @@ interface ReviewerQueueTotals {
   statusBreakdown: Array<{ status: ReviewerQueueStatus; count: number }>;
 }
 
-/**
- * One page of a reviewer's queue for the admin screen, with whole-queue totals.
- * The assignments come off the same query, in the same shape, as the
- * reviewer's own "Proposals to review" list.
- */
+/** One page of a reviewer's queue for the admin screen, with whole-queue totals. */
 export async function listReviewerAssignments({
   user,
   processInstanceId,
@@ -50,8 +45,7 @@ export async function listReviewerAssignments({
 }): Promise<ReviewerAssignments> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  // No org fallback: admin access comes from a grant on the instance's own
-  // profile, which legacy instances may not have — fail closed there.
+  // No org fallback: legacy instances without their own profile fail closed.
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -82,14 +76,12 @@ export async function listReviewerAssignments({
       sort: 'oldest',
       cursor,
       limit,
-      excludeUnreachableProposals: true,
     }),
     getReviewerQueueTotals({ processInstanceId, phaseId, reviewerProfileId }),
     getEligibleReviewerProfileIds({ decisionProfileId: instance.profileId }),
   ]);
 
-  // Any id can be put in the URL, so identity is withheld unless the profile
-  // is tied to this process — else this reads back a stranger's email.
+  // Any id can be put in the URL; withhold identity unless tied to this process.
   const isEligible = eligibleProfileIds.includes(reviewerProfileId);
   const isAssociated = isEligible || totals.assignedCount > 0;
 
@@ -103,11 +95,7 @@ export async function listReviewerAssignments({
   });
 }
 
-/**
- * Not derived from the returned page: a page is a window, and the list drops
- * merged-away proposals while a reviewer's progress should still count the
- * work they did on one.
- */
+/** Whole-queue counts: the page drops merged-away proposals that still count as done work. */
 async function getReviewerQueueTotals({
   processInstanceId,
   phaseId,
@@ -117,13 +105,6 @@ async function getReviewerQueueTotals({
   phaseId: string;
   reviewerProfileId: string;
 }): Promise<ReviewerQueueTotals> {
-  // Deleted and moderation-detached proposals are invisible even to admins,
-  // so this join is the filter as well as the lookup.
-  const reachableProposal = and(
-    eq(proposals.id, proposalReviewAssignments.proposalId),
-    isNull(proposals.deletedAt),
-    isNull(proposals.moderationDetachedAt),
-  );
   const reviewOfAssignment = eq(
     proposalReviews.assignmentId,
     proposalReviewAssignments.id,
@@ -154,7 +135,6 @@ async function getReviewerQueueTotals({
         >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
       })
       .from(proposalReviewAssignments)
-      .innerJoin(proposals, reachableProposal)
       .leftJoin(proposalReviews, reviewOfAssignment)
       .where(reviewerQueue),
     db
@@ -163,7 +143,6 @@ async function getReviewerQueueTotals({
         count: count(proposalReviewAssignments.id),
       })
       .from(proposalReviewAssignments)
-      .innerJoin(proposals, reachableProposal)
       .leftJoin(proposalReviews, reviewOfAssignment)
       .where(reviewerQueue)
       .groupBy(statusKey),
