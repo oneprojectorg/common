@@ -22,6 +22,7 @@ import { CommonError } from '../../../utils';
 import { analyzeThemes } from './analyzeThemes';
 import { askForJson } from './askForJson';
 import {
+  THEME_ANALYSIS_MAX_OUTPUT_TOKENS,
   THEME_ANALYSIS_MODEL_ID,
   THEME_ANALYSIS_PASS_TIMEOUT_MS,
 } from './constants';
@@ -73,6 +74,36 @@ describe('askForJson', () => {
     await expect(ask()).resolves.toEqual({ ok: true });
   });
 
+  // The model this runs on reasons before it answers, and some endpoints return
+  // that reasoning inline. It is prose *about* JSON, so it is full of braces —
+  // which is exactly what a first-brace-to-last-brace slice cannot survive.
+  it('reads JSON out of a reply that reasons about JSON first', async () => {
+    replyWith(
+      '<think>They want {"themes": [...]}. I should list two.</think>\n{"ok": true}',
+    );
+
+    await expect(ask()).resolves.toEqual({ ok: true });
+  });
+
+  // Trailing chat is as common as a preamble, and a brace in it moved the end
+  // of the old span past the end of the answer.
+  it('reads JSON out of a reply with braces after the answer', async () => {
+    replyWith('{"ok": true}\n\nLet me know if {anything} needs changing.');
+
+    await expect(ask()).resolves.toEqual({ ok: true });
+  });
+
+  // A brace inside quoted proposal text is content, not structure. Counting it
+  // would end the object in the wrong place.
+  it('ignores braces inside strings when finding the object', async () => {
+    replyWith('{"title": "Fix the {broken} sign", "ok": true}');
+
+    await expect(ask()).resolves.toEqual({
+      title: 'Fix the {broken} sign',
+      ok: true,
+    });
+  });
+
   it('fails when the reply holds no JSON at all', async () => {
     replyWith('I would rather not.');
 
@@ -80,9 +111,38 @@ describe('askForJson', () => {
   });
 
   it('fails when the reply holds JSON it cannot parse', async () => {
-    replyWith('{"themes": [');
+    replyWith('{"themes": [}');
 
     await expect(ask()).rejects.toBeInstanceOf(CommonError);
+  });
+
+  // The three ways this fails have three different causes, and they used to
+  // record one sentence between them — true of all of them, actionable for
+  // none. The record is what a person reads when a run fails.
+  it('says which way the reply was unusable', async () => {
+    replyWith('I would rather not.');
+    await expect(ask()).rejects.toMatchObject({
+      message: expect.stringContaining('no complete JSON object'),
+    });
+
+    replyWith('{"themes": [}');
+    await expect(ask()).rejects.toMatchObject({
+      message: expect.stringContaining('could not be parsed'),
+    });
+  });
+
+  // A reply stopped at the output cap is an unclosed object, which is
+  // indistinguishable from garbage at the point it fails to parse — and the fix
+  // is a bigger cap rather than a better prompt, so the record says so.
+  it('names truncation when the model stopped at the output limit', async () => {
+    generate.mockResolvedValue({
+      text: '{"themes": [{"title": "Street spa',
+      finishReason: 'length',
+    });
+
+    await expect(ask()).rejects.toMatchObject({
+      message: expect.stringContaining('cut off at the output limit'),
+    });
   });
 
   it('fails when the reply parses but does not match the schema', async () => {
@@ -131,6 +191,24 @@ describe('askForJson', () => {
     ];
 
     expect(options?.abortSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  // Left to the endpoint, the cap is whichever default the provider behind
+  // `AI_BASE_URL` happens to use — and a thinking model spends part of it
+  // reasoning, so a modest one ends the reply mid-object.
+  it('sets its own output cap rather than inheriting the endpoint default', async () => {
+    replyWithJson({ ok: true });
+
+    await ask();
+
+    const [, options] = generate.mock.calls[0] as [
+      string,
+      { modelSettings?: { maxOutputTokens?: number } },
+    ];
+
+    expect(options?.modelSettings?.maxOutputTokens).toBe(
+      THEME_ANALYSIS_MAX_OUTPUT_TOKENS,
+    );
   });
 
   // Coded, so the app can say "took too long" rather than "failed", and

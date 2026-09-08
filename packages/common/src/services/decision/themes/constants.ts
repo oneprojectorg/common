@@ -119,3 +119,20 @@ export const THEME_ANALYSIS_MODEL_ID = 'zai-org/GLM-5.3';
  * and a retry would only spend the budget twice on its way to the same place.
  */
 export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * The output cap for one pass.
+ *
+ * Set explicitly because the default belongs to whichever OpenAI-compatible
+ * endpoint `AI_BASE_URL` names, and some of them are modest. The model this
+ * feature runs on reasons before it answers, and that reasoning is charged
+ * against the same cap as the answer — so a default sized for a chat reply can
+ * end a pass part-way through its JSON.
+ *
+ * Sized for the larger of the two replies: up to eight themes, or the
+ * common-ground pass's three lists over a hundred-proposal corpus, plus the
+ * reasoning that precedes either. Generous on purpose — the cost of setting it
+ * too high is nothing, and the cost of setting it too low is a truncated object
+ * that reads as a model returning garbage.
+ */
+export const THEME_ANALYSIS_MAX_OUTPUT_TOKENS = 16_000;
