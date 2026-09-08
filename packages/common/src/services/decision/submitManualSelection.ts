@@ -39,10 +39,9 @@ export interface SubmitManualSelectionInput {
   processInstanceId: string;
   proposalIds: string[];
   /**
-   * The funded / not-funded messages to send proposal authors. Only meaningful
-   * on the final phase, where this call publishes results — passing them off it
-   * is rejected rather than silently discarded. Omitting them there publishes
-   * without notifying anyone, which is what the review-selection flow does.
+   * Only meaningful on the final phase, where this call publishes results;
+   * passing them off it is rejected. Omitting them there publishes without
+   * notifying anyone, which is what the review-selection flow does.
    */
   resultNotifications?: ResultNotificationMessages;
   user: User;
@@ -108,8 +107,7 @@ export async function submitManualSelection({
     );
   }
 
-  // Shape-checked before the transaction opens: blank or oversized email copy
-  // is the admin's mistake to fix, and the rejection must land before anything
+  // Before the transaction opens, so a rejection lands before anything
   // publishes. Whether this phase publishes at all is decided under the lock.
   const composedNotifications = resultNotifications
     ? parseResultNotifications(resultNotifications)
@@ -229,9 +227,6 @@ export async function submitManualSelection({
     const manualSelectionAudit: ManualSelectionAudit = {
       byProfileId,
       at: now,
-      // Stamped here, not carried in the notification event: the results these
-      // messages describe commit in this same transaction, so a failed event
-      // send must cost delivery rather than the record of what was written.
       ...(composedNotifications
         ? { resultNotifications: composedNotifications }
         : {}),
@@ -301,9 +296,8 @@ export async function submitManualSelection({
       };
     }
 
-    // Results only publish on the last phase, so that is the only place author
-    // notifications mean anything. Rejected rather than silently dropped: copy
-    // arriving here would never be sent and the admin would never know.
+    // Rejected rather than silently dropped: copy arriving on a phase that
+    // publishes nothing would never be sent and the admin would never know.
     const publishesResults = isLastPhase(currentStateId, lockedPhases ?? []);
     if (composedNotifications && !publishesResults) {
       throw new ValidationError(
@@ -353,14 +347,9 @@ export async function submitManualSelection({
         });
       });
 
-    // Both halves required: results were published AND an admin composed the
-    // copy to announce them with.
-    //
-    // Awaited, unlike the send above: publishing is one-shot (a second submit
-    // hits the manual-selection stamp and throws), so a send dropped when the
-    // serverless isolate freezes would leave every author unnotified with no
-    // way to retry. The results are already committed, so a failure here is
-    // logged rather than thrown.
+    // Awaited, unlike the send above: publishing is one-shot, so a send
+    // dropped when the isolate freezes leaves every author unnotified with no
+    // way to retry.
     if (processResultId && transitionHistoryId && composedNotifications) {
       try {
         await event.send({
@@ -383,11 +372,7 @@ export async function submitManualSelection({
   }
 }
 
-/**
- * Trims and bounds the composed author messages. Asserted here rather than
- * trusted from the router because this is a public `@op/common` entry point and
- * every other gate in it is asserted here too.
- */
+/** Asserted here, not trusted from the router: this is a public entry point. */
 function parseResultNotifications(
   resultNotifications: ResultNotificationMessages,
 ): ResultNotificationMessages {

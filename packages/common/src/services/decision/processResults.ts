@@ -21,9 +21,8 @@ import {
  * row on uncaught errors. Pass `instance` when the caller already loaded the
  * row (e.g. inside a locking tx) to skip a redundant fetch.
  *
- * Returns the id of the row it wrote, so a caller announcing these results can
- * name the exact run rather than re-resolving "the latest successful one" —
- * which a concurrent `revertPhase` can retire out from under it.
+ * Returns the id of the row it wrote: `revertPhase` can retire "the latest
+ * successful one" out from under a caller that re-resolves it.
  */
 export async function processResults({
   processInstanceId,

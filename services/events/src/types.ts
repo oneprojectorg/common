@@ -95,21 +95,16 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
-  // Refs only. The admin-authored message bodies live on the transition row
-  // (`transitionData.manualSelection.resultNotifications`) because the results
-  // they describe are already published by the time this fires — a lost event
-  // must cost delivery, not the record of what was written. Both rows are
-  // addressed by id rather than re-resolved as "the latest": a revert retires
-  // the result row, and any later transition would hide the copy.
+  // Refs only, both addressed by id: a revert retires the result row, and any
+  // later transition would hide the copy. The message bodies live on the
+  // transition row.
   decisionResultsNotified: {
     name: 'decision/results-notified' as const,
     schema: z.object({
       processInstanceId: z.string().uuid(),
-      /** The exact `decision_process_results` row this announces. */
       processResultId: z.string().uuid(),
-      /** The `state_transition_history` row carrying the composed messages. */
       transitionHistoryId: z.string().uuid(),
-      /** The phase whose membership defines the not-funded audience. */
+      /** The phase whose membership defines the not-selected audience. */
       previousPhaseId: z.string().min(1),
     }),
   },

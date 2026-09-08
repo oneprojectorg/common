@@ -63,7 +63,7 @@ describe('formatResultAmount', () => {
   });
 
   // The regression that matters: falling back to the budget would tell every
-  // funded author they were awarded exactly what they asked for.
+  // selected author they were awarded exactly what they asked for.
   it('never falls back to the requested budget when nothing was allocated', () => {
     expect(
       formatResultAmount({
@@ -90,11 +90,14 @@ describe('formatResultAmount', () => {
 });
 
 describe('selectResultNotificationTemplate', () => {
-  const messages = { funded: 'You were funded', notFunded: 'Not this round' };
+  const messages = {
+    selected: 'You were selected',
+    notSelected: 'Not this round',
+  };
 
   it.each([
-    ['funded', 'You were funded'],
-    ['notFunded', 'Not this round'],
+    ['selected', 'You were selected'],
+    ['notSelected', 'Not this round'],
   ] as const)('pairs %s with its own copy', (outcome, expected) => {
     expect(selectResultNotificationTemplate({ messages, outcome })).toBe(
       expected,

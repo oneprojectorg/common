@@ -13,11 +13,7 @@ import type { Proposal } from './schemas/proposal';
 
 export interface SelectionCandidates {
   items: Proposal[];
-  /**
-   * Size of the whole eligible pool, before `categoryId` narrows it. The
-   * final-phase confirm needs "how many are NOT selected", which a filtered
-   * `items.length` cannot answer.
-   */
+  /** Size of the whole eligible pool, before `categoryId` narrows it. */
   totalCandidates: number;
 }
 
@@ -72,9 +68,8 @@ export async function listSelectionCandidates({
     return { items: [], totalCandidates: 0 };
   }
 
-  // The pool is resolved unconditionally and alongside the category read:
-  // `totalCandidates` must describe the unfiltered pool even when the filter
-  // matches nothing, which is exactly the case it exists to get right.
+  // Resolved unconditionally: `totalCandidates` describes the unfiltered pool
+  // even when the filter matches nothing.
   const [phaseCandidateIds, categoryRows] = await Promise.all([
     getProposalIdsForPhase({ instance, phaseId: previousPhaseId, db }),
     categoryId

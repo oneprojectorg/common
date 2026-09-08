@@ -6,14 +6,17 @@ import {
   users,
 } from '@op/db/schema';
 
+import { CommonError } from '../../utils';
 import { hasEmail } from '../../utils/email';
 import {
   type EmailRecipient,
   listMemberProfileRecipientsByProfile,
 } from '../email/recipients';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { normalizeBudget } from './proposalDataSchema';
 import {
   type ResultNotificationMessages,
+  type ResultNotificationOutcome,
   type ResultNotificationValues,
   formatResultAmount,
   resultNotificationMessagesSchema,
@@ -21,9 +24,6 @@ import {
 import type { TransitionData } from './schemas/transitionData';
 import { isProposalReachable } from './utils/proposal';
 
-export type ResultNotificationOutcome = 'funded' | 'notFunded';
-
-/** Emails are English-only, so the greeting fallback lives here. */
 const DEFAULT_GREETING_NAME = 'there';
 
 export interface ResultNotificationRecipient {
@@ -31,7 +31,6 @@ export interface ResultNotificationRecipient {
   /** App URLs address a proposal by its profile id, not its own id. */
   proposalProfileId: string;
   outcome: ResultNotificationOutcome;
-  /** The `{{...}}` substitutions for this recipient's copy of the message. */
   values: ResultNotificationValues;
 }
 
@@ -44,24 +43,15 @@ export interface ResultNotification {
 
 export type ListResultNotificationRecipientsResult =
   | { ok: true; notification: ResultNotification }
-  | {
-      ok: false;
-      reason:
-        | 'resultRetired'
-        | 'instanceUnavailable'
-        | 'messagesMissing'
-        | 'noRecipients';
-    };
+  | { ok: false; reason: 'resultRetired' | 'noRecipients' };
 
 /**
- * Who hears how the decision went, and the copy they need. Addresses the exact
- * `decision_process_results` row that was published rather than "the latest
- * successful one": `revertPhase` retires rows by flipping `success`, and
- * re-resolving after a revert would read an empty selection set and tell every
- * author they were not funded.
+ * Who hears how the decision went, and the copy they need.
  *
- * Empty outcomes return a reason rather than throwing. Nothing to authorize:
- * the audience is derived, not requested.
+ * Addresses the exact `decision_process_results` row that was published rather
+ * than the latest successful one: `revertPhase` retires rows by flipping
+ * `success`, and re-resolving after a revert would read an empty selection set
+ * and tell every author they were not selected.
  */
 export async function listResultNotificationRecipients({
   processInstanceId,
@@ -72,7 +62,7 @@ export async function listResultNotificationRecipients({
   processInstanceId: string;
   processResultId: string;
   transitionHistoryId: string;
-  /** The phase whose membership defines the not-funded audience. */
+  /** The phase whose membership defines the not-selected audience. */
   previousPhaseId: string;
 }): Promise<ListResultNotificationRecipientsResult> {
   const [resultRow, instance, messages] = await Promise.all([
@@ -92,11 +82,15 @@ export async function listResultNotificationRecipients({
   }
 
   if (!instance?.profile) {
-    return { ok: false, reason: 'instanceUnavailable' };
+    throw new CommonError(
+      `Process instance ${processInstanceId} has no associated profile`,
+    );
   }
 
   if (!messages) {
-    return { ok: false, reason: 'messagesMissing' };
+    throw new CommonError(
+      `Transition ${transitionHistoryId} carries no author notifications`,
+    );
   }
 
   const [selections, candidateIds] = await Promise.all([
@@ -115,13 +109,13 @@ export async function listResultNotificationRecipients({
   const allocatedByProposalId = new Map(
     selections.map(({ proposalId, allocated }) => [proposalId, allocated]),
   );
-  // Funded comes from the result row, not from the candidate pool: a proposal
+  // Selected comes from the result row, not the candidate pool: a proposal
   // created inside the final phase's own window can be selected without ever
   // belonging to the previous phase.
-  const notFundedIds = candidateIds.filter(
+  const notSelectedIds = candidateIds.filter(
     (id) => !allocatedByProposalId.has(id),
   );
-  const proposalIds = [...allocatedByProposalId.keys(), ...notFundedIds];
+  const proposalIds = [...allocatedByProposalId.keys(), ...notSelectedIds];
 
   if (proposalIds.length === 0) {
     return { ok: false, reason: 'noRecipients' };
@@ -133,17 +127,9 @@ export async function listResultNotificationRecipients({
   });
 
   const reachable = proposals.filter(isProposalReachable);
-
-  // Addresses come from the shared resolver — the single place that knows
-  // delivery goes to `auth.users.email`, so this send can't drift from the
-  // rest of them. Batched: a phase-wide fan-out would otherwise put one query
-  // per proposal on the wire.
   const audiences = await listMemberProfileRecipientsByProfile(
     reachable.map(({ profileId }) => profileId),
   );
-
-  // Names need their own read: `EmailRecipient` carries no display name, and
-  // `{{name}}` has to come from the author's own profile.
   const names = await readAuthorNames(
     [...audiences.values()].flat().map(({ authUserId }) => authUserId),
   );
@@ -161,8 +147,8 @@ export async function listResultNotificationRecipients({
     return { ok: false, reason: 'noRecipients' };
   }
 
-  // Stable order: the batch sender's idempotency keys are chunk-index based,
-  // so a retry must rebuild the same list in the same order.
+  // The batch sender's idempotency keys are chunk-index based, so a retry has
+  // to rebuild the same list in the same order.
   recipients.sort(
     (a, b) =>
       a.proposalProfileId.localeCompare(b.proposalProfileId) ||
@@ -181,11 +167,9 @@ export async function listResultNotificationRecipients({
 }
 
 /**
- * One message per (author, proposal): a co-authored proposal mails every
- * collaborator, and an author with two proposals hears about each. Dedup is
- * per inbox within the proposal, so two access rows for one person can't
- * double up. `allocated` is `undefined` for a proposal the result row did not
- * select, and `null` for one it selected without an amount.
+ * One message per (author, proposal). `allocated` is `undefined` for a proposal
+ * the result row did not select, and `null` for one it selected without an
+ * amount.
  */
 function toRecipients({
   proposal,
@@ -200,19 +184,18 @@ function toRecipients({
     profile: { name: string };
   };
   allocated: string | null | undefined;
-  /** This proposal's authors, from the shared recipient resolver. */
   audience: Array<EmailRecipient>;
-  /** Display names, keyed by auth user id. */
   names: Map<string, string>;
 }): Array<ResultNotificationRecipient> {
   const outcome: ResultNotificationOutcome =
-    allocated === undefined ? 'notFunded' : 'funded';
+    allocated === undefined ? 'notSelected' : 'selected';
   const amount =
-    outcome === 'funded'
+    outcome === 'selected'
       ? formatResultAmount({
           allocated: allocated ?? null,
-          budget: (proposal.proposalData as { budget?: unknown } | null)
-            ?.budget,
+          budget: normalizeBudget(
+            (proposal.proposalData as { budget?: unknown } | null)?.budget,
+          ),
         })
       : '';
 
@@ -231,10 +214,6 @@ function toRecipients({
         proposalProfileId: proposal.profileId,
         outcome,
         values: {
-          // The address decides delivery; the name is enrichment. A
-          // collaborator who accepted a proposal invite before finishing
-          // onboarding has no profile row yet, and losing their greeting
-          // beats losing the announcement on a publish that can't be redone.
           name: names.get(authUserId) ?? DEFAULT_GREETING_NAME,
           proposal: proposal.profile.name,
           amount,
@@ -245,14 +224,9 @@ function toRecipients({
 }
 
 /**
- * The display name for each author, from their own profile — the identity
- * record, rather than the `profileUsers` access row. Addresses deliberately do
- * not come from here: `profiles.email` is an unverified public contact field,
- * so delivery stays with the shared resolver.
- *
- * Left-joined and best-effort. `users.profileId` is nullable and an invited
- * collaborator may have no `users` row at all, so a missing name has to mean a
- * generic greeting, never a dropped recipient.
+ * Best-effort: `users.profileId` is nullable and an invited collaborator may
+ * have no `users` row at all, so a missing name means a generic greeting,
+ * never a dropped recipient.
  */
 async function readAuthorNames(
   authUserIds: Array<string>,
@@ -280,10 +254,9 @@ async function readAuthorNames(
 }
 
 /**
- * The copy the admin wrote, read back off the exact transition row they stamped
- * it on. Addressed by id rather than "the latest transition": any row written
- * afterwards — a revert-and-readvance inside the debounce window, an archive —
- * would hide the messages and silently send nothing.
+ * Addressed by id rather than the latest transition: any row written afterwards
+ * would hide the messages and silently send nothing. Re-validated because
+ * `transitionData` is a shared jsonb bag several writers touch.
  */
 async function readComposedMessages(
   transitionHistoryId: string,
@@ -295,10 +268,6 @@ async function readComposedMessages(
     .limit(1);
 
   const transitionData = row?.transitionData as TransitionData | null;
-
-  // Re-validated, not just null-checked: `transitionData` is a shared jsonb bag
-  // several writers touch, and a half-written object would reach the renderer
-  // as `template: undefined` and throw inside the send step.
   const parsed = resultNotificationMessagesSchema.safeParse(
     transitionData?.manualSelection?.resultNotifications,
   );

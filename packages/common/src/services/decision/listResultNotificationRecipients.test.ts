@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Boundary mock: drive the reads, assert the funded/not-funded split and the
-// skip rules. `eq` records (column, value) pairs so the tests can pin WHICH row
-// each query addresses — the by-id lookups are the whole point of the module,
-// and a chain that ignores its WHERE would hide a regression to "the latest".
+// `eq`/`inArray` record (column, value) pairs so the tests can pin which row
+// each query addresses.
 vi.mock('@op/db/client', () => {
   const selections: { rows: Array<unknown> } = { rows: [] };
   const transitions: { rows: Array<unknown> } = { rows: [] };
@@ -60,8 +58,7 @@ vi.mock('@op/db/client', () => {
   };
 });
 
-// Distinct sentinels per column so a query filtering on the wrong one is
-// visible in `__filters`.
+// Distinct sentinels per column so a wrong filter is visible in `__filters`.
 vi.mock('@op/db/schema', () => ({
   profiles: {
     id: 'profiles.id',
@@ -111,10 +108,11 @@ const RESULT_ID = '22222222-2222-4222-8222-222222222222';
 const TRANSITION_ID = '33333333-3333-4333-8333-333333333333';
 const PREVIOUS_PHASE_ID = 'review';
 
-const MESSAGES = { funded: 'You were funded', notFunded: 'Not this round' };
+const MESSAGES = {
+  selected: 'You were selected',
+  notSelected: 'Not this round',
+};
 
-// The mock module hangs the mutable query results off `db`; reach them through
-// a typed accessor rather than re-declaring the mock's shape at every use.
 const state = () =>
   db as unknown as {
     __selections: { rows: Array<unknown> };
@@ -158,7 +156,6 @@ const proposal = ({
   profile: { name: title },
 });
 
-/** Routes each proposal profile to its own audience, as the resolver does. */
 const audienceByProfile = (map: Record<string, Array<EmailRecipient>>) =>
   mockAudiences.mockImplementation(async (profileIds) => {
     const entries = profileIds.flatMap((id) =>
@@ -185,7 +182,9 @@ describe('listResultNotificationRecipients', () => {
       { authUserId: 'auth-ada', profileName: 'Ada' },
       { authUserId: 'auth-bo', profileName: 'Bo' },
     ];
-    state().__selections.rows = [{ proposalId: 'funded-1', allocated: '8000' }];
+    state().__selections.rows = [
+      { proposalId: 'selected-1', allocated: '8000' },
+    ];
     state().__transitions.rows = [
       {
         transitionData: { manualSelection: { resultNotifications: MESSAGES } },
@@ -199,29 +198,27 @@ describe('listResultNotificationRecipients', () => {
       currentStateId: 'voting',
       profile: { slug: 'pb-2026' },
     } as never);
-    mockPhaseIds.mockResolvedValue(['funded-1', 'not-funded-1']);
+    mockPhaseIds.mockResolvedValue(['selected-1', 'not-selected-1']);
     findProposals.mockResolvedValue([
       proposal({
-        id: 'funded-1',
+        id: 'selected-1',
         title: 'Community Garden Revamp',
-        profileId: 'profile-funded',
+        profileId: 'profile-a-selected',
       }),
       proposal({
-        id: 'not-funded-1',
+        id: 'not-selected-1',
         title: 'Bike Lane Study',
-        profileId: 'profile-not-funded',
+        profileId: 'profile-b-not-selected',
         budget: { amount: 3000, currency: 'USD' },
       }),
     ] as never);
     audienceByProfile({
-      'profile-funded': [ADA],
-      'profile-not-funded': [BO],
+      'profile-a-selected': [ADA],
+      'profile-b-not-selected': [BO],
     });
   });
 
-  // The event carries both ids precisely so neither row is re-resolved as "the
-  // latest" — a revert retires the result, and a later transition would hide
-  // the copy. Pin the WHEREs, or that regression is invisible here.
+  // Guards the regression to "the latest row", which no fixture can catch.
   it('addresses the result row and the transition row by id', async () => {
     await run();
 
@@ -239,22 +236,17 @@ describe('listResultNotificationRecipients', () => {
     });
   });
 
-  // Delivery is the shared resolver's job — it is the one place that knows
-  // addresses come from `auth.users`, so this send must not resolve its own.
   it('asks the shared resolver once for every proposal profile', async () => {
     await run();
 
-    // One call, not one per proposal: a phase-wide fan-out would otherwise put
-    // a query per proposal on the wire.
     expect(mockAudiences).toHaveBeenCalledTimes(1);
     expect(mockAudiences).toHaveBeenCalledWith([
-      'profile-funded',
-      'profile-not-funded',
+      'profile-a-selected',
+      'profile-b-not-selected',
     ]);
   });
 
-  // Structural, because fixtures alone can't prove a column goes unread: the
-  // only query this module runs against the author is for the display name.
+  // Structural, because fixtures alone can't prove a column goes unread.
   it('never reads an address of its own', async () => {
     await run();
 
@@ -283,8 +275,8 @@ describe('listResultNotificationRecipients', () => {
         recipients: [
           {
             email: 'ada@example.com',
-            proposalProfileId: 'profile-funded',
-            outcome: 'funded',
+            proposalProfileId: 'profile-a-selected',
+            outcome: 'selected',
             values: {
               name: 'Ada',
               proposal: 'Community Garden Revamp',
@@ -293,8 +285,8 @@ describe('listResultNotificationRecipients', () => {
           },
           {
             email: 'bo@example.com',
-            proposalProfileId: 'profile-not-funded',
-            outcome: 'notFunded',
+            proposalProfileId: 'profile-b-not-selected',
+            outcome: 'notSelected',
             values: { name: 'Bo', proposal: 'Bike Lane Study', amount: '' },
           },
         ],
@@ -303,22 +295,22 @@ describe('listResultNotificationRecipients', () => {
   });
 
   // The final phase's own window can produce a proposal the previous phase
-  // never held. It is funded, so the result row has to be what decides.
+  // never held, so the result row has to be what decides.
   it('funds a selected proposal that was never in the candidate pool', async () => {
     state().__selections.rows = [
-      { proposalId: 'funded-1', allocated: null },
+      { proposalId: 'selected-1', allocated: null },
       { proposalId: 'late-1', allocated: null },
     ];
-    mockPhaseIds.mockResolvedValue(['funded-1']);
+    mockPhaseIds.mockResolvedValue(['selected-1']);
     state().__names.rows = [
       ...state().__names.rows,
       { authUserId: 'auth-cy', profileName: 'Cy' },
     ];
     findProposals.mockResolvedValue([
       proposal({
-        id: 'funded-1',
+        id: 'selected-1',
         title: 'Community Garden Revamp',
-        profileId: 'profile-funded',
+        profileId: 'profile-a-selected',
       }),
       proposal({
         id: 'late-1',
@@ -328,7 +320,7 @@ describe('listResultNotificationRecipients', () => {
       }),
     ] as never);
     audienceByProfile({
-      'profile-funded': [ADA],
+      'profile-a-selected': [ADA],
       'profile-late': [{ authUserId: 'auth-cy', email: 'cy@example.com' }],
     });
 
@@ -338,11 +330,9 @@ describe('listResultNotificationRecipients', () => {
       ok: true,
       notification: {
         recipients: [
-          expect.objectContaining({ outcome: 'funded' }),
-          // Funded, but with no allocation written, so `{{amount}}` resolves
-          // to nothing rather than to what they asked for.
+          expect.objectContaining({ outcome: 'selected' }),
           expect.objectContaining({
-            outcome: 'funded',
+            outcome: 'selected',
             values: expect.objectContaining({ amount: '' }),
           }),
         ],
@@ -351,18 +341,17 @@ describe('listResultNotificationRecipients', () => {
   });
 
   it('mails every collaborator once, per proposal', async () => {
-    mockPhaseIds.mockResolvedValue(['funded-1']);
+    mockPhaseIds.mockResolvedValue(['selected-1']);
     findProposals.mockResolvedValue([
       proposal({
-        id: 'funded-1',
+        id: 'selected-1',
         title: 'Community Garden Revamp',
-        profileId: 'profile-funded',
+        profileId: 'profile-a-selected',
       }),
     ] as never);
-    // Two accounts landing in one inbox in different case, plus an anonymous
-    // account the resolver reports with no address at all.
+    // Two accounts in one inbox in different case, plus an anonymous account.
     audienceByProfile({
-      'profile-funded': [
+      'profile-a-selected': [
         ADA,
         { authUserId: 'auth-ada-dup', email: 'ADA@example.com' },
         BO,
@@ -383,9 +372,6 @@ describe('listResultNotificationRecipients', () => {
     ]);
   });
 
-  // A collaborator who accepted a proposal invite before finishing onboarding
-  // has no profile row. Losing their greeting beats losing the announcement on
-  // a publish that can't be redone.
   it('still mails an author with no profile to take a name from', async () => {
     state().__names.rows = [{ authUserId: 'auth-ada', profileName: 'Ada' }];
 
@@ -424,26 +410,25 @@ describe('listResultNotificationRecipients', () => {
   it('skips a proposal that is no longer reachable', async () => {
     findProposals.mockResolvedValue([
       proposal({
-        id: 'funded-1',
+        id: 'selected-1',
         title: 'Community Garden Revamp',
-        profileId: 'profile-funded',
+        profileId: 'profile-a-selected',
         moderationDetachedAt: '2026-01-01T00:00:00Z',
       }),
       proposal({
-        id: 'not-funded-1',
+        id: 'not-selected-1',
         title: 'Bike Lane Study',
-        profileId: 'profile-not-funded',
+        profileId: 'profile-b-not-selected',
         deletedAt: '2026-01-01T00:00:00Z',
       }),
     ] as never);
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'noRecipients' });
-    // A takedown must not even be looked up, let alone mailed.
     expect(mockAudiences).toHaveBeenCalledWith([]);
   });
 
-  // A revert retires the row rather than deleting it. Re-resolving "the latest
-  // successful result" here would find none and mail the whole pool.
+  // Re-resolving "the latest successful result" would find none here and mail
+  // the whole pool.
   it('sends nothing once the result it announces has been retired', async () => {
     findResult.mockResolvedValue({ id: RESULT_ID, success: false } as never);
 
@@ -453,42 +438,37 @@ describe('listResultNotificationRecipients', () => {
     });
   });
 
-  // A half-written jsonb bag must not reach the renderer as `template:
-  // undefined` and throw inside the send step.
   it.each([
     ['no admin composed them', { manualSelection: {} }],
     [
       'only one side was stamped',
-      { manualSelection: { resultNotifications: { funded: 'Funded' } } },
+      { manualSelection: { resultNotifications: { selected: 'Selected' } } },
     ],
     [
       'a side is blank',
       {
         manualSelection: {
-          resultNotifications: { funded: 'Funded', notFunded: '   ' },
+          resultNotifications: { selected: 'Selected', notSelected: '   ' },
         },
       },
     ],
-  ])('sends nothing when %s', async (_label, transitionData) => {
+  ])('throws when %s', async (_label, transitionData) => {
     state().__transitions.rows = [{ transitionData }];
 
-    await expect(run()).resolves.toEqual({
-      ok: false,
-      reason: 'messagesMissing',
-    });
+    await expect(run()).rejects.toThrow(/no author notifications/);
   });
 
   it('sends nothing when no author has a usable address', async () => {
-    mockPhaseIds.mockResolvedValue(['funded-1']);
+    mockPhaseIds.mockResolvedValue(['selected-1']);
     findProposals.mockResolvedValue([
       proposal({
-        id: 'funded-1',
+        id: 'selected-1',
         title: 'Community Garden Revamp',
-        profileId: 'profile-funded',
+        profileId: 'profile-a-selected',
       }),
     ] as never);
     audienceByProfile({
-      'profile-funded': [{ authUserId: 'auth-anon', email: null }],
+      'profile-a-selected': [{ authUserId: 'auth-anon', email: null }],
     });
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'noRecipients' });

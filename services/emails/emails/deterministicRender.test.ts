@@ -40,15 +40,15 @@ describe('email render determinism', () => {
   });
 
   it.each([true, false])(
-    'renders DecisionResultEmail identically for identical props (funded: %s)',
-    async (isFunded) => {
+    'renders DecisionResultEmail identically for identical props (selected: %s)',
+    async (isSelected) => {
       const props = {
         processTitle: 'Participatory Budgeting 2026',
         message:
           'Hi Ada,\n\nYour proposal "Community Garden Revamp" has an outcome.\n\nThanks for taking part.',
         proposalUrl:
           'https://common.oneproject.org/decisions/pb-2026/proposal/abc',
-        isFunded,
+        isSelected,
       };
 
       const first = await render(DecisionResultEmail(props));

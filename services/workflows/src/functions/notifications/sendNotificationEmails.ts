@@ -16,9 +16,8 @@ export const sendNotificationEmails = async ({
   failureMessage: string;
   context: Record<string, string>;
   /**
-   * Scope to the Inngest run id on a fan-out send. Without it the throw above
-   * makes the retry re-deliver every chunk that already succeeded — tolerable
-   * for a proposal's two co-authors, not for a whole phase of them.
+   * Scope to the Inngest run id on a fan-out send: without it the throw above
+   * makes a retry re-deliver every chunk that already succeeded.
    */
   idempotencyKeyPrefix?: string;
 }): Promise<{ sent: number }> => {

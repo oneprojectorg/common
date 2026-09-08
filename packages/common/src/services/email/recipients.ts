@@ -51,12 +51,6 @@ export const listMemberProfileRecipients = async (
   return byProfile.get(profileId) ?? [];
 };
 
-/**
- * The same audience for many profiles at once, keyed by profile id. A
- * phase-wide send fans out over every proposal in the pool, and calling the
- * single-profile form in a loop would put one query per proposal on the wire.
- * Empty and unknown ids are simply absent from the map.
- */
 export const listMemberProfileRecipientsByProfile = async (
   profileIds: Array<string>,
 ): Promise<Map<string, Array<EmailRecipient>>> => {
@@ -81,7 +75,7 @@ export const listMemberProfileRecipientsByProfile = async (
   }
 
   // Dedup within a profile, not across: one person on two proposals hears
-  // about each of them.
+  // about each.
   return new Map(
     [...byProfile].map(([profileId, recipients]) => [
       profileId,

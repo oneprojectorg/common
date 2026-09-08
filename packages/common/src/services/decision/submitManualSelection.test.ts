@@ -113,8 +113,7 @@ function instanceData(review: boolean) {
  * order. `tx` awaits happen sequentially in submitManualSelection, so a single
  * FIFO queue mirrors execution.
  *
- * Pass `recorded` to capture the payloads handed to `.set(...)` — the only way
- * to assert what was stamped onto the transition row.
+ * Pass `recorded` to capture the payloads handed to `.set(...)`.
  */
 function makeTx(results: unknown[], recorded?: { set: unknown[] }) {
   const builder: Record<string, unknown> = {};
@@ -289,11 +288,12 @@ describe('submitManualSelection', () => {
   });
 });
 
-// The final phase is where results publish, so it is the only place author
-// notifications are composed — and the only place they are allowed at all.
 describe('submitManualSelection author notifications', () => {
   const PROCESS_RESULT_ID = 'result-1';
-  const messages = { funded: 'You were funded', notFunded: 'Not this round' };
+  const messages = {
+    selected: 'You were selected',
+    notSelected: 'Not this round',
+  };
 
   /** Three phases with the CURRENT one last, so this call publishes results. */
   const lastPhaseInstanceData = () => ({
@@ -354,7 +354,6 @@ describe('submitManualSelection author notifications', () => {
         manualSelection: { resultNotifications: messages },
       },
     });
-    // Refs only, both rows addressed by id — the workflow re-reads the copy.
     expect(event.send).toHaveBeenCalledWith({
       name: 'decisionResultsNotified',
       data: {
@@ -379,8 +378,8 @@ describe('submitManualSelection author notifications', () => {
       processInstanceId: INSTANCE_ID,
       proposalIds: ['prop-1', 'prop-2'],
       resultNotifications: {
-        funded: '  You were funded\n',
-        notFunded: '\tNot this round  ',
+        selected: '  You were selected\n',
+        notSelected: '\tNot this round  ',
       },
       user,
     });
@@ -393,8 +392,7 @@ describe('submitManualSelection author notifications', () => {
     expect(recorded.set).toHaveLength(1);
   });
 
-  // The review-selection flow confirms into what can be the final phase and
-  // composes nothing; publishing has to stay possible without author copy.
+  // The review-selection flow reaches this path composing nothing.
   it('publishes without announcing anything when no messages are supplied', async () => {
     const recorded = { set: [] as unknown[] };
     mockTransaction.mockImplementation(
@@ -419,25 +417,23 @@ describe('submitManualSelection author notifications', () => {
     );
   });
 
-  // Rejected before the transaction opens, so nothing publishes and the admin
-  // can fix the copy rather than hitting the one-shot ConflictError on retry.
-  // The message has to name the offending side — blaming `funded` for a blank
-  // `notFunded` sends the admin to the wrong tab.
+  // The message has to name the offending side, or the admin is sent to the
+  // wrong tab.
   it.each([
     [
-      'the funded message is blank',
-      { funded: '   ', notFunded: 'Not this round' },
-      /funded message must be between/,
+      'the selected message is blank',
+      { selected: '   ', notSelected: 'Not this round' },
+      /selected message must be between/,
     ],
     [
-      'the not-funded message is blank',
-      { funded: 'You were funded', notFunded: '   ' },
-      /notFunded message must be between/,
+      'the not-selected message is blank',
+      { selected: 'You were selected', notSelected: '   ' },
+      /notSelected message must be between/,
     ],
     [
       'a message is over the length cap',
-      { funded: 'a'.repeat(4001), notFunded: 'Not this round' },
-      /funded message must be between 1 and 4000/,
+      { selected: 'a'.repeat(4001), notSelected: 'Not this round' },
+      /selected message must be between 1 and 4000/,
     ],
   ])(
     'refuses to publish results when %s',
@@ -456,9 +452,6 @@ describe('submitManualSelection author notifications', () => {
     },
   );
 
-  // Whether the phase publishes is only knowable under the lock, so this one
-  // rejects inside the transaction — which rolls back rather than confirming a
-  // selection whose author copy would never be sent.
   it('rejects messages on a phase that publishes nothing', async () => {
     mockFindFirst.mockResolvedValue({
       profileId: DECISION_PROFILE_ID,
@@ -486,8 +479,7 @@ describe('submitManualSelection author notifications', () => {
         resultNotifications: messages,
         user,
       }),
-      // Pinned to the message: this path can throw ValidationError from four
-      // other guards, and a bare `toThrow()` would pass on any of them.
+      // Pinned: four other guards on this path also throw ValidationError.
     ).rejects.toThrow(/only sent when confirming the final phase/);
 
     expect(mockProcessResults).not.toHaveBeenCalled();
