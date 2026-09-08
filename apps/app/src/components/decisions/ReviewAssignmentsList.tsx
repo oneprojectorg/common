@@ -53,6 +53,7 @@ import {
 import { TranslationNotice } from './TranslationNotice';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
+import { useReviewersByProposalId } from './useReviewersByProposalId';
 import { useTranslateDecision } from './useTranslateDecision';
 
 const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
@@ -159,16 +160,11 @@ export function ReviewAssignmentsList({
     needsTranslation,
   });
 
-  const { data: aggregatesData } =
-    trpc.decision.listWithReviewAggregates.useQuery(
-      {
-        processInstanceId,
-        proposalIds,
-      },
-      {
-        enabled: canViewReviewers && proposalIds.length > 0,
-      },
-    );
+  const reviewersByProposalId = useReviewersByProposalId({
+    processInstanceId,
+    proposalIds,
+    enabled: canViewReviewers,
+  });
   const isByCategory =
     !!currentPhase &&
     getPhaseReviewSettings({ phases }, currentPhase.phaseId).scope ===
@@ -219,17 +215,6 @@ export function ReviewAssignmentsList({
     (proposal: Pick<Proposal, 'profileId'>) =>
       `/decisions/${decisionSlug}/proposal/${proposal.profileId}/reviews`,
     [decisionSlug],
-  );
-
-  const reviewersByProposalId = useMemo(
-    () =>
-      new Map(
-        (aggregatesData?.items ?? []).map((item) => [
-          item.proposal.id,
-          item.aggregates.reviewers,
-        ]),
-      ),
-    [aggregatesData],
   );
 
   // The tab is the filter: pins come from the assignments themselves, so the

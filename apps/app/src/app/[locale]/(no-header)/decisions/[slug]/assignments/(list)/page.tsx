@@ -12,7 +12,7 @@ import { getTranslations } from '@/lib/i18n';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
 import { ReviewersTableSection } from '@/components/decisions/ReviewAssignments/ReviewersTableSection';
 
-import { loadReviewAssignmentsPage } from './loadReviewAssignmentsPage';
+import { loadReviewAssignmentsPage } from '../loadReviewAssignmentsPage';
 
 interface ReviewAssignmentsPageProps {
   params: Promise<{ slug: string; locale: string }>;

@@ -44,6 +44,8 @@ import {
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
+type LoadedInstance = Awaited<ReturnType<typeof getInstance>>;
+
 /**
  * Status priority for the "least reviewed" secondary sort — lower ranks first,
  * so the most actionable work (resume in-progress, then items needing action)
@@ -146,6 +148,43 @@ export async function listReviewAssignments({
   });
 
   assertInstancePhase({ instance, phaseId });
+
+  return await listAssignmentsForReviewer({
+    instance,
+    reviewerProfileId,
+    phaseId,
+    status,
+    categoryIds,
+    proposalProfileId,
+    sort,
+    cursor,
+    limit,
+  });
+}
+
+/** One page of a reviewer's queue. No access check: callers gate. */
+export async function listAssignmentsForReviewer({
+  instance,
+  reviewerProfileId,
+  phaseId,
+  status,
+  categoryIds,
+  proposalProfileId,
+  sort = 'leastReviewed',
+  cursor,
+  limit,
+}: {
+  instance: LoadedInstance;
+  reviewerProfileId: string;
+  phaseId: string;
+  status?: ProposalReviewAssignmentStatus;
+  categoryIds?: string[];
+  proposalProfileId?: string;
+  sort?: ReviewAssignmentSort;
+  cursor?: string | null;
+  limit: number;
+}): Promise<ReviewAssignmentList> {
+  const processInstanceId = instance.id;
 
   // Resolve the categories' proposal IDs up front (same approach as
   // resolveProposalListScope): assignments have no category column, so the
