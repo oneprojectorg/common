@@ -1,6 +1,11 @@
 export interface AIModelConfig {
-  /** Model on that endpoint. Omit to use AI_MODEL_ID. */
-  modelId?: string;
+  /**
+   * Model to run on that endpoint. Required, and deliberately not defaulted from
+   * the environment: a model id only names something on a particular endpoint,
+   * and services here run on different models, so a single deploy-wide default
+   * would silently apply one service's choice to another.
+   */
+  modelId: string;
   /** OpenAI-compatible inference endpoint. Omit to use AI_BASE_URL. */
   baseURL?: string;
   /** Omit to use AI_API_KEY (env endpoint only). Empty string = keyless. */
@@ -29,26 +34,8 @@ export const resolveAIModelConfig = ({
     );
   }
 
-  // Falls back beside the URL rather than at each caller, because the two are
-  // one fact: a model id only names something on a particular endpoint, and
-  // there is no default worth guessing for an arbitrary OpenAI-compatible
-  // provider.
-  //
-  // Scoped to the env endpoint for the same reason the key below is. The env
-  // model is the deploy's answer for the deploy's endpoint; sending it to a
-  // caller-supplied one asks that provider for a model it has likely never
-  // served, and the 404 names a model the caller never chose. A caller that
-  // brings its own endpoint brings its own model.
-  //
-  // `??` not `||`: an explicit empty modelId is a misconfiguration to report,
-  // not a cue to read the env.
-  const resolvedModelId =
-    baseURL == null ? (modelId ?? process.env.AI_MODEL_ID) : modelId;
-
-  if (!resolvedModelId) {
-    throw new Error(
-      'No inference model configured. Pass modelId, or set AI_MODEL_ID for the AI_BASE_URL endpoint.',
-    );
+  if (!modelId) {
+    throw new Error('No inference model configured. Pass modelId.');
   }
 
   // The env key belongs to the env-configured endpoint only — never attach
@@ -59,7 +46,7 @@ export const resolveAIModelConfig = ({
 
   return {
     providerId: 'op-ai',
-    modelId: resolvedModelId,
+    modelId,
     url,
     apiKey: resolvedApiKey || undefined,
   };

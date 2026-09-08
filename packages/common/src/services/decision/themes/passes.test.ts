@@ -21,6 +21,7 @@ import { createAIAgent } from '@op/ai';
 import { CommonError } from '../../../utils';
 import { analyzeThemes } from './analyzeThemes';
 import { askForJson } from './askForJson';
+import { THEME_ANALYSIS_MODEL_ID } from './constants';
 import { findCommonGround } from './findCommonGround';
 
 const corpus = [
@@ -87,6 +88,20 @@ describe('askForJson', () => {
         } as never,
       }),
     ).rejects.toBeInstanceOf(CommonError);
+  });
+
+  // Both passes name the same model, and it comes from the code rather than the
+  // environment. The second pass reads the first's output, so a corpus analysed
+  // by two different models is harder to account for than one analysed twice by
+  // the same one.
+  it('runs on the model the feature names, not on an env default', async () => {
+    replyWithJson({ ok: true });
+
+    await ask();
+
+    expect(vi.mocked(createAIAgent).mock.calls[0]?.[0]?.model).toEqual({
+      modelId: THEME_ANALYSIS_MODEL_ID,
+    });
   });
 
   // The rules are what make "ignore the above" a proposal about ignoring things

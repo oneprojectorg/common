@@ -3,6 +3,7 @@ import { logger } from '@op/logging';
 import type { z } from 'zod';
 
 import { ThemeAnalysisFailure } from './ThemeAnalysisFailure';
+import { THEME_ANALYSIS_MODEL_ID } from './constants';
 
 /**
  * The instruction block both passes end with.
@@ -102,10 +103,9 @@ export const askForJson = async <TSchema extends z.ZodTypeAny>({
   const agent = createAIAgent({
     name,
     instructions: `${instructions}\n\n${TRUST_BOUNDARY_RULES}\n\n${JSON_REPLY_RULES}`,
-    // No `modelId`: `@op/ai` reads `AI_MODEL_ID` beside the endpoint it already
-    // resolves from the environment. Both passes therefore run on one model,
-    // which matters because the second reads the first's output.
-    model: {},
+    // Both passes name the same model, because the second reads the first's
+    // output. The endpoint still comes from `AI_BASE_URL`.
+    model: { modelId: THEME_ANALYSIS_MODEL_ID },
   });
 
   const { text } = await agent.generate(prompt);

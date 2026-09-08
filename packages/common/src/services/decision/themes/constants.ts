@@ -69,3 +69,22 @@ export const THEME_ANALYSIS_PROPOSAL_CHARS = 1_200;
  * a blank dialog.
  */
 export const THEME_ANALYSIS_MIN_PROPOSALS = 2;
+
+/**
+ * The model both passes run on.
+ *
+ * Named here in code rather than read from the environment. Services in this
+ * repo run on different models, so a single deploy-wide setting would apply one
+ * service's choice to every other one; each names what it wants and changing it
+ * is a reviewable diff rather than a deploy-time setting nobody can see from the
+ * code.
+ *
+ * One constant for both passes so they cannot drift apart. The common-ground
+ * pass reads the themes pass's output, and a synthesis assembled by two
+ * different models reasoning over one corpus is harder to account for than a
+ * worse one assembled by the same model twice.
+ *
+ * The endpoint is still `AI_BASE_URL`, so this has to name a model that endpoint
+ * serves.
+ */
+export const THEME_ANALYSIS_MODEL_ID = 'zai-org/GLM-5.3';
