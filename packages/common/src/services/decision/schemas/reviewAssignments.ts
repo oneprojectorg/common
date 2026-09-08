@@ -34,7 +34,7 @@ export const reviewerQueueStatusSchema = z.union([
 
 export type ReviewerQueueStatus = z.infer<typeof reviewerQueueStatusSchema>;
 
-export const reviewerAssignmentsSchema = z.object({
+export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
   /** Null when the profile has no tie to this process. */
   reviewer: eligibleReviewerSchema.nullable(),
   /** False once the reviewer lost the REVIEW capability; their history stays visible. */
@@ -46,9 +46,6 @@ export const reviewerAssignmentsSchema = z.object({
   statusBreakdown: z.array(
     z.object({ status: reviewerQueueStatusSchema, count: z.number().int() }),
   ),
-  assignments: reviewAssignmentListSchema.shape.assignments,
-  next: z.string().nullable(),
-  total: z.number().int(),
 });
 
 export type ReviewerAssignments = z.infer<typeof reviewerAssignmentsSchema>;
