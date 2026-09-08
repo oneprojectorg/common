@@ -109,16 +109,23 @@ export const THEME_ANALYSIS_MODEL_ID = 'zai-org/GLM-5.3';
  * and the facilitator waits out the client's own timer for a run that is already
  * dead. Bounding the call converts that into a reported failure with a cause.
  *
- * Five minutes per pass, two passes, each in its own step and so its own
- * invocation. That fits inside `maxDuration` on the workflows route with room
- * for the corpus read, and keeps a whole successful run inside the client's
- * wait.
+ * Eight minutes per pass, two passes, each in its own step and so its own
+ * invocation. Raised from five, which was picked before the passes had separate
+ * steps and turned out to be tighter than the work: the common-ground pass —
+ * which reasons over the corpus *and* the first pass's themes — reached it on a
+ * real run and was cut off mid-answer. Each step now gets a whole invocation, so
+ * the ceiling that matters is `maxDuration` on the workflows route (800s), and
+ * eight minutes sits inside it with margin.
+ *
+ * The ordering is the constraint, not the number: pass timeout < the route's
+ * `maxDuration`, and the read plus both passes < the client's wait. Moving this
+ * means checking `THEME_ANALYSIS_WAIT_TIMEOUT_MS` in the app against it.
  *
  * A pass that hits this reports rather than throws, so it does not retry: a
- * provider that has not answered in five minutes will not answer in five more,
+ * provider that has not answered in eight minutes will not answer in eight more,
  * and a retry would only spend the budget twice on its way to the same place.
  */
-export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 5 * 60 * 1000;
+export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 8 * 60 * 1000;
 
 /**
  * The output cap for one pass.

@@ -8,6 +8,8 @@ vi.mock('@op/logging', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
+import { createAIAgent } from '@op/ai';
+
 import { askForJson } from './askForJson';
 import {
   THEME_ANALYSIS_MAX_OUTPUT_TOKENS,
@@ -26,6 +28,8 @@ import {
 let server: Server;
 let requestBodies: Array<Record<string, unknown>> = [];
 let reply = '';
+/** When set, the stub accepts the request and never answers. */
+let hang = false;
 
 beforeAll(async () => {
   server = createServer((request, response) => {
@@ -37,6 +41,10 @@ beforeAll(async () => {
 
     request.on('end', () => {
       requestBodies.push(JSON.parse(raw));
+
+      if (hang) {
+        return;
+      }
 
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(
@@ -109,4 +117,45 @@ describe('the model call as it goes over the wire', () => {
       themes: [{ title: 'Street space' }],
     });
   });
+});
+
+describe('an abort against the real SDK', () => {
+  // The behaviour our whole timeout path depends on, and the reason a pass that
+  // ran out of time was reported as unusable JSON. Mastra does NOT reject when
+  // the abort signal fires: it resolves with empty text and a 'tripwire' finish
+  // reason. Code that only inspects the catch block therefore sees a model that
+  // answered with nothing, and says so.
+  //
+  // Pinned here because it is a third-party behaviour we rely on and cannot
+  // detect changing. If Mastra starts throwing, this fails and the success-path
+  // check in `generateWithin` becomes dead code that should be removed.
+  it('resolves empty with a tripwire finish reason instead of throwing', async () => {
+    hang = true;
+
+    const agent = createAIAgent({
+      name: 'abort-probe',
+      instructions: 'Answer in JSON.',
+      model: { modelId: THEME_ANALYSIS_MODEL_ID },
+    });
+
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 200);
+
+    const outcome = await agent
+      .generate('Hello', { abortSignal: controller.signal })
+      .then((value) => ({
+        threw: false,
+        text: value.text,
+        finishReason: value.finishReason,
+      }))
+      .catch(() => ({ threw: true, text: undefined, finishReason: undefined }));
+
+    hang = false;
+
+    expect(outcome).toEqual({
+      threw: false,
+      text: '',
+      finishReason: 'tripwire',
+    });
+  }, 30_000);
 });

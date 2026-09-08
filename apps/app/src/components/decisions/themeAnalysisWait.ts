@@ -8,8 +8,8 @@
  *
  * Sized to sit above the server's own bounds, so the run always gets to say what
  * happened before the client gives up guessing. Each model pass is capped at
- * `THEME_ANALYSIS_PASS_TIMEOUT_MS` (5 minutes) and there are two of them, so a
- * run that is going to fail reports it inside ~10 minutes; this leaves margin
+ * `THEME_ANALYSIS_PASS_TIMEOUT_MS` (8 minutes) and there are two of them, so a
+ * run that is going to fail reports it inside ~16 minutes; this leaves margin
  * on top for the corpus read and the broadcast.
  *
  * Ordering is the whole point: pass timeout < the route's `maxDuration` < this.
@@ -25,4 +25,4 @@
  * row sits there with nothing on screen able to address it. Erring long is
  * therefore the cheaper direction.
  */
-export const THEME_ANALYSIS_WAIT_TIMEOUT_MS = 15 * 60 * 1000;
+export const THEME_ANALYSIS_WAIT_TIMEOUT_MS = 25 * 60 * 1000;

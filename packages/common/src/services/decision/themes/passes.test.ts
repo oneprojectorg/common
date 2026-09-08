@@ -237,6 +237,29 @@ describe('askForJson', () => {
     await asked;
   });
 
+  // The way this actually fails in production. Mastra resolves rather than
+  // rejects when the abort fires, so the catch block never runs and an empty
+  // reply reaches the parser — which reported a pass that ran out of time as one
+  // that returned unusable JSON, sending the reader after the wrong bug.
+  it('reports a timeout the SDK swallowed into an empty reply', async () => {
+    generate.mockImplementation(
+      (_prompt: string, { abortSignal }: { abortSignal: AbortSignal }) =>
+        new Promise((resolve) => {
+          abortSignal.addEventListener('abort', () =>
+            resolve({ text: '', finishReason: 'tripwire' }),
+          );
+        }),
+    );
+
+    const asked = expect(ask()).rejects.toMatchObject({
+      code: 'analysis-timed-out',
+    });
+
+    await vi.advanceTimersByTimeAsync(THEME_ANALYSIS_PASS_TIMEOUT_MS + 1);
+
+    await asked;
+  });
+
   // The rules are what make "ignore the above" a proposal about ignoring things
   // rather than a command, so they have to reach every pass rather than be
   // remembered at each call site.

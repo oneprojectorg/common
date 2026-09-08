@@ -283,6 +283,32 @@ const parseReply = <TSchema extends z.ZodTypeAny>({
 };
 
 /**
+ * The failure for a pass that ran out of time.
+ *
+ * Shared by both ways an abort surfaces. Mastra resolves rather than rejects
+ * when the signal fires, so the timeout has to be recognised on the success
+ * path as well as in the catch — and both have to report the same thing, or the
+ * same event gets two different diagnoses depending on which path noticed.
+ *
+ * Recorded with the prompt size: a timeout on a small prompt is an endpoint that
+ * is not answering, and a timeout on a large one is work that needs a smaller
+ * corpus. The message says which without anyone having to reason about it.
+ */
+const timedOut = (name: string, prompt: string, elapsedMs: number) => {
+  logger.error('Theme analysis pass timed out', {
+    pass: name,
+    promptChars: prompt.length,
+    timeoutMs: THEME_ANALYSIS_PASS_TIMEOUT_MS,
+    elapsedMs,
+  });
+
+  return new ThemeAnalysisFailure(
+    'analysis-timed-out',
+    `The ${name} pass did not answer within ${THEME_ANALYSIS_PASS_TIMEOUT_MS / 1000}s (prompt ${prompt.length} chars).`,
+  );
+};
+
+/**
  * Runs one generation, bounded by {@link THEME_ANALYSIS_PASS_TIMEOUT_MS}.
  *
  * Without a bound the call runs until something else stops it, and on a
@@ -343,6 +369,15 @@ const generateWithin = async (
       modelSettings: { maxOutputTokens: THEME_ANALYSIS_MAX_OUTPUT_TOKENS },
     });
 
+    // Checked on the way out, not only in the catch. Mastra does not reject
+    // when the abort signal fires — it resolves with empty text and a
+    // 'tripwire' finish reason, so an abort that nothing inspects looks exactly
+    // like a model that answered with nothing. That is how a pass that ran out
+    // of time came back reported as unusable JSON.
+    if (controller.signal.aborted) {
+      throw timedOut(name, prompt, Date.now() - startedAt);
+    }
+
     logger.info('Theme analysis pass answered', {
       pass: name,
       promptChars: prompt.length,
@@ -360,14 +395,7 @@ const generateWithin = async (
     // aborted generation depends on the provider and the SDK layer that noticed
     // first, and the signal is the one thing that says why unambiguously.
     if (controller.signal.aborted) {
-      // Recorded with the prompt size: a timeout on a small prompt is an
-      // endpoint that is not answering, and a timeout on a large one is work
-      // that needs a smaller corpus. The message says which without anyone
-      // having to reason about it.
-      throw new ThemeAnalysisFailure(
-        'analysis-timed-out',
-        `The ${name} pass did not answer within ${THEME_ANALYSIS_PASS_TIMEOUT_MS / 1000}s (prompt ${prompt.length} chars).`,
-      );
+      throw timedOut(name, prompt, Date.now() - startedAt);
     }
 
     logger.error('Theme analysis pass failed', {
