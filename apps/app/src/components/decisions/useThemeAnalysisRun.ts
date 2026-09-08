@@ -129,7 +129,9 @@ export const useThemeAnalysisRun = (
   // channel is live — which covers a run reaching either of those before the
   // socket join lands.
   const { data: status } = trpc.decision.getThemeAnalysisStatus.useQuery(
-    { analysisId: analysisId ?? '' },
+    // The instance and the scope are part of the record's key, so the read
+    // needs all three to name the run.
+    { analysisId: analysisId ?? '', processInstanceId, scope },
     {
       // Stops once the run settles, and react-query keeps serving the settled
       // record from its cache. Without this, any later refetch — on window

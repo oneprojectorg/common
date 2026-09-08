@@ -241,14 +241,6 @@ export const themeAnalysisResultSchema = z.object({
 export type ThemeAnalysisResult = z.infer<typeof themeAnalysisResultSchema>;
 
 /**
- * Zod object schema for one theme analysis, as the client receives it.
- *
- * A row in `proposal_theme_analyses` stands behind it. This schema is the wire
- * contract the app reads, and `getThemeAnalysisStatus` parses each row against
- * it — `result` is `jsonb`, so nothing between the write and the read checks
- * its shape, and a row written by an older deploy is a real possibility.
- */
-/**
  * Why an analysis failed, as something the app can translate.
  *
  * The record's `errorMessage` is composed in `@op/common`, which has no
@@ -267,6 +259,20 @@ export type ThemeAnalysisErrorCode = z.infer<
   typeof themeAnalysisErrorCodeSchema
 >;
 
+/**
+ * Zod object schema for one stored theme analysis.
+ *
+ * The cache holds the only copy. Nothing stands behind it, so this schema is the
+ * sole description of the shape and the sole check on it:
+ * `getThemeAnalysisStatus` parses every read against it and reports a record
+ * that fails as `not_found`, which returns the client to idle rather than
+ * leaving it waiting on something no later read repairs.
+ *
+ * `requestThemeAnalysis` seeds the record in full and the workflow overwrites it
+ * whole, so a record that fails this check is one an eviction interrupted — and
+ * the seed read-back in the request is what stops a deployment with no cache
+ * from producing them by the dozen.
+ */
 export const themeAnalysisRecordSchema = z.object({
   analysisId: z.string(),
   processInstanceId: z.string(),

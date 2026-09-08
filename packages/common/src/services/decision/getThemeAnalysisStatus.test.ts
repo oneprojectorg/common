@@ -3,8 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Boundary mocks: reading a status is orchestration over the row and the access
 // gate. These drive both and assert what reaches the caller — whether a row is
 // reported at all, and whether the boundary was re-asserted on the way out.
+vi.mock('@op/cache', () => ({ getWithStatus: vi.fn() }));
+
 vi.mock('@op/db/client', () => ({
-  db: { query: { proposalThemeAnalyses: { findFirst: vi.fn() } } },
+  db: { select: vi.fn() },
+  eq: vi.fn(),
 }));
 
 vi.mock('../access', () => ({ assertInstanceProfileAccess: vi.fn() }));
@@ -13,11 +16,12 @@ vi.mock('@op/logging', () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
+import { getWithStatus } from '@op/cache';
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getThemeAnalysisStatus } from './getThemeAnalysisStatus';
 
@@ -35,51 +39,63 @@ const result = {
   suggestions: [],
 };
 
-const row = (overrides: Record<string, unknown> = {}) => ({
-  id: ANALYSIS_ID,
+const record = (overrides: Record<string, unknown> = {}) => ({
+  analysisId: ANALYSIS_ID,
   processInstanceId: INSTANCE_ID,
-  requestedByAuthUserId: AUTH_USER_ID,
+  userId: AUTH_USER_ID,
   status: 'pending',
-  result: null,
-  analyzedCount: null,
-  total: null,
-  errorCode: null,
-  errorMessage: null,
   createdAt: '2026-09-08T12:00:00.000Z',
-  completedAt: null,
-  processInstance: { profileId: PROFILE_ID },
   ...overrides,
 });
 
-const storedRowIs = (value: unknown) => {
-  vi.mocked(db.query.proposalThemeAnalyses.findFirst).mockResolvedValue(
-    value as never,
-  );
+const storedRecordIs = (data: unknown) => {
+  vi.mocked(getWithStatus).mockResolvedValue({ status: 'hit', data } as never);
+};
+
+const cacheAnswers = (status: 'miss' | 'timeout' | 'error') => {
+  vi.mocked(getWithStatus).mockResolvedValue({ status } as never);
+};
+
+const instanceRowIs = (rows: Array<{ profileId: string | null }>) => {
+  vi.mocked(db.select).mockReturnValue({
+    from: () => ({ where: () => ({ limit: async () => rows }) }),
+  } as never);
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  storedRowIs(row());
+  storedRecordIs(record());
+  instanceRowIs([{ profileId: PROFILE_ID }]);
 });
 
-const read = () => getThemeAnalysisStatus({ analysisId: ANALYSIS_ID, user });
+const read = () =>
+  getThemeAnalysisStatus({
+    analysisId: ANALYSIS_ID,
+    processInstanceId: INSTANCE_ID,
+    scope: 'phase',
+    user,
+  });
 
 describe('getThemeAnalysisStatus', () => {
+  // The instance and the scope are part of the key, so an id alone does not name
+  // a run — and a phase run and a process run of one instance must not collide.
+  it('reads the key the instance, scope and id name', async () => {
+    await read();
+
+    expect(vi.mocked(getWithStatus)).toHaveBeenCalledWith(
+      `themeAnalysis:${INSTANCE_ID}:phase:${ANALYSIS_ID}`,
+    );
+  });
+
   it('returns the run as the client contract shapes it', async () => {
-    await expect(read()).resolves.toEqual({
-      analysisId: ANALYSIS_ID,
-      processInstanceId: INSTANCE_ID,
-      userId: AUTH_USER_ID,
-      status: 'pending',
-      createdAt: '2026-09-08T12:00:00.000Z',
-    });
+    await expect(read()).resolves.toEqual(record());
   });
 
   // The whole point of the run: what the two passes produced has to come back
   // out, with the coverage the dialog states beside it.
   it('carries a completed run"s result and counts through', async () => {
-    storedRowIs(
-      row({
+    storedRecordIs(
+      record({
         status: 'completed',
         result,
         analyzedCount: 3,
@@ -99,8 +115,8 @@ describe('getThemeAnalysisStatus', () => {
   // The code is what the app translates; the message is the English diagnostic
   // that stays in the log and the row.
   it('carries a failed run"s code and message through', async () => {
-    storedRowIs(
-      row({
+    storedRecordIs(
+      record({
         status: 'failed',
         errorCode: 'not-enough-text',
         errorMessage: 'Only 1 of this phase"s 5 proposals have any text.',
@@ -114,23 +130,33 @@ describe('getThemeAnalysisStatus', () => {
   });
 
   it('reports an unknown analysis as not found', async () => {
-    storedRowIs(undefined);
+    cacheAnswers('miss');
 
     await expect(read()).resolves.toEqual({ status: 'not_found' });
   });
 
-  // `result` is jsonb, so nothing between the write and this read checks its
-  // shape — a row written by an older deploy is a real possibility.
-  it('reports a row whose result does not match the schema as not found', async () => {
-    storedRowIs(
-      row({ status: 'completed', result: { themes: 'not an array' } }),
-    );
+  // The client retires the analysis id when it reads `not_found`, so collapsing
+  // these two would let one cache timeout discard a run that is still working.
+  it.each(['timeout', 'error'] as const)(
+    'refuses to call a cache %s a missing record',
+    async (status) => {
+      cacheAnswers(status);
+
+      await expect(read()).rejects.toBeInstanceOf(CommonError);
+    },
+  );
+
+  // Reachable: the workflow writes whole records, but an eviction between the
+  // seed and a later write leaves one holding a status and nothing else. No
+  // later read repairs it.
+  it('reports a record that does not match its schema as not found', async () => {
+    storedRecordIs({ status: 'processing' });
 
     await expect(read()).resolves.toEqual({ status: 'not_found' });
   });
 
   it('refuses a caller who does not own the analysis', async () => {
-    storedRowIs(row({ requestedByAuthUserId: 'someone-else' }));
+    storedRecordIs(record({ userId: 'someone-else' }));
 
     await expect(read()).rejects.toBeInstanceOf(UnauthorizedError);
   });
@@ -156,17 +182,17 @@ describe('getThemeAnalysisStatus', () => {
     await expect(read()).rejects.toBeInstanceOf(UnauthorizedError);
   });
 
-  // The foreign key cascades, so this should be unreachable — but the join is
-  // what authorization reads, and answering an authorization question with a
-  // missing record is worse than saying the instance is gone.
-  it('reports a row whose instance is gone', async () => {
-    storedRowIs(row({ processInstance: null }));
+  // Nothing cascades a cache entry when its instance is deleted, so a record can
+  // outlive the instance it names — and the instance is what authorization
+  // reads.
+  it('reports a record whose instance is gone', async () => {
+    instanceRowIs([]);
 
     await expect(read()).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('checks ownership before it asks about access', async () => {
-    storedRowIs(row({ requestedByAuthUserId: 'someone-else' }));
+    storedRecordIs(record({ userId: 'someone-else' }));
 
     await expect(read()).rejects.toBeInstanceOf(UnauthorizedError);
     expect(vi.mocked(assertInstanceProfileAccess)).not.toHaveBeenCalled();

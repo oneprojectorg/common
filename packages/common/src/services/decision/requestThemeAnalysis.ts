@@ -1,13 +1,20 @@
+import { getWithStatus, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import { processInstances, proposalThemeAnalyses } from '@op/db/schema';
+import { processInstances } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
+import { randomUUID } from 'crypto';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import type { ThemeAnalysisScope } from './schemas/themeAnalysis';
-import { THEME_ANALYSIS_MIN_PROPOSALS, readProposalsInScope } from './themes';
+import {
+  THEME_ANALYSIS_CACHE_TTL_SECONDS,
+  THEME_ANALYSIS_MIN_PROPOSALS,
+  readProposalsInScope,
+  themeAnalysisCacheKey,
+} from './themes';
 
 export interface RequestThemeAnalysisInput {
   processInstanceId: string;
@@ -36,7 +43,8 @@ export interface RequestThemeAnalysisInput {
  *
  * @param input - The instance to analyse.
  * @param user - The calling facilitator, checked for decision admin.
- * @returns The id of the analysis — the row's primary key, and its channel.
+ * @returns The id of the analysis. Combined with the instance and the scope it
+ *   forms the cache key, and on its own it names the run's realtime channel.
  * @throws NotFoundError when the instance does not exist.
  * @throws UnauthorizedError when the caller does not hold `decisions: ADMIN` on
  *   the profile that owns the instance.
@@ -93,27 +101,44 @@ export const requestThemeAnalysis = async ({
     );
   }
 
-  // Inserted, not cached. The row is the only record of the run, and it has to
-  // outlive a process restart and exist in a deployment with no Redis — where
-  // `@op/cache`'s writes are a silent no-op, so the job would run, spend two
-  // model calls, and leave the caller waiting on something never written.
-  //
-  // The database mints the id, so the id the caller polls on and the row the
-  // workflow updates cannot disagree.
-  const [analysis] = await db
-    .insert(proposalThemeAnalyses)
-    .values({
+  // Its own id per request, so pressing the button twice produces two analyses
+  // rather than one overwriting the other.
+  const analysisId = randomUUID();
+  const key = themeAnalysisCacheKey({ processInstanceId, scope, analysisId });
+
+  // Seeded in full rather than as an id and a status. The status read checks
+  // ownership before anything else, so a partial record fails the first read
+  // instead of answering it — and the cache is the only store, so nothing else
+  // can supply what the seed omits.
+  await set(
+    key,
+    {
+      analysisId,
       processInstanceId,
-      requestedByAuthUserId: user.id,
+      userId: user.id,
       status: 'pending',
-    })
-    .returning({ id: proposalThemeAnalyses.id });
+      createdAt: new Date().toISOString(),
+    },
+    THEME_ANALYSIS_CACHE_TTL_SECONDS,
+  );
 
-  if (!analysis) {
-    throw new CommonError('Could not record the analysis request.');
+  // Read the seed back before dispatching the job, because `set` reports
+  // nothing: it returns early when no cache is configured, and swallows its own
+  // timeouts. Without this check a deployment with no `REDIS_URL` accepts the
+  // request, runs both model passes, and hands the caller an id for a record
+  // that was never stored — which reads to the client as a run still pending,
+  // so the button spins until it reports a timeout for an analysis that
+  // succeeded. That is exactly the failure this feature shipped with once.
+  //
+  // One extra round trip on a button press, and it converts a silent ten-minute
+  // wait into an immediate, actionable message.
+  const seeded = await getWithStatus(key);
+
+  if (seeded.status !== 'hit') {
+    throw new CommonError(
+      'Could not store the analysis request. The cache is unavailable, so a result would have nowhere to go.',
+    );
   }
-
-  const analysisId = analysis.id;
 
   await event.send({
     name: Events.proposalThemeAnalysisRequested.name,

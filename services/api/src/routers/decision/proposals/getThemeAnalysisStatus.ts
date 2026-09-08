@@ -1,14 +1,20 @@
 import {
   getThemeAnalysisStatus,
   themeAnalysisResponseSchema,
+  themeAnalysisScopeSchema,
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
+// The instance and the scope are part of the cache key, not decoration: a run
+// is stored under `themeAnalysis:<instance>:<scope>:<id>`, so an id alone does
+// not name it. The client has both — it chose the scope when it started the run.
 const themeAnalysisStatusInputSchema = z.object({
   analysisId: z.string().uuid(),
+  processInstanceId: z.string().uuid(),
+  scope: themeAnalysisScopeSchema,
 });
 
 export const getThemeAnalysisStatusRouter = router({
@@ -29,6 +35,8 @@ export const getThemeAnalysisStatusRouter = router({
 
       return await getThemeAnalysisStatus({
         analysisId: input.analysisId,
+        processInstanceId: input.processInstanceId,
+        scope: input.scope,
         user,
       });
     }),

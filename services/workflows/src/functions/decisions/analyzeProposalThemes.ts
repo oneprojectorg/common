@@ -1,37 +1,48 @@
+import { set } from '@op/cache';
 import {
+  THEME_ANALYSIS_CACHE_TTL_SECONDS,
   type CommonGroundAnalysis,
   type CorpusProposal,
   type PassFailure,
+  type ThemeAnalysisData,
+  type ThemeAnalysisScope,
   type ThemeAnalysisTheme,
   runCommonGroundPass,
   runThemesPass,
+  themeAnalysisCacheKey,
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
-import { db, eq } from '@op/db/client';
-import { proposalThemeAnalyses } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { realtime } from '@op/realtime/server';
 
 /**
- * Record what the run has reached.
+ * Write the analysis record.
  *
- * An `UPDATE` on the row `requestThemeAnalysis` inserted, so the analysis
- * outlives a process restart and exists in a deployment with no Redis. The
- * previous version wrote to `@op/cache`, whose `set` is a silent no-op when
- * `REDIS_URL` is unset — the job ran, the passes cost what they cost, and the
- * caller waited on a record nothing had written.
+ * A whole record every time, not a patch, and nothing is read first. `identity`
+ * carries everything the request's seed carried, so `identity` plus the status
+ * fields below is already every field the schema names — there is nothing a read
+ * could add.
  *
- * Scoped by `id` alone: the id came from the event, which came from the insert,
- * so there is exactly one row and no second writer to race.
+ * Reading anyway was worse than useless. The cache holds the only copy, so a
+ * read has to tell "held nothing" apart from "did not answer", which means a
+ * read that did not answer has to fail the step — and that put a cache blip
+ * between a finished two-model analysis and the record that reports it. It also
+ * put one inside the failure handler, where a throw would replace the real cause
+ * and skip the broadcast that ends the facilitator's wait.
+ *
+ * Writing blind is safe here because this workflow and the request are the only
+ * writers, and their writes are ordered: the seed, then `processing`, then one
+ * terminal write.
  */
 const recordAnalysis = async (
-  analysisId: string,
-  fields: Partial<typeof proposalThemeAnalyses.$inferInsert>,
+  identity: AnalysisIdentity,
+  fields: Partial<ThemeAnalysisData>,
 ) =>
-  db
-    .update(proposalThemeAnalyses)
-    .set(fields)
-    .where(eq(proposalThemeAnalyses.id, analysisId));
+  set(
+    themeAnalysisCacheKey(identity),
+    { ...identity, ...fields },
+    THEME_ANALYSIS_CACHE_TTL_SECONDS,
+  );
 
 /**
  * Tell the facilitator waiting on this analysis that its record has moved.
@@ -59,6 +70,15 @@ const notifyAnalysisChanged = (analysisId: string) =>
     // `processing` suppress the terminal one.
     mutationId: crypto.randomUUID(),
   });
+
+/**
+ * The fields that identify a record and never change once it is seeded — and,
+ * between them, the cache key it lives under.
+ */
+type AnalysisIdentity = Pick<
+  ThemeAnalysisData,
+  'analysisId' | 'processInstanceId' | 'userId'
+> & { scope: ThemeAnalysisScope };
 
 const { proposalThemeAnalysisRequested } = Events;
 
@@ -98,8 +118,16 @@ export const analyzeProposalThemes = inngest.createFunction(
     const { analysisId, processInstanceId, userId, scope } =
       proposalThemeAnalysisRequested.schema.parse(event.data);
 
+    // Everything the seed carried, taken from the event rather than re-read, so
+    // every write below is a complete record on its own — and it is also the
+    // cache key, which the id alone does not name.
+    const identity = { analysisId, processInstanceId, userId, scope };
+
     await step.run('update-status-processing', () =>
-      recordAnalysis(analysisId, { status: 'processing' }),
+      recordAnalysis(identity, {
+        status: 'processing',
+        createdAt: new Date().toISOString(),
+      }),
     );
 
     // Closes over `step` rather than taking it: Inngest's `step` type is
@@ -107,7 +135,7 @@ export const analyzeProposalThemes = inngest.createFunction(
     // structural type to keep in step with it for no gain.
     const reportFailure = async (failure: PassFailure) => {
       await step.run('update-status-failed', () =>
-        recordAnalysis(analysisId, {
+        recordAnalysis(identity, {
           status: 'failed',
           // The code is what the facilitator sees, mapped to copy in their own
           // locale. The message is English and diagnostic, for the log and for
@@ -167,7 +195,7 @@ export const analyzeProposalThemes = inngest.createFunction(
       // nothing but the message survives. That is why the passes classify
       // themselves rather than throwing something this could inspect.
       await step.run('update-status-failed', async () => {
-        await recordAnalysis(analysisId, {
+        await recordAnalysis(identity, {
           status: 'failed',
           errorCode: 'unknown',
           errorMessage:
@@ -188,7 +216,7 @@ export const analyzeProposalThemes = inngest.createFunction(
     // whole record with no `result` — it would overwrite a completed two-model
     // analysis with "failed" over a broadcast that did not send.
     await step.run('update-status-completed', () =>
-      recordAnalysis(analysisId, {
+      recordAnalysis(identity, {
         status: 'completed',
         result: { themes: completed.themes, ...completed.habermas },
         // Written in the same update as the result, so a reader that sees a

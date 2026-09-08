@@ -1,9 +1,44 @@
+import type { ThemeAnalysisScope } from '../schemas/themeAnalysis';
+
 /**
  * Shared configuration for the proposal theme analysis pipeline.
  *
  * The `@op/common` service layer, the Inngest workflow and the app read these,
  * so they live here rather than at each call site.
  */
+
+/**
+ * The lifetime of a stored analysis.
+ *
+ * Analysis state lives only in the cache. Nothing stands behind it, so this is
+ * also how long a finished analysis stays readable: a facilitator who runs one,
+ * closes the tab and comes back the next day runs it again.
+ */
+export const THEME_ANALYSIS_CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+
+/**
+ * The cache key for one run.
+ *
+ * Namespaced by the instance and the scope it covers, then by the run's own id.
+ * Every request is its own analysis — pressing the button twice gives two ids
+ * and two records, and neither overwrites the other — while the prefix keeps a
+ * phase-scoped run and a process-scoped run of the same instance in separate
+ * namespaces rather than distinguishable only by a UUID.
+ *
+ * Every reader and writer builds the key through this, so no call site holds its
+ * own copy of the format. It also means a reader needs the instance and the
+ * scope as well as the id, which is why they travel together on the status
+ * query.
+ */
+export const themeAnalysisCacheKey = ({
+  processInstanceId,
+  scope,
+  analysisId,
+}: {
+  processInstanceId: string;
+  scope: ThemeAnalysisScope;
+  analysisId: string;
+}) => `themeAnalysis:${processInstanceId}:${scope}:${analysisId}`;
 
 /**
  * The most proposals one analysis reads.

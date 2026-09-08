@@ -8,6 +8,14 @@ import {
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
+// An id that names no run, with the instance and scope that complete its key.
+// Every tier below is refused before the read, so the ids only have to be valid.
+const statusInput = () => ({
+  analysisId: randomUUID(),
+  processInstanceId: randomUUID(),
+  scope: 'phase' as const,
+});
+
 describeDecisionAccessTierGating('getThemeAnalysisStatus', {
   noJwtNonPublic: accessTierGatingCell(
     'rejects no-JWT caller on non-public instance',
@@ -18,7 +26,7 @@ describeDecisionAccessTierGating('getThemeAnalysisStatus', {
       const caller = await callers.noJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.getThemeAnalysisStatus({ analysisId: randomUUID() }),
+        caller.decision.getThemeAnalysisStatus(statusInput()),
         'none',
       );
     },
@@ -33,7 +41,7 @@ describeDecisionAccessTierGating('getThemeAnalysisStatus', {
       const caller = await callers.anonJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.getThemeAnalysisStatus({ analysisId: randomUUID() }),
+        caller.decision.getThemeAnalysisStatus(statusInput()),
         'anon',
       );
     },
@@ -48,7 +56,7 @@ describeDecisionAccessTierGating('getThemeAnalysisStatus', {
       const caller = await callers.userJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.getThemeAnalysisStatus({ analysisId: randomUUID() }),
+        caller.decision.getThemeAnalysisStatus(statusInput()),
         'user',
       );
     },
@@ -62,9 +70,8 @@ describeDecisionAccessTierGating('getThemeAnalysisStatus', {
 
       const caller = await callers.networkJwt(setup.userEmail);
 
-      const result = await caller.decision.getThemeAnalysisStatus({
-        analysisId: randomUUID(),
-      });
+      const result =
+        await caller.decision.getThemeAnalysisStatus(statusInput());
 
       expect(result.status).toBe('not_found');
     },

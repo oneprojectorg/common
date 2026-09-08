@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // lookup, the admin gate, a count, the status cache, and the event bus. We drive
 // those and assert what it hands onward — the job it asks for, and the record
 // the first status read will find.
+vi.mock('@op/cache', () => ({ set: vi.fn(), getWithStatus: vi.fn() }));
+
 vi.mock('@op/db/client', () => ({
-  db: { select: vi.fn(), insert: vi.fn() },
+  db: { select: vi.fn() },
   eq: vi.fn(),
 }));
 
@@ -16,6 +18,7 @@ vi.mock('./themes', async (importOriginal) => ({
   readProposalsInScope: vi.fn(),
 }));
 
+import { getWithStatus, set } from '@op/cache';
 import { db } from '@op/db/client';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
@@ -49,24 +52,19 @@ const scopeHolds = (total: number) => {
   vi.mocked(readProposalsInScope).mockResolvedValue({ proposals: [], total });
 };
 
-const inserted = vi.fn();
-
-const insertReturns = (rows: Array<{ id: string }>) => {
-  vi.mocked(db.insert).mockReturnValue({
-    values: (row: unknown) => {
-      inserted(row);
-      return { returning: async () => rows };
-    },
-  } as never);
+// The seed read-back. A hit means the write landed; anything else means the
+// cache is not there, which is the case this guard exists for.
+const cacheAnswers = (status: 'hit' | 'miss' | 'timeout' | 'error') => {
+  vi.mocked(getWithStatus).mockResolvedValue(
+    (status === 'hit' ? { status, data: {} } : { status }) as never,
+  );
 };
-
-const ANALYSIS_ID = '55555555-5555-4555-8555-555555555555';
 
 beforeEach(() => {
   vi.clearAllMocks();
   instanceRowIs([{ profileId: PROFILE_ID }]);
   scopeHolds(10);
-  insertReturns([{ id: ANALYSIS_ID }]);
+  cacheAnswers('hit');
   vi.spyOn(event, 'send').mockImplementation(sendEvent);
 });
 
@@ -119,31 +117,62 @@ describe('requestThemeAnalysis', () => {
     });
   });
 
-  // The id the caller polls on is the row's, so the workflow's updates and the
-  // client's reads cannot land on different records.
-  it('returns the id the database minted', async () => {
-    await expect(request()).resolves.toEqual({ analysisId: ANALYSIS_ID });
+  // Every request is its own analysis: two presses give two ids under two keys,
+  // and neither overwrites the other.
+  it('gives each request its own id and key', async () => {
+    const first = await request();
+    const second = await request();
+
+    expect(first.analysisId).not.toBe(second.analysisId);
+
+    const [[firstKey], [secondKey]] = vi.mocked(set).mock.calls as [
+      [string],
+      [string],
+    ];
+
+    expect(firstKey).not.toBe(secondKey);
   });
 
-  // A row, not a cache entry: `@op/cache` writes are a silent no-op without
-  // `REDIS_URL`, so the job would run, spend two model calls, and leave the
-  // caller waiting on a record nothing had written.
-  it('inserts a pending row the status read can act on', async () => {
-    await request();
+  // Namespaced by instance and scope, so a phase run and a process run of the
+  // same instance live apart rather than being told apart only by a UUID.
+  it('keys the record by instance, scope and id', async () => {
+    const { analysisId } = await request('process');
 
-    expect(inserted).toHaveBeenCalledWith({
+    const [key] = vi.mocked(set).mock.calls[0] as [string];
+
+    expect(key).toBe(`themeAnalysis:${INSTANCE_ID}:process:${analysisId}`);
+  });
+
+  // The cache is the only store, so nothing else can supply what the seed omits
+  // — and the status read checks ownership before anything else.
+  it('seeds a record the first status read can act on', async () => {
+    const { analysisId } = await request();
+
+    const [, record] = vi.mocked(set).mock.calls[0] as [string, unknown];
+
+    expect(record).toEqual({
+      analysisId,
       processInstanceId: INSTANCE_ID,
-      requestedByAuthUserId: AUTH_USER_ID,
+      userId: AUTH_USER_ID,
       status: 'pending',
+      createdAt: expect.any(String),
     });
   });
 
-  it('starts no job when the insert reports no row', async () => {
-    insertReturns([]);
+  // `set` reports nothing: it returns early with no cache configured and
+  // swallows its own timeouts. Without the read-back the request would accept
+  // the job, spend two model passes, and hand back an id for a record that was
+  // never stored — which the client reads as still pending, so the button spins
+  // until it reports a timeout for an analysis that succeeded.
+  it.each(['miss', 'timeout', 'error'] as const)(
+    'refuses the request when the seed read-back reports %s',
+    async (status) => {
+      cacheAnswers(status);
 
-    await expect(request()).rejects.toBeInstanceOf(CommonError);
-    expect(sendEvent).not.toHaveBeenCalled();
-  });
+      await expect(request()).rejects.toBeInstanceOf(CommonError);
+      expect(sendEvent).not.toHaveBeenCalled();
+    },
+  );
 
   // An analysis reads every proposal in the phase, including any hidden from the
   // public, so it stays with admins of the decision profile itself rather than
@@ -167,7 +196,7 @@ describe('requestThemeAnalysis', () => {
 
     await expect(request()).rejects.toBeInstanceOf(UnauthorizedError);
     expect(sendEvent).not.toHaveBeenCalled();
-    expect(inserted).not.toHaveBeenCalled();
+    expect(vi.mocked(set)).not.toHaveBeenCalled();
   });
 
   it('reports a missing instance rather than gating on nothing', async () => {
@@ -190,7 +219,9 @@ describe('requestThemeAnalysis', () => {
   it('accepts a phase holding exactly the minimum', async () => {
     scopeHolds(THEME_ANALYSIS_MIN_PROPOSALS);
 
-    await expect(request()).resolves.toEqual({ analysisId: ANALYSIS_ID });
+    await expect(request()).resolves.toEqual({
+      analysisId: expect.any(String),
+    });
   });
 
   // The count check must not read the corpus: it runs on every press, and the
