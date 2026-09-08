@@ -9,6 +9,7 @@ vi.mock('@op/logging', () => ({
 }));
 
 import { createAIAgent } from '@op/ai';
+import { logger } from '@op/logging';
 
 import { askForJson } from './askForJson';
 import {
@@ -102,6 +103,26 @@ describe('the model call as it goes over the wire', () => {
     // than one it quietly drops.
     expect(body?.max_tokens).toBe(THEME_ANALYSIS_MAX_OUTPUT_TOKENS);
     expect(body?.model).toBe(THEME_ANALYSIS_MODEL_ID);
+  });
+
+  // Logged numbers that are always undefined are worse than no numbers: they
+  // read as "the model reported nothing" rather than "we asked wrongly". This
+  // is the only check that the usage fields survive the trip from the provider
+  // response to our log line.
+  it("carries the provider's token usage through to the log", async () => {
+    requestBodies = [];
+    reply = '{"themes": []}';
+
+    await ask();
+
+    expect(vi.mocked(logger.info)).toHaveBeenCalledWith(
+      'Theme analysis pass answered',
+      expect.objectContaining({
+        // What the stub reports as completion_tokens / total_tokens.
+        outputTokens: 1,
+        totalTokens: 2,
+      }),
+    );
   });
 
   // The failure this whole change is about: a thinking model that narrates

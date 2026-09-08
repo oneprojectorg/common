@@ -138,8 +138,16 @@ export const THEME_ANALYSIS_PASS_TIMEOUT_MS = 8 * 60 * 1000;
  *
  * Sized for the larger of the two replies: up to eight themes, or the
  * common-ground pass's three lists over a hundred-proposal corpus, plus the
- * reasoning that precedes either. Generous on purpose — the cost of setting it
- * too high is nothing, and the cost of setting it too low is a truncated object
- * that reads as a model returning garbage.
+ * reasoning that precedes either. Both answers are on the order of a thousand
+ * tokens, so most of this is headroom for thinking.
+ *
+ * "The cost of setting it too high is nothing" was wrong, which is why this
+ * came down from 16k. On a thinking model the cap bounds reasoning as well as
+ * answer, and reasoning is time: a bigger cap does not make a pass slower by
+ * itself, but it is the ceiling on how long one is allowed to take, and the
+ * common-ground pass was running past five minutes against the old one. Too low
+ * is still the worse direction — it truncates — but that failure now names
+ * itself as `finish reason 'length'` rather than reading as a model returning
+ * garbage, so this is a safe direction to move in.
  */
-export const THEME_ANALYSIS_MAX_OUTPUT_TOKENS = 16_000;
+export const THEME_ANALYSIS_MAX_OUTPUT_TOKENS = 8_000;

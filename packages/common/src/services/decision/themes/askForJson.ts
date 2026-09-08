@@ -386,6 +386,16 @@ const generateWithin = async (
       // when parsing fails. 'length' here on a run that then succeeded is a
       // warning that the cap is close.
       finishReason: reply.finishReason,
+      // Where the time went. A pass that takes minutes is either generating a
+      // lot or waiting on a slow endpoint, and elapsed time alone cannot tell
+      // those apart — but tokens-per-second can. `reasoningTokens` is the one
+      // that matters here: on a thinking model most of the output can be
+      // reasoning the answer never shows, which is billed and waited for all
+      // the same, and it is the number that says whether the output cap is the
+      // right lever.
+      outputTokens: reply.usage?.outputTokens,
+      reasoningTokens: reply.usage?.reasoningTokens,
+      totalTokens: reply.usage?.totalTokens,
       elapsedMs: Date.now() - startedAt,
     });
 
