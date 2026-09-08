@@ -145,7 +145,6 @@ overrides:
   react-resizable-panels: ^4.11.2
   server-only: ^0.0.1
   sonner: ^1.7.1
-  spacetime: ^7.7.0
   supabase: 2.95.4
   superjson: ^2.2.2
   three: ^0.174.0
@@ -310,9 +309,6 @@ importers:
       sonner:
         specifier: ^1.7.1
         version: 1.7.4(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      spacetime:
-        specifier: ^7.7.0
-        version: 7.7.0
       supabase:
         specifier: 2.95.4
         version: 2.95.4
@@ -1255,9 +1251,6 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
-      spacetime:
-        specifier: ^7.7.0
-        version: 7.7.0
       ssr-only-secrets:
         specifier: ^0.1.4
         version: 0.1.4(react@19.2.1)
@@ -9777,9 +9770,6 @@ packages:
 
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
-
-  spacetime@7.7.0:
-    resolution: {integrity: sha512-m97vi+g9OdEZWmvpWFpoDjx9ApsUX8pcTw2VcTc39SCysg/pmPfTD7zhs+XSg5tfA1yr7SlRpzzprgAVFLUdeA==}
 
   split-string@3.1.0:
     resolution: {integrity: sha512-NzNVhJDYpwceVVii8/Hu6DKfD2G+NrQHlS/V/qgv763EYudVwEcMQNxd2lh+0VrUByXN/oJkl5grOhYWvQUYiw==}
@@ -19178,8 +19168,6 @@ snapshots:
   source-map@0.6.1: {}
 
   space-separated-tokens@2.0.2: {}
-
-  spacetime@7.7.0: {}
 
   split-string@3.1.0:
     dependencies:
