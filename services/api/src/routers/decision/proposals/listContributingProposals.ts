@@ -15,10 +15,11 @@ export const listContributingProposalsRouter = router({
     .input(listContributingProposalsInputSchema)
     .output(contributingProposalListSchema)
     .query(async ({ ctx, input }) => {
-      const { proposals, queriedProposal } = await listContributingProposals({
-        proposalId: input.proposalId,
-        user: ctx.user,
-      });
+      const { items: proposals, queriedProposal } =
+        await listContributingProposals({
+          proposalId: input.proposalId,
+          user: ctx.user,
+        });
 
       // Merge and unmerge register this channel for both ends of the edge.
       ctx.registerQueryChannels([
@@ -28,6 +29,6 @@ export const listContributingProposalsRouter = router({
         ),
       ]);
 
-      return contributingProposalListSchema.parse({ proposals });
+      return contributingProposalListSchema.parse({ items: proposals });
     }),
 });

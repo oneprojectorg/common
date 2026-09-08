@@ -246,7 +246,7 @@ describe.concurrent('decision-profile post authorization', () => {
       offset: 0,
       includeChildren: false,
     });
-    expect(thread.map((p) => p.id)).toContain(comment.id);
+    expect(thread.items.map((p) => p.id)).toContain(comment.id);
 
     const outsiderCaller = await createOutsiderCaller(testData);
     await expect(
@@ -818,8 +818,8 @@ describe.concurrent('org-feed post authorization', () => {
       includeChildren: false,
     });
 
-    expect(result.length).toBeGreaterThanOrEqual(1);
-    expect(result.map((p) => p.content)).toContain(
+    expect(result.items.length).toBeGreaterThanOrEqual(1);
+    expect(result.items.map((p) => p.content)).toContain(
       'Org post visible to outsider.',
     );
   });
@@ -1217,7 +1217,7 @@ describe.concurrent('proposal post authorization', () => {
       offset: 0,
       includeChildren: false,
     });
-    expect(thread.map((p) => p.id)).toContain(comment.id);
+    expect(thread.items.map((p) => p.id)).toContain(comment.id);
 
     const outsiderCaller = await createOutsiderCaller(testData);
     await expect(
@@ -1458,10 +1458,10 @@ describe.concurrent('getPosts pagination', () => {
         offset,
         includeChildren: false,
       });
-      if (page.length === 0) {
+      if (page.items.length === 0) {
         break;
       }
-      page.forEach((post) => {
+      page.items.forEach((post) => {
         expect(post.parentPostId).toBeNull();
         collected.push(post.id);
       });

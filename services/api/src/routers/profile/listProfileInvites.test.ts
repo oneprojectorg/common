@@ -42,8 +42,8 @@ describe.concurrent('profile.listProfileInvites', () => {
       profileId: profile.id,
     });
 
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       email: inviteeEmail,
       accessRoleId: ROLES.MEMBER.id,
     });
@@ -88,10 +88,10 @@ describe.concurrent('profile.listProfileInvites', () => {
       profileId: profile.id,
     });
 
-    expect(result).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const memberInvite = result.find((r) => r.email === memberEmail);
-    const adminInvite = result.find((r) => r.email === adminEmail);
+    const memberInvite = result.items.find((r) => r.email === memberEmail);
+    const adminInvite = result.items.find((r) => r.email === adminEmail);
 
     expect(memberInvite?.accessRoleId).toBe(ROLES.MEMBER.id);
     expect(adminInvite?.accessRoleId).toBe(ROLES.ADMIN.id);
@@ -136,9 +136,9 @@ describe.concurrent('profile.listProfileInvites', () => {
       profileId: profile.id,
     });
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.email).toBe(pendingEmail);
-    expect(result[0]?.accessRoleId).toBe(ROLES.MEMBER.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.email).toBe(pendingEmail);
+    expect(result.items[0]?.accessRoleId).toBe(ROLES.MEMBER.id);
   });
 
   it('should return empty array when no pending invites exist', async ({
@@ -157,7 +157,7 @@ describe.concurrent('profile.listProfileInvites', () => {
       profileId: profile.id,
     });
 
-    expect(result).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 });
 

@@ -35,7 +35,7 @@ export const listProposalLocations = async ({
   });
 
   if (isEmpty) {
-    return { proposals: [] };
+    return { items: [] };
   }
 
   const rows = await db.query.proposals.findMany({
@@ -49,5 +49,5 @@ export const listProposalLocations = async ({
   // Drafts and any proposal without coordinates never render a pin.
   const proposals = rows.flatMap((row) => projectProposalLocation(row));
 
-  return { proposals };
+  return { items: proposals };
 };

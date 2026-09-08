@@ -1,4 +1,5 @@
 import { Channels, listProfileUserInvites } from '@op/common';
+import { list } from '@op/common/client';
 import { z } from 'zod';
 
 import { profileInviteEncoder } from '../../encoders/profiles';
@@ -9,7 +10,7 @@ const inputSchema = z.object({
   query: z.string().min(2).optional(),
 });
 
-const outputSchema = z.array(profileInviteEncoder);
+const outputSchema = list(profileInviteEncoder);
 
 export const listProfileInvitesRouter = router({
   listProfileInvites: networkAuthenticatedProcedure()
@@ -24,13 +25,15 @@ export const listProfileInvitesRouter = router({
 
       ctx.registerQueryChannels([Channels.profileMembers(input.profileId)]);
 
-      return invites.map((invite) => ({
-        id: invite.id,
-        email: invite.email,
-        accessRoleId: invite.accessRoleId,
-        createdAt: invite.createdAt,
-        notifiedAt: invite.notifiedAt,
-        inviteeProfile: invite.inviteeProfile ?? null,
-      }));
+      return {
+        items: invites.map((invite) => ({
+          id: invite.id,
+          email: invite.email,
+          accessRoleId: invite.accessRoleId,
+          createdAt: invite.createdAt,
+          notifiedAt: invite.notifiedAt,
+          inviteeProfile: invite.inviteeProfile ?? null,
+        })),
+      };
     }),
 });

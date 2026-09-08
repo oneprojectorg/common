@@ -30,7 +30,7 @@ export function ReviewAssignmentsMapWithLocations({
   locationFilter,
   ...props
 }: ReviewAssignmentsMapWithLocationsProps) {
-  const [{ proposals: pinProposals }] =
+  const [{ items: pinProposals }] =
     trpc.decision.listReviewAssignmentLocations.useSuspenseQuery(
       locationFilter,
       {

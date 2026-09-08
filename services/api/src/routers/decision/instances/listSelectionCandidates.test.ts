@@ -128,7 +128,7 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals.map((p) => p.id)).toContain(submitted.id);
+    expect(result.items.map((p) => p.id)).toContain(submitted.id);
   });
 
   it('still returns candidates after a manual-selection stamp exists (state gating lives on getInstance)', async ({
@@ -175,7 +175,7 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals.length).toBeGreaterThan(0);
+    expect(result.items.length).toBeGreaterThan(0);
   });
 
   it('returns empty when the instance is still in the first phase', async ({
@@ -189,7 +189,7 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('returns empty for a legacy instance (no phase model)', async ({
@@ -216,7 +216,7 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('rejects callers without admin access on the instance', async ({
@@ -322,7 +322,7 @@ describe.concurrent('listSelectionCandidates', () => {
     });
 
     const seededIds = new Set([low.id, high.id, mid.id, zero.id]);
-    const seededOnly = result.proposals.filter((p) => seededIds.has(p.id));
+    const seededOnly = result.items.filter((p) => seededIds.has(p.id));
 
     expect(seededOnly.map((p) => p.id)).toEqual([
       high.id,
@@ -406,7 +406,7 @@ describe.concurrent('listSelectionCandidates', () => {
       sortOrder: 'votes',
     });
 
-    const found = result.proposals.find((p) => p.id === proposal.id);
+    const found = result.items.find((p) => p.id === proposal.id);
     expect(found?.voteCount).toBe(2);
   });
 });

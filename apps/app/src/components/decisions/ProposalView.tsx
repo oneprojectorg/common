@@ -148,9 +148,7 @@ export function ProposalView({
       { enabled: affordances.review.revisions, throwOnError: false },
     );
 
-  const submittedRevisions = revisionError
-    ? []
-    : (revisionData?.revisionRequests ?? []);
+  const submittedRevisions = revisionError ? [] : (revisionData?.items ?? []);
 
   const firstRevisionRequestId =
     submittedRevisions[0]?.revisionRequest.id ?? null;

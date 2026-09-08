@@ -88,8 +88,8 @@ describe.concurrent('listContributingProposals', () => {
       proposalId: target.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       id: source.id,
       // The proposal route is keyed on the profile, not the id.
       profileId: source.profileId,
@@ -121,7 +121,7 @@ describe.concurrent('listContributingProposals', () => {
     });
 
     // An empty array, not undefined — the card renders no meta separator.
-    expect(result.proposals[0]?.proposalData.category).toEqual([]);
+    expect(result.items[0]?.proposalData.category).toEqual([]);
   });
 
   it('reads one direction only: the merged-away proposal has no contributors', async ({
@@ -141,7 +141,7 @@ describe.concurrent('listContributingProposals', () => {
       proposalId: source.id,
     });
 
-    expect(result.proposals).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('is empty for a proposal nothing was merged into', async ({
@@ -155,7 +155,7 @@ describe.concurrent('listContributingProposals', () => {
       proposalId: target.id,
     });
 
-    expect(result.proposals).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('drops the card once unmerged', async ({ task, onTestFinished }) => {
@@ -172,7 +172,7 @@ describe.concurrent('listContributingProposals', () => {
       proposalId: target.id,
     });
 
-    expect(result.proposals).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('is readable by a non-admin member of the decision', async ({
@@ -199,9 +199,7 @@ describe.concurrent('listContributingProposals', () => {
       proposalId: target.id,
     });
 
-    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
-      source.id,
-    ]);
+    expect(result.items.map((proposal) => proposal.id)).toEqual([source.id]);
   });
 
   it('serves a public visitor the visible contributing ideas only', async ({
@@ -242,9 +240,7 @@ describe.concurrent('listContributingProposals', () => {
       proposalId: target.id,
     });
 
-    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
-      source.id,
-    ]);
+    expect(result.items.map((proposal) => proposal.id)).toEqual([source.id]);
   });
 
   it('loads on a proposal only an admin can open', async ({
@@ -282,9 +278,7 @@ describe.concurrent('listContributingProposals', () => {
       proposalId: target.id,
     });
 
-    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
-      source.id,
-    ]);
+    expect(result.items.map((proposal) => proposal.id)).toEqual([source.id]);
   });
 
   it('shows a hidden contributing proposal to an admin but not to other members', async ({
@@ -333,10 +327,10 @@ describe.concurrent('listContributingProposals', () => {
       }),
     ]);
 
-    expect(adminResult.proposals.map((proposal) => proposal.id)).toEqual([
+    expect(adminResult.items.map((proposal) => proposal.id)).toEqual([
       source.id,
     ]);
-    expect(memberResult.proposals).toEqual([]);
+    expect(memberResult.items).toEqual([]);
   });
 });
 

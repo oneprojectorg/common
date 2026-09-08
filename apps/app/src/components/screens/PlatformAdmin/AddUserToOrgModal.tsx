@@ -253,21 +253,22 @@ const OrganizationAndRoleSelection = ({
 }) => {
   const t = useTranslations();
 
-  const [[organizationsData, rolesData]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({
-      // TODO: because we lack a proper search/filter UI at this point, we set a high limit here. To be changed.
-      limit: 500,
-    }),
-    t.organization.getRoles(),
-  ]);
+  const [[{ items: organizations }, { items: roles }]] =
+    trpc.useSuspenseQueries((t) => [
+      t.organization.list({
+        // TODO: because we lack a proper search/filter UI at this point, we set a high limit here. To be changed.
+        limit: 500,
+      }),
+      t.organization.getRoles(),
+    ]);
 
   // Filter out organizations user is already a member of
   const availableOrganizations = useMemo(() => {
     const userOrgIds = new Set(
       user.organizationUsers?.map((ou) => ou.organizationId) ?? [],
     );
-    return organizationsData.items.filter((org) => !userOrgIds.has(org.id));
-  }, [organizationsData.items, user.organizationUsers]);
+    return organizations.filter((org) => !userOrgIds.has(org.id));
+  }, [organizations, user.organizationUsers]);
 
   const orgItems: ComboboxOption[] = availableOrganizations.map((org) => ({
     value: org.id,
@@ -275,11 +276,11 @@ const OrganizationAndRoleSelection = ({
   }));
   const orgById = new Map(availableOrganizations.map((org) => [org.id, org]));
 
-  const roleItems: ComboboxOption[] = rolesData.roles.map((role) => ({
+  const roleItems: ComboboxOption[] = roles.map((role) => ({
     value: role.id,
     label: role.name,
   }));
-  const roleById = new Map(rolesData.roles.map((role) => [role.id, role]));
+  const roleById = new Map(roles.map((role) => [role.id, role]));
 
   return (
     <>

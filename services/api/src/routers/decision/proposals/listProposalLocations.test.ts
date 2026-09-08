@@ -80,10 +80,10 @@ describe.concurrent('listProposalLocations', () => {
       processInstanceId: instanceId,
     });
 
-    const ids = result.proposals.map((p) => p.id).sort();
+    const ids = result.items.map((p) => p.id).sort();
     expect(ids).toEqual([located1.id, located2.id].sort());
     // The pin needs coordinates + author, so both must survive the slim map.
-    const first = result.proposals.find((p) => p.id === located1.id);
+    const first = result.items.find((p) => p.id === located1.id);
     expect(first?.proposalData.location).toEqual({ lat: 40.7, lng: -74 });
     expect(first?.submittedBy).toBeDefined();
   });
@@ -139,7 +139,7 @@ describe.concurrent('listProposalLocations', () => {
 
     // The hidden proposal has coordinates but must not leak a pin to a member
     // who can't see it in the list.
-    expect(result.proposals.map((p) => p.id)).toEqual([visible.id]);
+    expect(result.items.map((p) => p.id)).toEqual([visible.id]);
   });
 
   it('applies the search filter so pins match the list', async ({
@@ -180,7 +180,7 @@ describe.concurrent('listProposalLocations', () => {
       search: 'bike',
     });
 
-    expect(result.proposals.map((p) => p.id)).toEqual([matching.id]);
+    expect(result.items.map((p) => p.id)).toEqual([matching.id]);
   });
 });
 

@@ -21,19 +21,21 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   const canReadDecisions =
     access.getPermissionsForProfile(profileId).decisions.read;
 
-  const decisionProfiles = trpc.decision.listDecisionProfiles.useQuery({
-    stewardProfileId: profileId,
-    status: VISIBLE_DECISION_STATUSES,
-  });
+  const { data: decisionProfilesData } =
+    trpc.decision.listDecisionProfiles.useQuery({
+      stewardProfileId: profileId,
+      status: VISIBLE_DECISION_STATUSES,
+    });
+  const decisionProfiles = decisionProfilesData?.items;
 
   const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
     { ownerProfileId: profileId },
     { retry: false, enabled: canReadDecisions },
   );
 
-  const hasDecisionProfiles = (decisionProfiles.data?.items?.length ?? 0) > 0;
-  const hasLegacyInstances = (legacyInstances.data?.length ?? 0) > 0;
-  const hasPublishedDecisions = decisionProfiles.data?.items?.some(
+  const hasDecisionProfiles = (decisionProfiles?.length ?? 0) > 0;
+  const hasLegacyInstances = (legacyInstances.data?.items.length ?? 0) > 0;
+  const hasPublishedDecisions = decisionProfiles?.some(
     (item) => item.processInstance.status === ProcessStatus.PUBLISHED,
   );
 

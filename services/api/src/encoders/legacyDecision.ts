@@ -1,6 +1,7 @@
 import {
   PAGE_LIMIT,
   documentContentSchema,
+  list,
   paginated,
   proposalDataSchema,
 } from '@op/common/client';
@@ -281,7 +282,7 @@ export const legacyOnlyInstanceFilterSchema = z.object({
   ownerProfileId: z.uuid(),
 });
 
-export const legacyInstanceListEncoder = z.array(legacyProcessInstanceEncoder);
+export const legacyInstanceListEncoder = list(legacyProcessInstanceEncoder);
 
 // Type exports
 export type LegacyProcessInstance = z.infer<

@@ -91,7 +91,7 @@ export const ProfileUsersAccess = ({
   const isDraft = instance?.status === ProcessStatus.DRAFT;
 
   // Fetch pending invites to show alongside accepted members, filtered by search
-  const { data: invites } = trpc.profile.listProfileInvites.useQuery(
+  const { data: invitesData } = trpc.profile.listProfileInvites.useQuery(
     {
       profileId,
       query: searchFilter,
@@ -101,6 +101,7 @@ export const ProfileUsersAccess = ({
 
   const profileUsers = data?.pages.flatMap((page) => page.items) ?? [];
   const roles = rolesData?.items ?? [];
+  const invites = invitesData?.items ?? [];
 
   return (
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
@@ -149,7 +150,7 @@ export const ProfileUsersAccess = ({
             onRetry={() => void refetch()}
             roles={roles}
             isMobile={isMobile}
-            invites={invites ?? []}
+            invites={invites}
             processName={processName}
             isDraft={isDraft}
           />

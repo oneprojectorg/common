@@ -40,7 +40,7 @@ export const InviteToExistingOrganization = ({
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
 
-  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+  const [{ items: roles }] = trpc.organization.getRoles.useSuspenseQuery();
 
   const organizationItems = useAdminOrganizations();
   const selectedOrganizationItem = organizationItems.find(
@@ -48,15 +48,15 @@ export const InviteToExistingOrganization = ({
   );
   // Keyed on the role id, which is what the invite sends; SelectValue reads the
   // name back off `items`.
-  const roleItems = rolesData.roles.map((role) => ({
+  const roleItems = roles.map((role) => ({
     value: role.id,
     label: role.name,
   }));
 
   React.useEffect(() => {
     if (!selectedRoleId) {
-      const memberRole = rolesData.roles.find((role) => role.name === 'Member');
-      const defaultRole = memberRole || rolesData.roles[0];
+      const memberRole = roles.find((role) => role.name === 'Member');
+      const defaultRole = memberRole || roles[0];
       if (defaultRole) {
         setSelectedRoleId(defaultRole.id);
       }

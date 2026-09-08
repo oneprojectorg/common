@@ -66,12 +66,14 @@ export const listProposalSubmitters = async ({
   // cache so a hit can never bypass authorization.
   return cache({
     type: 'decision',
-    params: [processInstanceId, 'submitters'],
+    // Versioned because the cached payload shape changed in ADR-0003; old
+    // entries expire on their own.
+    params: [processInstanceId, 'submitters:v2'],
     fetch: async () => {
       const phaseProposalIds = await getProposalIdsForPhase({ instance });
 
       if (phaseProposalIds.length === 0) {
-        return { submitters: [], total: 0 };
+        return { items: [], total: 0 };
       }
 
       const scope: SQL = and(
@@ -127,7 +129,7 @@ export const listProposalSubmitters = async ({
       ]);
 
       return {
-        submitters: faceRows.map((row) => ({
+        items: faceRows.map((row) => ({
           slug: row.slug,
           name: row.name ?? null,
           avatarImage: row.avatarName ? { name: row.avatarName } : null,

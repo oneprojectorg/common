@@ -231,10 +231,11 @@ const StewardSelect = ({
   currentSteward?: { id: string; name: string | null } | null;
 }) => {
   const t = useTranslations();
-  const [userProfiles] = trpc.account.getUserProfiles.useSuspenseQuery();
+  const [{ items: userProfiles }] =
+    trpc.account.getUserProfiles.useSuspenseQuery();
 
   const profileItems = useMemo(() => {
-    const items = (userProfiles ?? []).map((p) => ({
+    const items = userProfiles.map((p) => ({
       id: p.id,
       name: p.name,
     }));
@@ -245,7 +246,7 @@ const StewardSelect = ({
   }, [userProfiles, currentSteward]);
 
   // Set steward to current user on mount if not already set
-  const defaultProfileId = userProfiles?.[0]?.id;
+  const defaultProfileId = userProfiles[0]?.id;
   useEffect(() => {
     if (defaultProfileId && !stewardProfileId) {
       onSelectionChange(defaultProfileId);

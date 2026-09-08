@@ -569,9 +569,9 @@ describe.concurrent('listProposalRelationships', () => {
       targetProposalId: target.id,
     });
 
-    expect(result.relationships).toHaveLength(1);
+    expect(result.items).toHaveLength(1);
     // The far end is the merged-away proposal, not the one that was pinned.
-    expect(result.relationships[0]).toMatchObject({
+    expect(result.items[0]).toMatchObject({
       relationshipType: 'merged',
       proposal: {
         id: source.id,
@@ -597,8 +597,8 @@ describe.concurrent('listProposalRelationships', () => {
       sourceProposalId: source.id,
     });
 
-    expect(result.relationships).toHaveLength(1);
-    expect(result.relationships[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       proposal: { id: target.id, profile: { id: target.profileId } },
     });
   });
@@ -637,7 +637,7 @@ describe.concurrent('listProposalRelationships', () => {
     const result = await caller.decision.listProposalRelationships({
       targetProposalId: target.id,
     });
-    expect(result.relationships).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('is readable by a non-admin member of the decision', async ({
@@ -665,8 +665,8 @@ describe.concurrent('listProposalRelationships', () => {
       targetProposalId: target.id,
     });
 
-    expect(result.relationships).toHaveLength(1);
-    expect(result.relationships[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       proposal: { id: source.id },
     });
   });
@@ -702,7 +702,7 @@ describe.concurrent('listProposalRelationships', () => {
       targetProposalId: target.id,
     });
 
-    expect(result.relationships).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('hides relationships on a pinned proposal the caller could not open', async ({
@@ -773,9 +773,7 @@ describe.concurrent('listProposalRelationships', () => {
       targetProposalId: target.id,
     });
 
-    expect(result.relationships).toMatchObject([
-      { proposal: { id: source.id } },
-    ]);
+    expect(result.items).toMatchObject([{ proposal: { id: source.id } }]);
   });
 
   it('lists relationships on a pinned proposal for everyone who can open it', async ({
@@ -819,12 +817,8 @@ describe.concurrent('listProposalRelationships', () => {
       }),
     ]);
 
-    expect(adminResult.relationships).toMatchObject([
-      { proposal: { id: source.id } },
-    ]);
-    expect(authorResult.relationships).toMatchObject([
-      { proposal: { id: source.id } },
-    ]);
+    expect(adminResult.items).toMatchObject([{ proposal: { id: source.id } }]);
+    expect(authorResult.items).toMatchObject([{ proposal: { id: source.id } }]);
   });
 
   it('rejects a caller with no access to the decision', async ({

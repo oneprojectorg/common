@@ -17,6 +17,6 @@ export const listCategoryReviewersRouter = router({
         user: ctx.user,
       });
 
-      return { categories };
+      return { items: categories };
     }),
 });

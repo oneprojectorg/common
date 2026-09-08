@@ -140,7 +140,7 @@ function ReviewFormProviderInner({
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
   }
 
-  const [proposalRevisionRequestList] =
+  const [{ items: openRevisionRequests }] =
     trpc.decision.listProposalRevisionRequests.useSuspenseQuery(
       {
         proposalId: assignment.proposal.id,
@@ -149,8 +149,7 @@ function ReviewFormProviderInner({
       { refetchOnMount: 'always' },
     );
 
-  const hasAnyOpenRevisionRequest =
-    proposalRevisionRequestList.revisionRequests.length > 0;
+  const hasAnyOpenRevisionRequest = openRevisionRequests.length > 0;
 
   // Only trust the per-assignment request when it is still REQUESTED — a
   // locally cached CANCELLED/RESUBMITTED entry must not gate the UI.
@@ -163,9 +162,7 @@ function ReviewFormProviderInner({
   // outstanding request from any other reviewer on the same proposal so
   // every reviewer sees the same paused state + feedback.
   const effectiveRevisionRequest =
-    ownRevisionRequest ??
-    proposalRevisionRequestList.revisionRequests[0]?.revisionRequest ??
-    null;
+    ownRevisionRequest ?? openRevisionRequests[0]?.revisionRequest ?? null;
   const isOwnRevisionRequest = !!ownRevisionRequest;
 
   // Seed 'no' for untouched yes/no criteria — the switch already shows "No"

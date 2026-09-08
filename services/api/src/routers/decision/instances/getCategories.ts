@@ -1,4 +1,5 @@
 import { getProcessCategories } from '@op/common';
+import { list } from '@op/common/client';
 import { z } from 'zod';
 
 import { openProcedure, router } from '../../../trpcFactory';
@@ -13,9 +14,7 @@ const processCategoryEncoder = z.object({
   termUri: z.string(),
 });
 
-const getCategoriesOutputSchema = z.object({
-  categories: z.array(processCategoryEncoder),
-});
+const getCategoriesOutputSchema = list(processCategoryEncoder);
 
 export const getCategoriesRouter = router({
   getCategories: openProcedure()
@@ -29,6 +28,6 @@ export const getCategoriesRouter = router({
         user,
       });
 
-      return { categories };
+      return { items: categories };
     }),
 });

@@ -29,7 +29,7 @@ export const submitProposalRouter = router({
       waitUntil(
         invalidate({
           type: 'decision',
-          params: [proposal.processInstanceId, 'submitters'],
+          params: [proposal.processInstanceId, 'submitters:v2'],
         }),
       );
 

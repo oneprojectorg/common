@@ -59,13 +59,14 @@ const MemberMenu = ({
   const t = useTranslations();
 
   // Query for all available roles to find the "Member" role ID
-  const { data: roles } = trpc.organization.getRoles.useQuery();
+  const { data: rolesData } = trpc.organization.getRoles.useQuery();
+  const roles = rolesData?.items;
 
   const updateUser = trpc.organization.updateOrganizationUser.useMutation({
     onSuccess: (_, variables) => {
       // Determine what role was assigned for the success message
       const wasChangingToAdmin = variables.data.roleIds?.some((roleId) =>
-        roles?.roles?.find(
+        roles?.find(
           (role: any) =>
             role.id === roleId && role.name.toLowerCase() === 'admin',
         ),
@@ -105,7 +106,7 @@ const MemberMenu = ({
   const handleRoleToggle = () => {
     if (isCurrentlyAdmin) {
       // Change admin to member
-      const memberRole = roles?.roles?.find(
+      const memberRole = roles?.find(
         (role: any) => role.name.toLowerCase() === 'member',
       );
 
@@ -123,7 +124,7 @@ const MemberMenu = ({
       });
     } else {
       // Change member to admin
-      const adminRole = roles?.roles?.find(
+      const adminRole = roles?.find(
         (role: any) => role.name.toLowerCase() === 'admin',
       );
 
@@ -299,21 +300,16 @@ const MembersListContent = ({
 export const MembersList = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
 
-  const [members] = trpc.organization.listUsers.useSuspenseQuery({
+  const [{ items: members }] = trpc.organization.listUsers.useSuspenseQuery({
     profileId,
   });
 
   // We need to get the organizationId from the profileId
   // This assumes the profileId belongs to an organization
-  const organizationId =
-    members && members.length > 0 && members[0]
-      ? members[0].organizationId
-      : '';
+  const organizationId = members[0]?.organizationId ?? '';
 
   // Group members by roles for filtering
   const rolesSegmented: Array<[string, Array<Member>]> = useMemo(() => {
-    if (!members) return [];
-
     // Get all unique role names
     const allRoleNames = new Set<string>();
     members.forEach((member) => {
@@ -331,7 +327,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
     ]);
   }, [members]);
 
-  if (!members || members.length === 0) {
+  if (members.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary">

@@ -44,10 +44,12 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[instance, { submitters, total }]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstance({ instanceId }),
-    t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
-  ]);
+  const [[instance, { items: submitters, total }]] = trpc.useSuspenseQueries(
+    (t) => [
+      t.decision.getInstance({ instanceId }),
+      t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
+    ],
+  );
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;

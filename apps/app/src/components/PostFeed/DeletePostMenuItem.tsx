@@ -25,7 +25,9 @@ export const DeletePostMenuItem = ({ post }: { post: Post }) => {
 
         utils.posts.getPosts.setData(queryKey, (old) => {
           if (!old) return old;
-          return old.filter((comment) => comment.id !== post.id);
+          return {
+            items: old.items.filter((comment) => comment.id !== post.id),
+          };
         });
 
         return { previousComments };

@@ -127,9 +127,7 @@ function EditProposalPageContent() {
       { enabled: affordances.review.feedback, throwOnError: false },
     );
 
-  const revisionRequests = revisionError
-    ? []
-    : (revisionData?.revisionRequests ?? []);
+  const revisionRequests = revisionError ? [] : (revisionData?.items ?? []);
 
   const revisionRequest: ProposalReviewRequest | null = reviewRevision
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)

@@ -78,7 +78,7 @@ export function LocationSearchField({
     query.length >= MIN_QUERY_LENGTH &&
     (isFetching || query !== debouncedQuery);
 
-  const items: GeoOption[] = (data?.geonames ?? []).map((geoname) => {
+  const items: GeoOption[] = (data?.items ?? []).map((geoname) => {
     const address = geoname.address ?? geoname.name;
     // Hide the name when it just echoes the address (pure street-address
     // results) so we don't render "123 Main St" twice.

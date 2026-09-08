@@ -19,11 +19,11 @@ describe('proposalSubmittersListSchema', () => {
     );
 
     const parsed = proposalSubmittersListSchema.parse({
-      submitters: atCap,
+      items: atCap,
       total: 9999,
     });
 
-    expect(parsed.submitters).toHaveLength(PROPOSAL_SUBMITTER_FACE_PILE_MAX);
+    expect(parsed.items).toHaveLength(PROPOSAL_SUBMITTER_FACE_PILE_MAX);
     expect(parsed.total).toBe(9999);
   });
 
@@ -35,8 +35,17 @@ describe('proposalSubmittersListSchema', () => {
 
     expect(() =>
       proposalSubmittersListSchema.parse({
-        submitters: overCap,
+        items: overCap,
         total: overCap.length,
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a sample keyed by anything but items', () => {
+    expect(() =>
+      proposalSubmittersListSchema.parse({
+        submitters: [sampleEntry],
+        total: 1,
       }),
     ).toThrow();
   });

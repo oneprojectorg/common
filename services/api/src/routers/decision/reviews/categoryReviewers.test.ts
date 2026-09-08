@@ -165,12 +165,12 @@ describe.concurrent('categoryReviewers CRUD', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.categories).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const categoryOne = result.categories.find(
+    const categoryOne = result.items.find(
       (c) => c.category.id === terms[0]!.id,
     );
-    const categoryTwo = result.categories.find(
+    const categoryTwo = result.items.find(
       (c) => c.category.id === terms[1]!.id,
     );
 
@@ -229,7 +229,7 @@ describe.concurrent('categoryReviewers CRUD', () => {
     const result = await adminCaller.decision.listCategoryReviewers({
       processInstanceId: instanceId,
     });
-    const categoryOne = result.categories.find(
+    const categoryOne = result.items.find(
       (c) => c.category.id === terms[0]!.id,
     );
     expect(categoryOne?.reviewers).toHaveLength(0);
@@ -275,11 +275,11 @@ describe.concurrent('categoryReviewers CRUD', () => {
       processInstanceId: instanceId,
     });
     expect(
-      instanceWideList.categories.find((c) => c.category.id === terms[0]!.id)
+      instanceWideList.items.find((c) => c.category.id === terms[0]!.id)
         ?.reviewers,
     ).toHaveLength(1);
     expect(
-      instanceWideList.categories.find((c) => c.category.id === terms[0]!.id)
+      instanceWideList.items.find((c) => c.category.id === terms[0]!.id)
         ?.reviewers[0]?.scopeId,
     ).toBe(instanceWide.id);
 
@@ -288,12 +288,11 @@ describe.concurrent('categoryReviewers CRUD', () => {
       phaseId: 'review',
     });
     expect(
-      phaseList.categories.find((c) => c.category.id === terms[0]!.id)
-        ?.reviewers,
+      phaseList.items.find((c) => c.category.id === terms[0]!.id)?.reviewers,
     ).toHaveLength(1);
     expect(
-      phaseList.categories.find((c) => c.category.id === terms[0]!.id)
-        ?.reviewers[0]?.scopeId,
+      phaseList.items.find((c) => c.category.id === terms[0]!.id)?.reviewers[0]
+        ?.scopeId,
     ).toBe(phaseScoped.id);
   });
 
@@ -330,7 +329,7 @@ describe.concurrent('categoryReviewers CRUD', () => {
       processInstanceId: instanceOneId,
     });
     expect(
-      listOne.categories.find((c) => c.category.id === terms[0]!.id)?.reviewers,
+      listOne.items.find((c) => c.category.id === terms[0]!.id)?.reviewers,
     ).toHaveLength(1);
 
     // Same shared term, different instance → no scope row leaks across.
@@ -338,7 +337,7 @@ describe.concurrent('categoryReviewers CRUD', () => {
       processInstanceId: instanceTwoId,
     });
     expect(
-      listTwo.categories.find((c) => c.category.id === terms[0]!.id)?.reviewers,
+      listTwo.items.find((c) => c.category.id === terms[0]!.id)?.reviewers,
     ).toHaveLength(0);
   });
 

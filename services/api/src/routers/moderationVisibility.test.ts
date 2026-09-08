@@ -308,7 +308,7 @@ describe.concurrent('moderation read visibility', () => {
       const before = await otherCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      expect(before.map((post) => post.id)).toContain(comment.id);
+      expect(before.items.map((post) => post.id)).toContain(comment.id);
 
       await flagItem(onTestFinished, ModerationItemType.POST, comment.id);
 
@@ -316,13 +316,15 @@ describe.concurrent('moderation read visibility', () => {
       const otherAfter = await otherCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      expect(otherAfter.map((post) => post.id)).not.toContain(comment.id);
+      expect(otherAfter.items.map((post) => post.id)).not.toContain(comment.id);
 
       // The author still sees their own flagged comment, marked flagged.
       const authorAfter = await authorCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      const authorComment = authorAfter.find((post) => post.id === comment.id);
+      const authorComment = authorAfter.items.find(
+        (post) => post.id === comment.id,
+      );
       expect(authorComment).toBeDefined();
       expect(authorComment?.isFlagged).toBe(true);
 
@@ -330,7 +332,9 @@ describe.concurrent('moderation read visibility', () => {
       const adminAfter = await adminCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      const adminComment = adminAfter.find((post) => post.id === comment.id);
+      const adminComment = adminAfter.items.find(
+        (post) => post.id === comment.id,
+      );
       expect(adminComment).toBeDefined();
       expect(adminComment?.isFlagged).toBe(true);
     });
@@ -471,10 +475,10 @@ describe.concurrent('moderation read visibility', () => {
           proposalId: survivor.id,
         }),
       ]);
-      expect(authorView.proposals.map((proposal) => proposal.id)).toEqual([
+      expect(authorView.items.map((proposal) => proposal.id)).toEqual([
         contributing.id,
       ]);
-      expect(adminView.proposals.map((proposal) => proposal.id)).toEqual([
+      expect(adminView.items.map((proposal) => proposal.id)).toEqual([
         contributing.id,
       ]);
 
@@ -543,7 +547,7 @@ describe.concurrent('moderation read visibility', () => {
       const adminView = await adminCaller.decision.listContributingProposals({
         proposalId: survivor.id,
       });
-      expect(adminView.proposals).toMatchObject([
+      expect(adminView.items).toMatchObject([
         { id: contributing.id, isFlagged: true },
       ]);
 
@@ -551,7 +555,7 @@ describe.concurrent('moderation read visibility', () => {
       const otherView = await otherCaller.decision.listContributingProposals({
         proposalId: survivor.id,
       });
-      expect(otherView.proposals).toEqual([]);
+      expect(otherView.items).toEqual([]);
     });
   });
 });

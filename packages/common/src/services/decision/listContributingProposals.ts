@@ -104,7 +104,7 @@ export async function listContributingProposals({
   };
 
   if (contributingIds.length === 0) {
-    return { queriedProposal, proposals: [] };
+    return { queriedProposal, items: [] };
   }
 
   // `getProposalAccessContext` resolved it through this instance, so a miss means the
@@ -180,9 +180,9 @@ export async function listContributingProposals({
 
   return {
     queriedProposal,
-    // Merge order lives on the edge, not on `proposals`. Reapplied in JS
+    // Merge order lives on the edge, not on the proposal rows. Reapplied in JS
     // because the set is unpaginated and already in memory.
-    proposals: contributingIds
+    items: contributingIds
       .map((id) => byId.get(id))
       .filter((row) => row !== undefined),
   };

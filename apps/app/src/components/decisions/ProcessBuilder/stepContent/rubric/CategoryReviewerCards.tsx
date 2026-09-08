@@ -40,12 +40,11 @@ function CategoryReviewerCardsContent({
   const t = useTranslations();
   const [, setSection] = useQueryState('section', { history: 'push' });
 
-  const [{ categories }] = trpc.decision.listCategoryReviewers.useSuspenseQuery(
-    {
+  const [{ items: categories }] =
+    trpc.decision.listCategoryReviewers.useSuspenseQuery({
       processInstanceId: instanceId,
-    },
-  );
-  const [{ reviewers: eligibleReviewers }] =
+    });
+  const [{ items: eligibleReviewers }] =
     trpc.decision.listEligibleReviewers.useSuspenseQuery({
       processInstanceId: instanceId,
     });

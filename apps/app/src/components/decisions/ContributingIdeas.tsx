@@ -67,12 +67,12 @@ function ContributingIdeasSuspense({
   const t = useTranslations();
   const headingId = useId();
 
-  const [contributing] =
+  const [{ items: contributingProposals }] =
     trpc.decision.listContributingProposals.useSuspenseQuery({
       proposalId: proposal.id,
     });
 
-  if (contributing.proposals.length === 0) {
+  if (contributingProposals.length === 0) {
     return null;
   }
 
@@ -90,7 +90,7 @@ function ContributingIdeasSuspense({
         </p>
       </div>
       <ul className="mt-6 flex flex-col gap-4">
-        {contributing.proposals.map((contributingProposal) => (
+        {contributingProposals.map((contributingProposal) => (
           <li key={contributingProposal.id}>
             {/* Restriction only: the candidacy badges describe a race that
                 ended at the merge, but a hidden idea listed here for admins

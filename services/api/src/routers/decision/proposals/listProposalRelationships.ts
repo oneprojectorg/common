@@ -16,7 +16,7 @@ export const listProposalRelationshipsRouter = router({
     .input(listProposalRelationshipsInputSchema)
     .output(proposalRelationshipListSchema)
     .query(async ({ ctx, input }) => {
-      const { relationships, queriedProposal } =
+      const { items: relationships, queriedProposal } =
         await listProposalRelationships({
           sourceProposalId: input.sourceProposalId,
           targetProposalId: input.targetProposalId,
@@ -31,6 +31,6 @@ export const listProposalRelationshipsRouter = router({
         ),
       ]);
 
-      return proposalRelationshipListSchema.parse({ relationships });
+      return proposalRelationshipListSchema.parse({ items: relationships });
     }),
 });

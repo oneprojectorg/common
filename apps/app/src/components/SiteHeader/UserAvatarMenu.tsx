@@ -302,7 +302,8 @@ const AvatarMenuContent = ({
   const t = useTranslations();
   const logout = useAuthLogout();
 
-  const { data: profiles } = trpc.account.getUserProfiles.useQuery();
+  const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
+  const profiles = profilesData?.items;
 
   const { userProfiles, orgProfiles } =
     profiles?.reduce<{

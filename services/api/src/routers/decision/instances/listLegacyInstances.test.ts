@@ -123,8 +123,8 @@ describe.concurrent('listLegacyInstances', () => {
       ownerProfileId: setup.organization.profileId,
     });
 
-    expect(result).toHaveLength(2);
-    result.forEach((instance) => {
+    expect(result.items).toHaveLength(2);
+    result.items.forEach((instance) => {
       expect(instance.name).toMatch(/^Legacy Instance/);
       expect(instance.status).toBe('published');
     });
@@ -165,9 +165,9 @@ describe.concurrent('listLegacyInstances', () => {
       ownerProfileId: setup.organization.profileId,
     });
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.proposalCount).toBe(0);
-    expect(result[0]?.participantCount).toBe(0);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.proposalCount).toBe(0);
+    expect(result.items[0]?.participantCount).toBe(0);
   });
 
   it('should return empty array when no legacy instances exist', async ({
@@ -186,7 +186,7 @@ describe.concurrent('listLegacyInstances', () => {
       ownerProfileId: setup.organization.profileId,
     });
 
-    expect(result).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('should filter out instances with non-legacy process schemas', async ({
@@ -259,8 +259,8 @@ describe.concurrent('listLegacyInstances', () => {
     });
 
     // Only the legacy instance should be returned (new format is filtered out by safeParse)
-    expect(result).toHaveLength(1);
-    expect(result[0]?.name).toBe('Legacy Instance');
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.name).toBe('Legacy Instance');
   });
 
   it('should throw for users without org access', async ({
@@ -343,8 +343,8 @@ describe.concurrent('listLegacyInstances', () => {
       ownerProfileId: setup.organization.profileId,
     });
 
-    expect(result).toHaveLength(1);
-    const instance = result[0]!;
+    expect(result.items).toHaveLength(1);
+    const instance = result.items[0]!;
 
     // Process should be included with the legacy schema
     expect(instance.process).toBeDefined();
@@ -432,7 +432,7 @@ describeDecisionAccessTierGating('listLegacyInstances', {
       const result = await caller.decision.listLegacyInstances({
         ownerProfileId: setup.organization.profileId,
       });
-      expect(Array.isArray(result)).toBe(true);
+      expect(Array.isArray(result.items)).toBe(true);
     },
   ),
 });

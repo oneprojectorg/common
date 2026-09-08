@@ -151,9 +151,9 @@ export const proposalRevisionRequestItemSchema = z.object({
   decisionProfileSlug: z.string(),
 });
 
-export const proposalRevisionRequestListSchema = z.object({
-  revisionRequests: z.array(proposalRevisionRequestItemSchema),
-});
+export const proposalRevisionRequestListSchema = list(
+  proposalRevisionRequestItemSchema,
+);
 
 // ── Proposal-scoped author feedback schemas ───────────────────────────
 
@@ -335,9 +335,7 @@ export type CategoryWithReviewersSchema = z.infer<
   typeof categoryWithReviewersSchema
 >;
 
-export const categoryReviewersListSchema = z.object({
-  categories: z.array(categoryWithReviewersSchema),
-});
+export const categoryReviewersListSchema = list(categoryWithReviewersSchema);
 
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
@@ -367,9 +365,7 @@ export const eligibleReviewerSchema = createSelectSchema(profiles)
 
 export type EligibleReviewerSchema = z.infer<typeof eligibleReviewerSchema>;
 
-export const eligibleReviewersListSchema = z.object({
-  reviewers: z.array(eligibleReviewerSchema),
-});
+export const eligibleReviewersListSchema = list(eligibleReviewerSchema);
 
 /** A category (taxonomy term id + label) the current reviewer is scoped to. */
 export const reviewerCategorySchema = z.object({
@@ -379,4 +375,4 @@ export const reviewerCategorySchema = z.object({
 
 export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
 
-export const reviewerCategoriesSchema = z.array(reviewerCategorySchema);
+export const reviewerCategoriesSchema = list(reviewerCategorySchema);

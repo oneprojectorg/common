@@ -46,7 +46,7 @@ export function Comments({
 }) {
   const t = useTranslations();
 
-  const [comments] = trpc.posts.getPosts.useSuspenseQuery({
+  const [{ items: comments }] = trpc.posts.getPosts.useSuspenseQuery({
     parentPostId: postId,
     limit: PAGE_LIMIT.lg,
     offset: 0,

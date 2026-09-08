@@ -41,9 +41,7 @@ export function useProposalFeedback({
 
   const revisionHistory = revisionQuery.error
     ? []
-    : (revisionQuery.data?.revisionRequests ?? []).map(
-        (item) => item.revisionRequest,
-      );
+    : (revisionQuery.data?.items ?? []).map((item) => item.revisionRequest);
 
   return {
     notes,

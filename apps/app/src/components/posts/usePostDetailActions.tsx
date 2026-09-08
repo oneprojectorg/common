@@ -59,14 +59,16 @@ export const usePostDetailActions = ({
           return old;
         }
 
-        return old.map(
-          (comment) =>
-            togglePostLike({
-              item: { post: comment },
-              postId: likedPostId,
-              user,
-            }).post,
-        );
+        return {
+          items: old.items.map(
+            (comment) =>
+              togglePostLike({
+                item: { post: comment },
+                postId: likedPostId,
+                user,
+              }).post,
+          ),
+        };
       });
 
       return { previousMainPost, previousComments };

@@ -26,7 +26,8 @@ import { useEffect, useState, useTransition } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 // TODO: typing here needs to be fixed
-type AccountProfile = RouterOutput['account']['getUserProfiles'][number];
+type AccountProfile =
+  RouterOutput['account']['getUserProfiles']['items'][number];
 
 interface OrgDeletionModalProps {
   isOpen: boolean;
@@ -38,7 +39,8 @@ export const DeleteOrganizationModal = ({
   onOpenChange,
 }: OrgDeletionModalProps) => {
   const t = useTranslations();
-  const { data: profiles } = trpc.account.getUserProfiles.useQuery();
+  const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
+  const profiles = profilesData?.items;
   const [selectedProfileId, setSelectedProfileId] = useState<string>();
   const [profileToDelete, setProfileToDelete] = useState<AccountProfile>();
   const [currentStep, setCurrentStep] = useState(0);

@@ -141,10 +141,11 @@ function ProfileInviteModalContent({
   };
   // Batched so the roles and pending-invites fetches fire together — two
   // separate useSuspenseQuery calls would suspend one after the other.
-  const [[{ items: roles }, serverInvites]] = trpc.useSuspenseQueries((t) => [
-    t.profile.listRoles(rolesQueryInput),
-    t.profile.listProfileInvites({ profileId }),
-  ]);
+  const [[{ items: roles }, { items: serverInvites }]] =
+    trpc.useSuspenseQueries((t) => [
+      t.profile.listRoles(rolesQueryInput),
+      t.profile.listProfileInvites({ profileId }),
+    ]);
   const selectedRole =
     roles.find((role) => role.id === requestedRoleId) ?? roles[0];
   const selectedRoleId = selectedRole?.id ?? '';

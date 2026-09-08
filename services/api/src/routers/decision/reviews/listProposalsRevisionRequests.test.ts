@@ -46,8 +46,8 @@ describe.concurrent('listProposalsRevisionRequests', () => {
       {},
     );
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       revisionRequest: {
         id: revisionRequest.id,
         assignmentId: created.assignment.id,
@@ -60,10 +60,10 @@ describe.concurrent('listProposalsRevisionRequests', () => {
         profileId: created.proposal.profileId,
       },
     });
-    expect(result.revisionRequests[0]?.proposal.proposalData.title).toBe(
+    expect(result.items[0]?.proposal.proposalData.title).toBe(
       'Budget Proposal',
     );
-    expect(result.revisionRequests[0]?.decisionProfileSlug).toBeTruthy();
+    expect(result.items[0]?.decisionProfileSlug).toBeTruthy();
   });
 
   it('returns empty list when no revision requests exist', async ({
@@ -80,7 +80,7 @@ describe.concurrent('listProposalsRevisionRequests', () => {
       {},
     );
 
-    expect(result.revisionRequests).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('excludes cancelled and resolved revision requests', async ({
@@ -113,7 +113,7 @@ describe.concurrent('listProposalsRevisionRequests', () => {
       states: [ProposalReviewRequestState.REQUESTED],
     });
 
-    expect(result.revisionRequests).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('does not return revision requests for proposals by other authors', async ({
@@ -143,7 +143,7 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     const result = await otherCaller.decision.listProposalsRevisionRequests({});
 
     // Should only see their own proposals (which have no revision requests)
-    expect(result.revisionRequests).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 });
 
@@ -202,7 +202,7 @@ describeDecisionAccessTierGating('listProposalsRevisionRequests', {
       const caller = await callers.networkJwt(context.defaultReviewer.email);
 
       const result = await caller.decision.listProposalsRevisionRequests({});
-      expect(result.revisionRequests).toBeDefined();
+      expect(result.items).toBeDefined();
     },
   ),
 });

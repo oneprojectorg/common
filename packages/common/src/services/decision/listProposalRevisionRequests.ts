@@ -41,7 +41,7 @@ export async function listProposalRevisionRequests({
   );
 
   return {
-    revisionRequests,
+    items: revisionRequests,
     processInstanceId: proposal.processInstanceId,
   };
 }

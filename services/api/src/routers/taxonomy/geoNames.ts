@@ -1,4 +1,5 @@
 import { cache } from '@op/cache';
+import { list } from '@op/common/client';
 import { logger } from '@op/logging';
 import { z } from 'zod';
 
@@ -156,11 +157,7 @@ export const getGeoNames = router({
         center: CenterSchema.optional(),
       }),
     )
-    .output(
-      z.object({
-        geonames: z.array(GeoNameSchema).optional().prefault([]),
-      }),
-    )
+    .output(list(GeoNameSchema))
     .query(async ({ input }) => {
       const { q, center } = input;
 
@@ -177,8 +174,7 @@ export const getGeoNames = router({
         fetch: () => getGeonames({ q, center }),
       });
 
-      return {
-        geonames,
-      };
+      // `cache` resolves to undefined when the provider call failed outright.
+      return { items: geonames ?? [] };
     }),
 });
