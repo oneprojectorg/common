@@ -3,12 +3,16 @@ import { z } from 'zod';
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
 import { normalizeBudget } from './proposalDataSchema';
 
-/** The placeholders an admin may use in a results notification message. */
-export const RESULT_NOTIFICATION_TOKENS = [
-  'name',
-  'proposal',
-  'amount',
-] as const;
+/**
+ * The placeholders an admin may use in a results notification message.
+ *
+ * No `amount` yet: nothing writes
+ * `decision_process_result_selections.allocated`, so the token could only ever
+ * resolve to '' — an admin following the hint would ship "you were allocated
+ * ." to every funded author, irreversibly. `formatResultAmount` below stays,
+ * so re-listing it here is the whole change once allocations are written.
+ */
+export const RESULT_NOTIFICATION_TOKENS = ['name', 'proposal'] as const;
 
 export type ResultNotificationToken =
   (typeof RESULT_NOTIFICATION_TOKENS)[number];

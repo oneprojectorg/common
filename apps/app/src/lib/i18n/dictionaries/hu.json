@@ -1736,7 +1736,6 @@
   "Compose Notifications": "Értesítések megírása",
   "Notification audiences": "Értesítési címzettek",
   "Not funded": "Nem támogatva",
-  "Use {name} for the submitter’s name, {proposal} for proposal title, and {amount} for allocated amount.": "A {name} a beküldő nevét, a {proposal} a javaslat címét, a {amount} pedig a megítélt összeget helyettesíti.",
   "Notification Message": "Értesítés szövege",
   "Write a message before publishing results.": "Írj üzenetet az eredmények közzététele előtt.",
   "Send & publish results": "Küldés és eredmények közzététele",
@@ -1744,5 +1743,6 @@
   "{count} proposals": "{count, plural, one {# javaslat} other {# javaslat}}",
   "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.": "Szia {name}!\n\nJó hír: a(z) „{proposal}” javaslatod a közösségi szavazás eredménye alapján támogatást kapott.\n\nA következő lépésekről és a végleges összegről hamarosan jelentkezünk.",
   "Needs a message": "Üzenet szükséges",
-  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "A közzététel e-mailt küld {fundedCount, plural, one {# támogatott javaslat} other {# támogatott javaslat}} és {notFundedCount, plural, one {# nem támogatott javaslat} other {# nem támogatott javaslat}} szerzőinek. Ez nem vonható vissza."
+  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "A közzététel e-mailt küld {fundedCount, plural, one {# támogatott javaslat} other {# támogatott javaslat}} és {notFundedCount, plural, one {# nem támogatott javaslat} other {# nem támogatott javaslat}} szerzőinek. Ez nem vonható vissza.",
+  "Use {name} for the submitter’s name and {proposal} for proposal title.": "A {name} a beküldő nevét, a {proposal} pedig a javaslat címét helyettesíti."
 }

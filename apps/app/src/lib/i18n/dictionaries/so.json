@@ -1736,7 +1736,6 @@
   "Compose Notifications": "Qor ogeysiisyada",
   "Notification audiences": "Dhagaystayaasha ogeysiiska",
   "Not funded": "Lama maalgelin",
-  "Use {name} for the submitter’s name, {proposal} for proposal title, and {amount} for allocated amount.": "Isticmaal {name} magaca soo gudbiyaha, {proposal} cinwaanka soo jeedinta, iyo {amount} qaddarka la qoondeeyay.",
   "Notification Message": "Fariinta ogeysiiska",
   "Write a message before publishing results.": "Qor fariin ka hor inta aan natiijada la daabicin.",
   "Send & publish results": "Dir oo daabac natiijada",
@@ -1744,5 +1743,6 @@
   "{count} proposals": "{count, plural, one {# soo jeedin} other {# soo jeedimo}}",
   "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.": "Salaan {name},\n\nWar wanaagsan — soo jeedintaada \"{proposal}\" waa la doortay in la maalgeliyo iyadoo lagu saleynayo natiijada codbixinta bulshada!\n\nDhawaan waxaan kula soo xiriiri doonnaa talaabooyinka xiga iyo qaddarka ugu dambeeya.",
   "Needs a message": "Waxay u baahan tahay fariin",
-  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "Daabicidda waxay iimayl u dirtaa qorayaasha {fundedCount, plural, one {# soo jeedin la maalgeliyay} other {# soo jeedimo la maalgeliyay}} iyo {notFundedCount, plural, one {# soo jeedin aan la maalgelin} other {# soo jeedimo aan la maalgelin}}. Tan dib looma celin karo."
+  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "Daabicidda waxay iimayl u dirtaa qorayaasha {fundedCount, plural, one {# soo jeedin la maalgeliyay} other {# soo jeedimo la maalgeliyay}} iyo {notFundedCount, plural, one {# soo jeedin aan la maalgelin} other {# soo jeedimo aan la maalgelin}}. Tan dib looma celin karo.",
+  "Use {name} for the submitter’s name and {proposal} for proposal title.": "Isticmaal {name} magaca soo gudbiyaha iyo {proposal} cinwaanka soo jeedinta."
 }

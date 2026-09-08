@@ -1736,7 +1736,6 @@
   "Compose Notifications": "Compose Notifications",
   "Notification audiences": "Notification audiences",
   "Not funded": "Not funded",
-  "Use {name} for the submitter’s name, {proposal} for proposal title, and {amount} for allocated amount.": "Use {name} for the submitter’s name, {proposal} for proposal title, and {amount} for allocated amount.",
   "Notification Message": "Notification Message",
   "Write a message before publishing results.": "Write a message before publishing results.",
   "Send & publish results": "Send & publish results",
@@ -1744,5 +1743,6 @@
   "{count} proposals": "{count, plural, one {# proposal} other {# proposals}}",
   "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.": "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.",
   "Needs a message": "Needs a message",
-  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone."
+  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.",
+  "Use {name} for the submitter’s name and {proposal} for proposal title.": "Use {name} for the submitter’s name and {proposal} for proposal title."
 }

@@ -1736,7 +1736,6 @@
   "Compose Notifications": "বিজ্ঞপ্তি লিখুন",
   "Notification audiences": "বিজ্ঞপ্তির প্রাপকগোষ্ঠী",
   "Not funded": "অর্থায়িত নয়",
-  "Use {name} for the submitter’s name, {proposal} for proposal title, and {amount} for allocated amount.": "জমাদানকারীর নামের জন্য {name}, প্রস্তাবের শিরোনামের জন্য {proposal} এবং বরাদ্দকৃত পরিমাণের জন্য {amount} ব্যবহার করুন।",
   "Notification Message": "বিজ্ঞপ্তির বার্তা",
   "Write a message before publishing results.": "ফলাফল প্রকাশের আগে একটি বার্তা লিখুন।",
   "Send & publish results": "পাঠান ও ফলাফল প্রকাশ করুন",
@@ -1744,5 +1743,6 @@
   "{count} proposals": "{count, plural, other {#টি প্রস্তাব}}",
   "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.": "প্রিয় {name},\n\nসুখবর — কমিউনিটি ভোটের ফলাফলের ভিত্তিতে আপনার প্রস্তাব \"{proposal}\" অর্থায়নের জন্য নির্বাচিত হয়েছে!\n\nপরবর্তী ধাপ ও চূড়ান্ত পরিমাণ নিয়ে আমরা শীঘ্রই যোগাযোগ করব।",
   "Needs a message": "একটি বার্তা প্রয়োজন",
-  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "প্রকাশ করলে {fundedCount, plural, other {#টি অর্থায়িত প্রস্তাবের}} এবং {notFundedCount, plural, other {#টি অর্থায়িত নয় এমন প্রস্তাবের}} প্রস্তাবকদের ইমেল করা হবে। এটি ফেরানো যাবে না।"
+  "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "প্রকাশ করলে {fundedCount, plural, other {#টি অর্থায়িত প্রস্তাবের}} এবং {notFundedCount, plural, other {#টি অর্থায়িত নয় এমন প্রস্তাবের}} প্রস্তাবকদের ইমেল করা হবে। এটি ফেরানো যাবে না।",
+  "Use {name} for the submitter’s name and {proposal} for proposal title.": "জমাদানকারীর নামের জন্য {name} এবং প্রস্তাবের শিরোনামের জন্য {proposal} ব্যবহার করুন।"
 }

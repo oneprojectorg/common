@@ -16,13 +16,10 @@ describe('renderResultNotificationMessage', () => {
   it('substitutes every supported token', () => {
     expect(
       renderResultNotificationMessage({
-        template:
-          'Hi {{name}},\n\n"{{proposal}}" was allocated {{amount}}.\n\nThanks.',
+        template: 'Hi {{name}},\n\n"{{proposal}}" has an outcome.\n\nThanks.',
         values,
       }),
-    ).toBe(
-      'Hi Ada,\n\n"Community Garden Revamp" was allocated $12,000.\n\nThanks.',
-    );
+    ).toBe('Hi Ada,\n\n"Community Garden Revamp" has an outcome.\n\nThanks.');
   });
 
   it('does not re-expand a token that appears inside a substituted value', () => {
@@ -43,13 +40,15 @@ describe('renderResultNotificationMessage', () => {
     ).toBe('Hi {{Name}} / {{ name }} / {{proposal_title}}.');
   });
 
-  it('renders an absent amount as nothing rather than a stray symbol', () => {
+  // `amount` is off the token list until something writes an allocation, so a
+  // message mentioning it must render literally rather than resolve to ''.
+  it('leaves {{amount}} untouched while it is not an offered token', () => {
     expect(
       renderResultNotificationMessage({
         template: 'You were allocated {{amount}}.',
-        values: { ...values, amount: '' },
+        values,
       }),
-    ).toBe('You were allocated .');
+    ).toBe('You were allocated {{amount}}.');
   });
 });
 
