@@ -368,12 +368,12 @@ test.describe('Decision Manual Selection — full flow', () => {
 
     // Type into both tabs: the feature's premise is admin-authored copy, so the
     // markers below are what prove it reached the DB rather than the defaults.
-    const fundedMessage = `Funded copy ${instance.slug}`;
-    const notFundedMessage = `Not funded copy ${instance.slug}`;
-    await activeMessageBox.fill(fundedMessage);
+    const selectedMessage = `Selected copy ${instance.slug}`;
+    const notSelectedMessage = `Not selected copy ${instance.slug}`;
+    await activeMessageBox.fill(selectedMessage);
     await dialog.getByRole('tab', { name: /Not funded/ }).click();
     await expect(activeMessageBox).toHaveValue(/not selected for funding/);
-    await activeMessageBox.fill(notFundedMessage);
+    await activeMessageBox.fill(notSelectedMessage);
 
     await dialog
       .getByRole('button', { name: 'Send & publish results' })
@@ -427,8 +427,8 @@ test.describe('Decision Manual Selection — full flow', () => {
     expect(transitionRow?.transitionData).toMatchObject({
       manualSelection: {
         resultNotifications: {
-          funded: fundedMessage,
-          notFunded: notFundedMessage,
+          selected: selectedMessage,
+          notSelected: notSelectedMessage,
         },
       },
     });
