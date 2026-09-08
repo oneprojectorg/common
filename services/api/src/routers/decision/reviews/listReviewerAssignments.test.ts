@@ -2,6 +2,7 @@ import {
   ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  profileUserToAccessRoles,
   profiles,
   proposalRelationships,
   proposals,
@@ -34,7 +35,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('decision.listReviewerAssignments', () => {
-  it('returns the reviewer header, totals and their own assignments', async ({
+  it('returns the reviewer header and their own assignments in the shared item shape', async ({
     task,
     onTestFinished,
   }) => {
@@ -71,10 +72,6 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(result.reviewer?.id).toBe(context.defaultReviewer.profileId);
     expect(result.reviewer?.email).toBe(`reviewer-${task.id}@example.org`);
     expect(result.isEligible).toBe(true);
-    expect(result.assignedCount).toBe(1);
-    expect(result.submittedCount).toBe(1);
-    expect(result.draftCount).toBe(0);
-    expect(result.lastSubmittedAt).not.toBeNull();
     expect(result.assignments).toHaveLength(1);
     const [item] = result.assignments;
     expect(item?.assignment.proposal.id).toBe(created.proposal.id);
@@ -199,15 +196,18 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const first = await testData.createReviewAssignment({
       title: `Paged proposal 1 ${task.id}`,
+      assignedAt: '2026-01-01T00:00:00.000Z',
     });
     const context = first.context;
-    await testData.createReviewAssignment({
+    const second = await testData.createReviewAssignment({
       context,
       title: `Paged proposal 2 ${task.id}`,
+      assignedAt: '2026-01-02T00:00:00.000Z',
     });
-    await testData.createReviewAssignment({
+    const third = await testData.createReviewAssignment({
       context,
       title: `Paged proposal 3 ${task.id}`,
+      assignedAt: '2026-01-03T00:00:00.000Z',
     });
 
     const adminCaller = await createAuthenticatedCaller(
@@ -237,7 +237,9 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     const ids = [...page1.assignments, ...page2.assignments].map(
       (item) => item.assignment.id,
     );
-    expect(new Set(ids).size).toBe(3);
+    expect(ids).toEqual(
+      [first, second, third].map((created) => created.assignment.id),
+    );
   });
 
   it('hides assignments whose proposal was moderation-detached', async ({
@@ -268,9 +270,10 @@ describe.concurrent('decision.listReviewerAssignments', () => {
 
     expect(result.assignedCount).toBe(0);
     expect(result.assignments).toEqual([]);
+    expect(result.total).toBe(0);
   });
 
-  it('drops an assignment whose proposal was merged away', async ({
+  it('keeps a merged-away assignment in the totals while the page drops it', async ({
     task,
     onTestFinished,
   }) => {
@@ -314,6 +317,10 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(
       after.assignments.map((entry) => entry.assignment.proposal.id),
     ).toEqual([survivor.proposal.id]);
+    // The page drops it via notSuperseded; the totals still count the work
+    // the reviewer did on the merged-away proposal, on purpose.
+    expect(after.total).toBe(1);
+    expect(after.assignedCount).toBe(2);
   });
 
   it('withholds the identity of a profile with no tie to the process', async ({
@@ -322,8 +329,12 @@ describe.concurrent('decision.listReviewerAssignments', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    // An admin who guesses a UUID must not read back a name or email.
-    const outsider = await testData.createContext();
+    // An admin who guesses a UUID must not read back a name or email, even
+    // for an org member: only a grant on the instance profile counts.
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const outsider = await decisions.createMemberUser({
+      organization: context.organization,
+    });
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
@@ -332,12 +343,127 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     const result = await adminCaller.decision.listReviewerAssignments({
       processInstanceId: context.instance.instance.id,
       phaseId: 'review',
-      reviewerProfileId: outsider.defaultReviewer.profileId,
+      reviewerProfileId: outsider.profileId,
     });
 
     expect(result.reviewer).toBeNull();
     expect(result.isEligible).toBe(false);
     expect(result.assignments).toEqual([]);
+  });
+
+  it('does not let an assignment in another phase count as a tie to this phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const outsider = await decisions.createMemberUser({
+      organization: context.organization,
+    });
+
+    await testData.createReviewAssignment({
+      context,
+      reviewer: outsider,
+      phaseId: 'voting',
+      title: `Other phase proposal ${task.id}`,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      reviewerProfileId: outsider.profileId,
+    };
+
+    const result = await adminCaller.decision.listReviewerAssignments({
+      ...input,
+      phaseId: 'review',
+    });
+
+    // The phase-scoped totals are what unlock identity, so an assignment in
+    // another phase must not name the profile here.
+    expect(result.reviewer).toBeNull();
+    expect(result.isEligible).toBe(false);
+    expect(result.assignedCount).toBe(0);
+    expect(result.total).toBe(0);
+    expect(result.assignments).toEqual([]);
+
+    // Sanity: the fixture really did create the assignment, one phase over.
+    const otherPhase = await adminCaller.decision.listReviewerAssignments({
+      ...input,
+      phaseId: 'voting',
+    });
+    expect(otherPhase.reviewer?.id).toBe(outsider.profileId);
+    expect(otherPhase.assignedCount).toBe(1);
+  });
+
+  it('still identifies a reviewer who lost the review role but kept assignments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: `Removed member proposal ${task.id}`,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
+    };
+
+    const before = await adminCaller.decision.listReviewerAssignments(input);
+    expect(before.isEligible).toBe(true);
+
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: {
+        authUserId: reviewer.authUserId,
+        profileId: context.instance.profileId,
+      },
+    });
+    if (!profileUser) {
+      throw new Error('No profileUsers row for the instance reviewer');
+    }
+    await db
+      .delete(profileUserToAccessRoles)
+      .where(eq(profileUserToAccessRoles.profileUserId, profileUser.id));
+
+    const result = await adminCaller.decision.listReviewerAssignments(input);
+
+    // A removed member is no longer eligible, but their review history must
+    // stay visible to the admin, so the header still names them.
+    expect(result.reviewer?.id).toBe(reviewer.profileId);
+    expect(result.isEligible).toBe(false);
+    expect(result.assignedCount).toBe(1);
+  });
+
+  it('rejects a phaseId that does not exist on the instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    await expect(
+      adminCaller.decision.listReviewerAssignments({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'this-phase-does-not-exist',
+        reviewerProfileId: context.defaultReviewer.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('rejects a reviewer who is not an instance admin', async ({
