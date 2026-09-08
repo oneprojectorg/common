@@ -3,25 +3,23 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { useState } from 'react';
 import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useOpenMergeProposalDialog } from '../MergeProposalDialogContext';
+import { useProposalCardDialogs } from '../ProposalCardDialogContext';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
-import { RejectProposalDialog } from '../RejectProposalDialog';
 import { buildMergeMenuItem } from '../proposals/merge';
 import { buildRejectMenuItem } from '../proposals/reject';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { useProposalRejectionActions } from '../useProposalRejectionActions';
-import { DeleteProposalDialog } from './DeleteProposalDialog';
 
-// Pre-existing: hoisting the merge dialog took this from CRAP 156 to 132, still
-// over the threshold. Cutting it further means restructuring the whole menu.
+// Pre-existing: hoisting the merge dialog took this from CRAP 156 to 132, and
+// hoisting delete and reject took it to 56 — still over the threshold. Cutting
+// it further means restructuring the whole menu.
 // fallow-ignore-next-line complexity
 export function ProposalCardMenu({
   proposal,
@@ -34,11 +32,10 @@ export function ProposalCardMenu({
   canManage?: boolean;
 }) {
   const t = useTranslations();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   // Owned above the grid, so a list refresh that re-parents this card can't
-  // close a merge in progress — see `MergeProposalDialogContext`.
-  const openMergeDialog = useOpenMergeProposalDialog();
+  // close a dialog in progress — see `ProposalCardDialogContext`.
+  const { openMergeDialog, openRejectDialog, openDeleteDialog } =
+    useProposalCardDialogs();
 
   const {
     toggleVisibility: handleToggleVisibility,
@@ -55,8 +52,9 @@ export function ProposalCardMenu({
   const canRejectOrUndo =
     rejectEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
   const isRejected = proposal.status === ProposalStatus.REJECTED;
-  const { reject, unreject, isRejecting, isUnrejecting } =
-    useProposalRejectionActions(proposal);
+  // Undo only — it has no dialog. Rejecting runs from the host, whose dialog
+  // owns the confirm button that calls it.
+  const { unreject, isUnrejecting } = useProposalRejectionActions(proposal);
 
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
@@ -88,11 +86,11 @@ export function ProposalCardMenu({
     if (canRejectOrUndo) {
       items.push(
         buildRejectMenuItem({
-          isDisabled: isLoading || isRejecting || isUnrejecting,
+          isDisabled: isLoading || isUnrejecting,
           isRejected,
           rejectLabel: t('Do not advance'),
           undoLabel: t('Undo rejection'),
-          onReject: () => setIsRejectModalOpen(true),
+          onReject: () => openRejectDialog(proposal),
           onUndo: unreject,
         }),
       );
@@ -118,7 +116,7 @@ export function ProposalCardMenu({
         key: 'delete',
         icon: <LuTrash2 className="size-5" />,
         label: t('Delete'),
-        onAction: () => setIsDeleteModalOpen(true),
+        onAction: () => openDeleteDialog(proposal),
         isDisabled: isLoading,
         isDestructive: true,
       });
@@ -134,24 +132,6 @@ export function ProposalCardMenu({
       groups={[menuItems]}
       label={t('Proposal options')}
       triggerProps={{ variant: 'ghost', size: 'icon-xs' }}
-    >
-      {(proposal.isEditable || canManage) && (
-        <DeleteProposalDialog
-          proposalId={proposal.id}
-          open={isDeleteModalOpen}
-          onOpenChange={setIsDeleteModalOpen}
-        />
-      )}
-      {canRejectOrUndo && !isRejected && (
-        <RejectProposalDialog
-          open={isRejectModalOpen}
-          onOpenChange={setIsRejectModalOpen}
-          isPending={isRejecting}
-          onConfirm={(input) =>
-            reject(input, { onSuccess: () => setIsRejectModalOpen(false) })
-          }
-        />
-      )}
-    </ProposalOptionsMenu>
+    />
   );
 }
