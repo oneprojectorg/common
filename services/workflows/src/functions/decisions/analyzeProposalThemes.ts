@@ -7,6 +7,7 @@ import {
   type ThemeAnalysisData,
   type ThemeAnalysisScope,
   type ThemeAnalysisTheme,
+  readCorpusForAnalysis,
   runCommonGroundPass,
   runThemesPass,
   themeAnalysisCacheKey,
@@ -80,6 +81,16 @@ type AnalysisIdentity = Pick<
   'analysisId' | 'processInstanceId' | 'userId'
 > & { scope: ThemeAnalysisScope };
 
+/**
+ * The diagnostic to record for a fault nobody classified.
+ *
+ * A caught value carries no guarantee of being an `Error`, and by the time one
+ * reaches the handler it has crossed a step boundary and been rebuilt anyway.
+ * The message is all that survives, so it is all this takes.
+ */
+const messageOf = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unknown error';
+
 const { proposalThemeAnalysisRequested } = Events;
 
 /**
@@ -87,19 +98,17 @@ const { proposalThemeAnalysisRequested } = Events;
  * common ground between them, the proposals sitting outside it, and what to
  * suggest.
  *
- * Two model passes, in two steps. The themes pass runs first and the
- * common-ground pass reads its output, so splitting them buys real retry
- * granularity: a common-ground pass that fails does not pay for the themes pass
- * again.
+ * Three steps: read the corpus, then the themes pass, then the common-ground
+ * pass. Inngest invokes the handler once per step, so each gets its own budget
+ * and its own line in the run — which is what makes "the analysis was slow"
+ * answerable as "the read was slow" or "the model was slow" without reading a
+ * log. It also buys retry granularity: a common-ground pass that fails does not
+ * pay for the themes pass again.
  *
- * The corpus is read once, in the first step, and carried to the second through
- * function state. Re-reading it there looked cheaper than serializing it, and is
- * not: the corpus keeps three fields per proposal, but assembling it runs
- * `listProposals`, which resolves the phase scope, joins authors and profiles,
- * aggregates reactions and selections, fetches up to a hundred collaboration
- * documents, and renders each to plain text. Carrying it instead costs one
- * serialization of roughly 130 KB — which is also, near enough, what each pass
- * already sends to the model.
+ * The corpus is read once and carried through function state to both passes.
+ * Re-reading it per step would be cheaper to serialize and wrong to do: the
+ * indexes the themes pass grounds against are positions in that list, so a
+ * re-read returning a different set would silently renumber them.
  */
 export const analyzeProposalThemes = inngest.createFunction(
   {
@@ -153,6 +162,60 @@ export const analyzeProposalThemes = inngest.createFunction(
       return { analysisId, status: 'failed' as const };
     };
 
+    /**
+     * The three steps, in order, stopping at the first that reports a failure.
+     *
+     * Its own closure so each guard reads as one line of a sequence rather than
+     * another branch in the handler, and so the handler below is left saying the
+     * only thing it decides: record what came back, or report why nothing did.
+     */
+    const runAnalysisSteps = async () => {
+      await step.run('notify-analysis-processing', () =>
+        notifyAnalysisChanged(analysisId),
+      );
+
+      // Three steps, not two. The corpus read is not the model call, and giving
+      // it its own step means Inngest names whichever one is slow — and neither
+      // has to finish inside the other's share of one invocation's budget.
+      const corpus = await step.run('read-corpus', () =>
+        readCorpusForAnalysis({ processInstanceId, userId, scope }),
+      );
+
+      // A reported failure, not a thrown one: this is the corpus telling us
+      // there is nothing here to compare, and no number of retries changes that.
+      if (!corpus.ok) {
+        return corpus;
+      }
+
+      const { proposals, total } = corpus;
+
+      const analysed = await step.run('analyze-themes', () =>
+        runThemesPass({ proposals }),
+      );
+
+      if (!analysed.ok) {
+        return analysed;
+      }
+
+      const { themes } = analysed;
+
+      const habermas = await step.run('find-common-ground', () =>
+        runCommonGroundPass({ themes, proposals }),
+      );
+
+      if (!habermas.ok) {
+        return habermas;
+      }
+
+      return {
+        ok: true as const,
+        themes,
+        habermas: habermas.analysis,
+        proposals,
+        total,
+      };
+    };
+
     // Assigned inside the try, written outside it. See the comment on the
     // completed write below for why the two are separated.
     let completed: {
@@ -163,31 +226,13 @@ export const analyzeProposalThemes = inngest.createFunction(
     };
 
     try {
-      await step.run('notify-analysis-processing', () =>
-        notifyAnalysisChanged(analysisId),
-      );
+      const outcome = await runAnalysisSteps();
 
-      const analysed = await step.run('analyze-themes', () =>
-        runThemesPass({ processInstanceId, userId, scope }),
-      );
-
-      // A reported failure, not a thrown one: this is the corpus telling us
-      // there is nothing here to compare, and no number of retries changes that.
-      if (!analysed.ok) {
-        return await reportFailure(analysed);
+      if (!outcome.ok) {
+        return await reportFailure(outcome);
       }
 
-      const { themes, proposals, total } = analysed;
-
-      const habermas = await step.run('find-common-ground', () =>
-        runCommonGroundPass({ themes, proposals }),
-      );
-
-      if (!habermas.ok) {
-        return await reportFailure(habermas);
-      }
-
-      completed = { themes, habermas: habermas.analysis, proposals, total };
+      completed = outcome;
     } catch (error) {
       // Only genuine faults reach here — the two passes report their own
       // failures above. `error` has crossed a step boundary, so it is a
@@ -198,8 +243,7 @@ export const analyzeProposalThemes = inngest.createFunction(
         await recordAnalysis(identity, {
           status: 'failed',
           errorCode: 'unknown',
-          errorMessage:
-            error instanceof Error ? error.message : 'Unknown error',
+          errorMessage: messageOf(error),
           completedAt: new Date().toISOString(),
         });
       });

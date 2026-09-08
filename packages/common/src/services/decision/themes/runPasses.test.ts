@@ -18,7 +18,11 @@ import { ThemeAnalysisFailure } from './ThemeAnalysisFailure';
 import { analyzeThemes } from './analyzeThemes';
 import { collectProposalCorpus } from './collectProposalCorpus';
 import { findCommonGround } from './findCommonGround';
-import { runCommonGroundPass, runThemesPass } from './runPasses';
+import {
+  readCorpusForAnalysis,
+  runCommonGroundPass,
+  runThemesPass,
+} from './runPasses';
 
 const INSTANCE_ID = '22222222-2222-4222-8222-222222222222';
 const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
@@ -39,12 +43,14 @@ const themes = [
 
 const habermas = { commonGround: [], outliers: [], suggestions: [] };
 
-const runThemes = (scope: 'phase' | 'process' = 'phase') =>
-  runThemesPass({
+const readCorpus = (scope: 'phase' | 'process' = 'phase') =>
+  readCorpusForAnalysis({
     processInstanceId: INSTANCE_ID,
     userId: AUTH_USER_ID,
     scope,
   });
+
+const runThemes = () => runThemesPass({ proposals: corpusOf(4).proposals });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -53,9 +59,9 @@ beforeEach(() => {
   vi.mocked(findCommonGround).mockResolvedValue(habermas);
 });
 
-describe('runThemesPass', () => {
+describe('readCorpusForAnalysis', () => {
   it('confirms the requester exists before reading anything', async () => {
-    await runThemes();
+    await readCorpus();
 
     expect(vi.mocked(assertUserByAuthId)).toHaveBeenCalledWith(AUTH_USER_ID);
   });
@@ -63,7 +69,7 @@ describe('runThemesPass', () => {
   // The scope decides which proposals the run is about, so it has to survive the
   // trip from the button rather than being re-derived here.
   it('reads the scope it was asked for', async () => {
-    await runThemes('process');
+    await readCorpus('process');
 
     expect(vi.mocked(collectProposalCorpus)).toHaveBeenCalledWith({
       processInstanceId: INSTANCE_ID,
@@ -72,14 +78,11 @@ describe('runThemesPass', () => {
     });
   });
 
-  // The corpus travels back because the second pass must read the same one: the
-  // indexes the themes pass grounded against are positions in this list.
-  it('returns the corpus alongside the themes', async () => {
-    const result = await runThemes();
-
-    expect(result).toEqual({
+  // The corpus travels back so the caller can hand the same list to both passes:
+  // the indexes the themes pass grounds against are positions in it.
+  it('returns the corpus and the scope total', async () => {
+    await expect(readCorpus()).resolves.toEqual({
       ok: true,
-      themes,
       proposals: corpusOf(4).proposals,
       total: 4,
     });
@@ -87,25 +90,28 @@ describe('runThemesPass', () => {
 
   // Reported, not thrown. An exception thrown inside an Inngest step reaches the
   // function body as a `StepError` rebuilt from name/message/stack, so the class
-  // — and with it the code the app translates — would not survive. Returning is
-  // also what stops the retry: an empty corpus is just as empty second time, and
-  // re-running costs another corpus read.
+  // — and with it the code the app translates — would not survive.
   it('reports an under-populated corpus rather than throwing', async () => {
     vi.mocked(collectProposalCorpus).mockResolvedValue(corpusOf(1, 5));
 
-    await expect(runThemes()).resolves.toEqual({
+    await expect(readCorpus()).resolves.toEqual({
       ok: false,
       code: 'not-enough-text',
       message: expect.stringContaining('1 of'),
     });
   });
+});
 
-  it('does not call the model when the corpus is too small', async () => {
-    vi.mocked(collectProposalCorpus).mockResolvedValue(corpusOf(1, 5));
+describe('runThemesPass', () => {
+  // Takes the corpus rather than reading it, so the read can sit in its own
+  // Inngest step — which is what lets Inngest name the slow half.
+  it('analyses the corpus it is handed, reading nothing itself', async () => {
+    await expect(runThemes()).resolves.toEqual({ ok: true, themes });
 
-    await runThemes();
-
-    expect(vi.mocked(analyzeThemes)).not.toHaveBeenCalled();
+    expect(vi.mocked(collectProposalCorpus)).not.toHaveBeenCalled();
+    expect(vi.mocked(analyzeThemes)).toHaveBeenCalledWith(
+      corpusOf(4).proposals,
+    );
   });
 
   it('reports an unusable model reply with its code', async () => {

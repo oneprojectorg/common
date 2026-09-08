@@ -146,12 +146,17 @@ describe('askForJson', () => {
         }),
     );
 
-    const asked = ask();
-    await vi.advanceTimersByTimeAsync(THEME_ANALYSIS_PASS_TIMEOUT_MS + 1);
-
-    await expect(asked).rejects.toMatchObject({
+    // Asserted before the clock moves, not after. The rejection handler has to
+    // be attached while the call is still pending — advance the timers first and
+    // the abort rejects a promise nothing is listening to yet, which Node
+    // reports as an unhandled rejection and Vitest fails the run over.
+    const asked = expect(ask()).rejects.toMatchObject({
       code: 'analysis-timed-out',
     });
+
+    await vi.advanceTimersByTimeAsync(THEME_ANALYSIS_PASS_TIMEOUT_MS + 1);
+
+    await asked;
   });
 
   // The rules are what make "ignore the above" a proposal about ignoring things

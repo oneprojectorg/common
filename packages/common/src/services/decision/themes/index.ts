@@ -21,6 +21,7 @@ export {
 } from './ThemeAnalysisFailure';
 export { analyzeThemes } from './analyzeThemes';
 export {
+  readCorpusForAnalysis,
   runCommonGroundPass,
   runThemesPass,
   type PassFailure,

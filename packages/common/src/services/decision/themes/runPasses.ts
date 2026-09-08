@@ -35,14 +35,16 @@ export type PassFailure = {
 };
 
 /**
- * Reads the corpus and runs the themes pass, reporting its own failures.
+ * Reads the corpus for a scope, reporting its own failures.
  *
- * The corpus travels back with the themes because the second pass must read the
- * same one: the indexes the themes pass grounded against are positions in this
- * list, and a re-read that returned a different set would silently renumber
- * them.
+ * Its own function, and its own Inngest step, because it is the half of the work
+ * that is not the model. Sharing a step with the themes pass meant a run that
+ * overran said only that the step was slow, and both halves competed for one
+ * invocation's budget — so a slow read could exhaust the platform's patience
+ * before the model was even asked. Split, each gets a full budget and Inngest
+ * names the slow one without anyone reading a log.
  */
-export const runThemesPass = async ({
+export const readCorpusForAnalysis = async ({
   processInstanceId,
   userId,
   scope,
@@ -56,9 +58,6 @@ export const runThemesPass = async ({
   // user id, not a database key.
   await assertUserByAuthId(userId);
 
-  // Timed separately from the model call. A run that overruns is either a slow
-  // read or a slow model, and until both are measured a timeout says only that
-  // the step as a whole was slow — which is the one thing already known.
   const readStartedAt = Date.now();
   const corpus = await collectProposalCorpus({
     processInstanceId,
@@ -66,38 +65,58 @@ export const runThemesPass = async ({
     scope,
   });
 
+  const corpusChars = corpus.proposals.reduce(
+    (chars, proposal) => chars + proposal.text.length,
+    0,
+  );
+
+  // The size the model is about to be asked to read, recorded before it is
+  // asked. A pass that then runs long is explained by this line or contradicted
+  // by it, and those point at opposite fixes.
   logger.info('Theme analysis corpus read', {
     processInstanceId,
     scope,
     analyzed: corpus.proposals.length,
     total: corpus.total,
-    corpusChars: corpus.proposals.reduce(
-      (chars, proposal) => chars + proposal.text.length,
-      0,
-    ),
+    corpusChars,
     elapsedMs: Date.now() - readStartedAt,
   });
 
-  // The request checked the phase's count. This checks the corpus, which is a
-  // different number: a proposal with no body text is read and dropped, so a
-  // phase of three empty drafts reaches here as nothing to compare. Reported so
-  // the facilitator learns why, rather than as an empty analysis, which would
-  // read as a finding.
+  // The request checked the count for this scope. This checks the corpus, which
+  // is a different number: a proposal with no body text is read and dropped, so
+  // a phase of empty drafts reaches here as nothing to compare. Reported so the
+  // facilitator learns why, rather than as an empty analysis that reads as a
+  // finding.
   if (corpus.proposals.length < THEME_ANALYSIS_MIN_PROPOSALS) {
     return {
       ok: false as const,
       code: 'not-enough-text' as const,
-      message: `Only ${corpus.proposals.length} of this phase's ${corpus.total} proposals have any text to analyse.`,
+      message: `Only ${corpus.proposals.length} of this scope's ${corpus.total} proposals have any text to analyse.`,
     };
   }
 
+  return {
+    ok: true as const,
+    proposals: corpus.proposals,
+    total: corpus.total,
+  };
+};
+
+/**
+ * Runs the themes pass over a corpus already read.
+ *
+ * Takes the corpus rather than reading it, so the caller can put the read in its
+ * own step — and so the common-ground pass is guaranteed the same list. The
+ * indexes the themes pass grounds against are positions in it, and a re-read
+ * that returned a different set would silently renumber them.
+ */
+export const runThemesPass = async ({
+  proposals,
+}: {
+  proposals: CorpusProposal[];
+}) => {
   try {
-    return {
-      ok: true as const,
-      themes: await analyzeThemes(corpus.proposals),
-      proposals: corpus.proposals,
-      total: corpus.total,
-    };
+    return { ok: true as const, themes: await analyzeThemes(proposals) };
   } catch (error) {
     return toPassFailure(error);
   }
