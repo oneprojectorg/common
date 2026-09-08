@@ -9,12 +9,6 @@ export const screens = {
 };
 
 /**
- * Canonical heading class strings shared between the `Header1/2/3/4` components
- * in `@op/sense` and the TipTap rich text editor's `StyledHeading` extension.
- * Keeping these as literal Tailwind class strings ensures the build-time
- * scanner picks them up.
- */
-/**
  * Avatar fallback gradients. The `gradient` values are Tailwind utility
  * classes defined in theme.css; the hex is a flat approximation for
  * contexts that can't use a class (e.g. remote cursors). Literal class
@@ -53,10 +47,3 @@ export const getAvatarColorForString = (name: string) => {
 export const getGradientForString = (name: string) => {
   return getAvatarColorForString(name).gradient;
 };
-
-export const headingClasses = {
-  h1: 'font-serif text-title-lg',
-  h2: 'font-serif text-title-lg text-neutral-black',
-  h3: 'font-serif text-title-base text-neutral-black',
-  h4: 'font-serif text-title-sm14 text-neutral-black',
-} as const;
