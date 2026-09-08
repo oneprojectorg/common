@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@op/db/client', () => {
   const selections: { rows: Array<unknown> } = { rows: [] };
   const transitions: { rows: Array<unknown> } = { rows: [] };
-  const authorRows: { rows: Array<unknown> } = { rows: [] };
+  const nameRows: { rows: Array<unknown> } = { rows: [] };
   const filters: Array<[unknown, unknown]> = [];
 
   // One builder per `select()`, keyed on the table it reads, so concurrent
@@ -15,7 +15,7 @@ vi.mock('@op/db/client', () => {
   const rowsByTable: Record<string, { rows: Array<unknown> }> = {
     'selections.table': selections,
     'transitions.table': transitions,
-    'users.table': authorRows,
+    'users.table': nameRows,
   };
 
   const makeBuilder = () => {
@@ -26,7 +26,6 @@ vi.mock('@op/db/client', () => {
         return builder;
       }),
       innerJoin: vi.fn(() => builder),
-      leftJoin: vi.fn(() => builder),
       where: vi.fn(() => builder),
       orderBy: vi.fn(() => builder),
       limit: vi.fn(() => Promise.resolve(rowsByTable[table]?.rows ?? [])),
@@ -46,10 +45,9 @@ vi.mock('@op/db/client', () => {
       select: vi.fn(() => makeBuilder()),
       __selections: selections,
       __transitions: transitions,
-      __authors: authorRows,
+      __names: nameRows,
       __filters: filters,
     },
-    desc: vi.fn(),
     inArray: vi.fn((column: unknown, values: unknown) => {
       filters.push([column, values]);
       return { column, values };
@@ -64,7 +62,6 @@ vi.mock('@op/db/client', () => {
 // Distinct sentinels per column so a query filtering on the wrong one is
 // visible in `__filters`.
 vi.mock('@op/db/schema', () => ({
-  authUsers: { id: 'auth_users.id', email: 'auth_users.email' },
   profiles: {
     id: 'profiles.id',
     name: 'profiles.name',
@@ -90,12 +87,20 @@ vi.mock('@op/db/schema', () => ({
   },
 }));
 
+vi.mock('../email/recipients', () => ({
+  listMemberProfileRecipients: vi.fn(),
+}));
+
 vi.mock('./getProposalsForPhase', () => ({
   getProposalIdsForPhase: vi.fn(),
 }));
 
 import { db } from '@op/db/client';
 
+import {
+  type EmailRecipient,
+  listMemberProfileRecipients,
+} from '../email/recipients';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { listResultNotificationRecipients } from './listResultNotificationRecipients';
 
@@ -112,7 +117,7 @@ const state = () =>
   db as unknown as {
     __selections: { rows: Array<unknown> };
     __transitions: { rows: Array<unknown> };
-    __authors: { rows: Array<unknown> };
+    __names: { rows: Array<unknown> };
     __filters: Array<[unknown, unknown]>;
   };
 
@@ -120,12 +125,18 @@ const findResult = vi.mocked(db.query.decisionProcessResults.findFirst);
 const findInstance = vi.mocked(db.query.processInstances.findFirst);
 const findProposals = vi.mocked(db.query.proposals.findMany);
 const mockPhaseIds = vi.mocked(getProposalIdsForPhase);
+const mockAudienceOf = vi.mocked(listMemberProfileRecipients);
+
+const ADA: EmailRecipient = {
+  authUserId: 'auth-ada',
+  email: 'ada@example.com',
+};
+const BO: EmailRecipient = { authUserId: 'auth-bo', email: 'bo@example.com' };
 
 const proposal = ({
   id,
   title,
   profileId,
-  profileUsers,
   budget = { amount: 12000, currency: 'USD' },
   deletedAt = null as string | null,
   moderationDetachedAt = null as string | null,
@@ -133,8 +144,6 @@ const proposal = ({
   id: string;
   title: string;
   profileId: string;
-  /** Access-control rows: the id is all the code may read from them. */
-  profileUsers: Array<{ authUserId: string }>;
   budget?: unknown;
   deletedAt?: string | null;
   moderationDetachedAt?: string | null;
@@ -144,22 +153,12 @@ const proposal = ({
   deletedAt,
   moderationDetachedAt,
   proposalData: { budget },
-  profile: { name: title, profileUsers },
+  profile: { name: title },
 });
 
-/**
- * A row of the `users` → `profiles` → `auth.users` identity join: the display
- * name from the author's own profile, the address from their account.
- */
-const author = ({
-  authUserId,
-  name,
-  email = null as string | null,
-}: {
-  authUserId: string;
-  name: string;
-  email?: string | null;
-}) => ({ authUserId, name, email });
+/** Routes each proposal profile to its own audience, as the resolver does. */
+const audienceByProfile = (map: Record<string, Array<EmailRecipient>>) =>
+  mockAudienceOf.mockImplementation(async (profileId) => map[profileId] ?? []);
 
 const run = () =>
   listResultNotificationRecipients({
@@ -173,17 +172,9 @@ describe('listResultNotificationRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     state().__filters.length = 0;
-    state().__authors.rows = [
-      author({
-        authUserId: 'auth-ada',
-        name: 'Ada',
-        email: 'ada@example.com',
-      }),
-      author({
-        authUserId: 'auth-bo',
-        name: 'Bo',
-        email: 'bo@example.com',
-      }),
+    state().__names.rows = [
+      { authUserId: 'auth-ada', name: 'Ada' },
+      { authUserId: 'auth-bo', name: 'Bo' },
     ];
     state().__selections.rows = [{ proposalId: 'funded-1', allocated: '8000' }];
     state().__transitions.rows = [
@@ -205,16 +196,18 @@ describe('listResultNotificationRecipients', () => {
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [{ authUserId: 'auth-ada' }],
       }),
       proposal({
         id: 'not-funded-1',
         title: 'Bike Lane Study',
         profileId: 'profile-not-funded',
-        profileUsers: [{ authUserId: 'auth-bo' }],
         budget: { amount: 3000, currency: 'USD' },
       }),
     ] as never);
+    audienceByProfile({
+      'profile-funded': [ADA],
+      'profile-not-funded': [BO],
+    });
   });
 
   // The event carries both ids precisely so neither row is re-resolved as "the
@@ -237,75 +230,28 @@ describe('listResultNotificationRecipients', () => {
     });
   });
 
-  // `profileUsers` is the access-control row; the person is their profile. The
-  // address is the account's, though — `profiles.email` is an unverified
-  // contact field, not a mailbox we know reaches them.
-  it('takes the name from the author profile and the address from the account', async () => {
-    state().__authors.rows = [
-      author({
-        authUserId: 'auth-ada',
-        name: 'Ada Lovelace',
-        email: 'ada.account@example.com',
-      }),
-      author({
-        authUserId: 'auth-bo',
-        name: 'Bo Diddley',
-        email: 'bo.account@example.com',
-      }),
-    ];
-
-    const result = await run();
-
-    expect(result.ok && result.notification.recipients).toEqual([
-      expect.objectContaining({
-        email: 'ada.account@example.com',
-        values: expect.objectContaining({ name: 'Ada Lovelace' }),
-      }),
-      expect.objectContaining({
-        email: 'bo.account@example.com',
-        values: expect.objectContaining({ name: 'Bo Diddley' }),
-      }),
-    ]);
-  });
-
-  // Structural, because the fixtures alone can't prove a column is unread:
-  // the identity query must not so much as select `profiles.email`.
-  it('never reads the profile contact address', async () => {
+  // Delivery is the shared resolver's job — it is the one place that knows
+  // addresses come from `auth.users`, so this send must not resolve its own.
+  it('asks the shared resolver for each proposal profile audience', async () => {
     await run();
 
-    const identitySelect = vi
+    expect(mockAudienceOf).toHaveBeenCalledWith('profile-funded');
+    expect(mockAudienceOf).toHaveBeenCalledWith('profile-not-funded');
+    expect(mockAudienceOf).toHaveBeenCalledTimes(2);
+  });
+
+  // Structural, because fixtures alone can't prove a column goes unread: the
+  // only query this module runs against the author is for the display name.
+  it('never reads an address of its own', async () => {
+    await run();
+
+    const nameSelect = vi
       .mocked(db.select)
       .mock.calls.map(([columns]) => Object.values(columns ?? {}))
       .find((columns) => columns.includes('profiles.name'));
 
-    expect(identitySelect).toContain('auth_users.email');
-    expect(identitySelect).not.toContain('profiles.email');
-  });
-
-  it('skips an author whose account carries no address', async () => {
-    state().__authors.rows = [
-      author({
-        authUserId: 'auth-ada',
-        name: 'Ada',
-        email: 'ada@example.com',
-      }),
-      author({ authUserId: 'auth-bo', name: 'Bo', email: null }),
-    ];
-
-    const result = await run();
-
-    expect(result.ok && result.notification.recipients).toEqual([
-      expect.objectContaining({ email: 'ada@example.com' }),
-    ]);
-  });
-
-  it('reads identities from the users table, keyed by auth user id', async () => {
-    await run();
-
-    expect(state().__filters).toContainEqual([
-      'users.auth_user_id',
-      ['auth-ada', 'auth-bo'],
-    ]);
+    expect(nameSelect).toEqual(['users.auth_user_id', 'profiles.name']);
+    expect(nameSelect).not.toContain('profiles.email');
   });
 
   it('splits the phase pool by the named result row', async () => {
@@ -347,29 +293,27 @@ describe('listResultNotificationRecipients', () => {
       { proposalId: 'late-1', allocated: null },
     ];
     mockPhaseIds.mockResolvedValue(['funded-1']);
-    state().__authors.rows = [
-      ...state().__authors.rows,
-      author({
-        authUserId: 'auth-cy',
-        name: 'Cy',
-        email: 'cy@example.com',
-      }),
+    state().__names.rows = [
+      ...state().__names.rows,
+      { authUserId: 'auth-cy', name: 'Cy' },
     ];
     findProposals.mockResolvedValue([
       proposal({
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [{ authUserId: 'auth-ada' }],
       }),
       proposal({
         id: 'late-1',
         title: 'Late Entry',
         profileId: 'profile-late',
-        profileUsers: [{ authUserId: 'auth-cy' }],
         budget: { amount: 500, currency: 'USD' },
       }),
     ] as never);
+    audienceByProfile({
+      'profile-funded': [ADA],
+      'profile-late': [{ authUserId: 'auth-cy', email: 'cy@example.com' }],
+    });
 
     const result = await run();
 
@@ -390,37 +334,45 @@ describe('listResultNotificationRecipients', () => {
   });
 
   it('mails every collaborator once, per proposal', async () => {
-    // `auth-ada-dup` resolves to Ada's inbox in a different case; `auth-anon`
-    // has no profile row at all, so the identity join drops them.
-    state().__authors.rows = [
-      ...state().__authors.rows,
-      author({
-        authUserId: 'auth-ada-dup',
-        name: 'Ada',
-        email: 'ADA@example.com',
-      }),
-    ];
+    mockPhaseIds.mockResolvedValue(['funded-1']);
     findProposals.mockResolvedValue([
       proposal({
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [
-          { authUserId: 'auth-ada' },
-          { authUserId: 'auth-ada-dup' },
-          { authUserId: 'auth-bo' },
-          { authUserId: 'auth-anon' },
-        ],
       }),
     ] as never);
-    mockPhaseIds.mockResolvedValue(['funded-1']);
+    // Two accounts landing in one inbox in different case, plus an anonymous
+    // account the resolver reports with no address at all.
+    audienceByProfile({
+      'profile-funded': [
+        ADA,
+        { authUserId: 'auth-ada-dup', email: 'ADA@example.com' },
+        BO,
+        { authUserId: 'auth-anon', email: null },
+      ],
+    });
+    state().__names.rows = [
+      ...state().__names.rows,
+      { authUserId: 'auth-ada-dup', name: 'Ada' },
+      { authUserId: 'auth-anon', name: 'Anon' },
+    ];
 
     const result = await run();
 
-    expect(result).toMatchObject({ ok: true });
     expect(result.ok && result.notification.recipients).toEqual([
       expect.objectContaining({ email: 'ada@example.com' }),
       expect.objectContaining({ email: 'bo@example.com' }),
+    ]);
+  });
+
+  it('skips an author with no profile to take a name from', async () => {
+    state().__names.rows = [{ authUserId: 'auth-ada', name: 'Ada' }];
+
+    const result = await run();
+
+    expect(result.ok && result.notification.recipients).toEqual([
+      expect.objectContaining({ email: 'ada@example.com' }),
     ]);
   });
 
@@ -430,19 +382,19 @@ describe('listResultNotificationRecipients', () => {
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [{ authUserId: 'auth-ada' }],
         moderationDetachedAt: '2026-01-01T00:00:00Z',
       }),
       proposal({
         id: 'not-funded-1',
         title: 'Bike Lane Study',
         profileId: 'profile-not-funded',
-        profileUsers: [{ authUserId: 'auth-bo' }],
         deletedAt: '2026-01-01T00:00:00Z',
       }),
     ] as never);
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'noRecipients' });
+    // A takedown must not even be looked up, let alone mailed.
+    expect(mockAudienceOf).not.toHaveBeenCalled();
   });
 
   // A revert retires the row rather than deleting it. Re-resolving "the latest
@@ -482,15 +434,17 @@ describe('listResultNotificationRecipients', () => {
   });
 
   it('sends nothing when no author has a usable address', async () => {
+    mockPhaseIds.mockResolvedValue(['funded-1']);
     findProposals.mockResolvedValue([
       proposal({
         id: 'funded-1',
         title: 'Community Garden Revamp',
         profileId: 'profile-funded',
-        profileUsers: [{ authUserId: 'auth-anon' }],
       }),
     ] as never);
-    mockPhaseIds.mockResolvedValue(['funded-1']);
+    audienceByProfile({
+      'profile-funded': [{ authUserId: 'auth-anon', email: null }],
+    });
 
     await expect(run()).resolves.toEqual({ ok: false, reason: 'noRecipients' });
   });

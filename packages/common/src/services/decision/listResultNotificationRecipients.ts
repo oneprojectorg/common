@@ -1,6 +1,5 @@
 import { db, eq, inArray } from '@op/db/client';
 import {
-  authUsers,
   decisionProcessResultSelections,
   profiles,
   stateTransitionHistory,
@@ -8,6 +7,10 @@ import {
 } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
+import {
+  type EmailRecipient,
+  listMemberProfileRecipients,
+} from '../email/recipients';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
   type ResultNotificationMessages,
@@ -123,21 +126,33 @@ export async function listResultNotificationRecipients({
 
   const proposals = await db.query.proposals.findMany({
     where: { id: { in: proposalIds } },
-    with: { profile: { with: { profileUsers: true } } },
+    with: { profile: true },
   });
 
   const reachable = proposals.filter(isProposalReachable);
-  const authors = await readAuthorIdentities(
-    reachable.flatMap((proposal) =>
-      proposal.profile.profileUsers.map(({ authUserId }) => authUserId),
+
+  // Addresses come from the shared resolver — one call per proposal profile,
+  // the same way `listProposalMergeRecipients` does it. It is the single place
+  // that knows delivery goes to `auth.users.email`, so this send can't drift
+  // from the rest of them.
+  const audiences = await Promise.all(
+    reachable.map((proposal) =>
+      listMemberProfileRecipients(proposal.profileId),
     ),
   );
 
-  const recipients = reachable.flatMap((proposal) =>
+  // Names need their own read: `EmailRecipient` carries no display name, and
+  // `{{name}}` has to come from the author's own profile.
+  const names = await readAuthorNames(
+    audiences.flat().map(({ authUserId }) => authUserId),
+  );
+
+  const recipients = reachable.flatMap((proposal, index) =>
     toRecipients({
       proposal,
       allocated: allocatedByProposalId.get(proposal.id),
-      authors,
+      audience: audiences[index] ?? [],
+      names,
     }),
   );
 
@@ -164,40 +179,30 @@ export async function listResultNotificationRecipients({
   };
 }
 
-/** Who an author is, resolved from their own profile. */
-interface AuthorIdentity {
-  name: string;
-  email: string | null;
-}
-
 /**
  * One message per (author, proposal): a co-authored proposal mails every
  * collaborator, and an author with two proposals hears about each. Dedup is
  * per inbox within the proposal, so two access rows for one person can't
  * double up. `allocated` is `undefined` for a proposal the result row did not
  * select, and `null` for one it selected without an amount.
- *
- * `profileUsers` contributes nothing but the `authUserId` — it is an
- * access-control row, and its `name`/`email` are insert-time snapshots of
- * whoever was granted access. The person is their profile.
  */
 function toRecipients({
   proposal,
   allocated,
-  authors,
+  audience,
+  names,
 }: {
   proposal: {
     id: string;
     profileId: string;
     proposalData: unknown;
-    profile: {
-      name: string;
-      profileUsers: Array<{ authUserId: string }>;
-    };
+    profile: { name: string };
   };
   allocated: string | null | undefined;
-  /** Author identities, keyed by auth user id. */
-  authors: Map<string, AuthorIdentity>;
+  /** This proposal's authors, from the shared recipient resolver. */
+  audience: Array<EmailRecipient>;
+  /** Display names, keyed by auth user id. */
+  names: Map<string, string>;
 }): Array<ResultNotificationRecipient> {
   const outcome: ResultNotificationOutcome =
     allocated === undefined ? 'notFunded' : 'funded';
@@ -212,66 +217,51 @@ function toRecipients({
 
   const seen = new Set<string>();
 
-  return proposal.profile.profileUsers
-    .flatMap(({ authUserId }) => {
-      const author = authors.get(authUserId);
-      return author ? [author] : [];
-    })
-    .filter(hasEmail)
-    .flatMap((author) => {
-      const key = author.email.toLowerCase();
-      if (seen.has(key)) {
-        return [];
-      }
-      seen.add(key);
+  return audience.filter(hasEmail).flatMap(({ authUserId, email }) => {
+    const name = names.get(authUserId);
 
-      return [
-        {
-          email: author.email,
-          proposalProfileId: proposal.profileId,
-          outcome,
-          values: {
-            name: author.name,
-            proposal: proposal.profile.name,
-            amount,
-          },
-        },
-      ];
-    });
+    // No profile means no name for the greeting, and the copy opens with it.
+    if (name === undefined) {
+      return [];
+    }
+
+    const key = email.toLowerCase();
+    if (seen.has(key)) {
+      return [];
+    }
+    seen.add(key);
+
+    return [
+      {
+        email,
+        proposalProfileId: proposal.profileId,
+        outcome,
+        values: { name, proposal: proposal.profile.name, amount },
+      },
+    ];
+  });
 }
 
 /**
- * Who each author is, from the two columns that are actually authoritative:
- * the display name from their own profile, the address from their account.
- *
- * `profileUsers.name` / `.email` are never read — that row records who was
- * granted access to the proposal, and its copies of both are insert-time
- * snapshots nothing keeps in sync. `profiles.email` is not read either: it is
- * an unverified public contact field somebody typed into a profile form, not
- * a mailbox we know reaches them. `auth.users.email` is the address they sign
- * in with, and the one every other notification sender delivers to.
+ * The display name for each author, from their own profile — always set, and
+ * the field Scott asked this to read rather than the `profileUsers` snapshot.
+ * Addresses deliberately do not come from here: `profiles.email` is an
+ * unverified public contact field, so delivery stays with the shared resolver.
  */
-async function readAuthorIdentities(
+async function readAuthorNames(
   authUserIds: Array<string>,
-): Promise<Map<string, AuthorIdentity>> {
+): Promise<Map<string, string>> {
   if (authUserIds.length === 0) {
     return new Map();
   }
 
   const rows = await db
-    .select({
-      authUserId: users.authUserId,
-      name: profiles.name,
-      email: authUsers.email,
-    })
+    .select({ authUserId: users.authUserId, name: profiles.name })
     .from(users)
     .innerJoin(profiles, eq(profiles.id, users.profileId))
-    .leftJoin(authUsers, eq(authUsers.id, users.authUserId))
     .where(inArray(users.authUserId, [...new Set(authUserIds)]));
 
-  return new Map(
-    rows.map(({ authUserId, name, email }) => [authUserId, { name, email }]),
-  );
+  return new Map(rows.map(({ authUserId, name }) => [authUserId, name]));
 }
 
 /**
