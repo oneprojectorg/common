@@ -27,13 +27,14 @@ import {
 const INSTANCE_ID = '22222222-2222-4222-8222-222222222222';
 const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 
-const corpusOf = (count: number, total = count) => ({
+const corpusOf = (count: number, total = count, read = count) => ({
   proposals: Array.from({ length: count }, (_unused, position) => ({
     index: position + 1,
     id: `proposal-${position + 1}`,
     title: `Proposal ${position + 1}`,
     text: 'Body',
   })),
+  read,
   total,
 });
 
@@ -97,7 +98,29 @@ describe('readCorpusForAnalysis', () => {
     await expect(readCorpus()).resolves.toEqual({
       ok: false,
       code: 'not-enough-text',
-      message: expect.stringContaining('1 of'),
+      message: expect.stringContaining('had text to analyse'),
+    });
+  });
+
+  // The two ways a scope comes back empty need telling apart. A read that
+  // returned nothing while the count says eight is a broken read; eight read
+  // with no bodies is eight empty proposals. Reporting only the survivors makes
+  // the first look like the second, which sends the next person to the wrong
+  // half of the code.
+  it('separates a read that returned nothing from proposals with no text', async () => {
+    vi.mocked(collectProposalCorpus).mockResolvedValue(corpusOf(0, 8, 0));
+
+    const readNothing = await readCorpus('process');
+
+    vi.mocked(collectProposalCorpus).mockResolvedValue(corpusOf(0, 8, 8));
+
+    const readWithoutText = await readCorpus('process');
+
+    expect(readNothing).toMatchObject({
+      message: expect.stringContaining('counted 8 proposals, read 0'),
+    });
+    expect(readWithoutText).toMatchObject({
+      message: expect.stringContaining('counted 8 proposals, read 8'),
     });
   });
 });

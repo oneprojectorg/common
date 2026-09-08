@@ -10,6 +10,17 @@ import type { CorpusProposal } from './corpusGrounding';
 export interface ProposalCorpus {
   proposals: CorpusProposal[];
   /**
+   * Rows the reader actually returned, before the empty-body drop.
+   *
+   * Reported separately from both other counts because the three answer
+   * different questions, and only together do they say what happened. `total`
+   * is a count query; `read` is the data query; `proposals.length` is what
+   * survived shaping. A scope whose count says eight and whose read says none
+   * is a broken read, and one that reads eight and shapes none is eight
+   * proposals with no body text — the same empty corpus, opposite causes.
+   */
+  read: number;
+  /**
    * Proposals the phase held when the read started, independent of how many
    * were taken. `listProposals` runs its count query separately from the data
    * query, so this is the full count rather than a remaining-rows figure.
@@ -111,6 +122,7 @@ export const collectProposalCorpus = async ({
       index: position + 1,
       ...proposal,
     })),
+    read: proposals.length,
     total,
   };
 };

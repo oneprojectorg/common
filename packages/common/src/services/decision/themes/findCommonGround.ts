@@ -7,7 +7,11 @@ import type {
 import { commonGroundPassReplySchema } from '../schemas/themeAnalysis';
 import { askForJson } from './askForJson';
 import type { CorpusProposal } from './corpusGrounding';
-import { renderCorpusForPrompt, resolveCorpusIndexes } from './corpusGrounding';
+import {
+  assertCorpusHasProposals,
+  renderCorpusForPrompt,
+  resolveCorpusIndexes,
+} from './corpusGrounding';
 
 const INSTRUCTIONS = `You help a facilitator find where a set of proposals already agrees, who is standing outside that agreement, and what small move would bring them closer.
 
@@ -80,6 +84,8 @@ export const findCommonGround = async ({
   themes: ThemeAnalysisTheme[];
   corpus: CorpusProposal[];
 }): Promise<CommonGroundAnalysis> => {
+  assertCorpusHasProposals(corpus, 'proposal-common-ground');
+
   const themeContext = themes.length
     ? `A first pass over these proposals reported these themes:\n\n${renderThemes(themes)}\n\n`
     : '';

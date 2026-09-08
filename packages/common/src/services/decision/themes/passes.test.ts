@@ -267,6 +267,18 @@ describe('analyzeThemes', () => {
     await expect(analyzeThemes(corpus)).rejects.toBeInstanceOf(CommonError);
   });
 
+  // The caller's count check and the corpus are read by different queries, so
+  // one can say eight while the other returns nothing. Without this the pass
+  // renders "these 0 proposals" and pays for a model call that has no material
+  // to answer from.
+  it('refuses an empty corpus without asking the model', async () => {
+    await expect(analyzeThemes([])).rejects.toMatchObject({
+      code: 'not-enough-text',
+    });
+
+    expect(generate).not.toHaveBeenCalled();
+  });
+
   it('sends the fenced corpus as the prompt', async () => {
     replyWithJson({ themes: [] });
 
@@ -375,6 +387,14 @@ describe('findCommonGround', () => {
     await findCommonGround({ themes, corpus });
 
     expect(promptSent()).toContain('Street space: Road space.');
+  });
+
+  it('refuses an empty corpus without asking the model', async () => {
+    await expect(
+      findCommonGround({ themes, corpus: [] }),
+    ).rejects.toMatchObject({ code: 'not-enough-text' });
+
+    expect(generate).not.toHaveBeenCalled();
   });
 
   it('omits the theme preamble when the first pass found nothing', async () => {

@@ -137,12 +137,16 @@ describe('collectProposalCorpus', () => {
       ],
     });
 
-    const { proposals } = await collect();
+    const { proposals, read } = await collect();
 
     expect(proposals.map(({ index, id }) => [index, id])).toEqual([
       [1, 'a'],
       [2, 'd'],
     ]);
+    // Counted before the drop, so an empty corpus can be attributed. Four rows
+    // read and two analysed is two empty proposals; zero read is a reader that
+    // returned nothing, which is a different bug in a different query.
+    expect(read).toBe(4);
   });
 
   // Empty rather than a placeholder: the title is stored on the record and

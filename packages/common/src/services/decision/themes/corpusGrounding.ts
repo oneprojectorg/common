@@ -1,3 +1,5 @@
+import { ThemeAnalysisFailure } from './ThemeAnalysisFailure';
+
 /**
  * One proposal as the model sees it.
  *
@@ -17,6 +19,36 @@ export interface CorpusProposal {
   /** Opening of the proposal body, trimmed to the per-proposal budget. */
   text: string;
 }
+
+/**
+ * Refuses a corpus with nothing in it, before the model is asked about it.
+ *
+ * At the pass rather than only at the caller. Both passes render "these 0
+ * proposals" followed by an empty list perfectly happily, and a model handed
+ * that has no material to answer from and no reason to answer quickly — it is a
+ * paid call whose best possible outcome is an empty analysis that reads as a
+ * finding. The callers do check their counts, but a count is read separately
+ * from the rows: the reader can return nothing while the count says eight, and
+ * whichever guard is furthest from the model is the one that misses it.
+ *
+ * Coded `not-enough-text`, which is what the facilitator is actually told, and
+ * reported rather than retried — an empty corpus is empty on the second attempt.
+ *
+ * @param corpus - The proposals the pass is about to render.
+ * @param pass - Pass name, for the diagnostic.
+ * @throws ThemeAnalysisFailure when the corpus holds no proposals.
+ */
+export const assertCorpusHasProposals = (
+  corpus: CorpusProposal[],
+  pass: string,
+): void => {
+  if (corpus.length === 0) {
+    throw new ThemeAnalysisFailure(
+      'not-enough-text',
+      `The ${pass} pass was handed an empty corpus, so the model was not asked.`,
+    );
+  }
+};
 
 /**
  * Resolves corpus indexes the model returned back to the proposals they name.

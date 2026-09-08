@@ -76,6 +76,12 @@ export const readCorpusForAnalysis = async ({
   logger.info('Theme analysis corpus read', {
     processInstanceId,
     scope,
+    // Three counts, because an empty corpus has two very different causes and
+    // one number cannot tell them apart. `total` is the scope's count query,
+    // `read` is what the data query returned, `analyzed` is what survived the
+    // empty-body drop. Whichever step of that chain lost the proposals is the
+    // one to fix.
+    read: corpus.read,
     analyzed: corpus.proposals.length,
     total: corpus.total,
     corpusChars,
@@ -91,7 +97,10 @@ export const readCorpusForAnalysis = async ({
     return {
       ok: false as const,
       code: 'not-enough-text' as const,
-      message: `Only ${corpus.proposals.length} of this scope's ${corpus.total} proposals have any text to analyse.`,
+      // All three counts, for the reason they are all logged: "0 of 8 have text"
+      // is the wrong diagnosis when the read returned nothing at all, and that
+      // sentence gives no way to notice.
+      message: `Nothing to compare in scope '${scope}': counted ${corpus.total} proposals, read ${corpus.read}, and ${corpus.proposals.length} had text to analyse.`,
     };
   }
 

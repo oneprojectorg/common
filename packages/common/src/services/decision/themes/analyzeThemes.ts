@@ -2,7 +2,11 @@ import type { ThemeAnalysisTheme } from '../schemas/themeAnalysis';
 import { themesPassReplySchema } from '../schemas/themeAnalysis';
 import { askForJson } from './askForJson';
 import type { CorpusProposal } from './corpusGrounding';
-import { renderCorpusForPrompt, resolveCorpusIndexes } from './corpusGrounding';
+import {
+  assertCorpusHasProposals,
+  renderCorpusForPrompt,
+  resolveCorpusIndexes,
+} from './corpusGrounding';
 
 const INSTRUCTIONS = `You read the proposals submitted to a participatory decision process and report the themes running through them.
 
@@ -38,6 +42,8 @@ Answer with an object holding one key, "themes", whose value is an array of obje
 export const analyzeThemes = async (
   corpus: CorpusProposal[],
 ): Promise<ThemeAnalysisTheme[]> => {
+  assertCorpusHasProposals(corpus, 'proposal-themes');
+
   const reply = await askForJson({
     name: 'proposal-themes',
     instructions: INSTRUCTIONS,
