@@ -47,7 +47,7 @@ describe.concurrent('public profile access', () => {
     expect(roles.length).toBeGreaterThan(0);
   });
 
-  it('opens a decision for participation, not just reading', async ({
+  it('opens a decision for voting, not just reading', async ({
     task,
     onTestFinished,
   }) => {
@@ -59,20 +59,44 @@ describe.concurrent('public profile access', () => {
       user: { id: setup.user.id },
     });
 
-    // A public process nobody outside the network can join is not public in
-    // any useful sense, so the decision grant carries submit and vote.
+    // A public process nobody outside the network can vote in is not public in
+    // any useful sense, so the decision grant carries vote.
     const roles = await assertProfileAccess({
       user: { id: randomUUID() },
       profileId: setup.instance.profileId,
       permissions: {
-        decisions:
-          permission.READ |
-          decisionPermission.SUBMIT_PROPOSALS |
-          decisionPermission.VOTE,
+        decisions: permission.READ | decisionPermission.VOTE,
       },
     });
 
     expect(roles.length).toBeGreaterThan(0);
+  });
+
+  it('does not open a decision for proposal submission', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+
+    await makeProfilePublic({
+      profileId: setup.instance.profileId,
+      user: { id: setup.user.id },
+    });
+
+    // `createProposal` writes a profile, a `profileUsers` row, a role link and
+    // a proposal row. Granting that to a caller who holds no account makes the
+    // endpoint a write amplifier for anyone who can reach it, so someone who
+    // wants to propose signs in first.
+    await expect(
+      assertProfileAccess({
+        user: { id: randomUUID() },
+        profileId: setup.instance.profileId,
+        permissions: {
+          decisions: decisionPermission.SUBMIT_PROPOSALS,
+        },
+      }),
+    ).rejects.toThrow(UnauthorizedError);
   });
 
   it('does not let the public write to it', async ({

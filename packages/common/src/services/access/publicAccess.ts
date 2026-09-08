@@ -22,9 +22,14 @@ const PUBLIC_ROLE_NAME = 'Public';
 /**
  * What the public may do on a profile, by what the profile is.
  *
- * A decision opens for participation, not just reading: the point of a public
- * process is that someone outside the network can propose and vote. An
- * organization opens for reading only — nothing about an org profile is a
+ * A decision opens for reading and voting. It does not open for proposal
+ * submission. `createProposal` writes a profile, a `profileUsers` row, a role
+ * link and a proposal row, so an unauthenticated caller who repeats it writes
+ * four indexed rows per call. Someone who wants to propose signs in first,
+ * with an email address or a phone number. A vote stays anonymous when the
+ * voter asks for that.
+ *
+ * An organization opens for reading only — nothing about an org profile is a
  * participatory surface.
  *
  * Every case carries `profile: READ`, matching the invariant `createRole`
@@ -45,10 +50,7 @@ const publicGrantsFor = (type: string): PublicGrant[] | undefined => {
         { zoneName: 'profile', permission: permission.READ },
         {
           zoneName: 'decisions',
-          permission:
-            permission.READ |
-            decisionPermission.SUBMIT_PROPOSALS |
-            decisionPermission.VOTE,
+          permission: permission.READ | decisionPermission.VOTE,
         },
       ];
     case EntityType.ORG:
