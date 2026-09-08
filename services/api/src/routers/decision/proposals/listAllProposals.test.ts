@@ -108,7 +108,7 @@ describe.concurrent('listAllProposals', () => {
     const phaseScoped = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(phaseScoped.proposals).toHaveLength(2);
+    expect(phaseScoped.items).toHaveLength(2);
 
     const allValid = await caller.decision.listAllProposals({
       processInstanceId: instanceId,

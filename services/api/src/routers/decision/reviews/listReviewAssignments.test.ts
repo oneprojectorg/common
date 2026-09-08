@@ -190,7 +190,7 @@ async function collectPages(
       ...input,
       cursor,
     });
-    ids.push(...result.assignments.map((entry) => entry.assignment.id));
+    ids.push(...result.items.map((entry) => entry.assignment.id));
     totals.push(result.total);
     if (!result.next) {
       return { ids, totals, pageCount: page + 1 };
@@ -322,7 +322,7 @@ describe.concurrent('listReviewAssignments pagination', () => {
       expect(single.next).toBeNull();
       expect(paged.pageCount).toBe(2);
       expect(paged.ids).toEqual(
-        single.assignments.map((entry) => entry.assignment.id),
+        single.items.map((entry) => entry.assignment.id),
       );
       expect(new Set(paged.ids).size).toBe(fixture.assignmentIds.length);
       // NULLS LAST in both directions, so the undated row never leads.
@@ -362,9 +362,7 @@ describe.concurrent('listReviewAssignments pagination', () => {
     const single = await caller.decision.listReviewAssignments(input);
     const paged = await collectPages(caller, { ...input, limit: 2 });
 
-    expect(paged.ids).toEqual(
-      single.assignments.map((entry) => entry.assignment.id),
-    );
+    expect(paged.ids).toEqual(single.items.map((entry) => entry.assignment.id));
     expect(new Set(paged.ids).size).toBe(4);
     expect(paged.totals).toEqual([4, 4]);
   });
@@ -454,7 +452,7 @@ describe.concurrent('listReviewAssignments pagination', () => {
       limit: 1,
     });
 
-    expect(page.assignments).toHaveLength(1);
+    expect(page.items).toHaveLength(1);
     expect(page.total).toBe(4);
 
     const completed = await caller.decision.listReviewAssignments({
@@ -492,8 +490,8 @@ describe.concurrent('listReviewAssignments', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(result.assignments).toHaveLength(1);
-    expect(result.assignments[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       assignment: {
         id: created.assignment.id,
         proposal: {
@@ -536,8 +534,8 @@ describe.concurrent('listReviewAssignments', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(result.assignments).toHaveLength(2);
-    expect(result.assignments.map((a) => a.assignment.id)).toEqual(
+    expect(result.items).toHaveLength(2);
+    expect(result.items.map((a) => a.assignment.id)).toEqual(
       expect.arrayContaining([first.assignment.id, second.assignment.id]),
     );
   });
@@ -578,8 +576,8 @@ describe.concurrent('listReviewAssignments', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(result.assignments).toHaveLength(1);
-    expect(result.assignments[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       assignment: {
         id: created.assignment.id,
         status: ProposalReviewAssignmentStatus.PENDING,
@@ -630,8 +628,8 @@ describe.concurrent('listReviewAssignments', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(result.assignments).toHaveLength(1);
-    expect(result.assignments[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       assignment: {
         id: created.assignment.id,
         status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
@@ -660,7 +658,7 @@ describe.concurrent('listReviewAssignments', () => {
       sort: 'leastReviewed',
     });
 
-    expect(result.assignments.map((a) => a.assignment.proposal.id)).toEqual([
+    expect(result.items.map((a) => a.assignment.proposal.id)).toEqual([
       zero.proposal.id,
       one.proposal.id,
       two.proposal.id,
@@ -702,7 +700,7 @@ describe.concurrent('listReviewAssignments', () => {
 
     // Both proposals have zero completed reviews, so the in-progress one wins
     // the tiebreak and leads the list.
-    expect(result.assignments[0]?.assignment.proposal.id).toBe(
+    expect(result.items[0]?.assignment.proposal.id).toBe(
       inProgress.proposal.id,
     );
   });
@@ -741,7 +739,7 @@ describe.concurrent('listReviewAssignments', () => {
       processInstanceId: context.instance.instance.id,
       phaseId: FEASIBILITY_PHASE,
     });
-    expect(past.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(past.items.map((a) => a.assignment.id)).toEqual([
       feasibility.assignment.id,
     ]);
 
@@ -749,7 +747,7 @@ describe.concurrent('listReviewAssignments', () => {
       processInstanceId: context.instance.instance.id,
       phaseId: COMMUNITY_PHASE,
     });
-    expect(current.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(current.items.map((a) => a.assignment.id)).toEqual([
       communityAssignment.id,
     ]);
   });
@@ -815,7 +813,7 @@ describe.concurrent('listReviewAssignments', () => {
 
     // Coverage counts within the scoped phase, so the proposal whose two
     // completions sit in the feasibility phase leads with zero.
-    expect(result.assignments.map((a) => a.assignment.proposal.id)).toEqual([
+    expect(result.items.map((a) => a.assignment.proposal.id)).toEqual([
       coveredBefore.proposal.id,
       coveredNow.proposal.id,
     ]);
@@ -876,8 +874,8 @@ describe.concurrent('listReviewAssignments', () => {
       categoryIds: [termOne.id],
     });
 
-    expect(single.assignments).toHaveLength(1);
-    expect(single.assignments[0]?.assignment.proposal.id).toBe(
+    expect(single.items).toHaveLength(1);
+    expect(single.items[0]?.assignment.proposal.id).toBe(
       inDistrictOne.proposal.id,
     );
 
@@ -888,9 +886,9 @@ describe.concurrent('listReviewAssignments', () => {
       categoryIds: [termOne.id, termTwo.id],
     });
 
-    expect(
-      multiple.assignments.map((a) => a.assignment.proposal.id).sort(),
-    ).toEqual([inDistrictOne.proposal.id, inDistrictTwo.proposal.id].sort());
+    expect(multiple.items.map((a) => a.assignment.proposal.id).sort()).toEqual(
+      [inDistrictOne.proposal.id, inDistrictTwo.proposal.id].sort(),
+    );
   });
 
   it('returns empty list when the category matches no proposals', async ({
@@ -917,7 +915,7 @@ describe.concurrent('listReviewAssignments', () => {
       categoryIds: [crypto.randomUUID()],
     });
 
-    expect(result.assignments).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('filters assignments to a single proposal by its profile id', async ({
@@ -957,7 +955,7 @@ describe.concurrent('listReviewAssignments', () => {
       proposalProfileId: target.proposal.profileId,
     });
 
-    expect(result.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(result.items.map((a) => a.assignment.id)).toEqual([
       target.assignment.id,
     ]);
   });
@@ -988,7 +986,7 @@ describe.concurrent('listReviewAssignments', () => {
       phaseId: FEASIBILITY_PHASE,
       proposalProfileId: feasibility.proposal.profileId,
     });
-    expect(ownPhase.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(ownPhase.items.map((a) => a.assignment.id)).toEqual([
       feasibility.assignment.id,
     ]);
 
@@ -997,7 +995,7 @@ describe.concurrent('listReviewAssignments', () => {
       proposalProfileId: feasibility.proposal.profileId,
       phaseId: COMMUNITY_PHASE,
     });
-    expect(otherPhase.assignments).toHaveLength(0);
+    expect(otherPhase.items).toHaveLength(0);
   });
 
   it('breaks an assignedAt tie by id, keeping the newest sort deterministic', async ({
@@ -1034,7 +1032,7 @@ describe.concurrent('listReviewAssignments', () => {
       sort: 'newest',
     });
 
-    expect(result.assignments.map((a) => a.assignment.id)).toEqual(
+    expect(result.items.map((a) => a.assignment.id)).toEqual(
       [first.assignment.id, second.assignment.id].sort().reverse(),
     );
   });
@@ -1083,7 +1081,7 @@ describe.concurrent('listReviewAssignments', () => {
       proposalProfileId: created.proposal.profileId,
     });
 
-    expect(result.assignments).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('returns empty list when reviewer has no assignments', async ({
@@ -1100,7 +1098,7 @@ describe.concurrent('listReviewAssignments', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(result.assignments).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('rejects access for users without review permissions', async ({
@@ -1153,7 +1151,7 @@ describe.concurrent('listReviewAssignments', () => {
       processInstanceId: instanceId,
       phaseId: REVIEW_PHASE,
     });
-    expect(before.assignments).toHaveLength(2);
+    expect(before.items).toHaveLength(2);
 
     // The edge directly rather than through mergeProposals: what's under test is
     // the read, and the assignment already exists at this point either way.
@@ -1169,9 +1167,9 @@ describe.concurrent('listReviewAssignments', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(
-      after.assignments.map((entry) => entry.assignment.proposal.id),
-    ).toEqual([survivor.proposal.id]);
+    expect(after.items.map((entry) => entry.assignment.proposal.id)).toEqual([
+      survivor.proposal.id,
+    ]);
   });
 });
 
@@ -1242,7 +1240,7 @@ describeDecisionAccessTierGating('listReviewAssignments', {
         processInstanceId: context.instance.instance.id,
         phaseId: REVIEW_PHASE,
       });
-      expect(result.assignments).toBeDefined();
+      expect(result.items).toBeDefined();
     },
   ),
 });

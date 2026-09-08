@@ -196,7 +196,7 @@ describe('createChannelRegistrationLink — infinite query invalidation', () => 
 
   function seedInfiniteQuery(client: QueryClient, queryKey: QueryKey) {
     client.setQueryData(queryKey, {
-      pages: [{ proposals: [], total: 0 }],
+      pages: [{ items: [], total: 0 }],
       pageParams: [undefined],
     });
   }

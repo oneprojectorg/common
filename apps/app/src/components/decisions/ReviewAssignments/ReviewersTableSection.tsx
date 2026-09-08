@@ -2,7 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { PhaseReviewerSummary } from '@op/common/client';
+import { type PhaseReviewerSummary, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import {
   Empty,
@@ -81,7 +81,7 @@ function ReviewersTableContent({
     trpc.decision.listPhaseReviewerSummaries.useSuspenseInfiniteQuery(
       { processInstanceId, phaseId },
       {
-        getNextPageParam: (lastPage) => lastPage.next,
+        getNextPageParam: nextCursor,
         // An SSR-seeded entry never registers the realtime channel; refetch.
         refetchOnMount: 'always',
       },
@@ -98,7 +98,7 @@ function ReviewersTableContent({
       isFetchingNextPage,
     });
 
-  const rows = data.pages.flatMap((page) => page.reviewers);
+  const rows = data.pages.flatMap((page) => page.items);
   const totalReviewers = data.pages[0]?.totalReviewers ?? rows.length;
 
   return (

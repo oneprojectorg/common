@@ -89,7 +89,7 @@ export async function listReviewerAssignments({
     reviewer: isAssociated ? (reviewer ?? null) : null,
     isEligible,
     ...totals,
-    assignments: queue.assignments,
+    items: queue.items,
     next: queue.next,
     total: queue.total,
   });

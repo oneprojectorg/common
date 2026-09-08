@@ -119,7 +119,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       votedByProfileId: voter.profileId,
     });
 
-    const returnedIds = result.proposals.map((p) => p.id).sort();
+    const returnedIds = result.items.map((p) => p.id).sort();
     expect(returnedIds).toEqual([proposalA.id, proposalC.id].sort());
     expect(result.total).toBe(2);
   });
@@ -217,7 +217,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       votedByProfileId: voter.profileId,
     });
 
-    const ids = result.proposals.map((p) => p.id);
+    const ids = result.items.map((p) => p.id);
     expect(ids).toContain(submittedProposal.id);
     expect(ids).not.toContain(draftProposal.id);
     expect(result.total).toBe(1);
@@ -275,7 +275,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       votedByProfileId: voter.profileId,
     });
 
-    const ids = result.proposals.map((p) => p.id);
+    const ids = result.items.map((p) => p.id);
     expect(ids).toContain(keptProposal.id);
     expect(ids).not.toContain(deletedProposal.id);
     expect(result.total).toBe(1);
@@ -350,7 +350,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       votedByProfileId: voter.profileId,
     });
     const byIdBefore = Object.fromEntries(
-      resultBeforePublish.proposals.map((p) => [p.id, p]),
+      resultBeforePublish.items.map((p) => [p.id, p]),
     );
     expect(byIdBefore[proposalA.id]?.voteCount).toBeNull();
     expect(byIdBefore[proposalB.id]?.voteCount).toBeNull();
@@ -369,7 +369,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       votedByProfileId: voter.profileId,
     });
     const byIdAfter = Object.fromEntries(
-      resultAfterPublish.proposals.map((p) => [p.id, p]),
+      resultAfterPublish.items.map((p) => [p.id, p]),
     );
     // proposalA was voted on by both voters (count = 2)
     expect(byIdAfter[proposalA.id]?.voteCount).toBe(2);

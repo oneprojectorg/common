@@ -35,9 +35,8 @@ const givenPages = (
   pages.forEach(({ proposals, total }, index) => {
     const isLast = index === pages.length - 1;
     vi.mocked(listProposals).mockResolvedValueOnce({
-      proposals,
+      items: proposals,
       total,
-      hasMore: !isLast,
       next: isLast ? null : `cursor-${index}`,
       canManageProposals: true,
     } as never);
@@ -238,9 +237,8 @@ describe('listProposalsForExport', () => {
       // `listProposals` should never do this. If the invariant breaks the loop
       // must end loudly rather than spin forever.
       vi.mocked(listProposals).mockResolvedValue({
-        proposals: [],
+        items: [],
         total: 5,
-        hasMore: true,
         next: 'cursor-stuck',
         canManageProposals: true,
       } as never);

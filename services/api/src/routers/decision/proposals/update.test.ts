@@ -235,8 +235,8 @@ describe.concurrent('updateProposal visibility', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(visibleProposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(visibleProposal.id);
   });
 
   it('should allow proposal owner to see their own hidden proposal', async ({
@@ -278,9 +278,9 @@ describe.concurrent('updateProposal visibility', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 
   it('should allow admin to see all proposals including hidden ones', async ({
@@ -322,7 +322,7 @@ describe.concurrent('updateProposal visibility', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
     expect(result.canManageProposals).toBe(true);
   });
 });
@@ -710,9 +710,9 @@ describe.concurrent('updateProposal post-submission editing rule', () => {
     ]);
 
     expect(detail.isEditable).toBe(false);
-    expect(
-      list.proposals.find((item) => item.id === proposal.id)?.isEditable,
-    ).toBe(false);
+    expect(list.items.find((item) => item.id === proposal.id)?.isEditable).toBe(
+      false,
+    );
   });
 
   it('should report isEditable true to the author while editing is enabled', async ({
@@ -752,9 +752,9 @@ describe.concurrent('updateProposal post-submission editing rule', () => {
     ]);
 
     expect(detail.isEditable).toBe(true);
-    expect(
-      list.proposals.find((item) => item.id === proposal.id)?.isEditable,
-    ).toBe(true);
+    expect(list.items.find((item) => item.id === proposal.id)?.isEditable).toBe(
+      true,
+    );
   });
 });
 

@@ -173,7 +173,7 @@ export async function listPhaseReviewerSummaries({
   const lastRow = pageRows[pageRows.length - 1];
 
   return phaseReviewerSummariesSchema.parse({
-    reviewers: pageRows.map((row) => ({
+    items: pageRows.map((row) => ({
       reviewer: {
         id: row.id,
         name: row.name,

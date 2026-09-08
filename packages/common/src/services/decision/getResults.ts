@@ -25,7 +25,7 @@ type SelectionCursor = { selectionRank: number | null; id: string };
 
 type ResultProposalItem = Awaited<
   ReturnType<typeof listProposals>
->['proposals'][number] & {
+>['items'][number] & {
   selectionRank: number | null;
   voteCount: number;
   allocated: string | null;
@@ -138,7 +138,7 @@ export const getLatestResultWithProposals = async ({
     : paginatedSelections;
   const paginatedProposalIds = selections.map((s) => s.proposalId);
 
-  const [voteCounts, enrichedProposals] = await Promise.all([
+  const [voteCounts, { items: enrichedProposals }] = await Promise.all([
     db
       .select({
         proposalId: decisionsVoteProposals.proposalId,
@@ -184,9 +184,7 @@ export const getLatestResultWithProposals = async ({
     ]),
   );
 
-  const proposalMap = new Map(
-    enrichedProposals.proposals.map((p) => [p.id, p]),
-  );
+  const proposalMap = new Map(enrichedProposals.map((p) => [p.id, p]));
 
   // Map proposals to match the DB-ordered selection rank
   // The order is maintained from selections which was sorted by selectionRank at DB level

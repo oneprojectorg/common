@@ -113,7 +113,7 @@ function ReviewerAssignmentsContent({
 
   const summary = data.pages[0];
   const assignments = useMemo(
-    () => data.pages.flatMap((page) => page.assignments),
+    () => data.pages.flatMap((page) => page.items),
     [data.pages],
   );
 

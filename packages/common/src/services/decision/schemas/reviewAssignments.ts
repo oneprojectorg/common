@@ -4,6 +4,7 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
+import { paginated, total } from '../../../utils/pagination';
 import { eligibleReviewerSchema, reviewAssignmentListSchema } from './reviews';
 
 export const phaseReviewerSummarySchema = z.object({
@@ -16,11 +17,12 @@ export const phaseReviewerSummarySchema = z.object({
 
 export type PhaseReviewerSummary = z.infer<typeof phaseReviewerSummarySchema>;
 
-export const phaseReviewerSummariesSchema = z.object({
-  reviewers: z.array(phaseReviewerSummarySchema),
-  next: z.string().nullable(),
-  totalReviewers: z.number(),
-  totalAssignments: z.number(),
+export const phaseReviewerSummariesSchema = paginated(
+  phaseReviewerSummarySchema,
+).extend({
+  /** Phase-wide counts, independent of the page. */
+  totalReviewers: total,
+  totalAssignments: total,
 });
 
 export type PhaseReviewerSummaries = z.infer<

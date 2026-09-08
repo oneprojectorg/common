@@ -199,7 +199,7 @@ describe.concurrent('mergeProposals', () => {
     const before = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(before.proposals.map((p) => p.id)).toEqual(
+    expect(before.items.map((p) => p.id)).toEqual(
       expect.arrayContaining([source.id, target.id]),
     );
 
@@ -211,7 +211,7 @@ describe.concurrent('mergeProposals', () => {
     const after = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    const ids = after.proposals.map((p) => p.id);
+    const ids = after.items.map((p) => p.id);
     expect(ids).not.toContain(source.id);
     expect(ids).toContain(target.id);
     expect(after.total).toBe(before.total - 1);
@@ -237,9 +237,7 @@ describe.concurrent('mergeProposals', () => {
       status: ProposalStatus.SHORTLISTED,
     });
 
-    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
-      target.id,
-    ]);
+    expect(result.items.map((proposal) => proposal.id)).toEqual([target.id]);
   });
 
   it('rejects merging a proposal into itself', async ({
@@ -343,7 +341,7 @@ describe.concurrent('mergeProposals', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals.map((proposal) => proposal.id)).toEqual([third.id]);
+    expect(result.items.map((proposal) => proposal.id)).toEqual([third.id]);
   });
 
   it('rejects merging a draft proposal', async ({ task, onTestFinished }) => {
@@ -447,7 +445,7 @@ describe.concurrent('unmergeProposal', () => {
     const listed = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(listed.proposals.map((p) => p.id)).toContain(source.id);
+    expect(listed.items.map((p) => p.id)).toContain(source.id);
   });
 
   it('allows re-merging the same pair after an unmerge', async ({
@@ -506,9 +504,7 @@ describe.concurrent('unmergeProposal', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
-      source.id,
-    ]);
+    expect(result.items.map((proposal) => proposal.id)).toEqual([source.id]);
     expect(await readStatus(source.id)).toBe(ProposalStatus.SHORTLISTED);
   });
 
@@ -552,9 +548,7 @@ describe.concurrent('unmergeProposal', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals.map((proposal) => proposal.id)).toEqual([
-      target.id,
-    ]);
+    expect(result.items.map((proposal) => proposal.id)).toEqual([target.id]);
   });
 });
 

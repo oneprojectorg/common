@@ -74,7 +74,7 @@ const MyBallotProposals = ({
 }) => {
   const t = useTranslations();
 
-  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({
+  const [{ items: proposals }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
     votedByProfileId,
   });
@@ -84,7 +84,7 @@ const MyBallotProposals = ({
       <Header3>{t('My Ballot')}</Header3>
 
       <ProposalMasonry>
-        {proposalsData.proposals.map((proposal) => {
+        {proposals.map((proposal) => {
           const viewHref = proposalHref({
             profileId: proposal.profileId,
             decisionSlug,

@@ -94,7 +94,7 @@ export async function listSelectionCandidates({
 
   // Single relational query: `listProposals` joins the vote-count subquery via
   // `includeVoteCounts` and lets the DB drive ordering when `orderBy: 'votes'`.
-  const { proposals } = await listProposals({
+  const { items: proposals } = await listProposals({
     input: {
       processInstanceId,
       proposalIds: candidateIds,

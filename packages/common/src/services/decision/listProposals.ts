@@ -124,9 +124,8 @@ export const listProposals = async ({
   // decoding, while authenticated callers decoded first — so a malformed
   // cursor still throws for them even when the result set is empty.
   const emptyResult = {
-    proposals: [],
+    items: [],
     total: 0,
-    hasMore: false,
     canManageProposals,
     next: null,
   };
@@ -381,9 +380,8 @@ export const listProposals = async ({
       : null;
 
   return {
-    proposals: proposalsWithCounts,
+    items: proposalsWithCounts,
     total: Number(count),
-    hasMore,
     canManageProposals,
     next,
   };

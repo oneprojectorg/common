@@ -66,7 +66,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     });
 
     expect(result.totalAssignments).toBe(2);
-    const summary = result.reviewers.find(
+    const summary = result.items.find(
       (candidate) =>
         candidate.reviewer.id === context.defaultReviewer.profileId,
     );
@@ -123,7 +123,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       ...ties.map((tie) => tie.profileId).sort(),
       idle.profileId,
     ];
-    const ordered = result.reviewers.filter((summary) =>
+    const ordered = result.items.filter((summary) =>
       expected.includes(summary.reviewer.id),
     );
     expect(ordered.map((summary) => summary.reviewer.id)).toEqual(expected);
@@ -150,10 +150,10 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       limit: 2,
     });
 
-    expect(firstPage.reviewers.map((row) => row.reviewer.id)).toEqual(
+    expect(firstPage.items.map((row) => row.reviewer.id)).toEqual(
       expectedProfileIds.slice(0, 2),
     );
-    expect(firstPage.reviewers.map((row) => row.assignedCount)).toEqual([2, 1]);
+    expect(firstPage.items.map((row) => row.assignedCount)).toEqual([2, 1]);
     expect(firstPage.next).not.toBeNull();
 
     const secondPage = await adminCaller.decision.listPhaseReviewerSummaries({
@@ -163,12 +163,10 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       cursor: firstPage.next,
     });
 
-    expect(secondPage.reviewers.map((row) => row.reviewer.id)).toEqual(
+    expect(secondPage.items.map((row) => row.reviewer.id)).toEqual(
       expectedProfileIds.slice(2, 4),
     );
-    expect(secondPage.reviewers.map((row) => row.assignedCount)).toEqual([
-      1, 1,
-    ]);
+    expect(secondPage.items.map((row) => row.assignedCount)).toEqual([1, 1]);
 
     // Totals describe the phase, not the page, so both pages agree.
     expect(firstPage.totalAssignments).toBe(5);

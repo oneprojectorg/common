@@ -45,7 +45,7 @@ export function ReviewSummaryView({
   const { user } = useRequiredUser();
   const utils = trpc.useUtils();
 
-  const [[proposalWithReviews, proposal, ownAssignments]] =
+  const [[proposalWithReviews, proposal, { items: ownAssignments }]] =
     trpc.useSuspenseQueries((t) => [
       t.decision.getProposalWithReviewAggregates({
         processInstanceId: instanceId,
@@ -88,7 +88,7 @@ export function ReviewSummaryView({
   } = useTranslateProposal(proposal);
 
   // 'newest' orders by assignedAt in SQL, as ProposalReviewsLayout does.
-  const ownAssignment = ownAssignments.assignments[0];
+  const ownAssignment = ownAssignments[0];
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useQueryState(
     'assignment',

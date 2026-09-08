@@ -180,7 +180,7 @@ const CurrentPhaseProposalsLoader = ({
 }) => {
   const [paginatedData, query] =
     trpc.decision.listProposals.useSuspenseInfiniteQuery(queryParams, {
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      getNextPageParam: nextCursor,
       staleTime: 30 * 1000,
       // Force a client-side fetch so the query registers its invalidation
       // channel via the client link. TODO: find a cleaner way to register.
@@ -202,7 +202,7 @@ const CurrentPhaseProposalsLoader = ({
   );
 
   const allProposals = useMemo(
-    () => paginatedData.pages.flatMap((page) => page.proposals),
+    () => paginatedData.pages.flatMap((page) => page.items),
     [paginatedData.pages],
   );
   const total = paginatedData.pages[0]?.total ?? 0;
