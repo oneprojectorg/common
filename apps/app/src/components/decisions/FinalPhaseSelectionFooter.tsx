@@ -15,7 +15,6 @@ import { ComposeNotificationsDialog } from './ComposeNotificationsDialog';
 
 interface FinalPhaseSelectionFooterProps {
   numSelected: number;
-  /** Every eligible proposal in the phase, selected or not. */
   totalCandidates: number;
   isConfirmOpen: boolean;
   onConfirmOpenChange: (open: boolean) => void;
@@ -46,11 +45,8 @@ export const FinalPhaseSelectionFooter = ({
       <FooterBarCenter />
       <FooterBarEnd>
         <ComposeNotificationsDialog
-          fundedCount={numSelected}
-          // Selections are drawn from the candidate pool, so this can't go
-          // negative — but a stale count under an open dialog shouldn't be
-          // able to render "-1 recipients" either.
-          notFundedCount={Math.max(totalCandidates - numSelected, 0)}
+          selectedCount={numSelected}
+          notSelectedCount={Math.max(totalCandidates - numSelected, 0)}
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
           onConfirm={onConfirm}

@@ -13,8 +13,8 @@ import { trackManualSelectionSubmitted } from '../../../utils/analytics';
 const submitManualSelectionInputSchema = z.object({
   processInstanceId: z.uuid(),
   proposalIds: z.array(z.uuid()).min(1),
-  // Whether this phase publishes results — and so whether these mean anything
-  // — isn't knowable here; the service owns that half of the gate.
+  // Whether this phase publishes results isn't knowable here; the service
+  // owns that half of the gate.
   resultNotifications: resultNotificationMessagesSchema.optional(),
 });
 

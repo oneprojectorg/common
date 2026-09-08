@@ -567,8 +567,8 @@ describe.concurrent('submitManualSelection', () => {
     const mockSend = event.send as unknown as MockInstance;
 
     const resultNotifications = {
-      funded: `Funded copy ${task.id}`,
-      notFunded: `Not funded copy ${task.id}`,
+      selected: `Selected copy ${task.id}`,
+      notSelected: `Not selected copy ${task.id}`,
     };
 
     await caller.decision.submitManualSelection({
@@ -615,8 +615,6 @@ describe.concurrent('submitManualSelection', () => {
       expect(row.status).toBe(ProposalStatus.APPROVED);
     }
 
-    // The author copy survives the jsonb round-trip on the transition row —
-    // this, not the event payload, is the durable record of what was sent.
     const [latestTransition] = await db
       .select({
         id: stateTransitionHistory.id,
@@ -744,7 +742,10 @@ describe.concurrent('submitManualSelection', () => {
       caller.decision.submitManualSelection({
         processInstanceId: instanceId,
         proposalIds: [proposal.id],
-        resultNotifications: { funded: 'Funded', notFunded: 'Not funded' },
+        resultNotifications: {
+          selected: 'Selected',
+          notSelected: 'Not selected',
+        },
       }),
       // Pinned to the message: four other guards on this path also throw
       // ValidationError, so the name alone proves nothing.

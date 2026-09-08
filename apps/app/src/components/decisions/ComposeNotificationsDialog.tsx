@@ -26,8 +26,8 @@ import { LuCircleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 interface ComposeNotificationsDialogProps {
-  fundedCount: number;
-  notFundedCount: number;
+  selectedCount: number;
+  notSelectedCount: number;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (messages: ResultNotificationMessages) => void;
@@ -35,29 +35,21 @@ interface ComposeNotificationsDialogProps {
   triggerLabel: ReactNode;
 }
 
-type OutcomeTab = 'funded' | 'notFunded';
+type OutcomeTab = 'selected' | 'notSelected';
 
 const isOutcomeTab = (value: string): value is OutcomeTab =>
-  value === 'funded' || value === 'notFunded';
+  value === 'selected' || value === 'notSelected';
 
-// Placeholder syntax, not prose: passed as ICU arguments so the tokens never
-// reach a dictionary value, where a literal `{{` would break the parser and a
-// translator could not reorder them around a sentence.
+// Passed as ICU arguments so a literal `{{` never reaches a dictionary value,
+// where it would break the parser.
 const TOKENS = {
   name: resultNotificationToken('name'),
   proposal: resultNotificationToken('proposal'),
 };
 
-/**
- * The final-phase publish gate (Figma 18037-40825): one editable message per
- * outcome, sent to the authors on that side of the result. Composes `Dialog`
- * directly rather than reusing `SelectionConfirmShell` — the shell's single
- * string label and one-button footer can't carry per-tab validation without
- * bloating it for the mid-process variant it still serves.
- */
 export const ComposeNotificationsDialog = ({
-  fundedCount,
-  notFundedCount,
+  selectedCount,
+  notSelectedCount,
   isOpen,
   onOpenChange,
   onConfirm,
@@ -66,64 +58,50 @@ export const ComposeNotificationsDialog = ({
 }: ComposeNotificationsDialogProps) => {
   const t = useTranslations();
 
-  // Lazy: the component re-renders on every keystroke in a 4000-char textarea,
-  // and these two ICU formats are only ever read once.
   const [messages, setMessages] = useState<ResultNotificationMessages>(() => ({
-    // No amount anywhere in this copy, and no `{{amount}}` token offered:
-    // nothing writes `decision_process_result_selections.allocated`, so any
-    // figure here would either be invented or blank.
-    funded: t(
+    selected: t(
       'Hi {name},\n\nGreat news — your proposal "{proposal}" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.',
       TOKENS,
     ),
-    notFunded: t(
+    notSelected: t(
       'Hi {name},\n\nThank you for submitting "{proposal}". After community voting, it was not selected for funding in this round.\n\nThe results are published on the decision page, and we hope you will take part again.',
       TOKENS,
     ),
   }));
-  const [activeTab, setActiveTab] = useState<OutcomeTab>('funded');
-  // The candidate query refetches on channel events, so the live counts can
-  // move while the admin composes. Freeze what they were told on open. Only
-  // the dialog body reads this — the trigger has to track the live count, or
-  // it can never enable once the admin makes their first pick.
+  const [activeTab, setActiveTab] = useState<OutcomeTab>('selected');
+  // Frozen on open: the candidate query refetches on channel events, so the
+  // live counts can move while the admin composes.
   const [counts, setCounts] = useState({
-    funded: fundedCount,
-    notFunded: notFundedCount,
+    selected: selectedCount,
+    notSelected: notSelectedCount,
   });
   const fieldIdPrefix = useId();
   const hintId = `${fieldIdPrefix}-hint`;
 
   const handleOpenChange = (open: boolean) => {
-    // A close mid-submit would discard the composed copy the pending mutation
-    // may still reject; hold the dialog until it settles.
+    // Closing mid-submit would discard copy the pending mutation may reject.
     if (!open && isSubmitting) {
       return;
     }
     if (open) {
-      setCounts({ funded: fundedCount, notFunded: notFundedCount });
-      setActiveTab('funded');
+      setCounts({ selected: selectedCount, notSelected: notSelectedCount });
+      setActiveTab('selected');
     }
     onOpenChange(open);
   };
 
-  // Both messages are always required, matching `resultNotificationMessages
-  // Schema` exactly. Gating `notFunded` on its audience instead would let a
-  // blank message survive a close/reopen into a state the server rejects and
-  // the dialog can't show — the counts are a snapshot, the copy is not.
   const invalid = {
-    funded: messages.funded.trim().length === 0,
-    notFunded: messages.notFunded.trim().length === 0,
+    selected: messages.selected.trim().length === 0,
+    notSelected: messages.notSelected.trim().length === 0,
   };
-  const hasError = invalid.funded || invalid.notFunded;
+  const hasError = invalid.selected || invalid.notSelected;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger
-        render={<Button disabled={fundedCount === 0}>{triggerLabel}</Button>}
+        render={<Button disabled={selectedCount === 0}>{triggerLabel}</Button>}
       />
 
-      {/* 32rem — the sense default (sm:max-w-sm) is narrower than two message
-          templates need. */}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('Compose Notifications')}</DialogTitle>
@@ -138,8 +116,6 @@ export const ComposeNotificationsDialog = ({
             }
           }}
         >
-          {/* The rail lives on a wrapper, not the list — sense's `line` variant
-              draws the active indicator only. Mirrors DecisionResultsTabs. */}
           <div className="w-full border-b">
             <TabsList
               variant="line"
@@ -147,23 +123,22 @@ export const ComposeNotificationsDialog = ({
               aria-label={t('Notification audiences')}
             >
               <OutcomeTabTrigger
-                value="funded"
+                value="selected"
                 label={t('Funded')}
-                count={counts.funded}
-                isInvalid={invalid.funded}
+                count={counts.selected}
+                isInvalid={invalid.selected}
               />
               <OutcomeTabTrigger
-                value="notFunded"
+                value="notSelected"
                 label={t('Not funded')}
-                count={counts.notFunded}
-                isInvalid={invalid.notFunded}
+                count={counts.notSelected}
+                isInvalid={invalid.notSelected}
               />
             </TabsList>
           </div>
 
-          {/* Mounted once, above the panels: identical for both audiences, and
-              `Alert`'s default assertive role would re-announce this reference
-              text on every tab switch. */}
+          {/* `role="note"`: identical for both tabs, so the default assertive
+              role would re-announce it on every switch. */}
           <Alert variant="info" role="note" id={hintId}>
             <LuCircleAlert aria-hidden />
             <AlertDescription>
@@ -174,49 +149,43 @@ export const ComposeNotificationsDialog = ({
             </AlertDescription>
           </Alert>
 
-          {/* `keepMounted` so caret position, scroll, and undo history survive a
-              tab switch (base-ui's equivalent of react-aria's shouldForceMount). */}
-          <TabsContent value="funded" keepMounted>
+          {/* `keepMounted` keeps caret and undo history across a tab switch. */}
+          <TabsContent value="selected" keepMounted>
             <MessageField
-              id={`${fieldIdPrefix}-funded`}
+              id={`${fieldIdPrefix}-selected`}
               hintId={hintId}
-              value={messages.funded}
-              onChange={(funded) =>
-                setMessages((prev) => ({ ...prev, funded }))
+              value={messages.selected}
+              onChange={(selected) =>
+                setMessages((prev) => ({ ...prev, selected }))
               }
-              isInvalid={invalid.funded}
+              isInvalid={invalid.selected}
             />
           </TabsContent>
 
-          <TabsContent value="notFunded" keepMounted>
+          <TabsContent value="notSelected" keepMounted>
             <MessageField
-              id={`${fieldIdPrefix}-not-funded`}
+              id={`${fieldIdPrefix}-not-selected`}
               hintId={hintId}
-              value={messages.notFunded}
-              onChange={(notFunded) =>
-                setMessages((prev) => ({ ...prev, notFunded }))
+              value={messages.notSelected}
+              onChange={(notSelected) =>
+                setMessages((prev) => ({ ...prev, notSelected }))
               }
-              isInvalid={invalid.notFunded}
+              isInvalid={invalid.notSelected}
             />
           </TabsContent>
 
-          {/* Proposal counts, not head counts: a co-authored proposal mails
-              every collaborator, so the number of emails is at least this. */}
           <p className="text-sm text-muted-foreground">
             {t(
               'Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.',
               {
-                fundedCount: counts.funded,
-                notFundedCount: counts.notFunded,
+                fundedCount: counts.selected,
+                notFundedCount: counts.notSelected,
               },
             )}
           </p>
         </Tabs>
 
         <DialogFooter>
-          {/* Figma shows a single primary button, but an explicit Cancel stays:
-              it's the only keyboard-reachable dismiss control in the footer of
-              an irreversible flow. */}
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
@@ -251,13 +220,8 @@ const OutcomeTabTrigger = ({
   const t = useTranslations();
 
   return (
-    // No `aria-invalid`: ARIA 1.2 dropped it from the global set and `tab`
-    // doesn't support it, so the state rides the sr-only text instead — which
-    // also keeps the cue off colour alone.
     <TabsTrigger value={value} className={cn(isInvalid && 'text-destructive')}>
       {label}
-      {/* The pill is decorative duplication; the count reaches the accessible
-          name through the sr-only text, with its unit. */}
       <BadgeNumber variant="secondary" aria-hidden>
         {count}
       </BadgeNumber>
@@ -277,7 +241,6 @@ const MessageField = ({
   isInvalid,
 }: {
   id: string;
-  /** The placeholder-token help text, shared by both fields. */
   hintId: string;
   value: string;
   onChange: (value: string) => void;

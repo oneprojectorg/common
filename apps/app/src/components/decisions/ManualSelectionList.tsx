@@ -125,9 +125,7 @@ export const ManualSelectionList = ({
       }
     },
     onError: (error) => {
-      // The final-phase dialog stays open on failure so the toast lands beside
-      // the two hand-written messages that caused it. The standard variant has
-      // nothing to correct, so it still dismisses.
+      // The final-phase dialog holds hand-written copy; keep it open to fix.
       if (!isFinalPhase) {
         setIsConfirmOpen(false);
       }

@@ -14,14 +14,13 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 
-/**
- * The unit tests mock the resolver, the schema and the db client, so nothing
- * there proves a proposal profile actually carries `profileUsers` rows, that
- * `profileUsers.authUser` resolves, or that the name join finds anything.
- * These run against a real database to close that gap.
- */
+// The unit tests mock the resolver, schema and db client; these run against a
+// real database.
 
-const MESSAGES = { funded: 'You were funded', notFunded: 'Not this round' };
+const MESSAGES = {
+  selected: 'You were selected',
+  notSelected: 'Not this round',
+};
 
 /** Attaches an extra person to a proposal's profile, as an accepted invite does. */
 async function addProposalCollaborator({
@@ -38,10 +37,7 @@ async function addProposalCollaborator({
     .values({ profileId: proposalProfileId, authUserId, email });
 }
 
-/**
- * Lands an instance on its final phase with results published and the author
- * copy stamped, then returns the refs the workflow's event would carry.
- */
+/** Returns the refs the workflow's event would carry. */
 async function publishResults(
   testData: TestDecisionsDataManager,
   titles: Array<string>,
@@ -131,12 +127,9 @@ describe.concurrent('listResultNotificationRecipients', () => {
     );
     expect(author).toBeDefined();
     expect(author?.values.name).toBeTruthy();
-    // No allocation is ever written, so the token has nothing to resolve to.
     expect(author?.values.amount).toBe('');
   });
 
-  // The snapshot column is stale by design; delivery must ignore it in favour
-  // of auth.users, which is what the shared resolver reads.
   it('ignores the profileUsers email snapshot for a collaborator', async ({
     task,
     onTestFinished,
@@ -170,9 +163,6 @@ describe.concurrent('listResultNotificationRecipients', () => {
     expect(emails).not.toContain(staleEmail);
   });
 
-  // A collaborator can be attached to a proposal before they finish onboarding,
-  // so the name lookup finds nothing. Losing the greeting must not lose the
-  // announcement — this publish cannot be re-triggered.
   it('still reaches an author whose profile carries no name', async ({
     task,
     onTestFinished,
@@ -195,8 +185,7 @@ describe.concurrent('listResultNotificationRecipients', () => {
       email: collaborator.email,
     });
 
-    // Detach the personal profile and clear the account name, reproducing an
-    // invite accepted before onboarding finished.
+    // Reproduces an invite accepted before onboarding finished.
     const [userRow] = await db
       .select({ profileId: users.profileId })
       .from(users)
