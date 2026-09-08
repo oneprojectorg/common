@@ -105,6 +105,9 @@ export const requestThemeAnalysis = async ({
   // rather than one overwriting the other.
   const analysisId = randomUUID();
   const key = themeAnalysisCacheKey({ processInstanceId, scope, analysisId });
+  // One value for the seed and the event. The workflow writes whole records and
+  // has no other way to know when the run was asked for.
+  const createdAt = new Date().toISOString();
 
   // Seeded in full rather than as an id and a status. The status read checks
   // ownership before anything else, so a partial record fails the first read
@@ -117,7 +120,7 @@ export const requestThemeAnalysis = async ({
       processInstanceId,
       userId: user.id,
       status: 'pending',
-      createdAt: new Date().toISOString(),
+      createdAt,
     },
     THEME_ANALYSIS_CACHE_TTL_SECONDS,
   );
@@ -147,6 +150,7 @@ export const requestThemeAnalysis = async ({
       processInstanceId,
       userId: user.id,
       scope,
+      createdAt,
     },
   });
 

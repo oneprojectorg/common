@@ -61,6 +61,12 @@ export const Events = {
       // diverge once an instance advances and a synthesis of the wrong one
       // would not give itself away.
       scope: z.enum(['phase', 'process']),
+      // When the request was made. Carried rather than re-derived because the
+      // workflow writes whole records, not patches: without it every write
+      // after the seed would either invent a new creation time or omit a field
+      // the record schema requires — and a record that fails that schema reads
+      // back as "no such analysis".
+      createdAt: z.string(),
     }),
   },
   profileInviteSent: {

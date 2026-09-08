@@ -37,13 +37,27 @@ import { realtime } from '@op/realtime/server';
  */
 const recordAnalysis = async (
   identity: AnalysisIdentity,
-  fields: Partial<ThemeAnalysisData>,
-) =>
-  set(
+  fields: AnalysisFields,
+) => {
+  // `satisfies` rather than a bare object, and `AnalysisFields` rather than a
+  // Partial. Between them the compiler now checks what only the reader used to:
+  // that identity and fields together make a whole record.
+  //
+  // They did not. `createdAt` is required by the schema and lived in neither —
+  // the seed had it, the `processing` write passed it by hand, and the two
+  // terminal writes simply did not. Both wrote a record that failed to parse on
+  // the way back out, which `getThemeAnalysisStatus` reports as `not_found`: a
+  // finished analysis read to the client as an analysis that never existed.
+  // A `Partial` cannot catch a missing required field, which is why this is not
+  // one.
+  const record = { ...identity, ...fields } satisfies ThemeAnalysisData;
+
+  return await set(
     themeAnalysisCacheKey(identity),
-    { ...identity, ...fields },
+    record,
     THEME_ANALYSIS_CACHE_TTL_SECONDS,
   );
+};
 
 /**
  * Tell the facilitator waiting on this analysis that its record has moved.
@@ -78,8 +92,16 @@ const notifyAnalysisChanged = (analysisId: string) =>
  */
 type AnalysisIdentity = Pick<
   ThemeAnalysisData,
-  'analysisId' | 'processInstanceId' | 'userId'
+  'analysisId' | 'processInstanceId' | 'userId' | 'createdAt'
 > & { scope: ThemeAnalysisScope };
+
+/**
+ * Everything a write supplies on top of the identity.
+ *
+ * `Omit` rather than `Partial`, so `status` stays required and a write that
+ * forgets a field the record schema demands does not compile.
+ */
+type AnalysisFields = Omit<ThemeAnalysisData, keyof AnalysisIdentity>;
 
 /**
  * The diagnostic to record for a fault nobody classified.
@@ -124,19 +146,22 @@ export const analyzeProposalThemes = inngest.createFunction(
   },
   { event: proposalThemeAnalysisRequested.name },
   async ({ event, step }) => {
-    const { analysisId, processInstanceId, userId, scope } =
+    const { analysisId, processInstanceId, userId, scope, createdAt } =
       proposalThemeAnalysisRequested.schema.parse(event.data);
 
     // Everything the seed carried, taken from the event rather than re-read, so
     // every write below is a complete record on its own — and it is also the
     // cache key, which the id alone does not name.
-    const identity = { analysisId, processInstanceId, userId, scope };
+    const identity = {
+      analysisId,
+      processInstanceId,
+      userId,
+      scope,
+      createdAt,
+    };
 
     await step.run('update-status-processing', () =>
-      recordAnalysis(identity, {
-        status: 'processing',
-        createdAt: new Date().toISOString(),
-      }),
+      recordAnalysis(identity, { status: 'processing' }),
     );
 
     // Closes over `step` rather than taking it: Inngest's `step` type is

@@ -91,7 +91,28 @@ describe('requestThemeAnalysis', () => {
       processInstanceId: INSTANCE_ID,
       userId: AUTH_USER_ID,
       scope: 'phase',
+      // Carried, not re-derived. The workflow writes whole records rather than
+      // patches, so without this every write after the seed would omit a field
+      // the record schema requires — and such a record reads back as "no such
+      // analysis".
+      createdAt: expect.any(String),
     });
+  });
+
+  // One value, written into the seed and sent with the job. Two calls to
+  // `new Date()` would give the workflow's records a different creation time
+  // from the seed's, for the same run.
+  it('seeds and dispatches the same creation time', async () => {
+    await request();
+
+    const [[, seeded]] = vi.mocked(set).mock.calls as [
+      [string, { createdAt: string }],
+    ];
+    const [payload] = sendEvent.mock.calls[0] as [
+      { data: { createdAt: string } },
+    ];
+
+    expect(payload.data.createdAt).toBe(seeded.createdAt);
   });
 
   // The scope decides which proposals the run reads, and the surface that
