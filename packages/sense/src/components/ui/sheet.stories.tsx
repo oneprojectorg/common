@@ -81,3 +81,32 @@ export const Sides: Story = {
     </div>
   ),
 };
+
+export const CustomWidth: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      {(
+        [
+          { label: 'narrow', className: 'sm:max-w-xs' },
+          { label: 'wide', className: 'sm:max-w-2xl' },
+          { label: 'fixed 480px', className: 'w-[480px] sm:max-w-none' },
+        ] as const
+      ).map(({ label, className }) => (
+        <Sheet key={label}>
+          <SheetTrigger render={<Button variant="outline" />}>
+            {label}
+          </SheetTrigger>
+          <SheetContent className={className}>
+            <SheetHeader>
+              <SheetTitle>Width: {label}</SheetTitle>
+              <SheetDescription>
+                Width comes from `className`; it merges over the default `w-7/8
+                sm:max-w-sm`.
+              </SheetDescription>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>
+      ))}
+    </div>
+  ),
+};

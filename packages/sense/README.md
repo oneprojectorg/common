@@ -227,3 +227,10 @@ published source lags its declared dependency versions. Reapply if you re-run
   v10 dropped `table` from its `ClassNames` type; the registry still emits it.
 - `scroll-area.tsx` — dropped an unused `import * as React from "react"` that
   fails `noUnusedLocals`.
+- `sheet.tsx` — moved the panel width out of the `data-[side=left|right]:`
+  variants into a plain `side === 'left' || side === 'right'` branch
+  (`w-7/8 sm:max-w-sm`). As a variant it outranked a caller's own `w-*` /
+  `max-w-*` on specificity, and `cn` cannot merge across different variant
+  chains, so `className` was silently ignored (the mobile `Sidebar`'s
+  `w-(--sidebar-width)` lost to `data-[side=left]:w-7/8`). The `data-[side]`
+  variants for insets, borders and translates are stock — keep them.
