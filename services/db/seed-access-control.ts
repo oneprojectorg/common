@@ -62,6 +62,53 @@ console.log(`Inserted ${ACCESS_ZONES.length} access zones`);
 await db.insert(accessRoles).values(ACCESS_ROLES).onConflictDoNothing();
 console.log(`Inserted ${ACCESS_ROLES.length} access roles`);
 
+// A seeded id that already belongs to a different zone or role takes the two
+// inserts above as a conflict and skips them — and then the permission rows
+// below attach to whatever does hold that id. Nothing in this repository has
+// ever inserted a global role through a migration, so the ids cannot be
+// assumed. Abort instead of mis-granting.
+const assertSeededNames = (
+  label: string,
+  expected: Array<{ id: string; name: string }>,
+  stored: Array<{ id: string; name: string }>,
+) => {
+  const storedNameById = new Map(stored.map((row) => [row.id, row.name]));
+
+  for (const { id, name } of expected) {
+    const storedName = storedNameById.get(id);
+
+    if (storedName !== undefined && storedName !== name) {
+      throw new Error(
+        `Seed collision: ${label} id ${id} holds "${storedName}", not "${name}". Refusing to seed.`,
+      );
+    }
+  }
+};
+
+const [storedZones, storedRoles] = await Promise.all([
+  db
+    .select({ id: accessZones.id, name: accessZones.name })
+    .from(accessZones)
+    .where(
+      inArray(
+        accessZones.id,
+        ACCESS_ZONES.map((zone) => zone.id),
+      ),
+    ),
+  db
+    .select({ id: accessRoles.id, name: accessRoles.name })
+    .from(accessRoles)
+    .where(
+      inArray(
+        accessRoles.id,
+        ACCESS_ROLES.map((role) => role.id),
+      ),
+    ),
+]);
+
+assertSeededNames('access_zones', ACCESS_ZONES, storedZones);
+assertSeededNames('access_roles', ACCESS_ROLES, storedRoles);
+
 await db
   .insert(accessRolePermissionsOnAccessZones)
   .values(ACCESS_ROLE_PERMISSIONS)
@@ -174,7 +221,19 @@ const existingAdmins = await db._query.users.findMany({
 // A user-level grant is a role row on the holder's own individual-profile
 // membership, which the signup trigger creates. Same row shape as
 // grantPlatformAdmin in @op/common, written here because services/db cannot
-// import it. Without this a fresh local DB 404s on /admin for every dev.
+// import it — including resolving the role by name, the runtime identifier for
+// a global role. Without this a fresh local DB 404s on /admin for every dev.
+const platformAdminRole = await db._query.accessRoles.findFirst({
+  where: (t, { eq, and, isNull }) =>
+    and(eq(t.name, ROLES.PLATFORM_ADMIN.name), isNull(t.profileId)),
+});
+
+if (!platformAdminRole) {
+  throw new Error(
+    `Could not find the global "${ROLES.PLATFORM_ADMIN.name}" role after seeding access roles`,
+  );
+}
+
 const adminMemberships = await db
   .select({ profileUserId: profileUsers.id })
   .from(users)
@@ -193,7 +252,7 @@ if (adminMemberships.length > 0) {
     .values(
       adminMemberships.map(({ profileUserId }) => ({
         profileUserId,
-        accessRoleId: ROLES.PLATFORM_ADMIN.id,
+        accessRoleId: platformAdminRole.id,
       })),
     )
     .onConflictDoNothing();
