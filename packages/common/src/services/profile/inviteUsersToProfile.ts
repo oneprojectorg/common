@@ -1,6 +1,6 @@
 import { trackAdminInvitedParticipants } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import { ProcessStatus, allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
@@ -95,12 +95,14 @@ export const inviteUsersToProfile = async ({
   requesterProfileId,
   personalMessage,
   user,
+  db = defaultDb,
 }: {
   invitations: Array<{ email: string; roleId: string }>;
   profileId: string;
   requesterProfileId: string;
   personalMessage?: string;
   user: User;
+  db?: DbClient;
 }) => {
   if (invitations.length === 0) {
     throw new CommonError('At least one invitation is required');
@@ -127,9 +129,9 @@ export const inviteUsersToProfile = async ({
     processInstanceForProfile,
   ] = await Promise.all([
     // Get the target profile details
-    assertProfile(profileId),
+    assertProfile(profileId, undefined, db),
     // Get the requester's profile for the inviter name
-    assertProfile(requesterProfileId),
+    assertProfile(requesterProfileId, undefined, db),
     // Get all target roles with their zone permissions (needed to detect
     // admin roles). Non-assignable system global roles resolve as nonexistent
     // and fail the invalid-role check below.

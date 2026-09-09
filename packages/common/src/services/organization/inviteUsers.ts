@@ -1,6 +1,6 @@
 import { trackUserInvited } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   CommonUser,
   Organization,
@@ -47,12 +47,14 @@ export interface InviteUsersToOrganizationInput {
   personalMessage?: string;
 
   user: User;
+  db?: DbClient;
 }
 
 export interface InviteNewUsersInput {
   emails: string[];
   personalMessage?: string;
   user: User;
+  db?: DbClient;
 }
 
 /**
@@ -61,7 +63,14 @@ export interface InviteNewUsersInput {
 export const inviteUsersToOrganization = async (
   input: InviteUsersToOrganizationInput,
 ) => {
-  const { emails, roleId, organizationId, personalMessage, user } = input;
+  const {
+    emails,
+    roleId,
+    organizationId,
+    personalMessage,
+    user,
+    db = defaultDb,
+  } = input;
 
   const orgUser = await assertOrgAccess({
     user,
@@ -272,7 +281,7 @@ export const inviteUsersToOrganization = async (
  * Invite new users to create their own organizations
  */
 export const inviteNewUsers = async (input: InviteNewUsersInput) => {
-  const { emails, personalMessage, user } = input;
+  const { emails, personalMessage, user, db = defaultDb } = input;
 
   // Get the current user's database record with profile details
   const authUser = (await db.query.users.findFirst({

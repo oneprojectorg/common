@@ -1,4 +1,4 @@
-import { type DbClient, count, db, eq } from '@op/db/client';
+import { type DbClient, count, db as defaultDb, eq } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
@@ -16,33 +16,28 @@ import {
 /**
  * Persist the proposals attached to the current phase as the decision's
  * selections. Append-only: each run inserts a new `decision_process_results`
- * row; readers pick the latest by `executedAt`. Pass `tx` to run inline in a
- * caller's transaction; otherwise this manages its own and stamps a failure
- * row on uncaught errors. Pass `instance` when the caller already loaded the
- * row (e.g. inside a locking tx) to skip a redundant fetch.
+ * row; readers pick the latest by `executedAt`. On an uncaught error it stamps
+ * a failure row and rethrows as a `CommonError`.
+ *
+ * Pass a caller's transaction as `db` to fold the write into it. Drizzle nests
+ * that as a savepoint, so a failure here rolls back only this work and leaves
+ * the caller's transaction usable — though the failure row then commits or
+ * aborts with the caller, not on its own. Pass `instance` when the caller
+ * already loaded the row (e.g. inside a locking tx) to skip a redundant fetch.
  */
 export async function processResults({
   processInstanceId,
-  tx,
+  db = defaultDb,
   instance,
 }: {
   processInstanceId: string;
-  tx?: DbClient;
+  db?: DbClient;
   instance?: PhaseScopedInstance;
 }): Promise<void> {
-  if (tx) {
-    await runProcessResults({
-      tx,
-      processInstanceId,
-      preloadedInstance: instance,
-    });
-    return;
-  }
-
   try {
-    await db.transaction(async (newTx) =>
+    await db.transaction(async (tx) =>
       runProcessResults({
-        tx: newTx,
+        tx,
         processInstanceId,
         preloadedInstance: instance,
       }),

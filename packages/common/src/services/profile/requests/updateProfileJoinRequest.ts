@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   EntityType,
   JoinProfileRequestStatus,
@@ -22,11 +22,13 @@ export const updateProfileJoinRequest = async ({
   user,
   requestId,
   status,
+  db = defaultDb,
 }: {
   user: User;
   /** The ID of the join profile request to update */
   requestId: string;
   status: JoinProfileRequestStatus.APPROVED | JoinProfileRequestStatus.REJECTED;
+  db?: DbClient;
 }): Promise<JoinProfileRequestWithProfiles> => {
   // Find the existing request by ID
   const existingRequest = await db._query.joinProfileRequests.findFirst({
@@ -49,7 +51,11 @@ export const updateProfileJoinRequest = async ({
   }
 
   // Fetch the request profile
-  const requestProfile = await assertProfile(existingRequest.requestProfileId);
+  const requestProfile = await assertProfile(
+    existingRequest.requestProfileId,
+    undefined,
+    db,
+  );
 
   // If status is unchanged, return the existing record with profiles
   if (existingRequest.status === status) {
@@ -106,7 +112,7 @@ export const updateProfileJoinRequest = async ({
 
       // Only create membership if it doesn't already exist
       if (!existingMembership) {
-        const memberRole = await assertGlobalRole('Member');
+        const memberRole = await assertGlobalRole('Member', db);
 
         await db.transaction(async (tx) => {
           // Create the organization membership

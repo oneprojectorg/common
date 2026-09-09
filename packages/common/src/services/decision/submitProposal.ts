@@ -1,5 +1,5 @@
 import { getTipTapClient } from '@op/collab';
-import { db, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { permission } from 'access-zones';
@@ -32,9 +32,11 @@ export interface SubmitProposalInput {
 export const submitProposal = async ({
   data,
   authUserId,
+  db = defaultDb,
 }: {
   data: SubmitProposalInput;
   authUserId: string;
+  db?: DbClient;
 }) => {
   // Fetch the proposal with its process instance
   const existingProposal = await db.query.proposals.findFirst({

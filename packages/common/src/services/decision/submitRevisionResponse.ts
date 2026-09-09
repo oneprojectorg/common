@@ -1,6 +1,6 @@
 import { trackRevisionResponseSubmitted } from '@op/analytics';
 import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   type ProposalReviewRequest,
@@ -32,10 +32,12 @@ export async function submitRevisionResponse({
   revisionRequestId,
   resubmitComment,
   user,
+  db = defaultDb,
 }: {
   revisionRequestId: string;
   resubmitComment?: string;
   user: User;
+  db?: DbClient;
 }): Promise<ProposalReviewRequest & { processInstanceId: string }> {
   const [request, dbUser] = await Promise.all([
     db.query.proposalReviewRequests.findFirst({
@@ -50,7 +52,7 @@ export async function submitRevisionResponse({
         },
       },
     }),
-    assertUserByAuthId(user.id),
+    assertUserByAuthId(user.id, undefined, db),
   ]);
 
   if (!request) {

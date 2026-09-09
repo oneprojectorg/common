@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import {
   type AccessRole,
   type ObjectsInStorage,
@@ -33,9 +33,13 @@ export type ProfileUserWithRelations = ProfileUser & {
  * Fetch a single profile user with full relations.
  * Returns the same shape as items from listProfileUsers.
  */
-export const getProfileUserWithRelations = async (
-  profileUserId: string,
-): Promise<ProfileUserWithRelations | null> => {
+export const getProfileUserWithRelations = async ({
+  profileUserId,
+  db = defaultDb,
+}: {
+  profileUserId: string;
+  db?: DbClient;
+}): Promise<ProfileUserWithRelations | null> => {
   const profileUser = await db._query.profileUsers.findFirst({
     where: eq(profileUsers.id, profileUserId),
     with: {

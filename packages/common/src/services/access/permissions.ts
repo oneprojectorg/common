@@ -1,5 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
@@ -14,7 +14,13 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import { profileUserCacheKey } from './cacheKeys';
 
-export async function invalidateProfileUserCacheForRole(roleId: string) {
+export async function invalidateProfileUserCacheForRole({
+  roleId,
+  db = defaultDb,
+}: {
+  roleId: string;
+  db?: DbClient;
+}) {
   const affectedUsers = await db
     .select({
       profileId: profileUsers.profileId,
@@ -95,6 +101,7 @@ export async function createRole({
   description,
   profileId,
   user,
+  db = defaultDb,
 }: {
   name: string;
   zoneName: string;
@@ -102,6 +109,7 @@ export async function createRole({
   description?: string;
   profileId: string;
   user: { id: string };
+  db?: DbClient;
 }) {
   const [zone] = await Promise.all([
     db.query.accessZones.findFirst({
@@ -180,12 +188,14 @@ export async function updateRolePermissions({
   permissions,
   user,
   profileId,
+  db = defaultDb,
 }: {
   roleId: string;
   zoneName: string;
   permissions: Permissions;
   user: { id: string };
   profileId?: string;
+  db?: DbClient;
 }) {
   const [zone, role] = await Promise.all([
     db.query.accessZones.findFirst({
@@ -234,7 +244,7 @@ export async function updateRolePermissions({
     });
   }
 
-  await invalidateProfileUserCacheForRole(roleId);
+  await invalidateProfileUserCacheForRole({ roleId, db });
 
   return role;
 }
@@ -246,10 +256,12 @@ export async function updateRole({
   roleId,
   name,
   user,
+  db = defaultDb,
 }: {
   roleId: string;
   name: string;
   user: { id: string };
+  db?: DbClient;
 }) {
   const role = await db.query.accessRoles.findFirst({
     where: { id: roleId },
@@ -284,9 +296,11 @@ export async function updateRole({
 export async function deleteRole({
   roleId,
   user,
+  db = defaultDb,
 }: {
   roleId: string;
   user: { id: string };
+  db?: DbClient;
 }) {
   // First check if the role is a global role (profileId IS NULL)
   const role = await db.query.accessRoles.findFirst({
@@ -304,7 +318,7 @@ export async function deleteRole({
   await assertProfileAdmin({ user, profileId: role.profileId });
 
   // Invalidate before delete (cascade will remove the join rows we query)
-  await invalidateProfileUserCacheForRole(roleId);
+  await invalidateProfileUserCacheForRole({ roleId, db });
 
   // Delete the role (cascade will handle permissions)
   await db.delete(accessRoles).where(eq(accessRoles.id, roleId));
@@ -312,10 +326,15 @@ export async function deleteRole({
   return { deletedId: roleId };
 }
 
-export async function assignRoleToUser(
-  organizationUserId: string,
-  roleId: string,
-) {
+export async function assignRoleToUser({
+  organizationUserId,
+  roleId,
+  db = defaultDb,
+}: {
+  organizationUserId: string;
+  roleId: string;
+  db?: DbClient;
+}) {
   return await db
     .insert(organizationUserToAccessRoles)
     .values({
@@ -328,10 +347,15 @@ export async function assignRoleToUser(
 /**
  * Remove a role from an organization user
  */
-export async function removeRoleFromUser(
-  organizationUserId: string,
-  roleId: string,
-) {
+export async function removeRoleFromUser({
+  organizationUserId,
+  roleId,
+  db = defaultDb,
+}: {
+  organizationUserId: string;
+  roleId: string;
+  db?: DbClient;
+}) {
   return await db
     .delete(organizationUserToAccessRoles)
     .where(

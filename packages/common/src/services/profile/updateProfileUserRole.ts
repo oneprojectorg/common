@@ -1,4 +1,10 @@
-import { and, db, eq, inArray } from '@op/db/client';
+import {
+  type DbClient,
+  and,
+  db as defaultDb,
+  eq,
+  inArray,
+} from '@op/db/client';
 import { EntityType, profileUserToAccessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
@@ -21,10 +27,12 @@ export const updateProfileUserRoles = async ({
   profileUserId,
   roleIds,
   user,
+  db = defaultDb,
 }: {
   profileUserId: string;
   roleIds: string[];
   user: User;
+  db?: DbClient;
 }) => {
   if (roleIds.length === 0) {
     throw new CommonError('At least one role must be specified');
@@ -143,7 +151,10 @@ export const updateProfileUserRoles = async ({
   });
 
   // Fetch and return the updated profile user with full relations
-  const updatedProfileUser = await getProfileUserWithRelations(profileUserId);
+  const updatedProfileUser = await getProfileUserWithRelations({
+    profileUserId,
+    db,
+  });
   if (!updatedProfileUser) {
     throw new CommonError('Failed to fetch updated profile user');
   }

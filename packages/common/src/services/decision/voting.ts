@@ -1,5 +1,5 @@
 import { trackUserVoted } from '@op/analytics';
-import { and, db, eq, isNull } from '@op/db/client';
+import { type DbClient, and, db as defaultDb, eq, isNull } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
@@ -155,9 +155,11 @@ const createVoteSignature = (proposalIds: string[], userId: string): string => {
 export const submitVote = async ({
   data,
   authUserId,
+  db = defaultDb,
 }: {
   data: SubmitVoteInput;
   authUserId: string;
+  db?: DbClient;
 }): Promise<VoteSubmissionResult> => {
   if (!authUserId) {
     throw new UnauthorizedError('User must be authenticated');
@@ -363,7 +365,7 @@ export const getVotingStatus = async ({
     }
 
     // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
+    const processInstance = await defaultDb._query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
       columns: {
         id: true,
@@ -397,30 +399,31 @@ export const getVotingStatus = async ({
     // Check if user has voted
     let voteSubmission = null;
     if (profileId) {
-      voteSubmission = await db._query.decisionsVoteSubmissions.findFirst({
-        where: and(
-          eq(
-            decisionsVoteSubmissions.processInstanceId,
-            data.processInstanceId,
+      voteSubmission =
+        await defaultDb._query.decisionsVoteSubmissions.findFirst({
+          where: and(
+            eq(
+              decisionsVoteSubmissions.processInstanceId,
+              data.processInstanceId,
+            ),
+            eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
           ),
-          eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-        ),
-        with: {
-          voteProposals: {
-            with: {
-              proposal: {
-                with: {
-                  profile: {
-                    columns: {
-                      name: true,
+          with: {
+            voteProposals: {
+              with: {
+                proposal: {
+                  with: {
+                    profile: {
+                      columns: {
+                        name: true,
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-      });
+        });
     }
 
     let selectedProposals = null;

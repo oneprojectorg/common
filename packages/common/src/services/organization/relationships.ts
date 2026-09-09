@@ -1,5 +1,11 @@
 import { OPURLConfig } from '@op/core';
-import { and, db, eq, inArray } from '@op/db/client';
+import {
+  type DbClient,
+  and,
+  db as defaultDb,
+  eq,
+  inArray,
+} from '@op/db/client';
 import {
   Organization,
   Profile,
@@ -45,11 +51,13 @@ export const addRelationship = async ({
   from,
   to,
   relationships,
+  db = defaultDb,
 }: {
   user: User;
   from: string;
   to: string;
   relationships: Array<string>;
+  db?: DbClient;
 }) => {
   const orgUser = await getOrgAccessUser({ user, organizationId: from });
 
@@ -87,11 +95,11 @@ export const sendRelationshipNotification = async ({
   relationships: Array<string>;
 }) => {
   const [sourceOrg, targetOrg] = await Promise.all([
-    db.query.organizations.findFirst({
+    defaultDb.query.organizations.findFirst({
       where: { id: from },
       with: { profile: true },
     }),
-    db.query.organizations.findFirst({
+    defaultDb.query.organizations.findFirst({
       where: { id: to },
       with: { profile: true },
     }),
@@ -103,13 +111,13 @@ export const sendRelationshipNotification = async ({
 
   // Send email notifications to target organization admin users only
   try {
-    const adminUsers = await db.query.organizationUsers.findMany({
+    const adminUsers = await defaultDb.query.organizationUsers.findMany({
       where: {
         organizationId: to,
         RAW: (table) =>
           inArray(
             table.id,
-            db
+            defaultDb
               .select({
                 userId: organizationUserToAccessRoles.organizationUserId,
               })
@@ -176,32 +184,33 @@ export const getRelatedOrganizations = async ({
   // }
   //
 
-  const relationships = await db.query.organizationRelationships.findMany({
-    where: {
-      OR: [{ sourceOrganizationId: orgId }, { targetOrganizationId: orgId }],
-      ...(pending !== null && { pending }),
-    },
-    with: {
-      targetOrganization: {
-        with: {
-          profile: {
-            with: {
-              avatarImage: true,
+  const relationships =
+    await defaultDb.query.organizationRelationships.findMany({
+      where: {
+        OR: [{ sourceOrganizationId: orgId }, { targetOrganizationId: orgId }],
+        ...(pending !== null && { pending }),
+      },
+      with: {
+        targetOrganization: {
+          with: {
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
+          },
+        },
+        sourceOrganization: {
+          with: {
+            profile: {
+              with: {
+                avatarImage: true,
+              },
             },
           },
         },
       },
-      sourceOrganization: {
-        with: {
-          profile: {
-            with: {
-              avatarImage: true,
-            },
-          },
-        },
-      },
-    },
-  });
+    });
 
   // At the moment we combine all the relationships into one distinct org record
   // in JS as this is harder to do in SQL
@@ -279,7 +288,7 @@ export const getDirectedRelationships = async ({
   // }
   //
   const allRelationshipsFromDb =
-    await db.query.organizationRelationships.findMany({
+    await defaultDb.query.organizationRelationships.findMany({
       where: {
         OR: [{ sourceOrganizationId: from }, { targetOrganizationId: from }],
         ...(to && {
@@ -353,7 +362,7 @@ export const getPendingRelationships = async ({
   }
 
   const [relationships] = await Promise.all([
-    db.query.organizationRelationships.findMany({
+    defaultDb.query.organizationRelationships.findMany({
       where: {
         targetOrganizationId: orgId,
         pending: true,
@@ -430,7 +439,13 @@ export const getPendingRelationships = async ({
   return { records: organizations, count: organizations.length };
 };
 
-export const removeRelationship = async ({ id }: { id: string }) => {
+export const removeRelationship = async ({
+  id,
+  db = defaultDb,
+}: {
+  id: string;
+  db?: DbClient;
+}) => {
   // const orgUser = await getOrgAccessUser({ user, organizationId: user });
 
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
@@ -461,10 +476,12 @@ export const approveRelationship = async ({
   targetOrganizationId,
   sourceOrganizationId,
   user,
+  db = defaultDb,
 }: {
   user: User;
   targetOrganizationId: string;
   sourceOrganizationId: string;
+  db?: DbClient;
 }) => {
   const orgUser = await getOrgAccessUser({
     user,
@@ -511,10 +528,12 @@ export const declineRelationship = async ({
   targetOrganizationId,
   ids,
   user,
+  db = defaultDb,
 }: {
   user: User;
   targetOrganizationId: string;
   ids: string[];
+  db?: DbClient;
 }) => {
   const orgUser = await getOrgAccessUser({
     user,

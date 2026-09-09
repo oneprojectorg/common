@@ -1,5 +1,5 @@
 import { invalidate } from '@op/cache';
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import { attachments, posts, postsToProfiles } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { logger } from '@op/logging';
@@ -14,6 +14,7 @@ import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
   authUserId: string;
+  db?: DbClient;
 }
 
 export const createPost = async (input: CreatePostServiceInput) => {
@@ -24,6 +25,7 @@ export const createPost = async (input: CreatePostServiceInput) => {
     profileId: targetProfileId,
     proposalId,
     authUserId,
+    db = defaultDb,
   } = input;
 
   // getCurrentProfileId and resolvePostRoots are independent reads — run them
