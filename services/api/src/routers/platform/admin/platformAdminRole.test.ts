@@ -106,9 +106,8 @@ const createTestSubject = async (
   return { authUserId: user.id, email, caller, grantOnOtherProfile };
 };
 
-// The gate is what the assertions read: a caller past it gets a not-found for
-// the random instance id, a caller stopped by it gets UnauthorizedError.
-const gatingInput = { instanceId: randomUUID() };
+// `getStats` is the plainest procedure behind the gate: a caller past it gets
+// the counts, a caller stopped by it gets UnauthorizedError.
 
 describe.concurrent('platform admin as a user-level access role', () => {
   it('admits a caller granted the role on their own profile', async ({
@@ -119,9 +118,7 @@ describe.concurrent('platform admin as a user-level access role', () => {
 
     const caller = await subject.caller();
 
-    await expect(caller.getDecisionInstance(gatingInput)).rejects.toMatchObject(
-      { cause: { name: 'NotFoundError' } },
-    );
+    await expect(caller.getStats()).resolves.toBeDefined();
   });
 
   it('rejects a caller holding the role on another profile only', async ({
@@ -132,9 +129,9 @@ describe.concurrent('platform admin as a user-level access role', () => {
 
     const caller = await subject.caller();
 
-    await expect(caller.getDecisionInstance(gatingInput)).rejects.toMatchObject(
-      { cause: { name: 'UnauthorizedError' } },
-    );
+    await expect(caller.getStats()).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
   });
 
   it('rejects a caller with only the trigger-granted Admin role', async ({
@@ -144,8 +141,8 @@ describe.concurrent('platform admin as a user-level access role', () => {
 
     const caller = await subject.caller();
 
-    await expect(caller.getDecisionInstance(gatingInput)).rejects.toMatchObject(
-      { cause: { name: 'UnauthorizedError' } },
-    );
+    await expect(caller.getStats()).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
   });
 });
