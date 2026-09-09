@@ -135,8 +135,8 @@ await seedGlobalUsers();
 // ---------------------------------------------------------------------------
 console.log('Ensuring default organization exists...');
 
-let orgProfile = await db._query.profiles.findFirst({
-  where: (t, { eq }) => eq(t.slug, DEFAULT_ORG.slug),
+let orgProfile = await db.query.profiles.findFirst({
+  where: { slug: DEFAULT_ORG.slug },
 });
 
 if (!orgProfile) {
@@ -158,8 +158,8 @@ if (!orgProfile) {
   console.log(`  Created profile: ${DEFAULT_ORG.name} (${orgProfile.id})`);
 }
 
-let defaultOrg = await db._query.organizations.findFirst({
-  where: (t, { eq }) => eq(t.profileId, orgProfile!.id),
+let defaultOrg = await db.query.organizations.findFirst({
+  where: { profileId: orgProfile!.id },
 });
 
 if (!defaultOrg) {
@@ -184,8 +184,8 @@ if (!defaultOrg) {
 // out and the ProcessBuilder never opens.
 // ---------------------------------------------------------------------------
 for (const template of Object.values(decisionTemplates)) {
-  const existing = await db._query.decisionProcesses.findFirst({
-    where: (t, { eq }) => eq(t.name, template.name),
+  const existing = await db.query.decisionProcesses.findFirst({
+    where: { name: template.name },
   });
 
   if (!existing) {
@@ -222,8 +222,8 @@ if (backfilled.length > 0) {
   );
 }
 
-const existingAdmins = await db._query.users.findMany({
-  where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
+const existingAdmins = await db.query.users.findMany({
+  where: { email: { in: [...adminEmails] } },
   columns: { authUserId: true, email: true },
 });
 
@@ -233,9 +233,8 @@ const existingAdmins = await db._query.users.findMany({
 // import it — including resolving the role by name, the runtime identifier for
 // a global role. Without this a fresh local DB 404s on /admin for every dev.
 // On staging and production an operator grants the role the same way.
-const platformAdminRole = await db._query.accessRoles.findFirst({
-  where: (t, { eq, and, isNull }) =>
-    and(eq(t.name, ROLES.PLATFORM_ADMIN.name), isNull(t.profileId)),
+const platformAdminRole = await db.query.accessRoles.findFirst({
+  where: { name: ROLES.PLATFORM_ADMIN.name, profileId: { isNull: true } },
 });
 
 if (!platformAdminRole) {
@@ -271,9 +270,8 @@ if (adminMemberships.length > 0) {
   console.log(`Granted Platform Admin to ${adminMemberships.length} user(s)`);
 }
 
-const adminRole = await db._query.accessRoles.findFirst({
-  where: (t, { eq, and, isNull }) =>
-    and(eq(t.name, 'Admin'), isNull(t.profileId)),
+const adminRole = await db.query.accessRoles.findFirst({
+  where: { name: 'Admin', profileId: { isNull: true } },
 });
 
 if (!adminRole) {
@@ -285,12 +283,11 @@ if (!adminRole) {
 let linkedCount = 0;
 for (const admin of existingAdmins) {
   // Is this admin already an org user for the default org?
-  const existingOrgUser = await db._query.organizationUsers.findFirst({
-    where: (t, { and, eq }) =>
-      and(
-        eq(t.authUserId, admin.authUserId),
-        eq(t.organizationId, defaultOrg!.id),
-      ),
+  const existingOrgUser = await db.query.organizationUsers.findFirst({
+    where: {
+      authUserId: admin.authUserId,
+      organizationId: defaultOrg!.id,
+    },
   });
 
   let orgUserId = existingOrgUser?.id;
