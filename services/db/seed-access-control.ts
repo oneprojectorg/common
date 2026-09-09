@@ -1,6 +1,6 @@
 /* eslint-disable antfu/no-top-level-await */
 /**
- * Docker dev seed.
+ * Access-control seed.
  *
  * The standard `seed.ts` has a database-URL allowlist that excludes the dind
  * hostname used inside our docker-compose stack, so it refuses to run there.
@@ -12,8 +12,13 @@
  *   4. The Platform Admin role, granted to admin users at the user level.
  *   5. Admin-user linkage to the default organization, with the Admin role.
  *
+ * `docker-compose.dev.yml` runs it on every api container start, and it is also
+ * how step 1's rows — including the `platform` zone and the `Platform Admin`
+ * role of ADR 0005 — reach staging and production: an operator runs it there.
+ * Nothing runs it automatically outside docker dev.
+ *
  * Idempotent: every step uses onConflictDoNothing or existence checks, so the
- * script is safe to re-run on every api container start.
+ * script is safe to re-run.
  */
 import { adminEmails } from '@op/core';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
@@ -64,8 +69,8 @@ console.log(`Inserted ${ACCESS_ROLES.length} access roles`);
 
 // A seeded id that already belongs to a different zone or role takes the two
 // inserts above as a conflict and skips them — and then the permission rows
-// below attach to whatever does hold that id. Nothing in this repository has
-// ever inserted a global role through a migration, so the ids cannot be
+// below attach to whatever does hold that id. This script is the only writer
+// of global roles, so the ids of a database it has never run against cannot be
 // assumed. Abort instead of mis-granting.
 const assertSeededNames = (
   label: string,
@@ -109,6 +114,10 @@ const [storedZones, storedRoles] = await Promise.all([
 assertSeededNames('access_zones', ACCESS_ZONES, storedZones);
 assertSeededNames('access_roles', ACCESS_ROLES, storedRoles);
 
+// The rows carry no id of their own, so a re-run would insert duplicates were
+// it not for `arpoaz_role_zone_profile_unique` on (role, zone, profile) —
+// declared `nullsNotDistinct`, so the NULL `profile_id` of a global baseline
+// row conflicts too. An untargeted DO NOTHING covers it.
 await db
   .insert(accessRolePermissionsOnAccessZones)
   .values(ACCESS_ROLE_PERMISSIONS)
@@ -223,6 +232,7 @@ const existingAdmins = await db._query.users.findMany({
 // grantPlatformAdmin in @op/common, written here because services/db cannot
 // import it — including resolving the role by name, the runtime identifier for
 // a global role. Without this a fresh local DB 404s on /admin for every dev.
+// On staging and production an operator grants the role the same way.
 const platformAdminRole = await db._query.accessRoles.findFirst({
   where: (t, { eq, and, isNull }) =>
     and(eq(t.name, ROLES.PLATFORM_ADMIN.name), isNull(t.profileId)),

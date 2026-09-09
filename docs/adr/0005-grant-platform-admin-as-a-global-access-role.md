@@ -49,9 +49,12 @@ exists for everyone.
   member-role UI can write it to an own-profile membership.
   `grantPlatformAdmin` / `revokePlatformAdmin` in `@op/common` are the only
   intended writers; they are not exposed through tRPC.
-- The seed rows reach production as an idempotent data migration
-  (`20260909172759_platform_admin_role_seed`), because only
-  `docker-compose.dev.yml` runs `seed-access-control.ts`.
+- The seed rows — the zone, the role and its four permission rows — reach every
+  environment through `services/db/seed-access-control.ts`, which an operator
+  runs. Seed data is not a schema change, so it does not belong in a Drizzle
+  migration. The script is idempotent, and it aborts if a fixed seed id already
+  belongs to a different zone or role rather than silently granting that other
+  role.
 
 ## Consequences
 
@@ -78,7 +81,10 @@ exists for everyone.
   anchor, so it grants no platform access, but it lets an org admin attach a
   system global role to an org membership. Left as it is here; worth its own
   change.
+- Nothing applies the seed rows automatically outside docker dev, so a new
+  environment is not a platform-admin environment until someone runs the seed.
+  `getUserGlobalRoles` returns no roles until then, which fails closed.
 - Rejected in this pull request: a `user_to_access_roles` table holding a role
   for a user directly. It read more explicitly, but the existing primitives
-  already express the grant, and a new table costs a migration, relations, and
-  a second place where roles live.
+  already express the grant, and a new table costs a schema change, relations,
+  and a second place where roles live.
