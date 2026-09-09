@@ -11,8 +11,6 @@ import { waitUntil } from '@vercel/functions';
 import { ValidationError } from '../../utils';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
-import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
-import { isReviewOutOfDate } from './review/staleness';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -21,19 +19,9 @@ import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
 
 /**
- * Edits an already-submitted review in place — no version history — leaving
- * `state` and the assignment status untouched (`updatedAt` advances, so an edit
- * stays derivable). Only while the assignment's phase is still the instance's
- * current phase; frozen once the process advances past it.
- *
- * This is also the re-affirm path. The review's version anchor is re-stamped to
- * the proposal's current history row on every edit, so an out-of-date review
- * (anchor behind the proposal) becomes current again. When the review *was* out
- * of date, `submittedAt` advances too: the reviewer has now judged this
- * version. An edit of an already-current review leaves `submittedAt` alone.
- *
- * The assignment's pin is untouched — it records the version the reviewer was
- * asked to review, which an edit does not change.
+ * Edits an already-submitted review in place while its phase is still current.
+ * Also the re-affirm path: the anchor moves to the current proposal version,
+ * and `submittedAt` advances only if the review was out of date.
  */
 export async function updateReview({
   assignmentId,
@@ -66,24 +54,10 @@ export async function updateReview({
 
   schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
+  const { currentProposalHistoryId, isReviewOutOfDate: stale } = context;
+
   const { review: updatedReview, wasStale } = await db.transaction(
     async (tx) => {
-      // Anchor the review to the proposal version this edit was written
-      // against; the read below compares it with the current row.
-      const currentProposalHistoryId =
-        await getCurrentProposalHistoryIdForAssignment({
-          assignment: context.assignment,
-          db: tx,
-        });
-
-      // Read the staleness *before* the anchor moves — the edit is a re-affirm
-      // only if the review was behind the proposal when it started.
-      const stale = isReviewOutOfDate({
-        assignment: context.assignment,
-        review: context.review,
-        currentProposalHistoryId,
-      });
-
       const [row] = await tx
         .update(proposalReviews)
         .set({
@@ -92,7 +66,6 @@ export async function updateReview({
           ...(currentProposalHistoryId && {
             reviewedProposalHistoryId: currentProposalHistoryId,
           }),
-          // A re-affirm is a fresh judgement of the current version.
           ...(stale && { submittedAt: new Date().toISOString() }),
         })
         // Defensive: the row must still be SUBMITTED (nothing un-submits today).

@@ -1,6 +1,5 @@
 import { type DbClient, db as defaultDb, sql } from '@op/db/client';
 import type { ProposalReviewAssignment } from '@op/db/schema';
-import { logger } from '@op/logging';
 
 /**
  * The current (open temporal range) history row id per proposal, in one query
@@ -38,24 +37,13 @@ export async function getCurrentProposalHistoryIdForAssignment({
   assignment,
   db = defaultDb,
 }: {
-  assignment: Pick<ProposalReviewAssignment, 'id' | 'proposalId'>;
+  assignment: Pick<ProposalReviewAssignment, 'proposalId'>;
   db?: DbClient;
 }): Promise<string | null> {
   const byProposal = await getCurrentProposalHistoryIds({
     proposalIds: [assignment.proposalId],
     db,
   });
-  const historyId = byProposal.get(assignment.proposalId) ?? null;
 
-  if (!historyId) {
-    logger.warn(
-      'Proposal has no open history row; review anchor left unchanged',
-      {
-        assignmentId: assignment.id,
-        proposalId: assignment.proposalId,
-      },
-    );
-  }
-
-  return historyId;
+  return byProposal.get(assignment.proposalId) ?? null;
 }

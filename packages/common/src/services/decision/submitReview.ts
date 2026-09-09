@@ -14,7 +14,6 @@ import { count } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../utils';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
-import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -59,17 +58,11 @@ export async function submitReview({
 
   const submittedAt = new Date().toISOString();
 
+  const reviewedHistoryValues = context.currentProposalHistoryId
+    ? { reviewedProposalHistoryId: context.currentProposalHistoryId }
+    : {};
+
   const review = await db.transaction(async (tx) => {
-    const currentProposalHistoryId =
-      await getCurrentProposalHistoryIdForAssignment({
-        assignment: context.assignment,
-        db: tx,
-      });
-
-    const reviewedHistoryValues = currentProposalHistoryId
-      ? { reviewedProposalHistoryId: currentProposalHistoryId }
-      : {};
-
     const [submittedReview] = await tx
       .insert(proposalReviews)
       .values({

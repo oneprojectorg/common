@@ -12,9 +12,7 @@ import { ValidationError } from '../../utils';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { isReviewOutOfDate } from './review/staleness';
 import {
   assertReviewAssignmentContext,
   canEditSubmittedReview,
@@ -33,11 +31,17 @@ export async function getReviewAssignment({
   assignmentId: string;
   user: User;
 }): Promise<ReviewAssignmentExtended> {
-  const { assignment, instance, review, revisionRequest, rubricTemplate } =
-    await assertReviewAssignmentContext({
-      assignmentId,
-      user,
-    });
+  const {
+    assignment,
+    instance,
+    isReviewOutOfDate,
+    review,
+    revisionRequest,
+    rubricTemplate,
+  } = await assertReviewAssignmentContext({
+    assignmentId,
+    user,
+  });
 
   const proposalSnapshot = resolveAssignmentProposal(assignment);
 
@@ -46,32 +50,27 @@ export async function getReviewAssignment({
     instance.process.id,
   );
 
-  const [
-    relationshipInfo,
-    documentContentMap,
-    proposalAttachments,
-    currentProposalHistoryId,
-  ] = await Promise.all([
-    getProposalRelationshipInfo({
-      profileId: assignment.proposal.profileId,
-      viewerProfileId: assignment.reviewerProfileId,
-    }),
-    getProposalDocumentsContent(
-      [
-        {
-          id: proposalSnapshot.id,
-          proposalData: proposalSnapshot.proposalData,
-          proposalTemplate,
-          collaborationDocVersionId:
-            proposalSnapshot.proposalData.collaborationDocVersionId,
-        },
-      ],
-      // Tolerate an unavailable document rather than failing the review view.
-      { onFetchError: 'omit' },
-    ),
-    getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
-    getCurrentProposalHistoryIdForAssignment({ assignment, db }),
-  ]);
+  const [relationshipInfo, documentContentMap, proposalAttachments] =
+    await Promise.all([
+      getProposalRelationshipInfo({
+        profileId: assignment.proposal.profileId,
+        viewerProfileId: assignment.reviewerProfileId,
+      }),
+      getProposalDocumentsContent(
+        [
+          {
+            id: proposalSnapshot.id,
+            proposalData: proposalSnapshot.proposalData,
+            proposalTemplate,
+            collaborationDocVersionId:
+              proposalSnapshot.proposalData.collaborationDocVersionId,
+          },
+        ],
+        // Tolerate an unavailable document rather than failing the review view.
+        { onFetchError: 'omit' },
+      ),
+      getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
+    ]);
 
   const documentContent = documentContentMap.get(proposalSnapshot.id);
 
@@ -104,11 +103,7 @@ export async function getReviewAssignment({
     review,
     revisionRequest,
     canEditReview: canEditSubmittedReview({ assignment, instance, review }),
-    isReviewOutOfDate: isReviewOutOfDate({
-      assignment,
-      review,
-      currentProposalHistoryId,
-    }),
+    isReviewOutOfDate,
   });
 }
 

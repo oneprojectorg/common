@@ -13,7 +13,9 @@ import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import { decisionPermission } from './permissions';
+import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import { isReviewOutOfDate } from './review/staleness';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
@@ -360,10 +362,13 @@ export async function assertReviewAssignmentContext({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const instance = await getInstance({
-    instanceId: assignment.processInstanceId,
-    user,
-  });
+  const [instance, currentProposalHistoryId] = await Promise.all([
+    getInstance({
+      instanceId: assignment.processInstanceId,
+      user,
+    }),
+    getCurrentProposalHistoryIdForAssignment({ assignment }),
+  ]);
 
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
@@ -384,10 +389,18 @@ export async function assertReviewAssignmentContext({
     );
   }
 
+  const review = assignment.reviews[0] ?? null;
+
   return {
     assignment,
     instance,
-    review: assignment.reviews[0] ?? null,
+    review,
+    currentProposalHistoryId,
+    isReviewOutOfDate: isReviewOutOfDate({
+      assignment,
+      review,
+      currentProposalHistoryId,
+    }),
     revisionRequest: getActiveRevisionRequest(assignment.requests),
     // Reviews are validated and rendered against the rubric of the phase
     // their assignment belongs to.
@@ -399,11 +412,8 @@ export async function assertReviewAssignmentContext({
 }
 
 /**
- * Resolves the proposal a review assignment is about — always the LIVE
- * proposal, for every assignment status — and parses/validates its proposal
- * data. The assignment's `assignedProposalHistoryId` pin records the version
- * the reviewer was asked to review; it is deliberately not used to pick the
- * content shown, so a reviewer always reads what the author has now.
+ * Resolves and validates the assignment's proposal. Always the live proposal:
+ * the pin records what the reviewer was asked to review, not what to show.
  */
 export function resolveAssignmentProposal(assignment: {
   proposal: {
