@@ -21,6 +21,7 @@ const ACCESS_ZONE_IDS = {
   PROFILE: '00000000-0000-4000-8000-000000000001',
   ADMIN: '00000000-0000-4000-8000-000000000002',
   DECISIONS: '00000000-0000-4000-8000-000000000003',
+  PLATFORM: '00000000-0000-4000-8000-000000000004',
 } as const;
 
 // Predefined UUIDs for access roles (v4 format with version=4 and variant=8)
@@ -28,6 +29,7 @@ const ACCESS_ROLE_IDS = {
   ADMIN: '00000000-0000-4000-8000-000000000011',
   MEMBER: '00000000-0000-4000-8000-000000000012',
   PUBLIC: '00000000-0000-4000-8000-000000000013',
+  PLATFORM_ADMIN: '00000000-0000-4000-8000-000000000014',
 } as const;
 
 // Access zones data
@@ -47,6 +49,11 @@ export const ACCESS_ZONES = [
     name: 'decisions',
     description: 'Allows accessing to decision making func',
   },
+  {
+    id: ACCESS_ZONE_IDS.PLATFORM,
+    name: 'platform',
+    description: 'Platform-wide administration, not scoped to any profile',
+  },
 ];
 
 // Access roles data
@@ -60,6 +67,14 @@ export const ACCESS_ROLES = [
     id: ACCESS_ROLE_IDS.ADMIN,
     name: 'Admin',
     description: null,
+  },
+  {
+    id: ACCESS_ROLE_IDS.PLATFORM_ADMIN,
+    name: 'Platform Admin',
+    // Global superuser role, held on the holder's own individual-profile
+    // membership, and never offered by an invite or member-role UI (it is kept
+    // out of EXPOSABLE_GLOBAL_ROLE_NAMES). See ADR 0005.
+    description: 'Platform-wide administrator',
   },
   {
     id: ACCESS_ROLE_IDS.PUBLIC,
@@ -85,6 +100,10 @@ export const ROLES = {
     id: ACCESS_ROLE_IDS.PUBLIC,
     name: 'Public',
   },
+  PLATFORM_ADMIN: {
+    id: ACCESS_ROLE_IDS.PLATFORM_ADMIN,
+    name: 'Platform Admin',
+  },
 } as const;
 
 // Zone name to ID mapping for convenient access (avoids string references)
@@ -100,6 +119,10 @@ export const ZONES = {
   DECISIONS: {
     id: ACCESS_ZONE_IDS.DECISIONS,
     name: 'decisions',
+  },
+  PLATFORM: {
+    id: ACCESS_ZONE_IDS.PLATFORM,
+    name: 'platform',
   },
 } as const;
 
@@ -151,4 +174,16 @@ export const ACCESS_ROLE_PERMISSIONS = [
       DECISION_BITS.SUBMIT_PROPOSALS |
       DECISION_BITS.VOTE,
   },
+  // Platform Admin gets ACRUD on every zone. Deliberately no decision behavior
+  // bits: those mark a reviewer/voter, which a superuser must never appear as.
+  ...[
+    ACCESS_ZONE_IDS.PLATFORM,
+    ACCESS_ZONE_IDS.ADMIN,
+    ACCESS_ZONE_IDS.PROFILE,
+    ACCESS_ZONE_IDS.DECISIONS,
+  ].map((accessZoneId) => ({
+    accessRoleId: ACCESS_ROLE_IDS.PLATFORM_ADMIN,
+    accessZoneId,
+    permission: ADMIN_ROLE_PERMISSIONS,
+  })),
 ];
