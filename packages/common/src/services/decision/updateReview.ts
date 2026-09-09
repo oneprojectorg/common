@@ -1,4 +1,3 @@
-import { trackReviewUpdated } from '@op/analytics';
 import { and, db, eq } from '@op/db/client';
 import {
   type ProposalReview,
@@ -6,11 +5,8 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { waitUntil } from '@vercel/functions';
 
 import { ValidationError } from '../../utils';
-import { getRubricScoringInfo } from './getRubricScoringInfo';
-import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -56,56 +52,34 @@ export async function updateReview({
 
   const { currentProposalHistoryId, isReviewOutOfDate: stale } = context;
 
-  const { review: updatedReview, wasStale } = await db.transaction(
-    async (tx) => {
-      const [row] = await tx
-        .update(proposalReviews)
-        .set({
-          reviewData,
-          overallComment: overallComment ?? null,
-          ...(currentProposalHistoryId && {
-            reviewedProposalHistoryId: currentProposalHistoryId,
-          }),
-          ...(stale && { submittedAt: new Date().toISOString() }),
-        })
-        // Defensive: the row must still be SUBMITTED (nothing un-submits today).
-        .where(
-          and(
-            eq(proposalReviews.assignmentId, assignmentId),
-            eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
-          ),
-        )
-        .returning();
+  const updatedReview = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(proposalReviews)
+      .set({
+        reviewData,
+        overallComment: overallComment ?? null,
+        ...(currentProposalHistoryId && {
+          reviewedProposalHistoryId: currentProposalHistoryId,
+        }),
+        ...(stale && { submittedAt: new Date().toISOString() }),
+      })
+      // Defensive: the row must still be SUBMITTED (nothing un-submits today).
+      .where(
+        and(
+          eq(proposalReviews.assignmentId, assignmentId),
+          eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
+        ),
+      )
+      .returning();
 
-      if (!row) {
-        throw new ValidationError(
-          'This review can no longer be edited; please refresh and try again',
-        );
-      }
+    if (!row) {
+      throw new ValidationError(
+        'This review can no longer be edited; please refresh and try again',
+      );
+    }
 
-      return { review: row, wasStale: stale };
-    },
-  );
-
-  const scoredCriterionKeys = getRubricScoringInfo(context.rubricTemplate)
-    .criteria.filter((criterion) => criterion.scored)
-    .map((criterion) => criterion.key);
-  const scored = getSubmittedReviewScore(updatedReview, scoredCriterionKeys);
-
-  waitUntil(
-    trackReviewUpdated(
-      user.id,
-      context.assignment.processInstanceId,
-      context.assignment.proposalId,
-      {
-        assignment_id: assignmentId,
-        phase_id: context.assignment.phaseId,
-        recommendation: scored?.overallRecommendation ?? null,
-        score: scored?.score ?? null,
-        was_stale: wasStale,
-      },
-    ),
-  );
+    return row;
+  });
 
   return {
     review: updatedReview,
