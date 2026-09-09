@@ -133,7 +133,9 @@ export function CategoryReviewerCard({
       data-testid={`category-reviewer-card-${category.name}`}
     >
       <div className="flex items-end justify-between gap-2">
-        <span className="font-serif text-sm">{category.name}</span>
+        <span className="font-serif text-sm">
+          <bdi>{category.name}</bdi>
+        </span>
         <span
           className={
             isEmpty ? 'text-sm text-warning' : 'text-sm text-muted-foreground'
