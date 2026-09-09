@@ -102,6 +102,17 @@ export const Events = {
       processInstanceId: z.string().uuid(),
     }),
   },
+  // Fan-out from the daily reminder cron: one event per pending transition
+  // whose review phase is ending soon. Carries only ids — the consumer
+  // re-reads current DB state before sending.
+  reviewPhaseEndingSoon: {
+    name: 'review/phase-ending-soon' as const,
+    schema: z.object({
+      transitionId: z.string().uuid(),
+      processInstanceId: z.string().uuid(),
+      phaseId: z.string().min(1),
+    }),
+  },
   reviewRevisionResubmitted: {
     name: 'review/revision-resubmitted' as const,
     schema: z.object({
