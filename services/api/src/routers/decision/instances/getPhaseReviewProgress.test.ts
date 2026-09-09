@@ -2,8 +2,10 @@ import { computeDaysLeft } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  processInstances,
   proposalReviewAssignments,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
 import { createProposalReview, testSimpleVotingSchema } from '@op/test';
 import { eq } from 'drizzle-orm';
@@ -53,17 +55,39 @@ describe.concurrent('getPhaseReviewProgress', () => {
     task,
     onTestFinished,
   }) => {
-    // The org fallback still admits this caller to `getInstance` (a read
-    // surface legacy results screens hit), but the admin gate here resolves
-    // against the instance's own profile, where they hold nothing.
+    // The legacy org fallback (`assertInstanceProfileAccess`) still admits this
+    // caller to `getInstance` — the read surface legacy results screens hit —
+    // but the admin gate here resolves against the instance's own profile,
+    // where an org admin holds nothing.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
-      grantAccess: false,
       processSchema: testSimpleVotingSchema,
     });
 
-    const orgAdminCaller = await createAuthenticatedCaller(setup.userEmail);
+    // The fixture owns instances by the creator's individual profile; the org
+    // fallback only fires when the owner is an organization's profile.
+    await db
+      .update(processInstances)
+      .set({ ownerProfileId: setup.organization.profileId })
+      .where(eq(processInstances.id, setup.instance.instance.id));
+
+    const orgAdmin = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+      orgRoleId: ROLES.ADMIN.id,
+    });
+
+    const orgAdminCaller = await createAuthenticatedCaller(orgAdmin.email);
+
+    // Proof the caller is genuinely on the fallback path rather than simply
+    // locked out everywhere: the instance read still admits them, and still
+    // reports the org-derived admin bit to the client.
+    await expect(
+      orgAdminCaller.decision.getInstance({
+        instanceId: setup.instance.instance.id,
+      }),
+    ).resolves.toMatchObject({ access: { admin: true } });
 
     await expect(
       orgAdminCaller.decision.getPhaseReviewProgress({
