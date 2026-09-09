@@ -274,11 +274,13 @@ export function ProposalView({
       reportProposalId={proposalId}
       editHref={editHref}
       canEdit={canEdit}
-      // Same viewer-access bit the comments prompt reads (getProposal mirrors
-      // the decision profile's SUBMIT_PROPOSALS grant onto proposal.access),
-      // so the Join button, the modal mount, and the prompt can't diverge —
-      // on any route that renders a proposal, including the legacy one.
-      canJoin={currentProposal.access?.submitProposals === true}
+      // Whether the parent decision is open, which is what the Join button and
+      // the modal mount actually depend on — on any route that renders a
+      // proposal, including the legacy one. The comments prompt keeps reading
+      // `access.submitProposals`, because that one mirrors the server's
+      // post-write gate. The two answer different questions and no longer move
+      // together: the public grant does not carry `submitProposals`.
+      canJoin={currentProposal.isPublic === true}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}

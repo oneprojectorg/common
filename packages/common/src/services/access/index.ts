@@ -522,3 +522,4 @@ export * from './requestCache';
 export * from './utils';
 export * from './platformAdmin';
 export * from './publicAccess';
+export * from './publicGrant';

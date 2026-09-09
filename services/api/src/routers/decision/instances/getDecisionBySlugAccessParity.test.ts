@@ -1,3 +1,4 @@
+import { makeProfilePublic } from '@op/common';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -74,5 +75,45 @@ describe.concurrent('getDecisionBySlug access parity with getInstance', () => {
     // And concretely: an admin can submit + administer.
     expect(slugAccess?.admin).toBe(true);
     expect(slugAccess?.submitProposals).toBe(true);
+
+    // `isPublic` rides beside `access` and is derived separately in each path
+    // (the router from `getProfileAccessRoles`, getInstance from the roles
+    // `assertInstanceProfileAccess` resolved), so it needs the same parity
+    // pin. This decision was never opened, so both must say false.
+    expect(bySlug.processInstance.isPublic).toBe(byInstance.isPublic);
+    expect(byInstance.isPublic).toBe(false);
+  });
+
+  it('public decision: both paths report isPublic', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    await makeProfilePublic({
+      profileId: setup.instance.profileId,
+      user: { id: setup.user.id },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const [bySlug, byInstance] = await Promise.all([
+      caller.decision.getDecisionBySlug({ slug: setup.instance.slug }),
+      caller.decision.getInstance({
+        instanceId: setup.instance.instance.id,
+      }),
+    ]);
+
+    expect(byInstance.isPublic).toBe(true);
+    expect(bySlug.processInstance.isPublic).toBe(true);
+
+    // The point of the split: publicness no longer travels on a capability.
+    // The public grant carries no `submitProposals`, so this admin's own role
+    // is what still reports it — the two answers are independent.
+    expect(byInstance.access?.submitProposals).toBe(true);
   });
 });

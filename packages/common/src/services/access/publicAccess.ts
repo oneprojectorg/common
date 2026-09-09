@@ -15,19 +15,33 @@ import { CommonError, NotFoundError } from '../../utils';
 import { assertOrgAccess, assertProfileAdmin } from '../assert';
 import { decisionPermission } from '../decision/permissions';
 import { profileUserCacheKey } from './cacheKeys';
-
-/** The global role a public grant hangs off. Seeded with no permissions. */
-const PUBLIC_ROLE_NAME = 'Public';
+import { PUBLIC_ROLE_NAME } from './publicGrant';
 
 /**
  * What the public may do on a profile, by what the profile is.
  *
- * A decision opens for reading and voting. It does not open for proposal
- * submission. `createProposal` writes a profile, a `profileUsers` row, a role
- * link and a proposal row, so an unauthenticated caller who repeats it writes
- * four indexed rows per call. Someone who wants to propose signs in first,
- * with an email address or a phone number. A vote stays anonymous when the
- * voter asks for that.
+ * A decision opens for reading. It does not open for proposal submission. A
+ * caller who holds no account cannot be identified, moderated, or held to a
+ * submission limit, so someone who wants to propose signs in first, with an
+ * email address or a phone number.
+ *
+ * `SUBMIT_PROPOSALS` is not only the proposal bit. Five gates read it —
+ * `createProposal`, `submitProposal`, `assertProposalEngagementAccess`, the
+ * post-write gate in `services/posts/access.ts`, and `toggleLike`. Only the
+ * two proposal gates change here. Commenting, liking and following sit on a
+ * procedure tier that already refuses an anonymous session
+ * (`authenticatedConfirmedProcedure` for a post, `networkAuthenticatedProcedure`
+ * for a like or a follow), so this grant never admitted a visitor to them.
+ * Withholding the bit affects those three only for a caller who holds an
+ * account but no role on the decision, and who was relying on this grant to
+ * supply it.
+ *
+ * So a public grant buys reading, and nothing else.
+ *
+ * The grant carries `VOTE`, which `submitVote` does not yet honour — it sits
+ * on `networkAuthenticatedProcedure` and admits network members only. Read
+ * `rolesIncludePublicGrant`, never a capability bit, to ask whether a profile
+ * is open.
  *
  * An organization opens for reading only — nothing about an org profile is a
  * participatory surface.

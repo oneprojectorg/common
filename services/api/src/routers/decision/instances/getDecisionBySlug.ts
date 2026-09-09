@@ -3,6 +3,7 @@ import {
   fromDecisionBitField,
   getDecisionBySlug,
   getProfileAccessRoles,
+  rolesIncludePublicGrant,
 } from '@op/common';
 import { collapseRoles } from 'access-zones';
 import { z } from 'zod';
@@ -52,6 +53,8 @@ export const getDecisionBySlugRouter = router({
         processInstance: {
           ...parsed.processInstance,
           access: fromDecisionBitField(decisionsBitField),
+          // Kept in step with getInstance, which the parity test asserts.
+          isPublic: rolesIncludePublicGrant(roles),
         },
       });
     }),

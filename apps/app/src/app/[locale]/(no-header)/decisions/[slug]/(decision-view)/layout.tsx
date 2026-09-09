@@ -37,9 +37,11 @@ const DecisionViewLayout = async ({
   // loadDecision already returned (no separate getInstance fetch).
   const isActive = hasFirstPhaseStarted(instance?.instanceData?.phases);
   const access = instance?.access;
-  // A viewer who can submit proposals without an account is on a "public"
-  // process — the header offers Join (account claim) instead of Log in.
-  const canJoin = access?.submitProposals === true;
+  // The header offers Join (account claim) instead of Log in on a public
+  // process. Read the server's `isPublic`, not a capability bit: the public
+  // grant no longer carries `submitProposals`, and a capability answers what
+  // the viewer may do rather than whether the process is open.
+  const canJoin = instance?.isPublic === true;
 
   return (
     <DecisionTranslationProvider>

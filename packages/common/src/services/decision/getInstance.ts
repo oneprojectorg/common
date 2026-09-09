@@ -10,6 +10,7 @@ import {
   type AccessUser,
   assertInstanceProfileAccess,
   getOrgAccessUser,
+  rolesIncludePublicGrant,
 } from '../access';
 import { getCachedInstance } from './getCachedInstance';
 import type { DecisionRolePermissions } from './permissions';
@@ -142,6 +143,12 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       proposalCount,
       participantCount,
       access,
+      // Whether the decision is open to the public, which is not a capability
+      // and so does not belong in `access`. The client offers Join (account
+      // claim) instead of Log in on this answer; it used to read
+      // `access.submitProposals`, which stopped being a proxy for "public" the
+      // moment the public grant dropped that bit.
+      isPublic: rolesIncludePublicGrant(profileRoles),
       selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };
   } catch (error) {

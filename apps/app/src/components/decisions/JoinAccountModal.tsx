@@ -33,7 +33,7 @@ import { isValidEmail } from './emailUtils';
  * header's replacement for "Log in" on public processes) via `?join=1`.
  *
  * Mounted only on public processes (the decision-view layout gates on the
- * viewer's submitProposals access) and only meaningful for logged-out and
+ * server's `isPublic`) and only meaningful for logged-out and
  * anonymous visitors; a full account never sees the Join button and the modal
  * won't open for one.
  */

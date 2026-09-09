@@ -361,6 +361,12 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
     access: decisionAccessEncoder.optional(),
+    /**
+     * Whether the decision is open to the public. Deliberately outside
+     * `access`: that object is the caller's capabilities, and publicness is a
+     * property of the profile. See `rolesIncludePublicGrant`.
+     */
+    isPublic: z.boolean().optional(),
     selectionsAreConfirmed: z.boolean().optional(),
   });
 

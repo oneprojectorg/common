@@ -18,7 +18,11 @@ import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getProfileAccessRoles,
+  rolesIncludePublicGrant,
+} from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
@@ -307,7 +311,7 @@ export const getPermissionsOnProposal = async ({
 }: {
   user: User | undefined;
   proposal: Proposal & { processInstance: ProcessInstance };
-}): Promise<{ access: DecisionRolePermissions }> => {
+}): Promise<{ access: DecisionRolePermissions; isPublic: boolean }> => {
   const roles = await getProfileAccessRoles({
     user,
     profileId: proposal.profileId,
@@ -335,6 +339,13 @@ export const getPermissionsOnProposal = async ({
   // for callers who'd be rejected on submit. Leave the other bits
   // (update / admin) on proposal-profile roles — editability and admin
   // signal are separate concerns from comment access.
+  // Whether the parent decision is open to the public. Not a capability, so it
+  // travels beside `access` rather than in it — the proposal view offers Join
+  // (account claim) on this answer, and used to read `access.submitProposals`,
+  // which stopped being a proxy for "public" the moment the public grant
+  // dropped that bit.
+  let isPublic = false;
+
   if (proposal.processInstance.profileId) {
     const decisionRoles = await getProfileAccessRoles({
       user,
@@ -351,7 +362,8 @@ export const getPermissionsOnProposal = async ({
     ) {
       access.submitProposals = true;
     }
+    isPublic = rolesIncludePublicGrant(decisionRoles);
   }
 
-  return { access };
+  return { access, isPublic };
 };

@@ -141,6 +141,12 @@ export const proposalSchema = z.object({
    *  flagged proposal, so this drives their "Flagged" indicator. */
   isFlagged: z.boolean().optional(),
   access: proposalAccessSchema.optional(),
+  /**
+   * Whether the parent decision is open to the public. Outside `access` on
+   * purpose: that object holds the caller's capabilities, and publicness is a
+   * property of the decision. See `rolesIncludePublicGrant`.
+   */
+  isPublic: z.boolean().optional(),
   attachments: z.array(proposalAttachmentSchema).optional(),
   selectionRank: z.number().nullable().optional(),
   voteCount: z.number().nullable().optional(),

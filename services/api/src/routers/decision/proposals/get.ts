@@ -30,7 +30,7 @@ export const getProposalRouter = router({
       });
 
       // Fetch permissions
-      const { access } = await getPermissionsOnProposal({
+      const { access, isPublic } = await getPermissionsOnProposal({
         user,
         proposal,
       }).catch((error) => {
@@ -38,7 +38,8 @@ export const getProposalRouter = router({
           error,
           profileId,
         });
-        return { access: undefined };
+        // Fail closed: an unresolved grant is not a public one.
+        return { access: undefined, isPublic: false };
       });
 
       ctx.registerQueryChannels([
@@ -49,6 +50,7 @@ export const getProposalRouter = router({
         ...proposal,
         isEditable: access?.update,
         access,
+        isPublic,
       });
     }),
 });

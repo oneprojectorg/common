@@ -178,7 +178,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
   return (
     <DecisionHeaderView
       {...props}
-      canJoin={instance.access?.submitProposals === true}
+      canJoin={instance.isPublic === true}
       title={
         props.profileName ||
         instance.name ||
@@ -203,7 +203,7 @@ function DecisionHeaderFromProps(
   return (
     <DecisionHeaderView
       {...props}
-      canJoin={instance.access?.submitProposals === true}
+      canJoin={instance.isPublic === true}
       title={
         props.profileName ||
         instance.name ||
