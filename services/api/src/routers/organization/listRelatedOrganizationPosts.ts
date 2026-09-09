@@ -1,5 +1,5 @@
 import { listAllRelatedOrganizationPosts } from '@op/common';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, paginated } from '@op/common/client';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders';
@@ -19,12 +19,7 @@ export const listRelatedOrganizationPostsRouter = router({
         })
         .optional(),
     )
-    .output(
-      z.object({
-        items: z.array(postsToOrganizationsEncoder),
-        next: z.string().nullish(),
-      }),
-    )
+    .output(paginated(postsToOrganizationsEncoder))
     .query(async ({ input, ctx }) => {
       const { limit = PAGE_LIMIT.md, cursor } = input ?? {};
 

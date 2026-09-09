@@ -1,5 +1,5 @@
 import { Channels, listProfileJoinRequests } from '@op/common';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, paginated } from '@op/common/client';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -19,12 +19,7 @@ export const listJoinRequestsRouter = router({
     rateLimit: { windowSize: 60, maxRequests: 60 },
   })
     .input(inputSchema)
-    .output(
-      z.object({
-        items: z.array(joinProfileRequestEncoder),
-        next: z.string().nullish(),
-      }),
-    )
+    .output(paginated(joinProfileRequestEncoder))
     .query(async ({ input, ctx }) => {
       const { limit = PAGE_LIMIT.sm, cursor, dir } = input;
 

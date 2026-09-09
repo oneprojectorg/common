@@ -22,15 +22,16 @@ export function useReviewersByProposalId({
     { processInstanceId, phaseId, proposalIds },
     { enabled: enabled && proposalIds.length > 0 },
   );
+  const aggregates = data?.items;
 
   return useMemo(
     () =>
       new Map(
-        (data?.items ?? []).map((item) => [
+        (aggregates ?? []).map((item) => [
           item.proposal.id,
           item.aggregates.reviewers,
         ]),
       ),
-    [data],
+    [aggregates],
   );
 }

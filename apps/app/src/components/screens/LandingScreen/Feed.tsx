@@ -2,7 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Fragment, useCallback } from 'react';
 
@@ -40,7 +40,7 @@ const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
   } = trpc.organization.listAllPosts.useInfiniteQuery(
     { limit },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
       staleTime: 30 * 1000,
       refetchOnMount: true,
       refetchOnWindowFocus: true,

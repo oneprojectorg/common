@@ -2,16 +2,12 @@ import {
   Channels,
   listProposalComments as listProposalCommentsService,
 } from '@op/common';
-import { listProposalCommentsSchema } from '@op/common/client';
-import { z } from 'zod';
+import { listProposalCommentsSchema, paginated } from '@op/common/client';
 
 import { proposalCommentEncoder } from '../../encoders';
 import { openProcedure, router } from '../../trpcFactory';
 
-const outputSchema = z.object({
-  items: z.array(proposalCommentEncoder),
-  next: z.string().nullish(),
-});
+const outputSchema = paginated(proposalCommentEncoder);
 
 export const listProposalComments = router({
   /**

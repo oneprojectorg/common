@@ -1,5 +1,5 @@
 import { listPosts } from '@op/common';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, paginated } from '@op/common/client';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders';
@@ -18,12 +18,7 @@ const inputSchema = dbFilter.extend({
 export const listOrganizationPostsRouter = router({
   listPosts: networkAuthenticatedProcedure()
     .input(inputSchema)
-    .output(
-      z.object({
-        items: z.array(postsToOrganizationsEncoder),
-        next: z.string().nullish(),
-      }),
-    )
+    .output(paginated(postsToOrganizationsEncoder))
     .query(async ({ ctx, input }) => {
       const { slug, limit = PAGE_LIMIT.md, cursor } = input;
 

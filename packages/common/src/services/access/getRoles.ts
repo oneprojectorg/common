@@ -24,12 +24,12 @@ import {
 import { type Permission, fromBitField } from 'access-zones';
 
 import {
-  type PaginatedResult,
   type SortDir,
   decodeCursor,
   encodeCursor,
   excludeGlobalUsers,
 } from '../../utils/db';
+import { type Paginated } from '../../utils/pagination';
 
 interface Role {
   id: string;
@@ -82,7 +82,7 @@ export const getRoles = async (params?: {
   cursor?: string | null;
   limit?: number;
   dir?: SortDir;
-}): Promise<PaginatedResult<Role>> => {
+}): Promise<Paginated<Role>> => {
   const {
     profileId = null,
     zoneName,

@@ -418,7 +418,7 @@ describe.concurrent('profile.users.listUsers', () => {
   });
 
   describe('pagination', () => {
-    it('should return paginated response with items, next cursor, and hasMore', async ({
+    it('should return paginated response with items and a next cursor', async ({
       task,
       onTestFinished,
     }) => {
@@ -439,7 +439,7 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(result.next).toBeTruthy();
     });
 
-    it('should return hasMore=false when all results fit in limit', async ({
+    it('should return a null next when all results fit in limit', async ({
       task,
       onTestFinished,
     }) => {

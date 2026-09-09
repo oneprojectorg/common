@@ -1,4 +1,5 @@
 import { listAllUsers } from '@op/common';
+import { paginated, total } from '@op/common/client';
 import { z } from 'zod';
 
 import { adminUserEncoder } from '../../../encoders/';
@@ -21,17 +22,15 @@ export const listAllUsersRouter = router({
         })
         .optional(),
     )
-    .output(
-      z.object({
-        items: z.array(adminUserEncoder),
-        next: z.string().nullish(),
-        total: z.number(),
-      }),
-    )
+    .output(paginated(adminUserEncoder).extend({ total }))
     .query(async ({ input }) => {
       const { cursor, dir, query, limit, includeAnonymous } = input ?? {};
 
-      const { items, next, total } = await listAllUsers({
+      const {
+        items: users,
+        next,
+        total: totalCount,
+      } = await listAllUsers({
         cursor,
         dir,
         query,
@@ -40,7 +39,7 @@ export const listAllUsersRouter = router({
       });
 
       return {
-        items: items.map((user) =>
+        items: users.map((user) =>
           adminUserEncoder.parse({
             ...user,
             // Email is authoritative on auth.users, not public.users.
@@ -50,7 +49,7 @@ export const listAllUsersRouter = router({
           }),
         ),
         next,
-        total,
+        total: totalCount,
       };
     }),
 });

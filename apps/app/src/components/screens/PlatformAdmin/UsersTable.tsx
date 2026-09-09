@@ -96,15 +96,15 @@ export const UsersTable = () => {
     startExportTransition(async () => {
       try {
         // Fetch all users without limit, honouring the anonymous filter
-        const result = await utils.platform.admin.listAllUsers.fetch({
+        const { items: users } = await utils.platform.admin.listAllUsers.fetch({
           includeAnonymous,
         });
 
-        if (result.items.length === 0) {
+        if (users.length === 0) {
           return;
         }
 
-        const allUsers = result.items.map((user) => ({
+        const allUsers = users.map((user) => ({
           name: user.profile?.name ?? user.name,
           email: user.email,
         }));

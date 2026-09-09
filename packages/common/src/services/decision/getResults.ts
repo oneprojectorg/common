@@ -13,7 +13,7 @@ import { count as countFn } from 'drizzle-orm';
 import {
   PAGE_LIMIT,
   NotFoundError,
-  type PaginatedResult,
+  type Paginated,
   decodeCursor,
   encodeCursor,
 } from '../../utils';
@@ -41,7 +41,7 @@ export const getLatestResultWithProposals = async ({
   user: User;
   limit?: number;
   cursor?: string | null;
-}): Promise<PaginatedResult<ResultProposalItem> | null> => {
+}): Promise<Paginated<ResultProposalItem> | null> => {
   const instance = await db
     .select({
       id: processInstances.id,

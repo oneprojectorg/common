@@ -272,13 +272,14 @@ const ProfileAbout = ({
 const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
-    limit: 3,
-    stewardProfileId: profileId,
-    status: [ProcessStatus.PUBLISHED],
-  });
+  const [{ items: decisionProfiles }] =
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      limit: 3,
+      stewardProfileId: profileId,
+      status: [ProcessStatus.PUBLISHED],
+    });
 
-  if (!data.items[0]) {
+  if (!decisionProfiles[0]) {
     return null;
   }
 
@@ -287,13 +288,15 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
       <Header2 className="text-label leading-normal sm:px-6">
         {t('Decisions')}
       </Header2>
-      {data.items.map((item, index) => (
+      {decisionProfiles.map((item, index) => (
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
             className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:p-6 hover:sm:bg-accent"
           />
-          {index < data.items.length - 1 && <hr className="hidden sm:block" />}
+          {index < decisionProfiles.length - 1 && (
+            <hr className="hidden sm:block" />
+          )}
         </Fragment>
       ))}
     </div>

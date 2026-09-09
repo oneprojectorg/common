@@ -1,5 +1,9 @@
 import { Channels, listProfileUsers } from '@op/common';
-import { PAGE_LIMIT, profileUserWithRolesSchema } from '@op/common/client';
+import {
+  PAGE_LIMIT,
+  paginated,
+  profileUserWithRolesSchema,
+} from '@op/common/client';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -20,12 +24,7 @@ export const listUsersRouter = router({
         })
         .merge(profileUserSortable),
     )
-    .output(
-      z.object({
-        items: z.array(profileUserWithRolesSchema),
-        next: z.string().nullable(),
-      }),
-    )
+    .output(paginated(profileUserWithRolesSchema))
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
       const { profileId, orderBy, dir, query, roleId, cursor, limit } = input;

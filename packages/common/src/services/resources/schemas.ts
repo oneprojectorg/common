@@ -6,6 +6,8 @@ import {
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { paginated } from '../../utils/pagination';
+
 export const attachmentSummarySchema = z.object({
   storageObjectId: z.string().uuid(),
   fileName: z.string(),
@@ -88,11 +90,9 @@ export type ResourceInCollectionDTO = z.infer<
   typeof resourceInCollectionSchema
 >;
 
-export const resourceListSchema = z.object({
+// `next` is the sortKey cursor of the last item; null at the end.
+export const resourceListSchema = paginated(resourceInCollectionSchema).extend({
   collectionId: z.string().uuid().nullable(),
-  items: z.array(resourceInCollectionSchema),
-  // Cursor (sortKey of the last item) for the next page; null at end.
-  next: z.string().nullable(),
 });
 export type ResourceListResult = z.infer<typeof resourceListSchema>;
 
@@ -117,8 +117,5 @@ export const collectionSchema = collectionSelect
   );
 export type CollectionDTO = z.infer<typeof collectionSchema>;
 
-export const collectionListSchema = z.object({
-  items: z.array(collectionSchema),
-  next: z.string().nullable(),
-});
+export const collectionListSchema = paginated(collectionSchema);
 export type CollectionListResult = z.infer<typeof collectionListSchema>;

@@ -1,6 +1,7 @@
 import {
   PAGE_LIMIT,
   documentContentSchema,
+  paginated,
   proposalDataSchema,
 } from '@op/common/client';
 import {
@@ -246,10 +247,7 @@ export const legacyProcessInstanceListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
-export const legacyInstanceResultsEncoder = z.object({
-  items: z.array(legacyProposalEncoder),
-  next: z.string().nullish(),
-});
+export const legacyInstanceResultsEncoder = paginated(legacyProposalEncoder);
 
 // Input Schemas
 export const legacyCreateProcessInputSchema = z.object({

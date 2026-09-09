@@ -3,7 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { match } from '@op/core';
 import { useInfiniteScroll } from '@op/hooks';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -70,7 +70,7 @@ const DecisionsListSuspense = ({
       ownerProfileId,
     },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
     },
   );
 
@@ -117,13 +117,14 @@ const AllDecisionsTabs = () => {
   const [tab, setTab] = useQueryState('tab');
   const ownerProfileId = user.currentProfile?.id;
 
-  const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
-    limit: 1,
-    status: [ProcessStatus.DRAFT],
-    ownerProfileId,
-  });
+  const [{ items: drafts }] =
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      limit: 1,
+      status: [ProcessStatus.DRAFT],
+      ownerProfileId,
+    });
 
-  const hasDrafts = draftsCheck.items.length > 0;
+  const hasDrafts = drafts.length > 0;
   const selectedTab = match(tab, {
     drafts: () => (hasDrafts ? 'drafts' : 'active'),
     completed: 'completed',

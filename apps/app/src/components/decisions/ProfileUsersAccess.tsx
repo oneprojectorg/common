@@ -4,6 +4,7 @@ import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type { SortDir } from '@op/common';
+import { nextCursor } from '@op/common/client';
 import { useDebounce, useInfiniteScroll, useMediaQuery } from '@op/hooks';
 import { Alert, AlertTitle, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
@@ -70,7 +71,7 @@ export const ProfileUsersAccess = ({
       query: searchFilter,
     },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
     },
   );
 

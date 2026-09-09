@@ -1,5 +1,5 @@
 import { listOrganizations } from '@op/common';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, paginated } from '@op/common/client';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
@@ -16,12 +16,7 @@ export const listOrganizationsRouter = router({
         })
         .optional(),
     )
-    .output(
-      z.object({
-        items: z.array(organizationsWithProfileEncoder),
-        next: z.string().nullish(),
-      }),
-    )
+    .output(paginated(organizationsWithProfileEncoder))
     .query(async ({ input }) => {
       const { limit = PAGE_LIMIT.sm, cursor, orderBy, dir } = input ?? {};
 

@@ -17,6 +17,7 @@ import {
   type ProposalTranslation,
   isReviewPhase,
   isVotingPhase,
+  nextCursor,
 } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/sense/lib/utils';
@@ -236,7 +237,7 @@ const ResultsPhaseProposalsLoader = ({
         votedByProfileId: queryParams.votedByProfileId,
       },
       {
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        getNextPageParam: nextCursor,
         staleTime: 30 * 1000,
         refetchOnMount: 'always',
       },

@@ -30,11 +30,12 @@ export const ResourcesTabContent = ({
   const [adding, setAdding] = useState(false);
   // Shares the cache with ResourcesFeed's suspense query — used only to hide
   // the footer when the list is empty (the empty state has its own CTA).
-  const { data: collections } = trpc.resources.collections.list.useQuery(
+  const { data } = trpc.resources.collections.list.useQuery(
     { profileId },
     { enabled: canRead, staleTime: 30 * 1000 },
   );
-  const isEmpty = collections !== undefined && collections.items.length === 0;
+  const collections = data?.items;
+  const isEmpty = collections !== undefined && collections.length === 0;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -96,12 +97,13 @@ const ResourcesFeed = ({
   canManage: boolean;
   onAddResource: () => void;
 }) => {
-  const [collections] = trpc.resources.collections.list.useSuspenseQuery(
-    { profileId },
-    { staleTime: 30 * 1000 },
-  );
+  const [{ items: collections }] =
+    trpc.resources.collections.list.useSuspenseQuery(
+      { profileId },
+      { staleTime: 30 * 1000 },
+    );
 
-  if (collections.items.length === 0) {
+  if (collections.length === 0) {
     // Managers can drop a file/link straight onto the empty state — the drop
     // lazily creates the Default collection. Readers just see the empty state.
     if (canManage) {
@@ -120,8 +122,8 @@ const ResourcesFeed = ({
   // Multi-section grouping isn't user-controllable yet, so when there's only
   // one collection the accordion is just visual noise — render the items
   // directly. The accordion comes back as soon as a second collection exists.
-  if (collections.items.length === 1) {
-    const collection = collections.items[0]!;
+  if (collections.length === 1) {
+    const collection = collections[0]!;
     return (
       <CollectionResourcesSuspense
         profileId={profileId}
@@ -134,10 +136,10 @@ const ResourcesFeed = ({
   return (
     <Accordion
       multiple
-      defaultValue={collections.items.map((c) => c.id)}
+      defaultValue={collections.map((c) => c.id)}
       className="gap-4"
     >
-      {collections.items.map((collection) => (
+      {collections.map((collection) => (
         <CollectionSection
           key={collection.id}
           profileId={profileId}

@@ -38,11 +38,13 @@ export const ResourcesList = ({
   // onMutate awaits cancel before patching the tRPC cache, so without this
   // mirror dnd-kit snaps the item back before the optimistic update lands.
   // Sync during render (not in an effect) by tracking the source reference.
-  const [items, setItems] = useState<ResourceInCollection[]>(data.items);
-  const [syncedFrom, setSyncedFrom] = useState(data.items);
-  if (syncedFrom !== data.items) {
-    setSyncedFrom(data.items);
-    setItems(data.items);
+  const serverResources = data.items;
+  const [resources, setResources] =
+    useState<ResourceInCollection[]>(serverResources);
+  const [syncedFrom, setSyncedFrom] = useState(serverResources);
+  if (syncedFrom !== serverResources) {
+    setSyncedFrom(serverResources);
+    setResources(serverResources);
   }
 
   // `handleTranslate` already sends this profile's resources to
@@ -55,8 +57,8 @@ export const ResourcesList = ({
   // would let the last one registered drop every other collection's samples,
   // hiding the control on a foreign-language resource in an earlier section.
   const resourceSamples = useMemo(
-    () => items.flatMap((item) => [item.title, item.description ?? '']),
-    [items],
+    () => resources.flatMap((item) => [item.title, item.description ?? '']),
+    [resources],
   );
   useRegisterTranslationSamples(
     `resources:${data.collectionId ?? profileId}`,
@@ -95,16 +97,16 @@ export const ResourcesList = ({
     if (!collectionId) {
       return;
     }
-    const moved = findMovedItem(items, next);
+    const moved = findMovedItem(resources, next);
     if (!moved) {
       return;
     }
-    setItems(next);
+    setResources(next);
     const upperNeighborId = next[moved.newIndex - 1]?.id ?? null;
     reorder.mutate({ id: moved.id, collectionId, upperNeighborId });
   };
 
-  if (items.length === 0 && !canManage) {
+  if (resources.length === 0 && !canManage) {
     return null;
   }
 
@@ -123,7 +125,7 @@ export const ResourcesList = ({
   if (!canManage) {
     return (
       <div className="flex flex-col gap-4">
-        {items.map((resource) => (
+        {resources.map((resource) => (
           <div key={resource.id}>{renderItem(resource)}</div>
         ))}
       </div>
@@ -135,17 +137,17 @@ export const ResourcesList = ({
       <ResourceDropZone
         profileId={profileId}
         collectionId={collectionId}
-        items={items}
+        items={resources}
         renderItem={renderItem}
       >
-        {items.length === 0 ? (
+        {resources.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input px-6 py-10 text-center text-muted-foreground">
             <LuUpload className="size-6" />
             <p className="text-sm">{t('Drag a file or link here to add it')}</p>
           </div>
         ) : (
           <Sortable
-            items={items}
+            items={resources}
             onChange={handleReorder}
             dragTrigger="item"
             getItemLabel={(resource) =>
