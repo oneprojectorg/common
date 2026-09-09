@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-09-09T12:26:06.710Z",
+  "coverage_model": "istanbul",
+  "istanbul_matched": 1107,
+  "istanbul_total": 13273,
+  "scope": {
+    "source": "{apps,packages,services}/*/src/**/*.{ts,tsx}",
+    "excluded": [
+      "apps/app",
+      "packages/sense"
+    ]
+  },
+  "summary": {
+    "scored": 605,
+    "clean": 533,
+    "atRisk": 26,
+    "median": 4,
+    "p90": 16.3,
+    "max": 1482
+  }
+}

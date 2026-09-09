@@ -25,7 +25,8 @@ Run the instrumented pass and refresh the merged report from the repo root:
 
 ```bash
 pnpm test:coverage   # instrumented tests, then merge into coverage/
-pnpm health:baseline # rewrite the committed baseline in configs/fallow/
+pnpm health          # CRAP over the files you changed
+pnpm health:baseline # re-record the committed baselines in configs/fallow/
 ```
 
 `services/api` is the bulk of the suite and needs the isolated test Supabase on
@@ -59,7 +60,11 @@ external file appears only once some test has loaded it.
 
 The Playwright suite in `tests/e2e` runs against a built Next server with no
 instrumentation, so a component only exercised end-to-end reads as 0% covered
-and carries a CRAP score to match. `packages/sense` (Storybook only) and
-`services/workflows` (no tests) are absent from the report for the same reason.
-Those numbers are a gap in measurement, not necessarily in testing — read the
-`apps/app` and `packages/sense` end of the CRAP list with that in mind.
+and carries a CRAP score to match. `packages/sense` (Storybook only) sits the
+same way. That is a gap in measurement rather than necessarily in testing, so
+`pnpm health` holds both workspaces out of its CRAP scope entirely — see
+[`configs/fallow/README.md`](../fallow/README.md). Instrumenting the e2e build
+is what puts them back in.
+
+`services/workflows` is absent from the report too, but for the plain reason
+that it has no tests. It stays in scope.

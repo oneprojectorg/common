@@ -1,8 +1,8 @@
 {
   "snapshot_schema_version": 3,
   "version": "2.22.1",
-  "timestamp": "2026-09-09T11:08:01Z",
-  "git_sha": "a9f05000c",
+  "timestamp": "2026-09-09T12:26:06Z",
+  "git_sha": "5e2fc0d76",
   "git_branch": "feat/fallow-crap-baseline",
   "shallow_clone": false,
   "vital_signs": {
@@ -16,18 +16,18 @@
     "circular_dep_count": 31,
     "counts": {
       "total_files": 2088,
-      "total_exports": 4146,
+      "total_exports": 4149,
       "dead_files": 14,
-      "dead_exports": 484,
+      "dead_exports": 485,
       "files_scored": 1888,
       "total_deps": 0
     }
   },
   "counts": {
     "total_files": 2088,
-    "total_exports": 4146,
+    "total_exports": 4149,
     "dead_files": 14,
-    "dead_exports": 484,
+    "dead_exports": 485,
     "files_scored": 1888,
     "total_deps": 0
   },
