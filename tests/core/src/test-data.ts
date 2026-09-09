@@ -1,5 +1,6 @@
 import {
   type Organization,
+  accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
@@ -9,7 +10,7 @@ import {
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { and, db, eq } from '@op/db/test';
+import { and, db, eq, isNull } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
@@ -80,10 +81,31 @@ export const isTestPlatformAdminEmail = (email: string): boolean =>
  * `getUserGlobalRoles` looks. Mirrors `grantPlatformAdmin` in @op/common
  * without importing it — that package has no `"type": "module"`, so calling
  * it breaks under Playwright's Node runtime (see `createProposal` below).
+ * That includes resolving the role by name, the runtime identifier for a
+ * global role.
  */
 export async function grantTestPlatformAdmin(
   authUserId: string,
 ): Promise<void> {
+  const roles = await db
+    .select({ id: accessRoles.id })
+    .from(accessRoles)
+    .where(
+      and(
+        eq(accessRoles.name, ROLES.PLATFORM_ADMIN.name),
+        isNull(accessRoles.profileId),
+      ),
+    )
+    .limit(1);
+
+  const role = roles[0];
+
+  if (!role) {
+    throw new Error(
+      `Cannot grant Platform Admin: the global "${ROLES.PLATFORM_ADMIN.name}" role is not seeded`,
+    );
+  }
+
   const memberships = await db
     .select({ profileUserId: profileUsers.id })
     .from(users)
@@ -109,7 +131,7 @@ export async function grantTestPlatformAdmin(
     .insert(profileUserToAccessRoles)
     .values({
       profileUserId: membership.profileUserId,
-      accessRoleId: ROLES.PLATFORM_ADMIN.id,
+      accessRoleId: role.id,
     })
     .onConflictDoNothing();
 }
