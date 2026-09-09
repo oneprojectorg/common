@@ -1734,5 +1734,9 @@
   "Your request • Sent {timeAgo}": "Your request • Sent {timeAgo}",
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
-  "Older version reviewed by {name}": "Older version reviewed by {name}"
+  "Older version reviewed by {name}": "Older version reviewed by {name}",
+  "Analytics consent": "Consentimiento de analítica",
+  "Help us improve Common": "Ayúdanos a mejorar Common",
+  "Accept cookies to help us measure how Common is used. Reject and we'll still count your visit anonymously, without cookies.": "Acepta las cookies para ayudarnos a medir cómo se usa Common. Si las rechazas, seguiremos contando tu visita de forma anónima, sin cookies.",
+  "Reject": "Rechazar"
 }
