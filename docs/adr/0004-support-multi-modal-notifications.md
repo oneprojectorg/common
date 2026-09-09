@@ -117,30 +117,29 @@ preference"}
 The client factory and the EU region are recorded intent rather than
 work this ADR covers.
 
-Our server never observes a verification, so it cannot record one. A
-trigger on `auth.users` writes a `phone_verifications` row when a number
-becomes confirmed, and network membership reads that row.
+Our server never observes a verification. GoTrue performs it and issues
+the session, so the platform records nothing about it.
 
-Membership does not read `auth.users.phone_confirmed_at`. An account
+Network membership does not read a phone number. It reads an email
+address: the network domains and the allow list. A phone number
+authenticates a person and admits them nowhere.
+
+Membership must not read `auth.users.phone_confirmed_at`. An account
 holder can set that column on their own row through GoTrue, so an
 account that could already sign in would be able to admit itself.
 
-GoTrue offers seven auth hooks. None of them reports a phone
-verification, which is why this is a trigger and not a hook.
-
 Network membership admits a participant to the platform. It is not
-access to an organization or to a decision. A confirmed phone number
-therefore lets anyone who holds a phone create an account, which is what
-self-enrollment means. An invitation still decides what that participant
-sees: `assertOrgAccess` and `assertInstanceProfileAccess` require a role
-on the owning profile, and a new account holds none.
+access to an organization or to a decision. Anyone who holds a phone can
+create an account, but that account holds no membership and no role. An
+invitation decides what a participant sees: `assertOrgAccess` and
+`assertInstanceProfileAccess` require a role on the owning profile, and
+a new account holds none.
 
-Self-enrollment splits the gates in two. A gate that reads a role stays
-as narrow as the role. A gate that reads membership alone widens to
-everyone who can receive a text. `assertPostReadAccess` reads roles. The
-comment path in `assertPostWriteAccess` reads membership alone, so any
-account can comment on any organization's post. That rule predates
-self-enrollment and needs a decision of its own.
+A gate that reads membership alone is wider than a gate that reads a
+role. `assertPostReadAccess` reads roles. The comment path in
+`assertPostWriteAccess` reads membership alone, so any member can
+comment on any organization's post. That rule predates this ADR and
+needs a decision of its own.
 
 We will need to store the notification preference for a user in the
 database.
@@ -194,8 +193,10 @@ One cost comes with GoTrue owning the code. No per-number send limit of
 ours applies, because no request of ours carries the send. Twilio's
 geographic permissions are the remaining control.
 
-SMS autoconfirm has to stay off. With it on, GoTrue confirms a number on
-a signup, and on a change, without checking a code, and the trigger
-cannot tell either apart from a real verification. The row would then
-admit an account that never held the number, so `enable_confirmations`
-is true in every Supabase config.
+SMS autoconfirm has to stay off. With it on, GoTrue sets
+`phone_confirmed_at` on a signup, and on a change, without checking a
+code, and issues a session for it. Anyone who can reach GoTrue could
+then sign in as a number they do not hold. Membership reads an email
+address, so this admits nobody to the closed network. It hands out the
+account instead, which is worse. `enable_confirmations` is true in every
+Supabase config.
