@@ -1748,5 +1748,9 @@
   "Code sent!": "Code envoyé !",
   "A code was sent to {phone}. Type the code below to sign in.": "Un code a été envoyé au {phone}. Saisissez-le ci-dessous pour vous connecter.",
   "A code was sent to {phone}. Type the code below to create your profile.": "Un code a été envoyé à {phone}. Saisissez le code ci-dessous pour créer votre profil.",
-  "An account with this phone number already exists. Try logging in instead.": "Un compte avec cet e-mail existe déjà. Essayez plutôt de vous connecter."
+  "An account with this phone number already exists. Try logging in instead.": "Un compte avec cet e-mail existe déjà. Essayez plutôt de vous connecter.",
+  "Sign up with": "Inscrivez-vous avec",
+  "Email me a code": "Envoyez-moi un code par e-mail",
+  "Text me a code": "Envoyez-moi un code par SMS",
+  "We'll email you a code to confirm it's yours.": "Nous vous enverrons un code par e-mail pour confirmer qu’il est bien à vous."
 }

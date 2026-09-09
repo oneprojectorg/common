@@ -1748,5 +1748,9 @@
   "Code sent!": "تم إرسال الرمز!",
   "A code was sent to {phone}. Type the code below to sign in.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لتسجيل الدخول.",
   "A code was sent to {phone}. Type the code below to create your profile.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لإنشاء ملفك الشخصي.",
-  "An account with this phone number already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك."
+  "An account with this phone number already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
+  "Sign up with": "سجّل باستخدام",
+  "Email me a code": "أرسل لي رمزًا بالبريد الإلكتروني",
+  "Text me a code": "أرسل لي رمزًا برسالة نصية",
+  "We'll email you a code to confirm it's yours.": "سنرسل إليك رمزًا بالبريد الإلكتروني للتأكد من أنه لك."
 }

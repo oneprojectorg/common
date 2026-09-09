@@ -1748,5 +1748,9 @@
   "Code sent!": "Koodhka waa la diray!",
   "A code was sent to {phone}. Type the code below to sign in.": "Kood ayaa loo diray {phone}. Hoosta ku qor koodhka si aad u gasho.",
   "A code was sent to {phone}. Type the code below to create your profile.": "Furaha waxaa loo diray {phone}. Ku qor furaha hoose si aad u abuurto profilekaaga.",
-  "An account with this phone number already exists. Try logging in instead.": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho."
+  "An account with this phone number already exists. Try logging in instead.": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho.",
+  "Sign up with": "Ku diiwaangeli",
+  "Email me a code": "Iimayl iigu soo dir kood",
+  "Text me a code": "Fariin qoraal ah iigu soo dir kood",
+  "We'll email you a code to confirm it's yours.": "Waxaan kuugu soo diri doonaa kood iimaylka si aan u xaqiijinno inuu kaaga yahay."
 }

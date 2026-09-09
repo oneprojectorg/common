@@ -1748,5 +1748,9 @@
   "Code sent!": "Kód elküldve!",
   "A code was sent to {phone}. Type the code below to sign in.": "Kódot küldtünk a következő számra: {phone}. Írja be lent a bejelentkezéshez.",
   "A code was sent to {phone}. Type the code below to create your profile.": "Kódot küldtünk a(z) {phone} címre. Írja be alább a kódot a profilja létrehozásához.",
-  "An account with this phone number already exists. Try logging in instead.": "Ezzel az e-mail-címmel már létezik fiók. Próbáljon meg inkább bejelentkezni."
+  "An account with this phone number already exists. Try logging in instead.": "Ezzel az e-mail-címmel már létezik fiók. Próbáljon meg inkább bejelentkezni.",
+  "Sign up with": "Regisztráció ezzel",
+  "Email me a code": "Küldjenek e-mailben kódot",
+  "Text me a code": "Küldjenek SMS-ben kódot",
+  "We'll email you a code to confirm it's yours.": "E-mailben küldünk egy kódot, hogy megerősítsük, ez az Öné."
 }

@@ -1748,5 +1748,9 @@
   "Code sent!": "Code sent!",
   "A code was sent to {phone}. Type the code below to sign in.": "A code was sent to {phone}. Type the code below to sign in.",
   "A code was sent to {phone}. Type the code below to create your profile.": "A code was sent to {phone}. Type the code below to create your profile.",
-  "An account with this phone number already exists. Try logging in instead.": "An account with this phone number already exists. Try logging in instead."
+  "An account with this phone number already exists. Try logging in instead.": "An account with this phone number already exists. Try logging in instead.",
+  "Sign up with": "Sign up with",
+  "Email me a code": "Email me a code",
+  "Text me a code": "Text me a code",
+  "We'll email you a code to confirm it's yours.": "We'll email you a code to confirm it's yours."
 }
