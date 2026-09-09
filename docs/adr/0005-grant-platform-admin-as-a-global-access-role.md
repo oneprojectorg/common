@@ -46,3 +46,14 @@ permissions to express exactly this.
   fails closed.
 - Widening `USER_LEVEL_GLOBAL_ROLE_NAMES` is a security decision.
 - The own-profile anchor lives in one query, covered by an integration test.
+
+## Amendment
+
+Option (a) for the roles-only resolvers: `getProfileAccessRoles` and
+`getProfileAccessRolesWithOrgFallback` fall back to the caller's user-level
+global roles, so `assertProfileAccess`, `assertInstanceProfileAccess` and
+`resolveInstanceAccess` admit on permissions alone. The identity resolvers
+`getProfileAccessUser` and `getOrgAccessUser` are untouched, so writers that
+store a `profileUserId` still fail closed. This widens every caller of
+`getProfileAccessRoles` — the surface to review. If it lands it becomes its own
+ADR superseding this consequence.
