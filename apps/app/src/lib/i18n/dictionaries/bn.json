@@ -1746,5 +1746,7 @@
   "Too many attempts. Wait a minute and try again.": "অনেক বেশি চেষ্টা। এক মিনিট অপেক্ষা করে আবার চেষ্টা করুন।",
   "Signing in by text is unavailable right now.": "এই মুহূর্তে টেক্সটের মাধ্যমে সাইন ইন করা যাচ্ছে না।",
   "Code sent!": "কোড পাঠানো হয়েছে!",
-  "A code was sent to {phone}. Type the code below to sign in.": "{phone} নম্বরে একটি কোড পাঠানো হয়েছে। সাইন ইন করতে নিচে কোডটি লিখুন।"
+  "A code was sent to {phone}. Type the code below to sign in.": "{phone} নম্বরে একটি কোড পাঠানো হয়েছে। সাইন ইন করতে নিচে কোডটি লিখুন।",
+  "A code was sent to {phone}. Type the code below to create your profile.": "{phone}-এ একটি কোড পাঠানো হয়েছে। আপনার প্রোফাইল তৈরি করতে নীচে কোডটি টাইপ করুন।",
+  "An account with this phone number already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।"
 }

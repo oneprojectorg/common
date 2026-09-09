@@ -1746,5 +1746,7 @@
   "Too many attempts. Wait a minute and try again.": "Túl sok próbálkozás. Várjon egy percet, és próbálja újra.",
   "Signing in by text is unavailable right now.": "Az SMS-es bejelentkezés jelenleg nem érhető el.",
   "Code sent!": "Kód elküldve!",
-  "A code was sent to {phone}. Type the code below to sign in.": "Kódot küldtünk a következő számra: {phone}. Írja be lent a bejelentkezéshez."
+  "A code was sent to {phone}. Type the code below to sign in.": "Kódot küldtünk a következő számra: {phone}. Írja be lent a bejelentkezéshez.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "Kódot küldtünk a(z) {phone} címre. Írja be alább a kódot a profilja létrehozásához.",
+  "An account with this phone number already exists. Try logging in instead.": "Ezzel az e-mail-címmel már létezik fiók. Próbáljon meg inkább bejelentkezni."
 }

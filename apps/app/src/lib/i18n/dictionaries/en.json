@@ -1746,5 +1746,7 @@
   "Too many attempts. Wait a minute and try again.": "Too many attempts. Wait a minute and try again.",
   "Signing in by text is unavailable right now.": "Signing in by text is unavailable right now.",
   "Code sent!": "Code sent!",
-  "A code was sent to {phone}. Type the code below to sign in.": "A code was sent to {phone}. Type the code below to sign in."
+  "A code was sent to {phone}. Type the code below to sign in.": "A code was sent to {phone}. Type the code below to sign in.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "A code was sent to {phone}. Type the code below to create your profile.",
+  "An account with this phone number already exists. Try logging in instead.": "An account with this phone number already exists. Try logging in instead."
 }

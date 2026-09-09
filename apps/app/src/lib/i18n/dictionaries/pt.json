@@ -1746,5 +1746,7 @@
   "Too many attempts. Wait a minute and try again.": "Demasiadas tentativas. Aguarde um minuto e tente novamente.",
   "Signing in by text is unavailable right now.": "O início de sessão por SMS não está disponível de momento.",
   "Code sent!": "Código enviado!",
-  "A code was sent to {phone}. Type the code below to sign in.": "Foi enviado um código para {phone}. Escreva o código abaixo para iniciar sessão."
+  "A code was sent to {phone}. Type the code below to sign in.": "Foi enviado um código para {phone}. Escreva o código abaixo para iniciar sessão.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "Um código foi enviado para {phone}. Digite o código abaixo para criar seu perfil.",
+  "An account with this phone number already exists. Try logging in instead.": "Já existe uma conta com este e-mail. Tente fazer login."
 }
