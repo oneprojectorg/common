@@ -375,7 +375,6 @@ export async function listAssignmentsForReviewer({
       // A single unavailable document must not break the whole list.
       { onFetchError: 'omit' },
     ),
-    // One query for the whole page, so staleness costs no per-assignment read.
     getCurrentProposalHistoryIds({
       proposalIds: Array.from(new Set(assignments.map((a) => a.proposalId))),
       db,

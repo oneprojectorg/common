@@ -126,7 +126,6 @@ describe.concurrent('updateReview', () => {
       },
     );
 
-    // The author edits the proposal, so the submitted review falls behind.
     const currentHistoryId = await reviseProposal({
       proposalId: created.proposal.id,
       proposalData: { title: 'Community Garden Expansion (revised)' },
@@ -139,7 +138,6 @@ describe.concurrent('updateReview', () => {
       overallComment: 'Still supportive after the revision',
     });
 
-    // A re-affirm is a fresh judgement of the current version.
     expect(result.submittedAt).not.toBe(before?.submittedAt);
     expect(new Date(result.submittedAt ?? 0).getTime()).toBeGreaterThanOrEqual(
       new Date(before?.submittedAt ?? 0).getTime(),
@@ -153,11 +151,9 @@ describe.concurrent('updateReview', () => {
     });
 
     expect(reviewAfter?.reviewedProposalHistoryId).toBe(currentHistoryId);
-    // The pin is the reviewer's original brief; an edit does not move it.
     expect(assignmentAfter?.assignedProposalHistoryId).toBe(
       assignmentBefore?.assignedProposalHistoryId,
     );
-    // The review stays a normal completed review underneath.
     expect(assignmentAfter?.status).toBe(
       ProposalReviewAssignmentStatus.COMPLETED,
     );

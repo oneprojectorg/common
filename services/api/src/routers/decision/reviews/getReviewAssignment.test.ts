@@ -140,11 +140,9 @@ describe.concurrent('getReviewAssignment', () => {
     });
 
     expect(stale.isReviewOutOfDate).toBe(true);
-    // The pane resolves the live proposal, not the pinned snapshot.
     expect(stale.assignment.proposal.proposalData.title).toBe(
       'Community Garden Expansion (revised)',
     );
-    // Still a completed review underneath.
     expect(stale.assignment.status).toBe(
       ProposalReviewAssignmentStatus.COMPLETED,
     );

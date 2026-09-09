@@ -532,7 +532,6 @@ describe.concurrent('listReviewAssignments', () => {
       return item;
     };
 
-    // Nothing submitted yet — a pending assignment is never out of date.
     expect(await listOne()).toMatchObject({ isReviewOutOfDate: false });
 
     await reviewerCaller.decision.submitReview({
@@ -540,7 +539,6 @@ describe.concurrent('listReviewAssignments', () => {
       reviewData: { answers: { impact: 5 }, rationales: {} },
     });
 
-    // Freshly submitted against the current version.
     expect(await listOne()).toMatchObject({ isReviewOutOfDate: false });
 
     await reviseProposal({
@@ -550,7 +548,6 @@ describe.concurrent('listReviewAssignments', () => {
 
     expect(await listOne()).toMatchObject({ isReviewOutOfDate: true });
 
-    // Re-affirming through the normal edit path clears it.
     await reviewerCaller.decision.updateReview({
       assignmentId: created.assignment.id,
       reviewData: { answers: { impact: 1 }, rationales: {} },
@@ -558,7 +555,6 @@ describe.concurrent('listReviewAssignments', () => {
 
     const reaffirmed = await listOne();
     expect(reaffirmed).toMatchObject({ isReviewOutOfDate: false });
-    // A stale review is still a completed one underneath.
     expect(reaffirmed.assignment.status).toBe(
       ProposalReviewAssignmentStatus.COMPLETED,
     );
@@ -598,8 +594,6 @@ describe.concurrent('listReviewAssignments', () => {
       (a) => a.assignment.id === created.assignment.id,
     );
 
-    // The draft carries an anchor, but staleness only speaks about an opinion
-    // the reviewer has actually committed.
     expect(item?.review?.state).toBe(ProposalReviewState.DRAFT);
     expect(item?.isReviewOutOfDate).toBe(false);
   });
@@ -617,9 +611,7 @@ describe.concurrent('listReviewAssignments', () => {
     await testData.setRubricTemplate(created.context, rubricTemplate);
     seedProposalCollab(created.proposal);
 
-    // A review written before the anchor column existed: submitted, no anchor.
-    // Those releases re-stamped the assignment pin on submit, so the pin still
-    // records what was reviewed.
+    // Pre-anchor-column review: submitted, no anchor, pin still set.
     await createProposalReview({
       assignmentId: created.assignment.id,
       state: ProposalReviewState.SUBMITTED,
@@ -647,7 +639,6 @@ describe.concurrent('listReviewAssignments', () => {
 
     const beforeEdit = await listOne();
     expect(beforeEdit.review?.state).toBe(ProposalReviewState.SUBMITTED);
-    // Pin equals the proposal's current version — nothing to flag.
     expect(beforeEdit.isReviewOutOfDate).toBe(false);
 
     await reviseProposal({

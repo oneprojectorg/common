@@ -470,9 +470,7 @@ export async function trackReviewSubmitted(
 }
 
 /**
- * Track when a reviewer edits a review they had already submitted. `was_stale`
- * marks a re-affirm: the proposal had changed since the reviewer last reviewed
- * it, so the edit re-anchors the review to the current version.
+ * Track when a reviewer edits an already-submitted review. `was_stale` marks a re-affirm.
  */
 export async function trackReviewUpdated(
   userId: string,
