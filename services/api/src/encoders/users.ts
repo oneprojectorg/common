@@ -72,6 +72,9 @@ export const userEncoder = createSelectSchema(users)
     currentProfileId: true,
     tos: true,
     privacy: true,
+    // Platform-wide superuser flag — the admin layout gates on it. Distinct
+    // from any org-level `Admin` access role.
+    isPlatformAdmin: true,
     createdAt: true,
   })
   .extend({

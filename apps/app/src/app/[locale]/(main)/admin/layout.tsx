@@ -1,5 +1,4 @@
 import { createClient } from '@op/api/serverClient';
-import { isUserEmailPlatformAdmin } from '@op/common';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
@@ -11,7 +10,9 @@ export default async function AdminLayout({
   const client = await createClient();
   const user = await client.account.getMyAccount();
 
-  if (!user?.email || !isUserEmailPlatformAdmin(user.email)) {
+  // 404 rather than 403: the admin area is not advertised to anyone who
+  // can't use it.
+  if (!user?.isPlatformAdmin) {
     notFound();
   }
 

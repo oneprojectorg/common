@@ -81,6 +81,7 @@ const TypeMap = {
   resourceSignedUrl: 'resourceSignedUrl',
   resources: 'resources',
   user: 'user',
+  platformAdmin: 'platformAdmin',
   orgUser: 'orgUser',
   profileUser: 'profileUser',
   profile: 'profile',

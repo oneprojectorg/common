@@ -138,7 +138,7 @@ for (const template of Object.values(decisionTemplates)) {
 }
 
 // ---------------------------------------------------------------------------
-// Admin users: backfill onboardedAt + link to default org as Admin
+// Admin users: backfill onboardedAt + platform admin, link to default org as Admin
 // ---------------------------------------------------------------------------
 if (adminEmails.length === 0) {
   await db.$client.end();
@@ -155,6 +155,28 @@ const backfilled = await db
 if (backfilled.length > 0) {
   console.log(
     `Backfilled onboardedAt for ${backfilled.length} admin user(s): ${backfilled
+      .map((u) => u.email)
+      .join(', ')}`,
+  );
+}
+
+// Platform admin is a `users` flag, not an allowlist in code
+// (docs/adr/0005-store-platform-admin-as-a-users-flag.md), so a fresh local DB
+// needs it set or /admin 404s for every dev.
+const platformAdmins = await db
+  .update(users)
+  .set({ isPlatformAdmin: true })
+  .where(
+    and(
+      inArray(users.email, [...adminEmails]),
+      eq(users.isPlatformAdmin, false),
+    ),
+  )
+  .returning({ email: users.email });
+
+if (platformAdmins.length > 0) {
+  console.log(
+    `Granted platform admin to ${platformAdmins.length} user(s): ${platformAdmins
       .map((u) => u.email)
       .join(', ')}`,
   );

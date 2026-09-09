@@ -1,4 +1,8 @@
-import { TEST_USER_DEFAULT_PASSWORD } from '@op/test';
+import {
+  TEST_USER_DEFAULT_PASSWORD,
+  isTestPlatformAdminEmail,
+  setTestPlatformAdmin,
+} from '@op/test';
 import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
@@ -82,11 +86,18 @@ export async function createTestContextWithSession(
 }
 
 /**
- * Create a test user and return the user object
+ * Create a test user and return the user object.
+ *
+ * Seeds `users.is_platform_admin` for network-domain addresses, matching what
+ * the removed `platformAdminEmails` mock in `setup.ts` used to fake — see
+ * `isTestPlatformAdminEmail` in `@op/test`. Pass `isPlatformAdmin` to override.
  */
 export async function createTestUser(
   email: string,
   password: string = TEST_USER_DEFAULT_PASSWORD,
+  {
+    isPlatformAdmin = isTestPlatformAdminEmail(email),
+  }: { isPlatformAdmin?: boolean } = {},
 ) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
@@ -102,6 +113,10 @@ export async function createTestUser(
 
   if (error) {
     throw new Error(`Failed to create test user: ${error.message}`);
+  }
+
+  if (data.user && isPlatformAdmin) {
+    await setTestPlatformAdmin(data.user.id, true);
   }
 
   return data;

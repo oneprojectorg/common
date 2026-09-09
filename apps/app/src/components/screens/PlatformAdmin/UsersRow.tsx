@@ -1,10 +1,12 @@
 'use client';
 
+import { useRequiredUser } from '@/utils/UserProvider';
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
   DropdownMenu,
@@ -21,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
+import { Switch } from '@op/sense/Switch';
 import { TableCell } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
 import { useFormatter } from 'next-intl';
@@ -87,6 +90,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
           '—'
         )}
       </TableCell>
+      <PlatformAdminCell user={user} />
       <TableCell className="text-sm text-muted-foreground">
         <div className="flex justify-end">
           <DropdownMenu>
@@ -161,6 +165,61 @@ export const UsersRowCells = ({ user }: { user: User }) => {
         />
       </TableCell>
     </>
+  );
+};
+
+/**
+ * Platform-admin ("superuser") toggle for one row. The flag lives on the
+ * `users` row, so granting it is a mutation, not a client-side concern — see
+ * `docs/adr/0005-store-platform-admin-as-a-users-flag.md`.
+ *
+ * The caller's own row is disabled: `setPlatformAdmin` refuses a self-change
+ * server-side, so offering the control would only produce an error.
+ */
+const PlatformAdminCell = ({ user }: { user: User }) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+  const { user: currentUser } = useRequiredUser();
+  const isSelf = currentUser.authUserId === user.authUserId;
+  const label =
+    user.profile?.name ?? user.name ?? user.email ?? user.authUserId;
+
+  const setPlatformAdmin = trpc.platform.admin.setPlatformAdmin.useMutation({
+    onSuccess: async ({ isPlatformAdmin }) => {
+      await utils.platform.admin.listAllUsers.invalidate();
+      toast.success(
+        isPlatformAdmin
+          ? t('Platform admin granted to {name}', { name: label })
+          : t('Platform admin revoked from {name}', { name: label }),
+      );
+    },
+    onError: (error) => {
+      logger.error('Failed to change platform admin', {
+        error,
+        context: 'UsersRow.setPlatformAdmin',
+      });
+      toast.error(error.message || t('Failed to change platform admin access'));
+    },
+  });
+
+  return (
+    <TableCell className="text-sm text-muted-foreground">
+      <Switch
+        checked={user.isPlatformAdmin}
+        disabled={isSelf || setPlatformAdmin.isPending}
+        aria-label={
+          isSelf
+            ? t('You cannot change your own platform admin access')
+            : t('Platform admin access for {name}', { name: label })
+        }
+        onCheckedChange={(checked) =>
+          setPlatformAdmin.mutate({
+            authUserId: user.authUserId,
+            isPlatformAdmin: checked,
+          })
+        }
+      />
+    </TableCell>
   );
 };
 

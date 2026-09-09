@@ -242,6 +242,7 @@ const UsersTableContent = ({
             <TableHead>{t('Organization')}</TableHead>
             <TableHead>{t('Created')}</TableHead>
             <TableHead>{t('Last sign in')}</TableHead>
+            <TableHead>{t('Platform admin')}</TableHead>
             <TableHead className="text-end">{t('Actions')}</TableHead>
           </TableRow>
         </TableHeader>
@@ -302,12 +303,15 @@ const UsersTableSkeleton = () => {
           <TableHead>
             <Skeleton className="h-4 w-14" />
           </TableHead>
+          <TableHead>
+            <Skeleton className="h-4 w-24" />
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {[...Array(USERS_PER_PAGE)].map((_, i) => (
           <TableRow key={i} className="h-[61px]">
-            {[...Array(7)].map((_, j) => (
+            {[...Array(8)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />
               </TableCell>
