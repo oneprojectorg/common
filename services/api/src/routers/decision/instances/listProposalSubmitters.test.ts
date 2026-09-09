@@ -1,3 +1,6 @@
+import { createIsolatedTestClient, createTestUser } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { schemaWithoutPipeline } from '@op/common/testing/helpers/pipelineSchemas';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -10,18 +13,12 @@ import {
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { createAuthenticatedCaller } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
-import {
-  createAuthenticatedCaller,
-  createIsolatedTestClient,
-  createTestUser,
-} from '../../../test/supabase-utils';
 
 /** Gives a profile an avatar so it qualifies for the face pile. */
 async function giveProfileAvatar(profileId: string): Promise<void> {

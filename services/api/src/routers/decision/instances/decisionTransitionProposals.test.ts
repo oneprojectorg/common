@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db } from '@op/db/client';
 import {
   decisionTransitionProposals,
@@ -7,8 +8,6 @@ import {
 } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 
 async function triggerProposalHistory(proposalId: string) {
   await db

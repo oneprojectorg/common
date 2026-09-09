@@ -6,6 +6,7 @@ import {
   createDecisionRole,
   generateReviewAssignments,
 } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -14,8 +15,6 @@ import {
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 
 /**
  * Schema with a review-capable middle phase.

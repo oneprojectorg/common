@@ -6,6 +6,7 @@ import {
   createDecisionRole,
   generateReviewAssignments,
 } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
@@ -18,8 +19,6 @@ import {
 } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 
 /** The schema shape createDecisionSetup accepts (encoder-inferred, not exported). */
 type TestProcessSchema = NonNullable<

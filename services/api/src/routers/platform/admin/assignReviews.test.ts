@@ -1,4 +1,6 @@
 import { createDecisionRole } from '@op/common';
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -10,17 +12,13 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const gatingInput = {

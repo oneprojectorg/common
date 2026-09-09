@@ -1,4 +1,9 @@
 import { getProposalsForPhase } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import {
+  schemaWithPipeline,
+  schemaWithoutPipeline,
+} from '@op/common/testing/helpers/pipelineSchemas';
 import { db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
@@ -8,12 +13,6 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import {
-  schemaWithPipeline,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineSchemas';
 
 // Random UUID unlikely to match any real transition
 const NONEXISTENT_PHASE_ID = '00000000-0000-0000-0000-000000000000';

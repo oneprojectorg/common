@@ -1,11 +1,10 @@
 import { ValidationError, assertProfileTypeAccess } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { permission } from 'access-zones';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../test/helpers/TestDecisionsDataManager';
 
 describe.concurrent('assertProfileTypeAccess', () => {
   describe('input handling', () => {

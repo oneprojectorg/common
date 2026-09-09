@@ -1,4 +1,5 @@
 import { createDecisionRole } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db } from '@op/db/client';
 import {
   ProfileRelationshipType,
@@ -10,14 +11,13 @@ import {
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { createAuthenticatedCaller } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
-import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 // Confirmed tier, not closed-network: accounts claimed from public decision
 // processes are out-of-network but may engage with proposals. The service

@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db, eq, inArray } from '@op/db/client';
 import {
   resourceCollectionItems,
@@ -6,8 +7,7 @@ import {
   resources,
 } from '@op/db/schema';
 
-import { createAuthenticatedCaller } from '../supabase-utils';
-import { TestDecisionsDataManager } from './TestDecisionsDataManager';
+import { createAuthenticatedCaller } from '../caller';
 
 type OnTestFinished = (fn: () => void | Promise<void>) => void;
 

@@ -1,3 +1,5 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestProfileUserDataManager } from '@op/common/testing/helpers/TestProfileUserDataManager';
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -12,11 +14,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import profileRouter from '.';
-import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
+import { createTestContextWithSession } from '../../test/caller';
 import { createCallerFactory } from '../../trpcFactory';
 
 describe.concurrent('profile.listRoles', () => {

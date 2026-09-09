@@ -8,6 +8,9 @@ import {
   generateReviewAssignments,
   updateProfileUserRoles,
 } from '@op/common';
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { TestProfileUserDataManager } from '@op/common/testing/helpers/TestProfileUserDataManager';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -18,10 +21,6 @@ import { ROLES } from '@op/db/seedData/accessControl';
 import { event } from '@op/events';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
-import { createIsolatedSession } from '../../../test/supabase-utils';
 
 vi.mock('@op/events', async () => {
   const actual = await vi.importActual('@op/events');

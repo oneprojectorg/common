@@ -1,18 +1,16 @@
+import { supabaseTestAdminClient } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db } from '@op/db/client';
 import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { createAuthenticatedCaller } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
-import {
-  createAuthenticatedCaller,
-  supabaseTestAdminClient,
-} from '../../test/supabase-utils';
 
 type AuthenticatedCaller = Awaited<
   ReturnType<typeof createAuthenticatedCaller>

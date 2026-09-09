@@ -15,11 +15,11 @@
   "scripts": {
     "format:check": "oxfmt --check",
     "test": "vitest run",
-    "test:check-supabase": "tsx src/test/check-supabase.ts",
-    "test:db:reset": "pnpm test:supabase:reset && pnpm test:migrate",
-    "test:supabase:start": "tsx src/test/supabase-test.ts start",
-    "test:supabase:status": "tsx src/test/supabase-test.ts status",
-    "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
+    "test:check-supabase": "tsx ../../packages/common/testing/check-supabase.ts",
+    "test:db:reset": "tsx ../../packages/common/testing/supabase-test.ts reset && pnpm --dir ../db migrate:test",
+    "test:supabase:start": "tsx ../../packages/common/testing/supabase-test.ts start",
+    "test:supabase:status": "tsx ../../packages/common/testing/supabase-test.ts status",
+    "test:supabase:stop": "tsx ../../packages/common/testing/supabase-test.ts stop",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },

@@ -1,14 +1,4 @@
 import { mockCollab } from '@op/collab/testing';
-import {
-  type DecisionInstanceData,
-  advancePhase,
-  createDecisionInstance,
-  createInstanceDataFromTemplate,
-  createOrganization as createOrganizationService,
-  createProposal as createProposalService,
-  getTemplate,
-  joinOrganization,
-} from '@op/common';
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
@@ -22,24 +12,53 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
+import { eq, inArray } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+
+import {
+  type DecisionInstanceData,
+  type DecisionSchemaDefinition as DecisionSchemaDefinitionStrict,
+  type PhaseDefinition,
+  advancePhase,
+  createDecisionInstance,
+  createInstanceDataFromTemplate,
+  createOrganization as createOrganizationService,
+  createProposal as createProposalService,
+  getTemplate,
+  joinOrganization,
+} from '../../src';
 import {
   grantDecisionProfileAccess,
   makeDecisionPublic as makeDecisionPublicShared,
   testMinimalSchema,
-} from '@op/test';
-import { eq, inArray } from 'drizzle-orm';
-import { randomUUID } from 'node:crypto';
-import type { z } from 'zod';
+} from '../data';
+import { createTestUser, supabaseTestAdminClient } from '../supabase';
 
-import type {
-  decisionProcessWithSchemaEncoder,
-  decisionSchemaDefinitionEncoder,
-  processInstanceWithSchemaEncoder,
-} from '../../encoders/decision';
-import { processInstanceWithSchemaEncoder as processInstanceEncoder } from '../../encoders/decision';
-import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
+// Fixture schemas are literals written straight to `process_schema` (jsonb), so
+// this mirrors the looser shape the api decision encoders decode them into.
+type TestSelectionPipelineBlock = {
+  id: string;
+  type: string;
+  name?: string;
+  sortBy?: Array<{ field: string; order?: 'asc' | 'desc' }>;
+  count?: number | { variable: string };
+  conditions?: unknown[];
+};
 
-type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
+type DecisionSchemaDefinition = Omit<
+  DecisionSchemaDefinitionStrict,
+  'phases' | 'proposalTemplate'
+> & {
+  phases: Array<
+    Omit<PhaseDefinition, 'selectionPipeline'> & {
+      selectionPipeline?: {
+        version: string;
+        blocks: TestSelectionPipelineBlock[];
+      };
+    }
+  >;
+  proposalTemplate?: Record<string, unknown>;
+};
 
 interface CreateDecisionSetupOptions {
   organizationName?: string;
@@ -55,21 +74,24 @@ interface CreateDecisionSetupOptions {
   processSchema?: DecisionSchemaDefinition;
 }
 
-type EncodedProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
+type CreatedProcessInstance = typeof processInstances.$inferSelect;
 
 interface CreatedInstance {
-  instance: EncodedProcessInstance;
+  instance: CreatedProcessInstance;
   profileId: string;
   slug: string;
 }
 
-type EncodedDecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;
+type CreatedDecisionProcess = Pick<
+  typeof decisionProcesses.$inferSelect,
+  'id' | 'name' | 'description' | 'createdAt' | 'updatedAt'
+> & { processSchema: DecisionSchemaDefinition };
 
 interface DecisionSetupOutput {
   user: User;
   userEmail: string;
   organization: Record<string, unknown> & { id: string; profileId: string };
-  process: EncodedDecisionProcess;
+  process: CreatedDecisionProcess;
   instances: CreatedInstance[];
   /**
    * The first (and usually only) created instance, already narrowed.
@@ -261,8 +283,7 @@ export class TestDecisionsDataManager {
       throw new Error('Failed to create decision process');
     }
 
-    // Map to the expected encoder format
-    const process: EncodedDecisionProcess = {
+    const process: CreatedDecisionProcess = {
       id: processRecord.id,
       name: processRecord.name,
       description: processRecord.description,
@@ -326,7 +347,7 @@ export class TestDecisionsDataManager {
       status,
     }: {
       processId?: string;
-      process?: EncodedDecisionProcess;
+      process?: CreatedDecisionProcess;
       user?: User;
       name: string;
       budget?: number;
@@ -422,7 +443,7 @@ export class TestDecisionsDataManager {
     }
 
     return {
-      instance: processInstanceEncoder.parse(processInstance),
+      instance: processInstance,
       profileId,
       slug: profile.slug,
     };
