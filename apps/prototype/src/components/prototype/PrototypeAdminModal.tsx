@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
@@ -18,12 +19,14 @@ import {
 } from '@op/sense/DropdownMenu';
 import { Field, FieldError, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import { Popover, PopoverContent } from '@op/sense/Popover';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { toast } from '@op/sense/Toast';
-import { useState } from 'react';
+import { cn } from '@op/sense/lib/utils';
+import { useId, useRef, useState } from 'react';
 import { LuEllipsisVertical, LuSend, LuTrash2 } from 'react-icons/lu';
 
-import type { ProcessAdmin } from './store';
+import { COMMON_DIRECTORY, type ProcessAdmin } from './store';
 
 /**
  * Said in both places admins are managed — this dialog and the `Settings` card —
@@ -78,8 +81,9 @@ export function PrototypeAdminModal({
             onEmailChange={setEmail}
             isValid={isValid}
             isDuplicate={isDuplicate}
-            onAdd={() => {
-              onChange(addAdmin(admins, trimmed));
+            admins={admins}
+            onAdd={(person) => {
+              onChange(addAdmin(admins, person));
               setEmail('');
             }}
           />
@@ -97,24 +101,66 @@ export function PrototypeAdminModal({
   );
 }
 
+/** How many directory matches the list shows, as in the invite modal. */
+const RESULTS = 5;
+
 /**
- * Somebody new, by email. Split out because `Settings` shows the same row: one
- * field and one button, and the button is what commits — Enter in the field does
- * the same thing, because a lone input asks to be submitted.
+ * Somebody new — searched for by name, or typed in as an address. Split out
+ * because `Settings` shows the same row: one field and one button, and the
+ * button is what commits — Enter in the field does the same thing, because a
+ * lone input asks to be submitted.
+ *
+ * It searches Common's people for the same reason the participants field does:
+ * the likeliest co-admin already has an account, and making someone type the
+ * address of a colleague they could have picked from a list is the kind of
+ * friction that only shows up once the directory is real. Picking an account
+ * carries the name over, so the list below reads "Marisol Ortega" rather than an
+ * address with "Invited just now" under it — a person already on Common is not
+ * waiting on an invitation.
  */
 export function AdminInvite({
   email,
   onEmailChange,
   isValid,
   isDuplicate,
+  admins,
   onAdd,
 }: {
   email: string;
   onEmailChange: (value: string) => void;
   isValid: boolean;
   isDuplicate: boolean;
-  onAdd: () => void;
+  /** Read only to keep people who are already admins out of the suggestions. */
+  admins: ProcessAdmin[];
+  onAdd: (person: { email: string; name?: string }) => void;
 }) {
+  /* Anchored to the whole field, not to the caret inside it. */
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const listId = useId();
+  const [highlight, setHighlight] = useState(0);
+
+  const trimmed = email.trim();
+  const taken = new Set(admins.map((admin) => admin.email.toLowerCase()));
+  const needle = trimmed.toLowerCase();
+  /* Nothing until something is typed — a directory laid out on open answers a
+     question nobody asked. Same rule as the participants field. */
+  const matches =
+    trimmed === ''
+      ? []
+      : COMMON_DIRECTORY.filter(
+          (person) =>
+            !taken.has(person.email.toLowerCase()) &&
+            (person.name.toLowerCase().includes(needle) ||
+              person.email.toLowerCase().includes(needle)),
+        ).slice(0, RESULTS);
+
+  const pick = (person: { email: string; name?: string }) => {
+    onAdd(person);
+    setHighlight(0);
+    input.current?.focus();
+  };
+
   return (
     <form
       className="flex items-start gap-2"
@@ -122,28 +168,66 @@ export function AdminInvite({
         event.preventDefault();
 
         if (isValid) {
-          onAdd();
+          onAdd({ email: trimmed });
         }
       }}
     >
-      <Field className="min-w-0 flex-1">
+      <Field ref={fieldRef} className="min-w-0 flex-1">
         <FieldLabel htmlFor="admin-email" className="sr-only">
-          Email address
+          Search people on Common, or type an email address
         </FieldLabel>
         <Input
+          ref={input}
           id="admin-email"
-          type="email"
+          /* `text`, not `email`: this field takes a name now too, and the
+             browser's own email validation would reject "Marisol". */
+          type="text"
           value={email}
-          onChange={(event) => onEmailChange(event.target.value)}
-          placeholder="name@organisation.org"
+          onChange={(event) => {
+            onEmailChange(event.target.value);
+            setHighlight(0);
+          }}
+          placeholder="Search a name, or type an email address"
           aria-invalid={isDuplicate || undefined}
+          aria-controls={listId}
           // The form's own submit doesn't fire from here — something between
           // this field and the dialog eats the key — and a lone field that
           // ignores Enter is broken however good the reason is.
           onKeyDown={(event) => {
-            if (event.key === 'Enter' && isValid) {
+            if (event.key === 'ArrowDown' && matches.length > 0) {
               event.preventDefault();
-              onAdd();
+              setHighlight((current) => (current + 1) % matches.length);
+
+              return;
+            }
+
+            if (event.key === 'ArrowUp' && matches.length > 0) {
+              event.preventDefault();
+              setHighlight(
+                (current) => (current - 1 + matches.length) % matches.length,
+              );
+
+              return;
+            }
+
+            if (event.key !== 'Enter') {
+              return;
+            }
+
+            /* A highlighted account wins over the raw text: if the list is
+               open, Enter means "that one" — the same as clicking it. */
+            const match = matches[highlight];
+
+            if (match) {
+              event.preventDefault();
+              pick(match);
+
+              return;
+            }
+
+            if (isValid) {
+              event.preventDefault();
+              onAdd({ email: trimmed });
             }
           }}
         />
@@ -151,6 +235,48 @@ export function AdminInvite({
           <FieldError>They&rsquo;re already an admin.</FieldError>
         ) : null}
       </Field>
+
+      {/* Floating and only while there is something in it, so it neither
+          pushes the dialog's footer around nor leaves a hole when closed.
+          Anchored to the field so it lines up with the box rather than the
+          caret, and focus stays in the input — this is a list of what you are
+          typing, not somewhere to go. */}
+      <Popover open={matches.length > 0}>
+        <PopoverContent
+          anchor={fieldRef}
+          align="start"
+          sideOffset={4}
+          id={listId}
+          className="w-(--anchor-width) gap-1 p-1"
+          initialFocus={input}
+          finalFocus={input}
+        >
+          {matches.map((person, index) => (
+            <Button
+              key={person.email}
+              type="button"
+              variant="bare"
+              className={cn(
+                'h-auto w-full justify-start gap-3 rounded-md p-2 text-start',
+                index === highlight && 'bg-muted',
+              )}
+              onMouseEnter={() => setHighlight(index)}
+              onClick={() => pick(person)}
+            >
+              <Avatar className="size-8 shrink-0">
+                <AvatarFallback name={person.name} />
+              </Avatar>
+              <span className="min-w-0 flex-1 truncate font-normal">
+                {person.name}
+              </span>
+              <span className="min-w-0 shrink truncate text-sm font-normal text-muted-foreground">
+                {person.email}
+              </span>
+            </Button>
+          ))}
+        </PopoverContent>
+      </Popover>
+
       <Button type="submit" disabled={!isValid}>
         Add
       </Button>
@@ -234,13 +360,16 @@ export function AdminList({
   );
 }
 
-/** One more admin, invited. Named so the two dialogs add them the same way. */
+/**
+ * One more admin. Named so the two dialogs add them the same way.
+ *
+ * The name is what separates the two cases downstream: an account picked from
+ * the directory has one and is simply on the process, while a typed address has
+ * none and `AdminList` reads that as an outstanding invitation.
+ */
 export function addAdmin(
   admins: ProcessAdmin[],
-  email: string,
+  { email, name = '' }: { email: string; name?: string },
 ): ProcessAdmin[] {
-  return [
-    ...admins,
-    { id: `admin-${admins.length}-${email}`, name: '', email },
-  ];
+  return [...admins, { id: `admin-${admins.length}-${email}`, name, email }];
 }

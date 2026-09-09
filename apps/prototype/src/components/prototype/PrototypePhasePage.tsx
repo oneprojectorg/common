@@ -97,6 +97,7 @@ import {
   DEFAULT_RATING,
   type FormField,
   INVITEE_LABEL,
+  isPhaseOverLimit,
   phaseToggles,
   phaseCopy,
   setRailEditing,
@@ -146,12 +147,18 @@ export function PrototypePhasePage() {
    */
   const [draft, setDraft] = useState<PrototypePhase | null>(null);
   const [isConfirmingExit, setIsConfirmingExit] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const phase = draft ?? stored;
   const isDirty =
     draft !== null && stored !== undefined
       ? JSON.stringify(draft) !== JSON.stringify(stored)
       : false;
+  /* The field editors let you type past a name or description limit rather than
+     truncating what you paste, so this page is where that gets refused. Read
+     from the working copy, not from what is stored — the point is to catch it
+     before it is committed. */
+  const isOverLimit = phase ? isPhaseOverLimit(phase) : false;
 
   if (!isResolved) {
     return (
@@ -237,6 +244,44 @@ export function PrototypePhasePage() {
     </AlertDialog>
   );
 
+  /* Deleting a phase takes its form, its people and its dates with it, and
+     `Update` cannot undo it — so it is the one action on this page that asks
+     first. The phase is named in the question rather than described, because
+     the rail can hold several and the one being deleted is the fact worth
+     confirming. */
+  const confirmDelete = (
+    <AlertDialog open={isConfirmingDelete} onOpenChange={setIsConfirmingDelete}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Delete &ldquo;{phase.name || 'this phase'}&rdquo;?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            The phase and everything in it will be permanently deleted.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {/* Destructive first, the way out last — same order as the exit
+            dialog above, so the safe button is always in the same place. */}
+        <AlertDialogFooter>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={() => {
+              setIsConfirmingDelete(false);
+              updateProcess(process.id, (current) => ({
+                ...current,
+                phases: current.phases.filter((item) => item.id !== phase.id),
+              }));
+              router.push(back);
+            }}
+          >
+            Delete phase
+          </AlertDialogAction>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   return (
     // Muted ground with white panels on it: this page is a workbench, and the
     // panels are the things being worked on. The process page stays white
@@ -259,7 +304,17 @@ export function PrototypePhasePage() {
               what says whether anything is pending. The note beside it only
               appears when there is, and is announced when it does. */}
           <div className="flex items-center gap-3">
-            {isDirty ? (
+            {/* Over a limit outranks "unsaved": both are true, but only one of
+                them is the reason the button is dead, and that is the one worth
+                the space. The field itself says which field and by how much. */}
+            {isOverLimit ? (
+              <span
+                className="hidden text-sm text-destructive sm:block"
+                aria-live="polite"
+              >
+                {t('Some fields are too long')}
+              </span>
+            ) : isDirty ? (
               <span
                 className="hidden text-sm text-muted-foreground sm:block"
                 aria-live="polite"
@@ -269,7 +324,7 @@ export function PrototypePhasePage() {
             ) : null}
             {/* A draft is being built, so its phases are saved; a live phase is
                 being changed, so it is updated. */}
-            <Button onClick={commit} disabled={!isDirty}>
+            <Button onClick={commit} disabled={!isDirty || isOverLimit}>
               {process.status === 'draft' ? t('Save') : t('Update')}
             </Button>
           </div>
@@ -493,13 +548,7 @@ export function PrototypePhasePage() {
             <Button
               variant="ghost"
               className="w-fit text-destructive"
-              onClick={() => {
-                updateProcess(process.id, (current) => ({
-                  ...current,
-                  phases: current.phases.filter((item) => item.id !== phase.id),
-                }));
-                router.push(back);
-              }}
+              onClick={() => setIsConfirmingDelete(true)}
             >
               <LuTrash2 className="size-4" aria-hidden />
               Delete this phase
@@ -509,6 +558,7 @@ export function PrototypePhasePage() {
       </div>
 
       {confirmExit}
+      {confirmDelete}
 
       {isPreviewing ? (
         <PrototypeFormPreviewModal

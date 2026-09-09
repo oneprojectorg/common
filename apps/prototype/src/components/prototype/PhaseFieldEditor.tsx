@@ -40,12 +40,16 @@ import {
   LuX,
 } from 'react-icons/lu';
 
+import { CharacterCountInput } from './CharacterCountInput';
+
 /** Said in the popover and on the row's own badge — one sentence, one meaning. */
 const CONFIDENTIAL_HINT =
   'Answers stay confidential \u2014 only process admins and reviewers can see them.';
 
 import {
   CURRENCIES,
+  DESCRIPTION_LIMIT,
+  FIELD_NAME_LIMIT,
   LOCATION_MODES,
   LOCATION_MODE_META,
   type LocationBounds,
@@ -163,10 +167,11 @@ export function PhaseFieldEditor<Format extends string>({
           {/* No asterisk here: whether the question is required is a fact about
               the question, so it is marked once, on the row's own title. */}
           <FieldLabel htmlFor={`${id}-name`}>{nameLabel}</FieldLabel>
-          <Input
+          <CharacterCountInput
             id={`${id}-name`}
             value={label}
-            maxLength={NAME_LIMIT}
+            limit={FIELD_NAME_LIMIT}
+            fieldLabel={nameLabel}
             placeholder={namePlaceholder}
             onChange={(event) => onLabelChange(event.target.value)}
           />
@@ -204,10 +209,14 @@ export function PhaseFieldEditor<Format extends string>({
         <Field>
           <FieldLabel htmlFor={`${id}-description`}>Description</FieldLabel>
           {/* A line, not a box: this is the hint under a question, and a
-              textarea invited an essay nobody reads on the form. */}
-          <Input
+              textarea invited an essay nobody reads on the form. Capped at the
+              product's own limit for the same field, so the count is a real
+              constraint rather than prototype decoration. */}
+          <CharacterCountInput
             id={`${id}-description`}
             value={description ?? ''}
+            limit={DESCRIPTION_LIMIT}
+            fieldLabel="Description"
             onChange={(event) => onDescriptionChange(event.target.value)}
           />
         </Field>
@@ -853,9 +862,19 @@ export function PhaseFieldListItem({
             made every row of the form twice as tall for a word. `text-label`
             is the row's own style in the frame — the serif step the trigger
             already sets its family for, one size down from a card title. */}
+          {/* `wrap-anywhere`, not `truncate`, and it is what makes the row hold
+              its shape at all. The accordion wraps this trigger in an `h3` that
+              is a grid item with the default `min-width: auto`, so the track's
+              `minmax(0,1fr)` never gets to shrink it: a long unbroken name set
+              the row's minimum width and ran straight out through the side of
+              the card, past the border, with no ellipsis. `overflow-wrap:
+              anywhere` is the one wrapping mode that also lowers the min-content
+              contribution, so the chain can shrink and the name wraps instead —
+              which is the behaviour wanted here anyway. `break-words` would not
+              have done it; it wraps without changing min-content. */}
           <span
             className={cn(
-              'me-2 min-w-0 flex-1 truncate text-start text-label',
+              'me-2 min-w-0 flex-1 text-start text-label wrap-anywhere',
               !title && 'text-muted-foreground',
             )}
           >

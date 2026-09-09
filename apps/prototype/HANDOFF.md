@@ -239,6 +239,47 @@ the other; clicking the open card does nothing. There is no collapsed-all state.
 Callout icons are matched on the copy itself (`calloutIcons.ts`) so each is
 literal.
 
+### 11. Character limits are soft, and the save is what enforces them
+
+`CharacterCountInput.tsx`, with the limits and the rule in `store.ts`. This is
+the one part of the form editor whose behaviour is mostly invisible in the
+markup, so it is worth reading before reimplementing it.
+
+A field name is capped at 120, a description at 250 — the same 250 the product
+already uses on this field (`ProcessBuilder/.../FieldCard.tsx`). Both behave the
+same way, and all four of these are deliberate:
+
+- **No `maxLength`.** Typing and pasting are never blocked or truncated. A paste
+  that runs 180 characters over keeps all 180 and turns the field red. Silently
+  dropping the tail of what someone pasted loses their work without telling
+  them; going over and being told is recoverable.
+- **The count and the space it needs both appear at 20 from the limit** — 100 on
+  a name, 230 on a description — and both go away again below that. The field's
+  end padding animates 12 → 76px alongside the count's opacity, 160ms, so the
+  reveal is one motion. Reserving that space permanently narrowed every field
+  for a limit almost none of them come near.
+- **Over the limit is an error state, not a full field**: destructive border via
+  `aria-invalid`, red count, and a sentence naming the field ("Field name must be
+  120 characters or less").
+- **`Update` is disabled while anything is over**, with the header note switching
+  from "Unsaved changes" to "Some fields are too long". `isPhaseOverLimit()` in
+  `store.ts` is the single rule both the editor and the button read, and it
+  covers `criteria` as well as `fields` — the same editor renders a review
+  criterion, so a rubric can block a save too.
+
+The announcement is GOV.UK's character-count behaviour rather than the obvious
+reading of it: the digits are `aria-hidden`, and a separate polite live region
+carries "15 characters remaining" one second after typing stops. Putting
+`aria-live` on the visible digits — which an earlier version did — announces
+every keystroke, so a screen reader reads the count instead of the words being
+typed.
+
+Note that `CountedInput.tsx` still exists and does **not** work this way: it
+hard-caps a process name at 50 with an always-visible count. Two patterns for
+one job is not the intent — the soft one is the direction, and the process-name
+fields were left alone only because converting them needs a save gate on those
+forms that nobody has specified yet.
+
 ---
 
 ## Real vs faked

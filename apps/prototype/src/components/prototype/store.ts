@@ -24,6 +24,29 @@ import { PROTOTYPE_USER } from './fakeUser';
 
 export const NAME_LIMIT = 50;
 
+/** A question's own wording. Longer than a process name — this is a sentence. */
+export const FIELD_NAME_LIMIT = 120;
+
+/** The hint under a question. Matches the product's own cap on the same field. */
+export const DESCRIPTION_LIMIT = 250;
+
+/**
+ * Whether anything in a phase is over one of the two caps above.
+ *
+ * Lives here rather than being lifted out of the field editors because the caps
+ * are soft: the editor lets you type past one and says so, and the page that
+ * owns `Update` has to refuse to commit. Both read this, so neither can hold a
+ * different opinion about what counts as too long — and it covers `criteria`
+ * as well as `fields`, since the same editor renders a review criterion.
+ */
+export function isPhaseOverLimit(phase: PrototypePhase): boolean {
+  const tooLong = (item: { label: string; description?: string }) =>
+    item.label.length > FIELD_NAME_LIMIT ||
+    (item.description?.length ?? 0) > DESCRIPTION_LIMIT;
+
+  return phase.fields.some(tooLong) || phase.criteria.some(tooLong);
+}
+
 export const ANSWER_FORMATS = [
   'Text',
   'Amount',

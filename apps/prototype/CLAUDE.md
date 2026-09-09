@@ -73,6 +73,14 @@ outside this worktree. This app owns **:3120** (`.claude/launch.json` →
 - **Dates are date-only strings** parsed to local noon (`parseDay`). Never
   `new Date('2026-09-05')` for display — it is UTC midnight and renders the day
   before, west of UTC.
+- **`truncate` needs every ancestor to be shrinkable, and `minmax(0,1fr)` on the
+  track is not enough.** Flex and grid items both default to `min-width: auto`,
+  so one unbroken string sets the row's minimum width and the text runs out
+  through the side of the card with no ellipsis. Where an ancestor is out of
+  reach — the accordion wraps its trigger in an `h3` we do not render —
+  `wrap-anywhere` fixes it instead: `overflow-wrap: anywhere` is the one wrapping
+  mode that also lowers min-content, so the chain can finally shrink.
+  `break-words` does not, and changes nothing here.
 - **The launch sequence depends on the phase card's two treatments being
   geometrically identical.** See HANDOFF §5 before touching the rail's cards.
 
@@ -99,3 +107,27 @@ involving drag or animation timing, hover the drag handle first (handles are
 Prefer measuring over eyeballing: computed styles, `getBoundingClientRect()`,
 `document.getAnimations()`. Several bugs in this prototype's history were
 "verified working" from a screenshot taken at the wrong moment.
+
+Two ways the pane will lie to you while you do that, both of which have cost an
+hour each:
+
+- **A transitioning property reads as its start value.** The same rAF throttling
+  freezes CSS transitions, so `getComputedStyle` returns where the transition
+  began, not where it lands — `document.getAnimations()` shows them `running` at
+  `currentTime: 0`. Everything in `@op/sense` that changes colour carries
+  `transition-colors`, so this hits any check of a border, text or background
+  that just changed: an `aria-invalid` error border measures as the *normal*
+  border and looks broken when it is fine. Set `el.style.transition = 'none'`,
+  read, then restore. Or read a `cloneNode` of it — a fresh node has no
+  transition in flight. The same freeze means a **dismissed dialog or popover
+  stays in the DOM**: Base UI keeps the node through its exit animation, which
+  never finishes here, so it is still queryable and still reports
+  `visibility: visible` at `opacity: 1` while being visually gone. Read
+  `data-open` / `data-closed` on it, never presence or computed style.
+- **Layout dimensions can all read 0.** `window.innerWidth`,
+  `document.body.getBoundingClientRect().width` and every ancestor width can come
+  back `0` while the page is laid out and painting correctly, which makes an
+  ancestor chain look collapsed and sends you hunting a flex/grid bug that does
+  not exist. Child elements still measure truthfully, so a real overflow shows up
+  as a child wider than a parent — but confirm any width conclusion with a
+  screenshot before acting on it.

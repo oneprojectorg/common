@@ -238,10 +238,11 @@ export function PrototypeSettingsModal({
                   onEmailChange={setEmail}
                   isValid={isValid}
                   isDuplicate={isDuplicate}
-                  onAdd={() => {
+                  admins={admins}
+                  onAdd={(person) => {
                     onChange((current) => ({
                       ...current,
-                      admins: addAdmin(processAdmins(current), trimmed),
+                      admins: addAdmin(processAdmins(current), person),
                     }));
                     setEmail('');
                   }}

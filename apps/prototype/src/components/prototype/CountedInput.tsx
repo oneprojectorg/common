@@ -30,9 +30,10 @@ export function CountedInput({
       <Input
         value={value}
         maxLength={limit}
-        // Clear of the count: five glyphs at the small step, plus the field's
-        // own 12 of end padding.
-        className={cn('pe-16', className)}
+        /* Clear of the count, which is as wide as the limit is long: "50/50" is
+           five glyphs, "250/250" is seven. Both plus the field's own 12 of end
+           padding — a fixed reserve fits one and clips the other. */
+        className={cn(String(limit).length > 2 ? 'pe-20' : 'pe-16', className)}
         {...props}
       />
       {/* Announced, because it is the only warning that the field is nearly
