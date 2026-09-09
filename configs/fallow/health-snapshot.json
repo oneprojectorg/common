@@ -1,8 +1,8 @@
 {
   "snapshot_schema_version": 3,
   "version": "2.22.1",
-  "timestamp": "2026-09-09T09:05:58Z",
-  "git_sha": "a5ce9f1c2",
+  "timestamp": "2026-09-09T11:08:01Z",
+  "git_sha": "a9f05000c",
   "git_branch": "feat/fallow-crap-baseline",
   "shallow_clone": false,
   "vital_signs": {
