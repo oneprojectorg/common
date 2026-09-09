@@ -1,3 +1,5 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db } from '@op/db/client';
 import { contentTranslations, moderationFlags } from '@op/db/schema';
 import {
@@ -9,16 +11,12 @@ import { eq, like } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { createTestContextWithSession } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
 // Set a fake API key so the endpoint doesn't throw before reaching the mock.

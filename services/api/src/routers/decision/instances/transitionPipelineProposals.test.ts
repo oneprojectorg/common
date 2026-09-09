@@ -1,4 +1,11 @@
 import { getProposalsForPhase } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import {
+  schemaMissingPipeline,
+  schemaWithPipeline,
+  schemaWithThreePhasesAndPipelines,
+  schemaWithoutPipeline,
+} from '@op/common/testing/helpers/pipelineSchemas';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -7,14 +14,6 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import {
-  schemaMissingPipeline,
-  schemaWithPipeline,
-  schemaWithThreePhasesAndPipelines,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineSchemas';
 
 describe.concurrent('Transition pipeline: join table population', () => {
   it('creates exactly 2 join rows when selectionPipeline limits to 2 from 3 proposals', async ({

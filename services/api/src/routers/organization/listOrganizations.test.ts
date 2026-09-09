@@ -1,20 +1,18 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestOrganizationDataManager } from '@op/common/testing/helpers/TestOrganizationDataManager';
 import { db } from '@op/db/client';
 import { links, organizations, projects } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
+import { createTestContextWithSession } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
 describe.concurrent('organization.list', () => {

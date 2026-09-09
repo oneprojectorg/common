@@ -1,3 +1,6 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { schemaWithoutPipeline } from '@op/common/testing/helpers/pipelineSchemas';
 import { db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
@@ -11,17 +14,12 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

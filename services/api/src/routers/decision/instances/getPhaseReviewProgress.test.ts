@@ -1,4 +1,7 @@
 import { computeDaysLeft } from '@op/common';
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { TestReviewsDataManager } from '@op/common/testing/helpers/TestReviewsDataManager';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
@@ -12,17 +15,12 @@ import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

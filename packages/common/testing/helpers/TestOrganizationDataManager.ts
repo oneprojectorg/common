@@ -1,15 +1,15 @@
 import { db } from '@op/db/client';
 import { type Organization, organizationUsers, profiles } from '@op/db/schema';
+import { inArray } from 'drizzle-orm';
+
 import {
   type CreateOrganizationResult,
   type GeneratedUser,
   addUserToOrganization as addUserToOrgCore,
   createOrganization as createOrgCore,
   generateTestEmail,
-} from '@op/test';
-import { inArray } from 'drizzle-orm';
-
-import { supabaseTestAdminClient } from '../supabase-utils';
+} from '../data';
+import { supabaseTestAdminClient } from '../supabase';
 
 interface SeedUserInput {
   email: string;

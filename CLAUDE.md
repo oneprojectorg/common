@@ -6,7 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 
 - **Type checking**: `pnpm typecheck` (all workspaces via Turbo) or `pnpm w:app typecheck` (main app only) — run after making changes
 - **Format checking**: `pnpm format:check` (required by CI); `pnpm format:changes` formats only files changed in git
-- **Tests**: `pnpm test` (integration tests)
+- **Tests**: name a unit test `<name>.unit.test.ts` and an integration test
+  `<name>.test.ts` — the unmarked file runs against the test Supabase instance on
+  55321/55322. This applies to `packages/common`, `services/api` and
+  `services/workflows`, the three packages wired to `@op/common/testing`
+- **Test commands**: `pnpm test` at the root runs `turbo test:unit` then
+  `turbo test:integration --concurrency=1`; a single workspace runs
+  `pnpm w:common test:unit` / `test:integration`. Start the test database first with
+  `pnpm test:supabase:start`
 - **Workspaces**: use the `pnpm w:<name>` shortcuts defined in the root `package.json` scripts (e.g. `pnpm w:app`, `pnpm w:db`)
 - **Dependencies**: add with `pnpm add <package> --filter <workspace-name>`; `pnpm deps:clean` / `pnpm deps:override` keep versions consistent
 

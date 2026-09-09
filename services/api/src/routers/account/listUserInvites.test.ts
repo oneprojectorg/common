@@ -1,3 +1,6 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { TestProfileUserDataManager } from '@op/common/testing/helpers/TestProfileUserDataManager';
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
@@ -10,18 +13,13 @@ import {
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
+import { createTestContextWithSession } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 import accountRouter from './index';
 

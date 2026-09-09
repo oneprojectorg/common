@@ -12,6 +12,7 @@
   "scripts": {
     "format:check": "oxfmt --check",
     "test": "vitest run",
+    "test:unit": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

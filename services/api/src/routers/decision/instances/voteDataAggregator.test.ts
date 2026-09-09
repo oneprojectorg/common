@@ -1,10 +1,9 @@
 import { aggregateProposalMetrics } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { schemaWithoutPipeline } from '@op/common/testing/helpers/pipelineSchemas';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 
 describe.concurrent('aggregateProposalMetrics', () => {
   it('returns empty object for an empty proposals array', async () => {

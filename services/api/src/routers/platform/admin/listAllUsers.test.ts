@@ -1,20 +1,18 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestOrganizationDataManager } from '@op/common/testing/helpers/TestOrganizationDataManager';
 import { GLOBAL_USER_IDS } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
-import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 describeAccessTierGating('platform.admin.listAllUsers', {

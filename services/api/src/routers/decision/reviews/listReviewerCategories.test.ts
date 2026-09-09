@@ -1,14 +1,12 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestReviewsDataManager } from '@op/common/testing/helpers/TestReviewsDataManager';
 import { db, inArray } from '@op/db/client';
 import { categoryReviewers, taxonomyTerms } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
+import { createTestContextWithSession } from '../../../test/caller';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

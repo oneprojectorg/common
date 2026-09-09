@@ -1,3 +1,8 @@
+import {
+  createIsolatedSession,
+  createTestUser,
+  supabaseTestAdminClient,
+} from '@op/common/testing';
 import { db, sql } from '@op/db/client';
 import { decisionBoundaries, profiles, users } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
@@ -5,18 +10,13 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
+import { createTestContextWithSession } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-  createTestUser,
-  supabaseTestAdminClient,
-} from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

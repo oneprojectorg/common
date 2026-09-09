@@ -14,12 +14,22 @@
     "./src/services/decision": "./src/services/decision/index.ts",
     "./locales": "./src/services/translation/locales.ts",
     "./locales.mjs": "./locales.mjs",
+    "./testing": "./testing/index.ts",
+    "./testing/data": "./testing/data/index.ts",
+    "./testing/*": "./testing/*.ts",
     "./src/*": "./src/*"
   },
   "main": "src/index.ts",
   "scripts": {
     "format:check": "oxfmt --check",
     "test": "vitest run",
+    "test:check-supabase": "tsx testing/check-supabase.ts",
+    "test:db:reset": "tsx testing/supabase-test.ts reset && pnpm --dir ../../services/db migrate:test",
+    "test:integration": "vitest run --project integration --passWithNoTests",
+    "test:supabase:start": "tsx testing/supabase-test.ts start",
+    "test:supabase:status": "tsx testing/supabase-test.ts status",
+    "test:supabase:stop": "tsx testing/supabase-test.ts stop",
+    "test:unit": "vitest run --project unit",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -66,6 +76,7 @@
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "@op/typescript-config": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
     "@types/json-schema": "^7.0.15",
     "csv-parse": "^7.0.2",
     "vitest": "^4.0.18"

@@ -1,13 +1,13 @@
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { createAuthenticatedCaller } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
-import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
 describe.concurrent('updateUserProfile', () => {
   it('busts the cached user so getMyAccount serves the update immediately', async ({

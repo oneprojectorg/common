@@ -1,12 +1,10 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestOrganizationDataManager } from '@op/common/testing/helpers/TestOrganizationDataManager';
 import { EntityType } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import profileRouter from '.';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
+import { createTestContextWithSession } from '../../test/caller';
 import { createCallerFactory } from '../../trpcFactory';
 
 describe.concurrent('profile.list', () => {

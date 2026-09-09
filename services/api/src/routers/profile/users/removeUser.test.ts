@@ -1,13 +1,11 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestProfileUserDataManager } from '@op/common/testing/helpers/TestProfileUserDataManager';
 import { db } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
+import { createTestContextWithSession } from '../../../test/caller';
 import { createCallerFactory } from '../../../trpcFactory';
 import { usersRouter } from './index';
 

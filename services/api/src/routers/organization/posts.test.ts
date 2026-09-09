@@ -1,13 +1,11 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestOrganizationDataManager } from '@op/common/testing/helpers/TestOrganizationDataManager';
 import { db, eq, inArray } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
+import { createTestContextWithSession } from '../../test/caller';
 import { createCallerFactory } from '../../trpcFactory';
 
 describe.concurrent('organization posts', () => {

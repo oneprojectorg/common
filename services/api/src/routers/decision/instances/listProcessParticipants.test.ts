@@ -1,5 +1,7 @@
 import { listProcessParticipants } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { schemaWithoutPipeline } from '@op/common/testing/helpers/pipelineSchemas';
 import { and, db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -10,9 +12,6 @@ import {
   proposals,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 
 /**
  * Reproduces a public submitter: production grants them submit rights through

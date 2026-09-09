@@ -1,3 +1,5 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestReviewsDataManager } from '@op/common/testing/helpers/TestReviewsDataManager';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -6,17 +8,13 @@ import { createRevisionRequest, grantDecisionProfileAccess } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
