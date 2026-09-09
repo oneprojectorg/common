@@ -12,6 +12,13 @@
  *   health-snapshot.json  vital signs — including the CRAP columns — consumed
  *                         by `--trend`
  *
+ * Plus one of ours, because fallow has no equivalent:
+ *
+ *   crap-baseline.json    every file's `crap_max`, so `pnpm health` can name
+ *                         the files a change pushed up. Fallow's own baseline
+ *                         tracks complexity findings, which do not move when a
+ *                         change deletes the tests around a function.
+ *
  * `--trend` only ever reads `.fallow/snapshots/`, which is gitignored working
  * state, so the committed snapshot is staged into that directory first. Local
  * ad-hoc snapshots are cleared on the way through: the point of `--trend` here
@@ -28,6 +35,8 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { collectCrap, writeCrapBaseline } from './lib/fallow-crap.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const COVERAGE = join(ROOT, 'coverage', 'coverage-final.json');
@@ -109,7 +118,10 @@ if (trend) {
 assertCompleteCoverage();
 
 mkdirSync(dirname(BASELINE), { recursive: true });
-const status = fallow([
+// fallow exits 1 whenever findings exist, which is the normal state here — the
+// baseline is the record of them. Only the write matters, so its status is not
+// forwarded: a run that recorded the baseline succeeded.
+fallow([
   'health',
   '--coverage',
   COVERAGE,
@@ -119,6 +131,8 @@ const status = fallow([
   SNAPSHOT,
 ]);
 
+const { files, report } = collectCrap();
+writeCrapBaseline(files, report);
+
 console.log(`\nBaseline written to configs/fallow/. Commit it so \`pnpm health:trend\` compares
 everyone against the same starting point.`);
-process.exit(status);
