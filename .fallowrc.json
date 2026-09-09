@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-dev/fallow/main/schema/fallowrc.schema.json",
+  "health": {
+    "maxCyclomatic": 20,
+    "maxCognitive": 15
+  }
+}

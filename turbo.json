@@ -28,6 +28,9 @@
     },
     "format:check": {},
     "test": {},
+    "test:coverage": {
+      "outputs": ["coverage/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

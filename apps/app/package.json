@@ -14,6 +14,7 @@
     "start": "next start -p 3100",
     "start:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next start -p 4100",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -100,6 +101,7 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
+    "@op/vitest-config": "workspace:*",
     "@tailwindcss/postcss": "4.1.18",
     "@tanstack/react-query-devtools": "5.66.11",
     "@testing-library/react": "^16.3.0",
@@ -108,6 +110,7 @@
     "@types/json-schema": "^7.0.15",
     "@types/react": "19.2.14",
     "@types/testing-library__user-event": "^4.2.0",
+    "@vitest/coverage-istanbul": "catalog:",
     "postcss": "^8.5.3",
     "tailwindcss": "4.1.18",
     "typescript": "7.0.2",

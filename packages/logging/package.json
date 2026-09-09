@@ -32,6 +32,6 @@
     "@op/typescript-config": "workspace:*",
     "next": "catalog:",
     "typescript": "7.0.2",
-    "vitest": "^4.0.18"
+    "vitest": "catalog:"
   }
 }
