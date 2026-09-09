@@ -24,18 +24,30 @@ import { isPhaseAtOrBefore } from './utils/phaseOrder';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
-/**
- * Review-side standing on a decision instance: the process-wide REVIEW grant,
- * or decisions ADMIN. Always checked against the instance's own profile —
- * `{ profile: permission.ADMIN }` is deliberately absent, matching the
- * precedent set for the active-process writes: the seeded Admin role carries
- * ADMIN on the decisions zone as well as the profile zone, so a profile admin
- * still passes on `{ decisions: permission.ADMIN }`.
- */
+/** Review-side standing on an instance: the process-wide REVIEW grant, or decisions ADMIN. */
 const INSTANCE_REVIEW_OR_ADMIN: AccessZonePermissionInput = [
   { decisions: decisionPermission.REVIEW },
   { decisions: permission.ADMIN },
 ];
+
+/** Decisions ADMIN on a loaded instance's own profile. */
+export async function assertInstanceDecisionsAdmin({
+  instance,
+  user,
+}: {
+  instance: { profileId: string | null };
+  user: AccessUser | undefined;
+}): Promise<void> {
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
+}
 
 /** Shared `with` config for review assignment queries. */
 export const reviewAssignmentWithConfig = {
@@ -137,9 +149,6 @@ export async function assertProposalReviewReadAccess({
   proposal: { profileId: string; submittedByProfileId: string | null };
   user: AccessUser | undefined;
 }): Promise<void> {
-  // No org fallback: the admin/reviewer standing that opens this read comes
-  // from a grant on the instance's own profile, which legacy instances may not
-  // have — fail closed there (the author paths below still apply).
   const instanceRoles = instance.profileId
     ? await getProfileAccessRoles({ user, profileId: instance.profileId })
     : [];
@@ -287,10 +296,6 @@ export interface PhaseReviewsReadContext {
  * earlier phase's reviews), but phases after the current one are never
  * readable. The reviewer grant is deliberately process-wide: ANY reviewer of
  * the process can read, not only those assigned to a given proposal.
- *
- * No org fallback: both capabilities are resolved from a grant on the
- * instance's own profile, which legacy instances may not have — fail closed
- * there.
  */
 export async function canReadPhaseReviews({
   instance,
@@ -393,17 +398,14 @@ export async function assertReviewAssignmentContext({
     user,
   });
 
-  // No org fallback: review access comes from a grant on the instance's own
-  // profile, which legacy instances may not have — fail closed there.
   if (!instance.profileId) {
-    throw new UnauthorizedError("You don't have access to review proposals");
+    throw new UnauthorizedError("You don't have access to do this");
   }
 
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
     permissions: INSTANCE_REVIEW_OR_ADMIN,
-    notMemberMessage: "You don't have access to review proposals",
   });
 
   if (assignment.reviewerProfileId !== dbUser.profileId) {

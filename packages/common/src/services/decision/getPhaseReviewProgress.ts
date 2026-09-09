@@ -4,12 +4,10 @@ import {
   proposalReviewAssignments,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { assertInstanceDecisionsAdmin } from './reviewHelpers';
 import type { InstancePhaseRef } from './schemas/instance';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
@@ -28,20 +26,9 @@ export async function getPhaseReviewProgress(
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  // No org fallback: admin access comes from a grant on the instance's own
-  // profile, which legacy instances may not have — fail closed there.
-  if (!instance.profileId) {
-    throw new UnauthorizedError(
-      "You don't have admin access to this process instance",
-    );
-  }
-
-  await assertProfileAccess({
-    user,
-    profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
-    notMemberMessage: "You don't have admin access to this process instance",
-  });
+  // Ahead of `assertInstancePhase` so an unauthorized caller can't probe which
+  // phases the instance has.
+  await assertInstanceDecisionsAdmin({ instance, user });
 
   assertInstancePhase({ instance, phaseId });
 

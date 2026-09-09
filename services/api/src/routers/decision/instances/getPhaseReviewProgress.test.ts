@@ -55,18 +55,14 @@ describe.concurrent('getPhaseReviewProgress', () => {
     task,
     onTestFinished,
   }) => {
-    // The legacy org fallback (`assertInstanceProfileAccess`) still admits this
-    // caller to `getInstance` — the read surface legacy results screens hit —
-    // but the admin gate here resolves against the instance's own profile,
-    // where an org admin holds nothing.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       processSchema: testSimpleVotingSchema,
     });
 
-    // The fixture owns instances by the creator's individual profile; the org
-    // fallback only fires when the owner is an organization's profile.
+    // The fixture owns instances by the creator's individual profile; an
+    // organization owner is what `getInstance` still resolves org roles from.
     await db
       .update(processInstances)
       .set({ ownerProfileId: setup.organization.profileId })
@@ -80,9 +76,8 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const orgAdminCaller = await createAuthenticatedCaller(orgAdmin.email);
 
-    // Proof the caller is genuinely on the fallback path rather than simply
-    // locked out everywhere: the instance read still admits them, and still
-    // reports the org-derived admin bit to the client.
+    // The caller isn't locked out everywhere: `getInstance` still admits them
+    // and still reports the admin bit to the client.
     await expect(
       orgAdminCaller.decision.getInstance({
         instanceId: setup.instance.instance.id,
