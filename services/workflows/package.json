@@ -10,6 +10,9 @@
   "scripts": {
     "dev": "inngest-cli dev",
     "format:check": "oxfmt --check",
+    "test": "vitest run",
+    "test:integration": "vitest run --project integration",
+    "test:unit": "vitest run --project unit",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,6 +32,7 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "catalog:"
   }
 }

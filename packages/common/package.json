@@ -25,9 +25,11 @@
     "test": "vitest run",
     "test:check-supabase": "tsx testing/check-supabase.ts",
     "test:db:reset": "tsx testing/supabase-test.ts reset && pnpm --dir ../../services/db migrate:test",
+    "test:integration": "vitest run --project integration --passWithNoTests",
     "test:supabase:start": "tsx testing/supabase-test.ts start",
     "test:supabase:status": "tsx testing/supabase-test.ts status",
     "test:supabase:stop": "tsx testing/supabase-test.ts stop",
+    "test:unit": "vitest run --project unit",
     "test:watch": "vitest"
   },
   "dependencies": {

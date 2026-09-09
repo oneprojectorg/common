@@ -1,7 +1,6 @@
+import { defineIntegrationProject } from '@op/common/testing/vitest';
 import { fileURLToPath } from 'node:url';
 import { configDefaults, defineConfig } from 'vitest/config';
-
-import { defineIntegrationProject } from './testing/vitest';
 
 const integration = defineIntegrationProject({
   root: fileURLToPath(new URL('.', import.meta.url)),
@@ -9,17 +8,15 @@ const integration = defineIntegrationProject({
 
 export default defineConfig({
   test: {
+    // The package has no tests yet, so both projects run empty.
+    passWithNoTests: true,
     projects: [
       {
-        esbuild: {
-          jsx: 'automatic',
-        },
         test: {
           name: 'unit',
           include: ['src/**/*.unit.test.ts'],
           environment: 'node',
           globals: true,
-          setupFiles: ['./testing/unitSetup.ts'],
         },
       },
       {
