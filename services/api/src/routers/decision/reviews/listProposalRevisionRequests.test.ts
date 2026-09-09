@@ -47,11 +47,9 @@ describe.concurrent('listProposalRevisionRequests', () => {
       proposalId: created.proposal.id,
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.revisionRequest.id).toBe(
-      revisionRequest.id,
-    );
-    expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.revisionRequest.id).toBe(revisionRequest.id);
+    expect(result.items[0]?.proposal.id).toBe(created.proposal.id);
   });
 
   it('returns the proposal revision requests for a decision admin', async ({
@@ -79,9 +77,9 @@ describe.concurrent('listProposalRevisionRequests', () => {
       states: [ProposalReviewRequestState.RESUBMITTED],
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
-    expect(result.revisionRequests[0]?.revisionRequest.state).toBe(
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.proposal.id).toBe(created.proposal.id);
+    expect(result.items[0]?.revisionRequest.state).toBe(
       ProposalReviewRequestState.RESUBMITTED,
     );
   });
@@ -114,8 +112,8 @@ describe.concurrent('listProposalRevisionRequests', () => {
       proposalId: created.proposal.id,
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.proposal.id).toBe(created.proposal.id);
   });
 
   it('filters by state', async ({ task, onTestFinished }) => {
@@ -142,8 +140,8 @@ describe.concurrent('listProposalRevisionRequests', () => {
       states: [ProposalReviewRequestState.RESUBMITTED],
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.revisionRequest.state).toBe(
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.revisionRequest.state).toBe(
       ProposalReviewRequestState.RESUBMITTED,
     );
   });
@@ -179,10 +177,8 @@ describe.concurrent('listProposalRevisionRequests', () => {
       proposalId: created.proposal.id,
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.revisionRequest.id).toBe(
-      revisionRequest.id,
-    );
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.revisionRequest.id).toBe(revisionRequest.id);
   });
 
   it('rejects callers with only member (non-reviewer, non-admin) access to the instance', async ({

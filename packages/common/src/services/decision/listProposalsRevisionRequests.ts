@@ -58,5 +58,5 @@ export async function listProposalsRevisionRequests({
     new Set(proposals.map((proposal) => proposal.processInstanceId)),
   );
 
-  return { revisionRequests, processInstanceIds };
+  return { items: revisionRequests, processInstanceIds };
 }

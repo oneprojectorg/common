@@ -97,7 +97,7 @@ function ProposalAdminMenuItems({
     { sourceProposalId: proposal.id },
     { enabled: mergeEnabled },
   );
-  const supersededBy = mergedAway?.relationships[0];
+  const supersededBy = mergedAway?.items[0];
 
   const triggerLabel = t('Proposal options');
   const showMergeDialog = mergeEnabled && !supersededBy;

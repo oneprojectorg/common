@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { list } from '../../../utils/pagination';
 import { allProposalsListItemSchema } from './proposal';
 
 export const listContributingProposalsInputSchema = z.object({
@@ -15,9 +16,7 @@ export type ListContributingProposalsInput = z.infer<
  * The same row shape as every other card surface, so the app renders these
  * through the shared card mapping that carries the anonymity rules.
  */
-export const contributingProposalListSchema = z.object({
-  proposals: z.array(allProposalsListItemSchema),
-});
+export const contributingProposalListSchema = list(allProposalsListItemSchema);
 
 export type ContributingProposalList = z.infer<
   typeof contributingProposalListSchema

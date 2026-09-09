@@ -1,4 +1,5 @@
 import { matchingDomainOrganizations as getMatchingDomainOrganizations } from '@op/common';
+import { list } from '@op/common/client';
 import { z } from 'zod';
 
 import { searchedOrganizationEncoder } from '../../encoders';
@@ -9,7 +10,7 @@ export const matchingDomainOrganizations = router({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(z.undefined())
-    .output(z.array(searchedOrganizationEncoder))
+    .output(list(searchedOrganizationEncoder))
     .query(async ({ ctx }) => {
       const result = await getMatchingDomainOrganizations({
         user: ctx.user,
@@ -17,8 +18,10 @@ export const matchingDomainOrganizations = router({
 
       // Domain matches are filtered server-side to exclude existing
       // memberships, so isMember is always false here.
-      return result.map((org) =>
-        searchedOrganizationEncoder.parse({ org, isMember: false }),
-      );
+      return {
+        items: result.map((org) =>
+          searchedOrganizationEncoder.parse({ org, isMember: false }),
+        ),
+      };
     }),
 });

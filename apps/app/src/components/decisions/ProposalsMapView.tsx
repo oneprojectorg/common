@@ -240,7 +240,7 @@ export function ProposalsMapWithLocations({
 }: Omit<ProposalsMapViewProps, 'pinProposals'> & {
   locationFilter: ProposalLocationFilter;
 }) {
-  const [{ proposals: pinProposals }] =
+  const [{ items: pinProposals }] =
     trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
       staleTime: 30 * 1000,
       // Force a client-side fetch so the query registers its invalidation

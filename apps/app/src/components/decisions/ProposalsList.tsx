@@ -499,8 +499,8 @@ const ProposalsListContent = ({
   }, [queryParams, pinOffset]);
 
   const currentProfileId = user?.currentProfile?.id;
-  const [[categoriesData, voteStatus, instance]] = trpc.useSuspenseQueries(
-    (t) => [
+  const [[{ items: categories }, voteStatus, instance]] =
+    trpc.useSuspenseQueries((t) => [
       t.decision.getCategories({
         processInstanceId: instanceId,
       }),
@@ -508,10 +508,7 @@ const ProposalsListContent = ({
         processInstanceId: instanceId,
       }),
       t.decision.getInstance({ instanceId }),
-    ],
-  );
-
-  const categories = categoriesData.categories;
+    ]);
 
   // Map browse mode is offered only when the process collects a location and
   // the GIS flag is on. Browse leads with the map when the process has one —
@@ -543,15 +540,17 @@ const ProposalsListContent = ({
       { states: [ProposalReviewRequestState.REQUESTED] },
       { enabled: isInReviewPhase },
     );
+  const revisionRequests = revisionRequestsData?.items;
 
   const revisionRequestIdByProposalId = useMemo(
     () =>
       new Map<string, string>(
-        revisionRequestsData?.revisionRequests.map(
-          ({ proposal, revisionRequest }) => [proposal.id, revisionRequest.id],
-        ),
+        revisionRequests?.map(({ proposal, revisionRequest }) => [
+          proposal.id,
+          revisionRequest.id,
+        ]),
       ),
-    [revisionRequestsData],
+    [revisionRequests],
   );
 
   // A review surface wraps this list in a decoration provider and needs the ids

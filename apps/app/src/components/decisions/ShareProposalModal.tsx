@@ -117,15 +117,16 @@ function ShareProposalModalContent({
 
   const [, startTransition] = useTransition();
 
-  const [usersData] = trpc.profile.listUsers.useSuspenseQuery({
+  const [{ items: profileUsers }] = trpc.profile.listUsers.useSuspenseQuery({
     profileId: proposalProfileId,
   });
-  const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
-    profileId: proposalProfileId,
-  });
+  const [{ items: serverInvites }] =
+    trpc.profile.listProfileInvites.useSuspenseQuery({
+      profileId: proposalProfileId,
+    });
 
   const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
-    usersData.items,
+    profileUsers,
     (state, profileUserId: string) =>
       state.filter((u) => u.id !== profileUserId),
   );
@@ -135,11 +136,11 @@ function ShareProposalModalContent({
     (state, inviteId: string) => state.filter((i) => i.id !== inviteId),
   );
 
-  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({});
-  const memberRole = useMemo(() => {
-    const roles = rolesData.items ?? [];
-    return roles.find((r) => r.name === 'Member');
-  }, [rolesData]);
+  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({});
+  const memberRole = useMemo(
+    () => roles.find((r) => r.name === 'Member'),
+    [roles],
+  );
 
   // Search for users to invite
   const { data: searchResults, isFetching: isSearching } =

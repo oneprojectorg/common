@@ -104,13 +104,14 @@ export const TermsMultiSelect = ({
   const t = useTranslations();
   // Controlled vocabularies are small, so fetch the whole tree once and let
   // base-ui filter client-side (no server query needed).
-  const { data: terms, isLoading } = trpc.taxonomy.getTerms.useQuery({
+  const { data, isLoading } = trpc.taxonomy.getTerms.useQuery({
     name: taxonomy,
   });
+  const terms = data?.items ?? [];
 
   const selectedOptions = value ?? [];
   const selectedIds = new Set(selectedOptions.map((option) => option.id));
-  const groups = buildTermGroups(terms ?? [], selectedIds);
+  const groups = buildTermGroups(terms, selectedIds);
 
   return (
     <div className="flex w-full flex-col gap-2">

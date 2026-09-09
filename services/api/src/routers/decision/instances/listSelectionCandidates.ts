@@ -1,5 +1,5 @@
 import { Channels, listSelectionCandidates } from '@op/common';
-import { proposalSchema } from '@op/common/client';
+import { list, proposalSchema } from '@op/common/client';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -10,9 +10,7 @@ const listSelectionCandidatesInputSchema = z.object({
   sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
 });
 
-const listSelectionCandidatesOutputSchema = z.object({
-  proposals: z.array(proposalSchema),
-});
+const listSelectionCandidatesOutputSchema = list(proposalSchema);
 
 export const listSelectionCandidatesRouter = router({
   listSelectionCandidates: networkAuthenticatedProcedure()

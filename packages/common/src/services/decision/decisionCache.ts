@@ -9,7 +9,13 @@ import { db } from '@op/db/client';
  * (`getDecisionBySlug`, `[slug, 'slugProfile']`) is handled separately below
  * because its key is the profile slug, not the instance id.
  */
-const DECISION_CACHE_KEYS = ['instance', 'categories', 'submitters'] as const;
+const DECISION_CACHE_KEYS = [
+  'instance',
+  'categories',
+  // Versioned because the cached payload shape changed in ADR-0003; old
+  // entries expire on their own.
+  'submitters:v2',
+] as const;
 
 /**
  * Invalidate every cached projection of a decision instance — the instance

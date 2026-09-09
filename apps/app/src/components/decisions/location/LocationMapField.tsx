@@ -73,7 +73,7 @@ export function LocationMapField({
     { profileId: profileId ?? '' },
     { enabled: profileId != null, staleTime: Infinity, gcTime: Infinity },
   );
-  const boundaries = boundaryShapesQuery.data?.boundaries;
+  const boundaries = boundaryShapesQuery.data?.items;
 
   // Reverse-geocode a freshly-placed pin through react-query, which caches by
   // coordinate and surfaces failures as query state (so no try/catch is needed).

@@ -46,13 +46,12 @@ function ProposalMergeNoticeSuspense({
   const t = useTranslations();
 
   // Pinning the source end asks what this was merged into: at most one row.
-  const [mergedAway] = trpc.decision.listProposalRelationships.useSuspenseQuery(
-    {
+  const [{ items: mergedAway }] =
+    trpc.decision.listProposalRelationships.useSuspenseQuery({
       sourceProposalId: proposal.id,
-    },
-  );
+    });
 
-  const supersededBy = mergedAway.relationships[0];
+  const supersededBy = mergedAway[0];
 
   if (!supersededBy) {
     return null;

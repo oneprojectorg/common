@@ -1,4 +1,5 @@
 import { UnauthorizedError, getUserWithProfiles } from '@op/common';
+import { list } from '@op/common/client';
 import { EntityType, ObjectsInStorage, Profile } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -22,7 +23,7 @@ export const getUserProfiles = router({
   getUserProfiles: authenticatedProcedure()
     .input(z.undefined())
     .output(
-      z.array(
+      list(
         userProfileSchema.extend({
           avatarImage: z
             .object({
@@ -103,6 +104,6 @@ export const getUserProfiles = router({
         }
       }
 
-      return userProfiles;
+      return { items: userProfiles };
     }),
 });

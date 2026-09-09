@@ -42,7 +42,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
     ],
   );
 
-  const revisionRequests = revisionData?.revisionRequests ?? [];
+  const revisionRequests = revisionData?.items ?? [];
   const count = decisions.length + revisionRequests.length;
 
   if (count === 0) {

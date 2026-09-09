@@ -193,7 +193,7 @@ export function ReviewAssignmentsList({
       { enabled: isByCategory },
     );
   const showCategory = isByCategory
-    ? (reviewerCategories?.length ?? 0) > 1
+    ? (reviewerCategories?.items.length ?? 0) > 1
     : true;
 
   // Map mode is offered on the same terms as browse (location field + GIS
@@ -528,10 +528,11 @@ const AssignedCategoriesLabel = ({
 }) => {
   const t = useTranslations();
 
-  const [categories] = trpc.decision.listReviewerCategories.useSuspenseQuery({
-    processInstanceId,
-    phaseId,
-  });
+  const [{ items: categories }] =
+    trpc.decision.listReviewerCategories.useSuspenseQuery({
+      processInstanceId,
+      phaseId,
+    });
 
   if (categories.length === 0) {
     return null;

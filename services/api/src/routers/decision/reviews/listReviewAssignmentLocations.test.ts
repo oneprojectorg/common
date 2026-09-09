@@ -75,7 +75,7 @@ describe.concurrent('listReviewAssignmentLocations', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(result.proposals.map((p) => p.id)).toEqual([mine.proposal.id]);
+    expect(result.items.map((p) => p.id)).toEqual([mine.proposal.id]);
   });
 
   it('rejects a caller without review access on the instance', async ({
@@ -131,10 +131,10 @@ describe.concurrent('listReviewAssignmentLocations', () => {
     const unfiltered =
       await caller.decision.listReviewAssignmentLocations(input);
 
-    expect(onlyCompleted.proposals.map((p) => p.id)).toEqual([
+    expect(onlyCompleted.items.map((p) => p.id)).toEqual([
       completed.proposal.id,
     ]);
-    expect(unfiltered.proposals.map((p) => p.id).sort()).toEqual(
+    expect(unfiltered.items.map((p) => p.id).sort()).toEqual(
       [pending.proposal.id, completed.proposal.id].sort(),
     );
   });
@@ -171,7 +171,7 @@ describe.concurrent('listReviewAssignmentLocations', () => {
       phaseId: REVIEW_PHASE,
     });
 
-    expect(result.proposals.map((p) => p.id)).toEqual([survivor.proposal.id]);
+    expect(result.items.map((p) => p.id)).toEqual([survivor.proposal.id]);
   });
 
   it('marks an anonymous author on the pin', async ({
@@ -193,7 +193,7 @@ describe.concurrent('listReviewAssignmentLocations', () => {
     });
 
     // Without the `profileUsers` join every author reads as not anonymous.
-    expect(result.proposals[0]?.submittedBy).toMatchObject({
+    expect(result.items[0]?.submittedBy).toMatchObject({
       isAnonymous: true,
     });
   });
@@ -285,7 +285,7 @@ describeDecisionAccessTierGating('listReviewAssignmentLocations', {
         processInstanceId: context.instance.instance.id,
         phaseId: REVIEW_PHASE,
       });
-      expect(result.proposals).toBeDefined();
+      expect(result.items).toBeDefined();
     },
   ),
 });

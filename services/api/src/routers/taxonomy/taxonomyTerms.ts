@@ -1,4 +1,5 @@
 import { getTerms } from '@op/common';
+import { list } from '@op/common/client';
 import { z } from 'zod';
 
 import { taxonomyTermsWithChildrenEncoder } from '../../encoders/taxonomyTerms';
@@ -7,12 +8,16 @@ import { authenticatedConfirmedProcedure, router } from '../../trpcFactory';
 export const termsRouter = router({
   getTerms: authenticatedConfirmedProcedure()
     .input(z.object({ name: z.string().min(3), q: z.string().optional() }))
-    .output(z.array(taxonomyTermsWithChildrenEncoder))
+    .output(list(taxonomyTermsWithChildrenEncoder))
     .query(async ({ input }) => {
       const { name, q } = input;
 
       const terms = await getTerms({ name, query: q });
 
-      return terms.map((term) => taxonomyTermsWithChildrenEncoder.parse(term));
+      return {
+        items: terms.map((term) =>
+          taxonomyTermsWithChildrenEncoder.parse(term),
+        ),
+      };
     }),
 });

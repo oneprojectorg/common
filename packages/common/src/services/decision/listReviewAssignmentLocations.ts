@@ -88,5 +88,5 @@ export const listReviewAssignmentLocations = async ({
     projectProposalLocation(row.proposal),
   );
 
-  return proposalLocationsSchema.parse({ proposals });
+  return proposalLocationsSchema.parse({ items: proposals });
 };

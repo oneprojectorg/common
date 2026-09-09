@@ -21,7 +21,7 @@ export const InviteToOrganizationButton = ({
   const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
 
-  const [[rolesData, membershipData]] = trpc.useSuspenseQueries((t) => [
+  const [[{ items: roles }, membershipData]] = trpc.useSuspenseQueries((t) => [
     t.organization.getRoles(),
     user.currentOrganization
       ? t.organization.checkMembership({
@@ -98,7 +98,7 @@ export const InviteToOrganizationButton = ({
     }
 
     // Find the Member role - throw error if not found
-    const memberRole = rolesData.roles.find((role) => role.name === 'Member');
+    const memberRole = roles.find((role) => role.name === 'Member');
     if (!memberRole) {
       toast.error('System configuration error', {
         description: 'Member role not found. Please contact support.',

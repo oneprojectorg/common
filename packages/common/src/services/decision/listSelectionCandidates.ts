@@ -12,7 +12,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import type { Proposal } from './schemas/proposal';
 
 export interface SelectionCandidates {
-  proposals: Proposal[];
+  items: Proposal[];
 }
 
 interface ListSelectionCandidatesInput {
@@ -63,7 +63,7 @@ export async function listSelectionCandidates({
 
   const previousPhaseId = resolvePreviousPhaseId(instance);
   if (!previousPhaseId) {
-    return { proposals: [] };
+    return { items: [] };
   }
 
   let categoryProposalIds: Set<string> | undefined;
@@ -73,7 +73,7 @@ export async function listSelectionCandidates({
       .from(proposalCategories)
       .where(eq(proposalCategories.taxonomyTermId, categoryId));
     if (rows.length === 0) {
-      return { proposals: [] };
+      return { items: [] };
     }
     categoryProposalIds = new Set(rows.map((r) => r.proposalId));
   }
@@ -89,7 +89,7 @@ export async function listSelectionCandidates({
     : phaseCandidateIds;
 
   if (candidateIds.length === 0) {
-    return { proposals: [] };
+    return { items: [] };
   }
 
   // Single relational query: `listProposals` joins the vote-count subquery via
@@ -106,7 +106,7 @@ export async function listSelectionCandidates({
     user,
   });
 
-  return { proposals };
+  return { items: proposals };
 }
 
 function resolvePreviousPhaseId(instance: {

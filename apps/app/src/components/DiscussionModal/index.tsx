@@ -55,7 +55,7 @@ export function DiscussionModal({
     { enabled: isOpen },
   );
 
-  const comments = commentsData || [];
+  const comments = commentsData?.items ?? [];
 
   // Function to scroll to show the bottom of the original post after adding a comment
   const scrollToOriginalPost = useCallback(() => {

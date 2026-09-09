@@ -82,7 +82,8 @@ export function ProcessSettingsForm({
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Fetch the current user's profiles (individual + organizations)
-  const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
+  const { data: userProfilesData } = trpc.account.getUserProfiles.useQuery();
+  const userProfiles = userProfilesData?.items;
   const profileItems = (userProfiles ?? []).map((p) => ({
     id: p.id,
     name: p.name,

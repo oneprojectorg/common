@@ -39,11 +39,12 @@ export const LaunchProcessModal = ({
   );
   const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
 
-  const { data: invites, isLoading: invitesLoading } =
+  const { data: invitesData, isLoading: invitesLoading } =
     trpc.profile.listProfileInvites.useQuery(
       { profileId: decisionProfileId },
       { enabled: isOpen },
     );
+  const invites = invitesData?.items;
   const pendingNotificationCount =
     invites?.filter((i) => !i.notifiedAt).length ?? 0;
 

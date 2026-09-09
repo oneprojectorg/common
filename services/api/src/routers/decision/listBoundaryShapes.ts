@@ -1,4 +1,5 @@
 import { listBoundaryShapes } from '@op/common';
+import { list } from '@op/common/client';
 import { z } from 'zod';
 
 import { boundaryShapeEncoder } from '../../encoders/decision';
@@ -8,9 +9,7 @@ const listBoundaryShapesInputSchema = z.object({
   profileId: z.string().uuid(),
 });
 
-const listBoundaryShapesOutputSchema = z.object({
-  boundaries: z.array(boundaryShapeEncoder),
-});
+const listBoundaryShapesOutputSchema = list(boundaryShapeEncoder);
 
 export const listBoundaryShapesRouter = router({
   // Returns the boundaries owned by the given decision profile so the editable
@@ -28,6 +27,6 @@ export const listBoundaryShapesRouter = router({
         profileId: input.profileId,
       });
 
-      return { boundaries };
+      return { items: boundaries };
     }),
 });

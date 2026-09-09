@@ -32,7 +32,7 @@ export function VotingPage({
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const [[instance, voteStatus, { submitters, total }]] =
+  const [[instance, voteStatus, { items: submitters, total }]] =
     trpc.useSuspenseQueries((t) => [
       t.decision.getInstance({ instanceId }),
       t.decision.getVotingStatus({ processInstanceId: instanceId }),

@@ -26,9 +26,9 @@ import { useTranslations } from '@/lib/i18n';
 type ReviewerOption = { value: string; label: string };
 
 type CategoryWithReviewers =
-  RouterOutput['decision']['listCategoryReviewers']['categories'][number];
+  RouterOutput['decision']['listCategoryReviewers']['items'][number];
 type EligibleReviewer =
-  RouterOutput['decision']['listEligibleReviewers']['reviewers'][number];
+  RouterOutput['decision']['listEligibleReviewers']['items'][number];
 
 export interface CategoryReviewerCardProps {
   processInstanceId: string;

@@ -116,7 +116,7 @@ export async function listProposalRelationships({
       id: proposal.proposalId,
       processInstanceId: proposal.processInstanceId,
     },
-    relationships: rows.map((row) => ({
+    items: rows.map((row) => ({
       id: row.id,
       relationshipType: row.relationshipType,
       createdAt: row.createdAt,

@@ -1,7 +1,7 @@
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { PAGE_LIMIT, paginated, total } from '../../../utils/pagination';
+import { PAGE_LIMIT, list, paginated, total } from '../../../utils/pagination';
 import {
   PROPOSAL_TITLE_MAX_LENGTH,
   proposalDataSchema,
@@ -189,9 +189,7 @@ export const proposalSearchSchema = z
  * simply left unset — so the map's marker + hovercard render the same
  * `Proposal` type the paginated list produces.
  */
-export const proposalLocationsSchema = z.object({
-  proposals: z.array(proposalSchema),
-});
+export const proposalLocationsSchema = list(proposalSchema);
 
 export type ProposalLocations = z.infer<typeof proposalLocationsSchema>;
 
@@ -259,11 +257,11 @@ export type ProposalSubmitter = z.infer<typeof proposalSubmitterSchema>;
 // callers (ONE-40 audit #23).
 export const PROPOSAL_SUBMITTER_FACE_PILE_MAX = 20;
 
-export const proposalSubmittersListSchema = z.object({
-  submitters: z
-    .array(proposalSubmitterSchema)
-    .max(PROPOSAL_SUBMITTER_FACE_PILE_MAX),
-  total: z.number(),
+export const proposalSubmittersListSchema = list(
+  proposalSubmitterSchema,
+).extend({
+  items: z.array(proposalSubmitterSchema).max(PROPOSAL_SUBMITTER_FACE_PILE_MAX),
+  total,
 });
 
 export type ProposalSubmittersList = z.infer<

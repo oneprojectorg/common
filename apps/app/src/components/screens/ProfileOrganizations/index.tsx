@@ -33,7 +33,7 @@ export const ProfileOrganizationsSuspense = ({
     slug,
   });
 
-  const [organizations] =
+  const [{ items: organizations }] =
     trpc.organization.getOrganizationsByProfile.useSuspenseQuery({
       profileId: profile.id,
     });

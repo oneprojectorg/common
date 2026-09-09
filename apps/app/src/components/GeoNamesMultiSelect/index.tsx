@@ -37,7 +37,7 @@ export const GeoNamesMultiSelect = ({
   const t = useTranslations();
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
   const [debouncedQuery] = useDebounce(whereWeWorkQuery, 300);
-  const { data: geoNames, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
+  const { data: geoNamesData, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
     {
       q: debouncedQuery,
     },
@@ -46,6 +46,7 @@ export const GeoNamesMultiSelect = ({
       placeholderData: (prev) => prev,
     },
   );
+  const geoNames = geoNamesData?.items;
 
   const selectedOptions = value ?? [];
 
@@ -53,8 +54,8 @@ export const GeoNamesMultiSelect = ({
   // here we only hide options that are already selected (as the previous
   // MultiSelectComboBox did).
   const items: Option[] =
-    geoNames?.geonames
-      .map((item) => {
+    geoNames
+      ?.map((item) => {
         const { name } = item;
         // @ts-ignore
         item.placeId = item.id;

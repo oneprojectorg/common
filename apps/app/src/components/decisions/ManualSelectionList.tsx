@@ -61,7 +61,7 @@ export const ManualSelectionList = ({
   const categoryId =
     selectedCategory === 'all-categories' ? undefined : selectedCategory;
 
-  const [[categoriesData, instance]] = trpc.useSuspenseQueries((q) => [
+  const [[{ items: categories }, instance]] = trpc.useSuspenseQueries((q) => [
     q.decision.getCategories({ processInstanceId: instanceId }),
     q.decision.getInstance({ instanceId }),
   ]);
@@ -78,7 +78,7 @@ export const ManualSelectionList = ({
     { processInstanceId: instanceId, categoryId, sortOrder },
     { placeholderData: (prev) => prev },
   );
-  const candidates = candidatesQuery.data;
+  const candidates = candidatesQuery.data?.items;
 
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
@@ -95,7 +95,7 @@ export const ManualSelectionList = ({
     if (!candidates) return;
     setProposalCache((prev) => {
       const next = { ...prev };
-      for (const p of candidates.proposals) next[p.id] = p;
+      for (const p of candidates) next[p.id] = p;
       return next;
     });
   }, [candidates]);
@@ -205,7 +205,7 @@ export const ManualSelectionList = ({
 
   // Full pool empty → dead end, no toolbar. A narrowing category filter keeps
   // the toolbar (below) so the admin can loosen it.
-  if (!categoryId && candidates.proposals.length === 0) {
+  if (!categoryId && candidates.length === 0) {
     return (
       <Empty>
         <EmptyHeader>
@@ -229,7 +229,6 @@ export const ManualSelectionList = ({
     );
   };
 
-  const proposals = candidates.proposals;
   const numSelected = selectedIds.length;
   // No budget key in the instance's proposal template means the process
   // collects no budgets, so the column would only ever show "—".
@@ -244,14 +243,14 @@ export const ManualSelectionList = ({
   return (
     <div className="relative flex flex-col gap-6 pb-20">
       <ManualSelectionToolbar
-        count={proposals.length}
-        categories={categoriesData.categories}
+        count={candidates.length}
+        categories={categories}
         filters={toolbarFilters}
         onChange={handleToolbarChange}
         pinOffset={pinOffset}
       />
 
-      {proposals.length === 0 ? (
+      {candidates.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -264,7 +263,7 @@ export const ManualSelectionList = ({
         </Empty>
       ) : (
         <SelectableProposalsTable
-          proposals={proposals}
+          proposals={candidates}
           selectedIds={selectedIds}
           onToggle={toggleProposal}
           getProposalHref={(p) =>

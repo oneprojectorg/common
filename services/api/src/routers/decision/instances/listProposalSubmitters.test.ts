@@ -245,9 +245,7 @@ describe.concurrent('listProposalSubmitters', () => {
     // Owner + anonymous collaborator both count toward the total.
     expect(result.total).toBe(2);
     // ...but the anonymous account is never a face, even with an avatar.
-    expect(result.submitters.some((s) => s.slug === anonProfile.slug)).toBe(
-      false,
-    );
+    expect(result.items.some((s) => s.slug === anonProfile.slug)).toBe(false);
   });
 
   it('shows registered submitters with an avatar as faces and omits those without', async ({
@@ -297,9 +295,9 @@ describe.concurrent('listProposalSubmitters', () => {
     });
 
     expect(result.total).toBe(2);
-    expect(result.submitters).toHaveLength(1);
-    expect(result.submitters[0]?.slug).toBe(collabProfile.slug);
-    expect(result.submitters[0]?.avatarImage).not.toBeNull();
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.slug).toBe(collabProfile.slug);
+    expect(result.items[0]?.avatarImage).not.toBeNull();
   });
 });
 

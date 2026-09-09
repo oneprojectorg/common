@@ -81,7 +81,7 @@ describe.concurrent('listEligibleReviewers', () => {
       processInstanceId: instanceId,
     });
 
-    const ids = result.reviewers.map((r) => r.id);
+    const ids = result.items.map((r) => r.id);
 
     // The admin's default decision role carries REVIEW, so the creator is
     // eligible too.
@@ -91,7 +91,7 @@ describe.concurrent('listEligibleReviewers', () => {
     expect(ids).not.toContain(memberC.profileId);
 
     // Display shape: purpose-built picker fields are present.
-    const entry = result.reviewers.find((r) => r.id === reviewerA.profileId);
+    const entry = result.items.find((r) => r.id === reviewerA.profileId);
     expect(entry).toMatchObject({
       id: reviewerA.profileId,
       name: expect.any(String),
@@ -132,16 +132,14 @@ describe.concurrent('listEligibleReviewers', () => {
       processInstanceId: instanceId,
       search: reviewerName,
     });
-    expect(matched.reviewers.map((r) => r.id)).toContain(reviewerA.profileId);
+    expect(matched.items.map((r) => r.id)).toContain(reviewerA.profileId);
 
     // A term that matches no name excludes the reviewer (and yields no rows).
     const unmatched = await adminCaller.decision.listEligibleReviewers({
       processInstanceId: instanceId,
       search: 'zzz-no-such-reviewer-name',
     });
-    expect(unmatched.reviewers.map((r) => r.id)).not.toContain(
-      reviewerA.profileId,
-    );
+    expect(unmatched.items.map((r) => r.id)).not.toContain(reviewerA.profileId);
   });
 
   it('rejects non-admin callers', async ({ task, onTestFinished }) => {

@@ -81,7 +81,7 @@ describe.concurrent('listReviewerCategories', () => {
       phaseId: 'review',
     });
 
-    expect(result).toEqual([
+    expect(result.items).toEqual([
       { id: termA!.id, name: termA!.label },
       { id: termB!.id, name: termB!.label },
     ]);
@@ -101,7 +101,7 @@ describe.concurrent('listReviewerCategories', () => {
       phaseId: 'review',
     });
 
-    expect(result).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('does not return another reviewer’s scope rows', async ({
@@ -139,7 +139,7 @@ describe.concurrent('listReviewerCategories', () => {
       phaseId: 'review',
     });
 
-    expect(result).toEqual([{ id: ownTerm!.id, name: ownTerm!.label }]);
+    expect(result.items).toEqual([{ id: ownTerm!.id, name: ownTerm!.label }]);
   });
 
   it('rejects callers without review access', async ({
@@ -212,7 +212,7 @@ describe.concurrent('listReviewerCategories', () => {
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(withPhase).toEqual([
+    expect(withPhase.items).toEqual([
       { id: termA!.id, name: termA!.label },
       { id: termB!.id, name: termB!.label },
     ]);

@@ -1,6 +1,8 @@
 import { ProposalRelationshipType } from '@op/db/schema';
 import { z } from 'zod';
 
+import { list } from '../../../utils/pagination';
+
 /** The column is `text`, so this is the only ceiling; raising it needs no migration. */
 export const MERGE_NOTE_MAX_LENGTH = 2000;
 
@@ -68,9 +70,9 @@ export type ProposalRelationshipItem = z.infer<
   typeof proposalRelationshipItemSchema
 >;
 
-export const proposalRelationshipListSchema = z.object({
-  relationships: z.array(proposalRelationshipItemSchema),
-});
+export const proposalRelationshipListSchema = list(
+  proposalRelationshipItemSchema,
+);
 
 export type ProposalRelationshipList = z.infer<
   typeof proposalRelationshipListSchema
