@@ -127,10 +127,11 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-      // Create a platform admin user (oneproject.org domain)
+      // The caller of a platform-admin router has to hold the role.
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        isPlatformAdmin: true,
       });
 
       // Create an organization (not owned by the admin)
@@ -176,6 +177,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create a user to add
@@ -214,6 +217,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create an organization to add users to
@@ -246,6 +251,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create an organization to add users to
@@ -282,6 +289,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create an organization and user to add
@@ -323,6 +332,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create an organization and user to add
@@ -369,6 +380,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create an organization to add users to
@@ -412,6 +425,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create organization (target org to add users to)
@@ -488,6 +503,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create organization
@@ -551,6 +568,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create organization
@@ -666,6 +685,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { adminUser: platformAdmin } = await testData.createOrganization({
         users: { admin: 1 },
         emailDomain: 'oneproject.org',
+        // The caller of a platform-admin router has to hold the role.
+        isPlatformAdmin: true,
       });
 
       // Create organization with existing member

@@ -23,7 +23,7 @@ interface GenerateTestOrganizationOptions {
   };
   organizationName?: string;
   emailDomain?: string;
-  /** Grant the Platform Admin role. Defaults to the email's domain. */
+  /** Grant the Platform Admin role to every user created here. Off by default. */
   isPlatformAdmin?: boolean;
 }
 

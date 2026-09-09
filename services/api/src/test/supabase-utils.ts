@@ -83,8 +83,8 @@ export async function createTestContextWithSession(
 
 /**
  * Create a test user and return the user object. `isPlatformAdmin` grants the
- * seeded Platform Admin role; off by default, since the role now widens the
- * holder's access on every profile they belong to.
+ * seeded Platform Admin role; off unless asked for, since the role ORs its
+ * permissions into every membership its holder has.
  */
 export async function createTestUser(
   email: string,

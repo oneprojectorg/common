@@ -5,7 +5,6 @@ export {
   findAuthUserByPhone,
   generateTestEmail,
   grantTestPlatformAdmin,
-  isTestPlatformAdminEmail,
   releaseTestPhoneNumber,
   TEST_PLATFORM_ADMIN_DOMAIN,
   TEST_USER_DEFAULT_PASSWORD,
