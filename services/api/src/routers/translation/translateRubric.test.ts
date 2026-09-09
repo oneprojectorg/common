@@ -1,21 +1,19 @@
 import { mockCollab } from '@op/collab/testing';
 import type { RubricTemplateSchema } from '@op/common';
+import { createIsolatedSession } from '@op/common/testing';
+import { TestReviewsDataManager } from '@op/common/testing/helpers/TestReviewsDataManager';
 import { db } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
 import { like } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '..';
-import { TestReviewsDataManager } from '../../test/helpers/TestReviewsDataManager';
+import { createTestContextWithSession } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../test/helpers/gating/decision';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
 // Set a fake API key so the endpoint doesn't throw before reaching the mock

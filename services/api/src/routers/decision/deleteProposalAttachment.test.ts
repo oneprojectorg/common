@@ -1,8 +1,10 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { createTestContextWithSession } from '../../test/caller';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
@@ -10,10 +12,6 @@ import {
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import { uploadProposalAttachmentForTest } from '../../test/helpers/proposalAttachmentTestUtils';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

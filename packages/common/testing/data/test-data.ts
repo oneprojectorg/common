@@ -11,7 +11,9 @@ import { db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
-export const TEST_USER_DEFAULT_PASSWORD = 'Test_Password_123!';
+import { TEST_USER_DEFAULT_PASSWORD } from '../constants';
+
+export { TEST_USER_DEFAULT_PASSWORD };
 
 export interface GeneratedUser {
   authUserId: string;

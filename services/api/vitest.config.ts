@@ -21,8 +21,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    globalSetup: ['./src/test/globalSetup.ts'],
-    setupFiles: ['./src/test/setup.ts'],
+    globalSetup: ['../../packages/common/testing/globalSetup.ts'],
+    setupFiles: ['../../packages/common/testing/setup.ts'],
     testTimeout: 30_000,
     maxWorkers: process.env.CI ? 1 : 2,
     pool: 'threads',

@@ -8,7 +8,7 @@ export {
   type CreateOrganizationResult,
   type CreateUserOptions,
   type GeneratedUser,
-} from './test-data';
+} from '@op/common/testing/data/test-data';
 
 export {
   createDecisionInstance,
@@ -38,7 +38,7 @@ export {
   type GrantDecisionProfileAccessOptions,
   type GrantInstanceRoleOptions,
   type MakeDecisionPublicOptions,
-} from './decision-data';
+} from '@op/common/testing/data/decision-data';
 
 export {
   addProposalToCategory,
@@ -60,7 +60,7 @@ export {
   type CreateRevisionRequestOptions,
   type EnsuredCategoryTerm,
   type ReviewSettings,
-} from './review-data';
+} from '@op/common/testing/data/review-data';
 
 // Re-export schema types from @op/common for convenience
 export type { DecisionSchemaDefinition, PhaseDefinition } from '@op/common';

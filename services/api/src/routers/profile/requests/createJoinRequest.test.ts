@@ -1,3 +1,6 @@
+import { createIsolatedSession, createTestUser } from '@op/common/testing';
+import { TestJoinProfileRequestDataManager } from '@op/common/testing/helpers/TestJoinProfileRequestDataManager';
+import { TestOrganizationDataManager } from '@op/common/testing/helpers/TestOrganizationDataManager';
 import { db } from '@op/db/client';
 import {
   JoinProfileRequestStatus,
@@ -11,13 +14,7 @@ import {
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-  createTestUser,
-} from '../../../test/supabase-utils';
+import { createTestContextWithSession } from '../../../test/caller';
 import { createCallerFactory } from '../../../trpcFactory';
 import { createJoinRequestRouter } from './createJoinRequest';
 

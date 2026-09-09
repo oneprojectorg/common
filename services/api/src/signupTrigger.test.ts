@@ -1,12 +1,11 @@
+import {
+  createIsolatedTestClient,
+  supabaseTestAdminClient,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-
-import {
-  createIsolatedTestClient,
-  supabaseTestAdminClient,
-} from './test/supabase-utils';
 
 /**
  * Integration coverage for the `create_user_on_signup` trigger's anonymous

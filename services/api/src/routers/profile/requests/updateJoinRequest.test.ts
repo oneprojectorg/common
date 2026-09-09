@@ -1,13 +1,11 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestJoinProfileRequestDataManager } from '@op/common/testing/helpers/TestJoinProfileRequestDataManager';
+import { TestOrganizationDataManager } from '@op/common/testing/helpers/TestOrganizationDataManager';
 import { db } from '@op/db/client';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
+import { createTestContextWithSession } from '../../../test/caller';
 import { createCallerFactory } from '../../../trpcFactory';
 import { updateJoinRequestRouter } from './updateJoinRequest';
 

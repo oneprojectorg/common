@@ -1,5 +1,12 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
 import { PROPOSAL_SEARCH_MAX_LENGTH, RejectionReason } from '@op/common/client';
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import {
+  schemaWithPipeline,
+  schemaWithThreePhases,
+  schemaWithoutPipeline,
+} from '@op/common/testing/helpers/pipelineSchemas';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -19,21 +26,12 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import {
-  schemaWithPipeline,
-  schemaWithThreePhases,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineSchemas';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

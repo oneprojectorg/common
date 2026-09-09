@@ -1,10 +1,8 @@
 import type { AllowedUploadMimeType } from '@op/common';
+import { supabaseTestAdminClient } from '@op/common/testing';
 import { Buffer } from 'node:buffer';
 
-import {
-  createAuthenticatedCaller,
-  supabaseTestAdminClient,
-} from '../supabase-utils';
+import { createAuthenticatedCaller } from '../caller';
 
 type AuthenticatedCaller = Awaited<
   ReturnType<typeof createAuthenticatedCaller>

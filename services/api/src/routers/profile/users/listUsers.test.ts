@@ -1,14 +1,12 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestProfileUserDataManager } from '@op/common/testing/helpers/TestProfileUserDataManager';
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { accessRoles, profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
+import { createTestContextWithSession } from '../../../test/caller';
 import { createCallerFactory } from '../../../trpcFactory';
 import { usersRouter } from './index';
 

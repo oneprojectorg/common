@@ -1,3 +1,9 @@
+import {
+  createIsolatedSession,
+  createIsolatedTestClient,
+  createTestUser,
+  supabaseTestAdminClient,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
@@ -5,13 +11,7 @@ import { randomUUID } from 'node:crypto';
 
 import { appRouter } from '../../../routers';
 import { createCallerFactory } from '../../../trpcFactory';
-import {
-  createIsolatedSession,
-  createIsolatedTestClient,
-  createTestContextWithSession,
-  createTestUser,
-  supabaseTestAdminClient,
-} from '../../supabase-utils';
+import { createTestContextWithSession } from '../../caller';
 
 const createCaller = createCallerFactory(appRouter);
 

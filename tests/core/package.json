@@ -4,9 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./test-data": "./src/test-data.ts",
-    "./decision-data": "./src/decision-data.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

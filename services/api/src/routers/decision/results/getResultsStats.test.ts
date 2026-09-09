@@ -1,3 +1,5 @@
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db } from '@op/db/client';
 import {
   decisionProcessResultSelections,
@@ -7,16 +9,12 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

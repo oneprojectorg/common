@@ -1,5 +1,8 @@
 import { mockCollab } from '@op/collab/testing';
 import { getInstancePhases } from '@op/common';
+import { createIsolatedSession } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
+import { TestReviewsDataManager } from '@op/common/testing/helpers/TestReviewsDataManager';
 import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -12,18 +15,13 @@ import { createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { createTestContextWithSession } from '../../../test/caller';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);

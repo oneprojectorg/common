@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing/helpers/TestDecisionsDataManager';
 import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
@@ -9,8 +10,7 @@ import {
 import { TRPCError } from '@trpc/server';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { createAuthenticatedCaller } from '../../../test/supabase-utils';
+import { createAuthenticatedCaller } from '../../../test/caller';
 
 /**
  * Directly inserts a vote submission + vote proposals join rows for a given

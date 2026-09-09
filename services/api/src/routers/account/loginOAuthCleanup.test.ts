@@ -1,19 +1,19 @@
+import {
+  TEST_USER_DEFAULT_PASSWORD,
+  supabaseTestAdminClient,
+} from '@op/common/testing';
+import {
+  signUpAllowlistedUser,
+  signUpConfirmedUser,
+  signUpNonAllowlistedUser,
+} from '@op/common/testing/helpers/loginTestUtils';
 import { db, eq } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
 import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import {
-  signUpAllowlistedUser,
-  signUpConfirmedUser,
-  signUpNonAllowlistedUser,
-} from '../../test/helpers/loginTestUtils';
-import {
-  TEST_USER_DEFAULT_PASSWORD,
-  createTestContextWithSession,
-  supabaseTestAdminClient,
-} from '../../test/supabase-utils';
+import { createTestContextWithSession } from '../../test/caller';
 import { createCallerFactory } from '../../trpcFactory';
 import { wasCreatedByThisSignIn } from './login';
 
