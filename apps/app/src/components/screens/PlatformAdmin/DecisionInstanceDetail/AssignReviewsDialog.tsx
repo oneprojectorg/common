@@ -82,7 +82,7 @@ export const AssignReviewsDialog = ({
     [eligibleReviewers],
   );
 
-  const assignReviews = trpc.platform.admin.assignReviews.useMutation({
+  const assignReviews = trpc.decision.assignReviews.useMutation({
     onSuccess: ({ createdCount }) => {
       toast.success(
         t(
@@ -92,8 +92,8 @@ export const AssignReviewsDialog = ({
           },
         ),
       );
-      utils.platform.admin.listDecisionReviewAssignments.invalidate({
-        instanceId,
+      utils.decision.listPhaseReviewAssignments.invalidate({
+        processInstanceId: instanceId,
         phaseId,
       });
       setIsOpen(false);
@@ -262,7 +262,7 @@ export const AssignReviewsDialog = ({
                 return;
               }
               assignReviews.mutate({
-                instanceId,
+                processInstanceId: instanceId,
                 phaseId,
                 reviewerProfileId: reviewerId,
                 proposalIds: selectedAssignableIds,

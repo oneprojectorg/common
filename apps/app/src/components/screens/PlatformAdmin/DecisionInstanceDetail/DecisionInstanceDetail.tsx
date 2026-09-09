@@ -1,10 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type {
-  AdminDecisionConfig,
-  AdminDecisionPhase,
-} from '@op/common/client';
+import type { PhaseRules, ProcessInstance } from '@op/api/encoders';
+import { isReviewPhase } from '@op/common/client';
 import { Badge } from '@op/sense/Badge';
 import { Button, buttonVariants } from '@op/sense/Button';
 import {
@@ -19,7 +17,7 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
 import { useFormatter } from 'next-intl';
-import { Suspense, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -27,6 +25,40 @@ import { Link } from '@/lib/i18n/routing';
 
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
+
+/** Phase capability flags, derived from a phase's resolved `rules`. */
+type AdminDecisionPhase = {
+  phaseId: string;
+  name: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  isCurrent: boolean;
+  hasProposals: boolean;
+  hasReviews: boolean;
+  hasVoting: boolean;
+  canEditProposals: boolean;
+  canEditVotes: boolean;
+  /** Null = no limit. */
+  maxVotesPerMember: number | null;
+  proposalsHiddenByDefault: boolean;
+  /** 'date' | 'manual' | null when unset. */
+  advancementMethod: string | null;
+};
+
+/** Process-level configuration toggles surfaced to platform admins. */
+type AdminDecisionConfig = {
+  isPrivate: boolean;
+  hideBudget: boolean;
+  hasProposalTemplate: boolean;
+  hasRubric: boolean;
+  reviewsAllowRevisions: boolean;
+  reviewsAnonymousFeedback: boolean;
+  requireCategorySelection: boolean;
+  allowMultipleCategories: boolean;
+  organizeByCategories: boolean;
+  requireCollaborativeProposals: boolean;
+  categoriesCount: number;
+};
 
 const STATUS_DISPLAY: Record<string, string> = {
   draft: 'Draft',
@@ -55,9 +87,10 @@ const DecisionInstanceDetailContent = ({
 }) => {
   const t = useTranslations();
   const format = useFormatter();
-  const [detail] = trpc.platform.admin.getDecisionInstance.useSuspenseQuery({
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
     instanceId,
   });
+  const detail = useMemo(() => toAdminDetail(instance), [instance]);
 
   const createdAt = detail.createdAt ? new Date(detail.createdAt) : null;
 
@@ -160,6 +193,76 @@ const DecisionInstanceDetailContent = ({
       </Tabs>
     </div>
   );
+};
+
+/**
+ * The admin drill-down's read model, derived from the standard instance
+ * response. `getInstance` returns the stored shapes; the flags below are the
+ * same resolution the decision engine applies when it reads a phase's rules.
+ */
+const toAdminDetail = (instance: ProcessInstance) => {
+  const { config, phases, templateName, templateVersion } =
+    instance.instanceData;
+
+  // Instance rules win; fall back to the process schema definition (older
+  // instances don't copy every rule into instanceData).
+  const schemaRulesByPhaseId = new Map<string, PhaseRules>(
+    (instance.process?.processSchema.phases ?? []).map((phase) => [
+      phase.id,
+      phase.rules,
+    ]),
+  );
+
+  const adminPhases: AdminDecisionPhase[] = (phases ?? []).map((phase) => {
+    const rules = phase.rules ?? schemaRulesByPhaseId.get(phase.phaseId);
+
+    return {
+      phaseId: phase.phaseId,
+      name: phase.name ?? null,
+      startDate: phase.startDate ?? null,
+      endDate: phase.endDate ?? null,
+      isCurrent: phase.phaseId === instance.currentStateId,
+      hasProposals: rules?.proposals?.submit ?? false,
+      hasReviews: isReviewPhase({ rules }),
+      hasVoting: rules?.voting?.submit ?? false,
+      canEditProposals: rules?.proposals?.edit ?? false,
+      canEditVotes: rules?.voting?.edit ?? false,
+      maxVotesPerMember: rules?.voting?.maxVotesPerMember ?? null,
+      proposalsHiddenByDefault: rules?.proposals?.defaults?.hidden ?? false,
+      advancementMethod: rules?.advancement?.method ?? null,
+    };
+  });
+
+  const adminConfig: AdminDecisionConfig = {
+    isPrivate: config?.isPrivate ?? false,
+    hideBudget: config?.hideBudget ?? false,
+    hasProposalTemplate: instance.instanceData.proposalTemplate != null,
+    hasRubric: instance.instanceData.rubricTemplate != null,
+    // Unset resolves to on (getPhaseReviewSettings); display must match.
+    reviewsAllowRevisions: config?.reviewsAllowRevisions ?? true,
+    reviewsAnonymousFeedback: config?.reviewsAnonymousFeedback ?? true,
+    requireCategorySelection: config?.requireCategorySelection ?? false,
+    allowMultipleCategories: config?.allowMultipleCategories ?? false,
+    organizeByCategories: config?.organizeByCategories ?? false,
+    requireCollaborativeProposals:
+      config?.requireCollaborativeProposals ?? false,
+    categoriesCount: config?.categories?.length ?? 0,
+  };
+
+  return {
+    name: instance.name,
+    slug: instance.slug ?? null,
+    status: instance.status,
+    createdAt: instance.createdAt,
+    owner: instance.owner ?? null,
+    steward: instance.steward ?? null,
+    reviewsPolicy: config?.reviewsPolicy ?? null,
+    processType: templateName ?? instance.process?.name ?? null,
+    templateVersion: templateVersion ?? null,
+    config: adminConfig,
+    instanceData: instance.instanceData,
+    phases: adminPhases,
+  };
 };
 
 const MetaItem = ({ label, value }: { label: string; value: string }) => {
