@@ -9,7 +9,8 @@
  *   1. Access control zones, roles, and permissions.
  *   2. A default "One Project" organization + profile.
  *   3. onboardedAt backfill for admin users (prevents the /start redirect loop).
- *   4. Admin-user linkage to the default organization, with the Admin role.
+ *   4. The Platform Admin role, granted to admin users at the user level.
+ *   5. Admin-user linkage to the default organization, with the Admin role.
  *
  * Idempotent: every step uses onConflictDoNothing or existence checks, so the
  * script is safe to re-run on every api container start.
@@ -29,6 +30,10 @@ import {
   organizationUsers,
 } from './schema/tables/organizationUsers.sql';
 import { organizations } from './schema/tables/organizations.sql';
+import {
+  profileUserToAccessRoles,
+  profileUsers,
+} from './schema/tables/profileUsers.sql';
 import { profiles } from './schema/tables/profiles.sql';
 import { users } from './schema/tables/users.sql';
 import { seedGlobalUsers } from './seed-global-users';
@@ -36,6 +41,7 @@ import {
   ACCESS_ROLES,
   ACCESS_ROLE_PERMISSIONS,
   ACCESS_ZONES,
+  ROLES,
 } from './seedData/accessControl';
 import { decisionTemplates } from './seedData/decisionTemplates';
 
@@ -138,7 +144,7 @@ for (const template of Object.values(decisionTemplates)) {
 }
 
 // ---------------------------------------------------------------------------
-// Admin users: backfill onboardedAt + link to default org as Admin
+// Admin users: backfill onboardedAt + Platform Admin, link to default org as Admin
 // ---------------------------------------------------------------------------
 if (adminEmails.length === 0) {
   await db.$client.end();
@@ -160,6 +166,42 @@ if (backfilled.length > 0) {
   );
 }
 
+const existingAdmins = await db._query.users.findMany({
+  where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
+  columns: { authUserId: true, email: true },
+});
+
+// A user-level grant is a role row on the holder's own individual-profile
+// membership, which the signup trigger creates. Same row shape as
+// grantPlatformAdmin in @op/common, written here because services/db cannot
+// import it. Without this a fresh local DB 404s on /admin for every dev.
+const adminMemberships = await db
+  .select({ profileUserId: profileUsers.id })
+  .from(users)
+  .innerJoin(
+    profileUsers,
+    and(
+      eq(profileUsers.profileId, users.profileId),
+      eq(profileUsers.authUserId, users.authUserId),
+    ),
+  )
+  .where(inArray(users.email, [...adminEmails]));
+
+if (adminMemberships.length > 0) {
+  await db
+    .insert(profileUserToAccessRoles)
+    .values(
+      adminMemberships.map(({ profileUserId }) => ({
+        profileUserId,
+        accessRoleId: ROLES.PLATFORM_ADMIN.id,
+      })),
+    )
+    .onConflictDoNothing();
+
+  // Count only: the emails are personal data and this runs in CI logs.
+  console.log(`Granted Platform Admin to ${adminMemberships.length} user(s)`);
+}
+
 const adminRole = await db._query.accessRoles.findFirst({
   where: (t, { eq, and, isNull }) =>
     and(eq(t.name, 'Admin'), isNull(t.profileId)),
@@ -170,11 +212,6 @@ if (!adminRole) {
     'Admin role not found — access-control seed above should have created it',
   );
 }
-
-const existingAdmins = await db._query.users.findMany({
-  where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
-  columns: { authUserId: true, email: true },
-});
 
 let linkedCount = 0;
 for (const admin of existingAdmins) {
