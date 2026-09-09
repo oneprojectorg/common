@@ -39,9 +39,9 @@ export interface CreateOrganizationOptions {
   /** Email domain for generated users */
   emailDomain?: string;
   /**
-   * Grant the Platform Admin role. Defaults to the network-domain admins only:
-   * granting it to members would give them admin rights in their own
-   * organization and mask the membership gates the tests check.
+   * Grant the Platform Admin role to every user created here. Off unless asked
+   * for: the role ORs its permissions into each membership its holder has, so
+   * granting it by default would mask the membership gates the tests check.
    */
   isPlatformAdmin?: boolean;
 }
@@ -69,11 +69,8 @@ export interface CreateUserOptions {
   isPlatformAdmin?: boolean;
 }
 
-/** Test users on this domain stand in for One Project staff. */
+/** Test users on this domain stand in for One Project staff (in-network). */
 export const TEST_PLATFORM_ADMIN_DOMAIN = 'oneproject.org';
-
-export const isTestPlatformAdminEmail = (email: string): boolean =>
-  email.toLowerCase().endsWith(`@${TEST_PLATFORM_ADMIN_DOMAIN}`);
 
 /**
  * Grants the seeded Platform Admin role to an existing test user: a role row
@@ -241,9 +238,7 @@ export async function createOrganization(
     const authUser = await createUser({
       supabaseAdmin,
       email,
-      isPlatformAdmin:
-        isPlatformAdmin ??
-        (role === 'Admin' && isTestPlatformAdminEmail(email)),
+      isPlatformAdmin,
     });
 
     createdIds.authUserIds.push(authUser.id);

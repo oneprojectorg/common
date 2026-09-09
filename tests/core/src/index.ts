@@ -4,7 +4,6 @@ export {
   createUser,
   generateTestEmail,
   grantTestPlatformAdmin,
-  isTestPlatformAdminEmail,
   TEST_PLATFORM_ADMIN_DOMAIN,
   TEST_USER_DEFAULT_PASSWORD,
   type CreateOrganizationOptions,
