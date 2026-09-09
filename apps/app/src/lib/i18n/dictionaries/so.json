@@ -1754,5 +1754,9 @@
   "Your Privacy": "Asturnaantaada",
   "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Waxaan isticmaalnaa cookies lagama maarmaan ah si Common u shaqeeyo, iyo cookies falanqayn si aan u fahanno sida madasha loo isticmaalo. Akhri <privacy>Siyaasadda Asturnaanta</privacy> iyo <terms>Shuruudaha Isticmaalka</terms> si aad wax badan u ogaato.",
   "A code was sent to {phone}. Type the code below to create your profile.": "Furaha waxaa loo diray {phone}. Ku qor furaha hoose si aad u abuurto profilekaaga.",
-  "An account with this phone number already exists. Try logging in instead.": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho."
+  "An account with this phone number already exists. Try logging in instead.": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho.",
+  "Sign up with": "Ku diiwaangeli",
+  "Email me a code": "Iimayl iigu soo dir kood",
+  "Text me a code": "Fariin qoraal ah iigu soo dir kood",
+  "We'll email you a code to confirm it's yours.": "Waxaan kuugu soo diri doonaa kood iimaylka si aan u xaqiijinno inuu kaaga yahay."
 }

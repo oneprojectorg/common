@@ -1754,5 +1754,9 @@
   "Your Privacy": "আপনার গোপনীয়তা",
   "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Common চালু রাখতে আমরা অপরিহার্য কুকি ব্যবহার করি, আর প্ল্যাটফর্মটি কীভাবে ব্যবহৃত হয় তা বুঝতে বিশ্লেষণী কুকি ব্যবহার করি। আরও জানতে আমাদের <privacy>গোপনীয়তা নীতি</privacy> ও <terms>ব্যবহারের শর্তাবলী</terms> পড়ুন।",
   "A code was sent to {phone}. Type the code below to create your profile.": "{phone}-এ একটি কোড পাঠানো হয়েছে। আপনার প্রোফাইল তৈরি করতে নীচে কোডটি টাইপ করুন।",
-  "An account with this phone number already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।"
+  "An account with this phone number already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
+  "Sign up with": "যা দিয়ে সাইন আপ করবেন",
+  "Email me a code": "আমাকে ইমেইলে একটি কোড পাঠান",
+  "Text me a code": "আমাকে টেক্সটে একটি কোড পাঠান",
+  "We'll email you a code to confirm it's yours.": "এটি আপনার কিনা নিশ্চিত করতে আমরা আপনাকে ইমেইলে একটি কোড পাঠাব।"
 }

@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
@@ -303,24 +304,76 @@ const JoinAccountModalContent = () => {
           />
         ) : (
           <>
-            {isPhone ? (
-              <AuthPhoneField
-                label={t('Phone number')}
-                description={t(
-                  'We text you a code. Standard message and data rates may apply.',
-                )}
-                value={phone}
-                isDisabled={isSubmitting}
-                onChange={setPhone}
-                onSubmit={() => {
-                  void submitContact();
+            {smsEnabled ? (
+              <Tabs
+                value={activeChannel}
+                onValueChange={(next) => {
+                  if (next !== activeChannel) {
+                    switchChannel();
+                  }
                 }}
-              />
+              >
+                <span id="join-channel-label" className="text-label">
+                  {t('Sign up with')}
+                </span>
+                {/* TabsList is `w-fit`; the design splits the full width. */}
+                <TabsList
+                  className="w-full"
+                  aria-labelledby="join-channel-label"
+                >
+                  <TabsTrigger
+                    value="email"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    {t('Email')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="phone"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    {t('Phone number')}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="email">
+                  <AuthEmailField
+                    label={t('Email')}
+                    // The design says "We'll email a link"; we send a
+                    // six-digit code, so the copy says code.
+                    description={t(
+                      "We'll email you a code to confirm it's yours.",
+                    )}
+                    // Example-email placeholders are deliberately untranslated.
+                    placeholder="name@example.com"
+                    value={email}
+                    isDisabled={isSubmitting}
+                    onChange={setEmail}
+                    onSubmit={() => {
+                      void submitContact();
+                    }}
+                  />
+                </TabsContent>
+                <TabsContent value="phone">
+                  <AuthPhoneField
+                    label={t('Phone number')}
+                    description={t(
+                      'We text you a code. Standard message and data rates may apply.',
+                    )}
+                    value={phone}
+                    isDisabled={isSubmitting}
+                    onChange={setPhone}
+                    onSubmit={() => {
+                      void submitContact();
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
             ) : (
               <AuthEmailField
                 label={t('Email')}
-                // Example-email placeholders are deliberately untranslated.
-                placeholder="your@email.com"
+                description={t("We'll email you a code to confirm it's yours.")}
+                placeholder="name@example.com"
                 value={email}
                 isDisabled={isSubmitting}
                 onChange={setEmail}
@@ -329,18 +382,6 @@ const JoinAccountModalContent = () => {
                 }}
               />
             )}
-            {smsEnabled ? (
-              <Button
-                variant="link"
-                className="self-start p-0"
-                onClick={switchChannel}
-                disabled={isSubmitting}
-              >
-                {isPhone
-                  ? t('Use an email address instead')
-                  : t('Use a phone number instead')}
-              </Button>
-            ) : null}
             <p className="text-muted-foreground">
               {t.rich('Already have an account? <login>Log in</login>', {
                 login: (chunks: ReactNode) => (
@@ -380,7 +421,7 @@ const JoinAccountModalContent = () => {
               void submitContact();
             }}
           >
-            {t('Join')}
+            {isPhone ? t('Text me a code') : t('Email me a code')}
           </Button>
         )}
       </DialogFooter>

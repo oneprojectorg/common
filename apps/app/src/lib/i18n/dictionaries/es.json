@@ -1754,5 +1754,9 @@
   "Your Privacy": "Tu privacidad",
   "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Usamos cookies esenciales para que Common funcione, y cookies de analítica para entender cómo se usa la plataforma. Lee nuestra <privacy>Política de privacidad</privacy> y nuestros <terms>Términos de uso</terms> para saber más.",
   "A code was sent to {phone}. Type the code below to create your profile.": "Se envió un código a {phone}. Escribe el código a continuación para crear tu perfil.",
-  "An account with this phone number already exists. Try logging in instead.": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión."
+  "An account with this phone number already exists. Try logging in instead.": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión.",
+  "Sign up with": "Regístrate con",
+  "Email me a code": "Envíame un código por correo",
+  "Text me a code": "Envíame un código por mensaje",
+  "We'll email you a code to confirm it's yours.": "Te enviaremos un código por correo para confirmar que es tuyo."
 }
