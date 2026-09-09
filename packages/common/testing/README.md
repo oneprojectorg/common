@@ -2,6 +2,19 @@
 
 This directory holds the harness for running integration tests with Vitest against an **isolated test Supabase instance**. It is published as `@op/common/testing` so `packages/common`, `services/api` and `services/workflows` can all use it.
 
+## Naming rule
+
+|                | Unit                     | Integration                       |
+| -------------- | ------------------------ | --------------------------------- |
+| File           | `<name>.unit.test.ts`    | `<name>.test.ts`                  |
+| Infrastructure | none                     | test Supabase on 55321/55322      |
+| Vitest project | `unit`                   | `integration`                     |
+
+The unmarked file is the integration test, so a forgotten `.unit` marker sends a
+file to the integration project — slow, but correct. The rule applies to the
+three packages that wire this harness: `packages/common`, `services/api` and
+`services/workflows`.
+
 ## Isolated Test Environment
 
 The test setup uses a **separate Supabase instance** running on different ports:

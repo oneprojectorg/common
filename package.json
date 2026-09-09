@@ -32,7 +32,7 @@
     "format:changes": "git diff --name-only --diff-filter=ACM | xargs pnpx oxfmt",
     "format:check": "turbo format:check",
     "start:e2e": "node ./scripts/ensure-e2e-redis.mjs && cross-env E2E=true INNGEST_DEV=1 REDIS_URL=redis://127.0.0.1:6380 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:56321 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:56322/postgres S3_ASSET_ROOT=http://127.0.0.1:56321/storage/v1/object/public/assets TIPTAP_SECRET=e2e NEXT_PUBLIC_TIPTAP_APP_ID=e2e turbo start:e2e",
-    "test": "turbo test",
+    "test": "turbo test:unit && turbo test:integration --concurrency=1",
     "test:check-supabase": "pnpm w:common test:check-supabase",
     "test:db:reset": "pnpm w:common test:db:reset",
     "test:supabase:start": "pnpm w:common test:supabase:start",

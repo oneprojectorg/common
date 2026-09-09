@@ -28,6 +28,8 @@
     },
     "format:check": {},
     "test": {},
+    "test:unit": {},
+    "test:integration": {},
     "dev": {
       "cache": false,
       "persistent": true

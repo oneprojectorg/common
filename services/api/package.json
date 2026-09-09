@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:check-supabase": "tsx ../../packages/common/testing/check-supabase.ts",
     "test:db:reset": "tsx ../../packages/common/testing/supabase-test.ts reset && pnpm --dir ../db migrate:test",
+    "test:integration": "vitest run",
     "test:supabase:start": "tsx ../../packages/common/testing/supabase-test.ts start",
     "test:supabase:status": "tsx ../../packages/common/testing/supabase-test.ts status",
     "test:supabase:stop": "tsx ../../packages/common/testing/supabase-test.ts stop",
