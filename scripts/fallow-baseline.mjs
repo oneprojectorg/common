@@ -12,12 +12,14 @@
  *   health-snapshot.json  vital signs — including the CRAP columns — consumed
  *                         by `--trend`
  *
- * Plus one of ours, because fallow has no equivalent:
+ * Plus one of ours, because fallow aggregates CRAP nowhere:
  *
- *   crap-baseline.json    every file's `crap_max`, so `pnpm health` can name
- *                         the files a change pushed up. Fallow's own baseline
- *                         tracks complexity findings, which do not move when a
- *                         change deletes the tests around a function.
+ *   crap-trend.json       scope-wide CRAP aggregates, so `pnpm health` can show
+ *                         a delta. Aggregates only: `pnpm health` gates on the
+ *                         files a change touched, which needs no committed
+ *                         per-file record, and a committed per-file record has
+ *                         to be rewritten from a full instrumented run every
+ *                         time anyone improves anything.
  *
  * `--trend` only ever reads `.fallow/snapshots/`, which is gitignored working
  * state, so the committed snapshot is staged into that directory first. Local
@@ -36,7 +38,7 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { collectCrap, writeCrapBaseline } from './lib/fallow-crap.mjs';
+import { collectCrap, writeCrapTrend } from './lib/fallow-crap.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const COVERAGE = join(ROOT, 'coverage', 'coverage-final.json');
@@ -132,7 +134,7 @@ fallow([
 ]);
 
 const { files, report } = collectCrap();
-writeCrapBaseline(files, report);
+writeCrapTrend(files, report);
 
 console.log(`\nBaseline written to configs/fallow/. Commit it so \`pnpm health:trend\` compares
 everyone against the same starting point.`);
