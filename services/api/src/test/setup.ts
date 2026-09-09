@@ -75,12 +75,8 @@ vi.mock('@op/events', async () => {
   };
 });
 
-// Mock @op/core to return test environment values.
-//
-// Platform admin is no longer mockable here: it is a flag on the `users` row
-// (docs/adr/0005-store-platform-admin-as-a-users-flag.md), so test users are
-// seeded with it at creation time instead — see `createUser` /
-// `setTestPlatformAdmin` in `@op/test` (tests/core/src/test-data.ts).
+// Mock @op/core to return test environment values. Platform admin is a `users`
+// column now, so test users are seeded with it in `@op/test` instead of mocked.
 vi.mock('@op/core', async () => {
   const actual = await vi.importActual('@op/core');
   return {

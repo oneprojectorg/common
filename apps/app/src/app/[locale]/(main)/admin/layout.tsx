@@ -10,8 +10,7 @@ export default async function AdminLayout({
   const client = await createClient();
   const user = await client.account.getMyAccount();
 
-  // 404 rather than 403: the admin area is not advertised to anyone who
-  // can't use it.
+  // 404, not 403: the admin area isn't advertised to anyone who can't use it.
   if (!user?.isPlatformAdmin) {
     notFound();
   }

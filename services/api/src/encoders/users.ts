@@ -72,18 +72,11 @@ export const userEncoder = createSelectSchema(users)
     currentProfileId: true,
     tos: true,
     privacy: true,
+    // Platform-wide grant; distinct from any org-level `Admin` access role.
+    isPlatformAdmin: true,
     createdAt: true,
   })
   .extend({
-    // Platform-wide superuser flag — the admin layout gates on it. Distinct
-    // from any org-level `Admin` access role.
-    //
-    // Defaulted rather than picked off the table so a `user` cache entry
-    // written before the column existed still parses: those entries live for
-    // 72h, and a required field here would break every account load until they
-    // expired. `getMyAccount` overrides it with the authoritative read, so the
-    // default is only ever the fallback for a stale cached row.
-    isPlatformAdmin: z.boolean().default(false),
     onboardedAt: z.string().nullish(),
     tosAcceptedOn: z.string().nullish(),
     privacyAcceptedOn: z.string().nullish(),

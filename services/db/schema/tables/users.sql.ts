@@ -47,11 +47,7 @@ export const users = pgTable(
     }),
     tos: boolean(),
     privacy: boolean(),
-    // Platform-wide superuser: grants access to /admin and every
-    // `withAuthenticatedPlatformAdmin` procedure. Distinct from the org-level
-    // `Admin` access role, which is scoped to one organization. Read-only to
-    // the application — granted and revoked by an operator with database
-    // access — see `docs/adr/0005-store-platform-admin-as-a-users-flag.md`.
+    // Platform-wide grant, set only by an operator's SQL. See ADR 0005.
     isPlatformAdmin: boolean().default(false).notNull(),
     // When the user accepted the current Terms of Use / Privacy Policy. Null
     // until they accept the latest version; stamped whenever `tos` / `privacy`

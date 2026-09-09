@@ -157,9 +157,7 @@ for (const email of adminEmails) {
           authUserId: authUser.id,
           email: authUser.email!,
           name: authUser.user_metadata?.name || null,
-          // Local dev admins need to reach /admin. In production the flag is
-          // granted from the Platform Admin screen; see
-          // docs/adr/0005-store-platform-admin-as-a-users-flag.md.
+          // Local dev admins need to reach /admin.
           isPlatformAdmin: true,
         })
         .onConflictDoUpdate({

@@ -5,7 +5,6 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
-import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   DropdownMenu,
@@ -84,13 +83,6 @@ export const UsersRowCells = ({ user }: { user: User }) => {
           >
             {relativeLastSignIn}
           </TimestampTooltip>
-        ) : (
-          '—'
-        )}
-      </TableCell>
-      <TableCell className="text-sm font-normal text-foreground">
-        {user.isPlatformAdmin ? (
-          <Badge variant="secondary">{t('Yes')}</Badge>
         ) : (
           '—'
         )}

@@ -86,11 +86,8 @@ export async function createTestContextWithSession(
 }
 
 /**
- * Create a test user and return the user object.
- *
- * Seeds `users.is_platform_admin` for network-domain addresses, matching what
- * the removed `platformAdminEmails` mock in `setup.ts` used to fake — see
- * `isTestPlatformAdminEmail` in `@op/test`. Pass `isPlatformAdmin` to override.
+ * Create a test user and return the user object. Seeds
+ * `users.is_platform_admin` for network-domain addresses.
  */
 export async function createTestUser(
   email: string,

@@ -35,10 +35,7 @@ export interface CreateOrganizationOptions {
   organizationName?: string;
   /** Email domain for generated users */
   emailDomain?: string;
-  /**
-   * Seed `users.is_platform_admin` on every created user. Defaults to
-   * {@link isTestPlatformAdminEmail} for the generated address.
-   */
+  /** Seed `users.is_platform_admin`. Defaults to the email's domain. */
   isPlatformAdmin?: boolean;
 }
 
@@ -61,30 +58,17 @@ export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
-  /**
-   * Whether to seed `users.is_platform_admin`. Defaults to
-   * {@link isTestPlatformAdminEmail} for the user's email.
-   */
+  /** Seed `users.is_platform_admin`. Defaults to the email's domain. */
   isPlatformAdmin?: boolean;
 }
 
-/**
- * The network domain whose test users are seeded as platform admins.
- *
- * Platform admin used to be an email allowlist in `@op/core`, and
- * `services/api/src/test/setup.ts` mocked it so that every `@oneproject.org`
- * address counted as one. It is now a flag on the `users` row
- * (`docs/adr/0005-store-platform-admin-as-a-users-flag.md`), which a mock
- * cannot fake — so the flag is written when the user is created, keeping the
- * same rule the mock encoded. Pass `isPlatformAdmin` explicitly to opt out (or
- * in, for a non-network domain).
- */
+/** Test users on this domain are seeded as platform admins. */
 export const TEST_PLATFORM_ADMIN_DOMAIN = 'oneproject.org';
 
 export const isTestPlatformAdminEmail = (email: string): boolean =>
   email.toLowerCase().endsWith(`@${TEST_PLATFORM_ADMIN_DOMAIN}`);
 
-/** Sets `users.is_platform_admin` for an already-created test user. */
+/** Sets `users.is_platform_admin` on an existing test user. */
 export async function setTestPlatformAdmin(
   authUserId: string,
   isPlatformAdmin = true,

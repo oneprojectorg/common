@@ -8,14 +8,7 @@ import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
-/**
- * Middleware to ensure the user is authenticated and is a platform admin.
- *
- * `isPlatformAdmin` is the read-through variant on purpose: the flag is only
- * ever changed by an operator's SQL, so a cache entry here could keep admitting
- * a revoked admin with nothing able to clear it. Use `isPlatformAdminCached`
- * only for presentational reads.
- */
+/** Ensures the caller is authenticated and holds the platform admin grant. */
 export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   TContextWithUser
 > = async ({ ctx, next }) => {
@@ -23,16 +16,13 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
 
   const user = verifyAuthentication(data);
 
-  // An auth identity with no id can't carry a platform grant — the flag lives
-  // on the `users` row keyed by it.
   if (!user.id) {
     throw new AccessTierError('anon');
   }
 
   const isAdmin = await isPlatformAdmin({ authUserId: user.id });
 
-  // Admin membership is authorization: the caller is authenticated (past the
-  // gate) but is not permitted to use this admin endpoint.
+  // Authenticated (past the gate), but not permitted to use this endpoint.
   if (!isAdmin) {
     throw new UnauthorizedError('Platform admin access required');
   }

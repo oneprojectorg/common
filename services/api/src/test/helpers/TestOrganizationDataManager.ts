@@ -23,12 +23,7 @@ interface GenerateTestOrganizationOptions {
   };
   organizationName?: string;
   emailDomain?: string;
-  /**
-   * Seed `users.is_platform_admin` on every created user. Defaults to whether
-   * the generated address is on the network domain — the rule the removed
-   * `platformAdminEmails` mock encoded. Set `false` to create org admins that
-   * are *not* platform admins on the network domain.
-   */
+  /** Seed `users.is_platform_admin`. Defaults to the email's domain. */
   isPlatformAdmin?: boolean;
 }
 

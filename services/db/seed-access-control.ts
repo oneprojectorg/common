@@ -160,9 +160,7 @@ if (backfilled.length > 0) {
   );
 }
 
-// Platform admin is a `users` flag, not an allowlist in code
-// (docs/adr/0005-store-platform-admin-as-a-users-flag.md), so a fresh local DB
-// needs it set or /admin 404s for every dev.
+// Without this a fresh local DB 404s on /admin for every dev.
 const platformAdmins = await db
   .update(users)
   .set({ isPlatformAdmin: true })
@@ -174,7 +172,7 @@ const platformAdmins = await db
   )
   .returning({ authUserId: users.authUserId });
 
-// Count only — the emails are personal data and this runs in CI logs.
+// Count only: the emails are personal data and this runs in CI logs.
 if (platformAdmins.length > 0) {
   console.log(`Granted platform admin to ${platformAdmins.length} user(s)`);
 }
