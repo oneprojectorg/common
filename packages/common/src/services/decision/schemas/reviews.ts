@@ -9,7 +9,7 @@ import { logger } from '@op/logging';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { list } from '../../../utils/pagination';
+import { list, paginated, total } from '../../../utils/pagination';
 import type { RubricTemplateSchema } from '../types';
 import {
   instanceOptionalPhaseRefSchema,
@@ -136,11 +136,11 @@ export const reviewAssignmentExtendedSchema = z.object({
   canEditReview: z.boolean(),
 });
 
-export const reviewAssignmentListSchema = z.object({
-  assignments: z.array(reviewAssignmentExtendedSchema),
-  next: z.string().nullable(),
+export const reviewAssignmentListSchema = paginated(
+  reviewAssignmentExtendedSchema,
+).extend({
   /** Count for the request's filters, independent of the page. */
-  total: z.number().int(),
+  total,
 });
 
 // ── Proposal-scoped revision request schemas ──────────────────────────

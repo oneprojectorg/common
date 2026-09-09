@@ -6,6 +6,7 @@ import {
   MERGE_NOTE_MAX_LENGTH,
   PAGE_LIMIT,
   type Proposal,
+  nextCursor,
 } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { logger } from '@op/logging/client';
@@ -525,6 +526,7 @@ function useMergeCandidateSearch({
   );
 
   const untitledLabel = t('Untitled Proposal');
+  const matchingProposals = query.data?.items;
   const results = useMemo(
     () =>
       // `placeholderData` outlives both a cleared field and a failed refetch,
@@ -533,18 +535,12 @@ function useMergeCandidateSearch({
       // rendering `ComboboxEmpty`, where the error message lives.
       hasQuery && !query.isError
         ? getMergeCandidates({
-            proposals: query.data?.proposals ?? [],
+            proposals: matchingProposals ?? [],
             sourceProposalId: proposal.id,
             untitledLabel,
           })
         : [],
-    [
-      hasQuery,
-      query.isError,
-      query.data?.proposals,
-      proposal.id,
-      untitledLabel,
-    ],
+    [hasQuery, query.isError, matchingProposals, proposal.id, untitledLabel],
   );
 
   return {
@@ -625,7 +621,7 @@ function MergeCandidateListSuspense({
         limit: PAGE_LIMIT.lg,
       },
       {
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        getNextPageParam: nextCursor,
         staleTime: 30 * 1000,
       },
     );
@@ -634,7 +630,7 @@ function MergeCandidateListSuspense({
   const candidates = useMemo(
     () =>
       getMergeCandidates({
-        proposals: paginatedData.pages.flatMap((page) => page.proposals),
+        proposals: paginatedData.pages.flatMap((page) => page.items),
         sourceProposalId: proposal.id,
         untitledLabel,
       }),

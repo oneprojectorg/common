@@ -79,11 +79,11 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
     expect(result.total).toBe(2);
-    expect(result.hasMore).toBe(false);
+    expect(result.next).toBeNull();
 
-    const proposalIds = result.proposals.map((p) => p.id);
+    const proposalIds = result.items.map((p) => p.id);
     expect(proposalIds).toContain(proposal1.id);
     expect(proposalIds).toContain(proposal2.id);
   });
@@ -192,7 +192,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const myProposal = result.proposals.find((p) => p.id === proposal.id);
+    const myProposal = result.items.find((p) => p.id === proposal.id);
     expect(myProposal?.isEditable).toBe(true);
   });
 
@@ -252,8 +252,8 @@ describe.concurrent('listProposals', () => {
     });
 
     // Non-admin should only see visible proposal
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(visibleProposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(visibleProposal.id);
   });
 
   it('should show hidden proposals to admin users', async ({
@@ -312,7 +312,7 @@ describe.concurrent('listProposals', () => {
     });
 
     // Admin should see both proposals (including member's hidden proposal)
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
   });
 
   it('shows rejected proposals to admins and non-admins alike', async ({
@@ -373,9 +373,9 @@ describe.concurrent('listProposals', () => {
     // two proposals, and the rejected one carries its status so the card can
     // badge it.
     for (const result of [memberResult, adminResult]) {
-      expect(result.proposals).toHaveLength(2);
+      expect(result.items).toHaveLength(2);
       expect(
-        result.proposals.find((p) => p.id === rejectedProposal.id)?.status,
+        result.items.find((p) => p.id === rejectedProposal.id)?.status,
       ).toBe(ProposalStatus.REJECTED);
     }
   });
@@ -420,8 +420,8 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals.map((p) => p.id)).toEqual([rejectedProposal.id]);
-    expect(result.proposals[0]?.status).toBe(ProposalStatus.REJECTED);
+    expect(result.items.map((p) => p.id)).toEqual([rejectedProposal.id]);
+    expect(result.items[0]?.status).toBe(ProposalStatus.REJECTED);
   });
 
   it('keeps a rejected proposal in its own phase but out of later phases and the review read', async ({
@@ -486,14 +486,14 @@ describe.concurrent('listProposals', () => {
 
     // It stays a record where it lived: the rejection happened in `submission`,
     // and that phase's list still carries it.
-    expect(submissionPhase.proposals.map((p) => p.id)).toContain(
+    expect(submissionPhase.items.map((p) => p.id)).toContain(
       rejectedProposal.id,
     );
 
     // Rejected proposals are dropped when the advance snapshot is written, so
     // `review` never receives it — the pipeline exclusion this change must not
     // weaken. The kept proposal proves the snapshot itself worked.
-    expect(reviewPhase.proposals.map((p) => p.id)).toEqual([keptProposal.id]);
+    expect(reviewPhase.items.map((p) => p.id)).toEqual([keptProposal.id]);
     expect(reviewAggregates.items.map((item) => item.proposal.id)).toEqual([
       keptProposal.id,
     ]);
@@ -538,9 +538,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('should show hidden proposals to their owners', async ({
@@ -583,9 +583,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 
   it('should show hidden proposals to invited collaborators on the proposal profile', async ({
@@ -660,9 +660,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 
   it('should support cursor pagination with limit and next', async ({
@@ -704,9 +704,8 @@ describe.concurrent('listProposals', () => {
       limit: 2,
     });
 
-    expect(page1.proposals).toHaveLength(2);
+    expect(page1.items).toHaveLength(2);
     expect(page1.total).toBe(3);
-    expect(page1.hasMore).toBe(true);
     expect(page1.next).not.toBeNull();
 
     // Second page, following the cursor
@@ -716,14 +715,13 @@ describe.concurrent('listProposals', () => {
       cursor: page1.next,
     });
 
-    expect(page2.proposals).toHaveLength(1);
+    expect(page2.items).toHaveLength(1);
     expect(page2.total).toBe(3);
-    expect(page2.hasMore).toBe(false);
     expect(page2.next).toBeNull();
 
     // Pages must not overlap.
-    const page1Ids = page1.proposals.map((p) => p.id);
-    expect(page1Ids).not.toContain(page2.proposals[0]?.id);
+    const page1Ids = page1.items.map((p) => p.id);
+    expect(page1Ids).not.toContain(page2.items[0]?.id);
   });
 
   it('should return parsed proposalData with correct structure for new and legacy proposals', async ({
@@ -765,12 +763,10 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const newFormat = result.proposals.find(
-      (p) => p.id === newFormatProposal.id,
-    );
-    const legacy = result.proposals.find((p) => p.id === legacyProposal.id);
+    const newFormat = result.items.find((p) => p.id === newFormatProposal.id);
+    const legacy = result.items.find((p) => p.id === legacyProposal.id);
 
     // New format proposal should have title and API-generated collaborationDocId
     expect(newFormat?.proposalData).toMatchObject({
@@ -804,9 +800,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
     expect(result.total).toBe(0);
-    expect(result.hasMore).toBe(false);
+    expect(result.next).toBeNull();
   });
 
   it('should throw error when user does not have access to instance', async ({
@@ -889,7 +885,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    const foundProposal = result.items.find((p) => p.id === proposal.id);
     expect(foundProposal?.previewText).toBe('This is rich content');
     // List rows ship the precomputed preview instead of the full content.
     expect(foundProposal?.documentContent).toBeUndefined();
@@ -940,7 +936,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    const foundProposal = result.items.find((p) => p.id === proposal.id);
     expect(foundProposal?.previewText).toBe('Hello from TipTap');
     expect(foundProposal?.documentContent).toBeUndefined();
   });
@@ -977,7 +973,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    const foundProposal = result.items.find((p) => p.id === proposal.id);
     expect(foundProposal).toBeDefined();
     expect(foundProposal?.previewText).toBeUndefined();
   });
@@ -1038,8 +1034,8 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const found1 = result.proposals.find((p) => p.id === proposal1.id);
-    const found2 = result.proposals.find((p) => p.id === proposal2.id);
+    const found1 = result.items.find((p) => p.id === proposal1.id);
+    const found2 = result.items.find((p) => p.id === proposal2.id);
 
     expect(found1?.previewText).toBe('Doc 1');
     expect(found2?.previewText).toBe('Doc 2');
@@ -1100,13 +1096,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundCollab = result.proposals.find(
-      (p) => p.id === collabProposal.id,
-    );
-    const foundLegacy = result.proposals.find(
-      (p) => p.id === legacyProposal.id,
-    );
-    const foundEmpty = result.proposals.find((p) => p.id === emptyProposal.id);
+    const foundCollab = result.items.find((p) => p.id === collabProposal.id);
+    const foundLegacy = result.items.find((p) => p.id === legacyProposal.id);
+    const foundEmpty = result.items.find((p) => p.id === emptyProposal.id);
 
     expect(foundCollab?.previewText).toBe('TipTap');
     expect(foundLegacy?.previewText).toBe('HTML');
@@ -1213,10 +1205,10 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const foundA = result.proposals.find((p) => p.id === proposalA.id);
-    const foundB = result.proposals.find((p) => p.id === proposalB.id);
+    const foundA = result.items.find((p) => p.id === proposalA.id);
+    const foundB = result.items.find((p) => p.id === proposalB.id);
 
     // Plain number → { amount, currency: 'USD' }
     expect(foundA?.proposalData).toMatchObject({
@@ -1296,14 +1288,10 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const foundNew = result.proposals.find(
-      (p) => p.id === newSchemaProposal.id,
-    );
-    const foundLegacy = result.proposals.find(
-      (p) => p.id === legacyProposal.id,
-    );
+    const foundNew = result.items.find((p) => p.id === newSchemaProposal.id);
+    const foundLegacy = result.items.find((p) => p.id === legacyProposal.id);
 
     // New-schema: collaborationDocId present, TipTap content
     expect(foundNew?.proposalData).toMatchObject({
@@ -1376,7 +1364,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundByCreator = creatorResult.proposals.find(
+    const foundByCreator = creatorResult.items.find(
       (p) => p.id === draftProposal.id,
     );
     expect(foundByCreator).toBeDefined();
@@ -1390,7 +1378,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundByCollaborator = collaboratorResult.proposals.find(
+    const foundByCollaborator = collaboratorResult.items.find(
       (p) => p.id === draftProposal.id,
     );
     expect(foundByCollaborator).toBeDefined();
@@ -1430,7 +1418,7 @@ describe.concurrent('listProposals', () => {
     });
 
     // Admin should see zero draft proposals (they have no proposal-level access)
-    const drafts = result.proposals.filter(
+    const drafts = result.items.filter(
       (p) => p.status === ProposalStatus.DRAFT,
     );
     expect(drafts).toHaveLength(0);
@@ -1474,7 +1462,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('should show submitted proposals to all users with instance-level access', async ({
@@ -1521,9 +1509,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('should show submitted proposals to admins', async ({
@@ -1563,9 +1551,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('should show draft proposals to collaborators with proposal-level access', async ({
@@ -1615,7 +1603,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const found = result.proposals.find((p) => p.id === draftProposal.id);
+    const found = result.items.find((p) => p.id === draftProposal.id);
     expect(found).toBeDefined();
     expect(found?.status).toBe(ProposalStatus.DRAFT);
   });
@@ -1678,11 +1666,11 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const resultAIds = resultA.proposals.map((p) => p.id);
+    const resultAIds = resultA.items.map((p) => p.id);
     expect(resultAIds).toContain(draftA.id);
     expect(resultAIds).toContain(submittedA.id);
     expect(resultAIds).not.toContain(draftB.id);
-    expect(resultA.proposals).toHaveLength(2);
+    expect(resultA.items).toHaveLength(2);
 
     // Member B should see: their own draft + Member A's submitted proposal
     // Member B should NOT see: Member A's draft
@@ -1691,11 +1679,11 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const resultBIds = resultB.proposals.map((p) => p.id);
+    const resultBIds = resultB.items.map((p) => p.id);
     expect(resultBIds).toContain(draftB.id);
     expect(resultBIds).toContain(submittedA.id);
     expect(resultBIds).not.toContain(draftA.id);
-    expect(resultB.proposals).toHaveLength(2);
+    expect(resultB.items).toHaveLength(2);
   });
 
   it('should serve versioned system field fragments for submitted proposals', async ({
@@ -1800,7 +1788,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const listedProposal = result.proposals.find((p) => p.id === proposal.id);
+    const listedProposal = result.items.find((p) => p.id === proposal.id);
     expect(listedProposal).toBeDefined();
 
     // The pinned version's fragments drive both the preview and the resolved
@@ -1848,7 +1836,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
     expect(result.total).toBe(2);
   });
 
@@ -1885,7 +1873,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toHaveLength(3);
+    expect(result.items).toHaveLength(3);
     expect(result.total).toBe(3);
   });
 
@@ -1935,8 +1923,8 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     });
 
     // Only the non-deleted proposal should appear
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(p1.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(p1.id);
   });
 
   it('excludes proposals soft-deleted after transition from the phase-scoped list', async ({
@@ -1986,8 +1974,8 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     });
 
     // Soft-deleted proposal must be excluded even though it's in the join table
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(p1.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(p1.id);
   });
 
   it('shows the creator their draft when viewing the phase it was created in', async ({
@@ -2014,7 +2002,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(phase1Result.proposals.map((p) => p.id)).toContain(phase1Draft.id);
+    expect(phase1Result.items.map((p) => p.id)).toContain(phase1Draft.id);
 
     await testData.advancePhase({
       instanceId,
@@ -2033,9 +2021,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     const currentPhaseResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(currentPhaseResult.proposals.map((p) => p.id)).toContain(
-      phase2Draft.id,
-    );
+    expect(currentPhaseResult.items.map((p) => p.id)).toContain(phase2Draft.id);
   });
 
   it('hides a phase-1 draft from the creator after the instance advances to phase 2', async ({
@@ -2069,21 +2055,21 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     const reviewResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(reviewResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(reviewResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     // Explicit phaseId='review' should likewise hide it.
     const reviewExplicit = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewExplicit.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(reviewExplicit.items.map((p) => p.id)).not.toContain(draft.id);
 
     // Querying back at the creation phase should re-surface the draft.
     const submissionResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(submissionResult.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(submissionResult.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('shows all drafts for legacy instances regardless of phaseId', async ({
@@ -2124,7 +2110,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(result.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(result.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('does not leak another user’s phase-scoped draft to a member who lacks proposal-level access', async ({
@@ -2165,7 +2151,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
 
     // Phase scoping must not bypass the ownership pushdown: another instance
     // member without proposal-level access must not see the creator's draft.
-    expect(result.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(result.items.map((p) => p.id)).not.toContain(draft.id);
   });
 
   it('shows a phase-scoped draft to an invited collaborator viewing the creation phase', async ({
@@ -2220,7 +2206,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       phaseId: 'submission',
     });
 
-    expect(result.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(result.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('places a draft created exactly at the inbound transition timestamp into the new phase (half-open window)', async ({
@@ -2271,13 +2257,13 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(submissionResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(submissionResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     const reviewResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(reviewResult.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('hides a draft created mid-phase from views of earlier and later phases (strict bounded window)', async ({
@@ -2313,7 +2299,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewWhileCurrent.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(reviewWhileCurrent.items.map((p) => p.id)).toContain(draft.id);
 
     // Advance past review so it now has both inbound and outbound transitions —
     // the draft sits strictly inside review's bounded window.
@@ -2327,19 +2313,19 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(submissionResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(submissionResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     const finalResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'final',
     });
-    expect(finalResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(finalResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     const reviewResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(reviewResult.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('hides a HIDDEN proposal from a non-admin viewing a later phase (visibility + phaseId)', async ({
@@ -2405,7 +2391,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       phaseId: 'review',
     });
 
-    const ids = result.proposals.map((p) => p.id);
+    const ids = result.items.map((p) => p.id);
     expect(ids).toContain(visibleProposal.id);
     expect(ids).not.toContain(hiddenProposal.id);
   });
@@ -2459,8 +2445,8 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       dir: 'asc',
     });
 
-    const descIds = desc.proposals.map((p) => p.id);
-    const ascIds = asc.proposals.map((p) => p.id);
+    const descIds = desc.items.map((p) => p.id);
+    const ascIds = asc.items.map((p) => p.id);
 
     expect([...descIds].sort()).toEqual([p1.id, p2.id, p3.id].sort());
     expect(ascIds).toEqual([...descIds].reverse());
@@ -2640,7 +2626,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       processInstanceId: instanceId,
     });
     expect(withAssigned.total).toBe(3);
-    expect(withAssigned.proposals.map((p) => p.id)).toContain(p1.id);
+    expect(withAssigned.items.map((p) => p.id)).toContain(p1.id);
 
     // Flag on: the assigned proposal is gone and total drops to match.
     const withoutAssigned = await caller.decision.listProposals({
@@ -2648,7 +2634,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       excludeAssignedForReview: true,
     });
     expect(withoutAssigned.total).toBe(2);
-    expect(withoutAssigned.proposals.map((p) => p.id)).not.toContain(p1.id);
+    expect(withoutAssigned.items.map((p) => p.id)).not.toContain(p1.id);
   });
 
   it('keeps total and keyset pagination consistent with the exclusion', async ({
@@ -2676,7 +2662,6 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       limit: 1,
     });
     expect(page1.total).toBe(2);
-    expect(page1.hasMore).toBe(true);
     expect(page1.next).not.toBeNull();
 
     const page2 = await caller.decision.listProposals({
@@ -2686,10 +2671,10 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       cursor: page1.next,
     });
     expect(page2.total).toBe(2);
-    expect(page2.hasMore).toBe(false);
+    expect(page2.next).toBeNull();
 
     // The assigned proposal never surfaces on any page; the other two do.
-    const seenIds = [...page1.proposals, ...page2.proposals].map((p) => p.id);
+    const seenIds = [...page1.items, ...page2.items].map((p) => p.id);
     expect(seenIds).not.toContain(p1.id);
     expect(seenIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
   });
@@ -2724,7 +2709,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       excludeAssignedForReview: true,
     });
     expect(result.total).toBe(3);
-    expect(result.proposals.map((p) => p.id)).toContain(p1.id);
+    expect(result.items.map((p) => p.id)).toContain(p1.id);
   });
 
   it('does not exclude assignments from a different phase', async ({
@@ -2753,7 +2738,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
 
     // The past-phase assignment must not hide the proposal in the current one.
     expect(result.total).toBe(3);
-    expect(result.proposals.map((p) => p.id)).toContain(p1.id);
+    expect(result.items.map((p) => p.id)).toContain(p1.id);
   });
 
   it('composes with sort direction, excluding the assigned proposal', async ({
@@ -2789,10 +2774,10 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
 
     // The excluded list is exactly the baseline order minus the assigned p1 —
     // sort composes with the exclusion, order is otherwise preserved.
-    const expectedIds = baseline.proposals
+    const expectedIds = baseline.items
       .map((p) => p.id)
       .filter((id) => id !== p1.id);
-    expect(excluded.proposals.map((p) => p.id)).toEqual(expectedIds);
+    expect(excluded.items.map((p) => p.id)).toEqual(expectedIds);
     expect(expectedIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
   });
 });
@@ -2843,10 +2828,10 @@ describe.concurrent('listProposals: search', () => {
       search: 'bIkE',
     });
 
-    expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
+    expect(result.items.map((p) => p.id)).toEqual([first.id]);
     // `total` counts the filtered set, not the whole pool.
     expect(result.total).toBe(1);
-    expect(result.proposals.map((p) => p.id)).not.toContain(second.id);
+    expect(result.items.map((p) => p.id)).not.toContain(second.id);
   });
 
   it('matches words in any order, and requires all of them', async ({
@@ -2865,14 +2850,14 @@ describe.concurrent('listProposals: search', () => {
       processInstanceId: instanceId,
       search: 'path riverside',
     });
-    expect(reversed.proposals.map((p) => p.id)).toEqual([first.id]);
+    expect(reversed.items.map((p) => p.id)).toEqual([first.id]);
 
     // Words are ANDed, so a term drawn from two different titles matches neither.
     const mixed = await caller.decision.listProposals({
       processInstanceId: instanceId,
       search: 'bike mural',
     });
-    expect(mixed.proposals).toHaveLength(0);
+    expect(mixed.items).toHaveLength(0);
     expect(mixed.total).toBe(0);
   });
 
@@ -2892,7 +2877,7 @@ describe.concurrent('listProposals: search', () => {
         processInstanceId: instanceId,
         search,
       });
-      expect(result.proposals).toHaveLength(0);
+      expect(result.items).toHaveLength(0);
       expect(result.total).toBe(0);
     }
   });
@@ -2928,13 +2913,13 @@ describe.concurrent('listProposals: search', () => {
       processInstanceId: instanceId,
       search: 'Bicycle Parking',
     });
-    expect(byNewTitle.proposals.map((p) => p.id)).toEqual([proposal.id]);
+    expect(byNewTitle.items.map((p) => p.id)).toEqual([proposal.id]);
 
     const byStaleTitle = await caller.decision.listProposals({
       processInstanceId: instanceId,
       search: 'Placeholder',
     });
-    expect(byStaleTitle.proposals).toHaveLength(0);
+    expect(byStaleTitle.items).toHaveLength(0);
   });
 
   it('ignores an empty or whitespace-only query', async ({
@@ -2974,7 +2959,7 @@ describe.concurrent('listProposals: search', () => {
       processInstanceId: instanceId,
       search: `${tenWords} zzzznomatch`,
     });
-    expect(overCap.proposals.map((p) => p.id)).toEqual([first.id]);
+    expect(overCap.items.map((p) => p.id)).toEqual([first.id]);
 
     // Inside the cap the same word does filter — so it was the cap, not the
     // word being ignored generally.
@@ -2982,7 +2967,7 @@ describe.concurrent('listProposals: search', () => {
       processInstanceId: instanceId,
       search: 'one zzzznomatch',
     });
-    expect(underCap.proposals).toHaveLength(0);
+    expect(underCap.items).toHaveLength(0);
   });
 
   it('truncates an over-long query instead of rejecting it', async ({
@@ -3005,13 +2990,13 @@ describe.concurrent('listProposals: search', () => {
       processInstanceId: instanceId,
       search: overCap,
     });
-    expect(result.proposals.map((p) => p.id)).toEqual([first.id]);
+    expect(result.items.map((p) => p.id)).toEqual([first.id]);
 
     // Inside the cap the same word does filter — so it was the truncation.
     const withinCap = await caller.decision.listProposals({
       processInstanceId: instanceId,
       search: 'Bike zzzznomatch',
     });
-    expect(withinCap.proposals).toHaveLength(0);
+    expect(withinCap.items).toHaveLength(0);
   });
 });

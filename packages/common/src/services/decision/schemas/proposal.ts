@@ -159,13 +159,9 @@ export const proposalSchema = z.object({
 export type Proposal = z.infer<typeof proposalSchema>;
 
 /** Paginated proposal list as returned by the API. */
-export const proposalListSchema = z.object({
-  proposals: z.array(proposalSchema),
-  total: z.number(),
-  hasMore: z.boolean(),
+export const proposalListSchema = paginated(proposalSchema).extend({
+  total,
   canManageProposals: z.boolean().prefault(false),
-  // Cursor for the next page, or `null` when there are no further pages.
-  next: z.string().nullable(),
 });
 
 export type ProposalList = z.infer<typeof proposalListSchema>;

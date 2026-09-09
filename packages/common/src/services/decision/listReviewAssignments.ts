@@ -206,7 +206,7 @@ export async function listAssignmentsForReviewer({
     categoryProposalIds = proposalIdsInCategories.map((p) => p.proposalId);
     if (categoryProposalIds.length === 0) {
       return reviewAssignmentListSchema.parse({
-        assignments: [],
+        items: [],
         next: null,
         total: 0,
       });
@@ -425,7 +425,7 @@ export async function listAssignmentsForReviewer({
       : null;
 
   return reviewAssignmentListSchema.parse({
-    assignments: assignmentList,
+    items: assignmentList,
     next,
     total,
   });

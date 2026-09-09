@@ -7,7 +7,7 @@ import { generateProposalsCsv } from './generateProposalsCsv';
 
 type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
->['proposals'][number];
+>['items'][number];
 
 /**
  * The Simple Voting template, trimmed to the fields the CSV reads. The long

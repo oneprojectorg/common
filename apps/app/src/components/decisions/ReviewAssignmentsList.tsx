@@ -10,6 +10,7 @@ import {
   ProposalReviewAssignmentStatus,
   REVIEW_ASSIGNMENT_SORTS,
   getPhaseReviewSettings,
+  nextCursor,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Card } from '@op/sense/Card';
@@ -115,11 +116,11 @@ export function ReviewAssignmentsList({
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     trpc.decision.listReviewAssignments.useInfiniteQuery(queueInput, {
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      getNextPageParam: nextCursor,
     });
 
   const assignments = useMemo(
-    () => data?.pages.flatMap((page) => page.assignments) ?? [],
+    () => data?.pages.flatMap((page) => page.items) ?? [],
     [data?.pages],
   );
   const total = data?.pages[0]?.total ?? 0;

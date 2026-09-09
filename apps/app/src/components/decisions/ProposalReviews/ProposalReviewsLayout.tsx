@@ -102,7 +102,7 @@ async function ReviewerReview({
   try {
     // 'newest' orders by assignedAt (id tie-break) in SQL, so the first row is
     // the latest of this phase's assignments.
-    const { assignments } = await client.decision.listReviewAssignments({
+    const { items: assignments } = await client.decision.listReviewAssignments({
       processInstanceId,
       proposalProfileId,
       phaseId,

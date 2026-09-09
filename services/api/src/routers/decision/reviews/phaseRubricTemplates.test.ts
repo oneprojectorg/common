@@ -224,10 +224,10 @@ describe.concurrent('per-phase rubric templates', () => {
         phaseId: FEASIBILITY_PHASE,
       },
     );
-    expect(feasibilityList.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(feasibilityList.items.map((a) => a.assignment.id)).toEqual([
       feasibilityScenario.assignment.id,
     ]);
-    expect(feasibilityList.assignments[0]?.rubricTemplate).toMatchObject({
+    expect(feasibilityList.items[0]?.rubricTemplate).toMatchObject({
       properties: { viability: { title: 'Viability' } },
     });
 
@@ -235,10 +235,10 @@ describe.concurrent('per-phase rubric templates', () => {
       processInstanceId: context.instance.instance.id,
       phaseId: COMMUNITY_PHASE,
     });
-    expect(communityList.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(communityList.items.map((a) => a.assignment.id)).toEqual([
       communityAssignment.id,
     ]);
-    expect(communityList.assignments[0]?.rubricTemplate).toMatchObject({
+    expect(communityList.items[0]?.rubricTemplate).toMatchObject({
       properties: { impact: { title: 'Impact' } },
     });
   });

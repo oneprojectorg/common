@@ -261,7 +261,7 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
       await createTestContextWithSession(session),
     );
     const readBallot = async () => {
-      const { proposals: rows } = await voterCaller.decision.listProposals({
+      const { items: rows } = await voterCaller.decision.listProposals({
         processInstanceId: instanceId,
         votedByProfileId: voter.profileId,
       });

@@ -27,10 +27,9 @@ export interface ProposalsForExport {
  *
  * This replaces a single `listProposals` call with `limit: 1000`, which took
  * only the first page and reported nothing about the rest. `listProposals`
- * offers no signal that a caller has under-read — `hasMore` and `next` are
- * there to be *used*, and ignoring them made a truncated export
- * indistinguishable from a complete one, in the UI, in the file, and in the
- * logs.
+ * offers no signal that a caller has under-read — `next` is there to be
+ * *used*, and ignoring it made a truncated export indistinguishable from a
+ * complete one, in the UI, in the file, and in the logs.
  *
  * Ordering and concurrency: paging is keyset, on the default `createdAt desc`.
  * A proposal created while this runs sorts ahead of the first page and is
@@ -81,7 +80,7 @@ export const listProposalsForExport = async ({
       total = page.total;
     }
 
-    proposals.push(...page.proposals);
+    proposals.push(...page.items);
 
     // Nothing further to read: this is the only complete-and-done exit, and it
     // is checked before the ceiling so an instance holding exactly
@@ -94,7 +93,7 @@ export const listProposalsForExport = async ({
     // `listProposals` should not produce one — `next` is only set when it read
     // past `limit` — so this is a backstop against that invariant breaking,
     // and it is loud because a silent spin is the worse outcome.
-    if (page.proposals.length === 0) {
+    if (page.items.length === 0) {
       logger.warn('Proposal export: page advanced the cursor with no rows', {
         processInstanceId,
         pages,

@@ -28,7 +28,7 @@ import type { ProposalTemplateSchema, XFormatPropertySchema } from '../types';
 // instead of each re-deriving its own.
 export type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
->['proposals'][number];
+>['items'][number];
 
 /**
  * Plain text of a proposal's body, for the Description column.

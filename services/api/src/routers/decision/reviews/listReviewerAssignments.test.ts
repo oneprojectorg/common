@@ -71,8 +71,8 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(result.reviewer?.id).toBe(context.defaultReviewer.profileId);
     expect(result.reviewer?.email).toBe(`reviewer-${task.id}@example.org`);
     expect(result.isEligible).toBe(true);
-    expect(result.assignments).toHaveLength(1);
-    const [item] = result.assignments;
+    expect(result.items).toHaveLength(1);
+    const [item] = result.items;
     expect(item?.assignment.proposal.id).toBe(created.proposal.id);
     expect(item?.assignment.proposal.profile.name).toBe(
       `Scoped proposal ${task.id}`,
@@ -116,10 +116,8 @@ describe.concurrent('decision.listReviewerAssignments', () => {
 
     // Both reviewers hold it; the scoped read returns one row.
     expect(result.assignedCount).toBe(1);
-    expect(result.assignments).toHaveLength(1);
-    expect(result.assignments[0]?.assignment.proposal.id).toBe(
-      created.proposal.id,
-    );
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.assignment.proposal.id).toBe(created.proposal.id);
     expect(result.reviewer?.id).toBe(other.profileId);
   });
 
@@ -183,7 +181,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       ]),
     );
     expect(result.statusBreakdown).toHaveLength(3);
-    expect(result.assignments).toHaveLength(3);
+    expect(result.items).toHaveLength(3);
     expect(result.total).toBe(3);
     expect(result.next).toBeNull();
   });
@@ -220,7 +218,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     };
 
     const page1 = await adminCaller.decision.listReviewerAssignments(input);
-    expect(page1.assignments).toHaveLength(2);
+    expect(page1.items).toHaveLength(2);
     expect(page1.total).toBe(3);
     expect(page1.assignedCount).toBe(3);
     expect(page1.next).not.toBeNull();
@@ -229,11 +227,11 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       ...input,
       cursor: page1.next,
     });
-    expect(page2.assignments).toHaveLength(1);
+    expect(page2.items).toHaveLength(1);
     expect(page2.total).toBe(3);
     expect(page2.next).toBeNull();
 
-    const ids = [...page1.assignments, ...page2.assignments].map(
+    const ids = [...page1.items, ...page2.items].map(
       (item) => item.assignment.id,
     );
     expect(ids).toEqual(
@@ -266,7 +264,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       phaseId: 'review',
       reviewerProfileId: context.defaultReviewer.profileId,
     });
-    expect(before.assignments).toHaveLength(2);
+    expect(before.items).toHaveLength(2);
 
     // The edge directly: the read is what's under test, not mergeProposals.
     await db.insert(proposalRelationships).values({
@@ -282,9 +280,9 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       reviewerProfileId: context.defaultReviewer.profileId,
     });
 
-    expect(
-      after.assignments.map((entry) => entry.assignment.proposal.id),
-    ).toEqual([survivor.proposal.id]);
+    expect(after.items.map((entry) => entry.assignment.proposal.id)).toEqual([
+      survivor.proposal.id,
+    ]);
     // The page drops it via notSuperseded; the totals still count the work
     // the reviewer did on the merged-away proposal, on purpose.
     expect(after.total).toBe(1);
@@ -316,7 +314,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
 
     expect(result.reviewer).toBeNull();
     expect(result.isEligible).toBe(false);
-    expect(result.assignments).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('does not let an assignment in another phase count as a tie to this phase', async ({
@@ -356,7 +354,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(result.isEligible).toBe(false);
     expect(result.assignedCount).toBe(0);
     expect(result.total).toBe(0);
-    expect(result.assignments).toEqual([]);
+    expect(result.items).toEqual([]);
 
     // Sanity: the fixture really did create the assignment, one phase over.
     const otherPhase = await adminCaller.decision.listReviewerAssignments({
@@ -553,7 +551,7 @@ describeDecisionAccessTierGating('decision.listReviewerAssignments', {
       });
 
       expect(result.assignedCount).toBe(0);
-      expect(result.assignments).toEqual([]);
+      expect(result.items).toEqual([]);
     },
   ),
 });
