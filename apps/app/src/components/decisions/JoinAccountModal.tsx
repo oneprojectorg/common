@@ -2,11 +2,14 @@
 
 import {
   getClaimEmailErrorMessage,
+  getClaimPhoneErrorMessage,
   goToOnboarding,
   useClaimAccount,
 } from '@/hooks/useClaimAccount';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import type { CommonUser } from '@op/api/encoders';
+import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -22,7 +25,12 @@ import { type ReactNode, Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { AuthCodeField, AuthEmailField, isValidOtpLength } from '../AuthPanel';
+import {
+  AuthCodeField,
+  AuthEmailField,
+  AuthPhoneField,
+  isValidOtpLength,
+} from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
 
@@ -133,18 +141,38 @@ export const JoinOrUserMenu = ({
 
 const JoinAccountModalContent = () => {
   const t = useTranslations();
-  const { requestEmailCode, verifyEmailCode } = useClaimAccount();
+  const {
+    requestEmailCode,
+    verifyEmailCode,
+    requestPhoneCode,
+    verifyPhoneCode,
+  } = useClaimAccount();
+  // Same flag the login screen gates its phone channel on, so the two agree
+  // about whether SMS exists at all.
+  const smsEnabled = useFeatureFlag('sms-login') ?? false;
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
 
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [channel, setChannel] = useState<'email' | 'phone'>('email');
   const [token, setToken] = useState<string | undefined>();
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // With the flag off there is no phone channel to be on, even if a previous
+  // render put us there.
+  const activeChannel = smsEnabled ? channel : 'email';
+  const isPhone = activeChannel === 'phone';
+
   const emailIsValid = isValidEmail(email);
+  // People type `(415) 555-0132`. Validate what they meant, and send that.
+  const phoneIsValid = phoneNumberSchema.safeParse(
+    normalizePhoneNumber(phone),
+  ).success;
+  const contactIsValid = isPhone ? phoneIsValid : emailIsValid;
 
   // Return to this decision page after onboarding. Query params are dropped
   // deliberately — `join=1` must not re-open the modal on the way back.
@@ -152,8 +180,8 @@ const JoinAccountModalContent = () => {
     goToOnboarding(pathname);
   };
 
-  const submitEmail = async () => {
-    if (isSubmitting || !emailIsValid) {
+  const submitContact = async () => {
+    if (isSubmitting || !contactIsValid) {
       return;
     }
 
@@ -163,9 +191,15 @@ const JoinAccountModalContent = () => {
     // Deliberately left submitting through the success-navigation path so the
     // form can't be re-submitted while window.location is unloading the page.
     try {
-      const result = await requestEmailCode(email, { mintAnonSession: true });
+      const result = isPhone
+        ? await requestPhoneCode(phone, { mintAnonSession: true })
+        : await requestEmailCode(email, { mintAnonSession: true });
       if (!result.ok) {
-        setError(getClaimEmailErrorMessage(result, t));
+        setError(
+          isPhone
+            ? getClaimPhoneErrorMessage(result, t)
+            : getClaimEmailErrorMessage(result, t),
+        );
         setIsSubmitting(false);
         return;
       }
@@ -190,7 +224,9 @@ const JoinAccountModalContent = () => {
     setError(undefined);
 
     try {
-      const result = await verifyEmailCode({ email, token });
+      const result = isPhone
+        ? await verifyPhoneCode({ phone, token })
+        : await verifyEmailCode({ email, token });
       if (result.ok) {
         goAfterClaim();
         return;
@@ -208,6 +244,15 @@ const JoinAccountModalContent = () => {
     setError(undefined);
   };
 
+  // Switching channel abandons whatever was typed in the other one, so a
+  // half-entered address can't be submitted against the wrong endpoint.
+  const switchChannel = () => {
+    setChannel(isPhone ? 'email' : 'phone');
+    setError(undefined);
+    setEmail('');
+    setPhone('');
+  };
+
   // Native anchor: /login is outside the [locale] tree, so a RAC link 404s at
   // /en/login (same as HeaderUserMenu).
   const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
@@ -217,14 +262,23 @@ const JoinAccountModalContent = () => {
       {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
       <DialogHeader>
         <DialogTitle>
-          {otpSent ? t('Email sent!') : t('Claim your account')}
+          {otpSent
+            ? isPhone
+              ? t('Code sent!')
+              : t('Email sent!')
+            : t('Claim your account')}
         </DialogTitle>
         <DialogDescription>
           {otpSent
-            ? t(
-                'A code was sent to {email}. Type the code below to create your profile.',
-                { email },
-              )
+            ? isPhone
+              ? t(
+                  'A code was sent to {phone}. Type the code below to create your profile.',
+                  { phone: normalizePhoneNumber(phone) },
+                )
+              : t(
+                  'A code was sent to {email}. Type the code below to create your profile.',
+                  { email },
+                )
             : t(
                 'Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.',
               )}
@@ -249,17 +303,44 @@ const JoinAccountModalContent = () => {
           />
         ) : (
           <>
-            <AuthEmailField
-              label={t('Email')}
-              // Example-email placeholders are deliberately untranslated.
-              placeholder="your@email.com"
-              value={email}
-              isDisabled={isSubmitting}
-              onChange={setEmail}
-              onSubmit={() => {
-                void submitEmail();
-              }}
-            />
+            {isPhone ? (
+              <AuthPhoneField
+                label={t('Phone number')}
+                description={t(
+                  'We text you a code. Standard message and data rates may apply.',
+                )}
+                value={phone}
+                isDisabled={isSubmitting}
+                onChange={setPhone}
+                onSubmit={() => {
+                  void submitContact();
+                }}
+              />
+            ) : (
+              <AuthEmailField
+                label={t('Email')}
+                // Example-email placeholders are deliberately untranslated.
+                placeholder="your@email.com"
+                value={email}
+                isDisabled={isSubmitting}
+                onChange={setEmail}
+                onSubmit={() => {
+                  void submitContact();
+                }}
+              />
+            )}
+            {smsEnabled ? (
+              <Button
+                variant="link"
+                className="self-start p-0"
+                onClick={switchChannel}
+                disabled={isSubmitting}
+              >
+                {isPhone
+                  ? t('Use an email address instead')
+                  : t('Use a phone number instead')}
+              </Button>
+            ) : null}
             <p className="text-muted-foreground">
               {t.rich('Already have an account? <login>Log in</login>', {
                 login: (chunks: ReactNode) => (
@@ -294,9 +375,9 @@ const JoinAccountModalContent = () => {
           <Button
             className="w-full"
             loading={isSubmitting}
-            disabled={isSubmitting || !emailIsValid}
+            disabled={isSubmitting || !contactIsValid}
             onClick={() => {
-              void submitEmail();
+              void submitContact();
             }}
           >
             {t('Join')}

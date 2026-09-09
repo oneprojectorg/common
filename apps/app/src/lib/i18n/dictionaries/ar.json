@@ -1752,5 +1752,7 @@
   "Comments off": "التعليقات معطّلة",
   "Reject": "رفض",
   "Your Privacy": "خصوصيتك",
-  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "نستخدم ملفات تعريف ارتباط أساسية لتشغيل Common، وملفات تعريف ارتباط تحليلية لفهم كيفية استخدام المنصة. اقرأ <privacy>سياسة الخصوصية</privacy> و<terms>شروط الاستخدام</terms> لمعرفة المزيد."
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "نستخدم ملفات تعريف ارتباط أساسية لتشغيل Common، وملفات تعريف ارتباط تحليلية لفهم كيفية استخدام المنصة. اقرأ <privacy>سياسة الخصوصية</privacy> و<terms>شروط الاستخدام</terms> لمعرفة المزيد.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لإنشاء ملفك الشخصي.",
+  "An account with this phone number already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك."
 }

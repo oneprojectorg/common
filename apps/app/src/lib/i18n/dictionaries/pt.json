@@ -1752,5 +1752,7 @@
   "Comments off": "Comentários desativados",
   "Reject": "Recusar",
   "Your Privacy": "A sua privacidade",
-  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Usamos cookies essenciais para o Common funcionar e cookies de análise para perceber como a plataforma é usada. Leia a nossa <privacy>Política de Privacidade</privacy> e os <terms>Termos de Utilização</terms> para saber mais."
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Usamos cookies essenciais para o Common funcionar e cookies de análise para perceber como a plataforma é usada. Leia a nossa <privacy>Política de Privacidade</privacy> e os <terms>Termos de Utilização</terms> para saber mais.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "Um código foi enviado para {phone}. Digite o código abaixo para criar seu perfil.",
+  "An account with this phone number already exists. Try logging in instead.": "Já existe uma conta com este e-mail. Tente fazer login."
 }
