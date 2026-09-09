@@ -47,7 +47,7 @@ export async function getProposalWithReviewAggregates(
   // Read gate: admin, or the process-wide reviewer grant on an open phase at
   // or before the current one — see `canReadPhaseReviews` for the semantics.
   // Gated on the caller's raw phaseId so reviewers must always name a phase.
-  assertCanReadPhaseReviews(instance, input.phaseId);
+  await assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user });
 
   // Effective phase: explicit `phaseId`, else the instance's current phase —
   // mirrors `listProposalsWithReviewAggregates`, so there is no cross-phase

@@ -5,11 +5,12 @@ import {
   proposalReviewAssignments,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createProposalReview } from '@op/test';
+import { createProposalReview, testSimpleVotingSchema } from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
@@ -43,6 +44,30 @@ describe.concurrent('getPhaseReviewProgress', () => {
     await expect(
       reviewerCaller.decision.getPhaseReviewProgress({
         processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects an org admin with no grant on the instance profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // The org fallback still admits this caller to `getInstance` (a read
+    // surface legacy results screens hit), but the admin gate here resolves
+    // against the instance's own profile, where they hold nothing.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: false,
+      processSchema: testSimpleVotingSchema,
+    });
+
+    const orgAdminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      orgAdminCaller.decision.getPhaseReviewProgress({
+        processInstanceId: setup.instance.instance.id,
         phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });

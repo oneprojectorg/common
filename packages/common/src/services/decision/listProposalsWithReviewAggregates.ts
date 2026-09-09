@@ -5,9 +5,11 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
@@ -66,11 +68,26 @@ export async function listProposalsWithReviewAggregates(
 
   if ('proposalIds' in input) {
     // Raw `phaseId`, not the effective one: a reviewer must name the phase.
-    assertCanReadPhaseReviews(instance, input.phaseId);
-  } else if (!instance.access.admin) {
-    throw new UnauthorizedError(
-      "You don't have admin access to this process instance",
-    );
+    await assertCanReadPhaseReviews({
+      instance,
+      phaseId: input.phaseId,
+      user,
+    });
+  } else {
+    // No org fallback: admin access comes from a grant on the instance's own
+    // profile, which legacy instances may not have — fail closed there.
+    if (!instance.profileId) {
+      throw new UnauthorizedError(
+        "You don't have admin access to this process instance",
+      );
+    }
+
+    await assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: { decisions: permission.ADMIN },
+      notMemberMessage: "You don't have admin access to this process instance",
+    });
   }
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
