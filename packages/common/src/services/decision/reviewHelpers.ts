@@ -6,11 +6,7 @@ import {
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
-import {
-  type AccessZonePermissionInput,
-  checkPermission,
-  permission,
-} from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
@@ -23,31 +19,6 @@ import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
-
-/** Review-side standing on an instance: the process-wide REVIEW grant, or decisions ADMIN. */
-const INSTANCE_REVIEW_OR_ADMIN: AccessZonePermissionInput = [
-  { decisions: decisionPermission.REVIEW },
-  { decisions: permission.ADMIN },
-];
-
-/** Decisions ADMIN on a loaded instance's own profile. */
-export async function assertInstanceDecisionsAdmin({
-  instance,
-  user,
-}: {
-  instance: { profileId: string | null };
-  user: AccessUser | undefined;
-}): Promise<void> {
-  if (!instance.profileId) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  await assertProfileAccess({
-    user,
-    profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
-  });
-}
 
 /** Shared `with` config for review assignment queries. */
 export const reviewAssignmentWithConfig = {
@@ -155,7 +126,13 @@ export async function assertProposalReviewReadAccess({
 
   if (
     instanceRoles.length > 0 &&
-    checkPermission(INSTANCE_REVIEW_OR_ADMIN, instanceRoles)
+    checkPermission(
+      [
+        { decisions: decisionPermission.REVIEW },
+        { decisions: permission.ADMIN },
+      ],
+      instanceRoles,
+    )
   ) {
     return;
   }
@@ -405,7 +382,10 @@ export async function assertReviewAssignmentContext({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: INSTANCE_REVIEW_OR_ADMIN,
+    permissions: [
+      { decisions: decisionPermission.REVIEW },
+      { decisions: permission.ADMIN },
+    ],
   });
 
   if (assignment.reviewerProfileId !== dbUser.profileId) {
