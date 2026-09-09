@@ -1735,8 +1735,7 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Analytics consent": "বিশ্লেষণে সম্মতি",
-  "Help us improve Common": "Common উন্নত করতে আমাদের সাহায্য করুন",
-  "Accept cookies to help us measure how Common is used. Reject and we'll still count your visit anonymously, without cookies.": "Common কীভাবে ব্যবহৃত হয় তা পরিমাপ করতে আমাদের সাহায্য করতে কুকি গ্রহণ করুন। প্রত্যাখ্যান করলেও আমরা কুকি ছাড়াই আপনার ভিজিট বেনামে গণনা করব।",
-  "Reject": "প্রত্যাখ্যান"
+  "Reject": "প্রত্যাখ্যান",
+  "Your Privacy": "আপনার গোপনীয়তা",
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Common চালু রাখতে আমরা অপরিহার্য কুকি ব্যবহার করি, আর প্ল্যাটফর্মটি কীভাবে ব্যবহৃত হয় তা বুঝতে বিশ্লেষণী কুকি ব্যবহার করি। আরও জানতে আমাদের <privacy>গোপনীয়তা নীতি</privacy> ও <terms>ব্যবহারের শর্তাবলী</terms> পড়ুন।"
 }

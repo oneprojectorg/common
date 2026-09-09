@@ -1735,8 +1735,7 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Analytics consent": "الموافقة على التحليلات",
-  "Help us improve Common": "ساعدنا في تحسين Common",
-  "Accept cookies to help us measure how Common is used. Reject and we'll still count your visit anonymously, without cookies.": "اقبل ملفات تعريف الارتباط لمساعدتنا في قياس طريقة استخدام Common. إذا رفضت، فسنواصل احتساب زيارتك بشكل مجهول، بدون ملفات تعريف الارتباط.",
-  "Reject": "رفض"
+  "Reject": "رفض",
+  "Your Privacy": "خصوصيتك",
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "نستخدم ملفات تعريف ارتباط أساسية لتشغيل Common، وملفات تعريف ارتباط تحليلية لفهم كيفية استخدام المنصة. اقرأ <privacy>سياسة الخصوصية</privacy> و<terms>شروط الاستخدام</terms> لمعرفة المزيد."
 }

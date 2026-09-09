@@ -27,8 +27,8 @@ async function visitAsUnansweredVisitor(page: Page) {
   await page.reload();
 }
 
-const consentToast = (page: Page) =>
-  page.getByRole('region', { name: 'Analytics consent' });
+const cookieBanner = (page: Page) =>
+  page.getByRole('region', { name: 'Your Privacy' });
 
 const analyticsCookies = async (page: Page) =>
   (await page.context().cookies()).filter((cookie) =>
@@ -40,11 +40,11 @@ test.describe('Analytics consent', () => {
     page,
   }) => {
     await visitAsUnansweredVisitor(page);
-    await expect(consentToast(page)).toBeVisible();
+    await expect(cookieBanner(page)).toBeVisible();
 
     // Persistent: ignoring it and reloading brings it straight back.
     await page.reload();
-    await expect(consentToast(page)).toBeVisible();
+    await expect(cookieBanner(page)).toBeVisible();
 
     expect(await analyticsCookies(page)).toEqual([]);
   });
@@ -53,21 +53,21 @@ test.describe('Analytics consent', () => {
     page,
   }) => {
     await visitAsUnansweredVisitor(page);
-    await consentToast(page).getByRole('button', { name: 'Reject' }).click();
-    await expect(consentToast(page)).toBeHidden();
+    await cookieBanner(page).getByRole('button', { name: 'Reject' }).click();
+    await expect(cookieBanner(page)).toBeHidden();
 
     await page.reload();
-    await expect(consentToast(page)).toBeHidden();
+    await expect(cookieBanner(page)).toBeHidden();
 
     expect(await analyticsCookies(page)).toEqual([]);
   });
 
   test('accepting dismisses it for good', async ({ page }) => {
     await visitAsUnansweredVisitor(page);
-    await consentToast(page).getByRole('button', { name: 'Accept' }).click();
-    await expect(consentToast(page)).toBeHidden();
+    await cookieBanner(page).getByRole('button', { name: 'Accept' }).click();
+    await expect(cookieBanner(page)).toBeHidden();
 
     await page.reload();
-    await expect(consentToast(page)).toBeHidden();
+    await expect(cookieBanner(page)).toBeHidden();
   });
 });

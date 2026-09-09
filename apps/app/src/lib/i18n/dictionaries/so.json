@@ -1735,8 +1735,7 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Analytics consent": "Oggolaanshaha falanqaynta",
-  "Help us improve Common": "Naga caawi inaan Common wanaajinno",
-  "Accept cookies to help us measure how Common is used. Reject and we'll still count your visit anonymously, without cookies.": "Aqbal cookies-ka si aad naga caawiso cabbirka sida Common loo isticmaalo. Haddii aad diiddo, weli si aan magac lahayn ayaan u tirin doonaa booqashadaada, cookies la'aan.",
-  "Reject": "Diid"
+  "Reject": "Diid",
+  "Your Privacy": "Asturnaantaada",
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Waxaan isticmaalnaa cookies lagama maarmaan ah si Common u shaqeeyo, iyo cookies falanqayn si aan u fahanno sida madasha loo isticmaalo. Akhri <privacy>Siyaasadda Asturnaanta</privacy> iyo <terms>Shuruudaha Isticmaalka</terms> si aad wax badan u ogaato."
 }
