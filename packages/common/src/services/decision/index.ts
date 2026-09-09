@@ -89,7 +89,6 @@ export * from './assignReviewsToReviewer';
 export * from './assignPhaseReviews';
 export * from './removeReviewAssignments';
 export * from './getDecisionReviewAssignments';
-export * from './getPhaseReviewAssignments';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';
 export * from './backfillReviewAssignments';
