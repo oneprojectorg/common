@@ -81,6 +81,9 @@ export const userEncoder = createSelectSchema(users)
     isAnonymous: z.boolean(),
     // Closed-network membership; authoritative only via `encodeUser`.
     isNetworkMember: z.boolean().default(false),
+    // Permissions from roles the user holds directly, outside any membership —
+    // `access.platform.admin` is the platform admin grant. See ADR 0005.
+    access: zonePermissionsSchema.nullish(),
     avatarImage: storageItemEncoder.nullish(),
     organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
     profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
