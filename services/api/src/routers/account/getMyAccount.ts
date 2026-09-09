@@ -1,5 +1,10 @@
 import { cache } from '@op/cache';
-import { CommonError, getNetworkMembership, getUserByAuthId } from '@op/common';
+import {
+  CommonError,
+  getNetworkMembership,
+  getUserByAuthId,
+  isPlatformAdminCached,
+} from '@op/common';
 import { z } from 'zod';
 
 import { encodeUser, userEncoder } from '../../encoders';
@@ -18,8 +23,9 @@ export const getMyAccount = router({
 
       const { id } = ctx.user;
 
-      // Account and network membership are independent cached lookups.
-      const [user, isNetworkMember] = await Promise.all([
+      // Account, network membership and the platform-admin flag are
+      // independent cached lookups.
+      const [user, isNetworkMember, isPlatformAdmin] = await Promise.all([
         cache({
           type: 'user',
           params: [id],
@@ -34,6 +40,13 @@ export const getMyAccount = router({
           },
         }),
         getNetworkMembership(ctx.user.email),
+        // Resolved separately rather than read off the cached account above.
+        // That entry lives for 72h and nothing invalidates the platform-admin
+        // flag, which an operator changes by direct SQL; entries written before
+        // the column existed don't carry it at all. This read has its own
+        // 5-minute TTL, so a grant or revocation reaches the admin layout in
+        // minutes — and the API gate behind that layout doesn't cache at all.
+        isPlatformAdminCached({ authUserId: id }),
       ]);
 
       if (!user) {
@@ -41,6 +54,12 @@ export const getMyAccount = router({
         throw new CommonError('Common user not found');
       }
 
-      return encodeUser({ user, authUser: ctx.user, isNetworkMember });
+      // Spread over the (possibly stale-shaped) cached row so the encoded
+      // account always carries the authoritative flag.
+      return encodeUser({
+        user: { ...user, isPlatformAdmin },
+        authUser: ctx.user,
+        isNetworkMember,
+      });
     }),
 });

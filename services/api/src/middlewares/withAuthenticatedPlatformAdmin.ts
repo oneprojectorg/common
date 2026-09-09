@@ -9,7 +9,12 @@ import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
 /**
- * Middleware to ensure the user is authenticated and is a platform admin
+ * Middleware to ensure the user is authenticated and is a platform admin.
+ *
+ * `isPlatformAdmin` is the read-through variant on purpose: the flag is only
+ * ever changed by an operator's SQL, so a cache entry here could keep admitting
+ * a revoked admin with nothing able to clear it. Use `isPlatformAdminCached`
+ * only for presentational reads.
  */
 export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   TContextWithUser

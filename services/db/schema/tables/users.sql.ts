@@ -49,9 +49,9 @@ export const users = pgTable(
     privacy: boolean(),
     // Platform-wide superuser: grants access to /admin and every
     // `withAuthenticatedPlatformAdmin` procedure. Distinct from the org-level
-    // `Admin` access role, which is scoped to one organization. Granted and
-    // revoked by another platform admin from the Platform Admin screen — see
-    // `docs/adr/0005-store-platform-admin-as-a-users-flag.md`.
+    // `Admin` access role, which is scoped to one organization. Read-only to
+    // the application — granted and revoked by an operator with database
+    // access — see `docs/adr/0005-store-platform-admin-as-a-users-flag.md`.
     isPlatformAdmin: boolean().default(false).notNull(),
     // When the user accepted the current Terms of Use / Privacy Policy. Null
     // until they accept the latest version; stamped whenever `tos` / `privacy`
@@ -71,12 +71,6 @@ export const users = pgTable(
     index().on(table.lastOrgId),
     index().on(table.currentProfileId),
     index().on(table.email).concurrently(),
-    // Partial: the only reads of this column that aren't already keyed by
-    // auth_user_id are "how many platform admins are left", which touches the
-    // handful of true rows only.
-    index('users_is_platform_admin_index')
-      .on(table.isPlatformAdmin)
-      .where(sql`${table.isPlatformAdmin}`),
     index('users_email_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.email})`)
       .concurrently(),

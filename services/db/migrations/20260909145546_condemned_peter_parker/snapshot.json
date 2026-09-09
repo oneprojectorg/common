@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "839dd879-4ebe-4f81-a240-319f4c78b6f8",
+  "id": "e4270355-9bfc-435a-b8ff-c6cf92ae2e37",
   "prevIds": [
     "9d550a88-abe5-49fe-9a2c-52c4e6489f6d"
   ],
@@ -12242,27 +12242,6 @@
       "method": "btree",
       "concurrently": true,
       "name": "users_email_index",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "users"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "is_platform_admin",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": "\"is_platform_admin\"",
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "users_is_platform_admin_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "users"

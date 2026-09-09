@@ -172,14 +172,11 @@ const platformAdmins = await db
       eq(users.isPlatformAdmin, false),
     ),
   )
-  .returning({ email: users.email });
+  .returning({ authUserId: users.authUserId });
 
+// Count only — the emails are personal data and this runs in CI logs.
 if (platformAdmins.length > 0) {
-  console.log(
-    `Granted platform admin to ${platformAdmins.length} user(s): ${platformAdmins
-      .map((u) => u.email)
-      .join(', ')}`,
-  );
+  console.log(`Granted platform admin to ${platformAdmins.length} user(s)`);
 }
 
 const adminRole = await db._query.accessRoles.findFirst({
