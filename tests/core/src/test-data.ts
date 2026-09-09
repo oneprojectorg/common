@@ -97,12 +97,9 @@ export async function setTestPlatformAdmin(
 
 /** Creates a user via Supabase admin API, bypassing email confirmation. */
 export async function createUser(opts: CreateUserOptions) {
-  const {
-    supabaseAdmin,
-    email,
-    password = TEST_USER_DEFAULT_PASSWORD,
-    isPlatformAdmin = isTestPlatformAdminEmail(email),
-  } = opts;
+  const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
+  const isPlatformAdmin =
+    opts.isPlatformAdmin ?? isTestPlatformAdminEmail(email);
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
