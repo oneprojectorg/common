@@ -41,14 +41,9 @@ export type GatingCallers = {
    */
   networkJwt: (email?: string) => Promise<GatingCaller>;
   /**
-   * A phone-only account, which holds no email at all.
-   *
-   * Neither the domain rule nor the allow list can speak for such an account,
-   * so the network gate refuses it. Use this caller in a test that has to
-   * reach the gate with a credential that authenticates but does not admit.
-   *
-   * Not part of {@link GatingCells}: adding a fifth required cell would touch
-   * every gating suite in the repository.
+   * A phone-only account: authenticates, holds no email, so the network gate
+   * refuses it with `callerTier: 'user'`. Not a {@link GatingCells} key — a
+   * fifth required cell would touch every gating suite in the repository.
    */
   phoneJwt: () => Promise<GatingCaller>;
 };
