@@ -54,8 +54,8 @@ export const ANALYTICS_CONSENT_KEY_PREFIX = '__ph_opt_in_out_';
 
 /**
  * The local-storage entry posthog-js writes when a visitor rejects tracking.
- * Empty when no PostHog key is configured — the app never initialises posthog
- * without one, so there is no prompt to answer.
+ * Empty when no PostHog key is configured — the app doesn't raise the consent
+ * prompt without one, so there is nothing to answer.
  */
 function analyticsConsentAnswered(): Array<{ name: string; value: string }> {
   const token = process.env.NEXT_PUBLIC_POSTHOG_KEY;

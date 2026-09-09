@@ -7,62 +7,63 @@ import {
 } from '../fixtures/index.js';
 
 /**
- * The shared storage state answers the consent prompt so it doesn't sit over
- * the corner of every other spec. These tests are about the prompt itself, so
- * they start from a visitor who hasn't answered yet.
+ * Land on the app as a visitor who hasn't answered the consent prompt. The
+ * shared storage state answers it so it isn't sitting over the corner of every
+ * other spec; these tests are about the prompt itself.
+ *
+ * The answer is cleared once and the page reloaded, rather than through an init
+ * script — an init script re-runs on every navigation, which would also wipe
+ * the answer the visitor gives partway through a test.
  */
-async function forgetConsentAnswer(page: Page) {
-  await page.addInitScript((prefix) => {
+async function visitAsUnansweredVisitor(page: Page) {
+  await page.goto('/en/');
+  await page.evaluate((prefix) => {
     for (const key of Object.keys(window.localStorage)) {
       if (key.startsWith(prefix)) {
         window.localStorage.removeItem(key);
       }
     }
   }, ANALYTICS_CONSENT_KEY_PREFIX);
+  await page.reload();
 }
 
 const consentToast = (page: Page) =>
   page.getByRole('region', { name: 'Analytics consent' });
 
-test.describe('Analytics consent', () => {
-  test.beforeEach(async ({ page }) => {
-    await forgetConsentAnswer(page);
-  });
+const analyticsCookies = async (page: Page) =>
+  (await page.context().cookies()).filter((cookie) =>
+    cookie.name.startsWith('ph_'),
+  );
 
+test.describe('Analytics consent', () => {
   test('keeps asking until the visitor answers, and stays cookieless meanwhile', async ({
     page,
   }) => {
-    await page.goto('/en/');
+    await visitAsUnansweredVisitor(page);
     await expect(consentToast(page)).toBeVisible();
 
     // Persistent: ignoring it and reloading brings it straight back.
     await page.reload();
     await expect(consentToast(page)).toBeVisible();
 
-    const cookies = await page.context().cookies();
-    expect(cookies.filter((cookie) => cookie.name.startsWith('ph_'))).toEqual(
-      [],
-    );
+    expect(await analyticsCookies(page)).toEqual([]);
   });
 
   test('rejecting dismisses it for good and sets no analytics cookie', async ({
     page,
   }) => {
-    await page.goto('/en/');
+    await visitAsUnansweredVisitor(page);
     await consentToast(page).getByRole('button', { name: 'Reject' }).click();
     await expect(consentToast(page)).toBeHidden();
 
     await page.reload();
     await expect(consentToast(page)).toBeHidden();
 
-    const cookies = await page.context().cookies();
-    expect(cookies.filter((cookie) => cookie.name.startsWith('ph_'))).toEqual(
-      [],
-    );
+    expect(await analyticsCookies(page)).toEqual([]);
   });
 
   test('accepting dismisses it for good', async ({ page }) => {
-    await page.goto('/en/');
+    await visitAsUnansweredVisitor(page);
     await consentToast(page).getByRole('button', { name: 'Accept' }).click();
     await expect(consentToast(page)).toBeHidden();
 

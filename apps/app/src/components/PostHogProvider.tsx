@@ -16,11 +16,11 @@ import {
 
 import { stampExceptionWithTraceContext } from '../lib/otelErrorTracking';
 
-/** `undefined` until `posthog.init()` has run — nothing is known before that. */
-type ConsentStatus = 'granted' | 'denied' | 'pending' | undefined;
+type ConsentStatus = ReturnType<typeof posthog.get_explicit_consent_status>;
 
 interface TrackingConsent {
-  status: ConsentStatus;
+  /** `undefined` until `posthog.init()` has run — unknown before that. */
+  status: ConsentStatus | undefined;
   /** Full tracking: cookies, local storage, and an identified person. */
   accept: () => void;
   /** Keeps capturing events, cookielessly and without an identity. */
@@ -63,7 +63,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       opt_out_capturing_by_default: true,
     });
 
-    setStatus(posthog.get_explicit_consent_status());
+    // Without a project key posthog has nowhere to send anything, so there is
+    // nothing to ask the visitor to consent to. Leaving the status unknown
+    // keeps the toast off a local checkout that has no `.env.local`.
+    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      setStatus(posthog.get_explicit_consent_status());
+    }
   }, []);
 
   useEffect(() => {

@@ -13,8 +13,10 @@ import { useTrackingConsent } from '../PostHogProvider';
  *
  * It is not raised through the `@op/sense` toast manager — that surface is for
  * transient notifications that stack, auto-expire and can be swiped away, none
- * of which a consent prompt may do. It sits on the opposite side of the viewport
- * from the toast viewport (`sm:right-4`) so the two don't collide.
+ * of which a consent prompt may do. It sits at the inline-start corner so it
+ * clears the toast viewport, which pins itself to the physical right; in an RTL
+ * locale the two share that corner until the sense viewport moves to logical
+ * properties.
  */
 export const ConsentToast = () => {
   const t = useTranslations();
