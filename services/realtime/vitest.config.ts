@@ -1,3 +1,4 @@
+import { coverageConfig } from '@op/vitest-config/coverage';
 import { defineConfig } from 'vitest/config';
 
 const TEST_ENV = {
@@ -14,6 +15,7 @@ const TEST_ENV = {
 
 export default defineConfig({
   test: {
+    coverage: coverageConfig(),
     environment: 'node',
     globals: true,
     testTimeout: 30000,
