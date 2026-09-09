@@ -13,8 +13,8 @@ export interface AssignPhaseReviewsInput extends InstancePhaseRef {
 }
 
 /**
- * The decision-scoped counterpart of `platform.admin.assignReviews`.
- * Returns the number of assignments created.
+ * Assign a phase's proposals to one reviewer. Returns the number of
+ * assignments created.
  */
 export async function assignPhaseReviews({
   processInstanceId,
