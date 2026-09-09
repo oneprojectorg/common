@@ -1,4 +1,4 @@
-import { TEST_USER_DEFAULT_PASSWORD } from '@op/test';
+import { TEST_USER_DEFAULT_PASSWORD, grantTestPlatformAdmin } from '@op/test';
 import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
@@ -82,11 +82,14 @@ export async function createTestContextWithSession(
 }
 
 /**
- * Create a test user and return the user object
+ * Create a test user and return the user object. `isPlatformAdmin` grants the
+ * seeded Platform Admin role; off by default, since the role now widens the
+ * holder's access on every profile they belong to.
  */
 export async function createTestUser(
   email: string,
   password: string = TEST_USER_DEFAULT_PASSWORD,
+  { isPlatformAdmin = false }: { isPlatformAdmin?: boolean } = {},
 ) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
@@ -102,6 +105,10 @@ export async function createTestUser(
 
   if (error) {
     throw new Error(`Failed to create test user: ${error.message}`);
+  }
+
+  if (data.user && isPlatformAdmin) {
+    await grantTestPlatformAdmin(data.user.id);
   }
 
   return data;

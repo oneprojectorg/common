@@ -3,11 +3,13 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
+  profileUserToAccessRoles,
+  profileUsers,
   profiles,
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { db, eq } from '@op/db/test';
+import { and, db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
@@ -35,6 +37,12 @@ export interface CreateOrganizationOptions {
   organizationName?: string;
   /** Email domain for generated users */
   emailDomain?: string;
+  /**
+   * Grant the Platform Admin role. Defaults to the network-domain admins only:
+   * granting it to members would give them admin rights in their own
+   * organization and mask the membership gates the tests check.
+   */
+  isPlatformAdmin?: boolean;
 }
 
 export interface CreateOrganizationResult {
@@ -56,6 +64,54 @@ export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
+  /** Grant the Platform Admin role. Off unless asked for. */
+  isPlatformAdmin?: boolean;
+}
+
+/** Test users on this domain stand in for One Project staff. */
+export const TEST_PLATFORM_ADMIN_DOMAIN = 'oneproject.org';
+
+export const isTestPlatformAdminEmail = (email: string): boolean =>
+  email.toLowerCase().endsWith(`@${TEST_PLATFORM_ADMIN_DOMAIN}`);
+
+/**
+ * Grants the seeded Platform Admin role to an existing test user: a role row
+ * on the membership of the user's OWN individual profile, which is where
+ * `getUserGlobalRoles` looks. Mirrors `grantPlatformAdmin` in @op/common
+ * without importing it — that package has no `"type": "module"`, so calling
+ * it breaks under Playwright's Node runtime (see `createProposal` below).
+ */
+export async function grantTestPlatformAdmin(
+  authUserId: string,
+): Promise<void> {
+  const memberships = await db
+    .select({ profileUserId: profileUsers.id })
+    .from(users)
+    .innerJoin(
+      profileUsers,
+      and(
+        eq(profileUsers.profileId, users.profileId),
+        eq(profileUsers.authUserId, users.authUserId),
+      ),
+    )
+    .where(eq(users.authUserId, authUserId))
+    .limit(1);
+
+  const membership = memberships[0];
+
+  if (!membership) {
+    throw new Error(
+      `Cannot grant Platform Admin: no individual-profile membership for ${authUserId}`,
+    );
+  }
+
+  await db
+    .insert(profileUserToAccessRoles)
+    .values({
+      profileUserId: membership.profileUserId,
+      accessRoleId: ROLES.PLATFORM_ADMIN.id,
+    })
+    .onConflictDoNothing();
 }
 
 /** Creates a user via Supabase admin API, bypassing email confirmation. */
@@ -84,6 +140,10 @@ export async function createUser(opts: CreateUserOptions) {
     .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
     .where(eq(users.authUserId, data.user.id));
 
+  if (opts.isPlatformAdmin) {
+    await grantTestPlatformAdmin(data.user.id);
+  }
+
   return {
     id: data.user.id,
     email: data.user.email ?? email,
@@ -109,6 +169,7 @@ export async function createOrganization(
     users: userCounts = { admin: 1, member: 0 },
     organizationName = 'Test Org',
     emailDomain = 'oneproject.org',
+    isPlatformAdmin,
   } = opts;
 
   const createdIds = {
@@ -158,6 +219,9 @@ export async function createOrganization(
     const authUser = await createUser({
       supabaseAdmin,
       email,
+      isPlatformAdmin:
+        isPlatformAdmin ??
+        (role === 'Admin' && isTestPlatformAdminEmail(email)),
     });
 
     createdIds.authUserIds.push(authUser.id);

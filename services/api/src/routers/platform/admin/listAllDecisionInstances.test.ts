@@ -1,4 +1,5 @@
 import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { grantTestPlatformAdmin } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -87,6 +88,8 @@ describe.concurrent('platform.admin.listAllDecisionInstances', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
+    // The caller of a platform-admin router has to hold the role.
+    await grantTestPlatformAdmin(setup.user.id);
     const instanceId = setup.instance.instance.id;
 
     await Promise.all([
@@ -137,6 +140,8 @@ describe.concurrent('platform.admin.listAllDecisionInstances', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
+    // The caller of a platform-admin router has to hold the role.
+    await grantTestPlatformAdmin(setup.user.id);
     const instanceId = setup.instance.instance.id;
 
     const { session } = await createIsolatedSession(setup.userEmail);
