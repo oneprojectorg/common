@@ -5,9 +5,11 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
@@ -64,15 +66,6 @@ export async function listProposalsWithReviewAggregates(
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  if ('proposalIds' in input) {
-    // Raw `phaseId`, not the effective one: a reviewer must name the phase.
-    assertCanReadPhaseReviews(instance, input.phaseId);
-  } else if (!instance.access.admin) {
-    throw new UnauthorizedError(
-      "You don't have admin access to this process instance",
-    );
-  }
-
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
   // Scoring follows the effective phase's rubric (the list is always
@@ -83,10 +76,32 @@ export async function listProposalsWithReviewAggregates(
         .criteria.filter((c) => c.scored)
         .map((c) => c.key)
     : [];
-  const phaseProposalIds = await getProposalIdsForPhase({
-    instance,
-    phaseId,
-  });
+
+  // Filtered mode gates on the raw `phaseId`, not the effective one: a reviewer
+  // must name the phase. The gate races the phase lookup, which never throws.
+  let accessCheck: Promise<unknown>;
+  if ('proposalIds' in input) {
+    accessCheck = assertCanReadPhaseReviews({
+      instance,
+      phaseId: input.phaseId,
+      user,
+    });
+  } else {
+    if (!instance.profileId) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+
+    accessCheck = assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: { decisions: permission.ADMIN },
+    });
+  }
+
+  const [phaseProposalIds] = await Promise.all([
+    getProposalIdsForPhase({ instance, phaseId }),
+    accessCheck,
+  ]);
 
   if ('proposalIds' in input) {
     return listProposalsFiltered({

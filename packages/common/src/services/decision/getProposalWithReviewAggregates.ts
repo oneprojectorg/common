@@ -44,11 +44,6 @@ export async function getProposalWithReviewAggregates(
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  // Read gate: admin, or the process-wide reviewer grant on an open phase at
-  // or before the current one — see `canReadPhaseReviews` for the semantics.
-  // Gated on the caller's raw phaseId so reviewers must always name a phase.
-  assertCanReadPhaseReviews(instance, input.phaseId);
-
   // Effective phase: explicit `phaseId`, else the instance's current phase —
   // mirrors `listProposalsWithReviewAggregates`, so there is no cross-phase
   // blended mode.
@@ -63,6 +58,8 @@ export async function getProposalWithReviewAggregates(
         .map((c) => c.key)
     : [];
 
+  // Read gate — see `canReadPhaseReviews`. On the caller's raw phaseId, so a
+  // reviewer must name one; the reads only return once it passes.
   const [proposal, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findFirst({
       // Moderation-detached (CSAM) proposals are treated as not-found even
@@ -74,6 +71,7 @@ export async function getProposalWithReviewAggregates(
       with: proposalRelations({ processInstanceId, phaseId }),
     }),
     getCategoriesByProposalIds([proposalId]),
+    assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user }),
   ]);
 
   if (!proposal || proposal.processInstanceId !== processInstanceId) {

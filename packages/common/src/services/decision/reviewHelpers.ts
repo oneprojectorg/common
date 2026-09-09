@@ -6,12 +6,13 @@ import {
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
+import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
-import type { DecisionRolePermissions } from './permissions';
+import { decisionPermission } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isInstanceCurrentPhase } from './utils/instance';
@@ -114,12 +115,25 @@ export async function assertProposalReviewReadAccess({
   user,
 }: {
   subject: string;
-  instance: { access: Pick<DecisionRolePermissions, 'admin' | 'review'> };
+  instance: { profileId: string | null };
   profileId: string;
   proposal: { profileId: string; submittedByProfileId: string | null };
   user: AccessUser | undefined;
 }): Promise<void> {
-  if (instance.access.admin || instance.access.review) {
+  const instanceRoles = instance.profileId
+    ? await getProfileAccessRoles({ user, profileId: instance.profileId })
+    : [];
+
+  if (
+    instanceRoles.length > 0 &&
+    checkPermission(
+      [
+        { decisions: decisionPermission.REVIEW },
+        { decisions: permission.ADMIN },
+      ],
+      instanceRoles,
+    )
+  ) {
     return;
   }
 
@@ -239,11 +253,11 @@ export function getActiveRevisionRequest(
 
 /**
  * The slice of a loaded decision instance (`getInstance`'s return) that the
- * phase-reviews read gate needs: the viewer's resolved capabilities plus the
- * instance's phase configuration.
+ * phase-reviews read gate needs: the instance's own profile (which the
+ * viewer's capabilities are resolved against) plus its phase configuration.
  */
 export interface PhaseReviewsReadContext {
-  access: DecisionRolePermissions;
+  profileId: string | null;
   currentStateId: string | null;
   instanceData: DecisionInstanceData;
 }
@@ -253,22 +267,40 @@ export interface PhaseReviewsReadContext {
  * instance. Admins always can — any phase, or the caller's default when
  * `phaseId` is omitted — and return before any phase-settings resolution
  * (which throws NotFound on a phase the instance doesn't have). Reviewers
- * (`access.review`) must name a phase, and that phase's resolved
+ * (the decisions REVIEW grant) must name a phase, and that phase's resolved
  * `openReviews` must be on. An
  * open phase stays readable after it ends (later-phase reviewers read the
  * earlier phase's reviews), but phases after the current one are never
  * readable. The reviewer grant is deliberately process-wide: ANY reviewer of
  * the process can read, not only those assigned to a given proposal.
  */
-export function canReadPhaseReviews(
-  instance: PhaseReviewsReadContext,
-  phaseId: string | undefined,
-): boolean {
-  if (instance.access.admin) {
+export async function canReadPhaseReviews({
+  instance,
+  phaseId,
+  user,
+}: {
+  instance: PhaseReviewsReadContext;
+  phaseId: string | undefined;
+  user: AccessUser | undefined;
+}): Promise<boolean> {
+  const instanceRoles = instance.profileId
+    ? await getProfileAccessRoles({ user, profileId: instance.profileId })
+    : [];
+
+  if (instanceRoles.length === 0) {
+    return false;
+  }
+
+  if (checkPermission({ decisions: permission.ADMIN }, instanceRoles)) {
     return true;
   }
 
-  if (!instance.access.review || !phaseId || instance.currentStateId == null) {
+  const isReviewer = checkPermission(
+    { decisions: decisionPermission.REVIEW },
+    instanceRoles,
+  );
+
+  if (!isReviewer || !phaseId || instance.currentStateId == null) {
     return false;
   }
 
@@ -284,11 +316,12 @@ export function canReadPhaseReviews(
 }
 
 /** `canReadPhaseReviews`, but throws `UnauthorizedError` on denial. */
-export function assertCanReadPhaseReviews(
-  instance: PhaseReviewsReadContext,
-  phaseId: string | undefined,
-): void {
-  if (!canReadPhaseReviews(instance, phaseId)) {
+export async function assertCanReadPhaseReviews(args: {
+  instance: PhaseReviewsReadContext;
+  phaseId: string | undefined;
+  user: AccessUser | undefined;
+}): Promise<void> {
+  if (!(await canReadPhaseReviews(args))) {
     throw new UnauthorizedError(
       "You don't have access to read reviews for this process instance",
     );
@@ -342,10 +375,18 @@ export async function assertReviewAssignmentContext({
     user,
   });
 
-  // TODO: revisit the access here
-  if (!instance.access.review && !instance.access.admin) {
-    throw new UnauthorizedError("You don't have access to review proposals");
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
   }
+
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: [
+      { decisions: decisionPermission.REVIEW },
+      { decisions: permission.ADMIN },
+    ],
+  });
 
   if (assignment.reviewerProfileId !== dbUser.profileId) {
     throw new UnauthorizedError(

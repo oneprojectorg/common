@@ -2,14 +2,17 @@ import { computeDaysLeft } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  processInstances,
   proposalReviewAssignments,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
-import { createProposalReview } from '@op/test';
+import { createProposalReview, testSimpleVotingSchema } from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
@@ -43,6 +46,47 @@ describe.concurrent('getPhaseReviewProgress', () => {
     await expect(
       reviewerCaller.decision.getPhaseReviewProgress({
         processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects an org admin with no grant on the instance profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      processSchema: testSimpleVotingSchema,
+    });
+
+    // The fixture owns instances by the creator's individual profile; an
+    // organization owner is what `getInstance` still resolves org roles from.
+    await db
+      .update(processInstances)
+      .set({ ownerProfileId: setup.organization.profileId })
+      .where(eq(processInstances.id, setup.instance.instance.id));
+
+    const orgAdmin = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+      orgRoleId: ROLES.ADMIN.id,
+    });
+
+    const orgAdminCaller = await createAuthenticatedCaller(orgAdmin.email);
+
+    // The caller isn't locked out everywhere: `getInstance` still admits them
+    // and still reports the admin bit to the client.
+    await expect(
+      orgAdminCaller.decision.getInstance({
+        instanceId: setup.instance.instance.id,
+      }),
+    ).resolves.toMatchObject({ access: { admin: true } });
+
+    await expect(
+      orgAdminCaller.decision.getPhaseReviewProgress({
+        processInstanceId: setup.instance.instance.id,
         phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
