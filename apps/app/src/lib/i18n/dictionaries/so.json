@@ -1736,5 +1736,9 @@
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
   "Participants can comment on proposals during this phase.": "Ka qaybgalayaashu waxay faallo ka bixin karaan soo jeedimaha inta lagu jiro wejigan.",
-  "Comments off": "Faallooyinka waa damman"
+  "Comments off": "Faallooyinka waa damman",
+  "Analytics consent": "Oggolaanshaha falanqaynta",
+  "Help us improve Common": "Naga caawi inaan Common wanaajinno",
+  "Accept cookies to help us measure how Common is used. Reject and we'll still count your visit anonymously, without cookies.": "Aqbal cookies-ka si aad naga caawiso cabbirka sida Common loo isticmaalo. Haddii aad diiddo, weli si aan magac lahayn ayaan u tirin doonaa booqashadaada, cookies la'aan.",
+  "Reject": "Diid"
 }

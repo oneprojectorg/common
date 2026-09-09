@@ -14,6 +14,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { IconProvider } from '@/components/IconProvider';
 
+import { ConsentToast } from '../components/ConsentToast';
 import { FileDropGuard } from '../components/FileDropGuard';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
@@ -113,6 +114,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
                       <IconProvider>{children}</IconProvider>
                     </TooltipProvider>
                   </NuqsAdapter>
+                  <ConsentToast />
                 </PostHogProvider>
               </OTelBrowserProvider>
             </I18nProvider>
