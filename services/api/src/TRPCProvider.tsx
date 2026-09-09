@@ -84,8 +84,9 @@ export function TRPCProvider({
             // Bump whenever a persisted payload's shape changes. Entries are
             // kept for 24h, so without this a returning user restores posts
             // shaped for the previous release and renders undefined counts.
-            // Last bumped: posts moved from reaction fields to like fields.
-            buster: 'post-likes-1',
+            // Last bumped: every list/paginated payload moved to the
+            // { items } / { items, next } envelope (#2001–#2003).
+            buster: 'list-items-envelope-1',
             dehydrateOptions: {
               shouldDehydrateQuery: (query) => {
                 const queryIsReadyForPersistance =
