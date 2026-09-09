@@ -27,8 +27,19 @@
       "dependsOn": ["^typecheck"]
     },
     "format:check": {},
-    "test": {},
+    // Phantom task: nothing runs it, but depending on it makes a task's hash
+    // include the source files of the packages it depends on. Without it turbo
+    // hashes only the package's own files, so editing shared config in
+    // `@op/vitest-config` leaves every `test:coverage` a cache hit and the run
+    // silently replays coverage measured under the old settings.
+    "topo": {
+      "dependsOn": ["^topo"]
+    },
+    "test": {
+      "dependsOn": ["topo"]
+    },
     "test:coverage": {
+      "dependsOn": ["topo"],
       "outputs": ["coverage/**"]
     },
     "dev": {
