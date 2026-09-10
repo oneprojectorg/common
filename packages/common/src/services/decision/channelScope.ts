@@ -33,8 +33,8 @@ export const getProposalRevisionChannels = async ({
 
 /**
  * The same fan-out for a mutation that only knows one assignment (request,
- * cancel, per-request resubmission). Falls back to the acting assignment's own
- * channel when the assignment row is gone, so a caller never loses it.
+ * cancel). Falls back to the acting assignment's own channel when the
+ * assignment row is gone, so a caller never loses it.
  */
 export const getAssignmentRevisionChannels = async (
   assignmentId: string,

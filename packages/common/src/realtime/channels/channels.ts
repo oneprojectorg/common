@@ -37,8 +37,7 @@ export const Channels = {
    * `reviews.listProposalRevisionRequests`, `reviews.getReviewAssignment` and
    * `proposals.getProposalWithReviewAggregates`; broadcast to by the revision
    * mutations (`requestRevision`, `cancelRevisionRequest`,
-   * `submitRevisionResponse`, `submitProposalRevision`) through
-   * `getProposalRevisionChannels`.
+   * `submitProposalRevision`) through `getProposalRevisionChannels`.
    */
   decisionProposal: (instanceId: string, proposalId: string) =>
     `decisionProposal:${instanceId}:${proposalId}` as const,
