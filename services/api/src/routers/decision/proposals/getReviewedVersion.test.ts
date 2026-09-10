@@ -1,10 +1,19 @@
-import { ProposalReviewState } from '@op/db/schema';
+import {
+  ModerationFlagStatus,
+  ModerationSource,
+  ProposalReviewState,
+  Visibility,
+  moderationFlags,
+  proposals,
+} from '@op/db/schema';
+import { db } from '@op/db/test';
 import {
   createProposalReview,
   createReviewAssignment,
   getCurrentProposalHistoryId,
   reviseProposal,
 } from '@op/test';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -168,6 +177,83 @@ describe.concurrent('getReviewedVersion', () => {
 
     await expect(
       adminCaller.decision.getReviewedVersion({ reviewId: review.id }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('hides a hidden proposal from a reviewer while an admin still reads it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+    const created = await testData.createReviewAssignment({ context });
+    const review = await submitReviewAtCurrentVersion({
+      assignmentId: created.assignment.id,
+      proposalId: created.proposal.id,
+    });
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, created.proposal.id));
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.getReviewedVersion({ reviewId: review.id }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.getReviewedVersion({
+      reviewId: review.id,
+    });
+
+    expect(result.proposal.id).toBe(created.proposal.id);
+  });
+
+  it('hides a flagged proposal from a reviewer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+    const created = await testData.createReviewAssignment({ context });
+    const review = await submitReviewAtCurrentVersion({
+      assignmentId: created.assignment.id,
+      proposalId: created.proposal.id,
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(moderationFlags)
+        .where(eq(moderationFlags.itemId, created.proposal.id));
+    });
+    await db.insert(moderationFlags).values({
+      itemType: 'proposal',
+      itemId: created.proposal.id,
+      status: ModerationFlagStatus.FLAGGED,
+      source: ModerationSource.AUTOMATED,
+      reason: 'integration-test verdict',
+    });
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.getReviewedVersion({ reviewId: review.id }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 

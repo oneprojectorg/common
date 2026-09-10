@@ -1,9 +1,10 @@
-import { type DbClient, and, db as defaultDb, eq, isNull } from '@op/db/client';
+import { type DbClient, and, db as defaultDb, eq } from '@op/db/client';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../../utils';
+import { getProfileAccessRoles } from '../../access';
 import { generateProposalHtml } from '../generateProposalHtml';
 import { getInstance } from '../getInstance';
 import { getProposalAttachmentsWithSignedUrls } from '../getProposalAttachmentsWithSignedUrls';
@@ -13,6 +14,10 @@ import {
 } from '../getProposalDocumentsContent';
 import { isAnonymousAuthor } from '../proposalAuthor';
 import { parseProposalData } from '../proposalDataSchema';
+import {
+  getProposalReadContext,
+  isProposalReadable,
+} from '../proposalVisibility';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { assertCanReadPhaseReviews } from '../reviewHelpers';
 import {
@@ -78,46 +83,63 @@ export async function getReviewedProposalVersion({
 
   // Same gate as the admin review reads: decision admins on any phase,
   // reviewers on an open-reviews phase at or before the current one.
-  await assertCanReadPhaseReviews({
-    instance,
-    phaseId: assignment.phaseId,
-    user,
-  });
+  const [decisionRoles] = await Promise.all([
+    instance.profileId
+      ? getProfileAccessRoles({ user, profileId: instance.profileId })
+      : Promise.resolve([]),
+    assertCanReadPhaseReviews({
+      instance,
+      phaseId: assignment.phaseId,
+      user,
+    }),
+  ]);
+
+  // Reading a review does not widen who may read its proposal: drafts, hidden,
+  // flagged and detached proposals stay behind exactly the gate `getProposal`
+  // applies, and are 404 to everyone else.
+  const readContext = getProposalReadContext({ user, decisionRoles });
 
   const anchorHistoryId =
     review.reviewedProposalHistoryId ?? assignment.assignedProposalHistoryId;
 
-  const [proposal, currentProposalHistoryId, snapshot] = await Promise.all([
-    db.query.proposals.findFirst({
-      // Moderation-detached (CSAM) proposals are treated as not-found even for
-      // admins — same 404 every other proposal read returns.
-      where: {
-        RAW: (table) =>
-          and(
-            eq(table.id, assignment.proposalId),
-            isNull(table.moderationDetachedAt),
-          )!,
-      },
-      with: {
-        profile: true,
-        submittedBy: {
-          with: {
-            avatarImage: true,
-            profileUsers: {
-              columns: {},
-              with: { authUser: { columns: { isAnonymous: true } } },
+  // One repeatable-read snapshot: a revision landing between the proposal read
+  // and the current-history read would otherwise let `isCurrent` describe a
+  // different version than the content returned with it.
+  const { proposal, currentProposalHistoryId, snapshot } = await db.transaction(
+    async (tx) => ({
+      proposal: await tx.query.proposals.findFirst({
+        where: {
+          RAW: (table) =>
+            and(
+              eq(table.id, assignment.proposalId),
+              isProposalReadable(table, readContext),
+            )!,
+        },
+        with: {
+          profile: true,
+          submittedBy: {
+            with: {
+              avatarImage: true,
+              profileUsers: {
+                columns: {},
+                with: { authUser: { columns: { isAnonymous: true } } },
+              },
             },
           },
         },
-      },
+      }),
+      currentProposalHistoryId: await getCurrentProposalHistoryIdForAssignment({
+        assignment,
+        db: tx,
+      }),
+      snapshot: anchorHistoryId
+        ? await tx.query.proposalHistory.findFirst({
+            where: { historyId: anchorHistoryId },
+          })
+        : undefined,
     }),
-    getCurrentProposalHistoryIdForAssignment({ assignment, db }),
-    anchorHistoryId
-      ? db.query.proposalHistory.findFirst({
-          where: { historyId: anchorHistoryId },
-        })
-      : Promise.resolve(undefined),
-  ]);
+    { isolationLevel: 'repeatable read', accessMode: 'read only' },
+  );
 
   if (!proposal) {
     throw new NotFoundError('Proposal', assignment.proposalId);
