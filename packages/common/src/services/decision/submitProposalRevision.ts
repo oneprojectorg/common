@@ -22,6 +22,7 @@ import {
 import { assertUserByAuthId } from '../assert';
 import { getCurrentProposalHistoryIds } from './proposal/history';
 import { parseProposalData } from './proposalDataSchema';
+import { assertProposalAuthorWriteAccess } from './reviewHelpers';
 
 export interface SubmitProposalRevisionResult {
   items: Array<ProposalReviewRequest>;
@@ -61,11 +62,12 @@ export async function submitProposalRevision({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  if (proposal.submittedByProfileId !== dbUser.profileId) {
-    throw new UnauthorizedError(
-      "You don't have access to resubmit this proposal",
-    );
-  }
+  await assertProposalAuthorWriteAccess({
+    action: 'resubmit this proposal',
+    profileId: dbUser.profileId,
+    proposal,
+    user: { id: user.id },
+  });
 
   const trimmedNote = note.trim();
 

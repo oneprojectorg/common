@@ -149,6 +149,46 @@ export async function assertProposalReviewReadAccess({
   );
 }
 
+/**
+ * Write gate for the author side of a revision: the proposal's submitter, or
+ * anyone holding a role on the proposal's own profile — the invited
+ * collaborators. A proposal written by several people is answered by any of
+ * them; the note the resubmission carries is the proposal's, not one person's.
+ *
+ * The author half of {@link assertProposalReviewReadAccess}, minus the
+ * instance-capability branch: a reviewer or a decision admin may read a
+ * proposal's revision requests, but answering one is the authors' act. `action`
+ * names the attempted write in the denial message.
+ */
+export async function assertProposalAuthorWriteAccess({
+  action,
+  profileId,
+  proposal,
+  user,
+}: {
+  action: string;
+  profileId: string;
+  proposal: { profileId: string; submittedByProfileId: string | null };
+  user: AccessUser | undefined;
+}): Promise<void> {
+  if (proposal.submittedByProfileId === profileId) {
+    return;
+  }
+
+  // Fail-closed: no grant on the proposal's own profile means no author
+  // standing, whatever the caller holds on the decision.
+  const proposalRoles = await getProfileAccessRoles({
+    user,
+    profileId: proposal.profileId,
+  });
+
+  if (proposalRoles.length > 0) {
+    return;
+  }
+
+  throw new UnauthorizedError(`You don't have access to ${action}`);
+}
+
 type ProposalWithConfig = NonNullable<
   NonNullable<Parameters<typeof db.query.proposals.findFirst>[0]>['with']
 >;
