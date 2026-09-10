@@ -7,11 +7,13 @@ import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import {
   assertInstancePhase,
+  getProcessCapabilities,
   isReviewPhase,
   resolveReviewSettings,
 } from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
 
+import { ProcessCapabilitiesProvider } from '../ProcessCapabilitiesContext';
 import { ReviewSummaryView } from './ReviewSummaryView';
 
 interface ReviewSummaryLayoutProps {
@@ -121,15 +123,19 @@ export async function ReviewSummaryLayout({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ReviewSummaryView
-        decisionSlug={decisionSlug}
-        instanceId={instanceId}
-        proposalId={proposalId}
-        proposalProfileId={proposalProfileId}
-        phaseId={phaseId}
-        isPhaseInProgress={isPhaseInProgress}
-        reviewSettings={reviewSettings}
-      />
+      <ProcessCapabilitiesProvider
+        capabilities={getProcessCapabilities(instance.instanceData)}
+      >
+        <ReviewSummaryView
+          decisionSlug={decisionSlug}
+          instanceId={instanceId}
+          proposalId={proposalId}
+          proposalProfileId={proposalProfileId}
+          phaseId={phaseId}
+          isPhaseInProgress={isPhaseInProgress}
+          reviewSettings={reviewSettings}
+        />
+      </ProcessCapabilitiesProvider>
     </HydrationBoundary>
   );
 }

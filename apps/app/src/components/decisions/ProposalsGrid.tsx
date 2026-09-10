@@ -48,8 +48,6 @@ export interface ProposalsProps {
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
   permissions?: DecisionAccess | null;
-  /** The process's "Allow comments" toggle; off drops the cards' comment count. */
-  commentsEnabled?: boolean;
   votedProposalIds?: string[];
   hasFilter: boolean;
   /** Applied search term — named in the empty state when it returns nothing. */
@@ -541,7 +539,6 @@ const ViewProposalsList = ({
   slug,
   decisionSlug,
   permissions,
-  commentsEnabled,
   hasFilter,
   searchQuery,
   isTranslated,
@@ -579,7 +576,6 @@ const ViewProposalsList = ({
           decisionSlug={decisionSlug}
           permissions={permissions}
           hasRevisionRequest={proposalIdsWithRevisionRequest?.has(proposal.id)}
-          commentsEnabled={commentsEnabled}
         />
       ))}
     </ProposalMasonry>

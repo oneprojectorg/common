@@ -19,6 +19,7 @@ import { LuCircleX } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
+import { useProcessCapabilities } from '../ProcessCapabilitiesContext';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import {
   getProposalContentPreview,
@@ -156,11 +157,6 @@ export interface ProposalCardViewProps extends Omit<
   /** Show the engagement counts (likes / follows / comments). */
   showMetrics?: boolean;
   /**
-   * Whether the process takes comments. `false` drops the comment count from
-   * the metrics row. Defaults to true, matching the process default.
-   */
-  commentsEnabled?: boolean;
-  /**
    * Makes the like and follow counts pressable. The counts are the controls —
    * there is no separate Like/Follow pair repeating the same two icons. Ignored
    * for viewers who can't act (anonymous, or no engagement access), who get the
@@ -202,7 +198,6 @@ export const ProposalCardView = ({
   aside,
   actions,
   showMetrics = false,
-  commentsEnabled = true,
   canEngage = false,
   revisionRequested = false,
   // A default parameter, so `null` reaches the card as "no badge" while an
@@ -220,6 +215,7 @@ export const ProposalCardView = ({
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData(proposal);
   const engagement = useProposalEngagement({ proposal, canEngage });
+  const { comments: commentsEnabled } = useProcessCapabilities();
   // Empty unless a review surface provides it; an explicit slot always wins.
   const decoration = useProposalReviewDecoration(proposal.id);
 

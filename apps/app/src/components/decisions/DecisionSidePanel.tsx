@@ -34,6 +34,7 @@ import {
 import { PostUpdate } from '@/components/PostUpdate';
 import { ResourcesTabContent } from '@/components/Resources/ResourcesTabContent';
 
+import { useProcessCapabilities } from './ProcessCapabilitiesContext';
 import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
 
@@ -43,15 +44,9 @@ const isPanelTab = (key: string): key is PanelTab =>
 export const DecisionSidePanel = ({
   decisionProfileId,
   access,
-  commentsEnabled,
 }: {
   decisionProfileId: string;
   access?: DecisionAccess | null;
-  /**
-   * The process's "Allow comments" toggle. Off removes the reply affordance on
-   * every update — organizers keep posting, participants stop replying.
-   */
-  commentsEnabled: boolean;
 }) => {
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
@@ -97,7 +92,6 @@ export const DecisionSidePanel = ({
           decisionProfileId={decisionProfileId}
           canPostUpdate={canPostUpdate}
           canReadUpdates={canReadUpdates}
-          commentsEnabled={commentsEnabled}
           activeTab={activeTab}
           onSelectTab={setPanel}
           onClose={close}
@@ -112,7 +106,6 @@ const PanelContents = ({
   decisionProfileId,
   canPostUpdate,
   canReadUpdates,
-  commentsEnabled,
   activeTab,
   onSelectTab,
   onClose,
@@ -121,7 +114,6 @@ const PanelContents = ({
   decisionProfileId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
-  commentsEnabled: boolean;
   activeTab: PanelTab;
   onSelectTab: (tab: PanelTab) => void;
   onClose: () => void;
@@ -170,7 +162,6 @@ const PanelContents = ({
             decisionProfileId={decisionProfileId}
             canPostUpdate={canPostUpdate}
             canReadUpdates={canReadUpdates}
-            commentsEnabled={commentsEnabled}
           />
         ) : null}
       </TabsContent>
@@ -194,12 +185,10 @@ const UpdatesTabContent = ({
   decisionProfileId,
   canPostUpdate,
   canReadUpdates,
-  commentsEnabled,
 }: {
   decisionProfileId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
-  commentsEnabled: boolean;
 }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -224,10 +213,7 @@ const UpdatesTabContent = ({
         {canReadUpdates ? (
           <ErrorBoundary>
             <Suspense fallback={<PostFeedSkeleton numPosts={2} />}>
-              <UpdatesFeed
-                decisionProfileId={decisionProfileId}
-                commentsEnabled={commentsEnabled}
-              />
+              <UpdatesFeed decisionProfileId={decisionProfileId} />
             </Suspense>
           </ErrorBoundary>
         ) : (
@@ -247,15 +233,10 @@ const UpdatesTabContent = ({
   );
 };
 
-const UpdatesFeed = ({
-  decisionProfileId,
-  commentsEnabled,
-}: {
-  decisionProfileId: string;
-  commentsEnabled: boolean;
-}) => {
+const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
   const t = useTranslations();
   const { user } = useUser();
+  const { comments: commentsEnabled } = useProcessCapabilities();
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(

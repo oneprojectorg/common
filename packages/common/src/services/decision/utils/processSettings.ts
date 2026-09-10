@@ -9,6 +9,35 @@
  */
 
 /**
+ * What a process offers its participants, as configured in the Process
+ * Builder. Distinct from `DecisionAccess`, which is what THIS VIEWER may do —
+ * a capability is off for everyone, including admins.
+ *
+ * Grouped rather than passed as loose booleans: the UI resolves the whole set
+ * once per process and reads members off it, so adding the next capability
+ * costs one field instead of a new prop on every component between the
+ * instance and the control it governs.
+ */
+export interface ProcessCapabilities {
+  /** Participants may comment on proposals and process updates. */
+  comments: boolean;
+}
+
+/** Resolves every process capability from the `instanceData` jsonb column. */
+export function getProcessCapabilities(
+  instanceData: unknown,
+): ProcessCapabilities {
+  return { comments: areCommentsAllowed(instanceData) };
+}
+
+/**
+ * Every capability on — the shape a process gets when nothing is configured.
+ * Not a grant: the server re-derives each capability from the stored config on
+ * every write.
+ */
+export const ALL_PROCESS_CAPABILITIES: ProcessCapabilities = { comments: true };
+
+/**
  * Participants may comment in this process — the Process Builder's "Allow
  * comments" toggle. Gates the comment surfaces AND the write itself (see
  * `assertPostWriteAccess`), so both read the same rule.
