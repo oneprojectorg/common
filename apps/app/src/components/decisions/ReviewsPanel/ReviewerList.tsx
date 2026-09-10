@@ -7,11 +7,13 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
-import { LuChevronRight } from 'react-icons/lu';
+import { LuChevronRight, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -42,8 +44,12 @@ export function ReviewerList({
   ownReview,
 }: ReviewerListProps) {
   const t = useTranslations();
-  const { reviewsSubmittedCount, assignmentsCount, averageScore } =
-    proposalWithReviews.aggregates;
+  const {
+    reviewsSubmittedCount,
+    assignmentsCount,
+    averageScore,
+    outOfDateReviewsCount,
+  } = proposalWithReviews.aggregates;
   const { hasScoring, hasOverallRecommendation, totalPoints } = rubricSummary;
 
   const recommendationOptions = useMemo(
@@ -75,6 +81,21 @@ export function ReviewerList({
             )}
           </p>
         </header>
+      )}
+
+      {/* Admin-only: the reviewer-facing panel hides the summary header, and
+          this banner belongs to it. */}
+      {!hideSummaryHeader && outOfDateReviewsCount > 0 && (
+        <Alert variant="warning">
+          <LuRefreshCw />
+          <AlertTitle>{t('Mixed version reviews')}</AlertTitle>
+          <AlertDescription>
+            {t(
+              '{n} out of {total} reviews were completed before the latest revision. Cumulative score includes all reviews.',
+              { n: outOfDateReviewsCount, total: reviewsSubmittedCount },
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
       {hasScoring && reviewsSubmittedCount > 0 && (
@@ -222,7 +243,13 @@ function ReviewerRow({
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}
       className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
-      aria-label={t('View review by {name}', { name: rowLabel })}
+      // The label replaces everything inside, so the tag has to be said here
+      // too or the row reads the same as an up-to-date one.
+      aria-label={
+        item.isReviewOutOfDate
+          ? t('View review by {name} (older version)', { name: rowLabel })
+          : t('View review by {name}', { name: rowLabel })
+      }
     >
       <div className="flex items-center gap-2">
         <ProfileAvatar
@@ -240,7 +267,17 @@ function ReviewerRow({
           )}
         </div>
       </div>
-      <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
+      {/* Juan's Figma puts the tag inside the Person row; the trailing slot
+          next to the chevron gets there without forking the component. */}
+      <div className="flex items-center gap-2">
+        {item.isReviewOutOfDate && (
+          <Badge variant="warning">
+            <LuRefreshCw data-icon="inline-start" />
+            {t('Older version')}
+          </Badge>
+        )}
+        <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
+      </div>
     </Button>
   );
 }

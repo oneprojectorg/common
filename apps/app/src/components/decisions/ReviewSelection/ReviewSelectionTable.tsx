@@ -7,6 +7,7 @@ import {
   type RecommendationValue,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
+import { Badge } from '@op/sense/Badge';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
@@ -20,6 +21,7 @@ import {
 } from '@op/sense/Table';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
+import { LuRefreshCw } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -116,18 +118,23 @@ export function ReviewSelectionTable({
               {/* The cell that names the row, so grid navigation can announce
                   which proposal a value belongs to. */}
               <TableRowHeader>
-                <div className="flex flex-col">
-                  <Link
-                    href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-                    className="line-clamp-1 text-base text-foreground"
-                  >
-                    <bdi>{title}</bdi>
-                  </Link>
-                  {submitterName && (
-                    <span className="line-clamp-1 text-sm text-muted-foreground">
-                      <bdi>{submitterName}</bdi>
-                    </span>
+                <div className="flex flex-col items-start gap-2">
+                  {item.aggregates.outOfDateReviewsCount > 0 && (
+                    <MixedVersionBadge />
                   )}
+                  <div className="flex flex-col">
+                    <Link
+                      href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
+                      className="line-clamp-1 text-base text-foreground"
+                    >
+                      <bdi>{title}</bdi>
+                    </Link>
+                    {submitterName && (
+                      <span className="line-clamp-1 text-sm text-muted-foreground">
+                        <bdi>{submitterName}</bdi>
+                      </span>
+                    )}
+                  </div>
                 </div>
               </TableRowHeader>
               {showBudget ? (
@@ -239,6 +246,7 @@ function ProposalCard({
 
   return (
     <SelectionCard isSelected={advancing}>
+      {item.aggregates.outOfDateReviewsCount > 0 && <MixedVersionBadge />}
       <div className="flex flex-col gap-1">
         <Link
           href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
@@ -282,6 +290,21 @@ function ProposalCard({
         />
       </div>
     </SelectionCard>
+  );
+}
+
+/**
+ * Marks a proposal whose submitted reviews do not all point at the same
+ * version. The cumulative score still counts every one of them.
+ */
+function MixedVersionBadge() {
+  const t = useTranslations();
+
+  return (
+    <Badge variant="warning">
+      <LuRefreshCw data-icon="inline-start" />
+      {t('Mixed version reviews')}
+    </Badge>
   );
 }
 
