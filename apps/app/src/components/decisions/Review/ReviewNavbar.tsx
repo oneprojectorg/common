@@ -51,9 +51,6 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
         }
       >
         <div className="flex items-center gap-4">
-          {/* Visible whenever the phase allows revisions, disabled only while
-              this reviewer's own request is open: the rule is per reviewer,
-              and a submitted review does not spend the right to ask. */}
           {reviewSettings.allowRevisions && !isEditing && (
             <Button
               variant="outline"
