@@ -5,31 +5,6 @@ import { createTwilioProvider } from './providers/twilio';
 import type { SmsProvider } from './types';
 
 /**
- * Rejects a Twilio identifier that was pasted into the wrong variable.
- *
- * Every Twilio SID carries a two-letter prefix naming its resource, so the
- * mistake is detectable here rather than at the first call. An Account SID in
- * the Messaging Service slot otherwise fails per message, and an API Key SID in
- * the account slot fails inside the SDK constructor, both far from the cause.
- *
- * @param name - The variable, so the message names what to correct.
- * @param value - The configured value. An unset variable passes.
- * @param prefix - The two letters the resource always starts with.
- * @throws {CommonError} When the value is set and carries another prefix.
- */
-const assertSidPrefix = (
-  name: string,
-  value: string | undefined,
-  prefix: string,
-): void => {
-  if (value && !value.startsWith(prefix)) {
-    throw new CommonError(
-      `${name} must start with ${prefix}, but it starts with ${value.slice(0, 2)}. Check which value was pasted into it.`,
-    );
-  }
-};
-
-/**
  * Resolves the configured SMS vendor from the environment.
  *
  * Call this at the edge — a tRPC procedure, a workflow function, an API route
@@ -51,9 +26,13 @@ const assertSidPrefix = (
  * what notifications will need, and the reason this resolver exists before
  * anything calls it.
  * `TWILIO_VERIFY_SERVICE_SID` switches on nothing here: GoTrue reads that
- * variable itself and confirms phone numbers without this provider. It is
- * still validated below, so a value pasted into the wrong slot fails at
- * startup rather than inside GoTrue.
+ * variable itself and confirms phone numbers without this provider, so the
+ * value never reaches the client built below.
+ *
+ * This function does not check that each SID carries its resource prefix. The
+ * SDK constructor already rejects an account SID that does not start with
+ * `AC`, and says so when the value looks like an API key instead. Every other
+ * misplaced SID fails on the call that uses it, with Twilio's own message.
  *
  * Two credentials work. An API key pair — `TWILIO_API_KEY_SID` with
  * `TWILIO_API_KEY_SECRET` — is preferred, because a key is scoped and can be
@@ -70,9 +49,8 @@ const assertSidPrefix = (
  * @returns The configured provider, or `null` when SMS is off. Check for
  *   `sendSms` before calling it. A Verify-only deployment returns a provider
  *   with no methods, which is the signup-phase shape.
- * @throws {CommonError} When a SID carries the wrong prefix, when no credential
- *   is set, when `TWILIO_API_KEY_SID` has no secret, or when neither service SID
- *   is set.
+ * @throws {CommonError} When no credential is set, when `TWILIO_API_KEY_SID`
+ *   has no secret, or when neither service SID is set.
  *
  * @example Resolve at the edge, inject into the service
  * ```ts
@@ -95,11 +73,6 @@ export const getSmsProvider = (): SmsProvider | null => {
   if (!accountSid) {
     return null;
   }
-
-  assertSidPrefix('TWILIO_ACCOUNT_SID', accountSid, 'AC');
-  assertSidPrefix('TWILIO_API_KEY_SID', apiKeySid, 'SK');
-  assertSidPrefix('TWILIO_VERIFY_SERVICE_SID', verifyServiceSid, 'VA');
-  assertSidPrefix('TWILIO_MESSAGING_SERVICE_SID', messagingServiceSid, 'MG');
 
   if (apiKeySid && !apiKeySecret) {
     throw new CommonError(

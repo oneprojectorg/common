@@ -138,19 +138,4 @@ describe('getSmsProvider', () => {
       expect(() => getSmsProvider()).toThrow(CommonError);
     });
   });
-
-  describe('SID prefixes', () => {
-    it.each([
-      ['TWILIO_ACCOUNT_SID', 'SK1', /must start with AC/],
-      ['TWILIO_API_KEY_SID', 'AC1', /must start with SK/],
-      ['TWILIO_VERIFY_SERVICE_SID', 'AC1', /must start with VA/],
-      ['TWILIO_MESSAGING_SERVICE_SID', 'AC1', /must start with MG/],
-    ] as const)('rejects %s holding %s', (key, value, message) => {
-      // Pasting the account SID into the Messaging slot is the mistake this
-      // catches. Without the guard it fails per message, far from the cause.
-      setEnv({ ...ACCOUNT, [key]: value });
-
-      expect(() => getSmsProvider()).toThrow(message);
-    });
-  });
 });
