@@ -1,6 +1,7 @@
 import { NotFoundError } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
+  areCommentsAllowed,
   isReviewPhase,
 } from '@op/common/client';
 import { db } from '@op/db/client';
@@ -52,6 +53,7 @@ const detailInstanceData = z
         allowMultipleCategories: z.boolean().optional(),
         organizeByCategories: z.boolean().optional(),
         requireCollaborativeProposals: z.boolean().optional(),
+        allowComments: z.boolean().optional(),
         categories: z.array(z.unknown()).optional(),
       })
       .partial()
@@ -151,6 +153,7 @@ export const getDecisionInstanceRouter = router({
             instanceData.config?.organizeByCategories ?? false,
           requireCollaborativeProposals:
             instanceData.config?.requireCollaborativeProposals ?? false,
+          allowComments: areCommentsAllowed(instanceData),
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
         instanceData: instance.instanceData,

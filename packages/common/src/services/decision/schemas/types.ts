@@ -125,6 +125,8 @@ export type PhaseReviewSettings = z.infer<typeof phaseReviewSettingsSchema>;
 
 export interface ProcessConfig {
   hideBudget?: boolean;
+  /** Participants may comment; read via `areCommentsAllowed`, never directly. */
+  allowComments?: boolean;
   categories?: ProposalCategory[];
   requireCategorySelection?: boolean;
   allowMultipleCategories?: boolean;

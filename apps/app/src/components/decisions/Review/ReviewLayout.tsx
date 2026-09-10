@@ -6,6 +6,7 @@ import {
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import {
+  areCommentsAllowed,
   getPhaseReviewSettings,
   getPreviousPhases,
   type ReviewSettings,
@@ -39,6 +40,7 @@ export async function ReviewLayout({
 
   let reviewSettings: ReviewSettings;
   let previousReviewPhases: PreviousReviewPhase[];
+  let commentsEnabled: boolean;
   try {
     const [decisionProfile, reviewAssignment] = await Promise.all([
       client.decision.getDecisionBySlug({ slug: decisionSlug }),
@@ -47,6 +49,8 @@ export async function ReviewLayout({
 
     const instanceData = decisionProfile.processInstance.instanceData;
     const assignmentPhaseId = reviewAssignment.assignment.phaseId;
+
+    commentsEnabled = areCommentsAllowed(instanceData);
 
     // Throws NotFoundError when the assignment's phase is no longer in the
     // instance's phase list (stale assignment) — mapped to notFound() below.
@@ -105,6 +109,7 @@ export async function ReviewLayout({
               <SplitPane.Pane id="proposal" label={t('Proposal')}>
                 <ReviewProposalPane
                   decisionRoot={`/decisions/${decisionSlug}`}
+                  commentsEnabled={commentsEnabled}
                 />
               </SplitPane.Pane>
               <SplitPane.Pane id="review" label={t('Review')}>

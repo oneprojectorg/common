@@ -1733,5 +1733,7 @@
   "Your request • Sent {timeAgo}": "Your request • Sent {timeAgo}",
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
-  "Older version reviewed by {name}": "Older version reviewed by {name}"
+  "Older version reviewed by {name}": "Older version reviewed by {name}",
+  "Allow comments": "Oggolow faallooyinka",
+  "Participants can comment on proposals and updates. Turning this off hides comments everywhere in the process.": "Ka qaybgalayaashu waxay faallo ka bixin karaan soo jeedimaha iyo cusboonaysiinta. Damintadu waxay qarinaysaa faallooyinka meel walba oo habka ah."
 }

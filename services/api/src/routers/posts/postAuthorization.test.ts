@@ -1295,6 +1295,175 @@ describe.concurrent('proposal post authorization', () => {
   });
 });
 
+// The Process Builder's "Allow comments" toggle (`config.allowComments`). The
+// setup writes it through `decision.updateDecisionInstance` — the same call the
+// builder makes — so the gate is exercised against a real saved config rather
+// than a hand-written instanceData row.
+describe.concurrent('process-level comment gating', () => {
+  const setUpProcessWithComments = async (
+    testData: TestDecisionsDataManager,
+    { allowComments }: { allowComments: boolean },
+  ) => {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    await adminCaller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      config: { allowComments },
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    return {
+      setup,
+      instance,
+      adminCaller,
+      memberCaller: await createAuthenticatedCaller(member.email),
+    };
+  };
+
+  it('rejects a comment on a proposal when the process disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, memberCaller } = await setUpProcessWithComments(
+      testData,
+      { allowComments: false },
+    );
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Comments off', description: 'desc' },
+    });
+
+    // The toggle denies, not the permission check — the member holds
+    // SUBMIT_PROPOSALS and would be admitted on a process that takes comments.
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Comment on a process with comments turned off.',
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: 'Comments are turned off for this process',
+      },
+    });
+  });
+
+  it('rejects a reply to a process update when the process disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, adminCaller, memberCaller } =
+      await setUpProcessWithComments(testData, { allowComments: false });
+
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update on a process with comments turned off.',
+      profileId: instance.profileId,
+    });
+
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Reply that should be refused.',
+        parentPostId: update.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: 'Comments are turned off for this process',
+      },
+    });
+  });
+
+  // Announcements are the organizer's channel, not a comment — turning comments
+  // off must not lock admins out of posting updates.
+  it('still admits an admin update when the process disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, adminCaller } = await setUpProcessWithComments(testData, {
+      allowComments: false,
+    });
+
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update stays available.',
+      profileId: instance.profileId,
+    });
+
+    expect(update.content).toBe('Admin update stays available.');
+  });
+
+  it('admits a comment when the process allows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, memberCaller } = await setUpProcessWithComments(
+      testData,
+      { allowComments: true },
+    );
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Comments on', description: 'desc' },
+    });
+
+    const comment = await memberCaller.posts.createPost({
+      content: 'Comment on a process with comments turned on.',
+      profileId: proposal.profileId,
+    });
+
+    expect(comment.content).toBe(
+      'Comment on a process with comments turned on.',
+    );
+  });
+
+  // The default has to be "allowed": every process configured before the toggle
+  // existed carries no `allowComments` key and must keep its comments working.
+  it('admits a comment when the process never set the toggle', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Toggle unset', description: 'desc' },
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const comment = await memberCaller.posts.createPost({
+      content: 'Comment on a process that never set the toggle.',
+      profileId: proposal.profileId,
+    });
+
+    expect(comment.content).toBe(
+      'Comment on a process that never set the toggle.',
+    );
+  });
+});
+
 // Pin the schema contract introduced by resolvePostRoots: every new post must
 // have rootProfileId / rootPostId set per the integration's rules. Behavioral
 // tests above only verify auth pass/fail, which would still pass if the

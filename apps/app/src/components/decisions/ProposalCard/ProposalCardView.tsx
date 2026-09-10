@@ -156,6 +156,11 @@ export interface ProposalCardViewProps extends Omit<
   /** Show the engagement counts (likes / follows / comments). */
   showMetrics?: boolean;
   /**
+   * Whether the process takes comments. `false` drops the comment count from
+   * the metrics row. Defaults to true, matching the process default.
+   */
+  commentsEnabled?: boolean;
+  /**
    * Makes the like and follow counts pressable. The counts are the controls —
    * there is no separate Like/Follow pair repeating the same two icons. Ignored
    * for viewers who can't act (anonymous, or no engagement access), who get the
@@ -197,6 +202,7 @@ export const ProposalCardView = ({
   aside,
   actions,
   showMetrics = false,
+  commentsEnabled = true,
   canEngage = false,
   revisionRequested = false,
   // A default parameter, so `null` reaches the card as "no badge" while an
@@ -243,7 +249,14 @@ export const ProposalCardView = ({
             onClick: engagement.onFollow,
           }),
         },
-        comments: { count: proposal.commentsCount || 0, label: t('Comments') },
+        // Dropped entirely when the process takes no comments — a count of a
+        // surface the reader can't reach reads as a broken link.
+        ...(commentsEnabled && {
+          comments: {
+            count: proposal.commentsCount || 0,
+            label: t('Comments'),
+          },
+        }),
       }
     : undefined;
 

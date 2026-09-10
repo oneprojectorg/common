@@ -1,3 +1,4 @@
+import { areCommentsAllowed } from '@op/common/client';
 import { type ReactNode, Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -82,6 +83,7 @@ const DecisionViewLayout = async ({
           <DecisionSidePanel
             decisionProfileId={decisionProfile.id}
             access={access}
+            commentsEnabled={areCommentsAllowed(instance?.instanceData)}
           />
         </Suspense>
         {/*

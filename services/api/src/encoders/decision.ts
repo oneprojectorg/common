@@ -142,6 +142,7 @@ const reviewsPolicyEncoder = z.enum(REVIEWS_POLICIES);
 /** Process-level configuration */
 const processConfigEncoder = z.object({
   hideBudget: z.boolean().optional(),
+  allowComments: z.boolean().optional(),
   categories: z.array(categoryEncoder).optional(),
   requireCategorySelection: z.boolean().optional(),
   allowMultipleCategories: z.boolean().optional(),
