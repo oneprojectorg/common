@@ -256,10 +256,13 @@ test.describe('Proposal editor — review notes sheet', () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    // The author lands back on the decision, and the requests are answered.
-    await expect(page.getByText('Proposal resubmitted')).toBeVisible({
-      timeout: 30_000,
-    });
+    // Only `onSuccess` navigates, so landing back on the decision is the
+    // signal that the server accepted the one revision. The toast is not
+    // asserted: it races with the navigation that fires alongside it.
+    await expect(page).toHaveURL(
+      new RegExp(`/decisions/${scenario.instance.slug}/current`),
+      { timeout: 30_000 },
+    );
   });
 });
 

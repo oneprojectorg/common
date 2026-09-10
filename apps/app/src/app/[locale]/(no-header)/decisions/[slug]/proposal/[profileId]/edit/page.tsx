@@ -286,6 +286,7 @@ function EditProposalPageContent() {
           asideHeaderIcons={headerIcons}
           reviewNotesSlot={reviewNotesSlot}
           hasOpenRevisionRequests={hasOpenRevisionRequests}
+          isReviewNotesOpen={isReviewNotesOpen}
           reviewNotesAside={
             <ProposalEditorAsideSheet
               open={isReviewNotesOpen}
@@ -332,6 +333,7 @@ function ProposalEditorContent({
   asideHeaderIcons,
   reviewNotesSlot,
   hasOpenRevisionRequests,
+  isReviewNotesOpen,
   reviewNotesAside,
   children,
 }: {
@@ -344,6 +346,7 @@ function ProposalEditorContent({
   asideHeaderIcons: React.ReactNode[];
   reviewNotesSlot: React.ReactNode;
   hasOpenRevisionRequests: boolean;
+  isReviewNotesOpen: boolean;
   /** The "Review notes" sheet — an overlay, so it sits outside the editor. */
   reviewNotesAside: React.ReactNode;
   /** The aside pane, forwarded straight to `ProposalEditor`. */
@@ -393,7 +396,10 @@ function ProposalEditorContent({
     <div
       className={cn(
         'flex h-screen bg-background transition-[padding]',
-        isVersionsAsideOpen && 'sm:pe-96',
+        // Both sheets are 384px wide and neither is modal, so the editor —
+        // header included — has to give up the gutter. Without it the sheet
+        // covers the header's actions, and "Update" cannot be pressed.
+        (isVersionsAsideOpen || isReviewNotesOpen) && 'sm:pe-96',
       )}
     >
       <ProposalEditor
