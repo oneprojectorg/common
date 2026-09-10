@@ -13,33 +13,38 @@ import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { useId, useState } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 interface ResubmitProposalModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  revisionRequestId: string;
+  proposalId: string;
   backHref: string;
 }
 
+/**
+ * One note answers every request open on the proposal, so this dialog asks the
+ * author for a single note rather than a reply per request.
+ */
 export function ResubmitProposalModal({
   isOpen,
   onOpenChange,
-  revisionRequestId,
+  proposalId,
   backHref,
 }: ResubmitProposalModalProps) {
   const t = useTranslations();
   const router = useRouter();
-  const commentId = useId();
-  const [comment, setComment] = useState('');
+  const noteId = useId();
+  const [note, setNote] = useState('');
 
-  const submitRevisionResponse =
-    trpc.decision.submitRevisionResponse.useMutation({
+  const submitProposalRevision =
+    trpc.decision.submitProposalRevision.useMutation({
       onSuccess: () => {
         toast.success(t('Proposal resubmitted'));
         onOpenChange(false);
-        setComment('');
+        setNote('');
         router.push(backHref);
       },
       onError: () => {
@@ -47,35 +52,25 @@ export function ResubmitProposalModal({
       },
     });
 
-  const handleSubmit = () => {
-    submitRevisionResponse.mutate({
-      revisionRequestId,
-      resubmitComment: comment.trim() || undefined,
-    });
-  };
-
-  const handleCancel = () => {
-    onOpenChange(false);
-    setComment('');
-  };
+  const trimmedNote = note.trim();
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
-          setComment('');
+          setNote('');
         }
         onOpenChange(open);
       }}
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('Resubmit proposal')}</DialogTitle>
+          <DialogTitle>{t('Submit revision')}</DialogTitle>
         </DialogHeader>
-        <div className="px-6 py-4">
+        <div className="flex flex-col gap-4 px-6 py-6">
           <Field>
-            <FieldLabel htmlFor={commentId}>
+            <FieldLabel htmlFor={noteId}>
               {t('What did you change?')}
             </FieldLabel>
             <FieldDescription>
@@ -84,23 +79,30 @@ export function ResubmitProposalModal({
               )}
             </FieldDescription>
             <Textarea
-              id={commentId}
-              rows={4}
-              placeholder={t('Describe what you changed…')}
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
+              id={noteId}
+              rows={6}
+              placeholder={t('Add note for reviewers...')}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
             />
           </Field>
+
+          <p className="flex items-start gap-2 text-sm text-muted-foreground">
+            <LuCircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+            {t(
+              "After you submit, you can't edit unless a reviewer requests another revision.",
+            )}
+          </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
-            {t('Cancel')}
-          </Button>
           <Button
-            onClick={handleSubmit}
-            loading={submitRevisionResponse.isPending}
+            onClick={() =>
+              submitProposalRevision.mutate({ proposalId, note: trimmedNote })
+            }
+            disabled={trimmedNote.length === 0}
+            loading={submitProposalRevision.isPending}
           >
-            {t('Resubmit proposal')}
+            {t('Submit revision')}
           </Button>
         </DialogFooter>
       </DialogContent>

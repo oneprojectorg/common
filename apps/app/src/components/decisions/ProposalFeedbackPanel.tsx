@@ -40,7 +40,7 @@ export function ProposalFeedbackPanel({
             comment={item.comment}
             sentAt={item.submittedAt}
             variant="reviewer"
-            anonymousReviewer
+            meta="anonymousReviewer"
           />
         ))}
 

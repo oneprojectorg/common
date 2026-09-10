@@ -542,14 +542,8 @@ const ProposalsListContent = ({
     );
   const revisionRequests = revisionRequestsData?.items;
 
-  const revisionRequestIdByProposalId = useMemo(
-    () =>
-      new Map<string, string>(
-        revisionRequests?.map(({ proposal, revisionRequest }) => [
-          proposal.id,
-          revisionRequest.id,
-        ]),
-      ),
+  const proposalIdsWithRevisionRequest = useMemo(
+    () => new Set<string>(revisionRequests?.map(({ proposal }) => proposal.id)),
     [revisionRequests],
   );
 
@@ -579,7 +573,7 @@ const ProposalsListContent = ({
         slug={slug}
         decisionSlug={decisionSlug}
         permissions={permissions}
-        revisionRequestId={revisionRequestIdByProposalId.get(proposal.id)}
+        hasRevisionRequest={proposalIdsWithRevisionRequest.has(proposal.id)}
         className={className}
       />
     ),
@@ -588,7 +582,7 @@ const ProposalsListContent = ({
       slug,
       decisionSlug,
       permissions,
-      revisionRequestIdByProposalId,
+      proposalIdsWithRevisionRequest,
     ],
   );
 
@@ -805,7 +799,7 @@ const ProposalsListContent = ({
             {...emptyStateProps}
             isVotingPhase={isInVotingPhase}
             proposalsHidden={proposalsHidden}
-            revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+            proposalIdsWithRevisionRequest={proposalIdsWithRevisionRequest}
             isFetchingNextPage={isFetchingNextPage}
           />
         )}

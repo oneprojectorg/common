@@ -23,15 +23,17 @@ import { ProposalComments } from './ProposalComments';
 import { ProposalFeedbackPanel } from './ProposalFeedbackPanel';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
-import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
+import { ReviewNotesPanel } from './ReviewNotesPanel';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
 import {
   proposalEditorReviewRevisionParser,
   proposalFeedbackPanelParser,
+  proposalReviewNotesParser,
 } from './proposalEditor/proposalEditorAsideParams';
+import { getLatestProposalRevisionNote } from './proposalRevisionNotes';
 import { useProposalFeedback } from './useProposalFeedback';
 import { useTranslateProposal } from './useTranslateProposal';
 
@@ -129,11 +131,18 @@ export function ProposalView({
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  const [{ reviewRevision, feedback: isFeedbackPanelOpen }, setQueryState] =
-    useQueryStates({
-      reviewRevision: proposalEditorReviewRevisionParser,
-      feedback: proposalFeedbackPanelParser,
-    });
+  const [
+    {
+      reviewRevision,
+      reviewNotes: isReviewNotesRequested,
+      feedback: isFeedbackPanelOpen,
+    },
+    setQueryState,
+  ] = useQueryStates({
+    reviewRevision: proposalEditorReviewRevisionParser,
+    reviewNotes: proposalReviewNotesParser,
+    feedback: proposalFeedbackPanelParser,
+  });
 
   // The view panel is "Revision submitted" — only surface entries the author
   // has already responded to. Pending requests are handled by the editor.
@@ -148,15 +157,19 @@ export function ProposalView({
       { enabled: affordances.review.revisions, throwOnError: false },
     );
 
-  const submittedRevisions = revisionError ? [] : (revisionData?.items ?? []);
+  const submittedRevisions = (
+    revisionError ? [] : (revisionData?.items ?? [])
+  ).map((item) => item.revisionRequest);
 
-  const firstRevisionRequestId =
-    submittedRevisions[0]?.revisionRequest.id ?? null;
+  // The author's most recent note and the requests that one resubmission
+  // answered — the record the editor's sheet leaves behind.
+  const latestRevisionNote = getLatestProposalRevisionNote(submittedRevisions);
 
-  const activeRevisionRequest = reviewRevision
-    ? (submittedRevisions.find((r) => r.revisionRequest.id === reviewRevision)
-        ?.revisionRequest ?? null)
-    : null;
+  // `?reviewRevision=<id>` stays a working deep link; the panel lists the whole
+  // group rather than the one request the link names.
+  const isReviewNotesOpen = Boolean(
+    latestRevisionNote && (isReviewNotesRequested || reviewRevision),
+  );
 
   // `feedback`, not `revisions`: this is the history the panel keeps showing
   // after the review phase ends, which is when `revisions` goes false.
@@ -172,21 +185,12 @@ export function ProposalView({
     );
   }, [isFeedbackPanelOpen, setQueryState]);
 
-  const toggleRevisionRequest = useCallback(() => {
-    if (!firstRevisionRequestId) {
-      return;
-    }
-
+  const toggleReviewNotes = useCallback(() => {
     void setQueryState(
-      {
-        reviewRevision:
-          reviewRevision === firstRevisionRequestId
-            ? null
-            : firstRevisionRequestId,
-      },
+      { reviewNotes: isReviewNotesOpen ? null : true, reviewRevision: null },
       { history: 'push', scroll: false },
     );
-  }, [firstRevisionRequestId, reviewRevision, setQueryState]);
+  }, [isReviewNotesOpen, setQueryState]);
 
   const {
     translation,
@@ -199,7 +203,7 @@ export function ProposalView({
 
   // Most recently responded revision (if any) — drives the "Revised on"
   // badge shown inline in the submitter metadata row.
-  const latestResponse = submittedRevisions[0]?.revisionRequest ?? null;
+  const latestRespondedAt = latestRevisionNote?.note.respondedAt ?? null;
 
   const proposalBody: ReactNode = (
     <>
@@ -221,8 +225,8 @@ export function ProposalView({
         }
         translation={translation}
         submissionMetaSuffix={
-          latestResponse?.respondedAt ? (
-            <RevisedOnBadge respondedAt={latestResponse.respondedAt} />
+          latestRespondedAt ? (
+            <RevisedOnBadge respondedAt={latestRespondedAt} />
           ) : undefined
         }
       />
@@ -240,13 +244,16 @@ export function ProposalView({
   );
 
   const asidePane: { label: string; content: ReactNode } | null =
-    activeRevisionRequest
+    isReviewNotesOpen && latestRevisionNote
       ? {
-          label: t('Revision feedback'),
+          label: t('Review notes'),
           content: (
-            <ProposalRevisionSubmittedPanel
-              revisionRequest={activeRevisionRequest}
-            />
+            <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
+              <ReviewNotesPanel
+                requests={latestRevisionNote.requests}
+                note={latestRevisionNote.note}
+              />
+            </div>
           ),
         }
       : isFeedbackPanelOpen && hasFeedback
@@ -289,10 +296,10 @@ export function ProposalView({
       // One disclosure for both panes: mid-phase it opens the submitted
       // revision, and the feedback panel once `affordances.review.revisions` is false.
       feedbackToggle={
-        firstRevisionRequestId
+        latestRevisionNote
           ? {
-              onToggle: toggleRevisionRequest,
-              isActive: Boolean(activeRevisionRequest),
+              onToggle: toggleReviewNotes,
+              isActive: isReviewNotesOpen,
             }
           : hasFeedback
             ? {

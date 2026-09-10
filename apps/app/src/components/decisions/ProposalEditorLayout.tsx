@@ -2,7 +2,6 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import type { ProposalReviewRequest } from '@op/common/client';
 import { type ReactNode, useState } from 'react';
 
 import { ProposalEditorHeader } from './ProposalEditorHeader';
@@ -21,19 +20,26 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
+  /** The "Review notes" disclosure, rendered in the header after Share. */
+  reviewNotesSlot?: ReactNode;
   /** Optional save/version status text shown in the header's left cluster */
   statusSlot?: ReactNode;
   /** When true, hide editing actions while showing a historical version. */
   readOnlyMode?: boolean;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
+  /** The proposal's ID, used to resubmit a revision */
+  proposalId: string;
   /** The current user's decision permissions on this proposal */
   access?: {
     admin: boolean;
     inviteMembers: boolean;
   };
-  /** Active revision request when the editor is in revision mode */
-  revisionRequest?: ProposalReviewRequest | null;
+  /**
+   * Whether any revision request is still open on the proposal. One
+   * resubmission answers them all, so the count never reaches the header.
+   */
+  hasOpenRevisionRequests?: boolean;
 }
 
 export function ProposalEditorLayout({
@@ -46,11 +52,13 @@ export function ProposalEditorLayout({
   isDraft = false,
   presenceSlot,
   asideHeaderIcons,
+  reviewNotesSlot,
   statusSlot,
   readOnlyMode = false,
   proposalProfileId,
+  proposalId,
   access,
-  revisionRequest,
+  hasOpenRevisionRequests = false,
 }: ProposalEditorLayoutProps) {
   const { user } = useUser();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -61,7 +69,7 @@ export function ProposalEditorLayout({
   const canShare = Boolean(
     userCanInteract(user) && (access?.admin || access?.inviteMembers),
   );
-  const isRevisionMode = Boolean(revisionRequest);
+  const isRevisionMode = hasOpenRevisionRequests;
 
   return (
     <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[auto_1fr] bg-background">
@@ -74,6 +82,7 @@ export function ProposalEditorLayout({
         isDraft={isDraft}
         presenceSlot={presenceSlot}
         asideHeaderIcons={asideHeaderIcons}
+        reviewNotesSlot={reviewNotesSlot}
         statusSlot={statusSlot}
         readOnlyMode={readOnlyMode}
         canShare={canShare}
@@ -92,11 +101,11 @@ export function ProposalEditorLayout({
         />
       )}
 
-      {revisionRequest && (
+      {hasOpenRevisionRequests && (
         <ResubmitProposalModal
           isOpen={isResubmitModalOpen}
           onOpenChange={setIsResubmitModalOpen}
-          revisionRequestId={revisionRequest.id}
+          proposalId={proposalId}
           backHref={backHref}
         />
       )}

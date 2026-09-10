@@ -7,7 +7,6 @@ import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalDataInput,
-  type ProposalReviewRequest,
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
@@ -58,7 +57,8 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  revisionRequest = null,
+  reviewNotesSlot,
+  hasOpenRevisionRequests = false,
   children,
 }: {
   instance: ProcessInstance;
@@ -66,11 +66,13 @@ export function ProposalEditor({
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
+  /** The "Review notes" disclosure, rendered in the header after Share. */
+  reviewNotesSlot?: ReactNode;
   /**
    * Drives revision mode in the header and the resubmit modal. Which pane the
    * document sits beside is the caller's business, not this prop's.
    */
-  revisionRequest?: ProposalReviewRequest | null;
+  hasOpenRevisionRequests?: boolean;
   /**
    * The pane beside the document, expected to be a `ProposalEditorAsidePane`.
    * Absent, the document gets the full width.
@@ -116,9 +118,10 @@ export function ProposalEditor({
       proposal={proposal}
       isEditMode={isEditMode}
       asideHeaderIcons={asideHeaderIcons}
+      reviewNotesSlot={reviewNotesSlot}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
-      revisionRequest={revisionRequest}
+      hasOpenRevisionRequests={hasOpenRevisionRequests}
       asidePane={children}
     />
   );
@@ -148,9 +151,10 @@ function ProposalEditorInner({
   proposal,
   isEditMode,
   asideHeaderIcons,
+  reviewNotesSlot,
   collaborationDocId,
   proposalTemplate,
-  revisionRequest,
+  hasOpenRevisionRequests,
   asidePane,
 }: {
   instance: ProcessInstance;
@@ -158,9 +162,10 @@ function ProposalEditorInner({
   proposal: Proposal;
   isEditMode: boolean;
   asideHeaderIcons?: ReactNode;
+  reviewNotesSlot?: ReactNode;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
-  revisionRequest: ProposalReviewRequest | null;
+  hasOpenRevisionRequests: boolean;
   asidePane: ReactNode;
 }) {
   const router = useRouter();
@@ -536,9 +541,11 @@ function ProposalEditorInner({
       readOnlyMode={isPreviewMode}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
+      reviewNotesSlot={reviewNotesSlot}
       proposalProfileId={proposal.profileId}
+      proposalId={proposal.id}
       access={proposal.access}
-      revisionRequest={revisionRequest}
+      hasOpenRevisionRequests={hasOpenRevisionRequests}
     >
       {/* Formatting is per-field now: each prose editor renders its own bubble
           menu on the selection, so there is no toolbar row above the form. */}

@@ -25,6 +25,8 @@ interface ProposalEditorHeaderProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
+  /** The "Review notes" disclosure, rendered after Share (Figma order). */
+  reviewNotesSlot?: ReactNode;
   /**
    * Optional save/version status text rendered in the bar's left cluster,
    * after the proposal name (Figma: "Saved 2 min ago" / "Viewing {date}").
@@ -49,6 +51,7 @@ export function ProposalEditorHeader({
   isDraft = false,
   presenceSlot,
   asideHeaderIcons,
+  reviewNotesSlot,
   statusSlot,
   readOnlyMode = false,
   canShare,
@@ -103,17 +106,14 @@ export function ProposalEditorHeader({
               <span className="hidden sm:inline">{t('Share')}</span>
             </Button>
           )}
+          {!readOnlyMode && reviewNotesSlot}
           {!readOnlyMode && (
             <Button
               onClick={isRevisionMode ? onResubmit : onSubmitProposal}
               loading={isSubmitting}
             >
               <LuCheck className="size-4" />
-              {isRevisionMode
-                ? t('Resubmit')
-                : isEditMode && !isDraft
-                  ? t('Update')
-                  : t('Submit')}
+              {isEditMode && !isDraft ? t('Update') : t('Submit')}
             </Button>
           )}
           <LocaleChooser />

@@ -7,7 +7,14 @@ import {
 
 export const proposalEditorAsideValues = ['versions'] as const;
 
+/**
+ * Deep link from a revision-request notification. The sheet lists every open
+ * request, so the id only decides whether it opens.
+ */
 export const proposalEditorReviewRevisionParser = parseAsString;
+
+/** The author's "Review notes" sheet, which names no single request. */
+export const proposalReviewNotesParser = parseAsBoolean.withDefault(false);
 
 /**
  * A flag rather than an id: the panel lists every released note at once, so the

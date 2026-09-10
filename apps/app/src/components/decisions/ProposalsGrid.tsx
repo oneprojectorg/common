@@ -67,10 +67,10 @@ export interface ProposalsProps {
 }
 
 export const ProposalsGrid = ({
-  revisionRequestIdByProposalId,
+  proposalIdsWithRevisionRequest,
   ...props
 }: ProposalsProps & {
-  revisionRequestIdByProposalId?: Map<string, string>;
+  proposalIdsWithRevisionRequest?: Set<string>;
 }) => {
   const { instanceId, isVotingPhase } = props;
 
@@ -91,7 +91,7 @@ export const ProposalsGrid = ({
   return (
     <ViewProposalsList
       {...props}
-      revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+      proposalIdsWithRevisionRequest={proposalIdsWithRevisionRequest}
     />
   );
 };
@@ -546,9 +546,9 @@ const ViewProposalsList = ({
   proposalsHidden,
   excludeAssignedForReview,
   isFetchingNextPage,
-  revisionRequestIdByProposalId,
+  proposalIdsWithRevisionRequest,
 }: ProposalsProps & {
-  revisionRequestIdByProposalId?: Map<string, string>;
+  proposalIdsWithRevisionRequest?: Set<string>;
 }) => {
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
@@ -575,7 +575,7 @@ const ViewProposalsList = ({
           slug={slug}
           decisionSlug={decisionSlug}
           permissions={permissions}
-          revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
+          hasRevisionRequest={proposalIdsWithRevisionRequest?.has(proposal.id)}
         />
       ))}
     </ProposalMasonry>
