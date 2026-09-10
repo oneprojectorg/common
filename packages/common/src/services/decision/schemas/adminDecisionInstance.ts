@@ -55,6 +55,8 @@ export const adminDecisionPhaseSchema = z.object({
   hasVoting: z.boolean(),
   canEditProposals: z.boolean(),
   canEditVotes: z.boolean(),
+  /** Defaults to true — see `allowsComments`. */
+  allowsComments: z.boolean(),
   /** Null = no limit. */
   maxVotesPerMember: z.number().nullable(),
   proposalsHiddenByDefault: z.boolean(),
@@ -74,7 +76,6 @@ export const adminDecisionConfigSchema = z.object({
   allowMultipleCategories: z.boolean(),
   organizeByCategories: z.boolean(),
   requireCollaborativeProposals: z.boolean(),
-  allowComments: z.boolean(),
   categoriesCount: z.number(),
 });
 

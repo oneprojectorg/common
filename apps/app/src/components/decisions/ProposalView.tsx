@@ -22,7 +22,7 @@ import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
-import { useProcessAllowsComments } from './useProcessAllowsComments';
+import { useCommentsAllowed } from './useCommentsAllowed';
 import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
 
@@ -55,9 +55,7 @@ export function ProposalView({
   selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
-  const commentsEnabled = useProcessAllowsComments(
-    initialProposal.processInstanceId,
-  );
+  const commentsEnabled = useCommentsAllowed(initialProposal.processInstanceId);
 
   // When the document fetch failed server-side it comes back as
   // `{ type: 'unavailable' }`. That can be transient (still syncing from the

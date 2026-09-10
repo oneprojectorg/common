@@ -1734,6 +1734,6 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Allow comments": "Autoriser les commentaires",
-  "Participants can comment on proposals and updates. Turning this off hides comments everywhere in the process.": "Les participants peuvent commenter les propositions et les actualités. Désactiver cette option masque les commentaires dans tout le processus."
+  "Participants can comment on proposals during this phase.": "Les participants peuvent commenter les propositions pendant cette phase.",
+  "Comments off": "Commentaires désactivés"
 }

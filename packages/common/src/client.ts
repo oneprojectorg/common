@@ -13,6 +13,8 @@ export {
 // Re-exported from the decision utils so client components can resolve
 // phase-level settings without pulling in the server-only utils barrel.
 export {
+  allowsComments,
+  areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
   hasVotingPhase,
@@ -25,7 +27,6 @@ export {
   assertInstancePhase,
   getInstanceCurrentPhase,
 } from './services/decision/utils/instance';
-export { areCommentsAllowed } from './services/decision/utils/processSettings';
 export {
   getPhaseIndex,
   getPreviousPhases,

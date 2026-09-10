@@ -1734,6 +1734,6 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Allow comments": "Hozzászólások engedélyezése",
-  "Participants can comment on proposals and updates. Turning this off hides comments everywhere in the process.": "A résztvevők hozzászólhatnak a javaslatokhoz és a hírekhez. Kikapcsolása a folyamat minden pontján elrejti a hozzászólásokat."
+  "Participants can comment on proposals during this phase.": "A résztvevők hozzászólhatnak a javaslatokhoz ebben a szakaszban.",
+  "Comments off": "Hozzászólások kikapcsolva"
 }

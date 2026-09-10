@@ -44,7 +44,7 @@ import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslationNotice } from './TranslationNotice';
 import { resolveProposalSystemFields } from './proposalContentUtils';
-import { useProcessAllowsComments } from './useProcessAllowsComments';
+import { useCommentsAllowed } from './useCommentsAllowed';
 
 export type ProposalTranslation = {
   htmlContent: Record<string, string | string[]>;
@@ -318,7 +318,7 @@ function EngagementRow({
   engagement?: ProposalEngagement;
 }) {
   const t = useTranslations();
-  const commentsEnabled = useProcessAllowsComments(proposal.processInstanceId);
+  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
 
   const likesCount = proposal.likesCount || 0;
   const followersCount = proposal.followersCount || 0;

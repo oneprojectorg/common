@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  allowsComments,
+  areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
   hasVotingPhase,
@@ -436,5 +438,47 @@ describe('resolveReviewSettings', () => {
     );
 
     expect(result.anonymousFeedback).toBe(false);
+  });
+});
+
+describe('allowsComments', () => {
+  it('reads comments.submit', () => {
+    expect(allowsComments({ rules: { comments: { submit: false } } })).toBe(
+      false,
+    );
+    expect(allowsComments({ rules: { comments: { submit: true } } })).toBe(
+      true,
+    );
+  });
+
+  // The one rule here that is opt-out: phases predating the toggle carry no
+  // `comments` key and all of them allow commenting today.
+  it('defaults to allowed, unlike its sibling rules', () => {
+    expect(allowsComments({ rules: {} })).toBe(true);
+    expect(allowsComments({})).toBe(true);
+  });
+});
+
+describe('areCommentsAllowed', () => {
+  const phases = [
+    { phaseId: 'open', rules: { comments: { submit: true } } },
+    { phaseId: 'voting', rules: { comments: { submit: false } } },
+    { phaseId: 'legacy', rules: {} },
+  ];
+
+  it('resolves the current phase', () => {
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'open' })).toBe(true);
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'voting' })).toBe(
+      false,
+    );
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'legacy' })).toBe(true);
+  });
+
+  it('falls back to allowed when the phase cannot be resolved', () => {
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'gone' })).toBe(true);
+    expect(areCommentsAllowed({ phases, currentPhaseId: null })).toBe(true);
+    expect(areCommentsAllowed({ phases: [], currentPhaseId: 'open' })).toBe(
+      true,
+    );
   });
 });

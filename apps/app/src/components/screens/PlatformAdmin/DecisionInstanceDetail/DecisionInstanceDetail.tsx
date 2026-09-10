@@ -220,6 +220,8 @@ const PhaseCard = ({
           })
         : t('Voting')),
     phase.canEditVotes && t('Vote editing'),
+    // Only the exception is worth a row: comments are on unless turned off.
+    !phase.allowsComments && t('Comments off'),
     phase.advancementMethod === 'manual'
       ? t('Advances manually')
       : phase.advancementMethod === 'date'
@@ -341,7 +343,6 @@ const ConfigurationCard = ({
       label: t('Require collaborative proposals'),
       value: config.requireCollaborativeProposals,
     },
-    { label: t('Allow comments'), value: config.allowComments },
     { label: t('Categories'), value: String(config.categoriesCount) },
   ];
 

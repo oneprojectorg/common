@@ -1,7 +1,6 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { areCommentsAllowed } from '@op/common/client';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Switch } from '@op/sense/Switch';
 import { useEffect, useRef } from 'react';
@@ -28,7 +27,6 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
       .min(1, { message: t('Enter a description') }),
     organizeByCategories: z.boolean(),
     requireCollaborativeProposals: z.boolean(),
-    allowComments: z.boolean(),
     isPrivate: z.boolean(),
   });
 
@@ -117,7 +115,6 @@ export function ProcessSettingsForm({
       config: {
         organizeByCategories: values.organizeByCategories,
         requireCollaborativeProposals: values.requireCollaborativeProposals,
-        allowComments: values.allowComments,
         isPrivate: values.isPrivate,
       },
     });
@@ -139,8 +136,6 @@ export function ProcessSettingsForm({
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
       requireCollaborativeProposals:
         instanceData?.config?.requireCollaborativeProposals ?? false,
-      // Must default on, or opening the builder saves an unset toggle as off.
-      allowComments: areCommentsAllowed(instanceData),
       isPrivate: instanceData?.config?.isPrivate ?? false,
     },
     validators: {
@@ -265,20 +260,6 @@ export function ProcessSettingsForm({
                     label={t('Require collaborative proposals')}
                     description={t(
                       'Require proposals to be co-authored by at least 2 participants.',
-                    )}
-                  >
-                    <field.Switch />
-                  </ToggleRow>
-                )}
-              />
-
-              <form.AppField
-                name="allowComments"
-                children={(field) => (
-                  <ToggleRow
-                    label={t('Allow comments')}
-                    description={t(
-                      'Participants can comment on proposals and updates. Turning this off hides comments everywhere in the process.',
                     )}
                   >
                     <field.Switch />

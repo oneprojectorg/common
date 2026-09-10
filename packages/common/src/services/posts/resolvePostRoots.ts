@@ -18,7 +18,10 @@ export type ResolvedPostRoots = {
    * read it anyway. Null on every other path; a wrapper rather than a bare
    * `instanceData` so "not resolved" can't be confused with a null column.
    */
-  resolvedInstance: { instanceData: unknown } | null;
+  resolvedInstance: {
+    instanceData: unknown;
+    currentStateId: string | null;
+  } | null;
 };
 
 // Resolves the two write-time root columns for a new post:
@@ -79,6 +82,7 @@ export const resolvePostRoots = async ({
         .select({
           decisionProfileId: processInstances.profileId,
           instanceData: processInstances.instanceData,
+          currentStateId: processInstances.currentStateId,
         })
         .from(proposals)
         .innerJoin(
@@ -94,7 +98,10 @@ export const resolvePostRoots = async ({
       return {
         rootProfileId: parent.decisionProfileId,
         rootPostId: null,
-        resolvedInstance: { instanceData: parent.instanceData },
+        resolvedInstance: {
+          instanceData: parent.instanceData,
+          currentStateId: parent.currentStateId,
+        },
       };
     }
 
