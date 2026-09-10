@@ -43,6 +43,7 @@ export {
 export {
   addProposalToCategory,
   categoryTermUri,
+  closeOpenProposalHistory,
   configureProcessReviews,
   createCategoryReviewer,
   createProposalReview,
@@ -51,7 +52,9 @@ export {
   createRevisionRequest,
   defaultReviewSettings,
   ensureProposalCategoryTerms,
+  getCurrentProposalHistoryId,
   getLatestProposalHistoryId,
+  reviseProposal,
   type CreateCategoryReviewerOptions,
   type CreateProposalReviewOptions,
   type CreateReviewAssignmentOptions,

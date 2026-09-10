@@ -4,6 +4,7 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
+import { closeOpenProposalHistory, reviseProposal } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -109,6 +110,49 @@ describe.concurrent('updateReview', () => {
     });
   });
 
+  it("re-anchors the review to the proposal's current version, leaving the assignment pin alone", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const submitted = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+
+    const revisedHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+    expect(submitted?.reviewedProposalHistoryId).not.toBe(revisedHistoryId);
+
+    await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { impact: 2 },
+        rationales: { impact: 'Reassessed against the revision' },
+      },
+    });
+
+    const edited = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(edited?.reviewedProposalHistoryId).toBe(revisedHistoryId);
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
+  });
+
   it('rejects editing a review that has not been submitted', async ({
     task,
     onTestFinished,
@@ -188,6 +232,38 @@ describe.concurrent('updateReview', () => {
         reviewData: { answers: { impact: 2 }, rationales: {} },
       }),
     ).rejects.toThrow("don't have access to this review assignment");
+  });
+
+  it('keeps the anchor the review already had when the proposal has no current version', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const submitted = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(submitted?.reviewedProposalHistoryId).toBeTruthy();
+
+    await closeOpenProposalHistory({ proposalId: created.proposal.id });
+
+    const result = await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { impact: 2 },
+        rationales: { impact: 'Reassessed after committee discussion' },
+      },
+    });
+
+    expect(result.reviewData.answers).toEqual({ impact: 2 });
+
+    const edited = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(edited?.reviewedProposalHistoryId).toBe(
+      submitted?.reviewedProposalHistoryId,
+    );
   });
 });
 

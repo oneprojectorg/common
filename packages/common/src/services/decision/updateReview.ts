@@ -7,6 +7,7 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { ValidationError } from '../../utils';
+import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -19,6 +20,9 @@ import type { RubricReviewData } from './schemas/reviews';
  * `submittedAt`, `state`, and the assignment status untouched (`updatedAt`
  * advances, so an edit stays derivable). Only while the assignment's phase is
  * still the instance's current phase; frozen once the process advances past it.
+ *
+ * The review's anchor is re-stamped to the proposal's current version — an edit
+ * judges the proposal as it stands now. The assignment's pin is untouched.
  */
 export async function updateReview({
   assignmentId,
@@ -51,26 +55,39 @@ export async function updateReview({
 
   schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
-  const [updatedReview] = await db
-    .update(proposalReviews)
-    .set({
-      reviewData,
-      overallComment: overallComment ?? null,
-    })
-    // Defensive: the row must still be SUBMITTED (nothing un-submits today).
-    .where(
-      and(
-        eq(proposalReviews.assignmentId, assignmentId),
-        eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
-      ),
-    )
-    .returning();
+  const updatedReview = await db.transaction(async (tx) => {
+    const currentProposalHistoryId =
+      await getCurrentProposalHistoryIdForAssignment({
+        assignment: context.assignment,
+        db: tx,
+      });
 
-  if (!updatedReview) {
-    throw new ValidationError(
-      'This review can no longer be edited; please refresh and try again',
-    );
-  }
+    const [row] = await tx
+      .update(proposalReviews)
+      .set({
+        reviewData,
+        overallComment: overallComment ?? null,
+        ...(currentProposalHistoryId && {
+          reviewedProposalHistoryId: currentProposalHistoryId,
+        }),
+      })
+      // Defensive: the row must still be SUBMITTED (nothing un-submits today).
+      .where(
+        and(
+          eq(proposalReviews.assignmentId, assignmentId),
+          eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
+        ),
+      )
+      .returning();
+
+    if (!row) {
+      throw new ValidationError(
+        'This review can no longer be edited; please refresh and try again',
+      );
+    }
+
+    return row;
+  });
 
   return {
     review: updatedReview,

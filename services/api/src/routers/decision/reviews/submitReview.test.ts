@@ -4,6 +4,7 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
+import { closeOpenProposalHistory, reviseProposal } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -439,6 +440,99 @@ describe.concurrent('submitReview', () => {
     );
   });
 
+  it("anchors the review to the proposal's current version and leaves the assignment pin alone", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+
+    const currentHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+    expect(assignmentBefore?.assignedProposalHistoryId).not.toBe(
+      currentHistoryId,
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(review?.reviewedProposalHistoryId).toBe(currentHistoryId);
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
+  });
+
+  it('re-anchors a draft to the version it is submitted against', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+    });
+
+    const draft = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+
+    const revisedHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+    expect(draft?.reviewedProposalHistoryId).not.toBe(revisedHistoryId);
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    const submitted = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(submitted?.reviewedProposalHistoryId).toBe(revisedHistoryId);
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
+  });
+
   it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await createAssignmentWithRubric(testData);
@@ -456,6 +550,32 @@ describe.concurrent('submitReview', () => {
         },
       }),
     ).rejects.toThrow('Rubric validation failed');
+  });
+
+  it('submits the review with no version anchor when the proposal has no current version', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    await closeOpenProposalHistory({ proposalId: created.proposal.id });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(review?.reviewedProposalHistoryId).toBeNull();
   });
 });
 

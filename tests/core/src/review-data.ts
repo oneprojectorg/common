@@ -6,6 +6,7 @@ import {
   categoryReviewers,
   decisionProcesses,
   proposalCategories,
+  proposalHistory,
   proposalReviewAssignments,
   proposalReviewRequests,
   proposalReviews,
@@ -13,7 +14,7 @@ import {
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
-import { and, db, eq } from '@op/db/test';
+import { and, db, eq, sql } from '@op/db/test';
 
 import { type CreateProposalResult, createProposal } from './decision-data';
 
@@ -84,6 +85,99 @@ export async function getLatestProposalHistoryId(opts: {
   }
 
   return latestHistory.historyId;
+}
+
+/**
+ * The proposal's current history row id — the open temporal range
+ * (`upper(valid_during) IS NULL`) a review's version anchor points at.
+ */
+export async function getCurrentProposalHistoryId(opts: {
+  proposalId: string;
+}): Promise<string> {
+  const current = await db.query.proposalHistory.findFirst({
+    where: {
+      id: opts.proposalId,
+      RAW: (table) => sql`upper(${table.validDuring}) IS NULL`,
+    },
+    columns: { historyId: true },
+  });
+
+  if (!current?.historyId) {
+    throw new Error(
+      `Expected an open proposal history row for proposal: ${opts.proposalId}`,
+    );
+  }
+
+  return current.historyId;
+}
+
+/**
+ * Edits `proposalData` so the history trigger closes the current snapshot and
+ * opens a new one. Returns the new current history row id.
+ */
+export async function reviseProposal(opts: {
+  proposalId: string;
+  proposalData?: Record<string, unknown>;
+}): Promise<string> {
+  const existing = await db.query.proposals.findFirst({
+    where: { id: opts.proposalId },
+  });
+
+  if (!existing) {
+    throw new Error(`Proposal not found: ${opts.proposalId}`);
+  }
+
+  // The jsonb column widens to `unknown`; keep only a plain object to spread.
+  const existingData =
+    typeof existing.proposalData === 'object' &&
+    existing.proposalData !== null &&
+    !Array.isArray(existing.proposalData)
+      ? existing.proposalData
+      : {};
+
+  await db
+    .update(proposals)
+    .set({
+      proposalData: {
+        ...existingData,
+        ...(opts.proposalData ?? { revisedAt: new Date().toISOString() }),
+      },
+    })
+    .where(eq(proposals.id, opts.proposalId));
+
+  return getCurrentProposalHistoryId({ proposalId: opts.proposalId });
+}
+
+/**
+ * Leaves the proposal with no current version. Closing the range rather than
+ * deleting keeps the ON DELETE SET NULL anchors a test is checking intact.
+ */
+export async function closeOpenProposalHistory(opts: {
+  proposalId: string;
+}): Promise<void> {
+  const open = await db.query.proposalHistory.findFirst({
+    where: {
+      id: opts.proposalId,
+      RAW: (table) => sql`upper(${table.validDuring}) IS NULL`,
+    },
+    columns: { historyId: true, validDuring: true },
+  });
+
+  if (!open) {
+    throw new Error(
+      `Expected an open proposal history row for proposal: ${opts.proposalId}`,
+    );
+  }
+
+  await db
+    .update(proposalHistory)
+    .set({
+      validDuring: {
+        from: open.validDuring.from,
+        to: new Date().toISOString(),
+      },
+    })
+    .where(eq(proposalHistory.historyId, open.historyId));
 }
 
 export interface CreateReviewAssignmentOptions {
