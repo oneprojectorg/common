@@ -1,3 +1,4 @@
+import type { RubricTemplateSchema } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -20,6 +21,28 @@ import {
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
+
+// Minimal rubric so the reviewer can submit a review in the tests that pair a
+// revision request with a completed assignment.
+const rubricTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['impact'],
+  properties: {
+    impact: {
+      type: 'integer',
+      title: 'Impact',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 5,
+      oneOf: [
+        { const: 1, title: 'Low' },
+        { const: 2, title: 'Medium' },
+        { const: 3, title: 'High' },
+      ],
+    },
+  },
+  required: ['impact'],
+};
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -60,6 +83,42 @@ describe.concurrent('cancelRevisionRequest', () => {
       where: { id: created.assignment.id },
     });
     expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.IN_PROGRESS);
+  });
+
+  it('leaves a completed assignment completed when its request is cancelled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Cancelled After Review',
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const revisionRequest = await reviewerCaller.decision.requestRevision({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please revise.',
+    });
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    await reviewerCaller.decision.cancelRevisionRequest({
+      assignmentId: created.assignment.id,
+      revisionRequestId: revisionRequest.id,
+    });
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.COMPLETED);
   });
 
   it('rejects when the revision request is not in requested state', async ({

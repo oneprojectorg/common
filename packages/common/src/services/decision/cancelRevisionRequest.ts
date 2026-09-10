@@ -7,12 +7,12 @@ import {
   proposalReviewRequests,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 
-/** Cancels an active revision request and resumes the assignment. */
+/** Cancels an active revision request and resumes a paused assignment. */
 export async function cancelRevisionRequest({
   assignmentId,
   revisionRequestId,
@@ -50,12 +50,23 @@ export async function cancelRevisionRequest({
       throw new CommonError('Failed to cancel revision request');
     }
 
+    // Only the pause this request caused is lifted. A COMPLETED assignment
+    // (the reviewer submitted their review after requesting) must keep its
+    // status, or cancelling would reopen a finished review.
     await tx
       .update(proposalReviewAssignments)
       .set({
         status: ProposalReviewAssignmentStatus.IN_PROGRESS,
       })
-      .where(eq(proposalReviewAssignments.id, assignmentId));
+      .where(
+        and(
+          eq(proposalReviewAssignments.id, assignmentId),
+          eq(
+            proposalReviewAssignments.status,
+            ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+          ),
+        ),
+      );
 
     return cancelledRequest;
   });

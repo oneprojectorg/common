@@ -2,10 +2,7 @@ import { listMemberProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
-} from '@op/db/schema';
+import { ProposalReviewRequestState } from '@op/db/schema';
 import { OPBatchSend, RevisionRequestedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
@@ -64,17 +61,6 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
       logger.info('Revision request is no longer active', {
         revisionRequestId,
         state: revisionRequest.state,
-      });
-      return;
-    }
-
-    if (
-      assignment.status !==
-      ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION
-    ) {
-      logger.info('Assignment is no longer awaiting revision', {
-        assignmentId,
-        status: assignment.status,
       });
       return;
     }

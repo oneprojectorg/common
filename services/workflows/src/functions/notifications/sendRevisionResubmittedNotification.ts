@@ -2,10 +2,7 @@ import { listProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
-} from '@op/db/schema';
+import { ProposalReviewRequestState } from '@op/db/schema';
 import { OPBatchSend, RevisionResubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
@@ -65,16 +62,6 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
       logger.info('Revision request is not in resubmitted state', {
         revisionRequestId,
         state: revisionRequest.state,
-      });
-      return;
-    }
-
-    if (
-      assignment.status !== ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW
-    ) {
-      logger.info('Assignment is not ready for re-review', {
-        assignmentId,
-        status: assignment.status,
       });
       return;
     }

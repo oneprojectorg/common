@@ -1,4 +1,5 @@
 import { getTipTapClient } from '@op/collab';
+import type { RubricTemplateSchema } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -21,6 +22,28 @@ import {
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
+
+// Minimal rubric so the reviewer can submit a review in the tests that pair a
+// revision request with a completed assignment.
+const rubricTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['impact'],
+  properties: {
+    impact: {
+      type: 'integer',
+      title: 'Impact',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 5,
+      oneOf: [
+        { const: 1, title: 'Low' },
+        { const: 2, title: 'Medium' },
+        { const: 3, title: 'High' },
+      ],
+    },
+  },
+  required: ['impact'],
+};
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -219,31 +242,44 @@ describe.concurrent('submitRevisionResponse', () => {
     );
   });
 
-  it('rejects when the assignment is not awaiting author revision', async ({
+  it('lets the author respond after the requester submitted their own review', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
-      title: 'Drifted Assignment State',
+      title: 'Requester Reviewed First',
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
 
-    const revisionRequest = await createRevisionRequest({
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const revisionRequest = await reviewerCaller.decision.requestRevision({
       assignmentId: created.assignment.id,
-      requestComment: 'Please revise.',
+      requestComment: 'Please add budget details.',
+    });
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
     });
 
     const authorCaller = await createAuthenticatedCaller(created.author.email);
-
-    await expect(
-      authorCaller.decision.submitRevisionResponse({
-        revisionRequestId: revisionRequest.id,
-        resubmitComment: 'Updated as requested.',
-      }),
-    ).rejects.toMatchObject({
-      cause: { name: 'ValidationError' },
+    const result = await authorCaller.decision.submitRevisionResponse({
+      revisionRequestId: revisionRequest.id,
+      resubmitComment: 'Added the budget.',
     });
+
+    expect(result.state).toBe(ProposalReviewRequestState.RESUBMITTED);
+
+    // Decision I is still open: a submitted review is not reopened by the
+    // resubmission, the derived out-of-date flag surfaces it instead.
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.COMPLETED);
   });
 
   it('stores null when the resubmit comment is omitted', async ({
