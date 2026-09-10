@@ -7,7 +7,6 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { ValidationError } from '../../utils';
-import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -16,13 +15,9 @@ import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
 
 /**
- * Edits an already-submitted review in place — no version history — leaving
- * `submittedAt`, `state`, and the assignment status untouched (`updatedAt`
- * advances, so an edit stays derivable). Only while the assignment's phase is
- * still the instance's current phase; frozen once the process advances past it.
- *
- * The review's anchor is re-stamped to the proposal's current version — an edit
- * judges the proposal as it stands now. The assignment's pin is untouched.
+ * Edits an already-submitted review in place while its phase is still current.
+ * Also the re-affirm path: the anchor moves to the current proposal version,
+ * and `submittedAt` advances only if the review was out of date.
  */
 export async function updateReview({
   assignmentId,
@@ -55,13 +50,9 @@ export async function updateReview({
 
   schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
-  const updatedReview = await db.transaction(async (tx) => {
-    const currentProposalHistoryId =
-      await getCurrentProposalHistoryIdForAssignment({
-        assignment: context.assignment,
-        db: tx,
-      });
+  const { currentProposalHistoryId, isReviewOutOfDate: stale } = context;
 
+  const updatedReview = await db.transaction(async (tx) => {
     const [row] = await tx
       .update(proposalReviews)
       .set({
@@ -70,6 +61,7 @@ export async function updateReview({
         ...(currentProposalHistoryId && {
           reviewedProposalHistoryId: currentProposalHistoryId,
         }),
+        ...(stale && { submittedAt: new Date().toISOString() }),
       })
       // Defensive: the row must still be SUBMITTED (nothing un-submits today).
       .where(

@@ -15,9 +15,11 @@ import {
 } from '@op/db/schema';
 import { db } from '@op/db/test';
 import {
+  closeOpenProposalHistory,
   createProposalReview,
   createReviewAssignment as createReviewAssignmentRow,
   createRevisionRequest,
+  reviseProposal,
 } from '@op/test';
 import { eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -499,6 +501,334 @@ describe.concurrent('listReviewAssignments', () => {
         },
       },
     });
+  });
+
+  it("derives isReviewOutOfDate from the review's version anchor: false, true after an edit, false after a re-affirm", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Staleness Review',
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    seedProposalCollab(created.proposal);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const listOne = async () => {
+      const result = await reviewerCaller.decision.listReviewAssignments({
+        processInstanceId: created.context.instance.instance.id,
+        phaseId: REVIEW_PHASE,
+      });
+      const item = result.items.find(
+        (a) => a.assignment.id === created.assignment.id,
+      );
+      if (!item) {
+        throw new Error('assignment missing from the review queue');
+      }
+      return item;
+    };
+
+    expect(await listOne()).toMatchObject({ isReviewOutOfDate: false });
+
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+    });
+
+    expect(await listOne()).toMatchObject({ isReviewOutOfDate: false });
+
+    await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Staleness Review (revised)' },
+    });
+
+    expect(await listOne()).toMatchObject({ isReviewOutOfDate: true });
+
+    await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 1 }, rationales: {} },
+    });
+
+    const reaffirmed = await listOne();
+    expect(reaffirmed).toMatchObject({ isReviewOutOfDate: false });
+    expect(reaffirmed.assignment.status).toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
+  });
+
+  it('never flags a draft, however far the proposal has moved on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Draft Staleness Review',
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    seedProposalCollab(created.proposal);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+    });
+
+    await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Draft Staleness Review (revised)' },
+    });
+
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: created.context.instance.instance.id,
+      phaseId: REVIEW_PHASE,
+    });
+    const item = result.items.find(
+      (a) => a.assignment.id === created.assignment.id,
+    );
+
+    expect(item?.review?.state).toBe(ProposalReviewState.DRAFT);
+    expect(item?.isReviewOutOfDate).toBe(false);
+  });
+
+  it('falls back to the assignment pin for a submitted review with no anchor', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Legacy Anchor Review',
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    seedProposalCollab(created.proposal);
+
+    // Pre-anchor-column review: submitted, no anchor, pin still set.
+    await createProposalReview({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const listOne = async () => {
+      const result = await reviewerCaller.decision.listReviewAssignments({
+        processInstanceId: created.context.instance.instance.id,
+        phaseId: REVIEW_PHASE,
+      });
+      const item = result.items.find(
+        (a) => a.assignment.id === created.assignment.id,
+      );
+      if (!item) {
+        throw new Error('assignment missing from the review queue');
+      }
+      return item;
+    };
+
+    const beforeEdit = await listOne();
+    expect(beforeEdit.review?.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(beforeEdit.isReviewOutOfDate).toBe(false);
+
+    await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Legacy Anchor Review (revised)' },
+    });
+
+    expect((await listOne()).isReviewOutOfDate).toBe(true);
+  });
+
+  it('resolves staleness per proposal across a page of stale, current and pending assignments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const stale = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Mixed Page Stale',
+    });
+    const context = stale.context;
+    const reviewer = stale.reviewer;
+    const current = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Mixed Page Current',
+    });
+    const pending = await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: 'Mixed Page Pending',
+    });
+    await testData.setRubricTemplate(context, rubricTemplate);
+
+    for (const created of [stale, current, pending]) {
+      seedProposalCollab(created.proposal);
+    }
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    for (const created of [stale, current]) {
+      await reviewerCaller.decision.submitReview({
+        assignmentId: created.assignment.id,
+        reviewData: { answers: { impact: 5 }, rationales: {} },
+      });
+    }
+
+    await reviseProposal({
+      proposalId: stale.proposal.id,
+      proposalData: { title: 'Mixed Page Stale (revised)' },
+    });
+
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: REVIEW_PHASE,
+    });
+
+    expect(result.items).toHaveLength(3);
+
+    const outOfDateByProposalId = new Map(
+      result.items.map((entry) => [
+        entry.assignment.proposal.id,
+        entry.isReviewOutOfDate,
+      ]),
+    );
+
+    expect(outOfDateByProposalId.get(stale.proposal.id)).toBe(true);
+    expect(outOfDateByProposalId.get(current.proposal.id)).toBe(false);
+    expect(outOfDateByProposalId.get(pending.proposal.id)).toBe(false);
+  });
+
+  it('never flags a submitted review when both the review anchor and the assignment pin are null', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Unanchored Review',
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    seedProposalCollab(created.proposal);
+
+    await createProposalReview({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+
+    await db
+      .update(proposalReviewAssignments)
+      .set({ assignedProposalHistoryId: null })
+      .where(eq(proposalReviewAssignments.id, created.assignment.id));
+
+    await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Unanchored Review (revised)' },
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: created.context.instance.instance.id,
+      phaseId: REVIEW_PHASE,
+    });
+    const item = result.items.find(
+      (entry) => entry.assignment.id === created.assignment.id,
+    );
+
+    expect(item?.review?.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(item?.isReviewOutOfDate).toBe(false);
+  });
+
+  it('never flags a submitted review while the proposal has no current version', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Versionless Proposal Review',
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    seedProposalCollab(created.proposal);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+    });
+
+    await closeOpenProposalHistory({ proposalId: created.proposal.id });
+
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: created.context.instance.instance.id,
+      phaseId: REVIEW_PHASE,
+    });
+    const item = result.items.find(
+      (entry) => entry.assignment.id === created.assignment.id,
+    );
+
+    expect(item?.review?.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(item?.isReviewOutOfDate).toBe(false);
+  });
+
+  it('flags a submitted review from its own anchor when the assignment pin is null', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      context: await createReviewPhaseContext(testData),
+      title: 'Pinless Anchored Review',
+    });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+    seedProposalCollab(created.proposal);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+    });
+
+    await db
+      .update(proposalReviewAssignments)
+      .set({ assignedProposalHistoryId: null })
+      .where(eq(proposalReviewAssignments.id, created.assignment.id));
+
+    await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Pinless Anchored Review (revised)' },
+    });
+
+    const result = await reviewerCaller.decision.listReviewAssignments({
+      processInstanceId: created.context.instance.instance.id,
+      phaseId: REVIEW_PHASE,
+    });
+    const item = result.items.find(
+      (entry) => entry.assignment.id === created.assignment.id,
+    );
+
+    expect(item?.review?.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(item?.isReviewOutOfDate).toBe(true);
   });
 
   it('returns all assignments for the reviewer in the current phase', async ({

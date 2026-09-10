@@ -13,7 +13,9 @@ import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import { decisionPermission } from './permissions';
+import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import { isReviewOutOfDate } from './review/staleness';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
@@ -22,16 +24,6 @@ import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /** Shared `with` config for review assignment queries. */
 export const reviewAssignmentWithConfig = {
-  assignedProposalHistory: {
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-        },
-      },
-      profile: true,
-    },
-  },
   proposal: {
     with: {
       submittedBy: {
@@ -370,10 +362,13 @@ export async function assertReviewAssignmentContext({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const instance = await getInstance({
-    instanceId: assignment.processInstanceId,
-    user,
-  });
+  const [instance, currentProposalHistoryId] = await Promise.all([
+    getInstance({
+      instanceId: assignment.processInstanceId,
+      user,
+    }),
+    getCurrentProposalHistoryIdForAssignment({ assignment }),
+  ]);
 
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
@@ -394,10 +389,18 @@ export async function assertReviewAssignmentContext({
     );
   }
 
+  const review = assignment.reviews[0] ?? null;
+
   return {
     assignment,
     instance,
-    review: assignment.reviews[0] ?? null,
+    review,
+    currentProposalHistoryId,
+    isReviewOutOfDate: isReviewOutOfDate({
+      assignment,
+      review,
+      currentProposalHistoryId,
+    }),
     revisionRequest: getActiveRevisionRequest(assignment.requests),
     // Reviews are validated and rendered against the rubric of the phase
     // their assignment belongs to.
@@ -409,13 +412,10 @@ export async function assertReviewAssignmentContext({
 }
 
 /**
- * Resolves the effective proposal snapshot from a review assignment
- * and parses/validates its proposal data.
+ * Resolves and validates the assignment's proposal. Always the live proposal:
+ * the pin records what the reviewer was asked to review, not what to show.
  */
 export function resolveAssignmentProposal(assignment: {
-  assignedProposalHistory: {
-    proposalData: unknown;
-  } | null;
   proposal: {
     id: string;
     proposalData: unknown;
@@ -424,8 +424,8 @@ export function resolveAssignmentProposal(assignment: {
   id: string;
   proposalData: ProposalData;
 } {
-  const snapshot = assignment.assignedProposalHistory ?? assignment.proposal;
-  const id = assignment.proposal.id;
+  const snapshot = assignment.proposal;
+  const id = snapshot.id;
 
   const proposalData = parseProposalData(snapshot.proposalData);
 

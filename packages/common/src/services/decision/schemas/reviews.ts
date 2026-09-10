@@ -134,6 +134,8 @@ export const reviewAssignmentExtendedSchema = z.object({
   review: proposalReviewSchema.nullable(),
   revisionRequest: proposalReviewRequestSchema.nullable(),
   canEditReview: z.boolean(),
+  /** The proposal changed after this review was submitted. Derived at read time. */
+  isReviewOutOfDate: z.boolean(),
 });
 
 export const reviewAssignmentListSchema = paginated(

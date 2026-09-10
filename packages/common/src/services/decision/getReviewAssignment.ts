@@ -31,11 +31,17 @@ export async function getReviewAssignment({
   assignmentId: string;
   user: User;
 }): Promise<ReviewAssignmentExtended> {
-  const { assignment, instance, review, revisionRequest, rubricTemplate } =
-    await assertReviewAssignmentContext({
-      assignmentId,
-      user,
-    });
+  const {
+    assignment,
+    instance,
+    isReviewOutOfDate,
+    review,
+    revisionRequest,
+    rubricTemplate,
+  } = await assertReviewAssignmentContext({
+    assignmentId,
+    user,
+  });
 
   const proposalSnapshot = resolveAssignmentProposal(assignment);
 
@@ -97,6 +103,7 @@ export async function getReviewAssignment({
     review,
     revisionRequest,
     canEditReview: canEditSubmittedReview({ assignment, instance, review }),
+    isReviewOutOfDate,
   });
 }
 

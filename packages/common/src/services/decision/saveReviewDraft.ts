@@ -12,7 +12,6 @@ import { waitUntil } from '@vercel/functions';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
-import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -57,17 +56,11 @@ export async function saveReviewDraft({
     throw new ValidationError('Rubric template not found for this assignment');
   }
 
+  const reviewedHistoryValues = context.currentProposalHistoryId
+    ? { reviewedProposalHistoryId: context.currentProposalHistoryId }
+    : {};
+
   const review = await db.transaction(async (tx) => {
-    const currentProposalHistoryId =
-      await getCurrentProposalHistoryIdForAssignment({
-        assignment: context.assignment,
-        db: tx,
-      });
-
-    const reviewedHistoryValues = currentProposalHistoryId
-      ? { reviewedProposalHistoryId: currentProposalHistoryId }
-      : {};
-
     const [draft] = await tx
       .insert(proposalReviews)
       .values({
