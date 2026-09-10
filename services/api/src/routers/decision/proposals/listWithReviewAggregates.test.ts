@@ -8,7 +8,11 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createProposalReview } from '@op/test';
+import {
+  createProposalReview,
+  getCurrentProposalHistoryId,
+  reviseProposal,
+} from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -200,6 +204,69 @@ describe.concurrent('listWithReviewAggregates', () => {
       overallRecommendationCount: {},
     });
     expect(unreviewedItem?.aggregates.reviewers).toHaveLength(1);
+  });
+
+  it('counts out-of-date reviews per proposal in filtered mode', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // Same review on both proposals; only the first is edited afterwards, so
+    // the batched current-version lookup has to key its answer per proposal.
+    const [edited, untouched] = await Promise.all([
+      testData.createReviewAssignment({ context, title: 'Edited Proposal' }),
+      testData.createReviewAssignment({ context, title: 'Untouched Proposal' }),
+    ]);
+
+    await Promise.all(
+      [edited, untouched].map(async (scenario) =>
+        createProposalReview({
+          assignmentId: scenario.assignment.id,
+          state: ProposalReviewState.SUBMITTED,
+          reviewData: {
+            answers: { impact: 7, feasibility: 4 },
+            rationales: {},
+          },
+          submittedAt: new Date().toISOString(),
+          reviewedProposalHistoryId: await getCurrentProposalHistoryId({
+            proposalId: scenario.proposal.id,
+          }),
+        }),
+      ),
+    );
+
+    await reviseProposal({
+      proposalId: edited.proposal.id,
+      proposalData: { title: 'Edited Proposal (revised)' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalIds: [edited.proposal.id, untouched.proposal.id],
+    });
+
+    const editedItem = result.items.find(
+      (i) => i.proposal.id === edited.proposal.id,
+    );
+    const untouchedItem = result.items.find(
+      (i) => i.proposal.id === untouched.proposal.id,
+    );
+
+    expect(editedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 1,
+    });
+    expect(untouchedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 0,
+    });
   });
 
   it('drops proposalIds belonging to a different instance in filtered mode', async ({

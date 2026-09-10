@@ -200,6 +200,8 @@ export interface CreateProposalReviewOptions {
   reviewData?: Record<string, unknown>;
   overallComment?: string | null;
   submittedAt?: string | null;
+  /** The proposal version the review was written against; production writes it on save/submit. */
+  reviewedProposalHistoryId?: string | null;
 }
 
 export interface CreateRevisionRequestOptions {
@@ -256,6 +258,7 @@ export async function createProposalReview(
     reviewData = {},
     overallComment = null,
     submittedAt = null,
+    reviewedProposalHistoryId = null,
   } = opts;
 
   const [review] = await db
@@ -266,6 +269,7 @@ export async function createProposalReview(
       reviewData,
       overallComment,
       submittedAt,
+      reviewedProposalHistoryId,
     })
     .returning();
 

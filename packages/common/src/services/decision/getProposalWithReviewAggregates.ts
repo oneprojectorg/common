@@ -11,6 +11,8 @@ import {
   getSubmittedReviewScore,
   proposalRelations,
 } from './listProposalsWithReviewAggregates';
+import { getCurrentProposalHistoryIds } from './proposal/history';
+import { isReviewOutOfDate } from './review/staleness';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
@@ -60,28 +62,35 @@ export async function getProposalWithReviewAggregates(
 
   // Read gate — see `canReadPhaseReviews`. On the caller's raw phaseId, so a
   // reviewer must name one; the reads only return once it passes.
-  const [proposal, categoriesByProposalId] = await Promise.all([
-    db.query.proposals.findFirst({
-      // Moderation-detached (CSAM) proposals are treated as not-found even
-      // for admins — same 404 the endpoint returns for a plain missing row.
-      where: {
-        RAW: (table) =>
-          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
-      },
-      with: proposalRelations({ processInstanceId, phaseId }),
-    }),
-    getCategoriesByProposalIds([proposalId]),
-    assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user }),
-  ]);
+  const [proposal, categoriesByProposalId, currentHistoryIdByProposal] =
+    await Promise.all([
+      db.query.proposals.findFirst({
+        // Moderation-detached (CSAM) proposals are treated as not-found even
+        // for admins — same 404 the endpoint returns for a plain missing row.
+        where: {
+          RAW: (table) =>
+            and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+        },
+        with: proposalRelations({ processInstanceId, phaseId }),
+      }),
+      getCategoriesByProposalIds([proposalId]),
+      getCurrentProposalHistoryIds({ proposalIds: [proposalId] }),
+      assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user }),
+    ]);
 
   if (!proposal || proposal.processInstanceId !== processInstanceId) {
     throw new NotFoundError('Proposal', proposalId);
   }
 
-  const aggregates = getComputedReviewAggregates(
-    proposal.reviewAssignments,
+  // One batched lookup for the whole read; the staleness rule is a pure
+  // comparison against it, so nothing fans out per review row.
+  const currentProposalHistoryId = currentHistoryIdByProposal.get(proposal.id);
+
+  const aggregates = getComputedReviewAggregates({
+    reviewAssignments: proposal.reviewAssignments,
     scoredCriterionKeys,
-  );
+    currentProposalHistoryId,
+  });
 
   const reviews = proposal.reviewAssignments.flatMap((assignment) => {
     const reviewRow = assignment.reviews[0];
@@ -96,6 +105,11 @@ export async function getProposalWithReviewAggregates(
         assignmentStatus: assignment.status,
         score: scored.score,
         overallRecommendation: scored.overallRecommendation,
+        isReviewOutOfDate: isReviewOutOfDate({
+          assignment,
+          review: reviewRow,
+          currentProposalHistoryId,
+        }),
       },
     ];
   });

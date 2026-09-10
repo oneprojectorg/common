@@ -190,10 +190,14 @@ export const proposalFeedbackListSchema = list(proposalFeedbackItemSchema);
  * `overallRecommendationCount` is a tally of submitted answers to the
  * well-known overall-recommendation criterion (e.g. `{ yes: 2, no: 1 }`).
  * Empty when the rubric doesn't include the field or no reviews are in.
+ *
+ * `outOfDateReviewsCount` is how many of those submissions were written
+ * against an older proposal version. Derived at read time, never stored.
  */
 export const proposalReviewAggregatesSchema = z.object({
   assignmentsCount: z.number().int(),
   reviewsSubmittedCount: z.number().int(),
+  outOfDateReviewsCount: z.number().int(),
   averageScore: z.number(),
   overallRecommendationCount: z.record(z.string(), z.number().int()),
   reviewers: z.array(
@@ -230,6 +234,8 @@ export const submittedReviewItemSchema = z.object({
   assignmentStatus: z.enum(ProposalReviewAssignmentStatus),
   score: z.number(),
   overallRecommendation: z.string().nullable(),
+  /** The proposal changed after this review was submitted. Derived at read time. */
+  isReviewOutOfDate: z.boolean(),
 });
 
 export const proposalWithSubmittedReviewsSchema =
