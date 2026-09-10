@@ -39,7 +39,7 @@ import {
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { useId, useMemo, useState } from 'react';
-import { LuPlus, LuRefreshCw } from 'react-icons/lu';
+import { LuPlus, LuRefreshCcw, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -164,12 +164,11 @@ function MyReviewForm() {
     ) : null;
 
   // A submitted review shows the read-only result unless the reviewer has
-  // switched it back into the form via "Edit review". The banner rides along so
-  // the reviewer knows why "Update review" is worth pressing.
+  // switched it back into the form via "Edit review" — or the review is out of
+  // date, which opens the form directly (see `ReviewFormContext`).
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
       <>
-        {isReviewOutOfDate && <OutOfDateAlert />}
         {revisionAlert}
         <SubmittedReviewView
           rubricTemplate={template}
@@ -184,7 +183,7 @@ function MyReviewForm() {
 
   return (
     <>
-      {isReviewOutOfDate && <OutOfDateAlert />}
+      {isReviewOutOfDate && <NewRevisionAlert />}
 
       {revisionAlert}
 
@@ -234,21 +233,20 @@ function MyReviewForm() {
 
 /**
  * The reviewer's submitted review is behind the proposal's current version.
- * Re-affirming is the existing "Update review" action, so this only explains
- * why it matters — the copy is two keys so a future non-revision edit variant
- * is a copy change alone.
+ * The form below it is already open with their answers, so this only says why
+ * — the action is the navbar's "Update review".
  */
-function OutOfDateAlert() {
+function NewRevisionAlert() {
   const t = useTranslations();
 
   return (
     // `Alert` carries role="alert"; announced when it appears mid-session.
     <Alert variant="warning">
-      <LuRefreshCw />
-      <AlertTitle>{t('Your review is out of date')}</AlertTitle>
+      <LuRefreshCcw />
+      <AlertTitle>{t('New revision')}</AlertTitle>
       <AlertDescription>
         {t(
-          'The author submitted revisions to this proposal. Your previous responses have been carried over.',
+          'The author revised this proposal after you reviewed it. Your responses were carried over, update them if the changes affect your review',
         )}
       </AlertDescription>
     </Alert>

@@ -190,7 +190,12 @@ function ReviewFormProviderInner({
     reviewSettings.allowRevisions && !ownRevisionRequest;
 
   // Local: unsaved until "Update review", so navigating away discards edits.
-  const [isEditing, setIsEditing] = useState(initiallyEditing);
+  const [isEditRequested, setIsEditRequested] = useState(initiallyEditing);
+
+  // An out-of-date review skips the read-only step: the reviewer came to check
+  // their answers against a new revision, so the form opens with them carried
+  // over and "Update review" as the one action.
+  const isEditing = isEditRequested || isReviewOutOfDate;
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
@@ -210,7 +215,7 @@ function ReviewFormProviderInner({
     onSuccess: () => {
       // The mutation's review channels invalidate getReviewAssignment locally,
       // refreshing the read-only view in place (as requestRevision does).
-      setIsEditing(false);
+      setIsEditRequested(false);
       toast.success(t('Review updated successfully'));
       onCompleted?.();
     },
@@ -302,7 +307,7 @@ function ReviewFormProviderInner({
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
   const startEditing = useCallback(() => {
-    setIsEditing(true);
+    setIsEditRequested(true);
   }, []);
 
   const handleUpdate = useCallback(async () => {

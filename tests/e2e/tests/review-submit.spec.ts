@@ -8,6 +8,7 @@ import {
   createDecisionInstance,
   createReviewScenario,
   getSeededTemplate,
+  reviseProposal,
 } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
@@ -192,7 +193,7 @@ const PROPOSAL_TITLE = 'Community Solar Initiative';
 const PROPOSAL_REVIEWS_URL = /\/proposal\/[^/]+\/reviews$/;
 
 test.describe('Review Submit', () => {
-  test('full review journey: request revision → cancel → submit review → edit review', async ({
+  test('full review journey: request revision → cancel → submit review → edit review → re-affirm after a revision', async ({
     authenticatedPage: page,
     org,
   }) => {
@@ -539,6 +540,59 @@ test.describe('Review Submit', () => {
         .answers[OVERALL_RECOMMENDATION_KEY],
     ).toBe('no');
     expect(editedReview?.submittedAt).toBe(submittedAt);
+
+    // ========================================================================
+    // Step 9: The author revises the proposal — the review reopens pre-filled
+    // ========================================================================
+
+    const revisedHistoryId = await reviseProposal({
+      proposalId: assignment.proposalId,
+    });
+
+    await openReview();
+    await expect(
+      page.getByText('Review Proposal', { exact: true }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+
+    // No read-only step for an out-of-date review: the alert sits above an
+    // already-open form, and the only header action is "Update review".
+    await expect(page.getByText('New revision')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit review' })).toHaveCount(
+      0,
+    );
+    const reaffirmButton = page.getByRole('button', { name: 'Update review' });
+    await expect(reaffirmButton).toBeVisible();
+
+    // The submitted answers and rationales were carried into the open form.
+    await expect(
+      page.getByRole('combobox', { name: 'Innovation' }),
+    ).toContainText('Very Good');
+    await expect(
+      innovationSection.getByRole('textbox', { name: 'Note' }),
+    ).toHaveValue(innovationRationale);
+
+    await reaffirmButton.click();
+
+    await expect(
+      page
+        .locator('[data-slot="toast"]')
+        .filter({ hasText: 'Review updated successfully' }),
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Re-affirming re-anchors the review to the revised version, so the next
+    // load is the ordinary read-only view again.
+    const reaffirmedReview = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: assignment.id },
+    });
+    expect(reaffirmedReview?.reviewedProposalHistoryId).toBe(revisedHistoryId);
+
+    await openReview();
+    await expect(page.getByRole('button', { name: 'Edit review' })).toBeVisible(
+      {
+        timeout: 36_000,
+      },
+    );
+    await expect(page.getByText('New revision')).toHaveCount(0);
   });
 
   test('shows comments section on the review page in read-only mode', async ({
