@@ -115,11 +115,17 @@ export const assertPostReadAccess = async ({
 const WRITE_DENIED = 'You do not have access to write here';
 const COMMENTS_DISABLED = 'Comments are turned off for this process';
 
-const assertProcessAllowsComments = async (decisionProfileId: string) => {
-  const instance = await db.query.processInstances.findFirst({
-    where: { profileId: decisionProfileId },
-    columns: { instanceData: true },
-  });
+const assertProcessAllowsComments = async (
+  decisionProfileId: string,
+  // Non-null when `resolvePostRoots` already read the instance on its way here.
+  resolvedInstance: { instanceData: unknown } | null,
+) => {
+  const instance =
+    resolvedInstance ??
+    (await db.query.processInstances.findFirst({
+      where: { profileId: decisionProfileId },
+      columns: { instanceData: true },
+    }));
 
   // Deny rather than fall through to the permissive default: a DECISION
   // profile always has an instance, so this means the rows disagree.
@@ -162,11 +168,14 @@ export const assertPostWriteAccess = async ({
   rootProfileId,
   rootPostId,
   targetProfileId,
+  resolvedInstance = null,
 }: {
   user: AccessUser | undefined;
   rootProfileId: string | null;
   rootPostId: string | null;
   targetProfileId?: string | null;
+  /** Pass `resolvePostRoots`'s instance so the comment gate doesn't re-read it. */
+  resolvedInstance?: { instanceData: unknown } | null;
 }) => {
   // Legacy postsToOrganizations branch: the only write that lands here is
   // a reply under a legacy org-feed post. Same walled-garden gate as the
@@ -223,7 +232,7 @@ export const assertPostWriteAccess = async ({
       // After the permission check, so an unauthorized caller gets that error
       // rather than a hint about the process config.
       if (!isAnnouncement) {
-        await assertProcessAllowsComments(rootProfileId);
+        await assertProcessAllowsComments(rootProfileId, resolvedInstance);
       }
       return;
 
