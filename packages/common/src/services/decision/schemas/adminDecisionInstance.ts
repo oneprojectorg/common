@@ -74,7 +74,6 @@ export const adminDecisionConfigSchema = z.object({
   allowMultipleCategories: z.boolean(),
   organizeByCategories: z.boolean(),
   requireCollaborativeProposals: z.boolean(),
-  /** Defaults to true — see `areCommentsAllowed`. */
   allowComments: z.boolean(),
   categoriesCount: z.number(),
 });

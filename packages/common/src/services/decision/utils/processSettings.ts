@@ -1,20 +1,7 @@
 /**
- * Process-level settings resolution: `instanceData.config.*` → defaults. The
- * process-wide counterpart to `phaseSettings`; consumers go through these
- * helpers rather than reading `config` directly.
- *
- * Takes `unknown` because the domain type, the API-encoder `InstanceData`, and
- * the raw jsonb column all reach these helpers — same reason `getInstancePhases`
- * does. The narrowing happens once, here, instead of an assertion per caller.
- */
-
-/**
- * Participants may comment in this process — the Process Builder's "Allow
- * comments" toggle. Gates the comment surfaces AND the write itself (see
- * `assertPostWriteAccess`), so both read the same rule.
- *
- * Absent = allowed. Every process configured before this toggle existed has
- * working comments, and defaulting to `false` would retire all of them at once.
+ * Absent = allowed: defaulting to false would retire comments on every process
+ * configured before the toggle existed. Takes `unknown` because the domain
+ * type, the API encoder and the raw jsonb column all reach here.
  */
 export function areCommentsAllowed(instanceData: unknown): boolean {
   if (

@@ -10,8 +10,6 @@ describe('areCommentsAllowed', () => {
     );
   });
 
-  // Every process configured before the toggle existed has no key, and all of
-  // them have working comments today.
   it('defaults to allowed when the toggle was never set', () => {
     expect(areCommentsAllowed({ config: {} })).toBe(true);
     expect(areCommentsAllowed({})).toBe(true);

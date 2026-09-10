@@ -318,7 +318,6 @@ function EngagementRow({
   engagement?: ProposalEngagement;
 }) {
   const t = useTranslations();
-  // The link targets the comments section; both disappear together.
   const commentsEnabled = useProcessAllowsComments(proposal.processInstanceId);
 
   const likesCount = proposal.likesCount || 0;

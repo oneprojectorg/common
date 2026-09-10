@@ -46,10 +46,6 @@ export const DecisionSidePanel = ({
   access,
 }: {
   decisionProfileId: string;
-  /**
-   * The updates feed reads its process settings from this. Threaded because
-   * the panel is keyed by profile, and only the instance carries the config.
-   */
   instanceId: string;
   access?: DecisionAccess | null;
 }) => {
@@ -257,10 +253,8 @@ const UpdatesFeed = ({
   const t = useTranslations();
   const { user } = useUser();
 
-  // Suspense, not `useProcessAllowsComments`: this feed is already inside a
-  // Suspense boundary, and the overview tab does not preload `getInstance`.
-  // A plain query would resolve to "allowed" on the first paint and blink the
-  // reply button off when the instance lands.
+  // Suspense, not `useProcessAllowsComments`: the overview tab does not
+  // preload `getInstance`, so a plain query would blink the reply button off.
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const commentsEnabled = areCommentsAllowed(instance.instanceData);
 
@@ -332,8 +326,6 @@ const UpdatesFeed = ({
               user={user}
               withLinks={false}
               onLikeClick={handleLikeClick}
-              // Omitted, not disabled: PostItem drops the whole comment button
-              // when no handler arrives, which is what "no comment options" means.
               onCommentClick={commentsEnabled ? handleCommentClick : undefined}
               className="sm:px-0"
             />

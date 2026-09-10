@@ -1295,10 +1295,6 @@ describe.concurrent('proposal post authorization', () => {
   });
 });
 
-// The Process Builder's "Allow comments" toggle (`config.allowComments`). The
-// setup writes it through `decision.updateDecisionInstance` — the same call the
-// builder makes — so the gate is exercised against a real saved config rather
-// than a hand-written instanceData row.
 describe.concurrent('process-level comment gating', () => {
   const setUpProcessWithComments = async (
     testData: TestDecisionsDataManager,
@@ -1344,8 +1340,6 @@ describe.concurrent('process-level comment gating', () => {
       proposalData: { title: 'Comments off', description: 'desc' },
     });
 
-    // The toggle denies, not the permission check — the member holds
-    // SUBMIT_PROPOSALS and would be admitted on a process that takes comments.
     await expect(
       memberCaller.posts.createPost({
         content: 'Comment on a process with comments turned off.',
@@ -1385,8 +1379,6 @@ describe.concurrent('process-level comment gating', () => {
     });
   });
 
-  // Announcements are the organizer's channel, not a comment — turning comments
-  // off must not lock admins out of posting updates.
   it('still admits an admin update when the process disallows comments', async ({
     task,
     onTestFinished,
@@ -1429,8 +1421,6 @@ describe.concurrent('process-level comment gating', () => {
     );
   });
 
-  // The default has to be "allowed": every process configured before the toggle
-  // existed carries no `allowComments` key and must keep its comments working.
   it('admits a comment when the process never set the toggle', async ({
     task,
     onTestFinished,

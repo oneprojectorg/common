@@ -245,8 +245,6 @@ export const ProposalCardView = ({
             onClick: engagement.onFollow,
           }),
         },
-        // Dropped entirely when the process takes no comments — a count of a
-        // surface the reader can't reach reads as a broken link.
         ...(commentsEnabled && {
           comments: {
             count: proposal.commentsCount || 0,
