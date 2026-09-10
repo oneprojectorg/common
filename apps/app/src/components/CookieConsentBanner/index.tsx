@@ -11,9 +11,9 @@ import { useTrackingConsent } from '../PostHogProvider';
 
 export const CookieConsentBanner = () => {
   const t = useTranslations();
-  const { status, accept, reject } = useTrackingConsent();
+  const { shouldPrompt, accept, reject } = useTrackingConsent();
 
-  if (status !== 'pending') {
+  if (!shouldPrompt) {
     return null;
   }
 

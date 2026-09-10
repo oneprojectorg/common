@@ -64,17 +64,16 @@ export const UserProviderSuspense = ({
   const user = account ?? initialUser ?? undefined;
 
   // Identifying attaches a persistent id to the person, which is exactly what
-  // a visitor who hasn't accepted tracking has not agreed to — they stay on
-  // PostHog's cookieless, server-hashed identity instead. Keyed on the consent
-  // status so accepting identifies straight away rather than on the next
-  // navigation.
-  const { status: consentStatus } = useTrackingConsent();
+  // a visitor being tracked cookielessly has not agreed to — they stay on
+  // PostHog's server-hashed identity instead. Keyed on the consent state so
+  // accepting identifies straight away rather than on the next navigation.
+  const { isIdentifiable } = useTrackingConsent();
   const authUserId = user?.authUserId;
   const email = user?.email;
   const name = user?.name;
 
   useEffect(() => {
-    if (consentStatus !== 'granted' || !authUserId) {
+    if (!isIdentifiable || !authUserId) {
       return;
     }
 
@@ -85,7 +84,7 @@ export const UserProviderSuspense = ({
       // others are given anonymous IDs
       posthog.identify(authUserId);
     }
-  }, [consentStatus, authUserId, email, name]);
+  }, [isIdentifiable, authUserId, email, name]);
 
   // Utility function to get permissions for a specific profile
   const getPermissionsForProfile = (

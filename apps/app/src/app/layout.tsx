@@ -21,6 +21,7 @@ import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
 import { I18nProvider } from '../lib/i18n';
 import { getLocaleDirection } from '../lib/i18n/config';
+import { getCookieConsentRequired } from '../utils/cookieConsent';
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -74,11 +75,12 @@ export const viewport: Viewport = {
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   // getMessages() with no locale argument shares getLocale()'s memoized
-  // request config, so all three can resolve in parallel.
-  const [ssrCookies, locale, messages] = await Promise.all([
+  // request config, so these can all resolve in parallel.
+  const [ssrCookies, locale, messages, consentRequired] = await Promise.all([
     getSSRCookies(),
     getLocale(),
     getMessages(),
+    getCookieConsentRequired(),
   ]);
   const dir = getLocaleDirection(locale);
 
@@ -102,7 +104,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           <DirectionProvider direction={dir}>
             <I18nProvider locale={locale} messages={messages}>
               <OTelBrowserProvider>
-                <PostHogProvider>
+                <PostHogProvider consentRequired={consentRequired}>
                   <NuqsAdapter>
                     {/* base-ui's tooltip Provider is the grouping primitive, not
                         just a delay carrier: it keeps one tooltip open at a time
