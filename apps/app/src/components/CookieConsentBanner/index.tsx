@@ -1,11 +1,10 @@
 'use client';
 
 import { CookieBanner } from '@op/sense/CookieBanner';
+import { CookieBannerLink } from '@op/sense/CookieBannerLink';
 import type { ReactNode } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
-
-import { ButtonLink } from '@/components/ButtonLink';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { useTrackingConsent } from '../PostHogProvider';
 
@@ -49,7 +48,5 @@ const PolicyLink = ({
   href: string;
   children: ReactNode;
 }) => (
-  <ButtonLink href={href} variant="link" size="inline" className="underline">
-    {children}
-  </ButtonLink>
+  <CookieBannerLink render={<Link href={href} />}>{children}</CookieBannerLink>
 );
