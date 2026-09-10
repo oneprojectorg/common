@@ -12,7 +12,7 @@ import {
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import {
   CommonError,
@@ -150,12 +150,6 @@ export async function submitProposalRevision({
   const now = new Date().toISOString();
 
   const { items, proposalHistoryId } = await db.transaction(async (tx) => {
-    // Serializes two resubmissions of the same proposal, so a concurrent pair
-    // cannot each write a version and split one answer across two snapshots.
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${'proposal_revision:' + proposalId}))`,
-    );
-
     const proposalDataWithVersion = {
       ...(proposal.proposalData as Record<string, unknown>),
       collaborationDocVersionId,
@@ -177,8 +171,9 @@ export async function submitProposalRevision({
     const historyId = await findOpenProposalHistoryId(tx, proposal.id);
 
     // The state guard repeats the read-side check inside the write: a request
-    // answered between the read and here is not answered twice, and a caller
-    // that raced away every open request rolls the whole resubmission back.
+    // answered between the read and here is not answered twice. It is also what
+    // decides a double submit — the loser matches no row and gets "no open
+    // revision requests", rolling the whole resubmission back.
     const updatedRequests = await tx
       .update(proposalReviewRequests)
       .set({
