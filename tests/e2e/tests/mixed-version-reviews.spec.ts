@@ -119,165 +119,207 @@ const RUBRIC_TEMPLATE = {
 const REVISED_TITLE = 'Riverside Crosswalk';
 const UNTOUCHED_TITLE = 'Library Book Drive';
 
+type SeedOrg = {
+  organizationProfile: { id: string };
+  adminUser: { authUserId: string; email: string };
+};
+
+/**
+ * Two proposals in the review phase's pool: one revised after its first review
+ * came in (one stale review, one written against the new version) and one that
+ * was never revised. `stopOn` picks the phase the instance is parked on — the
+ * selection screen only renders once review has an empty outbound transition,
+ * and the phase is written last so no page read can cache an earlier state.
+ */
+async function seedMixedVersionReviews({
+  org,
+  supabaseAdmin,
+  testId,
+  stopOn,
+}: {
+  org: SeedOrg;
+  supabaseAdmin: Parameters<typeof createInstanceMember>[0]['supabaseAdmin'];
+  testId: string;
+  stopOn: 'review' | 'voting';
+}) {
+  const template = await getSeededTemplate();
+
+  const instance = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: REVIEW_TO_VOTING_SCHEMA,
+  });
+
+  const { user: earlyReviewer } = await createInstanceMember({
+    supabaseAdmin,
+    testId: `${testId}-early`,
+    instanceProfileId: instance.profileId,
+  });
+  const { user: lateReviewer } = await createInstanceMember({
+    supabaseAdmin,
+    testId: `${testId}-late`,
+    instanceProfileId: instance.profileId,
+  });
+
+  const author = {
+    profileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+  };
+
+  // The proposal that gets revised: two reviewers, both anchored to the
+  // pre-revision snapshot, only one of whom re-reviews afterwards.
+  const {
+    proposal: revised,
+    assignedProposalHistoryId: revisedFirstHistoryId,
+    assignment: earlyAssignment,
+  } = await createReviewScenario({
+    instance: { id: instance.instance.id },
+    author,
+    reviewer: { profileId: earlyReviewer.profileId },
+    proposalData: { title: REVISED_TITLE },
+  });
+
+  const lateAssignment = await createReviewAssignment({
+    processInstanceId: instance.instance.id,
+    proposalId: revised.id,
+    reviewerProfileId: lateReviewer.profileId,
+    assignedProposalHistoryId: revisedFirstHistoryId,
+  });
+
+  // The control proposal: one review, never revised.
+  const {
+    proposal: untouched,
+    assignedProposalHistoryId: untouchedHistoryId,
+    assignment: untouchedAssignment,
+  } = await createReviewScenario({
+    instance: { id: instance.instance.id },
+    author,
+    reviewer: { profileId: earlyReviewer.profileId },
+    proposalData: { title: UNTOUCHED_TITLE },
+  });
+
+  // Both proposals belong to the review phase's pool.
+  const [submissionToReview] = await db
+    .insert(stateTransitionHistory)
+    .values({
+      processInstanceId: instance.instance.id,
+      fromStateId: 'submission',
+      toStateId: 'review',
+      transitionData: {},
+      transitionedAt: new Date(Date.now() - 60_000),
+    })
+    .returning();
+  if (!submissionToReview) {
+    throw new Error('Failed to seed the submission→review transition');
+  }
+
+  await db.insert(decisionTransitionProposals).values([
+    {
+      processInstanceId: instance.instance.id,
+      transitionHistoryId: submissionToReview.id,
+      proposalId: revised.id,
+      proposalHistoryId: revisedFirstHistoryId,
+    },
+    {
+      processInstanceId: instance.instance.id,
+      transitionHistoryId: submissionToReview.id,
+      proposalId: untouched.id,
+      proposalHistoryId: untouchedHistoryId,
+    },
+  ]);
+
+  const submittedAt = new Date().toISOString();
+
+  await createProposalReview({
+    assignmentId: earlyAssignment.id,
+    state: ProposalReviewState.SUBMITTED,
+    reviewData: {
+      answers: {
+        innovation: 5,
+        feasibility: 3,
+        [OVERALL_RECOMMENDATION_KEY]: 'yes',
+      },
+    },
+    submittedAt,
+    reviewedProposalHistoryId: revisedFirstHistoryId,
+  });
+
+  await createProposalReview({
+    assignmentId: untouchedAssignment.id,
+    state: ProposalReviewState.SUBMITTED,
+    reviewData: {
+      answers: {
+        innovation: 4,
+        feasibility: 3,
+        [OVERALL_RECOMMENDATION_KEY]: 'yes',
+      },
+    },
+    submittedAt,
+    reviewedProposalHistoryId: untouchedHistoryId,
+  });
+
+  // The revision: the early review's anchor stops matching the proposal's
+  // current version, the late one is written against the new version.
+  const revisedCurrentHistoryId = await reviseProposal({
+    proposalId: revised.id,
+  });
+
+  await createProposalReview({
+    assignmentId: lateAssignment.id,
+    state: ProposalReviewState.SUBMITTED,
+    reviewData: {
+      answers: {
+        innovation: 4,
+        feasibility: 3,
+        [OVERALL_RECOMMENDATION_KEY]: 'yes',
+      },
+    },
+    submittedAt,
+    reviewedProposalHistoryId: revisedCurrentHistoryId,
+  });
+
+  // An inbound transition with no attachments and no manualSelection stamp is
+  // what `resolveManualSelectionStatus` reads as "still awaiting a selection",
+  // which is what routes an admin to the review selection screen.
+  if (stopOn === 'voting') {
+    await db.insert(stateTransitionHistory).values({
+      processInstanceId: instance.instance.id,
+      fromStateId: 'review',
+      toStateId: 'voting',
+      transitionData: {},
+      transitionedAt: new Date(),
+    });
+  }
+
+  await db
+    .update(processInstances)
+    .set({
+      instanceData: {
+        ...(instance.instance.instanceData as Record<string, unknown>),
+        rubricTemplate: RUBRIC_TEMPLATE,
+      },
+      currentStateId: stopOn,
+    })
+    .where(eq(processInstances.id, instance.instance.id));
+
+  return { instance, revised, untouched };
+}
+
 test.describe('Mixed version reviews — admin tags and banner', () => {
-  test('a revision marks the proposal row, the summary banner and the stale reviewer row', async ({
+  test('the review summary banners the stale count and tags the stale reviewer row', async ({
     authenticatedPage: page,
     org,
     supabaseAdmin,
   }, testInfo) => {
-    const testId = `mixed-version-${testInfo.workerIndex}-${Date.now()}`;
-    const template = await getSeededTemplate();
-
-    const instance = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-      schema: REVIEW_TO_VOTING_SCHEMA,
-    });
-
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: {
-          ...(instance.instance.instanceData as Record<string, unknown>),
-          rubricTemplate: RUBRIC_TEMPLATE,
-        },
-        currentStateId: 'review',
-      })
-      .where(eq(processInstances.id, instance.instance.id));
-
-    const { user: earlyReviewer } = await createInstanceMember({
+    const { instance, revised, untouched } = await seedMixedVersionReviews({
+      org,
       supabaseAdmin,
-      testId: `${testId}-early`,
-      instanceProfileId: instance.profileId,
+      testId: `mixed-version-summary-${testInfo.workerIndex}-${Date.now()}`,
+      stopOn: 'review',
     });
-    const { user: lateReviewer } = await createInstanceMember({
-      supabaseAdmin,
-      testId: `${testId}-late`,
-      instanceProfileId: instance.profileId,
-    });
-
-    const author = {
-      profileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-    };
-
-    // The proposal that gets revised: two reviewers, both anchored to the
-    // pre-revision snapshot, only one of whom re-reviews afterwards.
-    const {
-      proposal: revised,
-      assignedProposalHistoryId: revisedFirstHistoryId,
-      assignment: earlyAssignment,
-    } = await createReviewScenario({
-      instance: { id: instance.instance.id },
-      author,
-      reviewer: { profileId: earlyReviewer.profileId },
-      proposalData: { title: REVISED_TITLE },
-    });
-
-    const lateAssignment = await createReviewAssignment({
-      processInstanceId: instance.instance.id,
-      proposalId: revised.id,
-      reviewerProfileId: lateReviewer.profileId,
-      assignedProposalHistoryId: revisedFirstHistoryId,
-    });
-
-    // The control proposal: one review, never revised.
-    const {
-      proposal: untouched,
-      assignedProposalHistoryId: untouchedHistoryId,
-      assignment: untouchedAssignment,
-    } = await createReviewScenario({
-      instance: { id: instance.instance.id },
-      author,
-      reviewer: { profileId: earlyReviewer.profileId },
-      proposalData: { title: UNTOUCHED_TITLE },
-    });
-
-    // Both proposals belong to the review phase's pool.
-    const [submissionToReview] = await db
-      .insert(stateTransitionHistory)
-      .values({
-        processInstanceId: instance.instance.id,
-        fromStateId: 'submission',
-        toStateId: 'review',
-        transitionData: {},
-      })
-      .returning();
-    if (!submissionToReview) {
-      throw new Error('Failed to seed the submission→review transition');
-    }
-
-    await db.insert(decisionTransitionProposals).values([
-      {
-        processInstanceId: instance.instance.id,
-        transitionHistoryId: submissionToReview.id,
-        proposalId: revised.id,
-        proposalHistoryId: revisedFirstHistoryId,
-      },
-      {
-        processInstanceId: instance.instance.id,
-        transitionHistoryId: submissionToReview.id,
-        proposalId: untouched.id,
-        proposalHistoryId: untouchedHistoryId,
-      },
-    ]);
-
-    const submittedAt = new Date().toISOString();
-
-    await createProposalReview({
-      assignmentId: earlyAssignment.id,
-      state: ProposalReviewState.SUBMITTED,
-      reviewData: {
-        answers: {
-          innovation: 5,
-          feasibility: 3,
-          [OVERALL_RECOMMENDATION_KEY]: 'yes',
-        },
-      },
-      submittedAt,
-      reviewedProposalHistoryId: revisedFirstHistoryId,
-    });
-
-    await createProposalReview({
-      assignmentId: untouchedAssignment.id,
-      state: ProposalReviewState.SUBMITTED,
-      reviewData: {
-        answers: {
-          innovation: 4,
-          feasibility: 3,
-          [OVERALL_RECOMMENDATION_KEY]: 'yes',
-        },
-      },
-      submittedAt,
-      reviewedProposalHistoryId: untouchedHistoryId,
-    });
-
-    // The revision: the early review's anchor stops matching the proposal's
-    // current version, the late one is written against the new version.
-    const revisedCurrentHistoryId = await reviseProposal({
-      proposalId: revised.id,
-    });
-
-    await createProposalReview({
-      assignmentId: lateAssignment.id,
-      state: ProposalReviewState.SUBMITTED,
-      reviewData: {
-        answers: {
-          innovation: 4,
-          feasibility: 3,
-          [OVERALL_RECOMMENDATION_KEY]: 'yes',
-        },
-      },
-      submittedAt,
-      reviewedProposalHistoryId: revisedCurrentHistoryId,
-    });
-
-    // ================================================================
-    // 1. Proposal review summary: banner counts + per-reviewer tag
-    // ================================================================
 
     await page.goto(
       `/en/decisions/${instance.slug}/proposal/${revised.profileId}/reviews`,
@@ -320,22 +362,19 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
     ).toBeVisible({ timeout: 36_000 });
     await expect(page.getByText('Mixed version reviews')).toHaveCount(0);
     await expect(page.getByText('Older version')).toHaveCount(0);
+  });
 
-    // ================================================================
-    // 2. Advance to voting so the selection table renders
-    // ================================================================
-
-    await page.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'networkidle',
+  test('the selection table tags only the proposal with mixed-version reviews', async ({
+    authenticatedPage: page,
+    org,
+    supabaseAdmin,
+  }, testInfo) => {
+    const { instance } = await seedMixedVersionReviews({
+      org,
+      supabaseAdmin,
+      testId: `mixed-version-table-${testInfo.workerIndex}-${Date.now()}`,
+      stopOn: 'voting',
     });
-    await page.getByRole('button', { name: 'Advance' }).first().click();
-
-    const advanceDialog = page
-      .getByRole('alertdialog')
-      .and(page.locator(':not([data-slot="toast"])'));
-    await expect(advanceDialog).toBeVisible();
-    await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
-    await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
 
     await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
@@ -343,11 +382,7 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
 
     await expect(
       page.getByRole('columnheader', { name: 'Overall recommendation' }),
-    ).toBeVisible({ timeout: 15_000 });
-
-    // ================================================================
-    // 3. Selection table: only the revised proposal carries the tag
-    // ================================================================
+    ).toBeVisible({ timeout: 36_000 });
 
     const revisedRow = page.getByRole('row').filter({ hasText: REVISED_TITLE });
     await expect(revisedRow).toContainText('Mixed version reviews');
@@ -355,6 +390,7 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
     const untouchedRow = page
       .getByRole('row')
       .filter({ hasText: UNTOUCHED_TITLE });
+    await expect(untouchedRow).toBeVisible();
     await expect(untouchedRow).not.toContainText('Mixed version reviews');
   });
 });
