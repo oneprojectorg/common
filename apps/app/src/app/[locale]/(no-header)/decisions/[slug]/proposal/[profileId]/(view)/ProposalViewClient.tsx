@@ -3,11 +3,10 @@
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { getProcessCapabilities, isLastPhase } from '@op/common/client';
+import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { ProcessCapabilitiesProvider } from '@/components/decisions/ProcessCapabilitiesContext';
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
 import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
@@ -47,18 +46,14 @@ function ProposalViewPageContent({
     );
 
   return (
-    <ProcessCapabilitiesProvider
-      capabilities={getProcessCapabilities(instance.instanceData)}
-    >
-      <ProposalView
-        proposal={proposal}
-        affordances={affordances}
-        isAuthor={isAuthor}
-        currentPhaseId={instance.currentStateId}
-        decisionRoot={`/decisions/${slug}`}
-        selection={selection ?? null}
-      />
-    </ProcessCapabilitiesProvider>
+    <ProposalView
+      proposal={proposal}
+      affordances={affordances}
+      isAuthor={isAuthor}
+      currentPhaseId={instance.currentStateId}
+      decisionRoot={`/decisions/${slug}`}
+      selection={selection ?? null}
+    />
   );
 }
 

@@ -29,13 +29,13 @@ function ProposalViewPageContent({
 
   const decisionRoot = `/profile/${orgSlug}/decisions/${instanceId}`;
 
-  // No ProcessCapabilitiesProvider here, so the capabilities read as "all on".
-  // That is right for this route: "Allow comments" is a Process Builder
-  // setting and the builder does not edit legacy instances, so none of them
-  // carry it. Neither endpoint that could report it fits — `getLegacyInstance`
-  // drops `config` at its encoder and requires auth (these are public links),
-  // and `getInstance` only parses new-schema instances. The server still
-  // refuses the write either way.
+  // The comment surfaces below resolve "Allow comments" from the instance and
+  // fall back to allowed, which is right for this route: it is a Process
+  // Builder setting and the builder does not edit legacy instances, so none of
+  // them carry it. Neither endpoint that could report it fits either —
+  // `getLegacyInstance` drops `config` at its encoder and requires auth (these
+  // are public links), and `getInstance` only parses new-schema instances. The
+  // server still refuses the write regardless.
   return (
     <ProposalView
       proposal={proposal}

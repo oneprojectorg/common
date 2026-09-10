@@ -19,13 +19,13 @@ import { LuCircleX } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
-import { useProcessCapabilities } from '../ProcessCapabilitiesContext';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import {
   getProposalContentPreview,
   resolveProposalSystemFields,
 } from '../proposalContentUtils';
 import { useProposalReviewDecoration } from '../proposalReviewDecoration';
+import { useProcessAllowsComments } from '../useProcessAllowsComments';
 
 /**
  * Maps the app's `Proposal` into the presentational values the sense
@@ -215,7 +215,7 @@ export const ProposalCardView = ({
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData(proposal);
   const engagement = useProposalEngagement({ proposal, canEngage });
-  const { comments: commentsEnabled } = useProcessCapabilities();
+  const commentsEnabled = useProcessAllowsComments(proposal.processInstanceId);
   // Empty unless a review surface provides it; an explicit slot always wins.
   const decoration = useProposalReviewDecoration(proposal.id);
 

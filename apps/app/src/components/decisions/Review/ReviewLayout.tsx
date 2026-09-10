@@ -8,8 +8,6 @@ import { CommonError } from '@op/common';
 import {
   getPhaseReviewSettings,
   getPreviousPhases,
-  getProcessCapabilities,
-  type ProcessCapabilities,
   type ReviewSettings,
 } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
@@ -17,7 +15,6 @@ import { forbidden, notFound } from 'next/navigation';
 
 import { getTranslations } from '@/lib/i18n';
 
-import { ProcessCapabilitiesProvider } from '../ProcessCapabilitiesContext';
 import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewProposalPane } from './ReviewProposalPane';
@@ -42,7 +39,6 @@ export async function ReviewLayout({
 
   let reviewSettings: ReviewSettings;
   let previousReviewPhases: PreviousReviewPhase[];
-  let capabilities: ProcessCapabilities;
   try {
     const [decisionProfile, reviewAssignment] = await Promise.all([
       client.decision.getDecisionBySlug({ slug: decisionSlug }),
@@ -51,8 +47,6 @@ export async function ReviewLayout({
 
     const instanceData = decisionProfile.processInstance.instanceData;
     const assignmentPhaseId = reviewAssignment.assignment.phaseId;
-
-    capabilities = getProcessCapabilities(instanceData);
 
     // Throws NotFoundError when the assignment's phase is no longer in the
     // instance's phase list (stale assignment) — mapped to notFound() below.
@@ -93,37 +87,33 @@ export async function ReviewLayout({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProcessCapabilitiesProvider capabilities={capabilities}>
-        <ReviewFormProvider
-          assignmentId={assignmentId}
-          decisionSlug={decisionSlug}
-          reviewSettings={reviewSettings}
-        >
-          {/* Inside ReviewFormProvider: the proposal and the rubric it translates
+      <ReviewFormProvider
+        assignmentId={assignmentId}
+        decisionSlug={decisionSlug}
+        reviewSettings={reviewSettings}
+      >
+        {/* Inside ReviewFormProvider: the proposal and the rubric it translates
             both come from the assignment that provider loads. */}
-          <ReviewTranslationProvider assignmentId={assignmentId}>
-            <div className="flex h-dvh flex-col overflow-hidden bg-white">
-              <ReviewNavbar decisionSlug={decisionSlug} />
+        <ReviewTranslationProvider assignmentId={assignmentId}>
+          <div className="flex h-dvh flex-col overflow-hidden bg-white">
+            <ReviewNavbar decisionSlug={decisionSlug} />
 
-              <SplitPane
-                className="mx-auto max-w-6xl"
-                defaultMobileTabId="review"
-              >
-                <SplitPane.Pane id="proposal" label={t('Proposal')}>
-                  <ReviewProposalPane
-                    decisionRoot={`/decisions/${decisionSlug}`}
-                  />
-                </SplitPane.Pane>
-                <SplitPane.Pane id="review" label={t('Review')}>
-                  <ReviewRubricForm
-                    previousReviewPhases={previousReviewPhases}
-                  />
-                </SplitPane.Pane>
-              </SplitPane>
-            </div>
-          </ReviewTranslationProvider>
-        </ReviewFormProvider>
-      </ProcessCapabilitiesProvider>
+            <SplitPane
+              className="mx-auto max-w-6xl"
+              defaultMobileTabId="review"
+            >
+              <SplitPane.Pane id="proposal" label={t('Proposal')}>
+                <ReviewProposalPane
+                  decisionRoot={`/decisions/${decisionSlug}`}
+                />
+              </SplitPane.Pane>
+              <SplitPane.Pane id="review" label={t('Review')}>
+                <ReviewRubricForm previousReviewPhases={previousReviewPhases} />
+              </SplitPane.Pane>
+            </SplitPane>
+          </div>
+        </ReviewTranslationProvider>
+      </ReviewFormProvider>
     </HydrationBoundary>
   );
 }

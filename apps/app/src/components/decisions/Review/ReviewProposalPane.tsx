@@ -2,9 +2,9 @@
 
 import { ProposalReviewRequestState } from '@op/common/client';
 
-import { useProcessCapabilities } from '../ProcessCapabilitiesContext';
 import { ProposalComments } from '../ProposalComments';
 import { ProposalPreview } from '../ProposalPreview';
+import { useProcessAllowsComments } from '../useProcessAllowsComments';
 import { AuthorNotesSection } from './AuthorNotesSection';
 import { RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
@@ -17,7 +17,9 @@ export function ReviewProposalPane({
   decisionRoot: string;
 }) {
   const { assignment, ownLatestRevisionRequest } = useReviewForm();
-  const { comments: commentsEnabled } = useProcessCapabilities();
+  const commentsEnabled = useProcessAllowsComments(
+    assignment.proposal.processInstanceId,
+  );
   const { proposal: translation } = useReviewTranslation();
 
   const respondedAt =

@@ -38,13 +38,13 @@ import { ButtonLink } from '../ButtonLink';
 import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
-import { useProcessCapabilities } from './ProcessCapabilitiesContext';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslationNotice } from './TranslationNotice';
 import { resolveProposalSystemFields } from './proposalContentUtils';
+import { useProcessAllowsComments } from './useProcessAllowsComments';
 
 export type ProposalTranslation = {
   htmlContent: Record<string, string | string[]>;
@@ -319,7 +319,7 @@ function EngagementRow({
 }) {
   const t = useTranslations();
   // The link targets the comments section; both disappear together.
-  const { comments: commentsEnabled } = useProcessCapabilities();
+  const commentsEnabled = useProcessAllowsComments(proposal.processInstanceId);
 
   const likesCount = proposal.likesCount || 0;
   const followersCount = proposal.followersCount || 0;

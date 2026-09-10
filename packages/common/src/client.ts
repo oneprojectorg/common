@@ -25,12 +25,7 @@ export {
   assertInstancePhase,
   getInstanceCurrentPhase,
 } from './services/decision/utils/instance';
-export {
-  ALL_PROCESS_CAPABILITIES,
-  areCommentsAllowed,
-  getProcessCapabilities,
-  type ProcessCapabilities,
-} from './services/decision/utils/processSettings';
+export { areCommentsAllowed } from './services/decision/utils/processSettings';
 export {
   getPhaseIndex,
   getPreviousPhases,
