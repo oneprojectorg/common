@@ -4,7 +4,11 @@ import {
   ProposalReviewRequestState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createReviewAssignment, createRevisionRequest } from '@op/test';
+import {
+  createReviewAssignment,
+  createRevisionRequest,
+  getLatestProposalHistoryId,
+} from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -131,11 +135,16 @@ describe.concurrent('submitProposalRevision', () => {
     });
     await testData.setRubricTemplate(created.context, rubricTemplate);
 
+    const originalHistoryId = await getLatestProposalHistoryId({
+      proposalId: created.proposal.id,
+    });
+
     const secondReviewer = await testData.createReviewer(created.context);
     const secondAssignment = await createReviewAssignment({
       processInstanceId: created.context.instance.instance.id,
       proposalId: created.proposal.id,
       reviewerProfileId: secondReviewer.profileId,
+      assignedProposalHistoryId: originalHistoryId,
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
 
@@ -167,6 +176,10 @@ describe.concurrent('submitProposalRevision', () => {
 
     expect(result.items).toHaveLength(2);
 
+    const answeredRequest = await db.query.proposalReviewRequests.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+
     const pausedAssignment = await db.query.proposalReviewAssignments.findFirst(
       {
         where: { id: created.assignment.id },
@@ -175,15 +188,24 @@ describe.concurrent('submitProposalRevision', () => {
     expect(pausedAssignment?.status).toBe(
       ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     );
+    expect(pausedAssignment?.assignedProposalHistoryId).toBe(
+      answeredRequest?.respondedProposalHistoryId,
+    );
 
-    // Decision I is still open: a submitted review is not reopened by the
-    // resubmission, the derived out-of-date flag surfaces it instead.
+    // Nothing the author does touches a submitted review: the status and the
+    // pin both stay, so the out-of-date flag is what surfaces the new version.
     const completedAssignment =
       await db.query.proposalReviewAssignments.findFirst({
         where: { id: secondAssignment.id },
       });
     expect(completedAssignment?.status).toBe(
       ProposalReviewAssignmentStatus.COMPLETED,
+    );
+    expect(completedAssignment?.assignedProposalHistoryId).toBe(
+      originalHistoryId,
+    );
+    expect(pausedAssignment?.assignedProposalHistoryId).not.toBe(
+      originalHistoryId,
     );
   });
 

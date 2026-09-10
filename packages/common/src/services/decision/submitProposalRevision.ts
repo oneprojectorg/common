@@ -204,22 +204,14 @@ export async function submitProposalRevision({
       );
     }
 
-    // Re-anchor every touched assignment to the new snapshot. The pin records
-    // the version the assignment was handed; it feeds the staleness signal and
-    // the admin views, not what the reviewer pane renders.
+    // The pin records the version the assignment's reviewer was asked to
+    // review, so only the paused requester's pin moves. A completed review
+    // keeps its pin, which is what the out-of-date fallback reads for a legacy
+    // review that recorded no version of its own.
     await tx
       .update(proposalReviewAssignments)
       .set({
         assignedProposalHistoryId: historyId,
-      })
-      .where(inArray(proposalReviewAssignments.id, assignmentIds));
-
-    // Only assignments this revision cycle paused resume. A COMPLETED
-    // assignment keeps its status — the reviewer already submitted, and the
-    // derived out-of-date flag tells them their review predates this version.
-    await tx
-      .update(proposalReviewAssignments)
-      .set({
         status: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
       })
       .where(
