@@ -9,7 +9,6 @@ import {
   proposalReviewRequests,
   proposals,
 } from '@op/db/schema';
-import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -22,11 +21,7 @@ import {
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { parseProposalData } from './proposalDataSchema';
-import {
-  evictPriorProposalVersionCache,
-  findOpenProposalHistoryId,
-} from './proposalRevisionHelpers';
-import { isInstanceCurrentPhase } from './utils/instance';
+import { findOpenProposalHistoryId } from './review/revision';
 
 export interface SubmitProposalRevisionResult {
   items: Array<ProposalReviewRequest>;
@@ -53,13 +48,6 @@ export async function submitProposalRevision({
       where: { id: proposalId },
       with: {
         processInstance: true,
-        reviewAssignments: {
-          with: {
-            requests: {
-              where: { state: ProposalReviewRequestState.REQUESTED },
-            },
-          },
-        },
       },
     }),
     assertUserByAuthId(user.id),
@@ -85,37 +73,35 @@ export async function submitProposalRevision({
     throw new ValidationError('A note for reviewers is required');
   }
 
-  const instance = proposal.processInstance;
+  const currentPhaseId = proposal.processInstance.currentStateId;
 
-  const assignmentsWithOpenRequests = proposal.reviewAssignments.filter(
-    (assignment) => assignment.requests.length > 0,
-  );
-  const answerableAssignments = assignmentsWithOpenRequests.filter(
-    (assignment) => isInstanceCurrentPhase(instance, assignment.phaseId),
-  );
-
-  const pastPhaseCount =
-    assignmentsWithOpenRequests.length - answerableAssignments.length;
-
-  if (pastPhaseCount > 0) {
-    logger.warn('Revision requests from an earlier phase left unanswered', {
-      proposalId,
-      assignmentCount: pastPhaseCount,
-    });
-  }
-
-  if (answerableAssignments.length === 0) {
+  if (currentPhaseId == null) {
     throw new ValidationError(
       'This proposal has no open revision requests to answer',
     );
   }
 
-  const assignmentIds = answerableAssignments.map(
-    (assignment) => assignment.id,
-  );
-  const requestIds = answerableAssignments.flatMap((assignment) =>
-    assignment.requests.map((request) => request.id),
-  );
+  const openRequests = await db.query.proposalReviewRequests.findMany({
+    columns: { id: true, assignmentId: true },
+    where: {
+      state: ProposalReviewRequestState.REQUESTED,
+      assignment: {
+        proposalId: proposal.id,
+        phaseId: currentPhaseId,
+      },
+    },
+  });
+
+  if (openRequests.length === 0) {
+    throw new ValidationError(
+      'This proposal has no open revision requests to answer',
+    );
+  }
+
+  const requestIds = openRequests.map((request) => request.id);
+  const assignmentIds = [
+    ...new Set(openRequests.map((request) => request.assignmentId)),
+  ];
 
   const proposalData = parseProposalData(proposal.proposalData);
 
@@ -204,12 +190,6 @@ export async function submitProposalRevision({
       );
 
     return { items: updatedRequests, proposalHistoryId: historyId };
-  });
-
-  await evictPriorProposalVersionCache({
-    collaborationDocId: proposalData.collaborationDocId,
-    instance,
-    priorVersionId: proposalData.collaborationDocVersionId,
   });
 
   waitUntil(
