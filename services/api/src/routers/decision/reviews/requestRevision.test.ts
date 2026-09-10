@@ -1,10 +1,14 @@
-import type { RubricTemplateSchema } from '@op/common';
+import {
+  type ChannelName,
+  Channels,
+  type RubricTemplateSchema,
+} from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createRevisionRequest } from '@op/test';
+import { createReviewAssignment, createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -45,6 +49,23 @@ const rubricTemplate: RubricTemplateSchema = {
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** Caller that records the channels a mutation registers on this request. */
+async function createChannelCapturingCaller(email: string) {
+  const { session } = await createIsolatedSession(email);
+  const context = await createTestContextWithSession(session);
+  const channels: Array<ChannelName> = [];
+
+  return {
+    caller: createCaller({
+      ...context,
+      registerMutationChannels: (registered: Array<ChannelName>) => {
+        channels.push(...registered);
+      },
+    }),
+    channels,
+  };
 }
 
 describe.concurrent('requestRevision', () => {
@@ -240,6 +261,43 @@ describe.concurrent('requestRevision', () => {
     ).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError' },
     });
+  });
+
+  it('registers the proposal channel and every assignment of the proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Two Reviewers, One Request',
+    });
+
+    const secondReviewer = await testData.createReviewer(created.context);
+    const secondAssignment = await createReviewAssignment({
+      processInstanceId: created.context.instance.instance.id,
+      proposalId: created.proposal.id,
+      reviewerProfileId: secondReviewer.profileId,
+    });
+
+    const { caller, channels } = await createChannelCapturingCaller(
+      created.reviewer.email,
+    );
+
+    await caller.decision.requestRevision({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add budget details.',
+    });
+
+    const instanceId = created.context.instance.instance.id;
+
+    expect(channels).toEqual(
+      expect.arrayContaining([
+        Channels.decisionProposal(instanceId, created.proposal.id),
+        Channels.reviewAssignments(instanceId),
+        Channels.reviewAssignment(created.assignment.id),
+        Channels.reviewAssignment(secondAssignment.id),
+      ]),
+    );
   });
 });
 

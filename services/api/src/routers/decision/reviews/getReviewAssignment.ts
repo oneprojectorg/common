@@ -16,13 +16,21 @@ export const getReviewAssignmentRouter = router({
     )
     .output(reviewAssignmentExtendedSchema)
     .query(async ({ ctx, input }) => {
-      ctx.registerQueryChannels([
-        Channels.reviewAssignment(input.assignmentId),
-      ]);
-
-      return await getReviewAssignment({
+      const result = await getReviewAssignment({
         assignmentId: input.assignmentId,
         user: ctx.user,
       });
+
+      // Also the proposal channel: another reviewer's request or the author's
+      // resubmission changes this pane without touching this assignment row.
+      ctx.registerQueryChannels([
+        Channels.reviewAssignment(input.assignmentId),
+        Channels.decisionProposal(
+          result.assignment.processInstanceId,
+          result.assignment.proposal.id,
+        ),
+      ]);
+
+      return result;
     }),
 });
