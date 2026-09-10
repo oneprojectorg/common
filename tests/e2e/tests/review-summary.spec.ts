@@ -2,7 +2,11 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { ProposalReviewState, processInstances } from '@op/db/schema';
+import {
+  ProposalReviewRequestState,
+  ProposalReviewState,
+  processInstances,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
@@ -10,6 +14,7 @@ import {
   createProposalReview,
   createReviewAssignment,
   createReviewScenario,
+  createRevisionRequest,
   getSeededTemplate,
 } from '@op/test';
 import type { Locator, Page } from '@playwright/test';
@@ -125,6 +130,15 @@ const RUBRIC_TEMPLATE = {
 } as const satisfies RubricTemplateSchema;
 
 const PROPOSAL_TITLE = 'Community Solar Initiative';
+
+const OLDER_REQUEST_COMMENT = 'Please add a detailed budget breakdown.';
+const NEWER_REQUEST_COMMENT = 'Please name the partner organisations.';
+const OLDER_NOTE = 'Broke the budget out per site and per line item.';
+const NEWER_NOTE = 'Added the partnership with the Riverside District Library.';
+
+function daysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
 
 /**
  * Keyboard, not a click: headless, Base UI's inert node over the open popup is
@@ -766,5 +780,98 @@ test.describe('Review Summary page', () => {
     ).toBeVisible({ timeout: 36_000 });
 
     await ctx.close();
+  });
+  test('admin sees the author revision notes above the proposal content', async ({
+    authenticatedPage: page,
+    org,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `summary-notes-${testInfo.workerIndex}-${Date.now()}`;
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+    });
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(instance.instance.instanceData as Record<string, unknown>),
+          rubricTemplate: RUBRIC_TEMPLATE,
+        },
+        currentStateId: 'review',
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+
+    const { proposal, assignment } = await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author: {
+        profileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      },
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE,
+        collaborationDocId: 'test-proposal-view-doc',
+      },
+    });
+
+    // Two answered requests with no resubmitted-version pointer: each stands
+    // alone, so the pane has two notes to collapse into the accordion.
+    await createRevisionRequest({
+      assignmentId: assignment.id,
+      state: ProposalReviewRequestState.RESUBMITTED,
+      requestComment: OLDER_REQUEST_COMMENT,
+      responseComment: OLDER_NOTE,
+      respondedAt: daysAgo(5),
+    });
+    await createRevisionRequest({
+      assignmentId: assignment.id,
+      state: ProposalReviewRequestState.RESUBMITTED,
+      requestComment: NEWER_REQUEST_COMMENT,
+      responseComment: NEWER_NOTE,
+      respondedAt: daysAgo(1),
+    });
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    const notes = page.getByTestId('author-notes').first();
+    await expect(notes).toBeVisible({ timeout: 36_000 });
+
+    const entries = notes.getByTestId('author-note');
+    await expect(entries).toHaveCount(2);
+    await expect(entries.nth(0)).toContainText(NEWER_NOTE);
+    await expect(entries.nth(1)).toContainText(OLDER_NOTE);
+
+    await entries
+      .nth(1)
+      .getByRole('button', { name: 'View revision request' })
+      .click();
+
+    const modal = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
+    await expect(modal).toBeVisible();
+    await expect(modal.getByText(OLDER_REQUEST_COMMENT)).toBeVisible();
+    await expect(modal.getByText(NEWER_REQUEST_COMMENT)).toHaveCount(0);
+    // Nothing here is the admin's to cancel, and requests stay anonymous.
+    await expect(
+      modal.getByRole('button', { name: 'Cancel request' }),
+    ).toHaveCount(0);
   });
 });

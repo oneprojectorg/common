@@ -14,6 +14,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
+import { AuthorNotesSection } from '../Review/AuthorNotesSection';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
@@ -196,7 +197,14 @@ export function ReviewSummaryView({
 
       <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="summary">
         <SplitPane.Pane id="proposal" label={t('Proposal')}>
-          <ProposalPreview proposal={proposal} translation={translation} />
+          <ProposalPreview
+            proposal={proposal}
+            translation={translation}
+            // Same card as the reviewer pane, above the proposal body: the
+            // reviews on the right are read against whatever the author last
+            // resubmitted, so the notes belong beside them.
+            headerBanner={<AuthorNotesSection proposalId={proposalId} />}
+          />
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"
