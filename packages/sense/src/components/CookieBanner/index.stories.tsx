@@ -1,5 +1,5 @@
-import { Button } from '@op/sense/Button';
 import { CookieBanner } from '@op/sense/CookieBanner';
+import { CookieBannerLink } from '@op/sense/CookieBannerLink';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof CookieBanner> = {
@@ -17,31 +17,18 @@ export default meta;
 
 type Story = StoryObj<typeof CookieBanner>;
 
-const PolicyLink = ({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) => (
-  <Button
-    variant="link"
-    size="inline"
-    className="underline"
-    nativeButton={false}
-    role={undefined}
-    render={<a href={href} />}
-  >
-    {children}
-  </Button>
-);
-
 const description = (
   <>
     We use essential cookies to make Common work, and analytics cookies to
     understand how the platform is used. Read our{' '}
-    <PolicyLink href="#privacy">Privacy Policy</PolicyLink> and{' '}
-    <PolicyLink href="#terms">Terms of Use</PolicyLink> to learn more.
+    <CookieBannerLink render={<a href="#privacy" />}>
+      Privacy Policy
+    </CookieBannerLink>{' '}
+    and{' '}
+    <CookieBannerLink render={<a href="#terms" />}>
+      Terms of Use
+    </CookieBannerLink>{' '}
+    to learn more.
   </>
 );
 

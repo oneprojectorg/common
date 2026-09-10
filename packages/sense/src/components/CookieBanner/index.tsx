@@ -74,3 +74,33 @@ export function CookieBanner({
     </div>
   );
 }
+
+/**
+ * A link inside the banner's copy — the policy links the description sentence
+ * wraps around. Pass the app's router link through `render`:
+ * `<CookieBannerLink render={<Link href="/info/privacy" />}>`.
+ *
+ * It differs from the surrounding sentence by colour and underline and nothing
+ * else. `Button`'s base sets `text-base font-strong`, which inside the
+ * banner's `text-sm` body copy reads as a second typeface dropped mid-sentence,
+ * so the font is inherited back — the same escape hatch the `bare` button
+ * variant uses, and the reason this lives here rather than as a className at
+ * the call site.
+ */
+export function CookieBannerLink({
+  className,
+  ...props
+}: React.ComponentProps<typeof Button>) {
+  return (
+    <Button
+      variant="link"
+      size="inline"
+      // It navigates, so it stays a link: base-ui would otherwise mark the
+      // anchor up as a button and drop it from the screen reader's link list.
+      nativeButton={false}
+      role={undefined}
+      className={cn('underline [font:inherit]', className)}
+      {...props}
+    />
+  );
+}
