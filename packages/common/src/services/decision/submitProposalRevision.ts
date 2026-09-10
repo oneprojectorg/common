@@ -20,8 +20,8 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { getCurrentProposalHistoryIds } from './proposal/history';
 import { parseProposalData } from './proposalDataSchema';
-import { findOpenProposalHistoryId } from './review/revision';
 
 export interface SubmitProposalRevisionResult {
   items: Array<ProposalReviewRequest>;
@@ -146,7 +146,16 @@ export async function submitProposalRevision({
       throw new CommonError('Failed to update proposal for the revision');
     }
 
-    const historyId = await findOpenProposalHistoryId(tx, proposal.id);
+    const historyId = (
+      await getCurrentProposalHistoryIds({
+        proposalIds: [proposal.id],
+        db: tx,
+      })
+    ).get(proposal.id);
+
+    if (!historyId) {
+      throw new CommonError('Failed to find proposal history snapshot');
+    }
 
     const updatedRequests = await tx
       .update(proposalReviewRequests)
