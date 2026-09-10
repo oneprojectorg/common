@@ -80,6 +80,7 @@ const phaseRulesEncoder = z.object({
       maxVotesPerMember: z.number().int().positive().optional(),
     })
     .optional(),
+  comments: z.object({ submit: z.boolean().optional() }).optional(),
   advancement: z
     .object({
       method: z.enum(['date', 'manual']),
@@ -142,7 +143,6 @@ const reviewsPolicyEncoder = z.enum(REVIEWS_POLICIES);
 /** Process-level configuration */
 const processConfigEncoder = z.object({
   hideBudget: z.boolean().optional(),
-  allowComments: z.boolean().optional(),
   categories: z.array(categoryEncoder).optional(),
   requireCategorySelection: z.boolean().optional(),
   allowMultipleCategories: z.boolean().optional(),

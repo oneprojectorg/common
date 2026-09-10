@@ -1,7 +1,7 @@
 import { NotFoundError } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
-  areCommentsAllowed,
+  allowsComments,
   isReviewPhase,
 } from '@op/common/client';
 import { db } from '@op/db/client';
@@ -33,6 +33,7 @@ const phaseRulesSchema = z
       })
       .partial()
       .optional(),
+    comments: z.object({ submit: z.boolean().optional() }).partial().optional(),
     advancement: z
       .object({ method: z.string().optional() })
       .partial()
@@ -53,7 +54,6 @@ const detailInstanceData = z
         allowMultipleCategories: z.boolean().optional(),
         organizeByCategories: z.boolean().optional(),
         requireCollaborativeProposals: z.boolean().optional(),
-        allowComments: z.boolean().optional(),
         categories: z.array(z.unknown()).optional(),
       })
       .partial()
@@ -153,7 +153,6 @@ export const getDecisionInstanceRouter = router({
             instanceData.config?.organizeByCategories ?? false,
           requireCollaborativeProposals:
             instanceData.config?.requireCollaborativeProposals ?? false,
-          allowComments: areCommentsAllowed(instanceData),
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
         instanceData: instance.instanceData,
@@ -172,6 +171,7 @@ export const getDecisionInstanceRouter = router({
             hasVoting: rules?.voting?.submit ?? false,
             canEditProposals: rules?.proposals?.edit ?? false,
             canEditVotes: rules?.voting?.edit ?? false,
+            allowsComments: allowsComments({ rules }),
             maxVotesPerMember: rules?.voting?.maxVotesPerMember ?? null,
             proposalsHiddenByDefault:
               rules?.proposals?.defaults?.hidden ?? false,

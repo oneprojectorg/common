@@ -25,7 +25,7 @@ import {
   resolveProposalSystemFields,
 } from '../proposalContentUtils';
 import { useProposalReviewDecoration } from '../proposalReviewDecoration';
-import { useProcessAllowsComments } from '../useProcessAllowsComments';
+import { useCommentsAllowed } from '../useCommentsAllowed';
 
 /**
  * Maps the app's `Proposal` into the presentational values the sense
@@ -215,7 +215,7 @@ export const ProposalCardView = ({
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData(proposal);
   const engagement = useProposalEngagement({ proposal, canEngage });
-  const commentsEnabled = useProcessAllowsComments(proposal.processInstanceId);
+  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
   // Empty unless a review surface provides it; an explicit slot always wins.
   const decoration = useProposalReviewDecoration(proposal.id);
 

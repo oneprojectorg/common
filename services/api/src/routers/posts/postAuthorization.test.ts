@@ -1295,8 +1295,8 @@ describe.concurrent('proposal post authorization', () => {
   });
 });
 
-describe.concurrent('process-level comment gating', () => {
-  const setUpProcessWithComments = async (
+describe.concurrent('phase-level comment gating', () => {
+  const setUpPhaseWithComments = async (
     testData: TestDecisionsDataManager,
     { allowComments }: { allowComments: boolean },
   ) => {
@@ -1307,9 +1307,28 @@ describe.concurrent('process-level comment gating', () => {
     const instance = setup.instance;
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
+    // The gate reads the CURRENT phase, so the rule goes on that phase.
+    // `updateDecisionInstance` replaces a phase's whole `rules` object, so the
+    // existing rules are carried over rather than dropped.
+    const currentPhaseId = instance.instance.currentStateId;
+    const currentPhase = instance.instance.instanceData?.phases?.find(
+      (phase) => phase.phaseId === currentPhaseId,
+    );
+    if (!currentPhaseId || !currentPhase) {
+      throw new Error('Test instance has no current phase');
+    }
+
     await adminCaller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
-      config: { allowComments },
+      phases: [
+        {
+          phaseId: currentPhaseId,
+          rules: {
+            ...currentPhase.rules,
+            comments: { submit: allowComments },
+          },
+        },
+      ],
     });
 
     const member = await testData.createMemberUser({
@@ -1325,12 +1344,12 @@ describe.concurrent('process-level comment gating', () => {
     };
   };
 
-  it('rejects a comment on a proposal when the process disallows comments', async ({
+  it('rejects a comment on a proposal when the current phase disallows comments', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instance, memberCaller } = await setUpProcessWithComments(
+    const { setup, instance, memberCaller } = await setUpPhaseWithComments(
       testData,
       { allowComments: false },
     );
@@ -1348,18 +1367,18 @@ describe.concurrent('process-level comment gating', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'UnauthorizedError',
-        message: 'Comments are turned off for this process',
+        message: 'Comments are turned off for this phase',
       },
     });
   });
 
-  it('rejects a reply to a process update when the process disallows comments', async ({
+  it('rejects a reply to a process update when the current phase disallows comments', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instance, adminCaller, memberCaller } =
-      await setUpProcessWithComments(testData, { allowComments: false });
+      await setUpPhaseWithComments(testData, { allowComments: false });
 
     const update = await adminCaller.posts.createPost({
       content: 'Admin update on a process with comments turned off.',
@@ -1374,17 +1393,17 @@ describe.concurrent('process-level comment gating', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'UnauthorizedError',
-        message: 'Comments are turned off for this process',
+        message: 'Comments are turned off for this phase',
       },
     });
   });
 
-  it('still admits an admin update when the process disallows comments', async ({
+  it('still admits an admin update when the current phase disallows comments', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance, adminCaller } = await setUpProcessWithComments(testData, {
+    const { instance, adminCaller } = await setUpPhaseWithComments(testData, {
       allowComments: false,
     });
 
@@ -1396,12 +1415,12 @@ describe.concurrent('process-level comment gating', () => {
     expect(update.content).toBe('Admin update stays available.');
   });
 
-  it('admits a comment when the process allows comments', async ({
+  it('admits a comment when the current phase allows comments', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instance, memberCaller } = await setUpProcessWithComments(
+    const { setup, instance, memberCaller } = await setUpPhaseWithComments(
       testData,
       { allowComments: true },
     );
@@ -1421,7 +1440,7 @@ describe.concurrent('process-level comment gating', () => {
     );
   });
 
-  it('admits a comment when the process never set the toggle', async ({
+  it('admits a comment when the phase never set the toggle', async ({
     task,
     onTestFinished,
   }) => {

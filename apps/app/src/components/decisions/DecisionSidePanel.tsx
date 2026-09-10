@@ -253,10 +253,13 @@ const UpdatesFeed = ({
   const t = useTranslations();
   const { user } = useUser();
 
-  // Suspense, not `useProcessAllowsComments`: the overview tab does not
+  // Suspense, not `useCommentsAllowed`: the overview tab does not
   // preload `getInstance`, so a plain query would blink the reply button off.
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const commentsEnabled = areCommentsAllowed(instance.instanceData);
+  const commentsEnabled = areCommentsAllowed({
+    phases: instance.instanceData?.phases ?? [],
+    currentPhaseId: instance.currentStateId,
+  });
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(

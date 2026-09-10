@@ -29,10 +29,10 @@ function ProposalViewPageContent({
 
   const decisionRoot = `/profile/${orgSlug}/decisions/${instanceId}`;
 
-  // Comments fall back to allowed here: the builder cannot edit legacy
-  // instances, and neither endpoint reports the setting for one —
-  // `getLegacyInstance` drops `config` and needs auth (these links are
-  // public), `getInstance` parses new-schema instances only.
+  // Comments fall back to allowed here: legacy phases carry no `comments` rule,
+  // and neither endpoint reports one — `getLegacyInstance` drops phase rules at
+  // its encoder and needs auth (these links are public), `getInstance` parses
+  // new-schema instances only.
   return (
     <ProposalView
       proposal={proposal}
