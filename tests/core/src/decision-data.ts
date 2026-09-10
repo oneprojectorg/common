@@ -636,6 +636,27 @@ export async function grantInstanceAdminWithoutReviewRole(opts: {
   });
 }
 
+/**
+ * Grants the user a process-admin role holding the `decisions` ACRUD + ADMIN
+ * bits and no behaviour bit at all (profile READ) — the seeded `Platform Admin`
+ * bit shape applied to a process membership, and the fixture for an admin who
+ * must still pass the INVITE_MEMBERS / REVIEW / SUBMIT_PROPOSALS / VOTE gates.
+ */
+export async function grantInstanceAdminOnlyRole(opts: {
+  instanceProfileId: string;
+  authUserId: string;
+  email: string;
+  roleName?: string;
+}): Promise<void> {
+  const { ADMIN, CREATE, DELETE, READ, UPDATE } = TEST_PERMISSION_BITS;
+
+  await grantInstanceRole({
+    ...opts,
+    roleName: opts.roleName ?? 'Admin (no behaviour bits)',
+    decisionsPermission: DELETE | UPDATE | READ | CREATE | ADMIN,
+  });
+}
+
 export interface CreateInstanceMemberOptions {
   supabaseAdmin: SupabaseClient;
   /** Unique identifier appended to the generated email */
