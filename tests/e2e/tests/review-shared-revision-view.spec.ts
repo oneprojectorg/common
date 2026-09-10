@@ -69,8 +69,10 @@ const REVIEW_SCHEMA = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-// Minimal rubric — one required criterion, just enough to enable "Submit
-// review". Nothing here is under test.
+// Minimal rubric — one required scored criterion, just enough to enable
+// "Submit review". Nothing here is under test. `maximum` is what makes
+// `inferCriterionType` read this as `scored`: without it the renderer draws
+// the prompt and no control at all.
 const RUBRIC_TEMPLATE = {
   type: 'object',
   required: ['innovation'],
@@ -80,6 +82,8 @@ const RUBRIC_TEMPLATE = {
       type: 'integer',
       title: 'Innovation',
       'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 2,
       oneOf: [
         { const: 1, title: '1 — Poor' },
         { const: 2, title: '2 — Good' },
