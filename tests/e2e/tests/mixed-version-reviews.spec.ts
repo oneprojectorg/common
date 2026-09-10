@@ -116,7 +116,13 @@ const RUBRIC_TEMPLATE = {
   },
 } as const satisfies RubricTemplateSchema;
 
-const REVISED_TITLE = 'Riverside Crosswalk';
+/**
+ * The revised proposal's title before and after the revision. Only the pane
+ * that renders proposal data shows the revised one — `reviseProposal` rewrites
+ * `proposals.proposal_data`, not the `profiles` row the tables read by name.
+ */
+const ORIGINAL_TITLE = 'Riverside Crosswalk';
+const REVISED_TITLE = 'Riverside Crosswalk and Lighting';
 const UNTOUCHED_TITLE = 'Library Book Drive';
 
 type SeedOrg = {
@@ -178,7 +184,7 @@ async function seedMixedVersionReviews({
     instance: { id: instance.instance.id },
     author,
     reviewer: { profileId: earlyReviewer.profileId },
-    proposalData: { title: REVISED_TITLE },
+    proposalData: { title: ORIGINAL_TITLE },
   });
 
   const lateAssignment = await createReviewAssignment({
@@ -263,6 +269,7 @@ async function seedMixedVersionReviews({
   // The revision leaves the early review anchored to an older version.
   const revisedCurrentHistoryId = await reviseProposal({
     proposalId: revised.id,
+    proposalData: { title: REVISED_TITLE },
   });
 
   await createProposalReview({
@@ -349,6 +356,55 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
     await expect(currentRow).toHaveCount(1);
     await expect(currentRow).not.toContainText('Older version');
 
+    // Only the left pane renders the proposal title as a heading, so the
+    // headings below are enough to say which version is on screen.
+    await expect(
+      page.getByRole('heading', { name: REVISED_TITLE }),
+    ).toBeVisible();
+
+    // The reviewers are seeded without display names, so the badge's name is
+    // read off the row that opens it rather than hardcoded.
+    const staleRowLabel = await staleRow.getAttribute('aria-label');
+    const staleReviewerName = (staleRowLabel ?? '')
+      .replace(/^View review by /, '')
+      .replace(/ \(older version\)$/, '');
+    expect(staleReviewerName).not.toBe('');
+
+    await staleRow.click();
+
+    await expect(
+      page.getByText(`Older version reviewed by ${staleReviewerName}`),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.getByRole('heading', { name: ORIGINAL_TITLE }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: REVISED_TITLE }),
+    ).toHaveCount(0);
+
+    // The seeded proposal carries a collaboration doc that was never
+    // version-stamped, so the body of that version cannot be rebuilt.
+    await expect(
+      page.getByText(
+        'This older version of the content is no longer available',
+      ),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back to all reviewers' }).click();
+
+    await expect(
+      page.getByRole('heading', { name: REVISED_TITLE }),
+    ).toBeVisible();
+    await expect(page.getByText('Older version reviewed by')).toHaveCount(0);
+
+    // An up-to-date review leaves the pane on the current proposal.
+    await currentRow.click();
+    await expect(
+      page.getByRole('heading', { name: REVISED_TITLE }),
+    ).toBeVisible();
+    await expect(page.getByText('Older version reviewed by')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Back to all reviewers' }).click();
+
     // The untouched proposal keeps a clean summary.
     await page.goto(
       `/en/decisions/${instance.slug}/proposal/${untouched.profileId}/reviews`,
@@ -381,7 +437,9 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
       page.getByRole('columnheader', { name: 'Overall recommendation' }),
     ).toBeVisible({ timeout: 36_000 });
 
-    const revisedRow = page.getByRole('row').filter({ hasText: REVISED_TITLE });
+    const revisedRow = page
+      .getByRole('row')
+      .filter({ hasText: ORIGINAL_TITLE });
     await expect(revisedRow).toContainText('Mixed version reviews');
 
     const untouchedRow = page

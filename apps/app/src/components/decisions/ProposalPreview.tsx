@@ -85,6 +85,8 @@ export type ProposalPreviewProps = {
    * don't track document loading (e.g. the review pane) are unaffected.
    */
   documentState?: 'ready' | 'pending' | 'error';
+  /** Overrides the `'error'` state's copy — e.g. an unrenderable old version. */
+  documentUnavailableMessage?: string;
 };
 
 export function ProposalPreview({
@@ -95,6 +97,7 @@ export function ProposalPreview({
   submissionMetaSuffix,
   headerBanner,
   documentState = 'ready',
+  documentUnavailableMessage,
 }: ProposalPreviewProps) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
@@ -281,7 +284,10 @@ export function ProposalPreview({
             <Spinner />
           </div>
         ) : documentState === 'error' ? (
-          <DocumentNotAvailable className="py-4" />
+          <DocumentNotAvailable
+            className="py-4"
+            message={documentUnavailableMessage}
+          />
         ) : legacyHtml ? (
           <ProposalHtmlContent html={legacyHtml} />
         ) : htmlContent && proposalTemplate ? (

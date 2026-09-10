@@ -22,6 +22,7 @@ import { TranslateBanner } from '../TranslateBanner';
 import { useTranslateProposal } from '../useTranslateProposal';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
+import { ReviewedVersionPane } from './ReviewedVersionPane';
 
 interface ReviewSummaryViewProps {
   decisionSlug: string;
@@ -159,6 +160,27 @@ export function ReviewSummaryView({
     !!ownAssignment && selectedAssignmentId === ownAssignment.assignment.id;
   const canEditOwnReview = !!ownAssignment?.canEditReview;
 
+  // Only a submitted review the aggregates flagged stale switches the left
+  // pane; back (`assignment` cleared) falls through to the current proposal.
+  const selectedStaleReview = selectedAssignmentId
+    ? proposalWithReviews.reviews.find(
+        (item) =>
+          item.review.assignmentId === selectedAssignmentId &&
+          item.isReviewOutOfDate,
+      )
+    : undefined;
+
+  const currentProposalPane = (
+    <ProposalPreview
+      proposal={proposal}
+      translation={translation}
+      // Same card as the reviewer pane, above the proposal body: the reviews
+      // on the right are read against whatever the author last resubmitted, so
+      // the notes belong beside them.
+      headerBanner={<AuthorNotesSection proposalId={proposalId} />}
+    />
+  );
+
   return (
     <div
       className={cn(
@@ -197,13 +219,21 @@ export function ReviewSummaryView({
 
       <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="summary">
         <SplitPane.Pane id="proposal" label={t('Proposal')}>
-          <ProposalPreview
-            proposal={proposal}
-            translation={translation}
-            // The reviews on the right are read against the author's last
-            // resubmission.
-            headerBanner={<AuthorNotesSection proposalId={proposalId} />}
-          />
+          {selectedStaleReview && !isOwnFormOpen ? (
+            <ReviewedVersionPane
+              // Remount on reviewer change so the skeleton, not the previous
+              // reviewer's snapshot, covers the next read.
+              key={selectedStaleReview.review.id}
+              reviewId={selectedStaleReview.review.id}
+              reviewerName={
+                selectedStaleReview.reviewer.name ??
+                selectedStaleReview.reviewer.slug
+              }
+              currentProposal={currentProposalPane}
+            />
+          ) : (
+            currentProposalPane
+          )}
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"
