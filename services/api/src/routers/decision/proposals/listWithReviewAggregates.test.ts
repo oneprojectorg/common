@@ -390,6 +390,73 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(createdAts).toEqual([...createdAts].sort().reverse());
   });
 
+  it('counts out-of-date reviews per proposal in phase-scoped mode', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const untouched = await testData.createReviewAssignment({
+      context,
+      title: 'Untouched Proposal',
+    });
+    const edited = await testData.createReviewAssignment({
+      context,
+      title: 'Edited Proposal',
+    });
+
+    for (const scenario of [untouched, edited]) {
+      await createProposalReview({
+        assignmentId: scenario.assignment.id,
+        state: ProposalReviewState.SUBMITTED,
+        reviewData: {
+          answers: { impact: 7, feasibility: 4 },
+          rationales: {},
+        },
+        submittedAt: new Date().toISOString(),
+        reviewedProposalHistoryId: await getCurrentProposalHistoryId({
+          proposalId: scenario.proposal.id,
+        }),
+      });
+    }
+
+    await reviseProposal({
+      proposalId: edited.proposal.id,
+      proposalData: { title: 'Edited Proposal (revised)' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    expect(result.items).toHaveLength(2);
+
+    const editedItem = result.items.find(
+      (i) => i.proposal.id === edited.proposal.id,
+    );
+    const untouchedItem = result.items.find(
+      (i) => i.proposal.id === untouched.proposal.id,
+    );
+
+    expect(editedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 1,
+    });
+    expect(untouchedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 0,
+    });
+
+    const createdAts = result.items.map((i) => i.proposal.createdAt ?? '');
+    expect(createdAts).toEqual([...createdAts].sort().reverse());
+  });
+
   it('attaches categories to response items', async ({
     task,
     onTestFinished,
