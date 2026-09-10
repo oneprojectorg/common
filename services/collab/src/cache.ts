@@ -78,7 +78,7 @@ export interface InvalidateCachedDocumentFragmentsArgs {
 /**
  * Evict the cached fragments for a published `(docId, versionId)` tuple.
  * Used by the version-minting mutations (`submitProposal`, `updateProposal`,
- * `submitRevisionResponse`) to drop the previous version's entry as soon as
+ * `submitProposalRevision`) to drop the previous version's entry as soon as
  * a fresh version supersedes it. Correctness doesn't depend on this — every
  * new version produces a fresh cache key on the next read regardless — but
  * it keeps Redis memory from accreting orphaned entries until they TTL out.
