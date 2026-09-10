@@ -1,4 +1,4 @@
-import { set } from '@op/cache';
+import { setWithStatus } from '@op/cache';
 import {
   THEME_ANALYSIS_CACHE_TTL_SECONDS,
   type CommonGroundAnalysis,
@@ -14,6 +14,7 @@ import {
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import { realtime } from '@op/realtime/server';
 
 /**
@@ -34,6 +35,15 @@ import { realtime } from '@op/realtime/server';
  * Writing blind is safe here because this workflow and the request are the only
  * writers, and their writes are ordered: the seed, then `processing`, then one
  * terminal write.
+ *
+ * Writing without checking was not. `set` reports nothing, so every way a write
+ * can fail — no cache configured, a client still coming up on a fresh
+ * per-step invocation, a command clipped by its socket timeout — left the step
+ * succeeding over a record that had not moved. Nothing then retried it, because
+ * from Inngest's side nothing had gone wrong, and a finished analysis sat at
+ * `processing` until the facilitator's wait ran out twenty-five minutes later.
+ * So this throws instead: the one thing that can still repair a dropped write is
+ * a retry by the caller that is holding the value.
  */
 const recordAnalysis = async (
   identity: AnalysisIdentity,
@@ -52,11 +62,27 @@ const recordAnalysis = async (
   // one.
   const record = { ...identity, ...fields } satisfies ThemeAnalysisData;
 
-  return await set(
+  const written = await setWithStatus(
     themeAnalysisCacheKey(identity),
     record,
     THEME_ANALYSIS_CACHE_TTL_SECONDS,
   );
+
+  if (written.status !== 'ok') {
+    // Thrown, not logged and swallowed. This is the record — there is no
+    // database behind it — so a write that did not land means the analysis has
+    // no result no matter how well the passes went. Failing the step is what
+    // buys the retry, and a retried write costs one Redis command: the passes
+    // above it are memoized by Inngest and are not paid for again.
+    //
+    // The status is in the message because it names the fix. `unconfigured` is
+    // a deployment missing REDIS_URL, `not-ready` a connection problem,
+    // `timeout` a command clipped by its socket bound, and they point at three
+    // different places.
+    throw new Error(
+      `Could not store the theme analysis record (${written.status}).`,
+    );
+  }
 };
 
 /**
@@ -168,8 +194,23 @@ export const analyzeProposalThemes = inngest.createFunction(
     // generated from the whole event schema, and naming it here would be a large
     // structural type to keep in step with it for no gain.
     const reportFailure = async (failure: PassFailure) => {
-      await step.run('update-status-failed', () =>
-        recordAnalysis(identity, {
+      await step.run('update-status-failed', () => {
+        // Logged before the write, and inside the step rather than beside it.
+        // Before, because a write that does not land now fails the step, and
+        // the error that reaches the run is then the storage failure rather
+        // than this — so a diagnosis kept only in the record would be lost in
+        // exactly the case where the record is. Inside, because the function
+        // body re-runs on every step, and a log out here would repeat itself
+        // once per step for the rest of the run.
+        logger.error('Theme analysis failed', {
+          analysisId,
+          processInstanceId,
+          scope,
+          errorCode: failure.code,
+          errorMessage: failure.message,
+        });
+
+        return recordAnalysis(identity, {
           status: 'failed',
           // The code is what the facilitator sees, mapped to copy in their own
           // locale. The message is English and diagnostic, for the log and for
@@ -177,8 +218,8 @@ export const analyzeProposalThemes = inngest.createFunction(
           errorCode: failure.code,
           errorMessage: failure.message,
           completedAt: new Date().toISOString(),
-        }),
-      );
+        });
+      });
 
       await step.run('notify-analysis-failed', () =>
         notifyAnalysisChanged(analysisId),
@@ -265,6 +306,16 @@ export const analyzeProposalThemes = inngest.createFunction(
       // nothing but the message survives. That is why the passes classify
       // themselves rather than throwing something this could inspect.
       await step.run('update-status-failed', async () => {
+        // See the log in `reportFailure`. Here it matters more: this is the one
+        // record of a fault nobody classified, and `messageOf` is all that
+        // survived the step boundary already.
+        logger.error('Theme analysis faulted', {
+          analysisId,
+          processInstanceId,
+          scope,
+          error,
+        });
+
         await recordAnalysis(identity, {
           status: 'failed',
           errorCode: 'unknown',

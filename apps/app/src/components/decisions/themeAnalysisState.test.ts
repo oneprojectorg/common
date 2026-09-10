@@ -49,13 +49,18 @@ const result: ThemeAnalysisResult = {
 // is the value half these cases are about and `??` would swallow it.
 const phaseOf = (
   status?: ThemeAnalysisStatusRecord,
-  overrides: { analysisId?: string | null; hasTimedOut?: boolean } = {},
+  overrides: {
+    analysisId?: string | null;
+    hasTimedOut?: boolean;
+    hasSeenRecord?: boolean;
+  } = {},
 ) =>
   resolveThemeAnalysisPhase({
     analysisId:
       overrides.analysisId === undefined ? ANALYSIS_ID : overrides.analysisId,
     hasTimedOut: overrides.hasTimedOut ?? false,
     status,
+    hasSeenRecord: overrides.hasSeenRecord ?? false,
   });
 
 describe('resolveThemeAnalysisPhase', () => {
@@ -98,6 +103,43 @@ describe('resolveThemeAnalysisPhase', () => {
 
   it('is failed on a failed record', () => {
     expect(phaseOf(record({ status: 'failed' }))).toBe('failed');
+  });
+
+  // The bug this was added for. A terminal write missing a required field is
+  // stored, fails its schema check on the way back out, and reads as
+  // `not_found` — so a run polled `pending`, turned `not_found`, and stayed
+  // there. Read as still-pending, that spent the facilitator's whole
+  // twenty-five-minute wait and then reported a timeout for a finished
+  // analysis.
+  it('is failed when a record it had already read stops coming back', () => {
+    expect(
+      phaseOf({ status: 'not_found' as const }, { hasSeenRecord: true }),
+    ).toBe('failed');
+  });
+
+  // The other half of that judgement. Absence is ordinary until a record has
+  // been seen: the request seeds it and the first read can win the race.
+  it('is still pending on a not-found before any record has been read', () => {
+    expect(
+      phaseOf({ status: 'not_found' as const }, { hasSeenRecord: false }),
+    ).toBe('pending');
+  });
+
+  // A read that has not landed is undefined, not `not_found`, and the two must
+  // not converge: a dropped request is not evidence about the record. The query
+  // escalates a read it cannot complete; nothing here should call it a failure.
+  it('is pending, not failed, when a read has not landed on a seen run', () => {
+    expect(phaseOf(undefined, { hasSeenRecord: true })).toBe('pending');
+  });
+
+  // A record already read is no reason to reopen a wait the client has ended.
+  it('stays idle when a record goes missing after a timeout', () => {
+    expect(
+      phaseOf(
+        { status: 'not_found' as const },
+        { hasSeenRecord: true, hasTimedOut: true },
+      ),
+    ).toBe('idle');
   });
 
   // A terminal record read after the client gave up must not re-open the run:
@@ -208,6 +250,30 @@ describe('resolveFailureCode', () => {
       'unknown',
     );
     expect(resolveFailureCode(undefined)).toBe('unknown');
+  });
+
+  // `unknown` reads to the facilitator as "the analysis failed", which is the
+  // wrong sentence: nothing failed the analysis, the record stopped being
+  // readable. This is a client-side key because no record survives to carry a
+  // server-side one.
+  it('names a record that went missing rather than calling it unknown', () => {
+    expect(
+      resolveFailureCode(
+        { status: 'not_found' as const },
+        { hasSeenRecord: true },
+      ),
+    ).toBe('record-lost');
+  });
+
+  // A record that is present and says why it failed always wins. `hasSeenRecord`
+  // is only ever a question about absence.
+  it('prefers a present record\u2019s own code', () => {
+    expect(
+      resolveFailureCode(
+        record({ status: 'failed', errorCode: 'analysis-timed-out' }),
+        { hasSeenRecord: true },
+      ),
+    ).toBe('analysis-timed-out');
   });
 });
 

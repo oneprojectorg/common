@@ -1557,6 +1557,7 @@
   "The analysis finished but found nothing to report across these proposals.": "বিশ্লেষণ শেষ হয়েছে, তবে এই প্রস্তাবগুলিতে জানানোর মতো কিছু পাওয়া যায়নি।",
   "There isn't enough written in these proposals to compare them.": "এই প্রস্তাবগুলিতে তুলনা করার মতো যথেষ্ট লেখা নেই।",
   "The analysis didn't come back in a usable form. Please try again.": "বিশ্লেষণটি ব্যবহারযোগ্য আকারে ফেরেনি। আবার চেষ্টা করুন।",
+  "We lost track of this analysis. Please try again.": "আমরা এই বিশ্লেষণের খোঁজ হারিয়ে ফেলেছি। আবার চেষ্টা করুন।",
   "The analysis timed out. Please try again.": "বিশ্লেষণের সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",
   "Couldn't check the analysis's status. It may still be running.": "বিশ্লেষণের অবস্থা জানা যায়নি। এটি এখনও চলতে পারে।",
   "Themes and common ground": "থিম ও অভিন্ন ভিত্তি",

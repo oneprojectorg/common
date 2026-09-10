@@ -1623,6 +1623,7 @@
   "The analysis finished but found nothing to report across these proposals.": "The analysis finished but found nothing to report across these proposals.",
   "There isn't enough written in these proposals to compare them.": "There isn't enough written in these proposals to compare them.",
   "The analysis didn't come back in a usable form. Please try again.": "The analysis didn't come back in a usable form. Please try again.",
+  "We lost track of this analysis. Please try again.": "We lost track of this analysis. Please try again.",
   "The analysis timed out. Please try again.": "The analysis timed out. Please try again.",
   "Couldn't check the analysis's status. It may still be running.": "Couldn't check the analysis's status. It may still be running.",
   "Themes and common ground": "Themes and common ground",

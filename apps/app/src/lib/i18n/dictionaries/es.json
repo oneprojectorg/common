@@ -1557,6 +1557,7 @@
   "The analysis finished but found nothing to report across these proposals.": "El análisis terminó, pero no encontró nada que informar sobre estas propuestas.",
   "There isn't enough written in these proposals to compare them.": "Estas propuestas no tienen suficiente texto para compararlas.",
   "The analysis didn't come back in a usable form. Please try again.": "El análisis no se recibió en un formato utilizable. Inténtalo de nuevo.",
+  "We lost track of this analysis. Please try again.": "Hemos perdido el rastro de este análisis. Inténtalo de nuevo.",
   "The analysis timed out. Please try again.": "El análisis tardó demasiado. Inténtalo de nuevo.",
   "Couldn't check the analysis's status. It may still be running.": "No se pudo comprobar el estado del análisis. Puede que siga en curso.",
   "Themes and common ground": "Temas y puntos en común",

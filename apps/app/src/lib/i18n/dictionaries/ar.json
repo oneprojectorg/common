@@ -1556,6 +1556,7 @@
   "The analysis finished but found nothing to report across these proposals.": "انتهى التحليل لكنه لم يجد ما يمكن الإبلاغ عنه في هذه المقترحات.",
   "There isn't enough written in these proposals to compare them.": "لا يوجد نص كافٍ في هذه المقترحات لمقارنتها.",
   "The analysis didn't come back in a usable form. Please try again.": "لم يعد التحليل بصيغة قابلة للاستخدام. يرجى المحاولة مرة أخرى.",
+  "We lost track of this analysis. Please try again.": "فقدنا تتبع هذا التحليل. يرجى المحاولة مرة أخرى.",
   "The analysis timed out. Please try again.": "انتهت مهلة التحليل. يرجى المحاولة مرة أخرى.",
   "Couldn't check the analysis's status. It may still be running.": "تعذّر التحقق من حالة التحليل. قد يكون لا يزال قيد التنفيذ.",
   "Themes and common ground": "المحاور والأرضية المشتركة",

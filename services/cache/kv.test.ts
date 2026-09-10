@@ -72,7 +72,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, getWithStatus, set } = await import('./kv');
+const { cache, get, getWithStatus, set, setWithStatus } = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -338,6 +338,27 @@ describe('getWithStatus()', () => {
     await expect(getWithStatus('k')).resolves.toEqual({ status: 'error' });
   });
 
+  // 250ms is over the cache tier's 100ms bound and well under this tier's. A
+  // record here is the largest thing in the cache — two model passes and every
+  // proposal they cite — and the fast bound was sized for a cached row, so it
+  // clipped exactly the read that had the most to return.
+  it('allows a read the cache tier would have clipped', async () => {
+    fakeRedis.get.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          setTimeout(
+            () => resolve(JSON.stringify({ status: 'completed' })),
+            250,
+          );
+        }),
+    );
+
+    await expect(getWithStatus('k')).resolves.toEqual({
+      status: 'hit',
+      data: { status: 'completed' },
+    });
+  });
+
   // Was a miss, and that was wrong. A configured client that has not come up
   // supports no claim about one key either way — but `miss` is a claim: it says
   // the key is absent, and a caller holding cache-only state acts on that by
@@ -386,6 +407,102 @@ describe('set()', () => {
     await expect(set('k', { a: 1 })).resolves.toBeUndefined();
     expect(recordError).toHaveBeenCalledWith('set');
     expect(recordTimeout).not.toHaveBeenCalled();
+  });
+});
+
+describe('setWithStatus()', () => {
+  beforeEach(() => {
+    fakeRedis.isReady = true;
+    fakeRedis.once.mockReset();
+    fakeRedis.setEx.mockReset();
+    fakeRedis.del.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('reports ok once Redis has acknowledged the write', async () => {
+    fakeRedis.setEx.mockResolvedValue('OK');
+
+    await expect(
+      setWithStatus('k', { status: 'completed' }, 60),
+    ).resolves.toEqual({ status: 'ok' });
+    expect(fakeRedis.setEx).toHaveBeenCalledWith(
+      'k',
+      60,
+      JSON.stringify({ status: 'completed' }),
+    );
+  });
+
+  // Every case below is one `set` answered the same way it answers success:
+  // with nothing. That silence is what let a workflow step finish over a record
+  // it had not written, so the whole point of this function is that each of them
+  // is distinguishable from `ok`.
+  it('reports a timeout when the command outruns its signal', async () => {
+    fakeRedis.setEx.mockImplementation(() => new Promise<string>(() => {}));
+
+    await expect(setWithStatus('k', { a: 1 })).resolves.toEqual({
+      status: 'timeout',
+    });
+  });
+
+  it('reports an error when Redis refuses the command', async () => {
+    fakeRedis.setEx.mockRejectedValue(new Error('connection refused'));
+
+    await expect(setWithStatus('k', { a: 1 })).resolves.toEqual({
+      status: 'error',
+    });
+  });
+
+  it('reports not-ready when the client never comes up', async () => {
+    fakeRedis.isReady = false;
+    fakeRedis.once.mockImplementation(() => {});
+
+    await expect(setWithStatus('k', { a: 1 })).resolves.toEqual({
+      status: 'not-ready',
+    });
+    expect(fakeRedis.setEx).not.toHaveBeenCalled();
+  });
+
+  it('waits out the handshake and then reports ok', async () => {
+    fakeRedis.isReady = false;
+    fakeRedis.setEx.mockResolvedValue('OK');
+    fakeRedis.once.mockImplementation((event: string, listener: () => void) => {
+      if (event === 'ready') {
+        fakeRedis.isReady = true;
+        setTimeout(listener, 0);
+      }
+    });
+
+    await expect(setWithStatus('k', { a: 1 })).resolves.toEqual({
+      status: 'ok',
+    });
+  });
+
+  // The write this function was added for: a completed analysis is kilobytes,
+  // and 100ms was never sized for putting that on the wire. Under the old bound
+  // this was a timeout that nothing reported, so the run finished while the
+  // record still said `processing`.
+  it('allows a write the cache tier would have clipped', async () => {
+    fakeRedis.setEx.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          setTimeout(() => resolve('OK'), 250);
+        }),
+    );
+
+    await expect(setWithStatus('k', { status: 'completed' })).resolves.toEqual({
+      status: 'ok',
+    });
+  });
+
+  it('deletes the key when handed null, as set() does', async () => {
+    fakeRedis.del.mockResolvedValue(1);
+
+    await expect(setWithStatus('k', null)).resolves.toEqual({ status: 'ok' });
+    expect(fakeRedis.del).toHaveBeenCalledWith('k');
+    expect(fakeRedis.setEx).not.toHaveBeenCalled();
   });
 });
 

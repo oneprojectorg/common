@@ -17,6 +17,45 @@ import { THEME_ANALYSIS_POLL_INTERVAL_MS } from './themeAnalysisWait';
  */
 export type ThemeAnalysisStatusRecord = ThemeAnalysisResponse;
 
+/**
+ * Every reason this app has failure copy for.
+ *
+ * The server's codes plus one the server cannot report: `record-lost` is the
+ * record going away mid-run, which by definition arrives as no record at all.
+ * Kept as a superset of the server's type rather than a parallel list, so a code
+ * added there is a missing entry in `FAILURE_COPY` at compile time.
+ */
+export type ThemeAnalysisFailureKey = ThemeAnalysisErrorCode | 'record-lost';
+
+/**
+ * Has a record this client was already following stopped coming back?
+ *
+ * `not_found` means two opposite things at two points in a run. Before the first
+ * record lands it is ordinary: the request seeds the record and the read can win
+ * the race, which is why an early `not_found` reads as `pending`. After a record
+ * has been seen it cannot be ordinary — nothing deletes these keys, and the TTL
+ * outlasts the client's whole wait by a day — so the record is either gone or
+ * unreadable.
+ *
+ * Unreadable is the case worth naming, because it is the one that has actually
+ * happened: `getThemeAnalysisStatus` answers `not_found` for a stored record that
+ * fails its schema check, so a terminal write missing a required field surfaced
+ * as a run that polled `pending`, turned `not_found`, and stayed there. Read as
+ * still-pending, that cost the facilitator the full wait and then a timeout
+ * message about an analysis that had finished.
+ *
+ * @param status - The record, or undefined when the read has not landed.
+ * @param hasSeenRecord - This client has already read a record for the run.
+ * @returns True when a record that existed is no longer readable.
+ */
+const isRecordLost = ({
+  status,
+  hasSeenRecord,
+}: {
+  status?: ThemeAnalysisStatusRecord;
+  hasSeenRecord: boolean;
+}): boolean => hasSeenRecord && status?.status === 'not_found';
+
 /** A finished analysis, with the coverage the dialog states alongside it. */
 export interface CompletedThemeAnalysis {
   result: ThemeAnalysisResult;
@@ -60,16 +99,20 @@ export type ThemeAnalysisPhase =
  * @param analysisId - The run being followed, or null when there is none.
  * @param hasTimedOut - The client gave up waiting.
  * @param status - The record, or undefined when the read has not landed.
+ * @param hasSeenRecord - This client has already read a record for the run, so a
+ *   `not_found` now is a record that went away rather than one not written yet.
  * @returns Which phase the run is in.
  */
 export const resolveThemeAnalysisPhase = ({
   analysisId,
   hasTimedOut,
   status,
+  hasSeenRecord = false,
 }: {
   analysisId: string | null;
   hasTimedOut: boolean;
   status?: ThemeAnalysisStatusRecord;
+  hasSeenRecord?: boolean;
 }): ThemeAnalysisPhase => {
   if (analysisId === null || hasTimedOut) {
     return 'idle';
@@ -80,6 +123,15 @@ export const resolveThemeAnalysisPhase = ({
   }
 
   if (status?.status === 'failed') {
+    return 'failed';
+  }
+
+  // A record that went away, reported now rather than waited out. The alternative
+  // was the `pending` below, which is the same answer this client was already
+  // getting — so it polled a record that could not be read for the full
+  // twenty-five minutes and then blamed a timeout. `failed` is honest and it is
+  // terminal, so the facilitator can start another run within the minute.
+  if (isRecordLost({ status, hasSeenRecord })) {
     return 'failed';
   }
 
@@ -185,14 +237,23 @@ export const resolveFailureDiagnostic = (
  * as `'unknown'`, which has copy of its own.
  *
  * @param status - The record, or undefined when the read has not landed.
- * @returns The failure's code.
+ * @param hasSeenRecord - This client has already read a record for the run. See
+ *   {@link isRecordLost}; a lost record carries no code of its own, because the
+ *   whole failure is that there is nothing left to carry one.
+ * @returns The failure's key.
  */
 export const resolveFailureCode = (
   status?: ThemeAnalysisStatusRecord,
-): ThemeAnalysisErrorCode =>
-  status && 'errorCode' in status && status.errorCode
+  { hasSeenRecord = false }: { hasSeenRecord?: boolean } = {},
+): ThemeAnalysisFailureKey => {
+  if (isRecordLost({ status, hasSeenRecord })) {
+    return 'record-lost';
+  }
+
+  return status && 'errorCode' in status && status.errorCode
     ? status.errorCode
     : 'unknown';
+};
 
 /**
  * The finished analysis on a record, or null when there is not a complete one.

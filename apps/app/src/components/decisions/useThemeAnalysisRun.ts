@@ -1,10 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type {
-  ThemeAnalysisErrorCode,
-  ThemeAnalysisScope,
-} from '@op/api/encoders';
+import type { ThemeAnalysisScope } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -13,6 +10,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import type {
   CompletedThemeAnalysis,
+  ThemeAnalysisFailureKey,
   ThemeAnalysisPhase,
   ThemeAnalysisStatusRecord,
 } from './themeAnalysisState';
@@ -53,7 +51,7 @@ const RUNNING_LABELS: Record<
  * covers the failures nobody anticipated.
  */
 const FAILURE_COPY: Record<
-  ThemeAnalysisErrorCode,
+  ThemeAnalysisFailureKey,
   (t: ReturnType<typeof useTranslations>) => string
 > = {
   'not-enough-text': (t) =>
@@ -62,6 +60,11 @@ const FAILURE_COPY: Record<
     t("The analysis didn't come back in a usable form. Please try again."),
   'analysis-timed-out': (t) =>
     t('The analysis took too long and was stopped. Please try again.'),
+  // Deliberately vague about the cause, because the client cannot tell which it
+  // was, and specific about what to do. Everything behind this is storage —
+  // there is no other copy of the record — so there is nothing here the reader
+  // could act on beyond starting again.
+  'record-lost': (t) => t('We lost track of this analysis. Please try again.'),
   unknown: (t) => t('The analysis failed'),
 };
 
@@ -108,12 +111,12 @@ export const useThemeAnalysisRun = (
   const t = useTranslations();
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
-  const { isSettled, clearSettled, latchSettled } = useSettledLatch();
+  const { isSettled, hasSeenRecord, latchRun, clearLatches } = useRunLatches();
 
   const startAnalysis = trpc.decision.analyzeThemes.useMutation({
     onSuccess: ({ analysisId: id }) => {
       setHasTimedOut(false);
-      clearSettled();
+      clearLatches();
       setAnalysisId(id);
     },
     onError: (error) => {
@@ -181,14 +184,20 @@ export const useThemeAnalysisRun = (
             analysisId,
             hasTimedOut,
             status: query.state.data,
+            hasSeenRecord,
           }),
         ),
     },
   );
 
-  const phase = resolveThemeAnalysisPhase({ analysisId, hasTimedOut, status });
+  const phase = resolveThemeAnalysisPhase({
+    analysisId,
+    hasTimedOut,
+    status,
+    hasSeenRecord,
+  });
 
-  latchSettled(phase);
+  latchRun({ phase, status });
 
   const labelKey = resolveRunningLabelKey(phase);
   const isRunning = labelKey !== null;
@@ -199,9 +208,9 @@ export const useThemeAnalysisRun = (
     setAnalysisId(null);
   });
 
-  useFailureReport(phase, status, t, () => {
+  useFailureReport(phase, status, hasSeenRecord, t, () => {
     setAnalysisId(null);
-    clearSettled();
+    clearLatches();
   });
 
   return {
@@ -212,7 +221,7 @@ export const useThemeAnalysisRun = (
     start: () => startAnalysis.mutate({ processInstanceId, scope }),
     retire: () => {
       setAnalysisId(null);
-      clearSettled();
+      clearLatches();
     },
   };
 };
@@ -257,36 +266,65 @@ const useRunTimeout = (
 };
 
 /**
- * Remembers that a run reached an outcome, so nothing can take it back.
+ * The two things this client has to remember about a run, because the newest
+ * read cannot tell it either one.
  *
- * Latched rather than derived from the newest read. The status query answers
- * `not_found` for a Redis client mid-reconnect as well as for a genuine miss,
- * and a `not_found` reads as still-pending — so a finished analysis could
- * otherwise be undone by a background refetch, unmounting the dialog the
- * facilitator was reading. This is what lets the query stop once there is an
- * answer.
+ * `isSettled` — the run reached an outcome, so nothing can take it back. The
+ * status query answers `not_found` for a Redis client mid-reconnect as well as
+ * for a genuine miss, so a finished analysis could otherwise be undone by a
+ * background refetch, unmounting the dialog the facilitator was reading. This is
+ * what lets the query stop once there is an answer.
  *
- * `latchSettled` is called during render rather than from an effect, and sets
- * state there. That is React's documented way to adjust state from something
- * rendering already knows, and it is what this needs: the phase is derived from
- * the status query, and the query's `enabled` reads `isSettled`, so the hook
- * cannot take the phase as an argument without the two depending on each other.
- * The `!isSettled` guard is what makes it terminate — React re-renders
- * immediately and then finds nothing left to change.
+ * `hasSeenRecord` — a record for this run has been read at least once, which is
+ * what makes a later `not_found` mean something. Absence is unremarkable at the
+ * start of a run and alarming after that, and only a client that remembers can
+ * tell the two apart. See `isRecordLost`.
  *
- * @returns `isSettled`, `latchSettled` to call with each phase, and
- *   `clearSettled` for when a new run begins or the old one is retired.
+ * Latched together because they are cleared together. A stale `hasSeenRecord`
+ * carried into the next run would read that run's ordinary opening `not_found`
+ * as a record already lost, and report a failure a second after the facilitator
+ * pressed the button — so every path that resets one resets both, and there is
+ * one function to call rather than two to remember.
+ *
+ * `latchRun` is called during render rather than from an effect, and sets state
+ * there. That is React's documented way to adjust state from something rendering
+ * already knows, and it is what this needs: the phase is derived from the status
+ * query, and the query's `enabled` reads `isSettled`, so the hook cannot take
+ * the phase as an argument without the two depending on each other. The `!`
+ * guards are what make it terminate — React re-renders immediately and then
+ * finds nothing left to change.
+ *
+ * @returns The two latched flags, `latchRun` to call each render, and
+ *   `clearLatches` for when a new run begins or the old one is retired.
  */
-const useSettledLatch = () => {
+const useRunLatches = () => {
   const [isSettled, setIsSettled] = useState(false);
-  const clearSettled = useCallback(() => setIsSettled(false), []);
-  const latchSettled = (phase: ThemeAnalysisPhase) => {
+  const [hasSeenRecord, setHasSeenRecord] = useState(false);
+  const clearLatches = useCallback(() => {
+    setIsSettled(false);
+    setHasSeenRecord(false);
+  }, []);
+  const latchRun = ({
+    phase,
+    status,
+  }: {
+    phase: ThemeAnalysisPhase;
+    status?: ThemeAnalysisStatusRecord;
+  }) => {
     if (isTerminalPhase(phase) && !isSettled) {
       setIsSettled(true);
     }
+
+    // Any arm but the not-found one — a record was read, whatever it said. The
+    // phase is no use for this: `pending` covers both a record that says
+    // `pending` and no record at all, which is the exact distinction being
+    // latched.
+    if (status && status.status !== 'not_found' && !hasSeenRecord) {
+      setHasSeenRecord(true);
+    }
   };
 
-  return { isSettled, clearSettled, latchSettled };
+  return { isSettled, hasSeenRecord, latchRun, clearLatches };
 };
 
 /**
@@ -302,12 +340,15 @@ const useSettledLatch = () => {
  *
  * @param phase - The run's phase. Nothing happens unless it is `failed`.
  * @param status - The record the code and the diagnostic come from.
+ * @param hasSeenRecord - Distinguishes a record that went away from one not
+ *   written yet, which is the difference between the two failures this reports.
  * @param t - Translator for the failure copy.
  * @param onFailed - Returns the control to idle.
  */
 const useFailureReport = (
   phase: ThemeAnalysisPhase,
   status: ThemeAnalysisStatusRecord | undefined,
+  hasSeenRecord: boolean,
   t: ReturnType<typeof useTranslations>,
   onFailed: () => void,
 ) => {
@@ -319,10 +360,17 @@ const useFailureReport = (
       return;
     }
 
+    const failureKey = resolveFailureCode(status, { hasSeenRecord });
+
     logger.error('Theme analysis failed', {
+      // Logged alongside the diagnostic, because a lost record has no
+      // diagnostic — the record that would have carried one is the thing that
+      // went missing. Without the key, that failure reaches the log as an empty
+      // field and reads like a bug in the logging.
+      errorCode: failureKey,
       error: resolveFailureDiagnostic(status),
     });
-    toast.error(FAILURE_COPY[resolveFailureCode(status)](t));
+    toast.error(FAILURE_COPY[failureKey](t));
     onFailedRef.current();
-  }, [phase, status, t]);
+  }, [phase, status, hasSeenRecord, t]);
 };

@@ -1623,6 +1623,7 @@
   "The analysis finished but found nothing to report across these proposals.": "Az elemzés befejeződött, de nem talált jelentenivalót ezekben a javaslatokban.",
   "There isn't enough written in these proposals to compare them.": "Ezekben a javaslatokban nincs elég szöveg az összehasonlításhoz.",
   "The analysis didn't come back in a usable form. Please try again.": "Az elemzés nem használható formában érkezett vissza. Próbáld újra.",
+  "We lost track of this analysis. Please try again.": "Elveszítettük ennek az elemzésnek a nyomát. Próbáld újra.",
   "The analysis timed out. Please try again.": "Az elemzés túllépte az időkorlátot. Próbáld újra.",
   "Couldn't check the analysis's status. It may still be running.": "Nem sikerült lekérdezni az elemzés állapotát. Lehet, hogy még fut.",
   "Themes and common ground": "Témák és közös alapok",

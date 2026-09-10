@@ -93,10 +93,18 @@ export const THEME_ANALYSIS_MIN_PROPOSALS = 2;
  * different models reasoning over one corpus is harder to account for than a
  * worse one assembled by the same model twice.
  *
+ * Flash rather than the full model. Both passes are extraction with a fixed
+ * output schema — name the themes running through a corpus, then say which of
+ * them the proposals agree on — rather than open reasoning, and thinking is
+ * already switched off for them (see `THEME_ANALYSIS_THINKING_OFF`). The larger
+ * model's advantage is in the part we are not using, and its cost is paid in the
+ * part that hurts here: two sequential passes over a corpus of up to
+ * `THEME_ANALYSIS_MAX_PROPOSALS` proposals, both inside one facilitator's wait.
+ *
  * The endpoint is still `AI_BASE_URL`, so this has to name a model that endpoint
  * serves.
  */
-export const THEME_ANALYSIS_MODEL_ID = 'zai-org/GLM-5.3';
+export const THEME_ANALYSIS_MODEL_ID = 'zai-org/GLM-5.3-Flash';
 
 /**
  * How long one model pass may take before the run gives up on it.
