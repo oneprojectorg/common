@@ -115,22 +115,14 @@ export const assertPostReadAccess = async ({
 const WRITE_DENIED = 'You do not have access to write here';
 const COMMENTS_DISABLED = 'Comments are turned off for this process';
 
-// Asserts the process behind a decision profile still accepts comments — the
-// Process Builder's "Allow comments" toggle. Only comments pass through here;
-// an organizer's announcement is not a comment and is never gated on it.
-//
-// Reads the same `areCommentsAllowed` resolver the comment surfaces render
-// from, so a UI that offers the composer and a server that accepts the write
-// can't disagree.
 const assertProcessAllowsComments = async (decisionProfileId: string) => {
   const instance = await db.query.processInstances.findFirst({
     where: { profileId: decisionProfileId },
     columns: { instanceData: true },
   });
 
-  // A DECISION profile always has an instance; reaching this means the two
-  // rows disagree. Deny rather than fall through to the permissive default —
-  // and say so, since a silent skip here would read as "comments allowed".
+  // Deny rather than fall through to the permissive default: a DECISION
+  // profile always has an instance, so this means the rows disagree.
   if (!instance) {
     logger.warn('Decision profile has no process instance; denying comment', {
       decisionProfileId,
@@ -228,8 +220,8 @@ export const assertPostWriteAccess = async ({
             : { decisions: decisionPermission.SUBMIT_PROPOSALS },
         },
       });
-      // Runs after the permission check so a caller who has no business here
-      // still gets the permission error, not a hint about the process config.
+      // After the permission check, so an unauthorized caller gets that error
+      // rather than a hint about the process config.
       if (!isAnnouncement) {
         await assertProcessAllowsComments(rootProfileId);
       }

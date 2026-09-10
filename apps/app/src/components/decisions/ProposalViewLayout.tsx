@@ -38,11 +38,6 @@ export function ProposalViewLayout({
    * "Log in" to logged-out and anonymous visitors.
    */
   canJoin?: boolean;
-  /**
-   * The process takes comments. Resolved by `ProposalView`, which renders both
-   * this shell and the comments section the jump button targets — they have to
-   * appear and disappear together.
-   */
   commentsEnabled: boolean;
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */

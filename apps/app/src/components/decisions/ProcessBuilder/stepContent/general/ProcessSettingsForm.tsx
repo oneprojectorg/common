@@ -139,8 +139,7 @@ export function ProcessSettingsForm({
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
       requireCollaborativeProposals:
         instanceData?.config?.requireCollaborativeProposals ?? false,
-      // Default on, matching `areCommentsAllowed` — an unset toggle must read
-      // as enabled here or opening the builder would save it off.
+      // Must default on, or opening the builder saves an unset toggle as off.
       allowComments: areCommentsAllowed(instanceData),
       isPrivate: instanceData?.config?.isPrivate ?? false,
     },
