@@ -23,10 +23,20 @@ export const CookieConsentBanner = () => {
         'We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.',
         {
           privacy: (chunks: ReactNode) => (
-            <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
+            <PolicyLink
+              href="/info/privacy"
+              newTabLabel={t('(opens in a new tab)')}
+            >
+              {chunks}
+            </PolicyLink>
           ),
           terms: (chunks: ReactNode) => (
-            <PolicyLink href="/info/tos">{chunks}</PolicyLink>
+            <PolicyLink
+              href="/info/tos"
+              newTabLabel={t('(opens in a new tab)')}
+            >
+              {chunks}
+            </PolicyLink>
           ),
         },
       )}
@@ -46,16 +56,21 @@ export const CookieConsentBanner = () => {
  * redirects to `/login`, so a visitor answering a cookie banner would be asked
  * to sign in to read the privacy policy.
  *
- * Same tab, not a new one: the banner is rendered by the root layout and the
- * answer is still pending after the navigation, so it's waiting when the
- * visitor comes back.
+ * Opens in a new tab so reading a policy doesn't navigate away from whatever
+ * the visitor came here to do, with the sighted-obvious "this leaves the page"
+ * cue spelled out for screen readers.
  */
 const PolicyLink = ({
   href,
+  newTabLabel,
   children,
 }: {
   href: string;
+  newTabLabel: string;
   children: ReactNode;
 }) => (
-  <CookieBannerLink render={<a href={href} />}>{children}</CookieBannerLink>
+  <CookieBannerLink render={<a href={href} target="_blank" rel="noreferrer" />}>
+    {children}
+    <span className="sr-only"> {newTabLabel}</span>
+  </CookieBannerLink>
 );

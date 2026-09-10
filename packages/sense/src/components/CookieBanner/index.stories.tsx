@@ -21,11 +21,15 @@ const description = (
   <>
     We use essential cookies to make Common work, and analytics cookies to
     understand how the platform is used. Read our{' '}
-    <CookieBannerLink render={<a href="#privacy" />}>
+    <CookieBannerLink
+      render={<a href="#privacy" target="_blank" rel="noreferrer" />}
+    >
       Privacy Policy
     </CookieBannerLink>{' '}
     and{' '}
-    <CookieBannerLink render={<a href="#terms" />}>
+    <CookieBannerLink
+      render={<a href="#terms" target="_blank" rel="noreferrer" />}
+    >
       Terms of Use
     </CookieBannerLink>{' '}
     to learn more.

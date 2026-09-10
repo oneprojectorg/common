@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Button } from '../ui/button';
 
 interface CookieBannerProps extends Omit<React.ComponentProps<'div'>, 'title'> {
@@ -21,10 +22,10 @@ interface CookieBannerProps extends Omit<React.ComponentProps<'div'>, 'title'> {
  * Cookie-consent banner: a persistent panel asking the visitor to accept or
  * reject analytics cookies.
  *
- * It takes the toast's surface, spacing and type scale, and positions itself in
- * the corner a toast would occupy, so it reads as the same object. It has no
- * close affordance and no auto-dismiss on purpose — it is the caller's job to
- * stop rendering it once the visitor has answered.
+ * It is an `Alert` that positions itself in the corner a toast would occupy, so
+ * it reads as part of the same notification surface. It has no close affordance
+ * and no auto-dismiss on purpose — it is the caller's job to stop rendering it
+ * once the visitor has answered.
  *
  * Reject leads, and Accept carries the primary weight: the refusing action
  * should be the one that needs no hunting for, and the two must not be equally
@@ -43,27 +44,27 @@ export function CookieBanner({
   const titleId = React.useId();
 
   return (
-    <div
+    <Alert
+      // `Alert` is `role="alert"` — an assertive live region, which would
+      // interrupt a screen reader mid-sentence on every cold load. This is a
+      // standing panel the visitor navigates to when ready, so it declares
+      // itself a landmark instead.
       role="region"
       aria-labelledby={titleId}
       className={cn(
-        // Geometry, surface and padding are `../ui/toast`'s viewport, root and
-        // content, restated rather than shared: this panel sits in the toast
-        // corner and has to read as the same object, but toast.tsx is generated
-        // from the shadcn registry, so a wrapper extracted out of it would not
-        // survive the next `shadcn add toast`.
-        'fixed inset-x-4 bottom-4 z-50 mx-auto flex w-auto max-w-sm flex-col gap-3 rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg sm:start-auto sm:end-4 sm:mx-0 sm:w-full',
+        // Everything except where it sits comes from `Alert`: rounding, border,
+        // surface, padding and the title's type. What's left is the "floating
+        // in the corner a toast would occupy" part, which no primitive owns.
+        'fixed inset-x-4 bottom-4 z-50 mx-auto w-auto max-w-sm shadow-lg sm:start-auto sm:end-4 sm:mx-0 sm:w-full',
         className,
       )}
       {...props}
     >
-      <div className="flex flex-col gap-1">
-        <p id={titleId} className="text-base font-strong">
-          {title}
-        </p>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-      <div className="flex gap-2">
+      <AlertTitle id={titleId}>{title}</AlertTitle>
+      {/* The one type override: `text-sm` matches the toast scale this panel
+          sits beside, rather than `Alert`'s roomier in-page default. */}
+      <AlertDescription className="text-sm">{description}</AlertDescription>
+      <div className="mt-3 flex gap-2">
         <Button variant="outline" size="sm" onClick={onReject}>
           {rejectLabel}
         </Button>
@@ -71,7 +72,7 @@ export function CookieBanner({
           {acceptLabel}
         </Button>
       </div>
-    </div>
+    </Alert>
   );
 }
 
