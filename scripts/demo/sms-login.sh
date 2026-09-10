@@ -8,13 +8,15 @@
 #
 #   ./scripts/demo/sms-login.sh --check
 #   ./scripts/demo/sms-login.sh
+#   ./scripts/demo/sms-login.sh --record    # record it instead of showing a window
+#   ./scripts/demo/sms-login.sh --record --fps 10  # lower frame rate for a long take
 
 cd "$(dirname "$0")/../.." || exit 1
 
 SESSION="demo-sms-login"
 NEED_EXISTING_ACCOUNT=1
 
-demo_help() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+demo_help() { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; }
 
 # shellcheck source=scripts/demo/lib.sh
 . scripts/demo/lib.sh
@@ -27,6 +29,7 @@ start_signed_out
 say "A returning participant opens the login screen"
 goto "$APP/en/login"
 must ab wait --text "Sign in"
+start_recording
 beat
 shot 1-login-email
 
@@ -55,6 +58,7 @@ say "A phone account belongs on the public process, not the network home page"
 note "membership reads an email address, so this account is admitted nowhere else"
 goto "$APP/en/decisions/$SLUG"
 must ab wait --text "Start a proposal"
+restart_recording
 shot 5-back-on-the-process
 
 finish

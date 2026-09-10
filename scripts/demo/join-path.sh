@@ -16,6 +16,8 @@
 #   ./scripts/demo/join-path.sh --check     # verify preconditions only
 #   ./scripts/demo/join-path.sh --reset     # free the test number, then run
 #   ./scripts/demo/join-path.sh --beat 2000 # slower, for a bigger room
+#   ./scripts/demo/join-path.sh --record    # record it instead of showing a window
+#   ./scripts/demo/join-path.sh --record --fps 10  # lower frame rate for a long take
 
 cd "$(dirname "$0")/../.." || exit 1
 
@@ -38,6 +40,7 @@ start_signed_out
 say "A visitor with no account opens a public process"
 goto "$APP/en/decisions/$SLUG"
 must ab wait --text "Join"
+start_recording
 beat
 
 say "The header offers Join, not Log in — this process is open to everyone"
@@ -81,6 +84,7 @@ say "With the code, the account is real"
 must ab find role textbox fill --name "Code" "$CODE"
 must ab find role button click --name "Create profile"
 must ab wait --text "Add your personal details"
+restart_recording
 shot 5-onboarding
 beat
 
@@ -108,6 +112,7 @@ if ! ab wait --text "Start a proposal" >/dev/null 2>&1; then
   finish
   exit 0
 fi
+restart_recording
 
 say "And back on the process, this account can act"
 note "no email on the auth record — the account exists because of a phone number"
@@ -137,6 +142,7 @@ shot 10-submit-confirm
 # With the dialog open the page behind it is inert, so this name resolves to
 # the dialog's button rather than the editor's.
 must ab find role button click --name "Submit"
+must ab wait --text "Current Phase"
 must ab wait --text "$PROPOSAL_TITLE"
 say "And the proposal is in the phase, authored by a phone number"
 shot 11-proposal-submitted

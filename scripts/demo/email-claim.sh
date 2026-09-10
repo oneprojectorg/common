@@ -8,13 +8,15 @@
 #
 #   ./scripts/demo/email-claim.sh --check
 #   ./scripts/demo/email-claim.sh
+#   ./scripts/demo/email-claim.sh --record  # record it instead of showing a window
+#   ./scripts/demo/email-claim.sh --record --fps 10  # lower frame rate for a long take
 
 cd "$(dirname "$0")/../.." || exit 1
 
 SESSION="demo-email-claim"
 NEED_PUBLIC_PROCESS=1
 
-demo_help() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+demo_help() { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; }
 
 # shellcheck source=scripts/demo/lib.sh
 . scripts/demo/lib.sh
@@ -36,6 +38,7 @@ start_signed_out
 
 say "The same Join button, the same modal"
 goto "$APP/en/decisions/$SLUG"
+start_recording
 must ab find role button click --name "Join"
 must ab wait --text "Claim your account"
 beat
@@ -62,6 +65,7 @@ say "And it completes the claim, exactly as the phone code does"
 must ab find role textbox fill --name "Code" "$CLAIM_CODE"
 must ab find role button click --name "Create profile"
 must ab wait --text "Add your personal details"
+restart_recording
 shot 3-onboarding
 
 finish
