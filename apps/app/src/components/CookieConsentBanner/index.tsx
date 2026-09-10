@@ -4,7 +4,7 @@ import { CookieBanner } from '@op/sense/CookieBanner';
 import { CookieBannerLink } from '@op/sense/CookieBannerLink';
 import type { ReactNode } from 'react';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { useTrackingConsent } from '../PostHogProvider';
 
@@ -38,9 +38,18 @@ export const CookieConsentBanner = () => {
   );
 };
 
-// Same tab, not a new one: the banner is rendered by the root layout and the
-// answer is still pending after the navigation, so it's waiting when the
-// visitor comes back.
+/**
+ * Deliberately NOT the i18n `Link`, and deliberately not locale-prefixed. The
+ * policy pages live at `/info/*`, outside the `[locale]` segment and outside
+ * the proxy's matcher, which is what keeps them reachable without a session.
+ * `/en/info/privacy` is not a route: it falls into the walled garden and
+ * redirects to `/login`, so a visitor answering a cookie banner would be asked
+ * to sign in to read the privacy policy.
+ *
+ * Same tab, not a new one: the banner is rendered by the root layout and the
+ * answer is still pending after the navigation, so it's waiting when the
+ * visitor comes back.
+ */
 const PolicyLink = ({
   href,
   children,
@@ -48,5 +57,5 @@ const PolicyLink = ({
   href: string;
   children: ReactNode;
 }) => (
-  <CookieBannerLink render={<Link href={href} />}>{children}</CookieBannerLink>
+  <CookieBannerLink render={<a href={href} />}>{children}</CookieBannerLink>
 );

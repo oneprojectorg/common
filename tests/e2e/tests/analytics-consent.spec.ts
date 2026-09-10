@@ -71,6 +71,21 @@ test.describe('Analytics consent', () => {
     await expect(cookieBanner(page)).toBeHidden();
   });
 
+  // The policy pages live outside the `[locale]` segment, which is what keeps
+  // them out of the walled garden. A locale-prefixed href would send someone
+  // reading a cookie banner to /login to read the privacy policy.
+  test('links to the policies outside the locale segment', async ({ page }) => {
+    await visitAsUnansweredVisitor(page);
+    const banner = cookieBanner(page);
+
+    await expect(
+      banner.getByRole('link', { name: 'Privacy Policy' }),
+    ).toHaveAttribute('href', '/info/privacy');
+    await expect(
+      banner.getByRole('link', { name: 'Terms of Use' }),
+    ).toHaveAttribute('href', '/info/tos');
+  });
+
   // Vercel's edge sets this header and overwrites anything the client sent, so
   // it can't be spoofed where it counts. Here it's the only way to stand in a
   // country from a local browser.
