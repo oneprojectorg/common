@@ -17,14 +17,7 @@ import {
   assertReviewAssignmentPhaseIsCurrent,
 } from './reviewHelpers';
 
-/**
- * Creates a revision request for one reviewer's assignment.
- *
- * Request state lives on the request row, not on the assignment status: a
- * reviewer may request a revision before or after submitting their own review,
- * so a COMPLETED assignment is a legitimate starting point and keeps its
- * status. Only a still-open assignment is paused.
- */
+/** Creates a revision request for one reviewer's assignment. */
 export async function requestRevision({
   assignmentId,
   requestComment,
@@ -46,8 +39,6 @@ export async function requestRevision({
   );
 
   const request = await db.transaction(async (tx) => {
-    // One open request per assignment. The check and the insert are not
-    // serialized: a concurrent duplicate is prevented in the UI, not here.
     const openRequest = await tx.query.proposalReviewRequests.findFirst({
       where: {
         assignmentId,

@@ -22,8 +22,6 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-// Minimal rubric so the reviewer can submit a review in the tests that pair a
-// revision request with a completed assignment.
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
   'x-field-order': ['impact'],

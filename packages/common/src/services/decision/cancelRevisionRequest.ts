@@ -50,9 +50,6 @@ export async function cancelRevisionRequest({
       throw new CommonError('Failed to cancel revision request');
     }
 
-    // Only the pause this request caused is lifted. A COMPLETED assignment
-    // (the reviewer submitted their review after requesting) must keep its
-    // status, or cancelling would reopen a finished review.
     await tx
       .update(proposalReviewAssignments)
       .set({
