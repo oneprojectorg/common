@@ -70,4 +70,14 @@ test.describe('Analytics consent', () => {
     await page.reload();
     await expect(cookieBanner(page)).toBeHidden();
   });
+
+  // Vercel's edge sets this header and overwrites anything the client sent, so
+  // it can't be spoofed where it counts. Here it's the only way to stand in a
+  // country from a local browser.
+  test('never asks a US visitor', async ({ page }) => {
+    await page.setExtraHTTPHeaders({ 'x-vercel-ip-country': 'US' });
+    await visitAsUnansweredVisitor(page);
+
+    await expect(cookieBanner(page)).toBeHidden();
+  });
 });
