@@ -12,7 +12,7 @@ import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
-import { decisionPermission } from './permissions';
+import { adminOr, decisionPermission } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isInstanceCurrentPhase } from './utils/instance';
@@ -126,13 +126,7 @@ export async function assertProposalReviewReadAccess({
 
   if (
     instanceRoles.length > 0 &&
-    checkPermission(
-      [
-        { decisions: decisionPermission.REVIEW },
-        { decisions: permission.ADMIN },
-      ],
-      instanceRoles,
-    )
+    checkPermission(adminOr(decisionPermission.REVIEW), instanceRoles)
   ) {
     return;
   }
@@ -382,10 +376,7 @@ export async function assertReviewAssignmentContext({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: [
-      { decisions: decisionPermission.REVIEW },
-      { decisions: permission.ADMIN },
-    ],
+    permissions: adminOr(decisionPermission.REVIEW),
   });
 
   if (assignment.reviewerProfileId !== dbUser.profileId) {

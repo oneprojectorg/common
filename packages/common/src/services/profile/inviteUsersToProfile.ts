@@ -11,7 +11,7 @@ import { hasEmail } from '../../utils/email';
 import { CommonError } from '../../utils/error';
 import { assignableRoleFilter } from '../access';
 import { assertProfile, assertProfileAccess } from '../assert';
-import { decisionPermission } from '../decision/permissions';
+import { adminOr, decisionPermission } from '../decision/permissions';
 
 /**
  * Determines which invites should be notified immediately and sends the
@@ -185,10 +185,7 @@ export const inviteUsersToProfile = async ({
   await assertProfileAccess({
     user,
     profileId,
-    permissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.INVITE_MEMBERS },
-    ],
+    permissions: adminOr(decisionPermission.INVITE_MEMBERS),
     notMemberMessage:
       'User must be associated with this profile to send invites',
   });

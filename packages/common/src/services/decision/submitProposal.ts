@@ -2,11 +2,10 @@ import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
 import { logger } from '@op/logging';
-import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { decisionPermission } from './permissions';
+import { adminOr, decisionPermission } from './permissions';
 import {
   normalizeLocation,
   normalizeProposalCategories,
@@ -66,10 +65,7 @@ export const submitProposal = async ({
   await assertProfileAccess({
     user: { id: authUserId },
     profileId: instance.profileId,
-    permissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
+    permissions: adminOr(decisionPermission.SUBMIT_PROPOSALS),
   });
 
   const instanceData = instance.instanceData as DecisionInstanceData;

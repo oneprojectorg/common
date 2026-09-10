@@ -1,12 +1,11 @@
 import { and, asc, db, eq, isNull, or } from '@op/db/client';
 import { categoryReviewers, taxonomyTerms } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
-import { decisionPermission } from './permissions';
+import { adminOr, decisionPermission } from './permissions';
 import type { ReviewerCategory } from './schemas/reviews';
 
 /**
@@ -38,10 +37,7 @@ export async function listReviewerCategories({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const reviewOrAdmin = [
-    { decisions: decisionPermission.REVIEW },
-    { decisions: permission.ADMIN },
-  ];
+  const reviewOrAdmin = adminOr(decisionPermission.REVIEW);
 
   await assertInstanceProfileAccess({
     user,

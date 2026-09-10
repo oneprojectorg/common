@@ -10,7 +10,7 @@ import {
   assertProfileTypeAccess,
   getUserSession,
 } from '../access';
-import { decisionPermission } from '../decision/permissions';
+import { adminOr, decisionPermission } from '../decision/permissions';
 import { getNetworkMembership } from '../user';
 
 export type PostReadAccess = {
@@ -194,7 +194,7 @@ export const assertPostWriteAccess = async ({
         policies: {
           [EntityType.DECISION]: isAnnouncement
             ? { decisions: permission.ADMIN }
-            : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+            : adminOr(decisionPermission.SUBMIT_PROPOSALS),
         },
       });
       return;

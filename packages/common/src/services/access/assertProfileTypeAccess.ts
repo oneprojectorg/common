@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { EntityType, profiles } from '@op/db/schema';
-import type { AccessZonePermission, NormalizedRole } from 'access-zones';
+import type { AccessZonePermissionInput, NormalizedRole } from 'access-zones';
 import { assertAccess, permission } from 'access-zones';
 import { inArray } from 'drizzle-orm';
 
@@ -12,7 +12,7 @@ import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 // that type is NOT gated — the caller is opting into lenient pass-through
 // for, e.g., regular org or individual profiles.
 export type ProfileTypePolicies = Partial<
-  Record<EntityType, AccessZonePermission>
+  Record<EntityType, AccessZonePermissionInput>
 >;
 
 export type AssertProfileTypeAccessOptions = {
@@ -96,8 +96,10 @@ export const assertProfileTypeAccess = async ({
   }
 
   for (const row of gatedRows) {
+    // A policy may be an OR-array; flatten it so the ADMIN alternative stays
+    // a sibling rather than a nested array assertAccess would never match.
     assertAccess(
-      [{ profile: permission.ADMIN }, row.requiredPermission],
+      [{ profile: permission.ADMIN }, ...[row.requiredPermission].flat()],
       rolesByProfileId.get(row.id) ?? [],
     );
   }

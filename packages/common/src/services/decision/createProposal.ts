@@ -19,7 +19,7 @@ import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
-import { decisionPermission } from './permissions';
+import { adminOr, decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
 import {
   type ProposalDataInput,
@@ -57,10 +57,7 @@ export const createProposal = async ({
   await assertInstanceProfileAccess({
     user: { id: authUserId },
     instance,
-    profilePermissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
+    profilePermissions: adminOr(decisionPermission.SUBMIT_PROPOSALS),
     orgFallbackPermissions: { profile: permission.ADMIN },
   });
 

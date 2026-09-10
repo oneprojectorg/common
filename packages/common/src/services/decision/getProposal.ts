@@ -27,6 +27,7 @@ import {
 } from './getProposalDocumentsContent';
 import {
   type DecisionRolePermissions,
+  adminOr,
   decisionPermission,
   fromDecisionBitField,
 } from './permissions';
@@ -330,9 +331,9 @@ export const getPermissionsOnProposal = async ({
 
   // The comment / post-write gate in `assertPostWriteAccess` walks proposal
   // targets up to the parent decision via `resolvePostRoots` and admits
-  // `{ profile: ADMIN }` OR `{ decisions: SUBMIT_PROPOSALS }` on the decision
-  // profile — bits that live on `profileUsers` for the *decision* profile,
-  // not the proposal profile. Mirror that OR on `access.submitProposals` so
+  // `adminOr(SUBMIT_PROPOSALS)` on the decision profile — bits that live on
+  // `profileUsers` for the *decision* profile, not the proposal profile.
+  // Mirror that OR on `access.submitProposals` so
   // the frontend can mirror the server gate and hide the comment box only
   // for callers who'd be rejected on submit. Leave the other bits
   // (update / admin) on proposal-profile roles — editability and admin
@@ -344,10 +345,7 @@ export const getPermissionsOnProposal = async ({
     });
     if (
       checkPermission(
-        [
-          { profile: permission.ADMIN },
-          { decisions: decisionPermission.SUBMIT_PROPOSALS },
-        ],
+        adminOr(decisionPermission.SUBMIT_PROPOSALS),
         decisionRoles,
       )
     ) {

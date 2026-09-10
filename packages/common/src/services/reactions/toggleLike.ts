@@ -2,7 +2,7 @@ import { EntityType } from '@op/db/schema';
 import { LIKE_REACTION_TYPE } from '@op/types';
 
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
-import { decisionPermission } from '../decision/permissions';
+import { adminOr, decisionPermission } from '../decision/permissions';
 import { loadPostContext, type PostContext } from '../posts/postContext';
 import { addReaction } from './addReaction';
 import { removeLike } from './removeLike';
@@ -41,9 +41,7 @@ export const toggleLike = async ({
     user,
     profileIds: profileIdsToAuthorize,
     policies: {
-      [EntityType.DECISION]: {
-        decisions: decisionPermission.SUBMIT_PROPOSALS,
-      },
+      [EntityType.DECISION]: adminOr(decisionPermission.SUBMIT_PROPOSALS),
     },
   });
 
