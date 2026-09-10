@@ -28,19 +28,11 @@ import { useReviewForm } from './ReviewFormContext';
 interface ViewRevisionRequestModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  /**
-   * The requests to list. Defaults to every request still open on the
-   * proposal; a caller with a narrower subject (one author note answering one
-   * request) passes its own list instead.
-   */
+  /** Defaults to every request still open on the proposal. */
   requests?: Array<ProposalReviewRequest>;
 }
 
-/**
- * Lists the revision requests on a proposal. Requests are anonymous, so no
- * card names its reviewer — the viewer's own card is the only one marked, and
- * the only one that can be cancelled.
- */
+/** Requests are anonymous; only the viewer's own card is marked and cancellable. */
 export function ViewRevisionRequestModal({
   isOpen,
   onOpenChange,
@@ -62,21 +54,12 @@ export function ViewRevisionRequestModal({
     return null;
   }
 
-  // The reviewer's own request leads the list — it is the only one they can
-  // act on, so it must not be buried under other reviewers' requests.
-  const ordered = [...listed].sort((a, b) => {
-    const aIsOwn = a.assignmentId === assignment.id ? 0 : 1;
-    const bIsOwn = b.assignmentId === assignment.id ? 0 : 1;
-    return aIsOwn - bIsOwn;
-  });
-
   const canCancel = ownRevisionRequest !== null;
 
   const handleConfirmCancel = () => {
     cancelRevisionRequest();
     setIsCancelConfirmOpen(false);
-    // Nothing left to read once the only request is withdrawn.
-    if (ordered.length === 1) {
+    if (listed.length === 1) {
       onOpenChange(false);
     }
   };
@@ -90,14 +73,14 @@ export function ViewRevisionRequestModal({
                 Revision" is the verb phrase that titles RequestRevisionModal,
                 which creates one. */}
             <DialogTitle>
-              {ordered.length === 1
+              {listed.length === 1
                 ? t('Revision request')
                 : t('Revision requests')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="flex flex-col gap-3 px-6 py-6">
-            {ordered.map((request) => (
+            {listed.map((request) => (
               <RevisionRequestCard
                 key={request.id}
                 request={request}
@@ -147,7 +130,6 @@ function RevisionRequestCard({
 }: {
   request: ProposalReviewRequest;
   isOwn: boolean;
-  /** The own card only offers cancel while the request is still open. */
   canCancel: boolean;
   onCancel: () => void;
 }) {

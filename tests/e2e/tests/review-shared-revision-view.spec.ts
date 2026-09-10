@@ -69,10 +69,8 @@ const REVIEW_SCHEMA = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-// Minimal rubric — one required scored criterion, just enough to enable
-// "Submit review". Nothing here is under test. `maximum` is what makes
-// `inferCriterionType` read this as `scored`: without it the renderer draws
-// the prompt and no control at all.
+// `maximum` is what makes `inferCriterionType` read this as `scored`: without
+// it the renderer draws the prompt and no control at all.
 const RUBRIC_TEMPLATE = {
   type: 'object',
   required: ['innovation'],
@@ -104,11 +102,6 @@ test.describe('Review — shared revision request view', () => {
       testInfo,
     });
 
-    // ======================================================================
-    // Reviewer A: a stranger's request is visible but gates nothing, and A
-    // can add their own on top of it
-    // ======================================================================
-
     const reviewUrlA = `/en/decisions/${scenario.slug}/reviews/${scenario.reviewerAAssignmentId}`;
     const pageA = await openAs(browser, scenario.reviewerA.email);
     await pageA.goto(reviewUrlA, { waitUntil: 'domcontentloaded' });
@@ -117,8 +110,7 @@ test.describe('Review — shared revision request view', () => {
     await expect(paneA.getByText('Revision requested')).toBeVisible({
       timeout: 36_000,
     });
-    // Polite, not sense `Alert`'s default assertive `role="alert"` — it can
-    // arrive mid-rubric and must not cut off the current announcement.
+    // Polite, not sense `Alert`'s default assertive `role="alert"`.
     const alertA = paneA.getByRole('status');
     await expect(alertA).toHaveAttribute('aria-live', 'polite');
     await expect(alertA).toContainText('The author has been notified');
@@ -142,12 +134,7 @@ test.describe('Review — shared revision request view', () => {
       timeout: 10_000,
     });
 
-    // One open request per reviewer: A's own is now in, so the button locks.
     await expect(requestButtonA).toBeDisabled();
-
-    // ======================================================================
-    // Both requests are listed, A's own is marked and is the only cancellable
-    // ======================================================================
 
     await paneA.getByRole('button', { name: 'View request' }).click();
 
@@ -158,36 +145,24 @@ test.describe('Review — shared revision request view', () => {
     await expect(listModalA.getByText(OWN_COMMENT)).toBeVisible();
     await expect(listModalA.getByText(OTHER_COMMENT)).toBeVisible();
     await expect(listModalA.getByText(/^Your request •/)).toBeVisible();
-    // Anonymous: no reviewer is ever named on a card.
     await expect(listModalA.getByText(scenario.reviewerC.email)).toHaveCount(0);
-    // Exactly one — the other reviewer's card offers no cancel.
     await expect(
       listModalA.getByRole('button', { name: 'Cancel request' }),
     ).toHaveCount(1);
 
     await closeDialog(pageA, listModalA);
 
-    // ======================================================================
-    // The requester is not paused: A submits with their own request open
-    // ======================================================================
-
     await submitReview(pageA, paneA);
     await expect(toast(pageA, 'Review submitted successfully')).toBeVisible({
       timeout: 10_000,
     });
 
-    // Submitting resolves nothing: A's own request and the stranger's both
-    // stay open. This is the invariant the proposal-wide pause was hiding.
     expect(await ownRequestState(scenario.reviewerAAssignmentId)).toBe(
       ProposalReviewRequestState.REQUESTED,
     );
     expect(await ownRequestState(scenario.otherAssignmentId)).toBe(
       ProposalReviewRequestState.REQUESTED,
     );
-
-    // ======================================================================
-    // Reviewer B is untouched by either request
-    // ======================================================================
 
     const pageB = await openAs(browser, scenario.reviewerB.email);
     await pageB.goto(
@@ -199,7 +174,6 @@ test.describe('Review — shared revision request view', () => {
     await expect(paneB.getByText('Revision requested')).toBeVisible({
       timeout: 36_000,
     });
-    // No open request of their own, so B may still open one.
     await expect(
       pageB.getByRole('button', { name: 'Request revision' }),
     ).toBeEnabled();
@@ -208,7 +182,6 @@ test.describe('Review — shared revision request view', () => {
     const listModalB = dialog(pageB);
     await expect(listModalB.getByText(OWN_COMMENT)).toBeVisible();
     await expect(listModalB.getByText(OTHER_COMMENT)).toBeVisible();
-    // Neither card is B's, so B can cancel nothing.
     await expect(
       listModalB.getByRole('button', { name: 'Cancel request' }),
     ).toHaveCount(0);
@@ -221,11 +194,6 @@ test.describe('Review — shared revision request view', () => {
       timeout: 10_000,
     });
 
-    // ======================================================================
-    // A withdraws their own request through the confirm dialog
-    // ======================================================================
-
-    // Submitting redirected A to the proposal list, so come back explicitly.
     await pageA.goto(reviewUrlA, { waitUntil: 'domcontentloaded' });
     await expect(paneA.getByText('Revision requested')).toBeVisible({
       timeout: 36_000,
@@ -247,7 +215,6 @@ test.describe('Review — shared revision request view', () => {
       timeout: 10_000,
     });
 
-    // The stranger's request is untouched, so the list stays open with it.
     await expect(cancelListModal.getByText(OTHER_COMMENT)).toBeVisible();
     await expect(cancelListModal.getByText(OWN_COMMENT)).toHaveCount(0);
     expect(await ownRequestState(scenario.reviewerAAssignmentId)).toBe(
@@ -259,7 +226,6 @@ test.describe('Review — shared revision request view', () => {
   });
 });
 
-/** The visible copy of the review pane — the layout renders one per breakpoint. */
 function reviewPane(page: Page): Locator {
   return page.locator('[data-slot="review-form"]').filter({ visible: true });
 }
@@ -280,7 +246,6 @@ async function closeDialog(page: Page, modal: Locator): Promise<void> {
   await expect(modal).toHaveCount(0);
 }
 
-/** Answers the one required criterion and submits. */
 async function submitReview(page: Page, pane: Locator): Promise<void> {
   const submitButton = page.getByRole('button', { name: 'Submit review' });
   await expect(submitButton).toBeDisabled();
@@ -292,7 +257,6 @@ async function submitReview(page: Page, pane: Locator): Promise<void> {
   await submitButton.click();
 }
 
-/** The state of the newest request on one assignment. */
 async function ownRequestState(
   assignmentId: string,
 ): Promise<string | undefined> {
@@ -303,11 +267,7 @@ async function ownRequestState(
   return stored?.state;
 }
 
-/**
- * A decision in its review phase with one proposal and three reviewers, each
- * holding their own assignment. Reviewer C already has an open request;
- * reviewers A and B start clean.
- */
+/** Review phase, one proposal, three reviewers; reviewer C already has an open request. */
 async function setUpSharedRevisionScenario({
   org,
   supabaseAdmin,
@@ -373,7 +333,6 @@ async function setUpSharedRevisionScenario({
     });
   }
 
-  // Reviewer C owns the request that is already open when the test starts.
   const {
     proposal,
     assignedProposalHistoryId,

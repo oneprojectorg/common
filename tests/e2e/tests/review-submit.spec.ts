@@ -340,8 +340,6 @@ test.describe('Review Submit', () => {
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // While their own request is open, the navbar "Request revision" button is
-    // disabled and the rubric pane's alert exposes "View request".
     await expect(
       page.getByRole('button', { name: 'Request revision' }),
     ).toBeDisabled();

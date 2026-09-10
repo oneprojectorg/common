@@ -52,13 +52,10 @@ interface ReviewFormState {
   isUpdating: boolean;
   /** Update button is enabled — editing an already-submitted review with a valid rubric. */
   canUpdate: boolean;
-  /** Every REQUESTED revision request on the proposal, newest first. */
   openRevisionRequests: Array<ProposalReviewRequest>;
-  /** This assignment's own request while it is still open. */
   ownRevisionRequest: ProposalReviewRequest | null;
-  /** This assignment's own latest request in any state (cancelled, resubmitted). */
+  /** Own latest request in any state. */
   ownLatestRevisionRequest: ProposalReviewRequest | null;
-  /** The reviewer may open a request: revisions are on and they have none open. */
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
@@ -178,8 +175,6 @@ function ReviewFormProviderInner({
     review?.overallComment ?? '',
   );
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
-  // Per reviewer, not per proposal: an open request from someone else neither
-  // blocks this reviewer's own request nor pauses anything they can do here.
   const canRequestRevision =
     reviewSettings.allowRevisions && !ownRevisionRequest;
 

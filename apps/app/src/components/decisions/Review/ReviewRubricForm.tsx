@@ -132,14 +132,11 @@ function MyReviewForm() {
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  // An open request never gates this reviewer: it only tells them a revision
-  // is on its way, and gives them a way to read what was asked for.
   const revisionAlert =
     openRevisionRequests.length > 0 ? (
       <>
-        {/* Polite, not sense `Alert`'s default assertive `role="alert"`: a
-            request from another reviewer can land mid-rubric over realtime and
-            must not cut off whatever is being announced. */}
+        {/* Polite, not sense `Alert`'s default assertive `role="alert"`: this
+            can land mid-rubric and must not cut off the current announcement. */}
         <Alert variant="warning" role="status" aria-live="polite">
           <LuRefreshCw />
           <AlertTitle>{t('Revision requested')}</AlertTitle>
@@ -174,7 +171,6 @@ function MyReviewForm() {
         <SubmittedReviewView
           rubricTemplate={template}
           review={review}
-          // Above the feedback block, per the design — hence the slot.
           scoreSlot={
             <TotalScoreCard rubricTemplate={template} values={values} />
           }
