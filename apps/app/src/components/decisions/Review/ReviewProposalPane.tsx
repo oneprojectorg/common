@@ -4,7 +4,8 @@ import { ProposalReviewRequestState } from '@op/common/client';
 
 import { ProposalComments } from '../ProposalComments';
 import { ProposalPreview } from '../ProposalPreview';
-import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
+import { AuthorNotesSection } from './AuthorNotesSection';
+import { RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
 import { useReviewTranslation } from './ReviewTranslationContext';
 
@@ -21,9 +22,6 @@ export function ReviewProposalPane({
     ownLatestRevisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
       ? ownLatestRevisionRequest.respondedAt
       : null;
-  const responseComment = respondedAt
-    ? ownLatestRevisionRequest?.responseComment
-    : null;
 
   return (
     // Same section rhythm as the proposal view: the sections below mirror this
@@ -32,19 +30,13 @@ export function ReviewProposalPane({
       <ProposalPreview
         proposal={assignment.proposal}
         translation={translation}
-        // The banner needs a comment to show; the date doesn't. A resubmission
-        // without one would otherwise leave the reviewer no sign it happened
-        // (`responseComment` is null when the author left it empty).
+        // The badge shows on the date alone: a resubmission without a note
+        // would otherwise leave the reviewer no sign it happened.
         submissionMetaSuffix={
           respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
         }
         headerBanner={
-          responseComment ? (
-            <AuthorRevisionNote
-              comment={responseComment}
-              respondedAt={respondedAt}
-            />
-          ) : undefined
+          <AuthorNotesSection proposalId={assignment.proposal.id} />
         }
       />
 
