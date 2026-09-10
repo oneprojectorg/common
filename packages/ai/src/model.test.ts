@@ -48,6 +48,18 @@ describe('resolveAIModelConfig', () => {
     expect(model.apiKey).toBe('env-key');
   });
 
+  // No environment fallback for the model. Services here run on different
+  // models, so a deploy-wide default would silently apply one service's choice
+  // to another — and a model id only names something on a particular endpoint
+  // anyway. Every caller says which model it wants.
+  it('throws when no model is given', () => {
+    vi.stubEnv('AI_BASE_URL', 'https://env.example.com/v1');
+
+    expect(() => resolveAIModelConfig({ modelId: '' })).toThrow(
+      'No inference model configured',
+    );
+  });
+
   it('never attaches the env key to a caller-supplied endpoint', () => {
     vi.stubEnv('AI_API_KEY', 'deploy-key');
 

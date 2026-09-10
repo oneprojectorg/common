@@ -46,6 +46,29 @@ export const Events = {
       format: z.enum(['csv']),
     }),
   },
+  // Carries the instance, not a corpus. The workflow reads the proposals at run
+  // time, the same way `contentSubmitted` re-reads an item's text: a snapshot in
+  // the payload would analyse whatever the phase held when the button was
+  // pressed, and the proposals it names could have changed underneath it.
+  proposalThemeAnalysisRequested: {
+    name: 'proposal/theme-analysis-requested' as const,
+    schema: z.object({
+      analysisId: z.string().uuid(),
+      processInstanceId: z.string().uuid(),
+      userId: z.string().uuid(),
+      // Which proposals to read — the current phase, or every one the instance
+      // holds. The surface that launched the run decides, because the two sets
+      // diverge once an instance advances and a synthesis of the wrong one
+      // would not give itself away.
+      scope: z.enum(['phase', 'process']),
+      // When the request was made. Carried rather than re-derived because the
+      // workflow writes whole records, not patches: without it every write
+      // after the seed would either invent a new creation time or omit a field
+      // the record schema requires — and a record that fails that schema reads
+      // back as "no such analysis".
+      createdAt: z.string(),
+    }),
+  },
   profileInviteSent: {
     name: 'profile/invites-sent' as const,
     schema: z.object({

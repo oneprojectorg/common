@@ -717,6 +717,9 @@ importers:
 
   packages/common:
     dependencies:
+      '@op/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@op/analytics':
         specifier: workspace:*
         version: link:../analytics

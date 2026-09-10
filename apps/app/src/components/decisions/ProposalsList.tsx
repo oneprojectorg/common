@@ -52,6 +52,7 @@ import {
 } from './ProposalsMapView';
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { getScrollParent } from './StickyFilterBar';
+import { ThemeAnalysisButton } from './ThemeAnalysisButton';
 import { TranslateBanner } from './TranslateBanner';
 import {
   useDecisionNeedsTranslation,
@@ -535,6 +536,12 @@ const ProposalsListContent = ({
   const exportEnabled = useFeatureFlag('export-feature') ?? false;
   const canExportProposals = canManageProposals && exportEnabled;
 
+  // Theme analysis is behind its own flag, defaulted the same way: it is the
+  // first thing in the product that spends money per press, so it rolls out on
+  // its own schedule rather than riding the export's.
+  const themesEnabled = useFeatureFlag('proposal-themes-feature') ?? false;
+  const canAnalyzeThemes = canManageProposals && themesEnabled;
+
   const { data: revisionRequestsData } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       { states: [ProposalReviewRequestState.REQUESTED] },
@@ -710,14 +717,32 @@ const ProposalsListContent = ({
               ? { value: effectiveView, onChange: handleViewChange }
               : undefined
           }
-          exportControl={
-            canExportProposals ? (
-              <ExportProposalsButton
-                processInstanceId={queryParams.processInstanceId}
-                // The phase's unfiltered count: the export ignores the list's
-                // filters, so a filter matching nothing must not disable it.
-                isEmpty={totalProposalCount === 0}
-              />
+          adminControls={
+            canExportProposals || canAnalyzeThemes ? (
+              <>
+                {canExportProposals && (
+                  <ExportProposalsButton
+                    processInstanceId={queryParams.processInstanceId}
+                    // The phase's unfiltered count: the export ignores the
+                    // list's filters, so a filter matching nothing must not
+                    // disable it.
+                    isEmpty={totalProposalCount === 0}
+                  />
+                )}
+                {canAnalyzeThemes && (
+                  <ThemeAnalysisButton
+                    processInstanceId={queryParams.processInstanceId}
+                    // The set this list is showing. Results renders every
+                    // proposal the instance has held (`listAllProposals`);
+                    // everywhere else is the current phase. Analysing the other
+                    // one would report a synthesis of proposals not on screen.
+                    scope={phase === 'results' ? 'process' : 'phase'}
+                    // Unfiltered for the same reason as the export, and it is
+                    // the count the server checks its minimum against.
+                    proposalCount={totalProposalCount}
+                  />
+                )}
+              </>
             ) : null
           }
         />

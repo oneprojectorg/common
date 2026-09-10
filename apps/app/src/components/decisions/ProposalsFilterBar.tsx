@@ -78,7 +78,7 @@ export const ProposalsFilterBar = ({
   count,
   total,
   header,
-  exportControl,
+  adminControls,
 }: {
   controls: ProposalControls;
   view?: ProposalViewControls;
@@ -88,8 +88,12 @@ export const ProposalsFilterBar = ({
   total: number;
   /** Replaces the count — e.g. the admin review title. */
   header?: React.ReactNode;
-  /** Admin-only CSV export control; omitted entirely for non-admins. */
-  exportControl?: React.ReactNode;
+  /**
+   * Admin-only controls that act on the whole phase rather than on the filtered
+   * view — the CSV export and the theme analysis. Omitted entirely for
+   * non-admins, so the surrounding separator goes with them.
+   */
+  adminControls?: React.ReactNode;
 }) => {
   const t = useTranslations();
   // Every option maps to a server-side query param in ProposalsList's
@@ -166,10 +170,10 @@ export const ProposalsFilterBar = ({
             <ProposalViewToggle value={view.value} onChange={view.onChange} />
           </div>
         )}
-        {exportControl && (
+        {adminControls && (
           <div className="flex items-center gap-4">
             <span aria-hidden className="h-6 w-px bg-border" />
-            {exportControl}
+            {adminControls}
           </div>
         )}
       </div>

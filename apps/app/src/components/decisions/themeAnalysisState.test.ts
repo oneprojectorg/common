@@ -1,0 +1,358 @@
+import type { ThemeAnalysisResult } from '@op/api/encoders';
+import { describe, expect, it } from 'vitest';
+
+import type { ThemeAnalysisStatusRecord } from './themeAnalysisState';
+import {
+  isFollowingRun,
+  isTerminalPhase,
+  resolveCompletedThemeAnalysis,
+  resolveFailureCode,
+  resolveRunningLabelKey,
+  resolveStatusPollInterval,
+  resolveThemeAnalysisPhase,
+} from './themeAnalysisState';
+import { THEME_ANALYSIS_POLL_INTERVAL_MS } from './themeAnalysisWait';
+
+const ANALYSIS_ID = '11111111-1111-4111-8111-111111111111';
+const INSTANCE_ID = '22222222-2222-4222-8222-222222222222';
+const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
+
+// The bookkeeping every non-not-found record carries. Spread rather than left
+// out: the type is the server's own response schema, so a fixture missing these
+// is a shape the client will never actually be handed.
+const RECORD_BASE = {
+  analysisId: ANALYSIS_ID,
+  processInstanceId: INSTANCE_ID,
+  userId: AUTH_USER_ID,
+  createdAt: '2026-09-07T12:00:00.000Z',
+} as const;
+
+// The record arm of the response union. Named so a fixture can be spread and
+// overridden without collapsing onto the not-found arm.
+type ThemeAnalysisRecord = Extract<
+  ThemeAnalysisStatusRecord,
+  { analysisId: string }
+>;
+
+const record = (
+  fields: Omit<ThemeAnalysisRecord, keyof typeof RECORD_BASE>,
+): ThemeAnalysisRecord => ({ ...RECORD_BASE, ...fields });
+
+const result: ThemeAnalysisResult = {
+  themes: [{ title: 'Street space', summary: 'Road space.', proposals: [] }],
+  commonGround: [],
+  outliers: [],
+  suggestions: [],
+};
+
+// `analysisId` defaults with `===  undefined` rather than `??`, because `null`
+// is the value half these cases are about and `??` would swallow it.
+const phaseOf = (
+  status?: ThemeAnalysisStatusRecord,
+  overrides: {
+    analysisId?: string | null;
+    hasTimedOut?: boolean;
+    hasSeenRecord?: boolean;
+  } = {},
+) =>
+  resolveThemeAnalysisPhase({
+    analysisId:
+      overrides.analysisId === undefined ? ANALYSIS_ID : overrides.analysisId,
+    hasTimedOut: overrides.hasTimedOut ?? false,
+    status,
+    hasSeenRecord: overrides.hasSeenRecord ?? false,
+  });
+
+describe('resolveThemeAnalysisPhase', () => {
+  it('is idle before anything has been started', () => {
+    expect(phaseOf(undefined, { analysisId: null })).toBe('idle');
+  });
+
+  // The wait ending is not the workflow reporting anything. Calling it `failed`
+  // would claim knowledge the client does not have, and would show a toast for
+  // an analysis that may yet finish.
+  it('is idle after the wait times out, not failed', () => {
+    expect(
+      phaseOf(record({ status: 'processing' }), { hasTimedOut: true }),
+    ).toBe('idle');
+  });
+
+  // The record is legitimately absent for the first moment of every run: the
+  // request seeds it, but the read can land first.
+  it('is pending while the status read has not landed', () => {
+    expect(phaseOf(undefined)).toBe('pending');
+  });
+
+  it('is pending for a record the workflow has not written yet', () => {
+    expect(phaseOf({ status: 'not_found' as const })).toBe('pending');
+  });
+
+  it('is pending for an accepted run nothing has picked up', () => {
+    expect(phaseOf(record({ status: 'pending' }))).toBe('pending');
+  });
+
+  // Only `processing` is evidence something took the job, which is what
+  // separates a slow run from one nothing picked up.
+  it('is processing once the workflow reports it has the job', () => {
+    expect(phaseOf(record({ status: 'processing' }))).toBe('processing');
+  });
+
+  it('is completed on a completed record', () => {
+    expect(phaseOf(record({ status: 'completed' }))).toBe('completed');
+  });
+
+  it('is failed on a failed record', () => {
+    expect(phaseOf(record({ status: 'failed' }))).toBe('failed');
+  });
+
+  // The bug this was added for. A terminal write missing a required field is
+  // stored, fails its schema check on the way back out, and reads as
+  // `not_found` — so a run polled `pending`, turned `not_found`, and stayed
+  // there. Read as still-pending, that spent the facilitator's whole
+  // twenty-five-minute wait and then reported a timeout for a finished
+  // analysis.
+  it('is failed when a record it had already read stops coming back', () => {
+    expect(
+      phaseOf({ status: 'not_found' as const }, { hasSeenRecord: true }),
+    ).toBe('failed');
+  });
+
+  // The other half of that judgement. Absence is ordinary until a record has
+  // been seen: the request seeds it and the first read can win the race.
+  it('is still pending on a not-found before any record has been read', () => {
+    expect(
+      phaseOf({ status: 'not_found' as const }, { hasSeenRecord: false }),
+    ).toBe('pending');
+  });
+
+  // A read that has not landed is undefined, not `not_found`, and the two must
+  // not converge: a dropped request is not evidence about the record. The query
+  // escalates a read it cannot complete; nothing here should call it a failure.
+  it('is pending, not failed, when a read has not landed on a seen run', () => {
+    expect(phaseOf(undefined, { hasSeenRecord: true })).toBe('pending');
+  });
+
+  // A record already read is no reason to reopen a wait the client has ended.
+  it('stays idle when a record goes missing after a timeout', () => {
+    expect(
+      phaseOf(
+        { status: 'not_found' as const },
+        { hasSeenRecord: true, hasTimedOut: true },
+      ),
+    ).toBe('idle');
+  });
+
+  // A terminal record read after the client gave up must not re-open the run:
+  // the button has already returned to idle and dropped the id.
+  it('stays idle when a terminal record arrives after a timeout', () => {
+    expect(
+      phaseOf(record({ status: 'completed' }), { hasTimedOut: true }),
+    ).toBe('idle');
+  });
+});
+
+describe('isFollowingRun', () => {
+  const following = (
+    overrides: Partial<Parameters<typeof isFollowingRun>[0]>,
+  ) =>
+    isFollowingRun({
+      analysisId: ANALYSIS_ID,
+      hasTimedOut: false,
+      isSettled: false,
+      ...overrides,
+    });
+
+  it('follows a run that is under way', () => {
+    expect(following({})).toBe(true);
+  });
+
+  it('follows nothing when no run has started', () => {
+    expect(following({ analysisId: null })).toBe(false);
+  });
+
+  it('stops once the client has given up waiting', () => {
+    expect(following({ hasTimedOut: true })).toBe(false);
+  });
+
+  // The one that matters most: a later read answering `not_found` during a cache
+  // blip would otherwise undo a finished analysis the facilitator is reading.
+  it('stops once the run has reported an outcome', () => {
+    expect(following({ isSettled: true })).toBe(false);
+  });
+});
+
+describe('isTerminalPhase', () => {
+  it.each(['completed', 'failed'] as const)('%s is terminal', (phase) => {
+    expect(isTerminalPhase(phase)).toBe(true);
+  });
+
+  // `idle` is the absence of a run, which a later one replaces — latching on it
+  // would stop the client following the next analysis at all.
+  it.each(['idle', 'pending', 'processing'] as const)(
+    '%s is not terminal',
+    (phase) => {
+      expect(isTerminalPhase(phase)).toBe(false);
+    },
+  );
+});
+
+describe('resolveRunningLabelKey', () => {
+  // The two in-flight labels are the point: a wait stuck on "preparing" means
+  // nothing picked the job up, which is a different thing to chase than a slow
+  // job.
+  it('distinguishes a job nothing has picked up from one that is working', () => {
+    expect(resolveRunningLabelKey('pending')).toBe('preparing');
+    expect(resolveRunningLabelKey('processing')).toBe('analyzing');
+  });
+
+  // A key here would label an idle control as busy, and the button renders the
+  // label into a live region.
+  it.each(['idle', 'completed', 'failed'] as const)(
+    'labels nothing in the %s phase',
+    (phase) => {
+      expect(resolveRunningLabelKey(phase)).toBeNull();
+    },
+  );
+});
+
+describe('resolveFailureCode', () => {
+  it('returns the code the workflow recorded', () => {
+    expect(
+      resolveFailureCode(
+        record({ status: 'failed', errorCode: 'not-enough-text' }),
+      ),
+    ).toBe('not-enough-text');
+  });
+
+  // Never the message. It is composed in `@op/common`, which has no
+  // `useTranslations`, so rendering it would show English whatever the locale.
+  it('ignores the diagnostic message entirely', () => {
+    expect(
+      resolveFailureCode(
+        record({
+          status: 'failed',
+          errorCode: 'analysis-unusable',
+          errorMessage: 'The proposal-common-ground pass returned no JSON.',
+        }),
+      ),
+    ).toBe('analysis-unusable');
+  });
+
+  // A record from before codes existed, or a failure nobody anticipated. The
+  // app has copy for `unknown`; it has none for `undefined`.
+  it('reads a failure with no code as unknown', () => {
+    expect(resolveFailureCode(record({ status: 'failed' }))).toBe('unknown');
+  });
+
+  // The not-found arm of the record union carries no code field at all.
+  it('reads a record with no code field as unknown', () => {
+    expect(resolveFailureCode({ status: 'not_found' as const })).toBe(
+      'unknown',
+    );
+    expect(resolveFailureCode(undefined)).toBe('unknown');
+  });
+
+  // `unknown` reads to the facilitator as "the analysis failed", which is the
+  // wrong sentence: nothing failed the analysis, the record stopped being
+  // readable. This is a client-side key because no record survives to carry a
+  // server-side one.
+  it('names a record that went missing rather than calling it unknown', () => {
+    expect(
+      resolveFailureCode(
+        { status: 'not_found' as const },
+        { hasSeenRecord: true },
+      ),
+    ).toBe('record-lost');
+  });
+
+  // A record that is present and says why it failed always wins. `hasSeenRecord`
+  // is only ever a question about absence.
+  it('prefers a present record\u2019s own code', () => {
+    expect(
+      resolveFailureCode(
+        record({ status: 'failed', errorCode: 'analysis-timed-out' }),
+        { hasSeenRecord: true },
+      ),
+    ).toBe('analysis-timed-out');
+  });
+});
+
+describe('resolveCompletedThemeAnalysis', () => {
+  const completedRecord = record({
+    status: 'completed',
+    result,
+    analyzedCount: 40,
+    total: 120,
+  });
+
+  it('returns the result with the coverage it was built from', () => {
+    expect(resolveCompletedThemeAnalysis(completedRecord)).toEqual({
+      result,
+      analyzedCount: 40,
+      total: 120,
+    });
+  });
+
+  it('returns nothing for a run that has not finished', () => {
+    expect(
+      resolveCompletedThemeAnalysis(record({ status: 'processing' })),
+    ).toBeNull();
+  });
+
+  it('returns nothing when the read has not landed', () => {
+    expect(resolveCompletedThemeAnalysis(undefined)).toBeNull();
+  });
+
+  it('returns nothing for a completed record carrying no result', () => {
+    expect(
+      resolveCompletedThemeAnalysis({ ...completedRecord, result: undefined }),
+    ).toBeNull();
+  });
+
+  // The coverage line is what stops a partial synthesis from reading as a
+  // statement about the whole process, so a result without it is not showable.
+  it.each(['analyzedCount', 'total'] as const)(
+    'returns nothing for a completed record missing %s',
+    (field) => {
+      expect(
+        resolveCompletedThemeAnalysis({
+          ...completedRecord,
+          [field]: undefined,
+        }),
+      ).toBeNull();
+    },
+  );
+
+  // Reachable in principle and a real number: "0 of 400" is a legible answer,
+  // where a truthiness check would silently drop the whole result.
+  it('keeps a zero count rather than reading it as missing', () => {
+    expect(
+      resolveCompletedThemeAnalysis({ ...completedRecord, analyzedCount: 0 }),
+    ).toMatchObject({ analyzedCount: 0, total: 120 });
+  });
+});
+
+describe('resolveStatusPollInterval', () => {
+  // The realtime broadcast is best-effort: `publishMany` swallows its failures
+  // because a client normally recovers on its next full fetch. This run has no
+  // next full fetch — the result has no other route to the screen — so without a
+  // poll a dropped broadcast leaves the button on "Preparing..." for a run that
+  // finished minutes ago and is sitting in the cache.
+  it.each(['idle', 'pending', 'processing'] as const)(
+    'keeps reading while the run is %s',
+    (phase) => {
+      expect(resolveStatusPollInterval(phase)).toBe(
+        THEME_ANALYSIS_POLL_INTERVAL_MS,
+      );
+    },
+  );
+
+  // An answer does not change. Re-asking costs a request per interval for as
+  // long as the dialog is open.
+  it.each(['completed', 'failed'] as const)(
+    'stops once the run is %s',
+    (phase) => {
+      expect(resolveStatusPollInterval(phase)).toBe(false);
+    },
+  );
+});

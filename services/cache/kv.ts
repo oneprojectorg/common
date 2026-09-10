@@ -18,6 +18,21 @@ const REDIS_RACE_TIMEOUT_MS = 300;
 // confirm it isn't clipping successful commands.
 const REDIS_COMMAND_TIMEOUT_MS = 100;
 
+// Per-command socket timeout for cache-only state (`getWithStatus` /
+// `setWithStatus`). Ten times the bound above, because the trade is inverted.
+// For a cache in front of a database a clipped command costs one re-fetch, so
+// failing fast is free and 100ms is right. Where this is the only copy, a
+// clipped command loses the record: a clipped read reports "could not read",
+// and a clipped write leaves a finished job looking unfinished.
+//
+// These are also the largest values in the cache by some margin. A completed
+// theme analysis carries two model passes and every proposal they cite —
+// kilobytes, where a cached row runs to hundreds of bytes — and 100ms was never
+// sized for writing that over TLS. A second is still an order of magnitude
+// under any caller's own budget, and these callers issue one command per
+// request rather than one per row.
+const REDIS_STATE_COMMAND_TIMEOUT_MS = 1_000;
+
 // Sentinel for `Promise.race` — distinguishes the race timeout from a
 // legitimate `null` returned by Redis (cache miss).
 const RACE_TIMEOUT: unique symbol = Symbol('cache.race-timeout');
@@ -26,14 +41,42 @@ const RACE_TIMEOUT: unique symbol = Symbol('cache.race-timeout');
 // record `hit` / `miss` / `timeout` separately so a Redis slowdown does
 // not masquerade as a cold cache.
 //
-// `miss` means Redis answered and held nothing. `timeout` and `error` mean
-// Redis did not answer, which is a different claim. A caller that treats them
-// as a miss states the key is absent, when it only knows it could not look.
-// A caller that holds cache-only state needs that distinction. See
+// `miss` means Redis answered and held nothing. `not-ready`, `timeout` and
+// `error` mean Redis did not answer, which is a different claim. A caller that
+// treats them as a miss states the key is absent, when it only knows it could
+// not look. A caller that holds cache-only state needs that distinction. See
 // `getWithStatus`.
 export type RedisGetResult =
   | { status: 'hit'; data: unknown }
   | { status: 'miss' }
+  | { status: 'not-ready' }
+  | { status: 'timeout' }
+  | { status: 'error' };
+
+/**
+ * What {@link getWithStatus} answers.
+ *
+ * `not-ready` is absent by construction: that function waits the client out and
+ * reports one that stayed down as a `timeout`. So a `miss` from it carries the
+ * guarantee its callers branch on — Redis answered, and held nothing.
+ */
+export type RedisStateGetResult = Exclude<
+  RedisGetResult,
+  { status: 'not-ready' }
+>;
+
+/**
+ * Whether a write to cache-only state landed. See {@link setWithStatus}.
+ *
+ * `ok` means Redis acknowledged the command. Every other status means the value
+ * is not stored, and says why: `unconfigured` is a deployment with no cache at
+ * all, `not-ready` a client that never started accepting commands, `timeout` a
+ * command that outran its socket bound, `error` one Redis refused.
+ */
+export type RedisSetResult =
+  | { status: 'ok' }
+  | { status: 'unconfigured' }
+  | { status: 'not-ready' }
   | { status: 'timeout' }
   | { status: 'error' };
 
@@ -240,7 +283,10 @@ export const cache = async <T>({
     cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
     memCache.set(cacheKey, { data: raced.data }, { ttl: memTtl });
     return raced.data as Awaited<T>;
-  } else if (raced.status === 'timeout') {
+  } else if (raced.status === 'timeout' || raced.status === 'not-ready') {
+    // Both mean Redis did not answer, which is what `cache.timeouts` carries.
+    // Counting a client that never came up as a miss would report a connection
+    // problem as a cold cache, on the one dashboard built to tell them apart.
     cacheMetrics.recordTimeout({ layer: 'command', keyType: type });
   } else {
     cacheMetrics.recordMiss(type);
@@ -314,20 +360,88 @@ export const invalidateMultiple = async ({
 // Internal: returns a discriminated result so `cache()` can split hit / miss
 // / timeout into different metrics. Public `get()` still maps everything
 // non-hit to `null` for back-compat.
-const tryGetFromRedis = async (key: string): Promise<RedisGetResult> => {
-  // No cache configured, or a client that never reached a ready state. Both
-  // mean this deployment has no working cache, so they answer the same way.
-  //
-  // The distinction that matters is narrower: a command that fails on a ready
-  // client. Redis is serving other keys in that case, so a caller cannot read
-  // the failure as "this key is absent". A client that is not ready supports no
-  // such inference, and reporting an error for it would turn a deployment
-  // without Redis into a deployment that answers 500.
-  if (!redis || !redis.isReady) {
+/**
+ * How long a caller that cannot tolerate a false answer waits for the client.
+ *
+ * Sized for a cold start rather than a reconnect: the client is created at
+ * module load and `connect()` is deliberately not awaited, so the first request
+ * a fresh serverless instance serves arrives while the socket is still coming
+ * up. Two seconds covers that handshake and is still far below any caller's own
+ * budget.
+ */
+const REDIS_READY_TIMEOUT_MS = 2_000;
+
+/**
+ * Waits, briefly, for the client to start accepting commands.
+ *
+ * `redis.connect()` is fired at module load and not awaited, so on a fresh
+ * instance there is a window where the client exists and is not ready. Commands
+ * issued in it fail — `disableOfflineQueue` means they are not held — and reads
+ * in it report a miss. For a cache in front of a database that is the right
+ * trade: answer "not cached", fetch from the source, move on.
+ *
+ * It is the wrong trade for cache-only state, where a miss is not a slower path
+ * to the same answer but a different answer. Waiting out the handshake turns a
+ * confident wrong reply into a correct one a moment later.
+ *
+ * Listens for `ready` rather than awaiting the connect promise, so it also
+ * covers a client reconnecting after a drop.
+ *
+ * @returns Whether the client is accepting commands.
+ */
+const whenRedisReady = async (): Promise<boolean> => {
+  const client = redis;
+
+  if (!client) {
+    return false;
+  }
+
+  if (client.isReady) {
+    return true;
+  }
+
+  return await new Promise<boolean>((resolve) => {
+    const settle = (ready: boolean) => {
+      clearTimeout(timer);
+      client.off('ready', onReady);
+      resolve(ready);
+    };
+    const onReady = () => settle(true);
+    // Re-reads `isReady` rather than resolving false outright: the event can
+    // fire between the check above and the listener being attached.
+    const timer = setTimeout(
+      () => settle(client.isReady),
+      REDIS_READY_TIMEOUT_MS,
+    );
+
+    client.once('ready', onReady);
+  });
+};
+
+const tryGetFromRedis = async (
+  key: string,
+  timeoutMs: number = REDIS_COMMAND_TIMEOUT_MS,
+): Promise<RedisGetResult> => {
+  // No cache configured at all. This deployment can hold nothing, which
+  // `cache()` reads as a miss and answers from the source. Reporting an error
+  // instead would turn a deployment without Redis into one that answers 500.
+  if (!redis) {
     return { status: 'miss' };
   }
 
-  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+  // A configured client that is not accepting commands: its own status, not a
+  // miss. `miss` is a claim that the key is absent, and a caller holding
+  // cache-only state acts on that claim by reporting a record that is still
+  // there as gone.
+  //
+  // `getWithStatus` waits the client out before reaching here, so this is
+  // either a deployment-wide connection problem or the client dropping between
+  // that wait and this command. Both are "could not look".
+  if (!redis.isReady) {
+    return { status: 'not-ready' };
+  }
+
+  const signal = AbortSignal.timeout(timeoutMs);
 
   try {
     const data = await redis.withAbortSignal(signal).get(key);
@@ -374,17 +488,66 @@ export const get = async (key: string) => {
  *   Redis answered and held nothing, or this deployment has no working cache.
  *   `timeout` and `error` mean Redis did not answer, so absence is not known.
  */
-export const getWithStatus = async (key: string): Promise<RedisGetResult> =>
-  tryGetFromRedis(key);
+export const getWithStatus = async (
+  key: string,
+): Promise<RedisStateGetResult> => {
+  // The wait is here rather than in `tryGetFromRedis` so it costs only the
+  // callers who need it. A cache in front of a database wants the fast miss and
+  // its own fetch; these callers have no source to fall back to, so for them a
+  // miss from a client that was never ready is a wrong answer, not a slow one.
+  if (redis && !(await whenRedisReady())) {
+    // Not `miss`. The client is configured and did not answer, which is the one
+    // thing this function exists to keep separate from absence.
+    cacheMetrics.recordTimeout({ layer: 'command' });
+
+    return { status: 'timeout' };
+  }
+
+  const result = await tryGetFromRedis(key, REDIS_STATE_COMMAND_TIMEOUT_MS);
+
+  // The client dropped between the wait above and the command. Reported as the
+  // timeout it is, so a `miss` from here keeps meaning "Redis answered and held
+  // nothing" — the guarantee this function exists to provide.
+  if (result.status === 'not-ready') {
+    cacheMetrics.recordTimeout({ layer: 'command' });
+
+    return { status: 'timeout' };
+  }
+
+  return result;
+};
 
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing
-export const set = async (key: string, data: unknown, ttl?: number) => {
+
+/**
+ * Writes a key and reports what happened.
+ *
+ * Shared by {@link set} and {@link setWithStatus}, which differ only in what
+ * they do with the answer and how long they let the command take.
+ */
+const tryWriteToRedis = async (
+  key: string,
+  data: unknown,
+  ttl: number | undefined,
+  timeoutMs: number,
+): Promise<RedisSetResult> => {
   if (!redis) {
-    return;
+    return { status: 'unconfigured' };
   }
 
-  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+  // Same window as the read, and worse consequences. `disableOfflineQueue` means
+  // a command issued before the client is ready is rejected rather than held, so
+  // a write on a fresh instance was landing in the catch below and being logged
+  // and dropped. For a cache that costs a repeat fetch; for cache-only state it
+  // loses the record.
+  if (!(await whenRedisReady())) {
+    cacheMetrics.recordTimeout({ layer: 'command' });
+
+    return { status: 'not-ready' };
+  }
+
+  const signal = AbortSignal.timeout(timeoutMs);
 
   try {
     const serializedData = JSON.stringify(data);
@@ -394,13 +557,54 @@ export const set = async (key: string, data: unknown, ttl?: number) => {
     } else {
       await scopedRedis.setEx(key, ttl || DEFAULT_TTL, serializedData);
     }
+
+    return { status: 'ok' };
   } catch (e) {
     if (signal.aborted) {
       cacheMetrics.recordTimeout({ layer: 'command' });
-      return;
+
+      return { status: 'timeout' };
     }
 
     logger.error('CACHE: error setting to Redis', { error: e });
     cacheMetrics.recordError('set');
+
+    return { status: 'error' };
   }
 };
+
+export const set = async (key: string, data: unknown, ttl?: number) => {
+  await tryWriteToRedis(key, data, ttl, REDIS_COMMAND_TIMEOUT_MS);
+};
+
+/**
+ * Writes a key and reports whether the write landed.
+ *
+ * {@link set} discards that answer, which is right for a cache: a dropped write
+ * costs the next reader one fetch from the source, and there is nothing useful
+ * for the caller to do about it.
+ *
+ * It is wrong for state whose only copy is here. A dropped write there is not a
+ * slower path to the same answer — the record simply does not say what the
+ * caller believes it says, and every reader afterwards is told something false.
+ * The one caller who can still fix that is the one who has the value in hand, so
+ * this hands the failure back: a workflow step can fail and be retried by
+ * Inngest, a request can report the error instead of claiming success.
+ *
+ * Allows the command ten times longer than {@link set} for the reasons on
+ * {@link REDIS_STATE_COMMAND_TIMEOUT_MS} — these values are the largest we
+ * store, and a clipped write of one is the failure this function exists to stop
+ * being silent.
+ *
+ * @param key - Key to write.
+ * @param data - Value to store. `null` deletes the key, as in {@link set}.
+ * @param ttl - Expiry in seconds. Defaults to {@link DEFAULT_TTL}.
+ * @returns A {@link RedisSetResult}. Anything but `ok` means the value is not
+ *   stored.
+ */
+export const setWithStatus = async (
+  key: string,
+  data: unknown,
+  ttl?: number,
+): Promise<RedisSetResult> =>
+  await tryWriteToRedis(key, data, ttl, REDIS_STATE_COMMAND_TIMEOUT_MS);

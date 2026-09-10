@@ -2,7 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { ProposalFilter } from '@op/api/encoders';
+import { type DecisionAccess, ProposalFilter } from '@op/api/encoders';
 import { hasVotingPhase } from '@op/common/client';
 import { match } from '@op/core';
 import {
@@ -44,6 +44,13 @@ import { ResultsStats } from '../ResultsStats';
 interface ResultsPageInstance {
   name: string;
   description: string | null;
+  /**
+   * Role-based capabilities, forwarded to the proposals list so its admin
+   * controls appear here too. Optional because the legacy instance endpoint
+   * does not return it — a legacy results screen simply shows no admin
+   * controls, which is what it did before.
+   */
+  access?: DecisionAccess | null;
   process?: {
     description: string | null;
   } | null;
@@ -232,6 +239,10 @@ function ResultsPageContent({
                   decisionSlug={decisionSlug}
                   initialFilter={ProposalFilter.ALL}
                   phase="results"
+                  // Without this the list reads the viewer as a non-admin and
+                  // hides its whole admin control group, which is why Export and
+                  // Analyze never appeared on results.
+                  permissions={instance.access}
                   pinOffset={pinOffset}
                 />
               </Suspense>

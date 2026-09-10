@@ -92,6 +92,22 @@ export {
   proposalSelectionSchema,
   type ProposalSelection,
 } from './services/decision/schemas/selection';
+// The corpus minimum, surfaced here so the theme analysis button ('use client')
+// can disable itself against the same number the request service enforces —
+// rather than offering an action whose only possible outcome is a validation
+// error, or keeping a second copy that drifts. No server dependencies: the
+// module it comes from imports nothing.
+export { THEME_ANALYSIS_MIN_PROPOSALS } from './services/decision/themes/constants';
+// What the client renders and what it branches on. The pass replies stay
+// server-side — those are prompt contracts, not something a component should be
+// able to reach for.
+export type {
+  ThemeAnalysisErrorCode,
+  ThemeAnalysisScope,
+  ThemeAnalysisOutlier,
+  ThemeAnalysisResponse,
+  ThemeAnalysisResult,
+} from './services/decision/schemas/themeAnalysis';
 export {
   MERGE_NOTE_MAX_LENGTH,
   mergeProposalsInputSchema,

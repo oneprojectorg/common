@@ -22,8 +22,12 @@ export interface ProposalsStickyFilterBarProps {
   controls?: ProposalControls;
   /** Absent when the process collects no location. */
   view?: ProposalViewControls;
-  /** Admin-only CSV export control; omitted entirely for non-admins. */
-  exportControl?: React.ReactNode;
+  /**
+   * Admin-only controls that act on the whole phase rather than on the filtered
+   * view — the CSV export and the theme analysis. Omitted entirely for
+   * non-admins, so the surrounding separator goes with them.
+   */
+  adminControls?: React.ReactNode;
   /**
    * Px offset where the bar pins inside its scroll container — clears whatever
    * sticky chrome sits above it (e.g. the floating Overview/Current toggle).
@@ -43,7 +47,7 @@ export const ProposalsStickyFilterBar = ({
   header,
   controls,
   view,
-  exportControl,
+  adminControls,
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => (
   <StickyFilterBar pinOffset={pinOffset}>
@@ -54,7 +58,7 @@ export const ProposalsStickyFilterBar = ({
         count={count}
         total={total}
         header={header}
-        exportControl={exportControl}
+        adminControls={adminControls}
       />
     ) : (
       (header ?? <MyProposalsHeader />)
