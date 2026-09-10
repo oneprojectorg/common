@@ -77,6 +77,15 @@ export async function submitRevisionResponse({
     );
   }
 
+  if (
+    request.assignment.status !==
+    ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION
+  ) {
+    throw new ValidationError(
+      'Only assignments awaiting author revision can be resubmitted',
+    );
+  }
+
   // A past-phase response would strand the assignment in READY_FOR_RE_REVIEW.
   assertReviewAssignmentPhaseIsCurrent(
     request.assignment.proposal.processInstance,
@@ -160,34 +169,16 @@ export async function submitRevisionResponse({
       throw new CommonError('Failed to update revision request');
     }
 
-    // 3. Re-anchor the assignment to the new snapshot. The pin is a record of
-    // the version this assignment was handed, used by the staleness signal and
-    // the admin views; it is not what the reviewer pane renders (that reads the
-    // live proposal).
-    await tx
-      .update(proposalReviewAssignments)
-      .set({
-        assignedProposalHistoryId: historyRecord.historyId,
-      })
-      .where(eq(proposalReviewAssignments.id, request.assignmentId));
-
-    // 4. Only an assignment this request paused resumes. A COMPLETED
-    // assignment keeps its status — the reviewer already submitted, and the
-    // derived out-of-date flag tells them their review predates this version.
+    // 3. Update assignment: status → READY_FOR_RE_REVIEW, and re-anchor
+    // assignedProposalHistoryId to the new snapshot so reviewers see the
+    // revised proposal instead of the pre-revision one.
     await tx
       .update(proposalReviewAssignments)
       .set({
         status: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+        assignedProposalHistoryId: historyRecord.historyId,
       })
-      .where(
-        and(
-          eq(proposalReviewAssignments.id, request.assignmentId),
-          eq(
-            proposalReviewAssignments.status,
-            ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
-          ),
-        ),
-      );
+      .where(eq(proposalReviewAssignments.id, request.assignmentId));
 
     return resubmittedRequest;
   });
