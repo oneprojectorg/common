@@ -9,7 +9,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
 import {
@@ -46,12 +46,8 @@ export async function requestRevision({
   );
 
   const request = await db.transaction(async (tx) => {
-    // Serializes two concurrent requests on the same assignment, so the
-    // "already open" check below cannot be raced into two pending rows.
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${'review_requests:' + assignmentId}))`,
-    );
-
+    // One open request per assignment. The check and the insert are not
+    // serialized: a concurrent duplicate is prevented in the UI, not here.
     const openRequest = await tx.query.proposalReviewRequests.findFirst({
       where: {
         assignmentId,
