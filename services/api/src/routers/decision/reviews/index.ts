@@ -18,6 +18,7 @@ import { removeCategoryReviewerRouter } from './removeCategoryReviewer';
 import { removeReviewAssignmentsRouter } from './removeReviewAssignments';
 import { requestRevisionRouter } from './requestRevision';
 import { saveReviewDraftRouter } from './saveReviewDraft';
+import { submitProposalRevisionRouter } from './submitProposalRevision';
 import { submitReviewRouter } from './submitReview';
 import { submitRevisionResponseRouter } from './submitRevisionResponse';
 import { updateReviewRouter } from './updateReview';
@@ -42,6 +43,7 @@ export const reviewsRouter = mergeRouters(
   removeReviewAssignmentsRouter,
   requestRevisionRouter,
   saveReviewDraftRouter,
+  submitProposalRevisionRouter,
   submitRevisionResponseRouter,
   submitReviewRouter,
   updateReviewRouter,

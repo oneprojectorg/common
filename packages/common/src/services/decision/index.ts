@@ -112,6 +112,7 @@ export * from './listProposalsRevisionRequests';
 export * from './listProposalFeedback';
 export * from './listProposalRevisionRequests';
 export * from './submitRevisionResponse';
+export * from './submitProposalRevision';
 export * from './submitReview';
 export * from './updateReview';
 export * from './saveReviewDraft';
