@@ -2,11 +2,14 @@ export {
   addUserToOrganization,
   createOrganization,
   createUser,
+  findAuthUserByPhone,
   generateTestEmail,
+  releaseTestPhoneNumber,
   TEST_USER_DEFAULT_PASSWORD,
   type CreateOrganizationOptions,
   type CreateOrganizationResult,
   type CreateUserOptions,
+  type TestAuthAccount,
   type GeneratedUser,
 } from './test-data';
 
