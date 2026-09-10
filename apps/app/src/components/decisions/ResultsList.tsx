@@ -23,14 +23,11 @@ export const ResultsList = ({
   slug,
   instanceId,
   decisionSlug,
-  commentsEnabled,
 }: {
   slug: string;
   instanceId: string;
   /** Decision profile slug for building proposal links in the new route structure */
   decisionSlug?: string;
-  /** The process's "Allow comments" toggle; off drops the cards' comment count. */
-  commentsEnabled?: boolean;
 }) => {
   const t = useTranslations();
 
@@ -77,7 +74,6 @@ export const ResultsList = ({
               proposal={proposal}
               href={viewHref}
               showMetrics
-              commentsEnabled={commentsEnabled}
               totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
               awardedLabel={
                 awardedText ? (

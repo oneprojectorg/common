@@ -3,7 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
-import { areCommentsAllowed, hasVotingPhase } from '@op/common/client';
+import { hasVotingPhase } from '@op/common/client';
 import { match } from '@op/core';
 import {
   Empty,
@@ -48,8 +48,6 @@ interface ResultsPageInstance {
     description: string | null;
   } | null;
   instanceData?: {
-    /** Read through `areCommentsAllowed`, which narrows it itself. */
-    config?: { allowComments?: boolean } | null;
     // Legacy instances omit `rules` on phases; the ballot tab is gated by
     // `isLegacy` there, so `hasVotingPhase` only reads it on the new schema.
     phases?: readonly {
@@ -221,7 +219,6 @@ function ResultsPageContent({
                     slug={profileSlug}
                     instanceId={instanceId}
                     decisionSlug={decisionSlug}
-                    commentsEnabled={areCommentsAllowed(instance.instanceData)}
                   />
                 </Suspense>
               </APIErrorBoundary>

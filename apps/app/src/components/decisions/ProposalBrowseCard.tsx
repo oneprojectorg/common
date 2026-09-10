@@ -22,8 +22,6 @@ interface ProposalBrowseCardProps {
   permissions?: DecisionAccess | null;
   /** Whether any revision request is open on this proposal. */
   hasRevisionRequest?: boolean;
-  /** The process's "Allow comments" toggle; off drops the comment count. */
-  commentsEnabled?: boolean;
   className?: string;
 }
 
@@ -42,7 +40,6 @@ export function ProposalBrowseCard({
   decisionSlug,
   permissions,
   hasRevisionRequest = false,
-  commentsEnabled,
   className,
 }: ProposalBrowseCardProps) {
   const canManageProposals = permissions?.admin ?? false;
@@ -94,7 +91,6 @@ export function ProposalBrowseCard({
       }
       actions={actions}
       showMetrics={!isDraft}
-      commentsEnabled={commentsEnabled}
       // Access is the only gate, same as the proposal page. It used to also
       // exclude editable and revision-requested proposals, back when
       // Like/Follow shared the footer slot with the owner and revise actions —

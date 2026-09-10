@@ -38,6 +38,7 @@ import { ButtonLink } from '../ButtonLink';
 import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
+import { useProcessCapabilities } from './ProcessCapabilitiesContext';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
@@ -78,12 +79,6 @@ export type ProposalPreviewProps = {
   /** Rendered between the header section and the proposal body. */
   headerBanner?: ReactNode;
   /**
-   * Whether the process takes comments. `false` drops the comment count from
-   * the engagement row — it links to a `#proposal-comments` section that isn't
-   * rendered. Defaults to true, matching the process default.
-   */
-  commentsEnabled?: boolean;
-  /**
    * Drives the body region when the collaboration document can't be rendered
    * yet. `'pending'` shows a loading state (still fetching/propagating),
    * `'error'` shows the "content not found" fallback, `'ready'` (default)
@@ -100,7 +95,6 @@ export function ProposalPreview({
   translation,
   submissionMetaSuffix,
   headerBanner,
-  commentsEnabled = true,
   documentState = 'ready',
 }: ProposalPreviewProps) {
   const t = useTranslations();
@@ -277,11 +271,7 @@ export function ProposalPreview({
             </div>
           </div>
 
-          <EngagementRow
-            proposal={proposal}
-            engagement={engagement}
-            commentsEnabled={commentsEnabled}
-          />
+          <EngagementRow proposal={proposal} engagement={engagement} />
         </div>
 
         {headerBanner}
@@ -323,13 +313,13 @@ export function ProposalPreview({
 function EngagementRow({
   proposal,
   engagement,
-  commentsEnabled,
 }: {
   proposal: Proposal;
   engagement?: ProposalEngagement;
-  commentsEnabled: boolean;
 }) {
   const t = useTranslations();
+  // The link targets the comments section; both disappear together.
+  const { comments: commentsEnabled } = useProcessCapabilities();
 
   const likesCount = proposal.likesCount || 0;
   const followersCount = proposal.followersCount || 0;

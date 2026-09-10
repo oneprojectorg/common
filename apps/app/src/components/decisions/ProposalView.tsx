@@ -14,6 +14,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { ContributingIdeas } from './ContributingIdeas';
+import { useProcessCapabilities } from './ProcessCapabilitiesContext';
 import { ProposalComments } from './ProposalComments';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
@@ -54,6 +55,7 @@ export function ProposalView({
   selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
+  const { comments: commentsEnabled } = useProcessCapabilities();
 
   // When the document fetch failed server-side it comes back as
   // `{ type: 'unavailable' }`. That can be transient (still syncing from the
@@ -162,7 +164,6 @@ export function ProposalView({
             : undefined
         }
         translation={translation}
-        commentsEnabled={affordances.comments.enabled}
         submissionMetaSuffix={
           latestRespondedAt ? (
             <RevisedOnBadge respondedAt={latestRespondedAt} />
@@ -175,7 +176,7 @@ export function ProposalView({
         decisionRoot={decisionRoot}
       />
 
-      {affordances.comments.enabled && (
+      {commentsEnabled && (
         <ProposalComments
           proposal={currentProposal}
           decisionRoot={decisionRoot}
@@ -206,7 +207,6 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
-      commentsEnabled={affordances.comments.enabled}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}
