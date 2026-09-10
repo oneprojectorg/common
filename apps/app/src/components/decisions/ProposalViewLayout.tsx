@@ -11,7 +11,6 @@ import { useRouter } from '@/lib/i18n/routing';
 import { ButtonLink } from '../ButtonLink';
 import { LocaleChooser } from '../LocaleChooser';
 import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
-import { useProcessCapabilities } from './ProcessCapabilitiesContext';
 import { ProposalAdminMenu } from './ProposalAdminMenu';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ReportProposalDialog } from './ReportProposalDialog';
@@ -23,6 +22,7 @@ export function ProposalViewLayout({
   editHref,
   canEdit = false,
   canJoin = false,
+  commentsEnabled,
   reportProposalId,
   reviewNotesToggle,
   moderationProposal,
@@ -38,6 +38,12 @@ export function ProposalViewLayout({
    * "Log in" to logged-out and anonymous visitors.
    */
   canJoin?: boolean;
+  /**
+   * The process takes comments. Resolved by `ProposalView`, which renders both
+   * this shell and the comments section the jump button targets — they have to
+   * appear and disappear together.
+   */
+  commentsEnabled: boolean;
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */
   reportProposalId?: string;
@@ -58,8 +64,6 @@ export function ProposalViewLayout({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  // The jump button targets the comments section; both disappear together.
-  const { comments: commentsEnabled } = useProcessCapabilities();
   const backLabel = t('Back to Proposals');
 
   return (

@@ -15,9 +15,9 @@ export interface ProposalAffordances {
 }
 
 /**
- * Nothing on offer. Process-wide capabilities (whether comments are on at all)
- * are not here — they belong to the process, not to this viewer on this
- * proposal, and travel through `ProcessCapabilitiesContext`.
+ * Nothing on offer. Whether the process takes comments is deliberately not
+ * here: it belongs to the process, not to this viewer on this proposal, and is
+ * read off the instance (`useProcessAllowsComments`).
  */
 export const NO_PROPOSAL_AFFORDANCES: ProposalAffordances = {
   review: { feedback: false, revisions: false },

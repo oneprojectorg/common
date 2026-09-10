@@ -14,7 +14,6 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { ContributingIdeas } from './ContributingIdeas';
-import { useProcessCapabilities } from './ProcessCapabilitiesContext';
 import { ProposalComments } from './ProposalComments';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
@@ -23,6 +22,7 @@ import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
+import { useProcessAllowsComments } from './useProcessAllowsComments';
 import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
 
@@ -55,7 +55,9 @@ export function ProposalView({
   selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
-  const { comments: commentsEnabled } = useProcessCapabilities();
+  const commentsEnabled = useProcessAllowsComments(
+    initialProposal.processInstanceId,
+  );
 
   // When the document fetch failed server-side it comes back as
   // `{ type: 'unavailable' }`. That can be transient (still syncing from the
@@ -207,6 +209,7 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
+      commentsEnabled={commentsEnabled}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}

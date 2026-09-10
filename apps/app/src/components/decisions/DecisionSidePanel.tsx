@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
-import { PAGE_LIMIT, nextCursor } from '@op/common/client';
+import { PAGE_LIMIT, areCommentsAllowed, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { useDirection } from '@op/sense/Direction';
@@ -34,7 +34,6 @@ import {
 import { PostUpdate } from '@/components/PostUpdate';
 import { ResourcesTabContent } from '@/components/Resources/ResourcesTabContent';
 
-import { useProcessCapabilities } from './ProcessCapabilitiesContext';
 import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
 
@@ -43,9 +42,15 @@ const isPanelTab = (key: string): key is PanelTab =>
 
 export const DecisionSidePanel = ({
   decisionProfileId,
+  instanceId,
   access,
 }: {
   decisionProfileId: string;
+  /**
+   * The updates feed reads its process settings from this. Threaded because
+   * the panel is keyed by profile, and only the instance carries the config.
+   */
+  instanceId: string;
   access?: DecisionAccess | null;
 }) => {
   const t = useTranslations();
@@ -90,6 +95,7 @@ export const DecisionSidePanel = ({
         <PanelContents
           isOpen={isOpen}
           decisionProfileId={decisionProfileId}
+          instanceId={instanceId}
           canPostUpdate={canPostUpdate}
           canReadUpdates={canReadUpdates}
           activeTab={activeTab}
@@ -104,6 +110,7 @@ export const DecisionSidePanel = ({
 const PanelContents = ({
   isOpen,
   decisionProfileId,
+  instanceId,
   canPostUpdate,
   canReadUpdates,
   activeTab,
@@ -112,6 +119,7 @@ const PanelContents = ({
 }: {
   isOpen: boolean;
   decisionProfileId: string;
+  instanceId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
   activeTab: PanelTab;
@@ -160,6 +168,7 @@ const PanelContents = ({
         {isOpen ? (
           <UpdatesTabContent
             decisionProfileId={decisionProfileId}
+            instanceId={instanceId}
             canPostUpdate={canPostUpdate}
             canReadUpdates={canReadUpdates}
           />
@@ -183,10 +192,12 @@ const PanelContents = ({
 
 const UpdatesTabContent = ({
   decisionProfileId,
+  instanceId,
   canPostUpdate,
   canReadUpdates,
 }: {
   decisionProfileId: string;
+  instanceId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
 }) => {
@@ -213,7 +224,10 @@ const UpdatesTabContent = ({
         {canReadUpdates ? (
           <ErrorBoundary>
             <Suspense fallback={<PostFeedSkeleton numPosts={2} />}>
-              <UpdatesFeed decisionProfileId={decisionProfileId} />
+              <UpdatesFeed
+                decisionProfileId={decisionProfileId}
+                instanceId={instanceId}
+              />
             </Suspense>
           </ErrorBoundary>
         ) : (
@@ -233,10 +247,22 @@ const UpdatesTabContent = ({
   );
 };
 
-const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
+const UpdatesFeed = ({
+  decisionProfileId,
+  instanceId,
+}: {
+  decisionProfileId: string;
+  instanceId: string;
+}) => {
   const t = useTranslations();
   const { user } = useUser();
-  const { comments: commentsEnabled } = useProcessCapabilities();
+
+  // Suspense, not `useProcessAllowsComments`: this feed is already inside a
+  // Suspense boundary, and the overview tab does not preload `getInstance`.
+  // A plain query would resolve to "allowed" on the first paint and blink the
+  // reply button off when the instance lands.
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const commentsEnabled = areCommentsAllowed(instance.instanceData);
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
