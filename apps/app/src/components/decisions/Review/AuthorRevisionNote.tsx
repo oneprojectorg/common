@@ -1,6 +1,7 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
+import type { ProposalReviewRequest } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { useState } from 'react';
 import { LuRefreshCw } from 'react-icons/lu';
@@ -22,10 +23,13 @@ export function RevisedOnBadge({ respondedAt }: { respondedAt: string }) {
 export function AuthorRevisionNote({
   comment,
   respondedAt,
+  revisionRequest,
 }: {
   comment: string;
   /** Resubmission date — rendered in the note's own footer row. */
   respondedAt?: string | null;
+  /** The answered request this note belongs to, shown by "View revision request". */
+  revisionRequest?: ProposalReviewRequest | null;
 }) {
   const t = useTranslations();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,6 +58,7 @@ export function AuthorRevisionNote({
       <ViewRevisionRequestModal
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
+        revisionRequest={revisionRequest}
       />
     </>
   );

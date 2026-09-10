@@ -14,14 +14,19 @@ export function ReviewProposalPane({
   /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
   decisionRoot: string;
 }) {
-  const { assignment, revisionRequest } = useReviewForm();
+  const { assignment, ownLatestRevisionRequest } = useReviewForm();
   const { proposal: translation } = useReviewTranslation();
 
+  // The author's note only exists on the reviewer's own request once it has
+  // been answered, so read the latest own request rather than the still-open
+  // one the rest of the form gates on.
   const respondedAt =
-    revisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
-      ? revisionRequest.respondedAt
+    ownLatestRevisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
+      ? ownLatestRevisionRequest.respondedAt
       : null;
-  const responseComment = respondedAt ? revisionRequest?.responseComment : null;
+  const responseComment = respondedAt
+    ? ownLatestRevisionRequest?.responseComment
+    : null;
 
   return (
     // Same section rhythm as the proposal view: the sections below mirror this
@@ -41,6 +46,7 @@ export function ReviewProposalPane({
             <AuthorRevisionNote
               comment={responseComment}
               respondedAt={respondedAt}
+              revisionRequest={ownLatestRevisionRequest}
             />
           ) : undefined
         }

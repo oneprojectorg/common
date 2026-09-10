@@ -54,6 +54,12 @@ interface ReviewFormState {
   canUpdate: boolean;
   isPausedForRevision: boolean;
   revisionRequest: ProposalReviewRequest | null;
+  /**
+   * This assignment's own most recent request, whatever its state — the only
+   * place a RESUBMITTED request (and so the author's note) is visible, since
+   * `revisionRequest` above is narrowed to still-open requests.
+   */
+  ownLatestRevisionRequest: ProposalReviewRequest | null;
   isOwnRevisionRequest: boolean;
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
@@ -355,6 +361,7 @@ function ReviewFormProviderInner({
       canUpdate,
       isPausedForRevision,
       revisionRequest: effectiveRevisionRequest,
+      ownLatestRevisionRequest: revisionRequest ?? null,
       isOwnRevisionRequest,
       canRequestRevision,
       rubricTemplate,
@@ -384,6 +391,7 @@ function ReviewFormProviderInner({
       updateReview.isPending,
       isPausedForRevision,
       effectiveRevisionRequest,
+      revisionRequest,
       isOwnRevisionRequest,
       canRequestRevision,
       rubricTemplate,

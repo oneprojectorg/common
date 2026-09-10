@@ -112,6 +112,10 @@ export interface CreateRevisionRequestOptions {
   assignmentId: string;
   state?: ProposalReviewRequestState;
   requestComment?: string;
+  /** The author's note left on the resubmission. */
+  responseComment?: string | null;
+  /** ISO timestamp of the resubmission. */
+  respondedAt?: string | null;
   requestedProposalHistoryId?: string | null;
   respondedProposalHistoryId?: string | null;
 }
@@ -210,6 +214,8 @@ export interface CreateReviewScenarioOptions {
   revisionRequest?: {
     state?: ProposalReviewRequestState;
     requestComment?: string;
+    responseComment?: string | null;
+    respondedAt?: string | null;
     requestedProposalHistoryId?: string | null;
     respondedProposalHistoryId?: string | null;
   };
@@ -265,6 +271,8 @@ export async function createReviewScenario(
         assignmentId: assignment.id,
         state: opts.revisionRequest.state,
         requestComment: opts.revisionRequest.requestComment,
+        responseComment: opts.revisionRequest.responseComment ?? null,
+        respondedAt: opts.revisionRequest.respondedAt ?? null,
         requestedProposalHistoryId:
           opts.revisionRequest.requestedProposalHistoryId ?? null,
         respondedProposalHistoryId:
@@ -439,6 +447,8 @@ export async function createRevisionRequest(
     assignmentId,
     state = ProposalReviewRequestState.REQUESTED,
     requestComment = 'Please revise your proposal.',
+    responseComment = null,
+    respondedAt = null,
     requestedProposalHistoryId = null,
     respondedProposalHistoryId = null,
   } = opts;
@@ -449,6 +459,8 @@ export async function createRevisionRequest(
       assignmentId,
       state,
       requestComment,
+      responseComment,
+      respondedAt,
       requestedProposalHistoryId,
       respondedProposalHistoryId,
     })

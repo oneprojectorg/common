@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  type ProposalReviewRequest,
+  ProposalReviewRequestState,
+} from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -16,19 +20,27 @@ import { useReviewForm } from './ReviewFormContext';
 interface ViewRevisionRequestModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Request to display. Defaults to the form's open request; callers that show
+   * an already-answered request (the author's note) pass it explicitly.
+   */
+  revisionRequest?: ProposalReviewRequest | null;
 }
 
 export function ViewRevisionRequestModal({
   isOpen,
   onOpenChange,
+  revisionRequest: revisionRequestOverride,
 }: ViewRevisionRequestModalProps) {
   const t = useTranslations();
   const {
-    revisionRequest,
+    revisionRequest: openRevisionRequest,
     isOwnRevisionRequest,
     cancelRevisionRequest,
     isCancellingRevision,
   } = useReviewForm();
+
+  const revisionRequest = revisionRequestOverride ?? openRevisionRequest;
 
   const handleCancelRequest = () => {
     cancelRevisionRequest();
@@ -75,15 +87,16 @@ export function ViewRevisionRequestModal({
         </div>
 
         <DialogFooter>
-          {isOwnRevisionRequest && (
-            <Button
-              variant="outline"
-              onClick={handleCancelRequest}
-              loading={isCancellingRevision}
-            >
-              {t('Cancel request')}
-            </Button>
-          )}
+          {isOwnRevisionRequest &&
+            revisionRequest.state === ProposalReviewRequestState.REQUESTED && (
+              <Button
+                variant="outline"
+                onClick={handleCancelRequest}
+                loading={isCancellingRevision}
+              >
+                {t('Cancel request')}
+              </Button>
+            )}
           <Button onClick={() => onOpenChange(false)}>{t('Close')}</Button>
         </DialogFooter>
       </DialogContent>
