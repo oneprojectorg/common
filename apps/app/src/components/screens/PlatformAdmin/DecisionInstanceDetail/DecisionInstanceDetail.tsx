@@ -341,6 +341,7 @@ const ConfigurationCard = ({
       label: t('Require collaborative proposals'),
       value: config.requireCollaborativeProposals,
     },
+    { label: t('Allow comments'), value: config.allowComments },
     { label: t('Categories'), value: String(config.categoriesCount) },
   ];
 

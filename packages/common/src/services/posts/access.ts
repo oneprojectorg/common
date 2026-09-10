@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { EntityType, postsToOrganizations } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
@@ -11,6 +12,7 @@ import {
   getUserSession,
 } from '../access';
 import { decisionPermission } from '../decision/permissions';
+import { areCommentsAllowed } from '../decision/utils/processSettings';
 import { getNetworkMembership } from '../user';
 
 export type PostReadAccess = {
@@ -111,6 +113,35 @@ export const assertPostReadAccess = async ({
 };
 
 const WRITE_DENIED = 'You do not have access to write here';
+const COMMENTS_DISABLED = 'Comments are turned off for this process';
+
+// Asserts the process behind a decision profile still accepts comments — the
+// Process Builder's "Allow comments" toggle. Only comments pass through here;
+// an organizer's announcement is not a comment and is never gated on it.
+//
+// Reads the same `areCommentsAllowed` resolver the comment surfaces render
+// from, so a UI that offers the composer and a server that accepts the write
+// can't disagree.
+const assertProcessAllowsComments = async (decisionProfileId: string) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: decisionProfileId },
+    columns: { instanceData: true },
+  });
+
+  // A DECISION profile always has an instance; reaching this means the two
+  // rows disagree. Deny rather than fall through to the permissive default —
+  // and say so, since a silent skip here would read as "comments allowed".
+  if (!instance) {
+    logger.warn('Decision profile has no process instance; denying comment', {
+      decisionProfileId,
+    });
+    throw new UnauthorizedError(WRITE_DENIED);
+  }
+
+  if (!areCommentsAllowed(instance.instanceData)) {
+    throw new UnauthorizedError(COMMENTS_DISABLED);
+  }
+};
 
 // Asserts the caller is inside the walled garden (a network email domain
 // or an allow-list entry). Org-post comments are gated on this — anyone in
@@ -197,6 +228,11 @@ export const assertPostWriteAccess = async ({
             : { decisions: decisionPermission.SUBMIT_PROPOSALS },
         },
       });
+      // Runs after the permission check so a caller who has no business here
+      // still gets the permission error, not a hint about the process config.
+      if (!isAnnouncement) {
+        await assertProcessAllowsComments(rootProfileId);
+      }
       return;
 
     // Org profile: announcement requires `profile: ADMIN` (resolved via

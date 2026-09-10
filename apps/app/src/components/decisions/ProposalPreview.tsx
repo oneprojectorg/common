@@ -78,6 +78,12 @@ export type ProposalPreviewProps = {
   /** Rendered between the header section and the proposal body. */
   headerBanner?: ReactNode;
   /**
+   * Whether the process takes comments. `false` drops the comment count from
+   * the engagement row — it links to a `#proposal-comments` section that isn't
+   * rendered. Defaults to true, matching the process default.
+   */
+  commentsEnabled?: boolean;
+  /**
    * Drives the body region when the collaboration document can't be rendered
    * yet. `'pending'` shows a loading state (still fetching/propagating),
    * `'error'` shows the "content not found" fallback, `'ready'` (default)
@@ -94,6 +100,7 @@ export function ProposalPreview({
   translation,
   submissionMetaSuffix,
   headerBanner,
+  commentsEnabled = true,
   documentState = 'ready',
 }: ProposalPreviewProps) {
   const t = useTranslations();
@@ -270,7 +277,11 @@ export function ProposalPreview({
             </div>
           </div>
 
-          <EngagementRow proposal={proposal} engagement={engagement} />
+          <EngagementRow
+            proposal={proposal}
+            engagement={engagement}
+            commentsEnabled={commentsEnabled}
+          />
         </div>
 
         {headerBanner}
@@ -312,9 +323,11 @@ export function ProposalPreview({
 function EngagementRow({
   proposal,
   engagement,
+  commentsEnabled,
 }: {
   proposal: Proposal;
   engagement?: ProposalEngagement;
+  commentsEnabled: boolean;
 }) {
   const t = useTranslations();
 
@@ -346,15 +359,17 @@ function EngagementRow({
       />
       {/* A link, not a toggle: jumping to the comments works for any viewer,
           signed in or not. `px-2` matches the ghost toggles' inset. */}
-      <ButtonLink
-        href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-        variant="ghost"
-        size="sm"
-        className="px-2 text-muted-foreground hover:text-foreground"
-      >
-        <LuMessageCircle aria-hidden />
-        <AnimatedCount value={commentsCount} /> {commentsNoun}
-      </ButtonLink>
+      {commentsEnabled && (
+        <ButtonLink
+          href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+          variant="ghost"
+          size="sm"
+          className="px-2 text-muted-foreground hover:text-foreground"
+        >
+          <LuMessageCircle aria-hidden />
+          <AnimatedCount value={commentsCount} /> {commentsNoun}
+        </ButtonLink>
+      )}
     </div>
   );
 }

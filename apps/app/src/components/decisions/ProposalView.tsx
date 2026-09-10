@@ -162,6 +162,7 @@ export function ProposalView({
             : undefined
         }
         translation={translation}
+        commentsEnabled={affordances.comments.enabled}
         submissionMetaSuffix={
           latestRespondedAt ? (
             <RevisedOnBadge respondedAt={latestRespondedAt} />
@@ -174,10 +175,12 @@ export function ProposalView({
         decisionRoot={decisionRoot}
       />
 
-      <ProposalComments
-        proposal={currentProposal}
-        decisionRoot={decisionRoot}
-      />
+      {affordances.comments.enabled && (
+        <ProposalComments
+          proposal={currentProposal}
+          decisionRoot={decisionRoot}
+        />
+      )}
     </>
   );
 
@@ -203,6 +206,7 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
+      commentsEnabled={affordances.comments.enabled}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}

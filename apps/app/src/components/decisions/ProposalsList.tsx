@@ -15,6 +15,7 @@ import {
   type Proposal,
   ProposalReviewRequestState,
   type ProposalTranslation,
+  areCommentsAllowed,
   isReviewPhase,
   isVotingPhase,
   nextCursor,
@@ -523,6 +524,8 @@ const ProposalsListContent = ({
     defaultView: 'map',
   });
 
+  const commentsEnabled = areCommentsAllowed(instance.instanceData);
+
   const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
@@ -574,6 +577,7 @@ const ProposalsListContent = ({
         decisionSlug={decisionSlug}
         permissions={permissions}
         hasRevisionRequest={proposalIdsWithRevisionRequest.has(proposal.id)}
+        commentsEnabled={commentsEnabled}
         className={className}
       />
     ),
@@ -583,6 +587,7 @@ const ProposalsListContent = ({
       decisionSlug,
       permissions,
       proposalIdsWithRevisionRequest,
+      commentsEnabled,
     ],
   );
 
@@ -795,6 +800,7 @@ const ProposalsListContent = ({
             slug={slug}
             decisionSlug={decisionSlug}
             permissions={permissions}
+            commentsEnabled={commentsEnabled}
             votedProposalIds={selectedProposalIds}
             {...emptyStateProps}
             isVotingPhase={isInVotingPhase}

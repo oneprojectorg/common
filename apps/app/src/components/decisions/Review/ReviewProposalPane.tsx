@@ -11,9 +11,12 @@ import { useReviewTranslation } from './ReviewTranslationContext';
 
 export function ReviewProposalPane({
   decisionRoot,
+  commentsEnabled,
 }: {
   /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
   decisionRoot: string;
+  /** The process's "Allow comments" toggle; off removes the section entirely. */
+  commentsEnabled: boolean;
 }) {
   const { assignment, ownLatestRevisionRequest } = useReviewForm();
   const { proposal: translation } = useReviewTranslation();
@@ -35,16 +38,19 @@ export function ReviewProposalPane({
         submissionMetaSuffix={
           respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
         }
+        commentsEnabled={commentsEnabled}
         headerBanner={
           <AuthorNotesSection proposalId={assignment.proposal.id} />
         }
       />
 
-      <ProposalComments
-        proposal={assignment.proposal}
-        decisionRoot={decisionRoot}
-        readOnly
-      />
+      {commentsEnabled && (
+        <ProposalComments
+          proposal={assignment.proposal}
+          decisionRoot={decisionRoot}
+          readOnly
+        />
+      )}
     </div>
   );
 }
