@@ -109,8 +109,6 @@ export const Events = {
       revisionRequestId: z.string().uuid(),
     }),
   },
-  // Proposal-scoped resubmission: one author note answers every request that
-  // was open on the proposal, so the event carries the whole answered set.
   reviewProposalRevisionSubmitted: {
     name: 'review/proposal-revision-submitted' as const,
     schema: z.object({

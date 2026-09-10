@@ -36,14 +36,8 @@ export interface SubmitProposalRevisionResult {
 }
 
 /**
- * Resubmits a proposal once, answering every revision request open on it.
- *
- * The unit of a resubmission is the proposal, not one reviewer's request: an
- * author writes one note, and every request open at that moment is answered by
- * it (they share `responseComment`, `respondedAt` and
- * `respondedProposalHistoryId`, which is what groups them into one author
- * note). Requests carried over from an earlier phase are left open — nobody
- * can act on them any more — rather than silently resolved.
+ * Resubmits a proposal once and answers every revision request open on it with
+ * one author note. Requests from an earlier phase stay open.
  */
 export async function submitProposalRevision({
   proposalId,
@@ -104,8 +98,6 @@ export async function submitProposalRevision({
     assignmentsWithOpenRequests.length - answerableAssignments.length;
 
   if (pastPhaseCount > 0) {
-    // A past-phase request can no longer be re-reviewed, so answering it would
-    // strand its assignment. It stays open and visible instead.
     logger.warn('Revision requests from an earlier phase left unanswered', {
       proposalId,
       assignmentCount: pastPhaseCount,
@@ -170,10 +162,6 @@ export async function submitProposalRevision({
 
     const historyId = await findOpenProposalHistoryId(tx, proposal.id);
 
-    // The state guard repeats the read-side check inside the write: a request
-    // answered between the read and here is not answered twice. It is also what
-    // decides a double submit — the loser matches no row and gets "no open
-    // revision requests", rolling the whole resubmission back.
     const updatedRequests = await tx
       .update(proposalReviewRequests)
       .set({
@@ -199,10 +187,6 @@ export async function submitProposalRevision({
       );
     }
 
-    // The pin records the version the assignment's reviewer was asked to
-    // review, so only the paused requester's pin moves. A completed review
-    // keeps its pin, which is what the out-of-date fallback reads for a legacy
-    // review that recorded no version of its own.
     await tx
       .update(proposalReviewAssignments)
       .set({

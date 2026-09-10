@@ -115,7 +115,6 @@ export const proposalReviewRequestSchema = z.object({
   updatedAt: z.string().nullable(),
 });
 
-/** One resubmission answers every open request, so writes return the set. */
 export const proposalReviewRequestListSchema = list(
   proposalReviewRequestSchema,
 );

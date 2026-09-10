@@ -26,8 +26,6 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-// Minimal rubric so a reviewer can submit a review and drive their assignment
-// to COMPLETED while their revision request is still open.
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
   'x-field-order': ['impact'],
@@ -105,8 +103,6 @@ describe.concurrent('submitProposalRevision', () => {
       expect(request.respondedProposalHistoryId).toBeTruthy();
     }
 
-    // One resubmission is one author note: the rows are grouped by the shared
-    // timestamp and history pointer.
     const [first, second] = requests;
     expect(first?.respondedAt).toBe(second?.respondedAt);
     expect(first?.respondedProposalHistoryId).toBe(
@@ -192,8 +188,6 @@ describe.concurrent('submitProposalRevision', () => {
       answeredRequest?.respondedProposalHistoryId,
     );
 
-    // Nothing the author does touches a submitted review: the status and the
-    // pin both stay, so the out-of-date flag is what surfaces the new version.
     const completedAssignment =
       await db.query.proposalReviewAssignments.findFirst({
         where: { id: secondAssignment.id },
