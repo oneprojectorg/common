@@ -52,9 +52,13 @@ interface ReviewFormState {
   isUpdating: boolean;
   /** Update button is enabled — editing an already-submitted review with a valid rubric. */
   canUpdate: boolean;
-  isPausedForRevision: boolean;
-  revisionRequest: ProposalReviewRequest | null;
-  isOwnRevisionRequest: boolean;
+  /** Every REQUESTED revision request on the proposal, newest first. */
+  openRevisionRequests: Array<ProposalReviewRequest>;
+  /** This assignment's own request while it is still open. */
+  ownRevisionRequest: ProposalReviewRequest | null;
+  /** This assignment's own latest request in any state (cancelled, resubmitted). */
+  ownLatestRevisionRequest: ProposalReviewRequest | null;
+  /** The reviewer may open a request: revisions are on and they have none open. */
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
@@ -140,7 +144,7 @@ function ReviewFormProviderInner({
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
   }
 
-  const [{ items: openRevisionRequests }] =
+  const [{ items: openRequestItems }] =
     trpc.decision.listProposalRevisionRequests.useSuspenseQuery(
       {
         proposalId: assignment.proposal.id,
@@ -149,7 +153,10 @@ function ReviewFormProviderInner({
       { refetchOnMount: 'always' },
     );
 
-  const hasAnyOpenRevisionRequest = openRevisionRequests.length > 0;
+  const openRevisionRequests = useMemo(
+    () => openRequestItems.map((item) => item.revisionRequest),
+    [openRequestItems],
+  );
 
   // Only trust the per-assignment request when it is still REQUESTED — a
   // locally cached CANCELLED/RESUBMITTED entry must not gate the UI.
@@ -157,13 +164,6 @@ function ReviewFormProviderInner({
     revisionRequest?.state === ProposalReviewRequestState.REQUESTED
       ? revisionRequest
       : null;
-
-  // Prefer the reviewer's own request; otherwise surface the earliest
-  // outstanding request from any other reviewer on the same proposal so
-  // every reviewer sees the same paused state + feedback.
-  const effectiveRevisionRequest =
-    ownRevisionRequest ?? openRevisionRequests[0]?.revisionRequest ?? null;
-  const isOwnRevisionRequest = !!ownRevisionRequest;
 
   // Seed 'no' for untouched yes/no criteria — the switch already shows "No"
   // before it is touched, so a required criterion must not need a Yes→No
@@ -178,9 +178,10 @@ function ReviewFormProviderInner({
     review?.overallComment ?? '',
   );
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
-  const isPausedForRevision = hasAnyOpenRevisionRequest;
+  // Per reviewer, not per proposal: an open request from someone else neither
+  // blocks this reviewer's own request nor pauses anything they can do here.
   const canRequestRevision =
-    reviewSettings.allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
+    reviewSettings.allowRevisions && !ownRevisionRequest;
 
   // Local: unsaved until "Update review", so navigating away discards edits.
   const [isEditing, setIsEditing] = useState(initiallyEditing);
@@ -219,7 +220,7 @@ function ReviewFormProviderInner({
     overallComment,
     // Drafts are pre-submission only; edits to a submitted review persist
     // solely via "Update review", never autosave.
-    enabled: !isSubmitted && !isPausedForRevision,
+    enabled: !isSubmitted,
   });
 
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
@@ -326,7 +327,7 @@ function ReviewFormProviderInner({
     });
   }, [assignmentId, ownRevisionRequest, cancelRevisionMutate]);
 
-  const canSubmit = isRubricValid && !isSubmitted && !isPausedForRevision;
+  const canSubmit = isRubricValid && !isSubmitted;
   const canUpdate = isRubricValid && isEditing;
 
   // What a host outside the form needs to drive its primary action.
@@ -353,9 +354,9 @@ function ReviewFormProviderInner({
       isEditing,
       isUpdating: updateReview.isPending,
       canUpdate,
-      isPausedForRevision,
-      revisionRequest: effectiveRevisionRequest,
-      isOwnRevisionRequest,
+      openRevisionRequests,
+      ownRevisionRequest,
+      ownLatestRevisionRequest: revisionRequest,
       canRequestRevision,
       rubricTemplate,
       review,
@@ -382,9 +383,9 @@ function ReviewFormProviderInner({
       canEditReview,
       isEditing,
       updateReview.isPending,
-      isPausedForRevision,
-      effectiveRevisionRequest,
-      isOwnRevisionRequest,
+      openRevisionRequests,
+      ownRevisionRequest,
+      revisionRequest,
       canRequestRevision,
       rubricTemplate,
       review,
