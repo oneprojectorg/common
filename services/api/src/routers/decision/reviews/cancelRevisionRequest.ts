@@ -24,7 +24,10 @@ export const cancelRevisionRequestRouter = router({
       });
 
       ctx.registerMutationChannels(
-        await getAssignmentRevisionChannels(input.assignmentId),
+        await getAssignmentRevisionChannels({
+          assignmentId: input.assignmentId,
+          processInstanceId: result.processInstanceId,
+        }),
       );
 
       return proposalReviewRequestSchema.parse(result);

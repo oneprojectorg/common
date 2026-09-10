@@ -23,7 +23,10 @@ export const requestRevisionRouter = router({
       });
 
       ctx.registerMutationChannels(
-        await getAssignmentRevisionChannels(input.assignmentId),
+        await getAssignmentRevisionChannels({
+          assignmentId: input.assignmentId,
+          processInstanceId: result.processInstanceId,
+        }),
       );
 
       // Send revision requested event for notification workflow
