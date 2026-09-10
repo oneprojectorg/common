@@ -61,9 +61,16 @@ export function CookieBanner({
       {...props}
     >
       <AlertTitle id={titleId}>{title}</AlertTitle>
-      {/* The one type override: `text-sm` matches the toast scale this panel
-          sits beside, rather than `Alert`'s roomier in-page default. */}
-      <AlertDescription className="text-sm">{description}</AlertDescription>
+      {/* `text-sm` matches the toast scale this panel sits beside rather than
+          `Alert`'s roomier in-page default. `text-wrap` undoes its
+          `text-balance md:text-pretty`: both shrink the text block to even out
+          line lengths, which reads as a wide right margin against a fixed
+          `max-w-sm` column — measured 62px of dead space under `balance`, 16px
+          under `pretty`, 5px with ordinary wrapping. Good for a headline, wrong
+          for a paragraph in a narrow panel. */}
+      <AlertDescription className="text-sm text-wrap md:text-wrap">
+        {description}
+      </AlertDescription>
       <div className="mt-3 flex gap-2">
         <Button variant="outline" size="sm" onClick={onReject}>
           {rejectLabel}
