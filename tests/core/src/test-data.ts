@@ -3,11 +3,13 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
+  profileUserToAccessRoles,
+  profileUsers,
   profiles,
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { db, eq } from '@op/db/test';
+import { and, db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
@@ -58,6 +60,40 @@ export interface CreateUserOptions {
   password?: string;
 }
 
+/** Network-domain test users hold Platform Admin, as staff do. */
+export const isTestPlatformAdminEmail = (email: string): boolean =>
+  email.toLowerCase().endsWith('@oneproject.org');
+
+/** Writes the role row on the user's own individual-profile membership. */
+export async function grantTestPlatformAdmin(
+  authUserId: string,
+): Promise<void> {
+  const [membership] = await db
+    .select({ profileUserId: profileUsers.id })
+    .from(users)
+    .innerJoin(
+      profileUsers,
+      and(
+        eq(profileUsers.profileId, users.profileId),
+        eq(profileUsers.authUserId, users.authUserId),
+      ),
+    )
+    .where(eq(users.authUserId, authUserId))
+    .limit(1);
+
+  if (!membership) {
+    throw new Error(`No individual-profile membership for ${authUserId}`);
+  }
+
+  await db
+    .insert(profileUserToAccessRoles)
+    .values({
+      profileUserId: membership.profileUserId,
+      accessRoleId: ROLES.PLATFORM_ADMIN.id,
+    })
+    .onConflictDoNothing();
+}
+
 /** Creates a user via Supabase admin API, bypassing email confirmation. */
 export async function createUser(opts: CreateUserOptions) {
   const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
@@ -83,6 +119,10 @@ export async function createUser(opts: CreateUserOptions) {
     .update(users)
     .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
     .where(eq(users.authUserId, data.user.id));
+
+  if (isTestPlatformAdminEmail(email)) {
+    await grantTestPlatformAdmin(data.user.id);
+  }
 
   return {
     id: data.user.id,

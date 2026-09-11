@@ -1,5 +1,4 @@
 import { createClient } from '@op/api/serverClient';
-import { isUserEmailPlatformAdmin } from '@op/common';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
@@ -11,7 +10,7 @@ export default async function AdminLayout({
   const client = await createClient();
   const user = await client.account.getMyAccount();
 
-  if (!user?.email || !isUserEmailPlatformAdmin(user.email)) {
+  if (!user?.access?.platform?.admin) {
     notFound();
   }
 
