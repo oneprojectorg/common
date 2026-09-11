@@ -7,8 +7,8 @@ import {
   type RecommendationValue,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
-import { Badge } from '@op/sense/Badge';
 import { Skeleton } from '@op/sense/Skeleton';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
@@ -301,10 +301,9 @@ function MixedVersionBadge() {
   const t = useTranslations();
 
   return (
-    <Badge variant="warning">
-      <LuRefreshCw data-icon="inline-start" />
+    <StatusBadge variant="revision" icon={LuRefreshCw}>
       {t('Mixed version reviews')}
-    </Badge>
+    </StatusBadge>
   );
 }
 
