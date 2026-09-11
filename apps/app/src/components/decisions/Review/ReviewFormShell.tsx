@@ -12,7 +12,8 @@ export function FormShell({ children }: { children: ReactNode }) {
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-6">
+    // One copy per breakpoint; tests need the visible one.
+    <div data-slot="review-form" className="flex flex-col gap-6">
       <Header3>{t('Review Proposal')}</Header3>
       {children}
     </div>

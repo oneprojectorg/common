@@ -8,6 +8,7 @@ import {
   processInstances,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import type { CreateOrganizationResult } from '@op/test';
 import {
   createDecisionInstance,
   createInstanceMember,
@@ -16,6 +17,8 @@ import {
   getSeededTemplate,
   grantInstanceReviewerRole,
 } from '@op/test';
+import type { Browser, Locator, Page, TestInfo } from '@playwright/test';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,
@@ -24,7 +27,10 @@ import {
   test,
 } from '../fixtures/index.js';
 
-const REQUEST_COMMENT = 'Please add a detailed budget breakdown.';
+/** Seeded before the test runs, on a third reviewer's assignment. */
+const OTHER_COMMENT = 'Please add a detailed budget breakdown.';
+/** Written through the request dialog by reviewer A. */
+const OWN_COMMENT = 'Name the second site and break out the water costs.';
 
 const REVIEW_SCHEMA = {
   id: 'shared-revision-view-schema',
@@ -63,8 +69,8 @@ const REVIEW_SCHEMA = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-// Minimal rubric — just enough to unblock the review page's notFound() when
-// rubricTemplate is null. We never interact with it.
+// `maximum` is what makes `inferCriterionType` read this as `scored`: without
+// it the renderer draws the prompt and no control at all.
 const RUBRIC_TEMPLATE = {
   type: 'object',
   required: ['innovation'],
@@ -74,153 +80,313 @@ const RUBRIC_TEMPLATE = {
       type: 'integer',
       title: 'Innovation',
       'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 2,
       oneOf: [
-        { const: 1, title: '1' },
-        { const: 2, title: '2' },
+        { const: 1, title: '1 — Poor' },
+        { const: 2, title: '2 — Good' },
       ],
     },
   },
 } as const satisfies RubricTemplateSchema;
 
 test.describe('Review — shared revision request view', () => {
-  test('a second reviewer sees the pending revision but cannot cancel it', async ({
+  test('an open request pauses nobody: both reviewers submit, both read every request, and only the owner can cancel', async ({
     browser,
     org,
     supabaseAdmin,
   }, testInfo) => {
-    const testId = `shared-rev-${testInfo.workerIndex}-${Date.now()}`;
-    const template = await getSeededTemplate();
-
-    const instance = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-      schema: REVIEW_SCHEMA,
-    });
-
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: {
-          ...(instance.instance.instanceData as Record<string, unknown>),
-          rubricTemplate: RUBRIC_TEMPLATE,
-        },
-        currentStateId: 'review',
-      })
-      .where(eq(processInstances.id, instance.instance.id));
-
-    const { user: author } = await createInstanceMember({
+    const scenario = await setUpSharedRevisionScenario({
+      org,
       supabaseAdmin,
-      testId: `${testId}-author`,
-      instanceProfileId: instance.profileId,
-    });
-    const { user: reviewerA } = await createInstanceMember({
-      supabaseAdmin,
-      testId: `${testId}-reviewer-a`,
-      instanceProfileId: instance.profileId,
-    });
-    const { user: reviewerB } = await createInstanceMember({
-      supabaseAdmin,
-      testId: `${testId}-reviewer-b`,
-      instanceProfileId: instance.profileId,
+      testInfo,
     });
 
-    await grantInstanceReviewerRole({
-      instanceProfileId: instance.profileId,
-      authUserId: reviewerA.authUserId,
-      email: reviewerA.email,
-      roleName: `ReviewerA-${testId}`,
+    const reviewUrlA = `/en/decisions/${scenario.slug}/reviews/${scenario.reviewerAAssignmentId}`;
+    const pageA = await openAs(browser, scenario.reviewerA.email);
+    await pageA.goto(reviewUrlA, { waitUntil: 'domcontentloaded' });
+    const paneA = reviewPane(pageA);
+
+    await expect(paneA.getByText('Revision requested')).toBeVisible({
+      timeout: 36_000,
     });
-    await grantInstanceReviewerRole({
-      instanceProfileId: instance.profileId,
-      authUserId: reviewerB.authUserId,
-      email: reviewerB.email,
-      roleName: `ReviewerB-${testId}`,
+    // Polite, not sense `Alert`'s default assertive `role="alert"`.
+    const alertA = paneA.getByRole('status');
+    await expect(alertA).toHaveAttribute('aria-live', 'polite');
+    await expect(alertA).toContainText('The author has been notified');
+
+    const requestButtonA = pageA.getByRole('button', {
+      name: 'Request revision',
     });
+    await expect(requestButtonA).toBeEnabled();
+    await requestButtonA.click();
 
-    // Reviewer A owns the revision request.
-    const { proposal, assignedProposalHistoryId, revisionRequest } =
-      await createReviewScenario({
-        instance: { id: instance.instance.id },
-        author,
-        reviewer: { profileId: reviewerA.profileId },
-        proposalData: {
-          title: 'Community Solar Initiative',
-          collaborationDocId: 'test-proposal-view-doc',
-        },
-        assignmentStatus:
-          ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
-        revisionRequest: {
-          state: ProposalReviewRequestState.REQUESTED,
-          requestComment: REQUEST_COMMENT,
-        },
-      });
+    const requestModal = dialog(pageA);
+    await expect(requestModal).toBeVisible();
+    await requestModal
+      .getByRole('textbox', { name: 'What should the author change?' })
+      .fill(OWN_COMMENT);
+    await requestModal
+      .getByRole('button', { name: 'Request revision' })
+      .click();
 
-    if (!revisionRequest) {
-      throw new Error('createReviewScenario did not return a revision request');
-    }
-
-    // Reviewer B has their own assignment on the same proposal — no request.
-    const reviewerBAssignment = await createReviewAssignment({
-      processInstanceId: instance.instance.id,
-      proposalId: proposal.id,
-      reviewerProfileId: reviewerB.profileId,
-      assignedProposalHistoryId,
+    await expect(toast(pageA, 'Revision requested')).toBeVisible({
+      timeout: 10_000,
     });
 
-    const ctx = await browser.newContext();
-    const page = await ctx.newPage();
-    await authenticateAsUser(page, {
-      email: reviewerB.email,
-      password: TEST_USER_DEFAULT_PASSWORD,
+    await expect(requestButtonA).toBeDisabled();
+
+    await paneA.getByRole('button', { name: 'View request' }).click();
+
+    const listModalA = dialog(pageA);
+    await expect(
+      listModalA.getByRole('heading', { name: 'Revision requests' }),
+    ).toBeVisible();
+    await expect(listModalA.getByText(OWN_COMMENT)).toBeVisible();
+    await expect(listModalA.getByText(OTHER_COMMENT)).toBeVisible();
+    await expect(listModalA.getByText(/^Your request •/)).toBeVisible();
+    await expect(listModalA.getByText(scenario.reviewerC.email)).toHaveCount(0);
+    await expect(
+      listModalA.getByRole('button', { name: 'Cancel request' }),
+    ).toHaveCount(1);
+
+    await closeDialog(pageA, listModalA);
+
+    await submitReview(pageA, paneA);
+    await expect(toast(pageA, 'Review submitted successfully')).toBeVisible({
+      timeout: 10_000,
     });
 
-    await page.goto(
-      `/en/decisions/${instance.slug}/reviews/${reviewerBAssignment.id}`,
+    expect(await ownRequestState(scenario.reviewerAAssignmentId)).toBe(
+      ProposalReviewRequestState.REQUESTED,
+    );
+    expect(await ownRequestState(scenario.otherAssignmentId)).toBe(
+      ProposalReviewRequestState.REQUESTED,
     );
 
-    // Shared paused state — banner + "View feedback" affordance render for
-    // reviewer B even though the request is on reviewer A's assignment.
-    // ReviewLayout renders the rubric pane twice (desktop + mobile
-    // responsive containers), so both copies exist in the DOM; pick the
-    // first one — which is the desktop copy that's visible at Playwright's
-    // default 1280px viewport.
-    await expect(
-      page.getByText('Proposal Revision Requested').first(),
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(
-      page.getByRole('button', { name: 'View feedback' }).first(),
-    ).toBeVisible();
+    const pageB = await openAs(browser, scenario.reviewerB.email);
+    await pageB.goto(
+      `/en/decisions/${scenario.slug}/reviews/${scenario.reviewerBAssignmentId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    const paneB = reviewPane(pageB);
 
-    await page.getByRole('button', { name: 'View feedback' }).first().click();
-
-    const modal = page
-      .getByRole('dialog')
-      .and(page.locator(':not([data-slot="toast"])'));
-    await expect(modal).toBeVisible();
+    await expect(paneB.getByText('Revision requested')).toBeVisible({
+      timeout: 36_000,
+    });
     await expect(
-      modal.getByRole('heading', { name: 'Revision request' }),
-    ).toBeVisible();
-    await expect(modal.getByText(REQUEST_COMMENT)).toBeVisible();
+      pageB.getByRole('button', { name: 'Request revision' }),
+    ).toBeEnabled();
 
-    // Ownership gate: Cancel is hidden because the request belongs to
-    // reviewer A, not the current viewer.
+    await paneB.getByRole('button', { name: 'View request' }).click();
+    const listModalB = dialog(pageB);
+    await expect(listModalB.getByText(OWN_COMMENT)).toBeVisible();
+    await expect(listModalB.getByText(OTHER_COMMENT)).toBeVisible();
     await expect(
-      modal.getByRole('button', { name: 'Cancel request' }),
+      listModalB.getByRole('button', { name: 'Cancel request' }),
     ).toHaveCount(0);
-    // Two controls close this dialog: the sense DialogContent's built-in
-    // corner button and the explicit one in the footer. Assert the footer's.
-    await expect(
-      modal
-        .locator('[data-slot="dialog-footer"]')
-        .getByRole('button', { name: 'Close', exact: true }),
-    ).toBeVisible();
+    await expect(listModalB.getByText(/^Your request •/)).toHaveCount(0);
 
-    // Navbar's "Request revision" is hidden too — reviewer B shouldn't race
-    // into a duplicate request while one is already open.
+    await closeDialog(pageB, listModalB);
+
+    await submitReview(pageB, paneB);
+    await expect(toast(pageB, 'Review submitted successfully')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await pageA.goto(reviewUrlA, { waitUntil: 'domcontentloaded' });
+    await expect(paneA.getByText('Revision requested')).toBeVisible({
+      timeout: 36_000,
+    });
+    await paneA.getByRole('button', { name: 'View request' }).click();
+
+    const cancelListModal = dialog(pageA);
+    await cancelListModal
+      .getByRole('button', { name: 'Cancel request' })
+      .click();
+
+    const confirm = pageA.getByRole('alertdialog');
     await expect(
-      page.getByRole('button', { name: 'Request revision' }),
-    ).toHaveCount(0);
+      confirm.getByRole('heading', { name: 'Cancel revision request?' }),
+    ).toBeVisible();
+    await confirm.getByRole('button', { name: 'Cancel request' }).click();
+
+    await expect(toast(pageA, 'Revision request cancelled')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await expect(cancelListModal.getByText(OTHER_COMMENT)).toBeVisible();
+    await expect(cancelListModal.getByText(OWN_COMMENT)).toHaveCount(0);
+    expect(await ownRequestState(scenario.reviewerAAssignmentId)).toBe(
+      ProposalReviewRequestState.CANCELLED,
+    );
+    expect(await ownRequestState(scenario.otherAssignmentId)).toBe(
+      ProposalReviewRequestState.REQUESTED,
+    );
   });
 });
+
+function reviewPane(page: Page): Locator {
+  return page.locator('[data-slot="review-form"]').filter({ visible: true });
+}
+
+/** Toasts are dialogs too, so every dialog lookup has to exclude them. */
+function dialog(page: Page): Locator {
+  return page
+    .getByRole('dialog')
+    .and(page.locator(':not([data-slot="toast"])'));
+}
+
+function toast(page: Page, text: string): Locator {
+  return page.locator('[data-slot="toast"]').filter({ hasText: text });
+}
+
+async function closeDialog(page: Page, modal: Locator): Promise<void> {
+  await page.keyboard.press('Escape');
+  await expect(modal).toHaveCount(0);
+}
+
+async function submitReview(page: Page, pane: Locator): Promise<void> {
+  const submitButton = page.getByRole('button', { name: 'Submit review' });
+  await expect(submitButton).toBeDisabled();
+
+  await pane.getByRole('combobox', { name: 'Innovation' }).click();
+  await page.getByRole('option', { name: '2 — Good' }).click();
+
+  await expect(submitButton).toBeEnabled();
+  await submitButton.click();
+}
+
+async function ownRequestState(
+  assignmentId: string,
+): Promise<string | undefined> {
+  const stored = await db.query.proposalReviewRequests.findFirst({
+    where: { assignmentId },
+    orderBy: { createdAt: 'desc' },
+  });
+  return stored?.state;
+}
+
+/** Review phase, one proposal, three reviewers; reviewer C already has an open request. */
+async function setUpSharedRevisionScenario({
+  org,
+  supabaseAdmin,
+  testInfo,
+}: {
+  org: CreateOrganizationResult;
+  supabaseAdmin: SupabaseClient;
+  testInfo: TestInfo;
+}) {
+  const testId = `shared-rev-${testInfo.workerIndex}-${Date.now()}`;
+  const template = await getSeededTemplate();
+
+  const instance = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: REVIEW_SCHEMA,
+  });
+
+  await db
+    .update(processInstances)
+    .set({
+      instanceData: {
+        ...(instance.instance.instanceData as Record<string, unknown>),
+        rubricTemplate: RUBRIC_TEMPLATE,
+      },
+      currentStateId: 'review',
+    })
+    .where(eq(processInstances.id, instance.instance.id));
+
+  const { user: author } = await createInstanceMember({
+    supabaseAdmin,
+    testId: `${testId}-author`,
+    instanceProfileId: instance.profileId,
+  });
+  const { user: reviewerA } = await createInstanceMember({
+    supabaseAdmin,
+    testId: `${testId}-reviewer-a`,
+    instanceProfileId: instance.profileId,
+  });
+  const { user: reviewerB } = await createInstanceMember({
+    supabaseAdmin,
+    testId: `${testId}-reviewer-b`,
+    instanceProfileId: instance.profileId,
+  });
+  const { user: reviewerC } = await createInstanceMember({
+    supabaseAdmin,
+    testId: `${testId}-reviewer-c`,
+    instanceProfileId: instance.profileId,
+  });
+
+  for (const [reviewer, roleName] of [
+    [reviewerA, 'ReviewerA'],
+    [reviewerB, 'ReviewerB'],
+    [reviewerC, 'ReviewerC'],
+  ] as const) {
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `${roleName}-${testId}`,
+    });
+  }
+
+  const {
+    proposal,
+    assignedProposalHistoryId,
+    assignment: reviewerCAssignment,
+    revisionRequest,
+  } = await createReviewScenario({
+    instance: { id: instance.instance.id },
+    author,
+    reviewer: { profileId: reviewerC.profileId },
+    proposalData: {
+      title: 'Community Solar Initiative',
+      collaborationDocId: 'test-proposal-view-doc',
+    },
+    assignmentStatus: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    revisionRequest: {
+      state: ProposalReviewRequestState.REQUESTED,
+      requestComment: OTHER_COMMENT,
+    },
+  });
+
+  if (!revisionRequest) {
+    throw new Error('createReviewScenario did not return a revision request');
+  }
+
+  const reviewerAAssignment = await createReviewAssignment({
+    processInstanceId: instance.instance.id,
+    proposalId: proposal.id,
+    reviewerProfileId: reviewerA.profileId,
+    assignedProposalHistoryId,
+  });
+  const reviewerBAssignment = await createReviewAssignment({
+    processInstanceId: instance.instance.id,
+    proposalId: proposal.id,
+    reviewerProfileId: reviewerB.profileId,
+    assignedProposalHistoryId,
+  });
+
+  return {
+    slug: instance.slug,
+    reviewerA,
+    reviewerB,
+    reviewerC,
+    otherAssignmentId: reviewerCAssignment.id,
+    reviewerAAssignmentId: reviewerAAssignment.id,
+    reviewerBAssignmentId: reviewerBAssignment.id,
+  };
+}
+
+async function openAs(browser: Browser, email: string): Promise<Page> {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await authenticateAsUser(page, {
+    email,
+    password: TEST_USER_DEFAULT_PASSWORD,
+  });
+  return page;
+}

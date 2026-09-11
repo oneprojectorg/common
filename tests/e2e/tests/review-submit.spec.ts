@@ -306,7 +306,7 @@ test.describe('Review Submit', () => {
     await expect(requestModal).toBeVisible();
 
     await requestModal
-      .getByRole('textbox', { name: 'Feedback for proposal author' })
+      .getByRole('textbox', { name: 'What should the author change?' })
       .fill('Please add more detail to the budget section.');
 
     await requestModal
@@ -340,9 +340,10 @@ test.describe('Review Submit', () => {
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // While a request is active, the navbar "Request revision" button is
-    // hidden and the rubric pane's alert banner exposes "View feedback".
-    await page.getByRole('button', { name: 'View feedback' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Request revision' }),
+    ).toBeDisabled();
+    await page.getByRole('button', { name: 'View request' }).click();
 
     const viewModal = page
       .getByRole('dialog')
@@ -356,6 +357,10 @@ test.describe('Review Submit', () => {
     ).toBeVisible();
 
     await viewModal.getByRole('button', { name: 'Cancel request' }).click();
+
+    const cancelConfirm = page.getByRole('alertdialog');
+    await expect(cancelConfirm).toBeVisible();
+    await cancelConfirm.getByRole('button', { name: 'Cancel request' }).click();
 
     await expect(
       page

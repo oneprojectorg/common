@@ -39,7 +39,7 @@ import {
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { useId, useMemo, useState } from 'react';
-import { LuCircleAlert, LuPlus } from 'react-icons/lu';
+import { LuPlus, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -113,7 +113,7 @@ function MyReviewForm() {
     handleValueChange,
     handleRationaleChange,
     handleOverallCommentChange,
-    isPausedForRevision,
+    openRevisionRequests,
     isEditing,
     review,
   } = useReviewForm();
@@ -132,94 +132,96 @@ function MyReviewForm() {
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+  const revisionAlert =
+    openRevisionRequests.length > 0 ? (
+      <>
+        {/* Polite, not sense `Alert`'s default assertive `role="alert"`: this
+            can land mid-rubric and must not cut off the current announcement. */}
+        <Alert variant="warning" role="status" aria-live="polite">
+          <LuRefreshCw />
+          <AlertTitle>{t('Revision requested')}</AlertTitle>
+          <AlertDescription>
+            {t(
+              'The author has been notified, the proposal will update when they submit a revision.',
+            )}{' '}
+            <Button
+              variant="link"
+              size="inline"
+              className="text-sm underline"
+              onClick={() => setIsViewModalOpen(true)}
+            >
+              {t('View request')}
+            </Button>
+          </AlertDescription>
+        </Alert>
+
+        <ViewRevisionRequestModal
+          isOpen={isViewModalOpen}
+          onOpenChange={setIsViewModalOpen}
+        />
+      </>
+    ) : null;
+
   // A submitted review shows the read-only result unless the reviewer has
   // switched it back into the form via "Edit review".
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
-      <SubmittedReviewView
-        rubricTemplate={template}
-        review={review}
-        // Above the feedback block, per the design — hence the slot.
-        scoreSlot={<TotalScoreCard rubricTemplate={template} values={values} />}
-      />
+      <>
+        {revisionAlert}
+        <SubmittedReviewView
+          rubricTemplate={template}
+          review={review}
+          scoreSlot={
+            <TotalScoreCard rubricTemplate={template} values={values} />
+          }
+        />
+      </>
     );
   }
 
   return (
     <>
-      {isPausedForRevision && (
-        <>
-          <Alert variant="warning">
-            <LuCircleAlert />
-            <AlertTitle>{t('Proposal Revision Requested')}</AlertTitle>
-            <AlertDescription>
-              {t('Reviewing is paused until author submits a revision.')}{' '}
-              <Button
-                variant="link"
-                size="inline"
-                className="text-sm underline"
-                onClick={() => setIsViewModalOpen(true)}
-              >
-                {t('View feedback')}
-              </Button>
-            </AlertDescription>
-          </Alert>
+      {revisionAlert}
 
-          <ViewRevisionRequestModal
-            isOpen={isViewModalOpen}
-            onOpenChange={setIsViewModalOpen}
+      <div className="flex flex-col gap-6">
+        {fields.map((field) => (
+          <RubricCriterionSection
+            key={field.key}
+            field={field}
+            maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
+            value={values[field.key]}
+            onChange={(value) => handleValueChange(field.key, value)}
+            rationaleValue={rationales[field.key] ?? ''}
+            onRationaleChange={(value) =>
+              handleRationaleChange(field.key, value)
+            }
+            rationalePlaceholder={
+              isOverallRecommendationField(field.key)
+                ? t('Add overall notes...')
+                : t('Add reasons or insights...')
+            }
           />
-        </>
-      )}
+        ))}
 
-      {/* `inert` (not just pointer-events-none) so a paused form can't be
-          reached or edited by keyboard either. */}
-      <div
-        inert={isPausedForRevision}
-        className={
-          isPausedForRevision ? 'pointer-events-none opacity-50' : undefined
-        }
-      >
-        <div className="flex flex-col gap-6">
-          {fields.map((field) => (
-            <RubricCriterionSection
-              key={field.key}
-              field={field}
-              maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
-              value={values[field.key]}
-              onChange={(value) => handleValueChange(field.key, value)}
-              rationaleValue={rationales[field.key] ?? ''}
-              onRationaleChange={(value) =>
-                handleRationaleChange(field.key, value)
-              }
-              rationalePlaceholder={
-                isOverallRecommendationField(field.key)
-                  ? t('Add overall notes...')
-                  : t('Add reasons or insights...')
-              }
+        <TotalScoreCard rubricTemplate={template} values={values} />
+
+        {isFeedbackOpen ? (
+          <section className="border-t pt-6">
+            <FeedbackToAuthorField
+              value={overallComment}
+              onChange={handleOverallCommentChange}
             />
-          ))}
-
-          <TotalScoreCard rubricTemplate={template} values={values} />
-
-          {isFeedbackOpen ? (
-            <section className="border-t pt-6">
-              <FeedbackToAuthorField
-                value={overallComment}
-                onChange={handleOverallCommentChange}
-              />
-            </section>
-          ) : anonymousFeedback ? (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setIsFeedbackOpen(true)}
-            >
-              <LuPlus className="size-4" />
-              {t('Feedback to author')}
-            </Button>
-          ) : null}
-        </div>
+          </section>
+        ) : anonymousFeedback ? (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setIsFeedbackOpen(true)}
+          >
+            <LuPlus className="size-4" />
+            {t('Feedback to author')}
+          </Button>
+        ) : null}
       </div>
     </>
   );

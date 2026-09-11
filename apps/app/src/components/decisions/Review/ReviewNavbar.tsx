@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { Button } from '@op/sense/Button';
 import { useState } from 'react';
-import { LuCheck, LuPencil } from 'react-icons/lu';
+import { LuCheck, LuPencil, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,6 +21,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
   const t = useTranslations();
   const { user } = useUser();
   const {
+    reviewSettings,
     canSubmit,
     isSubmitting,
     isSubmitted,
@@ -50,6 +51,17 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
         }
       >
         <div className="flex items-center gap-4">
+          {reviewSettings.allowRevisions && !isEditing && (
+            <Button
+              variant="outline"
+              disabled={!canRequestRevision}
+              onClick={() => setIsRequestModalOpen(true)}
+            >
+              <LuRefreshCw className="size-4" />
+              {t('Request revision')}
+            </Button>
+          )}
+
           {isEditing ? (
             <Button
               onClick={handleUpdate}
@@ -67,24 +79,14 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
               </Button>
             )
           ) : (
-            <>
-              {canRequestRevision && (
-                <Button
-                  variant="outline"
-                  onClick={() => setIsRequestModalOpen(true)}
-                >
-                  {t('Request revision')}
-                </Button>
-              )}
-              <Button
-                onClick={handleSubmit}
-                disabled={!canSubmit}
-                loading={isSubmitting}
-              >
-                <LuCheck className="size-4" />
-                {t('Submit review')}
-              </Button>
-            </>
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              loading={isSubmitting}
+            >
+              <LuCheck className="size-4" />
+              {t('Submit review')}
+            </Button>
           )}
 
           {userCanInteract(user) && (
