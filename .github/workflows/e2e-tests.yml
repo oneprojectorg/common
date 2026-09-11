@@ -23,6 +23,9 @@ jobs:
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
+      # Tiptap Pro registry authentication. pnpm >= 10.34.2 ignores ${...} in a
+      # repository's own .npmrc, so point userconfig at it to keep expansion.
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:56321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
@@ -51,9 +54,6 @@ jobs:
 
       - name: Enable Corepack
         run: corepack enable
-
-      - name: Install pnpm
-        run: corepack prepare pnpm@latest --activate
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -110,7 +110,9 @@ jobs:
         shard: [1, 2]
 
     env:
-      # Tiptap Pro registry authentication
+      # Tiptap Pro registry authentication. pnpm >= 10.34.2 ignores ${...} in a
+      # repository's own .npmrc, so point userconfig at it to keep expansion.
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
       # E2E Supabase instance environment variables (port 56xxx)
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:56321
@@ -144,9 +146,6 @@ jobs:
 
       - name: Enable Corepack
         run: corepack enable
-
-      - name: Install pnpm
-        run: corepack prepare pnpm@latest --activate
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -270,9 +269,6 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Install pnpm
-        run: corepack prepare pnpm@latest --activate
-
       - name: Download blob reports
         uses: actions/download-artifact@v4
         with:
@@ -322,7 +318,9 @@ jobs:
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
-      # Tiptap Pro registry authentication
+      # Tiptap Pro registry authentication. pnpm >= 10.34.2 ignores ${...} in a
+      # repository's own .npmrc, so point userconfig at it to keep expansion.
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
       # E2E Supabase instance environment variables (port 56xxx)
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:56321
@@ -356,9 +354,6 @@ jobs:
 
       - name: Enable Corepack
         run: corepack enable
-
-      - name: Install pnpm
-        run: corepack prepare pnpm@latest --activate
 
       - name: Get pnpm store directory
         id: pnpm-cache
