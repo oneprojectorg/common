@@ -4,6 +4,7 @@ import {
   ProposalReviewState,
   categoryReviewers,
   profiles,
+  proposalReviewRequests,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { createSelectSchema } from 'drizzle-zod';
@@ -108,6 +109,7 @@ export const proposalReviewRequestSchema = z.object({
   state: z.enum(ProposalReviewRequestState),
   requestComment: z.string(),
   responseComment: z.string().nullable(),
+  respondedProposalHistoryId: z.uuid().nullable(),
   requestedAt: z.string().nullable(),
   respondedAt: z.string().nullable(),
   resolvedAt: z.string().nullable(),
@@ -160,6 +162,43 @@ export const proposalRevisionRequestItemSchema = z.object({
 export const proposalRevisionRequestListSchema = list(
   proposalRevisionRequestItemSchema,
 );
+
+// ── Proposal-scoped author revision notes ────────────────────────────
+
+/**
+ * One revision request answered by an author note. Reviewer-authored, so the
+ * reviewer's identity is deliberately absent: revision requests are anonymous
+ * to the author and to the other reviewers.
+ */
+export const proposalRevisionNoteRequestSchema = createSelectSchema(
+  proposalReviewRequests,
+).pick({
+  id: true,
+  requestComment: true,
+  requestedAt: true,
+});
+
+/**
+ * One author note — a single resubmission — with every revision request it
+ * answered. Grouped on `respondedProposalHistoryId`, the proposal version the
+ * author resubmitted — always set on a resubmitted request, so the group key
+ * is never null.
+ */
+export const proposalRevisionNoteSchema = createSelectSchema(
+  proposalReviewRequests,
+)
+  .pick({
+    responseComment: true,
+    respondedAt: true,
+  })
+  .extend({
+    respondedProposalHistoryId: z.uuid(),
+    requests: z.array(proposalRevisionNoteRequestSchema),
+  });
+
+export const proposalRevisionNoteListSchema = list(proposalRevisionNoteSchema);
+
+export type ProposalRevisionNote = z.infer<typeof proposalRevisionNoteSchema>;
 
 // ── Proposal-scoped author feedback schemas ───────────────────────────
 
