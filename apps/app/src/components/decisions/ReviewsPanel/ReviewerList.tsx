@@ -8,9 +8,9 @@ import {
   parseSchemaOptions,
 } from '@op/common/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
-import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
 import { LuChevronRight, LuRefreshCw } from 'react-icons/lu';
@@ -190,7 +190,17 @@ function getReviewsGroupedByRecommendation(
     .map(([value, items]) => ({
       value,
       label: titles.get(value) ?? value,
-      items,
+      // The reviews of one proposal are a complete in-memory set — never
+      // paginated — so the design's "highest score first" order is safe to
+      // apply here rather than in SQL. Reviewer name breaks ties so equal
+      // scores keep a stable order between renders.
+      items: [...items].sort(
+        (a, b) =>
+          b.score - a.score ||
+          (a.reviewer.name ?? a.reviewer.slug).localeCompare(
+            b.reviewer.name ?? b.reviewer.slug,
+          ),
+      ),
     }));
 }
 
@@ -271,10 +281,9 @@ function ReviewerRow({
           next to the chevron gets there without forking the component. */}
       <div className="flex items-center gap-2">
         {item.isReviewOutOfDate && (
-          <Badge variant="warning">
-            <LuRefreshCw data-icon="inline-start" />
+          <StatusBadge variant="revision" icon={LuRefreshCw}>
             {t('Older version')}
-          </Badge>
+          </StatusBadge>
         )}
         <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
       </div>

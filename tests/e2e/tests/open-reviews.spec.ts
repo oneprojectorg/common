@@ -437,7 +437,7 @@ test.describe('Open Reviews', () => {
 
     // Average bar + Yes group + A's row with score.
     await expect(
-      otherPanel.getByText('Average Score', { exact: true }),
+      otherPanel.getByText('Average score:', { exact: true }),
     ).toBeVisible({ timeout: 15_000 });
     await expect(otherPanel.getByText('Yes (1)')).toBeVisible();
     // No "No" group — reviewer B's own "No" review is excluded.
