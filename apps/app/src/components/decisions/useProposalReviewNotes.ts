@@ -18,33 +18,17 @@ import {
 import { useProposalFeedback } from './useProposalFeedback';
 
 export interface ProposalReviewNotes {
-  /** Requests the author still has to answer, on the current phase alone. */
   openRequests: Array<ProposalReviewRequest>;
-  /**
-   * Every past revision cycle, newest first: the author's note plus the
-   * requests that one resubmission answered. Grouped by the server.
-   */
   noteGroups: Array<ProposalRevisionNote>;
-  /** Anonymized reviewer notes, released once their review phase ended. */
   feedbackNotes: Array<ProposalFeedbackItem>;
-  /** Whether the "Review notes" sheet has anything to show. */
   hasReviewNotes: boolean;
-  /** Marks the disclosure with a dot while the author owes an answer. */
   hasUnread: boolean;
   isOpen: boolean;
   setOpen: (open: boolean) => void;
   toggle: () => void;
 }
 
-/**
- * The whole record of a proposal's review notes, read as one unit for the
- * "Review notes" sheet: the open revision requests, every cycle already
- * answered, and the released reviewer notes. Owns the sheet's query state too,
- * so the two surfaces that render it cannot drift.
- *
- * A denied viewer gets empty arrays rather than a thrown error, so the
- * surrounding page still renders.
- */
+/** The "Review notes" sheet's contents and its open state, read as one unit. */
 export function useProposalReviewNotes({
   proposalId,
   phaseId,
@@ -52,14 +36,9 @@ export function useProposalReviewNotes({
   onOpen,
 }: {
   proposalId: string;
-  /**
-   * The instance's current phase — what `submitProposalRevision` answers
-   * requests against. `null` (no phase configured) means nothing is
-   * answerable, so no open request is read at all.
-   */
+  /** The instance's current phase; `null` leaves nothing answerable. */
   phaseId: string | null;
   enabled: boolean;
-  /** Runs as the sheet opens; the editor uses it to close its other aside. */
   onOpen?: () => void;
 }): ProposalReviewNotes {
   const [
@@ -80,8 +59,7 @@ export function useProposalReviewNotes({
       },
       { enabled: enabled && phaseId !== null, throwOnError: false },
     ),
-    // Deliberately unfiltered: the answered cycles of earlier phases are part
-    // of the record the sheet shows.
+    // Unfiltered on purpose: earlier phases' answered cycles belong here too.
     t.decision.listProposalRevisionNotes(
       { proposalId },
       { enabled, throwOnError: false },
@@ -108,8 +86,7 @@ export function useProposalReviewNotes({
         onOpen?.();
       }
 
-      // `reviewRevision` and `feedback` are deep links from the notification
-      // emails, so closing has to clear them too or the sheet reopens.
+      // Closing has to clear the deep-link params too, or the sheet reopens.
       void setQueryState(
         {
           reviewNotes: open ? true : null,
@@ -122,8 +99,7 @@ export function useProposalReviewNotes({
     [onOpen, setQueryState],
   );
 
-  // `?reviewRevision=<id>` names one request and `?feedback=true` named the
-  // panel that has since merged in; both stay working aliases for the sheet.
+  // `?reviewRevision=<id>` and `?feedback=true` are email deep-link aliases.
   const isOpen =
     hasReviewNotes &&
     (isReviewNotesRequested || Boolean(reviewRevision) || feedback);

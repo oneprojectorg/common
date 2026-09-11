@@ -11,22 +11,13 @@ import { useTranslations } from '@/lib/i18n';
 import { RevisionFeedbackCard } from './proposalEditor/RevisionFeedbackCard';
 
 interface ReviewNotesPanelProps {
-  /** Requests the author still has to answer, newest first. */
   openRequests: Array<ProposalReviewRequest>;
-  /** Every past revision cycle, newest first. */
   noteGroups: Array<ProposalRevisionNote>;
-  /** Anonymized reviewer notes, released once their review phase ended. */
   feedbackNotes: Array<ProposalFeedbackItem>;
-  /** The viewer wrote the proposal, which is all that changes the note title. */
   isAuthor: boolean;
 }
 
-/**
- * The body of the "Review notes" sheet: one record per proposal, the same for
- * every viewer the sheet admits — the open revision requests, then the released
- * reviewer notes, then every revision cycle already answered, newest first.
- * Requests and reviewer notes are anonymous, so no reviewer is named.
- */
+/** Open revision requests, then reviewer notes, then the answered cycles. */
 export function ReviewNotesPanel({
   openRequests,
   noteGroups,
@@ -86,8 +77,7 @@ export function ReviewNotesPanel({
           key={group.respondedProposalHistoryId}
           className="flex flex-col gap-4"
         >
-          {/* A resubmission can carry no note, and then the cycle is just the
-              requests it answered. */}
+          {/* A resubmission can carry no note. */}
           {group.responseComment ? (
             <RevisionFeedbackCard
               comment={group.responseComment}

@@ -12,7 +12,6 @@ import {
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Header2 } from '@op/sense/Header';
-import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
 import {
@@ -59,26 +58,14 @@ export function ProposalEditor({
   asideHeaderIcons,
   reviewNotesSlot,
   hasOpenRevisionRequests = false,
-  children,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  /** The "Review notes" disclosure, rendered in the header after Share. */
   reviewNotesSlot?: ReactNode;
-  /**
-   * Drives revision mode in the header and the resubmit modal. Which pane the
-   * document sits beside is the caller's business, not this prop's.
-   */
   hasOpenRevisionRequests?: boolean;
-  /**
-   * The pane beside the document, expected to be a `SplitPane.Pane`.
-   * Absent, the document gets the full width.
-   */
-  // TODO: restructure the children => aside mapping
-  children?: ReactNode;
 }) {
   const { user } = useRequiredUser();
   const t = useTranslations();
@@ -122,7 +109,6 @@ export function ProposalEditor({
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
       hasOpenRevisionRequests={hasOpenRevisionRequests}
-      asidePane={children}
     />
   );
 
@@ -155,7 +141,6 @@ function ProposalEditorInner({
   collaborationDocId,
   proposalTemplate,
   hasOpenRevisionRequests,
-  asidePane,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -166,7 +151,6 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
   hasOpenRevisionRequests: boolean;
-  asidePane: ReactNode;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -551,29 +535,14 @@ function ProposalEditorInner({
           menu on the selection, so there is no toolbar row above the form. */}
       <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
-          {asidePane ? (
-            <SplitPane className="mx-auto w-full max-w-6xl">
-              {/* Matches the standalone column below: `editorBody`'s sections
-                  mirror this gap in their own `pt`, keeping the rule centred. */}
-              <SplitPane.Pane
-                id="proposal"
-                label={t('Proposal')}
-                className="gap-6 sm:gap-10"
-              >
-                {editorBody}
-              </SplitPane.Pane>
-              {asidePane}
-            </SplitPane>
-          ) : (
-            <div className="px-4 py-8 sm:px-6 sm:py-14">
-              <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
-                <Header2>
-                  {isEditMode ? t('Edit proposal') : t('Create proposal')}
-                </Header2>
-                {editorBody}
-              </div>
+          <div className="px-4 py-8 sm:px-6 sm:py-14">
+            <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+              <Header2>
+                {isEditMode ? t('Edit proposal') : t('Create proposal')}
+              </Header2>
+              {editorBody}
             </div>
-          )}
+          </div>
         </div>
       </div>
 

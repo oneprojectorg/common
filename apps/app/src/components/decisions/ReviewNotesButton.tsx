@@ -7,19 +7,12 @@ import { useTranslations } from '@/lib/i18n';
 
 interface ReviewNotesButtonProps {
   onToggle: () => void;
-  /** Whether the review-notes sheet is currently showing. */
   isExpanded: boolean;
-  /**
-   * Marks the button with a dot while the author owes an answer. Omit it on a
-   * surface that never nags — the read view, which offers no resubmission.
-   */
+  /** Omitted on surfaces that cannot clear it — only the editor nags. */
   hasUnread?: boolean;
 }
 
-/**
- * Header disclosure for the review-notes sheet (Figma: outline button, label
- * visible, unread dot on the inline-end corner).
- */
+/** Header disclosure for the review-notes sheet. */
 export function ReviewNotesButton({
   onToggle,
   isExpanded,

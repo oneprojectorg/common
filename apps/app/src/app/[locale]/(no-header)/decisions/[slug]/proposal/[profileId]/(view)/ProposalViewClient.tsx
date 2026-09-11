@@ -33,8 +33,6 @@ function ProposalViewPageContent({
   const phases = instance.instanceData?.phases ?? [];
   const affordances = getProposalAffordances({ instance, proposal, user });
 
-  // Same check `getProposalAffordances` makes for author standing — the sheet
-  // is one record for every viewer, and only its note title reads differently.
   const isAuthor =
     !!user?.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;

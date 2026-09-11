@@ -25,7 +25,6 @@ interface ProposalEditorHeaderProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
-  /** The "Review notes" disclosure, rendered after Share (Figma order). */
   reviewNotesSlot?: ReactNode;
   /**
    * Optional save/version status text rendered in the bar's left cluster,

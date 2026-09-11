@@ -99,14 +99,9 @@ function EditProposalPageContent() {
 
   const { user } = useRequiredUser();
 
-  // Mirrors the server gate for the reads below: author standing, decision
-  // admin, or review capability. Deliberately not `review.revisions` — that
-  // adds a review-phase condition, and an author has to see a pending request
-  // whatever phase the decision is in.
+  // Not `review.revisions`: an author sees a pending request in any phase.
   const affordances = getProposalAffordances({ instance, proposal, user });
 
-  // Same check `getProposalAffordances` makes — an admin can open this editor
-  // too, and the note card is titled for whoever is reading it.
   const isAuthor =
     !!user.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
@@ -144,20 +139,15 @@ function EditProposalPageContent() {
     versionHistoryLabel,
   });
 
-  // Whoever the sheet admits reads the same record — the author, a decision
-  // admin, or anyone with review capability. Gated rather than firing for every
-  // viewer and swallowing the server's UnauthorizedError.
+  // Gated rather than firing for every viewer and swallowing a 403.
   const reviewNotes = useProposalReviewNotes({
     proposalId: proposal.id,
     phaseId: instance.currentStateId,
     enabled: affordances.review.feedback,
-    // Both are inline-end sheets; leaving the version history open would stack
-    // one on top of the other.
+    // Both are inline-end sheets, so they would otherwise stack.
     onOpen: () => setAsideState({ aside: null }),
   });
 
-  // Only the open requests put the editor in revision mode; the answered
-  // cycles are a record the sheet keeps showing afterwards.
   const hasOpenRevisionRequests = reviewNotes.openRequests.length > 0;
 
   // The version-history and revision-request controls are interactive editing
@@ -213,21 +203,20 @@ function EditProposalPageContent() {
           asideHeaderIcons={headerIcons}
           reviewNotesSlot={reviewNotesSlot}
           hasOpenRevisionRequests={hasOpenRevisionRequests}
-          reviewNotesAside={
-            <ProposalEditorAsideSheet
-              open={reviewNotes.isOpen}
-              title={t('Review notes')}
-              onClose={() => reviewNotes.setOpen(false)}
-            >
-              <ReviewNotesPanel
-                openRequests={reviewNotes.openRequests}
-                noteGroups={reviewNotes.noteGroups}
-                feedbackNotes={reviewNotes.feedbackNotes}
-                isAuthor={isAuthor}
-              />
-            </ProposalEditorAsideSheet>
-          }
-        />
+        >
+          <ProposalEditorAsideSheet
+            open={reviewNotes.isOpen}
+            title={t('Review notes')}
+            onClose={() => reviewNotes.setOpen(false)}
+          >
+            <ReviewNotesPanel
+              openRequests={reviewNotes.openRequests}
+              noteGroups={reviewNotes.noteGroups}
+              feedbackNotes={reviewNotes.feedbackNotes}
+              isAuthor={isAuthor}
+            />
+          </ProposalEditorAsideSheet>
+        </ProposalEditorContent>
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
@@ -250,7 +239,7 @@ function ProposalEditorContent({
   asideHeaderIcons,
   reviewNotesSlot,
   hasOpenRevisionRequests,
-  reviewNotesAside,
+  children,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -261,8 +250,7 @@ function ProposalEditorContent({
   asideHeaderIcons: React.ReactNode[];
   reviewNotesSlot: React.ReactNode;
   hasOpenRevisionRequests: boolean;
-  /** The "Review notes" sheet — an overlay, so it sits outside the editor. */
-  reviewNotesAside: React.ReactNode;
+  children: React.ReactNode;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -308,10 +296,8 @@ function ProposalEditorContent({
     <div
       className={cn(
         'flex h-screen bg-background transition-[padding]',
-        // Only the version history reserves the gutter: it previews a version
-        // against the live document, so the two have to sit side by side. The
-        // review-notes sheet slides over the editor instead (Figma 19881:9335)
-        // — the author closes it to reach the header's "Update".
+        // Only the version history reserves the gutter; it previews a version
+        // beside the live document. The review-notes sheet slides over instead.
         isVersionsAsideOpen && 'sm:pe-96',
       )}
     >
@@ -326,7 +312,7 @@ function ProposalEditorContent({
         reviewNotesSlot={reviewNotesSlot}
         hasOpenRevisionRequests={hasOpenRevisionRequests}
       />
-      {reviewNotesAside}
+      {children}
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays
           visible and scrollable beside it. Mobile: a modal drawer, which covers
           the viewport anyway. */}

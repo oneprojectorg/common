@@ -33,8 +33,7 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       affordances={NO_PROPOSAL_AFFORDANCES}
-      // No affordances on a legacy instance, so no sheet, no note title, and
-      // no phase to answer revision requests against.
+      // A legacy instance has no revision cycle at all.
       isAuthor={false}
       currentPhaseId={null}
       decisionRoot={decisionRoot}

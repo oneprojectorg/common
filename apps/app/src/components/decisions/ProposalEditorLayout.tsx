@@ -20,7 +20,6 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
-  /** The "Review notes" disclosure, rendered in the header after Share. */
   reviewNotesSlot?: ReactNode;
   /** Optional save/version status text shown in the header's left cluster */
   statusSlot?: ReactNode;
@@ -28,17 +27,12 @@ interface ProposalEditorLayoutProps {
   readOnlyMode?: boolean;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
-  /** The proposal's ID, used to resubmit a revision */
   proposalId: string;
   /** The current user's decision permissions on this proposal */
   access?: {
     admin: boolean;
     inviteMembers: boolean;
   };
-  /**
-   * Whether any revision request is still open on the proposal. One
-   * resubmission answers them all, so the count never reaches the header.
-   */
   hasOpenRevisionRequests?: boolean;
 }
 

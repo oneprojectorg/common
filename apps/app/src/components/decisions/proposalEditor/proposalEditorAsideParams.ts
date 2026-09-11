@@ -7,13 +7,9 @@ import {
 
 export const proposalEditorAsideValues = ['versions'] as const;
 
-/**
- * Deep link from a revision-request notification. The sheet lists every open
- * request, so the id only decides whether it opens.
- */
+/** Notification deep link; the id only decides whether the sheet opens. */
 export const proposalEditorReviewRevisionParser = parseAsString;
 
-/** The author's "Review notes" sheet, which names no single request. */
 export const proposalReviewNotesParser = parseAsBoolean.withDefault(false);
 
 /**

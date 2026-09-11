@@ -40,12 +40,6 @@ export function ProposalViewLayout({
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */
   reportProposalId?: string;
-  /**
-   * The header's "Review notes" disclosure — the one panel holding the
-   * revision-cycle record and the released reviewer notes. No unread dot: the
-   * read view offers no resubmission, so it has nothing to nag the author
-   * about. The editor, which does, owns that dot.
-   */
   reviewNotesToggle?: {
     onToggle: () => void;
     isActive: boolean;

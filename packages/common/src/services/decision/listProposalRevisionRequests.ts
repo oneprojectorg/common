@@ -14,9 +14,8 @@ import {
  *
  * For the author's cross-proposal inbox, use listProposalsRevisionRequests.
  *
- * `phaseId` narrows the read to the assignments pinned to one phase. Pass the
- * instance's current phase on any screen that offers the author a resubmission
- * — that is the set `submitProposalRevision` will answer.
+ * `phaseId` narrows to one phase's assignments — pass the current phase on any
+ * screen offering a resubmission, since that is what the submit will answer.
  */
 export async function listProposalRevisionRequests({
   phaseId,

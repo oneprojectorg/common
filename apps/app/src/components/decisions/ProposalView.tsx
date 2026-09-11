@@ -47,13 +47,8 @@ export function ProposalView({
   proposal: Proposal;
   /** What this viewer may see here — see `getProposalAffordances`. */
   affordances: ProposalAffordances;
-  /** The viewer wrote the proposal; only the note card's title depends on it. */
   isAuthor: boolean;
-  /**
-   * The instance's current phase (`processInstances.currentStateId`), which is
-   * the phase whose revision requests a resubmission can answer. `null` on a
-   * legacy instance, which has no revision cycle at all.
-   */
+  /** The instance's current phase; `null` on a legacy instance. */
   currentPhaseId: string | null;
   decisionRoot: string;
   selection: ProposalSelection | null;
@@ -129,9 +124,7 @@ export function ProposalView({
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  // `feedback`, not `revisions`: the sheet is the same record for every viewer
-  // it admits, and it keeps showing after the review phase ends — which is
-  // exactly when `revisions` goes false.
+  // `feedback`, not `revisions`: the sheet outlives the review phase.
   const reviewNotes = useProposalReviewNotes({
     proposalId: currentProposal.id,
     phaseId: currentPhaseId,
@@ -147,8 +140,7 @@ export function ProposalView({
     dismissBanner,
   } = useTranslateProposal(currentProposal);
 
-  // Most recent resubmission (if any) — drives the "Revised on" badge shown
-  // inline in the submitter metadata row. The server orders newest first.
+  // The server orders newest first.
   const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
 
   const proposalBody: ReactNode = (
