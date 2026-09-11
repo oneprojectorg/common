@@ -1,4 +1,4 @@
-import { and, db, desc, eq, isNotNull } from '@op/db/client';
+import { and, db, desc, eq } from '@op/db/client';
 import {
   ProposalReviewRequestState,
   proposalReviewAssignments,
@@ -17,8 +17,12 @@ import type { ProposalRevisionNote } from './schemas/reviews';
  * any user with the REVIEW capability on the instance.
  *
  * Groups are keyed on `respondedProposalHistoryId` — the proposal version the
- * author resubmitted. `reviewerProfileId` is never selected: revision requests
- * are anonymous to the author and to the other reviewers.
+ * author resubmitted — falling back to the request's own id when that pointer
+ * is null. The writer always sets it, but the FK is `onDelete: 'set null'`, so
+ * a resubmitted request outlives the snapshot it pointed to; without the
+ * fallback, that note would silently disappear instead of standing alone.
+ * `reviewerProfileId` is never selected: revision requests are anonymous to
+ * the author and to the other reviewers.
  */
 export async function listProposalRevisionNotes({
   proposalId,
@@ -56,10 +60,6 @@ export async function listProposalRevisionNotes({
           proposalReviewRequests.state,
           ProposalReviewRequestState.RESUBMITTED,
         ),
-        // A resubmitted row always carries the version pointer — both writers
-        // set it in the same statement as the state — so this only guards
-        // against a row no writer produces.
-        isNotNull(proposalReviewRequests.respondedProposalHistoryId),
       ),
     )
     .orderBy(
@@ -72,26 +72,26 @@ export async function listProposalRevisionNotes({
 
   // The rows arrive ordered by the database, and one resubmission stamps every
   // row it answered with the same comment and timestamp, so the first row of a
-  // key carries the note and the rest only add their request.
+  // key carries the note and the rest only add their request. A row whose
+  // pointer was nulled out by the history snapshot's deletion has no sibling
+  // to group with, so it keys on its own id and stands alone.
   for (const row of rows) {
-    if (row.respondedProposalHistoryId === null) {
-      continue;
-    }
+    const groupKey = row.respondedProposalHistoryId ?? row.id;
 
     const request = {
       id: row.id,
       requestComment: row.requestComment,
       requestedAt: row.requestedAt,
     };
-    const group = groups.get(row.respondedProposalHistoryId);
+    const group = groups.get(groupKey);
 
     if (group) {
       group.requests.push(request);
       continue;
     }
 
-    groups.set(row.respondedProposalHistoryId, {
-      respondedProposalHistoryId: row.respondedProposalHistoryId,
+    groups.set(groupKey, {
+      respondedProposalHistoryId: groupKey,
       responseComment: row.responseComment,
       respondedAt: row.respondedAt,
       requests: [request],
