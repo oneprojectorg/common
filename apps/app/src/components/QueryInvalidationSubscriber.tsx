@@ -7,7 +7,7 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { QueryClientContext } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
-const MAX_INVALIDATED_IDS = 500;
+import { ChannelInvalidationDedup } from './channelInvalidationDedup';
 
 /**
  * Returns the QueryClient if inside a QueryClientProvider, throws a descriptive error otherwise.
@@ -76,11 +76,13 @@ export function QueryInvalidationSubscriber() {
  * - mutation:added: Invalidates queries when mutations occur
  *
  * Also forwards TanStack QueryCache 'removed' events to the registry so
- * per-channel refcounts decrement, and bounds the mutation-id dedup cache.
+ * per-channel refcounts decrement.
  */
 function useInvalidateQueries(enabled: boolean): void {
   const queryClient = useRequiredQueryClient();
-  const invalidatedMutationIds = useRef<Map<string, true>>(new Map());
+  const dedupRef = useRef<ChannelInvalidationDedup>(
+    new ChannelInvalidationDedup(),
+  );
   const unsubscribersRef = useRef<Map<ChannelName, () => void>>(new Map());
   const initializedRef = useRef(false);
 
@@ -90,19 +92,15 @@ function useInvalidateQueries(enabled: boolean): void {
 
   const handleInvalidation = useCallback(
     async ({ channels, mutationId }: RegistryEvents['mutation:added']) => {
-      const seen = invalidatedMutationIds.current;
-      if (seen.has(mutationId)) {
+      // Per channel, not per mutation: this mutation's other channels each
+      // arrive as their own message carrying the same id.
+      const freshChannels = dedupRef.current.take(mutationId, channels);
+      if (freshChannels.length === 0) {
         return;
       }
-      seen.set(mutationId, true);
-      if (seen.size > MAX_INVALIDATED_IDS) {
-        const oldest = seen.keys().next().value;
-        if (oldest !== undefined) {
-          seen.delete(oldest);
-        }
-      }
 
-      const queryKeys = queryChannelRegistry.getQueryKeysForChannels(channels);
+      const queryKeys =
+        queryChannelRegistry.getQueryKeysForChannels(freshChannels);
 
       await Promise.allSettled(
         queryKeys.map((queryKey) =>
