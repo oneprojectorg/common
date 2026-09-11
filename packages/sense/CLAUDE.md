@@ -93,11 +93,74 @@ reimplement or work around any of it. These four are yours:
    whole surface must be clickable, use `Button variant="bare"`, which keeps
    button semantics without imposing button styling.
 
+Check your work in the **A11y** panel of the component's story — it runs axe
+against whatever is on screen, live.
+
+### RTL: layout, and then direction
+
+Logical properties (`ms-`, `ps-`, `start-`, `text-start`) get the *layout*
+right. They do nothing for *text direction*, which is a separate bug with a
+separate fix.
+
+The app ships Arabic, and its content is user-authored, so any proposal title,
+decision name, profile name, or category can run counter to the page direction.
+Rendered unisolated, its neutral characters — punctuation, digits, a currency
+symbol, the line-clamp ellipsis — resolve against the *page's* direction and
+jump to the wrong end: `Hell yeah??` renders as `??Hell yeah`. The text is
+correct in the DOM; only the rendering is wrong, which is why this survives
+review so easily.
+
+**Default: wrap user content in `<bdi>`.** Title, name, category, preview —
+heading or inline, it doesn't matter. `<bdi>` carries its own `dir="auto"`, so
+the *run* resolves its direction from its own first strong character while the
+surrounding block keeps the page's, and with it the page's alignment.
+
+```jsx
+<h3 className="font-serif text-title">
+  <bdi>{proposal.title}</bdi>
+</h3>
+```
+
+**If the block truncates or clamps, `<bdi>` is not enough.** The ellipsis is
+placed at the *block's* direction end, so an RTL block clips the head off an
+English name — `TEST Map Vote` renders as `…p Vote`. Those blocks need the
+direction on the element, and then the alignment pinned back to the page:
+
+```jsx
+<div dir="auto" className="truncate ltr:text-left rtl:text-right">
+  {profile.name}
+</div>
+```
+
+This is the one place physical `text-left` / `text-right` is the point rather
+than a bug: `text-start` would follow the element's own resolved direction,
+which is exactly what we're overriding.
+
+Two things that look like the answer and aren't:
+
+- **`dir="auto"` on its own.** Left-aligns an English row in an Arabic list
+  while its Arabic neighbours right-align — two ragged edges. Fine for a
+  *control* whose value the user is editing (`Input`, `Textarea`,
+  `lib/textDirection.ts`), wrong for display text unless paired with the
+  alignment override above.
+- **`unicode-bidi: plaintext`.** Resolves per *line* and drags alignment along.
+  The `RichTextEditor` viewer wants exactly that — mixed-language paragraphs are
+  the point there — and display text doesn't.
+
+Inputs need nothing from you: `Input`, `Textarea` and the `RichTextEditor`
+viewer already handle their own text.
+
+Already handled inside sense — don't re-wrap: `Header1`–`Header4`,
+`GradientHeader`, `ProfileItem`, `PhaseCard`, `ProposalCard`, `TagGroup`,
+`Input`, `Textarea`, `RichTextEditor`. A raw `<h1>`/`<p>`/`<span>` you write
+yourself is handled by nothing.
+
 Also: anything that animates needs a `motion-reduce:` branch, and any
 directional icon needs `rtl:-scale-x-100`.
 
-Check your work in the **A11y** panel of the component's story — it runs axe
-against whatever is on screen, live.
+To check it, switch Storybook or the app to Arabic and look at a story whose
+text is English — the mismatch is the whole point, and it's invisible when both
+run the same way.
 
 ---
 
