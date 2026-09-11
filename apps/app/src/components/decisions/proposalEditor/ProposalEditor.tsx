@@ -7,13 +7,11 @@ import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalDataInput,
-  type ProposalReviewRequest,
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Header2 } from '@op/sense/Header';
-import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
 import {
@@ -58,25 +56,12 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  revisionRequest = null,
-  children,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  /**
-   * Drives revision mode in the header and the resubmit modal. Which pane the
-   * document sits beside is the caller's business, not this prop's.
-   */
-  revisionRequest?: ProposalReviewRequest | null;
-  /**
-   * The pane beside the document, expected to be a `ProposalEditorAsidePane`.
-   * Absent, the document gets the full width.
-   */
-  // TODO: restructure the children => aside mapping
-  children?: ReactNode;
 }) {
   const { user } = useRequiredUser();
   const t = useTranslations();
@@ -118,8 +103,6 @@ export function ProposalEditor({
       asideHeaderIcons={asideHeaderIcons}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
-      revisionRequest={revisionRequest}
-      asidePane={children}
     />
   );
 
@@ -150,8 +133,6 @@ function ProposalEditorInner({
   asideHeaderIcons,
   collaborationDocId,
   proposalTemplate,
-  revisionRequest,
-  asidePane,
 }: {
   instance: ProcessInstance;
   backHref: string;
@@ -160,8 +141,6 @@ function ProposalEditorInner({
   asideHeaderIcons?: ReactNode;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
-  revisionRequest: ProposalReviewRequest | null;
-  asidePane: ReactNode;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -538,35 +517,19 @@ function ProposalEditorInner({
       asideHeaderIcons={asideHeaderIcons}
       proposalProfileId={proposal.profileId}
       access={proposal.access}
-      revisionRequest={revisionRequest}
     >
       {/* Formatting is per-field now: each prose editor renders its own bubble
           menu on the selection, so there is no toolbar row above the form. */}
       <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
         <div className="relative min-h-0 overflow-y-auto">
-          {asidePane ? (
-            <SplitPane className="mx-auto w-full max-w-6xl">
-              {/* Matches the standalone column below: `editorBody`'s sections
-                  mirror this gap in their own `pt`, keeping the rule centred. */}
-              <SplitPane.Pane
-                id="proposal"
-                label={t('Proposal')}
-                className="gap-6 sm:gap-10"
-              >
-                {editorBody}
-              </SplitPane.Pane>
-              {asidePane}
-            </SplitPane>
-          ) : (
-            <div className="px-4 py-8 sm:px-6 sm:py-14">
-              <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
-                <Header2>
-                  {isEditMode ? t('Edit proposal') : t('Create proposal')}
-                </Header2>
-                {editorBody}
-              </div>
+          <div className="px-4 py-8 sm:px-6 sm:py-14">
+            <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+              <Header2>
+                {isEditMode ? t('Edit proposal') : t('Create proposal')}
+              </Header2>
+              {editorBody}
             </div>
-          )}
+          </div>
         </div>
       </div>
 

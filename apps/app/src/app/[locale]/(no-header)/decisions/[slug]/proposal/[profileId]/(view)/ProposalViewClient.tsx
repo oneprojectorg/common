@@ -33,6 +33,10 @@ function ProposalViewPageContent({
   const phases = instance.instanceData?.phases ?? [];
   const affordances = getProposalAffordances({ instance, proposal, user });
 
+  const isAuthor =
+    !!user?.currentProfile?.id &&
+    proposal.submittedBy?.id === user.currentProfile.id;
+
   // Selections only make sense once we've reached the final/results phase.
   const inLastPhase = isLastPhase(instance.currentStateId, phases);
   const { data: selection } =
@@ -45,6 +49,8 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       affordances={affordances}
+      isAuthor={isAuthor}
+      currentPhaseId={instance.currentStateId}
       decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />

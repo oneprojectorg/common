@@ -2,19 +2,8 @@
 
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@op/sense/Tooltip';
 import { ReactNode } from 'react';
-import {
-  LuArrowLeft,
-  LuMessageCircle,
-  LuMessageSquareText,
-  LuPencil,
-} from 'react-icons/lu';
+import { LuArrowLeft, LuMessageCircle, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
@@ -25,6 +14,7 @@ import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
 import { ProposalAdminMenu } from './ProposalAdminMenu';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ReportProposalDialog } from './ReportProposalDialog';
+import { ReviewNotesButton } from './ReviewNotesButton';
 
 export function ProposalViewLayout({
   children,
@@ -33,7 +23,7 @@ export function ProposalViewLayout({
   canEdit = false,
   canJoin = false,
   reportProposalId,
-  feedbackToggle,
+  reviewNotesToggle,
   moderationProposal,
   notices,
 }: {
@@ -50,12 +40,7 @@ export function ProposalViewLayout({
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */
   reportProposalId?: string;
-  /**
-   * The header's "Feedback" disclosure; the owner decides which pane it opens.
-   * Its dot is static — Figma's red dot means "unread" and we hold no
-   * read-state for reviewer notes.
-   */
-  feedbackToggle?: {
+  reviewNotesToggle?: {
     onToggle: () => void;
     isActive: boolean;
   };
@@ -72,7 +57,6 @@ export function ProposalViewLayout({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const feedbackLabel = t('Feedback');
   const backLabel = t('Back to Proposals');
 
   return (
@@ -93,80 +77,60 @@ export function ProposalViewLayout({
           </Button>
         </div>
 
-        {/* One tooltip group for the row — `delay` exists on Provider alone. */}
-        <TooltipProvider delay={500}>
-          <div className="flex items-center gap-2 sm:gap-4">
-            {notices}
-            {canEdit && editHref && (
-              <Button
-                variant="outline"
-                onClick={() => router.push(editHref)}
-                className="max-sm:size-11"
-                aria-label={t('Edit')}
-              >
-                <LuPencil className="size-4" />
-                <span className="hidden sm:inline">{t('Edit')}</span>
-              </Button>
-            )}
-            {/* Report is a safety action the moderation API accepts from any
+        <div className="flex items-center gap-2 sm:gap-4">
+          {notices}
+          {canEdit && editHref && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(editHref)}
+              className="max-sm:size-11"
+              aria-label={t('Edit')}
+            >
+              <LuPencil className="size-4" />
+              <span className="hidden sm:inline">{t('Edit')}</span>
+            </Button>
+          )}
+          {/* Report is a safety action the moderation API accepts from any
               caller (signed-in, anonymous, or sessionless). Offer it to any
               viewer so inappropriate content is always flaggable. */}
-            {reportProposalId && (
-              <ReportProposalDialog proposalId={reportProposalId} />
-            )}
-            {/* Mobile-only jump to the comments section (Figma's speech-bubble
+          {reportProposalId && (
+            <ReportProposalDialog proposalId={reportProposalId} />
+          )}
+          {/* Mobile-only jump to the comments section (Figma's speech-bubble
               icon). A plain fragment link — no scroll scripting needed. */}
-            <ButtonLink
-              href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-              variant="outline"
-              size="icon"
-              aria-label={t('View comments')}
-              className="sm:hidden"
-            >
-              <LuMessageCircle className="size-4" />
-            </ButtonLink>
-            {/* Like/Follow live in the proposal's engagement row, not here — see
+          <ButtonLink
+            href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+            variant="outline"
+            size="icon"
+            aria-label={t('View comments')}
+            className="sm:hidden"
+          >
+            <LuMessageCircle className="size-4" />
+          </ButtonLink>
+          {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
-            {feedbackToggle && (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={feedbackToggle.onToggle}
-                      aria-label={feedbackLabel}
-                      aria-expanded={feedbackToggle.isActive}
-                      className="relative"
-                    >
-                      <LuMessageSquareText className="size-4" />
-                      <span
-                        aria-hidden
-                        className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
-                      />
-                    </Button>
-                  }
-                />
-                <TooltipContent>{feedbackLabel}</TooltipContent>
-              </Tooltip>
-            )}
-            {moderationProposal ? (
-              <ProposalAdminMenu
-                proposal={moderationProposal}
-                backHref={backHref}
-              />
-            ) : null}
-            <div className="hidden sm:block">
-              <LocaleChooser />
-            </div>
-            {/* Outside the sm-only cluster: Join stays visible on mobile (the
-              avatar keeps its desktop-only treatment via userMenuClassName). */}
-            <JoinOrUserMenu
-              canJoin={canJoin}
-              userMenuClassName="hidden sm:block"
+          {reviewNotesToggle && (
+            <ReviewNotesButton
+              onToggle={reviewNotesToggle.onToggle}
+              isExpanded={reviewNotesToggle.isActive}
             />
+          )}
+          {moderationProposal ? (
+            <ProposalAdminMenu
+              proposal={moderationProposal}
+              backHref={backHref}
+            />
+          ) : null}
+          <div className="hidden sm:block">
+            <LocaleChooser />
           </div>
-        </TooltipProvider>
+          {/* Outside the sm-only cluster: Join stays visible on mobile (the
+              avatar keeps its desktop-only treatment via userMenuClassName). */}
+          <JoinOrUserMenu
+            canJoin={canJoin}
+            userMenuClassName="hidden sm:block"
+          />
+        </div>
       </div>
 
       <div className="relative min-h-0 overflow-y-auto">{children}</div>

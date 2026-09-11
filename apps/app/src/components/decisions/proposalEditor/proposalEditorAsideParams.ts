@@ -7,7 +7,10 @@ import {
 
 export const proposalEditorAsideValues = ['versions'] as const;
 
+/** Notification deep link; the id only decides whether the sheet opens. */
 export const proposalEditorReviewRevisionParser = parseAsString;
+
+export const proposalReviewNotesParser = parseAsBoolean.withDefault(false);
 
 /**
  * A flag rather than an id: the panel lists every released note at once, so the

@@ -33,6 +33,9 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       affordances={NO_PROPOSAL_AFFORDANCES}
+      // A legacy instance has no revision cycle at all.
+      isAuthor={false}
+      currentPhaseId={null}
       decisionRoot={decisionRoot}
       selection={null}
     />

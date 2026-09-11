@@ -7,32 +7,22 @@ import {
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import {
-  type Proposal,
-  ProposalReviewRequestState,
-  type ProposalSelection,
-} from '@op/common/client';
+import type { Proposal, ProposalSelection } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
-import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
-import { ProposalFeedbackPanel } from './ProposalFeedbackPanel';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
-import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
+import { ReviewNotesPanel } from './ReviewNotesPanel';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
-import {
-  proposalEditorReviewRevisionParser,
-  proposalFeedbackPanelParser,
-} from './proposalEditor/proposalEditorAsideParams';
-import { useProposalFeedback } from './useProposalFeedback';
+import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
 
 /** How often to re-fetch while the document is still propagating from TipTap. */
@@ -49,12 +39,17 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 export function ProposalView({
   proposal: initialProposal,
   affordances,
+  isAuthor,
+  currentPhaseId,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
   /** What this viewer may see here — see `getProposalAffordances`. */
   affordances: ProposalAffordances;
+  isAuthor: boolean;
+  /** The instance's current phase; `null` on a legacy instance. */
+  currentPhaseId: string | null;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -129,64 +124,12 @@ export function ProposalView({
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  const [{ reviewRevision, feedback: isFeedbackPanelOpen }, setQueryState] =
-    useQueryStates({
-      reviewRevision: proposalEditorReviewRevisionParser,
-      feedback: proposalFeedbackPanelParser,
-    });
-
-  // The view panel is "Revision submitted" — only surface entries the author
-  // has already responded to. Pending requests are handled by the editor.
-  // The server throws UnauthorizedError when the viewer lacks review access;
-  // treat any error as "no revisions" so the proposal still renders.
-  const { data: revisionData, error: revisionError } =
-    trpc.decision.listProposalRevisionRequests.useQuery(
-      {
-        proposalId: currentProposal.id,
-        states: [ProposalReviewRequestState.RESUBMITTED],
-      },
-      { enabled: affordances.review.revisions, throwOnError: false },
-    );
-
-  const submittedRevisions = revisionError ? [] : (revisionData?.items ?? []);
-
-  const firstRevisionRequestId =
-    submittedRevisions[0]?.revisionRequest.id ?? null;
-
-  const activeRevisionRequest = reviewRevision
-    ? (submittedRevisions.find((r) => r.revisionRequest.id === reviewRevision)
-        ?.revisionRequest ?? null)
-    : null;
-
-  // `feedback`, not `revisions`: this is the history the panel keeps showing
-  // after the review phase ends, which is when `revisions` goes false.
-  const { notes, revisionHistory, hasFeedback } = useProposalFeedback({
+  // `feedback`, not `revisions`: the sheet outlives the review phase.
+  const reviewNotes = useProposalReviewNotes({
     proposalId: currentProposal.id,
+    phaseId: currentPhaseId,
     enabled: affordances.review.feedback,
   });
-
-  const toggleFeedbackPanel = useCallback(() => {
-    void setQueryState(
-      { feedback: isFeedbackPanelOpen ? null : true },
-      { history: 'push', scroll: false },
-    );
-  }, [isFeedbackPanelOpen, setQueryState]);
-
-  const toggleRevisionRequest = useCallback(() => {
-    if (!firstRevisionRequestId) {
-      return;
-    }
-
-    void setQueryState(
-      {
-        reviewRevision:
-          reviewRevision === firstRevisionRequestId
-            ? null
-            : firstRevisionRequestId,
-      },
-      { history: 'push', scroll: false },
-    );
-  }, [firstRevisionRequestId, reviewRevision, setQueryState]);
 
   const {
     translation,
@@ -197,9 +140,8 @@ export function ProposalView({
     dismissBanner,
   } = useTranslateProposal(currentProposal);
 
-  // Most recently responded revision (if any) — drives the "Revised on"
-  // badge shown inline in the submitter metadata row.
-  const latestResponse = submittedRevisions[0]?.revisionRequest ?? null;
+  // The server orders newest first.
+  const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
 
   const proposalBody: ReactNode = (
     <>
@@ -221,8 +163,8 @@ export function ProposalView({
         }
         translation={translation}
         submissionMetaSuffix={
-          latestResponse?.respondedAt ? (
-            <RevisedOnBadge respondedAt={latestResponse.respondedAt} />
+          latestRespondedAt ? (
+            <RevisedOnBadge respondedAt={latestRespondedAt} />
           ) : undefined
         }
       />
@@ -239,32 +181,16 @@ export function ProposalView({
     </>
   );
 
-  const asidePane: { label: string; content: ReactNode } | null =
-    activeRevisionRequest
-      ? {
-          label: t('Revision feedback'),
-          content: (
-            <ProposalRevisionSubmittedPanel
-              revisionRequest={activeRevisionRequest}
-            />
-          ),
-        }
-      : isFeedbackPanelOpen && hasFeedback
-        ? {
-            label: t('Feedback'),
-            content: (
-              <ProposalFeedbackPanel
-                feedbackItems={notes}
-                revisionRequests={revisionHistory}
-                title={t('Feedback')}
-                subtitle={t(
-                  'Notes reviewers shared while this proposal was under review',
-                )}
-                revisionRequestLabel={t('Revision request')}
-              />
-            ),
-          }
-        : null;
+  const asidePane: ReactNode = reviewNotes.isOpen ? (
+    <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
+      <ReviewNotesPanel
+        openRequests={reviewNotes.openRequests}
+        noteGroups={reviewNotes.noteGroups}
+        feedbackNotes={reviewNotes.feedbackNotes}
+        isAuthor={isAuthor}
+      />
+    </div>
+  ) : null;
 
   return (
     <ProposalViewLayout
@@ -286,20 +212,13 @@ export function ProposalView({
           decisionRoot={decisionRoot}
         />
       }
-      // One disclosure for both panes: mid-phase it opens the submitted
-      // revision, and the feedback panel once `affordances.review.revisions` is false.
-      feedbackToggle={
-        firstRevisionRequestId
+      reviewNotesToggle={
+        reviewNotes.hasReviewNotes
           ? {
-              onToggle: toggleRevisionRequest,
-              isActive: Boolean(activeRevisionRequest),
+              onToggle: reviewNotes.toggle,
+              isActive: reviewNotes.isOpen,
             }
-          : hasFeedback
-            ? {
-                onToggle: toggleFeedbackPanel,
-                isActive: isFeedbackPanelOpen,
-              }
-            : undefined
+          : undefined
       }
     >
       {asidePane ? (
@@ -315,12 +234,12 @@ export function ProposalView({
             {proposalBody}
           </SplitPane.Pane>
           <SplitPane.Pane
-            id="feedback"
-            label={asidePane.label}
-            className="bg-white"
+            id="reviewNotes"
+            label={t('Review notes')}
+            className="bg-background"
             unpadded
           >
-            {asidePane.content}
+            {asidePane}
           </SplitPane.Pane>
         </SplitPane>
       ) : (

@@ -113,7 +113,6 @@ export * from './listProposalsRevisionRequests';
 export * from './listProposalFeedback';
 export * from './listProposalRevisionRequests';
 export * from './listProposalRevisionNotes';
-export * from './submitRevisionResponse';
 export * from './submitProposalRevision';
 export * from './submitReview';
 export * from './updateReview';

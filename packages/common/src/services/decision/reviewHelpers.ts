@@ -43,15 +43,17 @@ export const reviewAssignmentWithConfig = {
 } as const;
 
 /**
- * Shared `with` config for proposal queries that need to surface the
- * proposal's revision requests (author inbox + proposal-scoped views).
- * Optionally filters nested `requests` by state.
+ * Shared `with` config for proposal queries that surface revision requests.
+ * Pass `phaseId` to match what `submitProposalRevision` will answer — reading
+ * wider leaves an ended phase's request looking answerable.
  */
 export function proposalWithRevisionRequestsConfig(
   states?: ProposalReviewRequestState[],
+  phaseId?: string,
 ) {
   const requestsWhere =
     states && states.length > 0 ? { state: { in: states } } : undefined;
+  const assignmentsWhere = phaseId != null ? { phaseId } : undefined;
 
   return {
     submittedBy: {
@@ -70,6 +72,7 @@ export function proposalWithRevisionRequestsConfig(
     },
     reviewAssignments: {
       columns: { id: true as const },
+      where: assignmentsWhere,
       with: {
         requests: {
           where: requestsWhere,

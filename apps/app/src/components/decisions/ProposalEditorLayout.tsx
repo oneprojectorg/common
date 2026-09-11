@@ -2,10 +2,10 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import type { ProposalReviewRequest } from '@op/common/client';
 import { type ReactNode, useState } from 'react';
 
 import { ProposalEditorHeader } from './ProposalEditorHeader';
+import { useOptionalReviewNotes } from './ReviewNotesContext';
 import { ShareProposalModal } from './ShareProposalModal';
 import { ResubmitProposalModal } from './proposalEditor/ResubmitProposalModal';
 
@@ -32,8 +32,6 @@ interface ProposalEditorLayoutProps {
     admin: boolean;
     inviteMembers: boolean;
   };
-  /** Active revision request when the editor is in revision mode */
-  revisionRequest?: ProposalReviewRequest | null;
 }
 
 export function ProposalEditorLayout({
@@ -50,9 +48,9 @@ export function ProposalEditorLayout({
   readOnlyMode = false,
   proposalProfileId,
   access,
-  revisionRequest,
 }: ProposalEditorLayoutProps) {
   const { user } = useUser();
+  const reviewNotes = useOptionalReviewNotes();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isResubmitModalOpen, setIsResubmitModalOpen] = useState(false);
 
@@ -61,7 +59,7 @@ export function ProposalEditorLayout({
   const canShare = Boolean(
     userCanInteract(user) && (access?.admin || access?.inviteMembers),
   );
-  const isRevisionMode = Boolean(revisionRequest);
+  const isRevisionMode = reviewNotes?.hasOpenRequests ?? false;
 
   return (
     <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[auto_1fr] bg-background">
@@ -92,14 +90,14 @@ export function ProposalEditorLayout({
         />
       )}
 
-      {revisionRequest && (
+      {reviewNotes?.hasOpenRequests ? (
         <ResubmitProposalModal
           isOpen={isResubmitModalOpen}
           onOpenChange={setIsResubmitModalOpen}
-          revisionRequestId={revisionRequest.id}
+          proposalId={reviewNotes.proposalId}
           backHref={backHref}
         />
-      )}
+      ) : null}
     </div>
   );
 }

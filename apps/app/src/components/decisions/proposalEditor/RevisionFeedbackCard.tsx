@@ -10,27 +10,35 @@ interface RevisionFeedbackCardProps {
   sentAt: string | null;
   /**
    * `reviewer` styles the comment in italic (reviewer feedback).
-   * `author` tints the card with the teal+white surface used for the
-   * author's note.
+   * `request` is the plain bordered card the review-notes sheet lists.
+   * `author` tints the card with the muted surface used for the author's note.
    */
-  variant: 'reviewer' | 'author';
-  /** Meta line reads "Reviewer · {time}" instead of "Sent {time}". */
-  anonymousReviewer?: boolean;
+  variant: 'reviewer' | 'request' | 'author';
+  /** Heading above the comment, e.g. "Your revision note". */
+  title?: string;
+  /**
+   * How the timestamp line reads: `sent` → "Sent 3 days ago",
+   * `anonymousReviewer` → "Reviewer · 3 days ago", `bare` → "3 days ago".
+   */
+  meta?: 'sent' | 'anonymousReviewer' | 'bare';
 }
 
 export function RevisionFeedbackCard({
   comment,
   sentAt,
   variant,
-  anonymousReviewer = false,
+  title,
+  meta = 'sent',
 }: RevisionFeedbackCardProps) {
   return (
     <div
       className={cn(
         'flex flex-col gap-2 rounded-xl border p-6',
-        variant === 'author' && 'bg-accent',
+        variant === 'author' && 'gap-3 bg-muted',
       )}
     >
+      {title ? <h4 className="font-serif text-label">{title}</h4> : null}
+
       <p
         dir="auto"
         className={cn(
@@ -40,28 +48,28 @@ export function RevisionFeedbackCard({
       >
         {comment}
       </p>
-      {sentAt && (
-        <SentAtLine sentAt={sentAt} anonymousReviewer={anonymousReviewer} />
-      )}
+      {sentAt && <SentAtLine sentAt={sentAt} meta={meta} />}
     </div>
   );
 }
 
 function SentAtLine({
   sentAt,
-  anonymousReviewer,
+  meta,
 }: {
   sentAt: string;
-  anonymousReviewer: boolean;
+  meta: 'sent' | 'anonymousReviewer' | 'bare';
 }) {
   const t = useTranslations();
   const timeAgo = useRelativeTime(sentAt, { style: 'long' });
 
   return (
     <p className="text-sm text-muted-foreground">
-      {anonymousReviewer
+      {meta === 'anonymousReviewer'
         ? t('Reviewer · {timeAgo}', { timeAgo })
-        : t('Sent {timeAgo}', { timeAgo })}
+        : meta === 'bare'
+          ? timeAgo
+          : t('Sent {timeAgo}', { timeAgo })}
     </p>
   );
 }

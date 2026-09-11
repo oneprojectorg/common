@@ -146,6 +146,51 @@ describe.concurrent('listProposalRevisionRequests', () => {
     );
   });
 
+  it('omits a request from an ended phase when the current phase is passed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Ended Phase',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewRequestState.REQUESTED,
+      requestComment: 'Left open when the review phase ended.',
+    });
+
+    // The assignment stays pinned to 'review' while the instance moves on, so
+    // `submitProposalRevision` can no longer answer this request. A screen
+    // that offers the author that action has to read the same narrowed set.
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+
+    const unfiltered = await authorCaller.decision.listProposalRevisionRequests(
+      {
+        proposalId: created.proposal.id,
+        states: [ProposalReviewRequestState.REQUESTED],
+      },
+    );
+
+    expect(unfiltered.items).toHaveLength(1);
+
+    const currentPhaseOnly =
+      await authorCaller.decision.listProposalRevisionRequests({
+        proposalId: created.proposal.id,
+        states: [ProposalReviewRequestState.REQUESTED],
+        phaseId: 'voting',
+      });
+
+    expect(currentPhaseOnly.items).toEqual([]);
+  });
+
   it('returns the proposal revision requests to an invited co-author', async ({
     task,
     onTestFinished,

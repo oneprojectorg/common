@@ -13,6 +13,8 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { ReviewNotesButton } from './ReviewNotesButton';
+import { useOptionalReviewNotes } from './ReviewNotesContext';
 
 interface ProposalEditorHeaderProps {
   backHref: string;
@@ -59,6 +61,8 @@ export function ProposalEditorHeader({
   const router = useRouter();
   const t = useTranslations();
   const { user } = useUser();
+  const reviewNotes = useOptionalReviewNotes();
+  const canInteract = userCanInteract(user);
 
   return (
     <div className="sticky top-0 z-20 flex h-editor-topbar items-center justify-between gap-2 border-b bg-background px-4 sm:px-6">
@@ -103,24 +107,25 @@ export function ProposalEditorHeader({
               <span className="hidden sm:inline">{t('Share')}</span>
             </Button>
           )}
+          {!readOnlyMode && canInteract && reviewNotes?.hasReviewNotes ? (
+            <ReviewNotesButton
+              onToggle={reviewNotes.toggle}
+              isExpanded={reviewNotes.isOpen}
+              hasUnread={reviewNotes.hasUnread}
+            />
+          ) : null}
           {!readOnlyMode && (
             <Button
               onClick={isRevisionMode ? onResubmit : onSubmitProposal}
               loading={isSubmitting}
             >
               <LuCheck className="size-4" />
-              {isRevisionMode
-                ? t('Resubmit')
-                : isEditMode && !isDraft
-                  ? t('Update')
-                  : t('Submit')}
+              {isEditMode && !isDraft ? t('Update') : t('Submit')}
             </Button>
           )}
           <LocaleChooser />
           {/* No avatar or login for visitors/anonymous. */}
-          {userCanInteract(user) ? (
-            <UserAvatarMenu className="hidden sm:block" />
-          ) : null}
+          {canInteract ? <UserAvatarMenu className="hidden sm:block" /> : null}
         </div>
       </TooltipProvider>
     </div>

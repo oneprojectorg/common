@@ -210,6 +210,7 @@ export interface CreateRevisionRequestOptions {
   requestComment?: string;
   requestedProposalHistoryId?: string | null;
   respondedProposalHistoryId?: string | null;
+  /** The author's note. One resubmission stamps the same one on every row. */
   responseComment?: string | null;
   requestedAt?: string;
   respondedAt?: string | null;
@@ -308,12 +309,7 @@ export interface CreateReviewScenarioOptions {
    * If provided, also create a revision request on the assignment.
    * Mirrors `CreateRevisionRequestOptions` minus assignmentId.
    */
-  revisionRequest?: {
-    state?: ProposalReviewRequestState;
-    requestComment?: string;
-    requestedProposalHistoryId?: string | null;
-    respondedProposalHistoryId?: string | null;
-  };
+  revisionRequest?: Omit<CreateRevisionRequestOptions, 'assignmentId'>;
 }
 
 export interface CreateReviewScenarioResult {
@@ -363,13 +359,8 @@ export async function createReviewScenario(
 
   const revisionRequest = opts.revisionRequest
     ? await createRevisionRequest({
+        ...opts.revisionRequest,
         assignmentId: assignment.id,
-        state: opts.revisionRequest.state,
-        requestComment: opts.revisionRequest.requestComment,
-        requestedProposalHistoryId:
-          opts.revisionRequest.requestedProposalHistoryId ?? null,
-        respondedProposalHistoryId:
-          opts.revisionRequest.respondedProposalHistoryId ?? null,
       })
     : undefined;
 

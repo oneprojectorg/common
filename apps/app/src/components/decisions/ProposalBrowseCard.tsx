@@ -20,8 +20,8 @@ interface ProposalBrowseCardProps {
   /** Decision profile slug for building proposal links. */
   decisionSlug?: string;
   permissions?: DecisionAccess | null;
-  /** Id of this proposal's open revision request, if it has one. */
-  revisionRequestId?: string;
+  /** Whether any revision request is open on this proposal. */
+  hasRevisionRequest?: boolean;
   className?: string;
 }
 
@@ -39,7 +39,7 @@ export function ProposalBrowseCard({
   slug,
   decisionSlug,
   permissions,
-  revisionRequestId,
+  hasRevisionRequest = false,
   className,
 }: ProposalBrowseCardProps) {
   const canManageProposals = permissions?.admin ?? false;
@@ -48,7 +48,6 @@ export function ProposalBrowseCard({
   const isDraft = proposal.status === ProposalStatus.DRAFT;
   const isEditable = Boolean(proposal.isEditable);
   const showMenu = canManageProposals || isEditable;
-  const hasRevisionRequest = revisionRequestId !== undefined;
 
   const route = {
     profileId: proposal.profileId,
@@ -57,8 +56,10 @@ export function ProposalBrowseCard({
     instanceId,
   };
   const editHref = proposalEditHref(route);
-  const reviseHref = revisionRequestId
-    ? `${editHref}?reviewRevision=${revisionRequestId}`
+  // One resubmission answers every open request, so the link opens the sheet
+  // rather than naming one of them.
+  const reviseHref = hasRevisionRequest
+    ? `${editHref}?reviewNotes=true`
     : editHref;
   const viewHref = proposalHref(route);
 

@@ -13,12 +13,17 @@ import {
  * READ) are rejected — revision feedback is reviewer-scoped.
  *
  * For the author's cross-proposal inbox, use listProposalsRevisionRequests.
+ *
+ * `phaseId` narrows to one phase's assignments — pass the current phase on any
+ * screen offering a resubmission, since that is what the submit will answer.
  */
 export async function listProposalRevisionRequests({
+  phaseId,
   proposalId,
   states,
   user,
 }: {
+  phaseId?: string;
   proposalId: string;
   states?: ProposalReviewRequestState[];
   user: User;
@@ -27,7 +32,7 @@ export async function listProposalRevisionRequests({
     proposalId,
     subject: 'revision requests',
     user,
-    with: proposalWithRevisionRequestsConfig(states),
+    with: proposalWithRevisionRequestsConfig(states, phaseId),
   });
 
   const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
