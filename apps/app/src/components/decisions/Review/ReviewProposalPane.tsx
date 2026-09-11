@@ -30,8 +30,8 @@ export function ReviewProposalPane({
       <ProposalPreview
         proposal={assignment.proposal}
         translation={translation}
-        // The badge shows on the date alone: a resubmission without a note
-        // would otherwise leave the reviewer no sign it happened.
+        // The badge shows on the date alone, so a note-less resubmission
+        // still shows.
         submissionMetaSuffix={
           respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
         }

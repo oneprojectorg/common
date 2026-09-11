@@ -1305,8 +1305,6 @@
   "View revision requests": "View revision requests",
   "Author notes": "Author notes",
   "Revised {timeAgo}": "Revised {timeAgo}",
-  "Collapse author notes": "Collapse author notes",
-  "Expand author notes": "Expand author notes",
   "Ends {date}": "Vége: {date}",
   "{nonDraft} non-draft proposals, {total} total including drafts": "{nonDraft} nem piszkozat javaslat, összesen {total} a piszkozatokkal együtt",
   "No proposals available to select": "Nincs kiválasztható javaslat",

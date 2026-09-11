@@ -14,23 +14,16 @@ import { Fragment, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-/** One resubmission: the author's note plus the requests it answered. */
 export interface AuthorNote {
-  /** Stable key — the resubmitted proposal version, or the note's own request. */
+  /** The resubmitted proposal version. */
   id: string;
   comment: string;
   respondedAt: string;
-  /** Requests this resubmission answered, newest first. */
   requestIds: string[];
 }
 
 const NOTES_ITEM = 'author-notes';
 
-/**
- * The author's resubmission notes, newest first. Presentational: the caller
- * owns the read and what "view requests" opens, so the admin summary can reuse
- * it against the same grouped notes.
- */
 export function AuthorNotesAccordion({
   notes,
   onViewRequests,
@@ -56,8 +49,7 @@ export function AuthorNotesAccordion({
     </div>
   );
 
-  // A single note has nothing to collapse into, so it skips the accordion
-  // chrome and renders as a plain card.
+  // One note has nothing to collapse into.
   if (notes.length === 1) {
     return (
       <section
@@ -78,15 +70,8 @@ export function AuthorNotesAccordion({
       className="rounded-lg border border-border bg-muted p-6"
     >
       <AccordionItem value={NOTES_ITEM}>
-        {/* The card itself is the frame, so the trigger drops the primitive's
-            own border and hover underline: a second rounded box around the
-            heading reads as a select input. Focus stays visible as a ring. */}
-        <AccordionTrigger
-          className="items-center py-0 hover:no-underline focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={
-            isOpen ? t('Collapse author notes') : t('Expand author notes')
-          }
-        >
+        {/* The card is the frame, so the trigger drops its own border. */}
+        <AccordionTrigger className="items-center py-0 hover:no-underline focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-ring">
           {t('Author notes')}
         </AccordionTrigger>
         <AccordionContent className="pt-4 pb-0">{entries}</AccordionContent>

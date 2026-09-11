@@ -25,10 +25,8 @@ import { useTranslations } from '@/lib/i18n';
 import { useReviewForm } from './ReviewFormContext';
 
 /**
- * Only the fields the cards render. The author-notes accordion passes past
- * requests read through `listProposalRevisionNotes`, which never selects an
- * assignment id — a request with no id can never be the viewer's own, which is
- * what the anonymous author-note view wants.
+ * Only the fields the cards render. `listProposalRevisionNotes` selects no
+ * assignment id, so its requests are never marked as the viewer's own.
  */
 export interface ListedRevisionRequest {
   id: string;

@@ -67,8 +67,7 @@ const REVIEW_SCHEMA = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-// Minimal rubric — just enough to unblock the review page's notFound() when
-// rubricTemplate is null. We never interact with it.
+// Only here to unblock the review page's notFound() on a null rubricTemplate.
 const RUBRIC_TEMPLATE = {
   type: 'object',
   required: ['innovation'],
@@ -151,11 +150,10 @@ test.describe('Review — author notes accordion', () => {
       assignmentStatus: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     });
 
-    // The revision closes the submitted snapshot and opens a new one, so the
-    // two resubmissions have distinct versions to point at.
+    // Each revision opens a new snapshot, so the two resubmissions have
+    // distinct versions to point at.
     const newerHistoryId = await reviseProposal({ proposalId: proposal.id });
 
-    // Each resubmission stamps the version it answered with.
     await createRevisionRequest({
       assignmentId: assignment.id,
       state: ProposalReviewRequestState.RESUBMITTED,
@@ -185,8 +183,8 @@ test.describe('Review — author notes accordion', () => {
     const notes = page.getByTestId('author-notes').first();
     await expect(notes).toBeVisible({ timeout: 30_000 });
     await expect(
-      notes.getByRole('button', { name: 'Collapse author notes' }),
-    ).toBeVisible();
+      notes.getByRole('button', { name: 'Author notes' }),
+    ).toHaveAttribute('aria-expanded', 'true');
 
     const entries = notes.getByTestId('author-note');
     await expect(entries).toHaveCount(2);
@@ -203,7 +201,6 @@ test.describe('Review — author notes accordion', () => {
       .and(page.locator(':not([data-slot="toast"])'));
     await expect(modal).toBeVisible();
     await expect(modal.getByText(OLDER_REQUEST_COMMENT)).toBeVisible();
-    // The dialog shows the request that note answered, not the other one.
     await expect(modal.getByText(NEWER_REQUEST_COMMENT)).toHaveCount(0);
     // A past request is nobody's to cancel.
     await expect(
