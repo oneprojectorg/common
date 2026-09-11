@@ -39,7 +39,7 @@ import {
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { useId, useMemo, useState } from 'react';
-import { LuPlus, LuRefreshCcw, LuRefreshCw } from 'react-icons/lu';
+import { LuPlus, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -242,7 +242,7 @@ function NewRevisionAlert() {
   return (
     // `Alert` carries role="alert"; announced when it appears mid-session.
     <Alert variant="warning">
-      <LuRefreshCcw />
+      <LuRefreshCw />
       <AlertTitle>{t('New revision')}</AlertTitle>
       <AlertDescription>
         {t(
