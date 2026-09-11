@@ -35,8 +35,6 @@ export interface CreateOrganizationOptions {
   organizationName?: string;
   /** Email domain for generated users */
   emailDomain?: string;
-  /** Seed `users.is_platform_admin`. Defaults to the email's domain. */
-  isPlatformAdmin?: boolean;
 }
 
 export interface CreateOrganizationResult {
@@ -58,32 +56,22 @@ export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
-  /** Seed `users.is_platform_admin`. Defaults to the email's domain. */
-  isPlatformAdmin?: boolean;
 }
 
-/** Test users on this domain are seeded as platform admins. */
-export const TEST_PLATFORM_ADMIN_DOMAIN = 'oneproject.org';
-
+/** Test users on the network domain are seeded as platform admins. */
 export const isTestPlatformAdminEmail = (email: string): boolean =>
-  email.toLowerCase().endsWith(`@${TEST_PLATFORM_ADMIN_DOMAIN}`);
+  email.toLowerCase().endsWith('@oneproject.org');
 
-/** Sets `users.is_platform_admin` on an existing test user. */
-export async function setTestPlatformAdmin(
-  authUserId: string,
-  isPlatformAdmin = true,
-): Promise<void> {
+export async function setTestPlatformAdmin(authUserId: string): Promise<void> {
   await db
     .update(users)
-    .set({ isPlatformAdmin })
+    .set({ isPlatformAdmin: true })
     .where(eq(users.authUserId, authUserId));
 }
 
 /** Creates a user via Supabase admin API, bypassing email confirmation. */
 export async function createUser(opts: CreateUserOptions) {
   const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
-  const isPlatformAdmin =
-    opts.isPlatformAdmin ?? isTestPlatformAdminEmail(email);
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -108,7 +96,7 @@ export async function createUser(opts: CreateUserOptions) {
       onboardedAt: now,
       tosAcceptedOn: now,
       privacyAcceptedOn: now,
-      isPlatformAdmin,
+      isPlatformAdmin: isTestPlatformAdminEmail(email),
     })
     .where(eq(users.authUserId, data.user.id));
 
@@ -137,7 +125,6 @@ export async function createOrganization(
     users: userCounts = { admin: 1, member: 0 },
     organizationName = 'Test Org',
     emailDomain = 'oneproject.org',
-    isPlatformAdmin,
   } = opts;
 
   const createdIds = {
@@ -187,7 +174,6 @@ export async function createOrganization(
     const authUser = await createUser({
       supabaseAdmin,
       email,
-      isPlatformAdmin,
     });
 
     createdIds.authUserIds.push(authUser.id);

@@ -47,7 +47,7 @@ export const users = pgTable(
     }),
     tos: boolean(),
     privacy: boolean(),
-    // Platform-wide grant, set only by an operator's SQL. See ADR 0005.
+    // Platform-wide grant, written only by operator SQL (ADR 0005).
     isPlatformAdmin: boolean().default(false).notNull(),
     // When the user accepted the current Terms of Use / Privacy Policy. Null
     // until they accept the latest version; stamped whenever `tos` / `privacy`

@@ -23,8 +23,7 @@ export const getMyAccount = router({
 
       const { id } = ctx.user;
 
-      // Independent lookups. The platform admin flag is read fresh rather than
-      // taken off the cached account, whose entry lives for 72h.
+      // The admin flag is read fresh; the cached account entry lives for 72h.
       const [user, isNetworkMember, isUserPlatformAdmin] = await Promise.all([
         cache({
           type: 'user',

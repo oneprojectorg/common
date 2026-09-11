@@ -138,7 +138,7 @@ for (const template of Object.values(decisionTemplates)) {
 }
 
 // ---------------------------------------------------------------------------
-// Admin users: backfill onboardedAt + platform admin, link to default org as Admin
+// Admin users: backfill onboardedAt + link to default org as Admin
 // ---------------------------------------------------------------------------
 if (adminEmails.length === 0) {
   await db.$client.end();
@@ -160,22 +160,10 @@ if (backfilled.length > 0) {
   );
 }
 
-// Without this a fresh local DB 404s on /admin for every dev.
-const platformAdmins = await db
+await db
   .update(users)
   .set({ isPlatformAdmin: true })
-  .where(
-    and(
-      inArray(users.email, [...adminEmails]),
-      eq(users.isPlatformAdmin, false),
-    ),
-  )
-  .returning({ authUserId: users.authUserId });
-
-// Count only: the emails are personal data and this runs in CI logs.
-if (platformAdmins.length > 0) {
-  console.log(`Granted platform admin to ${platformAdmins.length} user(s)`);
-}
+  .where(inArray(users.email, [...adminEmails]));
 
 const adminRole = await db._query.accessRoles.findFirst({
   where: (t, { eq, and, isNull }) =>

@@ -86,15 +86,11 @@ export async function createTestContextWithSession(
 }
 
 /**
- * Create a test user and return the user object. Seeds
- * `users.is_platform_admin` for network-domain addresses.
+ * Create a test user and return the user object
  */
 export async function createTestUser(
   email: string,
   password: string = TEST_USER_DEFAULT_PASSWORD,
-  {
-    isPlatformAdmin = isTestPlatformAdminEmail(email),
-  }: { isPlatformAdmin?: boolean } = {},
 ) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
@@ -112,8 +108,8 @@ export async function createTestUser(
     throw new Error(`Failed to create test user: ${error.message}`);
   }
 
-  if (data.user && isPlatformAdmin) {
-    await setTestPlatformAdmin(data.user.id, true);
+  if (data.user && isTestPlatformAdminEmail(email)) {
+    await setTestPlatformAdmin(data.user.id);
   }
 
   return data;

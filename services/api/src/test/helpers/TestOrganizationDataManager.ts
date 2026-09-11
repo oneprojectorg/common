@@ -23,8 +23,6 @@ interface GenerateTestOrganizationOptions {
   };
   organizationName?: string;
   emailDomain?: string;
-  /** Seed `users.is_platform_admin`. Defaults to the email's domain. */
-  isPlatformAdmin?: boolean;
 }
 
 interface GenerateTestOrganizationOutput {
@@ -106,7 +104,6 @@ export class TestOrganizationDataManager {
       users: opts?.users,
       organizationName: opts?.organizationName,
       emailDomain: opts?.emailDomain,
-      isPlatformAdmin: opts?.isPlatformAdmin,
     });
 
     // Track created IDs for cleanup

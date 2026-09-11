@@ -1,14 +1,12 @@
-import {
-  AccessTierError,
-  UnauthorizedError,
-  isPlatformAdmin,
-} from '@op/common';
+import { UnauthorizedError, isPlatformAdmin } from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
-/** Ensures the caller is authenticated and holds the platform admin grant. */
+/**
+ * Middleware to ensure the user is authenticated and is a platform admin
+ */
 export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   TContextWithUser
 > = async ({ ctx, next }) => {
@@ -16,13 +14,10 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
 
   const user = verifyAuthentication(data);
 
-  if (!user.id) {
-    throw new AccessTierError('anon');
-  }
-
   const isAdmin = await isPlatformAdmin({ authUserId: user.id });
 
-  // Authenticated (past the gate), but not permitted to use this endpoint.
+  // Admin membership is authorization: the caller is authenticated (past the
+  // gate) but is not permitted to use this admin endpoint.
   if (!isAdmin) {
     throw new UnauthorizedError('Platform admin access required');
   }

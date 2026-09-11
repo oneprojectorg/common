@@ -72,7 +72,6 @@ export const userEncoder = createSelectSchema(users)
     currentProfileId: true,
     tos: true,
     privacy: true,
-    // Platform-wide grant; distinct from any org-level `Admin` access role.
     isPlatformAdmin: true,
     createdAt: true,
   })

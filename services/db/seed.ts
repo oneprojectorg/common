@@ -157,7 +157,6 @@ for (const email of adminEmails) {
           authUserId: authUser.id,
           email: authUser.email!,
           name: authUser.user_metadata?.name || null,
-          // Local dev admins need to reach /admin.
           isPlatformAdmin: true,
         })
         .onConflictDoUpdate({
