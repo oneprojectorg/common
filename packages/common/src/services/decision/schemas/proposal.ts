@@ -158,6 +158,26 @@ export const proposalSchema = z.object({
 
 export type Proposal = z.infer<typeof proposalSchema>;
 
+/**
+ * The proposal version a submitted review was written against.
+ *
+ * `isCurrent` says the returned content is the proposal as it stands today —
+ * the anchor resolves to the current history row, or there is nothing to
+ * compare it with — so a client only labels the pane "older version" when this
+ * is false. `contentUnavailable` marks an older snapshot whose rich text
+ * cannot be reconstructed (no collaboration-doc version stamp); the rest of
+ * the proposal still renders.
+ */
+export const reviewedProposalVersionSchema = z.object({
+  proposal: proposalSchema,
+  isCurrent: z.boolean(),
+  contentUnavailable: z.boolean(),
+});
+
+export type ReviewedProposalVersion = z.infer<
+  typeof reviewedProposalVersionSchema
+>;
+
 /** Paginated proposal list as returned by the API. */
 export const proposalListSchema = paginated(proposalSchema).extend({
   total,

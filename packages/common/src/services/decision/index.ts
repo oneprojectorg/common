@@ -107,6 +107,7 @@ export * from './addCategoryReviewer';
 export * from './removeCategoryReviewer';
 export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
+export * from './proposal/getReviewedProposalVersion';
 export * from './getPhaseReviewProgress';
 export * from './listProposalsRevisionRequests';
 export * from './listProposalFeedback';

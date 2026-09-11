@@ -8,6 +8,7 @@ import { getProposalRouter } from './get';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
+import { getReviewedVersionRouter } from './getReviewedVersion';
 import { listProposalsRouter } from './list';
 import { listContributingProposalsRouter } from './listContributingProposals';
 import { listProposalLocationsRouter } from './listProposalLocations';
@@ -29,6 +30,7 @@ export const proposalsRouter = mergeRouters(
   getProposalRouter,
   getLatestSelectionForProposalRouter,
   getProposalWithReviewAggregatesRouter,
+  getReviewedVersionRouter,
   listProposalsRouter,
   listProposalLocationsRouter,
   listProposalRelationshipsRouter,
