@@ -352,7 +352,17 @@ export async function assertReviewAssignmentContext({
       where: {
         id: assignmentId,
       },
-      with: reviewAssignmentWithConfig,
+      with: {
+        ...reviewAssignmentWithConfig,
+        proposal: {
+          with: {
+            ...reviewAssignmentWithConfig.proposal.with,
+            // The revision fan-out needs every assignment of the proposal, so
+            // the ids ride on this query rather than costing a second one.
+            reviewAssignments: { columns: { id: true } },
+          },
+        },
+      },
     }),
     assertUserByAuthId(user.id),
   ]);
@@ -398,6 +408,9 @@ export async function assertReviewAssignmentContext({
     assignment,
     instance,
     review,
+    proposalAssignmentIds: assignment.proposal.reviewAssignments.map(
+      (sibling) => sibling.id,
+    ),
     currentProposalHistoryId,
     isReviewOutOfDate: isReviewOutOfDate({
       assignment,

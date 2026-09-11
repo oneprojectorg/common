@@ -20,8 +20,12 @@ export const cancelRevisionRequestRouter = router({
         user: ctx.user,
       });
 
+      // Every assignment of the proposal, not only the acting one: a request
+      // changes the count the proposal's other reviewers see.
       ctx.registerMutationChannels([
-        Channels.reviewAssignment(input.assignmentId),
+        ...result.proposalAssignmentIds.map((assignmentId) =>
+          Channels.reviewAssignment(assignmentId),
+        ),
         Channels.reviewAssignments(result.processInstanceId),
         Channels.decisionProposal(result.processInstanceId, result.proposalId),
       ]);
