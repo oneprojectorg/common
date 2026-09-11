@@ -9,7 +9,12 @@ import {
   processInstances,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createProposalReview, createReviewAssignment } from '@op/test';
+import {
+  createProposalReview,
+  createReviewAssignment,
+  getCurrentProposalHistoryId,
+  reviseProposal,
+} from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -706,6 +711,151 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
     expect(
       result.reviews.some((r) => r.reviewer.id === draftPeer.profileId),
     ).toBe(false);
+  });
+});
+
+// --- Out-of-date reviews (staleness derived at read time) ------------------
+
+describe.concurrent('getProposalWithReviewAggregates out-of-date reviews', () => {
+  it('counts and flags only the submitted reviews written before the edit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    const staleScenario = await testData.createReviewAssignment({
+      context,
+      title: 'Edited After Reviews',
+    });
+    const proposalId = staleScenario.proposal.id;
+    const originalHistoryId = await getCurrentProposalHistoryId({ proposalId });
+
+    const [secondReviewer, thirdReviewer, draftReviewer] = await Promise.all([
+      testData.createReviewer(context),
+      testData.createReviewer(context),
+      testData.createReviewer(context),
+    ]);
+
+    const [secondAssignment, thirdAssignment, draftAssignment] =
+      await Promise.all(
+        [secondReviewer, thirdReviewer, draftReviewer].map((reviewer) =>
+          createReviewAssignment({
+            processInstanceId: context.instance.instance.id,
+            proposalId,
+            reviewerProfileId: reviewer.profileId,
+            assignedProposalHistoryId: originalHistoryId,
+          }),
+        ),
+      );
+
+    const submittedAnswers = {
+      answers: {
+        impact: 7,
+        feasibility: 4,
+        [OVERALL_RECOMMENDATION_KEY]: 'yes',
+      },
+      rationales: {},
+    };
+
+    // Two submissions and one draft against the version reviewers were given.
+    await Promise.all([
+      createProposalReview({
+        assignmentId: staleScenario.assignment.id,
+        state: ProposalReviewState.SUBMITTED,
+        reviewData: submittedAnswers,
+        submittedAt: new Date().toISOString(),
+        reviewedProposalHistoryId: originalHistoryId,
+      }),
+      createProposalReview({
+        assignmentId: secondAssignment!.id,
+        state: ProposalReviewState.SUBMITTED,
+        reviewData: submittedAnswers,
+        submittedAt: new Date().toISOString(),
+        reviewedProposalHistoryId: originalHistoryId,
+      }),
+      createProposalReview({
+        assignmentId: draftAssignment!.id,
+        state: ProposalReviewState.DRAFT,
+        reviewData: { answers: { impact: 9 }, rationales: {} },
+        reviewedProposalHistoryId: originalHistoryId,
+      }),
+    ]);
+
+    const revisedHistoryId = await reviseProposal({
+      proposalId,
+      proposalData: { title: 'Edited After Reviews (revised)' },
+    });
+
+    await createProposalReview({
+      assignmentId: thirdAssignment!.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: submittedAnswers,
+      submittedAt: new Date().toISOString(),
+      reviewedProposalHistoryId: revisedHistoryId,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.getProposalWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalId,
+    });
+
+    expect(result.aggregates).toMatchObject({
+      assignmentsCount: 4,
+      reviewsSubmittedCount: 3,
+      outOfDateReviewsCount: 2,
+    });
+
+    expect(result.reviews).toHaveLength(3);
+    const flagByReviewer = new Map(
+      result.reviews.map((row) => [row.reviewer.id, row.isReviewOutOfDate]),
+    );
+    expect(flagByReviewer.get(staleScenario.reviewer.profileId)).toBe(true);
+    expect(flagByReviewer.get(secondReviewer.profileId)).toBe(true);
+    expect(flagByReviewer.get(thirdReviewer.profileId)).toBe(false);
+  });
+
+  it('flags nothing while the proposal still matches every submission', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await advanceToReviewPhase(context.instance.instance.id);
+
+    const scenario = await testData.createReviewAssignment({
+      context,
+      title: 'Untouched Proposal',
+    });
+    const currentHistoryId = await getCurrentProposalHistoryId({
+      proposalId: scenario.proposal.id,
+    });
+
+    await createProposalReview({
+      assignmentId: scenario.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: { impact: 7, feasibility: 4 }, rationales: {} },
+      submittedAt: new Date().toISOString(),
+      reviewedProposalHistoryId: currentHistoryId,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.getProposalWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalId: scenario.proposal.id,
+    });
+
+    expect(result.aggregates.reviewsSubmittedCount).toBe(1);
+    expect(result.aggregates.outOfDateReviewsCount).toBe(0);
+    expect(result.reviews[0]!.isReviewOutOfDate).toBe(false);
   });
 });
 

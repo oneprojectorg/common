@@ -16,6 +16,8 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { getCurrentProposalHistoryIds } from './proposal/history';
+import { isReviewOutOfDate } from './review/staleness';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
 import {
@@ -149,29 +151,32 @@ async function listProposalsFiltered({
     return { items: [], rubricTemplate };
   }
 
-  const [proposalsFull, categoriesByProposalId] = await Promise.all([
-    db.query.proposals.findMany({
-      // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
-      // re-apply the filter here so a bug upstream can't leak a CSAM row to
-      // the review UI.
-      where: {
-        RAW: (table) =>
-          and(
-            inArray(table.id, filteredProposalIds),
-            isNull(table.moderationDetachedAt),
-          )!,
-      },
-      with: proposalRelations({ processInstanceId, phaseId }),
-    }),
-    getCategoriesByProposalIds(filteredProposalIds),
-  ]);
+  const [proposalsFull, categoriesByProposalId, currentHistoryIdByProposal] =
+    await Promise.all([
+      db.query.proposals.findMany({
+        // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
+        // re-apply the filter here so a bug upstream can't leak a CSAM row to
+        // the review UI.
+        where: {
+          RAW: (table) =>
+            and(
+              inArray(table.id, filteredProposalIds),
+              isNull(table.moderationDetachedAt),
+            )!,
+        },
+        with: proposalRelations({ processInstanceId, phaseId }),
+      }),
+      getCategoriesByProposalIds(filteredProposalIds),
+      getCurrentProposalHistoryIds({ proposalIds: filteredProposalIds }),
+    ]);
 
   const items = proposalsFull.map((proposal) => ({
     proposal,
-    aggregates: getComputedReviewAggregates(
-      proposal.reviewAssignments,
+    aggregates: getComputedReviewAggregates({
+      reviewAssignments: proposal.reviewAssignments,
       scoredCriterionKeys,
-    ),
+      currentProposalHistoryId: currentHistoryIdByProposal.get(proposal.id),
+    }),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
 
@@ -220,16 +225,20 @@ async function listPhaseProposalsWithAggregates({
     return { items: [], rubricTemplate };
   }
 
-  const categoriesByProposalId = await getCategoriesByProposalIds(
-    rows.map((p) => p.id),
-  );
+  const rowProposalIds = rows.map((p) => p.id);
+  const [categoriesByProposalId, currentHistoryIdByProposal] =
+    await Promise.all([
+      getCategoriesByProposalIds(rowProposalIds),
+      getCurrentProposalHistoryIds({ proposalIds: rowProposalIds }),
+    ]);
 
   const items = rows.map((proposal) => ({
     proposal,
-    aggregates: getComputedReviewAggregates(
-      proposal.reviewAssignments,
+    aggregates: getComputedReviewAggregates({
+      reviewAssignments: proposal.reviewAssignments,
       scoredCriterionKeys,
-    ),
+      currentProposalHistoryId: currentHistoryIdByProposal.get(proposal.id),
+    }),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
 
@@ -240,6 +249,13 @@ async function listPhaseProposalsWithAggregates({
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
+
+/** The review columns the aggregates and the staleness rule read. */
+type ReviewAggregateRow = {
+  state: string;
+  reviewData: unknown;
+  reviewedProposalHistoryId: string | null;
+};
 
 /**
  * `with` block for the proposal relational query — shared by filtered and
@@ -306,21 +322,31 @@ export async function getCategoriesByProposalIds(
  *
  * `proposal_reviews_assignment_unique` makes `reviews` 0-or-1; we read just
  * the first row even though the relation is declared as many.
+ *
+ * `currentProposalHistoryId` comes from one batched lookup per page — never
+ * per row — so `outOfDateReviewsCount` costs no extra query.
  */
-export function getComputedReviewAggregates(
+export function getComputedReviewAggregates({
+  reviewAssignments,
+  scoredCriterionKeys,
+  currentProposalHistoryId,
+}: {
   reviewAssignments: Array<{
     status: string;
     reviewer: unknown;
-    reviews: Array<{ state: string; reviewData: unknown }>;
-  }>,
-  scoredCriterionKeys: string[],
-) {
+    assignedProposalHistoryId: string | null;
+    reviews: Array<ReviewAggregateRow>;
+  }>;
+  scoredCriterionKeys: string[];
+  currentProposalHistoryId: string | null | undefined;
+}) {
   const reviewers = reviewAssignments.map((a) => ({
     profile: a.reviewer,
     status: a.status,
   }));
 
   let reviewsSubmittedCount = 0;
+  let outOfDateReviewsCount = 0;
   let totalScore = 0;
   const overallRecommendationCount: Record<string, number> = {};
 
@@ -331,6 +357,15 @@ export function getComputedReviewAggregates(
       continue;
     }
     reviewsSubmittedCount += 1;
+    if (
+      isReviewOutOfDate({
+        assignment,
+        review: review ?? null,
+        currentProposalHistoryId,
+      })
+    ) {
+      outOfDateReviewsCount += 1;
+    }
     totalScore += scored.score;
 
     if (scored.overallRecommendation != null) {
@@ -346,6 +381,7 @@ export function getComputedReviewAggregates(
   return {
     assignmentsCount: reviewAssignments.length,
     reviewsSubmittedCount,
+    outOfDateReviewsCount,
     averageScore,
     overallRecommendationCount,
     reviewers,
