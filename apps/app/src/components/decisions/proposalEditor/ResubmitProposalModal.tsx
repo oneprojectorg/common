@@ -37,6 +37,8 @@ export function ResubmitProposalModal({
   const t = useTranslations();
   const router = useRouter();
   const noteId = useId();
+  const noteDescriptionId = useId();
+  const noteHintId = useId();
   const [note, setNote] = useState('');
 
   const submitProposalRevision =
@@ -64,7 +66,7 @@ export function ResubmitProposalModal({
         onOpenChange(open);
       }}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('Submit revision')}</DialogTitle>
         </DialogHeader>
@@ -73,13 +75,18 @@ export function ResubmitProposalModal({
             <FieldLabel htmlFor={noteId}>
               {t('What did you change?')}
             </FieldLabel>
-            <FieldDescription>
+            <FieldDescription id={noteDescriptionId}>
               {t(
                 'Briefly describe your revisions so reviewers know what to look for.',
               )}
             </FieldDescription>
+            {/* `Field` does not wire `aria-describedby` itself, so the hint
+                below the field is listed here too — it states the one-shot
+                consequence of submitting, which a screen reader user needs
+                before the control, not after it. */}
             <Textarea
               id={noteId}
+              aria-describedby={`${noteDescriptionId} ${noteHintId}`}
               rows={6}
               placeholder={t('Add note for reviewers...')}
               value={note}
@@ -87,7 +94,10 @@ export function ResubmitProposalModal({
             />
           </Field>
 
-          <p className="flex items-start gap-2 text-sm text-muted-foreground">
+          <p
+            id={noteHintId}
+            className="flex items-start gap-2 text-sm text-muted-foreground"
+          >
             <LuCircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
             {t(
               "After you submit, you can't edit unless a reviewer requests another revision.",
