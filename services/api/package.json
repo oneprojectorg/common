@@ -16,6 +16,7 @@
     "format:check": "oxfmt --check",
     "test": "vitest run",
     "test:check-supabase": "tsx src/test/check-supabase.ts",
+    "test:coverage": "vitest run --coverage",
     "test:db:reset": "pnpm test:supabase:reset && pnpm test:migrate",
     "test:supabase:start": "tsx src/test/supabase-test.ts start",
     "test:supabase:status": "tsx src/test/supabase-test.ts status",
@@ -67,8 +68,10 @@
   "devDependencies": {
     "@op/test": "workspace:*",
     "@op/typescript-config": "workspace:*",
+    "@op/vitest-config": "workspace:*",
     "@rjsf/utils": "^6.3.1",
     "@types/jsonwebtoken": "^9.0.10",
+    "@vitest/coverage-istanbul": "catalog:",
     "jsonwebtoken": "^9.0.2",
     "typescript": "7.0.2",
     "vitest": "catalog:"

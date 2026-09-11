@@ -12,6 +12,7 @@
   "scripts": {
     "format:check": "oxfmt --check",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,6 +24,8 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
+    "@op/vitest-config": "workspace:*",
+    "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:"
   }
 }
