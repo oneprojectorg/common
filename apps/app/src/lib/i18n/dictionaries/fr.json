@@ -1725,5 +1725,16 @@
   "(opens in a new tab)": "(s’ouvre dans un nouvel onglet)",
   "Submitting is final": "La soumission est définitive",
   "You won't be able to edit your proposal after submitting": "Vous ne pourrez plus modifier votre proposition après l'envoi",
-  "Keep editing": "Continuer à modifier"
+  "Keep editing": "Continuer à modifier",
+  "User": "Utilisateur",
+  "View user": "Voir l'utilisateur",
+  "Network member": "Membre du réseau",
+  "Onboarded": "Intégré",
+  "Terms accepted": "Conditions acceptées",
+  "Privacy accepted": "Confidentialité acceptée",
+  "Profile memberships": "Adhésions de profil",
+  "User not found": "Utilisateur introuvable",
+  "Not a member of any organization": "Membre d'aucune organisation",
+  "No profile memberships": "Aucune adhésion de profil",
+  "Unknown Organization": "Organisation inconnue"
 }

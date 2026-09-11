@@ -1725,5 +1725,16 @@
   "(opens in a new tab)": "(új lapon nyílik meg)",
   "Submitting is final": "A beküldés végleges",
   "You won't be able to edit your proposal after submitting": "A beküldés után nem szerkesztheti a javaslatát",
-  "Keep editing": "Szerkesztés folytatása"
+  "Keep editing": "Szerkesztés folytatása",
+  "User": "Felhasználó",
+  "View user": "Felhasználó megtekintése",
+  "Network member": "Hálózati tag",
+  "Onboarded": "Bevezetve",
+  "Terms accepted": "Feltételek elfogadva",
+  "Privacy accepted": "Adatvédelem elfogadva",
+  "Profile memberships": "Profiltagságok",
+  "User not found": "A felhasználó nem található",
+  "Not a member of any organization": "Nem tagja egyetlen szervezetnek sem",
+  "No profile memberships": "Nincsenek profiltagságok",
+  "Unknown Organization": "Ismeretlen szervezet"
 }

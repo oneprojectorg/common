@@ -1725,5 +1725,16 @@
   "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)",
   "Submitting is final": "Gudbintu waa mid aan la beddeli karin",
   "You won't be able to edit your proposal after submitting": "Ma awoodi doontid inaad wax ka beddesho soo jeedintaada ka dib marka aad gudbiso",
-  "Keep editing": "Sii wad wax ka beddelka"
+  "Keep editing": "Sii wad wax ka beddelka",
+  "User": "Isticmaale",
+  "View user": "Eeg isticmaalaha",
+  "Network member": "Xubin shabakadeed",
+  "Onboarded": "La soo dhoweeyay",
+  "Terms accepted": "Shuruudaha la aqbalay",
+  "Privacy accepted": "Sirta la aqbalay",
+  "Profile memberships": "Xubinnimada astaanta",
+  "User not found": "Isticmaalaha lama helin",
+  "Not a member of any organization": "Xubin kama aha hay’ad kasta",
+  "No profile memberships": "Ma jiraan xubinnimo astaan ah",
+  "Unknown Organization": "Hay’ad aan la garanayn"
 }

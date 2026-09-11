@@ -1725,5 +1725,16 @@
   "(opens in a new tab)": "(opens in a new tab)",
   "Submitting is final": "Submitting is final",
   "You won't be able to edit your proposal after submitting": "You won't be able to edit your proposal after submitting",
-  "Keep editing": "Keep editing"
+  "Keep editing": "Keep editing",
+  "User": "User",
+  "View user": "View user",
+  "Network member": "Network member",
+  "Onboarded": "Onboarded",
+  "Terms accepted": "Terms accepted",
+  "Privacy accepted": "Privacy accepted",
+  "Profile memberships": "Profile memberships",
+  "User not found": "User not found",
+  "Not a member of any organization": "Not a member of any organization",
+  "No profile memberships": "No profile memberships",
+  "Unknown Organization": "Unknown Organization"
 }
