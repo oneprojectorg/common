@@ -45,13 +45,22 @@ export const reviewAssignmentWithConfig = {
 /**
  * Shared `with` config for proposal queries that need to surface the
  * proposal's revision requests (author inbox + proposal-scoped views).
- * Optionally filters nested `requests` by state.
+ * Optionally filters nested `requests` by state, and the assignments those
+ * requests hang off by phase.
+ *
+ * `phaseId` matters because the revision cycle is phase-scoped:
+ * `submitProposalRevision` answers only the requests on the current phase's
+ * assignments, so a screen that offers the author that action has to read the
+ * same set. Reading wider leaves a request from an ended phase looking
+ * answerable, and the submit then rejects it.
  */
 export function proposalWithRevisionRequestsConfig(
   states?: ProposalReviewRequestState[],
+  phaseId?: string,
 ) {
   const requestsWhere =
     states && states.length > 0 ? { state: { in: states } } : undefined;
+  const assignmentsWhere = phaseId != null ? { phaseId } : undefined;
 
   return {
     submittedBy: {
@@ -70,6 +79,7 @@ export function proposalWithRevisionRequestsConfig(
     },
     reviewAssignments: {
       columns: { id: true as const },
+      where: assignmentsWhere,
       with: {
         requests: {
           where: requestsWhere,
