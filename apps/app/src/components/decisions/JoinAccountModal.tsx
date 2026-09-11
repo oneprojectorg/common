@@ -292,9 +292,9 @@ const JoinAccountModalContent = () => {
             ? isPhone
               ? t('Code sent!')
               : t('Email sent!')
-            : t('Claim your account')}
+            : t("Don't lose track of this idea")}
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="text-center">
           {otpSent
             ? isPhone
               ? t(
@@ -306,7 +306,7 @@ const JoinAccountModalContent = () => {
                   { email },
                 )
             : t(
-                'Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.',
+                'Followers get updates as this idea moves through the process. Sign up in seconds.',
               )}
         </DialogDescription>
       </DialogHeader>
@@ -345,7 +345,7 @@ const JoinAccountModalContent = () => {
                 }}
               >
                 <span id="join-channel-label" className="text-label">
-                  {t('Sign up with')}
+                  {t('Continue with')}
                 </span>
                 {/* TabsList is `w-fit`; the design splits the full width. */}
                 <TabsList
