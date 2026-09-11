@@ -11,10 +11,10 @@ export interface ProposalRevisionNoteGroup {
 /**
  * The author's latest revision note and the requests it answered.
  *
- * One resubmission stamps the same `respondedAt` on every request it answers,
- * so an identical timestamp is what groups them. Swap this for the grouped
- * `listProposalRevisionNotes` read once `respondedProposalHistoryId` is exposed
- * on the request schema.
+ * One resubmission stamps the same `respondedProposalHistoryId` on every
+ * request it answers, which is what groups them — the same key the server-side
+ * `listProposalRevisionNotes` groups on. Rows written before that column
+ * existed carry a null id, so those still group by an identical `respondedAt`.
  */
 export function getLatestProposalRevisionNote(
   requests: Array<ProposalReviewRequest>,
@@ -23,21 +23,31 @@ export function getLatestProposalRevisionNote(
     (request) => request.respondedAt !== null && request.responseComment,
   );
 
-  const latestRespondedAt = answered.reduce<string | null>(
-    (latest, request) =>
-      latest === null || (request.respondedAt ?? '') > latest
-        ? request.respondedAt
-        : latest,
+  const latest = answered.reduce<ProposalReviewRequest | null>(
+    (newest, request) =>
+      newest === null ||
+      (request.respondedAt ?? '') > (newest.respondedAt ?? '')
+        ? request
+        : newest,
     null,
   );
 
-  if (latestRespondedAt === null) {
+  if (latest === null || latest.respondedAt === null) {
     return null;
   }
 
-  const group = answered.filter(
-    (request) => request.respondedAt === latestRespondedAt,
-  );
+  const historyId = latest.respondedProposalHistoryId;
+
+  const group =
+    historyId === null
+      ? answered.filter(
+          (request) =>
+            request.respondedProposalHistoryId === null &&
+            request.respondedAt === latest.respondedAt,
+        )
+      : answered.filter(
+          (request) => request.respondedProposalHistoryId === historyId,
+        );
 
   const comment = group[0]?.responseComment;
 
@@ -46,7 +56,7 @@ export function getLatestProposalRevisionNote(
   }
 
   return {
-    note: { comment, respondedAt: latestRespondedAt },
+    note: { comment, respondedAt: latest.respondedAt },
     requests: group,
   };
 }
