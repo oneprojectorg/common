@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { type ReactNode, Suspense } from 'react';
+import { LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -59,7 +60,7 @@ function ReviewedVersion({
   return (
     <div className="flex flex-col gap-6 sm:gap-10">
       <div className="flex">
-        <StatusBadge variant="warning">
+        <StatusBadge variant="revision" icon={LuRefreshCw}>
           {t('Older version reviewed by {name}', { name: reviewerName })}
         </StatusBadge>
       </div>

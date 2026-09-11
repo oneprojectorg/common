@@ -10,6 +10,7 @@ import { Header3 } from '@op/sense/Header';
 import { StatusDot } from '@op/sense/StatusDot';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
+import { TotalScoreCard } from '../Review/ReviewFormShell';
 import { SubmittedReviewView } from '../Review/SubmittedReviewView';
 import { BackToReviewers } from './BackToReviewers';
 import type { RubricSummary } from './ReviewsPanel';
@@ -75,6 +76,14 @@ export function ReviewerDetail({
       <SubmittedReviewView
         rubricTemplate={rubricTemplate}
         review={item.review}
+        // The same row the live rubric form shows above its feedback block, so
+        // a read-only review reads the same wherever it is opened.
+        scoreSlot={
+          <TotalScoreCard
+            rubricTemplate={rubricTemplate}
+            values={item.review.reviewData.answers}
+          />
+        }
       />
     </div>
   );
