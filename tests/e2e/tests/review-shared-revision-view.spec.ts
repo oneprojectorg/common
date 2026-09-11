@@ -115,7 +115,9 @@ test.describe('Review — shared revision request view', () => {
     await expect(alertA).toHaveAttribute('aria-live', 'polite');
     await expect(alertA).toContainText('The author has been notified');
 
-    const requestButtonA = pageA.getByRole('button', {
+    // Header-scoped: the dialog's submit button shares the name and stays
+    // mounted while it animates out.
+    const requestButtonA = pageA.getByRole('banner').getByRole('button', {
       name: 'Request revision',
     });
     await expect(requestButtonA).toBeEnabled();
