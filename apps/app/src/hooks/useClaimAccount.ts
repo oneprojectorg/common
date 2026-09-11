@@ -76,11 +76,15 @@ export function getClaimPhoneErrorMessage(
 }
 
 /**
- * After linking, route through promote onboarding (personal details + ToS),
- * returning to `dest` when done. `dest` must carry the locale prefix — the
- * locale-less /login route and the modal both pass a localized pathname.
+ * The promote-onboarding URL (personal details + ToS) that returns to `dest`
+ * when done. `dest` must carry the locale prefix — the locale-less /login
+ * route and the modal both pass a localized pathname.
+ *
+ * Exported separately from {@link goToOnboarding} so a redirect-based flow
+ * (Google OAuth) can hand this to the auth callback's own `redirect` param
+ * instead of navigating client-side.
  */
-export function goToOnboarding(dest: string | null) {
+export function getOnboardingPath(dest: string | null): string {
   const safeDest = dest && isSafeRedirectPath(dest) ? dest : '/';
   // A safe path isn't necessarily locale-prefixed (e.g. /info/tos), so
   // validate the first segment before building the /start URL from it.
@@ -88,7 +92,12 @@ export function goToOnboarding(dest: string | null) {
   const locale = SUPPORTED_LOCALES.some((l) => l === firstSegment)
     ? firstSegment
     : i18nConfig.defaultLocale;
-  window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
+  return `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
+}
+
+/** After linking, route through promote onboarding. See {@link getOnboardingPath}. */
+export function goToOnboarding(dest: string | null) {
+  window.location.href = getOnboardingPath(dest);
 }
 
 export function useClaimAccount() {

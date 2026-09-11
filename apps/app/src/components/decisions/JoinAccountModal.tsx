@@ -3,6 +3,7 @@
 import {
   getClaimEmailErrorMessage,
   getClaimPhoneErrorMessage,
+  getOnboardingPath,
   goToOnboarding,
   useClaimAccount,
 } from '@/hooks/useClaimAccount';
@@ -20,6 +21,7 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
@@ -28,7 +30,9 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   AuthCodeField,
+  AuthDivider,
   AuthEmailField,
+  AuthGoogleButton,
   AuthPhoneField,
   isValidOtpLength,
 } from '../AuthPanel';
@@ -142,6 +146,7 @@ export const JoinOrUserMenu = ({
 
 const JoinAccountModalContent = () => {
   const t = useTranslations();
+  const supabase = createSBBrowserClient();
   const {
     requestEmailCode,
     verifyEmailCode,
@@ -179,6 +184,26 @@ const JoinAccountModalContent = () => {
   // deliberately — `join=1` must not re-open the modal on the way back.
   const goAfterClaim = () => {
     goToOnboarding(pathname);
+  };
+
+  // Google is a redirect flow, not an in-page OTP exchange, so it can't call
+  // goAfterClaim itself — the destination has to travel as the callback's own
+  // `redirect` param.
+  //
+  // KNOWN GAP: unlike requestEmailCode/requestPhoneCode (see useClaimAccount's
+  // module doc), this goes through the standard /api/auth/callback, which
+  // calls account.login and enforces the invite-only allow-list. A public,
+  // uninvited visitor who picks "Continue with Google" here will be rejected
+  // and their freshly-created account deleted — the exact gate the claim flow
+  // exists to bypass. Left as-is per product decision; needs a claim-flow
+  // equivalent (linkIdentity) before this is correct for public processes.
+  const joinWithGoogle = async () => {
+    const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+    callbackUrl.searchParams.set('redirect', getOnboardingPath(pathname));
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: callbackUrl.toString() },
+    });
   };
 
   const submitContact = async () => {
@@ -262,7 +287,7 @@ const JoinAccountModalContent = () => {
     <>
       {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
       <DialogHeader>
-        <DialogTitle>
+        <DialogTitle className="text-center">
           {otpSent
             ? isPhone
               ? t('Code sent!')
@@ -304,6 +329,12 @@ const JoinAccountModalContent = () => {
           />
         ) : (
           <>
+            <AuthGoogleButton
+              onPress={() => {
+                void joinWithGoogle();
+              }}
+            />
+            <AuthDivider />
             {smsEnabled ? (
               <Tabs
                 value={activeChannel}
