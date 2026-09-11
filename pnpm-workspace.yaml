@@ -47,5 +47,4 @@ catalog:
   '@tiptap/extension-strike': ^3.15.3
   '@tiptap/extension-text': ^3.15.3
   '@tiptap/extension-text-align': ^3.15.3
-  '@tiptap/extension-underline': ^3.15.3
   '@tiptap/suggestion': ^3.15.3
