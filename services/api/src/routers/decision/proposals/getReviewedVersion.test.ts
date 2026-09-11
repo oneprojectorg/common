@@ -81,10 +81,7 @@ describe.concurrent('getReviewedVersion', () => {
 
     expect(result.isCurrent).toBe(false);
     expect(result.proposal.id).toBe(created.proposal.id);
-    // The fixture's collaboration doc is never version-stamped, so the older
-    // snapshot's rich text cannot be rebuilt — the rest of it still comes back.
-    expect(result.contentUnavailable).toBe(true);
-    expect(result.proposal.documentContent).toBeUndefined();
+    expect(result.proposal.documentContent).toEqual({ type: 'unavailable' });
     expect(result.proposal.proposalData.title).toBe('Reviewed title');
   });
 

@@ -22,6 +22,7 @@ import { TranslateBanner } from '../TranslateBanner';
 import { useTranslateProposal } from '../useTranslateProposal';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
+import { ReviewedVersionPane } from './ReviewedVersionPane';
 
 interface ReviewSummaryViewProps {
   decisionSlug: string;
@@ -159,6 +160,25 @@ export function ReviewSummaryView({
     !!ownAssignment && selectedAssignmentId === ownAssignment.assignment.id;
   const canEditOwnReview = !!ownAssignment?.canEditReview;
 
+  // Only a review the aggregates flagged stale switches the left pane.
+  const selectedStaleReview = selectedAssignmentId
+    ? proposalWithReviews.reviews.find(
+        (item) =>
+          item.review.assignmentId === selectedAssignmentId &&
+          item.isReviewOutOfDate,
+      )
+    : undefined;
+
+  const currentProposalPane = (
+    <ProposalPreview
+      proposal={proposal}
+      translation={translation}
+      // The reviews on the right are read against the author's last
+      // resubmission.
+      headerBanner={<AuthorNotesSection proposalId={proposalId} />}
+    />
+  );
+
   return (
     <div
       className={cn(
@@ -197,13 +217,21 @@ export function ReviewSummaryView({
 
       <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="summary">
         <SplitPane.Pane id="proposal" label={t('Proposal')}>
-          <ProposalPreview
-            proposal={proposal}
-            translation={translation}
-            // The reviews on the right are read against the author's last
-            // resubmission.
-            headerBanner={<AuthorNotesSection proposalId={proposalId} />}
-          />
+          {selectedStaleReview && !isOwnFormOpen ? (
+            <ReviewedVersionPane
+              // Remount per reviewer so the skeleton covers the next read.
+              key={selectedStaleReview.review.id}
+              reviewId={selectedStaleReview.review.id}
+              reviewerName={
+                selectedStaleReview.reviewer.name ??
+                selectedStaleReview.reviewer.slug
+              }
+            >
+              {currentProposalPane}
+            </ReviewedVersionPane>
+          ) : (
+            currentProposalPane
+          )}
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"

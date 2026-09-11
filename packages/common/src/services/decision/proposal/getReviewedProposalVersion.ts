@@ -19,6 +19,7 @@ import {
   isProposalReadable,
 } from '../proposalVisibility';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
+import { resolveReviewedProposalHistoryId } from '../review/staleness';
 import { assertCanReadPhaseReviews } from '../reviewHelpers';
 import {
   type ReviewedProposalVersion,
@@ -35,15 +36,9 @@ export type GetReviewedProposalVersionInput = z.infer<
 >;
 
 /**
- * The proposal as it stood when this review was written: the review's own
- * version anchor, falling back to the assignment pin for reviews written
- * before the anchor column existed. The caller never names a version — the
- * pointers stay server-side (ADR 0006).
- *
- * `isCurrent` is true when the anchor resolves to the proposal's current
- * history row, when there is no anchor at all, and when the proposal has no
- * open history row to compare against; in every one of those cases the live
- * proposal is returned, so live content is never labelled an older version.
+ * The proposal as it stood when this review was written. The caller names a
+ * review and never a version — the history pointers stay server-side (ADR
+ * 0006). `isCurrent` is true when the live proposal was returned.
  */
 export async function getReviewedProposalVersion({
   reviewId,
@@ -81,8 +76,6 @@ export async function getReviewedProposalVersion({
     user,
   });
 
-  // Same gate as the admin review reads: decision admins on any phase,
-  // reviewers on an open-reviews phase at or before the current one.
   const [decisionRoles] = await Promise.all([
     instance.profileId
       ? getProfileAccessRoles({ user, profileId: instance.profileId })
@@ -96,11 +89,13 @@ export async function getReviewedProposalVersion({
 
   // Reading a review does not widen who may read its proposal: drafts, hidden,
   // flagged and detached proposals stay behind exactly the gate `getProposal`
-  // applies, and are 404 to everyone else.
+  // applies.
   const readContext = getProposalReadContext({ user, decisionRoles });
 
-  const anchorHistoryId =
-    review.reviewedProposalHistoryId ?? assignment.assignedProposalHistoryId;
+  const anchorHistoryId = resolveReviewedProposalHistoryId({
+    review,
+    assignment,
+  });
 
   // One repeatable-read snapshot: a revision landing between the proposal read
   // and the current-history read would otherwise let `isCurrent` describe a
@@ -164,10 +159,9 @@ export async function getReviewedProposalVersion({
   const versionRow = snapshot && !isCurrent ? snapshot : proposal;
   const proposalData = parseProposalData(versionRow.proposalData);
 
-  // An older snapshot whose collaboration doc was never version-stamped (the
-  // stamp on submit is best-effort) cannot be rendered as it was — fetching it
-  // would return today's document under an "older version" label.
-  const contentUnavailable =
+  // Fetching an older snapshot's collaboration document without a version
+  // stamp would return today's document under an older-version label.
+  const documentUnstamped =
     !isCurrent &&
     Boolean(proposalData.collaborationDocId) &&
     proposalData.collaborationDocVersionId == null;
@@ -178,7 +172,7 @@ export async function getReviewedProposalVersion({
   );
 
   const [documentContentMap, attachments] = await Promise.all([
-    contentUnavailable
+    documentUnstamped
       ? Promise.resolve(new Map<string, ProposalDocumentContent>())
       : getProposalDocumentsContent(
           [
@@ -196,7 +190,9 @@ export async function getReviewedProposalVersion({
     getProposalAttachmentsWithSignedUrls(proposal.id),
   ]);
 
-  const documentContent = documentContentMap.get(proposal.id);
+  const documentContent: ProposalDocumentContent | undefined = documentUnstamped
+    ? { type: 'unavailable' }
+    : documentContentMap.get(proposal.id);
 
   let htmlContent: Record<string, string> | undefined;
   if (documentContent?.type === 'json') {
@@ -213,7 +209,6 @@ export async function getReviewedProposalVersion({
       id: proposal.id,
       profileId: proposal.profileId,
       proposalData,
-      // Profiles are not versioned; the author and owning group are read live.
       submittedBy: {
         ...submittedBy,
         isAnonymous: isAnonymousAuthor(profileUsers),
@@ -225,6 +220,5 @@ export async function getReviewedProposalVersion({
       htmlContent,
     },
     isCurrent,
-    contentUnavailable,
   });
 }
