@@ -50,7 +50,7 @@ beat
 
 say "Join opens the claim modal"
 must ab find role button click --name "Join"
-must ab wait --text "Claim your account"
+must ab wait --text "Don't lose track of this idea"
 beat
 shot 2-claim-modal
 

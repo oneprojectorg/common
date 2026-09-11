@@ -40,7 +40,7 @@ say "The same Join button, the same modal"
 goto "$APP/en/decisions/$SLUG"
 start_recording
 must ab find role button click --name "Join"
-must ab wait --text "Claim your account"
+must ab wait --text "Don't lose track of this idea"
 beat
 shot 1-claim-modal
 
