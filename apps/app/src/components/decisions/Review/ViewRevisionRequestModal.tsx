@@ -1,6 +1,5 @@
 'use client';
 
-import type { ProposalReviewRequest } from '@op/common/client';
 import { useRelativeTime } from '@op/hooks';
 import {
   AlertDialog,
@@ -25,11 +24,22 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useReviewForm } from './ReviewFormContext';
 
+/**
+ * Only the fields the cards render. `listProposalRevisionNotes` selects no
+ * assignment id, so its requests are never marked as the viewer's own.
+ */
+export interface ListedRevisionRequest {
+  id: string;
+  assignmentId?: string | null;
+  requestComment: string;
+  requestedAt: string | null;
+}
+
 interface ViewRevisionRequestModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   /** Defaults to every request still open on the proposal. */
-  requests?: Array<ProposalReviewRequest>;
+  requests?: Array<ListedRevisionRequest>;
 }
 
 /** Requests are anonymous; only the viewer's own card is marked and cancellable. */
@@ -128,7 +138,7 @@ function RevisionRequestCard({
   canCancel,
   onCancel,
 }: {
-  request: ProposalReviewRequest;
+  request: ListedRevisionRequest;
   isOwn: boolean;
   canCancel: boolean;
   onCancel: () => void;
