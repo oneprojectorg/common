@@ -7,11 +7,7 @@ import {
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import {
-  type Proposal,
-  ProposalReviewRequestState,
-  type ProposalSelection,
-} from '@op/common/client';
+import type { Proposal, ProposalSelection } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
 import { useQueryStates } from 'nuqs';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
@@ -33,8 +29,8 @@ import {
   proposalFeedbackPanelParser,
   proposalReviewNotesParser,
 } from './proposalEditor/proposalEditorAsideParams';
-import { getLatestProposalRevisionNote } from './proposalRevisionNotes';
 import { useProposalFeedback } from './useProposalFeedback';
+import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
 
 /** How often to re-fetch while the document is still propagating from TipTap. */
@@ -51,12 +47,15 @@ export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 export function ProposalView({
   proposal: initialProposal,
   affordances,
+  isAuthor,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
   /** What this viewer may see here — see `getProposalAffordances`. */
   affordances: ProposalAffordances;
+  /** The viewer wrote the proposal; only the note card's title depends on it. */
+  isAuthor: boolean;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -144,36 +143,24 @@ export function ProposalView({
     feedback: proposalFeedbackPanelParser,
   });
 
-  // The view panel is "Revision submitted" — only surface entries the author
-  // has already responded to. Pending requests are handled by the editor.
-  // The server throws UnauthorizedError when the viewer lacks review access;
-  // treat any error as "no revisions" so the proposal still renders.
-  const { data: revisionData, error: revisionError } =
-    trpc.decision.listProposalRevisionRequests.useQuery(
-      {
-        proposalId: currentProposal.id,
-        states: [ProposalReviewRequestState.RESUBMITTED],
-      },
-      { enabled: affordances.review.revisions, throwOnError: false },
-    );
+  // `feedback`, not `revisions`: the sheet is the same record for every viewer
+  // it admits, and it keeps showing after the review phase ends — which is
+  // exactly when `revisions` goes false.
+  const { openRequests, noteGroups, hasReviewNotes } = useProposalReviewNotes({
+    proposalId: currentProposal.id,
+    enabled: affordances.review.feedback,
+  });
 
-  const submittedRevisions = (
-    revisionError ? [] : (revisionData?.items ?? [])
-  ).map((item) => item.revisionRequest);
+  // `?reviewRevision=<id>` stays a working deep link; the sheet lists every
+  // cycle rather than the one request the link names.
+  const isReviewNotesOpen =
+    hasReviewNotes && Boolean(isReviewNotesRequested || reviewRevision);
 
-  // The author's most recent note and the requests that one resubmission
-  // answered — the record the editor's sheet leaves behind.
-  const latestRevisionNote = getLatestProposalRevisionNote(submittedRevisions);
+  // Session-local, like the editor's: we hold no read state for revision
+  // requests, and the dot only has to stop nagging once the sheet was opened.
+  const [hasOpenedReviewNotes, setHasOpenedReviewNotes] = useState(false);
 
-  // `?reviewRevision=<id>` stays a working deep link; the panel lists the whole
-  // group rather than the one request the link names.
-  const isReviewNotesOpen = Boolean(
-    latestRevisionNote && (isReviewNotesRequested || reviewRevision),
-  );
-
-  // `feedback`, not `revisions`: this is the history the panel keeps showing
-  // after the review phase ends, which is when `revisions` goes false.
-  const { notes, revisionHistory, hasFeedback } = useProposalFeedback({
+  const { notes, hasFeedback } = useProposalFeedback({
     proposalId: currentProposal.id,
     enabled: affordances.review.feedback,
   });
@@ -186,6 +173,7 @@ export function ProposalView({
   }, [isFeedbackPanelOpen, setQueryState]);
 
   const toggleReviewNotes = useCallback(() => {
+    setHasOpenedReviewNotes(true);
     void setQueryState(
       { reviewNotes: isReviewNotesOpen ? null : true, reviewRevision: null },
       { history: 'push', scroll: false },
@@ -201,9 +189,9 @@ export function ProposalView({
     dismissBanner,
   } = useTranslateProposal(currentProposal);
 
-  // Most recently responded revision (if any) — drives the "Revised on"
-  // badge shown inline in the submitter metadata row.
-  const latestRespondedAt = latestRevisionNote?.note.respondedAt ?? null;
+  // Most recent resubmission (if any) — drives the "Revised on" badge shown
+  // inline in the submitter metadata row. The server orders newest first.
+  const latestRespondedAt = noteGroups[0]?.respondedAt ?? null;
 
   const proposalBody: ReactNode = (
     <>
@@ -244,14 +232,15 @@ export function ProposalView({
   );
 
   const asidePane: { label: string; content: ReactNode } | null =
-    isReviewNotesOpen && latestRevisionNote
+    isReviewNotesOpen
       ? {
           label: t('Review notes'),
           content: (
             <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
               <ReviewNotesPanel
-                requests={latestRevisionNote.requests}
-                note={latestRevisionNote.note}
+                openRequests={openRequests}
+                noteGroups={noteGroups}
+                isAuthor={isAuthor}
               />
             </div>
           ),
@@ -262,12 +251,10 @@ export function ProposalView({
             content: (
               <ProposalFeedbackPanel
                 feedbackItems={notes}
-                revisionRequests={revisionHistory}
                 title={t('Feedback')}
                 subtitle={t(
                   'Notes reviewers shared while this proposal was under review',
                 )}
-                revisionRequestLabel={t('Revision request')}
               />
             ),
           }
@@ -293,20 +280,24 @@ export function ProposalView({
           decisionRoot={decisionRoot}
         />
       }
-      // One disclosure for both panes: mid-phase it opens the submitted
-      // revision, and the feedback panel once `affordances.review.revisions` is false.
-      feedbackToggle={
-        latestRevisionNote
+      // Two independent disclosures: the revision-cycle record and the
+      // reviewer notes. Both can show at once.
+      reviewNotesToggle={
+        hasReviewNotes
           ? {
               onToggle: toggleReviewNotes,
               isActive: isReviewNotesOpen,
+              hasUnread: !hasOpenedReviewNotes && !isReviewNotesOpen,
             }
-          : hasFeedback
-            ? {
-                onToggle: toggleFeedbackPanel,
-                isActive: isFeedbackPanelOpen,
-              }
-            : undefined
+          : undefined
+      }
+      feedbackToggle={
+        hasFeedback
+          ? {
+              onToggle: toggleFeedbackPanel,
+              isActive: isFeedbackPanelOpen,
+            }
+          : undefined
       }
     >
       {asidePane ? (

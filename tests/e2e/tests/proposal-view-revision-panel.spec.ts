@@ -2,8 +2,9 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   processInstances,
+  proposalReviewRequests,
 } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import { db, eq, inArray } from '@op/db/test';
 import {
   type CreateOrganizationResult,
   type DecisionSchemaDefinition,
@@ -78,8 +79,9 @@ const REVIEW_PHASE_SCHEMA = {
  * the decision admin (via createDecisionInstance).
  *
  * `state` decides whether the requests are still open (`REQUESTED`) or already
- * answered by one resubmission (`RESUBMITTED` — same note and `respondedAt` on
- * both rows, which is what groups them into one author note).
+ * answered by one resubmission (`RESUBMITTED` — one note and one
+ * `respondedProposalHistoryId` stamped on both rows, which is what groups them
+ * into a single revision cycle).
  */
 async function setupRevisionScenario({
   org,
@@ -140,10 +142,6 @@ async function setupRevisionScenario({
   });
 
   const isAnswered = state === ProposalReviewRequestState.RESUBMITTED;
-  const respondedAt = isAnswered ? new Date().toISOString() : null;
-  const answer = isAnswered
-    ? { responseComment: AUTHOR_NOTE, respondedAt }
-    : {};
 
   const { proposal, assignedProposalHistoryId, revisionRequest } =
     await createReviewScenario({
@@ -158,7 +156,6 @@ async function setupRevisionScenario({
       revisionRequest: {
         state,
         requestComment: FIRST_REQUEST_COMMENT,
-        ...answer,
       },
     });
 
@@ -175,12 +172,30 @@ async function setupRevisionScenario({
     assignedProposalHistoryId,
     status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
   });
-  await createRevisionRequest({
+  const secondRequest = await createRevisionRequest({
     assignmentId: secondAssignment.id,
     state,
     requestComment: SECOND_REQUEST_COMMENT,
-    ...answer,
   });
+
+  // One resubmission stamps the same note and version pointer on every request
+  // it answers, in one statement — the pointer is what the grouped notes read
+  // keys on, so both rows have to carry it.
+  if (isAnswered) {
+    await db
+      .update(proposalReviewRequests)
+      .set({
+        responseComment: AUTHOR_NOTE,
+        respondedAt: new Date().toISOString(),
+        respondedProposalHistoryId: assignedProposalHistoryId,
+      })
+      .where(
+        inArray(proposalReviewRequests.id, [
+          revisionRequest.id,
+          secondRequest.id,
+        ]),
+      );
+  }
 
   return {
     instance,
@@ -294,15 +309,17 @@ test.describe('Proposal View — revision notes panel', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    // Plain URL — the header's "Feedback" toggle is visible because a
-    // RESUBMITTED request exists.
+    // Plain URL — the header's "Review notes" toggle is visible because an
+    // answered revision cycle exists.
     await page.goto(
       proposalUrl(scenario.instance.slug, scenario.proposal.profileId),
     );
     await expect(
       page.getByRole('heading', { name: 'Community Solar Initiative' }),
     ).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole('button', { name: 'Feedback' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Review notes' }),
+    ).toBeVisible();
 
     // Panel open — one note, both of the requests it answered.
     await page.goto(
@@ -320,7 +337,7 @@ test.describe('Proposal View — revision notes panel', () => {
     await expect(page.getByText(SECOND_REQUEST_COMMENT)).toBeVisible();
   });
 
-  test('a reviewer with the REVIEW role sees the revision notes panel', async ({
+  test("a reviewer with the REVIEW role sees the author's note", async ({
     browser,
     org,
     supabaseAdmin,
@@ -347,13 +364,16 @@ test.describe('Proposal View — revision notes panel', () => {
       ),
     );
 
+    // Not "Your revision note": the record is identical, only the note card's
+    // title tracks who is reading it.
     await expect(
-      page.getByRole('heading', { name: 'Your revision note' }),
+      page.getByRole('heading', { name: "Author's revision note" }),
     ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(AUTHOR_NOTE)).toBeVisible();
     await expect(page.getByText(FIRST_REQUEST_COMMENT)).toBeVisible();
   });
 
-  test('a decision admin sees the revision notes panel', async ({
+  test("a decision admin sees the author's note", async ({
     authenticatedPage,
     org,
     supabaseAdmin,
@@ -376,7 +396,9 @@ test.describe('Proposal View — revision notes panel', () => {
     );
 
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'Your revision note' }),
+      authenticatedPage.getByRole('heading', {
+        name: "Author's revision note",
+      }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
       authenticatedPage.getByText(FIRST_REQUEST_COMMENT),
@@ -412,9 +434,12 @@ test.describe('Proposal View — revision notes panel', () => {
 
     // The panel must not render for a user with no access to the instance.
     await expect(
-      page.getByRole('heading', { name: 'Your revision note' }),
+      page.getByRole('heading', { name: "Author's revision note" }),
     ).not.toBeVisible();
     await expect(page.getByText(FIRST_REQUEST_COMMENT)).not.toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Review notes' }),
+    ).not.toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Feedback' }),
     ).not.toBeVisible();

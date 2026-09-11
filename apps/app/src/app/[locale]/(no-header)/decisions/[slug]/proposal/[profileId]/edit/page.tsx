@@ -7,7 +7,6 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
-  ProposalReviewRequestState,
   getProposalFragmentNames,
   parseProposalData,
 } from '@op/common/client';
@@ -51,6 +50,7 @@ import {
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 import { useProposalFeedback } from '@/components/decisions/useProposalFeedback';
+import { useProposalReviewNotes } from '@/components/decisions/useProposalReviewNotes';
 
 /**
  * Route page for the proposal editor.
@@ -121,34 +121,32 @@ function EditProposalPageContent() {
 
   const { user } = useRequiredUser();
 
-  // Mirrors the server gate for both revision reads below: author standing,
-  // decision admin, or review capability. Deliberately not `review.revisions` —
-  // that adds a review-phase condition, and an author has to see a pending
-  // request whatever phase the decision is in.
+  // Mirrors the server gate for the reads below: author standing, decision
+  // admin, or review capability. Deliberately not `review.revisions` — that
+  // adds a review-phase condition, and an author has to see a pending request
+  // whatever phase the decision is in.
   const affordances = getProposalAffordances({ instance, proposal, user });
 
-  // Gated rather than firing for every viewer and swallowing the server's
-  // UnauthorizedError. The error-to-empty fallback stays for transport
-  // failures, so the editor still loads.
-  const { data: revisionData, error: revisionError } =
-    trpc.decision.listProposalRevisionRequests.useQuery(
-      {
-        proposalId: proposal.id,
-        states: [ProposalReviewRequestState.REQUESTED],
-      },
-      { enabled: affordances.review.feedback, throwOnError: false },
-    );
+  // Whoever the sheet admits reads the same record — the author, a decision
+  // admin, or anyone with review capability. Gated rather than firing for every
+  // viewer and swallowing the server's UnauthorizedError.
+  const { openRequests, noteGroups, hasReviewNotes } = useProposalReviewNotes({
+    proposalId: proposal.id,
+    enabled: affordances.review.feedback,
+  });
 
-  // One resubmission answers every one of these, so they are read as a set
-  // rather than singled out by id.
-  const openRevisionRequests = (
-    revisionError ? [] : (revisionData?.items ?? [])
-  ).map((item) => item.revisionRequest);
+  // Only the open requests put the editor in revision mode; the answered
+  // cycles are a record the sheet keeps showing afterwards.
+  const hasOpenRevisionRequests = openRequests.length > 0;
 
-  const hasOpenRevisionRequests = openRevisionRequests.length > 0;
+  // Same check `getProposalAffordances` makes — an admin can open this editor
+  // too, and the note card is titled for whoever is reading it.
+  const isAuthor =
+    !!user.currentProfile?.id &&
+    proposal.submittedBy?.id === user.currentProfile.id;
 
-  // Same gate: the panel keeps showing this history after the review phase
-  // ends, which is exactly when `review.revisions` would go false.
+  // Same gate: the reviewer notes stay readable after the review phase ends,
+  // which is exactly when `review.revisions` would go false.
   const feedback = useProposalFeedback({
     proposalId: proposal.id,
     enabled: affordances.review.feedback,
@@ -190,8 +188,7 @@ function EditProposalPageContent() {
   // `?reviewRevision=<id>` stays a working deep link from the notification
   // email: it names one request, but the sheet lists them all.
   const isReviewNotesOpen =
-    hasOpenRevisionRequests &&
-    (isReviewNotesRequested || Boolean(reviewRevision));
+    hasReviewNotes && (isReviewNotesRequested || Boolean(reviewRevision));
 
   const setReviewNotesOpen = (open: boolean) => {
     setHasOpenedReviewNotes(true);
@@ -219,18 +216,17 @@ function EditProposalPageContent() {
   // surfaces — hide them from anonymous accounts and logged-out visitors.
   const canInteract = userCanInteract(user);
 
-  // The review-notes sheet owns the open requests, so this disclosure is left
-  // with the read-only record of a review that has already ended.
-  const feedbackDisclosure =
-    !hasOpenRevisionRequests && feedback.hasFeedback ? (
-      <FeedbackDotIconButton
-        key="feedback"
-        icon={LuMessageSquareText}
-        label={t('Feedback')}
-        onToggle={toggleFeedbackPanel}
-        isExpanded={isFeedbackPanelOpen}
-      />
-    ) : null;
+  // The review-notes sheet owns every revision cycle, so this disclosure is
+  // left with the reviewer notes alone — both can show at once.
+  const feedbackDisclosure = feedback.hasFeedback ? (
+    <FeedbackDotIconButton
+      key="feedback"
+      icon={LuMessageSquareText}
+      label={t('Feedback')}
+      onToggle={toggleFeedbackPanel}
+      isExpanded={isFeedbackPanelOpen}
+    />
+  ) : null;
 
   const headerIcons = !canInteract
     ? []
@@ -240,7 +236,7 @@ function EditProposalPageContent() {
       ];
 
   const reviewNotesSlot =
-    canInteract && hasOpenRevisionRequests ? (
+    canInteract && hasReviewNotes ? (
       <ReviewNotesButton
         onToggle={() => setReviewNotesOpen(!isReviewNotesOpen)}
         isExpanded={isReviewNotesOpen}
@@ -292,7 +288,11 @@ function EditProposalPageContent() {
               title={t('Review notes')}
               onClose={() => setReviewNotesOpen(false)}
             >
-              <ReviewNotesPanel requests={openRevisionRequests} />
+              <ReviewNotesPanel
+                openRequests={openRequests}
+                noteGroups={noteGroups}
+                isAuthor={isAuthor}
+              />
             </ProposalEditorAsideSheet>
           }
         >
@@ -300,12 +300,10 @@ function EditProposalPageContent() {
             <ProposalEditorAsidePane label={t('Feedback')}>
               <ProposalFeedbackPanel
                 feedbackItems={feedback.notes}
-                revisionRequests={feedback.revisionHistory}
                 title={t('Feedback')}
                 subtitle={t(
                   'Notes reviewers shared while this proposal was under review',
                 )}
-                revisionRequestLabel={t('Revision request')}
               />
             </ProposalEditorAsidePane>
           ) : null}

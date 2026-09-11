@@ -1,56 +1,89 @@
 'use client';
 
-import type { ProposalReviewRequest } from '@op/common/client';
+import type {
+  ProposalReviewRequest,
+  ProposalRevisionNote,
+} from '@op/common/client';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { RevisionFeedbackCard } from './proposalEditor/RevisionFeedbackCard';
 
-export interface ProposalRevisionNote {
-  comment: string;
-  respondedAt: string | null;
-}
-
 interface ReviewNotesPanelProps {
-  /** The revision requests listed as cards, newest first. */
-  requests: Array<ProposalReviewRequest>;
-  /** The author's note, shown above the requests it answered. */
-  note?: ProposalRevisionNote | null;
+  /** Requests the author still has to answer, newest first. */
+  openRequests: Array<ProposalReviewRequest>;
+  /** Every past revision cycle, newest first. */
+  noteGroups: Array<ProposalRevisionNote>;
+  /** The viewer wrote the proposal, which is all that changes the note title. */
+  isAuthor: boolean;
 }
 
 /**
- * The body of the "Review notes" sheet: every revision request the author has
- * to answer, or — once they have resubmitted — their note above the requests it
- * answered. Requests are anonymous, so no reviewer is named.
+ * The body of the "Review notes" sheet: one record per proposal, the same for
+ * every viewer the sheet admits — the open revision requests, then every cycle
+ * already answered, newest first. Requests are anonymous, so no reviewer is
+ * named.
  */
-export function ReviewNotesPanel({ requests, note }: ReviewNotesPanelProps) {
+export function ReviewNotesPanel({
+  openRequests,
+  noteGroups,
+  isAuthor,
+}: ReviewNotesPanelProps) {
   const t = useTranslations();
+  const noteTitle = isAuthor
+    ? t('Your revision note')
+    : t("Author's revision note");
 
   return (
     // Fills in from a client query, with no navigation to announce it.
     <div aria-live="polite" className="flex flex-col gap-4">
-      <h3 className="font-serif text-label">
-        {requests.length === 1 ? t('Revision request') : t('Revision requests')}
-      </h3>
+      {openRequests.length > 0 ? (
+        <>
+          <h3 className="font-serif text-label">
+            {openRequests.length === 1
+              ? t('Revision request')
+              : t('Revision requests')}
+          </h3>
 
-      {note ? (
-        <RevisionFeedbackCard
-          comment={note.comment}
-          sentAt={note.respondedAt}
-          variant="author"
-          title={t('Your revision note')}
-          meta="bare"
-        />
+          {openRequests.map((request) => (
+            <RevisionFeedbackCard
+              key={request.id}
+              comment={request.requestComment}
+              sentAt={request.requestedAt}
+              variant="request"
+              meta="bare"
+            />
+          ))}
+        </>
       ) : null}
 
-      {requests.map((request) => (
-        <RevisionFeedbackCard
-          key={request.id}
-          comment={request.requestComment}
-          sentAt={request.requestedAt}
-          variant="request"
-          meta="bare"
-        />
+      {noteGroups.map((group) => (
+        <div
+          key={group.respondedProposalHistoryId}
+          className="flex flex-col gap-4"
+        >
+          {/* A resubmission can carry no note, and then the cycle is just the
+              requests it answered. */}
+          {group.responseComment ? (
+            <RevisionFeedbackCard
+              comment={group.responseComment}
+              sentAt={group.respondedAt}
+              variant="author"
+              title={noteTitle}
+              meta="bare"
+            />
+          ) : null}
+
+          {group.requests.map((request) => (
+            <RevisionFeedbackCard
+              key={request.id}
+              comment={request.requestComment}
+              sentAt={request.requestedAt}
+              variant="request"
+              meta="bare"
+            />
+          ))}
+        </div>
       ))}
     </div>
   );

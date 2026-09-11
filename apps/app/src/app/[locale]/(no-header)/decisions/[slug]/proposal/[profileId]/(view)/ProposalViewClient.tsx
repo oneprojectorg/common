@@ -33,6 +33,12 @@ function ProposalViewPageContent({
   const phases = instance.instanceData?.phases ?? [];
   const affordances = getProposalAffordances({ instance, proposal, user });
 
+  // Same check `getProposalAffordances` makes for author standing — the sheet
+  // is one record for every viewer, and only its note title reads differently.
+  const isAuthor =
+    !!user?.currentProfile?.id &&
+    proposal.submittedBy?.id === user.currentProfile.id;
+
   // Selections only make sense once we've reached the final/results phase.
   const inLastPhase = isLastPhase(instance.currentStateId, phases);
   const { data: selection } =
@@ -45,6 +51,7 @@ function ProposalViewPageContent({
     <ProposalView
       proposal={proposal}
       affordances={affordances}
+      isAuthor={isAuthor}
       decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />

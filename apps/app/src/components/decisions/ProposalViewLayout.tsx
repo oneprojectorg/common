@@ -25,6 +25,7 @@ import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
 import { ProposalAdminMenu } from './ProposalAdminMenu';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ReportProposalDialog } from './ReportProposalDialog';
+import { ReviewNotesButton } from './ReviewNotesButton';
 
 export function ProposalViewLayout({
   children,
@@ -34,6 +35,7 @@ export function ProposalViewLayout({
   canJoin = false,
   reportProposalId,
   feedbackToggle,
+  reviewNotesToggle,
   moderationProposal,
   notices,
 }: {
@@ -51,13 +53,22 @@ export function ProposalViewLayout({
    *  proposal with this id. */
   reportProposalId?: string;
   /**
-   * The header's "Feedback" disclosure; the owner decides which pane it opens.
-   * Its dot is static — Figma's red dot means "unread" and we hold no
-   * read-state for reviewer notes.
+   * The header's "Feedback" disclosure, for reviewer notes alone. Its dot is
+   * static — Figma's red dot means "unread" and we hold no read-state for
+   * reviewer notes.
    */
   feedbackToggle?: {
     onToggle: () => void;
     isActive: boolean;
+  };
+  /**
+   * The header's "Review notes" disclosure — the revision-cycle record. Sits
+   * beside `feedbackToggle`: both can show at once.
+   */
+  reviewNotesToggle?: {
+    onToggle: () => void;
+    isActive: boolean;
+    hasUnread: boolean;
   };
   /**
    * Admin overflow menu (hide / delete). Gates itself on
@@ -127,6 +138,13 @@ export function ProposalViewLayout({
             </ButtonLink>
             {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
+            {reviewNotesToggle && (
+              <ReviewNotesButton
+                onToggle={reviewNotesToggle.onToggle}
+                isExpanded={reviewNotesToggle.isActive}
+                hasUnread={reviewNotesToggle.hasUnread}
+              />
+            )}
             {feedbackToggle && (
               <Tooltip>
                 <TooltipTrigger
