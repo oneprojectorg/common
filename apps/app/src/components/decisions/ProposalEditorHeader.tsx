@@ -13,6 +13,8 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { ReviewNotesButton } from './ReviewNotesButton';
+import { useOptionalReviewNotes } from './ReviewNotesContext';
 
 interface ProposalEditorHeaderProps {
   backHref: string;
@@ -25,7 +27,6 @@ interface ProposalEditorHeaderProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
-  reviewNotesSlot?: ReactNode;
   /**
    * Optional save/version status text rendered in the bar's left cluster,
    * after the proposal name (Figma: "Saved 2 min ago" / "Viewing {date}").
@@ -50,7 +51,6 @@ export function ProposalEditorHeader({
   isDraft = false,
   presenceSlot,
   asideHeaderIcons,
-  reviewNotesSlot,
   statusSlot,
   readOnlyMode = false,
   canShare,
@@ -61,6 +61,8 @@ export function ProposalEditorHeader({
   const router = useRouter();
   const t = useTranslations();
   const { user } = useUser();
+  const reviewNotes = useOptionalReviewNotes();
+  const canInteract = userCanInteract(user);
 
   return (
     <div className="sticky top-0 z-20 flex h-editor-topbar items-center justify-between gap-2 border-b bg-background px-4 sm:px-6">
@@ -105,7 +107,13 @@ export function ProposalEditorHeader({
               <span className="hidden sm:inline">{t('Share')}</span>
             </Button>
           )}
-          {!readOnlyMode && reviewNotesSlot}
+          {!readOnlyMode && canInteract && reviewNotes?.hasReviewNotes ? (
+            <ReviewNotesButton
+              onToggle={reviewNotes.toggle}
+              isExpanded={reviewNotes.isOpen}
+              hasUnread={reviewNotes.hasUnread}
+            />
+          ) : null}
           {!readOnlyMode && (
             <Button
               onClick={isRevisionMode ? onResubmit : onSubmitProposal}
@@ -117,9 +125,7 @@ export function ProposalEditorHeader({
           )}
           <LocaleChooser />
           {/* No avatar or login for visitors/anonymous. */}
-          {userCanInteract(user) ? (
-            <UserAvatarMenu className="hidden sm:block" />
-          ) : null}
+          {canInteract ? <UserAvatarMenu className="hidden sm:block" /> : null}
         </div>
       </TooltipProvider>
     </div>

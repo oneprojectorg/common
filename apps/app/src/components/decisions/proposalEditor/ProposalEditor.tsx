@@ -56,16 +56,12 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  reviewNotesSlot,
-  hasOpenRevisionRequests = false,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode?: boolean;
   asideHeaderIcons?: ReactNode;
-  reviewNotesSlot?: ReactNode;
-  hasOpenRevisionRequests?: boolean;
 }) {
   const { user } = useRequiredUser();
   const t = useTranslations();
@@ -105,10 +101,8 @@ export function ProposalEditor({
       proposal={proposal}
       isEditMode={isEditMode}
       asideHeaderIcons={asideHeaderIcons}
-      reviewNotesSlot={reviewNotesSlot}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
-      hasOpenRevisionRequests={hasOpenRevisionRequests}
     />
   );
 
@@ -137,20 +131,16 @@ function ProposalEditorInner({
   proposal,
   isEditMode,
   asideHeaderIcons,
-  reviewNotesSlot,
   collaborationDocId,
   proposalTemplate,
-  hasOpenRevisionRequests,
 }: {
   instance: ProcessInstance;
   backHref: string;
   proposal: Proposal;
   isEditMode: boolean;
   asideHeaderIcons?: ReactNode;
-  reviewNotesSlot?: ReactNode;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
-  hasOpenRevisionRequests: boolean;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -525,11 +515,8 @@ function ProposalEditorInner({
       readOnlyMode={isPreviewMode}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
-      reviewNotesSlot={reviewNotesSlot}
       proposalProfileId={proposal.profileId}
-      proposalId={proposal.id}
       access={proposal.access}
-      hasOpenRevisionRequests={hasOpenRevisionRequests}
     >
       {/* Formatting is per-field now: each prose editor renders its own bubble
           menu on the selection, so there is no toolbar row above the form. */}

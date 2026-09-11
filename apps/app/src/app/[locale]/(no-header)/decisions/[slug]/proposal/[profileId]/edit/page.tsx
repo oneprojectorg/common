@@ -24,7 +24,10 @@ import { useTranslations } from '@/lib/i18n';
 import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorAside as ProposalEditorAsideSheet } from '@/components/decisions/ProposalEditorAside';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
-import { ReviewNotesButton } from '@/components/decisions/ReviewNotesButton';
+import {
+  type ReviewNotesState,
+  ReviewNotesProvider,
+} from '@/components/decisions/ReviewNotesContext';
 import { ReviewNotesPanel } from '@/components/decisions/ReviewNotesPanel';
 import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
@@ -148,22 +151,28 @@ function EditProposalPageContent() {
     onOpen: () => setAsideState({ aside: null }),
   });
 
-  const hasOpenRevisionRequests = reviewNotes.openRequests.length > 0;
+  // The version-history controls are interactive editing surfaces — hide them
+  // from anonymous accounts and logged-out visitors.
+  const headerIcons = !userCanInteract(user) ? [] : asideHeaderIcons;
 
-  // The version-history and revision-request controls are interactive editing
-  // surfaces — hide them from anonymous accounts and logged-out visitors.
-  const canInteract = userCanInteract(user);
-
-  const headerIcons = !canInteract ? [] : asideHeaderIcons;
-
-  const reviewNotesSlot =
-    canInteract && reviewNotes.hasReviewNotes ? (
-      <ReviewNotesButton
-        onToggle={reviewNotes.toggle}
-        isExpanded={reviewNotes.isOpen}
-        hasUnread={reviewNotes.hasUnread}
-      />
-    ) : null;
+  const reviewNotesState = useMemo<ReviewNotesState>(
+    () => ({
+      proposalId: proposal.id,
+      hasReviewNotes: reviewNotes.hasReviewNotes,
+      hasUnread: reviewNotes.hasUnread,
+      hasOpenRequests: reviewNotes.openRequests.length > 0,
+      isOpen: reviewNotes.isOpen,
+      toggle: reviewNotes.toggle,
+    }),
+    [
+      proposal.id,
+      reviewNotes.hasReviewNotes,
+      reviewNotes.hasUnread,
+      reviewNotes.openRequests,
+      reviewNotes.isOpen,
+      reviewNotes.toggle,
+    ],
+  );
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -193,30 +202,30 @@ function EditProposalPageContent() {
         }
         fragmentNames={fragmentNames}
       >
-        <ProposalEditorContent
-          proposal={proposal}
-          instance={instance}
-          slug={slug}
-          fragmentNames={fragmentNames}
-          asideState={asideState}
-          setAsideState={setAsideState}
-          asideHeaderIcons={headerIcons}
-          reviewNotesSlot={reviewNotesSlot}
-          hasOpenRevisionRequests={hasOpenRevisionRequests}
-        >
-          <ProposalEditorAsideSheet
-            open={reviewNotes.isOpen}
-            title={t('Review notes')}
-            onClose={() => reviewNotes.setOpen(false)}
+        <ReviewNotesProvider value={reviewNotesState}>
+          <ProposalEditorContent
+            proposal={proposal}
+            instance={instance}
+            slug={slug}
+            fragmentNames={fragmentNames}
+            asideState={asideState}
+            setAsideState={setAsideState}
+            asideHeaderIcons={headerIcons}
           >
-            <ReviewNotesPanel
-              openRequests={reviewNotes.openRequests}
-              noteGroups={reviewNotes.noteGroups}
-              feedbackNotes={reviewNotes.feedbackNotes}
-              isAuthor={isAuthor}
-            />
-          </ProposalEditorAsideSheet>
-        </ProposalEditorContent>
+            <ProposalEditorAsideSheet
+              open={reviewNotes.isOpen}
+              title={t('Review notes')}
+              onClose={() => reviewNotes.setOpen(false)}
+            >
+              <ReviewNotesPanel
+                openRequests={reviewNotes.openRequests}
+                noteGroups={reviewNotes.noteGroups}
+                feedbackNotes={reviewNotes.feedbackNotes}
+                isAuthor={isAuthor}
+              />
+            </ProposalEditorAsideSheet>
+          </ProposalEditorContent>
+        </ReviewNotesProvider>
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
@@ -237,8 +246,6 @@ function ProposalEditorContent({
   asideState,
   setAsideState,
   asideHeaderIcons,
-  reviewNotesSlot,
-  hasOpenRevisionRequests,
   children,
 }: {
   proposal: Proposal;
@@ -248,8 +255,6 @@ function ProposalEditorContent({
   asideState: ProposalEditorAsideState;
   setAsideState: (state: ProposalEditorAsideState) => void;
   asideHeaderIcons: React.ReactNode[];
-  reviewNotesSlot: React.ReactNode;
-  hasOpenRevisionRequests: boolean;
   children: React.ReactNode;
 }) {
   const versionPreview = useOptionalVersionPreview();
@@ -309,8 +314,6 @@ function ProposalEditorContent({
         asideHeaderIcons={
           asideHeaderIcons.length > 0 ? asideHeaderIcons : undefined
         }
-        reviewNotesSlot={reviewNotesSlot}
-        hasOpenRevisionRequests={hasOpenRevisionRequests}
       />
       {children}
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays

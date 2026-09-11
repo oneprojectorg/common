@@ -8,7 +8,7 @@ import {
   type ProposalRevisionNote,
 } from '@op/common/client';
 import { useQueryStates } from 'nuqs';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import {
   proposalEditorReviewRevisionParser,
@@ -71,11 +71,20 @@ export function useProposalReviewNotes({
     enabled,
   });
 
-  const openRequests = (
-    requestQuery.error ? [] : (requestQuery.data?.items ?? [])
-  ).map((item) => item.revisionRequest);
+  // Memoized so a consumer reading these keeps a stable prop identity; the
+  // `.map()` and the `[]` fallback would otherwise be new arrays each render.
+  const openRequests = useMemo(
+    () =>
+      (requestQuery.error ? [] : (requestQuery.data?.items ?? [])).map(
+        (item) => item.revisionRequest,
+      ),
+    [requestQuery.data, requestQuery.error],
+  );
 
-  const noteGroups = noteQuery.error ? [] : (noteQuery.data?.items ?? []);
+  const noteGroups = useMemo(
+    () => (noteQuery.error ? [] : (noteQuery.data?.items ?? [])),
+    [noteQuery.data, noteQuery.error],
+  );
 
   const hasReviewNotes =
     openRequests.length > 0 || noteGroups.length > 0 || hasFeedback;
