@@ -19,6 +19,7 @@ export const getProposalWithReviewAggregatesRouter = router({
 
       ctx.registerQueryChannels([
         Channels.decisionProposal(input.processInstanceId, input.proposalId),
+        Channels.reviewAssignments(input.processInstanceId),
       ]);
 
       return result;

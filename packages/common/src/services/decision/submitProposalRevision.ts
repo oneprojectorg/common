@@ -25,7 +25,6 @@ import { parseProposalData } from './proposalDataSchema';
 
 export interface SubmitProposalRevisionResult {
   items: Array<ProposalReviewRequest>;
-  assignmentIds: Array<string>;
   proposalAssignmentIds: Array<string>;
   processInstanceId: string;
   proposalHistoryId: string;
@@ -219,7 +218,6 @@ export async function submitProposalRevision({
 
   return {
     items,
-    assignmentIds,
     proposalAssignmentIds: proposal.reviewAssignments.map(
       (assignment) => assignment.id,
     ),
