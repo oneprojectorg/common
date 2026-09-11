@@ -115,6 +115,10 @@ export const proposalReviewRequestSchema = z.object({
   updatedAt: z.string().nullable(),
 });
 
+export const proposalReviewRequestListSchema = list(
+  proposalReviewRequestSchema,
+);
+
 // ── Review schemas ──────────────────────────────────────────────────────
 
 export const proposalReviewSchema = z.object({
