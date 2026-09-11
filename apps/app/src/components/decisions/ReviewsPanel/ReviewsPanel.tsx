@@ -33,7 +33,10 @@ interface ReviewsPanelProps {
   onSelectAssignment: (assignmentId: string | null) => void;
   /** When set, that reviewer's review is omitted from the list and detail. */
   excludeProfileId?: string;
-  /** Hides the "Review Summary" header + submitted-count line in the list view. */
+  /**
+   * Reviewer-facing mode: hides the "Review Summary" header, the
+   * submitted-count line and the admin-only mixed-version banner.
+   */
   hideSummaryHeader?: boolean;
   /** Header text; defaults to "Review Summary". */
   title?: string;
