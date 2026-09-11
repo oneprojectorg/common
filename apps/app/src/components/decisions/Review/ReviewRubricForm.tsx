@@ -164,8 +164,7 @@ function MyReviewForm() {
     ) : null;
 
   // A submitted review shows the read-only result unless the reviewer has
-  // switched it back into the form via "Edit review" — or the review is out of
-  // date, which opens the form directly (see `ReviewFormContext`).
+  // switched it back into the form via "Edit review", or it is out of date.
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
       <>
@@ -231,16 +230,10 @@ function MyReviewForm() {
   );
 }
 
-/**
- * The reviewer's submitted review is behind the proposal's current version.
- * The form below it is already open with their answers, so this only says why
- * — the action is the navbar's "Update review".
- */
 function NewRevisionAlert() {
   const t = useTranslations();
 
   return (
-    // `Alert` carries role="alert"; announced when it appears mid-session.
     <Alert variant="warning">
       <LuRefreshCw />
       <AlertTitle>{t('New revision')}</AlertTitle>

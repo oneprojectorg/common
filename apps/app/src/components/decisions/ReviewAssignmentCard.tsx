@@ -42,8 +42,7 @@ export function ReviewAssignmentCard({
   const t = useTranslations();
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
-  // `ready_for_re_review` already tells the reviewer to look again, and says it
-  // louder — its treatment wins, so the staleness pill stands down.
+  // `ready_for_re_review` already says "look again", louder.
   const showOutOfDate = isReviewOutOfDate && !isRevised;
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData(proposal);

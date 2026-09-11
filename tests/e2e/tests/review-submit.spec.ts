@@ -554,8 +554,7 @@ test.describe('Review Submit', () => {
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // No read-only step for an out-of-date review: the alert sits above an
-    // already-open form, and the only header action is "Update review".
+    // No read-only step for an out-of-date review.
     await expect(page.getByText('New revision')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Edit review' })).toHaveCount(
       0,
@@ -579,8 +578,7 @@ test.describe('Review Submit', () => {
         .filter({ hasText: 'Review updated successfully' }),
     ).toBeVisible({ timeout: 10_000 });
 
-    // Re-affirming re-anchors the review to the revised version, so the next
-    // load is the ordinary read-only view again.
+    // Re-affirming re-anchors the review to the revised version.
     const reaffirmedReview = await db.query.proposalReviews.findFirst({
       where: { assignmentId: assignment.id },
     });

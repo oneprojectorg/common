@@ -56,10 +56,7 @@ interface ReviewFormState {
   ownRevisionRequest: ProposalReviewRequest | null;
   /** Own latest request in any state. */
   ownLatestRevisionRequest: ProposalReviewRequest | null;
-  /**
-   * The submitted review predates the proposal's current version — the reviewer
-   * has to re-affirm it (via "Update review") for it to count as current.
-   */
+  /** The submitted review predates the proposal's current version. */
   isReviewOutOfDate: boolean;
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
@@ -192,9 +189,8 @@ function ReviewFormProviderInner({
   // Local: unsaved until "Update review", so navigating away discards edits.
   const [isEditRequested, setIsEditRequested] = useState(initiallyEditing);
 
-  // An out-of-date review skips the read-only step: the reviewer came to check
-  // their answers against a new revision, so the form opens with them carried
-  // over and "Update review" as the one action.
+  // An out-of-date review skips the read-only step: it opens pre-filled so the
+  // reviewer can re-affirm it.
   const isEditing = isEditRequested || isReviewOutOfDate;
 
   const submitReview = trpc.decision.submitReview.useMutation({
