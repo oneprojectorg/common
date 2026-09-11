@@ -7,11 +7,13 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
-import { LuChevronRight } from 'react-icons/lu';
+import { LuChevronRight, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -42,8 +44,12 @@ export function ReviewerList({
   ownReview,
 }: ReviewerListProps) {
   const t = useTranslations();
-  const { reviewsSubmittedCount, assignmentsCount, averageScore } =
-    proposalWithReviews.aggregates;
+  const {
+    reviewsSubmittedCount,
+    assignmentsCount,
+    averageScore,
+    outOfDateReviewsCount,
+  } = proposalWithReviews.aggregates;
   const { hasScoring, hasOverallRecommendation, totalPoints } = rubricSummary;
 
   const recommendationOptions = useMemo(
@@ -75,6 +81,20 @@ export function ReviewerList({
             )}
           </p>
         </header>
+      )}
+
+      {/* Admin-only: the reviewer-facing panel hides the summary header. */}
+      {!hideSummaryHeader && outOfDateReviewsCount > 0 && (
+        <Alert variant="warning">
+          <LuRefreshCw />
+          <AlertTitle>{t('Mixed version reviews')}</AlertTitle>
+          <AlertDescription>
+            {t(
+              '{n} out of {total} reviews were completed before the latest revision. Cumulative score includes all reviews.',
+              { n: outOfDateReviewsCount, total: reviewsSubmittedCount },
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
       {hasScoring && reviewsSubmittedCount > 0 && (
@@ -222,7 +242,12 @@ function ReviewerRow({
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}
       className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
-      aria-label={t('View review by {name}', { name: rowLabel })}
+      // aria-label replaces the row's visible text, so it must repeat the tag.
+      aria-label={
+        item.isReviewOutOfDate
+          ? t('View review by {name} (older version)', { name: rowLabel })
+          : t('View review by {name}', { name: rowLabel })
+      }
     >
       <div className="flex items-center gap-2">
         <ProfileAvatar
@@ -240,7 +265,14 @@ function ReviewerRow({
           )}
         </div>
       </div>
-      <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
+      <div className="flex items-center gap-2">
+        {item.isReviewOutOfDate && (
+          <StatusBadge variant="revision" icon={LuRefreshCw}>
+            {t('Older version')}
+          </StatusBadge>
+        )}
+        <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
+      </div>
     </Button>
   );
 }

@@ -14,10 +14,12 @@ export function AverageScoreBar({
   const t = useTranslations();
   return (
     <div className="flex items-center justify-between rounded-lg bg-muted p-4">
-      <span className="font-serif text-label">{t('Average Score')}</span>
+      <span className="font-serif text-label">{t('Average score:')}</span>
       <span className="font-serif text-label">
         {formatScore(averageScore)}
-        <span className="text-muted-foreground">/{totalPoints}pts</span>
+        <span className="text-muted-foreground">
+          /{t('{pts} points', { pts: totalPoints })}
+        </span>
       </span>
     </div>
   );

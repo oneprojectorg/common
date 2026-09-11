@@ -296,7 +296,7 @@ test.describe('Review Summary page', () => {
     await page.goto(summaryUrl, { waitUntil: 'domcontentloaded' });
 
     // ====================================================================
-    // Step 1: Header reflects submitted/total + Average Score
+    // Step 1: Header reflects submitted/total + the average score
     // ====================================================================
 
     // The instance sits in the review phase, so no shortlisting yet.
@@ -315,11 +315,11 @@ test.describe('Review Summary page', () => {
     ).toBeVisible();
 
     const averageScoreSection = page
-      .getByText('Average Score', { exact: true })
+      .getByText('Average score:', { exact: true })
       .first()
       .locator('..');
     await expect(averageScoreSection).toContainText('6.3');
-    await expect(averageScoreSection).toContainText('/8pts');
+    await expect(averageScoreSection).toContainText('/8 points');
 
     // ====================================================================
     // Step 2: Recommendation groups — Yes (2), Maybe (1); No is filtered out
@@ -467,7 +467,7 @@ test.describe('Review Summary page', () => {
     await expect(addReview).toBeVisible();
 
     // Nothing submitted yet, so no average to show — but the counts line stays.
-    await expect(page.getByText('Average Score')).toHaveCount(0);
+    await expect(page.getByText('Average score:')).toHaveCount(0);
     await expect(
       page
         .getByText('0 out of 1 reviewers submitted a review for this proposal')
@@ -544,7 +544,7 @@ test.describe('Review Summary page', () => {
     // Their review is grouped under the "Yes" recommendation they picked, and
     // an average exists now that one review is in.
     await expect(page.getByText('Yes (1)').first()).toBeVisible();
-    await expect(page.getByText('Average Score').first()).toBeVisible();
+    await expect(page.getByText('Average score:').first()).toBeVisible();
 
     // Submitted, so the button below the list is gone — the row is the entry.
     await expect(
