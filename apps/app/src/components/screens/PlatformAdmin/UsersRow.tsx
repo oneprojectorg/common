@@ -28,6 +28,7 @@ import { useState } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { Link, useRouter } from '@/lib/i18n/routing';
 
 import { AddUserToOrgModal } from './AddUserToOrgModal';
 import { TimestampTooltip } from './TimestampTooltip';
@@ -43,6 +44,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
   const format = useFormatter();
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
   const createdAt = user.createdAt ? new Date(user.createdAt) : null;
@@ -55,7 +57,12 @@ export const UsersRowCells = ({ user }: { user: User }) => {
   return (
     <>
       <TableCell className="text-sm font-normal text-foreground">
-        {user.profile?.name ?? user.name ?? '—'}
+        <Link
+          href={`/admin/users/${user.authUserId}`}
+          className="hover:underline"
+        >
+          {user.profile?.name ?? user.name ?? '—'}
+        </Link>
       </TableCell>
       <TableCell className="text-sm font-normal text-foreground">
         {user.email}
@@ -102,6 +109,12 @@ export const UsersRowCells = ({ user }: { user: User }) => {
               }
             />
             <DropdownMenuContent align="end" className="min-w-48">
+              <DropdownMenuItem
+                onClick={() => router.push(`/admin/users/${user.authUserId}`)}
+              >
+                {t('View user')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={!user.profile}
                 onClick={() => {

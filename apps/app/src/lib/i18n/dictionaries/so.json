@@ -1758,5 +1758,16 @@
   "Continue with": "Ku sii wad",
   "Email me a code": "Iimayl iigu soo dir kood",
   "Text me a code": "Fariin qoraal ah iigu soo dir kood",
-  "We'll email you a code to confirm it's yours.": "Waxaan kuugu soo diri doonaa kood iimaylka si aan u xaqiijinno inuu kaaga yahay."
+  "We'll email you a code to confirm it's yours.": "Waxaan kuugu soo diri doonaa kood iimaylka si aan u xaqiijinno inuu kaaga yahay.",
+  "User": "Isticmaale",
+  "View user": "Eeg isticmaalaha",
+  "Network member": "Xubin shabakadeed",
+  "Onboarded": "La soo dhoweeyay",
+  "Terms accepted": "Shuruudaha la aqbalay",
+  "Privacy accepted": "Sirta la aqbalay",
+  "Profile memberships": "Xubinnimada astaanta",
+  "User not found": "Isticmaalaha lama helin",
+  "Not a member of any organization": "Xubin kama aha hay’ad kasta",
+  "No profile memberships": "Ma jiraan xubinnimo astaan ah",
+  "Unknown Organization": "Hay’ad aan la garanayn"
 }

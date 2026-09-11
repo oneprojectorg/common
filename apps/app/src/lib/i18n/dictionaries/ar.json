@@ -1758,5 +1758,16 @@
   "Continue with": "المتابعة باستخدام",
   "Email me a code": "أرسل لي رمزًا بالبريد الإلكتروني",
   "Text me a code": "أرسل لي رمزًا برسالة نصية",
-  "We'll email you a code to confirm it's yours.": "سنرسل إليك رمزًا بالبريد الإلكتروني للتأكد من أنه لك."
+  "We'll email you a code to confirm it's yours.": "سنرسل إليك رمزًا بالبريد الإلكتروني للتأكد من أنه لك.",
+  "User": "المستخدم",
+  "View user": "عرض المستخدم",
+  "Network member": "عضو في الشبكة",
+  "Onboarded": "تم الإعداد",
+  "Terms accepted": "تم قبول الشروط",
+  "Privacy accepted": "تم قبول الخصوصية",
+  "Profile memberships": "عضويات الملف الشخصي",
+  "User not found": "لم يتم العثور على المستخدم",
+  "Not a member of any organization": "ليس عضواً في أي مؤسسة",
+  "No profile memberships": "لا توجد عضويات ملف شخصي",
+  "Unknown Organization": "مؤسسة غير معروفة"
 }

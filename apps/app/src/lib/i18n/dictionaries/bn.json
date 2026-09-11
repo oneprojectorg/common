@@ -1758,5 +1758,16 @@
   "Continue with": "চালিয়ে যান",
   "Email me a code": "আমাকে ইমেইলে একটি কোড পাঠান",
   "Text me a code": "আমাকে টেক্সটে একটি কোড পাঠান",
-  "We'll email you a code to confirm it's yours.": "এটি আপনার কিনা নিশ্চিত করতে আমরা আপনাকে ইমেইলে একটি কোড পাঠাব।"
+  "We'll email you a code to confirm it's yours.": "এটি আপনার কিনা নিশ্চিত করতে আমরা আপনাকে ইমেইলে একটি কোড পাঠাব।",
+  "User": "ব্যবহারকারী",
+  "View user": "ব্যবহারকারী দেখুন",
+  "Network member": "নেটওয়ার্ক সদস্য",
+  "Onboarded": "অনবোর্ড সম্পন্ন",
+  "Terms accepted": "শর্তাবলী গৃহীত",
+  "Privacy accepted": "গোপনীয়তা গৃহীত",
+  "Profile memberships": "প্রোফাইল সদস্যপদ",
+  "User not found": "ব্যবহারকারী পাওয়া যায়নি",
+  "Not a member of any organization": "কোনো সংস্থার সদস্য নন",
+  "No profile memberships": "কোনো প্রোফাইল সদস্যপদ নেই",
+  "Unknown Organization": "অজানা সংস্থা"
 }
