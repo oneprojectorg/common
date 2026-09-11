@@ -9,8 +9,11 @@ interface ReviewNotesButtonProps {
   onToggle: () => void;
   /** Whether the review-notes sheet is currently showing. */
   isExpanded: boolean;
-  /** Marks the button with a dot until the author has opened the sheet once. */
-  hasUnread: boolean;
+  /**
+   * Marks the button with a dot while the author owes an answer. Omit it on a
+   * surface that never nags — the read view, which offers no resubmission.
+   */
+  hasUnread?: boolean;
 }
 
 /**
@@ -20,7 +23,7 @@ interface ReviewNotesButtonProps {
 export function ReviewNotesButton({
   onToggle,
   isExpanded,
-  hasUnread,
+  hasUnread = false,
 }: ReviewNotesButtonProps) {
   const t = useTranslations();
   const label = t('Review notes');

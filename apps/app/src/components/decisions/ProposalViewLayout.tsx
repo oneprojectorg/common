@@ -2,7 +2,6 @@
 
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import { TooltipProvider } from '@op/sense/Tooltip';
 import { ReactNode } from 'react';
 import { LuArrowLeft, LuMessageCircle, LuPencil } from 'react-icons/lu';
 
@@ -43,12 +42,13 @@ export function ProposalViewLayout({
   reportProposalId?: string;
   /**
    * The header's "Review notes" disclosure — the one panel holding the
-   * revision-cycle record and the released reviewer notes.
+   * revision-cycle record and the released reviewer notes. No unread dot: the
+   * read view offers no resubmission, so it has nothing to nag the author
+   * about. The editor, which does, owns that dot.
    */
   reviewNotesToggle?: {
     onToggle: () => void;
     isActive: boolean;
-    hasUnread: boolean;
   };
   /**
    * Admin overflow menu (hide / delete). Gates itself on
@@ -83,64 +83,60 @@ export function ProposalViewLayout({
           </Button>
         </div>
 
-        {/* One tooltip group for the row — `delay` exists on Provider alone. */}
-        <TooltipProvider delay={500}>
-          <div className="flex items-center gap-2 sm:gap-4">
-            {notices}
-            {canEdit && editHref && (
-              <Button
-                variant="outline"
-                onClick={() => router.push(editHref)}
-                className="max-sm:size-11"
-                aria-label={t('Edit')}
-              >
-                <LuPencil className="size-4" />
-                <span className="hidden sm:inline">{t('Edit')}</span>
-              </Button>
-            )}
-            {/* Report is a safety action the moderation API accepts from any
+        <div className="flex items-center gap-2 sm:gap-4">
+          {notices}
+          {canEdit && editHref && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(editHref)}
+              className="max-sm:size-11"
+              aria-label={t('Edit')}
+            >
+              <LuPencil className="size-4" />
+              <span className="hidden sm:inline">{t('Edit')}</span>
+            </Button>
+          )}
+          {/* Report is a safety action the moderation API accepts from any
               caller (signed-in, anonymous, or sessionless). Offer it to any
               viewer so inappropriate content is always flaggable. */}
-            {reportProposalId && (
-              <ReportProposalDialog proposalId={reportProposalId} />
-            )}
-            {/* Mobile-only jump to the comments section (Figma's speech-bubble
+          {reportProposalId && (
+            <ReportProposalDialog proposalId={reportProposalId} />
+          )}
+          {/* Mobile-only jump to the comments section (Figma's speech-bubble
               icon). A plain fragment link — no scroll scripting needed. */}
-            <ButtonLink
-              href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-              variant="outline"
-              size="icon"
-              aria-label={t('View comments')}
-              className="sm:hidden"
-            >
-              <LuMessageCircle className="size-4" />
-            </ButtonLink>
-            {/* Like/Follow live in the proposal's engagement row, not here — see
+          <ButtonLink
+            href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+            variant="outline"
+            size="icon"
+            aria-label={t('View comments')}
+            className="sm:hidden"
+          >
+            <LuMessageCircle className="size-4" />
+          </ButtonLink>
+          {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
-            {reviewNotesToggle && (
-              <ReviewNotesButton
-                onToggle={reviewNotesToggle.onToggle}
-                isExpanded={reviewNotesToggle.isActive}
-                hasUnread={reviewNotesToggle.hasUnread}
-              />
-            )}
-            {moderationProposal ? (
-              <ProposalAdminMenu
-                proposal={moderationProposal}
-                backHref={backHref}
-              />
-            ) : null}
-            <div className="hidden sm:block">
-              <LocaleChooser />
-            </div>
-            {/* Outside the sm-only cluster: Join stays visible on mobile (the
-              avatar keeps its desktop-only treatment via userMenuClassName). */}
-            <JoinOrUserMenu
-              canJoin={canJoin}
-              userMenuClassName="hidden sm:block"
+          {reviewNotesToggle && (
+            <ReviewNotesButton
+              onToggle={reviewNotesToggle.onToggle}
+              isExpanded={reviewNotesToggle.isActive}
             />
+          )}
+          {moderationProposal ? (
+            <ProposalAdminMenu
+              proposal={moderationProposal}
+              backHref={backHref}
+            />
+          ) : null}
+          <div className="hidden sm:block">
+            <LocaleChooser />
           </div>
-        </TooltipProvider>
+          {/* Outside the sm-only cluster: Join stays visible on mobile (the
+              avatar keeps its desktop-only treatment via userMenuClassName). */}
+          <JoinOrUserMenu
+            canJoin={canJoin}
+            userMenuClassName="hidden sm:block"
+          />
+        </div>
       </div>
 
       <div className="relative min-h-0 overflow-y-auto">{children}</div>

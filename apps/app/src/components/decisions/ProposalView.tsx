@@ -225,7 +225,6 @@ export function ProposalView({
           ? {
               onToggle: reviewNotes.toggle,
               isActive: reviewNotes.isOpen,
-              hasUnread: reviewNotes.hasUnread,
             }
           : undefined
       }
@@ -245,7 +244,7 @@ export function ProposalView({
           <SplitPane.Pane
             id="reviewNotes"
             label={t('Review notes')}
-            className="bg-white"
+            className="bg-background"
             unpadded
           >
             {asidePane}
