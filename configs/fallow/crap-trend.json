@@ -1,8 +1,10 @@
 {
-  "generated_at": "2026-09-09T12:26:06.710Z",
-  "coverage_model": "istanbul",
-  "istanbul_matched": 1107,
-  "istanbul_total": 13273,
+  "generated_at": "2026-09-10T13:00:31.722Z",
+  "metric": "cognitive",
+  "functions_measured": 2004,
+  "functions_unmeasured": 170,
+  "files_scored": 569,
+  "files_unscored": 36,
   "scope": {
     "source": "{apps,packages,services}/*/src/**/*.{ts,tsx}",
     "excluded": [
@@ -11,11 +13,11 @@
     ]
   },
   "summary": {
-    "scored": 605,
-    "clean": 533,
-    "atRisk": 26,
-    "median": 4,
-    "p90": 16.3,
-    "max": 1482
+    "scored": 569,
+    "clean": 481,
+    "atRisk": 42,
+    "median": 2.032,
+    "p90": 21,
+    "max": 1190
   }
 }

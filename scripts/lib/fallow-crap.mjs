@@ -2,19 +2,45 @@
  * Per-file CRAP roll-up and the changed-file gate, shared by `pnpm health` and
  * `pnpm health:baseline`.
  *
- * Fallow reports CRAP per file (`crap_max`) but never aggregates it, and its
- * own `--baseline` covers complexity findings only. So a change that leaves
- * complexity alone while deleting the tests around it — exactly the change CRAP
- * exists to catch — passes `pnpm health` untouched.
+ * CRAP is scored on **cognitive** complexity here, against coverage measured
+ * per function out of the Istanbul report:
  *
- * This module closes that gap. Two rules keep the verdict worth reading:
+ *     cognitive² × (1 − coverage)³ + cognitive
+ *
+ * Neither half of that is what fallow's own `crap_max` reports, and both
+ * departures are deliberate.
+ *
+ * **Cognitive, not cyclomatic.** Cyclomatic counts branches; cognitive counts
+ * what it costs to hold the function in your head, charging for nesting depth
+ * and rewarding the flat forms — a `switch` with twenty arms scores 1, twenty
+ * nested `if`s score far more, and cyclomatic cannot tell them apart. The risk
+ * CRAP exists to price is the risk of changing code you have to understand
+ * first, so cognitive is the multiplier we want. Fallow computes both but
+ * hardcodes cyclomatic into `crap_max`.
+ *
+ * **Measured coverage, not fallow's.** Fallow matches functions onto the
+ * Istanbul report by name, and this codebase exports arrow functions assigned
+ * to consts, which istanbul-lib-instrument names `(anonymous_N)`. So 1107 of
+ * 13273 functions match; the other 92% fall back to its static model — a
+ * function counts as covered when any import path reaches its file from a test
+ * root — which returns "fully covered" for anything a test file can see. That
+ * is why `updateProcess.ts` reads as `crap_max` 21 (its cyclomatic complexity
+ * exactly, the value CRAP takes at 100% coverage) while its Istanbul entry has
+ * 1 of 33 statements and 0 of 3 functions ever executed. {@link crapScores}
+ * therefore reads the report directly and matches on line spans, which are
+ * name-independent.
+ *
+ * Two rules keep the verdict worth reading:
  *
  * **Scope.** CRAP is only a measurement where coverage is measured. See
  * {@link inCrapScope}: instrumented product source, minus the workspaces we
  * cannot yet instrument. Unscoped, two thirds of the at-risk list is React
  * components whose only tests are an uninstrumented Playwright run — a list
  * whose reader learns in thirty seconds that it is not about testing, and then
- * stops reading it.
+ * stops reading it. A file the report has never heard of is dropped rather than
+ * scored as uncovered: absent from an Istanbul report means "no test loaded
+ * this", which is usually true and occasionally just a workspace that did not
+ * run, and the second one produces a confident wrong number.
  *
  * **Changed files only.** The gate asks one question: did this change leave a
  * file it touched at risk? A repo-wide "nothing may rise anywhere" gate needs a
@@ -26,7 +52,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(
@@ -46,7 +72,24 @@ export const COVERAGE = join(ROOT, 'coverage', 'coverage-final.json');
  */
 export const CRAP_TREND = join(ROOT, 'configs', 'fallow', 'crap-trend.json');
 
-/** Fallow's own risk bands for a file's worst CRAP score. */
+/**
+ * Risk bands for a file's worst CRAP score.
+ *
+ * Fallow's own bands are 15 and 30 over cyclomatic complexity, and these keep
+ * those numbers because the anchor they land on reads just as well in cognitive
+ * terms. A band is easiest to argue about at zero coverage, where CRAP
+ * collapses to `c² + c`:
+ *
+ *     cognitive  3 →  12      cognitive  5 →  30
+ *     cognitive  4 →  20      cognitive  8 →  72
+ *
+ * So {@link AT_RISK} is "an untested function whose cognitive complexity has
+ * reached 5" — a couple of levels of nesting inside a branch, the point where a
+ * reader starts keeping state on their fingers. Coverage buys a lot of room
+ * back: at 50% covered a function can carry cognitive 15 and still come in
+ * under 45, and at 80% under 16. The cube is doing the work, which is the whole
+ * point of the metric — complexity is only a liability where nothing checks it.
+ */
 export const CLEAN = 15;
 export const AT_RISK = 30;
 
@@ -65,11 +108,10 @@ export const UNMEASURABLE = ['apps/app', 'packages/sense'];
 
 /**
  * Source that `configs/vitest-config/coverage.ts` instruments, in the same
- * shape it uses. Files outside it are absent from the Istanbul report, so
- * fallow scores them with its static binary model — "covered" if any import
- * path reaches the file from a test root — which is optimistic and collapses
- * CRAP into a rescaled complexity score. Complexity findings already cover
- * those; a CRAP number on them is a guess wearing a measurement's units.
+ * shape it uses. Files outside it are absent from the Istanbul report, and
+ * without a report there is nothing to measure coverage from — complexity
+ * findings already cover those, and a CRAP number on them is a guess wearing a
+ * measurement's units.
  */
 const PRODUCT_SOURCE = /^(apps|packages|services)\/[^/]+\/src\/.+\.(ts|tsx)$/;
 
@@ -83,42 +125,188 @@ export const inCrapScope = (path) =>
   !TEST_SUPPORT.test(path) &&
   !UNMEASURABLE.some((workspace) => path.startsWith(`${workspace}/`));
 
+/** CRAP, over whichever complexity measure the caller hands it. */
+const crap = (complexity, coverage) =>
+  complexity ** 2 * (1 - coverage) ** 3 + complexity;
+
 /**
- * Run fallow's file-score pass and return `{ path: crap_max }` plus its
- * summary, narrowed to {@link inCrapScope}.
+ * Every function fallow parses, each with its cognitive complexity and line
+ * span.
+ *
+ * Zero thresholds turn the complexity section into a full inventory: it is a
+ * findings list, so a function appears only when it exceeds one of them. This
+ * pass wants all 13k, and does not pass `--coverage` — none of fallow's own
+ * coverage or CRAP output is used.
+ *
+ * `--file-scores` would be the obvious source and is the wrong one: it reports
+ * `total_cognitive` per file, and CRAP is a per-function score. Summing a
+ * file's cognitive load and scoring the sum charges one twenty-branch
+ * function's risk to a file of twenty simple ones.
  */
-export const collectCrap = () => {
+const parseFunctions = () => {
   const result = spawnSync(
     'fallow',
     [
       'health',
       '--quiet',
-      '--coverage',
-      COVERAGE,
-      '--file-scores',
+      '--complexity',
+      '--max-cyclomatic',
+      '0',
+      '--max-cognitive',
+      '0',
       '--format',
       'json',
     ],
     {
       cwd: ROOT,
       stdio: ['inherit', 'pipe', 'inherit'],
-      // The JSON pass runs to a few megabytes, well past the 1MB pipe default.
+      // The full inventory runs to about 12MB, well past the 1MB pipe default.
       maxBuffer: 64 * 1024 * 1024,
       encoding: 'utf8',
     },
   );
 
-  if (result.status !== 0 || !result.stdout) {
-    throw new Error('fallow could not produce file scores');
+  // Zero thresholds make every function a finding, and fallow exits non-zero
+  // whenever findings exist — which is the success case for an inventory. Only
+  // the payload says whether the pass worked.
+  if (!result.stdout) {
+    throw new Error(
+      `fallow could not produce function complexity${result.error ? `: ${result.error.message}` : ''}`,
+    );
   }
 
-  const report = JSON.parse(result.stdout);
+  return JSON.parse(result.stdout).findings ?? [];
+};
+
+/**
+ * One Istanbul file entry, reshaped for line-span lookups: statement lines
+ * ascending, a prefix sum of how many of them were hit, and the hit flag of
+ * each function by declaration line.
+ *
+ * The prefix sum is what keeps this linear overall — a function's coverage is
+ * then two binary searches and a subtraction, rather than a scan of every
+ * statement in the file for every function in it.
+ */
+const index = (entry) => {
+  const statements = Object.entries(entry.statementMap)
+    .map(([id, loc]) => ({ line: loc.start.line, hit: (entry.s[id] ?? 0) > 0 }))
+    .sort((a, b) => a.line - b.line);
+
+  const hits = [0];
+  for (const statement of statements) {
+    hits.push(hits[hits.length - 1] + (statement.hit ? 1 : 0));
+  }
+
+  const functions = new Map();
+  for (const [id, fn] of Object.entries(entry.fnMap)) {
+    // `line` is synthesized by scripts/merge-coverage.mjs where the
+    // instrumenter omitted it, so it is always present in a merged report.
+    functions.set(fn.line ?? fn.decl.start.line, (entry.f[id] ?? 0) > 0);
+  }
+
+  return { lines: statements.map(({ line }) => line), hits, functions };
+};
+
+/** The merged Istanbul report, keyed the way fallow reports paths. */
+const readCoverage = () => {
+  const report = JSON.parse(readFileSync(COVERAGE, 'utf8'));
+  return new Map(
+    Object.values(report).map((entry) => [
+      relative(ROOT, entry.path),
+      index(entry),
+    ]),
+  );
+};
+
+/** First position in an ascending list holding a value at or above `line`. */
+const lowerBound = (lines, line) => {
+  let low = 0;
+  let high = lines.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (lines[mid] < line) low = mid + 1;
+    else high = mid;
+  }
+  return low;
+};
+
+/**
+ * Statement coverage across a function's line span, or `null` where the report
+ * cannot answer.
+ *
+ * The span includes any closure declared inside the function, and charging the
+ * outer function for its inner ones is the intended reading: cognitive
+ * complexity already counts a nested callback's branches against the function
+ * that nests them, so the coverage term has to be measured over the same body.
+ *
+ * A span with no statements in it — a one-line arrow, a bare re-export — falls
+ * back to the function's own hit counter, matched on its declaration line.
+ */
+const functionCoverage = (file, fn) => {
+  if (!file) return null;
+
+  const first = lowerBound(file.lines, fn.line);
+  const last = lowerBound(file.lines, fn.line + Math.max(fn.line_count, 1));
+  const total = last - first;
+  if (total > 0) return (file.hits[last] - file.hits[first]) / total;
+
+  const hit = file.functions.get(fn.line);
+  return hit === undefined ? null : Number(hit);
+};
+
+/**
+ * Score every in-scope function and keep each file's worst.
+ *
+ * Returns `files` for the aggregates and the gate, `worst` so the verdict can
+ * name the function to go and cover rather than just the file, and `stats` for
+ * the trend — a run where the measurable share has moved is a run whose
+ * aggregates are not comparable to the last one, and the counts are how anyone
+ * notices.
+ */
+export const crapScores = () => {
+  const coverage = readCoverage();
   const files = {};
-  for (const file of report.file_scores ?? []) {
-    if (inCrapScope(file.path)) files[file.path] = file.crap_max;
+  const worst = {};
+  let measured = 0;
+  let unmeasured = 0;
+  const absent = new Set();
+
+  for (const fn of parseFunctions()) {
+    if (!inCrapScope(fn.path)) continue;
+
+    const covered = functionCoverage(coverage.get(fn.path), fn);
+    if (covered === null) {
+      unmeasured += 1;
+      absent.add(fn.path);
+      continue;
+    }
+
+    measured += 1;
+    const score = crap(fn.cognitive, covered);
+    if (files[fn.path] === undefined || score > files[fn.path]) {
+      files[fn.path] = score;
+      worst[fn.path] = {
+        crap: score,
+        coverage: covered,
+        cognitive: fn.cognitive,
+        name: fn.name,
+        line: fn.line,
+      };
+    }
   }
 
-  return { files, report };
+  return {
+    files,
+    worst,
+    stats: {
+      metric: 'cognitive',
+      functions_measured: measured,
+      functions_unmeasured: unmeasured,
+      files_scored: Object.keys(files).length,
+      files_unscored: [...absent].filter((path) => files[path] === undefined)
+        .length,
+    },
+  };
 };
 
 /** Nearest-rank percentile over an ascending list. */
@@ -142,15 +330,13 @@ export const summarize = (files) => {
 export const readCrapTrend = () =>
   existsSync(CRAP_TREND) ? JSON.parse(readFileSync(CRAP_TREND, 'utf8')) : null;
 
-export const writeCrapTrend = (files, report) => {
+export const writeCrapTrend = (files, stats) => {
   writeFileSync(
     CRAP_TREND,
     `${JSON.stringify(
       {
         generated_at: new Date().toISOString(),
-        coverage_model: report.summary?.coverage_model,
-        istanbul_matched: report.summary?.istanbul_matched,
-        istanbul_total: report.summary?.istanbul_total,
+        ...stats,
         scope: {
           source: '{apps,packages,services}/*/src/**/*.{ts,tsx}',
           excluded: UNMEASURABLE,
@@ -214,7 +400,7 @@ export const changedFiles = (explicitBase) => {
 
 /**
  * The gate. Scoped files this change touched that sit at or above
- * {@link AT_RISK}, worst first.
+ * {@link AT_RISK}, worst first, each carrying the function that put it there.
  *
  * A file already over the line before the change counts too. Distinguishing
  * "you pushed it up" from "it was already there" needs a CRAP score for the
@@ -223,9 +409,9 @@ export const changedFiles = (explicitBase) => {
  * worked on is complex and untested. Touching it is when you are in a position
  * to fix that.
  */
-export const crossings = (files, changed) =>
+export const crossings = (files, worst, changed) =>
   changed
     .filter(inCrapScope)
-    .map((path) => ({ path, crap: files[path] }))
-    .filter(({ crap }) => crap !== undefined && crap >= AT_RISK)
+    .filter((path) => files[path] !== undefined && files[path] >= AT_RISK)
+    .map((path) => ({ path, ...worst[path] }))
     .sort((a, b) => b.crap - a.crap);

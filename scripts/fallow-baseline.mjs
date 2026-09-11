@@ -38,7 +38,7 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { collectCrap, writeCrapTrend } from './lib/fallow-crap.mjs';
+import { crapScores, writeCrapTrend } from './lib/fallow-crap.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const COVERAGE = join(ROOT, 'coverage', 'coverage-final.json');
@@ -133,8 +133,8 @@ fallow([
   SNAPSHOT,
 ]);
 
-const { files, report } = collectCrap();
-writeCrapTrend(files, report);
+const { files, stats } = crapScores();
+writeCrapTrend(files, stats);
 
 console.log(`\nBaseline written to configs/fallow/. Commit it so \`pnpm health:trend\` compares
 everyone against the same starting point.`);
