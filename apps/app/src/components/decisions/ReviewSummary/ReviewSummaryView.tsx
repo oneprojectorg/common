@@ -200,9 +200,8 @@ export function ReviewSummaryView({
           <ProposalPreview
             proposal={proposal}
             translation={translation}
-            // Same card as the reviewer pane, above the proposal body: the
-            // reviews on the right are read against whatever the author last
-            // resubmitted, so the notes belong beside them.
+            // The reviews on the right are read against the author's last
+            // resubmission.
             headerBanner={<AuthorNotesSection proposalId={proposalId} />}
           />
         </SplitPane.Pane>
