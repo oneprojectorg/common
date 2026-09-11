@@ -7,6 +7,7 @@ import {
   profiles,
   proposals,
 } from '@op/db/schema';
+import { grantTestPlatformAdmin } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -85,6 +86,7 @@ describe.concurrent('platform.admin.assignReviews', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
+    await grantTestPlatformAdmin(setup.user.id);
     const instanceId = setup.instance.instance.id;
 
     const proposal = await testData.createProposal({
