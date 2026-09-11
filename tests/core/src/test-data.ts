@@ -37,6 +37,8 @@ export interface CreateOrganizationOptions {
   organizationName?: string;
   /** Email domain for generated users */
   emailDomain?: string;
+  /** Grant the Platform Admin role. Off by default. */
+  isPlatformAdmin?: boolean;
 }
 
 export interface CreateOrganizationResult {
@@ -58,9 +60,11 @@ export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
+  /** Grant the Platform Admin role. Off by default. */
+  isPlatformAdmin?: boolean;
 }
 
-/** Network-domain test users hold Platform Admin, as staff do. */
+/** Test users on the network domain, standing in for staff. */
 export const isTestPlatformAdminEmail = (email: string): boolean =>
   email.toLowerCase().endsWith('@oneproject.org');
 
@@ -120,7 +124,7 @@ export async function createUser(opts: CreateUserOptions) {
     .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
     .where(eq(users.authUserId, data.user.id));
 
-  if (isTestPlatformAdminEmail(email)) {
+  if (opts.isPlatformAdmin) {
     await grantTestPlatformAdmin(data.user.id);
   }
 
@@ -149,6 +153,7 @@ export async function createOrganization(
     users: userCounts = { admin: 1, member: 0 },
     organizationName = 'Test Org',
     emailDomain = 'oneproject.org',
+    isPlatformAdmin,
   } = opts;
 
   const createdIds = {
@@ -198,6 +203,7 @@ export async function createOrganization(
     const authUser = await createUser({
       supabaseAdmin,
       email,
+      isPlatformAdmin,
     });
 
     createdIds.authUserIds.push(authUser.id);

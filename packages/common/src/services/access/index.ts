@@ -16,6 +16,7 @@ import {
   profileUserCacheKey,
   resolveAccessUserIds,
 } from './cacheKeys';
+import { getUserGlobalRoles } from './platformAdmin';
 import { memoize } from './requestCache';
 import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 
@@ -58,6 +59,26 @@ const mergeGrantRows = <
     normalizedRoles: rows.flatMap((row) =>
       getNormalizedRoles(row.roles, { profileId }),
     ),
+  };
+};
+
+/** ORs the caller's user-level roles into an existing membership, deduped by role id. No membership, no widening (ADR 0005). */
+const withGlobalRoles = <TRecord extends { roles: NormalizedRole[] }>(
+  record: TRecord | undefined,
+  globalRoles: NormalizedRole[],
+): TRecord | undefined => {
+  if (!record || globalRoles.length === 0) {
+    return record;
+  }
+
+  const heldRoleIds = new Set(record.roles.map((role) => role.id));
+
+  return {
+    ...record,
+    roles: [
+      ...record.roles,
+      ...globalRoles.filter((role) => !heldRoleIds.has(role.id)),
+    ],
   };
 };
 
@@ -114,14 +135,20 @@ export const getOrgAccessUser = memoize(
       };
     };
 
-    return cache({
-      type: 'orgUser',
-      params: orgUserCacheKey({ user, organizationId }),
-      fetch: getOrgUser,
-      options: {
-        skipMemCache: true,
-      },
-    });
+    // Read outside the durable cache so a grant needs no per-entity invalidation.
+    const [orgUser, globalRoles] = await Promise.all([
+      cache({
+        type: 'orgUser',
+        params: orgUserCacheKey({ user, organizationId }),
+        fetch: getOrgUser,
+        options: {
+          skipMemCache: true,
+        },
+      }),
+      getUserGlobalRoles({ user }),
+    ]);
+
+    return withGlobalRoles(orgUser, globalRoles);
   },
   (args) => orgUserCacheKey(args).join(':'),
 );
@@ -185,14 +212,20 @@ export const getProfileAccessUser = memoize(
       };
     };
 
-    return cache({
-      type: 'profileUser',
-      params: profileUserCacheKey({ user, profileId }),
-      fetch: getProfileUser,
-      options: {
-        skipMemCache: true,
-      },
-    });
+    // Read outside the durable cache so a grant needs no per-entity invalidation.
+    const [profileUser, globalRoles] = await Promise.all([
+      cache({
+        type: 'profileUser',
+        params: profileUserCacheKey({ user, profileId }),
+        fetch: getProfileUser,
+        options: {
+          skipMemCache: true,
+        },
+      }),
+      getUserGlobalRoles({ user }),
+    ]);
+
+    return withGlobalRoles(profileUser, globalRoles);
   },
   (args) => profileUserCacheKey(args).join(':'),
 );

@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
+import { isTestPlatformAdminEmail } from '@op/test';
 import { inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
@@ -80,7 +81,10 @@ export const createGatingCallers = (
   // tier-2 user with no allow-list entry.
   const freshCaller = async (domain: string) => {
     const email = `gating-${randomUUID().slice(0, 12)}@${domain}`;
-    const { user } = await createTestUser(email);
+    // Network callers stand in for staff, which is what the platform-admin gate checks.
+    const { user } = await createTestUser(email, undefined, {
+      isPlatformAdmin: isTestPlatformAdminEmail(email),
+    });
     if (!user) {
       throw new Error(`Failed to create gating user: ${email}`);
     }

@@ -23,6 +23,8 @@ interface GenerateTestOrganizationOptions {
   };
   organizationName?: string;
   emailDomain?: string;
+  /** Grant the Platform Admin role to every user created here. Off by default. */
+  isPlatformAdmin?: boolean;
 }
 
 interface GenerateTestOrganizationOutput {
@@ -104,6 +106,7 @@ export class TestOrganizationDataManager {
       users: opts?.users,
       organizationName: opts?.organizationName,
       emailDomain: opts?.emailDomain,
+      isPlatformAdmin: opts?.isPlatformAdmin,
     });
 
     // Track created IDs for cleanup

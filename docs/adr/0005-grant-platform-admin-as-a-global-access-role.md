@@ -26,14 +26,21 @@ permissions to express exactly this.
   grants every user the global `Admin` role on their own profile.
 - `isPlatformAdmin` is `checkPermission({ platform: ADMIN })` over them;
   `getMyAccount` returns them as `user.access`.
+- `getOrgAccessUser` and `getProfileAccessUser` OR the caller's user-level roles
+  into the roles of a membership they already have, read outside the durable
+  cache and deduped by role id. Pure OR: `assertPermissionRowScope` rejects a
+  scoped override row on the role, so a profile can never narrow it.
 - The role stays out of `EXPOSABLE_GLOBAL_ROLE_NAMES`, and nothing in the app
   writes it — an operator or the seed inserts the row.
 
 ## Consequences
 
 - Granting platform admin needs database access, not a deploy.
-- The role widens nothing yet: ORing it into org and profile access is a
-  follow-up.
+- The union widens a membership the caller already has; it does not create one.
+  A platform admin with no membership row is still not a member, and listing
+  queries stay membership-driven.
+- Test users get the role only when a test asks for it, since holding it changes
+  what every membership may do.
 - The seed rows reach an environment only when an operator runs
   `seed-access-control.ts`; until then `getUserGlobalRoles` returns nothing and
   fails closed.
