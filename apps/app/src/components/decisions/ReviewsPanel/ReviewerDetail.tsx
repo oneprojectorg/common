@@ -76,8 +76,7 @@ export function ReviewerDetail({
       <SubmittedReviewView
         rubricTemplate={rubricTemplate}
         review={item.review}
-        // The same row the live rubric form shows above its feedback block, so
-        // a read-only review reads the same wherever it is opened.
+        // The same row the live rubric form shows above its feedback block.
         scoreSlot={
           <TotalScoreCard
             rubricTemplate={rubricTemplate}

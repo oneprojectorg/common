@@ -160,8 +160,7 @@ export function ReviewSummaryView({
     !!ownAssignment && selectedAssignmentId === ownAssignment.assignment.id;
   const canEditOwnReview = !!ownAssignment?.canEditReview;
 
-  // Only a submitted review the aggregates flagged stale switches the left
-  // pane; back (`assignment` cleared) falls through to the current proposal.
+  // Only a review the aggregates flagged stale switches the left pane.
   const selectedStaleReview = selectedAssignmentId
     ? proposalWithReviews.reviews.find(
         (item) =>
@@ -174,9 +173,8 @@ export function ReviewSummaryView({
     <ProposalPreview
       proposal={proposal}
       translation={translation}
-      // Same card as the reviewer pane, above the proposal body: the reviews
-      // on the right are read against whatever the author last resubmitted, so
-      // the notes belong beside them.
+      // The reviews on the right are read against the author's last
+      // resubmission.
       headerBanner={<AuthorNotesSection proposalId={proposalId} />}
     />
   );
@@ -221,16 +219,16 @@ export function ReviewSummaryView({
         <SplitPane.Pane id="proposal" label={t('Proposal')}>
           {selectedStaleReview && !isOwnFormOpen ? (
             <ReviewedVersionPane
-              // Remount on reviewer change so the skeleton, not the previous
-              // reviewer's snapshot, covers the next read.
+              // Remount per reviewer so the skeleton covers the next read.
               key={selectedStaleReview.review.id}
               reviewId={selectedStaleReview.review.id}
               reviewerName={
                 selectedStaleReview.reviewer.name ??
                 selectedStaleReview.reviewer.slug
               }
-              currentProposal={currentProposalPane}
-            />
+            >
+              {currentProposalPane}
+            </ReviewedVersionPane>
           ) : (
             currentProposalPane
           )}

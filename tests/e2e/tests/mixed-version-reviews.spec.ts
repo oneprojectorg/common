@@ -384,11 +384,7 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
 
     // The seeded proposal carries a collaboration doc that was never
     // version-stamped, so the body of that version cannot be rebuilt.
-    await expect(
-      page.getByText(
-        'This older version of the content is no longer available',
-      ),
-    ).toBeVisible();
+    await expect(page.getByText('Content could not be loaded')).toBeVisible();
 
     await page.getByRole('button', { name: 'Back to all reviewers' }).click();
 

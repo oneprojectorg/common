@@ -14,30 +14,25 @@ import { ProposalPreview } from '../ProposalPreview';
 interface ReviewedVersionPaneProps {
   reviewId: string;
   reviewerName: string;
-  /**
-   * Rendered when the reviewed version is the current one and when the version
-   * read fails, so the pane is never left empty.
-   */
-  currentProposal: ReactNode;
+  /** The current proposal — rendered when the version read finds nothing older. */
+  children: ReactNode;
 }
 
 /**
  * The proposal as the selected reviewer saw it. `isCurrent` overrides the
- * aggregates' stale flag: only the server knows which history row is anchored.
+ * aggregates' stale flag: only the server resolves the version anchor.
  */
 export function ReviewedVersionPane({
   reviewId,
   reviewerName,
-  currentProposal,
+  children,
 }: ReviewedVersionPaneProps) {
   return (
-    <APIErrorBoundary fallbacks={{ default: () => currentProposal }}>
+    <APIErrorBoundary fallbacks={{ default: () => children }}>
       <Suspense fallback={<ReviewedVersionSkeleton />}>
-        <ReviewedVersion
-          reviewId={reviewId}
-          reviewerName={reviewerName}
-          currentProposal={currentProposal}
-        />
+        <ReviewedVersion reviewId={reviewId} reviewerName={reviewerName}>
+          {children}
+        </ReviewedVersion>
       </Suspense>
     </APIErrorBoundary>
   );
@@ -46,7 +41,7 @@ export function ReviewedVersionPane({
 function ReviewedVersion({
   reviewId,
   reviewerName,
-  currentProposal,
+  children,
 }: ReviewedVersionPaneProps) {
   const t = useTranslations();
   const [version] = trpc.decision.getReviewedVersion.useSuspenseQuery({
@@ -54,7 +49,7 @@ function ReviewedVersion({
   });
 
   if (version.isCurrent) {
-    return currentProposal;
+    return children;
   }
 
   return (
@@ -64,8 +59,6 @@ function ReviewedVersion({
           {t('Older version reviewed by {name}', { name: reviewerName })}
         </StatusBadge>
       </div>
-      {/* A snapshot whose rich text cannot be rebuilt still renders its
-          title, budget, category and author — only the body is missing. */}
       <ProposalPreview
         proposal={version.proposal}
         documentState={
@@ -73,9 +66,6 @@ function ReviewedVersion({
             ? 'error'
             : 'ready'
         }
-        documentUnavailableMessage={t(
-          'This older version of the content is no longer available',
-        )}
       />
     </div>
   );

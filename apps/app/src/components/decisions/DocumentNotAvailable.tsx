@@ -6,14 +6,7 @@ import { LuFileQuestion } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 /** Shown when document content failed to load from the collaboration server. */
-export function DocumentNotAvailable({
-  className,
-  message,
-}: {
-  className?: string;
-  /** Overrides the default "could not be loaded" copy. */
-  message?: string;
-}) {
+export function DocumentNotAvailable({ className }: { className?: string }) {
   const t = useTranslations();
 
   return (
@@ -27,7 +20,7 @@ export function DocumentNotAvailable({
         <LuFileQuestion className="size-4 text-muted-foreground" />
       </div>
       <p className="text-sm text-muted-foreground">
-        {message ?? t('Content could not be loaded')}
+        {t('Content could not be loaded')}
       </p>
     </div>
   );
