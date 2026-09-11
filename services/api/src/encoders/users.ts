@@ -93,9 +93,14 @@ export const userEncoder = createSelectSchema(users)
 
 export type CommonUser = z.infer<typeof userEncoder>;
 
-// Platform-admin list entry: shared fields plus last sign-in (admin-only).
+// Platform-admin shape: shared fields plus last sign-in (admin-only), and a
+// profile membership's roles, which the member-facing shape deliberately omits.
 export const adminUserEncoder = userEncoder.extend({
   lastSignInAt: createSelectSchema(authUsers).shape.lastSignInAt.nullish(),
+  profileUsers: profileUserWithPermissionsEncoder
+    .extend({ roles: z.array(roleJunctionSchema).nullish() })
+    .array()
+    .nullish(),
 });
 
 /**

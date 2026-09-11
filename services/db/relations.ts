@@ -823,6 +823,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.users.authUserId,
       to: r.organizationUsers.authUserId,
     }),
+    profileUsers: r.many.profileUsers({
+      from: r.users.authUserId,
+      to: r.profileUsers.authUserId,
+    }),
     avatarImage: r.one.objectsInStorage({
       from: r.users.avatarImageId,
       to: r.objectsInStorage.id,
