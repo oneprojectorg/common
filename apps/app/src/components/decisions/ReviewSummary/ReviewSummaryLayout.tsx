@@ -115,6 +115,8 @@ export async function ReviewSummaryLayout({
       phaseId,
       sort: 'newest',
     }),
+    // The left pane's author-notes card reads this unconditionally.
+    utils.decision.listProposalRevisionNotes.prefetch({ proposalId }),
   ]);
 
   return (

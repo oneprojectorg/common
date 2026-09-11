@@ -5,9 +5,9 @@ import { trpc } from '@op/api/client';
 import { Suspense, useMemo, useState } from 'react';
 
 import { type AuthorNote, AuthorNotesAccordion } from './AuthorNotesAccordion';
-import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
+import { RevisionRequestDialog } from './RevisionRequestDialog';
 
-// Context around the proposal, never a reason to fail the pane.
+/** Context around the proposal, so a slow or failed read shows nothing. */
 export function AuthorNotesSection({ proposalId }: { proposalId: string }) {
   return (
     <APIErrorBoundary fallbacks={{ default: () => null }}>
@@ -64,7 +64,7 @@ function AuthorNotes({ proposalId }: { proposalId: string }) {
         notes={notes}
         onViewRequests={setViewedRequestIds}
       />
-      <ViewRevisionRequestModal
+      <RevisionRequestDialog
         isOpen={viewedRequestIds !== null}
         onOpenChange={(open) => {
           if (!open) {
