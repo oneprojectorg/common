@@ -364,7 +364,7 @@ const JoinAccountModalContent = () => {
                     className="flex-1"
                     disabled={isSubmitting}
                   >
-                    {t('Phone number')}
+                    {t('Phone Number')}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="email">
@@ -387,7 +387,7 @@ const JoinAccountModalContent = () => {
                 </TabsContent>
                 <TabsContent value="phone">
                   <AuthPhoneField
-                    label={t('Phone number')}
+                    label={t('Phone Number')}
                     description={t(
                       'We text you a code. Standard message and data rates may apply.',
                     )}
