@@ -1,10 +1,24 @@
 import { ProposalReviewState } from '@op/db/schema';
 
 /**
+ * The proposal version a review was written against. Reviews older than the
+ * review pointer column carry only the assignment pin.
+ */
+export function resolveReviewedProposalHistoryId({
+  review,
+  assignment,
+}: {
+  review: { reviewedProposalHistoryId: string | null } | null;
+  assignment: { assignedProposalHistoryId: string | null };
+}): string | null {
+  return (
+    review?.reviewedProposalHistoryId ?? assignment.assignedProposalHistoryId
+  );
+}
+
+/**
  * A submitted review is out of date when its version anchor is not the
- * proposal's current history row. Reviews written before the anchor column
- * existed fall back to the assignment pin (no backfill). An unknown side never
- * claims staleness.
+ * proposal's current history row. An unknown side never claims staleness.
  */
 export function isReviewOutOfDate({
   assignment,
@@ -19,8 +33,10 @@ export function isReviewOutOfDate({
     return false;
   }
 
-  const reviewedProposalHistoryId =
-    review.reviewedProposalHistoryId ?? assignment.assignedProposalHistoryId;
+  const reviewedProposalHistoryId = resolveReviewedProposalHistoryId({
+    review,
+    assignment,
+  });
 
   if (!reviewedProposalHistoryId || !currentProposalHistoryId) {
     return false;

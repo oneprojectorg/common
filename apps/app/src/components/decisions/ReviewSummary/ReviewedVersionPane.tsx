@@ -14,17 +14,15 @@ interface ReviewedVersionPaneProps {
   reviewId: string;
   reviewerName: string;
   /**
-   * The current proposal, rendered when the reviewed version turns out to be
-   * the current one and when the version read fails — an admin reading a
-   * review should never be left with an empty pane.
+   * Rendered when the reviewed version is the current one and when the version
+   * read fails, so the pane is never left empty.
    */
   currentProposal: ReactNode;
 }
 
 /**
- * The proposal as the selected reviewer saw it. Only mounted for a review the
- * aggregates flagged out of date; `isCurrent` still wins, because the server
- * is the only side that knows which history row the review anchors to.
+ * The proposal as the selected reviewer saw it. `isCurrent` overrides the
+ * aggregates' stale flag: only the server knows which history row is anchored.
  */
 export function ReviewedVersionPane({
   reviewId,
@@ -69,7 +67,11 @@ function ReviewedVersion({
           title, budget, category and author — only the body is missing. */}
       <ProposalPreview
         proposal={version.proposal}
-        documentState={version.contentUnavailable ? 'error' : 'ready'}
+        documentState={
+          version.proposal.documentContent?.type === 'unavailable'
+            ? 'error'
+            : 'ready'
+        }
         documentUnavailableMessage={t(
           'This older version of the content is no longer available',
         )}
