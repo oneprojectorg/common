@@ -83,8 +83,7 @@ export function ReviewerList({
         </header>
       )}
 
-      {/* Admin-only: the reviewer-facing panel hides the summary header, and
-          this banner belongs to it. */}
+      {/* Admin-only: the reviewer-facing panel hides the summary header. */}
       {!hideSummaryHeader && outOfDateReviewsCount > 0 && (
         <Alert variant="warning">
           <LuRefreshCw />
@@ -190,17 +189,7 @@ function getReviewsGroupedByRecommendation(
     .map(([value, items]) => ({
       value,
       label: titles.get(value) ?? value,
-      // The reviews of one proposal are a complete in-memory set — never
-      // paginated — so the design's "highest score first" order is safe to
-      // apply here rather than in SQL. Reviewer name breaks ties so equal
-      // scores keep a stable order between renders.
-      items: [...items].sort(
-        (a, b) =>
-          b.score - a.score ||
-          (a.reviewer.name ?? a.reviewer.slug).localeCompare(
-            b.reviewer.name ?? b.reviewer.slug,
-          ),
-      ),
+      items,
     }));
 }
 
@@ -253,8 +242,7 @@ function ReviewerRow({
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}
       className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
-      // The label replaces everything inside, so the tag has to be said here
-      // too or the row reads the same as an up-to-date one.
+      // aria-label replaces the row's visible text, so it must repeat the tag.
       aria-label={
         item.isReviewOutOfDate
           ? t('View review by {name} (older version)', { name: rowLabel })
@@ -277,8 +265,6 @@ function ReviewerRow({
           )}
         </div>
       </div>
-      {/* Juan's Figma puts the tag inside the Person row; the trailing slot
-          next to the chevron gets there without forking the component. */}
       <div className="flex items-center gap-2">
         {item.isReviewOutOfDate && (
           <StatusBadge variant="revision" icon={LuRefreshCw}>

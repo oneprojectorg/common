@@ -293,10 +293,7 @@ function ProposalCard({
   );
 }
 
-/**
- * Marks a proposal whose submitted reviews do not all point at the same
- * version. The cumulative score still counts every one of them.
- */
+/** Marks a proposal whose submitted reviews do not all cover the same version. */
 function MixedVersionBadge() {
   const t = useTranslations();
 

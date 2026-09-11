@@ -189,8 +189,7 @@ function ReviewFormProviderInner({
   // Local: unsaved until "Update review", so navigating away discards edits.
   const [isEditRequested, setIsEditRequested] = useState(initiallyEditing);
 
-  // An out-of-date review skips the read-only step: it opens pre-filled so the
-  // reviewer can re-affirm it.
+  // An out-of-date review opens pre-filled, skipping the read-only step.
   const isEditing = isEditRequested || isReviewOutOfDate;
 
   const submitReview = trpc.decision.submitReview.useMutation({

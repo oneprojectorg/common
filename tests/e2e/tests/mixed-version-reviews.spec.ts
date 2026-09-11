@@ -21,14 +21,14 @@ import {
 
 import { expect, test } from '../fixtures/index.js';
 
-// Mirrors OVERALL_RECOMMENDATION_KEY from @op/common/client. Inlined to
-// sidestep CJS/ESM interop when loading @op/common from the e2e runner.
+// Inlined from @op/common/client: loading it in the e2e runner breaks on
+// CJS/ESM interop.
 const OVERALL_RECOMMENDATION_KEY = '__overall_recommendation';
 
 /**
- * Submission → Review (review enabled) → Voting, every transition manual.
- * `limit: 0` on review makes review→voting pass nothing, which is the empty
- * inbound transition ReviewSelectionPage exists to recover from.
+ * Submission → Review → Voting, every transition manual. `limit: 0` on review
+ * makes review→voting pass nothing, the empty inbound transition that sends an
+ * admin to the selection screen.
  */
 const REVIEW_TO_VOTING_SCHEMA: DecisionSchemaDefinition = {
   id: 'test-mixed-version-reviews',
@@ -126,10 +126,9 @@ type SeedOrg = {
 
 /**
  * Two proposals in the review phase's pool: one revised after its first review
- * came in (one stale review, one written against the new version) and one that
- * was never revised. `stopOn` picks the phase the instance is parked on — the
- * selection screen only renders once review has an empty outbound transition,
- * and the phase is written last so no page read can cache an earlier state.
+ * came in (so one stale review, one against the new version) and one never
+ * revised. `stopOn` picks the phase the instance is parked on; the phase is
+ * written last so no page read can cache an earlier state.
  */
 async function seedMixedVersionReviews({
   org,
@@ -169,7 +168,7 @@ async function seedMixedVersionReviews({
     email: org.adminUser.email,
   };
 
-  // The proposal that gets revised: two reviewers, both anchored to the
+  // The proposal that gets revised: two reviewers anchored to the
   // pre-revision snapshot, only one of whom re-reviews afterwards.
   const {
     proposal: revised,
@@ -261,8 +260,7 @@ async function seedMixedVersionReviews({
     reviewedProposalHistoryId: untouchedHistoryId,
   });
 
-  // The revision: the early review's anchor stops matching the proposal's
-  // current version, the late one is written against the new version.
+  // The revision leaves the early review anchored to an older version.
   const revisedCurrentHistoryId = await reviseProposal({
     proposalId: revised.id,
   });
@@ -281,9 +279,8 @@ async function seedMixedVersionReviews({
     reviewedProposalHistoryId: revisedCurrentHistoryId,
   });
 
-  // An inbound transition with no attachments and no manualSelection stamp is
-  // what `resolveManualSelectionStatus` reads as "still awaiting a selection",
-  // which is what routes an admin to the review selection screen.
+  // `resolveManualSelectionStatus` reads an inbound transition with no
+  // attachments and no manualSelection stamp as "awaiting a selection".
   if (stopOn === 'voting') {
     await db.insert(stateTransitionHistory).values({
       processInstanceId: instance.instance.id,
