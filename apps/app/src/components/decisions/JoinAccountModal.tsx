@@ -2,11 +2,15 @@
 
 import {
   getClaimEmailErrorMessage,
+  getClaimPhoneErrorMessage,
+  getOnboardingPath,
   goToOnboarding,
   useClaimAccount,
 } from '@/hooks/useClaimAccount';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import type { CommonUser } from '@op/api/encoders';
+import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -16,13 +20,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { AuthCodeField, AuthEmailField, isValidOtpLength } from '../AuthPanel';
+import {
+  AuthCodeField,
+  AuthDivider,
+  AuthEmailField,
+  AuthGoogleButton,
+  AuthPhoneField,
+  isValidOtpLength,
+} from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
 
@@ -133,18 +146,39 @@ export const JoinOrUserMenu = ({
 
 const JoinAccountModalContent = () => {
   const t = useTranslations();
-  const { requestEmailCode, verifyEmailCode } = useClaimAccount();
+  const supabase = createSBBrowserClient();
+  const {
+    requestEmailCode,
+    verifyEmailCode,
+    requestPhoneCode,
+    verifyPhoneCode,
+  } = useClaimAccount();
+  // Same flag the login screen gates its phone channel on, so the two agree
+  // about whether SMS exists at all.
+  const smsEnabled = useFeatureFlag('sms-login') ?? false;
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
 
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [channel, setChannel] = useState<'email' | 'phone'>('email');
   const [token, setToken] = useState<string | undefined>();
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // With the flag off there is no phone channel to be on, even if a previous
+  // render put us there.
+  const activeChannel = smsEnabled ? channel : 'email';
+  const isPhone = activeChannel === 'phone';
+
   const emailIsValid = isValidEmail(email);
+  // People type `(415) 555-0132`. Validate what they meant, and send that.
+  const phoneIsValid = phoneNumberSchema.safeParse(
+    normalizePhoneNumber(phone),
+  ).success;
+  const contactIsValid = isPhone ? phoneIsValid : emailIsValid;
 
   // Return to this decision page after onboarding. Query params are dropped
   // deliberately — `join=1` must not re-open the modal on the way back.
@@ -152,8 +186,28 @@ const JoinAccountModalContent = () => {
     goToOnboarding(pathname);
   };
 
-  const submitEmail = async () => {
-    if (isSubmitting || !emailIsValid) {
+  // Google is a redirect flow, not an in-page OTP exchange, so it can't call
+  // goAfterClaim itself — the destination has to travel as the callback's own
+  // `redirect` param.
+  //
+  // KNOWN GAP: unlike requestEmailCode/requestPhoneCode (see useClaimAccount's
+  // module doc), this goes through the standard /api/auth/callback, which
+  // calls account.login and enforces the invite-only allow-list. A public,
+  // uninvited visitor who picks "Continue with Google" here will be rejected
+  // and their freshly-created account deleted — the exact gate the claim flow
+  // exists to bypass. Left as-is per product decision; needs a claim-flow
+  // equivalent (linkIdentity) before this is correct for public processes.
+  const joinWithGoogle = async () => {
+    const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+    callbackUrl.searchParams.set('redirect', getOnboardingPath(pathname));
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: callbackUrl.toString() },
+    });
+  };
+
+  const submitContact = async () => {
+    if (isSubmitting || !contactIsValid) {
       return;
     }
 
@@ -163,9 +217,15 @@ const JoinAccountModalContent = () => {
     // Deliberately left submitting through the success-navigation path so the
     // form can't be re-submitted while window.location is unloading the page.
     try {
-      const result = await requestEmailCode(email, { mintAnonSession: true });
+      const result = isPhone
+        ? await requestPhoneCode(phone, { mintAnonSession: true })
+        : await requestEmailCode(email, { mintAnonSession: true });
       if (!result.ok) {
-        setError(getClaimEmailErrorMessage(result, t));
+        setError(
+          isPhone
+            ? getClaimPhoneErrorMessage(result, t)
+            : getClaimEmailErrorMessage(result, t),
+        );
         setIsSubmitting(false);
         return;
       }
@@ -190,7 +250,9 @@ const JoinAccountModalContent = () => {
     setError(undefined);
 
     try {
-      const result = await verifyEmailCode({ email, token });
+      const result = isPhone
+        ? await verifyPhoneCode({ phone, token })
+        : await verifyEmailCode({ email, token });
       if (result.ok) {
         goAfterClaim();
         return;
@@ -208,6 +270,15 @@ const JoinAccountModalContent = () => {
     setError(undefined);
   };
 
+  // Switching channel abandons whatever was typed in the other one, so a
+  // half-entered address can't be submitted against the wrong endpoint.
+  const switchChannel = () => {
+    setChannel(isPhone ? 'email' : 'phone');
+    setError(undefined);
+    setEmail('');
+    setPhone('');
+  };
+
   // Native anchor: /login is outside the [locale] tree, so a RAC link 404s at
   // /en/login (same as HeaderUserMenu).
   const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
@@ -216,17 +287,26 @@ const JoinAccountModalContent = () => {
     <>
       {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
       <DialogHeader>
-        <DialogTitle>
-          {otpSent ? t('Email sent!') : t('Claim your account')}
-        </DialogTitle>
-        <DialogDescription>
+        <DialogTitle className="text-center">
           {otpSent
-            ? t(
-                'A code was sent to {email}. Type the code below to create your profile.',
-                { email },
-              )
+            ? isPhone
+              ? t('Code sent!')
+              : t('Email sent!')
+            : t("Don't lose track of this idea")}
+        </DialogTitle>
+        <DialogDescription className="text-center">
+          {otpSent
+            ? isPhone
+              ? t(
+                  'A code was sent to {phone}. Type the code below to create your profile.',
+                  { phone: normalizePhoneNumber(phone) },
+                )
+              : t(
+                  'A code was sent to {email}. Type the code below to create your profile.',
+                  { email },
+                )
             : t(
-                'Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.',
+                'Followers get updates as this idea moves through the process. Sign up in seconds.',
               )}
         </DialogDescription>
       </DialogHeader>
@@ -249,17 +329,90 @@ const JoinAccountModalContent = () => {
           />
         ) : (
           <>
-            <AuthEmailField
-              label={t('Email')}
-              // Example-email placeholders are deliberately untranslated.
-              placeholder="your@email.com"
-              value={email}
-              isDisabled={isSubmitting}
-              onChange={setEmail}
-              onSubmit={() => {
-                void submitEmail();
+            <AuthGoogleButton
+              onPress={() => {
+                void joinWithGoogle();
               }}
             />
+            <AuthDivider />
+            {smsEnabled ? (
+              <Tabs
+                value={activeChannel}
+                onValueChange={(next) => {
+                  if (next !== activeChannel) {
+                    switchChannel();
+                  }
+                }}
+              >
+                <span id="join-channel-label" className="text-label">
+                  {t('Continue with')}
+                </span>
+                {/* TabsList is `w-fit`; the design splits the full width. */}
+                <TabsList
+                  className="w-full"
+                  aria-labelledby="join-channel-label"
+                >
+                  <TabsTrigger
+                    value="email"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    {t('Email')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="phone"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    {t('Phone Number')}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="email">
+                  <AuthEmailField
+                    label={t('Email')}
+                    // The design says "We'll email a link"; we send a
+                    // six-digit code, so the copy says code.
+                    description={t(
+                      "We'll email you a code to confirm it's yours.",
+                    )}
+                    // Example-email placeholders are deliberately untranslated.
+                    placeholder="name@example.com"
+                    value={email}
+                    isDisabled={isSubmitting}
+                    onChange={setEmail}
+                    onSubmit={() => {
+                      void submitContact();
+                    }}
+                  />
+                </TabsContent>
+                <TabsContent value="phone">
+                  <AuthPhoneField
+                    label={t('Phone Number')}
+                    description={t(
+                      'We text you a code. Standard message and data rates may apply.',
+                    )}
+                    value={phone}
+                    isDisabled={isSubmitting}
+                    onChange={setPhone}
+                    onSubmit={() => {
+                      void submitContact();
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <AuthEmailField
+                label={t('Email')}
+                description={t("We'll email you a code to confirm it's yours.")}
+                placeholder="name@example.com"
+                value={email}
+                isDisabled={isSubmitting}
+                onChange={setEmail}
+                onSubmit={() => {
+                  void submitContact();
+                }}
+              />
+            )}
             <p className="text-muted-foreground">
               {t.rich('Already have an account? <login>Log in</login>', {
                 login: (chunks: ReactNode) => (
@@ -294,12 +447,12 @@ const JoinAccountModalContent = () => {
           <Button
             className="w-full"
             loading={isSubmitting}
-            disabled={isSubmitting || !emailIsValid}
+            disabled={isSubmitting || !contactIsValid}
             onClick={() => {
-              void submitEmail();
+              void submitContact();
             }}
           >
-            {t('Join')}
+            {isPhone ? t('Text me a code') : t('Email me a code')}
           </Button>
         )}
       </DialogFooter>

@@ -75,11 +75,14 @@ test.describe('Join account flow (public decision header)', () => {
     const dialog = page
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
-    await dialog.getByLabel('Email').fill(email);
+    // By role, not by label: the claim modal's channel tabs give the panel
+    // an accessible name from its tab, so `getByLabel('Email')` matches the
+    // tabpanel as well as the input.
+    await dialog.getByRole('textbox', { name: 'Email' }).fill(email);
 
     // Confirmations are off in e2e, so submitting the email claims the account
     // immediately and navigates to the promote onboarding.
-    await dialog.getByRole('button', { name: 'Join' }).click();
+    await dialog.getByRole('button', { name: 'Email me a code' }).click();
     await page.waitForURL(/\/start\?.*promote=1/, { timeout: 20000 });
     await expect(
       page.getByText('You do not have permission to view this page'),
@@ -126,8 +129,11 @@ test.describe('Join account flow (public decision header)', () => {
     const dialog = page
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
-    await dialog.getByLabel('Email').fill(email);
-    await dialog.getByRole('button', { name: 'Join' }).click();
+    // By role, not by label: the claim modal's channel tabs give the panel
+    // an accessible name from its tab, so `getByLabel('Email')` matches the
+    // tabpanel as well as the input.
+    await dialog.getByRole('textbox', { name: 'Email' }).fill(email);
+    await dialog.getByRole('button', { name: 'Email me a code' }).click();
     await page.waitForURL(/\/start\?.*promote=1/, { timeout: 20000 });
     await expect(
       page.getByText('You do not have permission to view this page'),

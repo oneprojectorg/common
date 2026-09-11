@@ -1425,9 +1425,9 @@
   "Process settings": "إعدادات العملية",
   "ends {date}": "ينتهي في {date}",
   "Remove image": "إزالة الصورة",
-  "Claim your account": "احصل على حسابك",
+  "Don't lose track of this idea": "لا تفقد تتبّع هذه الفكرة",
   "Join": "انضم",
-  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "انضم إلى Common لتتمكن من الإعجاب بأي فكرة والتعليق عليها ومتابعتها، ولتعديل مساهماتك وتلقي التحديثات بشأنها.",
+  "Followers get updates as this idea moves through the process. Sign up in seconds.": "يحصل المتابعون على التحديثات أثناء تقدّم هذه الفكرة خلال العملية. سجّل خلال ثوانٍ.",
   "You're already signed in. Reload the page to continue.": "لقد سجّلت الدخول بالفعل. أعد تحميل الصفحة للمتابعة.",
   "An account with this email already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
   "Join Common to comment on this proposal.": "انضم إلى Common للتعليق على هذا المقترح.",
@@ -1734,7 +1734,7 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Phone number": "رقم الهاتف",
+  "Phone Number": "رقم الهاتف",
   "We text you a code. Standard message and data rates may apply.": "نرسل إليك رمزًا برسالة نصية. قد تُطبَّق رسوم الرسائل والبيانات المعتادة.",
   "Use a phone number instead": "استخدم رقم هاتف بدلاً من ذلك",
   "Use an email address instead": "استخدم بريدًا إلكترونيًا بدلاً من ذلك",
@@ -1746,5 +1746,11 @@
   "Too many attempts. Wait a minute and try again.": "محاولات كثيرة. انتظر دقيقة ثم حاول مرة أخرى.",
   "Signing in by text is unavailable right now.": "تسجيل الدخول عبر الرسائل النصية غير متاح حاليًا.",
   "Code sent!": "تم إرسال الرمز!",
-  "A code was sent to {phone}. Type the code below to sign in.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لتسجيل الدخول."
+  "A code was sent to {phone}. Type the code below to sign in.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لتسجيل الدخول.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "تم إرسال رمز إلى {phone}. اكتب الرمز أدناه لإنشاء ملفك الشخصي.",
+  "An account with this phone number already exists. Try logging in instead.": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
+  "Continue with": "المتابعة باستخدام",
+  "Email me a code": "أرسل لي رمزًا بالبريد الإلكتروني",
+  "Text me a code": "أرسل لي رمزًا برسالة نصية",
+  "We'll email you a code to confirm it's yours.": "سنرسل إليك رمزًا بالبريد الإلكتروني للتأكد من أنه لك."
 }

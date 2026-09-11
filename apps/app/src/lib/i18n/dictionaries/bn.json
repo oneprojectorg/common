@@ -1426,9 +1426,9 @@
   "Process settings": "প্রক্রিয়া সেটিংস",
   "ends {date}": "{date} তারিখে শেষ হয়",
   "Remove image": "ছবি সরান",
-  "Claim your account": "আপনার অ্যাকাউন্ট দাবি করুন",
+  "Don't lose track of this idea": "এই আইডিয়াটির খেয়াল রাখুন",
   "Join": "যোগ দিন",
-  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "যেকোনো আইডিয়া লাইক, কমেন্ট ও ফলো করতে এবং আপনার নিজের জমা দেওয়া আইডিয়া সম্পাদনা ও সেগুলোর আপডেট পেতে Common-এ যোগ দিন।",
+  "Followers get updates as this idea moves through the process. Sign up in seconds.": "প্রক্রিয়ার মধ্য দিয়ে এই আইডিয়াটি এগিয়ে যাওয়ার সাথে সাথে ফলোয়াররা আপডেট পাবেন। কয়েক সেকেন্ডে সাইন আপ করুন।",
   "You're already signed in. Reload the page to continue.": "আপনি ইতিমধ্যে সাইন ইন করেছেন। চালিয়ে যেতে পৃষ্ঠাটি পুনরায় লোড করুন।",
   "An account with this email already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
   "Join Common to comment on this proposal.": "এই প্রস্তাবে মন্তব্য করতে Common-এ যোগ দিন।",
@@ -1734,7 +1734,7 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Phone number": "ফোন নম্বর",
+  "Phone Number": "ফোন নম্বর",
   "We text you a code. Standard message and data rates may apply.": "আমরা আপনাকে একটি কোড পাঠাব। সাধারণ বার্তা ও ডেটা চার্জ প্রযোজ্য হতে পারে।",
   "Use a phone number instead": "পরিবর্তে ফোন নম্বর ব্যবহার করুন",
   "Use an email address instead": "পরিবর্তে ইমেল ঠিকানা ব্যবহার করুন",
@@ -1746,5 +1746,11 @@
   "Too many attempts. Wait a minute and try again.": "অনেক বেশি চেষ্টা। এক মিনিট অপেক্ষা করে আবার চেষ্টা করুন।",
   "Signing in by text is unavailable right now.": "এই মুহূর্তে টেক্সটের মাধ্যমে সাইন ইন করা যাচ্ছে না।",
   "Code sent!": "কোড পাঠানো হয়েছে!",
-  "A code was sent to {phone}. Type the code below to sign in.": "{phone} নম্বরে একটি কোড পাঠানো হয়েছে। সাইন ইন করতে নিচে কোডটি লিখুন।"
+  "A code was sent to {phone}. Type the code below to sign in.": "{phone} নম্বরে একটি কোড পাঠানো হয়েছে। সাইন ইন করতে নিচে কোডটি লিখুন।",
+  "A code was sent to {phone}. Type the code below to create your profile.": "{phone}-এ একটি কোড পাঠানো হয়েছে। আপনার প্রোফাইল তৈরি করতে নীচে কোডটি টাইপ করুন।",
+  "An account with this phone number already exists. Try logging in instead.": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
+  "Continue with": "চালিয়ে যান",
+  "Email me a code": "আমাকে ইমেইলে একটি কোড পাঠান",
+  "Text me a code": "আমাকে টেক্সটে একটি কোড পাঠান",
+  "We'll email you a code to confirm it's yours.": "এটি আপনার কিনা নিশ্চিত করতে আমরা আপনাকে ইমেইলে একটি কোড পাঠাব।"
 }

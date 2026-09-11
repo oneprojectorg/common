@@ -363,7 +363,7 @@ export const LoginPanel = () => {
           ) : step === 'phone-number' ? (
             <div className="flex flex-col gap-4">
               <AuthPhoneField
-                label={t('Phone number')}
+                label={t('Phone Number')}
                 description={t(
                   'We text you a code. Standard message and data rates may apply.',
                 )}

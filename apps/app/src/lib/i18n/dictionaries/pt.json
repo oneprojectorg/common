@@ -1426,9 +1426,9 @@
   "Process settings": "Configurações do processo",
   "ends {date}": "termina em {date}",
   "Remove image": "Remover imagem",
-  "Claim your account": "Reivindique sua conta",
+  "Don't lose track of this idea": "Não perca de vista esta ideia",
   "Join": "Participar",
-  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "Junte-se ao Common para curtir, comentar e seguir qualquer ideia, e para editar e receber atualizações sobre suas próprias contribuições.",
+  "Followers get updates as this idea moves through the process. Sign up in seconds.": "Os seguidores recebem atualizações à medida que esta ideia avança no processo. Cadastre-se em segundos.",
   "You're already signed in. Reload the page to continue.": "Você já está com a sessão iniciada. Recarregue a página para continuar.",
   "An account with this email already exists. Try logging in instead.": "Já existe uma conta com este e-mail. Tente fazer login.",
   "Join Common to comment on this proposal.": "Junte-se ao Common para comentar esta proposta.",
@@ -1734,7 +1734,7 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Phone number": "Número de telefone",
+  "Phone Number": "Número de telefone",
   "We text you a code. Standard message and data rates may apply.": "Enviamos um código por SMS. Podem aplicar-se tarifas de mensagens e dados.",
   "Use a phone number instead": "Usar um número de telefone",
   "Use an email address instead": "Usar um endereço de e-mail",
@@ -1746,5 +1746,11 @@
   "Too many attempts. Wait a minute and try again.": "Demasiadas tentativas. Aguarde um minuto e tente novamente.",
   "Signing in by text is unavailable right now.": "O início de sessão por SMS não está disponível de momento.",
   "Code sent!": "Código enviado!",
-  "A code was sent to {phone}. Type the code below to sign in.": "Foi enviado um código para {phone}. Escreva o código abaixo para iniciar sessão."
+  "A code was sent to {phone}. Type the code below to sign in.": "Foi enviado um código para {phone}. Escreva o código abaixo para iniciar sessão.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "Um código foi enviado para {phone}. Digite o código abaixo para criar seu perfil.",
+  "An account with this phone number already exists. Try logging in instead.": "Já existe uma conta com este e-mail. Tente fazer login.",
+  "Continue with": "Continuar com",
+  "Email me a code": "Envie-me um código por e-mail",
+  "Text me a code": "Envie-me um código por SMS",
+  "We'll email you a code to confirm it's yours.": "Enviaremos um código por e-mail para confirmar que é seu."
 }

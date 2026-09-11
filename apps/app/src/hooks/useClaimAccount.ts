@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { isSafeRedirectPath } from '@op/common/client';
+import { isSafeRedirectPath, normalizePhoneNumber } from '@op/common/client';
 import { SUPPORTED_LOCALES } from '@op/common/locales';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useCallback } from 'react';
@@ -58,12 +58,33 @@ export function getClaimEmailErrorMessage(
   return t("That didn't work");
 }
 
+/** The phone counterpart of {@link getClaimEmailErrorMessage}. */
+export function getClaimPhoneErrorMessage(
+  result: Extract<ClaimEmailResult, { ok: false }>,
+  t: TranslateFn,
+): string {
+  if (result.alreadySignedIn) {
+    return t("You're already signed in. Reload the page to continue.");
+  }
+  if (result.code === 'phone_exists') {
+    return t(
+      'An account with this phone number already exists. Try logging in instead.',
+    );
+  }
+  console.error('claim: requestPhoneCode failed', result);
+  return t("That didn't work");
+}
+
 /**
- * After linking, route through promote onboarding (personal details + ToS),
- * returning to `dest` when done. `dest` must carry the locale prefix — the
- * locale-less /login route and the modal both pass a localized pathname.
+ * The promote-onboarding URL (personal details + ToS) that returns to `dest`
+ * when done. `dest` must carry the locale prefix — the locale-less /login
+ * route and the modal both pass a localized pathname.
+ *
+ * Exported separately from {@link goToOnboarding} so a redirect-based flow
+ * (Google OAuth) can hand this to the auth callback's own `redirect` param
+ * instead of navigating client-side.
  */
-export function goToOnboarding(dest: string | null) {
+export function getOnboardingPath(dest: string | null): string {
   const safeDest = dest && isSafeRedirectPath(dest) ? dest : '/';
   // A safe path isn't necessarily locale-prefixed (e.g. /info/tos), so
   // validate the first segment before building the /start URL from it.
@@ -71,7 +92,12 @@ export function goToOnboarding(dest: string | null) {
   const locale = SUPPORTED_LOCALES.some((l) => l === firstSegment)
     ? firstSegment
     : i18nConfig.defaultLocale;
-  window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
+  return `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
+}
+
+/** After linking, route through promote onboarding. See {@link getOnboardingPath}. */
+export function goToOnboarding(dest: string | null) {
+  window.location.href = getOnboardingPath(dest);
 }
 
 export function useClaimAccount() {
@@ -137,6 +163,79 @@ export function useClaimAccount() {
     [supabase, utils],
   );
 
+  /**
+   * The phone counterpart of {@link requestEmailCode}: attach `phone` to the
+   * visitor's anon user with `updateUser({ phone })`.
+   *
+   * This is a phone *change*, which is one of the two writes GoTrue's SMS
+   * autoconfirm applies without checking a code. With autoconfirm on, the
+   * number is confirmed on the spot and `needsOtp` is false — the visitor
+   * would claim an account against a number they need not hold. The
+   * `enable_confirmations = true` this repository ships keeps that off, so the
+   * `needsOtp: false` branch is reachable only where a deployment has turned
+   * autoconfirm back on.
+   */
+  const requestPhoneCode = useCallback(
+    async (
+      phone: string,
+      { mintAnonSession = false }: { mintAnonSession?: boolean } = {},
+    ): Promise<ClaimEmailResult> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session && !sessionData.session.user.is_anonymous) {
+        return { ok: false, alreadySignedIn: true };
+      }
+      if (!sessionData.session && mintAnonSession) {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          return { ok: false, code: error.code, message: error.message };
+        }
+        void utils.account.getMyAccount.invalidate();
+      }
+
+      const normalized = normalizePhoneNumber(phone);
+      const { data, error } = await supabase.auth.updateUser({
+        phone: normalized,
+      });
+      if (error) {
+        return { ok: false, code: error.code, message: error.message };
+      }
+
+      // GoTrue stores the number without the leading `+`, so compare on digits
+      // rather than the E.164 string we sent, or an applied change would read
+      // as pending and dead-end on a code screen with no code sent.
+      const stored = data.user?.phone ?? '';
+      if (stored === normalized.replace(/^\+/, '') && !data.user?.new_phone) {
+        await supabase.auth.refreshSession();
+        return { ok: true, needsOtp: false };
+      }
+      return { ok: true, needsOtp: true };
+    },
+    [supabase, utils],
+  );
+
+  /** Confirm the OTP — the claim is a phone *change* on the anon user. */
+  const verifyPhoneCode = useCallback(
+    async ({
+      phone,
+      token,
+    }: {
+      phone: string;
+      token: string;
+    }): Promise<ClaimVerifyResult> => {
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: normalizePhoneNumber(phone),
+        token,
+        type: 'phone_change',
+      });
+
+      if (data.user && data.session && data.user.role === 'authenticated') {
+        return { ok: true };
+      }
+      return { ok: false, message: error?.message };
+    },
+    [supabase],
+  );
+
   /** Confirm the OTP — the claim is an email *change* on the anon user. */
   const verifyEmailCode = useCallback(
     async ({
@@ -160,5 +259,10 @@ export function useClaimAccount() {
     [supabase],
   );
 
-  return { requestEmailCode, verifyEmailCode };
+  return {
+    requestEmailCode,
+    verifyEmailCode,
+    requestPhoneCode,
+    verifyPhoneCode,
+  };
 }
