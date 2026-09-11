@@ -1,3 +1,4 @@
+import type { AccessZonePermission } from 'access-zones';
 import { permission } from 'access-zones';
 
 /**
@@ -18,6 +19,25 @@ export const decisionPermission = {
   SUBMIT_PROPOSALS: 0b100_00000,
   VOTE: 0b1000_00000,
 } as const;
+
+/**
+ * OR-pattern admitting a decisions behaviour bit or either admin spelling.
+ *
+ * Behaviour bits (5–8) carry no hierarchy — `checkPermission` is a plain
+ * bitwise AND, so ADMIN does not imply REVIEW or VOTE. Both admin spellings
+ * appear because the role editor writes only the `decisions` zone (a custom
+ * "Manage Process" role holds `decisions` ADMIN and no `profile` ADMIN),
+ * while the seeded `Admin` and `Platform Admin` roles hold both.
+ */
+export function adminOr(
+  behaviourBit: (typeof decisionPermission)[keyof typeof decisionPermission],
+): AccessZonePermission[] {
+  return [
+    { decisions: behaviourBit },
+    { decisions: permission.ADMIN },
+    { profile: permission.ADMIN },
+  ];
+}
 
 export type DecisionRolePermissions = {
   delete: boolean;

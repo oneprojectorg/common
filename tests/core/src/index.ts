@@ -20,6 +20,7 @@ export {
   getDecisionInstance,
   getSeededTemplate,
   grantDecisionProfileAccess,
+  grantInstanceAdminOnlyRole,
   grantInstanceAdminWithoutReviewRole,
   grantInstanceReviewerRole,
   grantInstanceRole,

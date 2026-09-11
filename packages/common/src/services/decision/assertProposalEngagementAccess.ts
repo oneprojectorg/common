@@ -1,10 +1,9 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import { decisionPermission } from './permissions';
+import { adminOr, decisionPermission } from './permissions';
 
 type ProposalEngagementTarget = {
   proposalId: string;
@@ -47,11 +46,8 @@ export async function assertProposalEngagementAccess({
   await assertInstanceProfileAccess({
     user,
     instance: proposal.processInstance,
-    profilePermissions: { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    orgFallbackPermissions: [
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-      { decisions: permission.ADMIN },
-    ],
+    profilePermissions: adminOr(decisionPermission.SUBMIT_PROPOSALS),
+    orgFallbackPermissions: adminOr(decisionPermission.SUBMIT_PROPOSALS),
   });
 
   return {

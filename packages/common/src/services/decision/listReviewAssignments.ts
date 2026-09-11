@@ -14,7 +14,6 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import {
@@ -27,7 +26,7 @@ import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { decisionPermission } from './permissions';
+import { adminOr, decisionPermission } from './permissions';
 import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
@@ -141,10 +140,7 @@ export async function listReviewAssignments({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: [
-      { decisions: decisionPermission.REVIEW },
-      { decisions: permission.ADMIN },
-    ],
+    permissions: adminOr(decisionPermission.REVIEW),
   });
 
   assertInstancePhase({ instance, phaseId });

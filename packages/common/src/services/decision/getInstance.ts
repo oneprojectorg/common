@@ -43,8 +43,14 @@ const resolveInstanceAccess = async (
   profileRoles: NormalizedRole[],
 ): Promise<DecisionRolePermissions> => {
   if (profileRoles.length > 0) {
-    // Profile admins bypass decision-zone role checks — they have full access
-    if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
+    // Admins bypass decision-zone role checks — they have full access. Both
+    // spellings: the role editor writes only the `decisions` zone.
+    if (
+      checkPermission(
+        [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
+        profileRoles,
+      )
+    ) {
       return ALL_TRUE_ACCESS;
     }
     return fromDecisionBitField(getRolesDecisionBits(profileRoles));
