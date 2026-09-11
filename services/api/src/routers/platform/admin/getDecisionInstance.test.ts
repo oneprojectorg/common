@@ -1,5 +1,4 @@
 import { ProcessStatus } from '@op/db/schema';
-import { grantTestPlatformAdmin } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -92,8 +91,6 @@ describe.concurrent('platform.admin.getDecisionInstance', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    // The caller of a platform-admin router has to hold the role.
-    await grantTestPlatformAdmin(setup.user.id);
     const instanceId = setup.instance.instance.id;
 
     const { session } = await createIsolatedSession(setup.userEmail);
@@ -124,8 +121,6 @@ describe.concurrent('platform.admin.getDecisionInstance', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
-    // The caller of a platform-admin router has to hold the role.
-    await grantTestPlatformAdmin(setup.user.id);
 
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));

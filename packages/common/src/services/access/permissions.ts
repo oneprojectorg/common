@@ -13,7 +13,6 @@ import { and, eq } from 'drizzle-orm';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import { profileUserCacheKey } from './cacheKeys';
-import { PLATFORM_ADMIN_ROLE_NAME } from './platformAdmin';
 
 export async function invalidateProfileUserCacheForRole(roleId: string) {
   const affectedUsers = await db
@@ -67,17 +66,10 @@ export async function assertPermissionRowScope({
   profileId,
   user,
 }: {
-  role: { name: string; profileId: string | null };
+  role: { profileId: string | null };
   profileId?: string;
   user: { id: string };
 }): Promise<string | null> {
-  // A user-level role is unscoped, so a scoped row could only narrow it.
-  if (role.name === PLATFORM_ADMIN_ROLE_NAME) {
-    throw new ValidationError(
-      `Cannot modify permissions for the ${PLATFORM_ADMIN_ROLE_NAME} role`,
-    );
-  }
-
   if (role.profileId) {
     if (profileId && profileId !== role.profileId) {
       throw new ValidationError(

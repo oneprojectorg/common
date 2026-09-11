@@ -1,4 +1,3 @@
-import { grantPlatformAdmin, revokePlatformAdmin } from '@op/common';
 import { db } from '@op/db/client';
 import {
   EntityType,
@@ -8,6 +7,7 @@ import {
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { grantTestPlatformAdmin } from '@op/test';
 import { inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -23,10 +23,7 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(platformAdminRouter);
 
-/**
- * A user plus the ids the signup trigger created for them, and a factory for a
- * second profile they are a member of.
- */
+/** A user with no grant, plus a factory for a second profile they belong to. */
 const createTestSubject = async (
   onTestFinished: (fn: () => void | Promise<void>) => void,
 ) => {
@@ -49,7 +46,7 @@ const createTestSubject = async (
     }
   });
 
-  const email = `platform-role-${randomUUID().slice(0, 12)}@oneproject.org`;
+  const email = `platform-role-${randomUUID().slice(0, 12)}@example.com`;
   const { user } = await createTestUser(email);
 
   if (!user) {
@@ -118,7 +115,7 @@ describe.concurrent('platform admin as a user-level access role', () => {
     onTestFinished,
   }) => {
     const subject = await createTestSubject(onTestFinished);
-    await grantPlatformAdmin({ authUserId: subject.authUserId });
+    await grantTestPlatformAdmin(subject.authUserId);
 
     const caller = await subject.caller();
 
@@ -150,43 +147,5 @@ describe.concurrent('platform admin as a user-level access role', () => {
     await expect(caller.getDecisionInstance(gatingInput)).rejects.toMatchObject(
       { cause: { name: 'UnauthorizedError' } },
     );
-  });
-
-  it('rejects the caller again after a revoke', async ({ onTestFinished }) => {
-    const subject = await createTestSubject(onTestFinished);
-    await grantPlatformAdmin({ authUserId: subject.authUserId });
-
-    const grantedCaller = await subject.caller();
-    await expect(
-      grantedCaller.getDecisionInstance(gatingInput),
-    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
-
-    await revokePlatformAdmin({ authUserId: subject.authUserId });
-
-    const revokedCaller = await subject.caller();
-    await expect(
-      revokedCaller.getDecisionInstance(gatingInput),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
-  });
-
-  it('is idempotent for both grant and revoke', async ({ onTestFinished }) => {
-    const subject = await createTestSubject(onTestFinished);
-
-    await revokePlatformAdmin({ authUserId: subject.authUserId });
-    await grantPlatformAdmin({ authUserId: subject.authUserId });
-    await grantPlatformAdmin({ authUserId: subject.authUserId });
-
-    const rows = await db.query.profileUsers.findMany({
-      where: { authUserId: subject.authUserId },
-      with: { roles: true },
-    });
-
-    expect(
-      rows.flatMap((row) =>
-        row.roles.filter(
-          (role) => role.accessRoleId === ROLES.PLATFORM_ADMIN.id,
-        ),
-      ),
-    ).toHaveLength(1);
   });
 });

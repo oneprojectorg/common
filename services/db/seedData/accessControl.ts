@@ -71,9 +71,6 @@ export const ACCESS_ROLES = [
   {
     id: ACCESS_ROLE_IDS.PLATFORM_ADMIN,
     name: 'Platform Admin',
-    // Global superuser role, held on the holder's own individual-profile
-    // membership, and never offered by an invite or member-role UI (it is kept
-    // out of EXPOSABLE_GLOBAL_ROLE_NAMES). See ADR 0005.
     description: 'Platform-wide administrator',
   },
   {
@@ -174,8 +171,7 @@ export const ACCESS_ROLE_PERMISSIONS = [
       DECISION_BITS.SUBMIT_PROPOSALS |
       DECISION_BITS.VOTE,
   },
-  // Platform Admin gets ACRUD on every zone. Deliberately no decision behavior
-  // bits: those mark a reviewer/voter, which a superuser must never appear as.
+  // Platform Admin: ACRUD on every zone, no decision behaviour bits.
   ...[
     ACCESS_ZONE_IDS.PLATFORM,
     ACCESS_ZONE_IDS.ADMIN,
