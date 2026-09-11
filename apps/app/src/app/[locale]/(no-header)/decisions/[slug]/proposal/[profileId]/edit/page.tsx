@@ -12,6 +12,7 @@ import {
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
 import { Button } from '@op/sense/Button';
+import { SplitPane } from '@op/sense/SplitPane';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
@@ -30,7 +31,6 @@ import { ReviewNotesButton } from '@/components/decisions/ReviewNotesButton';
 import { ReviewNotesPanel } from '@/components/decisions/ReviewNotesPanel';
 import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
-import { ProposalEditorAsidePane } from '@/components/decisions/proposalEditor/ProposalEditorAsidePane';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
@@ -297,7 +297,12 @@ function EditProposalPageContent() {
           }
         >
           {isFeedbackPanelOpen && feedback.hasFeedback ? (
-            <ProposalEditorAsidePane label={t('Feedback')}>
+            <SplitPane.Pane
+              id="feedback"
+              label={t('Feedback')}
+              className="bg-background"
+              unpadded
+            >
               <ProposalFeedbackPanel
                 feedbackItems={feedback.notes}
                 title={t('Feedback')}
@@ -305,7 +310,7 @@ function EditProposalPageContent() {
                   'Notes reviewers shared while this proposal was under review',
                 )}
               />
-            </ProposalEditorAsidePane>
+            </SplitPane.Pane>
           ) : null}
         </ProposalEditorContent>
       </VersionPreviewProvider>

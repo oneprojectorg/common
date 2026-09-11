@@ -74,7 +74,7 @@ export function ProposalEditor({
    */
   hasOpenRevisionRequests?: boolean;
   /**
-   * The pane beside the document, expected to be a `ProposalEditorAsidePane`.
+   * The pane beside the document, expected to be a `SplitPane.Pane`.
    * Absent, the document gets the full width.
    */
   // TODO: restructure the children => aside mapping
