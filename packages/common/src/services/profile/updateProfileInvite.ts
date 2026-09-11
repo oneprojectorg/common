@@ -3,6 +3,7 @@ import { profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError } from '../../utils/error';
+import { assignableRoleFilter } from '../access';
 import { assertProfileAdmin } from '../assert';
 
 /**
@@ -34,8 +35,12 @@ export const updateProfileInvite = async ({
         },
       },
     }),
+    // Same filter as invite creation; acceptance trusts the stored role id.
     db.query.accessRoles.findFirst({
-      where: { id: accessRoleId },
+      where: {
+        id: accessRoleId,
+        RAW: (table) => assignableRoleFilter(table),
+      },
     }),
   ]);
 
