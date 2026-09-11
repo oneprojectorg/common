@@ -62,7 +62,7 @@ export function AuthorNotesAccordion({
     return (
       <section
         data-testid="author-notes"
-        className="flex flex-col gap-4 rounded-lg border border-border bg-muted p-4"
+        className="flex flex-col gap-4 rounded-lg border border-border bg-muted p-6"
       >
         <Header3>{t('Author notes')}</Header3>
         {entries}
@@ -75,17 +75,21 @@ export function AuthorNotesAccordion({
       data-testid="author-notes"
       value={isOpen ? [NOTES_ITEM] : []}
       onValueChange={(value) => setIsOpen(value.length > 0)}
-      className="rounded-lg border border-border bg-muted px-4"
+      className="rounded-lg border border-border bg-muted p-6"
     >
       <AccordionItem value={NOTES_ITEM}>
+        {/* The card itself is the frame, so the trigger drops the primitive's
+            own border and hover underline: a second rounded box around the
+            heading reads as a select input. Focus stays visible as a ring. */}
         <AccordionTrigger
+          className="items-center py-0 hover:no-underline focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={
             isOpen ? t('Collapse author notes') : t('Expand author notes')
           }
         >
           {t('Author notes')}
         </AccordionTrigger>
-        <AccordionContent>{entries}</AccordionContent>
+        <AccordionContent className="pt-4 pb-0">{entries}</AccordionContent>
       </AccordionItem>
     </Accordion>
   );
