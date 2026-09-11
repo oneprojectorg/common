@@ -115,8 +115,7 @@ export async function ReviewSummaryLayout({
       phaseId,
       sort: 'newest',
     }),
-    // The author-notes card in the left pane reads this unconditionally, so
-    // hydrate it here rather than pay a client round-trip after the two above.
+    // The left pane's author-notes card reads this unconditionally.
     utils.decision.listProposalRevisionNotes.prefetch({ proposalId }),
   ]);
 

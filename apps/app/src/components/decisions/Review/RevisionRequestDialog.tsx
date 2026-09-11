@@ -22,12 +22,7 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-/**
- * Only the fields the cards render. `assignmentId` is optional because the
- * author-notes read (`listProposalRevisionNotes`) never selects one: a request
- * with no assignment id can never match the viewer's own assignment, which is
- * what an anonymous author-note view wants.
- */
+/** `assignmentId` is absent in the author-notes read, which is anonymous. */
 export interface ViewedRevisionRequest {
   id: string;
   assignmentId?: string | null;
@@ -39,18 +34,13 @@ interface RevisionRequestDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   requests: Array<ViewedRevisionRequest>;
-  /** The viewer's own assignment, so their card can be marked. */
   ownAssignmentId?: string | null;
   /** Absent → no cancel action, e.g. a past request or an admin reader. */
   onCancelOwn?: () => void;
   isCancelling?: boolean;
 }
 
-/**
- * Reads the revision requests on a proposal. Requests are anonymous, so no
- * reviewer is named here; the caller owns the cancel action, which keeps this
- * dialog usable outside the reviewer's form context (the admin summary).
- */
+/** Requests are anonymous, so no reviewer is named. */
 export function RevisionRequestDialog({
   isOpen,
   onOpenChange,
@@ -79,9 +69,7 @@ export function RevisionRequestDialog({
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            {/* This dialog *views* existing requests — the noun. "Request
-                Revision" is the verb phrase that titles RequestRevisionModal,
-                which creates one. */}
+            {/* The noun: RequestRevisionModal owns the verb phrase. */}
             <DialogTitle>
               {requests.length === 1
                 ? t('Revision request')

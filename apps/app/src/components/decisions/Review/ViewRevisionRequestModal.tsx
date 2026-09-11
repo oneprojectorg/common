@@ -13,11 +13,7 @@ interface ViewRevisionRequestModalProps {
   requests?: Array<ViewedRevisionRequest>;
 }
 
-/**
- * The reviewer's view of the revision requests on a proposal: adds the marking
- * and the cancelling of their own. Requests are anonymous, so no other
- * reviewer is named.
- */
+/** Adds the reviewer's own request: marks their card, offers the cancel. */
 export function ViewRevisionRequestModal({
   isOpen,
   onOpenChange,

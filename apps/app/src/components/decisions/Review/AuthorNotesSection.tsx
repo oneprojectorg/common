@@ -7,14 +7,7 @@ import { Suspense, useMemo, useState } from 'react';
 import { type AuthorNote, AuthorNotesAccordion } from './AuthorNotesAccordion';
 import { RevisionRequestDialog } from './RevisionRequestDialog';
 
-/**
- * The author's revision notes on a proposal. The notes are context around the
- * proposal, never a reason to fail the pane: a slow read shows nothing until it
- * lands, a failed one shows nothing at all.
- *
- * Reads nothing from the reviewer's form context, so the admin review summary
- * renders the same card over the same grouped read.
- */
+/** Context around the proposal, so a slow or failed read shows nothing. */
 export function AuthorNotesSection({ proposalId }: { proposalId: string }) {
   return (
     <APIErrorBoundary fallbacks={{ default: () => null }}>
@@ -51,8 +44,6 @@ function AuthorNotes({ proposalId }: { proposalId: string }) {
     [items],
   );
 
-  // The list dialog takes every request the note answered, so the link opens
-  // the whole set rather than only its first row.
   const viewedRequests = useMemo(() => {
     if (!viewedRequestIds) {
       return [];
