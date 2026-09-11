@@ -7,12 +7,12 @@ import {
   proposalReviewRequests,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 
-/** Cancels an active revision request and resumes the assignment. */
+/** Cancels an active revision request and resumes a paused assignment. */
 export async function cancelRevisionRequest({
   assignmentId,
   revisionRequestId,
@@ -55,7 +55,15 @@ export async function cancelRevisionRequest({
       .set({
         status: ProposalReviewAssignmentStatus.IN_PROGRESS,
       })
-      .where(eq(proposalReviewAssignments.id, assignmentId));
+      .where(
+        and(
+          eq(proposalReviewAssignments.id, assignmentId),
+          eq(
+            proposalReviewAssignments.status,
+            ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+          ),
+        ),
+      );
 
     return cancelledRequest;
   });
