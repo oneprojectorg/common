@@ -56,6 +56,8 @@ interface ReviewFormState {
   ownRevisionRequest: ProposalReviewRequest | null;
   /** Own latest request in any state. */
   ownLatestRevisionRequest: ProposalReviewRequest | null;
+  /** The submitted review predates the proposal's current version. */
+  isReviewOutOfDate: boolean;
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
@@ -134,8 +136,14 @@ function ReviewFormProviderInner({
     { refetchOnMount: 'always' },
   );
 
-  const { rubricTemplate, review, revisionRequest, assignment, canEditReview } =
-    reviewAssignment;
+  const {
+    rubricTemplate,
+    review,
+    revisionRequest,
+    assignment,
+    canEditReview,
+    isReviewOutOfDate,
+  } = reviewAssignment;
 
   if (!rubricTemplate) {
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
@@ -179,7 +187,11 @@ function ReviewFormProviderInner({
     reviewSettings.allowRevisions && !ownRevisionRequest;
 
   // Local: unsaved until "Update review", so navigating away discards edits.
-  const [isEditing, setIsEditing] = useState(initiallyEditing);
+  const [isEditRequested, setIsEditRequested] = useState(initiallyEditing);
+
+  // An out-of-date review skips the read-only step: it opens pre-filled so the
+  // reviewer can re-affirm it.
+  const isEditing = isEditRequested || isReviewOutOfDate;
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
@@ -199,7 +211,7 @@ function ReviewFormProviderInner({
     onSuccess: () => {
       // The mutation's review channels invalidate getReviewAssignment locally,
       // refreshing the read-only view in place (as requestRevision does).
-      setIsEditing(false);
+      setIsEditRequested(false);
       toast.success(t('Review updated successfully'));
       onCompleted?.();
     },
@@ -291,7 +303,7 @@ function ReviewFormProviderInner({
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
   const startEditing = useCallback(() => {
-    setIsEditing(true);
+    setIsEditRequested(true);
   }, []);
 
   const handleUpdate = useCallback(async () => {
@@ -352,6 +364,7 @@ function ReviewFormProviderInner({
       openRevisionRequests,
       ownRevisionRequest,
       ownLatestRevisionRequest: revisionRequest,
+      isReviewOutOfDate,
       canRequestRevision,
       rubricTemplate,
       review,
@@ -381,6 +394,7 @@ function ReviewFormProviderInner({
       openRevisionRequests,
       ownRevisionRequest,
       revisionRequest,
+      isReviewOutOfDate,
       canRequestRevision,
       rubricTemplate,
       review,

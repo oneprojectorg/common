@@ -114,6 +114,7 @@ function MyReviewForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     openRevisionRequests,
+    isReviewOutOfDate,
     isEditing,
     review,
   } = useReviewForm();
@@ -163,7 +164,7 @@ function MyReviewForm() {
     ) : null;
 
   // A submitted review shows the read-only result unless the reviewer has
-  // switched it back into the form via "Edit review".
+  // switched it back into the form via "Edit review", or it is out of date.
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
       <>
@@ -181,6 +182,8 @@ function MyReviewForm() {
 
   return (
     <>
+      {isReviewOutOfDate && <NewRevisionAlert />}
+
       {revisionAlert}
 
       <div className="flex flex-col gap-6">
@@ -224,6 +227,22 @@ function MyReviewForm() {
         ) : null}
       </div>
     </>
+  );
+}
+
+function NewRevisionAlert() {
+  const t = useTranslations();
+
+  return (
+    <Alert variant="warning">
+      <LuRefreshCw />
+      <AlertTitle>{t('New revision')}</AlertTitle>
+      <AlertDescription>
+        {t(
+          'The author revised this proposal after you reviewed it. Your responses were carried over, update them if the changes affect your review',
+        )}
+      </AlertDescription>
+    </Alert>
   );
 }
 
