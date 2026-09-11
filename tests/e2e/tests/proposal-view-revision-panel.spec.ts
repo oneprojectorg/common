@@ -239,6 +239,14 @@ test.describe('Proposal editor — review notes sheet', () => {
       page.getByRole('heading', { name: 'Revision requests' }),
     ).toBeVisible();
 
+    // The sheet slides over the editor and covers the header's actions, so
+    // the author closes it before submitting — as they would in the product.
+    const reviewNotesSheet = page.getByRole('dialog').filter({
+      has: page.getByRole('heading', { name: 'Review notes' }),
+    });
+    await reviewNotesSheet.getByRole('button', { name: 'Close' }).click();
+    await expect(reviewNotesSheet).toBeHidden();
+
     // One dialog, one note — not a reply per request.
     await page.getByRole('button', { name: 'Update' }).click();
 
