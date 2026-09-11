@@ -8,6 +8,7 @@ import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import React from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,7 +22,16 @@ import { useTranslations } from '@/lib/i18n';
  * the body from these parts.
  */
 
+/** Which credential the visitor is signing in with. */
+export type AuthChannel = 'email' | 'phone';
+
 interface AuthPanelState {
+  channel: AuthChannel;
+  setChannel: (channel: AuthChannel) => void;
+  phone: string;
+  setPhone: (phone: string) => void;
+  phoneCodeSent: boolean;
+  setPhoneCodeSent: (phoneCodeSent: boolean) => void;
   email: string;
   setEmail: (email: string) => void;
   emailIsValid: boolean;
@@ -32,34 +42,79 @@ interface AuthPanelState {
   setTokenError: (tokenError: string | undefined) => void;
   loginSuccess: boolean;
   setLoginSuccess: (loginSuccess: boolean) => void;
+  /**
+   * Drops a pending phone verification.
+   *
+   * The persisted fields outlive the panel that started them, so a panel that
+   * does not own the flow calls this rather than showing a code field for a
+   * verification the visitor did not begin here.
+   */
+  clearPhoneFlow: () => void;
   reset: () => void;
 }
 
-// Single store shared by both panels. This is safe only because every
-// transition between them is a full navigation (login/page.tsx renders exactly
-// one, "Log in"/"Sign up" links are native anchors), which resets this
-// module-level singleton. A soft navigation between the panels would leak
-// state across flows — call `reset()` on mount if that ever becomes possible.
-export const useAuthPanelStore = create<AuthPanelState>((set) => ({
-  email: '',
-  setEmail: (email) => set({ email }),
-  emailIsValid: false,
-  setEmailIsValid: (emailIsValid) => set({ emailIsValid }),
-  token: undefined,
-  setToken: (token) => set({ token }),
-  tokenError: undefined,
-  setTokenError: (tokenError) => set({ tokenError }),
-  loginSuccess: false,
-  setLoginSuccess: (loginSuccess) => set({ loginSuccess }),
-  reset: () =>
-    set({
+// Single store shared by both panels. A full navigation between them once
+// reset it, because it is a module-level singleton — but the persisted fields
+// below survive that, deliberately, so a person can leave for their messages
+// and come back. A panel that does not own a pending phone verification must
+// therefore clear it on mount; `LoginPanel` calls `clearPhoneFlow` for that.
+/**
+ * State for the login panel, shared by both channels.
+ *
+ * The phone fields persist to session storage, and the email fields do not.
+ * Reading an SMS code means leaving the page, and a mobile browser often
+ * discards it while the person is in their messages. Without this, they return
+ * to an empty email form and no way to finish signing in.
+ *
+ * Session storage rather than local storage, so a pending verification dies
+ * with the tab and no phone number outlives it on a shared machine. The code
+ * and any error stay out of storage: both are short-lived, and a stale code is
+ * worse than an empty field.
+ */
+export const useAuthPanelStore = create<AuthPanelState>()(
+  persist(
+    (set) => ({
+      channel: 'email',
+      setChannel: (channel) => set({ channel }),
+      phone: '',
+      setPhone: (phone) => set({ phone }),
+      phoneCodeSent: false,
+      setPhoneCodeSent: (phoneCodeSent) => set({ phoneCodeSent }),
       email: '',
+      setEmail: (email) => set({ email }),
       emailIsValid: false,
+      setEmailIsValid: (emailIsValid) => set({ emailIsValid }),
       token: undefined,
+      setToken: (token) => set({ token }),
       tokenError: undefined,
+      setTokenError: (tokenError) => set({ tokenError }),
       loginSuccess: false,
+      setLoginSuccess: (loginSuccess) => set({ loginSuccess }),
+      clearPhoneFlow: () =>
+        set({ channel: 'email', phone: '', phoneCodeSent: false }),
+      reset: () =>
+        set({
+          channel: 'email',
+          phone: '',
+          phoneCodeSent: false,
+          email: '',
+          emailIsValid: false,
+          token: undefined,
+          tokenError: undefined,
+          loginSuccess: false,
+        }),
     }),
-}));
+    {
+      name: 'op-auth-panel',
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        channel: state.channel,
+        phone: state.phone,
+        phoneCodeSent: state.phoneCodeSent,
+      }),
+    },
+  ),
+);
 
 // Supabase OTP length is configurable between 6-10 digits
 // https://supabase.com/docs/guides/local-development/cli/config#auth.email.otp_length
@@ -164,6 +219,69 @@ export const AuthEmailField = ({
             aria-label={t('Email')}
             aria-required
             type="email"
+            placeholder={placeholder}
+            spellCheck={false}
+            autoFocus
+            disabled={isDisabled}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          {description && <FieldDescription>{description}</FieldDescription>}
+        </Field>
+      </form>
+    </div>
+  );
+};
+
+/**
+ * The phone number field on the login panel.
+ *
+ * Mirrors {@link AuthEmailField}. GoTrue hands the number to Twilio Verify,
+ * which requires E.164, so the placeholder shows that shape.
+ * `normalizePhoneNumber` accepts what people actually type and converts it.
+ */
+export const AuthPhoneField = ({
+  label,
+  description,
+  value,
+  isDisabled,
+  onChange,
+  onSubmit,
+  placeholder = '+15551234567',
+}: {
+  label: string;
+  description?: string;
+  value: string;
+  isDisabled: boolean;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  placeholder?: string;
+}) => {
+  return (
+    <div className="flex flex-col">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onSubmit();
+        }}
+      >
+        <Field>
+          <FieldLabel htmlFor="auth-phone">
+            {label}
+            <RequiredAsterisk />
+          </FieldLabel>
+          <Input
+            id="auth-phone"
+            // Follows the visible label rather than repeating a fixed string:
+            // `aria-label` overrides the `FieldLabel` above, so a caller that
+            // passes a different label would otherwise be announced as
+            // something the screen does not show.
+            aria-label={label}
+            aria-required
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             placeholder={placeholder}
             spellCheck={false}
             autoFocus
