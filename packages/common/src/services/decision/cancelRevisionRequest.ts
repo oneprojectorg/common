@@ -21,7 +21,9 @@ export async function cancelRevisionRequest({
   assignmentId: string;
   revisionRequestId: string;
   user: User;
-}): Promise<ProposalReviewRequest & { processInstanceId: string }> {
+}): Promise<
+  ProposalReviewRequest & { processInstanceId: string; proposalId: string }
+> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -71,5 +73,6 @@ export async function cancelRevisionRequest({
   return {
     ...request,
     processInstanceId: context.assignment.processInstanceId,
+    proposalId: context.assignment.proposalId,
   };
 }

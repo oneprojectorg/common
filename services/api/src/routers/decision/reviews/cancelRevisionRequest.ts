@@ -1,7 +1,4 @@
-import {
-  cancelRevisionRequest,
-  getAssignmentRevisionChannels,
-} from '@op/common';
+import { Channels, cancelRevisionRequest } from '@op/common';
 import { proposalReviewRequestSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -23,12 +20,11 @@ export const cancelRevisionRequestRouter = router({
         user: ctx.user,
       });
 
-      ctx.registerMutationChannels(
-        await getAssignmentRevisionChannels({
-          assignmentId: input.assignmentId,
-          processInstanceId: result.processInstanceId,
-        }),
-      );
+      ctx.registerMutationChannels([
+        Channels.reviewAssignment(input.assignmentId),
+        Channels.reviewAssignments(result.processInstanceId),
+        Channels.decisionProposal(result.processInstanceId, result.proposalId),
+      ]);
 
       return proposalReviewRequestSchema.parse(result);
     }),

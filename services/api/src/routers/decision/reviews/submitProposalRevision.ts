@@ -1,7 +1,4 @@
-import {
-  getProposalRevisionChannels,
-  submitProposalRevision,
-} from '@op/common';
+import { Channels, submitProposalRevision } from '@op/common';
 import { proposalReviewRequestListSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
@@ -25,12 +22,13 @@ export const submitProposalRevisionRouter = router({
         user: ctx.user,
       });
 
-      ctx.registerMutationChannels(
-        await getProposalRevisionChannels({
-          processInstanceId: result.processInstanceId,
-          proposalId: input.proposalId,
-        }),
-      );
+      ctx.registerMutationChannels([
+        ...result.assignmentIds.map((assignmentId) =>
+          Channels.reviewAssignment(assignmentId),
+        ),
+        Channels.reviewAssignments(result.processInstanceId),
+        Channels.decisionProposal(result.processInstanceId, input.proposalId),
+      ]);
 
       waitUntil(
         inngest.send({

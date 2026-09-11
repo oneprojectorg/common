@@ -1,4 +1,4 @@
-import { getAssignmentRevisionChannels, requestRevision } from '@op/common';
+import { Channels, requestRevision } from '@op/common';
 import { proposalReviewRequestSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
@@ -22,12 +22,11 @@ export const requestRevisionRouter = router({
         user: ctx.user,
       });
 
-      ctx.registerMutationChannels(
-        await getAssignmentRevisionChannels({
-          assignmentId: input.assignmentId,
-          processInstanceId: result.processInstanceId,
-        }),
-      );
+      ctx.registerMutationChannels([
+        Channels.reviewAssignment(input.assignmentId),
+        Channels.reviewAssignments(result.processInstanceId),
+        Channels.decisionProposal(result.processInstanceId, result.proposalId),
+      ]);
 
       // Send revision requested event for notification workflow
       waitUntil(

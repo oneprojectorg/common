@@ -10,9 +10,6 @@ export * from './listProcessParticipants';
 // Instance cache invalidation
 export * from './decisionCache';
 
-// Realtime fan-out scopes
-export * from './channelScope';
-
 // Overview hero-image signed-URL upload flow
 export * from './overviewHeroImageStorage';
 export * from './removeOverviewHeroImage';

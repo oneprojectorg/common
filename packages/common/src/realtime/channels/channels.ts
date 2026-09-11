@@ -32,33 +32,12 @@ export const Channels = {
   decisionProposals: (instanceId: string) =>
     `decisionProposals:${instanceId}` as const,
 
-  /**
-   * Channel for a single proposal. Subscribed to by `decision.getProposal`,
-   * `reviews.listProposalRevisionRequests`, `reviews.getReviewAssignment` and
-   * `proposals.getProposalWithReviewAggregates`; broadcast to by the revision
-   * mutations (`requestRevision`, `cancelRevisionRequest`,
-   * `submitProposalRevision`) through `getProposalRevisionChannels`.
-   */
   decisionProposal: (instanceId: string, proposalId: string) =>
     `decisionProposal:${instanceId}:${proposalId}` as const,
 
-  /**
-   * Channel for a single review assignment. Subscribed to by
-   * `reviews.getReviewAssignment`; broadcast to by the review and revision
-   * mutations. A revision fans out to every assignment of the proposal, not
-   * only the acting one — a request or a new version changes what the other
-   * reviewers of that proposal see.
-   */
   reviewAssignment: (assignmentId: string) =>
     `reviewAssignment:${assignmentId}` as const,
 
-  /**
-   * Channel for the review assignments of an instance. Subscribed to by the
-   * assignment lists, `reviews.listProposalRevisionRequests` and
-   * `proposals.listWithReviewAggregates` (one channel per proposal on the page
-   * would be too many subscriptions for a list); broadcast to by assignment
-   * and revision mutations.
-   */
   reviewAssignments: (instanceId: string) =>
     `reviewAssignments:${instanceId}` as const,
 
