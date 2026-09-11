@@ -1,8 +1,4 @@
-import {
-  TEST_USER_DEFAULT_PASSWORD,
-  grantTestPlatformAdmin,
-  isTestPlatformAdminEmail,
-} from '@op/test';
+import { TEST_USER_DEFAULT_PASSWORD, grantTestPlatformAdmin } from '@op/test';
 import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
@@ -91,6 +87,7 @@ export async function createTestContextWithSession(
 export async function createTestUser(
   email: string,
   password: string = TEST_USER_DEFAULT_PASSWORD,
+  { isPlatformAdmin = false }: { isPlatformAdmin?: boolean } = {},
 ) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
@@ -108,7 +105,7 @@ export async function createTestUser(
     throw new Error(`Failed to create test user: ${error.message}`);
   }
 
-  if (data.user && isTestPlatformAdminEmail(email)) {
+  if (data.user && isPlatformAdmin) {
     await grantTestPlatformAdmin(data.user.id);
   }
 
