@@ -15,6 +15,7 @@ import {
   createRevisionRequest,
   getSeededTemplate,
   grantInstanceReviewerRole,
+  reviseProposal,
 } from '@op/test';
 
 import {
@@ -135,7 +136,11 @@ test.describe('Review — author notes accordion', () => {
       roleName: `Reviewer-${testId}`,
     });
 
-    const { assignment } = await createReviewScenario({
+    const {
+      proposal,
+      assignedProposalHistoryId: olderHistoryId,
+      assignment,
+    } = await createReviewScenario({
       instance: { id: instance.instance.id },
       author,
       reviewer: { profileId: reviewer.profileId },
@@ -146,13 +151,17 @@ test.describe('Review — author notes accordion', () => {
       assignmentStatus: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     });
 
-    // Two answered requests with no resubmitted-version pointer: each stands
-    // alone, so the pane has two notes to collapse into the accordion.
+    // The revision closes the submitted snapshot and opens a new one, so the
+    // two resubmissions have distinct versions to point at.
+    const newerHistoryId = await reviseProposal({ proposalId: proposal.id });
+
+    // Each resubmission stamps the version it answered with.
     await createRevisionRequest({
       assignmentId: assignment.id,
       state: ProposalReviewRequestState.RESUBMITTED,
       requestComment: OLDER_REQUEST_COMMENT,
       responseComment: OLDER_NOTE,
+      respondedProposalHistoryId: olderHistoryId,
       respondedAt: daysAgo(5),
     });
     await createRevisionRequest({
@@ -160,6 +169,7 @@ test.describe('Review — author notes accordion', () => {
       state: ProposalReviewRequestState.RESUBMITTED,
       requestComment: NEWER_REQUEST_COMMENT,
       responseComment: NEWER_NOTE,
+      respondedProposalHistoryId: newerHistoryId,
       respondedAt: daysAgo(1),
     });
 
