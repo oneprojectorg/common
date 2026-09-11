@@ -2,19 +2,9 @@
 
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@op/sense/Tooltip';
+import { TooltipProvider } from '@op/sense/Tooltip';
 import { ReactNode } from 'react';
-import {
-  LuArrowLeft,
-  LuMessageCircle,
-  LuMessageSquareText,
-  LuPencil,
-} from 'react-icons/lu';
+import { LuArrowLeft, LuMessageCircle, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
@@ -34,7 +24,6 @@ export function ProposalViewLayout({
   canEdit = false,
   canJoin = false,
   reportProposalId,
-  feedbackToggle,
   reviewNotesToggle,
   moderationProposal,
   notices,
@@ -53,17 +42,8 @@ export function ProposalViewLayout({
    *  proposal with this id. */
   reportProposalId?: string;
   /**
-   * The header's "Feedback" disclosure, for reviewer notes alone. Its dot is
-   * static — Figma's red dot means "unread" and we hold no read-state for
-   * reviewer notes.
-   */
-  feedbackToggle?: {
-    onToggle: () => void;
-    isActive: boolean;
-  };
-  /**
-   * The header's "Review notes" disclosure — the revision-cycle record. Sits
-   * beside `feedbackToggle`: both can show at once.
+   * The header's "Review notes" disclosure — the one panel holding the
+   * revision-cycle record and the released reviewer notes.
    */
   reviewNotesToggle?: {
     onToggle: () => void;
@@ -83,7 +63,6 @@ export function ProposalViewLayout({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const feedbackLabel = t('Feedback');
   const backLabel = t('Back to Proposals');
 
   return (
@@ -144,29 +123,6 @@ export function ProposalViewLayout({
                 isExpanded={reviewNotesToggle.isActive}
                 hasUnread={reviewNotesToggle.hasUnread}
               />
-            )}
-            {feedbackToggle && (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={feedbackToggle.onToggle}
-                      aria-label={feedbackLabel}
-                      aria-expanded={feedbackToggle.isActive}
-                      className="relative"
-                    >
-                      <LuMessageSquareText className="size-4" />
-                      <span
-                        aria-hidden
-                        className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
-                      />
-                    </Button>
-                  }
-                />
-                <TooltipContent>{feedbackLabel}</TooltipContent>
-              </Tooltip>
             )}
             {moderationProposal ? (
               <ProposalAdminMenu

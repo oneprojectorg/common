@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  ProposalFeedbackItem,
   ProposalReviewRequest,
   ProposalRevisionNote,
 } from '@op/common/client';
@@ -14,19 +15,22 @@ interface ReviewNotesPanelProps {
   openRequests: Array<ProposalReviewRequest>;
   /** Every past revision cycle, newest first. */
   noteGroups: Array<ProposalRevisionNote>;
+  /** Anonymized reviewer notes, released once their review phase ended. */
+  feedbackNotes: Array<ProposalFeedbackItem>;
   /** The viewer wrote the proposal, which is all that changes the note title. */
   isAuthor: boolean;
 }
 
 /**
  * The body of the "Review notes" sheet: one record per proposal, the same for
- * every viewer the sheet admits — the open revision requests, then every cycle
- * already answered, newest first. Requests are anonymous, so no reviewer is
- * named.
+ * every viewer the sheet admits — the open revision requests, then the released
+ * reviewer notes, then every revision cycle already answered, newest first.
+ * Requests and reviewer notes are anonymous, so no reviewer is named.
  */
 export function ReviewNotesPanel({
   openRequests,
   noteGroups,
+  feedbackNotes,
   isAuthor,
 }: ReviewNotesPanelProps) {
   const t = useTranslations();
@@ -52,6 +56,26 @@ export function ReviewNotesPanel({
               sentAt={request.requestedAt}
               variant="request"
               meta="bare"
+            />
+          ))}
+        </>
+      ) : null}
+
+      {feedbackNotes.length > 0 ? (
+        <>
+          <h3 className="font-serif text-label">{t('Feedback')}</h3>
+
+          <p className="text-base text-muted-foreground">
+            {t('Notes reviewers shared while this proposal was under review')}
+          </p>
+
+          {feedbackNotes.map((item) => (
+            <RevisionFeedbackCard
+              key={item.id}
+              comment={item.comment}
+              sentAt={item.submittedAt}
+              variant="reviewer"
+              meta="anonymousReviewer"
             />
           ))}
         </>

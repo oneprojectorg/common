@@ -52,6 +52,7 @@ function ProposalViewPageContent({
       proposal={proposal}
       affordances={affordances}
       isAuthor={isAuthor}
+      currentPhaseId={instance.currentStateId}
       decisionRoot={`/decisions/${slug}`}
       selection={selection ?? null}
     />

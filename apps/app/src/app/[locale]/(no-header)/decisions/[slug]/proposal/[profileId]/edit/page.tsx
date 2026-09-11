@@ -12,21 +12,18 @@ import {
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
 import { Button } from '@op/sense/Button';
-import { SplitPane } from '@op/sense/SplitPane';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
-import { useEffect, useMemo, useState } from 'react';
-import { LuHistory, LuMessageSquareText } from 'react-icons/lu';
+import { useEffect, useMemo } from 'react';
+import { LuHistory } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
-import { FeedbackDotIconButton } from '@/components/decisions/FeedbackDotIconButton';
 import { ProposalEditorAside as ProposalEditorAsideSheet } from '@/components/decisions/ProposalEditorAside';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
-import { ProposalFeedbackPanel } from '@/components/decisions/ProposalFeedbackPanel';
 import { ReviewNotesButton } from '@/components/decisions/ReviewNotesButton';
 import { ReviewNotesPanel } from '@/components/decisions/ReviewNotesPanel';
 import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
@@ -43,13 +40,9 @@ import {
   normalizeProposalEditorAsideQueryState,
   proposalEditorAsideParser,
   proposalEditorAsideValues,
-  proposalEditorReviewRevisionParser,
   proposalEditorVersionIdParser,
-  proposalFeedbackPanelParser,
-  proposalReviewNotesParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
-import { useProposalFeedback } from '@/components/decisions/useProposalFeedback';
 import { useProposalReviewNotes } from '@/components/decisions/useProposalReviewNotes';
 
 /**
@@ -75,25 +68,10 @@ function EditProposalPageContent() {
     profileId: string;
     slug: string;
   }>();
-  const [
-    {
-      aside,
-      versionId,
-      reviewRevision,
-      reviewNotes: isReviewNotesRequested,
-      feedback: isFeedbackPanelOpen,
-    },
-    setQueryState,
-  ] = useQueryStates({
+  const [{ aside, versionId }, setQueryState] = useQueryStates({
     aside: proposalEditorAsideParser,
     versionId: proposalEditorVersionIdParser,
-    reviewRevision: proposalEditorReviewRevisionParser,
-    reviewNotes: proposalReviewNotesParser,
-    feedback: proposalFeedbackPanelParser,
   });
-  // Session-local: we hold no read state for revision requests, and the dot
-  // only has to stop nagging once the author has looked at the sheet.
-  const [hasOpenedReviewNotes, setHasOpenedReviewNotes] = useState(false);
   const t = useTranslations();
 
   // -- Data fetching ---------------------------------------------------------
@@ -127,30 +105,11 @@ function EditProposalPageContent() {
   // whatever phase the decision is in.
   const affordances = getProposalAffordances({ instance, proposal, user });
 
-  // Whoever the sheet admits reads the same record — the author, a decision
-  // admin, or anyone with review capability. Gated rather than firing for every
-  // viewer and swallowing the server's UnauthorizedError.
-  const { openRequests, noteGroups, hasReviewNotes } = useProposalReviewNotes({
-    proposalId: proposal.id,
-    enabled: affordances.review.feedback,
-  });
-
-  // Only the open requests put the editor in revision mode; the answered
-  // cycles are a record the sheet keeps showing afterwards.
-  const hasOpenRevisionRequests = openRequests.length > 0;
-
   // Same check `getProposalAffordances` makes — an admin can open this editor
   // too, and the note card is titled for whoever is reading it.
   const isAuthor =
     !!user.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
-
-  // Same gate: the reviewer notes stay readable after the review phase ends,
-  // which is exactly when `review.revisions` would go false.
-  const feedback = useProposalFeedback({
-    proposalId: proposal.id,
-    enabled: affordances.review.feedback,
-  });
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 
@@ -185,62 +144,34 @@ function EditProposalPageContent() {
     versionHistoryLabel,
   });
 
-  // `?reviewRevision=<id>` stays a working deep link from the notification
-  // email: it names one request, but the sheet lists them all.
-  const isReviewNotesOpen =
-    hasReviewNotes && (isReviewNotesRequested || Boolean(reviewRevision));
-
-  const setReviewNotesOpen = (open: boolean) => {
-    setHasOpenedReviewNotes(true);
-
+  // Whoever the sheet admits reads the same record — the author, a decision
+  // admin, or anyone with review capability. Gated rather than firing for every
+  // viewer and swallowing the server's UnauthorizedError.
+  const reviewNotes = useProposalReviewNotes({
+    proposalId: proposal.id,
+    phaseId: instance.currentStateId,
+    enabled: affordances.review.feedback,
     // Both are inline-end sheets; leaving the version history open would stack
     // one on top of the other.
-    if (open) {
-      setAsideState({ aside: null });
-    }
+    onOpen: () => setAsideState({ aside: null }),
+  });
 
-    void setQueryState(
-      { reviewNotes: open ? true : null, reviewRevision: null },
-      { history: 'push', scroll: false },
-    );
-  };
-
-  const toggleFeedbackPanel = () => {
-    void setQueryState(
-      { feedback: isFeedbackPanelOpen ? null : true },
-      { history: 'push', scroll: false },
-    );
-  };
+  // Only the open requests put the editor in revision mode; the answered
+  // cycles are a record the sheet keeps showing afterwards.
+  const hasOpenRevisionRequests = reviewNotes.openRequests.length > 0;
 
   // The version-history and revision-request controls are interactive editing
   // surfaces — hide them from anonymous accounts and logged-out visitors.
   const canInteract = userCanInteract(user);
 
-  // The review-notes sheet owns every revision cycle, so this disclosure is
-  // left with the reviewer notes alone — both can show at once.
-  const feedbackDisclosure = feedback.hasFeedback ? (
-    <FeedbackDotIconButton
-      key="feedback"
-      icon={LuMessageSquareText}
-      label={t('Feedback')}
-      onToggle={toggleFeedbackPanel}
-      isExpanded={isFeedbackPanelOpen}
-    />
-  ) : null;
-
-  const headerIcons = !canInteract
-    ? []
-    : [
-        ...(feedbackDisclosure ? [feedbackDisclosure] : []),
-        ...asideHeaderIcons,
-      ];
+  const headerIcons = !canInteract ? [] : asideHeaderIcons;
 
   const reviewNotesSlot =
-    canInteract && hasReviewNotes ? (
+    canInteract && reviewNotes.hasReviewNotes ? (
       <ReviewNotesButton
-        onToggle={() => setReviewNotesOpen(!isReviewNotesOpen)}
-        isExpanded={isReviewNotesOpen}
-        hasUnread={!hasOpenedReviewNotes && !isReviewNotesOpen}
+        onToggle={reviewNotes.toggle}
+        isExpanded={reviewNotes.isOpen}
+        hasUnread={reviewNotes.hasUnread}
       />
     ) : null;
 
@@ -284,35 +215,19 @@ function EditProposalPageContent() {
           hasOpenRevisionRequests={hasOpenRevisionRequests}
           reviewNotesAside={
             <ProposalEditorAsideSheet
-              open={isReviewNotesOpen}
+              open={reviewNotes.isOpen}
               title={t('Review notes')}
-              onClose={() => setReviewNotesOpen(false)}
+              onClose={() => reviewNotes.setOpen(false)}
             >
               <ReviewNotesPanel
-                openRequests={openRequests}
-                noteGroups={noteGroups}
+                openRequests={reviewNotes.openRequests}
+                noteGroups={reviewNotes.noteGroups}
+                feedbackNotes={reviewNotes.feedbackNotes}
                 isAuthor={isAuthor}
               />
             </ProposalEditorAsideSheet>
           }
-        >
-          {isFeedbackPanelOpen && feedback.hasFeedback ? (
-            <SplitPane.Pane
-              id="feedback"
-              label={t('Feedback')}
-              className="bg-background"
-              unpadded
-            >
-              <ProposalFeedbackPanel
-                feedbackItems={feedback.notes}
-                title={t('Feedback')}
-                subtitle={t(
-                  'Notes reviewers shared while this proposal was under review',
-                )}
-              />
-            </SplitPane.Pane>
-          ) : null}
-        </ProposalEditorContent>
+        />
       </VersionPreviewProvider>
     </CollaborativeDocProvider>
   );
@@ -336,7 +251,6 @@ function ProposalEditorContent({
   reviewNotesSlot,
   hasOpenRevisionRequests,
   reviewNotesAside,
-  children,
 }: {
   proposal: Proposal;
   instance: ProcessInstance;
@@ -349,8 +263,6 @@ function ProposalEditorContent({
   hasOpenRevisionRequests: boolean;
   /** The "Review notes" sheet — an overlay, so it sits outside the editor. */
   reviewNotesAside: React.ReactNode;
-  /** The aside pane, forwarded straight to `ProposalEditor`. */
-  children: React.ReactNode;
 }) {
   const versionPreview = useOptionalVersionPreview();
 
@@ -413,9 +325,7 @@ function ProposalEditorContent({
         }
         reviewNotesSlot={reviewNotesSlot}
         hasOpenRevisionRequests={hasOpenRevisionRequests}
-      >
-        {children}
-      </ProposalEditor>
+      />
       {reviewNotesAside}
       {/* Desktop: a non-modal sheet with no backdrop, so the document stays
           visible and scrollable beside it. Mobile: a modal drawer, which covers

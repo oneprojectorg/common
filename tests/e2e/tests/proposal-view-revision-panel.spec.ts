@@ -440,8 +440,5 @@ test.describe('Proposal View — revision notes panel', () => {
     await expect(
       page.getByRole('button', { name: 'Review notes' }),
     ).not.toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Feedback' }),
-    ).not.toBeVisible();
   });
 });

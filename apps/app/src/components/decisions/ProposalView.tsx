@@ -9,14 +9,12 @@ import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { Proposal, ProposalSelection } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
-import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
-import { ProposalFeedbackPanel } from './ProposalFeedbackPanel';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalViewLayout } from './ProposalViewLayout';
@@ -24,12 +22,6 @@ import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
-import {
-  proposalEditorReviewRevisionParser,
-  proposalFeedbackPanelParser,
-  proposalReviewNotesParser,
-} from './proposalEditor/proposalEditorAsideParams';
-import { useProposalFeedback } from './useProposalFeedback';
 import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
 
@@ -48,6 +40,7 @@ export function ProposalView({
   proposal: initialProposal,
   affordances,
   isAuthor,
+  currentPhaseId,
   decisionRoot,
   selection,
 }: {
@@ -56,6 +49,12 @@ export function ProposalView({
   affordances: ProposalAffordances;
   /** The viewer wrote the proposal; only the note card's title depends on it. */
   isAuthor: boolean;
+  /**
+   * The instance's current phase (`processInstances.currentStateId`), which is
+   * the phase whose revision requests a resubmission can answer. `null` on a
+   * legacy instance, which has no revision cycle at all.
+   */
+  currentPhaseId: string | null;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
@@ -130,55 +129,14 @@ export function ProposalView({
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  const [
-    {
-      reviewRevision,
-      reviewNotes: isReviewNotesRequested,
-      feedback: isFeedbackPanelOpen,
-    },
-    setQueryState,
-  ] = useQueryStates({
-    reviewRevision: proposalEditorReviewRevisionParser,
-    reviewNotes: proposalReviewNotesParser,
-    feedback: proposalFeedbackPanelParser,
-  });
-
   // `feedback`, not `revisions`: the sheet is the same record for every viewer
   // it admits, and it keeps showing after the review phase ends — which is
   // exactly when `revisions` goes false.
-  const { openRequests, noteGroups, hasReviewNotes } = useProposalReviewNotes({
+  const reviewNotes = useProposalReviewNotes({
     proposalId: currentProposal.id,
+    phaseId: currentPhaseId,
     enabled: affordances.review.feedback,
   });
-
-  // `?reviewRevision=<id>` stays a working deep link; the sheet lists every
-  // cycle rather than the one request the link names.
-  const isReviewNotesOpen =
-    hasReviewNotes && Boolean(isReviewNotesRequested || reviewRevision);
-
-  // Session-local, like the editor's: we hold no read state for revision
-  // requests, and the dot only has to stop nagging once the sheet was opened.
-  const [hasOpenedReviewNotes, setHasOpenedReviewNotes] = useState(false);
-
-  const { notes, hasFeedback } = useProposalFeedback({
-    proposalId: currentProposal.id,
-    enabled: affordances.review.feedback,
-  });
-
-  const toggleFeedbackPanel = useCallback(() => {
-    void setQueryState(
-      { feedback: isFeedbackPanelOpen ? null : true },
-      { history: 'push', scroll: false },
-    );
-  }, [isFeedbackPanelOpen, setQueryState]);
-
-  const toggleReviewNotes = useCallback(() => {
-    setHasOpenedReviewNotes(true);
-    void setQueryState(
-      { reviewNotes: isReviewNotesOpen ? null : true, reviewRevision: null },
-      { history: 'push', scroll: false },
-    );
-  }, [isReviewNotesOpen, setQueryState]);
 
   const {
     translation,
@@ -191,7 +149,7 @@ export function ProposalView({
 
   // Most recent resubmission (if any) — drives the "Revised on" badge shown
   // inline in the submitter metadata row. The server orders newest first.
-  const latestRespondedAt = noteGroups[0]?.respondedAt ?? null;
+  const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
 
   const proposalBody: ReactNode = (
     <>
@@ -231,34 +189,16 @@ export function ProposalView({
     </>
   );
 
-  const asidePane: { label: string; content: ReactNode } | null =
-    isReviewNotesOpen
-      ? {
-          label: t('Review notes'),
-          content: (
-            <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
-              <ReviewNotesPanel
-                openRequests={openRequests}
-                noteGroups={noteGroups}
-                isAuthor={isAuthor}
-              />
-            </div>
-          ),
-        }
-      : isFeedbackPanelOpen && hasFeedback
-        ? {
-            label: t('Feedback'),
-            content: (
-              <ProposalFeedbackPanel
-                feedbackItems={notes}
-                title={t('Feedback')}
-                subtitle={t(
-                  'Notes reviewers shared while this proposal was under review',
-                )}
-              />
-            ),
-          }
-        : null;
+  const asidePane: ReactNode = reviewNotes.isOpen ? (
+    <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
+      <ReviewNotesPanel
+        openRequests={reviewNotes.openRequests}
+        noteGroups={reviewNotes.noteGroups}
+        feedbackNotes={reviewNotes.feedbackNotes}
+        isAuthor={isAuthor}
+      />
+    </div>
+  ) : null;
 
   return (
     <ProposalViewLayout
@@ -280,22 +220,12 @@ export function ProposalView({
           decisionRoot={decisionRoot}
         />
       }
-      // Two independent disclosures: the revision-cycle record and the
-      // reviewer notes. Both can show at once.
       reviewNotesToggle={
-        hasReviewNotes
+        reviewNotes.hasReviewNotes
           ? {
-              onToggle: toggleReviewNotes,
-              isActive: isReviewNotesOpen,
-              hasUnread: !hasOpenedReviewNotes && !isReviewNotesOpen,
-            }
-          : undefined
-      }
-      feedbackToggle={
-        hasFeedback
-          ? {
-              onToggle: toggleFeedbackPanel,
-              isActive: isFeedbackPanelOpen,
+              onToggle: reviewNotes.toggle,
+              isActive: reviewNotes.isOpen,
+              hasUnread: reviewNotes.hasUnread,
             }
           : undefined
       }
@@ -313,12 +243,12 @@ export function ProposalView({
             {proposalBody}
           </SplitPane.Pane>
           <SplitPane.Pane
-            id="feedback"
-            label={asidePane.label}
+            id="reviewNotes"
+            label={t('Review notes')}
             className="bg-white"
             unpadded
           >
-            {asidePane.content}
+            {asidePane}
           </SplitPane.Pane>
         </SplitPane>
       ) : (
