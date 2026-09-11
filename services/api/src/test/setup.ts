@@ -75,8 +75,7 @@ vi.mock('@op/events', async () => {
   };
 });
 
-// Mock @op/core to return test environment values. Platform admin is a seeded
-// access role now, so test users are granted it in `@op/test` instead.
+// Mock @op/core to return test environment values
 vi.mock('@op/core', async () => {
   const actual = await vi.importActual('@op/core');
   return {

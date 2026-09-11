@@ -8,7 +8,6 @@ import {
   decisionsVoteSubmissions,
   proposalReviewAssignments,
 } from '@op/db/schema';
-import { grantTestPlatformAdmin } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -89,8 +88,6 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
       grantAccess: true,
       status: ProcessStatus.PUBLISHED,
     });
-    // The caller of a platform-admin router has to hold the role.
-    await grantTestPlatformAdmin(setup.user.id);
     const instanceId = setup.instance.instance.id;
 
     const proposal = await testData.createProposal({
@@ -363,8 +360,6 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
       grantAccess: true,
       status: ProcessStatus.PUBLISHED,
     });
-    // The caller of a platform-admin router has to hold the role.
-    await grantTestPlatformAdmin(setup.user.id);
 
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -386,8 +381,6 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
       grantAccess: true,
       status: ProcessStatus.DRAFT,
     });
-    // The caller of a platform-admin router has to hold the role.
-    await grantTestPlatformAdmin(setup.user.id);
 
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));

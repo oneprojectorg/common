@@ -7,44 +7,24 @@ import { type AccessUser, resolveAccountUserId } from './cacheKeys';
 import { memoize } from './requestCache';
 import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 
-/** The zone a platform-wide grant lives on. Seeded, never renamed. */
 export const PLATFORM_ZONE_NAME = 'platform';
 
-/** The global role that carries the platform-wide grant. Seeded. */
 export const PLATFORM_ADMIN_ROLE_NAME = 'Platform Admin';
 
-/**
- * The closed set of global roles that mean something at the *user* level when
- * held on the holder's own individual profile. Every other global role — most
- * of all `Admin`, which the signup trigger grants every user on their own
- * profile — stays a per-profile grant. Widening this list widens what a row on
- * an own-profile membership can do everywhere, so add to it deliberately.
- */
+// Global roles that count at the user level when held on the own profile; widening this is a security decision.
 export const USER_LEVEL_GLOBAL_ROLE_NAMES: readonly string[] = [
   PLATFORM_ADMIN_ROLE_NAME,
 ];
 
 /**
- * The caller's user-level roles: the roles held on the membership row of their
- * OWN individual profile (`users.profileId`) that are global
- * (`accessRoles.profileId IS NULL`) *and* named in
- * {@link USER_LEVEL_GLOBAL_ROLE_NAMES}.
- *
- * Both conditions carry weight. The own-profile anchor keeps a `Platform Admin`
- * row on some other membership (an org or decision profile) from reading as a
- * platform grant, and the name allowlist keeps the trigger-granted global
- * `Admin` role — which every user holds on their own profile — from reading as
- * one. Only global permission rows apply: a user-level role is unscoped, so a
- * per-profile override row must never narrow it.
- *
- * Memoized per request only; no durable cache, so a grant or revoke takes
- * effect on the next request.
+ * The roles on the caller's OWN individual-profile membership that are global
+ * AND named in {@link USER_LEVEL_GLOBAL_ROLE_NAMES}. Both filters matter: the
+ * signup trigger grants every user the global `Admin` role on their own profile.
  */
 export const getUserGlobalRoles = memoize(
   async ({ user }: { user?: AccessUser }): Promise<NormalizedRole[]> => {
     const authUserId = resolveAccountUserId(user);
 
-    // Fail closed: no account identity can hold a user-level role.
     if (!authUserId) {
       return [];
     }
@@ -52,8 +32,7 @@ export const getUserGlobalRoles = memoize(
     const memberships = await db.query.profileUsers.findMany({
       where: {
         authUserId,
-        // The own individual profile, resolved in the same statement so the
-        // anchor can never widen to "any membership row this user has".
+        // Own individual profile, resolved in the same statement.
         RAW: (table) =>
           eq(
             table.profileId,

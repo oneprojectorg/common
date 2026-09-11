@@ -24,8 +24,7 @@ export const getMyAccount = router({
 
       const { id } = ctx.user;
 
-      // Independent lookups. The user-level roles are read fresh rather than
-      // taken off the cached account, whose entry lives for 72h.
+      // Read fresh: the cached account entry lives for 72h.
       const [user, isNetworkMember, globalRoles] = await Promise.all([
         cache({
           type: 'user',

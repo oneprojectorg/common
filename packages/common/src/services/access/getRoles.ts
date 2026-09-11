@@ -43,10 +43,9 @@ interface Role {
  * The global roles exposed through role listings (invite modals, member role
  * dropdowns). Global roles outside this list are system roles that are never
  * granted by hand — e.g. the global Public role, whose permissions everyone
- * holds by default, or Platform Admin, which an operator grants at the user
- * level — so offering them as an invite/assignment option is wrong. Names are
- * the runtime identifier for global roles (see assertGlobalRole); they are
- * seeded and cannot be renamed via the API.
+ * holds by default — so offering them as an invite/assignment option is
+ * meaningless. Names are the runtime identifier for global roles (see
+ * assertGlobalRole); they are seeded and cannot be renamed via the API.
  */
 export const EXPOSABLE_GLOBAL_ROLE_NAMES = ['Admin', 'Member'];
 

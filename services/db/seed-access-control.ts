@@ -1,6 +1,6 @@
 /* eslint-disable antfu/no-top-level-await */
 /**
- * Access-control seed.
+ * Docker dev seed.
  *
  * The standard `seed.ts` has a database-URL allowlist that excludes the dind
  * hostname used inside our docker-compose stack, so it refuses to run there.
@@ -9,16 +9,11 @@
  *   1. Access control zones, roles, and permissions.
  *   2. A default "One Project" organization + profile.
  *   3. onboardedAt backfill for admin users (prevents the /start redirect loop).
- *   4. The Platform Admin role, granted to admin users at the user level.
+ *   4. The Platform Admin role for admin users.
  *   5. Admin-user linkage to the default organization, with the Admin role.
  *
- * `docker-compose.dev.yml` runs it on every api container start, and it is also
- * how step 1's rows — including the `platform` zone and the `Platform Admin`
- * role of ADR 0005 — reach staging and production: an operator runs it there.
- * Nothing runs it automatically outside docker dev.
- *
  * Idempotent: every step uses onConflictDoNothing or existence checks, so the
- * script is safe to re-run.
+ * script is safe to re-run on every api container start.
  */
 import { adminEmails } from '@op/core';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
@@ -67,57 +62,6 @@ console.log(`Inserted ${ACCESS_ZONES.length} access zones`);
 await db.insert(accessRoles).values(ACCESS_ROLES).onConflictDoNothing();
 console.log(`Inserted ${ACCESS_ROLES.length} access roles`);
 
-// A seeded id that already belongs to a different zone or role takes the two
-// inserts above as a conflict and skips them — and then the permission rows
-// below attach to whatever does hold that id. This script is the only writer
-// of global roles, so the ids of a database it has never run against cannot be
-// assumed. Abort instead of mis-granting.
-const assertSeededNames = (
-  label: string,
-  expected: Array<{ id: string; name: string }>,
-  stored: Array<{ id: string; name: string }>,
-) => {
-  const storedNameById = new Map(stored.map((row) => [row.id, row.name]));
-
-  for (const { id, name } of expected) {
-    const storedName = storedNameById.get(id);
-
-    if (storedName !== undefined && storedName !== name) {
-      throw new Error(
-        `Seed collision: ${label} id ${id} holds "${storedName}", not "${name}". Refusing to seed.`,
-      );
-    }
-  }
-};
-
-const [storedZones, storedRoles] = await Promise.all([
-  db
-    .select({ id: accessZones.id, name: accessZones.name })
-    .from(accessZones)
-    .where(
-      inArray(
-        accessZones.id,
-        ACCESS_ZONES.map((zone) => zone.id),
-      ),
-    ),
-  db
-    .select({ id: accessRoles.id, name: accessRoles.name })
-    .from(accessRoles)
-    .where(
-      inArray(
-        accessRoles.id,
-        ACCESS_ROLES.map((role) => role.id),
-      ),
-    ),
-]);
-
-assertSeededNames('access_zones', ACCESS_ZONES, storedZones);
-assertSeededNames('access_roles', ACCESS_ROLES, storedRoles);
-
-// The rows carry no id of their own, so a re-run would insert duplicates were
-// it not for `arpoaz_role_zone_profile_unique` on (role, zone, profile) —
-// declared `nullsNotDistinct`, so the NULL `profile_id` of a global baseline
-// row conflicts too. An untargeted DO NOTHING covers it.
 await db
   .insert(accessRolePermissionsOnAccessZones)
   .values(ACCESS_ROLE_PERMISSIONS)
@@ -135,8 +79,8 @@ await seedGlobalUsers();
 // ---------------------------------------------------------------------------
 console.log('Ensuring default organization exists...');
 
-let orgProfile = await db.query.profiles.findFirst({
-  where: { slug: DEFAULT_ORG.slug },
+let orgProfile = await db._query.profiles.findFirst({
+  where: (t, { eq }) => eq(t.slug, DEFAULT_ORG.slug),
 });
 
 if (!orgProfile) {
@@ -158,8 +102,8 @@ if (!orgProfile) {
   console.log(`  Created profile: ${DEFAULT_ORG.name} (${orgProfile.id})`);
 }
 
-let defaultOrg = await db.query.organizations.findFirst({
-  where: { profileId: orgProfile!.id },
+let defaultOrg = await db._query.organizations.findFirst({
+  where: (t, { eq }) => eq(t.profileId, orgProfile!.id),
 });
 
 if (!defaultOrg) {
@@ -184,8 +128,8 @@ if (!defaultOrg) {
 // out and the ProcessBuilder never opens.
 // ---------------------------------------------------------------------------
 for (const template of Object.values(decisionTemplates)) {
-  const existing = await db.query.decisionProcesses.findFirst({
-    where: { name: template.name },
+  const existing = await db._query.decisionProcesses.findFirst({
+    where: (t, { eq }) => eq(t.name, template.name),
   });
 
   if (!existing) {
@@ -222,27 +166,7 @@ if (backfilled.length > 0) {
   );
 }
 
-const existingAdmins = await db.query.users.findMany({
-  where: { email: { in: [...adminEmails] } },
-  columns: { authUserId: true, email: true },
-});
-
-// A user-level grant is a role row on the holder's own individual-profile
-// membership, which the signup trigger creates. Same row shape as
-// grantPlatformAdmin in @op/common, written here because services/db cannot
-// import it — including resolving the role by name, the runtime identifier for
-// a global role. Without this a fresh local DB 404s on /admin for every dev.
-// On staging and production an operator grants the role the same way.
-const platformAdminRole = await db.query.accessRoles.findFirst({
-  where: { name: ROLES.PLATFORM_ADMIN.name, profileId: { isNull: true } },
-});
-
-if (!platformAdminRole) {
-  throw new Error(
-    `Could not find the global "${ROLES.PLATFORM_ADMIN.name}" role after seeding access roles`,
-  );
-}
-
+// Same row the operator SQL in ADR 0005 writes; without it a fresh local DB 404s on /admin.
 const adminMemberships = await db
   .select({ profileUserId: profileUsers.id })
   .from(users)
@@ -261,17 +185,17 @@ if (adminMemberships.length > 0) {
     .values(
       adminMemberships.map(({ profileUserId }) => ({
         profileUserId,
-        accessRoleId: platformAdminRole.id,
+        accessRoleId: ROLES.PLATFORM_ADMIN.id,
       })),
     )
     .onConflictDoNothing();
 
-  // Count only: the emails are personal data and this runs in CI logs.
   console.log(`Granted Platform Admin to ${adminMemberships.length} user(s)`);
 }
 
-const adminRole = await db.query.accessRoles.findFirst({
-  where: { name: 'Admin', profileId: { isNull: true } },
+const adminRole = await db._query.accessRoles.findFirst({
+  where: (t, { eq, and, isNull }) =>
+    and(eq(t.name, 'Admin'), isNull(t.profileId)),
 });
 
 if (!adminRole) {
@@ -280,14 +204,20 @@ if (!adminRole) {
   );
 }
 
+const existingAdmins = await db._query.users.findMany({
+  where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
+  columns: { authUserId: true, email: true },
+});
+
 let linkedCount = 0;
 for (const admin of existingAdmins) {
   // Is this admin already an org user for the default org?
-  const existingOrgUser = await db.query.organizationUsers.findFirst({
-    where: {
-      authUserId: admin.authUserId,
-      organizationId: defaultOrg!.id,
-    },
+  const existingOrgUser = await db._query.organizationUsers.findFirst({
+    where: (t, { and, eq }) =>
+      and(
+        eq(t.authUserId, admin.authUserId),
+        eq(t.organizationId, defaultOrg!.id),
+      ),
   });
 
   let orgUserId = existingOrgUser?.id;

@@ -16,7 +16,6 @@ import {
   profileUserCacheKey,
   resolveAccessUserIds,
 } from './cacheKeys';
-import { getUserGlobalRoles } from './platformAdmin';
 import { memoize } from './requestCache';
 import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 
@@ -59,33 +58,6 @@ const mergeGrantRows = <
     normalizedRoles: rows.flatMap((row) =>
       getNormalizedRoles(row.roles, { profileId }),
     ),
-  };
-};
-
-/**
- * OR the caller's user-level roles into a membership record's roles. Returns
- * the record untouched when there is no membership: a global role widens what
- * a member may do, it does not manufacture a membership. See ADR 0005.
- *
- * Deduped by role id: on the caller's own individual profile the membership
- * row is where the user-level grant is stored, so both sources carry it.
- */
-const withGlobalRoles = <TRecord extends { roles: NormalizedRole[] }>(
-  record: TRecord | undefined,
-  globalRoles: NormalizedRole[],
-): TRecord | undefined => {
-  if (!record || globalRoles.length === 0) {
-    return record;
-  }
-
-  const heldRoleIds = new Set(record.roles.map((role) => role.id));
-
-  return {
-    ...record,
-    roles: [
-      ...record.roles,
-      ...globalRoles.filter((role) => !heldRoleIds.has(role.id)),
-    ],
   };
 };
 
@@ -142,21 +114,14 @@ export const getOrgAccessUser = memoize(
       };
     };
 
-    // Global roles are fetched outside the cache and OR'd in afterwards, so a
-    // change to a user's global grant invalidates no per-entity entry.
-    const [orgUser, globalRoles] = await Promise.all([
-      cache({
-        type: 'orgUser',
-        params: orgUserCacheKey({ user, organizationId }),
-        fetch: getOrgUser,
-        options: {
-          skipMemCache: true,
-        },
-      }),
-      getUserGlobalRoles({ user }),
-    ]);
-
-    return withGlobalRoles(orgUser, globalRoles);
+    return cache({
+      type: 'orgUser',
+      params: orgUserCacheKey({ user, organizationId }),
+      fetch: getOrgUser,
+      options: {
+        skipMemCache: true,
+      },
+    });
   },
   (args) => orgUserCacheKey(args).join(':'),
 );
@@ -220,21 +185,14 @@ export const getProfileAccessUser = memoize(
       };
     };
 
-    // Global roles are fetched outside the cache and OR'd in afterwards, so a
-    // change to a user's global grant invalidates no per-entity entry.
-    const [profileUser, globalRoles] = await Promise.all([
-      cache({
-        type: 'profileUser',
-        params: profileUserCacheKey({ user, profileId }),
-        fetch: getProfileUser,
-        options: {
-          skipMemCache: true,
-        },
-      }),
-      getUserGlobalRoles({ user }),
-    ]);
-
-    return withGlobalRoles(profileUser, globalRoles);
+    return cache({
+      type: 'profileUser',
+      params: profileUserCacheKey({ user, profileId }),
+      fetch: getProfileUser,
+      options: {
+        skipMemCache: true,
+      },
+    });
   },
   (args) => profileUserCacheKey(args).join(':'),
 );
@@ -563,4 +521,3 @@ export * from './permissions';
 export * from './requestCache';
 export * from './utils';
 export * from './platformAdmin';
-export * from './platformAdminGrant';

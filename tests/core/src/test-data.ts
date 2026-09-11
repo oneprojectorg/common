@@ -1,6 +1,5 @@
 import {
   type Organization,
-  accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
@@ -10,7 +9,7 @@ import {
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { and, db, eq, isNull } from '@op/db/test';
+import { and, db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
@@ -38,12 +37,6 @@ export interface CreateOrganizationOptions {
   organizationName?: string;
   /** Email domain for generated users */
   emailDomain?: string;
-  /**
-   * Grant the Platform Admin role to every user created here. Off unless asked
-   * for: the role ORs its permissions into each membership its holder has, so
-   * granting it by default would mask the membership gates the tests check.
-   */
-  isPlatformAdmin?: boolean;
 }
 
 export interface CreateOrganizationResult {
@@ -65,45 +58,17 @@ export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
-  /** Grant the Platform Admin role. Off unless asked for. */
-  isPlatformAdmin?: boolean;
 }
 
-/** Test users on this domain stand in for One Project staff (in-network). */
-export const TEST_PLATFORM_ADMIN_DOMAIN = 'oneproject.org';
+/** Network-domain test users hold Platform Admin, as staff do. */
+export const isTestPlatformAdminEmail = (email: string): boolean =>
+  email.toLowerCase().endsWith('@oneproject.org');
 
-/**
- * Grants the seeded Platform Admin role to an existing test user: a role row
- * on the membership of the user's OWN individual profile, which is where
- * `getUserGlobalRoles` looks. Mirrors `grantPlatformAdmin` in @op/common
- * without importing it — that package has no `"type": "module"`, so calling
- * it breaks under Playwright's Node runtime (see `createProposal` below).
- * That includes resolving the role by name, the runtime identifier for a
- * global role.
- */
+/** Writes the role row on the user's own individual-profile membership. */
 export async function grantTestPlatformAdmin(
   authUserId: string,
 ): Promise<void> {
-  const roles = await db
-    .select({ id: accessRoles.id })
-    .from(accessRoles)
-    .where(
-      and(
-        eq(accessRoles.name, ROLES.PLATFORM_ADMIN.name),
-        isNull(accessRoles.profileId),
-      ),
-    )
-    .limit(1);
-
-  const role = roles[0];
-
-  if (!role) {
-    throw new Error(
-      `Cannot grant Platform Admin: the global "${ROLES.PLATFORM_ADMIN.name}" role is not seeded`,
-    );
-  }
-
-  const memberships = await db
+  const [membership] = await db
     .select({ profileUserId: profileUsers.id })
     .from(users)
     .innerJoin(
@@ -116,19 +81,15 @@ export async function grantTestPlatformAdmin(
     .where(eq(users.authUserId, authUserId))
     .limit(1);
 
-  const membership = memberships[0];
-
   if (!membership) {
-    throw new Error(
-      `Cannot grant Platform Admin: no individual-profile membership for ${authUserId}`,
-    );
+    throw new Error(`No individual-profile membership for ${authUserId}`);
   }
 
   await db
     .insert(profileUserToAccessRoles)
     .values({
       profileUserId: membership.profileUserId,
-      accessRoleId: role.id,
+      accessRoleId: ROLES.PLATFORM_ADMIN.id,
     })
     .onConflictDoNothing();
 }
@@ -159,7 +120,7 @@ export async function createUser(opts: CreateUserOptions) {
     .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
     .where(eq(users.authUserId, data.user.id));
 
-  if (opts.isPlatformAdmin) {
+  if (isTestPlatformAdminEmail(email)) {
     await grantTestPlatformAdmin(data.user.id);
   }
 
@@ -188,7 +149,6 @@ export async function createOrganization(
     users: userCounts = { admin: 1, member: 0 },
     organizationName = 'Test Org',
     emailDomain = 'oneproject.org',
-    isPlatformAdmin,
   } = opts;
 
   const createdIds = {
@@ -238,7 +198,6 @@ export async function createOrganization(
     const authUser = await createUser({
       supabaseAdmin,
       email,
-      isPlatformAdmin,
     });
 
     createdIds.authUserIds.push(authUser.id);
