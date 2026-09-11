@@ -1725,5 +1725,16 @@
   "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)",
   "Submitting is final": "الإرسال نهائي",
   "You won't be able to edit your proposal after submitting": "لن تتمكن من تعديل مقترحك بعد الإرسال",
-  "Keep editing": "متابعة التحرير"
+  "Keep editing": "متابعة التحرير",
+  "User": "المستخدم",
+  "View user": "عرض المستخدم",
+  "Network member": "عضو في الشبكة",
+  "Onboarded": "تم الإعداد",
+  "Terms accepted": "تم قبول الشروط",
+  "Privacy accepted": "تم قبول الخصوصية",
+  "Profile memberships": "عضويات الملف الشخصي",
+  "User not found": "لم يتم العثور على المستخدم",
+  "Not a member of any organization": "ليس عضواً في أي مؤسسة",
+  "No profile memberships": "لا توجد عضويات ملف شخصي",
+  "Unknown Organization": "مؤسسة غير معروفة"
 }

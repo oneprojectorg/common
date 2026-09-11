@@ -1725,5 +1725,16 @@
   "(opens in a new tab)": "(নতুন ট্যাবে খোলে)",
   "Submitting is final": "জমা দেওয়া চূড়ান্ত",
   "You won't be able to edit your proposal after submitting": "জমা দেওয়ার পর আপনি আপনার প্রস্তাব সম্পাদনা করতে পারবেন না",
-  "Keep editing": "সম্পাদনা চালিয়ে যান"
+  "Keep editing": "সম্পাদনা চালিয়ে যান",
+  "User": "ব্যবহারকারী",
+  "View user": "ব্যবহারকারী দেখুন",
+  "Network member": "নেটওয়ার্ক সদস্য",
+  "Onboarded": "অনবোর্ড সম্পন্ন",
+  "Terms accepted": "শর্তাবলী গৃহীত",
+  "Privacy accepted": "গোপনীয়তা গৃহীত",
+  "Profile memberships": "প্রোফাইল সদস্যপদ",
+  "User not found": "ব্যবহারকারী পাওয়া যায়নি",
+  "Not a member of any organization": "কোনো সংস্থার সদস্য নন",
+  "No profile memberships": "কোনো প্রোফাইল সদস্যপদ নেই",
+  "Unknown Organization": "অজানা সংস্থা"
 }
