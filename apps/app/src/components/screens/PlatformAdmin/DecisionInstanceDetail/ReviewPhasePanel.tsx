@@ -101,11 +101,10 @@ export const ReviewPhasePanel = ({
   isCompleted?: boolean;
 }) => {
   const t = useTranslations();
-  const [data] =
-    trpc.platform.admin.listDecisionReviewAssignments.useSuspenseQuery({
-      instanceId,
-      phaseId,
-    });
+  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery({
+    processInstanceId: instanceId,
+    phaseId,
+  });
 
   return (
     <div className="flex flex-col gap-3">

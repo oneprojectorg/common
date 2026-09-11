@@ -237,6 +237,8 @@ export const getProfileAccessUser = memoize(
  * presence check, which also held for a row with zero effective roles.
  *
  * No org fallback — see {@link getProfileAccessRolesWithOrgFallback} for that.
+ *
+ * A user-level global role is the last fallback (ADR 0005, amendment).
  */
 export const getProfileAccessRoles = async ({
   user,
@@ -244,8 +246,15 @@ export const getProfileAccessRoles = async ({
 }: {
   user?: AccessUser;
   profileId: string;
-}): Promise<NormalizedRole[]> =>
-  (await getProfileAccessUser({ user, profileId }))?.roles ?? [];
+}): Promise<NormalizedRole[]> => {
+  const [profileUser, globalRoles] = await Promise.all([
+    getProfileAccessUser({ user, profileId }),
+    getUserGlobalRoles({ user }),
+  ]);
+
+  // The membership record already carries the union (withGlobalRoles).
+  return profileUser?.roles ?? globalRoles;
+};
 
 /**
  * Resolve the caller's normalized roles on a profile, falling back to their
@@ -259,6 +268,8 @@ export const getProfileAccessRoles = async ({
  * admin/member. Prefer the profile-level grant when present (matching
  * `resolveInstanceAccess`); fall back to the org only when the profile carries
  * no grant of its own.
+ *
+ * Same user-level fallback as {@link getProfileAccessRoles}.
  */
 export const getProfileAccessRolesWithOrgFallback = async ({
   user,
@@ -276,12 +287,12 @@ export const getProfileAccessRolesWithOrgFallback = async ({
     .select({ id: organizations.id })
     .from(organizations)
     .where(eq(organizations.profileId, profileId));
-  if (!org?.id) {
-    return [];
-  }
 
-  const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
-  return orgUser?.roles ?? [];
+  const orgUser = org?.id
+    ? await getOrgAccessUser({ user, organizationId: org.id })
+    : undefined;
+
+  return orgUser?.roles ?? (await getUserGlobalRoles({ user }));
 };
 
 /**
