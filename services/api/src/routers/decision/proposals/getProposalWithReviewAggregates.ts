@@ -1,4 +1,5 @@
 import {
+  Channels,
   getProposalWithReviewAggregates,
   getProposalWithReviewAggregatesInputSchema,
   proposalWithSubmittedReviewsSchema,
@@ -11,9 +12,16 @@ export const getProposalWithReviewAggregatesRouter = router({
     .input(getProposalWithReviewAggregatesInputSchema)
     .output(proposalWithSubmittedReviewsSchema)
     .query(async ({ ctx, input }) => {
-      return await getProposalWithReviewAggregates({
+      const result = await getProposalWithReviewAggregates({
         ...input,
         user: ctx.user,
       });
+
+      ctx.registerQueryChannels([
+        Channels.decisionProposal(input.processInstanceId, input.proposalId),
+        Channels.reviewAssignments(input.processInstanceId),
+      ]);
+
+      return result;
     }),
 });

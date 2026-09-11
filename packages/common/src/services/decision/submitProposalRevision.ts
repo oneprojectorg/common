@@ -25,7 +25,7 @@ import { parseProposalData } from './proposalDataSchema';
 
 export interface SubmitProposalRevisionResult {
   items: Array<ProposalReviewRequest>;
-  assignmentIds: Array<string>;
+  proposalAssignmentIds: Array<string>;
   processInstanceId: string;
   proposalHistoryId: string;
 }
@@ -48,6 +48,10 @@ export async function submitProposalRevision({
       where: { id: proposalId },
       with: {
         processInstance: true,
+        // Every assignment of the proposal, for the realtime fan-out: a new
+        // version changes what all of its reviewers see, not only the ones
+        // whose request this answers.
+        reviewAssignments: { columns: { id: true } },
       },
     }),
     assertUserByAuthId(user.id),
@@ -214,7 +218,9 @@ export async function submitProposalRevision({
 
   return {
     items,
-    assignmentIds,
+    proposalAssignmentIds: proposal.reviewAssignments.map(
+      (assignment) => assignment.id,
+    ),
     processInstanceId: proposal.processInstanceId,
     proposalHistoryId,
   };

@@ -1,4 +1,5 @@
 import {
+  Channels,
   listProposalsWithReviewAggregates,
   listProposalsWithReviewAggregatesInputSchema,
   proposalsWithReviewAggregatesListSchema,
@@ -11,9 +12,17 @@ export const listWithReviewAggregatesRouter = router({
     .input(listProposalsWithReviewAggregatesInputSchema)
     .output(proposalsWithReviewAggregatesListSchema)
     .query(async ({ ctx, input }) => {
-      return await listProposalsWithReviewAggregates({
+      const result = await listProposalsWithReviewAggregates({
         ...input,
         user: ctx.user,
       });
+
+      // The instance's assignment channel rather than one proposal channel per
+      // row: a page of proposals would otherwise open a subscription each.
+      ctx.registerQueryChannels([
+        Channels.reviewAssignments(input.processInstanceId),
+      ]);
+
+      return result;
     }),
 });

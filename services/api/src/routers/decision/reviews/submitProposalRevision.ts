@@ -23,7 +23,7 @@ export const submitProposalRevisionRouter = router({
       });
 
       ctx.registerMutationChannels([
-        ...result.assignmentIds.map((assignmentId) =>
+        ...result.proposalAssignmentIds.map((assignmentId) =>
           Channels.reviewAssignment(assignmentId),
         ),
         Channels.reviewAssignments(result.processInstanceId),

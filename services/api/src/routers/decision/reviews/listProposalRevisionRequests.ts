@@ -28,6 +28,7 @@ export const listProposalRevisionRequestsRouter = router({
 
       ctx.registerQueryChannels([
         Channels.reviewAssignments(result.processInstanceId),
+        Channels.decisionProposal(result.processInstanceId, input.proposalId),
       ]);
 
       return proposalRevisionRequestListSchema.parse(result);

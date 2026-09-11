@@ -49,11 +49,14 @@ export function ReviewSummaryView({
 
   const [[proposalWithReviews, proposal, { items: ownAssignments }]] =
     trpc.useSuspenseQueries((t) => [
-      t.decision.getProposalWithReviewAggregates({
-        processInstanceId: instanceId,
-        proposalId,
-        phaseId,
-      }),
+      t.decision.getProposalWithReviewAggregates(
+        {
+          processInstanceId: instanceId,
+          proposalId,
+          phaseId,
+        },
+        { refetchOnMount: 'always' },
+      ),
       t.decision.getProposal({ profileId: proposalProfileId }),
       // Self-scoped, and scoped to the phase this screen describes — the same
       // one the aggregates above use.
@@ -64,8 +67,6 @@ export function ReviewSummaryView({
           phaseId,
           sort: 'newest',
         },
-        // Force a client-side fetch so the query registers its invalidation
-        // channel via the client link; the SSR prefetch cannot.
         { refetchOnMount: 'always' },
       ),
     ]);
@@ -119,8 +120,8 @@ export function ReviewSummaryView({
     setIsOwnFormOpen(false);
   }, []);
 
-  // The assignment list refreshes itself through its review channel; the
-  // aggregates router registers none, so only that one needs a nudge.
+  // Kept for the submitter's own pane, which must be correct with the
+  // realtime socket down.
   const handleOwnReviewCompleted = useCallback(() => {
     setOwnFormStatus(null);
     setIsOwnFormOpen(false);
