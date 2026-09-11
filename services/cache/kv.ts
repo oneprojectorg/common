@@ -104,6 +104,10 @@ const FULL_KEY_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
   'resourceSignedUrl',
   'decision',
   'resources',
+  // Keyed by a caller-supplied email, and the entry it guards decides which
+  // organization the caller may join. '/' is legal in an address local part,
+  // so collapsing would alias "a/victim@x.com" onto "victim@x.com".
+  'allowList',
 ]);
 
 const getCacheKey = (
