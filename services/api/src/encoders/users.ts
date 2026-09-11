@@ -72,6 +72,7 @@ export const userEncoder = createSelectSchema(users)
     currentProfileId: true,
     tos: true,
     privacy: true,
+    isPlatformAdmin: true,
     createdAt: true,
   })
   .extend({

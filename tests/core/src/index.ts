@@ -3,6 +3,8 @@ export {
   createOrganization,
   createUser,
   generateTestEmail,
+  isTestPlatformAdminEmail,
+  setTestPlatformAdmin,
   TEST_USER_DEFAULT_PASSWORD,
   type CreateOrganizationOptions,
   type CreateOrganizationResult,

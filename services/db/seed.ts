@@ -157,12 +157,14 @@ for (const email of adminEmails) {
           authUserId: authUser.id,
           email: authUser.email!,
           name: authUser.user_metadata?.name || null,
+          isPlatformAdmin: true,
         })
         .onConflictDoUpdate({
           target: [users.email],
           set: {
             authUserId: authUser.id,
             name: sql`excluded.name`,
+            isPlatformAdmin: true,
           },
         });
 

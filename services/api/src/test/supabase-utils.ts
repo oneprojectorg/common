@@ -1,4 +1,8 @@
-import { TEST_USER_DEFAULT_PASSWORD } from '@op/test';
+import {
+  TEST_USER_DEFAULT_PASSWORD,
+  isTestPlatformAdminEmail,
+  setTestPlatformAdmin,
+} from '@op/test';
 import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
@@ -102,6 +106,10 @@ export async function createTestUser(
 
   if (error) {
     throw new Error(`Failed to create test user: ${error.message}`);
+  }
+
+  if (data.user && isTestPlatformAdminEmail(email)) {
+    await setTestPlatformAdmin(data.user.id);
   }
 
   return data;

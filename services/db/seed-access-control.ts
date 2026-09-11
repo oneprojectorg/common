@@ -160,6 +160,11 @@ if (backfilled.length > 0) {
   );
 }
 
+await db
+  .update(users)
+  .set({ isPlatformAdmin: true })
+  .where(inArray(users.email, [...adminEmails]));
+
 const adminRole = await db._query.accessRoles.findFirst({
   where: (t, { eq, and, isNull }) =>
     and(eq(t.name, 'Admin'), isNull(t.profileId)),

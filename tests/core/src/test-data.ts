@@ -58,6 +58,17 @@ export interface CreateUserOptions {
   password?: string;
 }
 
+/** Test users on the network domain are seeded as platform admins. */
+export const isTestPlatformAdminEmail = (email: string): boolean =>
+  email.toLowerCase().endsWith('@oneproject.org');
+
+export async function setTestPlatformAdmin(authUserId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ isPlatformAdmin: true })
+    .where(eq(users.authUserId, authUserId));
+}
+
 /** Creates a user via Supabase admin API, bypassing email confirmation. */
 export async function createUser(opts: CreateUserOptions) {
   const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
@@ -81,7 +92,12 @@ export async function createUser(opts: CreateUserOptions) {
   const now = new Date().toISOString();
   await db
     .update(users)
-    .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
+    .set({
+      onboardedAt: now,
+      tosAcceptedOn: now,
+      privacyAcceptedOn: now,
+      isPlatformAdmin: isTestPlatformAdminEmail(email),
+    })
     .where(eq(users.authUserId, data.user.id));
 
   return {

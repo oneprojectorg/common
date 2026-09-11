@@ -1,5 +1,10 @@
 import { cache } from '@op/cache';
-import { CommonError, getNetworkMembership, getUserByAuthId } from '@op/common';
+import {
+  CommonError,
+  getNetworkMembership,
+  getUserByAuthId,
+  isPlatformAdmin,
+} from '@op/common';
 import { z } from 'zod';
 
 import { encodeUser, userEncoder } from '../../encoders';
@@ -18,8 +23,8 @@ export const getMyAccount = router({
 
       const { id } = ctx.user;
 
-      // Account and network membership are independent cached lookups.
-      const [user, isNetworkMember] = await Promise.all([
+      // The admin flag is read fresh; the cached account entry lives for 72h.
+      const [user, isNetworkMember, isUserPlatformAdmin] = await Promise.all([
         cache({
           type: 'user',
           params: [id],
@@ -34,6 +39,7 @@ export const getMyAccount = router({
           },
         }),
         getNetworkMembership(ctx.user.email),
+        isPlatformAdmin({ authUserId: id }),
       ]);
 
       if (!user) {
@@ -41,6 +47,10 @@ export const getMyAccount = router({
         throw new CommonError('Common user not found');
       }
 
-      return encodeUser({ user, authUser: ctx.user, isNetworkMember });
+      return encodeUser({
+        user: { ...user, isPlatformAdmin: isUserPlatformAdmin },
+        authUser: ctx.user,
+        isNetworkMember,
+      });
     }),
 });
