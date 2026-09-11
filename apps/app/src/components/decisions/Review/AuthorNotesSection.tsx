@@ -19,11 +19,9 @@ export function AuthorNotesSection({ proposalId }: { proposalId: string }) {
 }
 
 function AuthorNotes({ proposalId }: { proposalId: string }) {
-  const [{ items }] = trpc.decision.listProposalRevisionNotes.useSuspenseQuery(
-    { proposalId },
-    // One fetch per mount registers the realtime channel.
-    { refetchOnMount: 'always' },
-  );
+  const [{ items }] = trpc.decision.listProposalRevisionNotes.useSuspenseQuery({
+    proposalId,
+  });
 
   const [viewedRequestIds, setViewedRequestIds] =
     useState<Array<string> | null>(null);
