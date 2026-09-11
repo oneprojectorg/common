@@ -210,6 +210,9 @@ export interface CreateRevisionRequestOptions {
   requestComment?: string;
   requestedProposalHistoryId?: string | null;
   respondedProposalHistoryId?: string | null;
+  responseComment?: string | null;
+  requestedAt?: string;
+  respondedAt?: string | null;
 }
 
 /** Creates a review assignment row for a proposal within a review phase. */
@@ -539,6 +542,9 @@ export async function createRevisionRequest(
     requestComment = 'Please revise your proposal.',
     requestedProposalHistoryId = null,
     respondedProposalHistoryId = null,
+    responseComment = null,
+    requestedAt,
+    respondedAt = null,
   } = opts;
 
   const [request] = await db
@@ -549,6 +555,9 @@ export async function createRevisionRequest(
       requestComment,
       requestedProposalHistoryId,
       respondedProposalHistoryId,
+      responseComment,
+      ...(requestedAt === undefined ? {} : { requestedAt }),
+      respondedAt,
     })
     .returning();
 
