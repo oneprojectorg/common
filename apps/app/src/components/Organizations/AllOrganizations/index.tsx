@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { type RouterOutput, trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -10,10 +10,10 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProfileSummaryList } from '@/components/ProfileList';
 
-type ProfileListResponse = {
-  items: Array<any>;
-  next?: string | null;
-};
+// Derived from the procedure rather than hand-written: React Query types
+// `initialData` against the query's own output, so a looser local shape (an
+// optional `next`) no longer satisfies it.
+type ProfileListResponse = RouterOutput['profile']['list'];
 
 export const AllOrganizationsSuspense = ({
   limit = PAGE_LIMIT.md,
