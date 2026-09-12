@@ -20,6 +20,9 @@ import {
  * caller's transaction; otherwise this manages its own and stamps a failure
  * row on uncaught errors. Pass `instance` when the caller already loaded the
  * row (e.g. inside a locking tx) to skip a redundant fetch.
+ *
+ * Returns the id of the row it wrote: `revertPhase` can retire "the latest
+ * successful one" out from under a caller that re-resolves it.
  */
 export async function processResults({
   processInstanceId,
@@ -29,18 +32,17 @@ export async function processResults({
   processInstanceId: string;
   tx?: DbClient;
   instance?: PhaseScopedInstance;
-}): Promise<void> {
+}): Promise<string> {
   if (tx) {
-    await runProcessResults({
+    return runProcessResults({
       tx,
       processInstanceId,
       preloadedInstance: instance,
     });
-    return;
   }
 
   try {
-    await db.transaction(async (newTx) =>
+    return await db.transaction(async (newTx) =>
       runProcessResults({
         tx: newTx,
         processInstanceId,
@@ -79,7 +81,7 @@ async function runProcessResults({
   tx: DbClient;
   processInstanceId: string;
   preloadedInstance?: PhaseScopedInstance;
-}): Promise<void> {
+}): Promise<string> {
   const resolvedInstance =
     preloadedInstance ??
     (await loadPhaseScopedInstance({ db: tx, processInstanceId }));
@@ -93,7 +95,7 @@ async function runProcessResults({
     fetchVoterCount({ db: tx, processInstanceId }),
   ]);
 
-  await writeResultRow({
+  return writeResultRow({
     tx,
     processInstanceId,
     errorMessage: null,
@@ -147,7 +149,7 @@ async function writeResultRow({
   errorMessage: string | null;
   selectedProposalIds: string[];
   voterCount: number;
-}): Promise<void> {
+}): Promise<string> {
   const [row] = await tx
     .insert(decisionProcessResults)
     .values({
@@ -173,4 +175,6 @@ async function writeResultRow({
       })),
     );
   }
+
+  return row.id;
 }

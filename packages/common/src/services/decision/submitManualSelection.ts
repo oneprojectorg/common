@@ -22,6 +22,11 @@ import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
 import { processResults } from './processResults';
+import {
+  RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
+  type ResultNotificationMessages,
+  resultNotificationMessagesSchema,
+} from './resultNotificationTemplate';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import type {
@@ -33,6 +38,12 @@ import { isReviewPhase } from './utils/phaseSettings';
 export interface SubmitManualSelectionInput {
   processInstanceId: string;
   proposalIds: string[];
+  /**
+   * Only meaningful on the final phase, where this call publishes results;
+   * passing them off it is rejected. Omitting them there publishes without
+   * notifying anyone, which is what the review-selection flow does.
+   */
+  resultNotifications?: ResultNotificationMessages;
   user: User;
 }
 
@@ -47,6 +58,7 @@ export interface SubmitManualSelectionInput {
 export async function submitManualSelection({
   processInstanceId,
   proposalIds,
+  resultNotifications,
   user,
 }: SubmitManualSelectionInput): Promise<void> {
   const uniqueProposalIds = [...new Set(proposalIds)];
@@ -95,9 +107,17 @@ export async function submitManualSelection({
     );
   }
 
+  // Before the transaction opens, so a rejection lands before anything
+  // publishes. Whether this phase publishes at all is decided under the lock.
+  const composedNotifications = resultNotifications
+    ? parseResultNotifications(resultNotifications)
+    : undefined;
+
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
   let previousPhaseId: string | null = null;
+  let processResultId: string | null = null;
+  let transitionHistoryId: string | null = null;
   let reviewAssignmentInput:
     | Parameters<typeof runGenerateReviewAssignments>[0]
     | null = null;
@@ -207,6 +227,9 @@ export async function submitManualSelection({
     const manualSelectionAudit: ManualSelectionAudit = {
       byProfileId,
       at: now,
+      ...(composedNotifications
+        ? { resultNotifications: composedNotifications }
+        : {}),
     };
 
     const nextTransitionData: TransitionData = {
@@ -273,10 +296,19 @@ export async function submitManualSelection({
       };
     }
 
+    // Rejected rather than silently dropped: copy arriving on a phase that
+    // publishes nothing would never be sent and the admin would never know.
+    const publishesResults = isLastPhase(currentStateId, lockedPhases ?? []);
+    if (composedNotifications && !publishesResults) {
+      throw new ValidationError(
+        'Author notifications are only sent when confirming the final phase',
+      );
+    }
+
     // On the final phase, fold results processing into this transaction so
     // the new result row is atomic with the attachment write.
-    if (isLastPhase(currentStateId, lockedPhases ?? [])) {
-      await processResults({
+    if (publishesResults) {
+      processResultId = await processResults({
         processInstanceId,
         tx,
         instance: {
@@ -288,6 +320,7 @@ export async function submitManualSelection({
     }
 
     previousPhaseId = lockedPreviousPhaseId;
+    transitionHistoryId = latestRow.id;
   });
 
   // Runs after commit so generateReviewAssignments sees the attached proposals
@@ -313,5 +346,45 @@ export async function submitManualSelection({
           error: err,
         });
       });
+
+    // Awaited, unlike the send above: publishing is one-shot, so a send
+    // dropped when the isolate freezes leaves every author unnotified with no
+    // way to retry.
+    if (processResultId && transitionHistoryId && composedNotifications) {
+      try {
+        await event.send({
+          name: Events.decisionResultsNotified.name,
+          data: {
+            processInstanceId,
+            processResultId,
+            transitionHistoryId,
+            previousPhaseId,
+          },
+        });
+      } catch (err) {
+        logger.error('Failed to send decision results notified event', {
+          processInstanceId,
+          processResultId,
+          error: err,
+        });
+      }
+    }
   }
+}
+
+/** Asserted here, not trusted from the router: this is a public entry point. */
+function parseResultNotifications(
+  resultNotifications: ResultNotificationMessages,
+): ResultNotificationMessages {
+  const parsed =
+    resultNotificationMessagesSchema.safeParse(resultNotifications);
+
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    throw new ValidationError(
+      `${String(field ?? 'notification')} message must be between 1 and ${RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH} characters`,
+    );
+  }
+
+  return parsed.data;
 }

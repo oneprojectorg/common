@@ -95,6 +95,19 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
+  // Refs only, both addressed by id: a revert retires the result row, and any
+  // later transition would hide the copy. The message bodies live on the
+  // transition row.
+  decisionResultsNotified: {
+    name: 'decision/results-notified' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      processResultId: z.string().uuid(),
+      transitionHistoryId: z.string().uuid(),
+      /** The phase whose membership defines the not-selected audience. */
+      previousPhaseId: z.string().min(1),
+    }),
+  },
   voteSubmitted: {
     name: 'vote/submitted' as const,
     schema: z.object({

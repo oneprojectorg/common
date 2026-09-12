@@ -217,5 +217,6 @@ export * from './emails/ContentFlaggedEmail';
 export * from './emails/ProposalMergedEmail';
 export * from './emails/ProposalMergedIntoYoursEmail';
 export * from './emails/ProposalRejectedEmail';
+export * from './emails/DecisionResultEmail';
 
 export { render } from 'react-email';

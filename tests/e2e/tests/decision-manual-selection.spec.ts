@@ -349,11 +349,35 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(confirmButton).toBeEnabled();
 
     await confirmButton.click();
+    // The final-phase confirm is the Compose Notifications modal: one editable
+    // message per outcome, prefilled, sent to the authors on publish.
     const dialog = authenticatedPage.getByRole('dialog', {
-      name: 'Confirm winning proposals',
+      name: 'Compose Notifications',
     });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole('button', { name: 'Publish results' }).click();
+
+    await expect(dialog.getByRole('tab', { name: /Funded/ })).toBeVisible();
+    await expect(dialog.getByRole('tab', { name: /Not funded/ })).toBeVisible();
+    // `keepMounted` leaves the inactive panel in the DOM under `inert`, which
+    // takes it out of the a11y tree for real assistive tech — but Playwright's
+    // role engine ignores `inert`, so scope to the live panel explicitly.
+    const activeMessageBox = dialog
+      .locator('[role="tabpanel"]:not([inert])')
+      .getByRole('textbox', { name: 'Notification Message' });
+    await expect(activeMessageBox).toHaveValue(/selected for funding/);
+
+    // Type into both tabs: the feature's premise is admin-authored copy, so the
+    // markers below are what prove it reached the DB rather than the defaults.
+    const selectedMessage = `Selected copy ${instance.slug}`;
+    const notSelectedMessage = `Not selected copy ${instance.slug}`;
+    await activeMessageBox.fill(selectedMessage);
+    await dialog.getByRole('tab', { name: /Not funded/ }).click();
+    await expect(activeMessageBox).toHaveValue(/not selected for funding/);
+    await activeMessageBox.fill(notSelectedMessage);
+
+    await dialog
+      .getByRole('button', { name: 'Send & publish results' })
+      .click();
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
     // Channel invalidation swaps to ResultsPage and `?resultsLive=1` opens the
@@ -391,6 +415,23 @@ test.describe('Decision Manual Selection — full flow', () => {
     expect(new Set(selections.map((s) => s.proposalId))).toEqual(
       new Set([alpha.id, beta.id]),
     );
+
+    // The composed copy is stamped on the transition row, which is what the
+    // notification workflow re-reads at send time.
+    const [transitionRow] = await db
+      .select({ transitionData: stateTransitionHistory.transitionData })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instance.instance.id))
+      .orderBy(desc(stateTransitionHistory.transitionedAt))
+      .limit(1);
+    expect(transitionRow?.transitionData).toMatchObject({
+      manualSelection: {
+        resultNotifications: {
+          selected: selectedMessage,
+          notSelected: notSelectedMessage,
+        },
+      },
+    });
 
     // submitManualSelection writes selection rows with `allocated = null`.
     // The "allocated vs requested" UI only kicks in when a numeric allocation

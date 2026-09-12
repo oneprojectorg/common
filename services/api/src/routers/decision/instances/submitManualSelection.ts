@@ -3,6 +3,7 @@ import {
   invalidateDecisionInstance,
   submitManualSelection,
 } from '@op/common';
+import { resultNotificationMessagesSchema } from '@op/common/client';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -12,6 +13,9 @@ import { trackManualSelectionSubmitted } from '../../../utils/analytics';
 const submitManualSelectionInputSchema = z.object({
   processInstanceId: z.uuid(),
   proposalIds: z.array(z.uuid()).min(1),
+  // Whether this phase publishes results isn't knowable here; the service
+  // owns that half of the gate.
+  resultNotifications: resultNotificationMessagesSchema.optional(),
 });
 
 export const submitManualSelectionRouter = router({
@@ -21,6 +25,7 @@ export const submitManualSelectionRouter = router({
       await submitManualSelection({
         processInstanceId: input.processInstanceId,
         proposalIds: input.proposalIds,
+        resultNotifications: input.resultNotifications,
         user: ctx.user,
       });
 
