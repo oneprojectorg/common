@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { isReviewPhase } from '@op/common/client';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import {
@@ -14,9 +14,12 @@ export function useNavigationConfig(
   instanceId: string | undefined,
   decisionProfileId?: string,
 ): NavigationConfig {
-  const { data: instance } = trpc.decision.getInstance.useQuery(
-    { instanceId: instanceId! },
-    { enabled: !!instanceId },
+  const trpc = useTRPC();
+  const { data: instance } = useQuery(
+    trpc.decision.getInstance.queryOptions(
+      { instanceId: instanceId! },
+      { enabled: !!instanceId },
+    ),
   );
 
   const storePhases = useProcessBuilderStore((s) =>

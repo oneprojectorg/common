@@ -1,7 +1,8 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 const DOCUMENT_POLL_INTERVAL_MS = 2500;
@@ -35,14 +36,17 @@ export function useLiveProposalDocument(initialProposal: Proposal): {
 } {
   const [timedOut, setTimedOut] = useState(false);
 
-  const { data } = trpc.decision.getProposal.useQuery(
-    { profileId: initialProposal.profileId },
-    {
-      refetchInterval: (query) =>
-        hasUnavailableDocument(query.state.data) && !timedOut
-          ? DOCUMENT_POLL_INTERVAL_MS
-          : false,
-    },
+  const trpc = useTRPC();
+  const { data } = useQuery(
+    trpc.decision.getProposal.queryOptions(
+      { profileId: initialProposal.profileId },
+      {
+        refetchInterval: (query) =>
+          hasUnavailableDocument(query.state.data) && !timedOut
+            ? DOCUMENT_POLL_INTERVAL_MS
+            : false,
+      },
+    ),
   );
 
   const proposal = data ?? initialProposal;

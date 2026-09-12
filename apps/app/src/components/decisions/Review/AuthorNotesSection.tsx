@@ -1,7 +1,7 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useMemo, useState } from 'react';
 
 import { type AuthorNote, AuthorNotesAccordion } from './AuthorNotesAccordion';
@@ -19,9 +19,14 @@ export function AuthorNotesSection({ proposalId }: { proposalId: string }) {
 }
 
 function AuthorNotes({ proposalId }: { proposalId: string }) {
-  const [{ items }] = trpc.decision.listProposalRevisionNotes.useSuspenseQuery({
-    proposalId,
-  });
+  const trpc = useTRPC();
+  const {
+    data: { items },
+  } = useSuspenseQuery(
+    trpc.decision.listProposalRevisionNotes.queryOptions({
+      proposalId,
+    }),
+  );
 
   const [viewedRequestIds, setViewedRequestIds] =
     useState<Array<string> | null>(null);

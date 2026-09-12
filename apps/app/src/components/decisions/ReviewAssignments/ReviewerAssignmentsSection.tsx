@@ -1,7 +1,6 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import type { ReviewerAssignments } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -16,6 +15,7 @@ import { Header3 } from '@op/sense/Header';
 import { Item, ItemContent, ItemTitle } from '@op/sense/Item';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusDot } from '@op/sense/StatusDot';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useFormatter } from 'next-intl';
 import { Suspense, useCallback, useMemo } from 'react';
 import { LuUserX, LuUsers } from 'react-icons/lu';
@@ -88,17 +88,21 @@ function ReviewerAssignmentsContent({
   decisionSlug,
   access,
 }: ReviewerAssignmentsSectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [data, query] =
-    trpc.decision.listReviewerAssignments.useSuspenseInfiniteQuery(
+  const query = useSuspenseInfiniteQuery(
+    trpc.decision.listReviewerAssignments.infiniteQueryOptions(
       { processInstanceId, phaseId, reviewerProfileId },
       {
         getNextPageParam: (lastPage) => lastPage.next,
         // An SSR-seeded entry never registers the realtime channel; refetch.
         refetchOnMount: 'always',
       },
-    );
+    ),
+  );
+
+  const data = query.data;
 
   const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
   const loadNextPage = useCallback(() => {

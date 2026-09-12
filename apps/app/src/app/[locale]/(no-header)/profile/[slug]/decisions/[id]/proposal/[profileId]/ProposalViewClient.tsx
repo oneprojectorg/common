@@ -1,7 +1,7 @@
 'use client';
-
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -18,10 +18,13 @@ function ProposalViewPageContent({
   orgSlug: string;
   instanceId: string;
 }) {
+  const trpc = useTRPC();
   // Legacy decision boundary — still served via shared public links.
   // Revisions aren't available on legacy instances, so the instance fetch
   // isn't needed.
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
+  const { data: proposal } = useSuspenseQuery(
+    trpc.decision.getProposal.queryOptions({ profileId }),
+  );
 
   if (!proposal) {
     notFound();

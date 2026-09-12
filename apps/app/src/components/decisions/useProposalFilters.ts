@@ -1,10 +1,11 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useCallback, useDeferredValue, useMemo } from 'react';
 
@@ -45,9 +46,12 @@ export const useProposalFilters = ({
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
 
-  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
-    processInstanceId: instanceId,
-  });
+  const trpc = useTRPC();
+  const { data: voteStatus } = useSuspenseQuery(
+    trpc.decision.getVotingStatus.queryOptions({
+      processInstanceId: instanceId,
+    }),
+  );
   const hasVoted = voteStatus?.hasVoted ?? false;
 
   const [selectedCategory, setSelectedCategory] = useQueryState(
