@@ -76,8 +76,8 @@ export async function cancelRevisionRequest({
     return cancelledRequest;
   });
 
-  const requestedAtMs = request.createdAt
-    ? Date.parse(request.createdAt)
+  const requestedAtMs = request.requestedAt
+    ? Date.parse(request.requestedAt)
     : Number.NaN;
   const secondsOpen = Number.isFinite(requestedAtMs)
     ? Math.round((Date.now() - requestedAtMs) / 1000)
