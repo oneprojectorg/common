@@ -69,6 +69,19 @@ export const Events = {
       createdAt: z.string(),
     }),
   },
+  // The set of proposals an analysis would read has changed: one was submitted,
+  // edited, merged, rejected, deleted, or put back. Carries the instance and
+  // nothing else, because the consumer is debounced on it — many changes in a
+  // window collapse to one run — and re-reads the corpus at run time anyway.
+  // Emitted from every mutation that changes the set, rather than derived from
+  // the per-proposal events above: those carry a proposal or relationship id
+  // the debounce cannot key on, and deletion has no event of its own.
+  proposalCorpusChanged: {
+    name: 'proposal/corpus-changed' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+    }),
+  },
   profileInviteSent: {
     name: 'profile/invites-sent' as const,
     schema: z.object({

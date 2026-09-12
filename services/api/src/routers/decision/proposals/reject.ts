@@ -1,4 +1,8 @@
-import { Channels, rejectProposal } from '@op/common';
+import {
+  Channels,
+  notifyProposalCorpusChanged,
+  rejectProposal,
+} from '@op/common';
 import { rejectProposalInputSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
@@ -40,5 +44,9 @@ export const rejectProposalRouter = router({
           },
         }),
       );
+
+      // A rejected proposal drops out of the phase-scoped corpus the theme
+      // analysis reads.
+      waitUntil(notifyProposalCorpusChanged({ processInstanceId }));
     }),
 });

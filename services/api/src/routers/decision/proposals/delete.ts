@@ -1,5 +1,9 @@
 import { invalidate } from '@op/cache';
-import { Channels, deleteProposal as deleteProposalService } from '@op/common';
+import {
+  Channels,
+  deleteProposal as deleteProposalService,
+  notifyProposalCorpusChanged,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -38,6 +42,14 @@ export const deleteProposalRouter = router({
         Channels.decisionProposals(result.processInstanceId),
         Channels.decisionProposal(result.processInstanceId, input.proposalId),
       ]);
+
+      // Deletion has no event of its own, so this is the only signal the theme
+      // analysis gets that its corpus shrank.
+      waitUntil(
+        notifyProposalCorpusChanged({
+          processInstanceId: result.processInstanceId,
+        }),
+      );
 
       logger.info('Proposal deleted', {
         userId: user.id,

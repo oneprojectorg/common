@@ -7,6 +7,19 @@ import {
 } from './constants';
 import type { CorpusProposal } from './corpusGrounding';
 
+/**
+ * Who a corpus is read on behalf of.
+ *
+ * Two shapes rather than an optional user id, so that reading without a
+ * requester is something a caller writes down rather than something it forgets
+ * to pass. `userId` is a facilitator who pressed the button: they are confirmed
+ * to exist and, for the process scope, re-checked against the instance at read
+ * time. `system` is the scheduled refresh, which runs after a proposal changes
+ * and has nobody to check — it reads every proposal in scope the way an admin
+ * would, and what it produces is only ever shown to admins.
+ */
+export type CorpusReader = { userId: string } | { system: true };
+
 export interface ProposalCorpus {
   proposals: CorpusProposal[];
   /**
@@ -55,22 +68,23 @@ export interface ProposalCorpus {
  * corpus.
  *
  * The two readers settle access differently, and both are right for what they
- * do. The phase read passes `skipAccessCheck`, taking every phase-scoped
+ * do. The phase read always passes `skipAccessCheck`, taking every phase-scoped
  * non-draft proposal regardless of the visibility and moderation filters a
  * signed-in caller would get — the caller settled authorization before reaching
- * here. `listAllProposals` has no such bypass and asserts instance access
- * itself, which re-checks the requester at run time: an admin who lost the role
- * between pressing the button and the job starting gets a failed run rather than
- * a corpus.
+ * here. `listAllProposals` asserts instance access itself for a user reader,
+ * which re-checks the requester at run time: an admin who lost the role between
+ * pressing the button and the job starting gets a failed run rather than a
+ * corpus. A system reader bypasses that assertion too, because there is no
+ * requester to check; see {@link CorpusReader} for why that is safe.
  *
  * Proposals whose body is empty are dropped rather than sent as a bare title. A
  * title alone gives the model nothing to find a theme in, and it would still
  * occupy one of the ceiling's slots.
  *
  * @param processInstanceId - The instance to read.
- * @param userId - Auth-user id of the facilitator who asked. Identity only:
- *   every path this reaches (`getCurrentProfileId`, `assertUserByAuthId`,
- *   `resolveAccessUserIds`) reads it as an auth user id, not a database key.
+ * @param reader - Who is asking. See {@link CorpusReader}. A user id is an auth
+ *   user id, not a database key: every path it reaches (`getCurrentProfileId`,
+ *   `assertUserByAuthId`, `resolveAccessUserIds`) reads it that way.
  * @param scope - Which proposals to read. See {@link ThemeAnalysisScope}.
  * @returns The numbered corpus and the scope's total. The caller reports both,
  *   so a synthesis that covered a quarter of the field cannot read as a claim
@@ -78,16 +92,16 @@ export interface ProposalCorpus {
  */
 export const collectProposalCorpus = async ({
   processInstanceId,
-  userId,
+  reader,
   scope,
 }: {
   processInstanceId: string;
-  userId: string;
+  reader: CorpusReader;
   scope: ThemeAnalysisScope;
 }): Promise<ProposalCorpus> => {
   const { proposals, total } = await readProposalsInScope({
     processInstanceId,
-    userId,
+    reader,
     scope,
     limit: THEME_ANALYSIS_MAX_PROPOSALS,
   });
@@ -102,6 +116,10 @@ export const collectProposalCorpus = async ({
     return [
       {
         id: proposal.id,
+        // Carried so the dialog can link each reference to its proposal and
+        // hand it to the merge flow, neither of which can address a proposal
+        // by its own id.
+        profileId: proposal.profileId,
         // `proposalData.title` carries the fragment-resolved title that
         // `listProposals` merged over the snapshot, which is the title the
         // proposals list shows. Untitled proposals exist, and this keeps the
@@ -144,19 +162,22 @@ export const collectProposalCorpus = async ({
  */
 export const readProposalsInScope = async ({
   processInstanceId,
-  userId,
+  reader,
   scope,
   limit,
 }: {
   processInstanceId: string;
-  userId: string;
+  reader: CorpusReader;
   scope: ThemeAnalysisScope;
   limit: number;
 }): Promise<{ proposals: ProposalRow[]; total: number }> => {
+  const user = 'userId' in reader ? { id: reader.userId } : undefined;
+  const skipAccessCheck = 'system' in reader;
+
   if (scope === 'process') {
     const { items, total } = await listAllProposals({
-      input: { processInstanceId, limit },
-      user: { id: userId },
+      input: { processInstanceId, limit, skipAccessCheck },
+      user,
     });
 
     return { proposals: items, total };
@@ -164,7 +185,7 @@ export const readProposalsInScope = async ({
 
   const { proposals, total } = await listProposals({
     input: { processInstanceId, limit, skipAccessCheck: true },
-    user: { id: userId },
+    user,
   });
 
   return { proposals, total };
@@ -173,6 +194,7 @@ export const readProposalsInScope = async ({
 /** The fields the corpus reads off a row, whichever reader produced it. */
 interface ProposalRow {
   id: string;
+  profileId: string | null;
   proposalData: { title?: string | null };
   previewText?: string;
 }

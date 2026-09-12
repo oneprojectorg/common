@@ -127,6 +127,7 @@ export * from './getExportStatus';
 export * from './exports';
 export * from './requestThemeAnalysis';
 export * from './getThemeAnalysisStatus';
+export * from './getLatestThemeAnalysis';
 export * from './themes';
 export * from './generateProposalHtml';
 export * from './getProposalDocumentsContent';

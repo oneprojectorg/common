@@ -173,10 +173,16 @@ export type CommonGroundPassReply = z.infer<typeof commonGroundPassReplySchema>;
  * proposal retitled or deleted afterwards should still read as what the analysis
  * actually looked at, and the dialog should not need a second query to show a
  * name.
+ *
+ * `profileId` is how the dialog acts on a reference: proposal pages are
+ * addressed by profile id, and so is `getProposal`, which the merge action loads
+ * the full proposal through. Nullable because the column is, and a proposal
+ * with no profile has no page — the dialog names it without linking.
  */
 const analyzedProposalSchema = z.object({
   id: z.string(),
   title: z.string(),
+  profileId: z.string().nullable(),
 });
 
 /**
@@ -322,3 +328,56 @@ export const themeAnalysisResponseSchema = z.union([
 ]);
 
 export type ThemeAnalysisResponse = z.infer<typeof themeAnalysisResponseSchema>;
+
+/**
+ * Zod object schema for the latest finished analysis of a scope.
+ *
+ * One per instance and scope, overwritten each time an analysis of that scope
+ * completes — by the scheduled refresh that follows a change to the proposals,
+ * or by a facilitator running one by hand. This is what the button opens
+ * without starting a run: a run's record is the requester's and answers "how is
+ * my run going", where this is the instance's and answers "what does the field
+ * look like now".
+ *
+ * `completedAt` is rendered. The refresh is debounced, so what a reader opens
+ * can be up to the debounce window behind the proposals on screen, and the
+ * dialog says when it was taken rather than leaving them to assume it is
+ * current.
+ *
+ * `fingerprint` is kept so a refresh that reads an unchanged corpus can tell it
+ * has nothing to do without a result-cache round trip, and so a reader of the
+ * record can tell two snapshots apart.
+ */
+export const themeAnalysisSnapshotSchema = z.object({
+  status: z.literal('ready'),
+  processInstanceId: z.string(),
+  scope: themeAnalysisScopeSchema,
+  result: themeAnalysisResultSchema,
+  /** Proposals the analysis actually read. */
+  analyzedCount: z.number(),
+  /** Proposals the scope held when the read started. */
+  total: z.number(),
+  /** Digest of the corpus the result was computed over. See `fingerprintCorpus`. */
+  fingerprint: z.string(),
+  completedAt: z.string(),
+});
+
+export type ThemeAnalysisSnapshot = z.infer<typeof themeAnalysisSnapshotSchema>;
+
+/**
+ * Zod union schema for everything `getLatestThemeAnalysis` answers: the latest
+ * snapshot, or the not-found arm when no analysis of the scope has finished
+ * within the snapshot's lifetime.
+ *
+ * `status` discriminates, as it does for the run record. `'ready'` is the only
+ * value a snapshot can carry, so a caller that matches it has narrowed the
+ * not-found arm away.
+ */
+export const latestThemeAnalysisResponseSchema = z.union([
+  z.object({ status: z.literal('not_found') }),
+  themeAnalysisSnapshotSchema,
+]);
+
+export type LatestThemeAnalysisResponse = z.infer<
+  typeof latestThemeAnalysisResponseSchema
+>;

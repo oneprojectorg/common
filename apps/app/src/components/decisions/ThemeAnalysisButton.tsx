@@ -6,13 +6,17 @@ import { THEME_ANALYSIS_MIN_PROPOSALS } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
-import { LuSparkles, LuTriangleAlert } from 'react-icons/lu';
+import { LuRefreshCw, LuSparkles, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ThemeAnalysisDialog } from './ThemeAnalysisDialog';
+import {
+  ThemeAnalysisDialog,
+  type ThemeAnalysisRoute,
+} from './ThemeAnalysisDialog';
+import { useLatestThemeAnalysis } from './useLatestThemeAnalysis';
 import { useThemeAnalysisRun } from './useThemeAnalysisRun';
 
 export interface ThemeAnalysisButtonProps {
@@ -31,6 +35,16 @@ export interface ThemeAnalysisButtonProps {
    * the phase's own count, which is what the server checks against.
    */
   proposalCount: number;
+  /**
+   * Where the proposals live, so the dialog can link each one it names. See
+   * {@link ThemeAnalysisRoute}.
+   */
+  route: ThemeAnalysisRoute;
+  /**
+   * Whether the dialog may offer Merge on a merge suggestion. The caller
+   * decides, from the same flag and role the card menu reads.
+   */
+  canMerge: boolean;
 }
 
 /**
@@ -120,12 +134,20 @@ const ThemeAnalysisUnreadable = ({
 };
 
 /**
- * React component for the control itself, plus the dialog its run ends in.
+ * React component for the control itself, plus the dialog it opens.
  *
- * The run's state lives in {@link useThemeAnalysisRun}, so what is left here is
- * what a control is for: whether it can be pressed, what it says, and what it
- * announces. This component holds no state of its own — the dialog is open for
- * exactly as long as there is a result, and closing it ends the run.
+ * Two ways in, one dialog. When a stored analysis exists — the scheduled
+ * refresh writes one after the instance's proposals change — the control says
+ * "View themes" and opens it at once. When none exists it says "Find themes"
+ * and runs one, the way it always did; the run writes the snapshot, so the next
+ * press is a view. From inside the dialog the reader can ask for a fresh run,
+ * and its result replaces what they were reading when it lands.
+ *
+ * The run's state lives in {@link useThemeAnalysisRun} and the stored analysis
+ * in {@link useLatestThemeAnalysis}, so what is left here is what a control is
+ * for: whether it can be pressed, what it says, and what it announces. The
+ * only state of its own is whether the reader chose to open the stored
+ * analysis.
  *
  * Sits behind {@link ThemeAnalysisButton}'s error boundary rather than being
  * exported, so a reset remounts it and discards the run.
@@ -134,20 +156,41 @@ const ThemeAnalysisUnreadable = ({
  * @param scope - Which proposals to read. See {@link ThemeAnalysisButtonProps}.
  * @param proposalCount - The scope's unfiltered proposal count, which decides
  *   whether there is anything to compare.
+ * @param route - Passed through to the dialog for its links.
+ * @param canMerge - Passed through to the dialog for its Merge actions.
  */
 const ThemeAnalysisButtonContent = ({
   processInstanceId,
   scope,
   proposalCount,
+  route,
+  canMerge,
 }: ThemeAnalysisButtonProps) => {
   const t = useTranslations();
+  const { snapshot, isLoading: isLoadingSnapshot } = useLatestThemeAnalysis(
+    processInstanceId,
+    scope,
+  );
   const { isStarting, isRunning, runningLabel, completed, start, retire } =
     useThemeAnalysisRun(processInstanceId, scope);
+  const [isViewing, setIsViewing] = useState(false);
 
-  // Closing ends the run. Each press produces one analysis, and holding on to it
-  // would leave a later run indistinguishable from this one.
+  // A run that just finished outranks the stored one: it is the newer of the
+  // two, and it is what the reader asked for. The stored one is shown only
+  // when the reader opened it. Once the run is retired, the store — refreshed
+  // by the run's own broadcast — is what a reopen shows.
+  const shown = completed
+    ? { ...completed, completedAt: undefined }
+    : isViewing
+      ? snapshot
+      : null;
+
+  // Closing ends the run and the view together. Each press produces one
+  // analysis, and holding on to it would leave a later run indistinguishable
+  // from this one.
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
+      setIsViewing(false);
       retire();
     }
   };
@@ -156,6 +199,10 @@ const ThemeAnalysisButtonContent = ({
   // definition rather than mirrored: an enabled button whose only possible
   // outcome is a validation error is an action we should not have offered.
   const hasEnoughProposals = proposalCount >= THEME_ANALYSIS_MIN_PROPOSALS;
+
+  // Viewing needs no proposals — the analysis is already written — so a stored
+  // analysis stays openable even after the phase drops below the minimum.
+  const canView = snapshot !== null && !isRunning;
 
   return (
     <>
@@ -169,40 +216,67 @@ const ThemeAnalysisButtonContent = ({
       <span role="status" aria-live="polite" className="sr-only">
         {runningLabel}
       </span>
-      <Button
-        variant="outline"
-        // Disabled rather than `loading` once a run is under way: that prop
-        // draws a spinner over the label and hides it, and the label is the only
-        // thing separating a job nothing picked up from one that is working. The
-        // spinner stays for the request that starts the run, where there is no
-        // state to report yet.
-        disabled={!hasEnoughProposals || isRunning}
-        loading={isStarting}
-        // Disabled reads as "unavailable", which a run in progress is not.
-        aria-busy={isRunning}
-        onClick={start}
-      >
-        <LuSparkles aria-hidden />
-        {/* Named for what it produces. The control sits in the filter bar and
-            does not follow it, so a bare "Analyze" beside an active filter would
-            read as analysing that selection. */}
-        {runningLabel ?? t('Find themes')}
-      </Button>
+      {canView ? (
+        <Button variant="outline" onClick={() => setIsViewing(true)}>
+          <LuSparkles aria-hidden />
+          {t('View themes')}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          // Disabled rather than `loading` once a run is under way: that prop
+          // draws a spinner over the label and hides it, and the label is the
+          // only thing separating a job nothing picked up from one that is
+          // working. The spinner stays for the request that starts the run,
+          // where there is no state to report yet — and for the first read of
+          // the store, before the control knows which of its two labels it is.
+          disabled={!hasEnoughProposals || isRunning}
+          loading={isStarting || isLoadingSnapshot}
+          // Disabled reads as "unavailable", which a run in progress is not.
+          aria-busy={isRunning}
+          onClick={start}
+        >
+          <LuSparkles aria-hidden />
+          {/* Named for what it produces. The control sits in the filter bar
+              and does not follow it, so a bare "Analyze" beside an active
+              filter would read as analysing that selection. */}
+          {runningLabel ?? t('Find themes')}
+        </Button>
+      )}
 
       {/* Only rendered once there is a complete result to show. The dialog's own
           `open` would keep it mounted with nothing in it otherwise, and every
           section would have to defend against that. */}
       {/* Open for as long as it is mounted, which is exactly as long as there
-          is a result. Opening is not a decision the reader made — they pressed a
-          button and waited — and closing ends the run, which unmounts this. So
-          the dialog has no third state to hold in `useState`. */}
-      {completed && (
+          is something to show. Closing retires the run and the view, which
+          unmounts this. So the dialog has no third state to hold. */}
+      {shown && (
         <ThemeAnalysisDialog
           isOpen
           onOpenChange={handleDialogOpenChange}
-          result={completed.result}
-          analyzedCount={completed.analyzedCount}
-          total={completed.total}
+          result={shown.result}
+          analyzedCount={shown.analyzedCount}
+          total={shown.total}
+          completedAt={shown.completedAt}
+          route={route}
+          canMerge={canMerge}
+          actions={
+            // A fresh run from inside the dialog, for a reader who suspects the
+            // stored analysis is behind the proposals — the refresh waits out a
+            // quiet half hour before it runs, and a facilitator mid-triage may
+            // not want to. Same gate as the bar's button, same labels while it
+            // runs, and its result replaces this dialog's content when it lands.
+            <Button
+              variant="outline"
+              disabled={!hasEnoughProposals || isRunning}
+              loading={isStarting}
+              aria-busy={isRunning}
+              onClick={start}
+            >
+              <LuRefreshCw aria-hidden />
+              {runningLabel ?? t('Analyze again')}
+            </Button>
+          }
         />
       )}
     </>

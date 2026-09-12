@@ -1,5 +1,9 @@
 import { invalidate } from '@op/cache';
-import { Channels, updateProposal } from '@op/common';
+import {
+  Channels,
+  notifyProposalCorpusChanged,
+  updateProposal,
+} from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { ProposalStatus } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
@@ -51,6 +55,16 @@ export const updateProposalRouter = router({
               itemType: 'proposal',
               itemId: proposal.id,
             },
+          }),
+        );
+
+        // Same gate, same reason: the analysis reads submitted text, and an
+        // edit to a draft changes nothing it has seen. The refresh compares the
+        // corpus digest first, so an edit that leaves the analysed text alone
+        // costs a read and no model call.
+        waitUntil(
+          notifyProposalCorpusChanged({
+            processInstanceId: proposal.processInstanceId,
           }),
         );
       }

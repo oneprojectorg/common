@@ -543,6 +543,12 @@ const ProposalsListContent = ({
   const themesEnabled = useFeatureFlag('proposal-themes-feature') ?? false;
   const canAnalyzeThemes = canManageProposals && themesEnabled;
 
+  // The analysis dialog offers Merge on its merge suggestions under the same
+  // gate as the card menu's Merge item, read here so the two cannot disagree
+  // about whether a facilitator may merge.
+  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
+  const canMergeProposals = canManageProposals && mergeEnabled;
+
   const { data: revisionRequestsData } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       { states: [ProposalReviewRequestState.REQUESTED] },
@@ -739,6 +745,10 @@ const ProposalsListContent = ({
                     // Unfiltered for the same reason as the export, and it is
                     // the count the server checks its minimum against.
                     proposalCount={totalProposalCount}
+                    // The same route the cards link with, so the dialog's
+                    // links land where the grid's do.
+                    route={{ slug, decisionSlug, instanceId }}
+                    canMerge={canMergeProposals}
                   />
                 )}
               </>

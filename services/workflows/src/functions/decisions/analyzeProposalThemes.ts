@@ -1,15 +1,17 @@
 import { setWithStatus } from '@op/cache';
 import {
   THEME_ANALYSIS_CACHE_TTL_SECONDS,
-  type CommonGroundAnalysis,
   type CorpusProposal,
   type PassFailure,
   type ThemeAnalysisData,
+  type ThemeAnalysisResult,
   type ThemeAnalysisScope,
-  type ThemeAnalysisTheme,
+  readCachedThemeAnalysisResult,
   readCorpusForAnalysis,
   runCommonGroundPass,
   runThemesPass,
+  storeCachedThemeAnalysisResult,
+  storeLatestThemeAnalysis,
   themeAnalysisCacheKey,
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
@@ -92,17 +94,19 @@ const recordAnalysis = async (
  * and the message carries no payload — subscribers re-read
  * `getThemeAnalysisStatus` on receipt.
  *
- * Sent for the intermediate `processing` write as well as the terminal one.
- * Nothing polls behind this, so a lost broadcast costs correctness rather than
- * latency: lose the terminal one and the client never sees a terminal state, so
- * the wait reports a timeout for an analysis that worked.
+ * Sent for the intermediate `processing` write as well as the terminal one. The
+ * client polls behind this, so a lost broadcast costs latency rather than
+ * correctness — but the poll is slow by design, and the broadcast is what makes
+ * a finished analysis appear at once rather than on the next tick.
  *
  * An analysis that settles before the client's socket join lands is covered the
  * same way every other channel covers it — the client re-reads its query once
  * the join is confirmed, and whatever settled before then is in that read.
  *
  * `realtime.publish` logs and swallows its own failures, so this cannot fail the
- * run or trigger a retry that would rewrite a settled record.
+ * run or trigger a retry that would rewrite a settled record. That is also why
+ * it shares a step with the write it announces: a retried step re-sends a
+ * broadcast, which is harmless, rather than re-running a model pass.
  */
 const notifyAnalysisChanged = (analysisId: string) =>
   realtime.publish(Channels.proposalThemeAnalysis(analysisId), {
@@ -111,6 +115,24 @@ const notifyAnalysisChanged = (analysisId: string) =>
     // `processing` suppress the terminal one.
     mutationId: crypto.randomUUID(),
   });
+
+/**
+ * Writes the record and then announces it, as one step.
+ *
+ * One invocation rather than two. Every step is a round trip through Inngest —
+ * the handler is re-invoked, replays to the step, runs it, and reports back —
+ * and the write and its broadcast were paying for two of those to do a Redis
+ * command and a publish. Together they are one, and the broadcast still follows
+ * the write it describes: if the write throws, the publish is never reached, and
+ * the retry does both again.
+ */
+const recordAndNotify = async (
+  identity: AnalysisIdentity,
+  fields: AnalysisFields,
+) => {
+  await recordAnalysis(identity, fields);
+  await notifyAnalysisChanged(identity.analysisId);
+};
 
 /**
  * The fields that identify a record and never change once it is seeded — and,
@@ -129,6 +151,21 @@ type AnalysisIdentity = Pick<
  */
 type AnalysisFields = Omit<ThemeAnalysisData, keyof AnalysisIdentity>;
 
+/** What a run has once it has an answer, from the passes or from the cache. */
+interface CompletedAnalysis {
+  result: ThemeAnalysisResult;
+  proposals: CorpusProposal[];
+  total: number;
+  /** The digest the result was, or should be, stored under. */
+  fingerprint: string;
+  /**
+   * Whether the result came from the result cache. A reused result is not
+   * written back — it is already there, under the same key, with a TTL that
+   * has not run out.
+   */
+  reused: boolean;
+}
+
 /**
  * The diagnostic to record for a fault nobody classified.
  *
@@ -142,21 +179,29 @@ const messageOf = (error: unknown): string =>
 const { proposalThemeAnalysisRequested } = Events;
 
 /**
- * Reads a phase's proposals and reports the themes running through them, the
+ * Reads a scope's proposals and reports the themes running through them, the
  * common ground between them, the proposals sitting outside it, and what to
  * suggest.
  *
- * Three steps: read the corpus, then the themes pass, then the common-ground
- * pass. Inngest invokes the handler once per step, so each gets its own budget
- * and its own line in the run — which is what makes "the analysis was slow"
- * answerable as "the read was slow" or "the model was slow" without reading a
- * log. It also buys retry granularity: a common-ground pass that fails does not
- * pay for the themes pass again.
+ * Read the corpus; ask whether exactly this corpus has been analysed already;
+ * if not, run the themes pass and the common-ground pass *at the same time*;
+ * record the answer. Inngest invokes the handler once per step, so each gets
+ * its own budget and its own line in the run — which is what makes "the
+ * analysis was slow" answerable as "the read was slow" or "the model was slow"
+ * without reading a log — and two steps started together run in two
+ * invocations at once, so the model part of the wait is the slower pass rather
+ * than both added up.
+ *
+ * The cache lookup is what turns most presses into no model calls at all. A
+ * facilitator reopening a dialog they closed, or a colleague analysing the same
+ * phase, is asking about text that has not changed, and the answer to that is
+ * the answer already stored — keyed by a digest of the corpus, so an edit to any
+ * proposal the model would read is a new analysis and anything else is not.
  *
  * The corpus is read once and carried through function state to both passes.
  * Re-reading it per step would be cheaper to serialize and wrong to do: the
- * indexes the themes pass grounds against are positions in that list, so a
- * re-read returning a different set would silently renumber them.
+ * indexes each pass grounds against are positions in that list, so a re-read
+ * returning a different set would silently renumber them.
  */
 export const analyzeProposalThemes = inngest.createFunction(
   {
@@ -186,10 +231,6 @@ export const analyzeProposalThemes = inngest.createFunction(
       createdAt,
     };
 
-    await step.run('update-status-processing', () =>
-      recordAnalysis(identity, { status: 'processing' }),
-    );
-
     // Closes over `step` rather than taking it: Inngest's `step` type is
     // generated from the whole event schema, and naming it here would be a large
     // structural type to keep in step with it for no gain.
@@ -210,7 +251,7 @@ export const analyzeProposalThemes = inngest.createFunction(
           errorMessage: failure.message,
         });
 
-        return recordAnalysis(identity, {
+        return recordAndNotify(identity, {
           status: 'failed',
           // The code is what the facilitator sees, mapped to copy in their own
           // locale. The message is English and diagnostic, for the log and for
@@ -221,30 +262,32 @@ export const analyzeProposalThemes = inngest.createFunction(
         });
       });
 
-      await step.run('notify-analysis-failed', () =>
-        notifyAnalysisChanged(analysisId),
-      );
-
       return { analysisId, status: 'failed' as const };
     };
 
     /**
-     * The three steps, in order, stopping at the first that reports a failure.
+     * The steps, in order, stopping at the first that reports a failure.
      *
      * Its own closure so each guard reads as one line of a sequence rather than
      * another branch in the handler, and so the handler below is left saying the
      * only thing it decides: record what came back, or report why nothing did.
      */
-    const runAnalysisSteps = async () => {
-      await step.run('notify-analysis-processing', () =>
-        notifyAnalysisChanged(analysisId),
+    const runAnalysisSteps = async (): Promise<
+      PassFailure | ({ ok: true } & CompletedAnalysis)
+    > => {
+      await step.run('update-status-processing', () =>
+        recordAndNotify(identity, { status: 'processing' }),
       );
 
-      // Three steps, not two. The corpus read is not the model call, and giving
-      // it its own step means Inngest names whichever one is slow — and neither
-      // has to finish inside the other's share of one invocation's budget.
+      // Its own step. The corpus read is not the model call, and giving it its
+      // own step means Inngest names whichever one is slow — and neither has to
+      // finish inside the other's share of one invocation's budget.
       const corpus = await step.run('read-corpus', () =>
-        readCorpusForAnalysis({ processInstanceId, userId, scope }),
+        readCorpusForAnalysis({
+          processInstanceId,
+          reader: { userId },
+          scope,
+        }),
       );
 
       // A reported failure, not a thrown one: this is the corpus telling us
@@ -253,21 +296,45 @@ export const analyzeProposalThemes = inngest.createFunction(
         return corpus;
       }
 
-      const { proposals, total } = corpus;
+      const { proposals, total, fingerprint } = corpus;
 
-      const analysed = await step.run('analyze-themes', () =>
-        runThemesPass({ proposals }),
+      // Before the model, not instead of the read: the read is what produces
+      // the digest, and it is also the run-time access check for the `process`
+      // scope. A hit here is the whole reason the read is cheap to repeat.
+      const cached = await step.run('read-cached-result', () =>
+        readCachedThemeAnalysisResult({ processInstanceId, fingerprint }),
       );
 
+      if (cached) {
+        return {
+          ok: true as const,
+          result: cached,
+          proposals,
+          total,
+          fingerprint,
+          reused: true,
+        };
+      }
+
+      // Both at once. Neither pass reads the other's output — the common-ground
+      // pass grounds against the corpus, not against the themes — so there was
+      // never a reason for the facilitator to wait for one before the other
+      // started. Inngest runs steps awaited together as parallel steps, each in
+      // its own invocation, so the wait here is the slower of the two rather
+      // than the sum, and each keeps its own timeout and its own line in the
+      // run.
+      const [analysed, habermas] = await Promise.all([
+        step.run('analyze-themes', () => runThemesPass({ proposals })),
+        step.run('find-common-ground', () =>
+          runCommonGroundPass({ proposals }),
+        ),
+      ]);
+
+      // The first failure, when both report one. They are the same kind of
+      // failure over the same corpus, and the record carries one code.
       if (!analysed.ok) {
         return analysed;
       }
-
-      const { themes } = analysed;
-
-      const habermas = await step.run('find-common-ground', () =>
-        runCommonGroundPass({ themes, proposals }),
-      );
 
       if (!habermas.ok) {
         return habermas;
@@ -275,21 +342,17 @@ export const analyzeProposalThemes = inngest.createFunction(
 
       return {
         ok: true as const,
-        themes,
-        habermas: habermas.analysis,
+        result: { themes: analysed.themes, ...habermas.analysis },
         proposals,
         total,
+        fingerprint,
+        reused: false,
       };
     };
 
     // Assigned inside the try, written outside it. See the comment on the
     // completed write below for why the two are separated.
-    let completed: {
-      themes: ThemeAnalysisTheme[];
-      habermas: CommonGroundAnalysis;
-      proposals: CorpusProposal[];
-      total: number;
-    };
+    let completed: CompletedAnalysis;
 
     try {
       const outcome = await runAnalysisSteps();
@@ -300,11 +363,11 @@ export const analyzeProposalThemes = inngest.createFunction(
 
       completed = outcome;
     } catch (error) {
-      // Only genuine faults reach here — the two passes report their own
-      // failures above. `error` has crossed a step boundary, so it is a
-      // `StepError` rebuilt from `name`/`message`/`stack`: the class is gone and
-      // nothing but the message survives. That is why the passes classify
-      // themselves rather than throwing something this could inspect.
+      // Only genuine faults reach here — the passes report their own failures
+      // above. `error` has crossed a step boundary, so it is a `StepError`
+      // rebuilt from `name`/`message`/`stack`: the class is gone and nothing
+      // but the message survives. That is why the passes classify themselves
+      // rather than throwing something this could inspect.
       await step.run('update-status-failed', async () => {
         // See the log in `reportFailure`. Here it matters more: this is the one
         // record of a fault nobody classified, and `messageOf` is all that
@@ -316,7 +379,7 @@ export const analyzeProposalThemes = inngest.createFunction(
           error,
         });
 
-        await recordAnalysis(identity, {
+        await recordAndNotify(identity, {
           status: 'failed',
           errorCode: 'unknown',
           errorMessage: messageOf(error),
@@ -324,32 +387,65 @@ export const analyzeProposalThemes = inngest.createFunction(
         });
       });
 
-      await step.run('notify-analysis-failed', () =>
-        notifyAnalysisChanged(analysisId),
-      );
-
       throw error;
     }
 
-    // Outside the try, both of them. A step that fails after the analysis is
-    // finished must not reach the failure handler, because that handler writes a
-    // whole record with no `result` — it would overwrite a completed two-model
-    // analysis with "failed" over a broadcast that did not send.
-    await step.run('update-status-completed', () =>
-      recordAnalysis(identity, {
+    // Outside the try. A step that fails after the analysis is finished must
+    // not reach the failure handler, because that handler writes a whole record
+    // with no `result` — it would overwrite a completed analysis with "failed".
+    await step.run('update-status-completed', async () => {
+      const completedAt = new Date().toISOString();
+
+      await recordAnalysis(identity, {
         status: 'completed',
-        result: { themes: completed.themes, ...completed.habermas },
+        result: completed.result,
         // Written in the same update as the result, so a reader that sees a
         // completed analysis can always say how much of the phase it covers.
         analyzedCount: completed.proposals.length,
         total: completed.total,
-        completedAt: new Date().toISOString(),
-      }),
-    );
+        completedAt,
+      });
 
-    await step.run('notify-analysis-finished', () =>
-      notifyAnalysisChanged(analysisId),
-    );
+      // After the record and before the broadcast, so the next request for
+      // this corpus finds it. Best effort — see `storeCachedThemeAnalysisResult`
+      // — and skipped for a result that was read from there a moment ago.
+      if (!completed.reused) {
+        await storeCachedThemeAnalysisResult(
+          { processInstanceId, fingerprint: completed.fingerprint },
+          completed.result,
+        );
+      }
+
+      // A manual run is also the newest analysis of this scope, so it becomes
+      // what "View themes" opens for every other admin — the same snapshot the
+      // scheduled refresh writes. Best effort for the same reason as the line
+      // above.
+      await storeLatestThemeAnalysis({
+        status: 'ready',
+        processInstanceId,
+        scope,
+        result: completed.result,
+        analyzedCount: completed.proposals.length,
+        total: completed.total,
+        fingerprint: completed.fingerprint,
+        completedAt,
+      });
+
+      await notifyAnalysisChanged(analysisId);
+      await realtime.publish(
+        Channels.proposalThemeAnalysisLatest(processInstanceId, scope),
+        { mutationId: crypto.randomUUID() },
+      );
+    });
+
+    logger.info('Theme analysis completed', {
+      analysisId,
+      processInstanceId,
+      scope,
+      reused: completed.reused,
+      analyzedCount: completed.proposals.length,
+      total: completed.total,
+    });
 
     return { analysisId, status: 'completed' as const };
   },

@@ -10,6 +10,12 @@ export interface CorpusProposal {
   index: number;
   id: string;
   /**
+   * The proposal's profile id — the handle its page is addressed by, and what
+   * the merge flow loads it through. Null for a proposal with no profile, which
+   * the dialog then names without linking.
+   */
+  profileId: string | null;
+  /**
    * The proposal's title, or `''` when it has none. Empty rather than a
    * placeholder, because this string is stored and rendered to a facilitator in
    * their own locale — {@link renderCorpusForPrompt} substitutes an English
@@ -64,12 +70,13 @@ export const assertCorpusHasProposals = (
  * @param indexes - One-based positions from a parsed model reply.
  * @param corpus - The proposals the model was shown.
  * @returns The named proposals, in the order the model gave them, carrying the
- *   titles the analysis was built from.
+ *   titles the analysis was built from and the profile ids the dialog links
+ *   and merges through.
  */
 export const resolveCorpusIndexes = (
   indexes: number[],
   corpus: CorpusProposal[],
-): Array<{ id: string; title: string }> => {
+): Array<{ id: string; title: string; profileId: string | null }> => {
   const seen = new Set<number>();
 
   return indexes.flatMap((index) => {
@@ -87,7 +94,9 @@ export const resolveCorpusIndexes = (
       return [];
     }
 
-    return [{ id: proposal.id, title: proposal.title }];
+    return [
+      { id: proposal.id, title: proposal.title, profileId: proposal.profileId },
+    ];
   });
 };
 

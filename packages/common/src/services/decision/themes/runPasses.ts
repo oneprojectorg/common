@@ -4,12 +4,15 @@ import { assertUserByAuthId } from '../../assert';
 import type {
   ThemeAnalysisErrorCode,
   ThemeAnalysisScope,
-  ThemeAnalysisTheme,
 } from '../schemas/themeAnalysis';
 import { ThemeAnalysisFailure } from './ThemeAnalysisFailure';
 import { analyzeThemes } from './analyzeThemes';
-import { collectProposalCorpus } from './collectProposalCorpus';
+import {
+  type CorpusReader,
+  collectProposalCorpus,
+} from './collectProposalCorpus';
 import { THEME_ANALYSIS_MIN_PROPOSALS } from './constants';
+import { fingerprintCorpus } from './corpusFingerprint';
 import type { CorpusProposal } from './corpusGrounding';
 import { findCommonGround } from './findCommonGround';
 
@@ -46,22 +49,24 @@ export type PassFailure = {
  */
 export const readCorpusForAnalysis = async ({
   processInstanceId,
-  userId,
+  reader,
   scope,
 }: {
   processInstanceId: string;
-  userId: string;
+  reader: CorpusReader;
   scope: ThemeAnalysisScope;
 }) => {
   // Confirm the requester still exists, then hand the corpus read an
   // auth-shaped user. Every identity path it reaches reads `user.id` as an auth
-  // user id, not a database key.
-  await assertUserByAuthId(userId);
+  // user id, not a database key. A system reader has no requester to confirm.
+  if ('userId' in reader) {
+    await assertUserByAuthId(reader.userId);
+  }
 
   const readStartedAt = Date.now();
   const corpus = await collectProposalCorpus({
     processInstanceId,
-    userId,
+    reader,
     scope,
   });
 
@@ -108,6 +113,9 @@ export const readCorpusForAnalysis = async ({
     ok: true as const,
     proposals: corpus.proposals,
     total: corpus.total,
+    // Computed here, over the corpus as read, so the caller can ask whether
+    // this exact text has been analysed before without a second read.
+    fingerprint: fingerprintCorpus(corpus.proposals),
   };
 };
 
@@ -115,9 +123,10 @@ export const readCorpusForAnalysis = async ({
  * Runs the themes pass over a corpus already read.
  *
  * Takes the corpus rather than reading it, so the caller can put the read in its
- * own step — and so the common-ground pass is guaranteed the same list. The
- * indexes the themes pass grounds against are positions in it, and a re-read
- * that returned a different set would silently renumber them.
+ * own step — and so the common-ground pass, running beside this one, is
+ * guaranteed the same list. The indexes each pass grounds against are positions
+ * in it, and a re-read that returned a different set would silently renumber
+ * them.
  */
 export const runThemesPass = async ({
   proposals,
@@ -131,18 +140,21 @@ export const runThemesPass = async ({
   }
 };
 
-/** Runs the common-ground pass over the corpus the themes pass read. */
+/**
+ * Runs the common-ground pass over the same corpus the themes pass reads.
+ *
+ * Independent of that pass's output, which is what lets the caller run the two
+ * at once. See {@link findCommonGround}.
+ */
 export const runCommonGroundPass = async ({
-  themes,
   proposals,
 }: {
-  themes: ThemeAnalysisTheme[];
   proposals: CorpusProposal[];
 }) => {
   try {
     return {
       ok: true as const,
-      analysis: await findCommonGround({ themes, corpus: proposals }),
+      analysis: await findCommonGround({ corpus: proposals }),
     };
   } catch (error) {
     return toPassFailure(error);

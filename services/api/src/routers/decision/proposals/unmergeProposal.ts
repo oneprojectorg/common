@@ -1,5 +1,10 @@
-import { Channels, unmergeProposal } from '@op/common';
+import {
+  Channels,
+  notifyProposalCorpusChanged,
+  unmergeProposal,
+} from '@op/common';
 import { unmergeProposalInputSchema } from '@op/common/client';
+import { waitUntil } from '@vercel/functions';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
@@ -25,5 +30,8 @@ export const unmergeProposalRouter = router({
           ? [Channels.decisionProposal(processInstanceId, targetProposalId)]
           : []),
       ]);
+
+      // The source rejoins the corpus the theme analysis reads.
+      waitUntil(notifyProposalCorpusChanged({ processInstanceId }));
     }),
 });

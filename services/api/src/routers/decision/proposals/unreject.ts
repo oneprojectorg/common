@@ -1,5 +1,10 @@
-import { Channels, unrejectProposal } from '@op/common';
+import {
+  Channels,
+  notifyProposalCorpusChanged,
+  unrejectProposal,
+} from '@op/common';
 import { unrejectProposalInputSchema } from '@op/common/client';
+import { waitUntil } from '@vercel/functions';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
@@ -22,5 +27,8 @@ export const unrejectProposalRouter = router({
         Channels.decisionProposals(processInstanceId),
         Channels.decisionProposal(processInstanceId, proposalId),
       ]);
+
+      // It rejoins the corpus the theme analysis reads.
+      waitUntil(notifyProposalCorpusChanged({ processInstanceId }));
     }),
 });

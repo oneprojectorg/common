@@ -1,4 +1,8 @@
-import { Channels, mergeProposals } from '@op/common';
+import {
+  Channels,
+  mergeProposals,
+  notifyProposalCorpusChanged,
+} from '@op/common';
 import { mergeProposalsInputSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
@@ -42,5 +46,8 @@ export const mergeProposalsRouter = router({
           data: { relationshipId, actorAuthUserId: ctx.user.id },
         }),
       );
+
+      // The source leaves the corpus the theme analysis reads.
+      waitUntil(notifyProposalCorpusChanged({ processInstanceId }));
     }),
 });

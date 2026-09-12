@@ -98,11 +98,13 @@ export { THEME_ANALYSIS_MIN_PROPOSALS } from './services/decision/themes/constan
 // server-side — those are prompt contracts, not something a component should be
 // able to reach for.
 export type {
+  LatestThemeAnalysisResponse,
   ThemeAnalysisErrorCode,
   ThemeAnalysisScope,
   ThemeAnalysisOutlier,
   ThemeAnalysisResponse,
   ThemeAnalysisResult,
+  ThemeAnalysisSnapshot,
 } from './services/decision/schemas/themeAnalysis';
 export {
   MERGE_NOTE_MAX_LENGTH,

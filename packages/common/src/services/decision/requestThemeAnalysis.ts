@@ -90,7 +90,7 @@ export const requestThemeAnalysis = async ({
   // that happens to be empty.
   const { total } = await readProposalsInScope({
     processInstanceId,
-    userId: user.id,
+    reader: { userId: user.id },
     scope,
     limit: 1,
   });

@@ -33,8 +33,20 @@ import {
 import { findCommonGround } from './findCommonGround';
 
 const corpus = [
-  { index: 1, id: 'proposal-a', title: 'Bike lanes', text: 'Build bike lanes' },
-  { index: 2, id: 'proposal-b', title: 'Bus lanes', text: 'Build bus lanes' },
+  {
+    index: 1,
+    id: 'proposal-a',
+    profileId: 'profile-a',
+    title: 'Bike lanes',
+    text: 'Build bike lanes',
+  },
+  {
+    index: 2,
+    id: 'proposal-b',
+    profileId: 'profile-b',
+    title: 'Bus lanes',
+    text: 'Build bus lanes',
+  },
 ];
 
 const replyWith = (text: string) => generate.mockResolvedValue({ text });
@@ -364,8 +376,8 @@ describe('analyzeThemes', () => {
         title: 'Street space',
         summary: 'Both want road space reallocated.',
         proposals: [
-          { id: 'proposal-a', title: 'Bike lanes' },
-          { id: 'proposal-b', title: 'Bus lanes' },
+          { id: 'proposal-a', title: 'Bike lanes', profileId: 'profile-a' },
+          { id: 'proposal-b', title: 'Bus lanes', profileId: 'profile-b' },
         ],
       },
     ]);
@@ -459,10 +471,6 @@ describe('analyzeThemes', () => {
 });
 
 describe('findCommonGround', () => {
-  const themes = [
-    { title: 'Street space', summary: 'Road space.', proposals: [] },
-  ];
-
   const habermasReply = {
     commonGround: [
       { statement: 'Road space should be reallocated.', proposalIndexes: [1] },
@@ -482,16 +490,22 @@ describe('findCommonGround', () => {
   it('resolves common ground, outliers, and suggestions to real proposals', async () => {
     replyWithJson(habermasReply);
 
-    await expect(findCommonGround({ themes, corpus })).resolves.toEqual({
+    await expect(findCommonGround({ corpus })).resolves.toEqual({
       commonGround: [
         {
           statement: 'Road space should be reallocated.',
-          proposals: [{ id: 'proposal-a', title: 'Bike lanes' }],
+          proposals: [
+            { id: 'proposal-a', title: 'Bike lanes', profileId: 'profile-a' },
+          ],
         },
       ],
       outliers: [
         {
-          proposal: { id: 'proposal-b', title: 'Bus lanes' },
+          proposal: {
+            id: 'proposal-b',
+            title: 'Bus lanes',
+            profileId: 'profile-b',
+          },
           impact: 'high-impact',
           reason: 'Only one on buses.',
         },
@@ -501,8 +515,8 @@ describe('findCommonGround', () => {
           kind: 'merge',
           rationale: 'Both are about lanes.',
           proposals: [
-            { id: 'proposal-a', title: 'Bike lanes' },
-            { id: 'proposal-b', title: 'Bus lanes' },
+            { id: 'proposal-a', title: 'Bike lanes', profileId: 'profile-a' },
+            { id: 'proposal-b', title: 'Bus lanes', profileId: 'profile-b' },
           ],
         },
       ],
@@ -519,7 +533,7 @@ describe('findCommonGround', () => {
       ],
     });
 
-    const { outliers } = await findCommonGround({ themes, corpus });
+    const { outliers } = await findCommonGround({ corpus });
 
     expect(outliers).toEqual([]);
   });
@@ -533,7 +547,7 @@ describe('findCommonGround', () => {
       ],
     });
 
-    const { suggestions } = await findCommonGround({ themes, corpus });
+    const { suggestions } = await findCommonGround({ corpus });
 
     expect(suggestions).toEqual([]);
   });
@@ -546,32 +560,28 @@ describe('findCommonGround', () => {
       ],
     });
 
-    await expect(findCommonGround({ themes, corpus })).rejects.toBeInstanceOf(
+    await expect(findCommonGround({ corpus })).rejects.toBeInstanceOf(
       CommonError,
     );
   });
 
-  it('carries the first pass into the prompt so it can reason in those terms', async () => {
+  // Independent of the themes pass on purpose: a prompt that needed the first
+  // pass's output would put a whole model call between the facilitator and
+  // this answer. The corpus is the only thing it is shown.
+  it('sends the fenced corpus and nothing from another pass', async () => {
     replyWithJson({ commonGround: [], outliers: [], suggestions: [] });
 
-    await findCommonGround({ themes, corpus });
+    await findCommonGround({ corpus });
 
-    expect(promptSent()).toContain('Street space: Road space.');
+    expect(promptSent()).toContain('<proposal index="1">');
+    expect(promptSent()).not.toContain('A first pass');
   });
 
   it('refuses an empty corpus without asking the model', async () => {
-    await expect(
-      findCommonGround({ themes, corpus: [] }),
-    ).rejects.toMatchObject({ code: 'not-enough-text' });
+    await expect(findCommonGround({ corpus: [] })).rejects.toMatchObject({
+      code: 'not-enough-text',
+    });
 
     expect(generate).not.toHaveBeenCalled();
-  });
-
-  it('omits the theme preamble when the first pass found nothing', async () => {
-    replyWithJson({ commonGround: [], outliers: [], suggestions: [] });
-
-    await findCommonGround({ themes: [], corpus });
-
-    expect(promptSent()).not.toContain('A first pass');
   });
 });

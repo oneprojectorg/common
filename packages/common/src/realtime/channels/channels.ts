@@ -117,6 +117,15 @@ export const Channels = {
    */
   proposalThemeAnalysis: (analysisId: string) =>
     `proposalThemeAnalysis:${analysisId}` as const,
+  /**
+   * The latest stored analysis of an instance and scope. Published when a run
+   * — scheduled or manual — writes a new snapshot, so an open "View themes"
+   * button refetches without polling.
+   */
+  proposalThemeAnalysisLatest: (
+    processInstanceId: string,
+    scope: 'phase' | 'process',
+  ) => `proposalThemeAnalysisLatest:${processInstanceId}:${scope}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -159,6 +168,9 @@ export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
 export type ProposalThemeAnalysisChannel = ReturnType<
   typeof Channels.proposalThemeAnalysis
 >;
+export type ProposalThemeAnalysisLatestChannel = ReturnType<
+  typeof Channels.proposalThemeAnalysisLatest
+>;
 
 /**
  * Union of all valid channel types
@@ -181,4 +193,5 @@ export type ChannelName =
   | ProfileCollectionsChannel
   | ProfileMembersChannel
   | ProposalExportChannel
-  | ProposalThemeAnalysisChannel;
+  | ProposalThemeAnalysisChannel
+  | ProposalThemeAnalysisLatestChannel;

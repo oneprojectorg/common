@@ -31,6 +31,7 @@ const corpusOf = (count: number, total = count, read = count) => ({
   proposals: Array.from({ length: count }, (_unused, position) => ({
     index: position + 1,
     id: `proposal-${position + 1}`,
+    profileId: `profile-${position + 1}`,
     title: `Proposal ${position + 1}`,
     text: 'Body',
   })),
@@ -47,7 +48,7 @@ const habermas = { commonGround: [], outliers: [], suggestions: [] };
 const readCorpus = (scope: 'phase' | 'process' = 'phase') =>
   readCorpusForAnalysis({
     processInstanceId: INSTANCE_ID,
-    userId: AUTH_USER_ID,
+    reader: { userId: AUTH_USER_ID },
     scope,
   });
 
@@ -67,6 +68,23 @@ describe('readCorpusForAnalysis', () => {
     expect(vi.mocked(assertUserByAuthId)).toHaveBeenCalledWith(AUTH_USER_ID);
   });
 
+  // The scheduled refresh has nobody to confirm. It says so, and the read goes
+  // straight to the corpus as the system.
+  it('skips the requester check for a system reader', async () => {
+    await readCorpusForAnalysis({
+      processInstanceId: INSTANCE_ID,
+      reader: { system: true },
+      scope: 'phase',
+    });
+
+    expect(vi.mocked(assertUserByAuthId)).not.toHaveBeenCalled();
+    expect(vi.mocked(collectProposalCorpus)).toHaveBeenCalledWith({
+      processInstanceId: INSTANCE_ID,
+      reader: { system: true },
+      scope: 'phase',
+    });
+  });
+
   // The scope decides which proposals the run is about, so it has to survive the
   // trip from the button rather than being re-derived here.
   it('reads the scope it was asked for', async () => {
@@ -74,7 +92,7 @@ describe('readCorpusForAnalysis', () => {
 
     expect(vi.mocked(collectProposalCorpus)).toHaveBeenCalledWith({
       processInstanceId: INSTANCE_ID,
-      userId: AUTH_USER_ID,
+      reader: { userId: AUTH_USER_ID },
       scope: 'process',
     });
   });
@@ -86,7 +104,19 @@ describe('readCorpusForAnalysis', () => {
       ok: true,
       proposals: corpusOf(4).proposals,
       total: 4,
+      fingerprint: expect.stringMatching(/^[0-9a-f]{64}$/),
     });
+  });
+
+  // The fingerprint is what the result cache is keyed by, so it has to be a
+  // function of the corpus as read: the same text gives the same digest.
+  it('fingerprints the corpus it read', async () => {
+    const first = await readCorpus();
+    const second = await readCorpus();
+
+    expect(first.ok && second.ok && first.fingerprint).toBe(
+      second.ok ? second.fingerprint : undefined,
+    );
   });
 
   // Reported, not thrown. An exception thrown inside an Inngest step reaches the
@@ -163,11 +193,20 @@ describe('runThemesPass', () => {
 });
 
 describe('runCommonGroundPass', () => {
-  const run = () =>
-    runCommonGroundPass({ themes, proposals: corpusOf(4).proposals });
+  const run = () => runCommonGroundPass({ proposals: corpusOf(4).proposals });
 
   it('returns the analysis it produced', async () => {
     await expect(run()).resolves.toEqual({ ok: true, analysis: habermas });
+  });
+
+  // Independent of the themes pass, which is what lets the workflow run the
+  // two at once: the corpus is all it is given and all it asks for.
+  it('reads the corpus alone, not the themes pass', async () => {
+    await run();
+
+    expect(vi.mocked(findCommonGround)).toHaveBeenCalledWith({
+      corpus: corpusOf(4).proposals,
+    });
   });
 
   it('reports an unusable model reply with its code', async () => {

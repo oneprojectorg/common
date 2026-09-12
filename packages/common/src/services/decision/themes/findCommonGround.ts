@@ -2,7 +2,6 @@ import type {
   ThemeAnalysisCommonGround,
   ThemeAnalysisOutlier,
   ThemeAnalysisSuggestion,
-  ThemeAnalysisTheme,
 } from '../schemas/themeAnalysis';
 import { commonGroundPassReplySchema } from '../schemas/themeAnalysis';
 import { askForJson } from './askForJson';
@@ -34,16 +33,6 @@ Answer with an object holding:
 - "outliers": array of { "proposalIndex", "impact", "reason" }, impact being "high-impact" or "low-impact"
 - "suggestions": array of { "kind", "rationale", "proposalIndexes" }, kind being "merge" or "modify"`;
 
-/**
- * Renders the themes pass's output as context for this pass.
- *
- * Only titles and summaries. The proposal lists are omitted because this pass is
- * given the corpus itself and does its own grounding; passing the first pass's
- * index lists too would invite it to copy them through rather than re-read.
- */
-const renderThemes = (themes: ThemeAnalysisTheme[]): string =>
-  themes.map(({ title, summary }) => `- ${title}: ${summary}`).join('\n');
-
 export interface CommonGroundAnalysis {
   commonGround: ThemeAnalysisCommonGround[];
   outliers: ThemeAnalysisOutlier[];
@@ -52,7 +41,7 @@ export interface CommonGroundAnalysis {
 
 /**
  * Where a corpus of proposals agrees, who sits outside that agreement, and what
- * to do about it — the second of the two passes.
+ * to do about it — one of the two passes, run beside the other.
  *
  * This is the pass the task calls the Habermas machine, after the DeepMind
  * system that drafts a statement a group could collectively endorse. The shape
@@ -61,8 +50,13 @@ export interface CommonGroundAnalysis {
  * outlier split is what keeps it honest — a synthesis that reports only
  * agreement has quietly discarded the one proposal worth arguing about.
  *
- * Runs after {@link analyzeThemes} and is given its output, so it can reason
- * about the field in the vocabulary the corpus itself supplied.
+ * Runs beside {@link analyzeThemes} rather than after it, over the same corpus
+ * and nothing else. It used to be handed the first pass's themes as context,
+ * which made the two passes sequential and put a whole model call between the
+ * facilitator and the answer for the sake of a preamble the pass does not need:
+ * it is given the corpus itself and does its own reading, and what it is asked
+ * for — agreement, outliers, moves — is not phrased in themes. Independent, the
+ * two run concurrently and the wait is the longer of them rather than the sum.
  *
  * Every index is resolved against the corpus, so nothing here can name a
  * proposal the model invented. An outlier whose index does not resolve is
@@ -71,29 +65,22 @@ export interface CommonGroundAnalysis {
  * suggestion needs at least one proposal for the same reason — "merge these"
  * with nothing to merge is not advice.
  *
- * @param themes - What the first pass found.
- * @param corpus - The numbered proposals, the same set the first pass read.
+ * @param corpus - The numbered proposals, the same set the themes pass reads.
  * @returns Common ground, outliers, and suggestions, all grounded in the corpus.
  * @throws ThemeAnalysisFailure when the model's reply is unusable. See
  *   {@link askForJson}.
  */
 export const findCommonGround = async ({
-  themes,
   corpus,
 }: {
-  themes: ThemeAnalysisTheme[];
   corpus: CorpusProposal[];
 }): Promise<CommonGroundAnalysis> => {
   assertCorpusHasProposals(corpus, 'proposal-common-ground');
 
-  const themeContext = themes.length
-    ? `A first pass over these proposals reported these themes:\n\n${renderThemes(themes)}\n\n`
-    : '';
-
   const reply = await askForJson({
     name: 'proposal-common-ground',
     instructions: INSTRUCTIONS,
-    prompt: `${themeContext}Find the common ground across these ${corpus.length} proposals, the outliers, and what to suggest.\n\n${renderCorpusForPrompt(corpus)}`,
+    prompt: `Find the common ground across these ${corpus.length} proposals, the outliers, and what to suggest.\n\n${renderCorpusForPrompt(corpus)}`,
     schema: commonGroundPassReplySchema,
   });
 

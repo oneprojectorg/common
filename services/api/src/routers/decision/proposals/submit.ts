@@ -1,5 +1,9 @@
 import { invalidate } from '@op/cache';
-import { Channels, submitProposal } from '@op/common';
+import {
+  Channels,
+  notifyProposalCorpusChanged,
+  submitProposal,
+} from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
@@ -50,6 +54,15 @@ export const submitProposalRouter = router({
         inngest.send({
           name: Events.proposalSubmitted.name,
           data: { proposalId: proposal.id },
+        }),
+      );
+
+      // A submitted proposal joins the set the theme analysis reads. The
+      // refresh is debounced per instance, so a burst of submissions costs one
+      // run once the burst ends.
+      waitUntil(
+        notifyProposalCorpusChanged({
+          processInstanceId: proposal.processInstanceId,
         }),
       );
 

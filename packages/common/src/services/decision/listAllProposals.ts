@@ -68,7 +68,15 @@ export const listAllProposals = async ({
   input,
   user,
 }: {
-  input: AllProposalsFilter;
+  /**
+   * `skipAccessCheck` is for trusted server-side callers — the scheduled theme
+   * analysis — that run with no requester at all. It bypasses the instance
+   * access assertion and reads as an admin would, hidden and flagged
+   * proposals included, so a background read sees the same corpus a
+   * facilitator's read would. Deliberately absent from the zod input schema, so
+   * it cannot arrive over the wire; the same split `listProposals` makes.
+   */
+  input: AllProposalsFilter & { skipAccessCheck?: boolean };
   /**
    * Identity only — every path this reaches (`resolveAccessUserIds`,
    * `getCurrentProfileId`, `assertInstanceProfileAccess`) reads `id` and nothing
@@ -78,7 +86,12 @@ export const listAllProposals = async ({
    */
   user: AccessUser | undefined;
 }) => {
-  const { processInstanceId, status, categoryId } = input;
+  const {
+    processInstanceId,
+    status,
+    categoryId,
+    skipAccessCheck = false,
+  } = input;
   const limit = input.limit ?? PAGE_LIMIT.lg;
   const orderBy = input.orderBy ?? 'createdAt';
   const dir = input.dir ?? 'desc';
@@ -115,23 +128,23 @@ export const listAllProposals = async ({
   // `await` still rethrows.
   proposalTemplatePromise.catch(() => {});
 
-  const profileRoles = await assertInstanceProfileAccess({
-    user,
-    instance,
-    profilePermissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-    orgFallbackPermissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-  });
-
-  const isAdmin = checkPermission(
-    { decisions: permission.ADMIN },
-    profileRoles,
-  );
+  const isAdmin = skipAccessCheck
+    ? true
+    : checkPermission(
+        { decisions: permission.ADMIN },
+        await assertInstanceProfileAccess({
+          user,
+          instance,
+          profilePermissions: [
+            { decisions: permission.ADMIN },
+            { decisions: permission.READ },
+          ],
+          orgFallbackPermissions: [
+            { decisions: permission.ADMIN },
+            { decisions: permission.READ },
+          ],
+        }),
+      );
 
   // Ballots are private — a caller may only request their own.
   let votedProposalIds: string[] | undefined;

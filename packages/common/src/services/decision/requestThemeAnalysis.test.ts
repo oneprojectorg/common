@@ -132,7 +132,7 @@ describe('requestThemeAnalysis', () => {
 
     expect(vi.mocked(readProposalsInScope)).toHaveBeenCalledWith({
       processInstanceId: INSTANCE_ID,
-      userId: AUTH_USER_ID,
+      reader: { userId: AUTH_USER_ID },
       scope: 'process',
       limit: 1,
     });
@@ -252,7 +252,7 @@ describe('requestThemeAnalysis', () => {
 
     expect(vi.mocked(readProposalsInScope)).toHaveBeenCalledWith({
       processInstanceId: INSTANCE_ID,
-      userId: AUTH_USER_ID,
+      reader: { userId: AUTH_USER_ID },
       scope: 'phase',
       limit: 1,
     });

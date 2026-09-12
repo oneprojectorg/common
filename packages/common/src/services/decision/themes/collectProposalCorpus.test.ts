@@ -12,7 +12,10 @@ vi.mock('../listAllProposals', () => ({
 
 import { listAllProposals } from '../listAllProposals';
 import { listProposals } from '../listProposals';
-import { collectProposalCorpus } from './collectProposalCorpus';
+import {
+  type CorpusReader,
+  collectProposalCorpus,
+} from './collectProposalCorpus';
 import {
   THEME_ANALYSIS_MAX_PROPOSALS,
   THEME_ANALYSIS_PROPOSAL_CHARS,
@@ -23,13 +26,15 @@ const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 
 const proposalRow = ({
   id,
+  profileId = `profile-${id}`,
   title,
   previewText,
 }: {
   id: string;
+  profileId?: string | null;
   title?: string;
   previewText?: string;
-}) => ({ id, proposalData: { title }, previewText });
+}) => ({ id, profileId, proposalData: { title }, previewText });
 
 const answerWith = ({
   proposals,
@@ -44,10 +49,13 @@ const answerWith = ({
   } as never);
 };
 
-const collect = (scope: 'phase' | 'process' = 'phase') =>
+const collect = (
+  scope: 'phase' | 'process' = 'phase',
+  reader: CorpusReader = { userId: AUTH_USER_ID },
+) =>
   collectProposalCorpus({
     processInstanceId: INSTANCE_ID,
-    userId: AUTH_USER_ID,
+    reader,
     scope,
   });
 
@@ -100,12 +108,42 @@ describe('collectProposalCorpus', () => {
       input: {
         processInstanceId: INSTANCE_ID,
         limit: THEME_ANALYSIS_MAX_PROPOSALS,
+        // A facilitator's read keeps the instance access check: it is the
+        // run-time re-check of a role that may have lapsed since the press.
+        skipAccessCheck: false,
       },
       user: { id: AUTH_USER_ID },
     });
     expect({ analyzed: proposals.length, total }).toEqual({
       analyzed: 1,
       total: 40,
+    });
+  });
+
+  // The scheduled refresh has no requester. It has to say so explicitly — a
+  // system reader, not a missing user — and both readers then take every
+  // proposal in scope the way an admin's read would.
+  it('reads without a requester, bypassing the access check, for a system reader', async () => {
+    answerWith({ proposals: [] });
+
+    await collect('phase', { system: true });
+    await collect('process', { system: true });
+
+    expect(vi.mocked(listProposals).mock.calls[0]?.[0]).toEqual({
+      input: {
+        processInstanceId: INSTANCE_ID,
+        limit: THEME_ANALYSIS_MAX_PROPOSALS,
+        skipAccessCheck: true,
+      },
+      user: undefined,
+    });
+    expect(vi.mocked(listAllProposals).mock.calls[0]?.[0]).toEqual({
+      input: {
+        processInstanceId: INSTANCE_ID,
+        limit: THEME_ANALYSIS_MAX_PROPOSALS,
+        skipAccessCheck: true,
+      },
+      user: undefined,
     });
   });
 
@@ -120,9 +158,41 @@ describe('collectProposalCorpus', () => {
     const { proposals } = await collect();
 
     expect(proposals).toEqual([
-      { index: 1, id: 'a', title: 'Bike lanes', text: 'One' },
-      { index: 2, id: 'b', title: 'Bus lanes', text: 'Two' },
+      {
+        index: 1,
+        id: 'a',
+        profileId: 'profile-a',
+        title: 'Bike lanes',
+        text: 'One',
+      },
+      {
+        index: 2,
+        id: 'b',
+        profileId: 'profile-b',
+        title: 'Bus lanes',
+        text: 'Two',
+      },
     ]);
+  });
+
+  // The dialog links each reference through its profile id, and a proposal
+  // without one is named rather than linked — so null has to travel through
+  // as null, not be dropped or defaulted.
+  it('carries a missing profile id through as null', async () => {
+    answerWith({
+      proposals: [
+        proposalRow({
+          id: 'a',
+          profileId: null,
+          title: 'Orphan',
+          previewText: 'Body',
+        }),
+      ],
+    });
+
+    const { proposals } = await collect();
+
+    expect(proposals[0]?.profileId).toBeNull();
   });
 
   // A title alone gives the model nothing to find a theme in, and it would still

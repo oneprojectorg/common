@@ -8,6 +8,7 @@ import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
+import { getLatestThemeAnalysisRouter } from './getLatestThemeAnalysis';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
 import { getThemeAnalysisStatusRouter } from './getThemeAnalysisStatus';
 import { listProposalsRouter } from './list';
@@ -47,4 +48,5 @@ export const proposalsRouter = mergeRouters(
   getExportStatusRouter,
   analyzeProposalThemesRouter,
   getThemeAnalysisStatusRouter,
+  getLatestThemeAnalysisRouter,
 );

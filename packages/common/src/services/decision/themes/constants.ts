@@ -41,6 +41,67 @@ export const themeAnalysisCacheKey = ({
 }) => `themeAnalysis:${processInstanceId}:${scope}:${analysisId}`;
 
 /**
+ * The cache key for a finished result, by what it was computed over.
+ *
+ * Beside the per-run records rather than inside them. A run's record is owned
+ * by the facilitator who asked and answers "how is my run going"; this answers
+ * "has anyone already analysed exactly this corpus", which is a question about
+ * the instance rather than about a run. The workflow reads it after the corpus
+ * read and, on a hit, writes the run's record as completed from it — the run
+ * still exists and is still the requester's, it just cost a corpus read instead
+ * of two model passes.
+ *
+ * Not namespaced by scope, unlike the run record. A result is a function of the
+ * proposals the model read and nothing else — the digest already names them —
+ * so the same corpus read under two scopes is the same analysis, and keying it
+ * twice would compute it twice. That happens in practice: an instance in its
+ * first phase reads the same proposals whether asked for the phase or the whole
+ * process, and the scheduled refresh asks for both.
+ *
+ * The `result:` segment keeps it out of the run namespace: a run's id is a UUID,
+ * which a hex digest is not, but a prefix is a clearer boundary than a format.
+ *
+ * Shares the record TTL. A result that has outlived every record that could
+ * have pointed at it is one that would be recomputed identically anyway.
+ */
+export const themeAnalysisResultCacheKey = ({
+  processInstanceId,
+  fingerprint,
+}: {
+  processInstanceId: string;
+  fingerprint: string;
+}) => `themeAnalysis:${processInstanceId}:result:${fingerprint}`;
+
+/**
+ * The lifetime of the latest snapshot of a scope.
+ *
+ * Longer than a run's record by design. A record is one facilitator's wait and
+ * is over within the hour; the snapshot is what the button opens for everyone
+ * who holds the role, and it is refreshed only when the proposals change. A
+ * decision that goes quiet for a month has to run one analysis by hand before
+ * the button opens instantly again, which is the trade for not storing these
+ * forever in a cache that is the only copy.
+ */
+export const THEME_ANALYSIS_SNAPSHOT_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+
+/**
+ * The cache key for the latest finished analysis of a scope.
+ *
+ * One per instance and scope, overwritten by whichever run finishes last. Under
+ * the same namespace as the run records so the whole feature's state can be
+ * found by one prefix, and with a fixed final segment — `latest` is not a UUID
+ * and not a digest, so it cannot collide with either of the other two kinds of
+ * key under the prefix.
+ */
+export const themeAnalysisSnapshotCacheKey = ({
+  processInstanceId,
+  scope,
+}: {
+  processInstanceId: string;
+  scope: ThemeAnalysisScope;
+}) => `themeAnalysis:${processInstanceId}:${scope}:latest`;
+
+/**
  * The most proposals one analysis reads.
  *
  * This is a prompt budget, not a memory bound. Every proposal in the corpus is
@@ -88,17 +149,17 @@ export const THEME_ANALYSIS_MIN_PROPOSALS = 2;
  * is a reviewable diff rather than a deploy-time setting nobody can see from the
  * code.
  *
- * One constant for both passes so they cannot drift apart. The common-ground
- * pass reads the themes pass's output, and a synthesis assembled by two
- * different models reasoning over one corpus is harder to account for than a
- * worse one assembled by the same model twice.
+ * One constant for both passes so they cannot drift apart. The two run over
+ * one corpus and are shown together as one analysis, and a synthesis assembled
+ * by two different models reasoning over the same text is harder to account
+ * for than a worse one assembled by the same model twice.
  *
  * Flash rather than the full model. Both passes are extraction with a fixed
  * output schema — name the themes running through a corpus, then say which of
  * them the proposals agree on — rather than open reasoning, and thinking is
  * already switched off for them (see `THEME_ANALYSIS_THINKING_OFF`). The larger
  * model's advantage is in the part we are not using, and its cost is paid in the
- * part that hurts here: two sequential passes over a corpus of up to
+ * part that hurts here: two passes over a corpus of up to
  * `THEME_ANALYSIS_MAX_PROPOSALS` proposals, both inside one facilitator's wait.
  *
  * The endpoint is still `AI_BASE_URL`, so this has to name a model that endpoint
@@ -118,16 +179,16 @@ export const THEME_ANALYSIS_MODEL_ID = 'zai-org/GLM-5.3-Flash';
  * dead. Bounding the call converts that into a reported failure with a cause.
  *
  * Eight minutes per pass, two passes, each in its own step and so its own
- * invocation. Raised from five, which was picked before the passes had separate
- * steps and turned out to be tighter than the work: the common-ground pass —
- * which reasons over the corpus *and* the first pass's themes — reached it on a
- * real run and was cut off mid-answer. Each step now gets a whole invocation, so
- * the ceiling that matters is `maxDuration` on the workflows route (800s), and
- * eight minutes sits inside it with margin.
+ * invocation — and the two run at once, so the wait is the longer of them
+ * rather than the sum. Raised from five, which was picked before the passes had
+ * separate steps and turned out to be tighter than the work: the common-ground
+ * pass reached it on a real run and was cut off mid-answer. Each step now gets a
+ * whole invocation, so the ceiling that matters is `maxDuration` on the
+ * workflows route (800s), and eight minutes sits inside it with margin.
  *
  * The ordering is the constraint, not the number: pass timeout < the route's
- * `maxDuration`, and the read plus both passes < the client's wait. Moving this
- * means checking `THEME_ANALYSIS_WAIT_TIMEOUT_MS` in the app against it.
+ * `maxDuration`, and the read plus the slower pass < the client's wait. Moving
+ * this means checking `THEME_ANALYSIS_WAIT_TIMEOUT_MS` in the app against it.
  *
  * A pass that hits this reports rather than throws, so it does not retry: a
  * provider that has not answered in eight minutes will not answer in eight more,

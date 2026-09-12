@@ -1,21 +1,52 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
+import { trpc } from '@op/api/client';
 import type {
   ThemeAnalysisOutlier,
   ThemeAnalysisResult,
 } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { Badge } from '@op/sense/Badge';
+import { Button } from '@op/sense/Button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
 import { Header3 } from '@op/sense/Header';
-import { LuArrowRightLeft, LuPencilLine } from 'react-icons/lu';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemTitle,
+} from '@op/sense/Item';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
+import { useLocale } from 'next-intl';
+import { type ReactNode, useCallback, useState } from 'react';
+import { LuArrowRightLeft, LuMerge, LuPencilLine } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
+
+import { MergeProposalDialog } from './MergeProposalDialog';
+import { type ProposalRoute, proposalHref } from './proposalHrefs';
+
+/** One proposal as the analysis names it. */
+type AnalyzedProposal =
+  ThemeAnalysisResult['themes'][number]['proposals'][number];
+
+/**
+ * Where the analysed proposals live, for linking each reference to its page.
+ * The proposal's own profile id comes from the analysis; this is the rest of
+ * the route.
+ */
+export type ThemeAnalysisRoute = Omit<ProposalRoute, 'profileId'>;
 
 export interface ThemeAnalysisDialogProps {
   isOpen: boolean;
@@ -25,6 +56,26 @@ export interface ThemeAnalysisDialogProps {
   analyzedCount: number;
   /** Proposals the phase held when it ran. */
   total: number;
+  /**
+   * When the analysis finished, as an ISO string. Shown when given, so a reader
+   * of a stored analysis can tell how old it is; a run that just finished in
+   * front of them has no need of it.
+   */
+  completedAt?: string;
+  /**
+   * Controls rendered in the footer — the "Analyze again" action the button
+   * owns. A slot rather than a callback, because the run's state (its label,
+   * whether it can be pressed) lives with the button, not here.
+   */
+  actions?: ReactNode;
+  /** See {@link ThemeAnalysisRoute}. */
+  route: ThemeAnalysisRoute;
+  /**
+   * Whether the reader may merge proposals from here. The same gate as the
+   * card menu's Merge item — the flag and the admin role — decided by the
+   * caller, which already knows both.
+   */
+  canMerge: boolean;
 }
 
 /**
@@ -37,14 +88,22 @@ export interface ThemeAnalysisDialogProps {
  * Outliers say who is not in it. Suggestions are the only part that asks anyone
  * to do anything, so they come last, once the reader can judge them.
  *
- * Nothing here is a link. Every proposal named by the analysis is rendered as
- * its title, as text — the model wrote the prose around it, and prose from a
- * model that read public submissions is not something to hand a reader as an
- * affordance. Reading the proposal itself is one search away in the list behind
- * this dialog.
+ * Every proposal the analysis names is a link to that proposal, and each
+ * proposal in a merge suggestion carries the same Merge action the card menu
+ * offers — so a facilitator who agrees with a suggestion can act on it from
+ * here rather than go and find the card. The prose around the links is still
+ * the model's, and is rendered as text: the affordances are the proposals
+ * themselves, which are real, not the claims about them.
  *
- * Purely presentational and purely controlled. The run lives in
- * {@link ThemeAnalysisButton}, so closing this drops nothing.
+ * The merge dialog is rendered inside this one rather than through the list's
+ * provider. Base UI supports a dialog nested in another's tree — focus and
+ * dismissal stack correctly — where two unrelated modals open at once do not,
+ * and the reason the provider exists (a masonry grid remounting the card that
+ * owned the dialog) does not apply to a dialog owned by a button in the filter
+ * bar.
+ *
+ * Purely controlled. The run lives in {@link ThemeAnalysisButton}, so closing
+ * this drops nothing the server holds.
  */
 export const ThemeAnalysisDialog = ({
   isOpen,
@@ -52,8 +111,13 @@ export const ThemeAnalysisDialog = ({
   result,
   analyzedCount,
   total,
+  completedAt,
+  actions,
+  route,
+  canMerge,
 }: ThemeAnalysisDialogProps) => {
   const t = useTranslations();
+  const locale = useLocale();
 
   return (
     // Closing retires the run, and the client drops the id it would need to
@@ -78,6 +142,19 @@ export const ThemeAnalysisDialog = ({
                 total,
               },
             )}
+            {completedAt && (
+              <>
+                {' · '}
+                {t('Updated {date}', {
+                  date: formatDate(completedAt, locale, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  }),
+                })}
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -93,13 +170,22 @@ export const ThemeAnalysisDialog = ({
             </p>
           ) : (
             <>
-              <ThemesSection themes={result.themes} />
-              <CommonGroundSection commonGround={result.commonGround} />
-              <OutliersSection outliers={result.outliers} />
-              <SuggestionsSection suggestions={result.suggestions} />
+              <ThemesSection themes={result.themes} route={route} />
+              <CommonGroundSection
+                commonGround={result.commonGround}
+                route={route}
+              />
+              <OutliersSection outliers={result.outliers} route={route} />
+              <SuggestionsSection
+                suggestions={result.suggestions}
+                route={route}
+                canMerge={canMerge}
+              />
             </>
           )}
         </div>
+
+        {actions && <DialogFooter>{actions}</DialogFooter>}
       </DialogContent>
     </Dialog>
   );
@@ -147,20 +233,71 @@ const Section = ({
 };
 
 /**
- * The proposals a finding rests on, as plain titles.
+ * A proposal's title, linked to its page when it has one.
+ *
+ * The link is the card's link: the same `proposalHref` the grid, map and
+ * results list build, so a route change reaches here with them. A proposal
+ * with no profile — possible, the column is nullable — has no page to link to
+ * and is named as text instead, rather than as a link that goes nowhere.
+ *
+ * `dir="auto"` because the title is the participant's own text, in whatever
+ * script they wrote it, inside a dialog laid out for the facilitator's locale.
+ */
+const ProposalLink = ({
+  proposal,
+  route,
+  className,
+}: {
+  proposal: AnalyzedProposal;
+  route: ThemeAnalysisRoute;
+  className?: string;
+}) => {
+  const t = useTranslations();
+  const title = proposal.title || t('Untitled Proposal');
+
+  if (!proposal.profileId) {
+    return (
+      <span dir="auto" className={className}>
+        {title}
+      </span>
+    );
+  }
+
+  return (
+    <Button
+      variant="link"
+      size="inline"
+      dir="auto"
+      // `text-start` so a multi-line title wraps like the text around it rather
+      // than centring the way a button's label does; `whitespace-normal` for
+      // the same reason — a title can run to a sentence.
+      className={cn('text-start whitespace-normal', className)}
+      render={
+        <Link
+          href={proposalHref({ ...route, profileId: proposal.profileId })}
+        />
+      }
+    >
+      {title}
+    </Button>
+  );
+};
+
+/**
+ * The proposals a finding rests on, as linked titles.
  *
  * Rendered under every finding so a facilitator can check it against the text
- * rather than take it on the model's word. A finding whose proposals all failed
- * the grounding check renders nothing, which is the honest outcome: the claim
- * survived and its evidence did not.
+ * rather than take it on the model's word — and now can, in one click. A finding
+ * whose proposals all failed the grounding check renders nothing, which is the
+ * honest outcome: the claim survived and its evidence did not.
  */
 const ProposalRefs = ({
   proposals,
+  route,
 }: {
-  proposals: Array<{ id: string; title: string }>;
+  proposals: AnalyzedProposal[];
+  route: ThemeAnalysisRoute;
 }) => {
-  const t = useTranslations();
-
   if (proposals.length === 0) {
     return null;
   }
@@ -170,9 +307,9 @@ const ProposalRefs = ({
   // of them. `ps-` rather than `pl-` so the markers sit inside the text in RTL.
   return (
     <ul className="flex list-disc flex-col gap-0.5 ps-5">
-      {proposals.map(({ id, title }) => (
-        <li key={id} dir="auto" className="text-label text-muted-foreground">
-          {title || t('Untitled Proposal')}
+      {proposals.map((proposal) => (
+        <li key={proposal.id} className="text-label text-muted-foreground">
+          <ProposalLink proposal={proposal} route={route} />
         </li>
       ))}
     </ul>
@@ -181,8 +318,10 @@ const ProposalRefs = ({
 
 const ThemesSection = ({
   themes,
+  route,
 }: {
   themes: ThemeAnalysisResult['themes'];
+  route: ThemeAnalysisRoute;
 }) => {
   const t = useTranslations();
 
@@ -200,7 +339,7 @@ const ThemesSection = ({
             <p dir="auto" className="text-label text-muted-foreground">
               {summary}
             </p>
-            <ProposalRefs proposals={proposals} />
+            <ProposalRefs proposals={proposals} route={route} />
           </li>
         ))}
       </ul>
@@ -210,8 +349,10 @@ const ThemesSection = ({
 
 const CommonGroundSection = ({
   commonGround,
+  route,
 }: {
   commonGround: ThemeAnalysisResult['commonGround'];
+  route: ThemeAnalysisRoute;
 }) => {
   const t = useTranslations();
 
@@ -223,7 +364,7 @@ const CommonGroundSection = ({
             <p dir="auto" className="text-label">
               {statement}
             </p>
-            <ProposalRefs proposals={proposals} />
+            <ProposalRefs proposals={proposals} route={route} />
           </li>
         ))}
       </ul>
@@ -255,8 +396,10 @@ const OutlierImpactBadge = ({
 
 const OutliersSection = ({
   outliers,
+  route,
 }: {
   outliers: ThemeAnalysisResult['outliers'];
+  route: ThemeAnalysisRoute;
 }) => {
   const t = useTranslations();
 
@@ -276,9 +419,11 @@ const OutliersSection = ({
         {sorted.map(({ proposal, impact, reason }, position) => (
           <li key={position} className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span dir="auto" className="text-label font-strong">
-                {proposal.title || t('Untitled Proposal')}
-              </span>
+              <ProposalLink
+                proposal={proposal}
+                route={route}
+                className="text-label font-strong"
+              />
               <OutlierImpactBadge impact={impact} />
             </div>
             <p dir="auto" className="text-label text-muted-foreground">
@@ -293,8 +438,12 @@ const OutliersSection = ({
 
 const SuggestionsSection = ({
   suggestions,
+  route,
+  canMerge,
 }: {
   suggestions: ThemeAnalysisResult['suggestions'];
+  route: ThemeAnalysisRoute;
+  canMerge: boolean;
 }) => {
   const t = useTranslations();
 
@@ -316,10 +465,136 @@ const SuggestionsSection = ({
             <p dir="auto" className="text-label text-muted-foreground">
               {rationale}
             </p>
-            <ProposalRefs proposals={proposals} />
+            {/* Only a merge suggestion gets the action, and only for a reader
+                who could merge from the card menu. A revise suggestion has no
+                one-click action — the change is the author's to make. */}
+            {kind === 'merge' && canMerge ? (
+              <MergeableProposals proposals={proposals} route={route} />
+            ) : (
+              <ProposalRefs proposals={proposals} route={route} />
+            )}
           </li>
         ))}
       </ul>
     </Section>
+  );
+};
+
+/**
+ * The proposals a merge suggestion names, each with the card menu's Merge
+ * action beside it.
+ *
+ * Merge is directional — one proposal is merged away into another — and the
+ * suggestion names two or more without saying which survives. So the action
+ * sits on each proposal: pressing it opens the same merge dialog the card
+ * menu opens, with that proposal as the one being merged away, and the
+ * facilitator picks the target there exactly as they would from the card.
+ *
+ * The analysis carries only what it needs to render; the merge dialog needs the
+ * proposal itself. It is fetched on press, by profile id, through the same
+ * `getProposal` the proposal page reads — rather than loaded up front for every
+ * proposal in every suggestion, most of which will never be pressed.
+ */
+const MergeableProposals = ({
+  proposals,
+  route,
+}: {
+  proposals: AnalyzedProposal[];
+  route: ThemeAnalysisRoute;
+}) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  // The proposal being merged away, held past the close so the dialog animates
+  // out rather than disappearing — the same shape as the list's provider.
+  const [mergeSource, setMergeSource] = useState<Proposal | null>(null);
+  const [isMergeOpen, setIsMergeOpen] = useState(false);
+  const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
+
+  const handleMerge = useCallback(
+    async (profileId: string) => {
+      setLoadingProfileId(profileId);
+
+      try {
+        const proposal = await utils.decision.getProposal.fetch({ profileId });
+        setMergeSource(proposal);
+        setIsMergeOpen(true);
+      } catch (error) {
+        // The suggestion is still on screen and the card menu still works, so
+        // the toast says where to go rather than what went wrong.
+        logger.error('Could not load a proposal to merge from the analysis', {
+          error,
+          profileId,
+        });
+        toast.error(
+          t("Couldn't open this proposal to merge. Try again from its card."),
+        );
+      } finally {
+        setLoadingProfileId(null);
+      }
+    },
+    [utils, t],
+  );
+
+  if (proposals.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <ItemGroup>
+        {proposals.map((proposal) => {
+          const title = proposal.title || t('Untitled Proposal');
+          // Its own binding so the narrowing below survives into the click
+          // handler, which a property access would not.
+          const { profileId } = proposal;
+
+          return (
+            <Item key={proposal.id} variant="outline" size="xs">
+              <ItemContent>
+                <ItemTitle>
+                  <ProposalLink
+                    proposal={proposal}
+                    route={route}
+                    className="text-label"
+                  />
+                </ItemTitle>
+              </ItemContent>
+              {/* A proposal with no profile cannot be loaded by the endpoint
+                  the dialog needs, so it gets no action rather than one that
+                  fails on press. */}
+              {profileId && (
+                <ItemActions>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    loading={loadingProfileId === profileId}
+                    // One load at a time. Two dialogs cannot be open, and a
+                    // second press while the first is loading would race to
+                    // decide which proposal the dialog shows.
+                    disabled={loadingProfileId !== null}
+                    aria-label={t('Merge {title} with another proposal', {
+                      title,
+                    })}
+                    onClick={() => handleMerge(profileId)}
+                  >
+                    <LuMerge aria-hidden />
+                    {t('Merge')}
+                  </Button>
+                </ItemActions>
+              )}
+            </Item>
+          );
+        })}
+      </ItemGroup>
+
+      {mergeSource ? (
+        <MergeProposalDialog
+          proposal={mergeSource}
+          open={isMergeOpen}
+          onOpenChange={setIsMergeOpen}
+        />
+      ) : null}
+    </>
   );
 };
