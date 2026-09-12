@@ -44,6 +44,7 @@
     "@trpc/client": "11.18.0",
     "@trpc/react-query": "11.18.0",
     "@trpc/server": "11.18.0",
+    "@trpc/tanstack-react-query": "11.18.0",
     "@types/sanitize-s3-objectkey": "^0.0.0",
     "@vercel/functions": "^2.1.0",
     "access-zones": "catalog:",
