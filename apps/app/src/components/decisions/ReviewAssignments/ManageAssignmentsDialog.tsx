@@ -119,11 +119,10 @@ function ManageAssignmentsBody({
   reviewerProfileId,
   onSaved,
 }: ManageAssignmentsDialogContentProps) {
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId },
-    // An SSR-seeded entry never registers the realtime channel; refetch.
-    { refetchOnMount: 'always' },
-  );
+  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery({
+    processInstanceId,
+    phaseId,
+  });
 
   const { rows } = useMemo(
     () =>

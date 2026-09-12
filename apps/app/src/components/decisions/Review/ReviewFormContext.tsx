@@ -131,9 +131,6 @@ function ReviewFormProviderInner({
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
-    // 'always' forces one fetch per mount, which is what registers the
-    // realtime channel via the tRPC client link.
-    { refetchOnMount: 'always' },
   );
 
   const {
@@ -150,13 +147,10 @@ function ReviewFormProviderInner({
   }
 
   const [{ items: openRequestItems }] =
-    trpc.decision.listProposalRevisionRequests.useSuspenseQuery(
-      {
-        proposalId: assignment.proposal.id,
-        states: [ProposalReviewRequestState.REQUESTED],
-      },
-      { refetchOnMount: 'always' },
-    );
+    trpc.decision.listProposalRevisionRequests.useSuspenseQuery({
+      proposalId: assignment.proposal.id,
+      states: [ProposalReviewRequestState.REQUESTED],
+    });
 
   const openRevisionRequests = useMemo(
     () => openRequestItems.map((item) => item.revisionRequest),

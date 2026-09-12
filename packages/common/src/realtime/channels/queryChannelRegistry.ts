@@ -71,6 +71,16 @@ class QueryChannelRegistry {
   }
 
   /**
+   * Every channel that currently has at least one registered query.
+   *
+   * A subscriber that starts after registration (hydrated queries register in
+   * the first commit) needs this to catch up on what it missed.
+   */
+  getChannels(): ChannelName[] {
+    return [...this.channelToQueryKeys.keys()];
+  }
+
+  /**
    * Register a query to channels. Idempotent: re-registering the same query
    * with a smaller channel set decrements the channels it no longer touches
    * (and emits 'channel:removed' for any that drain). Emits 'query:added'.

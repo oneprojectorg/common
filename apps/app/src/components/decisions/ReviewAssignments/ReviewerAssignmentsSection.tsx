@@ -95,8 +95,6 @@ function ReviewerAssignmentsContent({
       { processInstanceId, phaseId, reviewerProfileId },
       {
         getNextPageParam: (lastPage) => lastPage.next,
-        // An SSR-seeded entry never registers the realtime channel; refetch.
-        refetchOnMount: 'always',
       },
     );
 

@@ -49,26 +49,20 @@ export function ReviewSummaryView({
 
   const [[proposalWithReviews, proposal, { items: ownAssignments }]] =
     trpc.useSuspenseQueries((t) => [
-      t.decision.getProposalWithReviewAggregates(
-        {
-          processInstanceId: instanceId,
-          proposalId,
-          phaseId,
-        },
-        { refetchOnMount: 'always' },
-      ),
+      t.decision.getProposalWithReviewAggregates({
+        processInstanceId: instanceId,
+        proposalId,
+        phaseId,
+      }),
       t.decision.getProposal({ profileId: proposalProfileId }),
       // Self-scoped, and scoped to the phase this screen describes — the same
       // one the aggregates above use.
-      t.decision.listReviewAssignments(
-        {
-          processInstanceId: instanceId,
-          proposalProfileId,
-          phaseId,
-          sort: 'newest',
-        },
-        { refetchOnMount: 'always' },
-      ),
+      t.decision.listReviewAssignments({
+        processInstanceId: instanceId,
+        proposalProfileId,
+        phaseId,
+        sort: 'newest',
+      }),
     ]);
 
   const rubricTemplate = proposalWithReviews.rubricTemplate;
