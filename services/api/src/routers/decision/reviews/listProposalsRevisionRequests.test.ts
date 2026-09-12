@@ -2,7 +2,7 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
-import { createRevisionRequest } from '@op/test';
+import { createRevisionRequest, grantDecisionProfileAccess } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -114,6 +114,42 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     });
 
     expect(result.items).toHaveLength(0);
+  });
+
+  it('returns the requests on a proposal the caller collaborates on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Written Together',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add a detailed budget breakdown.',
+    });
+
+    const collaborator = await testData.createInstanceMember(created.context);
+    await grantDecisionProfileAccess({
+      profileId: created.proposal.profileId,
+      authUserId: collaborator.authUserId,
+      email: collaborator.email,
+      isAdmin: false,
+    });
+
+    const collaboratorCaller = await createAuthenticatedCaller(
+      collaborator.email,
+    );
+    const result =
+      await collaboratorCaller.decision.listProposalsRevisionRequests({});
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      revisionRequest: { id: revisionRequest.id },
+      proposal: { id: created.proposal.id },
+    });
   });
 
   it('does not return revision requests for proposals by other authors', async ({

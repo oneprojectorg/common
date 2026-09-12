@@ -8,6 +8,7 @@ import {
   createReviewAssignment,
   createRevisionRequest,
   getLatestProposalHistoryId,
+  grantDecisionProfileAccess,
 } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
@@ -334,6 +335,75 @@ describe.concurrent('submitProposalRevision', () => {
 
     await expect(
       reviewerCaller.decision.submitProposalRevision({
+        proposalId: created.proposal.id,
+        note: 'Should not work.',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('lets a collaborator on the proposal profile resubmit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Written Together',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const request = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add budget details.',
+    });
+
+    const collaborator = await testData.createInstanceMember(created.context);
+    await grantDecisionProfileAccess({
+      profileId: created.proposal.profileId,
+      authUserId: collaborator.authUserId,
+      email: collaborator.email,
+      isAdmin: false,
+    });
+
+    const collaboratorCaller = await createAuthenticatedCaller(
+      collaborator.email,
+    );
+    const result = await collaboratorCaller.decision.submitProposalRevision({
+      proposalId: created.proposal.id,
+      note: 'My co-author added the budget.',
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(request.id);
+
+    const stored = await db.query.proposalReviewRequests.findFirst({
+      where: { id: request.id },
+    });
+    expect(stored?.state).toBe(ProposalReviewRequestState.RESUBMITTED);
+    expect(stored?.responseComment).toBe('My co-author added the budget.');
+  });
+
+  it('rejects an instance member who is not on the proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Not A Co-Author',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please revise.',
+    });
+
+    const bystander = await testData.createInstanceMember(created.context);
+    const bystanderCaller = await createAuthenticatedCaller(bystander.email);
+
+    await expect(
+      bystanderCaller.decision.submitProposalRevision({
         proposalId: created.proposal.id,
         note: 'Should not work.',
       }),
