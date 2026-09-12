@@ -48,9 +48,9 @@ class QueryChannelRegistry {
   /**
    * Get all query keys registered to a set of channels.
    */
-  getQueryKeysForChannels(channels: ChannelName[]): unknown[] {
+  getQueryKeysForChannels(channels: ChannelName[]): unknown[][] {
     const seen = new Set<string>();
-    const result: unknown[] = [];
+    const result: unknown[][] = [];
 
     for (const channel of channels) {
       const keys = this.channelToQueryKeys.get(channel);
@@ -59,7 +59,12 @@ class QueryChannelRegistry {
           if (!seen.has(key)) {
             seen.add(key);
             try {
-              result.push(JSON.parse(key));
+              // A React Query key is always an array; callers pass these
+              // straight to `invalidateQueries`, whose types say so.
+              const parsed: unknown = JSON.parse(key);
+              if (Array.isArray(parsed)) {
+                result.push(parsed);
+              }
             } catch {
               // Skip malformed keys - shouldn't happen if stringify succeeded
             }
