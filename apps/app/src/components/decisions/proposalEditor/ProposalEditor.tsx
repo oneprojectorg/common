@@ -1,8 +1,7 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
@@ -13,6 +12,9 @@ import {
 import { logger } from '@op/logging/client';
 import { Header2 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import {
   type ReactNode,
@@ -142,11 +144,12 @@ function ProposalEditorInner({
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
+  const trpc = useTRPC();
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations();
   const { user } = useRequiredUser();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Anon visitors get sent back with ?promote=1 so PromoteAccountModal offers an
   // upgrade. `isAnonymous` is session-derived, not the stale DB relation.
@@ -172,13 +175,15 @@ function ProposalEditorInner({
   // (cache-backed) so a click before this query resolves can't bypass the
   // required form.
   const initialPhaseId = instance.instanceData?.phases?.[0]?.phaseId;
-  const { data: customForm } = trpc.customForm.getForProfile.useQuery(
-    {
-      profileId: instance.profileId ?? '',
-      phaseId: instance.currentStateId ?? undefined,
-      initialPhaseId,
-    },
-    { enabled: Boolean(instance.profileId) && isDraft },
+  const { data: customForm } = useQuery(
+    trpc.customForm.getForProfile.queryOptions(
+      {
+        profileId: instance.profileId ?? '',
+        phaseId: instance.currentStateId ?? undefined,
+        initialPhaseId,
+      },
+      { enabled: Boolean(instance.profileId) && isDraft },
+    ),
   );
 
   // -- Instance config -------------------------------------------------------
@@ -219,17 +224,23 @@ function ProposalEditorInner({
 
   // -- Mutations -------------------------------------------------------------
 
-  const submitProposalMutation = trpc.decision.submitProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'submit', t),
-  });
+  const submitProposalMutation = useMutation(
+    trpc.decision.submitProposal.mutationOptions({
+      onError: (error) => handleMutationError(error, 'submit', t),
+    }),
+  );
 
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'update', t),
-  });
+  const updateProposalMutation = useMutation(
+    trpc.decision.updateProposal.mutationOptions({
+      onError: (error) => handleMutationError(error, 'update', t),
+    }),
+  );
 
-  const submitCustomFormMutation = trpc.customForm.submit.useMutation({
-    onError: (error) => handleMutationError(error, 'submit', t),
-  });
+  const submitCustomFormMutation = useMutation(
+    trpc.customForm.submit.mutationOptions({
+      onError: (error) => handleMutationError(error, 'submit', t),
+    }),
+  );
 
   // -- UI state handlers -----------------------------------------------------
 
@@ -347,11 +358,13 @@ function ProposalEditorInner({
       // Resolve via the query cache (fetch, not hook state) so a click before
       // the subscription resolves still routes through the required form.
       if (isDraft && instance.profileId) {
-        const form = await utils.customForm.getForProfile.fetch({
-          profileId: instance.profileId,
-          phaseId: instance.currentStateId ?? undefined,
-          initialPhaseId,
-        });
+        const form = await queryClient.fetchQuery(
+          trpc.customForm.getForProfile.queryOptions({
+            profileId: instance.profileId,
+            phaseId: instance.currentStateId ?? undefined,
+            initialPhaseId,
+          }),
+        );
         if (form) {
           setShowCustomFormModal(true);
           return;
@@ -375,7 +388,8 @@ function ProposalEditorInner({
     instance.profileId,
     instance.currentStateId,
     initialPhaseId,
-    utils,
+    queryClient,
+    trpc,
     updateProposalMutation,
     draftRef,
     finalizeSubmit,
@@ -488,9 +502,11 @@ function ProposalEditorInner({
             })) ?? []
           }
           onMutate={() =>
-            utils.decision.getProposal.invalidate({
-              profileId: proposal.profileId,
-            })
+            queryClient.invalidateQueries(
+              trpc.decision.getProposal.queryFilter({
+                profileId: proposal.profileId,
+              }),
+            )
           }
         />
       </div>

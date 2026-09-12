@@ -1,9 +1,11 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
   useCallback,
@@ -65,13 +67,16 @@ export function ProcessBuilderAutosaveProvider({
   isDraft: boolean;
   children: React.ReactNode;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Already cached by section queries — no extra request.
-  const { data: liveInstance } = trpc.decision.getInstance.useQuery({
-    instanceId,
-  });
+  const { data: liveInstance } = useQuery(
+    trpc.decision.getInstance.queryOptions({
+      instanceId,
+    }),
+  );
   const isDraft = liveInstance
     ? liveInstance.status === ProcessStatus.DRAFT
     : isDraftInitial;
@@ -124,24 +129,28 @@ export function ProcessBuilderAutosaveProvider({
   const dirtyFieldsRef = useRef<Partial<ProcessBuilderInstanceData>>({});
 
   const debouncedSaveRef = useRef<() => boolean>(null);
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
-    onError: (error) => {
-      setSaveStatus(decisionProfileId, 'error');
-      toast.error(t('Failed to save changes'), {
-        description: error.message,
-      });
-    },
-    onSettled: () => {
-      inflightRef.current = null;
-      // Another save is queued — let its onSettled invalidate instead,
-      // avoiding a stale refetch that could overwrite optimistic updates.
-      if (debouncedSaveRef.current?.()) {
-        return;
-      }
-      void utils.decision.getInstance.invalidate({ instanceId });
-    },
-  });
+  const updateInstance = useMutation(
+    trpc.decision.updateDecisionInstance.mutationOptions({
+      onSuccess: () => markSaved(decisionProfileId),
+      onError: (error) => {
+        setSaveStatus(decisionProfileId, 'error');
+        toast.error(t('Failed to save changes'), {
+          description: error.message,
+        });
+      },
+      onSettled: () => {
+        inflightRef.current = null;
+        // Another save is queued — let its onSettled invalidate instead,
+        // avoiding a stale refetch that could overwrite optimistic updates.
+        if (debouncedSaveRef.current?.()) {
+          return;
+        }
+        void queryClient.invalidateQueries(
+          trpc.decision.getInstance.queryFilter({ instanceId }),
+        );
+      },
+    }),
+  );
 
   const debouncedSave = useDebouncedCallback(() => {
     const payload = dirtyFieldsRef.current;

@@ -1,7 +1,6 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
@@ -39,6 +38,10 @@ import { ProfileAvatar as SenseProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   type ReactNode,
   Suspense,
@@ -108,8 +111,9 @@ function ShareProposalModalContent({
   proposalProfileId: string;
   onOpenChange: (isOpen: boolean) => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
@@ -117,13 +121,20 @@ function ShareProposalModalContent({
 
   const [, startTransition] = useTransition();
 
-  const [{ items: profileUsers }] = trpc.profile.listUsers.useSuspenseQuery({
-    profileId: proposalProfileId,
-  });
-  const [{ items: serverInvites }] =
-    trpc.profile.listProfileInvites.useSuspenseQuery({
+  const {
+    data: { items: profileUsers },
+  } = useSuspenseQuery(
+    trpc.profile.listUsers.queryOptions({
       profileId: proposalProfileId,
-    });
+    }),
+  );
+  const {
+    data: { items: serverInvites },
+  } = useSuspenseQuery(
+    trpc.profile.listProfileInvites.queryOptions({
+      profileId: proposalProfileId,
+    }),
+  );
 
   const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
     profileUsers,
@@ -136,21 +147,24 @@ function ShareProposalModalContent({
     (state, inviteId: string) => state.filter((i) => i.id !== inviteId),
   );
 
-  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({});
+  const {
+    data: { items: roles },
+  } = useSuspenseQuery(trpc.profile.listRoles.queryOptions({}));
   const memberRole = useMemo(
     () => roles.find((r) => r.name === 'Member'),
     [roles],
   );
 
   // Search for users to invite
-  const { data: searchResults, isFetching: isSearching } =
-    trpc.profile.search.useQuery(
+  const { data: searchResults, isFetching: isSearching } = useQuery(
+    trpc.profile.search.queryOptions(
       { q: debouncedQuery, types: [EntityType.INDIVIDUAL] },
       {
         enabled: debouncedQuery.length >= 2,
         placeholderData: (prev) => prev,
       },
-    );
+    ),
+  );
 
   // Results come pre-sorted by rank from the API
   const flattenedResults = useMemo(
@@ -218,9 +232,13 @@ function ShareProposalModalContent({
   );
   type PickerOption = (typeof pickerOptions)[number];
 
-  const inviteMutation = trpc.profile.invite.useMutation();
-  const removeUserMutation = trpc.profile.removeUser.useMutation();
-  const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
+  const inviteMutation = useMutation(trpc.profile.invite.mutationOptions());
+  const removeUserMutation = useMutation(
+    trpc.profile.removeUser.mutationOptions(),
+  );
+  const deleteInviteMutation = useMutation(
+    trpc.profile.deleteProfileInvite.mutationOptions(),
+  );
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
     const userEmail = result.user?.email;
@@ -280,9 +298,19 @@ function ShareProposalModalContent({
       } catch {
         toast.error(t('Failed to remove user'));
       }
-      await utils.profile.listUsers.invalidate({
-        profileId: proposalProfileId,
-      });
+      // `invalidate()` on the classic client was type-agnostic; the options
+      // proxy splits plain and infinite entries, and this list is rendered
+      // both ways — so both filters are needed to match it.
+      await queryClient.invalidateQueries(
+        trpc.profile.listUsers.queryFilter({
+          profileId: proposalProfileId,
+        }),
+      );
+      await queryClient.invalidateQueries(
+        trpc.profile.listUsers.infiniteQueryFilter({
+          profileId: proposalProfileId,
+        }),
+      );
     });
   };
 
@@ -294,9 +322,11 @@ function ShareProposalModalContent({
       } catch {
         toast.error(t('Failed to cancel invite'));
       }
-      await utils.profile.listProfileInvites.invalidate({
-        profileId: proposalProfileId,
-      });
+      await queryClient.invalidateQueries(
+        trpc.profile.listProfileInvites.queryFilter({
+          profileId: proposalProfileId,
+        }),
+      );
     });
   };
 
@@ -344,10 +374,22 @@ function ShareProposalModalContent({
       setPendingInvites([]);
       setSearchQuery('');
       onOpenChange(false);
-      utils.profile.listUsers.invalidate({ profileId: proposalProfileId });
-      utils.profile.listProfileInvites.invalidate({
-        profileId: proposalProfileId,
-      });
+      // `invalidate()` on the classic client was type-agnostic; the options
+      // proxy splits plain and infinite entries, and this list is rendered
+      // both ways — so both filters are needed to match it.
+      queryClient.invalidateQueries(
+        trpc.profile.listUsers.queryFilter({ profileId: proposalProfileId }),
+      );
+      queryClient.invalidateQueries(
+        trpc.profile.listUsers.infiniteQueryFilter({
+          profileId: proposalProfileId,
+        }),
+      );
+      queryClient.invalidateQueries(
+        trpc.profile.listProfileInvites.queryFilter({
+          profileId: proposalProfileId,
+        }),
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t('Failed to send invite');

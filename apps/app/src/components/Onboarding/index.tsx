@@ -1,12 +1,15 @@
 'use client';
-
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Spinner } from '@op/sense/Spinner';
 import { StepperProgressIndicator } from '@op/sense/Stepper';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { usePrefetchQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
@@ -60,7 +63,8 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 // Prefetch for the org-search step. Only on the org-search branch: the promote
 // flow skips it, and prefetching there fires a network-tier 403 for the new user.
 const PrefetchDomainOrganizations = () => {
-  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
+  const trpc = useTRPC();
+  usePrefetchQuery(trpc.account.listMatchingDomainOrganizations.queryOptions());
   return null;
 };
 
@@ -74,6 +78,7 @@ export const OnboardingFlow = ({
 }: {
   isNetworkMember: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
   const isOnline = useConnectionStatus();
@@ -97,11 +102,19 @@ export const OnboardingFlow = ({
     privacyPolicy,
     setOrganizationDetails,
   } = useOnboardingFormStore();
-  const trpcUtils = trpc.useUtils();
-  const { data: userAccount } = trpc.account.getMyAccount.useQuery();
-  const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
-  const completeOnboarding = trpc.account.completeOnboarding.useMutation();
-  const createOrganization = trpc.organization.create.useMutation();
+  const queryClient = useQueryClient();
+  const { data: userAccount } = useQuery(
+    trpc.account.getMyAccount.queryOptions(),
+  );
+  const createJoinRequest = useMutation(
+    trpc.profile.createJoinRequest.mutationOptions(),
+  );
+  const completeOnboarding = useMutation(
+    trpc.account.completeOnboarding.mutationOptions(),
+  );
+  const createOrganization = useMutation(
+    trpc.organization.create.mutationOptions(),
+  );
 
   // Handle hydration detection
   React.useEffect(() => {
@@ -182,8 +195,12 @@ export const OnboardingFlow = ({
         }
 
         await completeOnboarding.mutateAsync({ tos: true, privacy: true });
-        await trpcUtils.account.getMyAccount.invalidate();
-        await trpcUtils.account.getMyAccount.refetch();
+        await queryClient.invalidateQueries(
+          trpc.account.getMyAccount.pathFilter(),
+        );
+        await queryClient.refetchQueries(
+          trpc.account.getMyAccount.pathFilter(),
+        );
         router.push(completionDestination);
       } catch (err) {
         setIsSubmitting(false);
@@ -204,7 +221,8 @@ export const OnboardingFlow = ({
       userAccount,
       createJoinRequest,
       completeOnboarding,
-      trpcUtils,
+      queryClient,
+      trpc,
       router,
       completionDestination,
       t,
@@ -260,8 +278,12 @@ export const OnboardingFlow = ({
       .then(async () => {
         sendOnboardingAnalytics(combined);
         await completeOnboarding.mutateAsync({ tos: true, privacy: true });
-        await trpcUtils.account.getMyAccount.invalidate();
-        await trpcUtils.account.getMyAccount.refetch();
+        await queryClient.invalidateQueries(
+          trpc.account.getMyAccount.pathFilter(),
+        );
+        await queryClient.refetchQueries(
+          trpc.account.getMyAccount.pathFilter(),
+        );
         router.push(completionDestination);
       })
       .catch((err) => {
@@ -286,7 +308,8 @@ export const OnboardingFlow = ({
     createOrganization,
     isOnline,
     router,
-    trpcUtils,
+    queryClient,
+    trpc,
     t,
     getOrgCreationStepValues,
     completeOnboarding,

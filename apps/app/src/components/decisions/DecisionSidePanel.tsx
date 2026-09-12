@@ -1,7 +1,6 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -17,6 +16,8 @@ import {
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { MegaphoneIcon } from '@op/sense/icons';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useQueryState } from 'nuqs';
 import { Fragment, Suspense, useCallback, useMemo } from 'react';
 import { LuX } from 'react-icons/lu';
@@ -189,14 +190,25 @@ const UpdatesTabContent = ({
   canPostUpdate: boolean;
   canReadUpdates: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const handlePostSuccess = useCallback(() => {
-    void utils.posts.listProfilePosts.invalidate({
-      profileId: decisionProfileId,
-    });
-  }, [utils, decisionProfileId]);
+    // `invalidate()` on the classic client was type-agnostic; the options
+    // proxy splits plain and infinite entries, and this list is rendered as
+    // an infinite query below — so both filters are needed to match it.
+    void queryClient.invalidateQueries(
+      trpc.posts.listProfilePosts.queryFilter({
+        profileId: decisionProfileId,
+      }),
+    );
+    void queryClient.invalidateQueries(
+      trpc.posts.listProfilePosts.infiniteQueryFilter({
+        profileId: decisionProfileId,
+      }),
+    );
+  }, [queryClient, trpc, decisionProfileId]);
 
   return (
     <div className="flex flex-col px-4 pt-4 pb-8 sm:px-6">
@@ -233,17 +245,24 @@ const UpdatesTabContent = ({
 };
 
 const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const { user } = useUser();
 
-  const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
+  const {
+    data: paginatedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useSuspenseInfiniteQuery(
+    trpc.posts.listProfilePosts.infiniteQueryOptions(
       { profileId: decisionProfileId, limit: PAGE_LIMIT.md },
       {
         getNextPageParam: nextCursor,
         staleTime: 30 * 1000,
       },
-    );
+    ),
+  );
 
   const posts = useMemo(
     () => paginatedData.pages.flatMap((page) => page.items),

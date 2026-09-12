@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import {
   AlertDialog,
@@ -14,6 +13,8 @@ import {
   AlertDialogTrigger,
 } from '@op/sense/AlertDialog';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -39,20 +40,23 @@ export const DeleteProposalDialog = ({
   /** Runs after a successful delete — e.g. leave the page you just deleted. */
   onDeleted?: () => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('Failed to delete proposal'));
-    },
-    onSuccess: () => {
-      toast.success(t('Proposal deleted successfully'));
-      // Nothing else drops the deleted row, so any list still holding it —
-      // the grid, the map, the ballot — would keep rendering it.
-      utils.decision.invalidate();
-    },
-  });
+  const deleteProposalMutation = useMutation(
+    trpc.decision.deleteProposal.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message || t('Failed to delete proposal'));
+      },
+      onSuccess: () => {
+        toast.success(t('Proposal deleted successfully'));
+        // Nothing else drops the deleted row, so any list still holding it —
+        // the grid, the map, the ballot — would keep rendering it.
+        queryClient.invalidateQueries(trpc.decision.pathFilter());
+      },
+    }),
+  );
 
   const handleDelete = async () => {
     try {

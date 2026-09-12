@@ -1,8 +1,7 @@
 'use client';
-
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
@@ -16,6 +15,8 @@ import {
   ComboboxList,
 } from '@op/sense/Combobox';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePostHog } from 'posthog-js/react';
 import { useMemo } from 'react';
 import { LuX } from 'react-icons/lu';
@@ -49,32 +50,39 @@ export function CategoryReviewerCard({
   reviewers,
   eligibleReviewers,
 }: CategoryReviewerCardProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const posthog = usePostHog();
 
   const invalidate = () =>
-    utils.decision.listCategoryReviewers.invalidate({ processInstanceId });
+    queryClient.invalidateQueries(
+      trpc.decision.listCategoryReviewers.queryFilter({ processInstanceId }),
+    );
 
-  const addReviewer = trpc.decision.addCategoryReviewer.useMutation({
-    onError: (error) => {
-      logger.error('Failed to add category reviewer', { error });
-      toast.error(t('Could not add reviewer. Please try again.'));
-    },
-    onSettled: () => {
-      void invalidate();
-    },
-  });
+  const addReviewer = useMutation(
+    trpc.decision.addCategoryReviewer.mutationOptions({
+      onError: (error) => {
+        logger.error('Failed to add category reviewer', { error });
+        toast.error(t('Could not add reviewer. Please try again.'));
+      },
+      onSettled: () => {
+        void invalidate();
+      },
+    }),
+  );
 
-  const removeReviewer = trpc.decision.removeCategoryReviewer.useMutation({
-    onError: (error) => {
-      logger.error('Failed to remove category reviewer', { error });
-      toast.error(t('Could not remove reviewer. Please try again.'));
-    },
-    onSettled: () => {
-      void invalidate();
-    },
-  });
+  const removeReviewer = useMutation(
+    trpc.decision.removeCategoryReviewer.mutationOptions({
+      onError: (error) => {
+        logger.error('Failed to remove category reviewer', { error });
+        toast.error(t('Could not remove reviewer. Please try again.'));
+      },
+      onSettled: () => {
+        void invalidate();
+      },
+    }),
+  );
 
   // Candidates for this card: eligible role-holders not already assigned here,
   // so the same set can never be double-added. The in-flight add is excluded

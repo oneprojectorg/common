@@ -1,7 +1,6 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { PAGE_LIMIT, hasEmail, nextCursor } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
@@ -41,6 +40,11 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import {
   type ReactNode,
   Suspense,
@@ -123,8 +127,9 @@ function ProfileInviteModalContent({
   isDraft: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
   const [requestedRoleId, setRequestedRoleId] = useState<string>();
@@ -141,11 +146,19 @@ function ProfileInviteModalContent({
   };
   // Batched so the roles and pending-invites fetches fire together — two
   // separate useSuspenseQuery calls would suspend one after the other.
-  const [[{ items: roles }, { items: serverInvites }]] =
-    trpc.useSuspenseQueries((t) => [
-      t.profile.listRoles(rolesQueryInput),
-      t.profile.listProfileInvites({ profileId }),
-    ]);
+  const [
+    {
+      data: { items: roles },
+    },
+    {
+      data: { items: serverInvites },
+    },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.profile.listRoles.queryOptions(rolesQueryInput),
+      trpc.profile.listProfileInvites.queryOptions({ profileId }),
+    ],
+  });
   const selectedRole =
     roles.find((role) => role.id === requestedRoleId) ?? roles[0];
   const selectedRoleId = selectedRole?.id ?? '';
@@ -162,12 +175,14 @@ function ProfileInviteModalContent({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.profile.listUsers.useInfiniteQuery(
-    { profileId, roleId: selectedRoleId, limit: 25 },
-    {
-      getNextPageParam: nextCursor,
-      enabled: !!selectedRoleId,
-    },
+  } = useInfiniteQuery(
+    trpc.profile.listUsers.infiniteQueryOptions(
+      { profileId, roleId: selectedRoleId, limit: 25 },
+      {
+        getNextPageParam: nextCursor,
+        enabled: !!selectedRoleId,
+      },
+    ),
   );
 
   const loadedMembers = useMemo(
@@ -240,15 +255,16 @@ function ProfileInviteModalContent({
   );
 
   // Search for individuals
-  const { data: searchResults, isFetching: isSearching } =
-    trpc.profile.search.useQuery(
+  const { data: searchResults, isFetching: isSearching } = useQuery(
+    trpc.profile.search.queryOptions(
       { q: debouncedQuery, types: [EntityType.INDIVIDUAL] },
       {
         enabled: debouncedQuery.length >= 2,
         staleTime: 30_000,
         placeholderData: (prev) => prev,
       },
-    );
+    ),
+  );
 
   // Flatten and sort search results
   const flattenedResults = useMemo(() => {
@@ -319,9 +335,13 @@ function ProfileInviteModalContent({
   };
 
   // Mutations
-  const inviteMutation = trpc.profile.invite.useMutation();
-  const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
-  const removeUserMutation = trpc.profile.removeUser.useMutation();
+  const inviteMutation = useMutation(trpc.profile.invite.mutationOptions());
+  const deleteInviteMutation = useMutation(
+    trpc.profile.deleteProfileInvite.mutationOptions(),
+  );
+  const removeUserMutation = useMutation(
+    trpc.profile.removeUser.mutationOptions(),
+  );
 
   // Calculate total people count across all roles (staged only)
   const totalPeople = allSelectedItems.length;
@@ -397,7 +417,9 @@ function ProfileInviteModalContent({
       } catch {
         toast.error(t('Failed to cancel invite'));
       }
-      await utils.profile.listProfileInvites.invalidate({ profileId });
+      await queryClient.invalidateQueries(
+        trpc.profile.listProfileInvites.queryFilter({ profileId }),
+      );
     });
   };
 
@@ -458,9 +480,21 @@ function ProfileInviteModalContent({
           toast.error(`${t('Failed to send invite')}: ${failureDetail}`);
 
           if (result.details.successful.length > 0) {
-            utils.profile.listUsers.invalidate({ profileId });
-            utils.profile.listProfileInvites.invalidate({ profileId });
-            utils.profile.listRoles.invalidate({ profileId });
+            // `invalidate()` on the classic client was type-agnostic; the options
+            // proxy splits plain and infinite entries, and this list is rendered
+            // both ways — so both filters are needed to match it.
+            queryClient.invalidateQueries(
+              trpc.profile.listUsers.queryFilter({ profileId }),
+            );
+            queryClient.invalidateQueries(
+              trpc.profile.listUsers.infiniteQueryFilter({ profileId }),
+            );
+            queryClient.invalidateQueries(
+              trpc.profile.listProfileInvites.queryFilter({ profileId }),
+            );
+            queryClient.invalidateQueries(
+              trpc.profile.listRoles.queryFilter({ profileId }),
+            );
           }
           return;
         }
@@ -471,9 +505,21 @@ function ProfileInviteModalContent({
         onOpenChange(false);
 
         // Invalidate the lists and the per-role member counts (tab badges)
-        utils.profile.listUsers.invalidate({ profileId });
-        utils.profile.listProfileInvites.invalidate({ profileId });
-        utils.profile.listRoles.invalidate({ profileId });
+        // `invalidate()` on the classic client was type-agnostic; the options
+        // proxy splits plain and infinite entries, and this list is rendered
+        // both ways — so both filters are needed to match it.
+        queryClient.invalidateQueries(
+          trpc.profile.listUsers.queryFilter({ profileId }),
+        );
+        queryClient.invalidateQueries(
+          trpc.profile.listUsers.infiniteQueryFilter({ profileId }),
+        );
+        queryClient.invalidateQueries(
+          trpc.profile.listProfileInvites.queryFilter({ profileId }),
+        );
+        queryClient.invalidateQueries(
+          trpc.profile.listRoles.queryFilter({ profileId }),
+        );
       } catch (error) {
         const message =
           error instanceof Error ? error.message : t('Failed to send invite');

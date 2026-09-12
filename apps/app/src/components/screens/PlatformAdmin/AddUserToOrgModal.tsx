@@ -1,7 +1,6 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
@@ -27,6 +26,9 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { FormEvent, Suspense, useMemo, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -73,13 +75,16 @@ const AddUserToOrgModalContent = ({
   user: User;
   onOpenChange: (isOpen: boolean) => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [isSubmitting, startTransition] = useTransition();
 
-  const addUserToOrg = trpc.platform.admin.addUsersToOrganization.useMutation();
+  const addUserToOrg = useMutation(
+    trpc.platform.admin.addUsersToOrganization.mutationOptions(),
+  );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -105,7 +110,9 @@ const AddUserToOrgModalContent = ({
 
         toast.success(t('User added to organization successfully'));
 
-        utils.platform.admin.listAllUsers.invalidate();
+        queryClient.invalidateQueries(
+          trpc.platform.admin.listAllUsers.pathFilter(),
+        );
 
         // Reset form
         setSelectedOrgId('');
@@ -251,16 +258,25 @@ const OrganizationAndRoleSelection = ({
   selectedRoleId: string;
   setSelectedRoleId: (id: string) => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [[{ items: organizations }, { items: roles }]] =
-    trpc.useSuspenseQueries((t) => [
-      t.organization.list({
+  const [
+    {
+      data: { items: organizations },
+    },
+    {
+      data: { items: roles },
+    },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.organization.list.queryOptions({
         // TODO: because we lack a proper search/filter UI at this point, we set a high limit here. To be changed.
         limit: 500,
       }),
-      t.organization.getRoles(),
-    ]);
+      trpc.organization.getRoles.queryOptions(),
+    ],
+  });
 
   // Filter out organizations user is already a member of
   const availableOrganizations = useMemo(() => {

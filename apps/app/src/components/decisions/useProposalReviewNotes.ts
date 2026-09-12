@@ -1,12 +1,13 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   type ProposalFeedbackItem,
   type ProposalReviewRequest,
   ProposalReviewRequestState,
   type ProposalRevisionNote,
 } from '@op/common/client';
+import { useQueries } from '@tanstack/react-query';
 import { useQueryStates } from 'nuqs';
 import { useCallback, useMemo } from 'react';
 
@@ -41,6 +42,7 @@ export function useProposalReviewNotes({
   enabled: boolean;
   onOpen?: () => void;
 }): ProposalReviewNotes {
+  const trpc = useTRPC();
   const [
     { reviewNotes: isReviewNotesRequested, reviewRevision, feedback },
     setQueryState,
@@ -50,21 +52,23 @@ export function useProposalReviewNotes({
     feedback: proposalFeedbackPanelParser,
   });
 
-  const [requestQuery, noteQuery] = trpc.useQueries((t) => [
-    t.decision.listProposalRevisionRequests(
-      {
-        proposalId,
-        states: [ProposalReviewRequestState.REQUESTED],
-        phaseId: phaseId ?? undefined,
-      },
-      { enabled: enabled && phaseId !== null, throwOnError: false },
-    ),
-    // Unfiltered on purpose: earlier phases' answered cycles belong here too.
-    t.decision.listProposalRevisionNotes(
-      { proposalId },
-      { enabled, throwOnError: false },
-    ),
-  ]);
+  const [requestQuery, noteQuery] = useQueries({
+    queries: [
+      trpc.decision.listProposalRevisionRequests.queryOptions(
+        {
+          proposalId,
+          states: [ProposalReviewRequestState.REQUESTED],
+          phaseId: phaseId ?? undefined,
+        },
+        { enabled: enabled && phaseId !== null, throwOnError: false },
+      ),
+      // Unfiltered on purpose: earlier phases' answered cycles belong here too.
+      trpc.decision.listProposalRevisionNotes.queryOptions(
+        { proposalId },
+        { enabled, throwOnError: false },
+      ),
+    ],
+  });
 
   const { notes: feedbackNotes, hasFeedback } = useProposalFeedback({
     proposalId,

@@ -1,7 +1,6 @@
 'use client';
-
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
 import { isReviewPhase, isVotingPhase } from '@op/common/client';
 import {
@@ -35,6 +34,8 @@ import {
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useQueryState } from 'nuqs';
 import { usePostHog } from 'posthog-js/react';
 import { useRef, useState } from 'react';
@@ -97,8 +98,11 @@ function PhaseDetailForm({
   decisionProfileId: string;
   phaseId: string;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
 
@@ -167,7 +171,7 @@ function PhaseDetailForm({
     });
   };
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const updateRules = (updates: Partial<PhaseRules>) => {
     if (!phase) {
       return;
@@ -177,20 +181,23 @@ function PhaseDetailForm({
 
     // Optimistically update getInstance cache so useNavigationConfig
     // reacts immediately (e.g., showing/hiding the Reviews sidebar section).
-    utils.decision.getInstance.setData({ instanceId }, (old) => {
-      if (!old?.instanceData?.phases) {
-        return old;
-      }
-      return {
-        ...old,
-        instanceData: {
-          ...old.instanceData,
-          phases: old.instanceData.phases.map((p) =>
-            p.phaseId === phaseId ? { ...p, rules: newRules } : p,
-          ),
-        },
-      };
-    });
+    queryClient.setQueryData(
+      trpc.decision.getInstance.queryKey({ instanceId }),
+      (old) => {
+        if (!old?.instanceData?.phases) {
+          return old;
+        }
+        return {
+          ...old,
+          instanceData: {
+            ...old.instanceData,
+            phases: old.instanceData.phases.map((p) =>
+              p.phaseId === phaseId ? { ...p, rules: newRules } : p,
+            ),
+          },
+        };
+      },
+    );
   };
 
   // Validation

@@ -1,9 +1,8 @@
 'use client';
-
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { getPublicUrl } from '@/utils';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
@@ -11,6 +10,9 @@ import { BannerUploader } from '@op/sense/BannerUploader';
 import { DialogFooter } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
@@ -97,14 +99,17 @@ export const UpdateOrganizationForm = forwardRef<
   HTMLFormElement,
   UpdateOrganizationFormProps
 >(({ profile, onSuccess, className }, ref) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   // Fetch organization terms for focus areas and communities served
-  const { data: terms } = trpc.organization.getTerms.useQuery({
-    id: profile.id,
-  });
+  const { data: terms } = useQuery(
+    trpc.organization.getTerms.queryOptions({
+      id: profile.id,
+    }),
+  );
 
   // Initialize form data from profile and terms
   const initialData = transformOrganizationToFormData(profile, terms);
@@ -124,9 +129,15 @@ export const UpdateOrganizationForm = forwardRef<
       }
     : undefined;
 
-  const updateOrganization = trpc.organization.update.useMutation();
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+  const updateOrganization = useMutation(
+    trpc.organization.update.mutationOptions(),
+  );
+  const uploadAvatarImage = useMutation(
+    trpc.organization.uploadAvatarImage.mutationOptions(),
+  );
+  const uploadImage = useMutation(
+    trpc.organization.uploadAvatarImage.mutationOptions(),
+  );
 
   const [profileImage, setProfileImage] = useState<ImageData | undefined>(
     initialProfileImage,
@@ -161,9 +172,11 @@ export const UpdateOrganizationForm = forwardRef<
       await updateOrganization.mutateAsync(updateData);
 
       // Invalidate relevant queries
-      await utils.organization.getBySlug.invalidate({
-        slug: profile.profile.slug,
-      });
+      await queryClient.invalidateQueries(
+        trpc.organization.getBySlug.queryFilter({
+          slug: profile.profile.slug,
+        }),
+      );
       router.refresh();
 
       onSuccess();

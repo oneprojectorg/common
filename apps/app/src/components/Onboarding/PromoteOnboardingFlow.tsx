@@ -1,12 +1,13 @@
 'use client';
-
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Spinner } from '@op/sense/Spinner';
 import { StepperProgressIndicator } from '@op/sense/Stepper';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
@@ -46,13 +47,16 @@ export const PromoteOnboardingFlow = ({
 }: {
   hasHydrated: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const isOnline = useConnectionStatus();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { personalDetails } = useOnboardingFormStore();
-  const trpcUtils = trpc.useUtils();
-  const completeOnboarding = trpc.account.completeOnboarding.useMutation();
+  const queryClient = useQueryClient();
+  const completeOnboarding = useMutation(
+    trpc.account.completeOnboarding.mutationOptions(),
+  );
 
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
@@ -78,7 +82,9 @@ export const PromoteOnboardingFlow = ({
 
     try {
       await completeOnboarding.mutateAsync({ tos: true, privacy: true });
-      await trpcUtils.account.getMyAccount.invalidate();
+      await queryClient.invalidateQueries(
+        trpc.account.getMyAccount.pathFilter(),
+      );
       if (!isSafeRedirectPath(redirectParam)) {
         // `/` sends a non-member into the walled garden (403) — track how often
         // onboarding dead-ends here.
@@ -105,7 +111,8 @@ export const PromoteOnboardingFlow = ({
   }, [
     isOnline,
     completeOnboarding,
-    trpcUtils,
+    queryClient,
+    trpc,
     promoteRedirect,
     redirectParam,
     t,

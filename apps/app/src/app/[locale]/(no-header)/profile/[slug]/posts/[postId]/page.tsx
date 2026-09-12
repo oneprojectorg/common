@@ -1,9 +1,5 @@
 import { handleServerError } from '@/utils/handleServerError';
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
 import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
 import { Suspense, cache } from 'react';
@@ -18,13 +14,17 @@ import { PostDetail } from '@/components/posts/PostDetailView';
 // the shared queryClient, which HydrationBoundary then dehydrates — so the
 // client useSuspenseQuery hydrates without a second request.
 const fetchPost = cache(async (postId: string) => {
-  const { utils } = await createServerUtils();
-  return utils.posts.getPost.fetch({ postId, includeChildren: false });
+  const { trpc, queryClient } = await createServerTRPC();
+  return queryClient.fetchQuery(
+    trpc.posts.getPost.queryOptions({ postId, includeChildren: false }),
+  );
 });
 
 const fetchOrganizationBySlug = cache(async (slug: string) => {
-  const { utils } = await createServerUtils();
-  return utils.organization.getBySlug.fetch({ slug });
+  const { trpc, queryClient } = await createServerTRPC();
+  return queryClient.fetchQuery(
+    trpc.organization.getBySlug.queryOptions({ slug }),
+  );
 });
 
 export async function generateMetadata({
@@ -59,7 +59,7 @@ const PostDetailPage = async ({
   params: Promise<{ postId: string; slug: string }>;
 }) => {
   const { postId, slug } = await params;
-  const { queryClient } = await createServerUtils();
+  const { queryClient } = await createServerTRPC();
 
   // Shares the cache()-wrapped fetches with generateMetadata above, so each
   // resolver runs once and the data hydrates into HydrationBoundary. A missing

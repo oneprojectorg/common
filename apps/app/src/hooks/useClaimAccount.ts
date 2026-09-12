@@ -1,9 +1,9 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
 import { SUPPORTED_LOCALES } from '@op/common/locales';
 import { createSBBrowserClient } from '@op/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { i18nConfig } from '@/lib/i18n/config';
@@ -75,8 +75,9 @@ export function goToOnboarding(dest: string | null) {
 }
 
 export function useClaimAccount() {
+  const trpc = useTRPC();
   const supabase = createSBBrowserClient();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   /**
    * Attach `email` to the visitor's anon user. `updateUser({ email })` sends
@@ -112,7 +113,9 @@ export function useClaimAccount() {
         // The new session isn't reflected in the cached account query.
         // Fire-and-forget: the refetch only matters if the modal is abandoned,
         // and both success paths end in a full navigation anyway.
-        void utils.account.getMyAccount.invalidate();
+        void queryClient.invalidateQueries(
+          trpc.account.getMyAccount.pathFilter(),
+        );
       }
 
       // updateUser fails with code 'email_exists' when the email already
@@ -134,7 +137,7 @@ export function useClaimAccount() {
       }
       return { ok: true, needsOtp: true };
     },
-    [supabase, utils],
+    [supabase, queryClient, trpc],
   );
 
   /** Confirm the OTP — the claim is an email *change* on the anon user. */

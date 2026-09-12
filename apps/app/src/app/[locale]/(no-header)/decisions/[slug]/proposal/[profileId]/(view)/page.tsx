@@ -1,8 +1,4 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
@@ -13,13 +9,17 @@ import { ProposalViewClient } from './ProposalViewClient';
 // cache() dedupes the read across generateMetadata + page render (one request),
 // so the resolver and its "viewed" event fire once and the data hydrates.
 const fetchProposal = cache(async (profileId: string) => {
-  const { utils } = await createServerUtils();
-  return utils.decision.getProposal.fetch({ profileId });
+  const { trpc, queryClient } = await createServerTRPC();
+  return queryClient.fetchQuery(
+    trpc.decision.getProposal.queryOptions({ profileId }),
+  );
 });
 
 const fetchDecisionBySlug = cache(async (slug: string) => {
-  const { utils } = await createServerUtils();
-  return utils.decision.getDecisionBySlug.fetch({ slug });
+  const { trpc, queryClient } = await createServerTRPC();
+  return queryClient.fetchQuery(
+    trpc.decision.getDecisionBySlug.queryOptions({ slug }),
+  );
 });
 
 export async function generateMetadata({
@@ -54,7 +54,7 @@ const ProposalViewPage = async ({
   params: Promise<{ slug: string; profileId: string }>;
 }) => {
   const { slug, profileId } = await params;
-  const { queryClient } = await createServerUtils();
+  const { queryClient } = await createServerTRPC();
 
   // Shares the cache()-wrapped fetch with generateMetadata above, so the
   // resolver (and its view event) runs once and the data is hydrated.

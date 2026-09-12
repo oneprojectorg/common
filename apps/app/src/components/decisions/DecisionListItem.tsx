@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import {
@@ -20,6 +19,8 @@ import {
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuCalendar, LuEllipsis } from 'react-icons/lu';
@@ -56,8 +57,9 @@ export const DecisionListItem = ({
   item: DecisionProfile;
   className?: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const { processInstance } = item;
   const isDraft = processInstance.status === ProcessStatus.DRAFT;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -65,15 +67,19 @@ export const DecisionListItem = ({
   const canManage = processInstance.access?.admin === true;
   const canDelete = isDraft && (processInstance.access?.delete || canManage);
 
-  const deleteMutation = trpc.decision.deleteDecision.useMutation({
-    onSuccess: () => {
-      toast.success(t('Decision deleted successfully'));
-      utils.decision.listDecisionProfiles.invalidate();
-    },
-    onError: () => {
-      toast.error(t('Failed to delete decision'));
-    },
-  });
+  const deleteMutation = useMutation(
+    trpc.decision.deleteDecision.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Decision deleted successfully'));
+        queryClient.invalidateQueries(
+          trpc.decision.listDecisionProfiles.pathFilter(),
+        );
+      },
+      onError: () => {
+        toast.error(t('Failed to delete decision'));
+      },
+    }),
+  );
 
   // Get current phase from instanceData phases
   const currentPhase = processInstance.instanceData?.phases?.find(
