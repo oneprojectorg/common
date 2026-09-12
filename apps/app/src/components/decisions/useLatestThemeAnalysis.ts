@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { ThemeAnalysisScope, ThemeAnalysisSnapshot } from '@op/api/encoders';
+import type {
+  ThemeAnalysisScope,
+  ThemeAnalysisSnapshot,
+} from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { useEffect } from 'react';
 
