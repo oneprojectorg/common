@@ -76,13 +76,6 @@ export async function cancelRevisionRequest({
     return cancelledRequest;
   });
 
-  const requestedAtMs = request.requestedAt
-    ? Date.parse(request.requestedAt)
-    : Number.NaN;
-  const secondsOpen = Number.isFinite(requestedAtMs)
-    ? Math.round((Date.now() - requestedAtMs) / 1000)
-    : null;
-
   waitUntil(
     trackRevisionRequestCancelled(
       user.id,
@@ -91,7 +84,6 @@ export async function cancelRevisionRequest({
       {
         assignment_id: assignmentId,
         phase_id: context.assignment.phaseId,
-        seconds_open: secondsOpen,
       },
     ),
   );

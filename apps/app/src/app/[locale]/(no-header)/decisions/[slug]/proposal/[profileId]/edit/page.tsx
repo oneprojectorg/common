@@ -145,9 +145,7 @@ function EditProposalPageContent() {
   // Gated rather than firing for every viewer and swallowing a 403.
   const reviewNotes = useProposalReviewNotes({
     proposalId: proposal.id,
-    processInstanceId: instance.id,
     phaseId: instance.currentStateId,
-    surface: 'editor',
     enabled: affordances.review.feedback,
     // Both are inline-end sheets, so they would otherwise stack.
     onOpen: () => setAsideState({ aside: null }),
