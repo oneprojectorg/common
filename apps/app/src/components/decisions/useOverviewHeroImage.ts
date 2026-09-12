@@ -1,13 +1,13 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,
   IMAGE_UPLOAD_SIZE_LIMIT,
   isAllowedUploadMimeType,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -60,6 +60,7 @@ export function useOverviewHeroImage({
   initialPath?: string;
   onChange?: () => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(
     getPublicUrl(initialPath),
@@ -76,10 +77,15 @@ export function useOverviewHeroImage({
   // remove (or after a second upload) can't revert the preview to a stale
   // image or clobber `isUploading`.
   const latestRequestRef = useRef(0);
-  const signMutation =
-    trpc.decision.signOverviewHeroImageUploadUrl.useMutation();
-  const recordMutation = trpc.decision.updateOverviewHeroImage.useMutation();
-  const removeMutation = trpc.decision.removeOverviewHeroImage.useMutation();
+  const signMutation = useMutation(
+    trpc.decision.signOverviewHeroImageUploadUrl.mutationOptions(),
+  );
+  const recordMutation = useMutation(
+    trpc.decision.updateOverviewHeroImage.mutationOptions(),
+  );
+  const removeMutation = useMutation(
+    trpc.decision.removeOverviewHeroImage.mutationOptions(),
+  );
 
   const upload = async (file: File) => {
     if (

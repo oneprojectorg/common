@@ -3,7 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@op/sense/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,6 +42,7 @@ export const InviteUserModal = ({
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) => {
+  const trpc = useTRPC();
   const [emails, setEmails] = useState('');
   const [emailBadges, setEmailBadges] = useState<string[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState('');
@@ -68,36 +70,38 @@ export const InviteUserModal = ({
 
   const collectEmails = () => [...emailBadges, ...parseEmails(emails).emails];
 
-  const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: (result) => {
-      // A 200 only means the request was accepted. The server reports per-email
-      // outcomes in the payload, and `success` is merely "at least one landed",
-      // so an all-failed batch arrives here rather than in onError.
-      const failed = result.details?.failed ?? [];
+  const inviteUser = useMutation(
+    trpc.organization.invite.mutationOptions({
+      onSuccess: (result) => {
+        // A 200 only means the request was accepted. The server reports per-email
+        // outcomes in the payload, and `success` is merely "at least one landed",
+        // so an all-failed batch arrives here rather than in onError.
+        const failed = result.details?.failed ?? [];
 
-      if (!result.success) {
-        logger.error('Invite sent no invitations', {
-          context: 'InviteUserModal.sendInvite',
-          failed,
-        });
-        toast.error(t('org.inviteNoneSentTitle'), {
-          description: describeFailures(failed),
-        });
-        return;
-      }
+        if (!result.success) {
+          logger.error('Invite sent no invitations', {
+            context: 'InviteUserModal.sendInvite',
+            failed,
+          });
+          toast.error(t('org.inviteNoneSentTitle'), {
+            description: describeFailures(failed),
+          });
+          return;
+        }
 
-      if (failed.length > 0) {
-        toast.warning(t('org.invitePartialFailureTitle'), {
-          description: describeFailures(failed),
-        });
-      }
+        if (failed.length > 0) {
+          toast.warning(t('org.invitePartialFailureTitle'), {
+            description: describeFailures(failed),
+          });
+        }
 
-      handleInviteSuccess(result.details?.successful ?? []);
-    },
-    onError: (error) => {
-      handleInviteError(error, t('org.inviteSendError'));
-    },
-  });
+        handleInviteSuccess(result.details?.successful ?? []);
+      },
+      onError: (error) => {
+        handleInviteError(error, t('org.inviteSendError'));
+      },
+    }),
+  );
 
   const handleInviteSuccess = (invitedEmails: string[]) => {
     setLastInvitedEmail(invitedEmails[0] ?? '');
