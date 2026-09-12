@@ -1,11 +1,11 @@
 'use client';
-
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { type ReactNode, memo, useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -240,13 +240,17 @@ export function ProposalsMapWithLocations({
 }: Omit<ProposalsMapViewProps, 'pinProposals'> & {
   locationFilter: ProposalLocationFilter;
 }) {
-  const [{ items: pinProposals }] =
-    trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
+  const trpc = useTRPC();
+  const {
+    data: { items: pinProposals },
+  } = useSuspenseQuery(
+    trpc.decision.listProposalLocations.queryOptions(locationFilter, {
       staleTime: 30 * 1000,
       // Force a client-side fetch so the query registers its invalidation
       // channel via the client link (same pattern as the list query).
       refetchOnMount: 'always',
-    });
+    }),
+  );
 
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }

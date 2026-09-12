@@ -1,8 +1,8 @@
 'use client';
-
 import { formatCurrency } from '@/utils/formatting';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -45,11 +45,14 @@ interface ResultsStatsProps {
 }
 
 export function ResultsStats({ instanceId }: ResultsStatsProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [stats] = trpc.decision.getResultsStats.useSuspenseQuery({
-    instanceId,
-  });
+  const { data: stats } = useSuspenseQuery(
+    trpc.decision.getResultsStats.queryOptions({
+      instanceId,
+    }),
+  );
 
   if (!stats) {
     return null;

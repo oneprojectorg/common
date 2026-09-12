@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { LocationData } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import {
@@ -14,6 +13,7 @@ import {
 import { InputGroupAddon } from '@op/sense/InputGroup';
 import type { LngLat } from '@op/sense/Map';
 import { Spinner } from '@op/sense/Spinner';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
@@ -56,18 +56,21 @@ export function LocationSearchField({
   onSelect,
   center,
 }: LocationSearchFieldProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [query, setQuery] = useState('');
   // Debounce so we hit Google Places once the user pauses, not on every
   // keystroke (each call is billable + rate-limited).
   const [debouncedQuery] = useDebounce(query, 300);
 
-  const { data, isFetching } = trpc.taxonomy.getGeoNames.useQuery(
-    { q: debouncedQuery, center },
-    {
-      enabled: debouncedQuery.length >= MIN_QUERY_LENGTH,
-      placeholderData: (prev) => prev,
-    },
+  const { data, isFetching } = useQuery(
+    trpc.taxonomy.getGeoNames.queryOptions(
+      { q: debouncedQuery, center },
+      {
+        enabled: debouncedQuery.length >= MIN_QUERY_LENGTH,
+        placeholderData: (prev) => prev,
+      },
+    ),
   );
 
   // A search is in flight whenever the query is enabled and react-query is

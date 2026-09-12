@@ -1,9 +1,9 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Spinner } from '@op/sense/Spinner';
 import { cn } from '@op/sense/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
@@ -38,17 +38,20 @@ function getDomain(url: string): string {
 
 export const LinkPreview = memo(
   ({ url, className, onRemove }: LinkPreviewProps) => {
+    const trpc = useTRPC();
     const t = useTranslations();
     const {
       data: previewData,
       isLoading: loading,
       error,
-    } = trpc.content.linkPreview.useQuery(
-      { url },
-      {
-        enabled: !!url,
-        retry: false,
-      },
+    } = useQuery(
+      trpc.content.linkPreview.queryOptions(
+        { url },
+        {
+          enabled: !!url,
+          retry: false,
+        },
+      ),
     );
 
     const domain = getDomain(url);

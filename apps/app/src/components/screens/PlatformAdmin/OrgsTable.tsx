@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/sense/Header';
 import { PaginationBar } from '@op/sense/PaginationBar';
@@ -13,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/sense/Table';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -47,6 +47,7 @@ export const OrgsTable = () => {
 
 /** Renders organizations table with live data */
 const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const {
     cursor,
@@ -69,8 +70,9 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
     query: searchQuery || undefined,
   };
 
-  const [data] =
-    trpc.platform.admin.listAllOrganizations.useSuspenseQuery(queryInput);
+  const { data: data } = useSuspenseQuery(
+    trpc.platform.admin.listAllOrganizations.queryOptions(queryInput),
+  );
 
   const { items: orgs, next, total } = data;
 

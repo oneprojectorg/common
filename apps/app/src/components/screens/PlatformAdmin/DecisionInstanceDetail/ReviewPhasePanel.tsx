@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   AdminDecisionReviewer,
   AdminReviewAssignment,
@@ -16,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/sense/Table';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useFormatter } from 'next-intl';
 import { Fragment, useState } from 'react';
 import { LuChevronDown, LuChevronRight, LuDownload } from 'react-icons/lu';
@@ -100,12 +100,14 @@ export const ReviewPhasePanel = ({
   /** Completed phases are read-only: no manual assignment (server enforces too). */
   isCompleted?: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [data] =
-    trpc.platform.admin.listDecisionReviewAssignments.useSuspenseQuery({
+  const { data: data } = useSuspenseQuery(
+    trpc.platform.admin.listDecisionReviewAssignments.queryOptions({
       instanceId,
       phaseId,
-    });
+    }),
+  );
 
   return (
     <div className="flex flex-col gap-3">

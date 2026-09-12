@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   Empty,
   EmptyDescription,
@@ -10,6 +10,7 @@ import {
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { StatusBadge } from '@op/sense/StatusBadge';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,15 +31,20 @@ export const ResultsList = ({
   decisionSlug?: string;
 }) => {
   const t = useTranslations();
+  const trpc = useTRPC();
 
-  const [[instanceResults, resultStats]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstanceResults({
-      instanceId,
-    }),
-    t.decision.getResultsStats({
-      instanceId,
-    }),
-  ]);
+  const [{ data: instanceResults }, { data: resultStats }] = useSuspenseQueries(
+    {
+      queries: [
+        trpc.decision.getInstanceResults.queryOptions({
+          instanceId,
+        }),
+        trpc.decision.getResultsStats.queryOptions({
+          instanceId,
+        }),
+      ],
+    },
+  );
 
   const { items: proposals } = instanceResults;
 

@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { CommonUser } from '@op/api/encoders';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import type { Permission } from 'access-zones';
 import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext } from 'react';
@@ -45,15 +45,18 @@ export const UserProviderSuspense = ({
   children: React.ReactNode;
   initialUser: CommonUser | null;
 }) => {
+  const trpc = useTRPC();
   // Use initialUser as initialData to avoid redundant client-side fetch.
   // staleTime prevents immediate background revalidation — the server already
   // fetched fresh data for this layout render, so there's no need to re-fetch
   // on mount. This also avoids a race condition where the client-side refetch
   // fires before middleware cookie refresh is complete during navigation.
-  const [account] = trpc.account.getMyAccount.useSuspenseQuery(undefined, {
-    initialData: initialUser,
-    staleTime: 30 * 1000,
-  });
+  const { data: account } = useSuspenseQuery(
+    trpc.account.getMyAccount.queryOptions(undefined, {
+      initialData: initialUser,
+      staleTime: 30 * 1000,
+    }),
+  );
 
   // Map the API's `null` (JSON has no undefined) to match `user?:` props.
   // Fall back to the server-rendered user: sign-outs always arrive via a

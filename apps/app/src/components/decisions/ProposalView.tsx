@@ -1,14 +1,14 @@
 'use client';
-
 import {
   canEngageWithProposals,
   useProposalEngagement,
 } from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Proposal, ProposalSelection } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
+import { useQuery } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -53,6 +53,7 @@ export function ProposalView({
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
   // When the document fetch failed server-side it comes back as
@@ -61,17 +62,19 @@ export function ProposalView({
   // wait treat it as truly missing.
   const [documentLoadTimedOut, setDocumentLoadTimedOut] = useState(false);
 
-  const { data: proposal } = trpc.decision.getProposal.useQuery(
-    {
-      profileId: initialProposal.profileId,
-    },
-    {
-      refetchInterval: (query) =>
-        query.state.data?.documentContent?.type === 'unavailable' &&
-        !documentLoadTimedOut
-          ? DOCUMENT_POLL_INTERVAL_MS
-          : false,
-    },
+  const { data: proposal } = useQuery(
+    trpc.decision.getProposal.queryOptions(
+      {
+        profileId: initialProposal.profileId,
+      },
+      {
+        refetchInterval: (query) =>
+          query.state.data?.documentContent?.type === 'unavailable' &&
+          !documentLoadTimedOut
+            ? DOCUMENT_POLL_INTERVAL_MS
+            : false,
+      },
+    ),
   );
 
   // Safety check - fallback to initial data if query returns undefined

@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
@@ -40,7 +40,10 @@ function DecisionStateRouterNew({
   decisionSlug?: string;
   decisionProfileId?: string | null;
 }) {
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const trpc = useTRPC();
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
 
   const { currentStateId } = instance;
   const phases = instance.instanceData?.phases ?? [];

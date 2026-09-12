@@ -1,7 +1,6 @@
 'use client';
-
 import { ClientOnly } from '@/utils/ClientOnly';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type { SortDir } from '@op/common';
 import { nextCursor } from '@op/common/client';
@@ -16,6 +15,8 @@ import {
 } from '@op/sense/InputGroup';
 import { Skeleton } from '@op/sense/Skeleton';
 import { screens } from '@op/styles/constants';
+import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuSearch, LuCircleAlert, LuUserPlus } from 'react-icons/lu';
 
@@ -38,6 +39,7 @@ export const ProfileUsersAccess = ({
   instanceId: string;
   processName?: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,17 +64,19 @@ export const ProfileUsersAccess = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.profile.listUsers.useInfiniteQuery(
-    {
-      profileId,
-      limit: ITEMS_PER_PAGE,
-      orderBy,
-      dir,
-      query: searchFilter,
-    },
-    {
-      getNextPageParam: nextCursor,
-    },
+  } = useInfiniteQuery(
+    trpc.profile.listUsers.infiniteQueryOptions(
+      {
+        profileId,
+        limit: ITEMS_PER_PAGE,
+        orderBy,
+        dir,
+        query: searchFilter,
+      },
+      {
+        getNextPageParam: nextCursor,
+      },
+    ),
   );
 
   const { ref: scrollTriggerRef, shouldShowTrigger } = useInfiniteScroll(
@@ -81,22 +85,27 @@ export const ProfileUsersAccess = ({
   );
 
   // Fetch profile-specific roles for this decision instance
-  const { data: rolesData, isPending: rolesPending } =
-    trpc.profile.listRoles.useQuery({ profileId });
+  const { data: rolesData, isPending: rolesPending } = useQuery(
+    trpc.profile.listRoles.queryOptions({ profileId }),
+  );
 
   // Check if process is in draft status
-  const { data: instance } = trpc.decision.getInstance.useQuery({
-    instanceId,
-  });
+  const { data: instance } = useQuery(
+    trpc.decision.getInstance.queryOptions({
+      instanceId,
+    }),
+  );
   const isDraft = instance?.status === ProcessStatus.DRAFT;
 
   // Fetch pending invites to show alongside accepted members, filtered by search
-  const { data: invitesData } = trpc.profile.listProfileInvites.useQuery(
-    {
-      profileId,
-      query: searchFilter,
-    },
-    { retry: false },
+  const { data: invitesData } = useQuery(
+    trpc.profile.listProfileInvites.queryOptions(
+      {
+        profileId,
+        query: searchFilter,
+      },
+      { retry: false },
+    ),
   );
 
   const profileUsers = data?.pages.flatMap((page) => page.items) ?? [];

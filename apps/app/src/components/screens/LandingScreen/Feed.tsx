@@ -1,9 +1,9 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Fragment, useCallback } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,6 +29,7 @@ export const Feed = () => {
 
 /** Feed content component with live data */
 const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
+  const trpc = useTRPC();
   const { user } = useRequiredUser();
   const t = useTranslations();
 
@@ -37,15 +38,17 @@ const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.organization.listAllPosts.useInfiniteQuery(
-    { limit },
-    {
-      getNextPageParam: nextCursor,
-      staleTime: 30 * 1000,
-      refetchOnMount: true,
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-    },
+  } = useInfiniteQuery(
+    trpc.organization.listAllPosts.infiniteQueryOptions(
+      { limit },
+      {
+        getNextPageParam: nextCursor,
+        staleTime: 30 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+      },
+    ),
   );
 
   const allPosts = paginatedData?.pages.flatMap((page) => page.items) || [];

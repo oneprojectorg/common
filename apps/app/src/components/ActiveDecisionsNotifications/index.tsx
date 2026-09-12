@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import {
   PAGE_LIMIT,
@@ -17,6 +17,7 @@ import {
   NotificationPanelList,
 } from '@op/sense/NotificationPanel';
 import { ProfileItem } from '@op/sense/ProfileItem';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { Suspense, useState } from 'react';
 import { LuPenLine } from 'react-icons/lu';
 
@@ -27,20 +28,26 @@ import { DecisionAvatar } from '../DecisionAvatar';
 import ErrorBoundary from '../ErrorBoundary';
 
 const ActiveDecisionsNotificationsSuspense = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
-  const [[{ items: decisions }, revisionData]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.listDecisionProfiles({
+  const [
+    {
+      data: { items: decisions },
+    },
+    { data: revisionData },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.decision.listDecisionProfiles.queryOptions({
         status: [ProcessStatus.PUBLISHED],
         limit: PAGE_LIMIT.sm,
       }),
-      t.decision.listProposalsRevisionRequests({
+      trpc.decision.listProposalsRevisionRequests.queryOptions({
         states: [ProposalReviewRequestState.REQUESTED],
       }),
     ],
-  );
+  });
 
   const revisionRequests = revisionData?.items ?? [];
   const count = decisions.length + revisionRequests.length;

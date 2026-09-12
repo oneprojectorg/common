@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import {
   Select,
@@ -10,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -38,9 +38,12 @@ export const InviteToExistingOrganization = ({
   selectedOrganization,
   setSelectedOrganization,
 }: InviteToExistingOrganizationProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [{ items: roles }] = trpc.organization.getRoles.useSuspenseQuery();
+  const {
+    data: { items: roles },
+  } = useSuspenseQuery(trpc.organization.getRoles.queryOptions());
 
   const organizationItems = useAdminOrganizations();
   const selectedOrganizationItem = organizationItems.find(

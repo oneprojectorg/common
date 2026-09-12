@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { PhaseDefinition } from '@op/api/encoders';
 import {
   AlertDialog,
@@ -17,6 +16,7 @@ import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';
 import { DragHandle, Sortable } from '@op/sense/Sortable';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
@@ -34,7 +34,10 @@ export function PhasesSectionContent({
   instanceId,
   decisionProfileId,
 }: SectionProps) {
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const trpc = useTRPC();
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
 

@@ -1,7 +1,6 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
 import { Button } from '@op/sense/Button';
@@ -11,6 +10,7 @@ import { TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Fragment, ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
@@ -66,9 +66,12 @@ const FocusAreas = ({
 };
 
 const IndividualFocusAreas = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.individual.getTermsByProfile.useSuspenseQuery({
-    profileId,
-  });
+  const trpc = useTRPC();
+  const { data: terms } = useSuspenseQuery(
+    trpc.individual.getTermsByProfile.queryOptions({
+      profileId,
+    }),
+  );
 
   const focusAreas = terms['necSimple:focusArea'];
 
@@ -78,9 +81,12 @@ const IndividualFocusAreas = ({ profileId }: { profileId: string }) => {
 };
 
 const OrganizationFocusAreas = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
-    id: profileId,
-  });
+  const trpc = useTRPC();
+  const { data: terms } = useSuspenseQuery(
+    trpc.organization.getTerms.queryOptions({
+      id: profileId,
+    }),
+  );
 
   const focusAreas = terms['necSimple:focusArea'];
 
@@ -90,9 +96,12 @@ const OrganizationFocusAreas = ({ profileId }: { profileId: string }) => {
 };
 
 const CommunitiesServed = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
-    id: profileId,
-  });
+  const trpc = useTRPC();
+  const { data: terms } = useSuspenseQuery(
+    trpc.organization.getTerms.queryOptions({
+      id: profileId,
+    }),
+  );
   const t = useTranslations();
 
   const communitiesServed = terms['candid:POPULATION'];
@@ -270,14 +279,18 @@ const ProfileAbout = ({
 };
 
 const ProfileDecisions = ({ profileId }: { profileId: string }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [{ items: decisionProfiles }] =
-    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+  const {
+    data: { items: decisionProfiles },
+  } = useSuspenseQuery(
+    trpc.decision.listDecisionProfiles.queryOptions({
       limit: 3,
       stewardProfileId: profileId,
       status: [ProcessStatus.PUBLISHED],
-    });
+    }),
+  );
 
   if (!decisionProfiles[0]) {
     return null;

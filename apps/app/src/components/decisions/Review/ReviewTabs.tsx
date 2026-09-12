@@ -1,11 +1,11 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { usePostHog } from 'posthog-js/react';
 import { type ReactNode, Suspense, useState } from 'react';
 
@@ -187,6 +187,7 @@ function PhaseReviews({
   emptyMessage: string;
   excludeOwnReview?: boolean;
 }) {
+  const trpc = useTRPC();
   const { assignment } = useReviewForm();
   const { user } = useUser();
   const posthog = usePostHog();
@@ -217,12 +218,13 @@ function PhaseReviews({
     setSelectedAssignmentId(reviewAssignmentId);
   };
 
-  const [proposalWithReviews] =
-    trpc.decision.getProposalWithReviewAggregates.useSuspenseQuery({
+  const { data: proposalWithReviews } = useSuspenseQuery(
+    trpc.decision.getProposalWithReviewAggregates.queryOptions({
       processInstanceId: assignment.processInstanceId,
       proposalId: assignment.proposal.id,
       phaseId,
-    });
+    }),
+  );
 
   const visibleReviews = excludeProfileId
     ? proposalWithReviews.reviews.filter(

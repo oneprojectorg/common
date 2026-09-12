@@ -3,7 +3,7 @@
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
@@ -14,6 +14,7 @@ import { APP_NAME } from '@op/core';
 import { Button } from '@op/sense/Button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useMemo } from 'react';
@@ -76,13 +77,16 @@ function EditProposalPageContent() {
     versionId: proposalEditorVersionIdParser,
   });
   const t = useTranslations();
+  const trpc = useTRPC();
 
   // -- Data fetching ---------------------------------------------------------
 
-  const [[decisionProfile, proposal]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getDecisionBySlug({ slug }),
-    t.decision.getProposal({ profileId }),
-  ]);
+  const [{ data: decisionProfile }, { data: proposal }] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getDecisionBySlug.queryOptions({ slug }),
+      trpc.decision.getProposal.queryOptions({ profileId }),
+    ],
+  });
 
   if (!decisionProfile?.processInstance || !proposal) {
     notFound();

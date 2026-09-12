@@ -1,6 +1,6 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { ResourcesList } from './ResourcesList';
 
@@ -13,9 +13,12 @@ export const CollectionResourcesSuspense = ({
   collectionId: string;
   canManage: boolean;
 }) => {
-  const [data] = trpc.resources.listByCollection.useSuspenseQuery(
-    { collectionId },
-    { staleTime: 30 * 1000 },
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.resources.listByCollection.queryOptions(
+      { collectionId },
+      { staleTime: 30 * 1000 },
+    ),
   );
 
   const resources = data.items;

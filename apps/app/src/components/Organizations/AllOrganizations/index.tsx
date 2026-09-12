@@ -1,10 +1,10 @@
 'use client';
-
-import { type RouterOutput, trpc } from '@op/api/client';
+import { type RouterOutput, useTRPC } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonText } from '@op/sense/Skeleton';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -24,25 +24,30 @@ export const AllOrganizationsSuspense = ({
   initialData?: ProfileListResponse;
   types?: EntityType[];
 }) => {
+  const trpc = useTRPC();
   const {
     data: paginatedData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.profile.list.useInfiniteQuery(
-    {
-      limit,
-      types: types ?? [EntityType.ORG],
-    },
-    initialData
-      ? {
-          initialData: {
-            pages: [initialData],
-            pageParams: [null],
-          },
-          getNextPageParam: nextCursor,
-        }
-      : undefined,
+  } = useInfiniteQuery(
+    trpc.profile.list.infiniteQueryOptions(
+      {
+        limit,
+        types: types ?? [EntityType.ORG],
+      },
+      {
+        getNextPageParam: nextCursor,
+        ...(initialData
+          ? {
+              initialData: {
+                pages: [initialData],
+                pageParams: [null],
+              },
+            }
+          : {}),
+      },
+    ),
   );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {

@@ -1,5 +1,6 @@
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { LngLat } from '@op/sense/Map';
+import { useQuery } from '@tanstack/react-query';
 
 interface ProjectAreaCheck {
   /** True while no point is set, while resolving, or when inside a boundary. */
@@ -24,15 +25,18 @@ export function useProjectAreaCheck(
   point: LngLat | null,
   profileId: string | null,
 ): ProjectAreaCheck {
+  const trpc = useTRPC();
   const enabled = point != null && profileId != null;
 
-  const query = trpc.decision.resolveBoundary.useQuery(
-    {
-      lat: point?.lat ?? 0,
-      lng: point?.lng ?? 0,
-      profileId: profileId ?? '',
-    },
-    { enabled, staleTime: 60_000 },
+  const query = useQuery(
+    trpc.decision.resolveBoundary.queryOptions(
+      {
+        lat: point?.lat ?? 0,
+        lng: point?.lng ?? 0,
+        profileId: profileId ?? '',
+      },
+      { enabled, staleTime: 60_000 },
+    ),
   );
 
   const isResolving = enabled && query.isFetching;
