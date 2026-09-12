@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -17,8 +17,11 @@ export type UploadedResource = {
 };
 
 export const useResourceUpload = (profileId: string) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const uploadMutation = trpc.resources.uploadFile.useMutation();
+  const uploadMutation = useMutation(
+    trpc.resources.uploadFile.mutationOptions(),
+  );
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState<UploadedResource | null>(null);
   // Bump on every upload start. If a slower in-flight call resolves after a

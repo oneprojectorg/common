@@ -1,10 +1,10 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { match } from '@op/core';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -27,24 +27,27 @@ export interface ProposalModerationActions {
 export function useProposalModerationActions(
   proposal: Proposal,
 ): ProposalModerationActions {
+  const trpc = useTRPC();
   const t = useTranslations();
 
   const proposalTitle = proposal.profile.name || t('Untitled Proposal');
 
-  const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('Failed to update proposal visibility'));
-    },
-    onSuccess: (_, variables) => {
-      if (variables.data.visibility) {
-        const message = match(variables.data.visibility, {
-          [Visibility.HIDDEN]: `${proposalTitle} ${t('is now hidden from active proposals.')}`,
-          [Visibility.VISIBLE]: `${proposalTitle} ${t('is now visible in active proposals.')}`,
-        });
-        toast.success(message);
-      }
-    },
-  });
+  const updateVisibilityMutation = useMutation(
+    trpc.decision.updateProposal.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message || t('Failed to update proposal visibility'));
+      },
+      onSuccess: (_, variables) => {
+        if (variables.data.visibility) {
+          const message = match(variables.data.visibility, {
+            [Visibility.HIDDEN]: `${proposalTitle} ${t('is now hidden from active proposals.')}`,
+            [Visibility.VISIBLE]: `${proposalTitle} ${t('is now visible in active proposals.')}`,
+          });
+          toast.success(message);
+        }
+      },
+    }),
+  );
 
   const isHidden = proposal.visibility === Visibility.HIDDEN;
 

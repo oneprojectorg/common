@@ -1,7 +1,6 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import {
@@ -20,6 +19,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@op/sense/Tooltip';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Suspense, useState, useTransition } from 'react';
 import { LuClock, LuUserPlus } from 'react-icons/lu';
 
@@ -53,6 +54,7 @@ const RequestMembershipButtonSuspense = ({
 }: {
   profile: Organization;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const { user } = useRequiredUser();
   const [isPending, startTransition] = useTransition();
@@ -61,13 +63,19 @@ const RequestMembershipButtonSuspense = ({
   const currentProfileId = user.currentProfile?.id;
 
   // Check if there's already a pending join request
-  const [existingRequest] = trpc.profile.getJoinRequest.useSuspenseQuery({
-    requestProfileId: currentProfileId!,
-    targetProfileId: profile.profile.id,
-  });
+  const { data: existingRequest } = useSuspenseQuery(
+    trpc.profile.getJoinRequest.queryOptions({
+      requestProfileId: currentProfileId!,
+      targetProfileId: profile.profile.id,
+    }),
+  );
 
-  const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
-  const deleteJoinRequest = trpc.profile.deleteJoinRequest.useMutation();
+  const createJoinRequest = useMutation(
+    trpc.profile.createJoinRequest.mutationOptions(),
+  );
+  const deleteJoinRequest = useMutation(
+    trpc.profile.deleteJoinRequest.mutationOptions(),
+  );
 
   const hasPendingRequest =
     existingRequest?.status === JoinProfileRequestStatus.PENDING;

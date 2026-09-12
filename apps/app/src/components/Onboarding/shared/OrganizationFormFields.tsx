@@ -1,8 +1,9 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
 import { BannerUploader } from '@op/sense/BannerUploader';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { type ComponentProps, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
@@ -47,9 +48,14 @@ export const OrganizationFormFields = ({
   initialBannerImage,
   children,
 }: OrganizationFormFieldsProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+  const uploadAvatarImage = useMutation(
+    trpc.organization.uploadAvatarImage.mutationOptions(),
+  );
+  const uploadImage = useMutation(
+    trpc.organization.uploadAvatarImage.mutationOptions(),
+  );
 
   const [profileImage, setProfileImage] = useState<ImageData | undefined>(
     initialProfileImage,

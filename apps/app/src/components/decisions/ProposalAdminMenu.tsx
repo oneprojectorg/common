@@ -1,11 +1,12 @@
 'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
@@ -62,6 +63,7 @@ function ProposalAdminMenuItems({
   proposal: Proposal;
   backHref: string;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -71,18 +73,20 @@ function ProposalAdminMenuItems({
   const { toggleVisibility, isHidden, isLoading } =
     useProposalModerationActions(proposal);
   // No invalidation needed: the endpoint registers the affected proposal channels.
-  const unmergeMutation = trpc.decision.unmergeProposal.useMutation({
-    onError: (error) => {
-      toast.error(
-        error.message ||
-          t('Could not unmerge this proposal. Please try again.'),
-      );
-      logger.error('Failed to unmerge proposal', {
-        error,
-        context: 'ProposalAdminMenu',
-      });
-    },
-  });
+  const unmergeMutation = useMutation(
+    trpc.decision.unmergeProposal.mutationOptions({
+      onError: (error) => {
+        toast.error(
+          error.message ||
+            t('Could not unmerge this proposal. Please try again.'),
+        );
+        logger.error('Failed to unmerge proposal', {
+          error,
+          context: 'ProposalAdminMenu',
+        });
+      },
+    }),
+  );
   const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
   // The parent gate already requires admin + non-draft, so the slot always
@@ -93,9 +97,11 @@ function ProposalAdminMenuItems({
 
   // A superseded proposal leaves every listing, so its own page is the only
   // surface that can offer the undo. Gated with the item it feeds.
-  const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
-    { sourceProposalId: proposal.id },
-    { enabled: mergeEnabled },
+  const { data: mergedAway } = useQuery(
+    trpc.decision.listProposalRelationships.queryOptions(
+      { sourceProposalId: proposal.id },
+      { enabled: mergeEnabled },
+    ),
   );
   const supersededBy = mergedAway?.items[0];
 

@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   RESOURCE_DESCRIPTION_MAX_LEN,
   RESOURCE_TITLE_MAX_LEN,
@@ -18,6 +17,8 @@ import {
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
@@ -34,11 +35,14 @@ export const AddResourceLinkForm = ({
   onSuccess: () => void;
   onCancel: () => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const createLink = trpc.resources.createLink.useMutation({
-    onSuccess: () => toast.success(t('Resource added')),
-    onError: () => toast.error(t('Could not add resource')),
-  });
+  const createLink = useMutation(
+    trpc.resources.createLink.mutationOptions({
+      onSuccess: () => toast.success(t('Resource added')),
+      onError: () => toast.error(t('Could not add resource')),
+    }),
+  );
 
   const [url, setUrl] = useState('');
   const [titleInput, setTitleInput] = useState<string | null>(null);
@@ -56,9 +60,11 @@ export const AddResourceLinkForm = ({
   const debouncedValid =
     debouncedUrl !== null && httpUrlSchema.safeParse(debouncedUrl).success;
 
-  const previewQuery = trpc.content.linkPreview.useQuery(
-    { url: debouncedUrl ?? '' },
-    { enabled: debouncedValid, retry: false, staleTime: 60 * 1000 },
+  const previewQuery = useQuery(
+    trpc.content.linkPreview.queryOptions(
+      { url: debouncedUrl ?? '' },
+      { enabled: debouncedValid, retry: false, staleTime: 60 * 1000 },
+    ),
   );
 
   const previewTitle =

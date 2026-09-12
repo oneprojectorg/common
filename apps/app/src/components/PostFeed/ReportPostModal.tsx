@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -10,6 +9,7 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -28,17 +28,20 @@ export function ReportPostModal({
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const reportMutation = trpc.moderation.flagItem.useMutation({
-    onSuccess: () => {
-      toast.success(t('Reported for moderation review'));
-      onOpenChange(false);
-    },
-    onError: () => {
-      toast.error(t('Could not report this content. Please try again.'));
-    },
-  });
+  const reportMutation = useMutation(
+    trpc.moderation.flagItem.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Reported for moderation review'));
+        onOpenChange(false);
+      },
+      onError: () => {
+        toast.error(t('Could not report this content. Please try again.'));
+      },
+    }),
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

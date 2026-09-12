@@ -1,13 +1,13 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,
   IMAGE_UPLOAD_SIZE_LIMIT,
   isAllowedUploadMimeType,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,6 +41,7 @@ export function useProfileImageUpload({
   initialUrl?: string;
   onSuccess?: () => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [url, setUrl] = useState<string | undefined>(initialUrl);
   const [isUploading, setIsUploading] = useState(false);
@@ -48,8 +49,12 @@ export function useProfileImageUpload({
   // a newer request superseded them, so a slow upload landing after a second
   // upload can't revert the preview to a stale image or clobber `isUploading`.
   const latestRequestRef = useRef(0);
-  const signMutation = trpc.profile.signProfileImageUploadUrl.useMutation();
-  const saveMutation = trpc.profile.saveProfileImage.useMutation();
+  const signMutation = useMutation(
+    trpc.profile.signProfileImageUploadUrl.mutationOptions(),
+  );
+  const saveMutation = useMutation(
+    trpc.profile.saveProfileImage.mutationOptions(),
+  );
 
   const upload = async (file: File) => {
     if (!profileId) {
