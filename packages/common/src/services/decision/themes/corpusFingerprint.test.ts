@@ -29,7 +29,10 @@ describe('fingerprintCorpus', () => {
   // rather than positions, so a reshuffle is the same corpus.
   it('ignores the order the proposals came back in', () => {
     expect(fingerprintCorpus([proposalB, proposalA])).toBe(
-      fingerprintCorpus([{ ...proposalA, index: 2 }, { ...proposalB, index: 1 }]),
+      fingerprintCorpus([
+        { ...proposalA, index: 2 },
+        { ...proposalB, index: 1 },
+      ]),
     );
   });
 
