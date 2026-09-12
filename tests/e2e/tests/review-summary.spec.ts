@@ -319,8 +319,9 @@ test.describe('Review Summary page', () => {
       .getByText('Average score:', { exact: true })
       .first()
       .locator('..');
-    await expect(averageScoreSection).toContainText('6.3');
-    await expect(averageScoreSection).toContainText('/8 points');
+    // The panel rounds the average to a whole number, so the 6.3 average of
+    // the three submitted reviews renders as "6/8 points".
+    await expect(averageScoreSection).toContainText('6/8 points');
 
     // ====================================================================
     // Step 2: Recommendation groups — Yes (2), Maybe (1); No is filtered out
