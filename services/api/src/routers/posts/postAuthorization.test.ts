@@ -1295,6 +1295,184 @@ describe.concurrent('proposal post authorization', () => {
   });
 });
 
+describe.concurrent('phase-level comment gating', () => {
+  const setUpPhaseWithComments = async (
+    testData: TestDecisionsDataManager,
+    { allowComments }: { allowComments: boolean },
+  ) => {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    // The gate reads the CURRENT phase, so the rule goes on that phase.
+    // `updateDecisionInstance` replaces a phase's whole `rules` object, so the
+    // existing rules are carried over rather than dropped.
+    const currentPhaseId = instance.instance.currentStateId;
+    const currentPhase = instance.instance.instanceData?.phases?.find(
+      (phase) => phase.phaseId === currentPhaseId,
+    );
+    if (!currentPhaseId || !currentPhase) {
+      throw new Error('Test instance has no current phase');
+    }
+
+    await adminCaller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [
+        {
+          phaseId: currentPhaseId,
+          rules: {
+            ...currentPhase.rules,
+            comments: { submit: allowComments },
+          },
+        },
+      ],
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    return {
+      setup,
+      instance,
+      adminCaller,
+      memberCaller: await createAuthenticatedCaller(member.email),
+    };
+  };
+
+  it('rejects a comment on a proposal when the current phase disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, memberCaller } = await setUpPhaseWithComments(
+      testData,
+      { allowComments: false },
+    );
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Comments off', description: 'desc' },
+    });
+
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Comment on a process with comments turned off.',
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: 'Comments are turned off for this phase',
+      },
+    });
+  });
+
+  it('rejects a reply to a process update when the current phase disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, adminCaller, memberCaller } =
+      await setUpPhaseWithComments(testData, { allowComments: false });
+
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update on a process with comments turned off.',
+      profileId: instance.profileId,
+    });
+
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Reply that should be refused.',
+        parentPostId: update.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: 'Comments are turned off for this phase',
+      },
+    });
+  });
+
+  it('still admits an admin update when the current phase disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, adminCaller } = await setUpPhaseWithComments(testData, {
+      allowComments: false,
+    });
+
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update stays available.',
+      profileId: instance.profileId,
+    });
+
+    expect(update.content).toBe('Admin update stays available.');
+  });
+
+  it('admits a comment when the current phase allows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, memberCaller } = await setUpPhaseWithComments(
+      testData,
+      { allowComments: true },
+    );
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Comments on', description: 'desc' },
+    });
+
+    const comment = await memberCaller.posts.createPost({
+      content: 'Comment on a process with comments turned on.',
+      profileId: proposal.profileId,
+    });
+
+    expect(comment.content).toBe(
+      'Comment on a process with comments turned on.',
+    );
+  });
+
+  it('admits a comment when the phase never set the toggle', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Toggle unset', description: 'desc' },
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const comment = await memberCaller.posts.createPost({
+      content: 'Comment on a process that never set the toggle.',
+      profileId: proposal.profileId,
+    });
+
+    expect(comment.content).toBe(
+      'Comment on a process that never set the toggle.',
+    );
+  });
+});
+
 // Pin the schema contract introduced by resolvePostRoots: every new post must
 // have rootProfileId / rootPostId set per the integration's rules. Behavioral
 // tests above only verify auth pass/fail, which would still pass if the

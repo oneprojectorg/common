@@ -44,6 +44,7 @@ import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslationNotice } from './TranslationNotice';
 import { resolveProposalSystemFields } from './proposalContentUtils';
+import { useCommentsAllowed } from './useCommentsAllowed';
 
 export type ProposalTranslation = {
   htmlContent: Record<string, string | string[]>;
@@ -317,6 +318,7 @@ function EngagementRow({
   engagement?: ProposalEngagement;
 }) {
   const t = useTranslations();
+  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
 
   const likesCount = proposal.likesCount || 0;
   const followersCount = proposal.followersCount || 0;
@@ -346,15 +348,17 @@ function EngagementRow({
       />
       {/* A link, not a toggle: jumping to the comments works for any viewer,
           signed in or not. `px-2` matches the ghost toggles' inset. */}
-      <ButtonLink
-        href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-        variant="ghost"
-        size="sm"
-        className="px-2 text-muted-foreground hover:text-foreground"
-      >
-        <LuMessageCircle aria-hidden />
-        <AnimatedCount value={commentsCount} /> {commentsNoun}
-      </ButtonLink>
+      {commentsEnabled && (
+        <ButtonLink
+          href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+          variant="ghost"
+          size="sm"
+          className="px-2 text-muted-foreground hover:text-foreground"
+        >
+          <LuMessageCircle aria-hidden />
+          <AnimatedCount value={commentsCount} /> {commentsNoun}
+        </ButtonLink>
+      )}
     </div>
   );
 }

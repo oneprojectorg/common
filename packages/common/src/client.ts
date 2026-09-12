@@ -13,6 +13,8 @@ export {
 // Re-exported from the decision utils so client components can resolve
 // phase-level settings without pulling in the server-only utils barrel.
 export {
+  allowsComments,
+  areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
   hasVotingPhase,

@@ -22,6 +22,7 @@ import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
+import { useCommentsAllowed } from './useCommentsAllowed';
 import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
 
@@ -54,6 +55,7 @@ export function ProposalView({
   selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
+  const commentsEnabled = useCommentsAllowed(initialProposal.processInstanceId);
 
   // When the document fetch failed server-side it comes back as
   // `{ type: 'unavailable' }`. That can be transient (still syncing from the
@@ -174,10 +176,12 @@ export function ProposalView({
         decisionRoot={decisionRoot}
       />
 
-      <ProposalComments
-        proposal={currentProposal}
-        decisionRoot={decisionRoot}
-      />
+      {commentsEnabled && (
+        <ProposalComments
+          proposal={currentProposal}
+          decisionRoot={decisionRoot}
+        />
+      )}
     </>
   );
 
@@ -203,6 +207,7 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
+      commentsEnabled={commentsEnabled}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
       // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}

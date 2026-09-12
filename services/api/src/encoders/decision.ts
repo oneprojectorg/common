@@ -80,6 +80,7 @@ const phaseRulesEncoder = z.object({
       maxVotesPerMember: z.number().int().positive().optional(),
     })
     .optional(),
+  comments: z.object({ submit: z.boolean().optional() }).optional(),
   advancement: z
     .object({
       method: z.enum(['date', 'manual']),

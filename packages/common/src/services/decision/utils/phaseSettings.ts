@@ -41,6 +41,38 @@ export function isVotingPhase(phase: {
   return phase.rules?.voting?.submit ?? false;
 }
 
+/**
+ * Participants may comment during this phase — the Process Builder's
+ * "Comments" toggle.
+ *
+ * Defaults to TRUE, unlike every sibling rule: phases configured before this
+ * toggle existed carry no `comments` key and all of them allow commenting
+ * today, so defaulting to false would retire commenting on every live process.
+ */
+export function allowsComments(phase: {
+  rules?: { comments?: { submit?: boolean } };
+}): boolean {
+  return phase.rules?.comments?.submit ?? true;
+}
+
+/** Whether the instance's current phase takes comments. */
+export function areCommentsAllowed({
+  phases,
+  currentPhaseId,
+}: {
+  phases: readonly {
+    phaseId: string;
+    rules?: { comments?: { submit?: boolean } };
+  }[];
+  currentPhaseId: string | null | undefined;
+}): boolean {
+  const phase = phases.find((p) => p.phaseId === currentPhaseId);
+
+  // An unresolvable phase falls back to allowed rather than muting a process
+  // whose phase list has not caught up.
+  return phase ? allowsComments(phase) : true;
+}
+
 /** Whether an already-submitted proposal may still be edited. */
 export function isPostSubmissionEditingAllowed({
   phases,

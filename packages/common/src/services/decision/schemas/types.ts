@@ -28,6 +28,10 @@ export interface PhaseRules {
     /** Undefined = no limit (distinct from 0, which would block all voting). */
     maxVotesPerMember?: number;
   };
+  comments?: {
+    /** Unlike its siblings this defaults to TRUE — see `allowsComments`. */
+    submit?: boolean;
+  };
   advancement?: {
     method: 'date' | 'manual';
     endDate?: string;

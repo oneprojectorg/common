@@ -29,6 +29,10 @@ function ProposalViewPageContent({
 
   const decisionRoot = `/profile/${orgSlug}/decisions/${instanceId}`;
 
+  // Comments fall back to allowed here: legacy phases carry no `comments` rule,
+  // and neither endpoint reports one — `getLegacyInstance` drops phase rules at
+  // its encoder and needs auth (these links are public), `getInstance` parses
+  // new-schema instances only.
   return (
     <ProposalView
       proposal={proposal}
