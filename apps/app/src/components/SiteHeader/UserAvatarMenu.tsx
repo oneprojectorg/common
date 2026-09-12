@@ -376,7 +376,8 @@ const AvatarMenuContent = ({
           onClick={() => {
             // Full-page navigation: client-side routing would re-render the
             // authed tree with a dead session before the redirect lands.
-            void logout.refetch().finally(() => window.location.assign('/'));
+            const goHome = () => window.location.assign('/');
+            void logout.mutateAsync().then(goHome, goHome);
             onClose?.();
           }}
         >
@@ -628,6 +629,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     <>
       <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <DropdownMenuTrigger
+          data-testid="user-menu-trigger"
           render={
             <Button
               variant="ghost"

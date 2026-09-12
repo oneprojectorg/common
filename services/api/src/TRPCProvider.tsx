@@ -1,6 +1,5 @@
 'use client';
 
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { TRPCClientError } from '@trpc/client';
@@ -12,7 +11,10 @@ import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import React, { createContext, useState } from 'react';
 
 import { createLinks } from './links';
+import { queryPersister } from './queryPersister';
 import type { AppRouter } from './routers';
+
+export { clearPersistedQueryCache } from './queryPersister';
 
 // A module-level QueryClient is shared across every SSR render on the same
 // Node worker — two concurrent requests would read each other's cached
@@ -23,10 +25,6 @@ import type { AppRouter } from './routers';
  * This allows tRPC HTTP calls to include cookies during SSR
  */
 const SSRCookiesContext = createContext<string | undefined>(undefined);
-
-const persister = createSyncStoragePersister({
-  storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-});
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -80,7 +78,7 @@ export function TRPCProvider({
         <PersistQueryClientProvider
           client={queryClient}
           persistOptions={{
-            persister,
+            persister: queryPersister,
             // Bump whenever a persisted payload's shape changes. Entries are
             // kept for 24h, so without this a returning user restores posts
             // shaped for the previous release and renders undefined counts.
