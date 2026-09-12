@@ -1,5 +1,6 @@
 'use client';
 
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
   type ProposalFeedbackItem,
@@ -8,6 +9,7 @@ import {
   type ProposalRevisionNote,
 } from '@op/common/client';
 import { useQueryStates } from 'nuqs';
+import { usePostHog } from 'posthog-js/react';
 import { useCallback, useMemo } from 'react';
 
 import {
@@ -31,16 +33,22 @@ export interface ProposalReviewNotes {
 /** The "Review notes" sheet's contents and its open state, read as one unit. */
 export function useProposalReviewNotes({
   proposalId,
+  processInstanceId,
   phaseId,
+  surface,
   enabled,
   onOpen,
 }: {
   proposalId: string;
+  processInstanceId: string;
   /** The instance's current phase; `null` leaves nothing answerable. */
   phaseId: string | null;
+  /** Which page mounts the sheet, so the two surfaces stay separable. */
+  surface: 'editor' | 'view';
   enabled: boolean;
   onOpen?: () => void;
 }): ProposalReviewNotes {
+  const posthog = usePostHog();
   const [
     { reviewNotes: isReviewNotesRequested, reviewRevision, feedback },
     setQueryState,
@@ -89,10 +97,31 @@ export function useProposalReviewNotes({
   const hasReviewNotes =
     openRequests.length > 0 || noteGroups.length > 0 || hasFeedback;
 
+  // `?reviewRevision=<id>` and `?feedback=true` are email deep-link aliases.
+  const isOpen =
+    hasReviewNotes &&
+    (isReviewNotesRequested || Boolean(reviewRevision) || feedback);
+
   const setOpen = useCallback(
     (open: boolean) => {
       if (open) {
         onOpen?.();
+
+        // Only the closed -> open transition counts as opening the panel.
+        if (!isOpen) {
+          posthog.capture(
+            'review_notes_opened',
+            getDecisionCommonProperties({
+              decisionInstanceId: processInstanceId,
+              proposalId,
+              additionalProps: {
+                open_request_count: openRequests.length,
+                has_unread: openRequests.length > 0,
+                surface,
+              },
+            }),
+          );
+        }
       }
 
       // Closing has to clear the deep-link params too, or the sheet reopens.
@@ -105,13 +134,17 @@ export function useProposalReviewNotes({
         { history: 'push', scroll: false },
       );
     },
-    [onOpen, setQueryState],
+    [
+      onOpen,
+      setQueryState,
+      posthog,
+      isOpen,
+      processInstanceId,
+      proposalId,
+      openRequests,
+      surface,
+    ],
   );
-
-  // `?reviewRevision=<id>` and `?feedback=true` are email deep-link aliases.
-  const isOpen =
-    hasReviewNotes &&
-    (isReviewNotesRequested || Boolean(reviewRevision) || feedback);
 
   const toggle = useCallback(() => setOpen(!isOpen), [isOpen, setOpen]);
 

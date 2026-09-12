@@ -127,7 +127,9 @@ export function ProposalView({
   // `feedback`, not `revisions`: the sheet outlives the review phase.
   const reviewNotes = useProposalReviewNotes({
     proposalId: currentProposal.id,
+    processInstanceId,
     phaseId: currentPhaseId,
+    surface: 'view',
     enabled: affordances.review.feedback,
   });
 

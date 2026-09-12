@@ -1,3 +1,4 @@
+import { trackReviewUpdated } from '@op/analytics';
 import { and, db, eq } from '@op/db/client';
 import {
   type ProposalReview,
@@ -5,8 +6,11 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 
 import { ValidationError } from '../../utils';
+import { getRubricScoringInfo } from './getRubricScoringInfo';
+import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -80,6 +84,26 @@ export async function updateReview({
 
     return row;
   });
+
+  const scoredCriterionKeys = getRubricScoringInfo(context.rubricTemplate)
+    .criteria.filter((criterion) => criterion.scored)
+    .map((criterion) => criterion.key);
+  const scored = getSubmittedReviewScore(updatedReview, scoredCriterionKeys);
+
+  waitUntil(
+    trackReviewUpdated(
+      user.id,
+      context.assignment.processInstanceId,
+      context.assignment.proposalId,
+      {
+        assignment_id: assignmentId,
+        phase_id: context.assignment.phaseId,
+        was_out_of_date: stale,
+        recommendation: scored?.overallRecommendation ?? null,
+        score: scored?.score ?? null,
+      },
+    ),
+  );
 
   return {
     review: updatedReview,
