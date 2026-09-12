@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { TermWithChildren } from '@op/common';
 import {
   Combobox,
@@ -18,6 +17,7 @@ import {
 } from '@op/sense/Combobox';
 import { Label } from '@op/sense/Label';
 import { Spinner } from '@op/sense/Spinner';
+import { useQuery } from '@tanstack/react-query';
 import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -101,12 +101,15 @@ export const TermsMultiSelect = ({
   errorMessage?: string;
   showDefinitions?: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   // Controlled vocabularies are small, so fetch the whole tree once and let
   // base-ui filter client-side (no server query needed).
-  const { data, isLoading } = trpc.taxonomy.getTerms.useQuery({
-    name: taxonomy,
-  });
+  const { data, isLoading } = useQuery(
+    trpc.taxonomy.getTerms.queryOptions({
+      name: taxonomy,
+    }),
+  );
   const terms = data?.items ?? [];
 
   const selectedOptions = value ?? [];

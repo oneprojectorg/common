@@ -1,8 +1,9 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Switch } from '@op/sense/Switch';
+import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 
@@ -72,9 +73,12 @@ export function ProcessSettingsForm({
   instanceId,
   decisionName,
 }: SectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
 
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
@@ -82,7 +86,9 @@ export function ProcessSettingsForm({
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Fetch the current user's profiles (individual + organizations)
-  const { data: userProfilesData } = trpc.account.getUserProfiles.useQuery();
+  const { data: userProfilesData } = useQuery(
+    trpc.account.getUserProfiles.queryOptions(),
+  );
   const userProfiles = userProfilesData?.items;
   const profileItems = (userProfiles ?? []).map((p) => ({
     id: p.id,

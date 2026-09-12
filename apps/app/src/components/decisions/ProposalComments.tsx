@@ -1,8 +1,7 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { PAGE_LIMIT, type Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -15,6 +14,7 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
+import { useQuery } from '@tanstack/react-query';
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import { LuTriangleAlert, LuUserRoundPlus } from 'react-icons/lu';
 
@@ -41,6 +41,7 @@ export function ProposalComments({
   decisionRoot: string;
   readOnly?: boolean;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const { user } = useUser();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,16 +52,18 @@ export function ProposalComments({
     isLoading: commentsLoading,
     error: commentsError,
     refetch: refetchComments,
-  } = trpc.posts.listProposalComments.useQuery({
-    profileId: proposal.profileId,
-    // TODO(followup): paginate. `next` is discarded and there is no load-more,
-    // so anything past the first page is unreachable — and the window now
-    // spans the target plus every proposal merged into it, so the target's own
-    // older comments can be pushed out by carried-over ones with no
-    // indication. The header count below reads from the loaded page, so it
-    // reports 50 rather than the true total once truncated.
-    limit: PAGE_LIMIT.lg,
-  });
+  } = useQuery(
+    trpc.posts.listProposalComments.queryOptions({
+      profileId: proposal.profileId,
+      // TODO(followup): paginate. `next` is discarded and there is no load-more,
+      // so anything past the first page is unreachable — and the window now
+      // spans the target plus every proposal merged into it, so the target's own
+      // older comments can be pushed out by carried-over ones with no
+      // indication. The header count below reads from the loaded page, so it
+      // reports 50 rather than the true total once truncated.
+      limit: PAGE_LIMIT.lg,
+    }),
+  );
 
   const comments = commentsData?.items ?? [];
   const { handleLikeClick } = usePostFeedActions();

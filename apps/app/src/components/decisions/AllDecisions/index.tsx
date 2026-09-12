@@ -1,13 +1,14 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { match } from '@op/core';
 import { useInfiniteScroll } from '@op/hooks';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useQueryState } from 'nuqs';
 import { Fragment, Suspense } from 'react';
 
@@ -57,21 +58,24 @@ const DecisionsListSuspense = ({
   status: ProcessStatus[];
   ownerProfileId?: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const {
     data: paginatedData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.decision.listDecisionProfiles.useInfiniteQuery(
-    {
-      limit: PAGE_LIMIT.md,
-      status,
-      ownerProfileId,
-    },
-    {
-      getNextPageParam: nextCursor,
-    },
+  } = useInfiniteQuery(
+    trpc.decision.listDecisionProfiles.infiniteQueryOptions(
+      {
+        limit: PAGE_LIMIT.md,
+        status,
+        ownerProfileId,
+      },
+      {
+        getNextPageParam: nextCursor,
+      },
+    ),
   );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
@@ -112,17 +116,21 @@ const DecisionsListSuspense = ({
 };
 
 const AllDecisionsTabs = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const { user } = useRequiredUser();
   const [tab, setTab] = useQueryState('tab');
   const ownerProfileId = user.currentProfile?.id;
 
-  const [{ items: drafts }] =
-    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+  const {
+    data: { items: drafts },
+  } = useSuspenseQuery(
+    trpc.decision.listDecisionProfiles.queryOptions({
       limit: 1,
       status: [ProcessStatus.DRAFT],
       ownerProfileId,
-    });
+    }),
+  );
 
   const hasDrafts = drafts.length > 0;
   const selectedTab = match(tab, {

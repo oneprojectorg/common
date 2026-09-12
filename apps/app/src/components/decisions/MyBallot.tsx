@@ -1,10 +1,10 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -37,15 +37,18 @@ export const MyBallot = ({
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
 }) => {
+  const trpc = useTRPC();
   const user = useUser();
 
   if (!user.user?.id) {
     return <NoVoteFound />;
   }
 
-  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
-    processInstanceId: instanceId,
-  });
+  const { data: voteStatus } = useSuspenseQuery(
+    trpc.decision.getVotingStatus.queryOptions({
+      processInstanceId: instanceId,
+    }),
+  );
 
   if (!voteStatus.hasVoted || !voteStatus.voteSubmission) {
     return <NoVoteFound />;
@@ -72,12 +75,17 @@ const MyBallotProposals = ({
   decisionSlug?: string;
   votedByProfileId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [{ items: proposals }] = trpc.decision.listProposals.useSuspenseQuery({
-    processInstanceId: instanceId,
-    votedByProfileId,
-  });
+  const {
+    data: { items: proposals },
+  } = useSuspenseQuery(
+    trpc.decision.listProposals.queryOptions({
+      processInstanceId: instanceId,
+      votedByProfileId,
+    }),
+  );
 
   return (
     <div className="flex flex-col gap-4 pb-12">

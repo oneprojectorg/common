@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
 import { PAGE_LIMIT } from '@op/common/client';
 import { match } from '@op/core';
@@ -12,6 +11,7 @@ import {
 } from '@op/sense/Empty';
 import { Header1 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { LuUsers, LuUser } from 'react-icons/lu';
 
@@ -28,13 +28,16 @@ export const ProfileSearchResultsSuspense = ({
   query: string;
   limit?: number;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [profileSearchResults] = trpc.profile.search.useSuspenseQuery({
-    limit,
-    q: query,
-    types: [EntityType.ORG, EntityType.INDIVIDUAL],
-  });
+  const { data: profileSearchResults } = useSuspenseQuery(
+    trpc.profile.search.queryOptions({
+      limit,
+      q: query,
+      types: [EntityType.ORG, EntityType.INDIVIDUAL],
+    }),
+  );
 
   const totalResults = profileSearchResults.reduce(
     (acc, curr) => acc + curr.results.length,

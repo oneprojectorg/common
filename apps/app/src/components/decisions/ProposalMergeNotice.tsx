@@ -1,8 +1,8 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { type ReactNode, Suspense } from 'react';
 import { LuMerge } from 'react-icons/lu';
 
@@ -43,13 +43,17 @@ function ProposalMergeNoticeSuspense({
   proposal: Proposal;
   decisionRoot: string;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
   // Pinning the source end asks what this was merged into: at most one row.
-  const [{ items: mergedAway }] =
-    trpc.decision.listProposalRelationships.useSuspenseQuery({
+  const {
+    data: { items: mergedAway },
+  } = useSuspenseQuery(
+    trpc.decision.listProposalRelationships.queryOptions({
       sourceProposalId: proposal.id,
-    });
+    }),
+  );
 
   const supersededBy = mergedAway[0];
 

@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -11,6 +10,7 @@ import {
 import { Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { CheckIcon } from '@op/sense/icons';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,11 +29,14 @@ const VoteSuccessModalSuspense = ({
   onClose,
   instanceId,
 }: VoteSuccessModalProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [processInstance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId,
-  });
+  const { data: processInstance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({
+      instanceId,
+    }),
+  );
 
   const phases = processInstance.instanceData?.phases ?? [];
 

@@ -1,7 +1,6 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -13,6 +12,7 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useId } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 import { LuTriangleAlert } from 'react-icons/lu';
@@ -64,13 +64,17 @@ function ContributingIdeasSuspense({
   proposal: Proposal;
   decisionRoot: string;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const headingId = useId();
 
-  const [{ items: contributingProposals }] =
-    trpc.decision.listContributingProposals.useSuspenseQuery({
+  const {
+    data: { items: contributingProposals },
+  } = useSuspenseQuery(
+    trpc.decision.listContributingProposals.queryOptions({
       proposalId: proposal.id,
-    });
+    }),
+  );
 
   if (contributingProposals.length === 0) {
     return null;

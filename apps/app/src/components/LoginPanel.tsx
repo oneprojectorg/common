@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
@@ -10,6 +9,7 @@ import { Spinner } from '@op/sense/Spinner';
 import { CheckIcon } from '@op/sense/icons';
 import { cn } from '@op/sense/lib/utils';
 import { createSBBrowserClient } from '@op/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
@@ -37,6 +37,7 @@ import { CommonLogo } from './CommonLogo';
  * only handles signing into / creating a normal account.
  */
 export const LoginPanel = () => {
+  const trpc = useTRPC();
   const supabase = createSBBrowserClient();
   const t = useTranslations();
 
@@ -83,16 +84,18 @@ export const LoginPanel = () => {
     enabled: false,
   });
 
-  const login = trpc.account.login.useQuery(
-    {
-      email,
-      usingOAuth: false,
-    },
-    {
-      enabled: false,
-      staleTime: 0,
-      initialData: false,
-    },
+  const login = useQuery(
+    trpc.account.login.queryOptions(
+      {
+        email,
+        usingOAuth: false,
+      },
+      {
+        enabled: false,
+        staleTime: 0,
+        initialData: false,
+      },
+    ),
   );
 
   const combinedError = (login.error?.message || error) ?? undefined;

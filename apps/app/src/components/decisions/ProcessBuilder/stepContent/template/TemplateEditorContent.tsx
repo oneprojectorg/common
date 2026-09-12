@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import type {
   ProposalTemplateSchema,
@@ -10,6 +9,7 @@ import { Button } from '@op/sense/Button';
 import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
 import { Header2 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
@@ -53,12 +53,15 @@ export function TemplateEditorContent({
   decisionProfileId,
   instanceId,
 }: SectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [, setStep] = useQueryState('step', { history: 'push' });
   const [, setSection] = useQueryState('section', { history: 'push' });
 
   // Load instance data from the backend
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   const instanceData = instance.instanceData;
 
   const storeData = useProcessBuilderStore(

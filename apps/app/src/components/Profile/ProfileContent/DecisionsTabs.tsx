@@ -1,11 +1,11 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus, VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
 import { Header2 } from '@op/sense/Header';
 import { TabsContent, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -16,21 +16,25 @@ import { ProfileOrganizations } from '@/components/screens/ProfileOrganizations'
 import { MembersList } from './MembersList';
 
 export const DecisionsTab = ({ profileId }: { profileId: string }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const access = useUser();
   const canReadDecisions =
     access.getPermissionsForProfile(profileId).decisions.read;
 
-  const { data: decisionProfilesData } =
-    trpc.decision.listDecisionProfiles.useQuery({
+  const { data: decisionProfilesData } = useQuery(
+    trpc.decision.listDecisionProfiles.queryOptions({
       stewardProfileId: profileId,
       status: VISIBLE_DECISION_STATUSES,
-    });
+    }),
+  );
   const decisionProfiles = decisionProfilesData?.items;
 
-  const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
-    { ownerProfileId: profileId },
-    { retry: false, enabled: canReadDecisions },
+  const legacyInstances = useQuery(
+    trpc.decision.listLegacyInstances.queryOptions(
+      { ownerProfileId: profileId },
+      { retry: false, enabled: canReadDecisions },
+    ),
   );
 
   const hasDecisionProfiles = (decisionProfiles?.length ?? 0) > 0;

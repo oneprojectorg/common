@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Organization, OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { Button } from '@op/sense/Button';
@@ -11,6 +10,7 @@ import {
 } from '@op/sense/InputGroup';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Spinner } from '@op/sense/Spinner';
+import { useQuery } from '@tanstack/react-query';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { LuPlus, LuSearch, LuX } from 'react-icons/lu';
 
@@ -33,6 +33,7 @@ export const OrganizationSearchScreen = ({
   isSubmitting,
   initialOrganizations,
 }: OrganizationSearchScreenProps): ReactNode => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 300);
@@ -45,13 +46,15 @@ export const OrganizationSearchScreen = ({
 
   const isDropdownOpen = debouncedQuery.length >= 2 && !closedByClick;
 
-  const { data: searchData, isFetching } = trpc.organization.search.useQuery(
-    { q: debouncedQuery },
-    {
-      enabled: debouncedQuery.length >= 2,
-      staleTime: 30_000,
-      placeholderData: (prev) => prev,
-    },
+  const { data: searchData, isFetching } = useQuery(
+    trpc.organization.search.queryOptions(
+      { q: debouncedQuery },
+      {
+        enabled: debouncedQuery.length >= 2,
+        staleTime: 30_000,
+        placeholderData: (prev) => prev,
+      },
+    ),
   );
   const searchResults = searchData?.items;
 

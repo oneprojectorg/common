@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Spinner } from '@op/sense/Spinner';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ReactNode, Suspense } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';
@@ -20,8 +20,12 @@ type OrganizationSearchScreenSuspenseProps = Omit<
 const OrganizationSearchScreenWithDomainMatch = (
   props: OrganizationSearchScreenSuspenseProps,
 ): ReactNode => {
-  const [{ items: matchingOrgs }] =
-    trpc.account.listMatchingDomainOrganizations.useSuspenseQuery();
+  const trpc = useTRPC();
+  const {
+    data: { items: matchingOrgs },
+  } = useSuspenseQuery(
+    trpc.account.listMatchingDomainOrganizations.queryOptions(),
+  );
 
   return (
     <OrganizationSearchScreen

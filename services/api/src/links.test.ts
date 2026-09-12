@@ -1,7 +1,6 @@
 import { queryChannelRegistry } from '@op/common/realtime';
 import { QueryClient, type QueryKey } from '@tanstack/react-query';
 import { createTRPCClient, httpLink } from '@trpc/client';
-import { createTRPCReact, getQueryKey } from '@trpc/react-query';
 import { observable } from '@trpc/server/observable';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
@@ -13,9 +12,14 @@ import type { AppRouter } from './routers';
 
 // `buildChannelQueryKey` in `links.ts` hand-mirrors tRPC's internal key shape,
 // which drifts silently: nothing throws, queries simply stop being invalidated.
-// Deriving the fixtures below from tRPC's own `getQueryKey` turns that silent
+// Deriving the fixtures below from tRPC's own key builder turns that silent
 // drift into a failing test.
-const trpcForKeys = createTRPCReact<AppRouter>();
+const keysForTests = createTRPCOptionsProxy<AppRouter>({
+  client: createTRPCClient<AppRouter>({
+    links: [httpLink({ url: 'http://localhost/trpc', transformer: superjson })],
+  }),
+  queryClient: new QueryClient(),
+});
 
 /**
  * Drives a single operation through the channel-registration link and returns
@@ -198,11 +202,11 @@ describe('createChannelRegistrationLink — infinite query invalidation', () => 
   // library for the key rather than writing it out, so a shape change in tRPC
   // fails here instead of quietly breaking realtime invalidation.
   function infiniteQueryKey(processInstanceId: string): QueryKey {
-    return getQueryKey(
-      trpcForKeys.decision.listProposals,
-      { processInstanceId, dir: 'desc', limit: 51 },
-      'infinite',
-    );
+    return keysForTests.decision.listProposals.infiniteQueryKey({
+      processInstanceId,
+      dir: 'desc',
+      limit: 51,
+    });
   }
 
   function seedInfiniteQuery(client: QueryClient, queryKey: QueryKey) {
@@ -248,11 +252,8 @@ describe('createChannelRegistrationLink — infinite query invalidation', () => 
       direction: 'forward' as const,
     };
 
-    const withPagination = getQueryKey(
-      trpcForKeys.decision.listProposals,
-      paginatedInput,
-      'infinite',
-    );
+    const withPagination =
+      keysForTests.decision.listProposals.infiniteQueryKey(paginatedInput);
 
     expect(withPagination).toEqual(infiniteQueryKey('inst-key-shape'));
   });
@@ -363,15 +364,16 @@ describe('query keys — classic and tanstack clients must agree (no keyPrefix)'
     limit: 51,
   } as const;
 
-  it('produces the same plain-query key as the classic client', () => {
-    expect(optionsProxy.decision.listProposals.queryKey(input)).toEqual(
-      getQueryKey(trpcForKeys.decision.listProposals, input, 'query'),
-    );
+  it('builds the unprefixed plain-query key the link mirrors', () => {
+    expect(optionsProxy.decision.listProposals.queryKey(input)).toEqual([
+      ['decision', 'listProposals'],
+      { input, type: 'query' },
+    ]);
   });
 
-  it('produces the same infinite-query key as the classic client', () => {
+  it('builds the unprefixed infinite-query key the link mirrors', () => {
     expect(optionsProxy.decision.listProposals.infiniteQueryKey(input)).toEqual(
-      getQueryKey(trpcForKeys.decision.listProposals, input, 'infinite'),
+      [['decision', 'listProposals'], { input, type: 'infinite' }],
     );
   });
 
@@ -425,4 +427,62 @@ describe('query keys — classic and tanstack clients must agree (no keyPrefix)'
       expect(client.getQueryState(key)?.isInvalidated).toBe(true);
     },
   );
+});
+
+/**
+ * 15 call sites pass the exported `skipBatch` constant so their request skips
+ * `httpBatchStreamLink`. The classic client took it as a hook option
+ * (`{ trpc: { context: { skipBatch: true } } }`); the options proxy forwards
+ * `opts.trpc` through `getClientArgs` as the tRPC request options, so the same
+ * constant still works — but only as long as `context` survives the trip to
+ * the operation the `splitLink` condition reads.
+ */
+describe('skipBatch still reaches the splitLink condition', () => {
+  const skipBatch = { trpc: { context: { skipBatch: true } } };
+
+  /** Captures the operation as the `splitLink` in `createLinks()` would see it. */
+  function captureOperation(opts?: { trpc?: unknown }) {
+    let captured: { context: Record<string, unknown> } | undefined;
+
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        () =>
+          ({ op }) => {
+            captured = op as never;
+
+            return observable((observer) => {
+              observer.next({ result: { data: null } } as never);
+              observer.complete();
+            });
+          },
+      ],
+    });
+
+    const proxy = createTRPCOptionsProxy<AppRouter>({
+      client,
+      queryClient: new QueryClient(),
+    });
+
+    const options = proxy.decision.listProposals.queryOptions(
+      { processInstanceId: 'inst-skip-batch' },
+      opts as never,
+    );
+
+    // Options carry the queryFn; running it is what issues the operation.
+    void (options.queryFn as (ctx: unknown) => unknown)({
+      queryKey: options.queryKey,
+      signal: new AbortController().signal,
+    });
+
+    return captured;
+  }
+
+  it('carries skipBatch into the operation context', () => {
+    // `condition(op)` in `createLinks()` is exactly `op.context.skipBatch === true`.
+    expect(captureOperation(skipBatch)?.context.skipBatch).toBe(true);
+  });
+
+  it('leaves the context empty without it, so batching stays the default', () => {
+    expect(captureOperation()?.context.skipBatch).toBeUndefined();
+  });
 });
