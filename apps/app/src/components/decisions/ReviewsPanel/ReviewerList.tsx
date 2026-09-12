@@ -8,12 +8,12 @@ import {
   parseSchemaOptions,
 } from '@op/common/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
-import { StatusBadge } from '@op/sense/StatusBadge';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
-import { LuChevronRight, LuRefreshCw } from 'react-icons/lu';
+import { LuChevronRight, LuCircleAlert, LuRefreshCcw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -86,11 +86,16 @@ export function ReviewerList({
       {/* Admin-only: the reviewer-facing panel hides the summary header. */}
       {!hideSummaryHeader && outOfDateReviewsCount > 0 && (
         <Alert variant="warning">
-          <LuRefreshCw />
-          <AlertTitle>{t('Mixed version reviews')}</AlertTitle>
+          <LuRefreshCcw />
+          <AlertTitle>
+            {t(
+              '{n, plural, one {# of {total, plural, one {# review} other {# reviews}} is out of date} other {# of {total} reviews are out of date}}',
+              { n: outOfDateReviewsCount, total: reviewsSubmittedCount },
+            )}
+          </AlertTitle>
           <AlertDescription>
             {t(
-              '{n} out of {total} reviews were completed before the latest revision. Cumulative score includes all reviews.',
+              '{n, plural, one {The author revised the proposal after this review was submitted.} other {The author revised the proposal after these reviews were submitted.}} {total, plural, one {The review counts toward the score.} other {All # reviews count toward the score.}}',
               { n: outOfDateReviewsCount, total: reviewsSubmittedCount },
             )}
           </AlertDescription>
@@ -267,9 +272,10 @@ function ReviewerRow({
       </div>
       <div className="flex items-center gap-2">
         {item.isReviewOutOfDate && (
-          <StatusBadge variant="revision" icon={LuRefreshCw}>
+          <Badge variant="warning">
+            <LuCircleAlert aria-hidden className="text-warning" />
             {t('Older version')}
-          </StatusBadge>
+          </Badge>
         )}
         <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
       </div>
