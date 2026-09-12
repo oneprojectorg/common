@@ -33,11 +33,6 @@ export function ReviewAssignmentsMapWithLocations({
   const [{ items: pinProposals }] =
     trpc.decision.listReviewAssignmentLocations.useSuspenseQuery(
       locationFilter,
-      {
-        // A client-side fetch is what registers the realtime invalidation
-        // channel, so a cached result must not skip the request on mount.
-        refetchOnMount: 'always',
-      },
     );
 
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;

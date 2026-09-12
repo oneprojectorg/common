@@ -4,7 +4,8 @@ import type { ChannelName, RegistryEvents } from '@op/common/realtime';
 import { queryChannelRegistry } from '@op/common/realtime';
 import { RealtimeManager } from '@op/realtime/client';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { QueryClientContext } from '@tanstack/react-query';
+import type { QueryClient, QueryKey } from '@tanstack/react-query';
+import { QueryClientContext, matchQuery } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 const MAX_INVALIDATED_IDS = 500;
@@ -102,12 +103,9 @@ function useInvalidateQueries(enabled: boolean): void {
         }
       }
 
-      const queryKeys = queryChannelRegistry.getQueryKeysForChannels(channels);
-
-      await Promise.allSettled(
-        queryKeys.map((queryKey) =>
-          queryClientRef.current.invalidateQueries({ queryKey }),
-        ),
+      await invalidateRegisteredKeys(
+        queryClientRef.current,
+        queryChannelRegistry.getQueryKeysForChannels(channels),
       );
     },
     [],
@@ -128,12 +126,9 @@ function useInvalidateQueries(enabled: boolean): void {
    */
   const handleChannelSubscribed = useCallback(
     async ({ channel }: RegistryEvents['channel:subscribed']) => {
-      const queryKeys = queryChannelRegistry.getQueryKeysForChannels([channel]);
-
-      await Promise.allSettled(
-        queryKeys.map((queryKey) =>
-          queryClientRef.current.invalidateQueries({ queryKey }),
-        ),
+      await invalidateRegisteredKeys(
+        queryClientRef.current,
+        queryChannelRegistry.getQueryKeysForChannels([channel]),
       );
     },
     [],
@@ -205,31 +200,42 @@ function useInvalidateQueries(enabled: boolean): void {
 
     const realtimeManager = RealtimeManager.getInstance();
 
+    const subscribeChannel = (channel: ChannelName) => {
+      if (unsubscribersRef.current.has(channel)) {
+        return;
+      }
+
+      const unsubscribe = realtimeManager.subscribe(
+        channel,
+        ({ channel, data }) =>
+          handleInvalidation({
+            channels: [channel],
+            mutationId: data.mutationId,
+          }),
+        // Reported so every query on this channel re-reads once it is
+        // genuinely live — see `handleChannelSubscribed`. Fires again on a
+        // rejoin after the connection drops, which is the only thing that
+        // recovers what was broadcast while the socket was down.
+        () => queryChannelRegistry.notifyChannelSubscribed(channel),
+      );
+      unsubscribersRef.current.set(channel, unsubscribe);
+    };
+
     const unsubscribeQueryAdded = queryChannelRegistry.on(
       'query:added',
       ({ channels }: RegistryEvents['query:added']) => {
         for (const channel of channels) {
-          if (unsubscribersRef.current.has(channel)) {
-            continue;
-          }
-
-          const unsubscribe = realtimeManager.subscribe(
-            channel,
-            ({ channel, data }) =>
-              handleInvalidation({
-                channels: [channel],
-                mutationId: data.mutationId,
-              }),
-            // Reported so every query on this channel re-reads once it is
-            // genuinely live — see `handleChannelSubscribed`. Fires again on a
-            // rejoin after the connection drops, which is the only thing that
-            // recovers what was broadcast while the socket was down.
-            () => queryChannelRegistry.notifyChannelSubscribed(channel),
-          );
-          unsubscribersRef.current.set(channel, unsubscribe);
+          subscribeChannel(channel);
         }
       },
     );
+
+    // Hydrated queries register their channels during the first commit, before
+    // the session check resolves and this effect runs, so their 'query:added'
+    // events are already gone. Reconcile with what the registry holds.
+    for (const channel of queryChannelRegistry.getChannels()) {
+      subscribeChannel(channel);
+    }
 
     const unsubscribeChannelRemoved = queryChannelRegistry.on(
       'channel:removed',
@@ -253,4 +259,27 @@ function useInvalidateQueries(enabled: boolean): void {
       unsubscribersRef.current.clear();
     };
   }, [handleInvalidation, enabled]);
+}
+
+/**
+ * Invalidate every query matching one of the registered keys in a single pass.
+ *
+ * The same query can be registered under two spellings — the link's
+ * `[path, { input }]` and hydration's full key with `type` — and two
+ * `invalidateQueries` calls on one in-flight query cancel and restart its
+ * fetch, which shows up as a doubled request.
+ */
+async function invalidateRegisteredKeys(
+  queryClient: QueryClient,
+  keys: unknown[],
+): Promise<void> {
+  const queryKeys = keys.filter((key): key is QueryKey => Array.isArray(key));
+  if (queryKeys.length === 0) {
+    return;
+  }
+
+  await queryClient.invalidateQueries({
+    predicate: (query) =>
+      queryKeys.some((queryKey) => matchQuery({ queryKey }, query)),
+  });
 }

@@ -243,8 +243,9 @@ export function ProposalsMapWithLocations({
   const [{ items: pinProposals }] =
     trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
       staleTime: 30 * 1000,
-      // Force a client-side fetch so the query registers its invalidation
-      // channel via the client link (same pattern as the list query).
+      // Restored from the persisted cache within staleTime this query is fresh
+      // and never fetches, so it would never register its realtime channel.
+      // Not server-prefetched, so hydration meta cannot carry it.
       refetchOnMount: 'always',
     });
 

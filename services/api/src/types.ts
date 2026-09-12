@@ -17,6 +17,17 @@ export interface TContext {
   registerMutationChannels: (channels: ChannelName[]) => void;
   /** Registers channels that a query subscribes to for invalidation. */
   registerQueryChannels: (channels: ChannelName[]) => void;
+  /**
+   * Server-side callers only. Receives the channels a query resolved with so a
+   * prefetch can carry them into the dehydrated React Query cache
+   * (see TRPCProvider.server.ts). HTTP requests get the same information in
+   * the response envelope instead.
+   */
+  onQueryChannels?: (entry: {
+    path: string;
+    input: unknown;
+    channels: ChannelName[];
+  }) => void;
   requestId: string;
   time: number;
   ip: string | null;

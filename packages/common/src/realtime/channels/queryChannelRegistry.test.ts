@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ChannelName } from './channels';
+import { Channels } from './channels';
 import { queryChannelRegistry } from './queryChannelRegistry';
 
-const CH_A = 'org:A' as ChannelName;
-const CH_B = 'org:B' as ChannelName;
+const CH_A = Channels.org('A');
+const CH_B = Channels.org('B');
 
 describe('queryChannelRegistry', () => {
   beforeEach(() => {
@@ -24,6 +24,22 @@ describe('queryChannelRegistry', () => {
     expect(queryChannelRegistry.getQueryKeysForChannels([CH_A])).toEqual([
       ['q1'],
     ]);
+  });
+
+  // A subscriber that starts after hydration registered its queries has no
+  // 'query:added' event left to hear, so it reads the standing set instead.
+  it('lists every channel that still has a query', () => {
+    queryChannelRegistry.registerQuery({
+      queryKey: ['q1'],
+      channels: [CH_A, CH_B],
+    });
+    queryChannelRegistry.registerQuery({ queryKey: ['q2'], channels: [CH_B] });
+
+    expect(queryChannelRegistry.getChannels().sort()).toEqual([CH_A, CH_B]);
+
+    queryChannelRegistry.unregisterQuery({ queryKey: ['q1'] });
+
+    expect(queryChannelRegistry.getChannels()).toEqual([CH_B]);
   });
 
   it('emits channel:removed when the last query for a channel unregisters', () => {

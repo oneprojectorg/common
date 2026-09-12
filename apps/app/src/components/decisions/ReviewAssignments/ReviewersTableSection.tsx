@@ -82,8 +82,6 @@ function ReviewersTableContent({
       { processInstanceId, phaseId },
       {
         getNextPageParam: nextCursor,
-        // An SSR-seeded entry never registers the realtime channel; refetch.
-        refetchOnMount: 'always',
       },
     );
 
