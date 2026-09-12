@@ -6,6 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./CookieBanner": "./src/components/CookieBanner/index.tsx",
+    "./CookieBannerLink": "./src/components/CookieBanner/index.tsx",
     "./styles.css": "./src/styles.css",
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/textDirection": "./src/lib/textDirection.ts",

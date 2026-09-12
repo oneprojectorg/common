@@ -84,7 +84,7 @@
     "next": "catalog:",
     "next-intl": "^4.8.3",
     "nuqs": "^2.8.5",
-    "posthog-js": "^1.236.4",
+    "posthog-js": "^1.370.0",
     "posthog-node": "^4.13.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

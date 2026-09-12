@@ -1734,5 +1734,8 @@
   "Your request • Sent {timeAgo}": "Your request • Sent {timeAgo}",
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
-  "Older version reviewed by {name}": "Older version reviewed by {name}"
+  "Older version reviewed by {name}": "Older version reviewed by {name}",
+  "Reject": "প্রত্যাখ্যান",
+  "Your Privacy": "আপনার গোপনীয়তা",
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Common চালু রাখতে আমরা অপরিহার্য কুকি ব্যবহার করি, আর প্ল্যাটফর্মটি কীভাবে ব্যবহৃত হয় তা বুঝতে বিশ্লেষণী কুকি ব্যবহার করি। আরও জানতে আমাদের <privacy>গোপনীয়তা নীতি</privacy> ও <terms>ব্যবহারের শর্তাবলী</terms> পড়ুন।"
 }

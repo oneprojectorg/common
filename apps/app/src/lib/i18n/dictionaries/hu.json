@@ -1734,5 +1734,8 @@
   "Your request • Sent {timeAgo}": "Your request • Sent {timeAgo}",
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
-  "Older version reviewed by {name}": "Older version reviewed by {name}"
+  "Older version reviewed by {name}": "Older version reviewed by {name}",
+  "Reject": "Elutasítás",
+  "Your Privacy": "Az Ön adatai",
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "A Common működéséhez elengedhetetlen sütiket használunk, valamint analitikai sütiket annak megértéséhez, hogyan használják a platformot. Tudjon meg többet az <privacy>Adatvédelmi szabályzatunkból</privacy> és a <terms>Felhasználási feltételekből</terms>."
 }

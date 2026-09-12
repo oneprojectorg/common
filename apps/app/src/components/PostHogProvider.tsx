@@ -4,11 +4,51 @@ import { POSTHOG_SESSION_ID_COOKIE, posthogUIHost } from '@op/core';
 import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
-import { Suspense, useEffect } from 'react';
+import {
+  Suspense,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { stampExceptionWithTraceContext } from '../lib/otelErrorTracking';
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+type ConsentStatus = ReturnType<typeof posthog.get_explicit_consent_status>;
+
+interface TrackingConsent {
+  /** Whether to show the visitor the cookie banner. */
+  shouldPrompt: boolean;
+  /**
+   * Whether posthog is allowed cookies and a persistent identity. False while
+   * it is capturing cookielessly, and while the answer is still unknown.
+   */
+  isIdentifiable: boolean;
+  /** Full tracking: cookies, local storage, and an identified person. */
+  accept: () => void;
+  /** Keeps capturing events, cookielessly and without an identity. */
+  reject: () => void;
+}
+
+const TrackingConsentContext = createContext<TrackingConsent | undefined>(
+  undefined,
+);
+
+export function PostHogProvider({
+  children,
+  consentRequired,
+}: {
+  children: React.ReactNode;
+  /**
+   * Whether this visitor has to be asked before we set analytics cookies —
+   * resolved from their country on the server. See `utils/cookieConsent`.
+   */
+  consentRequired: boolean;
+}) {
+  const [status, setStatus] = useState<ConsentStatus>();
+
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host: '/stats',
@@ -21,9 +61,53 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       capture_performance: { web_vitals: true },
       // Stamp exceptions with OTel trace/span ids so they join to their traces
       before_send: stampExceptionWithTraceContext,
-      // Tracing headers set to `false` because it breaks CORS requests
-      __add_tracing_headers: false,
+      // No host gets tracing headers — injecting them breaks CORS requests.
+      // (`__add_tracing_headers: false` until posthog-js turned this into an
+      // allowlist of hostnames; the empty list is the same "never" it meant.)
+      tracing_headers: [],
+      // In `on_reject` mode a visitor posthog considers rejected is still
+      // captured — just with no cookies, no local storage and no persistent
+      // identity, with PostHog hashing them server-side instead. That covers
+      // anyone who presses Reject, in every country.
+      //
+      // `opt_out_capturing_by_default` decides what an *unanswered* visitor
+      // counts as, and so is the whole of the regional difference: where
+      // consent is required they count as rejected (cookieless, and the banner
+      // asks them), and where it isn't they count as opted in (cookies, no
+      // banner). posthog-js stores an explicit answer itself
+      // (`opt_out_capturing_persistence_type`, local storage by default), so a
+      // Reject keeps holding even if the same person later loads the page from
+      // a country that wouldn't have asked.
+      cookieless_mode: 'on_reject',
+      opt_out_capturing_by_default: consentRequired,
     });
+
+    // Without a project key posthog has nowhere to send anything, so there is
+    // nothing to ask the visitor to consent to. Leaving the status unknown
+    // keeps the toast off a local checkout that has no `.env.local`.
+    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      setStatus(posthog.get_explicit_consent_status());
+    }
+    // Init runs once. `consentRequired` is decided by the server render of the
+    // root layout, the only thing that mounts this, so it cannot change without
+    // a full page load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Mirrors posthog's own `ConsentManager.isRejected()`: an explicit denial, or
+  // an unanswered visitor in a country we're required to ask.
+  const isCookieless =
+    status === 'denied' || (status === 'pending' && consentRequired);
+  const isIdentifiable = status !== undefined && !isCookieless;
+
+  useEffect(() => {
+    // The mirrored cookie is a cookie like any other: only write it once
+    // posthog is allowed cookies at all. Cookieless visitors have no
+    // client-side session id to mirror anyway — ingestion assigns theirs
+    // server-side.
+    if (!isIdentifiable) {
+      return;
+    }
 
     // Mirror the session id into a cookie so server-side renders — which never
     // receive the `x-posthog-session-id` request header the tRPC HTTP link
@@ -37,14 +121,51 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       const secure = window.location.protocol === 'https:' ? '; Secure' : '';
       document.cookie = `${POSTHOG_SESSION_ID_COOKIE}=${encodeURIComponent(sessionId)}; path=/; max-age=86400; SameSite=Lax${secure}`;
     });
+  }, [isIdentifiable]);
+
+  const accept = useCallback(() => {
+    posthog.opt_in_capturing();
+    setStatus(posthog.get_explicit_consent_status());
   }, []);
+
+  const reject = useCallback(() => {
+    posthog.opt_out_capturing();
+    setStatus(posthog.get_explicit_consent_status());
+  }, []);
+
+  const consent = useMemo(
+    () => ({
+      shouldPrompt: consentRequired && status === 'pending',
+      isIdentifiable,
+      accept,
+      reject,
+    }),
+    [consentRequired, status, isIdentifiable, accept, reject],
+  );
 
   return (
     <PHProvider client={posthog}>
-      <SuspendedPostHogPageView />
-      {children}
+      <TrackingConsentContext.Provider value={consent}>
+        <SuspendedPostHogPageView />
+        {children}
+      </TrackingConsentContext.Provider>
     </PHProvider>
   );
+}
+
+/**
+ * The visitor's analytics consent. Both flags read false until
+ * `PostHogProvider`'s init effect has run — child effects fire before their
+ * parent's, so the answer can't be read straight off `posthog` at mount.
+ */
+export function useTrackingConsent() {
+  const consent = useContext(TrackingConsentContext);
+
+  if (!consent) {
+    throw new Error('useTrackingConsent must be used within a PostHogProvider');
+  }
+
+  return consent;
 }
 
 function PostHogPageView() {
