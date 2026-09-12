@@ -1,8 +1,4 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
 import { logger } from '@op/logging';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -37,9 +33,14 @@ export default async function ReviewerAssignmentsPage({
     await loadReviewAssignmentsPage(slug);
 
   // The SSR render has no browser client, so the suspending input needs a seed.
-  const { utils, queryClient } = await createServerUtils();
-  const preloaded = await utils.decision.listReviewerAssignments
-    .fetchInfinite({ processInstanceId, phaseId, reviewerProfileId: profileId })
+  const { trpc, queryClient } = await createServerTRPC();
+  const preloaded = await queryClient
+    .fetchInfiniteQuery(
+      trpc.decision.listReviewerAssignments.infiniteQueryOptions(
+        { processInstanceId, phaseId, reviewerProfileId: profileId },
+        { getNextPageParam: (lastPage) => lastPage.next },
+      ),
+    )
     .catch((error: unknown) => {
       logger.warn('Failed to preload reviewer assignments', {
         processInstanceId,

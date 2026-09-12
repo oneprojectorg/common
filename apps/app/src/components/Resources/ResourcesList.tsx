@@ -1,9 +1,10 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
 import { Sortable } from '@op/sense/Sortable';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { LuUpload } from 'react-icons/lu';
 
@@ -29,7 +30,8 @@ export const ResourcesList = ({
 }) => {
   const t = useTranslations('resources');
   const decisionTranslation = useDecisionTranslation();
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<ResourceInCollection | null>(
     null,
   );
@@ -65,31 +67,49 @@ export const ResourcesList = ({
     resourceSamples,
   );
 
-  const reorder = trpc.resources.reorder.useMutation({
-    onMutate: async (vars) => {
-      const key = { collectionId: vars.collectionId };
-      await utils.resources.listByCollection.cancel(key);
-      const previous = utils.resources.listByCollection.getData(key);
-      if (previous) {
-        utils.resources.listByCollection.setData(key, {
-          ...previous,
-          items: moveItemAfter(previous.items, vars.id, vars.upperNeighborId),
-        });
-      }
-      return { previous, key };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.previous && ctx?.key) {
-        utils.resources.listByCollection.setData(ctx.key, ctx.previous);
-      }
-      toast.error(t('reorderError'));
-    },
-  });
+  const reorder = useMutation(
+    trpc.resources.reorder.mutationOptions({
+      onMutate: async (vars) => {
+        const key = { collectionId: vars.collectionId };
+        await queryClient.cancelQueries(
+          trpc.resources.listByCollection.queryFilter(key),
+        );
+        const previous = queryClient.getQueryData(
+          trpc.resources.listByCollection.queryKey(key),
+        );
+        if (previous) {
+          queryClient.setQueryData(
+            trpc.resources.listByCollection.queryKey(key),
+            {
+              ...previous,
+              items: moveItemAfter(
+                previous.items,
+                vars.id,
+                vars.upperNeighborId,
+              ),
+            },
+          );
+        }
+        return { previous, key };
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.previous && ctx?.key) {
+          queryClient.setQueryData(
+            trpc.resources.listByCollection.queryKey(ctx.key),
+            ctx.previous,
+          );
+        }
+        toast.error(t('reorderError'));
+      },
+    }),
+  );
 
-  const remove = trpc.resources.delete.useMutation({
-    onSuccess: () => toast.success(t('deletedToast')),
-    onError: () => toast.error(t('deleteError')),
-  });
+  const remove = useMutation(
+    trpc.resources.delete.mutationOptions({
+      onSuccess: () => toast.success(t('deletedToast')),
+      onError: () => toast.error(t('deleteError')),
+    }),
+  );
 
   const collectionId = data.collectionId ?? null;
 

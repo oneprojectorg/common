@@ -1,7 +1,6 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
 import { Button } from '@op/sense/Button';
@@ -15,6 +14,9 @@ import {
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { toast } from '@op/sense/Toast';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
@@ -24,21 +26,30 @@ import { useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '../ErrorBoundary';
 
 const PendingDecisionInvitesSuspense = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
-  const [invites] = trpc.account.listUserInvites.useSuspenseQuery({
-    entityType: EntityType.DECISION,
-    pending: true,
-  });
+  const { data: invites } = useSuspenseQuery(
+    trpc.account.listUserInvites.queryOptions({
+      entityType: EntityType.DECISION,
+      pending: true,
+    }),
+  );
 
-  const acceptInvite = trpc.profile.acceptInvite.useMutation({
-    onSuccess: () => {
-      utils.account.listUserInvites.invalidate();
-      utils.decision.listDecisionProfiles.invalidate();
-    },
-  });
+  const acceptInvite = useMutation(
+    trpc.profile.acceptInvite.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          trpc.account.listUserInvites.pathFilter(),
+        );
+        queryClient.invalidateQueries(
+          trpc.decision.listDecisionProfiles.pathFilter(),
+        );
+      },
+    }),
+  );
 
   if (invites.length === 0) {
     return null;

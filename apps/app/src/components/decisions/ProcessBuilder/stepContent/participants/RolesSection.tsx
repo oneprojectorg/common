@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
@@ -43,6 +42,10 @@ import {
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuCheck,
@@ -122,53 +125,60 @@ function useRoleMutation({
   profileId: string;
   onComplete: () => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const pendingDecisionRolePermissions = useRef<DecisionRolePermissions | null>(
     null,
   );
-  const updateDecisionRoles = trpc.profile.updateDecisionRoles.useMutation();
+  const updateDecisionRoles = useMutation(
+    trpc.profile.updateDecisionRoles.mutationOptions(),
+  );
 
-  const createRole = trpc.profile.createRole.useMutation({
-    onSuccess: async (data) => {
-      const decisionPermissions = pendingDecisionRolePermissions.current;
-      pendingDecisionRolePermissions.current = null;
-      if (
-        decisionPermissions &&
-        Object.values(decisionPermissions).some(Boolean)
-      ) {
-        try {
-          await updateDecisionRoles.mutateAsync({
-            roleId: data.id,
-            decisionPermissions,
-          });
-        } catch {
-          toast.error(t('decisions.updateRoleError'));
-          utils.profile.listRoles.invalidate();
-          onComplete();
-          return;
+  const createRole = useMutation(
+    trpc.profile.createRole.mutationOptions({
+      onSuccess: async (data) => {
+        const decisionPermissions = pendingDecisionRolePermissions.current;
+        pendingDecisionRolePermissions.current = null;
+        if (
+          decisionPermissions &&
+          Object.values(decisionPermissions).some(Boolean)
+        ) {
+          try {
+            await updateDecisionRoles.mutateAsync({
+              roleId: data.id,
+              decisionPermissions,
+            });
+          } catch {
+            toast.error(t('decisions.updateRoleError'));
+            queryClient.invalidateQueries(trpc.profile.listRoles.pathFilter());
+            onComplete();
+            return;
+          }
         }
-      }
-      toast.success(t('decisions.processBuilder.createRoleSuccess'));
-      utils.profile.listRoles.invalidate();
-      onComplete();
-    },
-    onError: () => {
-      toast.error(t('decisions.processBuilder.createRoleError'));
-    },
-  });
+        toast.success(t('decisions.processBuilder.createRoleSuccess'));
+        queryClient.invalidateQueries(trpc.profile.listRoles.pathFilter());
+        onComplete();
+      },
+      onError: () => {
+        toast.error(t('decisions.processBuilder.createRoleError'));
+      },
+    }),
+  );
 
-  const updateRole = trpc.profile.updateRole.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.updateRoleSuccess'));
-      utils.profile.listRoles.invalidate();
-      onComplete();
-    },
-    onError: () => {
-      toast.error(t('decisions.updateRoleError'));
-    },
-  });
+  const updateRole = useMutation(
+    trpc.profile.updateRole.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.updateRoleSuccess'));
+        queryClient.invalidateQueries(trpc.profile.listRoles.pathFilter());
+        onComplete();
+      },
+      onError: () => {
+        toast.error(t('decisions.updateRoleError'));
+      },
+    }),
+  );
 
   const isPending =
     (role ? updateRole.isPending : createRole.isPending) ||
@@ -469,13 +479,16 @@ function RolesSectionContent({
 const DEBOUNCE_MS = 300;
 
 function usePermissionToggle(roleId: string, profileId: string) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const { data: serverPermissions } = trpc.profile.getDecisionRole.useQuery({
-    roleId,
-    profileId,
-  });
+  const { data: serverPermissions } = useQuery(
+    trpc.profile.getDecisionRole.queryOptions({
+      roleId,
+      profileId,
+    }),
+  );
 
   // Local overlay: null = use server data, non-null = use local override
   const [localPermissions, setLocalPermissions] =
@@ -483,7 +496,9 @@ function usePermissionToggle(roleId: string, profileId: string) {
 
   const localRef = useRef(localPermissions);
   localRef.current = localPermissions;
-  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
+  const updatePermissions = useMutation(
+    trpc.profile.updateDecisionRoles.mutationOptions(),
+  );
 
   const flush = useDebouncedCallback(
     () => {
@@ -503,7 +518,9 @@ function usePermissionToggle(roleId: string, profileId: string) {
             } else {
               toast.success(t('decisions.updateRoleSuccess'));
             }
-            utils.profile.getDecisionRole.invalidate({ roleId, profileId });
+            queryClient.invalidateQueries(
+              trpc.profile.getDecisionRole.queryFilter({ roleId, profileId }),
+            );
           },
         },
       );
@@ -792,27 +809,34 @@ function RolesTable({
   isAdding: boolean;
   onAddComplete: () => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
 
-  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({
-    profileId: decisionProfileId,
-    zoneName: 'decisions',
-  });
+  const {
+    data: { items: roles },
+  } = useSuspenseQuery(
+    trpc.profile.listRoles.queryOptions({
+      profileId: decisionProfileId,
+      zoneName: 'decisions',
+    }),
+  );
 
-  const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.processBuilder.deleteRoleSuccess'));
-      utils.profile.listRoles.invalidate();
-      setRoleToDelete(null);
-    },
-    onError: () => {
-      toast.error(t('decisions.processBuilder.deleteRoleError'));
-    },
-  });
+  const deleteRoleMutation = useMutation(
+    trpc.profile.deleteRole.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.processBuilder.deleteRoleSuccess'));
+        queryClient.invalidateQueries(trpc.profile.listRoles.pathFilter());
+        setRoleToDelete(null);
+      },
+      onError: () => {
+        toast.error(t('decisions.processBuilder.deleteRoleError'));
+      },
+    }),
+  );
 
   if (roles.length === 0 && !isAdding) {
     return (

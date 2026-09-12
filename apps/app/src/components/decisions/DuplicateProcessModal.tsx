@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
@@ -24,6 +23,9 @@ import {
 } from '@op/sense/Select';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -74,9 +76,10 @@ const DuplicateFormContent = ({
   onClose: () => void;
   isPendingRef: React.RefObject<boolean>;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState(
     t('decisions.processBuilder.duplicateProcessDefaultName', {
@@ -114,17 +117,21 @@ const DuplicateFormContent = ({
     includeOptions.map((o) => o.key),
   );
 
-  const duplicateMutation = trpc.decision.duplicateInstance.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.processBuilder.duplicateProcessSuccess'));
-      utils.decision.listDecisionProfiles.invalidate();
-      onClose();
-      router.push('/decisions?tab=drafts');
-    },
-    onError: () => {
-      toast.error(t('decisions.processBuilder.duplicateProcessError'));
-    },
-  });
+  const duplicateMutation = useMutation(
+    trpc.decision.duplicateInstance.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.processBuilder.duplicateProcessSuccess'));
+        queryClient.invalidateQueries(
+          trpc.decision.listDecisionProfiles.pathFilter(),
+        );
+        onClose();
+        router.push('/decisions?tab=drafts');
+      },
+      onError: () => {
+        toast.error(t('decisions.processBuilder.duplicateProcessError'));
+      },
+    }),
+  );
 
   // Keep parent's ref in sync so the modal dismiss guard works
   isPendingRef.current = duplicateMutation.isPending;
@@ -250,9 +257,11 @@ const StewardSelect = ({
   onSelectionChange: (key: string) => void;
   currentSteward?: { id: string; name: string | null } | null;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [{ items: userProfiles }] =
-    trpc.account.getUserProfiles.useSuspenseQuery();
+  const {
+    data: { items: userProfiles },
+  } = useSuspenseQuery(trpc.account.getUserProfiles.queryOptions());
 
   const profileItems = useMemo(() => {
     const items = userProfiles.map((p) => ({

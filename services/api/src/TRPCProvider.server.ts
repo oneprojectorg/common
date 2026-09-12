@@ -1,8 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
-import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { cache } from 'react';
-import superjson from 'superjson';
 
 import { appRouter } from './routers';
 import { createServerContext } from './serverClient';
@@ -10,13 +8,8 @@ import { createServerContext } from './serverClient';
 export { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 /**
- * One `QueryClient` per request, shared by the classic helpers and the
- * `@trpc/tanstack-react-query` proxy below. `cache()` scopes it to the React
- * request, so two concurrent SSR renders never see each other's data.
- *
- * Both mechanisms write the same cache keys (no `keyPrefix` — see
- * `TRPCProvider.tsx`), so a page part-way through the migration can seed with
- * either and `dehydrate()` once.
+ * One `QueryClient` per request. `cache()` scopes it to the React request, so
+ * two concurrent SSR renders never see each other's data.
  */
 const getServerQueryClient = cache(() => new QueryClient());
 
@@ -58,25 +51,4 @@ export const createServerTRPC = cache(async () => {
   });
 
   return { trpc, queryClient };
-});
-
-/**
- * Create server-side tRPC utils for prefetching data
- *
- * @deprecated Use {@link createServerTRPC}. This is the classic
- * `@trpc/react-query` helper, kept only until the remaining call sites move
- * over; it shares `createServerTRPC`'s `QueryClient`.
- */
-export const createServerUtils = cache(async () => {
-  const ctx = await createServerContext();
-  const queryClient = getServerQueryClient();
-
-  const helpers = createServerSideHelpers({
-    router: appRouter,
-    ctx,
-    transformer: superjson,
-    queryClient,
-  });
-
-  return { utils: helpers, queryClient };
 });

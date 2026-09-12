@@ -1,8 +1,4 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
 import { logger } from '@op/logging';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -66,9 +62,11 @@ const CurrentPhasePage = async ({
   // hydrates from. The (decision-view) layout no longer fetches getInstance
   // (the overview route is single-fetch), so /current seeds its own. Best
   // effort: on failure the client refetches under its own boundary.
-  const { utils, queryClient } = await createServerUtils();
+  const { trpc, queryClient } = await createServerTRPC();
   try {
-    await utils.decision.getInstance.fetch({ instanceId });
+    await queryClient.fetchQuery(
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+    );
   } catch (error) {
     logger.warn('Failed to seed current-phase instance', {
       instanceId,

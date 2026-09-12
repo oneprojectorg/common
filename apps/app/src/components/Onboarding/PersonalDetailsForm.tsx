@@ -1,9 +1,12 @@
 import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
 import { BannerUploader } from '@op/sense/BannerUploader';
 import { Skeleton } from '@op/sense/Skeleton';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { ReactNode, Suspense } from 'react';
 import { z } from 'zod';
 
@@ -102,20 +105,25 @@ export const PersonalDetailsForm = ({
   onNext,
   className,
 }: StepProps & { className?: string }): ReactNode => {
+  const trpc = useTRPC();
   const personalDetails = useOnboardingFormStore((s) => s.personalDetails);
   const setPersonalDetails = useOnboardingFormStore(
     (s) => s.setPersonalDetails,
   );
   const t = useTranslations();
-  const utils = trpc.useUtils();
-  const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const queryClient = useQueryClient();
+  const updateProfile = useMutation(
+    trpc.account.updateUserProfile.mutationOptions(),
+  );
   // Get current user's profile ID for the focus areas component
-  const { data: userAccount } = trpc.account.getMyAccount.useQuery();
+  const { data: userAccount } = useQuery(
+    trpc.account.getMyAccount.queryOptions(),
+  );
   const profileId = userAccount?.profile?.id;
 
   const handleImageUploadSuccess = () => {
-    utils.account.getMyAccount.invalidate();
-    utils.account.getUserProfiles.invalidate();
+    queryClient.invalidateQueries(trpc.account.getMyAccount.pathFilter());
+    queryClient.invalidateQueries(trpc.account.getUserProfiles.pathFilter());
   };
   // Hydrate previews from the store if present
   const avatarUpload = useProfileImageUpload({
@@ -162,12 +170,14 @@ export const PersonalDetailsForm = ({
         website: value.website || undefined,
         focusAreas: value.focusAreas || undefined,
       });
-      utils.account.getMyAccount.invalidate();
-      utils.account.getUserProfiles.invalidate();
+      queryClient.invalidateQueries(trpc.account.getMyAccount.pathFilter());
+      queryClient.invalidateQueries(trpc.account.getUserProfiles.pathFilter());
       if (profileId) {
-        utils.individual.getTermsByProfile.invalidate({
-          profileId,
-        });
+        queryClient.invalidateQueries(
+          trpc.individual.getTermsByProfile.queryFilter({
+            profileId,
+          }),
+        );
       }
       setPersonalDetails({
         ...value,

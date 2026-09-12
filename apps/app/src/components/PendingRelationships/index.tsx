@@ -1,6 +1,5 @@
 'use client';
-
-import { skipBatch, trpc } from '@op/api/client';
+import { skipBatch, useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {
   NotificationPanel,
@@ -10,6 +9,9 @@ import {
   NotificationPanelList,
 } from '@op/sense/NotificationPanel';
 import { relationshipMap } from '@op/types/relationships';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -18,41 +20,55 @@ import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
-  });
+  const { data: organization } = useSuspenseQuery(
+    trpc.organization.getBySlug.queryOptions({
+      slug,
+    }),
+  );
 
-  const [{ organizations, count }] =
-    trpc.organization.listPendingRelationships.useSuspenseQuery(undefined, {
+  const {
+    data: { organizations, count },
+  } = useSuspenseQuery(
+    trpc.organization.listPendingRelationships.queryOptions(undefined, {
       ...skipBatch,
-    });
+    }),
+  );
 
   const [acceptedRelationships, setAcceptedRelationships] = useState<
     Set<string>
   >(new Set());
 
-  const utils = trpc.useUtils();
-  const remove = trpc.organization.declineRelationship.useMutation({
-    onSuccess: () => {
-      utils.organization.invalidate();
-      utils.organization.listPendingRelationships.invalidate();
-    },
-  });
-  const approve = trpc.organization.approveRelationship.useMutation({
-    onSuccess: (_, variables) => {
-      const relationshipKey = `${variables.sourceOrganizationId}-${variables.targetOrganizationId}`;
-      setAcceptedRelationships((prev) => new Set(prev).add(relationshipKey));
+  const queryClient = useQueryClient();
+  const remove = useMutation(
+    trpc.organization.declineRelationship.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.organization.pathFilter());
+        queryClient.invalidateQueries(
+          trpc.organization.listPendingRelationships.pathFilter(),
+        );
+      },
+    }),
+  );
+  const approve = useMutation(
+    trpc.organization.approveRelationship.mutationOptions({
+      onSuccess: (_, variables) => {
+        const relationshipKey = `${variables.sourceOrganizationId}-${variables.targetOrganizationId}`;
+        setAcceptedRelationships((prev) => new Set(prev).add(relationshipKey));
 
-      utils.organization.listPosts.invalidate();
+        queryClient.invalidateQueries(trpc.organization.listPosts.pathFilter());
 
-      // invalidate so we remove it from the list.
-      setTimeout(() => {
-        utils.organization.invalidate();
-        utils.organization.listPendingRelationships.invalidate();
-      }, 5_000);
-    },
-  });
+        // invalidate so we remove it from the list.
+        setTimeout(() => {
+          queryClient.invalidateQueries(trpc.organization.pathFilter());
+          queryClient.invalidateQueries(
+            trpc.organization.listPendingRelationships.pathFilter(),
+          );
+        }, 5_000);
+      },
+    }),
+  );
 
   if (count === 0) {
     return null;

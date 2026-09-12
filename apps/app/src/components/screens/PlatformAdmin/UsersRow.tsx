@@ -1,9 +1,8 @@
 'use client';
-
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import {
@@ -23,6 +22,7 @@ import {
 } from '@op/sense/Select';
 import { TableCell } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
@@ -40,9 +40,10 @@ type OrganizationUsers = User['organizationUsers'];
 
 /** Renders table cells for a user row - must be used inside a <TableRow> */
 export const UsersRowCells = ({ user }: { user: User }) => {
+  const trpc = useTRPC();
   const format = useFormatter();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
   const createdAt = user.createdAt ? new Date(user.createdAt) : null;
@@ -150,7 +151,9 @@ export const UsersRowCells = ({ user }: { user: User }) => {
             isOpen={isEditModalOpen}
             onOpenChange={setIsEditModalOpen}
             onSuccess={() => {
-              utils.platform.admin.listAllUsers.invalidate();
+              queryClient.invalidateQueries(
+                trpc.platform.admin.listAllUsers.pathFilter(),
+              );
             }}
           />
         ) : null}

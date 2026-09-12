@@ -5,7 +5,7 @@ import {
   useProposalEngagement,
 } from '@/hooks/useProposalEngagement';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {
   Empty,
@@ -16,6 +16,7 @@ import {
 } from '@op/sense/Empty';
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useState } from 'react';
 import { LuExpand, LuTriangleAlert, LuX } from 'react-icons/lu';
 
@@ -127,7 +128,10 @@ export function ProposalSheet({
 
 /** Shares the body's query, so it costs no extra request. */
 function ReportAction({ profileId }: { profileId: string }) {
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
+  const trpc = useTRPC();
+  const { data: proposal } = useSuspenseQuery(
+    trpc.decision.getProposal.queryOptions({ profileId }),
+  );
 
   return <ReportProposalDialog proposalId={proposal.id} iconOnly />;
 }
@@ -151,9 +155,12 @@ function ProposalSheetBody({
   /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
   decisionRoot: string;
 }) {
-  const [initialProposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
-  });
+  const trpc = useTRPC();
+  const { data: initialProposal } = useSuspenseQuery(
+    trpc.decision.getProposal.queryOptions({
+      profileId,
+    }),
+  );
 
   const { proposal, documentState } = useLiveProposalDocument(initialProposal);
 

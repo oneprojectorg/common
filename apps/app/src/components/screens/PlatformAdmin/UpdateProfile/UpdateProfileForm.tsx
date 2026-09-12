@@ -1,5 +1,7 @@
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 import {
   BaseUpdateProfileForm,
@@ -19,8 +21,11 @@ export const UpdateProfileForm = ({
   onSuccess: () => void;
   className?: string;
 }) => {
-  const utils = trpc.useUtils();
-  const updateProfile = trpc.platform.admin.updateUserProfile.useMutation();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateProfile = useMutation(
+    trpc.platform.admin.updateUserProfile.mutationOptions(),
+  );
 
   const handleSubmit = async (value: FormFields) => {
     await updateProfile.mutateAsync({
@@ -33,11 +38,15 @@ export const UpdateProfileForm = ({
         focusAreas: value.focusAreas || undefined,
       },
     });
-    utils.platform.admin.listAllUsers.invalidate();
+    queryClient.invalidateQueries(
+      trpc.platform.admin.listAllUsers.pathFilter(),
+    );
   };
 
   const handleImageUploadSuccess = () => {
-    utils.platform.admin.listAllUsers.invalidate();
+    queryClient.invalidateQueries(
+      trpc.platform.admin.listAllUsers.pathFilter(),
+    );
   };
 
   return (

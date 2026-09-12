@@ -1,7 +1,6 @@
 'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {
   DropdownMenu,
@@ -13,6 +12,10 @@ import { Header2 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
@@ -55,46 +58,57 @@ const MemberMenu = ({
   organizationId: string;
   profileId: string;
 }) => {
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const t = useTranslations();
 
   // Query for all available roles to find the "Member" role ID
-  const { data: rolesData } = trpc.organization.getRoles.useQuery();
+  const { data: rolesData } = useQuery(
+    trpc.organization.getRoles.queryOptions(),
+  );
   const roles = rolesData?.items;
 
-  const updateUser = trpc.organization.updateOrganizationUser.useMutation({
-    onSuccess: (_, variables) => {
-      // Determine what role was assigned for the success message
-      const wasChangingToAdmin = variables.data.roleIds?.some((roleId) =>
-        roles?.find(
-          (role: any) =>
-            role.id === roleId && role.name.toLowerCase() === 'admin',
-        ),
-      );
+  const updateUser = useMutation(
+    trpc.organization.updateOrganizationUser.mutationOptions({
+      onSuccess: (_, variables) => {
+        // Determine what role was assigned for the success message
+        const wasChangingToAdmin = variables.data.roleIds?.some((roleId) =>
+          roles?.find(
+            (role: any) =>
+              role.id === roleId && role.name.toLowerCase() === 'admin',
+          ),
+        );
 
-      const message = wasChangingToAdmin
-        ? t('profile.changedToAdminToast')
-        : t('profile.changedToMemberToast');
+        const message = wasChangingToAdmin
+          ? t('profile.changedToAdminToast')
+          : t('profile.changedToMemberToast');
 
-      toast.success(message);
-      // Invalidate listUsers query to refresh the UI
-      void utils.organization.listUsers.invalidate({ profileId });
-    },
-    onError: (error) => {
-      toast.error(error.message || t('profile.updateMemberRoleError'));
-    },
-  });
+        toast.success(message);
+        // Invalidate listUsers query to refresh the UI
+        void queryClient.invalidateQueries(
+          trpc.organization.listUsers.queryFilter({ profileId }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || t('profile.updateMemberRoleError'));
+      },
+    }),
+  );
 
-  const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
-    onSuccess: () => {
-      toast.success(t('profile.removeMemberToast'));
-      // Invalidate listUsers query to refresh the UI
-      void utils.organization.listUsers.invalidate({ profileId });
-    },
-    onError: (error) => {
-      toast.error(error.message || t('profile.removeMemberError'));
-    },
-  });
+  const deleteUser = useMutation(
+    trpc.organization.deleteOrganizationUser.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('profile.removeMemberToast'));
+        // Invalidate listUsers query to refresh the UI
+        void queryClient.invalidateQueries(
+          trpc.organization.listUsers.queryFilter({ profileId }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || t('profile.removeMemberError'));
+      },
+    }),
+  );
 
   // Check if user is currently an admin
   const isCurrentlyAdmin = member.roles.some(
@@ -296,11 +310,16 @@ const MembersListContent = ({
 };
 
 export const MembersList = ({ profileId }: { profileId: string }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [{ items: members }] = trpc.organization.listUsers.useSuspenseQuery({
-    profileId,
-  });
+  const {
+    data: { items: members },
+  } = useSuspenseQuery(
+    trpc.organization.listUsers.queryOptions({
+      profileId,
+    }),
+  );
 
   // We need to get the organizationId from the profileId
   // This assumes the profileId belongs to an organization

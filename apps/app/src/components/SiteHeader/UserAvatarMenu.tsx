@@ -1,9 +1,8 @@
 'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
@@ -28,6 +27,9 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { Separator } from '@op/sense/Separator';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
@@ -69,18 +71,21 @@ const ProfileMenuRow = ({
     avatarImage?: { name: string } | null;
   }) => void;
 }) => {
+  const trpc = useTRPC();
   const { user } = useRequiredUser();
   const router = useRouter();
-  const utils = trpc.useUtils();
-  const switchProfile = trpc.account.switchProfile.useMutation({
-    onSuccess: () => {
-      utils.invalidate();
-      // TODO: something is happening when switching so trying this out to see if it helps to continue debugging
-      utils.organization.listAllPosts.refetch();
-      // Reset all SSR fetches as well
-      router.refresh();
-    },
-  });
+  const queryClient = useQueryClient();
+  const switchProfile = useMutation(
+    trpc.account.switchProfile.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.pathFilter());
+        // TODO: something is happening when switching so trying this out to see if it helps to continue debugging
+        queryClient.refetchQueries(trpc.organization.listAllPosts.pathFilter());
+        // Reset all SSR fetches as well
+        router.refresh();
+      },
+    }),
+  );
   const isCurrent = user.currentProfile?.id === profile.id;
 
   const handleSelect = () => {
@@ -299,10 +304,13 @@ const AvatarMenuContent = ({
     avatarImage?: { name: string } | null;
   }) => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const logout = useAuthLogout();
 
-  const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
+  const { data: profilesData } = useQuery(
+    trpc.account.getUserProfiles.queryOptions(),
+  );
   const profiles = profilesData?.items;
 
   const { userProfiles, orgProfiles } =

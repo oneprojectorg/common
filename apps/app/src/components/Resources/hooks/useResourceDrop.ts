@@ -1,11 +1,12 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   RESOURCE_TITLE_MAX_LEN,
   isAllowedUploadMimeType,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,15 +41,20 @@ export const useResourceDrop = ({
   collectionId: string | null;
 }) => {
   const t = useTranslations('resources');
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { upload } = useResourceUpload(profileId);
   const onError = () => {
     // Match the rest of the resource UI: a generic message, never raw
     // server error text.
     toast.error(t('addError'));
   };
-  const createDocument = trpc.resources.createDocument.useMutation({ onError });
-  const createLink = trpc.resources.createLink.useMutation({ onError });
+  const createDocument = useMutation(
+    trpc.resources.createDocument.mutationOptions({ onError }),
+  );
+  const createLink = useMutation(
+    trpc.resources.createLink.mutationOptions({ onError }),
+  );
   const [pending, setPending] = useState<PendingDrop[]>([]);
 
   const addPending = (index: number): string => {
@@ -130,8 +136,8 @@ export const useResourceDrop = ({
     try {
       // Same title derivation as the URL input: prefer the preview title, fall
       // back to the hostname.
-      const preview = await utils.content.linkPreview
-        .fetch({ url: linkUrl })
+      const preview = await queryClient
+        .fetchQuery(trpc.content.linkPreview.queryOptions({ url: linkUrl }))
         .catch(() => null);
       const title =
         preview?.meta?.title?.slice(0, RESOURCE_TITLE_MAX_LEN) ||

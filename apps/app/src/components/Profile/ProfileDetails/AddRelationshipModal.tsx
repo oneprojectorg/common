@@ -1,7 +1,6 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { skipBatch, trpc } from '@op/api/client';
+import { skipBatch, useTRPC } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import {
@@ -27,6 +26,9 @@ import {
 } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
 import { relationshipMap } from '@op/types';
+import { useMutation } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
@@ -45,17 +47,19 @@ import {
 
 const RemoveRelationshipModalContent = ({
   relationship,
-  utils,
   profileId,
   onClose,
 }: {
   relationship: any;
-  utils: any;
   profileId: string;
   onClose: () => void;
 }) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const t = useTranslations();
-  const removeRelationship = trpc.organization.removeRelationship.useMutation();
+  const removeRelationship = useMutation(
+    trpc.organization.removeRelationship.mutationOptions(),
+  );
   const [isSubmitting, startTransition] = useTransition();
 
   const handleSubmit = (e: FormEvent) => {
@@ -67,12 +71,16 @@ const RemoveRelationshipModalContent = ({
           id: relationship.id,
         });
 
-        utils.organization.listRelationships.invalidate({
-          organizationId: profileId,
-        });
-        utils.organization.listDirectedRelationships.invalidate({
-          from: profileId,
-        });
+        queryClient.invalidateQueries(
+          trpc.organization.listRelationships.queryFilter({
+            organizationId: profileId,
+          }),
+        );
+        queryClient.invalidateQueries(
+          trpc.organization.listDirectedRelationships.queryFilter({
+            from: profileId,
+          }),
+        );
 
         toast.success(t('profile.relationshipRemovedToast'));
         onClose();
@@ -114,9 +122,9 @@ export const AddRelationshipModalSuspense = ({
 }: {
   profile: Organization;
 }) => {
+  const trpc = useTRPC();
   const { user } = useRequiredUser();
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
   >(null);
@@ -124,15 +132,18 @@ export const AddRelationshipModalSuspense = ({
   const [removeOpen, setRemoveOpen] = useState(false);
 
   // checking for our relationships TOWARDS the profile
-  const [{ relationships }] =
-    trpc.organization.listDirectedRelationships.useSuspenseQuery(
+  const {
+    data: { relationships },
+  } = useSuspenseQuery(
+    trpc.organization.listDirectedRelationships.queryOptions(
       {
         from: profile.id,
       },
       {
         ...skipBatch,
       },
-    );
+    ),
+  );
 
   const selectedRelationship = relationships.find(
     (r) => r.id === selectedRelationshipId,
@@ -271,7 +282,6 @@ export const AddRelationshipModalSuspense = ({
         {selectedRelationship && (
           <RemoveRelationshipModalContent
             relationship={selectedRelationship}
-            utils={utils}
             profileId={profile.id}
             onClose={() => setSelectedRelationshipId(null)}
           />
