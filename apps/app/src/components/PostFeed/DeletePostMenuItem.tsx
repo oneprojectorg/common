@@ -1,55 +1,73 @@
 'use client';
-
 import { createCommentsQueryKey } from '@/utils/queryKeys';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Post } from '@op/api/encoders';
 import { DropdownMenuItem } from '@op/sense/DropdownMenu';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
 export const DeletePostMenuItem = ({ post }: { post: Post }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
-  const deletePost = trpc.organization.deletePost.useMutation({
-    onMutate: async () => {
-      if (post.parentPostId) {
-        const queryKey = createCommentsQueryKey(post.parentPostId);
+  const deletePost = useMutation(
+    trpc.organization.deletePost.mutationOptions({
+      onMutate: async () => {
+        if (post.parentPostId) {
+          const queryKey = createCommentsQueryKey(post.parentPostId);
 
-        await utils.posts.getPosts.cancel(queryKey);
+          await queryClient.cancelQueries(
+            trpc.posts.getPosts.queryFilter(queryKey),
+          );
 
-        const previousComments = utils.posts.getPosts.getData(queryKey);
+          const previousComments = queryClient.getQueryData(
+            trpc.posts.getPosts.queryKey(queryKey),
+          );
 
-        utils.posts.getPosts.setData(queryKey, (old) => {
-          if (!old) return old;
-          return {
-            items: old.items.filter((comment) => comment.id !== post.id),
-          };
-        });
+          queryClient.setQueryData(
+            trpc.posts.getPosts.queryKey(queryKey),
+            (old) => {
+              if (!old) return old;
+              return {
+                items: old.items.filter((comment) => comment.id !== post.id),
+              };
+            },
+          );
 
-        return { previousComments };
-      }
+          return { previousComments };
+        }
 
-      return {};
-    },
-    onSuccess: () => {
-      void utils.organization.listPosts.invalidate();
-      void utils.organization.listAllPosts.invalidate();
-      router.refresh();
-      toast.success(t('Post deleted'));
-    },
-    onError: (error, _variables, context) => {
-      if (post.parentPostId && context?.previousComments) {
-        const queryKey = createCommentsQueryKey(post.parentPostId);
-        utils.posts.getPosts.setData(queryKey, context.previousComments);
-      }
+        return {};
+      },
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
+          trpc.organization.listPosts.pathFilter(),
+        );
+        void queryClient.invalidateQueries(
+          trpc.organization.listAllPosts.pathFilter(),
+        );
+        router.refresh();
+        toast.success(t('Post deleted'));
+      },
+      onError: (error, _variables, context) => {
+        if (post.parentPostId && context?.previousComments) {
+          const queryKey = createCommentsQueryKey(post.parentPostId);
+          queryClient.setQueryData(
+            trpc.posts.getPosts.queryKey(queryKey),
+            context.previousComments,
+          );
+        }
 
-      toast.error(error.message || t('Failed to delete post'));
-    },
-  });
+        toast.error(error.message || t('Failed to delete post'));
+      },
+    }),
+  );
 
   return (
     <DropdownMenuItem

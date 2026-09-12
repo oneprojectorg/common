@@ -1,7 +1,6 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
 import { logger } from '@op/logging/client';
@@ -23,6 +22,9 @@ import {
   FooterBarStart,
 } from '@op/sense/FooterBar';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -72,12 +74,15 @@ export const ProposalsGrid = ({
 }: ProposalsProps & {
   proposalIdsWithRevisionRequest?: Set<string>;
 }) => {
+  const trpc = useTRPC();
   const { instanceId, isVotingPhase } = props;
 
   // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
-    processInstanceId: instanceId,
-  });
+  const { data: voteStatus } = useQuery(
+    trpc.decision.getVotingStatus.queryOptions({
+      processInstanceId: instanceId,
+    }),
+  );
 
   // Use the phase capability passed from the router, falling back to the
   // voting status endpoint for backwards compatibility
@@ -212,6 +217,7 @@ const VotingProposalsList = ({
   excludeAssignedForReview,
   isFetchingNextPage,
 }: ProposalsProps) => {
+  const trpc = useTRPC();
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
@@ -223,33 +229,41 @@ const VotingProposalsList = ({
   const numSelected = selectedProposalIds.length;
 
   // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
-    processInstanceId: instanceId,
-  });
+  const { data: voteStatus } = useQuery(
+    trpc.decision.getVotingStatus.queryOptions({
+      processInstanceId: instanceId,
+    }),
+  );
 
   // Instance context for resolving the current phase's optional custom form.
-  const { data: instance } = trpc.decision.getInstance.useQuery({ instanceId });
+  const { data: instance } = useQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   const decisionProfileId = instance?.profileId ?? undefined;
   const currentPhaseId = instance?.currentStateId ?? undefined;
   const initialPhaseId = instance?.instanceData?.phases?.[0]?.phaseId;
 
   // A form tagged for the current (voting) phase, attached to the decision
   // profile — same lookup the proposal editor uses, scoped by phase.
-  const { data: phaseForm } = trpc.customForm.getForProfile.useQuery(
-    {
-      profileId: decisionProfileId ?? '',
-      phaseId: currentPhaseId,
-      initialPhaseId,
-    },
-    { enabled: Boolean(decisionProfileId) && Boolean(currentPhaseId) },
+  const { data: phaseForm } = useQuery(
+    trpc.customForm.getForProfile.queryOptions(
+      {
+        profileId: decisionProfileId ?? '',
+        phaseId: currentPhaseId,
+        initialPhaseId,
+      },
+      { enabled: Boolean(decisionProfileId) && Boolean(currentPhaseId) },
+    ),
   );
 
   const { user } = useUser();
   const voterProfileId = user?.profileId;
 
-  const submitPhaseFormMutation = trpc.customForm.submit.useMutation();
+  const submitPhaseFormMutation = useMutation(
+    trpc.customForm.submit.mutationOptions(),
+  );
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
@@ -283,9 +297,11 @@ const VotingProposalsList = ({
     // close fires from a mutation callback, not a click.
     setIsVoteReviewOpen(false);
     setSelectedProposalIds([]);
-    utils.decision.getVotingStatus.invalidate({
-      processInstanceId: instanceId,
-    });
+    queryClient.invalidateQueries(
+      trpc.decision.getVotingStatus.queryFilter({
+        processInstanceId: instanceId,
+      }),
+    );
     // When the voting phase has a custom form, collect it before the success
     // confirmation; otherwise show the confirmation directly.
     if (phaseForm && voterProfileId) {

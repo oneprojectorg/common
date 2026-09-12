@@ -1,8 +1,4 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import {
@@ -31,10 +27,10 @@ export async function ReviewLayout({
   decisionSlug,
   assignmentId,
 }: ReviewLayoutProps) {
-  const [t, client, { utils, queryClient }] = await Promise.all([
+  const [t, client, { trpc, queryClient }] = await Promise.all([
     getTranslations(),
     createClient(),
-    createServerUtils(),
+    createServerTRPC(),
   ]);
 
   let reviewSettings: ReviewSettings;
@@ -42,7 +38,9 @@ export async function ReviewLayout({
   try {
     const [decisionProfile, reviewAssignment] = await Promise.all([
       client.decision.getDecisionBySlug({ slug: decisionSlug }),
-      utils.decision.getReviewAssignment.fetch({ assignmentId }),
+      queryClient.fetchQuery(
+        trpc.decision.getReviewAssignment.queryOptions({ assignmentId }),
+      ),
     ]);
 
     const instanceData = decisionProfile.processInstance.instanceData;

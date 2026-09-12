@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { JoinProfileRequestStatus } from '@op/api/encoders';
 import { PAGE_LIMIT } from '@op/common/client';
 import { Button } from '@op/sense/Button';
@@ -13,6 +12,9 @@ import {
 } from '@op/sense/NotificationPanel';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { toast } from '@op/sense/Toast';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,28 +43,37 @@ const JoinProfileRequestsNotificationsSuspense = ({
 }: {
   targetProfileId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const [{ items: requests }] = trpc.profile.listJoinRequests.useSuspenseQuery({
-    targetProfileId,
-    status: JoinProfileRequestStatus.PENDING,
-    limit: PAGE_LIMIT.md,
-  });
+  const {
+    data: { items: requests },
+  } = useSuspenseQuery(
+    trpc.profile.listJoinRequests.queryOptions({
+      targetProfileId,
+      status: JoinProfileRequestStatus.PENDING,
+      limit: PAGE_LIMIT.md,
+    }),
+  );
 
-  const updateRequestMutation = trpc.profile.updateJoinRequest.useMutation({
-    onSuccess: (_, variables) => {
-      toast.success(
-        variables.status === JoinProfileRequestStatus.APPROVED
-          ? t('Request accepted')
-          : t('Request declined'),
-      );
-      utils.profile.listJoinRequests.invalidate();
-    },
-    onError: () => {
-      toast.error(t('Failed to update request'));
-    },
-  });
+  const updateRequestMutation = useMutation(
+    trpc.profile.updateJoinRequest.mutationOptions({
+      onSuccess: (_, variables) => {
+        toast.success(
+          variables.status === JoinProfileRequestStatus.APPROVED
+            ? t('Request accepted')
+            : t('Request declined'),
+        );
+        queryClient.invalidateQueries(
+          trpc.profile.listJoinRequests.pathFilter(),
+        );
+      },
+      onError: () => {
+        toast.error(t('Failed to update request'));
+      },
+    }),
+  );
 
   const handleUpdateRequest = (
     requestId: string,

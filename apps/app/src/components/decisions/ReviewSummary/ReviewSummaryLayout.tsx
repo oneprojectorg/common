@@ -1,8 +1,4 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import {
@@ -51,14 +47,16 @@ export async function ReviewSummaryLayout({
 
   const instanceId = decisionProfile.processInstance.id;
 
-  const { utils, queryClient } = await createServerUtils();
+  const { trpc, queryClient } = await createServerTRPC();
 
   const [proposal, instance] = await Promise.all([
     (async () => {
       try {
-        return await utils.decision.getProposal.fetch({
-          profileId: proposalProfileId,
-        });
+        return await queryClient.fetchQuery(
+          trpc.decision.getProposal.queryOptions({
+            profileId: proposalProfileId,
+          }),
+        );
       } catch (error) {
         const cause = error instanceof Error ? error.cause : null;
         // A missing proposal (404) or a malformed proposal id (400) is an
@@ -75,7 +73,9 @@ export async function ReviewSummaryLayout({
         throw error;
       }
     })(),
-    utils.decision.getInstance.fetch({ instanceId }),
+    queryClient.fetchQuery(
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+    ),
   ]);
 
   if (proposal.processInstanceId !== instanceId) {
@@ -102,21 +102,27 @@ export async function ReviewSummaryLayout({
     isReviewPhase(assertInstancePhase({ instance, phaseId }));
 
   await Promise.all([
-    utils.decision.getProposalWithReviewAggregates.prefetch({
-      processInstanceId: instanceId,
-      proposalId,
-      phaseId,
-    }),
+    queryClient.prefetchQuery(
+      trpc.decision.getProposalWithReviewAggregates.queryOptions({
+        processInstanceId: instanceId,
+        proposalId,
+        phaseId,
+      }),
+    ),
     // Same key as the query in ReviewSummaryView, `sort` included, or the
     // client refetches on mount.
-    utils.decision.listReviewAssignments.prefetch({
-      processInstanceId: instanceId,
-      proposalProfileId,
-      phaseId,
-      sort: 'newest',
-    }),
+    queryClient.prefetchQuery(
+      trpc.decision.listReviewAssignments.queryOptions({
+        processInstanceId: instanceId,
+        proposalProfileId,
+        phaseId,
+        sort: 'newest',
+      }),
+    ),
     // The left pane's author-notes card reads this unconditionally.
-    utils.decision.listProposalRevisionNotes.prefetch({ proposalId }),
+    queryClient.prefetchQuery(
+      trpc.decision.listProposalRevisionNotes.queryOptions({ proposalId }),
+    ),
   ]);
 
   return (

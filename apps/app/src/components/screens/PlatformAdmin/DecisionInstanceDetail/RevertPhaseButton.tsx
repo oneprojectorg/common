@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +13,8 @@ import {
 } from '@op/sense/AlertDialog';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuUndo2 } from 'react-icons/lu';
 
@@ -33,23 +34,30 @@ export const RevertPhaseButton = ({
   phaseId: string;
   previousPhaseName: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
-  const revertPhase = trpc.platform.admin.revertDecisionPhase.useMutation({
-    onSuccess: () => {
-      toast.success(t('Moved back to {phase}', { phase: previousPhaseName }));
-      utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
-      utils.platform.admin.listDecisionReviewAssignments.invalidate({
-        instanceId,
-      });
-      setIsOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  const revertPhase = useMutation(
+    trpc.platform.admin.revertDecisionPhase.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Moved back to {phase}', { phase: previousPhaseName }));
+        queryClient.invalidateQueries(
+          trpc.platform.admin.getDecisionInstance.queryFilter({ instanceId }),
+        );
+        queryClient.invalidateQueries(
+          trpc.platform.admin.listDecisionReviewAssignments.queryFilter({
+            instanceId,
+          }),
+        );
+        setIsOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>

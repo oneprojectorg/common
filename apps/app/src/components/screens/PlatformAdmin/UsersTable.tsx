@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -30,6 +29,8 @@ import {
   TableRow,
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   Suspense,
   useCallback,
@@ -79,8 +80,9 @@ const exportUsersToCSV = (
 
 /** Main users table component with suspense boundary */
 export const UsersTable = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
   const [anonFilter, setAnonFilter] = useState<AnonFilter>('exclude');
@@ -96,9 +98,11 @@ export const UsersTable = () => {
     startExportTransition(async () => {
       try {
         // Fetch all users without limit, honouring the anonymous filter
-        const { items: users } = await utils.platform.admin.listAllUsers.fetch({
-          includeAnonymous,
-        });
+        const { items: users } = await queryClient.fetchQuery(
+          trpc.platform.admin.listAllUsers.queryOptions({
+            includeAnonymous,
+          }),
+        );
 
         if (users.length === 0) {
           return;
@@ -116,7 +120,7 @@ export const UsersTable = () => {
         toast.error(t('Failed to export users'));
       }
     });
-  }, [utils, t, includeAnonymous]);
+  }, [queryClient, trpc, t, includeAnonymous]);
 
   return (
     <div className="mt-8">
@@ -198,6 +202,7 @@ const UsersTableContent = ({
   searchQuery: string;
   includeAnonymous: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const {
     cursor,
@@ -221,7 +226,9 @@ const UsersTableContent = ({
     includeAnonymous,
   };
 
-  const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
+  const { data: data } = useSuspenseQuery(
+    trpc.platform.admin.listAllUsers.queryOptions(queryInput),
+  );
 
   const { items: users, next, total } = data;
 

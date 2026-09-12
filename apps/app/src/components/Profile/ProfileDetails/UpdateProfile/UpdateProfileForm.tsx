@@ -1,5 +1,8 @@
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { ReactNode, forwardRef } from 'react';
 
 import { BaseUpdateProfileForm, FormFields } from './BaseUpdateProfileForm';
@@ -12,11 +15,16 @@ export const UpdateProfileForm = forwardRef<
     className?: string;
   }
 >(({ profile, onSuccess, className }, ref): ReactNode => {
-  const utils = trpc.useUtils();
-  const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateProfile = useMutation(
+    trpc.account.updateUserProfile.mutationOptions(),
+  );
 
   // Get current user's profile ID for the focus areas component
-  const { data: userAccount } = trpc.account.getMyAccount.useQuery();
+  const { data: userAccount } = useQuery(
+    trpc.account.getMyAccount.queryOptions(),
+  );
   const profileId = userAccount?.profile?.id;
 
   const handleSubmit = async (value: FormFields) => {
@@ -31,23 +39,29 @@ export const UpdateProfileForm = forwardRef<
       website: value.website || undefined,
       focusAreas: value.focusAreas || undefined,
     });
-    utils.account.getMyAccount.invalidate();
-    utils.account.getUserProfiles.invalidate();
-    utils.profile.getBySlug.invalidate({
-      slug: profile.slug,
-    });
-    utils.profile.list.invalidate();
-    utils.individual.getTermsByProfile.invalidate({
-      profileId,
-    });
+    queryClient.invalidateQueries(trpc.account.getMyAccount.pathFilter());
+    queryClient.invalidateQueries(trpc.account.getUserProfiles.pathFilter());
+    queryClient.invalidateQueries(
+      trpc.profile.getBySlug.queryFilter({
+        slug: profile.slug,
+      }),
+    );
+    queryClient.invalidateQueries(trpc.profile.list.pathFilter());
+    queryClient.invalidateQueries(
+      trpc.individual.getTermsByProfile.queryFilter({
+        profileId,
+      }),
+    );
   };
 
   const handleImageUploadSuccess = () => {
-    utils.account.getMyAccount.invalidate();
-    utils.account.getUserProfiles.invalidate();
-    utils.profile.getBySlug.invalidate({
-      slug: profile.slug,
-    });
+    queryClient.invalidateQueries(trpc.account.getMyAccount.pathFilter());
+    queryClient.invalidateQueries(trpc.account.getUserProfiles.pathFilter());
+    queryClient.invalidateQueries(
+      trpc.profile.getBySlug.queryFilter({
+        slug: profile.slug,
+      }),
+    );
   };
 
   return (

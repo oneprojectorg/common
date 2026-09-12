@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
@@ -13,6 +12,9 @@ import {
 } from '@op/sense/Dialog';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -32,6 +34,7 @@ export const LaunchProcessModal = ({
   processName: string;
   decisionProfileId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
   const instanceData = useProcessBuilderStore(
@@ -39,11 +42,12 @@ export const LaunchProcessModal = ({
   );
   const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
 
-  const { data: invitesData, isLoading: invitesLoading } =
-    trpc.profile.listProfileInvites.useQuery(
+  const { data: invitesData, isLoading: invitesLoading } = useQuery(
+    trpc.profile.listProfileInvites.queryOptions(
       { profileId: decisionProfileId },
       { enabled: isOpen },
-    );
+    ),
+  );
   const invites = invitesData?.items;
   const pendingNotificationCount =
     invites?.filter((i) => !i.notifiedAt).length ?? 0;
@@ -54,22 +58,26 @@ export const LaunchProcessModal = ({
   const categoriesCount = instanceData?.config?.categories?.length ?? 0;
   const showNoCategoriesWarning = organizeByCategories && categoriesCount === 0;
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: async (data) => {
-      onOpenChange(false);
-      // Leftover dirty fields would otherwise overlay the published instance
-      clearInstance(decisionProfileId);
-      await utils.decision.getDecisionBySlug.invalidate();
-      router.push(`/decisions/${data.slug}`);
-    },
-    onError: (error) => {
-      toast.error(error.message, {
-        description: t('Failed to launch process'),
-      });
-    },
-  });
+  const updateInstance = useMutation(
+    trpc.decision.updateDecisionInstance.mutationOptions({
+      onSuccess: async (data) => {
+        onOpenChange(false);
+        // Leftover dirty fields would otherwise overlay the published instance
+        clearInstance(decisionProfileId);
+        await queryClient.invalidateQueries(
+          trpc.decision.getDecisionBySlug.pathFilter(),
+        );
+        router.push(`/decisions/${data.slug}`);
+      },
+      onError: (error) => {
+        toast.error(error.message, {
+          description: t('Failed to launch process'),
+        });
+      },
+    }),
+  );
 
   const handleLaunch = () => {
     updateInstance.mutate({

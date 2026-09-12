@@ -1,7 +1,6 @@
 'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProfileInvite } from '@op/api/encoders';
 import type { ProfileUser } from '@op/common/client';
 import {
@@ -42,6 +41,8 @@ import {
   TableRow,
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
   LuArrowDown,
@@ -329,30 +330,51 @@ const ProfileUserRoleSelect = ({
   isOwner?: boolean;
   className?: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
 
-  const updateRoles = trpc.profile.updateUserRoles.useMutation({
-    onSuccess: () => {
-      toast.success(t('Role updated successfully'));
-      void utils.profile.listUsers.invalidate({ profileId });
-    },
-    onError: (error) => {
-      toast.error(error.message || t('Failed to update role'));
-    },
-  });
+  const updateRoles = useMutation(
+    trpc.profile.updateUserRoles.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Role updated successfully'));
+        // `invalidate()` on the classic client was type-agnostic; the options
+        // proxy splits plain and infinite entries, and this list is rendered
+        // both ways — so both filters are needed to match it.
+        void queryClient.invalidateQueries(
+          trpc.profile.listUsers.queryFilter({ profileId }),
+        );
+        void queryClient.invalidateQueries(
+          trpc.profile.listUsers.infiniteQueryFilter({ profileId }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || t('Failed to update role'));
+      },
+    }),
+  );
 
-  const removeUser = trpc.profile.removeUser.useMutation({
-    onSuccess: () => {
-      toast.success(t('User removed from process'));
-      void utils.profile.listUsers.invalidate({ profileId });
-      setIsRemoveModalOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message || t('Failed to remove user'));
-    },
-  });
+  const removeUser = useMutation(
+    trpc.profile.removeUser.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('User removed from process'));
+        // `invalidate()` on the classic client was type-agnostic; the options
+        // proxy splits plain and infinite entries, and this list is rendered
+        // both ways — so both filters are needed to match it.
+        void queryClient.invalidateQueries(
+          trpc.profile.listUsers.queryFilter({ profileId }),
+        );
+        void queryClient.invalidateQueries(
+          trpc.profile.listUsers.infiniteQueryFilter({ profileId }),
+        );
+        setIsRemoveModalOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || t('Failed to remove user'));
+      },
+    }),
+  );
 
   const handleRoleChange = (roleId: string) => {
     if (roleId && roleId !== currentRoleId) {
@@ -400,30 +422,39 @@ const InviteRoleSelect = ({
   processName?: string;
   className?: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
 
-  const updateInvite = trpc.profile.updateProfileInvite.useMutation({
-    onSuccess: () => {
-      toast.success(t('Role updated successfully'));
-      void utils.profile.listProfileInvites.invalidate({ profileId });
-    },
-    onError: (error) => {
-      toast.error(error.message || t('Failed to update role'));
-    },
-  });
+  const updateInvite = useMutation(
+    trpc.profile.updateProfileInvite.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Role updated successfully'));
+        void queryClient.invalidateQueries(
+          trpc.profile.listProfileInvites.queryFilter({ profileId }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || t('Failed to update role'));
+      },
+    }),
+  );
 
-  const deleteInvite = trpc.profile.deleteProfileInvite.useMutation({
-    onSuccess: () => {
-      toast.success(t('Invite removed from process'));
-      void utils.profile.listProfileInvites.invalidate({ profileId });
-      setIsRemoveModalOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message || t('Failed to remove invite'));
-    },
-  });
+  const deleteInvite = useMutation(
+    trpc.profile.deleteProfileInvite.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Invite removed from process'));
+        void queryClient.invalidateQueries(
+          trpc.profile.listProfileInvites.queryFilter({ profileId }),
+        );
+        setIsRemoveModalOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || t('Failed to remove invite'));
+      },
+    }),
+  );
 
   const handleRoleChange = (roleId: string) => {
     if (roleId && roleId !== currentRoleId) {

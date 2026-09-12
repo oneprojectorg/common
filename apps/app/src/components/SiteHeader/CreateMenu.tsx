@@ -1,8 +1,7 @@
 'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC, useTRPCClient } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
@@ -17,6 +16,7 @@ import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
 import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
@@ -29,6 +29,8 @@ import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganiz
 const SM_BREAKPOINT = screens.sm;
 
 export const CreateMenu = () => {
+  const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const t = useTranslations();
   const router = useRouter();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -38,18 +40,19 @@ export const CreateMenu = () => {
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const createDecisionMutation = useMutation({
     mutationFn: async () => {
-      const { processes: templates } =
-        await utils.decision.listProcesses.ensureData({});
+      const { processes: templates } = await queryClient.ensureQueryData(
+        trpc.decision.listProcesses.queryOptions({}),
+      );
       const firstTemplate = templates[0];
       if (!firstTemplate) {
         throw new Error('No decision process templates available');
       }
-      return utils.client.decision.createInstanceFromTemplate.mutate({
+      return trpcClient.decision.createInstanceFromTemplate.mutate({
         templateId: firstTemplate.id,
         name: `New ${firstTemplate.name}`,
       });

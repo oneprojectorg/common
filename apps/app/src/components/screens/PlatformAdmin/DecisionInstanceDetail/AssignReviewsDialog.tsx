@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   AdminAssignableProposal,
   AdminEligibleReviewer,
@@ -27,6 +26,8 @@ import {
   SelectValue,
 } from '@op/sense/Select';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -46,8 +47,9 @@ export const AssignReviewsDialog = ({
   eligibleReviewers: AdminEligibleReviewer[];
   proposals: AdminAssignableProposal[];
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [reviewerId, setReviewerId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -82,26 +84,30 @@ export const AssignReviewsDialog = ({
     [eligibleReviewers],
   );
 
-  const assignReviews = trpc.platform.admin.assignReviews.useMutation({
-    onSuccess: ({ createdCount }) => {
-      toast.success(
-        t(
-          '{count, plural, one {# review assignment created} other {# review assignments created}}',
-          {
-            count: createdCount,
-          },
-        ),
-      );
-      utils.platform.admin.listDecisionReviewAssignments.invalidate({
-        instanceId,
-        phaseId,
-      });
-      setIsOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  const assignReviews = useMutation(
+    trpc.platform.admin.assignReviews.mutationOptions({
+      onSuccess: ({ createdCount }) => {
+        toast.success(
+          t(
+            '{count, plural, one {# review assignment created} other {# review assignments created}}',
+            {
+              count: createdCount,
+            },
+          ),
+        );
+        queryClient.invalidateQueries(
+          trpc.platform.admin.listDecisionReviewAssignments.queryFilter({
+            instanceId,
+            phaseId,
+          }),
+        );
+        setIsOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
 
   const assignableProposals = proposals.filter(
     (proposal) => proposal.submittedByProfileId !== reviewerId,

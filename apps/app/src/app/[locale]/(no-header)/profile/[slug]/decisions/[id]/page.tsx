@@ -1,9 +1,5 @@
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
 import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
 import { Suspense, cache } from 'react';
@@ -18,8 +14,10 @@ import { TranslationDetectionProvider } from '@/components/decisions/Translation
 // cache() dedupes the read across generateMetadata + page render (one request),
 // so the resolver and its "viewed" event fire once and the data hydrates.
 const fetchLegacyInstance = cache(async (instanceId: string) => {
-  const { utils } = await createServerUtils();
-  return utils.decision.getLegacyInstance.fetch({ instanceId });
+  const { trpc, queryClient } = await createServerTRPC();
+  return queryClient.fetchQuery(
+    trpc.decision.getLegacyInstance.queryOptions({ instanceId }),
+  );
 });
 
 function DecisionHeaderSkeleton() {
@@ -75,7 +73,7 @@ const DecisionInstancePageContent = async ({
   instanceId: string;
   slug: string;
 }) => {
-  const { queryClient } = await createServerUtils();
+  const { queryClient } = await createServerTRPC();
   // Swallow failures: this only warms the cache — the client suspense query
   // refetches and its error boundary owns errors, so a failed warmup must not
   // crash the route.

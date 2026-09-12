@@ -1,7 +1,6 @@
 'use client';
-
 import type { SurveyInternalData } from '@op/api';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
@@ -33,6 +32,8 @@ import {
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -104,6 +105,7 @@ export const ProcessSurveyModal = ({
   isOpen: boolean;
   onSkip: () => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const locale = useLocale();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
@@ -159,18 +161,22 @@ export const ProcessSurveyModal = ({
   const isPromoterCohort = npsNum != null && npsNum >= 7;
   const isDetractorCohort = npsNum != null && npsNum <= 6;
 
-  const utils = trpc.useUtils();
-  const submitSurvey = trpc.decision.submitProcessSurveyResponse.useMutation({
-    onSuccess: (result) => {
-      utils.decision.getProcessSurveyResponse.setData(
-        { processInstanceId: instanceId },
-        result,
-      );
-    },
-    onError: (err) => {
-      toast.error(err.message || t('Failed to submit survey'));
-    },
-  });
+  const queryClient = useQueryClient();
+  const submitSurvey = useMutation(
+    trpc.decision.submitProcessSurveyResponse.mutationOptions({
+      onSuccess: (result) => {
+        queryClient.setQueryData(
+          trpc.decision.getProcessSurveyResponse.queryKey({
+            processInstanceId: instanceId,
+          }),
+          result,
+        );
+      },
+      onError: (err) => {
+        toast.error(err.message || t('Failed to submit survey'));
+      },
+    }),
+  );
 
   const validate = (): boolean => {
     const next: Record<string, string | undefined> = {};

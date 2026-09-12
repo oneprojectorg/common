@@ -1,7 +1,6 @@
 'use client';
-
 import { useMaybeUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import {
@@ -16,6 +15,8 @@ import {
 } from '@op/sense/Dialog';
 import { Header3 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useRef, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
@@ -47,9 +48,12 @@ export const PolicyReacceptanceModal = () => {
 };
 
 const PolicyReacceptanceModalContent = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
-  const reaccept = trpc.account.completeOnboarding.useMutation();
+  const queryClient = useQueryClient();
+  const reaccept = useMutation(
+    trpc.account.completeOnboarding.mutationOptions(),
+  );
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,7 +65,9 @@ const PolicyReacceptanceModalContent = () => {
       // cutoff so this gate stops showing. Invalidating getMyAccount refetches
       // the account that drives eligibility, closing the modal.
       await reaccept.mutateAsync({ tos: true, privacy: true });
-      await utils.account.getMyAccount.invalidate();
+      await queryClient.invalidateQueries(
+        trpc.account.getMyAccount.pathFilter(),
+      );
     } catch {
       setIsSubmitting(false);
       toast.error(t("That didn't work"), {

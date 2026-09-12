@@ -1,10 +1,12 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { SidebarTrigger } from '@op/sense/Sidebar';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuAlignJustify, LuArrowRight, LuArrowLeft } from 'react-icons/lu';
 
@@ -31,6 +33,7 @@ export const ProcessBuilderFooter = ({
   slug: string;
   decisionProfileId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
@@ -45,9 +48,8 @@ export const ProcessBuilderFooter = ({
     phases,
   );
 
-  const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
-    { slug },
-    { enabled: !!slug },
+  const { data: decisionProfile } = useQuery(
+    trpc.decision.getDecisionBySlug.queryOptions({ slug }, { enabled: !!slug }),
   );
 
   const processInstance = decisionProfile?.processInstance;
@@ -69,25 +71,31 @@ export const ProcessBuilderFooter = ({
     storeData?.name || decisionProfile?.name || t('New process');
 
   const { flushPendingChanges } = useProcessBuilderAutosave();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: async (data) => {
-      toast.success(t('Changes saved successfully'));
-      // Clear stale store data so the editor reseeds from fresh server data
-      clearInstance(decisionProfileId);
-      await utils.decision.getDecisionBySlug.invalidate({ slug });
-      if (data.slug !== slug) {
-        await utils.decision.getDecisionBySlug.invalidate({ slug: data.slug });
-      }
-      router.push(`/decisions/${data.slug}`);
-    },
-    onError: (error) => {
-      toast.error(t('Failed to save changes'), {
-        description: error.message,
-      });
-    },
-  });
+  const updateInstance = useMutation(
+    trpc.decision.updateDecisionInstance.mutationOptions({
+      onSuccess: async (data) => {
+        toast.success(t('Changes saved successfully'));
+        // Clear stale store data so the editor reseeds from fresh server data
+        clearInstance(decisionProfileId);
+        await queryClient.invalidateQueries(
+          trpc.decision.getDecisionBySlug.queryFilter({ slug }),
+        );
+        if (data.slug !== slug) {
+          await queryClient.invalidateQueries(
+            trpc.decision.getDecisionBySlug.queryFilter({ slug: data.slug }),
+          );
+        }
+        router.push(`/decisions/${data.slug}`);
+      },
+      onError: (error) => {
+        toast.error(t('Failed to save changes'), {
+          description: error.message,
+        });
+      },
+    }),
+  );
 
   const handleLaunchOrSave = async () => {
     // Flush any pending autosave so in-flight draft saves complete

@@ -1,9 +1,8 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { RouterOutput } from '@op/api';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
 import { logger } from '@op/logging/client';
@@ -19,6 +18,9 @@ import { OptionBox } from '@op/sense/OptionBox';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
@@ -38,18 +40,25 @@ export const DeleteOrganizationModal = ({
   isOpen,
   onOpenChange,
 }: OrgDeletionModalProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
+  const { data: profilesData } = useQuery(
+    trpc.account.getUserProfiles.queryOptions(),
+  );
   const profiles = profilesData?.items;
   const [selectedProfileId, setSelectedProfileId] = useState<string>();
   const [profileToDelete, setProfileToDelete] = useState<AccountProfile>();
   const [currentStep, setCurrentStep] = useState(0);
 
   const [isSubmitting, startTransition] = useTransition();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const { user } = useRequiredUser();
-  const deleteProfile = trpc.organization.deleteOrganization.useMutation();
-  const switchProfile = trpc.account.switchProfile.useMutation();
+  const deleteProfile = useMutation(
+    trpc.organization.deleteOrganization.mutationOptions(),
+  );
+  const switchProfile = useMutation(
+    trpc.account.switchProfile.mutationOptions(),
+  );
 
   const router = useRouter();
 
@@ -87,8 +96,10 @@ export const DeleteOrganizationModal = ({
           }
         }
 
-        await utils.account.invalidate();
-        await utils.organization.listAllPosts.invalidate();
+        await queryClient.invalidateQueries(trpc.account.pathFilter());
+        await queryClient.invalidateQueries(
+          trpc.organization.listAllPosts.pathFilter(),
+        );
 
         router.refresh();
         setCurrentStep(2);

@@ -1,12 +1,11 @@
 'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { applyLikeToggle } from '@/utils/optimisticUpdates';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   CommonUser,
   Organization,
@@ -29,6 +28,8 @@ import { MediaDisplay } from '@op/sense/MediaDisplay';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
@@ -583,6 +584,7 @@ export const DiscussionModalContainer = ({
 };
 
 export const usePostFeedActions = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
@@ -594,21 +596,31 @@ export const usePostFeedActions = () => {
     organization: null,
   });
 
-  const utils = trpc.useUtils();
-  const toggleLike = trpc.organization.toggleLike.useMutation({
-    onSettled: () => {
-      void utils.organization.listPosts.invalidate();
-      void utils.organization.listAllPosts.invalidate();
-      void utils.posts.getPosts.invalidate();
-      void utils.posts.listProfilePosts.invalidate();
-      // Proposal comment feeds moved off listProfilePosts; without this a
-      // reaction on a proposal comment leaves the feed stale.
-      void utils.posts.listProposalComments.invalidate();
-    },
-    onError: (err) => {
-      toast.error(err.message || t('Failed to update like'));
-    },
-  });
+  const queryClient = useQueryClient();
+  const toggleLike = useMutation(
+    trpc.organization.toggleLike.mutationOptions({
+      onSettled: () => {
+        void queryClient.invalidateQueries(
+          trpc.organization.listPosts.pathFilter(),
+        );
+        void queryClient.invalidateQueries(
+          trpc.organization.listAllPosts.pathFilter(),
+        );
+        void queryClient.invalidateQueries(trpc.posts.getPosts.pathFilter());
+        void queryClient.invalidateQueries(
+          trpc.posts.listProfilePosts.pathFilter(),
+        );
+        // Proposal comment feeds moved off listProfilePosts; without this a
+        // reaction on a proposal comment leaves the feed stale.
+        void queryClient.invalidateQueries(
+          trpc.posts.listProposalComments.pathFilter(),
+        );
+      },
+      onError: (err) => {
+        toast.error(err.message || t('Failed to update like'));
+      },
+    }),
+  );
 
   // Returns the promise so the caller's optimistic state can roll itself back;
   // `onError` above still owns the toast.

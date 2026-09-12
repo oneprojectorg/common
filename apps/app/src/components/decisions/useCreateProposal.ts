@@ -1,10 +1,11 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { useMount } from '@op/hooks';
 import { toast } from '@op/sense/Toast';
 import { createSBBrowserClient } from '@op/supabase/client';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTransition } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -28,6 +29,7 @@ export function useCreateProposal({
   /** Submit access for the viewer; permits anon sign-in for public visitors. */
   canSubmitProposal: boolean;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
   const { user } = useUser();
@@ -37,9 +39,11 @@ export function useCreateProposal({
   const { mounted } = useMount();
   const [isCreating, startCreating] = useTransition();
   const supabase = createSBBrowserClient();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const createProposalMutation = trpc.decision.createProposal.useMutation();
+  const createProposalMutation = useMutation(
+    trpc.decision.createProposal.mutationOptions(),
+  );
 
   const createProposal = () => {
     startCreating(async () => {
@@ -56,7 +60,9 @@ export function useCreateProposal({
           // The new session isn't reflected in the cached account query, so
           // refetch it before navigating — the edit page requires a populated
           // user in context.
-          await utils.account.getMyAccount.invalidate();
+          await queryClient.invalidateQueries(
+            trpc.account.getMyAccount.pathFilter(),
+          );
         }
 
         const proposal = await createProposalMutation.mutateAsync({

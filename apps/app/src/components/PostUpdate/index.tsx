@@ -1,12 +1,11 @@
 'use client';
-
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { detectLinks } from '@/utils/linkDetection';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { PAGE_LIMIT } from '@op/common/client';
 import { logger } from '@op/logging/client';
@@ -21,6 +20,8 @@ import { MediaDisplay } from '@op/sense/MediaDisplay';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
@@ -71,6 +72,7 @@ const PostUpdateWithUser = ({
   processInstanceId?: string; // Process instance ID for proposal comments
   characterLimit?: number;
 }) => {
+  const trpc = useTRPC();
   const { user } = useUser();
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
@@ -80,7 +82,7 @@ const PostUpdateWithUser = ({
   } | null>(null);
   const optimisticCommentRef = useRef<string | null>(null);
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const isOnline = useConnectionStatus();
 
@@ -96,283 +98,121 @@ const PostUpdateWithUser = ({
   });
 
   // For organization posts (main feed posts)
-  const createOrganizationPost = trpc.organization.createPost.useMutation({
-    onSuccess: () => {
-      // Clear form on success
-      setContent('');
-      setDetectedUrls([]);
-      fileUpload.clearFiles();
-      setLastFailedPost(null);
+  const createOrganizationPost = useMutation(
+    trpc.organization.createPost.mutationOptions({
+      onSuccess: () => {
+        // Clear form on success
+        setContent('');
+        setDetectedUrls([]);
+        fileUpload.clearFiles();
+        setLastFailedPost(null);
 
-      // Invalidate organization feeds to show new post
-      if (organization?.profile?.slug) {
-        void utils.organization.listPosts.invalidate();
-        void utils.organization.listAllPosts.invalidate();
-      }
+        // Invalidate organization feeds to show new post
+        if (organization?.profile?.slug) {
+          void queryClient.invalidateQueries(
+            trpc.organization.listPosts.pathFilter(),
+          );
+          void queryClient.invalidateQueries(
+            trpc.organization.listAllPosts.pathFilter(),
+          );
+        }
 
-      // Call onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-    },
-    onError: (err) => {
-      const errorInfo = analyzeError(err);
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        }
+      },
+      onError: (err) => {
+        const errorInfo = analyzeError(err);
 
-      if (errorInfo.isConnectionError) {
-        // Store failed post data for retry
-        setLastFailedPost({
-          content: content.trim(),
-          attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        if (errorInfo.isConnectionError) {
+          // Store failed post data for retry
+          setLastFailedPost({
+            content: content.trim(),
+            attachmentIds: fileUpload.getUploadedAttachmentIds(),
+          });
+
+          toast.error(
+            errorInfo.message + ' Use the retry button to try again.',
+          );
+        } else {
+          toast.error(errorInfo.message);
+        }
+
+        logger.error('Failed to create organization post', {
+          error: err,
+          context: 'PostUpdate.createOrgPost',
         });
-
-        toast.error(errorInfo.message + ' Use the retry button to try again.');
-      } else {
-        toast.error(errorInfo.message);
-      }
-
-      logger.error('Failed to create organization post', {
-        error: err,
-        context: 'PostUpdate.createOrgPost',
-      });
-    },
-  });
+      },
+    }),
+  );
 
   // For profile posts (comments, etc.)
-  const createPost = trpc.posts.createPost.useMutation({
-    onMutate: async (variables) => {
-      const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      optimisticCommentRef.current = tempId;
+  const createPost = useMutation(
+    trpc.posts.createPost.mutationOptions({
+      onMutate: async (variables) => {
+        const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        optimisticCommentRef.current = tempId;
 
-      setContent('');
-      setDetectedUrls([]);
-      setLastFailedPost(null);
-
-      // For comments (posts with parentPostId)
-      if (variables.parentPostId) {
-        // Cancel any outgoing refetches
-        const queryKey = createCommentsQueryKey(
-          variables.parentPostId,
-          profileId,
-        );
-        await utils.posts.getPosts.cancel(queryKey);
-
-        // Snapshot previous value
-        const previousComments = utils.posts.getPosts.getData(queryKey);
-
-        // Add optimistic comment immediately
-        const optimisticComment: Post = {
-          id: tempId,
-          content: variables.content,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          deletedAt: null,
-          profile: user?.currentProfile || null,
-          profileId: user?.currentProfileId || null,
-          parentPostId: variables.parentPostId,
-          rootProfileId: null,
-          rootPostId: null,
-          attachments: [],
-          likeCount: 0,
-          userHasLiked: false,
-          likeUsers: [],
-          commentCount: 0,
-          childPosts: null,
-          parentPost: null,
-        };
-
-        // Add optimistic comment
-        utils.posts.getPosts.setData(queryKey, (old) => ({
-          items: [optimisticComment, ...(old?.items ?? [])],
-        }));
-
-        return {
-          previousComments,
-          tempId,
-          isComment: true,
-        };
-      }
-
-      // For top-level posts (profile posts like proposal comments)
-      if (profileId) {
-        // Cancel any outgoing refetches for profile posts
-        const queryKey = {
-          profileId,
-          parentPostId: null,
-          limit: PAGE_LIMIT.lg,
-          offset: 0,
-          includeChildren: false,
-        };
-        await utils.posts.getPosts.cancel(queryKey);
-
-        // Snapshot previous value
-        const previousPosts = utils.posts.getPosts.getData(queryKey);
-
-        // Add optimistic post immediately
-        const optimisticPost: Post = {
-          id: tempId,
-          content: variables.content,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          deletedAt: null,
-          profile: user?.currentProfile || null,
-          profileId: user?.currentProfileId || null,
-          parentPostId: null,
-          rootProfileId: null,
-          rootPostId: null,
-          attachments: [],
-          likeCount: 0,
-          userHasLiked: false,
-          likeUsers: [],
-          commentCount: 0,
-          childPosts: null,
-          parentPost: null,
-        };
-
-        // Add optimistic post
-        utils.posts.getPosts.setData(queryKey, (old) => ({
-          items: [optimisticPost, ...(old?.items ?? [])],
-        }));
-
-        return {
-          previousPosts,
-          tempId,
-          isComment: false,
-        };
-      }
-
-      return {};
-    },
-    onError: (err, variables, context) => {
-      const errorInfo = analyzeError(err);
-
-      setContent(variables.content);
-      setDetectedUrls(detectLinks(variables.content).urls);
-
-      // Rollback optimistic updates on error
-      if (context?.tempId && optimisticCommentRef.current === context.tempId) {
-        // For comments (posts with parentPostId)
-        if (variables.parentPostId && context.isComment) {
-          // Restore previous comments state
-          const queryKey = createCommentsQueryKey(
-            variables.parentPostId,
-            profileId,
-          );
-          utils.posts.getPosts.setData(queryKey, context.previousComments);
-
-          // Revert parent post comment count - only for organization posts
-          if (organization?.profile?.slug) {
-            void utils.organization.listPosts.invalidate();
-            void utils.organization.listAllPosts.invalidate();
-          }
-        }
-
-        // For top-level posts (profile posts)
-        if (profileId && !context.isComment) {
-          // Restore previous posts state
-          const queryKey = {
-            profileId,
-            parentPostId: null,
-            limit: PAGE_LIMIT.lg,
-            offset: 0,
-            includeChildren: false,
-          };
-          utils.posts.getPosts.setData(queryKey, context.previousPosts);
-        }
-
-        // Clear the optimistic comment ID
-        optimisticCommentRef.current = null;
-      }
-
-      if (errorInfo.isConnectionError) {
-        // Store failed post data for retry
-        setLastFailedPost({
-          content: variables.content,
-          attachmentIds: fileUpload.getUploadedAttachmentIds(),
-        });
-
-        toast.error(errorInfo.message + ' Use the retry button to try again.');
-      } else {
-        toast.error(errorInfo.message);
-      }
-
-      logger.error('Failed to create post', {
-        error: err,
-        context: 'PostUpdate.createPost',
-      });
-    },
-    onSuccess: (data, variables, context) => {
-      fileUpload.clearFiles();
-
-      if (data && context?.tempId) {
-        // Clear the optimistic comment ID since we have real data
-        optimisticCommentRef.current = null;
-
-        // Enhance server data with user profile if not present
-        const enhancedData = {
-          ...data,
-          profile: data.profile || user?.currentProfile || null,
-        };
+        setContent('');
+        setDetectedUrls([]);
+        setLastFailedPost(null);
 
         // For comments (posts with parentPostId)
         if (variables.parentPostId) {
+          // Cancel any outgoing refetches
           const queryKey = createCommentsQueryKey(
             variables.parentPostId,
             profileId,
           );
-          utils.posts.getPosts.setData(queryKey, (old) => {
-            if (!old) return { items: [enhancedData] };
-            // Drop our optimistic placeholder; if a realtime refetch already
-            // inserted the real comment, return without re-prepending.
-            const filtered = old.items.filter((c) => c.id !== context.tempId);
-            if (filtered.some((c) => c.id === enhancedData.id)) {
-              return { items: filtered };
-            }
-            return { items: [enhancedData, ...filtered] };
-          });
+          await queryClient.cancelQueries(
+            trpc.posts.getPosts.queryFilter(queryKey),
+          );
 
-          // Update parent post's comment count in main feed caches
-          const updateCommentCount = (item: any) => {
-            if (item.post.id === variables.parentPostId) {
-              return {
-                ...item,
-                post: {
-                  ...item.post,
-                  commentCount: (item.post.commentCount || 0) + 1,
-                },
-              };
-            }
-            return item;
+          // Snapshot previous value
+          const previousComments = queryClient.getQueryData(
+            trpc.posts.getPosts.queryKey(queryKey),
+          );
+
+          // Add optimistic comment immediately
+          const optimisticComment: Post = {
+            id: tempId,
+            content: variables.content,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            profile: user?.currentProfile || null,
+            profileId: user?.currentProfileId || null,
+            parentPostId: variables.parentPostId,
+            rootProfileId: null,
+            rootPostId: null,
+            attachments: [],
+            likeCount: 0,
+            userHasLiked: false,
+            likeUsers: [],
+            commentCount: 0,
+            childPosts: null,
+            parentPost: null,
           };
 
-          // Update organization.listPosts cache only if organization exists
-          if (organization?.profile?.slug) {
-            utils.organization.listPosts.setInfiniteData(
-              { slug: organization.profile.slug },
-              (old) => {
-                if (!old) return old;
-                return {
-                  ...old,
-                  pages: old.pages.map((page) => ({
-                    ...page,
-                    items: page.items.map(updateCommentCount),
-                  })),
-                };
-              },
-            );
+          // Add optimistic comment
+          queryClient.setQueryData(
+            trpc.posts.getPosts.queryKey(queryKey),
+            (old) => ({
+              items: [optimisticComment, ...(old?.items ?? [])],
+            }),
+          );
 
-            // Update organization.listAllPosts cache
-            utils.organization.listAllPosts.setData({}, (old) => {
-              if (!old) return old;
-              return {
-                ...old,
-                items: old.items.map(updateCommentCount),
-              };
-            });
-          }
+          return {
+            previousComments,
+            tempId,
+            isComment: true,
+          };
         }
 
         // For top-level posts (profile posts like proposal comments)
-        if (profileId && !variables.parentPostId) {
+        if (profileId) {
+          // Cancel any outgoing refetches for profile posts
           const queryKey = {
             profileId,
             parentPostId: null,
@@ -380,53 +220,90 @@ const PostUpdateWithUser = ({
             offset: 0,
             includeChildren: false,
           };
-          utils.posts.getPosts.setData(queryKey, (old) => {
-            if (!old) return { items: [enhancedData] };
-            // Drop our optimistic placeholder; if a realtime refetch already
-            // inserted the real post, return without re-prepending.
-            const filtered = old.items.filter((p) => p.id !== context.tempId);
-            if (filtered.some((p) => p.id === enhancedData.id)) {
-              return { items: filtered };
-            }
-            return { items: [enhancedData, ...filtered] };
-          });
-
-          // If this is a proposal comment, invalidate proposal queries to refresh comment counts
-          if (proposalId) {
-            void utils.decision.getProposal.invalidate({ profileId });
-            void utils.decision.listProposals.invalidate();
-          }
-        }
-      }
-
-      // Call onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-    },
-    onSettled: (_data, error, variables) => {
-      // For comments (posts with parentPostId)
-      if (variables.parentPostId) {
-        // Minimal invalidation since optimistic updates handle UI
-        // Only invalidate on ERROR to trigger recovery
-        if (error) {
-          const queryKey = createCommentsQueryKey(
-            variables.parentPostId,
-            profileId,
+          await queryClient.cancelQueries(
+            trpc.posts.getPosts.queryFilter(queryKey),
           );
-          void utils.posts.getPosts.invalidate(queryKey);
-          // Also invalidate main feeds on error to refresh comment counts - only for organization posts
-          if (organization?.profile?.slug) {
-            void utils.organization.listPosts.invalidate();
-            void utils.organization.listAllPosts.invalidate();
-          }
+
+          // Snapshot previous value
+          const previousPosts = queryClient.getQueryData(
+            trpc.posts.getPosts.queryKey(queryKey),
+          );
+
+          // Add optimistic post immediately
+          const optimisticPost: Post = {
+            id: tempId,
+            content: variables.content,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            profile: user?.currentProfile || null,
+            profileId: user?.currentProfileId || null,
+            parentPostId: null,
+            rootProfileId: null,
+            rootPostId: null,
+            attachments: [],
+            likeCount: 0,
+            userHasLiked: false,
+            likeUsers: [],
+            commentCount: 0,
+            childPosts: null,
+            parentPost: null,
+          };
+
+          // Add optimistic post
+          queryClient.setQueryData(
+            trpc.posts.getPosts.queryKey(queryKey),
+            (old) => ({
+              items: [optimisticPost, ...(old?.items ?? [])],
+            }),
+          );
+
+          return {
+            previousPosts,
+            tempId,
+            isComment: false,
+          };
         }
-        // Don't refresh router for comments to avoid layout shifts
-      } else {
-        // For top-level posts
-        if (profileId) {
-          // For profile posts (like proposal comments), only invalidate on error
-          if (error) {
+
+        return {};
+      },
+      onError: (err, variables, context) => {
+        const errorInfo = analyzeError(err);
+
+        setContent(variables.content);
+        setDetectedUrls(detectLinks(variables.content).urls);
+
+        // Rollback optimistic updates on error
+        if (
+          context?.tempId &&
+          optimisticCommentRef.current === context.tempId
+        ) {
+          // For comments (posts with parentPostId)
+          if (variables.parentPostId && context.isComment) {
+            // Restore previous comments state
+            const queryKey = createCommentsQueryKey(
+              variables.parentPostId,
+              profileId,
+            );
+            queryClient.setQueryData(
+              trpc.posts.getPosts.queryKey(queryKey),
+              context.previousComments,
+            );
+
+            // Revert parent post comment count - only for organization posts
+            if (organization?.profile?.slug) {
+              void queryClient.invalidateQueries(
+                trpc.organization.listPosts.pathFilter(),
+              );
+              void queryClient.invalidateQueries(
+                trpc.organization.listAllPosts.pathFilter(),
+              );
+            }
+          }
+
+          // For top-level posts (profile posts)
+          if (profileId && !context.isComment) {
+            // Restore previous posts state
             const queryKey = {
               profileId,
               parentPostId: null,
@@ -434,24 +311,223 @@ const PostUpdateWithUser = ({
               offset: 0,
               includeChildren: false,
             };
-            void utils.posts.getPosts.invalidate(queryKey);
+            queryClient.setQueryData(
+              trpc.posts.getPosts.queryKey(queryKey),
+              context.previousPosts,
+            );
+          }
 
-            // If this was a proposal comment, also invalidate proposal queries on error
-            if (variables.proposalId) {
-              void utils.decision.getProposal.invalidate({ profileId });
-              void utils.decision.listProposals.invalidate();
+          // Clear the optimistic comment ID
+          optimisticCommentRef.current = null;
+        }
+
+        if (errorInfo.isConnectionError) {
+          // Store failed post data for retry
+          setLastFailedPost({
+            content: variables.content,
+            attachmentIds: fileUpload.getUploadedAttachmentIds(),
+          });
+
+          toast.error(
+            errorInfo.message + ' Use the retry button to try again.',
+          );
+        } else {
+          toast.error(errorInfo.message);
+        }
+
+        logger.error('Failed to create post', {
+          error: err,
+          context: 'PostUpdate.createPost',
+        });
+      },
+      onSuccess: (data, variables, context) => {
+        fileUpload.clearFiles();
+
+        if (data && context?.tempId) {
+          // Clear the optimistic comment ID since we have real data
+          optimisticCommentRef.current = null;
+
+          // Enhance server data with user profile if not present
+          const enhancedData = {
+            ...data,
+            profile: data.profile || user?.currentProfile || null,
+          };
+
+          // For comments (posts with parentPostId)
+          if (variables.parentPostId) {
+            const queryKey = createCommentsQueryKey(
+              variables.parentPostId,
+              profileId,
+            );
+            queryClient.setQueryData(
+              trpc.posts.getPosts.queryKey(queryKey),
+              (old) => {
+                if (!old) return { items: [enhancedData] };
+                // Drop our optimistic placeholder; if a realtime refetch already
+                // inserted the real comment, return without re-prepending.
+                const filtered = old.items.filter(
+                  (c) => c.id !== context.tempId,
+                );
+                if (filtered.some((c) => c.id === enhancedData.id)) {
+                  return { items: filtered };
+                }
+                return { items: [enhancedData, ...filtered] };
+              },
+            );
+
+            // Update parent post's comment count in main feed caches
+            const updateCommentCount = (item: any) => {
+              if (item.post.id === variables.parentPostId) {
+                return {
+                  ...item,
+                  post: {
+                    ...item.post,
+                    commentCount: (item.post.commentCount || 0) + 1,
+                  },
+                };
+              }
+              return item;
+            };
+
+            // Update organization.listPosts cache only if organization exists
+            if (organization?.profile?.slug) {
+              queryClient.setQueryData(
+                trpc.organization.listPosts.infiniteQueryKey({
+                  slug: organization.profile.slug,
+                }),
+                (old) => {
+                  if (!old) return old;
+                  return {
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                      ...page,
+                      items: page.items.map(updateCommentCount),
+                    })),
+                  };
+                },
+              );
+
+              // Update organization.listAllPosts cache
+              queryClient.setQueryData(
+                trpc.organization.listAllPosts.queryKey({}),
+                (old) => {
+                  if (!old) return old;
+                  return {
+                    ...old,
+                    items: old.items.map(updateCommentCount),
+                  };
+                },
+              );
             }
           }
-          // Don't refresh router for profile posts to avoid layout shifts
-        } else if (organization?.profile?.slug) {
-          // For organization posts, invalidate organization caches
-          void utils.organization.listPosts.invalidate();
-          void utils.organization.listAllPosts.invalidate();
-          router.refresh();
+
+          // For top-level posts (profile posts like proposal comments)
+          if (profileId && !variables.parentPostId) {
+            const queryKey = {
+              profileId,
+              parentPostId: null,
+              limit: PAGE_LIMIT.lg,
+              offset: 0,
+              includeChildren: false,
+            };
+            queryClient.setQueryData(
+              trpc.posts.getPosts.queryKey(queryKey),
+              (old) => {
+                if (!old) return { items: [enhancedData] };
+                // Drop our optimistic placeholder; if a realtime refetch already
+                // inserted the real post, return without re-prepending.
+                const filtered = old.items.filter(
+                  (p) => p.id !== context.tempId,
+                );
+                if (filtered.some((p) => p.id === enhancedData.id)) {
+                  return { items: filtered };
+                }
+                return { items: [enhancedData, ...filtered] };
+              },
+            );
+
+            // If this is a proposal comment, invalidate proposal queries to refresh comment counts
+            if (proposalId) {
+              void queryClient.invalidateQueries(
+                trpc.decision.getProposal.queryFilter({ profileId }),
+              );
+              void queryClient.invalidateQueries(
+                trpc.decision.listProposals.pathFilter(),
+              );
+            }
+          }
         }
-      }
-    },
-  });
+
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        }
+      },
+      onSettled: (_data, error, variables) => {
+        // For comments (posts with parentPostId)
+        if (variables.parentPostId) {
+          // Minimal invalidation since optimistic updates handle UI
+          // Only invalidate on ERROR to trigger recovery
+          if (error) {
+            const queryKey = createCommentsQueryKey(
+              variables.parentPostId,
+              profileId,
+            );
+            void queryClient.invalidateQueries(
+              trpc.posts.getPosts.queryFilter(queryKey),
+            );
+            // Also invalidate main feeds on error to refresh comment counts - only for organization posts
+            if (organization?.profile?.slug) {
+              void queryClient.invalidateQueries(
+                trpc.organization.listPosts.pathFilter(),
+              );
+              void queryClient.invalidateQueries(
+                trpc.organization.listAllPosts.pathFilter(),
+              );
+            }
+          }
+          // Don't refresh router for comments to avoid layout shifts
+        } else {
+          // For top-level posts
+          if (profileId) {
+            // For profile posts (like proposal comments), only invalidate on error
+            if (error) {
+              const queryKey = {
+                profileId,
+                parentPostId: null,
+                limit: PAGE_LIMIT.lg,
+                offset: 0,
+                includeChildren: false,
+              };
+              void queryClient.invalidateQueries(
+                trpc.posts.getPosts.queryFilter(queryKey),
+              );
+
+              // If this was a proposal comment, also invalidate proposal queries on error
+              if (variables.proposalId) {
+                void queryClient.invalidateQueries(
+                  trpc.decision.getProposal.queryFilter({ profileId }),
+                );
+                void queryClient.invalidateQueries(
+                  trpc.decision.listProposals.pathFilter(),
+                );
+              }
+            }
+            // Don't refresh router for profile posts to avoid layout shifts
+          } else if (organization?.profile?.slug) {
+            // For organization posts, invalidate organization caches
+            void queryClient.invalidateQueries(
+              trpc.organization.listPosts.pathFilter(),
+            );
+            void queryClient.invalidateQueries(
+              trpc.organization.listAllPosts.pathFilter(),
+            );
+            router.refresh();
+          }
+        }
+      },
+    }),
+  );
 
   const retryFailedPost = () => {
     if (lastFailedPost) {
