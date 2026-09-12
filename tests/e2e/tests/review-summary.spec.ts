@@ -16,6 +16,7 @@ import {
   createReviewScenario,
   createRevisionRequest,
   getSeededTemplate,
+  reviseProposal,
 } from '@op/test';
 import type { Locator, Page } from '@playwright/test';
 
@@ -814,7 +815,11 @@ test.describe('Review Summary page', () => {
       instanceProfileId: instance.profileId,
     });
 
-    const { proposal, assignment } = await createReviewScenario({
+    const {
+      proposal,
+      assignedProposalHistoryId: olderHistoryId,
+      assignment,
+    } = await createReviewScenario({
       instance: { id: instance.instance.id },
       author: {
         profileId: org.organizationProfile.id,
@@ -828,13 +833,16 @@ test.describe('Review Summary page', () => {
       },
     });
 
-    // Two answered requests with no resubmitted-version pointer: each stands
-    // alone, so the pane has two notes to collapse into the accordion.
+    // Notes group on the resubmitted-version pointer, so two notes need two
+    // snapshots to point at.
+    const newerHistoryId = await reviseProposal({ proposalId: proposal.id });
+
     await createRevisionRequest({
       assignmentId: assignment.id,
       state: ProposalReviewRequestState.RESUBMITTED,
       requestComment: OLDER_REQUEST_COMMENT,
       responseComment: OLDER_NOTE,
+      respondedProposalHistoryId: olderHistoryId,
       respondedAt: daysAgo(5),
     });
     await createRevisionRequest({
@@ -842,6 +850,7 @@ test.describe('Review Summary page', () => {
       state: ProposalReviewRequestState.RESUBMITTED,
       requestComment: NEWER_REQUEST_COMMENT,
       responseComment: NEWER_NOTE,
+      respondedProposalHistoryId: newerHistoryId,
       respondedAt: daysAgo(1),
     });
 
