@@ -1,3 +1,4 @@
+import { trackRevisionRequestCancelled } from '@op/analytics';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -7,6 +8,7 @@ import {
   proposalReviewRequests,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -73,6 +75,18 @@ export async function cancelRevisionRequest({
 
     return cancelledRequest;
   });
+
+  waitUntil(
+    trackRevisionRequestCancelled(
+      user.id,
+      context.assignment.processInstanceId,
+      context.assignment.proposalId,
+      {
+        assignment_id: assignmentId,
+        phase_id: context.assignment.phaseId,
+      },
+    ),
+  );
 
   return {
     ...request,

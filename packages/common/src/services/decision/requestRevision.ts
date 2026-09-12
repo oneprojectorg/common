@@ -4,6 +4,7 @@ import {
   ProposalReviewAssignmentStatus,
   type ProposalReviewRequest,
   ProposalReviewRequestState,
+  ProposalReviewState,
   proposalReviewAssignments,
   proposalReviewRequests,
 } from '@op/db/schema';
@@ -100,6 +101,8 @@ export async function requestRevision({
       {
         assignment_id: assignmentId,
         phase_id: context.assignment.phaseId,
+        review_submitted:
+          context.review?.state === ProposalReviewState.SUBMITTED,
       },
     ),
   );
