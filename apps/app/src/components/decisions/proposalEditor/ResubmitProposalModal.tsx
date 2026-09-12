@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
@@ -34,6 +34,7 @@ export function ResubmitProposalModal({
   proposalId,
   backHref,
 }: ResubmitProposalModalProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
   const noteId = useId();
@@ -41,8 +42,8 @@ export function ResubmitProposalModal({
   const noteHintId = useId();
   const [note, setNote] = useState('');
 
-  const submitProposalRevision =
-    trpc.decision.submitProposalRevision.useMutation({
+  const submitProposalRevision = useMutation(
+    trpc.decision.submitProposalRevision.mutationOptions({
       onSuccess: () => {
         toast.success(t('Proposal resubmitted'));
         onOpenChange(false);
@@ -52,7 +53,8 @@ export function ResubmitProposalModal({
       onError: () => {
         toast.error(t('Failed to resubmit proposal'));
       },
-    });
+    }),
+  );
 
   const trimmedNote = note.trim();
 

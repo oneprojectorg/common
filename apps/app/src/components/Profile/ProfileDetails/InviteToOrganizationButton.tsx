@@ -1,11 +1,12 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuCheck, LuUserPlus } from 'react-icons/lu';
 
@@ -18,69 +19,83 @@ interface InviteToOrganizationButtonProps {
 export const InviteToOrganizationButton = ({
   profile,
 }: InviteToOrganizationButtonProps) => {
+  const trpc = useTRPC();
   const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
 
-  const [[{ items: roles }, membershipData]] = trpc.useSuspenseQueries((t) => [
-    t.organization.getRoles(),
-    user.currentOrganization
-      ? t.organization.checkMembership({
-          email: profile.profile.email!,
-          organizationId: user.currentOrganization?.id,
-        })
-      : {},
-  ]);
+  const [
+    {
+      data: { items: roles },
+    },
+    { data: membershipData },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.organization.getRoles.queryOptions(),
+      // The classic client tolerated a bare `{}` here when there was no
+      // current organization, but `membershipData.isMember` is read
+      // unconditionally two lines down, so that branch already threw. The
+      // assertion states what the old code assumed rather than adding a
+      // second broken path.
+      trpc.organization.checkMembership.queryOptions({
+        email: profile.profile.email!,
+        organizationId: user.currentOrganization!.id,
+      }),
+    ],
+  });
 
   const [isMember, setIsMember] = useState(membershipData.isMember);
 
-  const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: (result) => {
-      const successfulInvites = result.details?.successful || [];
-      const failedInvites = result.details?.failed || [];
+  const inviteUser = useMutation(
+    trpc.organization.invite.mutationOptions({
+      onSuccess: (result) => {
+        const successfulInvites = result.details?.successful || [];
+        const failedInvites = result.details?.failed || [];
 
-      // Check if user was successfully added to organization
-      const wasAdded = successfulInvites.includes(profile.profile.email!);
+        // Check if user was successfully added to organization
+        const wasAdded = successfulInvites.includes(profile.profile.email!);
 
-      // Check if user is already a member (in failed array)
-      const isMemberFailed = failedInvites.some(
-        (failed) =>
-          failed.email === profile.profile.email &&
-          failed.reason.includes('already a member'),
-      );
+        // Check if user is already a member (in failed array)
+        const isMemberFailed = failedInvites.some(
+          (failed) =>
+            failed.email === profile.profile.email &&
+            failed.reason.includes('already a member'),
+        );
 
-      if (wasAdded) {
-        setIsMember(true);
-        toast.success('Member added', {
-          description: `${profile.profile.name || profile.profile.email} is now a member of ${user.currentProfile?.name}`,
-        });
-      } else if (isMemberFailed) {
-        setIsMember(true);
-        toast.success(' a member', {
-          description: `${profile.profile.name || profile.profile.email} is already a member of ${user.currentProfile?.name}`,
-        });
-      } else {
-        // Handle other failure cases
-        const firstError = failedInvites[0]?.reason || 'Unknown error occurred';
-        toast.error('Failed to send invite', {
-          description: firstError,
-        });
-      }
-    },
-    onError: (error) => {
-      const errorInfo = analyzeError(error);
+        if (wasAdded) {
+          setIsMember(true);
+          toast.success('Member added', {
+            description: `${profile.profile.name || profile.profile.email} is now a member of ${user.currentProfile?.name}`,
+          });
+        } else if (isMemberFailed) {
+          setIsMember(true);
+          toast.success(' a member', {
+            description: `${profile.profile.name || profile.profile.email} is already a member of ${user.currentProfile?.name}`,
+          });
+        } else {
+          // Handle other failure cases
+          const firstError =
+            failedInvites[0]?.reason || 'Unknown error occurred';
+          toast.error('Failed to send invite', {
+            description: firstError,
+          });
+        }
+      },
+      onError: (error) => {
+        const errorInfo = analyzeError(error);
 
-      if (errorInfo.isConnectionError) {
-        toast.error('Connection issue', {
-          description:
-            errorInfo.message + ' Please try sending the invite again.',
-        });
-      } else {
-        toast.error('Failed to send invite', {
-          description: errorInfo.message,
-        });
-      }
-    },
-  });
+        if (errorInfo.isConnectionError) {
+          toast.error('Connection issue', {
+            description:
+              errorInfo.message + ' Please try sending the invite again.',
+          });
+        } else {
+          toast.error('Failed to send invite', {
+            description: errorInfo.message,
+          });
+        }
+      },
+    }),
+  );
 
   const handleInvite = () => {
     if (!isOnline) {

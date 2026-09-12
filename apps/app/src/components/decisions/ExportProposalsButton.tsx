@@ -1,10 +1,11 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
@@ -264,20 +265,23 @@ const ExportProposalsButtonContent = ({
   processInstanceId,
   isEmpty = false,
 }: ExportProposalsButtonProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [exportId, setExportId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
-  const startExport = trpc.decision.export.useMutation({
-    onSuccess: ({ exportId: id }) => {
-      setHasTimedOut(false);
-      setExportId(id);
-    },
-    onError: (error) => {
-      logger.error('Failed to start proposals export', { error });
-      toast.error(error.message || t('Failed to start export'));
-    },
-  });
+  const startExport = useMutation(
+    trpc.decision.export.mutationOptions({
+      onSuccess: ({ exportId: id }) => {
+        setHasTimedOut(false);
+        setExportId(id);
+      },
+      onError: (error) => {
+        logger.error('Failed to start proposals export', { error });
+        toast.error(error.message || t('Failed to start export'));
+      },
+    }),
+  );
 
   // No polling. The workflow broadcasts on this export's channel when it picks
   // the job up and again when the run settles, and the subscriber re-reads once
@@ -287,29 +291,32 @@ const ExportProposalsButtonContent = ({
     data: status,
     refetch: refetchStatus,
     isFetching: isFetchingStatus,
-  } = trpc.decision.getExportStatus.useQuery(
-    { exportId: exportId ?? '' },
-    {
-      enabled: Boolean(exportId) && !hasTimedOut,
-      // Escalate to the boundary while the run is unresolved. A failed status
-      // read is not inert here.
-      //
-      // `status` stays undefined, so no terminal state matches and `isRunning`
-      // stays true. The silence timer below then reports a timeout, which is a
-      // claim about the run the client cannot make. Escalating says "we cannot
-      // tell" instead.
-      //
-      // A completed record is exempt. Its signed URL is the only route to the
-      // file, because export state is cache-only with no history. Discarding a
-      // good link over a failed background refetch would cost the whole run.
-      throwOnError: (_error, query) => query.state.data?.status !== 'completed',
-      // The provider disables retries globally, which would make a single
-      // dropped request terminal: it escalates to the boundary, the button
-      // remounts at idle, and `exportId` goes with it — so a run that is still
-      // working writes a file nothing can reach. A blip is not the "we cannot
-      // tell" the escalation above is for, so absorb it first.
-      retry: 2,
-    },
+  } = useQuery(
+    trpc.decision.getExportStatus.queryOptions(
+      { exportId: exportId ?? '' },
+      {
+        enabled: Boolean(exportId) && !hasTimedOut,
+        // Escalate to the boundary while the run is unresolved. A failed status
+        // read is not inert here.
+        //
+        // `status` stays undefined, so no terminal state matches and `isRunning`
+        // stays true. The silence timer below then reports a timeout, which is a
+        // claim about the run the client cannot make. Escalating says "we cannot
+        // tell" instead.
+        //
+        // A completed record is exempt. Its signed URL is the only route to the
+        // file, because export state is cache-only with no history. Discarding a
+        // good link over a failed background refetch would cost the whole run.
+        throwOnError: (_error, query) =>
+          query.state.data?.status !== 'completed',
+        // The provider disables retries globally, which would make a single
+        // dropped request terminal: it escalates to the boundary, the button
+        // remounts at idle, and `exportId` goes with it — so a run that is still
+        // working writes a file nothing can reach. A blip is not the "we cannot
+        // tell" the escalation above is for, so absorb it first.
+        retry: 2,
+      },
+    ),
   );
 
   // `not_found` is not a member of ExportStatusData['status'], so matching a

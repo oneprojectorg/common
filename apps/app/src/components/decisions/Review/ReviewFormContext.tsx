@@ -1,7 +1,6 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   type ProposalReview,
   type ProposalReviewAssignment,
@@ -15,6 +14,8 @@ import {
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/sense/Toast';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 import {
   type ReactNode,
@@ -126,14 +127,17 @@ function ReviewFormProviderInner({
   initiallyEditing?: boolean;
   children: ReactNode;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
 
-  const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
-    { assignmentId },
-    // 'always' forces one fetch per mount, which is what registers the
-    // realtime channel via the tRPC client link.
-    { refetchOnMount: 'always' },
+  const { data: reviewAssignment } = useSuspenseQuery(
+    trpc.decision.getReviewAssignment.queryOptions(
+      { assignmentId },
+      // 'always' forces one fetch per mount, which is what registers the
+      // realtime channel via the tRPC client link.
+      { refetchOnMount: 'always' },
+    ),
   );
 
   const {
@@ -149,14 +153,17 @@ function ReviewFormProviderInner({
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
   }
 
-  const [{ items: openRequestItems }] =
-    trpc.decision.listProposalRevisionRequests.useSuspenseQuery(
+  const {
+    data: { items: openRequestItems },
+  } = useSuspenseQuery(
+    trpc.decision.listProposalRevisionRequests.queryOptions(
       {
         proposalId: assignment.proposal.id,
         states: [ProposalReviewRequestState.REQUESTED],
       },
       { refetchOnMount: 'always' },
-    );
+    ),
+  );
 
   const openRevisionRequests = useMemo(
     () => openRequestItems.map((item) => item.revisionRequest),
@@ -192,32 +199,36 @@ function ReviewFormProviderInner({
   // An out-of-date review opens pre-filled, skipping the read-only step.
   const isEditing = isEditRequested || isReviewOutOfDate;
 
-  const submitReview = trpc.decision.submitReview.useMutation({
-    onSuccess: () => {
-      toast.success(t('Review submitted successfully'));
-      if (onCompleted) {
-        onCompleted();
-        return;
-      }
-      router.push(`/decisions/${decisionSlug}/current`);
-    },
-    onError: (error) => {
-      toast.error(error.message || t('Failed to submit review'));
-    },
-  });
+  const submitReview = useMutation(
+    trpc.decision.submitReview.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Review submitted successfully'));
+        if (onCompleted) {
+          onCompleted();
+          return;
+        }
+        router.push(`/decisions/${decisionSlug}/current`);
+      },
+      onError: (error) => {
+        toast.error(error.message || t('Failed to submit review'));
+      },
+    }),
+  );
 
-  const updateReview = trpc.decision.updateReview.useMutation({
-    onSuccess: () => {
-      // The mutation's review channels invalidate getReviewAssignment locally,
-      // refreshing the read-only view in place (as requestRevision does).
-      setIsEditRequested(false);
-      toast.success(t('Review updated successfully'));
-      onCompleted?.();
-    },
-    onError: (error) => {
-      toast.error(error.message || t('Failed to update review'));
-    },
-  });
+  const updateReview = useMutation(
+    trpc.decision.updateReview.mutationOptions({
+      onSuccess: () => {
+        // The mutation's review channels invalidate getReviewAssignment locally,
+        // refreshing the read-only view in place (as requestRevision does).
+        setIsEditRequested(false);
+        toast.success(t('Review updated successfully'));
+        onCompleted?.();
+      },
+      onError: (error) => {
+        toast.error(error.message || t('Failed to update review'));
+      },
+    }),
+  );
 
   const scheduleAutosave = useAutosaveDraft({
     assignmentId,
@@ -229,24 +240,27 @@ function ReviewFormProviderInner({
     enabled: !isSubmitted,
   });
 
-  const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
-    onSuccess: () => {
-      toast.success(t('Revision requested'));
-    },
-    onError: (error) => {
-      toast.error(error.message || t('Failed to request revision'));
-    },
-  });
+  const requestRevisionMutation = useMutation(
+    trpc.decision.requestRevision.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Revision requested'));
+      },
+      onError: (error) => {
+        toast.error(error.message || t('Failed to request revision'));
+      },
+    }),
+  );
 
-  const cancelRevisionMutation =
-    trpc.decision.cancelRevisionRequest.useMutation({
+  const cancelRevisionMutation = useMutation(
+    trpc.decision.cancelRevisionRequest.mutationOptions({
       onSuccess: () => {
         toast.success(t('Revision request cancelled'));
       },
       onError: (error) => {
         toast.error(error.message || t('Failed to cancel revision request'));
       },
-    });
+    }),
+  );
 
   const isRubricValid = useMemo(
     () => schemaValidator.validate(rubricTemplate, values).valid,
@@ -432,7 +446,10 @@ function useAutosaveDraft({
   overallComment: string;
   enabled: boolean;
 }) {
-  const saveReviewDraft = trpc.decision.saveReviewDraft.useMutation();
+  const trpc = useTRPC();
+  const saveReviewDraft = useMutation(
+    trpc.decision.saveReviewDraft.mutationOptions(),
+  );
 
   const inflightRef = useRef<Promise<void> | null>(null);
   // Set when an edit lands during an in-flight save; the save's .then

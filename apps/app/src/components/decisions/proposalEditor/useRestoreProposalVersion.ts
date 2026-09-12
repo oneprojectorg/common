@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   PROPOSAL_TITLE_MAX_LENGTH,
   normalizeProposalCategories,
@@ -8,6 +7,7 @@ import {
 } from '@op/common/client';
 import type { ProposalData } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -33,18 +33,21 @@ export function useRestoreProposalVersion({
   proposalData,
   fragmentNames,
 }: UseRestoreProposalVersionOptions) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onSuccess: () => {
-      toast.success(t('Proposal version restored'));
-    },
-    onError: (error) => {
-      toast.error(t('Failed to restore proposal version'), {
-        description: error.message || t('An unexpected error occurred'),
-      });
-    },
-  });
+  const updateProposalMutation = useMutation(
+    trpc.decision.updateProposal.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('Proposal version restored'));
+      },
+      onError: (error) => {
+        toast.error(t('Failed to restore proposal version'), {
+          description: error.message || t('An unexpected error occurred'),
+        });
+      },
+    }),
+  );
 
   /**
    * Extracts field values from version preview fragment contents and merges
