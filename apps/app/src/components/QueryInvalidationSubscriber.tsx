@@ -205,31 +205,40 @@ function useInvalidateQueries(enabled: boolean): void {
 
     const realtimeManager = RealtimeManager.getInstance();
 
+    const subscribeChannels = (channels: ChannelName[]) => {
+      for (const channel of channels) {
+        if (unsubscribersRef.current.has(channel)) {
+          continue;
+        }
+
+        const unsubscribe = realtimeManager.subscribe(
+          channel,
+          ({ channel, data }) =>
+            handleInvalidation({
+              channels: [channel],
+              mutationId: data.mutationId,
+            }),
+          // Reported so every query on this channel re-reads once it is
+          // genuinely live — see `handleChannelSubscribed`. Fires again on a
+          // rejoin after the connection drops, which is the only thing that
+          // recovers what was broadcast while the socket was down.
+          () => queryChannelRegistry.notifyChannelSubscribed(channel),
+        );
+        unsubscribersRef.current.set(channel, unsubscribe);
+      }
+    };
+
     const unsubscribeQueryAdded = queryChannelRegistry.on(
       'query:added',
-      ({ channels }: RegistryEvents['query:added']) => {
-        for (const channel of channels) {
-          if (unsubscribersRef.current.has(channel)) {
-            continue;
-          }
-
-          const unsubscribe = realtimeManager.subscribe(
-            channel,
-            ({ channel, data }) =>
-              handleInvalidation({
-                channels: [channel],
-                mutationId: data.mutationId,
-              }),
-            // Reported so every query on this channel re-reads once it is
-            // genuinely live — see `handleChannelSubscribed`. Fires again on a
-            // rejoin after the connection drops, which is the only thing that
-            // recovers what was broadcast while the socket was down.
-            () => queryChannelRegistry.notifyChannelSubscribed(channel),
-          );
-          unsubscribersRef.current.set(channel, unsubscribe);
-        }
-      },
+      ({ channels }: RegistryEvents['query:added']) =>
+        subscribeChannels(channels),
     );
+
+    // `enabled` flips on after an async session read, and 'query:added' isn't
+    // replayed — any query that answered first (or before a sign-in) already
+    // registered its channels. Catch up on those, after the listener above is
+    // attached so nothing can land in between.
+    subscribeChannels(queryChannelRegistry.getChannels());
 
     const unsubscribeChannelRemoved = queryChannelRegistry.on(
       'channel:removed',
