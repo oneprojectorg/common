@@ -26,6 +26,22 @@ describe('queryChannelRegistry', () => {
     ]);
   });
 
+  it('lists channels registered before a listener attached, until they drain', () => {
+    queryChannelRegistry.registerQuery({
+      queryKey: ['q1'],
+      channels: [CH_A, CH_B],
+    });
+    queryChannelRegistry.registerQuery({
+      queryKey: ['q2'],
+      channels: [CH_A],
+    });
+
+    expect(queryChannelRegistry.getChannels()).toEqual([CH_A, CH_B]);
+
+    queryChannelRegistry.unregisterQuery({ queryKey: ['q1'] });
+    expect(queryChannelRegistry.getChannels()).toEqual([CH_A]);
+  });
+
   it('emits channel:removed when the last query for a channel unregisters', () => {
     const onRemoved = vi.fn();
     const off = queryChannelRegistry.on('channel:removed', onRemoved);

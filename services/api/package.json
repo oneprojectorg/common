@@ -55,7 +55,7 @@
     "fast-xml-parser": "^5.2.1",
     "nanoid": "5.1.2",
     "node-geonames-client": "^0.0.2",
-    "posthog-js": "^1.236.4",
+    "posthog-js": "^1.370.0",
     "react": "^19.0.1",
     "redis": "^5.5.5",
     "sanitize-s3-objectkey": "^0.0.1",
