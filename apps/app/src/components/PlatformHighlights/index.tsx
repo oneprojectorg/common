@@ -24,7 +24,7 @@ export const PlatformHighlights = () => {
 
   return (
     <Card className="gap-0 py-0">
-      <div className="flex flex-col items-center justify-around gap-6 px-10 py-6 sm:flex-row sm:gap-4">
+      <div className="flex flex-col items-center justify-around gap-6 px-10 py-6 sm:flex-row">
         {stats.newOrganizations > 0 && (
           <>
             <Highlight>
