@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { EntityType, postsToOrganizations } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
@@ -11,6 +12,8 @@ import {
   getUserSession,
 } from '../access';
 import { decisionPermission } from '../decision/permissions';
+import { getInstancePhases } from '../decision/schemas/instanceData';
+import { areCommentsAllowed } from '../decision/utils/phaseSettings';
 import { getNetworkMembership } from '../user';
 
 export type PostReadAccess = {
@@ -110,7 +113,44 @@ export const assertPostReadAccess = async ({
   }
 };
 
+type ResolvedInstance = {
+  instanceData: unknown;
+  currentStateId: string | null;
+};
+
 const WRITE_DENIED = 'You do not have access to write here';
+const COMMENTS_DISABLED = 'Comments are turned off for this phase';
+
+const assertPhaseAllowsComments = async (
+  decisionProfileId: string,
+  // Non-null when `resolvePostRoots` already read the instance on its way here.
+  resolvedInstance: ResolvedInstance | null,
+) => {
+  const instance =
+    resolvedInstance ??
+    (await db.query.processInstances.findFirst({
+      where: { profileId: decisionProfileId },
+      columns: { instanceData: true, currentStateId: true },
+    }));
+
+  // Deny rather than fall through to the permissive default: a DECISION
+  // profile always has an instance, so this means the rows disagree.
+  if (!instance) {
+    logger.warn('Decision profile has no process instance; denying comment', {
+      decisionProfileId,
+    });
+    throw new UnauthorizedError(WRITE_DENIED);
+  }
+
+  const allowed = areCommentsAllowed({
+    phases: getInstancePhases(instance.instanceData),
+    currentPhaseId: instance.currentStateId,
+  });
+
+  if (!allowed) {
+    throw new UnauthorizedError(COMMENTS_DISABLED);
+  }
+};
 
 // Asserts the caller is inside the walled garden (a network email domain
 // or an allow-list entry). Org-post comments are gated on this — anyone in
@@ -139,11 +179,14 @@ export const assertPostWriteAccess = async ({
   rootProfileId,
   rootPostId,
   targetProfileId,
+  resolvedInstance = null,
 }: {
   user: AccessUser | undefined;
   rootProfileId: string | null;
   rootPostId: string | null;
   targetProfileId?: string | null;
+  /** Pass `resolvePostRoots`'s instance so the comment gate doesn't re-read it. */
+  resolvedInstance?: ResolvedInstance | null;
 }) => {
   // Legacy postsToOrganizations branch: the only write that lands here is
   // a reply under a legacy org-feed post. Same walled-garden gate as the
@@ -197,6 +240,11 @@ export const assertPostWriteAccess = async ({
             : { decisions: decisionPermission.SUBMIT_PROPOSALS },
         },
       });
+      // After the permission check, so an unauthorized caller gets that error
+      // rather than a hint about the process config.
+      if (!isAnnouncement) {
+        await assertPhaseAllowsComments(rootProfileId, resolvedInstance);
+      }
       return;
 
     // Org profile: announcement requires `profile: ADMIN` (resolved via

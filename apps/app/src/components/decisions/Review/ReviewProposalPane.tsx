@@ -4,6 +4,7 @@ import { ProposalReviewRequestState } from '@op/common/client';
 
 import { ProposalComments } from '../ProposalComments';
 import { ProposalPreview } from '../ProposalPreview';
+import { useCommentsAllowed } from '../useCommentsAllowed';
 import { AuthorNotesSection } from './AuthorNotesSection';
 import { RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
@@ -16,6 +17,9 @@ export function ReviewProposalPane({
   decisionRoot: string;
 }) {
   const { assignment, ownLatestRevisionRequest } = useReviewForm();
+  const commentsEnabled = useCommentsAllowed(
+    assignment.proposal.processInstanceId,
+  );
   const { proposal: translation } = useReviewTranslation();
 
   const respondedAt =
@@ -40,11 +44,13 @@ export function ReviewProposalPane({
         }
       />
 
-      <ProposalComments
-        proposal={assignment.proposal}
-        decisionRoot={decisionRoot}
-        readOnly
-      />
+      {commentsEnabled && (
+        <ProposalComments
+          proposal={assignment.proposal}
+          decisionRoot={decisionRoot}
+          readOnly
+        />
+      )}
     </div>
   );
 }

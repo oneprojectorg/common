@@ -31,13 +31,14 @@ export const createPost = async (input: CreatePostServiceInput) => {
   // root (rootPostId) at write time, handling the proposal → parent-decision
   // lookup so rootProfileId is always the correct gate even when the target is
   // a proposal profile (which carries no permissions of its own).
-  const [profileId, { rootProfileId, rootPostId }] = await Promise.all([
-    getCurrentProfileId(authUserId),
-    resolvePostRoots({
-      targetProfileId,
-      parentPostId,
-    }),
-  ]);
+  const [profileId, { rootProfileId, rootPostId, resolvedInstance }] =
+    await Promise.all([
+      getCurrentProfileId(authUserId),
+      resolvePostRoots({
+        targetProfileId,
+        parentPostId,
+      }),
+    ]);
 
   // Access gate: must pass before any row is written. Dispatches by the
   // root profile type — DECISION via the existing announcement/comment
@@ -48,6 +49,7 @@ export const createPost = async (input: CreatePostServiceInput) => {
     rootProfileId,
     rootPostId,
     targetProfileId,
+    resolvedInstance,
   });
 
   // postsToProfiles inheritance for comments is purely a feed/discovery

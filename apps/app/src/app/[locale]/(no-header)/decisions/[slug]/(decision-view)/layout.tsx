@@ -81,6 +81,7 @@ const DecisionViewLayout = async ({
         <Suspense fallback={null}>
           <DecisionSidePanel
             decisionProfileId={decisionProfile.id}
+            instanceId={instanceId}
             access={access}
           />
         </Suspense>
