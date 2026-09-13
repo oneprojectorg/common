@@ -90,7 +90,7 @@ const HighlightNumber = ({
     <div className="col-span-3 text-transparent xxs:col-span-2">
       <div
         className={cn(
-          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-5xl font-light sm:text-display',
+          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-5xl font-light',
           className,
         )}
       >
