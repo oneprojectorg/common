@@ -1,3 +1,4 @@
+import { coverageConfig } from '@op/vitest-config/coverage';
 import { defineConfig } from 'vitest/config';
 
 // Test environment values - used for both `env` (runtime) and `define` (compile-time)
@@ -19,6 +20,7 @@ const TEST_ENV = {
 
 export default defineConfig({
   test: {
+    coverage: coverageConfig(),
     environment: 'node',
     globals: true,
     globalSetup: ['./src/test/globalSetup.ts'],

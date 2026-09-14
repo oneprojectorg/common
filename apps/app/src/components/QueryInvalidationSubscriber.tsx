@@ -7,7 +7,8 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { QueryClientContext } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
-const MAX_INVALIDATED_IDS = 500;
+/** Bound on remembered (mutation, channel) pairs. */
+const MAX_REMEMBERED_KEYS = 500;
 
 /**
  * Returns the QueryClient if inside a QueryClientProvider, throws a descriptive error otherwise.
@@ -76,11 +77,11 @@ export function QueryInvalidationSubscriber() {
  * - mutation:added: Invalidates queries when mutations occur
  *
  * Also forwards TanStack QueryCache 'removed' events to the registry so
- * per-channel refcounts decrement, and bounds the mutation-id dedup cache.
+ * per-channel refcounts decrement, and bounds the invalidation dedup cache.
  */
 function useInvalidateQueries(enabled: boolean): void {
   const queryClient = useRequiredQueryClient();
-  const invalidatedMutationIds = useRef<Map<string, true>>(new Map());
+  const seenInvalidationsRef = useRef<Set<string>>(new Set());
   const unsubscribersRef = useRef<Map<ChannelName, () => void>>(new Map());
   const initializedRef = useRef(false);
 
@@ -90,19 +91,30 @@ function useInvalidateQueries(enabled: boolean): void {
 
   const handleInvalidation = useCallback(
     async ({ channels, mutationId }: RegistryEvents['mutation:added']) => {
-      const seen = invalidatedMutationIds.current;
-      if (seen.has(mutationId)) {
+      // Per (mutation, channel): a fan-out arrives once per channel under the
+      // same id, so keying on the id alone would drop all but the first.
+      const seen = seenInvalidationsRef.current;
+      const freshChannels = channels.filter((channel) => {
+        const key = `${mutationId}:${channel}`;
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
+      });
+      if (freshChannels.length === 0) {
         return;
       }
-      seen.set(mutationId, true);
-      if (seen.size > MAX_INVALIDATED_IDS) {
-        const oldest = seen.keys().next().value;
-        if (oldest !== undefined) {
-          seen.delete(oldest);
+
+      for (const key of seen) {
+        if (seen.size <= MAX_REMEMBERED_KEYS) {
+          break;
         }
+        seen.delete(key);
       }
 
-      const queryKeys = queryChannelRegistry.getQueryKeysForChannels(channels);
+      const queryKeys =
+        queryChannelRegistry.getQueryKeysForChannels(freshChannels);
 
       await Promise.allSettled(
         queryKeys.map((queryKey) =>
@@ -205,31 +217,40 @@ function useInvalidateQueries(enabled: boolean): void {
 
     const realtimeManager = RealtimeManager.getInstance();
 
+    const subscribeChannels = (channels: ChannelName[]) => {
+      for (const channel of channels) {
+        if (unsubscribersRef.current.has(channel)) {
+          continue;
+        }
+
+        const unsubscribe = realtimeManager.subscribe(
+          channel,
+          ({ channel, data }) =>
+            handleInvalidation({
+              channels: [channel],
+              mutationId: data.mutationId,
+            }),
+          // Reported so every query on this channel re-reads once it is
+          // genuinely live — see `handleChannelSubscribed`. Fires again on a
+          // rejoin after the connection drops, which is the only thing that
+          // recovers what was broadcast while the socket was down.
+          () => queryChannelRegistry.notifyChannelSubscribed(channel),
+        );
+        unsubscribersRef.current.set(channel, unsubscribe);
+      }
+    };
+
     const unsubscribeQueryAdded = queryChannelRegistry.on(
       'query:added',
-      ({ channels }: RegistryEvents['query:added']) => {
-        for (const channel of channels) {
-          if (unsubscribersRef.current.has(channel)) {
-            continue;
-          }
-
-          const unsubscribe = realtimeManager.subscribe(
-            channel,
-            ({ channel, data }) =>
-              handleInvalidation({
-                channels: [channel],
-                mutationId: data.mutationId,
-              }),
-            // Reported so every query on this channel re-reads once it is
-            // genuinely live — see `handleChannelSubscribed`. Fires again on a
-            // rejoin after the connection drops, which is the only thing that
-            // recovers what was broadcast while the socket was down.
-            () => queryChannelRegistry.notifyChannelSubscribed(channel),
-          );
-          unsubscribersRef.current.set(channel, unsubscribe);
-        }
-      },
+      ({ channels }: RegistryEvents['query:added']) =>
+        subscribeChannels(channels),
     );
+
+    // `enabled` flips on after an async session read, and 'query:added' isn't
+    // replayed — any query that answered first (or before a sign-in) already
+    // registered its channels. Catch up on those, after the listener above is
+    // attached so nothing can land in between.
+    subscribeChannels(queryChannelRegistry.getChannels());
 
     const unsubscribeChannelRemoved = queryChannelRegistry.on(
       'channel:removed',

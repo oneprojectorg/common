@@ -1,0 +1,37 @@
+{
+  "snapshot_schema_version": 3,
+  "version": "2.22.1",
+  "timestamp": "2026-09-09T12:26:06Z",
+  "git_sha": "5e2fc0d76",
+  "git_branch": "feat/fallow-crap-baseline",
+  "shallow_clone": false,
+  "vital_signs": {
+    "dead_file_pct": 0.7,
+    "dead_export_pct": 11.7,
+    "avg_cyclomatic": 2.0,
+    "p90_cyclomatic": 4,
+    "hotspot_count": 0,
+    "maintainability_avg": 90.0,
+    "unused_dep_count": 54,
+    "circular_dep_count": 31,
+    "counts": {
+      "total_files": 2088,
+      "total_exports": 4149,
+      "dead_files": 14,
+      "dead_exports": 485,
+      "files_scored": 1888,
+      "total_deps": 0
+    }
+  },
+  "counts": {
+    "total_files": 2088,
+    "total_exports": 4149,
+    "dead_files": 14,
+    "dead_exports": 485,
+    "files_scored": 1888,
+    "total_deps": 0
+  },
+  "score": 75.1,
+  "grade": "B",
+  "coverage_model": "istanbul"
+}

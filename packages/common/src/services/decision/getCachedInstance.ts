@@ -13,6 +13,12 @@ import { db } from '@op/db/client';
  *
  * The row is viewer-independent — every caller still runs its own access check
  * outside the cache, so a hit can't bypass authorization.
+ *
+ * skipMemCache, as with `getDecisionBySlug`'s snapshot: writers run in the API
+ * process and `invalidateDecisionInstance` can only clear that process's local
+ * LRU plus Redis. The app server reads this key in-process to seed /current,
+ * so a local copy there would render the pre-mutation phase for the LRU's full
+ * TTL after an admin advances. Redis is the layer the invalidate reaches.
  */
 export const getCachedInstance = (instanceId: string) =>
   cache({
@@ -39,4 +45,7 @@ export const getCachedInstance = (instanceId: string) =>
           },
         },
       }),
+    options: {
+      skipMemCache: true,
+    },
   });

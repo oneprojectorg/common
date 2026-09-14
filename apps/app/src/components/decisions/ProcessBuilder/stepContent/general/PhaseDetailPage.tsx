@@ -3,7 +3,11 @@
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
-import { isReviewPhase, isVotingPhase } from '@op/common/client';
+import {
+  allowsComments,
+  isReviewPhase,
+  isVotingPhase,
+} from '@op/common/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -498,6 +502,21 @@ function PhaseDetailForm({
             />
           </ToggleRow>
         )}
+        <ToggleRow
+          label={t('Comments')}
+          description={t(
+            'Participants can comment on proposals during this phase.',
+          )}
+        >
+          <Switch
+            checked={allowsComments(phase)}
+            onCheckedChange={(val) =>
+              updateRules({
+                comments: { ...phase.rules?.comments, submit: val },
+              })
+            }
+          />
+        </ToggleRow>
       </div>
 
       <AlertDialog

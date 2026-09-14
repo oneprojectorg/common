@@ -22,6 +22,7 @@ export function ProposalViewLayout({
   editHref,
   canEdit = false,
   canJoin = false,
+  commentsEnabled,
   reportProposalId,
   reviewNotesToggle,
   moderationProposal,
@@ -37,6 +38,7 @@ export function ProposalViewLayout({
    * "Log in" to logged-out and anonymous visitors.
    */
   canJoin?: boolean;
+  commentsEnabled: boolean;
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */
   reportProposalId?: string;
@@ -98,15 +100,17 @@ export function ProposalViewLayout({
           )}
           {/* Mobile-only jump to the comments section (Figma's speech-bubble
               icon). A plain fragment link — no scroll scripting needed. */}
-          <ButtonLink
-            href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-            variant="outline"
-            size="icon"
-            aria-label={t('View comments')}
-            className="sm:hidden"
-          >
-            <LuMessageCircle className="size-4" />
-          </ButtonLink>
+          {commentsEnabled && (
+            <ButtonLink
+              href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+              variant="outline"
+              size="icon"
+              aria-label={t('View comments')}
+              className="sm:hidden"
+            >
+              <LuMessageCircle className="size-4" />
+            </ButtonLink>
+          )}
           {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
           {reviewNotesToggle && (

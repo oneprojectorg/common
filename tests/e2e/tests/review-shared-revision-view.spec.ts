@@ -115,11 +115,11 @@ test.describe('Review — shared revision request view', () => {
     await expect(alertA).toHaveAttribute('aria-live', 'polite');
     await expect(alertA).toContainText('The author has been notified');
 
-    // Scoped to the navbar: the request modal's submit button carries the same
-    // accessible name, so a page-wide lookup matches both while it is open.
-    const requestButtonA = pageA
-      .getByRole('banner')
-      .getByRole('button', { name: 'Request revision' });
+    // Header-scoped: the dialog's submit button shares the name and stays
+    // mounted while it animates out.
+    const requestButtonA = pageA.getByRole('banner').getByRole('button', {
+      name: 'Request revision',
+    });
     await expect(requestButtonA).toBeEnabled();
     await requestButtonA.click();
 
