@@ -7,7 +7,8 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { QueryClientContext } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
-import { ChannelInvalidationDedup } from './channelInvalidationDedup';
+/** Bound on remembered (mutation, channel) pairs. */
+const MAX_REMEMBERED_KEYS = 500;
 
 /**
  * Returns the QueryClient if inside a QueryClientProvider, throws a descriptive error otherwise.
@@ -76,13 +77,11 @@ export function QueryInvalidationSubscriber() {
  * - mutation:added: Invalidates queries when mutations occur
  *
  * Also forwards TanStack QueryCache 'removed' events to the registry so
- * per-channel refcounts decrement.
+ * per-channel refcounts decrement, and bounds the invalidation dedup cache.
  */
 function useInvalidateQueries(enabled: boolean): void {
   const queryClient = useRequiredQueryClient();
-  const dedupRef = useRef<ChannelInvalidationDedup>(
-    new ChannelInvalidationDedup(),
-  );
+  const seenInvalidationsRef = useRef<Set<string>>(new Set());
   const unsubscribersRef = useRef<Map<ChannelName, () => void>>(new Map());
   const initializedRef = useRef(false);
 
@@ -92,11 +91,29 @@ function useInvalidateQueries(enabled: boolean): void {
 
   const handleInvalidation = useCallback(
     async ({ channels, mutationId }: RegistryEvents['mutation:added']) => {
-      // Per channel, not per mutation: this mutation's other channels each
-      // arrive as their own message carrying the same id.
-      const freshChannels = dedupRef.current.take(mutationId, channels);
+      // Keyed per (mutation, channel), not per mutation. A mutation reaches
+      // this client once locally and once per channel as the realtime echo,
+      // all carrying the same id; keyed on the id alone, whichever message
+      // arrived first swallowed the mutation's other channels.
+      const seen = seenInvalidationsRef.current;
+      const freshChannels = channels.filter((channel) => {
+        const key = `${mutationId}:${channel}`;
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
+      });
       if (freshChannels.length === 0) {
         return;
+      }
+
+      // Oldest first: a Set iterates in insertion order.
+      for (const key of seen) {
+        if (seen.size <= MAX_REMEMBERED_KEYS) {
+          break;
+        }
+        seen.delete(key);
       }
 
       const queryKeys =
