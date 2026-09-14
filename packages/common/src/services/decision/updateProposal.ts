@@ -296,14 +296,10 @@ async function assertProposalUpdateAccess({
     profileId: proposal.profileId,
   });
 
-  // Authority comes from the proposal's own profile — the author holds Admin
-  // there, an invited collaborator Member — with decision admins as the
-  // override. Test the READ bit, not `proposalRoles.length`: the roles union
-  // in the public sentinel, which seeds with no permission rows.
-  if (
-    !checkPermission({ profile: permission.READ }, proposalRoles) &&
-    !checkPermission({ decisions: permission.ADMIN }, instanceRoles)
-  ) {
+  // Only standing on the proposal's own profile (author or invited
+  // collaborator) may edit its content. Test the READ bit, not `length`: the
+  // roles union in the public sentinel, which seeds with no permission rows.
+  if (!checkPermission({ profile: permission.READ }, proposalRoles)) {
     throw new UnauthorizedError("You don't have access to do this");
   }
 

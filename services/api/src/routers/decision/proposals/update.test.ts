@@ -1083,7 +1083,7 @@ describe.concurrent('updateProposal data authorization', () => {
     expect(result.profile.name).toBe('Edited by collaborator');
   });
 
-  it('should allow a decision admin to update the proposal data', async ({
+  it('should not allow a decision admin to edit proposal data they have no standing on', async ({
     task,
     onTestFinished,
   }) => {
@@ -1110,12 +1110,14 @@ describe.concurrent('updateProposal data authorization', () => {
       proposalData: { title: 'Admin Reviewed Proposal' },
     });
 
-    const result = await adminCaller.decision.updateProposal({
-      proposalId: proposal.id,
-      data: { proposalData: { title: 'Edited by admin' } },
+    await expect(
+      adminCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { proposalData: { title: 'Edited by admin' } },
+      }),
+    ).rejects.toMatchObject({
+      cause: { statusCode: 403 },
     });
-
-    expect(result.proposalData).toMatchObject({ title: 'Edited by admin' });
   });
 
   it('should not allow another process member to edit or rename a draft they did not author', async ({
