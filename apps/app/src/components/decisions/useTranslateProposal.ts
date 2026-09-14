@@ -1,7 +1,6 @@
 'use client';
-
 import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   type Proposal,
   type ProposalTranslation,
@@ -9,6 +8,7 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -34,6 +34,7 @@ type ProposalPreviewTranslation =
  * The review screen previously had none (ONE COWOP report).
  */
 export const useTranslateProposal = (proposal: Proposal) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const locale = useLocale();
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
@@ -48,17 +49,19 @@ export const useTranslateProposal = (proposal: Proposal) => {
     sourceLocale: string;
   } | null>(null);
 
-  const translateMutation = trpc.translation.translateProposal.useMutation({
-    onSuccess: (data) => {
-      setTranslated({
-        translated: data.translated,
-        sourceLocale: data.sourceLocale,
-      });
-    },
-    onError: () => {
-      toast.error(t('Failed to translate content'));
-    },
-  });
+  const translateMutation = useMutation(
+    trpc.translation.translateProposal.mutationOptions({
+      onSuccess: (data) => {
+        setTranslated({
+          translated: data.translated,
+          sourceLocale: data.sourceLocale,
+        });
+      },
+      onError: () => {
+        toast.error(t('Failed to translate content'));
+      },
+    }),
+  );
 
   const handleTranslate = useCallback(() => {
     if (!supportedLocale) {

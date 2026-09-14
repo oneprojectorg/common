@@ -1,8 +1,7 @@
 'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   AdminAssignableProposal,
   AdminReviewAssignment,
@@ -26,6 +25,8 @@ import { Label } from '@op/sense/Label';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Suspense, useId, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -119,10 +120,13 @@ function ManageAssignmentsBody({
   reviewerProfileId,
   onSaved,
 }: ManageAssignmentsDialogContentProps) {
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId },
-    // An SSR-seeded entry never registers the realtime channel; refetch.
-    { refetchOnMount: 'always' },
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.decision.listPhaseReviewAssignments.queryOptions(
+      { processInstanceId, phaseId },
+      // An SSR-seeded entry never registers the realtime channel; refetch.
+      { refetchOnMount: 'always' },
+    ),
   );
 
   const { rows } = useMemo(
@@ -156,6 +160,7 @@ function ManageAssignmentsForm({
   proposals,
   onSaved,
 }: ManageAssignmentsFormProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const filterId = useId();
   const importEnabled = useFeatureFlag('bulk_assign_import');
@@ -172,8 +177,12 @@ function ManageAssignmentsForm({
   // A reviewer without the role gets a frozen queue: unassign pending only.
   const canAssign = reviewer.isEligible;
 
-  const assignReviews = trpc.decision.assignReviews.useMutation();
-  const removeAssignments = trpc.decision.removeReviewAssignments.useMutation();
+  const assignReviews = useMutation(
+    trpc.decision.assignReviews.mutationOptions(),
+  );
+  const removeAssignments = useMutation(
+    trpc.decision.removeReviewAssignments.mutationOptions(),
+  );
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
 
   const rows = useMemo(

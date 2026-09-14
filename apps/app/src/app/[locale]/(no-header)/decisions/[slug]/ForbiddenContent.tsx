@@ -1,10 +1,11 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { Header1, Header2 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -33,37 +34,44 @@ const NoAccessMessage = () => {
 };
 
 const ForbiddenWithInviteCheck = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const { slug } = useParams<{ slug: string }>();
 
-  const [invites] = trpc.account.listUserInvites.useSuspenseQuery(
-    {
-      entityType: EntityType.DECISION,
-      pending: true,
-    },
-    {
-      staleTime: 0,
-      refetchOnMount: 'always',
-    },
+  const { data: invites } = useSuspenseQuery(
+    trpc.account.listUserInvites.queryOptions(
+      {
+        entityType: EntityType.DECISION,
+        pending: true,
+      },
+      {
+        staleTime: 0,
+        refetchOnMount: 'always',
+      },
+    ),
   );
 
-  const acceptInvite = trpc.profile.acceptInvite.useMutation({
-    onSuccess: () => {
-      window.location.reload();
-    },
-    onError: () => {
-      toast.error(t('Failed to accept invitations'));
-    },
-  });
+  const acceptInvite = useMutation(
+    trpc.profile.acceptInvite.mutationOptions({
+      onSuccess: () => {
+        window.location.reload();
+      },
+      onError: () => {
+        toast.error(t('Failed to accept invitations'));
+      },
+    }),
+  );
 
-  const declineInvite = trpc.profile.declineInvite.useMutation({
-    onSuccess: () => {
-      window.location.href = '/';
-    },
-    onError: () => {
-      toast.error(t('Failed to decline invitation'));
-    },
-  });
+  const declineInvite = useMutation(
+    trpc.profile.declineInvite.mutationOptions({
+      onSuccess: () => {
+        window.location.href = '/';
+      },
+      onError: () => {
+        toast.error(t('Failed to decline invitation'));
+      },
+    }),
+  );
 
   const matchingInvite = invites.find(
     (invite) => invite.profile?.slug === slug,

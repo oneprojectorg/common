@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,
   MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
@@ -8,6 +7,7 @@ import {
 } from '@op/common/client';
 import { FileDropZone } from '@op/sense/FileDropZone';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -59,6 +59,7 @@ export function ProposalAttachments({
   }[];
   onMutate: () => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
   // Normalize attachments to ensure fileSize is always a number
@@ -74,23 +75,28 @@ export function ProposalAttachments({
     attachmentsReducer,
   );
 
-  const signUrlMutation =
-    trpc.decision.signProposalAttachmentUploadUrl.useMutation();
-  const recordMutation = trpc.decision.uploadProposalAttachment.useMutation({
-    onSuccess: onMutate,
-    onError: (err) => {
-      toast.error(err.message);
-      onMutate(); // Refetch to clear optimistic state on error
-    },
-  });
+  const signUrlMutation = useMutation(
+    trpc.decision.signProposalAttachmentUploadUrl.mutationOptions(),
+  );
+  const recordMutation = useMutation(
+    trpc.decision.uploadProposalAttachment.mutationOptions({
+      onSuccess: onMutate,
+      onError: (err) => {
+        toast.error(err.message);
+        onMutate(); // Refetch to clear optimistic state on error
+      },
+    }),
+  );
 
-  const deleteMutation = trpc.decision.deleteProposalAttachment.useMutation({
-    onSuccess: onMutate,
-    onError: (err) => {
-      toast.error(err.message);
-      onMutate(); // Refetch to restore deleted item on error
-    },
-  });
+  const deleteMutation = useMutation(
+    trpc.decision.deleteProposalAttachment.mutationOptions({
+      onSuccess: onMutate,
+      onError: (err) => {
+        toast.error(err.message);
+        onMutate(); // Refetch to restore deleted item on error
+      },
+    }),
+  );
 
   const canAddMore = optimisticAttachments.length < MAX_FILES;
 

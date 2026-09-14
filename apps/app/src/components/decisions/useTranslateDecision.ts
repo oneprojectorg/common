@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   type PostTranslation,
   type Proposal,
@@ -10,6 +9,7 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
@@ -57,6 +57,7 @@ export const useTranslateDecision = ({
    */
   needsTranslation: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const locale = useLocale();
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
@@ -108,8 +109,8 @@ export const useTranslateDecision = ({
     toast.error(t('Failed to translate content'));
   }, [t]);
 
-  const translateBatchMutation =
-    trpc.translation.translateProposals.useMutation({
+  const translateBatchMutation = useMutation(
+    trpc.translation.translateProposals.mutationOptions({
       // Merge rather than replace: long lists are sent as several chunks, and
       // each chunk's response only carries its own proposals' translations.
       onSuccess: (data) => {
@@ -122,10 +123,11 @@ export const useTranslateDecision = ({
         }));
       },
       onError: onTranslateError,
-    });
+    }),
+  );
 
-  const translateDecisionMutation =
-    trpc.translation.translateDecision.useMutation({
+  const translateDecisionMutation = useMutation(
+    trpc.translation.translateDecision.mutationOptions({
       onSuccess: (data) => {
         if (!translatingRef.current) {
           return;
@@ -155,24 +157,27 @@ export const useTranslateDecision = ({
         });
       },
       onError: onTranslateError,
-    });
+    }),
+  );
 
-  const translatePostsMutation = trpc.translation.translatePosts.useMutation({
-    onSuccess: (data) => {
-      if (!translatingRef.current) {
-        return;
-      }
-      seedTranslationState(data.sourceLocale);
-      if (Object.keys(data.translations).length === 0) {
-        return;
-      }
-      patchDecisionTranslation({ posts: data.translations });
-    },
-    onError: onTranslateError,
-  });
+  const translatePostsMutation = useMutation(
+    trpc.translation.translatePosts.mutationOptions({
+      onSuccess: (data) => {
+        if (!translatingRef.current) {
+          return;
+        }
+        seedTranslationState(data.sourceLocale);
+        if (Object.keys(data.translations).length === 0) {
+          return;
+        }
+        patchDecisionTranslation({ posts: data.translations });
+      },
+      onError: onTranslateError,
+    }),
+  );
 
-  const translateResourcesMutation =
-    trpc.translation.translateResources.useMutation({
+  const translateResourcesMutation = useMutation(
+    trpc.translation.translateResources.mutationOptions({
       onSuccess: (data) => {
         if (!translatingRef.current) {
           return;
@@ -184,7 +189,8 @@ export const useTranslateDecision = ({
         patchDecisionTranslation({ resources: data.translations });
       },
       onError: onTranslateError,
-    });
+    }),
+  );
 
   const handleTranslate = useCallback(() => {
     if (!supportedLocale) {

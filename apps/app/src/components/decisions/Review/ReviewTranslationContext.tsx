@@ -1,7 +1,6 @@
 'use client';
-
 import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   SUPPORTED_LOCALES,
   type SupportedLocale,
@@ -9,6 +8,7 @@ import {
   parseTranslatedMeta,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import {
   type ReactNode,
@@ -61,6 +61,7 @@ export function ReviewTranslationProvider({
   assignmentId: string;
   children: ReactNode;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const locale = useLocale();
   const { assignment, rubricTemplate } = useReviewForm();
@@ -96,8 +97,8 @@ export function ReviewTranslationProvider({
     toast.error(t('Failed to translate content'));
   }, [t]);
 
-  const translateProposalMutation =
-    trpc.translation.translateProposal.useMutation({
+  const translateProposalMutation = useMutation(
+    trpc.translation.translateProposal.mutationOptions({
       onSuccess: (data) => {
         if (!translatingRef.current) {
           return;
@@ -109,21 +110,24 @@ export function ReviewTranslationProvider({
         }));
       },
       onError: onTranslateError,
-    });
+    }),
+  );
 
-  const translateRubricMutation = trpc.translation.translateRubric.useMutation({
-    onSuccess: (data) => {
-      if (!translatingRef.current) {
-        return;
-      }
-      setTranslated((prev) => ({
-        ...prev,
-        rubric: data.translated,
-        sourceLocale: prev?.sourceLocale || data.sourceLocale,
-      }));
-    },
-    onError: onTranslateError,
-  });
+  const translateRubricMutation = useMutation(
+    trpc.translation.translateRubric.mutationOptions({
+      onSuccess: (data) => {
+        if (!translatingRef.current) {
+          return;
+        }
+        setTranslated((prev) => ({
+          ...prev,
+          rubric: data.translated,
+          sourceLocale: prev?.sourceLocale || data.sourceLocale,
+        }));
+      },
+      onError: onTranslateError,
+    }),
+  );
 
   // One sample per surface rather than one concatenated blob: a rubric authored
   // in Spanish must offer translation even when the proposal is in English, and

@@ -1,7 +1,6 @@
 'use client';
-
 import { formatFileSize } from '@/utils/formatting';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,
   MAX_RESOURCE_FILE_SIZE,
@@ -18,6 +17,7 @@ import { Spinner } from '@op/sense/Spinner';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { LuFilePlus2, LuFileText, LuX } from 'react-icons/lu';
@@ -39,11 +39,14 @@ export const AddResourceDocumentForm = ({
   onSuccess: () => void;
   onCancel: () => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const createDocument = trpc.resources.createDocument.useMutation({
-    onSuccess: () => toast.success(t('Resource added')),
-    onError: () => toast.error(t('Could not add resource')),
-  });
+  const createDocument = useMutation(
+    trpc.resources.createDocument.mutationOptions({
+      onSuccess: () => toast.success(t('Resource added')),
+      onError: () => toast.error(t('Could not add resource')),
+    }),
+  );
   const { upload, uploading, uploaded, reset } = useResourceUpload(profileId);
 
   const [file, setFile] = useState<File | null>(null);

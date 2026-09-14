@@ -1,4 +1,4 @@
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   type BudgetData,
   type LocationData,
@@ -11,6 +11,7 @@ import {
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { logger } from '@op/logging/client';
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
@@ -39,6 +40,7 @@ export function useProposalDraft({
   isEditMode: boolean;
   collaborationDocId: string;
 }) {
+  const trpc = useTRPC();
   // -- Parsed server state --------------------------------------------------
 
   const parsedProposalData = useMemo(
@@ -76,14 +78,16 @@ export function useProposalDraft({
 
   // -- Auto-save mutation ---------------------------------------------------
 
-  const autoSaveMutation = trpc.decision.updateProposal.useMutation({
-    onError: (error) => {
-      logger.error('Auto-save failed', {
-        error,
-        context: 'useProposalDraft.autoSave',
-      });
-    },
-  });
+  const autoSaveMutation = useMutation(
+    trpc.decision.updateProposal.mutationOptions({
+      onError: (error) => {
+        logger.error('Auto-save failed', {
+          error,
+          context: 'useProposalDraft.autoSave',
+        });
+      },
+    }),
+  );
 
   /** Builds the proposalData payload for server persistence */
   const buildProposalData = useCallback(

@@ -1,10 +1,11 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { DecisionProcess } from '@op/api/encoders';
 import { Avatar } from '@op/sense/Avatar';
 import { Header1, Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -29,17 +30,21 @@ export const ProcessBuilderProcessSelector = () => {
 };
 
 const TemplateList = () => {
+  const trpc = useTRPC();
   const router = useRouter();
   const t = useTranslations();
-  const [templatesData] = trpc.decision.listProcesses.useSuspenseQuery({});
+  const { data: templatesData } = useSuspenseQuery(
+    trpc.decision.listProcesses.queryOptions({}),
+  );
   const templates = templatesData?.processes;
 
-  const createDecisionInstance =
-    trpc.decision.createInstanceFromTemplate.useMutation({
+  const createDecisionInstance = useMutation(
+    trpc.decision.createInstanceFromTemplate.mutationOptions({
       onSuccess: (data) => {
         router.push(`/decisions/${data.slug}/edit`);
       },
-    });
+    }),
+  );
 
   if (!templates?.length) {
     return (

@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { templateCollectsBudget } from '@op/common/client';
 import { Button } from '@op/sense/Button';
@@ -13,6 +12,9 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { toast } from '@op/sense/Toast';
+import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
@@ -48,6 +50,7 @@ export const ManualSelectionList = ({
   confirmVariant = 'standard',
   pinOffset,
 }: ManualSelectionListProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const posthog = usePostHog();
   const router = useRouter();
@@ -61,10 +64,19 @@ export const ManualSelectionList = ({
   const categoryId =
     selectedCategory === 'all-categories' ? undefined : selectedCategory;
 
-  const [[{ items: categories }, instance]] = trpc.useSuspenseQueries((q) => [
-    q.decision.getCategories({ processInstanceId: instanceId }),
-    q.decision.getInstance({ instanceId }),
-  ]);
+  const [
+    {
+      data: { items: categories },
+    },
+    { data: instance },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getCategories.queryOptions({
+        processInstanceId: instanceId,
+      }),
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+    ],
+  });
 
   // The selection list is only mounted once a phase exists; throw if it
   // doesn't so localStorage doesn't bucket unrelated sessions under ''.
@@ -74,9 +86,11 @@ export const ManualSelectionList = ({
 
   // Non-suspense + placeholderData so category/sort changes don't blank
   // the table while the server re-fetches.
-  const candidatesQuery = trpc.decision.listSelectionCandidates.useQuery(
-    { processInstanceId: instanceId, categoryId, sortOrder },
-    { placeholderData: (prev) => prev },
+  const candidatesQuery = useQuery(
+    trpc.decision.listSelectionCandidates.queryOptions(
+      { processInstanceId: instanceId, categoryId, sortOrder },
+      { placeholderData: (prev) => prev },
+    ),
   );
   const candidates = candidatesQuery.data?.items;
 
@@ -108,26 +122,28 @@ export const ManualSelectionList = ({
     [selectedIds, proposalCache],
   );
 
-  const submitMutation = trpc.decision.submitManualSelection.useMutation({
-    onSuccess: () => {
-      // Channel-based invalidation flips selectionsAreConfirmed in the client
-      // tRPC cache, which both the (client) DecisionHeader and DecisionStateRouter
-      // observe via useSuspenseQuery — DecisionStateRouter then swaps to
-      // ResultsPage. Add the resultsLive flag to the URL so the dialog mounted
-      // on ResultsPage opens on this admin's machine only.
-      setSelectedIds([]);
-      setIsConfirmOpen(false);
-      if (isFinalPhase) {
-        const params = new URLSearchParams(window.location.search);
-        params.set(RESULTS_LIVE_PARAM, '1');
-        router.replace(`${pathname}?${params.toString()}`);
-      }
-    },
-    onError: (error) => {
-      setIsConfirmOpen(false);
-      toast.error(error.message);
-    },
-  });
+  const submitMutation = useMutation(
+    trpc.decision.submitManualSelection.mutationOptions({
+      onSuccess: () => {
+        // Channel-based invalidation flips selectionsAreConfirmed in the client
+        // tRPC cache, which both the (client) DecisionHeader and DecisionStateRouter
+        // observe via useSuspenseQuery — DecisionStateRouter then swaps to
+        // ResultsPage. Add the resultsLive flag to the URL so the dialog mounted
+        // on ResultsPage opens on this admin's machine only.
+        setSelectedIds([]);
+        setIsConfirmOpen(false);
+        if (isFinalPhase) {
+          const params = new URLSearchParams(window.location.search);
+          params.set(RESULTS_LIVE_PARAM, '1');
+          router.replace(`${pathname}?${params.toString()}`);
+        }
+      },
+      onError: (error) => {
+        setIsConfirmOpen(false);
+        toast.error(error.message);
+      },
+    }),
+  );
 
   const handleConfirmDialogOpenChange = useCallback(
     (open: boolean) => {

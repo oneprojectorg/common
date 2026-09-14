@@ -1,4 +1,4 @@
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Relationship } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import {
@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { FormEvent, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -19,8 +20,11 @@ export const RemoveRelationshipModal = ({
   relationship: Relationship;
   onClose: () => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const removeRelationship = trpc.organization.removeRelationship.useMutation();
+  const removeRelationship = useMutation(
+    trpc.organization.removeRelationship.mutationOptions(),
+  );
 
   const [isSubmitting, startTransition] = useTransition();
 
