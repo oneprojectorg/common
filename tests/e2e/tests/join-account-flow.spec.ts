@@ -68,7 +68,7 @@ test.describe('Join account flow (public decision header)', () => {
 
     await page.getByRole('button', { name: 'Join' }).click();
     await expect(
-      page.getByRole('heading', { name: 'Claim your account' }),
+      page.getByRole('heading', { name: "Don't lose track of this idea" }),
     ).toBeVisible({ timeout: 15000 });
 
     const email = `join-${randomUUID().slice(0, 8)}@example.com`;
@@ -122,7 +122,7 @@ test.describe('Join account flow (public decision header)', () => {
     // the proposal view layout.
     await page.getByRole('button', { name: 'Join' }).first().click();
     await expect(
-      page.getByRole('heading', { name: 'Claim your account' }),
+      page.getByRole('heading', { name: "Don't lose track of this idea" }),
     ).toBeVisible({ timeout: 15000 });
 
     const email = `join-${randomUUID().slice(0, 8)}@example.com`;
@@ -160,7 +160,7 @@ test.describe('Join account flow (public decision header)', () => {
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
-      page.getByRole('heading', { name: 'Claim your account' }),
+      page.getByRole('heading', { name: "Don't lose track of this idea" }),
     ).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'Join' })).not.toBeVisible();
   });

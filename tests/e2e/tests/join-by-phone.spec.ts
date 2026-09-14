@@ -67,7 +67,7 @@ test.describe('Join by phone (public decision)', () => {
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
     await expect(
-      page.getByRole('heading', { name: 'Claim your account' }),
+      page.getByRole('heading', { name: "Don't lose track of this idea" }),
     ).toBeVisible({ timeout: 15000 });
 
     // Both up front, not one behind a "use a phone instead" link — the design
@@ -148,7 +148,7 @@ test.describe('Join by phone (public decision)', () => {
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
     await expect(
-      page.getByRole('heading', { name: 'Claim your account' }),
+      page.getByRole('heading', { name: "Don't lose track of this idea" }),
     ).toBeVisible({ timeout: 15000 });
 
     await dialog.getByRole('tab', { name: 'Phone number' }).click();
