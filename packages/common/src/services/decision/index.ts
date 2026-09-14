@@ -70,6 +70,7 @@ export * from './rejectProposal';
 export * from './unrejectProposal';
 export * from './listProposalRejectionRecipients';
 export * from './getProposal';
+export * from './getCollabToken';
 export * from './assertProposalEngagementAccess';
 
 // Proposal relationships (merge / unmerge / list)

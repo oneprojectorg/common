@@ -5,6 +5,7 @@ import { createProposalRouter } from './create';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
+import { getCollabTokenRouter } from './getCollabToken';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
@@ -28,6 +29,7 @@ export const proposalsRouter = mergeRouters(
   removeProposalRelationshipRouter,
   createProposalRouter,
   getProposalRouter,
+  getCollabTokenRouter,
   getLatestSelectionForProposalRouter,
   getProposalWithReviewAggregatesRouter,
   getReviewedVersionRouter,
