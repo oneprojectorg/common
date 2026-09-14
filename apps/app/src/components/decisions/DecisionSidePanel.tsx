@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
-import { PAGE_LIMIT, nextCursor } from '@op/common/client';
+import { PAGE_LIMIT, areCommentsAllowed, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { useDirection } from '@op/sense/Direction';
@@ -42,9 +42,11 @@ const isPanelTab = (key: string): key is PanelTab =>
 
 export const DecisionSidePanel = ({
   decisionProfileId,
+  instanceId,
   access,
 }: {
   decisionProfileId: string;
+  instanceId: string;
   access?: DecisionAccess | null;
 }) => {
   const t = useTranslations();
@@ -89,6 +91,7 @@ export const DecisionSidePanel = ({
         <PanelContents
           isOpen={isOpen}
           decisionProfileId={decisionProfileId}
+          instanceId={instanceId}
           canPostUpdate={canPostUpdate}
           canReadUpdates={canReadUpdates}
           activeTab={activeTab}
@@ -103,6 +106,7 @@ export const DecisionSidePanel = ({
 const PanelContents = ({
   isOpen,
   decisionProfileId,
+  instanceId,
   canPostUpdate,
   canReadUpdates,
   activeTab,
@@ -111,6 +115,7 @@ const PanelContents = ({
 }: {
   isOpen: boolean;
   decisionProfileId: string;
+  instanceId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
   activeTab: PanelTab;
@@ -159,6 +164,7 @@ const PanelContents = ({
         {isOpen ? (
           <UpdatesTabContent
             decisionProfileId={decisionProfileId}
+            instanceId={instanceId}
             canPostUpdate={canPostUpdate}
             canReadUpdates={canReadUpdates}
           />
@@ -182,10 +188,12 @@ const PanelContents = ({
 
 const UpdatesTabContent = ({
   decisionProfileId,
+  instanceId,
   canPostUpdate,
   canReadUpdates,
 }: {
   decisionProfileId: string;
+  instanceId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
 }) => {
@@ -212,7 +220,10 @@ const UpdatesTabContent = ({
         {canReadUpdates ? (
           <ErrorBoundary>
             <Suspense fallback={<PostFeedSkeleton numPosts={2} />}>
-              <UpdatesFeed decisionProfileId={decisionProfileId} />
+              <UpdatesFeed
+                decisionProfileId={decisionProfileId}
+                instanceId={instanceId}
+              />
             </Suspense>
           </ErrorBoundary>
         ) : (
@@ -232,9 +243,23 @@ const UpdatesTabContent = ({
   );
 };
 
-const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
+const UpdatesFeed = ({
+  decisionProfileId,
+  instanceId,
+}: {
+  decisionProfileId: string;
+  instanceId: string;
+}) => {
   const t = useTranslations();
   const { user } = useUser();
+
+  // Suspense, not `useCommentsAllowed`: the overview tab does not
+  // preload `getInstance`, so a plain query would blink the reply button off.
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const commentsEnabled = areCommentsAllowed({
+    phases: instance.instanceData?.phases ?? [],
+    currentPhaseId: instance.currentStateId,
+  });
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
@@ -304,7 +329,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
               user={user}
               withLinks={false}
               onLikeClick={handleLikeClick}
-              onCommentClick={handleCommentClick}
+              onCommentClick={commentsEnabled ? handleCommentClick : undefined}
               className="sm:px-0"
             />
             <hr />

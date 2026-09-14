@@ -7,8 +7,8 @@ import {
   type RecommendationValue,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
+import { Badge } from '@op/sense/Badge';
 import { Skeleton } from '@op/sense/Skeleton';
-import { StatusBadge } from '@op/sense/StatusBadge';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
@@ -21,7 +21,7 @@ import {
 } from '@op/sense/Table';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
-import { LuRefreshCw } from 'react-icons/lu';
+import { LuRefreshCcw } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -120,7 +120,10 @@ export function ReviewSelectionTable({
               <TableRowHeader>
                 <div className="flex flex-col items-start gap-2">
                   {item.aggregates.outOfDateReviewsCount > 0 && (
-                    <MixedVersionBadge />
+                    <OutOfDateReviewsBadge
+                      outOfDateCount={item.aggregates.outOfDateReviewsCount}
+                      submittedCount={item.aggregates.reviewsSubmittedCount}
+                    />
                   )}
                   <div className="flex flex-col">
                     <Link
@@ -246,7 +249,12 @@ function ProposalCard({
 
   return (
     <SelectionCard isSelected={advancing}>
-      {item.aggregates.outOfDateReviewsCount > 0 && <MixedVersionBadge />}
+      {item.aggregates.outOfDateReviewsCount > 0 && (
+        <OutOfDateReviewsBadge
+          outOfDateCount={item.aggregates.outOfDateReviewsCount}
+          submittedCount={item.aggregates.reviewsSubmittedCount}
+        />
+      )}
       <div className="flex flex-col gap-1">
         <Link
           href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
@@ -294,13 +302,26 @@ function ProposalCard({
 }
 
 /** Marks a proposal whose submitted reviews do not all cover the same version. */
-function MixedVersionBadge() {
+function OutOfDateReviewsBadge({
+  outOfDateCount,
+  submittedCount,
+}: {
+  outOfDateCount: number;
+  submittedCount: number;
+}) {
   const t = useTranslations();
 
   return (
-    <StatusBadge variant="revision" icon={LuRefreshCw}>
-      {t('Mixed version reviews')}
-    </StatusBadge>
+    <Badge variant="warning">
+      <LuRefreshCcw aria-hidden className="text-warning" />
+      {t(
+        '{n} of {total, plural, one {# review} other {# reviews}} out of date',
+        {
+          n: outOfDateCount,
+          total: submittedCount,
+        },
+      )}
+    </Badge>
   );
 }
 

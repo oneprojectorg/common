@@ -1363,9 +1363,10 @@
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} out of {total} reviewers submitted a review for this proposal",
   "View review by {name}": "View review by {name}",
   "View review by {name} (older version)": "View review by {name} (older version)",
-  "Mixed version reviews": "Mixed version reviews",
+  "{n} of {total, plural, one {# review} other {# reviews}} out of date": "{n} of {total, plural, one {# review} other {# reviews}} out of date",
   "Older version": "Older version",
-  "{n} out of {total} reviews were completed before the latest revision. Cumulative score includes all reviews.": "{n} out of {total} reviews were completed before the latest revision. Cumulative score includes all reviews.",
+  "{n, plural, one {# of {total, plural, one {# review} other {# reviews}} is out of date} other {# of {total} reviews are out of date}}": "{n, plural, one {# of {total, plural, one {# review} other {# reviews}} is out of date} other {# of {total} reviews are out of date}}",
+  "{n, plural, one {The author revised the proposal after this review was submitted.} other {The author revised the proposal after these reviews were submitted.}} {total, plural, one {The review counts toward the score.} other {All # reviews count toward the score.}}": "{n, plural, one {The author revised the proposal after this review was submitted.} other {The author revised the proposal after these reviews were submitted.}} {total, plural, one {The review counts toward the score.} other {All # reviews count toward the score.}}",
   "Results are live!": "Results are live!",
   "All participants can now view the winning proposals.": "All participants can now view the winning proposals.",
   "View public results page": "View public results page",
@@ -1733,5 +1734,10 @@
   "Your request • Sent {timeAgo}": "Your request • Sent {timeAgo}",
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
-  "Older version reviewed by {name}": "Older version reviewed by {name}"
+  "Older version reviewed by {name}": "Older version reviewed by {name}",
+  "Participants can comment on proposals during this phase.": "Participants can comment on proposals during this phase.",
+  "Comments off": "Comments off",
+  "Reject": "Reject",
+  "Your Privacy": "Your Privacy",
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more."
 }

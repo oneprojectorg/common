@@ -23,8 +23,8 @@ export default function GlobalError({
         ui_host: posthogUIHost,
         capture_exceptions: true,
         before_send: stampExceptionWithTraceContext,
-        // Tracing headers set to `false` because it breaks CORS requests
-        __add_tracing_headers: false,
+        // No host gets tracing headers — injecting them breaks CORS requests.
+        tracing_headers: [],
       });
     }
   }, []);

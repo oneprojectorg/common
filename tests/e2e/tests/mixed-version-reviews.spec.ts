@@ -312,7 +312,7 @@ async function seedMixedVersionReviews({
   return { instance, revised, untouched };
 }
 
-test.describe('Mixed version reviews — admin tags and banner', () => {
+test.describe('Out-of-date reviews — admin tags and banner', () => {
   test('the review summary banners the stale count and tags the stale reviewer row', async ({
     authenticatedPage: page,
     org,
@@ -335,11 +335,11 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
     ).toBeVisible({ timeout: 36_000 });
 
     const banner = page.getByRole('alert').filter({
-      hasText: 'Mixed version reviews',
+      hasText: '1 of 2 reviews is out of date',
     });
     await expect(banner).toBeVisible();
     await expect(banner).toContainText(
-      '1 out of 2 reviews were completed before the latest revision. Cumulative score includes all reviews.',
+      'The author revised the proposal after this review was submitted. All 2 reviews count toward the score.',
     );
 
     // 8/8 is the early (stale) review, 7/8 the late one.
@@ -409,7 +409,8 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
     await expect(
       page.getByRole('heading', { name: 'Review Progress' }),
     ).toBeVisible({ timeout: 36_000 });
-    await expect(page.getByText('Mixed version reviews')).toHaveCount(0);
+    await expect(page.getByText('review is out of date')).toHaveCount(0);
+    await expect(page.getByText('reviews out of date')).toHaveCount(0);
     await expect(page.getByText('Older version')).toHaveCount(0);
   });
 
@@ -436,12 +437,12 @@ test.describe('Mixed version reviews — admin tags and banner', () => {
     const revisedRow = page
       .getByRole('row')
       .filter({ hasText: ORIGINAL_TITLE });
-    await expect(revisedRow).toContainText('Mixed version reviews');
+    await expect(revisedRow).toContainText('1 of 2 reviews out of date');
 
     const untouchedRow = page
       .getByRole('row')
       .filter({ hasText: UNTOUCHED_TITLE });
     await expect(untouchedRow).toBeVisible();
-    await expect(untouchedRow).not.toContainText('Mixed version reviews');
+    await expect(untouchedRow).not.toContainText('reviews out of date');
   });
 });
