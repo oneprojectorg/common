@@ -15,6 +15,7 @@ import {
   createReviewScenario,
   createRevisionRequest,
   getSeededTemplate,
+  grantDecisionProfileAccess,
   grantInstanceReviewerRole,
 } from '@op/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -286,6 +287,70 @@ test.describe('Proposal editor — review notes sheet', () => {
       new RegExp(`/decisions/${scenario.instance.slug}/current`),
       { timeout: 30_000 },
     );
+  });
+
+  test('an invited co-author gets the same revision affordances as the submitter', async ({
+    browser,
+    org,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `rev-coauthor-${testInfo.workerIndex}-${Date.now()}`;
+    const scenario = await setupRevisionScenario({
+      org,
+      supabaseAdmin,
+      testId,
+      state: ProposalReviewRequestState.REQUESTED,
+    });
+
+    // A second user on the proposal's own profile — what ShareProposalModal
+    // creates. Member carries the decisions UPDATE bit, so `access.update` is
+    // true for them even though `submittedBy` is still the author.
+    const { user: coAuthor } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-coauthor`,
+      instanceProfileId: scenario.instance.profileId,
+    });
+    await grantDecisionProfileAccess({
+      profileId: scenario.proposal.profileId,
+      authUserId: coAuthor.authUserId,
+      email: coAuthor.email,
+      isAdmin: false,
+    });
+
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await authenticateAsUser(page, {
+      email: coAuthor.email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await page.goto(
+      `/en/decisions/${scenario.instance.slug}/proposal/${scenario.proposal.profileId}/edit?reviewRevision=${scenario.revisionRequest.id}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    const reviewNotesSheet = page.getByRole('dialog').filter({
+      has: page.getByRole('heading', { name: 'Review notes' }),
+    });
+    await expect(reviewNotesSheet).toBeVisible({ timeout: 36_000 });
+    await expect(page.getByText(FIRST_REQUEST_COMMENT)).toBeVisible();
+    await expect(page.getByText(SECOND_REQUEST_COMMENT)).toBeVisible();
+
+    // The sheet covers the header, so close it before reading the actions.
+    await reviewNotesSheet.getByRole('button', { name: 'Close' }).click();
+    await expect(reviewNotesSheet).toBeHidden();
+
+    await expect(
+      page.getByRole('button', { name: 'Review notes' }),
+    ).toBeVisible();
+
+    // The primary action resubmits the revision rather than plain-updating.
+    await page.getByRole('button', { name: 'Update' }).click();
+    await expect(
+      page.getByRole('dialog').filter({
+        has: page.getByRole('heading', { name: 'Submit revision' }),
+      }),
+    ).toBeVisible({ timeout: 6_000 });
   });
 });
 
