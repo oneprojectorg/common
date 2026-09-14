@@ -90,14 +90,14 @@ export const LoginPanel = () => {
   // before. GoTrue answers the browser directly, so this is the only check on
   // the request itself. The same flag is read again on the server, where it
   // decides whether a verified number grants membership.
-  const smsLoginEnabled = useFeatureFlag('sms-login') ?? false;
+  const smsLoginEnabled = useFeatureFlag('sms-login');
 
   // The channel every branch below agrees on.
   //
-  // `channel` is restored from sessionStorage, and `useFeatureFlag` answers
-  // `undefined` until PostHog resolves — which `?? false` reads as off. So a
-  // returning phone visitor arrives with the flag off and the channel set to
-  // phone on every production reload. Deriving one value keeps the rendered
+  // `channel` is restored from sessionStorage, and `useFeatureFlag` reads as
+  // off until PostHog resolves. So a returning phone visitor arrives with the
+  // flag off and the channel set to phone on every production reload. Deriving
+  // one value keeps the rendered
   // field and the submit button from disagreeing; when they disagreed, the
   // panel showed the email field behind a button that only a valid phone
   // number could enable, and neither channel could sign in.

@@ -6,5 +6,5 @@ export const useFeatureFlag = (key: string) => {
   // hook on some renders and not others.
   const enabled = useFeatureFlagEnabled(key);
 
-  return areFeatureFlagsForcedOn() ? true : enabled;
+  return areFeatureFlagsForcedOn() ? true : (enabled ?? false);
 };
