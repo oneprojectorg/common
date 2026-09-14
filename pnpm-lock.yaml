@@ -1527,9 +1527,6 @@ importers:
 
   services/workflows:
     dependencies:
-      '@op/cache':
-        specifier: workspace:*
-        version: link:../cache
       '@op/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -1551,9 +1548,6 @@ importers:
       '@op/realtime':
         specifier: workspace:*
         version: link:../realtime
-      '@op/supabase':
-        specifier: workspace:*
-        version: link:../supabase
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
