@@ -16,6 +16,13 @@ export interface CollabUser {
 export interface UseTiptapCollabOptions {
   docId: string | null;
   enabled?: boolean;
+  /**
+   * Resolves a Tiptap Cloud JWT scoped to `docId`. The provider awaits it on
+   * every authentication, so a reconnect picks up a fresh token without the
+   * Y.Doc being torn down. Must be referentially stable (`useCallback`) —
+   * a new function identity rebuilds the provider.
+   */
+  getToken: () => Promise<string>;
   /** User's display name for the collaboration cursor */
   userName?: string;
 }
@@ -34,6 +41,7 @@ export interface UseTiptapCollabReturn {
 export function useTiptapCollab({
   docId,
   enabled = true,
+  getToken,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const [status, setStatus] = useState<CollabStatus>('connecting');
@@ -41,6 +49,14 @@ export function useTiptapCollab({
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
 
   const ydoc = useMemo(() => new Y.Doc(), []);
+
+  // The Y.Doc outlives every provider rebuild, so it is released here rather
+  // than in the provider effect's cleanup.
+  useEffect(() => {
+    return () => {
+      ydoc.destroy();
+    };
+  }, [ydoc]);
 
   // Derive color from username - matches Avatar gradient
   const user = useMemo<CollabUser>(() => {
@@ -66,7 +82,7 @@ export function useTiptapCollab({
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
-      token: 'notoken', // TODO: proper JWT auth
+      token: getToken,
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
@@ -78,6 +94,14 @@ export function useTiptapCollab({
       onSynced: () => {
         setIsSynced(true);
       },
+      onAuthenticationFailed: () => {
+        setStatus('disconnected');
+        setIsSynced(false);
+        logger.warn('Tiptap collaboration rejected the token', {
+          context: 'useTiptapCollab',
+          docId,
+        });
+      },
     });
 
     setProvider(newProvider);
@@ -85,7 +109,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, ydoc]);
+  }, [docId, enabled, getToken, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {

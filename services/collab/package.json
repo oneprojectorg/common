@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
     "./testing": "./__mocks__/index.ts"
   },
   "main": "./src/index.ts",
@@ -17,11 +18,13 @@
   },
   "dependencies": {
     "@op/cache": "workspace:*",
+    "jsonwebtoken": "^9.0.2",
     "ky": "^1.8.1"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@op/vitest-config": "workspace:*",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.13.3",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:"
