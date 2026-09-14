@@ -40,11 +40,6 @@ export type GatingCallers = {
    * without, creates a throwaway one (cleaned up after the test).
    */
   networkJwt: (email?: string) => Promise<GatingCaller>;
-  /**
-   * A phone-only account: authenticates, holds no email, so the network gate
-   * refuses it with `callerTier: 'user'`. Not a {@link GatingCells} key — a
-   * fifth required cell would touch every gating suite in the repository.
-   */
   phoneJwt: () => Promise<GatingCaller>;
 };
 
