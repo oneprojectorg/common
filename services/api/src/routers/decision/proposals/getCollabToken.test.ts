@@ -1,5 +1,11 @@
-import { db } from '@op/db/client';
-import { EntityType, profileInvites } from '@op/db/schema';
+import { getInstancePhases } from '@op/common';
+import { db, eq } from '@op/db/client';
+import {
+  EntityType,
+  processInstances,
+  profileInvites,
+  proposals,
+} from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import jwt from 'jsonwebtoken';
 import { describe, expect, it } from 'vitest';
@@ -13,6 +19,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
+import { createGatingCallers } from '../../../test/helpers/gating/callers';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -27,6 +34,33 @@ const TIPTAP_SECRET = 'test-tiptap-secret';
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** Moves the instance onto its final phase, where editing is closed. */
+async function moveToLastPhase(processInstanceId: string): Promise<void> {
+  const instanceRecord = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+  });
+
+  if (!instanceRecord) {
+    throw new Error(`Instance ${processInstanceId} not found`);
+  }
+
+  const phases = getInstancePhases(instanceRecord.instanceData);
+  const lastPhase = phases[phases.length - 1];
+
+  if (!lastPhase) {
+    throw new Error(`Instance ${processInstanceId} has no phases`);
+  }
+
+  await db
+    .update(processInstances)
+    .set({ currentStateId: lastPhase.phaseId })
+    .where(eq(processInstances.id, processInstanceId));
+}
+
+function storedCollaborationDocId(proposalData: unknown): string | undefined {
+  return (proposalData as { collaborationDocId?: string }).collaborationDocId;
 }
 
 function decodeCollabToken(token: string): {
@@ -231,6 +265,143 @@ describe.concurrent('decision.getCollabToken', () => {
         proposalProfileId: proposal.profileId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('ignores a client-supplied collaborationDocId when minting', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Mine' },
+    });
+
+    const otherProposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Theirs' },
+    });
+
+    const ownDocId = storedCollaborationDocId(proposal.proposalData);
+    const otherDocId = storedCollaborationDocId(otherProposal.proposalData);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Point the proposal at another proposal's document, then at everything.
+    for (const injected of [otherDocId, '*']) {
+      await caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: {
+          proposalData: { title: 'Mine', collaborationDocId: injected },
+        },
+      });
+
+      const stored = await db.query.proposals.findFirst({
+        where: { id: proposal.id },
+        columns: { proposalData: true },
+      });
+
+      expect(storedCollaborationDocId(stored?.proposalData)).toBe(ownDocId);
+
+      const { token } = await caller.decision.getCollabToken({
+        proposalProfileId: proposal.profileId,
+      });
+
+      expect(decodeCollabToken(token).allowedDocumentNames).toEqual([ownDocId]);
+    }
+  });
+
+  it('refuses a token once the instance reaches its final phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Test Proposal' },
+    });
+
+    await moveToLastPhase(setup.instance.instance.id);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.getCollabToken({
+        proposalProfileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('404s a moderation-detached proposal, even for its author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Test Proposal' },
+    });
+
+    await db
+      .update(proposals)
+      .set({ moderationDetachedAt: new Date().toISOString() })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.getCollabToken({
+        proposalProfileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('refuses an anonymous caller on a real proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Test Proposal' },
+    });
+
+    const anonCaller = await createGatingCallers(onTestFinished).anonJwt();
+
+    await expect(
+      anonCaller.decision.getCollabToken({
+        proposalProfileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });
 
