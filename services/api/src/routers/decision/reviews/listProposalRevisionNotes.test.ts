@@ -1,3 +1,4 @@
+import { eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -164,6 +165,48 @@ describe.concurrent('listProposalRevisionNotes', () => {
     expect(result.items[1]).toMatchObject({
       respondedProposalHistoryId: olderHistoryId,
       responseComment: 'First response.',
+    });
+  });
+
+  it('keeps a note standalone when its resubmitted snapshot is later deleted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Snapshot Deleted',
+      status: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+    });
+
+    const respondedProposalHistoryId = await createProposalSnapshot(
+      created.proposal.id,
+    );
+
+    const request = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewRequestState.RESUBMITTED,
+      requestComment: 'Add a budget breakdown.',
+      respondedProposalHistoryId,
+      responseComment: 'Budget is in now.',
+      respondedAt: '2026-09-01T10:00:00.000Z',
+    });
+
+    // Mirrors what actually nulls the pointer in production: the FK is
+    // `onDelete: 'set null'`, so deleting the snapshot orphans the request
+    // instead of leaving a dangling foreign key.
+    await db
+      .delete(proposalHistory)
+      .where(eq(proposalHistory.historyId, respondedProposalHistoryId));
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+    const result = await authorCaller.decision.listProposalRevisionNotes({
+      proposalId: created.proposal.id,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      respondedProposalHistoryId: request.id,
+      responseComment: 'Budget is in now.',
     });
   });
 

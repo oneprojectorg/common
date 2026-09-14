@@ -181,8 +181,10 @@ export const proposalRevisionNoteRequestSchema = createSelectSchema(
 /**
  * One author note — a single resubmission — with every revision request it
  * answered. Grouped on `respondedProposalHistoryId`, the proposal version the
- * author resubmitted — always set on a resubmitted request, so the group key
- * is never null.
+ * author resubmitted. The writer always sets it, but the FK nulls it out if
+ * that snapshot is later deleted; `listProposalRevisionNotes` substitutes the
+ * request's own id in that case, so this field is a stable group key rather
+ * than always a real history pointer.
  */
 export const proposalRevisionNoteSchema = createSelectSchema(
   proposalReviewRequests,
