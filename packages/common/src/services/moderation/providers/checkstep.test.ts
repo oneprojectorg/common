@@ -160,6 +160,88 @@ describe('createCheckstepProvider', () => {
     );
   });
 
+  it('openInquiry opens a human-review incident on the submitted content ref', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okEmpty());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createCheckstepProvider({ apiKey: 'k' }).openInquiry!({
+      itemType: 'proposal',
+      itemId: '33333333-3333-4333-8333-333333333333',
+      roundId: ROUND_ID,
+      reason: 'This is targeted abuse.',
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    // The incident endpoint, not /content/report: a community report is a
+    // signal the classifiers weigh, an inquiry is the case a moderator picks up.
+    expect(url).toBe('https://api.checkstep.com/api/v2/review/cases/inquiries');
+    expect(init.method).toBe('POST');
+    expect(init.headers.authorization).toBe('Bearer k');
+    const body = JSON.parse(init.body);
+    // Same ref + complex type as the submit, which attaches the incident to the
+    // content we ingested instead of creating an isolated one.
+    expect(body.id).toBe(
+      `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+    );
+    expect(body.type).toBe('comment');
+    expect(body.origin).toBe('user-report');
+    expect(body.reason).toBe('This is targeted abuse.');
+    // No category is collected anywhere in the app, so we send no policy code
+    // rather than inventing one.
+    expect(body).not.toHaveProperty('violations');
+  });
+
+  it('openInquiry falls back to a default reason so the case explains itself', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okEmpty());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createCheckstepProvider({ apiKey: 'k' }).openInquiry!({
+      itemType: 'proposal',
+      itemId: '33333333-3333-4333-8333-333333333333',
+      roundId: ROUND_ID,
+      reason: '   ',
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.reason).toBe('Reported from the app.');
+  });
+
+  it('openInquiry does not retry a 5xx: one attempt, no duplicate case', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 502, text: async () => '' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      createCheckstepProvider({ apiKey: 'k' }).openInquiry!({
+        itemType: 'proposal',
+        itemId: '33333333-3333-4333-8333-333333333333',
+        roundId: ROUND_ID,
+      }),
+    ).rejects.toThrow();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("surfaces the provider's error body so a swallowed rejection is diagnosable", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => '{"detail":"violations: field required"}',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    // The caller swallows and logs this error, so the body is the only evidence
+    // anyone gets about which field Checkstep rejected.
+    await expect(
+      createCheckstepProvider({ apiKey: 'k' }).openInquiry!({
+        itemType: 'proposal',
+        itemId: '33333333-3333-4333-8333-333333333333',
+        roundId: ROUND_ID,
+      }),
+    ).rejects.toThrow(/400.*violations: field required/);
+  });
+
   it('reportForReview does not retry a 5xx: one attempt, no duplicate report', async () => {
     const fetchMock = vi
       .fn()

@@ -86,6 +86,24 @@ export interface ModerationReport {
   reason?: string;
 }
 
+/**
+ * A request for a human moderator to look at content, independent of what the
+ * classifiers concluded. Distinct from {@link ModerationReport}: a report is a
+ * community *signal* that feeds the classifiers and accumulates, while an
+ * inquiry opens the *incident* a moderator actually picks up from a queue.
+ */
+export interface ModerationInquiry {
+  itemType: ModerationItemType;
+  itemId: string;
+  /** The round the inquiry is raised against, so the case lands on the same
+   *  provider-side record the submission created. */
+  roundId: string;
+  /** Free-text context surfaced on the incident. No Report entry point
+   *  collects one today, so providers fall back to a default rather than
+   *  opening a case with nothing explaining why. */
+  reason?: string;
+}
+
 /** Raw inbound provider webhook, before vendor-specific parsing. */
 export interface ModerationWebhookInput {
   rawBody: string;
@@ -157,6 +175,14 @@ export interface ModerationProvider {
    * what a human report exists to catch. Called after `submitForReview`.
    */
   reportForReview?(input: ModerationReport): Promise<void>;
+  /**
+   * Opens a human-review incident on content `submitForReview` just submitted.
+   * `reportForReview` is not enough on its own: a community report is a signal
+   * that feeds the classifiers, and classifiers that read the content as clean
+   * raise no case — exactly what a user flag exists to catch. Called after
+   * `submitForReview`, alongside `reportForReview`.
+   */
+  openInquiry?(input: ModerationInquiry): Promise<void>;
   /**
    * Extracts the verdicts a webhook delivery carries. Checkstep sends one
    * verdict per callback and also ships non-verdict webhook types (author

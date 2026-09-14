@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { decodeContentRef, encodeContentRef } from '../contentRef';
 import type {
   ModerationCategory,
+  ModerationInquiry,
   ModerationMediaItem,
   ModerationProvider,
   ModerationProviderReference,
@@ -149,6 +150,24 @@ interface CheckstepViolation {
   severity?: string | null;
 }
 
+// Checkstep's 4xx bodies name the exact field it rejected. Without them a
+// rejected report/inquiry is just "returned 400" in the log, which is the
+// difference between knowing no case was raised and knowing why — the failures
+// here are swallowed by design (see `flagItem`), so the log line is the only
+// evidence anyone gets. Bounded, and body-only: the URL and key never enter
+// the message.
+const ERROR_BODY_LIMIT = 500;
+
+const errorDetail = async (response: Response): Promise<string> => {
+  try {
+    const text = (await response.text()).trim();
+    return text ? `: ${text.slice(0, ERROR_BODY_LIMIT)}` : '';
+  } catch {
+    // Body already consumed or not readable — the status alone still stands.
+    return '';
+  }
+};
+
 const post = async (
   url: string,
   apiKey: string,
@@ -169,7 +188,9 @@ const post = async (
   );
 
   if (!response.ok) {
-    throw new Error(`Moderation provider returned ${response.status}`);
+    throw new Error(
+      `Moderation provider returned ${response.status}${await errorDetail(response)}`,
+    );
   }
 
   // Checkstep acks an async submission with a success status but an empty body,
@@ -227,6 +248,10 @@ const USER_REPORT_TAG = '#user-report';
 // one — without this every case arrives with nothing explaining why. Shown in
 // Checkstep's UI, not ours, so deliberately untranslated.
 const DEFAULT_REPORT_REASON = 'Reported from the app.';
+
+// Surfaced on the incident so the queue can be filtered by how the case was
+// raised (ours, vs. one the classifiers opened themselves).
+const INQUIRY_ORIGIN = 'user-report';
 
 const contentBody = (
   contentId: string,
@@ -384,10 +409,12 @@ export const createCheckstepProvider = ({
       return reference;
     },
 
-    // Raises the human-review case. `POST /content` only feeds the classifiers,
-    // so without this a report on content they read as clean reaches no
-    // moderator. Same ref + complex type as the submission is what associates
-    // the two; an unrecognised id still creates a case, just an isolated one.
+    // Files the community signal. This does NOT open a moderation case on its
+    // own — Checkstep describes community reports as input the classifiers
+    // weigh (and a volume alarm), not an incident; `openInquiry` below is what
+    // raises the case. Kept because the signal is genuinely useful: it carries
+    // the human context the models miss. Same ref + complex type as the
+    // submission is what associates the two.
     reportForReview: async ({
       itemType,
       itemId,
@@ -407,6 +434,45 @@ export const createCheckstepProvider = ({
           type: COMPLEX_TYPE,
           reporter: reporterId ?? ANONYMOUS_REPORTER,
           tags: [USER_REPORT_TAG],
+          reason: reason?.trim() || DEFAULT_REPORT_REASON,
+        },
+        { retries: 0 },
+      );
+    },
+
+    // What actually puts the item in front of a moderator. `POST /content`
+    // only feeds the classifiers and `/content/report` only files a community
+    // signal — neither opens a case when the classifiers read the content as
+    // clean, which is the whole point of a user flag. Checkstep's own framing:
+    // an inquiry lets "your moderators review some content which was not
+    // identified as potentially violating by automation".
+    //
+    // Same ref + complex type as the submission, which is what attaches the
+    // incident to the content we ingested rather than creating an isolated one.
+    //
+    // `violations` is deliberately omitted: the Report dialog collects no
+    // category, so any policy code we sent would be invented. The docs show the
+    // field in their example but don't mark it required — if Checkstep rejects
+    // the call, the response body now rides along in the thrown error, which is
+    // what the preview test is for. `reason` is safe to default by contrast:
+    // it's free text, so a fallback states how the case was raised rather than
+    // asserting a policy nobody chose.
+    openInquiry: async ({
+      itemType,
+      itemId,
+      roundId,
+      reason,
+    }: ModerationInquiry): Promise<void> => {
+      // No retries, for the same reasons as `reportForReview`: not idempotent
+      // on the id (a 5xx after Checkstep accepted would open a duplicate case)
+      // and it runs inside a synchronous user mutation.
+      await post(
+        `${apiUrl}/review/cases/inquiries`,
+        apiKey,
+        {
+          id: encodeContentRef(itemType, itemId, roundId),
+          type: COMPLEX_TYPE,
+          origin: INQUIRY_ORIGIN,
           reason: reason?.trim() || DEFAULT_REPORT_REASON,
         },
         { retries: 0 },

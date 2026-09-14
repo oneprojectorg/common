@@ -38,8 +38,8 @@ export interface SubmitUserFlagInput {
  * User-initiated report. Verifies the reporter can read the item (flagging
  * ships its content to the external provider), records a `pending` flag and,
  * when a provider + webhook secret are configured, submits the item (text +
- * media) for an async verdict and files the report that puts it in the
- * provider's human-review queue. Idempotent on an item's open flag.
+ * media) for an async verdict, files the community report, and opens the
+ * inquiry that puts it in the provider's human-review queue. Idempotent on an item's open flag.
  */
 export const submitUserFlag = async (
   input: SubmitUserFlagInput,
@@ -78,6 +78,7 @@ export const submitUserFlag = async (
       ? {
           submitForReview: provider.submitForReview,
           reportForReview: provider.reportForReview,
+          openInquiry: provider.openInquiry,
         }
       : undefined;
   // Fresh round per report: encoded into the provider refs, so only this
@@ -104,6 +105,7 @@ export const submitUserFlag = async (
       createPendingFlag,
       submitForReview: asyncReview?.submitForReview,
       reportForReview: asyncReview?.reportForReview,
+      openInquiry: asyncReview?.openInquiry,
       planRefs: provider?.planReviewRefs,
       recordRound: (itemType, itemId, round, refs) =>
         recordSubmissionRound(
