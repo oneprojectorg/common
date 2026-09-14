@@ -136,6 +136,9 @@ test.describe('Review — shared revision request view', () => {
       timeout: 10_000,
     });
 
+    // The toast can beat the modal's unmount, and the navbar button only
+    // settles once the request has invalidated the review query.
+    await expect(requestModal).toHaveCount(0);
     await expect(requestButtonA).toBeDisabled();
 
     await paneA.getByRole('button', { name: 'View request' }).click();

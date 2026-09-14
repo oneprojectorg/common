@@ -76,4 +76,28 @@ describe.concurrent('account.getMyAccount: resolution by tier', () => {
     expect(account).not.toBeNull();
     expect(account?.authUserId).toBeDefined();
   });
+
+  it('reports no network membership for a phone-only account', async ({
+    onTestFinished,
+  }) => {
+    // Membership reads an email against the network domains and the allow
+    // list, and this account holds no email for either to read.
+    const callers = createGatingCallers(onTestFinished);
+    const caller = await callers.phoneJwt();
+
+    const account = await caller.account.getMyAccount();
+    expect(account?.isNetworkMember).toBe(false);
+  });
+
+  it('reports network membership for a network email', async ({
+    onTestFinished,
+  }) => {
+    // Without this the case above would also pass if the field were always
+    // false.
+    const callers = createGatingCallers(onTestFinished);
+    const caller = await callers.networkJwt();
+
+    const account = await caller.account.getMyAccount();
+    expect(account?.isNetworkMember).toBe(true);
+  });
 });

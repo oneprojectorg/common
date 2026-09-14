@@ -52,3 +52,16 @@ export function getDecisionCommonProperties({
 
   return baseProps;
 }
+
+/**
+ * Whether this build serves every feature flag as on.
+ *
+ * Development and end-to-end runs answer `true`, so a contributor and CI meet
+ * a new feature without a PostHog project behind them.
+ *
+ * `useFeatureFlag` in the browser is the only reader. Nothing on the server
+ * gates on a flag today.
+ */
+export const areFeatureFlagsForcedOn = (): boolean =>
+  process.env.NODE_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_E2E === 'true';
