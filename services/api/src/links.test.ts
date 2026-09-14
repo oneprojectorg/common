@@ -1,7 +1,10 @@
 import { queryChannelRegistry } from '@op/common/realtime';
 import { QueryClient, type QueryKey } from '@tanstack/react-query';
+import { createTRPCClient, httpLink } from '@trpc/client';
 import { createTRPCReact, getQueryKey } from '@trpc/react-query';
 import { observable } from '@trpc/server/observable';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import superjson from 'superjson';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { wrapResponseWithChannels } from './channelTransformer';
@@ -328,4 +331,98 @@ describe('createChannelRegistrationLink — infinite query invalidation', () => 
 
     expect(client.getQueryState(key)?.isInvalidated).toBe(false);
   });
+});
+
+/**
+ * The migration from `@trpc/react-query` to `@trpc/tanstack-react-query` runs
+ * both clients against one `QueryClient`. That is only safe while they cache
+ * under identical keys, and while `buildChannelQueryKey` — which the
+ * channel-registration link builds by hand from `op.path`/`op.input` — still
+ * partial-matches those keys.
+ *
+ * `getQueryKeyInternal` in `@trpc/tanstack-react-query` ends with
+ * `if (opts.prefix) key.unshift([opts.prefix])`. A configured `keyPrefix`
+ * therefore prepends a third element that the link cannot know about, and
+ * realtime invalidation stops matching with no error anywhere. These tests are
+ * the only thing that would catch it.
+ */
+describe('query keys — classic and tanstack clients must agree (no keyPrefix)', () => {
+  // Never invoked: the options proxy derives keys without touching the client.
+  const optionsProxy = createTRPCOptionsProxy<AppRouter>({
+    client: createTRPCClient<AppRouter>({
+      links: [
+        httpLink({ url: 'http://localhost/trpc', transformer: superjson }),
+      ],
+    }),
+    queryClient: new QueryClient(),
+  });
+
+  const input = {
+    processInstanceId: 'inst-key-parity',
+    dir: 'desc',
+    limit: 51,
+  } as const;
+
+  it('produces the same plain-query key as the classic client', () => {
+    expect(optionsProxy.decision.listProposals.queryKey(input)).toEqual(
+      getQueryKey(trpcForKeys.decision.listProposals, input, 'query'),
+    );
+  });
+
+  it('produces the same infinite-query key as the classic client', () => {
+    expect(optionsProxy.decision.listProposals.infiniteQueryKey(input)).toEqual(
+      getQueryKey(trpcForKeys.decision.listProposals, input, 'infinite'),
+    );
+  });
+
+  // The prefix lands at index 0, so a key whose first element is the split
+  // path is proof that no prefix is configured.
+  it.each(['queryKey', 'infiniteQueryKey'] as const)(
+    'leaves the split path at index 0 — no prefix element (%s)',
+    (method) => {
+      const key: QueryKey = optionsProxy.decision.listProposals[method](input);
+
+      expect(key[0]).toEqual(['decision', 'listProposals']);
+      expect(key).toHaveLength(2);
+    },
+  );
+
+  /**
+   * End-to-end proof, not a shape comparison: drive a real operation through
+   * the link, then invalidate with the keys the registry hands back and assert
+   * the entry the new client would have cached is the one that goes stale.
+   */
+  it.each([
+    ['plain query', 'queryKey'],
+    ['infinite query', 'infiniteQueryKey'],
+  ] as const)(
+    "the link-registered key invalidates the new client's %s entry",
+    async (_label, method) => {
+      const channel = `decisionProposals:${input.processInstanceId}` as const;
+
+      runLink({
+        isServer: false,
+        op: {
+          type: 'query',
+          path: 'decision.listProposals',
+          // Wire input carries the pagination keys tRPC strips from the key.
+          input: { ...input, cursor: 'page-2', direction: 'forward' },
+        },
+        emitted: wrapResponseWithChannels({ items: [] }, [channel]),
+      });
+
+      const client = new QueryClient();
+      // Widened: only the key's shape matters here, not the payload's type.
+      const key: QueryKey = optionsProxy.decision.listProposals[method](input);
+      client.setQueryData(key, { items: [] });
+      expect(client.getQueryState(key)?.isInvalidated).toBe(false);
+
+      const keys = queryChannelRegistry.getQueryKeysForChannels([channel]);
+      await Promise.all(
+        keys.map((queryKey) => client.invalidateQueries({ queryKey })),
+      );
+
+      expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    },
+  );
 });
