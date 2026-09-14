@@ -1,10 +1,18 @@
 import { queryChannelRegistry } from '@op/common/realtime';
 import { QueryClient, type QueryKey } from '@tanstack/react-query';
+import { createTRPCReact, getQueryKey } from '@trpc/react-query';
 import { observable } from '@trpc/server/observable';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { wrapResponseWithChannels } from './channelTransformer';
 import { createChannelRegistrationLink } from './links';
+import type { AppRouter } from './routers';
+
+// `buildChannelQueryKey` in `links.ts` hand-mirrors tRPC's internal key shape,
+// which drifts silently: nothing throws, queries simply stop being invalidated.
+// Deriving the fixtures below from tRPC's own `getQueryKey` turns that silent
+// drift into a failing test.
+const trpcForKeys = createTRPCReact<AppRouter>();
 
 /**
  * Drives a single operation through the channel-registration link and returns
@@ -183,15 +191,15 @@ describe('createChannelRegistrationLink', () => {
 // Uses a real `QueryClient` + the real registry so assertions run through React
 // Query's actual partial-match logic.
 describe('createChannelRegistrationLink — infinite query invalidation', () => {
-  // tRPC caches `useSuspenseInfiniteQuery` under `type: 'infinite'`.
+  // tRPC caches `useSuspenseInfiniteQuery` under `type: 'infinite'`. Ask the
+  // library for the key rather than writing it out, so a shape change in tRPC
+  // fails here instead of quietly breaking realtime invalidation.
   function infiniteQueryKey(processInstanceId: string): QueryKey {
-    return [
-      ['decision', 'listProposals'],
-      {
-        input: { processInstanceId, dir: 'desc', limit: 51 },
-        type: 'infinite',
-      },
-    ];
+    return getQueryKey(
+      trpcForKeys.decision.listProposals,
+      { processInstanceId, dir: 'desc', limit: 51 },
+      'infinite',
+    );
   }
 
   function seedInfiniteQuery(client: QueryClient, queryKey: QueryKey) {
@@ -222,6 +230,29 @@ describe('createChannelRegistrationLink — infinite query invalidation', () => 
       ]),
     });
   }
+
+  // `buildChannelQueryKey` drops `cursor`/`direction` because tRPC does. If
+  // tRPC stopped, the registered key would carry a cursor and match nothing.
+  it('tRPC still strips cursor and direction from an infinite query key', () => {
+    // The wire input carries the pagination keys tRPC's infinite link adds;
+    // they are not part of the procedure's declared input, so the object is
+    // built first rather than passed as a fresh literal.
+    const paginatedInput = {
+      processInstanceId: 'inst-key-shape',
+      dir: 'desc' as const,
+      limit: 51,
+      cursor: 'page-2-cursor',
+      direction: 'forward' as const,
+    };
+
+    const withPagination = getQueryKey(
+      trpcForKeys.decision.listProposals,
+      paginatedInput,
+      'infinite',
+    );
+
+    expect(withPagination).toEqual(infiniteQueryKey('inst-key-shape'));
+  });
 
   it('invalidates a live infinite query via the local mutation path', async () => {
     registerListProposals('inst-local');
