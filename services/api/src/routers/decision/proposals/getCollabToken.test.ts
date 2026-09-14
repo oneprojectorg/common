@@ -319,6 +319,44 @@ describe.concurrent('decision.getCollabToken', () => {
     }
   });
 
+  // Sanitization keeps a wildcard out of storage through the API, so this
+  // writes one directly to reach the minter's own refusal.
+  it('refuses a stored collaboration document name with a wildcard', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Test Proposal' },
+    });
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          ...(proposal.proposalData as Record<string, unknown>),
+          collaborationDocId: 'proposal-*',
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.getCollabToken({
+        proposalProfileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
   it('refuses a token once the instance reaches its final phase', async ({
     task,
     onTestFinished,
