@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath, normalizePhoneNumber } from '@op/common/client';
 import { SUPPORTED_LOCALES } from '@op/common/locales';
+import { logger } from '@op/logging/client';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useCallback } from 'react';
 
@@ -53,8 +54,9 @@ export function getClaimEmailErrorMessage(
       'An account with this email already exists. Try logging in instead.',
     );
   }
-  // The user sees localized generic copy; keep the raw cause findable.
-  console.error('claim: requestEmailCode failed', result);
+  // The user sees localized generic copy; keep the code findable without
+  // logging the raw Supabase message, which can echo the email back.
+  logger.error('claim: requestEmailCode failed', { code: result.code });
   return t("That didn't work");
 }
 
@@ -71,7 +73,9 @@ export function getClaimPhoneErrorMessage(
       'An account with this phone number already exists. Try logging in instead.',
     );
   }
-  console.error('claim: requestPhoneCode failed', result);
+  // Same reasoning as getClaimEmailErrorMessage — the raw message can echo
+  // the phone number back, so only the code is worth keeping.
+  logger.error('claim: requestPhoneCode failed', { code: result.code });
   return t("That didn't work");
 }
 
