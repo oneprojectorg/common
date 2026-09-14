@@ -296,9 +296,6 @@ async function assertProposalUpdateAccess({
     profileId: proposal.profileId,
   });
 
-  // Only standing on the proposal's own profile (author or invited
-  // collaborator) may edit its content. Test the READ bit, not `length`: the
-  // roles union in the public sentinel, which seeds with no permission rows.
   if (!checkPermission({ profile: permission.READ }, proposalRoles)) {
     throw new UnauthorizedError("You don't have access to do this");
   }
