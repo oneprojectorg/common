@@ -11,7 +11,7 @@ import { and, eq, gt, isNull, lte } from 'drizzle-orm';
 const { reviewPhaseEndingSoon } = Events;
 
 /** Days before a review phase's scheduled end that the reminder goes out. */
-const REMINDER_DAYS_BEFORE_END = 3;
+export const REMINDER_DAYS_BEFORE_END = 3;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -34,17 +34,16 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
     const endingTransitions = await step.run(
       'find-ending-review-phases',
       async () => {
-        // One-day-wide bucket (N-1, N] days out. With a daily cron each
-        // transition lands in the bucket exactly once, which is what enforces
-        // the single-reminder-per-transition guarantee — there is no
-        // "reminder sent" ledger, and Inngest idempotency keys only live for
-        // 24h so a wider window would re-send on subsequent days.
-        const now = Date.now();
+        // One-day-wide bucket (N-1, N] days out: with no reminder ledger,
+        // landing in it exactly once is the only thing stopping a re-send.
+        // Measured from UTC midnight so consecutive buckets tile exactly —
+        // run-clock edges leave gaps and overlaps of a few seconds.
+        const midnightUtc = new Date().setUTCHours(0, 0, 0, 0);
         const windowStart = new Date(
-          now + (REMINDER_DAYS_BEFORE_END - 1) * MS_PER_DAY,
+          midnightUtc + (REMINDER_DAYS_BEFORE_END - 1) * MS_PER_DAY,
         ).toISOString();
         const windowEnd = new Date(
-          now + REMINDER_DAYS_BEFORE_END * MS_PER_DAY,
+          midnightUtc + REMINDER_DAYS_BEFORE_END * MS_PER_DAY,
         ).toISOString();
 
         const rows = await db
@@ -52,7 +51,6 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
             id: decisionProcessTransitions.id,
             processInstanceId: decisionProcessTransitions.processInstanceId,
             fromStateId: decisionProcessTransitions.fromStateId,
-            currentStateId: processInstances.currentStateId,
             instanceData: processInstances.instanceData,
           })
           .from(decisionProcessTransitions)
@@ -69,13 +67,16 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
               gt(decisionProcessTransitions.scheduledDate, windowStart),
               lte(decisionProcessTransitions.scheduledDate, windowEnd),
               eq(processInstances.status, ProcessStatus.PUBLISHED),
+              // Only remind for the phase the instance is actually in.
+              eq(
+                decisionProcessTransitions.fromStateId,
+                processInstances.currentStateId,
+              ),
             ),
           );
 
-        // Only remind for the phase the instance is actually in, and only
-        // when that phase is a review phase.
         return rows.flatMap((row) => {
-          if (!row.fromStateId || row.fromStateId !== row.currentStateId) {
+          if (!row.fromStateId) {
             return [];
           }
 

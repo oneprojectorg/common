@@ -18,6 +18,8 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
+import { REMINDER_DAYS_BEFORE_END } from '../modules/decisions/sendReviewPhaseEndingReminders';
+
 const { reviewPhaseEndingSoon } = Events;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -25,21 +27,16 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 export const sendReviewPhaseEndingReminder = inngest.createFunction(
   {
     id: 'sendReviewPhaseEndingReminder',
-    // The cron's one-day scheduling window is what prevents cross-day
-    // repeats; these keys dedupe retries and double-fired events within a
-    // single sweep.
+    // Cross-day repeats are the cron's job; this only dedupes retries and
+    // double-fired events within one sweep.
     idempotency: 'event.data.transitionId',
-    debounce: {
-      key: 'event.data.transitionId',
-      period: '1m',
-      timeout: '3m',
-    },
   },
   { event: reviewPhaseEndingSoon.name },
   async ({ event, step, runId }) => {
     const { transitionId } = reviewPhaseEndingSoon.schema.parse(event.data);
 
     const transitionData = await step.run('get-transition-data', async () => {
+      // Explicit join: decisionProcessTransitions has no relations-v2 entry.
       const rows = await db
         .select({
           fromStateId: decisionProcessTransitions.fromStateId,
@@ -61,7 +58,15 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         .where(eq(decisionProcessTransitions.id, transitionId))
         .limit(1);
 
-      return rows[0];
+      const row = rows[0];
+
+      if (!row) {
+        return undefined;
+      }
+
+      // daysLeft derives from observedAt, not a live clock: a retry that
+      // re-rounded it would 409 the already-delivered chunk on its Resend key.
+      return { ...row, observedAt: new Date().toISOString() };
     });
 
     if (!transitionData) {
@@ -94,12 +99,21 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     }
 
     const msLeft =
-      new Date(transitionData.scheduledDate).getTime() - Date.now();
+      new Date(transitionData.scheduledDate).getTime() -
+      new Date(transitionData.observedAt).getTime();
     if (msLeft <= 0) {
       return {
         message: `Skipped: transition ${transitionId} is already due`,
       };
     }
+
+    // An admin can push the deadline out between the sweep and this run.
+    if (msLeft > REMINDER_DAYS_BEFORE_END * MS_PER_DAY) {
+      return {
+        message: `Skipped: transition ${transitionId} is no longer ending soon`,
+      };
+    }
+
     const daysLeft = Math.ceil(msLeft / MS_PER_DAY);
 
     if (!transitionData.profileSlug) {
@@ -121,7 +135,15 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         where: {
           processInstanceId: transitionData.processInstanceId,
           phaseId,
-          status: { ne: ProposalReviewAssignmentStatus.COMPLETED },
+          // Only what the reviewer can act on now: AWAITING_AUTHOR_REVISION
+          // is the author's turn.
+          status: {
+            in: [
+              ProposalReviewAssignmentStatus.PENDING,
+              ProposalReviewAssignmentStatus.IN_PROGRESS,
+              ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+            ],
+          },
         },
         columns: { reviewerProfileId: true },
         with: {
