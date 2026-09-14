@@ -1,7 +1,6 @@
 'use client';
-
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
-import { skipBatch, trpc } from '@op/api/client';
+import { skipBatch, useTRPC } from '@op/api/client';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,6 +12,7 @@ import {
 import { Header2 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -36,21 +36,27 @@ export const ProfileRelationshipsSuspense = ({
   slug: string;
   showBreadcrumb?: boolean;
 }) => {
+  const trpc = useTRPC();
   const [searchTerm] = useState('');
   const t = useTranslations();
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
-  });
+  const { data: organization } = useSuspenseQuery(
+    trpc.organization.getBySlug.queryOptions({
+      slug,
+    }),
+  );
 
-  const [{ organizations, count }] =
-    trpc.organization.listRelationships.useSuspenseQuery(
+  const {
+    data: { organizations, count },
+  } = useSuspenseQuery(
+    trpc.organization.listRelationships.queryOptions(
       {
         organizationId: organization.id,
       },
       {
         ...skipBatch,
       },
-    );
+    ),
+  );
 
   // Convert organization data to RelationshipListItem format
   const relationshipItems: RelationshipListItem[] = useMemo(

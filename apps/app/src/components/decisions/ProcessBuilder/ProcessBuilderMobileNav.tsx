@@ -1,8 +1,8 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { useSidebar } from '@op/sense/Sidebar';
+import { useQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -37,9 +37,12 @@ const MobileSidebarWithProfile = ({
   instanceId: string;
   slug?: string;
 }) => {
-  const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery(
-    { slug: slug! },
-    { enabled: !!slug },
+  const trpc = useTRPC();
+  const { data: decisionProfile } = useQuery(
+    trpc.decision.getDecisionBySlug.queryOptions(
+      { slug: slug! },
+      { enabled: !!slug },
+    ),
   );
   return (
     <MobileSidebar

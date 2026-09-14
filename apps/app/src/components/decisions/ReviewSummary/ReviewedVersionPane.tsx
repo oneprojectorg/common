@@ -1,9 +1,9 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -42,10 +42,13 @@ function ReviewedVersion({
   reviewerName,
   children,
 }: ReviewedVersionPaneProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [version] = trpc.decision.getReviewedVersion.useSuspenseQuery({
-    reviewId,
-  });
+  const { data: version } = useSuspenseQuery(
+    trpc.decision.getReviewedVersion.queryOptions({
+      reviewId,
+    }),
+  );
 
   if (version.isCurrent) {
     return children;

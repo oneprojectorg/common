@@ -1,9 +1,10 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Accordion } from '@op/sense/Accordion';
 import { Button } from '@op/sense/Button';
 import { Skeleton } from '@op/sense/Skeleton';
+import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
@@ -26,13 +27,16 @@ export const ResourcesTabContent = ({
   canManage: boolean;
   canRead: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [adding, setAdding] = useState(false);
   // Shares the cache with ResourcesFeed's suspense query — used only to hide
   // the footer when the list is empty (the empty state has its own CTA).
-  const { data } = trpc.resources.collections.list.useQuery(
-    { profileId },
-    { enabled: canRead, staleTime: 30 * 1000 },
+  const { data } = useQuery(
+    trpc.resources.collections.list.queryOptions(
+      { profileId },
+      { enabled: canRead, staleTime: 30 * 1000 },
+    ),
   );
   const collections = data?.items;
   const isEmpty = collections !== undefined && collections.length === 0;
@@ -97,11 +101,15 @@ const ResourcesFeed = ({
   canManage: boolean;
   onAddResource: () => void;
 }) => {
-  const [{ items: collections }] =
-    trpc.resources.collections.list.useSuspenseQuery(
+  const trpc = useTRPC();
+  const {
+    data: { items: collections },
+  } = useSuspenseQuery(
+    trpc.resources.collections.list.queryOptions(
       { profileId },
       { staleTime: 30 * 1000 },
-    );
+    ),
+  );
 
   if (collections.length === 0) {
     // Managers can drop a file/link straight onto the empty state — the drop

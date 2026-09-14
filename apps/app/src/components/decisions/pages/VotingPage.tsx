@@ -1,7 +1,8 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { Suspense } from 'react';
 
@@ -28,16 +29,28 @@ export function VotingPage({
   /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
   pinOffset?: number;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const [[instance, voteStatus, { items: submitters, total }]] =
-    trpc.useSuspenseQueries((t) => [
-      t.decision.getInstance({ instanceId }),
-      t.decision.getVotingStatus({ processInstanceId: instanceId }),
-      t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
-    ]);
+  const [
+    { data: instance },
+    { data: voteStatus },
+    {
+      data: { items: submitters, total },
+    },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+      trpc.decision.getVotingStatus.queryOptions({
+        processInstanceId: instanceId,
+      }),
+      trpc.decision.listProposalSubmitters.queryOptions({
+        processInstanceId: instanceId,
+      }),
+    ],
+  });
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;

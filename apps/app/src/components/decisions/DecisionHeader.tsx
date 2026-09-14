@@ -1,13 +1,13 @@
 'use client';
-
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   type InstanceData,
   type ProcessInstance,
   type ProcessPhase,
 } from '@op/api/encoders';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -170,10 +170,13 @@ function DecisionHeaderView({
 
 /** Query variant: canonical /decisions/[slug] page (no instance passed in). */
 function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: props.instanceId,
-  });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({
+      instanceId: props.instanceId,
+    }),
+  );
 
   return (
     <DecisionHeaderView
@@ -225,9 +228,12 @@ function LegacyDecisionHeaderContent({
   slug,
   profileName,
 }: LegacyDecisionHeaderProps) {
-  const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
-    instanceId,
-  });
+  const trpc = useTRPC();
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getLegacyInstance.queryOptions({
+      instanceId,
+    }),
+  );
 
   const instancePhases = instance.instanceData?.phases ?? [];
   const processSchema = instance.process?.processSchema;

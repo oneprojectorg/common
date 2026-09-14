@@ -1,7 +1,6 @@
 'use client';
-
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { InstancePhaseData } from '@op/api/encoders';
 import type { ReviewsScope } from '@op/common';
 import { isReviewPhase } from '@op/common/client';
@@ -16,6 +15,7 @@ import {
 import { Header1, Header3 } from '@op/sense/Header';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Switch } from '@op/sense/Switch';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { usePostHog } from 'posthog-js/react';
 import { useState } from 'react';
 
@@ -38,10 +38,13 @@ export function ReviewSettingsContent({
   instanceId,
   decisionProfileId,
 }: SectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const posthog = usePostHog();
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   const config = instance.instanceData?.config;
   const instancePhases = instance.instanceData?.phases;
 

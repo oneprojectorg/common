@@ -1,9 +1,9 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Card } from '@op/sense/Card';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { Link, usePathname, useTranslations } from '@/lib/i18n';
@@ -19,8 +19,11 @@ export const PlatformStats = () => {
 
 /** Renders platform statistics grid with live data */
 const PlatformStatsWithData = () => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [stats] = trpc.platform.admin.getStats.useSuspenseQuery();
+  const { data: stats } = useSuspenseQuery(
+    trpc.platform.admin.getStats.queryOptions(),
+  );
 
   const statItems: Array<{
     label: string;

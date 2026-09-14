@@ -1,7 +1,8 @@
 'use client';
 
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -18,11 +19,14 @@ function ProposalEditPageContent({
   instanceId: string;
   decisionSlug: string;
 }) {
+  const trpc = useTRPC();
   // Get both the proposal and the instance in parallel
-  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const [{ data: proposal }, { data: instance }] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getProposal.queryOptions({ profileId }),
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+    ],
+  });
 
   if (!proposal || !instance) {
     notFound();

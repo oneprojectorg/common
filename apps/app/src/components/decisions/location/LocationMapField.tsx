@@ -1,9 +1,9 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { LocationData, MapDefaultView } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import type { LngLat } from '@op/sense/Map';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { LuLocate } from 'react-icons/lu';
 
@@ -46,6 +46,7 @@ export function LocationMapField({
   defaultMapView,
   onChange,
 }: LocationMapFieldProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const styleUrl = useMapStyleUrl();
   const [center, setCenter] = useState<LngLat>(
@@ -69,17 +70,21 @@ export function LocationMapField({
   // the payload around across navigations between proposals. Skipped entirely
   // when no decision profile is available (legacy instances) — the picker then
   // renders without the overlay, matching the out-of-area check's behavior.
-  const boundaryShapesQuery = trpc.decision.listBoundaryShapes.useQuery(
-    { profileId: profileId ?? '' },
-    { enabled: profileId != null, staleTime: Infinity, gcTime: Infinity },
+  const boundaryShapesQuery = useQuery(
+    trpc.decision.listBoundaryShapes.queryOptions(
+      { profileId: profileId ?? '' },
+      { enabled: profileId != null, staleTime: Infinity, gcTime: Infinity },
+    ),
   );
   const boundaries = boundaryShapesQuery.data?.items;
 
   // Reverse-geocode a freshly-placed pin through react-query, which caches by
   // coordinate and surfaces failures as query state (so no try/catch is needed).
-  const reverseGeocodeQuery = trpc.taxonomy.reverseGeocode.useQuery(
-    { lat: pendingGeocode?.lat ?? 0, lng: pendingGeocode?.lng ?? 0 },
-    { enabled: pendingGeocode != null, staleTime: 60_000 },
+  const reverseGeocodeQuery = useQuery(
+    trpc.taxonomy.reverseGeocode.queryOptions(
+      { lat: pendingGeocode?.lat ?? 0, lng: pendingGeocode?.lng ?? 0 },
+      { enabled: pendingGeocode != null, staleTime: 60_000 },
+    ),
   );
 
   const placeFromCoordinates = useCallback(

@@ -1,7 +1,6 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { PAGE_LIMIT } from '@op/common/client';
 import {
@@ -17,6 +16,7 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from '@op/sense/Empty';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 import React from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -38,6 +38,7 @@ export function DiscussionModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const trpc = useTRPC();
   const { user } = useUser();
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
@@ -45,14 +46,16 @@ export function DiscussionModal({
   const { handleLikeClick, handleCommentClick } = usePostFeedActions();
 
   // Get comments for the post using getPosts without profileId (works for all post types)
-  const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
-    {
-      parentPostId: post.id,
-      limit: PAGE_LIMIT.lg,
-      offset: 0,
-      includeChildren: false,
-    },
-    { enabled: isOpen },
+  const { data: commentsData, isLoading } = useQuery(
+    trpc.posts.getPosts.queryOptions(
+      {
+        parentPostId: post.id,
+        limit: PAGE_LIMIT.lg,
+        offset: 0,
+        includeChildren: false,
+      },
+      { enabled: isOpen },
+    ),
   );
 
   const comments = commentsData?.items ?? [];

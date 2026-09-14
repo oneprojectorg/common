@@ -1,9 +1,9 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { sanitizeTiptapDoc } from '@op/common/client';
 import { RichTextEditor } from '@op/sense/RichTextEditor';
 import { Skeleton } from '@op/sense/Skeleton';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
 import { Suspense, useMemo, useRef, useState } from 'react';
@@ -41,9 +41,12 @@ function OverviewSectionContent({
   decisionProfileId,
   instanceId,
 }: SectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
 
   const storeOverview = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.overview,

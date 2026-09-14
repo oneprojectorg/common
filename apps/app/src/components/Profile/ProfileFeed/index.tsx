@@ -1,7 +1,6 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   CommonUser,
   Organization,
@@ -13,6 +12,7 @@ import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
 import { SkeletonText } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Fragment, type RefCallback, useCallback } from 'react';
 
 import {
@@ -51,24 +51,27 @@ export const ProfileFeedProvider = ({
   limit?: number;
   children: (props: ProfileFeedRenderProps) => React.ReactNode;
 }) => {
+  const trpc = useTRPC();
   const { user } = useRequiredUser();
   const {
     data: paginatedData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.organization.listPosts.useInfiniteQuery(
-    {
-      slug: profile.profile.slug,
-      limit,
-    },
-    {
-      getNextPageParam: nextCursor,
-      staleTime: 30 * 1000,
-      refetchOnMount: true,
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-    },
+  } = useInfiniteQuery(
+    trpc.organization.listPosts.infiniteQueryOptions(
+      {
+        slug: profile.profile.slug,
+        limit,
+      },
+      {
+        getNextPageParam: nextCursor,
+        staleTime: 30 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+      },
+    ),
   );
 
   const allPosts = paginatedData?.pages.flatMap((page) => page.items) || [];

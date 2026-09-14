@@ -1,9 +1,8 @@
 'use client';
-
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { type DecisionAccess } from '@op/api/encoders';
 import {
   type Proposal,
@@ -23,6 +22,9 @@ import {
 } from '@op/sense/Empty';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useCallback, useMemo } from 'react';
 import {
@@ -77,6 +79,7 @@ export function ReviewAssignmentsList({
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
 }) {
+  const trpc = useTRPC();
   const canViewReviewers = Boolean(access?.admin);
   const t = useTranslations();
 
@@ -90,9 +93,11 @@ export function ReviewAssignmentsList({
   );
 
   // cached from the page-level suspense query — no extra request
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: processInstanceId,
-  });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({
+      instanceId: processInstanceId,
+    }),
+  );
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find(
     (phase) => phase.phaseId === instance.currentStateId,
@@ -115,9 +120,11 @@ export function ReviewAssignmentsList({
   };
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    trpc.decision.listReviewAssignments.useInfiniteQuery(queueInput, {
-      getNextPageParam: nextCursor,
-    });
+    useInfiniteQuery(
+      trpc.decision.listReviewAssignments.infiniteQueryOptions(queueInput, {
+        getNextPageParam: nextCursor,
+      }),
+    );
 
   const assignments = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
@@ -187,11 +194,12 @@ export function ReviewAssignmentsList({
   // than one category (a single-category queue doesn't need the redundant tag).
   // Default to hiding while the count loads — the conservative choice for the
   // common single-category case avoids a show→hide flicker.
-  const { data: reviewerCategories } =
-    trpc.decision.listReviewerCategories.useQuery(
+  const { data: reviewerCategories } = useQuery(
+    trpc.decision.listReviewerCategories.queryOptions(
       { processInstanceId, phaseId: currentPhase?.phaseId ?? '' },
       { enabled: isByCategory },
-    );
+    ),
+  );
   const showCategory = isByCategory
     ? (reviewerCategories?.items.length ?? 0) > 1
     : true;
@@ -493,10 +501,13 @@ const AssignedCategoriesSuffix = ({
 }: {
   processInstanceId: string;
 }) => {
+  const trpc = useTRPC();
   // cached from the page-level suspense query — no extra request
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: processInstanceId,
-  });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({
+      instanceId: processInstanceId,
+    }),
+  );
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find(
@@ -526,13 +537,17 @@ const AssignedCategoriesLabel = ({
   processInstanceId: string;
   phaseId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [{ items: categories }] =
-    trpc.decision.listReviewerCategories.useSuspenseQuery({
+  const {
+    data: { items: categories },
+  } = useSuspenseQuery(
+    trpc.decision.listReviewerCategories.queryOptions({
       processInstanceId,
       phaseId,
-    });
+    }),
+  );
 
   if (categories.length === 0) {
     return null;

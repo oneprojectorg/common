@@ -1,12 +1,12 @@
 'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { PAGE_LIMIT } from '@op/common/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Card } from '@op/sense/Card';
 import { GrowingFacePile } from '@op/sense/FacePile';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { ReactNode, Suspense } from 'react';
 
@@ -19,7 +19,10 @@ import {
 } from '../ProfileAvatarLink';
 
 export const PlatformHighlights = () => {
-  const [stats] = trpc.platform.getStats.useSuspenseQuery();
+  const trpc = useTRPC();
+  const { data: stats } = useSuspenseQuery(
+    trpc.platform.getStats.queryOptions(),
+  );
   const t = useTranslations();
 
   return (
@@ -117,10 +120,18 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
 };
 
 const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
-  const [[{ items: organizations }, stats]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({ limit: PAGE_LIMIT.max }),
-    t.platform.getStats(),
-  ]);
+  const trpc = useTRPC();
+  const [
+    {
+      data: { items: organizations },
+    },
+    { data: stats },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.organization.list.queryOptions({ limit: PAGE_LIMIT.max }),
+      trpc.platform.getStats.queryOptions(),
+    ],
+  });
 
   const items = organizations.map((org) => (
     <ProfileAvatarLink

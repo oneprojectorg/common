@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Alert, AlertTitle } from '@op/sense/Alert';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
@@ -37,17 +37,24 @@ export function CategoryReviewerCards({
 function CategoryReviewerCardsContent({
   instanceId,
 }: CategoryReviewerCardsProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [, setSection] = useQueryState('section', { history: 'push' });
 
-  const [{ items: categories }] =
-    trpc.decision.listCategoryReviewers.useSuspenseQuery({
+  const {
+    data: { items: categories },
+  } = useSuspenseQuery(
+    trpc.decision.listCategoryReviewers.queryOptions({
       processInstanceId: instanceId,
-    });
-  const [{ items: eligibleReviewers }] =
-    trpc.decision.listEligibleReviewers.useSuspenseQuery({
+    }),
+  );
+  const {
+    data: { items: eligibleReviewers },
+  } = useSuspenseQuery(
+    trpc.decision.listEligibleReviewers.queryOptions({
       processInstanceId: instanceId,
-    });
+    }),
+  );
 
   // No categories to scope reviewers to yet — point the admin at the
   // Proposal Categories section to define them first.

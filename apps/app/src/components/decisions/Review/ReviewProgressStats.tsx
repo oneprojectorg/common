@@ -1,9 +1,9 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,12 +40,15 @@ function ReviewProgressStatsContent({
   phaseId: string;
   hasImage?: boolean;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [progress] = trpc.decision.getPhaseReviewProgress.useSuspenseQuery({
-    processInstanceId,
-    phaseId,
-  });
+  const { data: progress } = useSuspenseQuery(
+    trpc.decision.getPhaseReviewProgress.queryOptions({
+      processInstanceId,
+      phaseId,
+    }),
+  );
 
   return (
     <StatsRow>

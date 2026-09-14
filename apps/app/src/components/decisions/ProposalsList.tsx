@@ -1,9 +1,8 @@
 'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   type DecisionAccess,
   type InstancePhaseData,
@@ -21,6 +20,10 @@ import {
 } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import {
   type ReactNode,
@@ -178,27 +181,33 @@ const CurrentPhaseProposalsLoader = ({
   queryParams: ProposalQueryParams;
   children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
 }) => {
-  const [paginatedData, query] =
-    trpc.decision.listProposals.useSuspenseInfiniteQuery(queryParams, {
+  const trpc = useTRPC();
+  const query = useSuspenseInfiniteQuery(
+    trpc.decision.listProposals.infiniteQueryOptions(queryParams, {
       getNextPageParam: nextCursor,
       staleTime: 30 * 1000,
       // Force a client-side fetch so the query registers its invalidation
       // channel via the client link. TODO: find a cleaner way to register.
       refetchOnMount: 'always',
-    });
+    }),
+  );
+
+  const paginatedData = query.data;
 
   // Unfiltered count for the "of N" denominator — same endpoint/visibility as
   // the list, so it matches `total` when no filter is active. Only `.total` is
   // used, so a single row is fetched.
-  const [unfilteredData] = trpc.decision.listProposals.useSuspenseQuery(
-    {
-      processInstanceId: queryParams.processInstanceId,
-      dir: queryParams.dir,
-      limit: 1,
-      phase: queryParams.phase,
-      excludeAssignedForReview: queryParams.excludeAssignedForReview,
-    },
-    { staleTime: 30 * 1000 },
+  const { data: unfilteredData } = useSuspenseQuery(
+    trpc.decision.listProposals.queryOptions(
+      {
+        processInstanceId: queryParams.processInstanceId,
+        dir: queryParams.dir,
+        limit: 1,
+        phase: queryParams.phase,
+        excludeAssignedForReview: queryParams.excludeAssignedForReview,
+      },
+      { staleTime: 30 * 1000 },
+    ),
   );
 
   const allProposals = useMemo(
@@ -224,8 +233,9 @@ const ResultsPhaseProposalsLoader = ({
   queryParams: ProposalQueryParams;
   children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
 }) => {
-  const [paginatedData, query] =
-    trpc.decision.listAllProposals.useSuspenseInfiniteQuery(
+  const trpc = useTRPC();
+  const query = useSuspenseInfiniteQuery(
+    trpc.decision.listAllProposals.infiniteQueryOptions(
       {
         processInstanceId: queryParams.processInstanceId,
         dir: queryParams.dir,
@@ -241,15 +251,20 @@ const ResultsPhaseProposalsLoader = ({
         staleTime: 30 * 1000,
         refetchOnMount: 'always',
       },
-    );
+    ),
+  );
+
+  const paginatedData = query.data;
 
   // Unfiltered count for the "of N" denominator — same endpoint as the list so
   // it matches `total` when no filter is active. Only `.total` is used.
-  const [unfilteredData] = trpc.decision.listAllProposals.useSuspenseQuery({
-    processInstanceId: queryParams.processInstanceId,
-    dir: queryParams.dir,
-    limit: 1,
-  });
+  const { data: unfilteredData } = useSuspenseQuery(
+    trpc.decision.listAllProposals.queryOptions({
+      processInstanceId: queryParams.processInstanceId,
+      dir: queryParams.dir,
+      limit: 1,
+    }),
+  );
 
   const allProposals = useMemo(
     () => paginatedData.pages.flatMap((page) => page.items),
@@ -269,14 +284,17 @@ const ResultsPhaseProposalsLoader = ({
 
 // fallow-ignore-next-line complexity
 export const ProposalsList = (props: ProposalsListProps) => {
+  const trpc = useTRPC();
   const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
 
-  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
-    processInstanceId: instanceId,
-  });
+  const { data: voteStatus } = useSuspenseQuery(
+    trpc.decision.getVotingStatus.queryOptions({
+      processInstanceId: instanceId,
+    }),
+  );
   const hasVoted = voteStatus?.hasVoted || false;
 
   // nuqs holds the filters in the URL. `filter` has no default so an absent
@@ -466,6 +484,7 @@ const ProposalsListContent = ({
   isFilterFetching,
   hasActiveFilter,
 }: ProposalsListContentProps) => {
+  const trpc = useTRPC();
   const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
   const isInVotingPhase = !!currentPhase && isVotingPhase(currentPhase);
   const t = useTranslations();
@@ -499,16 +518,23 @@ const ProposalsListContent = ({
   }, [queryParams, pinOffset]);
 
   const currentProfileId = user?.currentProfile?.id;
-  const [[{ items: categories }, voteStatus, instance]] =
-    trpc.useSuspenseQueries((t) => [
-      t.decision.getCategories({
+  const [
+    {
+      data: { items: categories },
+    },
+    { data: voteStatus },
+    { data: instance },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getCategories.queryOptions({
         processInstanceId: instanceId,
       }),
-      t.decision.getVotingStatus({
+      trpc.decision.getVotingStatus.queryOptions({
         processInstanceId: instanceId,
       }),
-      t.decision.getInstance({ instanceId }),
-    ]);
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+    ],
+  });
 
   // Map browse mode is offered only when the process collects a location and
   // the GIS flag is on. Browse leads with the map when the process has one —
@@ -535,11 +561,12 @@ const ProposalsListContent = ({
   const exportEnabled = useFeatureFlag('export-feature') ?? false;
   const canExportProposals = canManageProposals && exportEnabled;
 
-  const { data: revisionRequestsData } =
-    trpc.decision.listProposalsRevisionRequests.useQuery(
+  const { data: revisionRequestsData } = useQuery(
+    trpc.decision.listProposalsRevisionRequests.queryOptions(
       { states: [ProposalReviewRequestState.REQUESTED] },
       { enabled: isInReviewPhase },
-    );
+    ),
+  );
   const revisionRequests = revisionRequestsData?.items;
 
   const proposalIdsWithRevisionRequest = useMemo(

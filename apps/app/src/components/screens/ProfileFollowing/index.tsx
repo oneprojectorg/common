@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType, ProfileRelationshipType } from '@op/api/encoders';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import React, { Suspense, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -19,13 +19,16 @@ export const ProfileFollowingSuspense = ({
 }: {
   profileId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
-    sourceProfileId: profileId,
-    types: [ProfileRelationshipType.FOLLOWING],
-    profileType: EntityType.ORG,
-  });
+  const { data: relationships } = useSuspenseQuery(
+    trpc.profile.getRelationships.queryOptions({
+      sourceProfileId: profileId,
+      types: [ProfileRelationshipType.FOLLOWING],
+      profileType: EntityType.ORG,
+    }),
+  );
 
   // Extract target profiles
   const following: RelationshipListItem[] = useMemo(() => {

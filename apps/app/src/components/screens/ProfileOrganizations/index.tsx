@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,6 +9,7 @@ import {
   BreadcrumbSeparator,
 } from '@op/sense/Breadcrumb';
 import { Header2 } from '@op/sense/Header';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -28,15 +28,21 @@ export const ProfileOrganizationsSuspense = ({
   slug: string;
   showBreadcrumb?: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [profile] = trpc.profile.getBySlug.useSuspenseQuery({
-    slug,
-  });
+  const { data: profile } = useSuspenseQuery(
+    trpc.profile.getBySlug.queryOptions({
+      slug,
+    }),
+  );
 
-  const [{ items: organizations }] =
-    trpc.organization.getOrganizationsByProfile.useSuspenseQuery({
+  const {
+    data: { items: organizations },
+  } = useSuspenseQuery(
+    trpc.organization.getOrganizationsByProfile.queryOptions({
       profileId: profile.id,
-    });
+    }),
+  );
 
   return (
     <>
@@ -71,9 +77,12 @@ export const ProfileOrganizationsSuspense = ({
 };
 
 export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
-  });
+  const trpc = useTRPC();
+  const { data: organization } = useSuspenseQuery(
+    trpc.organization.getBySlug.queryOptions({
+      slug,
+    }),
+  );
 
   return (
     <Link

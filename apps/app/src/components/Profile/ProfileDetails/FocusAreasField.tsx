@@ -1,6 +1,6 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -15,12 +15,14 @@ interface FocusAreasFieldProps {
 }
 
 export const FocusAreasField = ({ profileId, field }: FocusAreasFieldProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [individualTermsData] =
-    trpc.individual.getTermsByProfile.useSuspenseQuery({
+  const { data: individualTermsData } = useSuspenseQuery(
+    trpc.individual.getTermsByProfile.queryOptions({
       profileId,
-    });
+    }),
+  );
 
   // Transform individual terms into Options for the form
   const currentFocusAreas = useMemo((): Option[] => {

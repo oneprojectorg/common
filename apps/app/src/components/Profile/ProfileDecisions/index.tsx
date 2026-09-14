@@ -1,9 +1,10 @@
 'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
 import { Header2 } from '@op/sense/Header';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -17,11 +18,15 @@ import {
 } from '@/components/decisions/DecisionListItem';
 
 const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
-  const [{ items: decisionProfiles }] =
-    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+  const trpc = useTRPC();
+  const {
+    data: { items: decisionProfiles },
+  } = useSuspenseQuery(
+    trpc.decision.listDecisionProfiles.queryOptions({
       stewardProfileId: profileId,
       status: VISIBLE_DECISION_STATUSES,
-    });
+    }),
+  );
 
   if (!decisionProfiles.length) {
     return null;
@@ -37,11 +42,15 @@ const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
 };
 
 const LegacyDecisionProcessList = ({ profileId }: { profileId: string }) => {
+  const trpc = useTRPC();
   const { slug } = useParams();
-  const [{ items: instances }] =
-    trpc.decision.listLegacyInstances.useSuspenseQuery({
+  const {
+    data: { items: instances },
+  } = useSuspenseQuery(
+    trpc.decision.listLegacyInstances.queryOptions({
       ownerProfileId: profileId,
-    });
+    }),
+  );
 
   if (instances.length === 0) {
     return null;
@@ -107,19 +116,25 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
 };
 
 const DecisionProcessList = ({ profileId }: { profileId: string }) => {
+  const trpc = useTRPC();
   const access = useUser();
   const canReadDecisions =
     access.getPermissionsForProfile(profileId).decisions.read;
 
-  const [{ items: decisionProfiles }] =
-    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+  const {
+    data: { items: decisionProfiles },
+  } = useSuspenseQuery(
+    trpc.decision.listDecisionProfiles.queryOptions({
       stewardProfileId: profileId,
       status: VISIBLE_DECISION_STATUSES,
-    });
+    }),
+  );
 
-  const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
-    { ownerProfileId: profileId },
-    { retry: false, enabled: canReadDecisions },
+  const legacyInstances = useQuery(
+    trpc.decision.listLegacyInstances.queryOptions(
+      { ownerProfileId: profileId },
+      { retry: false, enabled: canReadDecisions },
+    ),
   );
 
   const hasDecisionProfiles = decisionProfiles.length > 0;

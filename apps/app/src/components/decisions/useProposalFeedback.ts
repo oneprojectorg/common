@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProposalFeedbackItem } from '@op/common/client';
+import { useQuery } from '@tanstack/react-query';
 
 export interface ProposalFeedback {
   /** Anonymized reviewer notes, released by the server once their phase ended. */
@@ -23,9 +23,12 @@ export function useProposalFeedback({
   proposalId: string;
   enabled: boolean;
 }): ProposalFeedback {
-  const feedbackQuery = trpc.decision.listProposalFeedback.useQuery(
-    { proposalId },
-    { enabled, throwOnError: false },
+  const trpc = useTRPC();
+  const feedbackQuery = useQuery(
+    trpc.decision.listProposalFeedback.queryOptions(
+      { proposalId },
+      { enabled, throwOnError: false },
+    ),
   );
 
   const notes = feedbackQuery.error ? [] : (feedbackQuery.data?.items ?? []);
