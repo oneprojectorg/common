@@ -16,6 +16,9 @@ jobs:
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
+      # Tiptap Pro registry authentication. pnpm >= 10.34.2 ignores ${...} in a
+      # repository's own .npmrc, so point userconfig at it to keep expansion.
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
 
     steps:
@@ -32,9 +35,6 @@ jobs:
 
       - name: Enable Corepack
         run: corepack enable
-
-      - name: Install pnpm
-        run: corepack prepare pnpm@latest --activate
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -68,6 +68,9 @@ jobs:
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
+      # Tiptap Pro registry authentication. pnpm >= 10.34.2 ignores ${...} in a
+      # repository's own .npmrc, so point userconfig at it to keep expansion.
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
 
     steps:
@@ -84,9 +87,6 @@ jobs:
 
       - name: Enable Corepack
         run: corepack enable
-
-      - name: Install pnpm
-        run: corepack prepare pnpm@latest --activate
 
       - name: Get pnpm store directory
         id: pnpm-cache

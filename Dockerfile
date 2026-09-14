@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Enable corepack and install the exact pnpm version used in the monorepo
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
 
 # Install Supabase CLI via the official binary (npm global install is not supported)
 # NOTE: The supabase service container requires Docker socket passthrough so
@@ -65,6 +65,11 @@ COPY services/translation/package.json ./services/translation/
 COPY services/workflows/package.json ./services/workflows/
 COPY tests/core/package.json ./tests/core/
 COPY tests/e2e/package.json ./tests/e2e/
+
+# Declares the repository's own .npmrc trusted, for this build layer and for the
+# runtime installs docker-compose runs: pnpm >= 10.34.2 ignores ${...} in a
+# repository .npmrc otherwise, and the Tiptap Pro token would never be read.
+ENV NPM_CONFIG_USERCONFIG=/app/.npmrc
 
 # Install all workspace dependencies using the frozen lockfile.
 # TIPTAP_PRO_TOKEN is passed as a build secret (mounted at /run/secrets/tiptap_token)
