@@ -22,6 +22,7 @@ import {
 import { assertUserByAuthId } from '../assert';
 import { getCurrentProposalHistoryIds } from './proposal/history';
 import { parseProposalData } from './proposalDataSchema';
+import { assertProposalAuthorWriteAccess } from './reviewHelpers';
 
 export interface SubmitProposalRevisionResult {
   items: Array<ProposalReviewRequest>;
@@ -65,11 +66,12 @@ export async function submitProposalRevision({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  if (proposal.submittedByProfileId !== dbUser.profileId) {
-    throw new UnauthorizedError(
-      "You don't have access to resubmit this proposal",
-    );
-  }
+  await assertProposalAuthorWriteAccess({
+    subject: 'resubmit this proposal',
+    profileId: dbUser.profileId,
+    proposal,
+    user: { id: user.id },
+  });
 
   const trimmedNote = note.trim();
 
@@ -119,6 +121,7 @@ export async function submitProposalRevision({
       meta: {
         eventType: 'proposal_revision_submitted',
         proposalId,
+        actorProfileId: dbUser.profileId,
       },
     })
     .then((version) => version?.version ?? null);
@@ -141,6 +144,7 @@ export async function submitProposalRevision({
       .update(proposals)
       .set({
         proposalData: proposalDataWithVersion,
+        lastEditedByProfileId: dbUser.profileId,
         updatedAt: now,
       })
       .where(eq(proposals.id, proposal.id))

@@ -1,4 +1,5 @@
-import type { RubricTemplateSchema } from '@op/common';
+import { getTipTapClient } from '@op/collab';
+import { type RubricTemplateSchema, parseProposalData } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -8,6 +9,7 @@ import {
   createReviewAssignment,
   createRevisionRequest,
   getLatestProposalHistoryId,
+  grantDecisionProfileAccess,
 } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
@@ -340,6 +342,99 @@ describe.concurrent('submitProposalRevision', () => {
     ).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError' },
     });
+  });
+
+  it('an invited co-author answers every open request on the proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Co-authored Resubmission',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const request = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add budget details.',
+    });
+
+    // A collaborator invited onto the proposal's own profile — what
+    // `acceptProposalInvite` produces. Member role, not admin: plain
+    // proposal-profile membership is what makes them an author here.
+    const coAuthor = await testData.createInstanceMember(created.context);
+    await grantDecisionProfileAccess({
+      profileId: created.proposal.profileId,
+      authUserId: coAuthor.authUserId,
+      email: coAuthor.email,
+      isAdmin: false,
+    });
+
+    const coAuthorCaller = await createAuthenticatedCaller(coAuthor.email);
+    const result = await coAuthorCaller.decision.submitProposalRevision({
+      proposalId: created.proposal.id,
+      note: 'Added the budget.',
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(request.id);
+    expect(result.items[0]?.state).toBe(ProposalReviewRequestState.RESUBMITTED);
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(
+      ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+    );
+
+    const proposal = await db.query.proposals.findFirst({
+      where: { id: created.proposal.id },
+    });
+    expect(proposal?.lastEditedByProfileId).toBe(coAuthor.profileId);
+
+    // `@op/collab` is mocked in the api test setup by an in-memory client, so
+    // the version the service wrote is readable back here.
+    const proposalData = parseProposalData(proposal?.proposalData);
+    const versions = await getTipTapClient().listVersions(
+      proposalData.collaborationDocId ?? '',
+    );
+    expect(versions.at(-1)?.meta).toMatchObject({
+      eventType: 'proposal_revision_submitted',
+      actorProfileId: coAuthor.profileId,
+    });
+  });
+
+  it('rejects a decision member with no row on the proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Instance Member Only',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please revise.',
+    });
+
+    const member = await testData.createInstanceMember(created.context);
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.decision.submitProposalRevision({
+        proposalId: created.proposal.id,
+        note: 'Should not work.',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+
+    const request = await db.query.proposalReviewRequests.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(request?.state).toBe(ProposalReviewRequestState.REQUESTED);
   });
 
   it('rejects when the proposal does not exist', async ({

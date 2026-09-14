@@ -103,11 +103,11 @@ function EditProposalPageContent() {
   const { user } = useRequiredUser();
 
   // Not `review.revisions`: an author sees a pending request in any phase.
-  const affordances = getProposalAffordances({ instance, proposal, user });
+  const affordances = getProposalAffordances({ instance, proposal });
 
-  const isAuthor =
-    !!user.currentProfile?.id &&
-    proposal.submittedBy?.id === user.currentProfile.id;
+  // Co-authors count as authors here: `access.update` comes from roles on the
+  // proposal's own profile, so an invitee reads "Your revision note" too.
+  const isAuthor = proposal.access?.update === true;
 
   const proposalTemplate = instance.instanceData.proposalTemplate;
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
-import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
@@ -28,14 +27,13 @@ function ProposalViewPageContent({
   }
 
   const instance = decisionProfile.processInstance;
-  const { user } = useUser();
 
   const phases = instance.instanceData?.phases ?? [];
-  const affordances = getProposalAffordances({ instance, proposal, user });
+  const affordances = getProposalAffordances({ instance, proposal });
 
-  const isAuthor =
-    !!user?.currentProfile?.id &&
-    proposal.submittedBy?.id === user.currentProfile.id;
+  // Co-authors count as authors here: `access.update` comes from roles on the
+  // proposal's own profile, so an invitee reads "Your revision note" too.
+  const isAuthor = proposal.access?.update === true;
 
   // Selections only make sense once we've reached the final/results phase.
   const inLastPhase = isLastPhase(instance.currentStateId, phases);

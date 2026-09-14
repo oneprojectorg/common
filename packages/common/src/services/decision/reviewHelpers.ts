@@ -152,6 +152,51 @@ export async function assertProposalReviewReadAccess({
   );
 }
 
+/**
+ * Write gate for the proposal-scoped writes only an author makes (answering a
+ * revision request by resubmitting). The counterpart of
+ * `assertProposalReviewReadAccess`, minus its instance branch: a decision
+ * admin or a reviewer has no standing to resubmit somebody's proposal.
+ *
+ * "Authors" is the same union the read gate uses — the recorded submitter plus
+ * the proposal's own profile membership (creator and invited collaborators) —
+ * so the human behind an org-acting submitter, whose personal profile may hold
+ * no row on the proposal profile, keeps access. `subject` names the action in
+ * the denial message.
+ *
+ * The membership branch tests the `profile: READ` bit rather than
+ * `roles.length`: `getProfileAccessRoles` unions the caller's grants with the
+ * public sentinel's, and the Public role seeds with no permission rows, so a
+ * length check would admit anyone on a publicly granted proposal. Both roles a
+ * co-author can hold (Admin, Member) carry `profile: READ`.
+ */
+export async function assertProposalAuthorWriteAccess({
+  subject,
+  profileId,
+  proposal,
+  user,
+}: {
+  subject: string;
+  profileId: string;
+  proposal: { profileId: string; submittedByProfileId: string | null };
+  user: AccessUser | undefined;
+}): Promise<void> {
+  if (proposal.submittedByProfileId === profileId) {
+    return;
+  }
+
+  const proposalRoles = await getProfileAccessRoles({
+    user,
+    profileId: proposal.profileId,
+  });
+
+  if (checkPermission({ profile: permission.READ }, proposalRoles)) {
+    return;
+  }
+
+  throw new UnauthorizedError(`You don't have access to ${subject}`);
+}
+
 type ProposalWithConfig = NonNullable<
   NonNullable<Parameters<typeof db.query.proposals.findFirst>[0]>['with']
 >;
