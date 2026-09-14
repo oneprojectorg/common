@@ -2,6 +2,7 @@ import type { ModerationFlag } from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import type {
+  ModerationInquiry,
   ModerationItemType,
   ModerationMediaItem,
   ModerationProviderReference,
@@ -41,9 +42,12 @@ export interface FlagItemDeps {
   submitForReview?: (
     input: ModerationSubmission,
   ) => Promise<ModerationProviderReference>;
-  /** Files the user's report against the just-submitted content — this, not
-   *  the submit, is what raises a human-review case. */
+  /** Files the user's community report against the just-submitted content: the
+   *  human context the classifiers can't infer. A signal, not a case. */
   reportForReview?: (input: ModerationReport) => Promise<void>;
+  /** Opens the human-review incident on the just-submitted content. This, not
+   *  the community report, is what puts the item in a moderator's queue. */
+  openInquiry?: (input: ModerationInquiry) => Promise<void>;
   /** The refs `submitForReview` will create, known before the provider is
    *  called. Required alongside `submitForReview`. */
   planRefs?: (
@@ -69,14 +73,14 @@ export interface FlagItemDeps {
 /**
  * User-initiated flag. Records a `pending` flag (manual source), records the
  * round of tasks the submission fans out into, submits the content to the
- * provider, then files the user's report against it so a human moderator gets
- * a case; the provider's webhook later confirms it (→ flagged) or clears it
- * (→ dismissed). Idempotent: if the item already has an open flag, returns it
+ * provider, then files the user's community report against it *and* opens a
+ * human-review incident so a moderator actually gets a case; the provider's
+ * webhook later confirms it (→ flagged) or clears it (→ dismissed). Idempotent: if the item already has an open flag, returns it
  * without a second record or submission. If the provider submit fails, the
  * pending flag and round are rolled back and the error propagates — otherwise
  * the flag would sit `pending` forever (nothing left to resolve it) and the
- * idempotency check would swallow every retry. A failed *report* is logged and
- * swallowed instead — see below.
+ * idempotency check would swallow every retry. A failed *report* or *inquiry*
+ * is logged and swallowed instead — see below.
  */
 export const flagItem = async (
   input: FlagItemInput,
@@ -141,12 +145,15 @@ export const flagItem = async (
         throw error;
       }
 
-      // After the submit: the provider only associates a report with content of
-      // the same ref it already ingested.
+      // Both calls happen after the submit: the provider only associates a
+      // report or an incident with content of the same ref it already ingested.
       //
-      // Outside the rollback and swallowed on purpose — the content is ingested
-      // either way, and dropping the round would leave the classifier verdict
-      // unmatched, which also skips the mandatory CSAM/terrorism detach.
+      // Both sit outside the rollback and are swallowed on purpose — the
+      // content is ingested either way, and dropping the round would leave the
+      // classifier verdict unmatched, which also skips the mandatory
+      // CSAM/terrorism detach. They're independent, so each gets its own
+      // try/catch: a rejected report must not cost us the incident, which is
+      // the half that actually reaches a moderator.
       //
       // KNOWN GAP: an edit after a report mints a new round and deletes this
       // one's rows, losing the moderator's ruling.
@@ -160,7 +167,26 @@ export const flagItem = async (
         });
       } catch (error) {
         logger.error(
-          'Moderation content was submitted but the user report failed to file — no human-review case was raised',
+          'Moderation content was submitted but the community report failed to file — the moderator loses the reporter context',
+          {
+            error,
+            itemType: input.itemType,
+            itemId: input.itemId,
+            roundId: input.roundId,
+          },
+        );
+      }
+
+      try {
+        await deps.openInquiry?.({
+          itemType: input.itemType,
+          itemId: input.itemId,
+          roundId: input.roundId,
+          reason: input.reason,
+        });
+      } catch (error) {
+        logger.error(
+          'Moderation content was submitted but the inquiry failed to open — no human-review case was raised, so the flag can only be resolved by the classifiers',
           {
             error,
             itemType: input.itemType,
