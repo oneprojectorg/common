@@ -91,10 +91,8 @@ function useInvalidateQueries(enabled: boolean): void {
 
   const handleInvalidation = useCallback(
     async ({ channels, mutationId }: RegistryEvents['mutation:added']) => {
-      // Keyed per (mutation, channel), not per mutation. A mutation reaches
-      // this client once locally and once per channel as the realtime echo,
-      // all carrying the same id; keyed on the id alone, whichever message
-      // arrived first swallowed the mutation's other channels.
+      // Per (mutation, channel): a fan-out arrives once per channel under the
+      // same id, so keying on the id alone would drop all but the first.
       const seen = seenInvalidationsRef.current;
       const freshChannels = channels.filter((channel) => {
         const key = `${mutationId}:${channel}`;
@@ -108,7 +106,6 @@ function useInvalidateQueries(enabled: boolean): void {
         return;
       }
 
-      // Oldest first: a Set iterates in insertion order.
       for (const key of seen) {
         if (seen.size <= MAX_REMEMBERED_KEYS) {
           break;
