@@ -101,9 +101,23 @@ export const updateProposal = async ({
     instancePhases,
   });
 
+  // `collaborationDocId` names the TipTap document a collaboration token is
+  // minted for, and `collaborationDocVersionId` is stamped server-side — a
+  // client that could rewrite either would aim its own edit token, and this
+  // validation read, at another proposal's document. The stored values win.
+  const sanitizedProposalData = data.proposalData
+    ? withStoredCollaborationFields(
+        data.proposalData,
+        existingProposal.proposalData,
+      )
+    : undefined;
+
   // Validate proposal data against template schema when updating non-draft proposals.
   // Drafts are inherently incomplete — validation is enforced on submission.
-  if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
+  if (
+    sanitizedProposalData &&
+    existingProposal.status !== ProposalStatus.DRAFT
+  ) {
     const instanceData =
       processInstance.instanceData as DecisionInstanceData | null;
 
@@ -118,7 +132,7 @@ export const updateProposal = async ({
       }
       await validateProposalAgainstTemplate(
         proposalTemplate,
-        data.proposalData,
+        sanitizedProposalData,
         data.title ?? existingProposal.profile.name,
         { profileId: processInstance.profileId },
       );
@@ -157,11 +171,11 @@ export const updateProposal = async ({
     const baseProposalData =
       collaborationDocVersionId !== null
         ? {
-            ...(proposalFields.proposalData ??
+            ...(sanitizedProposalData ??
               (existingProposal.proposalData as Record<string, unknown>)),
             collaborationDocVersionId,
           }
-        : proposalFields.proposalData;
+        : sanitizedProposalData;
 
     const proposalDataWithVersion =
       baseProposalData && categoryLabels
@@ -259,7 +273,40 @@ export const updateProposal = async ({
   return updatedProposal;
 };
 
-async function assertProposalUpdateAccess({
+/**
+ * Carry the stored collaboration-document fields onto an incoming
+ * `proposalData`, dropping whatever the client sent for them. A proposal that
+ * has no stored document keeps none, so a client cannot add one either.
+ */
+function withStoredCollaborationFields(
+  incoming: ProposalDataInput,
+  stored: unknown,
+): Record<string, unknown> {
+  const {
+    collaborationDocId: _incomingDocId,
+    collaborationDocVersionId: _incomingVersionId,
+    ...rest
+  } = incoming;
+
+  const {
+    collaborationDocId: storedDocId,
+    collaborationDocVersionId: storedVersionId,
+  } = parseProposalData(stored);
+
+  return {
+    ...rest,
+    ...(storedDocId !== undefined ? { collaborationDocId: storedDocId } : {}),
+    ...(storedVersionId !== undefined
+      ? { collaborationDocVersionId: storedVersionId }
+      : {}),
+  };
+}
+
+/**
+ * The proposal-edit gate. Exported so `getCollabToken` mints a Tiptap
+ * collaboration token under exactly the rule that guards `updateProposal`.
+ */
+export async function assertProposalUpdateAccess({
   user,
   data,
   proposal,
@@ -267,7 +314,8 @@ async function assertProposalUpdateAccess({
   instancePhases,
 }: {
   user: User;
-  data: UpdateProposalInput;
+  /** Only the admin-only fields are read, so a token check can pass `{}`. */
+  data: Pick<UpdateProposalInput, 'status' | 'visibility'>;
   proposal: { id: string; profileId: string; status: string | null };
   processInstance: {
     profileId: string | null;

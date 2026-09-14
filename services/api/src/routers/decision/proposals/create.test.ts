@@ -1,6 +1,7 @@
 import { ProposalStatus } from '@op/db/schema';
-import { expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
@@ -8,6 +9,51 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import {
+  createIsolatedSession,
+  createTestContextWithSession,
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+
+const createCaller = createCallerFactory(appRouter);
+
+describe.concurrent('createProposal collaboration fields', () => {
+  it('keeps the collaboration document fields server-owned', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const { session } = await createIsolatedSession(setup.userEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.decision.createProposal({
+      processInstanceId: setup.instance.instance.id,
+      proposalData: {
+        title: 'Seeded collaboration fields',
+        collaborationDocId: 'proposal-someone-elses-document',
+        collaborationDocVersionId: 42,
+      },
+    });
+
+    if (result.profileId) {
+      testData.trackProfileForCleanup(result.profileId);
+    }
+
+    const storedProposalData = result.proposalData as {
+      collaborationDocId?: string;
+      collaborationDocVersionId?: number;
+    };
+
+    expect(storedProposalData.collaborationDocId).toBe(`proposal-${result.id}`);
+    expect(storedProposalData.collaborationDocVersionId).toBeUndefined();
+  });
+});
 
 describeDecisionAccessTierGating('createProposal', {
   noJwtNonPublic: accessTierGatingCell(

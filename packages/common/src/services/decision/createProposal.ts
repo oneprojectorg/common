@@ -199,13 +199,20 @@ export const createProposal = async ({
     const proposalId = crypto.randomUUID();
     const collaborationDocId = `proposal-${proposalId}`;
 
+    // Both collaboration fields are server-owned — a client-seeded version id
+    // would be carried forward by every later update (see updateProposal).
+    const {
+      collaborationDocVersionId: _clientVersionId,
+      ...clientProposalData
+    } = data.proposalData ?? {};
+
     const [insertedProposal] = await tx
       .insert(proposals)
       .values({
         id: proposalId,
         processInstanceId: data.processInstanceId,
         proposalData: {
-          ...data.proposalData,
+          ...clientProposalData,
           collaborationDocId,
           category: categoryLabels.length > 0 ? categoryLabels : undefined,
         },

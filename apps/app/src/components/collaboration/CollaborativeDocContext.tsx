@@ -32,6 +32,11 @@ const CollaborativeDocContext =
 interface CollaborativeDocProviderProps {
   /** Unique document identifier for collaboration */
   docId: string;
+  /**
+   * Resolves a Tiptap Cloud JWT scoped to `docId`, awaited again on every
+   * reconnect. Must be memoized, or the provider is rebuilt on each render.
+   */
+  getToken: () => Promise<string>;
   /** User's display name for collaboration cursors */
   userName?: string;
   /** Loading state to show while the collaboration provider initializes */
@@ -46,7 +51,7 @@ interface CollaborativeDocProviderProps {
  *
  * @example
  * ```tsx
- * <CollaborativeDocProvider docId="proposal-123" userName="Alice" fallback={<Skeleton />}>
+ * <CollaborativeDocProvider docId="proposal-123" getToken={getToken} userName="Alice" fallback={<Skeleton />}>
  *   <CollaborativeTitleField />
  *   <CollaborativeEditor />
  * </CollaborativeDocProvider>
@@ -54,6 +59,7 @@ interface CollaborativeDocProviderProps {
  */
 export function CollaborativeDocProvider({
   docId,
+  getToken,
   userName = 'Anonymous',
   fallback = null,
   children,
@@ -61,6 +67,7 @@ export function CollaborativeDocProvider({
   const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
     docId,
     enabled: true,
+    getToken,
     userName,
   });
 
