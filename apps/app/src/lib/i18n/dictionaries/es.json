@@ -1427,9 +1427,9 @@
   "Process settings": "Configuración del proceso",
   "ends {date}": "finaliza el {date}",
   "Remove image": "Eliminar imagen",
-  "Claim your account": "Reclama tu cuenta",
+  "Don't lose track of this idea": "No pierdas el rastro de esta idea",
   "Join": "Únete",
-  "Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.": "Únete a Common para dar me gusta, comentar y seguir cualquier idea, y para editar y recibir novedades sobre tus propias propuestas.",
+  "Followers get updates as this idea moves through the process. Sign up in seconds.": "Los seguidores reciben novedades a medida que esta idea avanza en el proceso. Regístrate en segundos.",
   "You're already signed in. Reload the page to continue.": "Ya has iniciado sesión. Recarga la página para continuar.",
   "An account with this email already exists. Try logging in instead.": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión.",
   "Join Common to comment on this proposal.": "Únete a Common para comentar esta propuesta.",
@@ -1735,7 +1735,7 @@
   "Cancel revision request?": "Cancel revision request?",
   "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
   "Older version reviewed by {name}": "Older version reviewed by {name}",
-  "Phone number": "Número de teléfono",
+  "Phone Number": "Número de teléfono",
   "We text you a code. Standard message and data rates may apply.": "Te enviamos un código por SMS. Pueden aplicarse tarifas de mensajes y datos.",
   "Use a phone number instead": "Usar un número de teléfono",
   "Use an email address instead": "Usar un correo electrónico",
@@ -1752,5 +1752,11 @@
   "Comments off": "Comentarios desactivados",
   "Reject": "Rechazar",
   "Your Privacy": "Tu privacidad",
-  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Usamos cookies esenciales para que Common funcione, y cookies de analítica para entender cómo se usa la plataforma. Lee nuestra <privacy>Política de privacidad</privacy> y nuestros <terms>Términos de uso</terms> para saber más."
+  "We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.": "Usamos cookies esenciales para que Common funcione, y cookies de analítica para entender cómo se usa la plataforma. Lee nuestra <privacy>Política de privacidad</privacy> y nuestros <terms>Términos de uso</terms> para saber más.",
+  "A code was sent to {phone}. Type the code below to create your profile.": "Se envió un código a {phone}. Escribe el código a continuación para crear tu perfil.",
+  "An account with this phone number already exists. Try logging in instead.": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión.",
+  "Continue with": "Continuar con",
+  "Email me a code": "Envíame un código por correo",
+  "Text me a code": "Envíame un código por mensaje",
+  "We'll email you a code to confirm it's yours.": "Te enviaremos un código por correo para confirmar que es tuyo."
 }

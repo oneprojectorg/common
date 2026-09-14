@@ -45,7 +45,12 @@ export const createSupabaseOtpStrategy = ({
       return { ok: true };
     }
 
-    logger.error('GoTrue refused to send a code', { error });
+    // Only the code and status, never `error` itself — GoTrue's message for
+    // this endpoint can echo the phone number back.
+    logger.error('GoTrue refused to send a code', {
+      code: error.code,
+      status: error.status,
+    });
 
     return {
       ok: false,

@@ -137,7 +137,16 @@ message_service_sid = "env(TWILIO_VERIFY_SERVICE_SID)"
 # Sign in as +1 500 555 0006 with the code 123456. The range is reserved by
 # Twilio for testing, so no real line can collide with it.
 [auth.sms.test_otp]
+# A listed number skips the provider and accepts only its listed code, so
+# tests need no Twilio account and send no real text. One number per
+# concurrent claim: the e2e run is fullyParallel and sharded, and two tests
+# claiming the same number would race for it. 15005550006 is left to the demo
+# scripts; the rest belong to the suite.
 15005550006 = "123456"
+15005550007 = "234567"
+15005550008 = "345678"
+15005550009 = "456789"
+15005550010 = "567890"
 
 # Caps how many codes GoTrue itself sends in an hour, across all numbers.
 # `max_frequency` above only spaces out sends to one number, so it bounds

@@ -7,7 +7,7 @@ import {
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { db, eq } from '@op/db/test';
+import { db, eq, sql } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
@@ -269,4 +269,76 @@ export async function addUserToOrganization(opts: {
   });
 
   return orgUser;
+}
+
+/**
+ * Detaches a phone number from whoever currently holds it, so a claim or login
+ * flow can be run against that number again.
+ *
+ * Unlike an email address, a test cannot invent a fresh number: only the
+ * numbers listed under `[auth.sms.test_otp]` skip the SMS provider, and GoTrue
+ * refuses to attach one that is already on an account (`phone_exists`). The
+ * database is not reset between local runs, so without this the second run of
+ * a phone test fails on the account the first one created.
+ *
+ * Detaching rather than deleting: the previous run's account may have authored
+ * proposals, and taking those with it would break unrelated specs.
+ *
+ * Only a confirmed number holds the reservation. A claim abandoned at the code
+ * screen leaves the number in `phone_change`, which blocks nobody, and the
+ * `phone_change` flow creates no `auth.identities` row to collide on either.
+ */
+export async function releaseTestPhoneNumber(phone: string): Promise<void> {
+  // GoTrue stores E.164 without the leading `+`.
+  const digits = phone.replace(/^\+/, '');
+
+  await db.execute(sql`
+    UPDATE auth.users
+    SET phone = NULL, phone_confirmed_at = NULL
+    WHERE phone = ${digits}
+  `);
+}
+
+export interface TestAuthAccount {
+  authUserId: string;
+  /** Null for an account whose only credential is its phone number. */
+  email: string | null;
+  isAnonymous: boolean;
+}
+
+/**
+ * The auth record holding `phone`, or null when the number is free.
+ *
+ * Read straight from the database rather than through
+ * `supabaseAdmin.auth.admin.listUsers()`: that call pages at 50, and the e2e
+ * database accumulates thousands of accounts, so a scan of the first page
+ * answers "not found" for almost every number and quietly passes whatever it
+ * was asked to prove.
+ */
+export async function findAuthUserByPhone(
+  phone: string,
+): Promise<TestAuthAccount | null> {
+  const digits = phone.replace(/^\+/, '');
+
+  const rows = await db.execute<{
+    id: string;
+    email: string | null;
+    is_anonymous: boolean;
+  }>(sql`
+    SELECT id, email, is_anonymous
+    FROM auth.users
+    WHERE phone = ${digits}
+  `);
+
+  const row = rows[0];
+  if (!row) {
+    return null;
+  }
+
+  return {
+    authUserId: row.id,
+    // GoTrue stores an absent email as '', not NULL.
+    email: row.email ? row.email : null,
+    isAnonymous: row.is_anonymous,
+  };
 }
