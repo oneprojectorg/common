@@ -1,6 +1,7 @@
 import { GLOBAL_USER_IDS } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { users } from '@op/db/schema';
+import { grantTestPlatformAdmin } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -69,6 +70,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listAllUsers({ limit: 10 });
@@ -106,6 +108,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -135,6 +138,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -156,6 +160,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -171,6 +176,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listAllUsers({ limit: 3 });
@@ -188,6 +194,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listAllUsers({ limit: 10, dir: 'asc' });
@@ -213,6 +220,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -241,6 +249,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -265,6 +274,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
       });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -307,6 +317,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     ]);
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -369,6 +380,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
       .set({ email: null })
       .where(eq(users.authUserId, member.authUserId));
 
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -391,6 +403,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     // Create isolated session for this test
+    await grantTestPlatformAdmin(adminUser.authUserId);
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
