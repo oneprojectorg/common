@@ -192,6 +192,12 @@ test.describe('Join account flow (public decision header)', () => {
     ).toBeVisible();
 
     // The visitor can't like, so the click must not have liked anything.
+    // Dismiss the claim dialog first: while it's open it hides the background
+    // from the accessibility tree, so the count can't be read until it closes.
+    // The name assertion retries until the button is reachable again.
+    await dialog
+      .getByRole('button', { name: 'Browse proposals for now' })
+      .click();
     await expect(like).toHaveAccessibleName('0 Likes');
   });
 
