@@ -159,6 +159,12 @@ const JoinAccountModalContent = () => {
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
+  // Shares the `join` key with the parent JoinAccountModal's own instance, so
+  // clearing it here closes the dialog the same way the dismiss X does.
+  const [, setJoin] = useQueryState('join');
+  const close = () => {
+    void setJoin(null);
+  };
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -270,6 +276,11 @@ const JoinAccountModalContent = () => {
     setError(undefined);
   };
 
+  const resendCode = () => {
+    setToken(undefined);
+    void submitContact();
+  };
+
   // Switching channel abandons whatever was typed in the other one, so a
   // half-entered address can't be submitted against the wrong endpoint.
   const switchChannel = () => {
@@ -283,6 +294,16 @@ const JoinAccountModalContent = () => {
   // /en/login (same as HeaderUserMenu).
   const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
 
+  // One string read by both the visible description and the live region below,
+  // so the announcement can't drift from what sighted users see.
+  const sentTo = otpSent
+    ? isPhone
+      ? t('We sent a code to {phone}', {
+          phone: normalizePhoneNumber(phone),
+        })
+      : t('We sent a code to {email}', { email })
+    : undefined;
+
   return (
     <>
       {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
@@ -290,26 +311,26 @@ const JoinAccountModalContent = () => {
         <DialogTitle className="text-center">
           {otpSent
             ? isPhone
-              ? t('Code sent!')
-              : t('Email sent!')
-            : t("Don't lose track of this idea")}
+              ? t('Check your texts')
+              : t('Check your email')
+            : t('Add your voice to this idea')}
         </DialogTitle>
         <DialogDescription className="text-center">
-          {otpSent
-            ? isPhone
-              ? t(
-                  'A code was sent to {phone}. Type the code below to create your profile.',
-                  { phone: normalizePhoneNumber(phone) },
-                )
-              : t(
-                  'A code was sent to {email}. Type the code below to create your profile.',
-                  { email },
-                )
-            : t(
-                'Followers get updates as this idea moves through the process. Sign up in seconds.',
-              )}
+          {sentTo ??
+            t(
+              'Liking shows others which ideas matter most. Sign up in seconds and your like will be counted.',
+            )}
         </DialogDescription>
       </DialogHeader>
+
+      {/*
+        Announces where the code went: the heading swap and the code field's
+        autofocus announce nothing about it. Must stay mounted, empty until
+        `otpSent` — a live region only announces a change it was present for.
+      */}
+      <span role="status" className="sr-only">
+        {sentTo ?? ''}
+      </span>
 
       <div className="flex flex-col gap-4 px-6 py-4">
         {/* role="alert" so async claim errors are announced while focus stays on
@@ -388,9 +409,7 @@ const JoinAccountModalContent = () => {
                 <TabsContent value="phone">
                   <AuthPhoneField
                     label={t('Phone Number')}
-                    description={t(
-                      'We text you a code. Standard message and data rates may apply.',
-                    )}
+                    description={t("We'll text a code to confirm it's yours.")}
                     value={phone}
                     isDisabled={isSubmitting}
                     onChange={setPhone}
@@ -437,23 +456,38 @@ const JoinAccountModalContent = () => {
                 void submitToken();
               }}
             >
-              {t('Create profile')}
+              {t('Verify and continue')}
             </Button>
-            <Button variant="outline" className="w-full" onClick={goBack}>
-              {t('Go back')}
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={isSubmitting}
+              onClick={resendCode}
+            >
+              {t('Resend code')}
+            </Button>
+            <Button variant="link" onClick={goBack}>
+              {isPhone
+                ? t('Use a different phone number')
+                : t('Use a different email address')}
             </Button>
           </>
         ) : (
-          <Button
-            className="w-full"
-            loading={isSubmitting}
-            disabled={isSubmitting || !contactIsValid}
-            onClick={() => {
-              void submitContact();
-            }}
-          >
-            {isPhone ? t('Text me a code') : t('Email me a code')}
-          </Button>
+          <>
+            <Button
+              className="w-full"
+              loading={isSubmitting}
+              disabled={isSubmitting || !contactIsValid}
+              onClick={() => {
+                void submitContact();
+              }}
+            >
+              {isPhone ? t('Text me a code') : t('Email me a code')}
+            </Button>
+            <Button variant="link" onClick={close}>
+              {t('Browse proposals for now')}
+            </Button>
+          </>
         )}
       </DialogFooter>
     </>
