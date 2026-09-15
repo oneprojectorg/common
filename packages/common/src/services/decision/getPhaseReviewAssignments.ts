@@ -9,8 +9,8 @@ import type { InstancePhaseRef } from './schemas/instance';
 import { assertInstancePhase } from './utils/instance';
 
 /**
- * The `platform.admin.listDecisionReviewAssignments` read model, re-gated on
- * the instance's own admin capability.
+ * The per-phase review-assignment read model, gated on the instance's own
+ * admin capability.
  */
 export async function getPhaseReviewAssignments(
   input: InstancePhaseRef & { user: User },

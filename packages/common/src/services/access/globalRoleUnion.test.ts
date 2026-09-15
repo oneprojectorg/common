@@ -33,7 +33,7 @@ vi.mock('./platformAdmin', () => ({
 
 import { UnauthorizedError } from '../../utils/error';
 import { assertProfileAccess } from '../assert/assertProfileAccess';
-import { getProfileAccessRoles } from './index';
+import { getProfileAccessRoles, getProfileAccessUser } from './index';
 
 const AUTH_USER_ID = '00000000-0000-4000-a000-0000000000b2';
 const PROFILE_ID = '00000000-0000-4000-a000-0000000000c3';
@@ -113,9 +113,28 @@ describe('profile access with a user-level Platform Admin role', () => {
     );
   });
 
-  it('does not manufacture a membership the caller lacks (ADR 0005)', async () => {
+  it('admits the caller on permissions alone with no membership row', async () => {
     findProfileUsers.mockResolvedValue([]);
     getUserGlobalRoles.mockResolvedValue([platformAdminGlobalRole]);
+
+    await expect(
+      getProfileAccessRoles({
+        user: { id: AUTH_USER_ID },
+        profileId: PROFILE_ID,
+      }),
+    ).resolves.toEqual([expect.objectContaining({ name: 'Platform Admin' })]);
+
+    await expect(
+      assertProfileAccess({
+        user: { id: AUTH_USER_ID },
+        profileId: PROFILE_ID,
+        permissions: { profile: permission.ADMIN },
+      }),
+    ).resolves.toEqual([expect.objectContaining({ name: 'Platform Admin' })]);
+  });
+
+  it('still rejects a caller with neither a membership nor a global role', async () => {
+    findProfileUsers.mockResolvedValue([]);
 
     await expect(
       getProfileAccessRoles({
@@ -128,9 +147,22 @@ describe('profile access with a user-level Platform Admin role', () => {
       assertProfileAccess({
         user: { id: AUTH_USER_ID },
         profileId: PROFILE_ID,
-        permissions: { profile: permission.ADMIN },
+        permissions: { profile: permission.READ },
       }),
     ).rejects.toThrow(UnauthorizedError);
+  });
+
+  it('leaves the identity resolver membership-only for a global-role holder', async () => {
+    findProfileUsers.mockResolvedValue([]);
+    getUserGlobalRoles.mockResolvedValue([platformAdminGlobalRole]);
+
+    // Writers that store a profileUserId read this, so it must stay undefined.
+    await expect(
+      getProfileAccessUser({
+        user: { id: AUTH_USER_ID },
+        profileId: PROFILE_ID,
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it('leaves a caller without the global role on their own roles', async () => {

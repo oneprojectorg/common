@@ -40,9 +40,9 @@ export const RevertPhaseButton = ({
   const revertPhase = trpc.platform.admin.revertDecisionPhase.useMutation({
     onSuccess: () => {
       toast.success(t('Moved back to {phase}', { phase: previousPhaseName }));
-      utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
-      utils.platform.admin.listDecisionReviewAssignments.invalidate({
-        instanceId,
+      utils.decision.getInstance.invalidate({ instanceId });
+      utils.decision.listPhaseReviewAssignments.invalidate({
+        processInstanceId: instanceId,
       });
       setIsOpen(false);
     },
