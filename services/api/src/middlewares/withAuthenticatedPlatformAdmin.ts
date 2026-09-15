@@ -1,8 +1,4 @@
-import {
-  AccessTierError,
-  UnauthorizedError,
-  isUserEmailPlatformAdmin,
-} from '@op/common';
+import { UnauthorizedError, isPlatformAdmin } from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
@@ -18,13 +14,7 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
 
   const user = verifyAuthentication(data);
 
-  const userEmail = user.email;
-
-  if (!userEmail) {
-    throw new AccessTierError('anon');
-  }
-
-  const isAdmin = isUserEmailPlatformAdmin(userEmail);
+  const isAdmin = await isPlatformAdmin({ user });
 
   // Admin membership is authorization: the caller is authenticated (past the
   // gate) but is not permitted to use this admin endpoint.

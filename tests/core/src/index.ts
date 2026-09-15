@@ -4,6 +4,8 @@ export {
   createUser,
   findAuthUserByPhone,
   generateTestEmail,
+  grantTestPlatformAdmin,
+  isTestPlatformAdminEmail,
   releaseTestPhoneNumber,
   TEST_USER_DEFAULT_PASSWORD,
   type CreateOrganizationOptions,

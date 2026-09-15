@@ -242,18 +242,6 @@ export const adminEmails = ['scott@oneproject.org'];
 export const GLOBAL_USER_PUBLIC = '00000000-0000-4000-a000-000000000001';
 export const GLOBAL_USER_IDS = [GLOBAL_USER_PUBLIC] as const;
 
-// NOTE: This allowlist will eventually be moved to the database
-export const platformAdminEmails = new Set([
-  'iza@oneproject.org',
-  'casimiro@oneproject.org',
-  'nour@oneproject.org',
-  'raphael@oneproject.org',
-  'scott@oneproject.org',
-  'zaana@oneproject.org',
-  'valentino@oneproject.org',
-  'ivan@oneproject.org',
-]);
-
 export const commonColors = colors.neutral;
 
 export const version = '0.0.0';
