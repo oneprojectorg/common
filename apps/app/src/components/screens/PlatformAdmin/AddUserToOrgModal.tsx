@@ -106,6 +106,9 @@ const AddUserToOrgModalContent = ({
         toast.success(t('User added to organization successfully'));
 
         utils.platform.admin.listAllUsers.invalidate();
+        utils.platform.admin.getUser.invalidate({
+          authUserId: user.authUserId,
+        });
 
         // Reset form
         setSelectedOrgId('');

@@ -7,3 +7,4 @@ export * from './OrgsTable';
 export { OrgsRowCells } from './OrgsRow';
 export * from './UsersTable';
 export { UsersRowCells } from './UsersRow';
+export { UserDetail } from './UserDetail';

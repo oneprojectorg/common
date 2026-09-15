@@ -1758,5 +1758,16 @@
   "Continue with": "Continuer avec",
   "Email me a code": "Envoyez-moi un code par e-mail",
   "Text me a code": "Envoyez-moi un code par SMS",
-  "We'll email you a code to confirm it's yours.": "Nous vous enverrons un code par e-mail pour confirmer qu’il est bien à vous."
+  "We'll email you a code to confirm it's yours.": "Nous vous enverrons un code par e-mail pour confirmer qu’il est bien à vous.",
+  "User": "Utilisateur",
+  "View user": "Voir l'utilisateur",
+  "Network member": "Membre du réseau",
+  "Onboarded": "Intégré",
+  "Terms accepted": "Conditions acceptées",
+  "Privacy accepted": "Confidentialité acceptée",
+  "Profile memberships": "Adhésions de profil",
+  "User not found": "Utilisateur introuvable",
+  "Not a member of any organization": "Membre d'aucune organisation",
+  "No profile memberships": "Aucune adhésion de profil",
+  "Unknown Organization": "Organisation inconnue"
 }

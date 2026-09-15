@@ -1758,5 +1758,16 @@
   "Continue with": "Folytatás ezzel",
   "Email me a code": "Küldjenek e-mailben kódot",
   "Text me a code": "Küldjenek SMS-ben kódot",
-  "We'll email you a code to confirm it's yours.": "E-mailben küldünk egy kódot, hogy megerősítsük, ez az Öné."
+  "We'll email you a code to confirm it's yours.": "E-mailben küldünk egy kódot, hogy megerősítsük, ez az Öné.",
+  "User": "Felhasználó",
+  "View user": "Felhasználó megtekintése",
+  "Network member": "Hálózati tag",
+  "Onboarded": "Bevezetve",
+  "Terms accepted": "Feltételek elfogadva",
+  "Privacy accepted": "Adatvédelem elfogadva",
+  "Profile memberships": "Profiltagságok",
+  "User not found": "A felhasználó nem található",
+  "Not a member of any organization": "Nem tagja egyetlen szervezetnek sem",
+  "No profile memberships": "Nincsenek profiltagságok",
+  "Unknown Organization": "Ismeretlen szervezet"
 }
