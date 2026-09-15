@@ -60,7 +60,7 @@ test.describe('Modals on mobile are full screen', () => {
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
     await expect(
-      dialog.getByRole('heading', { name: "Don't lose track of this idea" }),
+      dialog.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).toBeVisible({ timeout: 15000 });
 
     await expectFillsViewport(dialog);

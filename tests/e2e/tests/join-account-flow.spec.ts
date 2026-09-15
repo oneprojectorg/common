@@ -68,7 +68,7 @@ test.describe('Join account flow (public decision header)', () => {
 
     await page.getByRole('button', { name: 'Join' }).click();
     await expect(
-      page.getByRole('heading', { name: "Don't lose track of this idea" }),
+      page.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).toBeVisible({ timeout: 15000 });
 
     const email = `join-${randomUUID().slice(0, 8)}@example.com`;
@@ -122,7 +122,7 @@ test.describe('Join account flow (public decision header)', () => {
     // the proposal view layout.
     await page.getByRole('button', { name: 'Join' }).first().click();
     await expect(
-      page.getByRole('heading', { name: "Don't lose track of this idea" }),
+      page.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).toBeVisible({ timeout: 15000 });
 
     const email = `join-${randomUUID().slice(0, 8)}@example.com`;
@@ -138,6 +138,61 @@ test.describe('Join account flow (public decision header)', () => {
     await expect(
       page.getByText('You do not have permission to view this page'),
     ).not.toBeVisible();
+  });
+
+  /**
+   * The Figma annotation on "Add your voice to this idea" is that the dialog
+   * appears when the user clicks Like, so the toggle is a second door into the
+   * claim flow rather than a dead count. Without the hook handing `join=1` to
+   * the layout's modal, a visitor who can't like would press an unresponsive
+   * button — the state this replaces, and the one no other spec asserts.
+   *
+   * Given a logged-out visitor on a public decision's proposal page
+   * When they press Like
+   * Then the claim dialog opens, and the like is not written
+   */
+  test("a visitor's Like opens the claim dialog instead of doing nothing", async ({
+    page,
+  }) => {
+    const { org, instance } = await seedPublicDecision('join-like');
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      proposalData: {
+        title: `Like prompt proposal ${randomUUID().slice(0, 6)}`,
+      },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'networkidle' },
+    );
+
+    // The control has to actually render for a visitor — the engagement row
+    // falls back to plain counts whenever the hook declines to act. Name is
+    // count-prefixed ("0 Likes"), so match the whole label, not `Like`.
+    const like = page.getByRole('button', { name: /^\d+ Likes$/ });
+    await expect(like).toBeVisible({ timeout: 15000 });
+
+    await like.click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Add your voice to this idea' }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(page).toHaveURL(/join=1/);
+
+    const dialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
+    await expect(
+      dialog.getByRole('button', { name: 'Email me a code' }),
+    ).toBeVisible();
+
+    // The visitor can't like, so the click must not have liked anything.
+    await expect(like).toHaveAccessibleName('0 Likes');
   });
 
   test('a full account sees the user menu, not Join, and ?join=1 opens nothing', async ({
@@ -160,7 +215,7 @@ test.describe('Join account flow (public decision header)', () => {
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
-      page.getByRole('heading', { name: "Don't lose track of this idea" }),
+      page.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'Join' })).not.toBeVisible();
   });
