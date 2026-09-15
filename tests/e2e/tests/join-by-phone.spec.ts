@@ -171,10 +171,10 @@ test.describe('Join by phone (public decision)', () => {
       page.getByRole('heading', { name: 'Check your texts' }),
     ).toBeVisible({ timeout: 20000 });
     await dialog.getByRole('textbox', { name: '6-digit code' }).fill(code);
-    await dialog.getByRole('button', { name: 'Verify and continue' }).click();
-
-    // Same destination as the email claim: the promote onboarding, not the
-    // walled-garden 403 a non-member used to get here.
+    // The code field submits itself the moment all six digits are in — there
+    // is no button press to make. Same destination as the email claim: the
+    // promote onboarding, not the walled-garden 403 a non-member used to get
+    // here.
     await page.waitForURL(/\/start\?.*promote=1/, { timeout: 30000 });
     await expect(
       page.getByText('You do not have permission to view this page'),
