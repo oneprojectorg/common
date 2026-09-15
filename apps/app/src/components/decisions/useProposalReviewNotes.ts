@@ -7,14 +7,10 @@ import {
   ProposalReviewRequestState,
   type ProposalRevisionNote,
 } from '@op/common/client';
-import { useQueryStates } from 'nuqs';
+import { useQueryState } from 'nuqs';
 import { useCallback, useMemo } from 'react';
 
-import {
-  proposalEditorReviewRevisionParser,
-  proposalFeedbackPanelParser,
-  proposalReviewNotesParser,
-} from './proposalEditor/proposalEditorAsideParams';
+import { proposalReviewNotesParser } from './proposalEditor/proposalEditorAsideParams';
 import { useProposalFeedback } from './useProposalFeedback';
 
 export interface ProposalReviewNotes {
@@ -41,14 +37,10 @@ export function useProposalReviewNotes({
   enabled: boolean;
   onOpen?: () => void;
 }): ProposalReviewNotes {
-  const [
-    { reviewNotes: isReviewNotesRequested, reviewRevision, feedback },
-    setQueryState,
-  ] = useQueryStates({
-    reviewNotes: proposalReviewNotesParser,
-    reviewRevision: proposalEditorReviewRevisionParser,
-    feedback: proposalFeedbackPanelParser,
-  });
+  const [isReviewNotesRequested, setReviewNotesRequested] = useQueryState(
+    'reviewNotes',
+    proposalReviewNotesParser,
+  );
 
   const [requestQuery, noteQuery] = trpc.useQueries((t) => [
     t.decision.listProposalRevisionRequests(
@@ -95,23 +87,17 @@ export function useProposalReviewNotes({
         onOpen?.();
       }
 
-      // Closing has to clear the deep-link params too, or the sheet reopens.
-      void setQueryState(
-        {
-          reviewNotes: open ? true : null,
-          reviewRevision: null,
-          feedback: null,
-        },
-        { history: 'push', scroll: false },
-      );
+      // Null, not `false`: closing drops the param rather than writing it.
+      void setReviewNotesRequested(open ? true : null, {
+        history: 'push',
+        scroll: false,
+      });
     },
-    [onOpen, setQueryState],
+    [onOpen, setReviewNotesRequested],
   );
 
-  // `?reviewRevision=<id>` and `?feedback=true` are email deep-link aliases.
-  const isOpen =
-    hasReviewNotes &&
-    (isReviewNotesRequested || Boolean(reviewRevision) || feedback);
+  // No deep link opens this; the header button's unread dot advertises it.
+  const isOpen = hasReviewNotes && isReviewNotesRequested;
 
   const toggle = useCallback(() => setOpen(!isOpen), [isOpen, setOpen]);
 

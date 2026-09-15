@@ -120,9 +120,9 @@ const RevisionRequestRow = ({
     return null;
   }
 
-  const { proposal, revisionRequest } = item;
+  const { proposal } = item;
   const title = proposal.profile.name;
-  const editHref = `/decisions/${item.decisionProfileSlug}/proposal/${proposal.profileId}/edit?reviewRevision=${revisionRequest.id}`;
+  const editHref = `/decisions/${item.decisionProfileSlug}/proposal/${proposal.profileId}/edit`;
 
   return (
     <NotificationPanelItem>

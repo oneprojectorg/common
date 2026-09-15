@@ -89,7 +89,7 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
 
     const proposalName = proposal.profile.name;
     const processTitle = processProfile.name;
-    const proposalUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfile.slug}/proposal/${proposal.profileId}/edit?reviewRevision=${revisionRequestId}`;
+    const proposalUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfile.slug}/proposal/${proposal.profileId}/edit`;
 
     const result = await step.run('send-emails', async () => {
       try {

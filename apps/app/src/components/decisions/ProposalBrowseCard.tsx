@@ -56,11 +56,6 @@ export function ProposalBrowseCard({
     instanceId,
   };
   const editHref = proposalEditHref(route);
-  // One resubmission answers every open request, so the link opens the sheet
-  // rather than naming one of them.
-  const reviseHref = hasRevisionRequest
-    ? `${editHref}?reviewNotes=true`
-    : editHref;
   const viewHref = proposalHref(route);
 
   // Only pass `actions` when something will actually render — otherwise the
@@ -71,7 +66,7 @@ export function ProposalBrowseCard({
   // the card's purpose. Everywhere else they'd sit on every card an admin can
   // touch — which is all of them — so they live in the `…` menu.
   const actions = hasRevisionRequest ? (
-    <ProposalCardReviseAction editHref={reviseHref} />
+    <ProposalCardReviseAction editHref={editHref} />
   ) : isDraft ? (
     <ProposalCardOwnerActions proposal={proposal} editHref={editHref} />
   ) : undefined;
