@@ -3,5 +3,261 @@
   "health": {
     "maxCyclomatic": 20,
     "maxCognitive": 15
+  },
+  "boundaries": {
+    "zones": [
+      {
+        "name": "apps/api",
+        "patterns": ["apps/api/**"]
+      },
+      {
+        "name": "apps/app",
+        "patterns": ["apps/app/**"]
+      },
+      {
+        "name": "packages/ai",
+        "patterns": ["packages/ai/**"]
+      },
+      {
+        "name": "packages/analytics",
+        "patterns": ["packages/analytics/**"]
+      },
+      {
+        "name": "packages/common",
+        "patterns": ["packages/common/**"]
+      },
+      {
+        "name": "packages/core",
+        "patterns": ["packages/core/**"]
+      },
+      {
+        "name": "packages/hooks",
+        "patterns": ["packages/hooks/**"]
+      },
+      {
+        "name": "packages/logging",
+        "patterns": ["packages/logging/**"]
+      },
+      {
+        "name": "packages/sense",
+        "patterns": ["packages/sense/**"]
+      },
+      {
+        "name": "packages/styles",
+        "patterns": ["packages/styles/**"]
+      },
+      {
+        "name": "packages/types",
+        "patterns": ["packages/types/**"]
+      },
+      {
+        "name": "services/api",
+        "patterns": ["services/api/**"]
+      },
+      {
+        "name": "services/cache",
+        "patterns": ["services/cache/**"]
+      },
+      {
+        "name": "services/collab",
+        "patterns": ["services/collab/**"]
+      },
+      {
+        "name": "services/db",
+        "patterns": ["services/db/**"]
+      },
+      {
+        "name": "services/emails",
+        "patterns": ["services/emails/**"]
+      },
+      {
+        "name": "services/events",
+        "patterns": ["services/events/**"]
+      },
+      {
+        "name": "services/realtime",
+        "patterns": ["services/realtime/**"]
+      },
+      {
+        "name": "services/supabase",
+        "patterns": ["services/supabase/**"]
+      },
+      {
+        "name": "services/translation",
+        "patterns": ["services/translation/**"]
+      },
+      {
+        "name": "services/workflows",
+        "patterns": ["services/workflows/**"]
+      },
+      {
+        "name": "tests/core",
+        "patterns": ["tests/core/**"]
+      },
+      {
+        "name": "tests/e2e",
+        "patterns": ["tests/e2e/**"]
+      }
+    ],
+    "rules": [
+      {
+        "from": "apps/api",
+        "allow": [
+          "packages/core",
+          "packages/logging",
+          "services/api",
+          "services/supabase",
+          "services/workflows"
+        ]
+      },
+      {
+        "from": "apps/app",
+        "allow": [
+          "packages/analytics",
+          "packages/common",
+          "packages/core",
+          "packages/hooks",
+          "packages/logging",
+          "packages/sense",
+          "packages/styles",
+          "packages/types",
+          "services/api",
+          "services/cache",
+          "services/realtime",
+          "services/supabase"
+        ]
+      },
+      {
+        "from": "packages/ai",
+        "allow": []
+      },
+      {
+        "from": "packages/analytics",
+        "allow": ["packages/core"]
+      },
+      {
+        "from": "packages/common",
+        "allow": [
+          "packages/analytics",
+          "packages/core",
+          "packages/logging",
+          "packages/styles",
+          "packages/types",
+          "services/cache",
+          "services/collab",
+          "services/db",
+          "services/emails",
+          "services/events",
+          "services/supabase",
+          "services/translation"
+        ]
+      },
+      {
+        "from": "packages/core",
+        "allow": []
+      },
+      {
+        "from": "packages/hooks",
+        "allow": [
+          "packages/common",
+          "packages/core",
+          "services/api",
+          "services/supabase"
+        ]
+      },
+      {
+        "from": "packages/logging",
+        "allow": []
+      },
+      {
+        "from": "packages/sense",
+        "allow": ["packages/styles"]
+      },
+      {
+        "from": "packages/styles",
+        "allow": []
+      },
+      {
+        "from": "packages/types",
+        "allow": []
+      },
+      {
+        "from": "services/api",
+        "allow": [
+          "packages/analytics",
+          "packages/common",
+          "packages/core",
+          "packages/logging",
+          "packages/types",
+          "services/cache",
+          "services/collab",
+          "services/db",
+          "services/events",
+          "services/realtime",
+          "services/supabase",
+          "services/translation",
+          "tests/core"
+        ]
+      },
+      {
+        "from": "services/cache",
+        "allow": ["packages/core", "packages/logging"]
+      },
+      {
+        "from": "services/collab",
+        "allow": ["services/cache"]
+      },
+      {
+        "from": "services/db",
+        "allow": ["packages/core", "services/supabase"]
+      },
+      {
+        "from": "services/emails",
+        "allow": ["packages/core", "packages/types"]
+      },
+      {
+        "from": "services/events",
+        "allow": ["packages/core", "services/db"]
+      },
+      {
+        "from": "services/realtime",
+        "allow": ["packages/common", "packages/core", "packages/logging"]
+      },
+      {
+        "from": "services/supabase",
+        "allow": ["packages/core"]
+      },
+      {
+        "from": "services/translation",
+        "allow": ["services/db"]
+      },
+      {
+        "from": "services/workflows",
+        "allow": [
+          "packages/common",
+          "packages/core",
+          "packages/logging",
+          "services/cache",
+          "services/db",
+          "services/emails",
+          "services/events",
+          "services/realtime",
+          "services/supabase"
+        ]
+      },
+      {
+        "from": "tests/core",
+        "allow": ["packages/common", "packages/core", "services/db"]
+      },
+      {
+        "from": "tests/e2e",
+        "allow": [
+          "packages/common",
+          "services/db",
+          "services/supabase",
+          "tests/core"
+        ]
+      }
+    ]
   }
 }
