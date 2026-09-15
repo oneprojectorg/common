@@ -5,7 +5,6 @@ import { cancelRevisionRequestRouter } from './cancelRevisionRequest';
 import { getReviewAssignmentRouter } from './getReviewAssignment';
 import { listCategoryReviewersRouter } from './listCategoryReviewers';
 import { listEligibleReviewersRouter } from './listEligibleReviewers';
-import { listPhaseReviewAssignmentsRouter } from './listPhaseReviewAssignments';
 import { listPhaseReviewerSummariesRouter } from './listPhaseReviewerSummaries';
 import { listProposalFeedbackRouter } from './listProposalFeedback';
 import { listProposalRevisionNotesRouter } from './listProposalRevisionNotes';
@@ -35,7 +34,6 @@ export const reviewsRouter = mergeRouters(
   listProposalRevisionNotesRouter,
   listProposalRevisionRequestsRouter,
   listProposalsRevisionRequestsRouter,
-  listPhaseReviewAssignmentsRouter,
   listPhaseReviewerSummariesRouter,
   listReviewAssignmentLocationsRouter,
   listReviewAssignmentsRouter,
