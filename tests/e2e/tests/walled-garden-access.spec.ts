@@ -101,7 +101,10 @@ test.describe('Walled garden — anonymous sessions can log in', () => {
 
     await page.goto('/login');
 
-    await expect(page.getByLabel('Email', { exact: true })).toBeVisible({
+    // By role, not by label: the login panel's channel tabs give the Email
+    // tabpanel an accessible name of "Email", so `getByLabel('Email')` matches
+    // the tabpanel as well as the input.
+    await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible({
       timeout: 15000,
     });
     await expect(page).toHaveURL(/\/login/);
