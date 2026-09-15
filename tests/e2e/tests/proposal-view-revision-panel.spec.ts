@@ -17,6 +17,7 @@ import {
   getSeededTemplate,
   grantInstanceReviewerRole,
 } from '@op/test';
+import type { Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
@@ -207,15 +208,14 @@ async function setupRevisionScenario({
   };
 }
 
-function proposalUrl(
-  instanceSlug: string,
-  proposalProfileId: string,
-  revisionRequestId?: string,
-) {
-  const base = `/en/decisions/${instanceSlug}/proposal/${proposalProfileId}`;
-  return revisionRequestId
-    ? `${base}?reviewRevision=${revisionRequestId}`
-    : base;
+function proposalUrl(instanceSlug: string, proposalProfileId: string) {
+  return `/en/decisions/${instanceSlug}/proposal/${proposalProfileId}`;
+}
+
+async function openReviewNotes(page: Page) {
+  await page
+    .getByRole('button', { name: 'Review notes' })
+    .click({ timeout: 30_000 });
 }
 
 test.describe('Proposal editor — review notes sheet', () => {
@@ -238,16 +238,21 @@ test.describe('Proposal editor — review notes sheet', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    // `?reviewRevision=<id>` is the deep link the request notification sends;
-    // it names one request and the sheet lists every open one.
     await page.goto(
-      `/en/decisions/${scenario.instance.slug}/proposal/${scenario.proposal.profileId}/edit?reviewRevision=${scenario.revisionRequest.id}`,
+      `/en/decisions/${scenario.instance.slug}/proposal/${scenario.proposal.profileId}/edit`,
       { waitUntil: 'domcontentloaded' },
     );
 
+    const reviewNotesSheet = page.getByRole('dialog').filter({
+      has: page.getByRole('heading', { name: 'Review notes' }),
+    });
+    await expect(reviewNotesSheet).toBeHidden({ timeout: 36_000 });
+
+    await openReviewNotes(page);
+
     await expect(
       page.getByRole('heading', { name: 'Review notes' }),
-    ).toBeVisible({ timeout: 36_000 });
+    ).toBeVisible();
     await expect(page.getByText(FIRST_REQUEST_COMMENT)).toBeVisible();
     await expect(page.getByText(SECOND_REQUEST_COMMENT)).toBeVisible();
     await expect(
@@ -256,9 +261,6 @@ test.describe('Proposal editor — review notes sheet', () => {
 
     // The sheet slides over the editor and covers the header's actions, so
     // the author closes it before submitting — as they would in the product.
-    const reviewNotesSheet = page.getByRole('dialog').filter({
-      has: page.getByRole('heading', { name: 'Review notes' }),
-    });
     await reviewNotesSheet.getByRole('button', { name: 'Close' }).click();
     await expect(reviewNotesSheet).toBeHidden();
 
@@ -322,13 +324,7 @@ test.describe('Proposal View — revision notes panel', () => {
     ).toBeVisible();
 
     // Panel open — one note, both of the requests it answered.
-    await page.goto(
-      proposalUrl(
-        scenario.instance.slug,
-        scenario.proposal.profileId,
-        scenario.revisionRequest.id,
-      ),
-    );
+    await openReviewNotes(page);
     await expect(
       page.getByRole('heading', { name: 'Your revision note' }),
     ).toBeVisible({ timeout: 30_000 });
@@ -357,12 +353,9 @@ test.describe('Proposal View — revision notes panel', () => {
     });
 
     await page.goto(
-      proposalUrl(
-        scenario.instance.slug,
-        scenario.proposal.profileId,
-        scenario.revisionRequest.id,
-      ),
+      proposalUrl(scenario.instance.slug, scenario.proposal.profileId),
     );
+    await openReviewNotes(page);
 
     // Not "Your revision note": the record is identical, only the note card's
     // title tracks who is reading it.
@@ -388,12 +381,9 @@ test.describe('Proposal View — revision notes panel', () => {
     });
 
     await authenticatedPage.goto(
-      proposalUrl(
-        scenario.instance.slug,
-        scenario.proposal.profileId,
-        scenario.revisionRequest.id,
-      ),
+      proposalUrl(scenario.instance.slug, scenario.proposal.profileId),
     );
+    await openReviewNotes(authenticatedPage);
 
     await expect(
       authenticatedPage.getByRole('heading', {
@@ -425,11 +415,7 @@ test.describe('Proposal View — revision notes panel', () => {
     });
 
     await page.goto(
-      proposalUrl(
-        scenario.instance.slug,
-        scenario.proposal.profileId,
-        scenario.revisionRequest.id,
-      ),
+      proposalUrl(scenario.instance.slug, scenario.proposal.profileId),
     );
 
     // The panel must not render for a user with no access to the instance.
