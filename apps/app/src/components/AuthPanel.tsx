@@ -4,6 +4,7 @@ import { Button } from '@op/sense/Button';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@op/sense/InputOTP';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import React from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';
@@ -296,7 +297,12 @@ export const AuthPhoneField = ({
   );
 };
 
-/** OTP entry field wrapped in a submit-on-enter form. */
+// Matches the `otp_length` set to 6 in every supabase/*.toml.
+const OTP_LENGTH = 6;
+// input-otp's REGEXP_ONLY_DIGITS, inlined to avoid a direct dependency on the package.
+const DIGITS_ONLY_PATTERN = '^\\d+$';
+
+/** 6-digit OTP entry field; submits automatically once all slots are filled. */
 export const AuthCodeField = ({
   value,
   isDisabled,
@@ -311,28 +317,28 @@ export const AuthCodeField = ({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col">
-      <form
-        onSubmit={async (e) => {
-          if (isValidOtpLength(value)) {
-            e.preventDefault();
-            e.stopPropagation();
-            await onSubmit();
-          }
+    <Field>
+      <FieldLabel htmlFor="auth-code">{t('6-digit code')}</FieldLabel>
+      <InputOTP
+        id="auth-code"
+        containerClassName="justify-center"
+        maxLength={OTP_LENGTH}
+        pattern={DIGITS_ONLY_PATTERN}
+        aria-label={t('6-digit code')}
+        autoFocus
+        disabled={isDisabled}
+        value={value ?? ''}
+        onChange={onChange}
+        onComplete={() => {
+          void onSubmit();
         }}
       >
-        <Field>
-          <Input
-            aria-label={t('Code')}
-            placeholder="1234567890"
-            spellCheck={false}
-            autoFocus
-            disabled={isDisabled}
-            value={value ?? ''}
-            onChange={(e) => onChange(e.target.value.trim())}
-          />
-        </Field>
-      </form>
-    </div>
+        <InputOTPGroup>
+          {Array.from({ length: OTP_LENGTH }, (_, index) => (
+            <InputOTPSlot key={index} index={index} />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+    </Field>
   );
 };
