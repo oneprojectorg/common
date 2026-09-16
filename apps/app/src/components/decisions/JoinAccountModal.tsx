@@ -9,7 +9,7 @@ import {
 } from '@/hooks/useClaimAccount';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
-import type { CommonUser } from '@op/api/encoders';
+import { isJoinEligible } from '@/utils/isJoinEligible';
 import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -53,14 +53,6 @@ import { isValidEmail } from './emailUtils';
  * anonymous visitors; a full account never sees the Join button and the modal
  * won't open for one.
  */
-
-/**
- * Who may claim: logged-out visitors and anonymous accounts. NOT the same as
- * `!userCanInteract` — a full account without a currentProfile must see the
- * user menu, not Join.
- */
-export const isJoinEligible = (user: CommonUser | null | undefined): boolean =>
-  !user || user.isAnonymous;
 
 export const JoinAccountModal = () => {
   const { user } = useUser();
