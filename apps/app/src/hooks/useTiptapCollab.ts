@@ -45,9 +45,7 @@ export function useTiptapCollab({
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const t = useTranslations();
 
-  const { getToken, refreshToken } = useProposalCollabToken({
-    proposalProfileId,
-  });
+  const getToken = useProposalCollabToken({ proposalProfileId });
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
@@ -92,8 +90,7 @@ export function useTiptapCollab({
       onAuthenticationFailed: () => {
         setStatus('disconnected');
         setIsSynced(false);
-        // The provider reconnects on its own; make it fetch a new token.
-        refreshToken();
+        // The provider reconnects on its own and fetches a fresh token.
         logger.warn('Tiptap collaboration rejected the token', {
           context: 'useTiptapCollab',
           docId,
@@ -112,7 +109,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, getToken, refreshToken, t, ydoc]);
+  }, [docId, getToken, t, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {
