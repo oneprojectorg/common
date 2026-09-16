@@ -1,10 +1,13 @@
 'use client';
 
 import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { getAvatarColorForString } from '@op/styles/constants';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { useProposalCollabToken } from './useProposalCollabToken';
 
@@ -44,24 +47,20 @@ export function useTiptapCollab({
   proposalProfileId,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
-  // The provider awaits this on every authentication, so a reconnect picks up
-  // a fresh token without the Y.Doc being torn down. It is memoized — a new
-  // function identity would rebuild the provider.
-  const getToken = useProposalCollabToken({ proposalProfileId });
+  const t = useTranslations();
+
+  // The provider awaits `getToken` on every authentication, so a reconnect
+  // picks up a fresh token without the Y.Doc being torn down. It is memoized —
+  // a new function identity would rebuild the provider.
+  const { getToken, refreshToken } = useProposalCollabToken({
+    proposalProfileId,
+  });
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
 
   const ydoc = useMemo(() => new Y.Doc(), []);
-
-  // The Y.Doc outlives every provider rebuild, so it is released here rather
-  // than in the provider effect's cleanup.
-  useEffect(() => {
-    return () => {
-      ydoc.destroy();
-    };
-  }, [ydoc]);
 
   // Derive color from username - matches Avatar gradient
   const user = useMemo<CollabUser>(() => {
@@ -79,6 +78,11 @@ export function useTiptapCollab({
       return;
     }
 
+    // A rejected token is most likely stale, so the first rejection drops the
+    // cached token and reconnects. A second rejection in a row means the fresh
+    // token was refused too, so the user is told and the retry loop stops.
+    let rejections = 0;
+
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
@@ -86,6 +90,9 @@ export function useTiptapCollab({
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
+      },
+      onAuthenticated: () => {
+        rejections = 0;
       },
       onDisconnect: () => {
         setStatus('disconnected');
@@ -97,10 +104,25 @@ export function useTiptapCollab({
       onAuthenticationFailed: () => {
         setStatus('disconnected');
         setIsSynced(false);
-        logger.warn('Tiptap collaboration rejected the token', {
+        rejections += 1;
+
+        if (rejections === 1) {
+          refreshToken();
+          newProvider.disconnect();
+          void newProvider.connect();
+          return;
+        }
+
+        logger.warn('Tiptap collaboration rejected a fresh token', {
           context: 'useTiptapCollab',
           docId,
         });
+        toast.error(
+          t(
+            'Could not reconnect to this document. Reload the page to try again.',
+          ),
+        );
+        newProvider.disconnect();
       },
     });
 
@@ -109,7 +131,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, getToken, ydoc]);
+  }, [docId, getToken, refreshToken, t, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {

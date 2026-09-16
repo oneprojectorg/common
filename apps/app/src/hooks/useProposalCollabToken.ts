@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 /** Refetch a token once it is five minutes old; the JWT itself lives an hour. */
 const TOKEN_STALE_TIME_MS = 5 * 60 * 1000;
@@ -14,15 +14,16 @@ const INITIAL_STALE_TIME_MS = 50 * 60 * 1000;
  *
  * The first fetch is a suspense query, so a FORBIDDEN or NOT_FOUND from the
  * endpoint reaches the surrounding `ResourceErrorBoundary` as a 403/404 page
- * instead of a silent failure to connect. The returned resolver is memoized
- * (a new identity would rebuild the Tiptap provider) and awaited again on
- * every reconnect — the cache serves the same token until it goes stale.
+ * instead of a silent failure to connect. `getToken` is memoized (a new
+ * identity would rebuild the Tiptap provider) and awaited again on every
+ * reconnect — the cache serves the same token until it goes stale, or until
+ * `refreshToken` drops it after Tiptap rejects one.
  */
 export function useProposalCollabToken({
   proposalProfileId,
 }: {
   proposalProfileId: string;
-}): () => Promise<string> {
+}): { getToken: () => Promise<string>; refreshToken: () => void } {
   const utils = trpc.useUtils();
 
   trpc.decision.getCollabToken.useSuspenseQuery(
@@ -30,11 +31,17 @@ export function useProposalCollabToken({
     { staleTime: INITIAL_STALE_TIME_MS, refetchOnWindowFocus: false },
   );
 
-  return useCallback(
+  const getToken = useCallback(
     () =>
       utils.decision.getCollabToken
         .fetch({ proposalProfileId }, { staleTime: TOKEN_STALE_TIME_MS })
         .then((result) => result.token),
     [utils, proposalProfileId],
   );
+
+  const refreshToken = useCallback(() => {
+    void utils.decision.getCollabToken.invalidate({ proposalProfileId });
+  }, [utils, proposalProfileId]);
+
+  return useMemo(() => ({ getToken, refreshToken }), [getToken, refreshToken]);
 }

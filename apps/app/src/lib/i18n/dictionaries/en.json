@@ -1758,5 +1758,6 @@
   "Continue with": "Continue with",
   "Email me a code": "Email me a code",
   "Text me a code": "Text me a code",
-  "We'll email you a code to confirm it's yours.": "We'll email you a code to confirm it's yours."
+  "We'll email you a code to confirm it's yours.": "We'll email you a code to confirm it's yours.",
+  "Could not reconnect to this document. Reload the page to try again.": "Could not reconnect to this document. Reload the page to try again."
 }

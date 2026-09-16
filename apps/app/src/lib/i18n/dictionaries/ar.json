@@ -1758,5 +1758,6 @@
   "Continue with": "المتابعة باستخدام",
   "Email me a code": "أرسل لي رمزًا بالبريد الإلكتروني",
   "Text me a code": "أرسل لي رمزًا برسالة نصية",
-  "We'll email you a code to confirm it's yours.": "سنرسل إليك رمزًا بالبريد الإلكتروني للتأكد من أنه لك."
+  "We'll email you a code to confirm it's yours.": "سنرسل إليك رمزًا بالبريد الإلكتروني للتأكد من أنه لك.",
+  "Could not reconnect to this document. Reload the page to try again.": "تعذّر إعادة الاتصال بهذا المستند. أعد تحميل الصفحة للمحاولة مرة أخرى."
 }

@@ -1758,5 +1758,6 @@
   "Continue with": "Ku sii wad",
   "Email me a code": "Iimayl iigu soo dir kood",
   "Text me a code": "Fariin qoraal ah iigu soo dir kood",
-  "We'll email you a code to confirm it's yours.": "Waxaan kuugu soo diri doonaa kood iimaylka si aan u xaqiijinno inuu kaaga yahay."
+  "We'll email you a code to confirm it's yours.": "Waxaan kuugu soo diri doonaa kood iimaylka si aan u xaqiijinno inuu kaaga yahay.",
+  "Could not reconnect to this document. Reload the page to try again.": "Lama awoodin in dib loogu xidhmo dukumeentigan. Dib u shub bogga si aad mar kale isku daydo."
 }
