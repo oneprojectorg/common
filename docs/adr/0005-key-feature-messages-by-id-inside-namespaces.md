@@ -98,9 +98,9 @@ yet (oxc-project/oxc#21644).
 
 ## Consequences
 
-- About 50 generic labels stay at the top level; the other ~1,700 keys move
-  under a namespace. Using a string from several files does not make it
-  generic: `Untitled Proposal` is read from 20 files and is still
+- An estimated 50 generic labels stay at the top level and the other ~1,700
+  keys move under a namespace; the real split is decided per feature during
+  migration. Using a string from several files does not make it generic: `Untitled Proposal` is read from 20 files and is still
   `decisions` copy.
 - Features write to different namespaces, so concurrent PRs collide only
   when they touch the same feature.
