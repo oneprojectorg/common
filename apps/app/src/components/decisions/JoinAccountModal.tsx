@@ -20,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
@@ -29,12 +28,15 @@ import { type ReactNode, Suspense, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import {
+  type AuthChannel,
   AuthCodeField,
+  AuthCodeStepActions,
+  AuthContactFields,
   AuthDivider,
-  AuthEmailField,
   AuthGoogleButton,
-  AuthPhoneField,
-  isValidOtpLength,
+  AuthSendCodeButton,
+  CodeSentAnnouncement,
+  codeSentToLabel,
 } from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
@@ -281,10 +283,8 @@ const JoinAccountModalContent = () => {
     void submitContact();
   };
 
-  // Switching channel abandons whatever was typed in the other one, so a
-  // half-entered address can't be submitted against the wrong endpoint.
-  const switchChannel = () => {
-    setChannel(isPhone ? 'email' : 'phone');
+  const switchChannel = (next: AuthChannel) => {
+    setChannel(next);
     setError(undefined);
     setEmail('');
     setPhone('');
@@ -294,14 +294,8 @@ const JoinAccountModalContent = () => {
   // /en/login (same as HeaderUserMenu).
   const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
 
-  // One string read by both the visible description and the live region below,
-  // so the announcement can't drift from what sighted users see.
   const sentTo = otpSent
-    ? isPhone
-      ? t('We sent a code to {phone}', {
-          phone: normalizePhoneNumber(phone),
-        })
-      : t('We sent a code to {email}', { email })
+    ? codeSentToLabel(t, { isPhone, phone: normalizePhoneNumber(phone), email })
     : undefined;
 
   return (
@@ -323,14 +317,7 @@ const JoinAccountModalContent = () => {
         </DialogDescription>
       </DialogHeader>
 
-      {/*
-        Announces where the code went: the heading swap and the code field's
-        autofocus announce nothing about it. Must stay mounted, empty until
-        `otpSent` — a live region only announces a change it was present for.
-      */}
-      <span role="status" className="sr-only">
-        {sentTo ?? ''}
-      </span>
+      <CodeSentAnnouncement sentTo={sentTo} />
 
       <div className="flex flex-col gap-4 px-6 py-4">
         {/* role="alert" so async claim errors are announced while focus stays on
@@ -356,82 +343,28 @@ const JoinAccountModalContent = () => {
               }}
             />
             <AuthDivider />
-            {smsEnabled ? (
-              <Tabs
-                value={activeChannel}
-                onValueChange={(next) => {
-                  if (next !== activeChannel) {
-                    switchChannel();
-                  }
-                }}
-              >
-                <span id="join-channel-label" className="text-label">
-                  {t('Continue with')}
-                </span>
-                {/* TabsList is `w-fit`; the design splits the full width. */}
-                <TabsList
-                  className="w-full"
-                  aria-labelledby="join-channel-label"
-                >
-                  <TabsTrigger
-                    value="email"
-                    className="flex-1"
-                    disabled={isSubmitting}
-                  >
-                    {t('Email')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="phone"
-                    className="flex-1"
-                    disabled={isSubmitting}
-                  >
-                    {t('Phone Number')}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="email">
-                  <AuthEmailField
-                    label={t('Email')}
-                    // The design says "We'll email a link"; we send a
-                    // six-digit code, so the copy says code.
-                    description={t(
-                      "We'll email you a code to confirm it's yours.",
-                    )}
-                    // Example-email placeholders are deliberately untranslated.
-                    placeholder="name@example.com"
-                    value={email}
-                    isDisabled={isSubmitting}
-                    onChange={setEmail}
-                    onSubmit={() => {
-                      void submitContact();
-                    }}
-                  />
-                </TabsContent>
-                <TabsContent value="phone">
-                  <AuthPhoneField
-                    label={t('Phone Number')}
-                    description={t("We'll text a code to confirm it's yours.")}
-                    value={phone}
-                    isDisabled={isSubmitting}
-                    onChange={setPhone}
-                    onSubmit={() => {
-                      void submitContact();
-                    }}
-                  />
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <AuthEmailField
-                label={t('Email')}
-                description={t("We'll email you a code to confirm it's yours.")}
-                placeholder="name@example.com"
-                value={email}
-                isDisabled={isSubmitting}
-                onChange={setEmail}
-                onSubmit={() => {
+            <AuthContactFields
+              smsEnabled={smsEnabled}
+              value={activeChannel}
+              onValueChange={switchChannel}
+              email={{
+                value: email,
+                isDisabled: isSubmitting,
+                onChange: setEmail,
+                onSubmit: () => {
                   void submitContact();
-                }}
-              />
-            )}
+                },
+              }}
+              phone={{
+                value: phone,
+                isDisabled: isSubmitting,
+                onChange: setPhone,
+                onSubmit: () => {
+                  void submitContact();
+                },
+              }}
+              isTriggersDisabled={isSubmitting}
+            />
             <p className="text-muted-foreground">
               {t.rich('Already have an account? <login>Log in</login>', {
                 login: (chunks: ReactNode) => (
@@ -447,43 +380,26 @@ const JoinAccountModalContent = () => {
 
       <DialogFooter className="flex-col sm:flex-col">
         {otpSent ? (
-          <>
-            <Button
-              className="w-full"
-              loading={isSubmitting}
-              disabled={isSubmitting || !isValidOtpLength(token)}
-              onClick={() => {
-                void submitToken();
-              }}
-            >
-              {t('Verify and continue')}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={isSubmitting}
-              onClick={resendCode}
-            >
-              {t('Resend code')}
-            </Button>
-            <Button variant="link" onClick={goBack}>
-              {isPhone
-                ? t('Use a different phone number')
-                : t('Use a different email address')}
-            </Button>
-          </>
+          <AuthCodeStepActions
+            token={token}
+            isBusy={isSubmitting}
+            isPhone={isPhone}
+            onVerify={() => {
+              void submitToken();
+            }}
+            onResend={resendCode}
+            onBack={goBack}
+          />
         ) : (
           <>
-            <Button
-              className="w-full"
-              loading={isSubmitting}
-              disabled={isSubmitting || !contactIsValid}
-              onClick={() => {
+            <AuthSendCodeButton
+              isPhone={isPhone}
+              isBusy={isSubmitting}
+              isDisabled={isSubmitting || !contactIsValid}
+              onSubmit={() => {
                 void submitContact();
               }}
-            >
-              {isPhone ? t('Text me a code') : t('Email me a code')}
-            </Button>
+            />
             <Button variant="link" onClick={close}>
               {t('Browse proposals for now')}
             </Button>

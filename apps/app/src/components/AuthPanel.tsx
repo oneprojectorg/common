@@ -6,21 +6,18 @@ import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@op/sense/InputOTP';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
-import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import React, { useId } from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { useTranslations } from '@/lib/i18n';
+import { useTranslations, type TranslateFn } from '@/lib/i18n';
 
 /**
- * Shared building blocks for the auth panels.
- *
- * `LoginPanel` (login + signup) and `LinkAccountPanel` (anonymous-account
- * upgrade) render the same card chrome, Google button, email field and OTP
- * field, but drive completely different Supabase calls. These presentational
- * pieces are the common shell; each panel owns its own auth logic and composes
- * the body from these parts.
+ * Shared building blocks for the auth panels. `LoginPanel` (login + signup),
+ * `JoinAccountModal` (claim), and `LinkAccountPanel` (anonymous upgrade) each
+ * own their auth logic and compose the body from these parts.
  */
 
 /** Which credential the visitor is signing in with. */
@@ -340,5 +337,202 @@ export const AuthCodeField = ({
         </InputOTPGroup>
       </InputOTP>
     </Field>
+  );
+};
+
+// ── Shared steps ───────────────────────────────────────────────────────────
+// The contact and code steps, shared by the login panel and the claim dialog.
+
+/**
+ * "We sent a code to {contact}" for the active channel. One string read by
+ * both the visible copy and the live region, so they cannot drift.
+ */
+export const codeSentToLabel = (
+  t: TranslateFn,
+  { isPhone, phone, email }: { isPhone: boolean; phone: string; email: string },
+): string =>
+  isPhone
+    ? t('We sent a code to {phone}', { phone })
+    : t('We sent a code to {email}', { email });
+
+/**
+ * Announces where the code went. Must stay mounted, empty until the code
+ * step — a live region only announces a change it was present for.
+ */
+export const CodeSentAnnouncement = ({ sentTo }: { sentTo?: string }) => (
+  <span role="status" className="sr-only">
+    {sentTo ?? ''}
+  </span>
+);
+
+/** One contact field's state and handlers, as handed to AuthContactFields. */
+interface ContactField {
+  value: string;
+  isDisabled: boolean;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+}
+
+/**
+ * The contact step: channel tabs (SMS on) or the email field alone.
+ * `onValueChange` receives the new channel; the caller must clear both
+ * fields, since a half-entered address must not hit the wrong endpoint.
+ */
+export const AuthContactFields = ({
+  smsEnabled,
+  value,
+  onValueChange,
+  email,
+  phone,
+  isTriggersDisabled = false,
+}: {
+  smsEnabled: boolean;
+  value: AuthChannel;
+  onValueChange: (channel: AuthChannel) => void;
+  email: ContactField;
+  phone: ContactField;
+  /** Disables both triggers (the claim dialog does this while submitting). */
+  isTriggersDisabled?: boolean;
+}) => {
+  const t = useTranslations();
+  const labelId = useId();
+
+  // The design mock says "We'll email a link"; we send a six-digit code, so
+  // the copy says code.
+  const emailField = (
+    <AuthEmailField
+      label={t('Email')}
+      description={t("We'll email you a code to confirm it's yours.")}
+      // Example-email placeholders are deliberately untranslated.
+      placeholder="name@example.com"
+      value={email.value}
+      isDisabled={email.isDisabled}
+      onChange={email.onChange}
+      onSubmit={email.onSubmit}
+    />
+  );
+
+  if (!smsEnabled) {
+    return emailField;
+  }
+
+  return (
+    <Tabs
+      value={value}
+      onValueChange={(next) => {
+        // Tabs reports a plain string; only the two channels are real.
+        const nextChannel: AuthChannel | undefined =
+          next === 'email' || next === 'phone' ? next : undefined;
+        if (nextChannel && nextChannel !== value) {
+          onValueChange(nextChannel);
+        }
+      }}
+    >
+      <span id={labelId} className="text-label">
+        {t('Continue with')}
+      </span>
+      {/* TabsList is `w-fit` by default; both surfaces split the full width. */}
+      <TabsList className="w-full" aria-labelledby={labelId}>
+        <TabsTrigger
+          value="email"
+          className="flex-1"
+          disabled={isTriggersDisabled}
+        >
+          {t('Email')}
+        </TabsTrigger>
+        <TabsTrigger
+          value="phone"
+          className="flex-1"
+          disabled={isTriggersDisabled}
+        >
+          {t('Phone Number')}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="email">{emailField}</TabsContent>
+      <TabsContent value="phone">
+        <AuthPhoneField
+          label={t('Phone Number')}
+          description={t("We'll text a code to confirm it's yours.")}
+          value={phone.value}
+          isDisabled={phone.isDisabled}
+          onChange={phone.onChange}
+          onSubmit={phone.onSubmit}
+        />
+      </TabsContent>
+    </Tabs>
+  );
+};
+
+/** The contact step's primary CTA: "Email me a code" / "Text me a code". */
+export const AuthSendCodeButton = ({
+  isPhone,
+  isBusy,
+  isDisabled,
+  onSubmit,
+}: {
+  isPhone: boolean;
+  isBusy: boolean;
+  isDisabled: boolean;
+  onSubmit: () => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Button
+      className="w-full"
+      loading={isBusy}
+      disabled={isDisabled}
+      onClick={onSubmit}
+    >
+      {isPhone ? t('Text me a code') : t('Email me a code')}
+    </Button>
+  );
+};
+
+/**
+ * The code step's actions: verify, resend, change contact. A fragment, so
+ * each surface keeps its own container.
+ */
+export const AuthCodeStepActions = ({
+  token,
+  isBusy,
+  isPhone,
+  onVerify,
+  onResend,
+  onBack,
+}: {
+  token: string | undefined;
+  isBusy: boolean;
+  isPhone: boolean;
+  onVerify: () => void;
+  onResend: () => void;
+  onBack: () => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <>
+      <Button
+        className="w-full"
+        loading={isBusy}
+        disabled={isBusy || !isValidOtpLength(token)}
+        onClick={onVerify}
+      >
+        {t('Verify and continue')}
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full"
+        disabled={isBusy}
+        onClick={onResend}
+      >
+        {t('Resend code')}
+      </Button>
+      <Button variant="link" disabled={isBusy} onClick={onBack}>
+        {isPhone
+          ? t('Use a different phone number')
+          : t('Use a different email address')}
+      </Button>
+    </>
   );
 };

@@ -8,7 +8,6 @@ import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { SocialLinks } from '@op/sense/SocialLinks';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
@@ -21,12 +20,14 @@ import { ButtonLink } from '@/components/ButtonLink';
 import {
   type AuthChannel,
   AuthCodeField,
+  AuthCodeStepActions,
+  AuthContactFields,
   AuthDivider,
-  AuthEmailField,
   AuthGoogleButton,
   AuthPanelShell,
-  AuthPhoneField,
-  isValidOtpLength,
+  AuthSendCodeButton,
+  CodeSentAnnouncement,
+  codeSentToLabel,
   useAuthPanelStore,
 } from './AuthPanel';
 import { CommonLogo } from './CommonLogo';
@@ -37,10 +38,9 @@ type LoginStep = 'phone-code' | 'phone-number' | 'email-address' | 'email-code';
 /**
  * Standard login / signup panel.
  *
- * Mirrors the composition of `JoinAccountModal` — channel tabs, code-step
- * copy, and the primary/outline/link footer — because both flows send a
- * six-digit code. The auth logic is not shared: this panel signs people in
- * through the invite-only gate; the modal claims accounts around it.
+ * Shares its contact and code steps with `JoinAccountModal` (AuthPanel);
+ * the auth logic is not shared — this panel signs people in through the
+ * invite-only gate.
  *
  * The anonymous-account upgrade flow ("link mode") lives in LinkAccountPanel;
  * login/page.tsx routes there when the visitor is anonymous. This component
@@ -125,12 +125,8 @@ export const LoginPanel = () => {
   const isPhone = activeChannel === 'phone';
   const isCodeStep = step === 'phone-code' || step === 'email-code';
 
-  // One string read by both the visible subtitle and the live region below,
-  // so the announcement cannot drift from what sighted users see.
   const sentTo = isCodeStep
-    ? isPhone
-      ? t('We sent a code to {phone}', { phone: phoneFlow.normalized })
-      : t('We sent a code to {email}', { email })
+    ? codeSentToLabel(t, { isPhone, phone: phoneFlow.normalized, email })
     : undefined;
 
   const handleLogin = async () => {
@@ -236,15 +232,8 @@ export const LoginPanel = () => {
     }
   };
 
-  // Switching channel abandons whatever was typed in the other one, so a
-  // half-entered address cannot be submitted against the wrong endpoint.
-  const switchChannel = (next: string) => {
-    const nextChannel: AuthChannel | undefined =
-      next === 'email' || next === 'phone' ? next : undefined;
-    if (!nextChannel || nextChannel === activeChannel) {
-      return;
-    }
-    setChannel(nextChannel);
+  const switchChannel = (next: AuthChannel) => {
+    setChannel(next);
     setEmail('');
     setPhone('');
     setTokenError(undefined);
@@ -308,15 +297,7 @@ export const LoginPanel = () => {
 
   return (
     <AuthPanelShell title={title} subtitle={subtitle}>
-      {/*
-        Announces where the code went: the heading swap and the code field's
-        autofocus announce nothing about it. Must stay mounted, empty until
-        the code step — a live region only announces a change it was present
-        for.
-      */}
-      <span role="status" className="sr-only">
-        {sentTo ?? ''}
-      </span>
+      <CodeSentAnnouncement sentTo={sentTo} />
 
       {!isConnectionError && !isErrorState && (
         <div className="flex flex-col gap-8">
@@ -342,69 +323,28 @@ export const LoginPanel = () => {
               onChange={setToken}
               onSubmit={verifyCode}
             />
-          ) : smsLoginEnabled ? (
-            <Tabs
-              value={activeChannel}
-              onValueChange={(next) => {
-                switchChannel(next);
-              }}
-            >
-              <span id="login-channel-label" className="text-label">
-                {t('Continue with')}
-              </span>
-              {/* TabsList is `w-fit`; the join dialog splits the full width. */}
-              <TabsList
-                className="w-full"
-                aria-labelledby="login-channel-label"
-              >
-                <TabsTrigger value="email" className="flex-1">
-                  {t('Email')}
-                </TabsTrigger>
-                <TabsTrigger value="phone" className="flex-1">
-                  {t('Phone Number')}
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="email">
-                <AuthEmailField
-                  label={t('Email')}
-                  description={t(
-                    "We'll email you a code to confirm it's yours.",
-                  )}
-                  placeholder="name@example.com"
-                  value={email}
-                  isDisabled={isBusy}
-                  onChange={(val) => {
-                    setEmailIsValid(emailParser.safeParse(val).success);
-                    setEmail(val);
-                  }}
-                  onSubmit={requestEmailCode}
-                />
-              </TabsContent>
-              <TabsContent value="phone">
-                <AuthPhoneField
-                  label={t('Phone Number')}
-                  description={t("We'll text a code to confirm it's yours.")}
-                  value={phone}
-                  isDisabled={phoneFlow.isSending}
-                  onChange={setPhone}
-                  onSubmit={() => {
-                    void phoneFlow.requestCode();
-                  }}
-                />
-              </TabsContent>
-            </Tabs>
           ) : (
-            <AuthEmailField
-              label={t('Email')}
-              description={t("We'll email you a code to confirm it's yours.")}
-              placeholder="name@example.com"
-              value={email}
-              isDisabled={isBusy}
-              onChange={(val) => {
-                setEmailIsValid(emailParser.safeParse(val).success);
-                setEmail(val);
+            <AuthContactFields
+              smsEnabled={smsLoginEnabled}
+              value={activeChannel}
+              onValueChange={switchChannel}
+              email={{
+                value: email,
+                isDisabled: isBusy,
+                onChange: (val) => {
+                  setEmailIsValid(emailParser.safeParse(val).success);
+                  setEmail(val);
+                },
+                onSubmit: requestEmailCode,
               }}
-              onSubmit={requestEmailCode}
+              phone={{
+                value: phone,
+                isDisabled: phoneFlow.isSending,
+                onChange: setPhone,
+                onSubmit: () => {
+                  void phoneFlow.requestCode();
+                },
+              }}
             />
           )}
         </div>
@@ -430,45 +370,30 @@ export const LoginPanel = () => {
             </Button>
           ) : isCodeStep ? (
             <div className="flex flex-col gap-2">
-              <Button
-                className="w-full"
-                loading={isBusy}
-                disabled={isBusy || !isValidOtpLength(token)}
-                onClick={verifyCode}
-              >
-                {t('Verify and continue')}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                disabled={isBusy}
-                onClick={resendCode}
-              >
-                {t('Resend code')}
-              </Button>
-              <Button variant="link" disabled={isBusy} onClick={backToContact}>
-                {isPhone
-                  ? t('Use a different phone number')
-                  : t('Use a different email address')}
-              </Button>
+              <AuthCodeStepActions
+                token={token}
+                isBusy={isBusy}
+                isPhone={isPhone}
+                onVerify={verifyCode}
+                onResend={resendCode}
+                onBack={backToContact}
+              />
             </div>
           ) : (
-            <Button
-              className="w-full"
-              loading={isBusy}
-              disabled={
+            <AuthSendCodeButton
+              isPhone={isPhone}
+              isBusy={isBusy}
+              isDisabled={
                 isBusy || (isPhone ? !phoneFlow.isValid : !emailIsValid)
               }
-              onClick={() => {
+              onSubmit={() => {
                 if (isPhone) {
                   void phoneFlow.requestCode();
                 } else {
                   requestEmailCode();
                 }
               }}
-            >
-              {isPhone ? t('Text me a code') : t('Email me a code')}
-            </Button>
+            />
           )
         ) : (
           <div className="flex flex-col items-center justify-center gap-4">
