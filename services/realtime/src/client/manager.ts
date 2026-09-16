@@ -1,4 +1,5 @@
 import { type ChannelName } from '@op/common/realtime';
+import { logger } from '@op/logging/client';
 import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -62,6 +63,32 @@ export class RealtimeManager {
       this.config.supabaseUrl,
       this.config.supabaseAnonKey,
     );
+
+    this.registerSocketListeners(this.supabase);
+  }
+
+  /**
+   * realtime-js fans a single websocket drop out to every joined channel as
+   * `CHANNEL_ERROR` and then rejoins each one on its own backoff, so a page
+   * holding fifteen channels reports fifteen failures for one event. The drop is
+   * recorded once here, at the socket, instead of once per channel.
+   */
+  private registerSocketListeners(client: SupabaseClient): void {
+    const { stateChangeCallbacks } = client.realtime;
+
+    stateChangeCallbacks.error.push((error: unknown) => {
+      logger.warn('[Realtime] Socket error', {
+        error,
+        openChannels: this.channels.size,
+      });
+    });
+
+    stateChangeCallbacks.close.push((event: unknown) => {
+      logger.warn('[Realtime] Socket closed', {
+        ...closeDetails(event),
+        openChannels: this.channels.size,
+      });
+    });
   }
 
   /**
@@ -97,10 +124,9 @@ export class RealtimeManager {
 
     // Prevent duplicate handlers
     if (listeners.has(handler)) {
-      console.warn(
-        '[Realtime] Handler already subscribed to channel:',
+      logger.warn('[Realtime] Handler already subscribed to channel', {
         channel,
-      );
+      });
       return () => {};
     }
 
@@ -124,10 +150,10 @@ export class RealtimeManager {
           const parseResult = realtimeMessageSchema.safeParse(payload);
 
           if (!parseResult.success) {
-            console.error(
-              '[Realtime] Invalid message format:',
-              parseResult.error,
-            );
+            logger.error('[Realtime] Invalid message format', {
+              error: parseResult.error,
+              channel,
+            });
             return;
           }
 
@@ -141,18 +167,27 @@ export class RealtimeManager {
         },
       );
 
-      realtimeChannel.subscribe((status) => {
+      realtimeChannel.subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[Realtime] Subscribed to channel:', channel);
           this.subscribedChannels.add(channel);
           onSubscribed?.();
           this.connectionListeners.forEach((listener) => listener(true));
         } else if (status === 'CLOSED') {
-          console.log('[Realtime] Unsubscribed from channel:', channel);
           this.subscribedChannels.delete(channel);
           this.connectionListeners.forEach((listener) => listener(false));
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[Realtime] Channel error:', channel);
+          this.subscribedChannels.delete(channel);
+          this.connectionListeners.forEach((listener) => listener(false));
+
+          // `err` is set only when the join itself was rejected — a server-side
+          // failure specific to this channel. Without it the status is the
+          // socket-drop fan-out, already logged once by the socket listeners.
+          if (err) {
+            logger.warn('[Realtime] Channel join rejected', {
+              error: err,
+              channel,
+            });
+          }
         }
       });
 
@@ -206,8 +241,6 @@ export class RealtimeManager {
       return;
     }
 
-    console.log('[Realtime] Closing all channels...');
-
     this.channels.forEach((realtimeChannel) => {
       this.supabase?.removeChannel(realtimeChannel);
     });
@@ -226,4 +259,22 @@ export class RealtimeManager {
   removeConnectionListener(listener: (isConnected: boolean) => void) {
     this.connectionListeners.delete(listener);
   }
+}
+
+/** The socket close callback is handed a `CloseEvent` the types do not describe. */
+function closeDetails(event: unknown): { code?: number; reason?: string } {
+  if (typeof event !== 'object' || event === null) {
+    return {};
+  }
+
+  return {
+    code:
+      'code' in event && typeof event.code === 'number'
+        ? event.code
+        : undefined,
+    reason:
+      'reason' in event && typeof event.reason === 'string'
+        ? event.reason
+        : undefined,
+  };
 }
