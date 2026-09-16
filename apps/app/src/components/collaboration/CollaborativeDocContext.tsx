@@ -43,7 +43,7 @@ interface CollaborativeDocProviderProps {
 /**
  * Provider for collaborative document editing.
  * Creates a single Yjs document and TipTap provider shared by all child collaborative fields.
- * Renders the fallback until the provider is ready. Suspends on the first token fetch.
+ * Renders the fallback until the provider is ready.
  *
  * @example
  * ```tsx

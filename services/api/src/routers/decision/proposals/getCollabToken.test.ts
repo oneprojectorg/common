@@ -193,8 +193,7 @@ describe.concurrent('decision.getCollabToken', () => {
       grantAccess: true,
     });
 
-    // A `description` makes the helper write legacy proposalData with no
-    // collaborationDocId.
+    // A `description` makes the helper write legacy data with no doc id.
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: setup.instance.instance.id,

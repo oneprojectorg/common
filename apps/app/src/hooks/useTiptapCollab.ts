@@ -13,7 +13,7 @@ import { useProposalCollabToken } from './useProposalCollabToken';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
-/** Rejections in a row before giving up. The first is a normal token expiry. */
+/** The first rejection is a normal token expiry. */
 const MAX_TOKEN_REJECTIONS = 3;
 const RECONNECT_DELAY_MS = 2000;
 
@@ -39,7 +39,7 @@ export interface UseTiptapCollabReturn {
   user: CollabUser;
 }
 
-/** Initialize TipTap Cloud collaboration provider. Suspends on the first token fetch. */
+/** Initialize TipTap Cloud collaboration provider. */
 export function useTiptapCollab({
   docId,
   proposalProfileId,
@@ -71,9 +71,8 @@ export function useTiptapCollab({
       return;
     }
 
-    // Tiptap Cloud keeps the socket open after it rejects a token — including
-    // one that has merely expired — and the provider never re-authenticates on
-    // its own, so a rejection has to be answered with an explicit reconnect.
+    // Tiptap keeps the socket open after rejecting a token and the provider
+    // never retries on its own, so a rejection needs an explicit reconnect.
     let rejections = 0;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
