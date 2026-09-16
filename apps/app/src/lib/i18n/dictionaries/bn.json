@@ -1762,5 +1762,6 @@
   "Search by title": "শিরোনাম দিয়ে খুঁজুন",
   "Loading more proposals…": "আরও প্রস্তাব লোড হচ্ছে…",
   "Keep {title} assigned": "{title} নির্ধারিত রাখুন",
-  "Remove {title}": "{title} সরান"
+  "Remove {title}": "{title} সরান",
+  "This phase has ended, so assignments can no longer be changed.": "এই ধাপটি শেষ হয়ে গেছে, তাই অ্যাসাইনমেন্ট আর পরিবর্তন করা যাবে না।"
 }

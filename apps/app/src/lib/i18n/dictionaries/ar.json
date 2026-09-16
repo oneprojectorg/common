@@ -1762,5 +1762,6 @@
   "Search by title": "البحث بالعنوان",
   "Loading more proposals…": "جارٍ تحميل مزيد من المقترحات…",
   "Keep {title} assigned": "أبقِ {title} معيَّنًا",
-  "Remove {title}": "أزل {title}"
+  "Remove {title}": "أزل {title}",
+  "This phase has ended, so assignments can no longer be changed.": "انتهت هذه المرحلة، لذلك لم يعد بالإمكان تغيير التعيينات."
 }

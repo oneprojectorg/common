@@ -1762,5 +1762,6 @@
   "Search by title": "Buscar por título",
   "Loading more proposals…": "Cargando más propuestas…",
   "Keep {title} assigned": "Mantener {title} asignada",
-  "Remove {title}": "Quitar {title}"
+  "Remove {title}": "Quitar {title}",
+  "This phase has ended, so assignments can no longer be changed.": "Esta fase ha terminado, por lo que las asignaciones ya no se pueden cambiar."
 }

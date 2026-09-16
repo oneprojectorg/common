@@ -1762,5 +1762,6 @@
   "Search by title": "Raadi cinwaanka",
   "Loading more proposals…": "Waxaa la soo dejinayaa soo jeedimo dheeraad ah…",
   "Keep {title} assigned": "Sii wad in {title} la qoondeeyo",
-  "Remove {title}": "Ka saar {title}"
+  "Remove {title}": "Ka saar {title}",
+  "This phase has ended, so assignments can no longer be changed.": "Wejigan wuu dhammaaday, sidaas darteed qoondooyinka lama beddeli karo."
 }

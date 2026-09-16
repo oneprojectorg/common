@@ -1762,5 +1762,6 @@
   "Search by title": "Rechercher par titre",
   "Loading more proposals…": "Chargement d’autres propositions…",
   "Keep {title} assigned": "Garder {title} attribuée",
-  "Remove {title}": "Retirer {title}"
+  "Remove {title}": "Retirer {title}",
+  "This phase has ended, so assignments can no longer be changed.": "Cette phase est terminée, les affectations ne peuvent donc plus être modifiées."
 }

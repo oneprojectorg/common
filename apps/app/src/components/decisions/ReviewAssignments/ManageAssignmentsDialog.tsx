@@ -2,11 +2,11 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
-import { ProposalStatus } from '@op/api/encoders';
 import {
+  type AssignableProposal,
   PROPOSAL_SEARCH_MAX_LENGTH,
-  type Proposal,
   type ReviewerAssignments,
+  normalizeProposalCategories,
 } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { logger } from '@op/logging/client';
@@ -33,7 +33,9 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useProposalCardData } from '../ProposalCard';
+import { useCardTranslation } from '../ProposalTranslationContext';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
+import { resolveProposalSystemFields } from '../proposalContentUtils';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
 
@@ -65,6 +67,8 @@ const IMPORT_POOL_PAGE_LIMIT = 100;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const EMPTY_ASSIGNMENTS: QueueAssignment[] = [];
+
+const EMPTY_PICK_ROWS: AssignableProposal[] = [];
 
 export function ManageAssignmentsDialogContent(
   props: ManageAssignmentsDialogContentProps,
@@ -118,25 +122,26 @@ function ManageAssignmentsBody({
   // Header, totals and eligibility describe the whole queue; any page carries them.
   const queue = queueQuery.data?.pages[0];
   const reviewer = queue?.reviewer ?? null;
+  // Removal asserts the phase is current, so a past phase freezes the queue.
+  const canModifyAssignments = queue?.canModifyAssignments === true;
+
   const assignments = useMemo(
     () =>
       queueQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_ASSIGNMENTS,
     [queueQuery.data?.pages],
   );
   // A reviewer without the role gets a frozen queue: unassign pending only.
-  const canAssign = queue?.isEligible === true;
+  // An ended phase freezes both halves — `assignReviews` rejects a completed
+  // phase and `removeReviewAssignments` requires the current one.
+  const canAssign = queue?.isEligible === true && canModifyAssignments;
   // Loaded, and the read does not claim this profile reviews here.
   const isUnknownReviewer = Boolean(queue && !queue.reviewer);
 
-  const assignedProposalIds = useMemo(
-    () => new Set(assignments.map((item) => item.assignment.proposal.id)),
-    [assignments],
-  );
-
-  const pickQuery = trpc.decision.listProposals.useInfiniteQuery(
+  const pickQuery = trpc.decision.listAssignableProposals.useInfiniteQuery(
     {
       processInstanceId,
       phaseId,
+      reviewerProfileId,
       limit: PICK_PAGE_LIMIT,
       // Blank is omitted to keep the untouched query key.
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
@@ -152,8 +157,17 @@ function ManageAssignmentsBody({
   );
 
   const pickProposals = useMemo(
-    () => collectAssignableProposals(pickQuery.data?.pages),
+    () =>
+      pickQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_PICK_ROWS,
     [pickQuery.data?.pages],
+  );
+
+  // Every row states whether this reviewer already holds it, so a re-tick of
+  // a row assigned since the page loaded is dropped rather than re-sent.
+  const assignedPickIds = useMemo(
+    () =>
+      new Set(pickProposals.flatMap((row) => (row.assignment ? [row.id] : []))),
+    [pickProposals],
   );
 
   const { fetchNextPage } = pickQuery;
@@ -189,10 +203,11 @@ function ManageAssignmentsBody({
   // Off the queue and the selection, never off the loaded page: a selection
   // has to survive a search and a page fetch.
   const assignIds = canAssign
-    ? [...toAssign].filter((id) => !assignedProposalIds.has(id))
+    ? [...toAssign].filter((id) => !assignedPickIds.has(id))
     : [];
   const unassignIds = assignments.flatMap((item) =>
-    isRemovable(item) && toUnassign.has(item.assignment.id)
+    isRemovable(item, canModifyAssignments) &&
+    toUnassign.has(item.assignment.id)
       ? [item.assignment.id]
       : [],
   );
@@ -204,10 +219,8 @@ function ManageAssignmentsBody({
 
   // Additive only, and only over what is loaded: never bulk-unassigns.
   const loadedFreeIds = canAssign
-    ? pickProposals.flatMap((proposal) =>
-        pickStateOf(proposal, assignedProposalIds, reviewerProfileId) === 'free'
-          ? [proposal.id]
-          : [],
+    ? pickProposals.flatMap((row) =>
+        pickStateOf(row) === 'free' ? [row.id] : [],
       )
     : [];
   const allLoadedFreeSelected =
@@ -344,7 +357,13 @@ function ManageAssignmentsBody({
                 {t('Assigned ({count})', { count: assignedCount })}
               </Header3>
 
-              {queue && !canAssign ? (
+              {queue && !canModifyAssignments ? (
+                <p className="text-sm text-muted-foreground">
+                  {t(
+                    'This phase has ended, so assignments can no longer be changed.',
+                  )}
+                </p>
+              ) : queue && !canAssign ? (
                 <p className="text-sm text-muted-foreground">
                   {t(
                     'This reviewer no longer has the reviewer role, so they cannot take new proposals.',
@@ -374,6 +393,7 @@ function ManageAssignmentsBody({
                     <AssignedRow
                       key={item.assignment.id}
                       item={item}
+                      canModifyAssignments={canModifyAssignments}
                       isRemoved={toUnassign.has(item.assignment.id)}
                       onToggle={() =>
                         setToUnassign((current) =>
@@ -404,7 +424,6 @@ function ManageAssignmentsBody({
                       processInstanceId={processInstanceId}
                       phaseId={phaseId}
                       reviewerProfileId={reviewerProfileId}
-                      assignedProposalIds={assignedProposalIds}
                       onImport={importProposals}
                     />
                   ) : null}
@@ -462,26 +481,18 @@ function ManageAssignmentsBody({
                 </p>
               ) : (
                 <ul className="flex flex-col rounded-lg border">
-                  {pickProposals.map((proposal) => {
-                    const state = pickStateOf(
-                      proposal,
-                      assignedProposalIds,
-                      reviewerProfileId,
-                    );
+                  {pickProposals.map((row) => {
+                    const state = pickStateOf(row);
 
                     return (
                       <PickRow
-                        key={proposal.id}
-                        proposal={proposal}
+                        key={row.id}
+                        row={row}
                         state={state}
                         canAssign={canAssign}
-                        isChecked={
-                          state === 'assigned' || toAssign.has(proposal.id)
-                        }
+                        isChecked={state === 'assigned' || toAssign.has(row.id)}
                         onToggle={() =>
-                          setToAssign((current) =>
-                            toggled(current, proposal.id),
-                          )
+                          setToAssign((current) => toggled(current, row.id))
                         }
                       />
                     );
@@ -538,10 +549,12 @@ function ManageAssignmentsBody({
 /** A current assignment: removable while pending, read-only once started. */
 function AssignedRow({
   item,
+  canModifyAssignments,
   isRemoved,
   onToggle,
 }: {
   item: QueueAssignment;
+  canModifyAssignments: boolean;
   isRemoved: boolean;
   onToggle: () => void;
 }) {
@@ -550,7 +563,7 @@ function AssignedRow({
     item.assignment.proposal,
   );
   const status = item.review?.state ?? item.assignment.status;
-  const canRemove = isRemovable(item);
+  const canRemove = isRemovable(item, canModifyAssignments);
 
   return (
     <li className="flex items-center gap-2 border-b px-3 py-2 last:border-b-0">
@@ -595,21 +608,21 @@ function AssignedRow({
 
 /** A phase proposal offered for assignment. */
 function PickRow({
-  proposal,
+  row,
   state,
   canAssign,
   isChecked,
   onToggle,
 }: {
-  proposal: Proposal;
+  row: AssignableProposal;
   state: PickState;
   canAssign: boolean;
   isChecked: boolean;
   onToggle: () => void;
 }) {
   const t = useTranslations();
-  const { titleText, displayCategories, authors } =
-    useProposalCardData(proposal);
+  const { titleText, displayCategories } = useAssignableRowData(row);
+  const authorName = row.author?.name;
   // An already-assigned row stays inert here even while its removal is
   // pending: the top section owns that assignment until Save runs.
   const isDisabled = state !== 'free' || !canAssign;
@@ -631,9 +644,9 @@ function PickRow({
           <span className="truncate" dir="auto">
             {titleText}
           </span>
-          {authors?.[0]?.name ? (
+          {authorName ? (
             <span className="truncate text-sm text-muted-foreground" dir="auto">
-              {authors[0].name}
+              {authorName}
             </span>
           ) : null}
         </span>
@@ -663,17 +676,20 @@ function ImportPoolAction({
   processInstanceId,
   phaseId,
   reviewerProfileId,
-  assignedProposalIds,
   onImport,
 }: {
   processInstanceId: string;
   phaseId: string;
   reviewerProfileId: string;
-  assignedProposalIds: ReadonlySet<string>;
   onImport: (proposalIds: Array<string>) => void;
 }) {
-  const poolQuery = trpc.decision.listProposals.useInfiniteQuery(
-    { processInstanceId, phaseId, limit: IMPORT_POOL_PAGE_LIMIT },
+  const poolQuery = trpc.decision.listAssignableProposals.useInfiniteQuery(
+    {
+      processInstanceId,
+      phaseId,
+      reviewerProfileId,
+      limit: IMPORT_POOL_PAGE_LIMIT,
+    },
     {
       getNextPageParam: (lastPage) => lastPage.next ?? undefined,
       staleTime: 30 * 1000,
@@ -687,26 +703,19 @@ function ImportPoolAction({
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const proposals = useMemo(
-    () => collectAssignableProposals(poolQuery.data?.pages),
+  const rows = useMemo(
+    () =>
+      poolQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_PICK_ROWS,
     [poolQuery.data?.pages],
   );
 
-  const poolIds = useMemo(
-    () => new Set(proposals.map((proposal) => proposal.id)),
-    [proposals],
-  );
+  const poolIds = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const assignableIds = useMemo(
     () =>
       new Set(
-        proposals.flatMap((proposal) =>
-          pickStateOf(proposal, assignedProposalIds, reviewerProfileId) ===
-          'free'
-            ? [proposal.id]
-            : [],
-        ),
+        rows.flatMap((row) => (pickStateOf(row) === 'free' ? [row.id] : [])),
       ),
-    [proposals, assignedProposalIds, reviewerProfileId],
+    [rows],
   );
 
   return (
@@ -730,36 +739,53 @@ function RowSkeletons({ count }: { count: number }) {
 }
 
 /**
- * Drafts are dropped: `listProposals` surfaces the admin's own drafts inside
- * the phase window, but the assignment pool never contains one, so ticking it
- * would make `assignReviews` reject the whole save.
+ * An existing assignment outranks "own proposal" — a stray self-assignment
+ * must stay visible in the top section and, while pending, removable. Both
+ * facts come from the row, so a state here never depends on how many pages
+ * of the reviewer's queue happen to be loaded.
  */
-function collectAssignableProposals(
-  pages: Array<{ items: Proposal[] }> | undefined,
-): Proposal[] {
-  return (pages ?? [])
-    .flatMap((page) => page.items)
-    .filter((proposal) => proposal.status !== ProposalStatus.DRAFT);
+/**
+ * Title and categories for a pick row, in the precedence
+ * `useProposalCardData` applies: a card translation first, then the system
+ * fields, then the proposal profile's name. The service already resolved the
+ * system fields against the pinned document version, so there is nothing left
+ * to resolve here.
+ */
+function useAssignableRowData(row: AssignableProposal) {
+  const t = useTranslations();
+  const cardTranslation = useCardTranslation(row.profileId);
+  const { title, category } = resolveProposalSystemFields({
+    proposalData: row.proposalData,
+    proposalTemplate: null,
+    documentContent: undefined,
+  });
+
+  return {
+    titleText:
+      cardTranslation?.title ??
+      (title || row.profileName || t('Untitled Proposal')),
+    displayCategories: cardTranslation?.category
+      ? cardTranslation.category
+      : normalizeProposalCategories(category),
+  };
+}
+
+function pickStateOf(row: AssignableProposal): PickState {
+  if (row.assignment) {
+    return 'assigned';
+  }
+  return row.isOwn ? 'own' : 'free';
 }
 
 /**
- * An existing assignment outranks "own proposal" — a stray self-assignment
- * must stay visible in the top section and, while pending, removable.
+ * Only an untouched assignment can be withdrawn: a started review is a record,
+ * and `removeReviewAssignments` refuses a phase the instance has left.
  */
-function pickStateOf(
-  proposal: Proposal,
-  assignedProposalIds: ReadonlySet<string>,
-  reviewerProfileId: string,
-): PickState {
-  if (assignedProposalIds.has(proposal.id)) {
-    return 'assigned';
-  }
-  return proposal.submittedBy?.id === reviewerProfileId ? 'own' : 'free';
-}
-
-/** Only an untouched assignment can be withdrawn; a started review is a record. */
-function isRemovable(item: QueueAssignment): boolean {
-  return item.assignment.status === 'pending';
+function isRemovable(
+  item: QueueAssignment,
+  canModifyAssignments: boolean,
+): boolean {
+  return canModifyAssignments && item.assignment.status === 'pending';
 }
 
 function toggled(

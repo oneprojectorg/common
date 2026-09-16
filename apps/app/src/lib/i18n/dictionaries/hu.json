@@ -1762,5 +1762,6 @@
   "Search by title": "Keresés cím szerint",
   "Loading more proposals…": "További javaslatok betöltése…",
   "Keep {title} assigned": "{title} kiosztva marad",
-  "Remove {title}": "{title} eltávolítása"
+  "Remove {title}": "{title} eltávolítása",
+  "This phase has ended, so assignments can no longer be changed.": "Ez a szakasz lezárult, ezért a kiosztások már nem módosíthatók."
 }
