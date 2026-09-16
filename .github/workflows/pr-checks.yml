@@ -15,9 +15,6 @@ jobs:
     # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
-    env:
-      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,6 +32,15 @@ jobs:
 
       - name: Install pnpm
         run: corepack prepare pnpm@latest --activate
+
+      # Runner config, not the checked-out .npmrc: these jobs check out the PR's
+      # head, so that file is PR-authored and must not be handed the token.
+      - name: Authenticate to the Tiptap Pro registry
+        env:
+          TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+        run: |
+          pnpm config set "@tiptap-pro:registry" "https://registry.tiptap.dev/"
+          pnpm config set "//registry.tiptap.dev/:_authToken" "$TIPTAP_PRO_TOKEN"
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -67,9 +73,6 @@ jobs:
     # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
-    env:
-      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -87,6 +90,15 @@ jobs:
 
       - name: Install pnpm
         run: corepack prepare pnpm@latest --activate
+
+      # Runner config, not the checked-out .npmrc: these jobs check out the PR's
+      # head, so that file is PR-authored and must not be handed the token.
+      - name: Authenticate to the Tiptap Pro registry
+        env:
+          TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+        run: |
+          pnpm config set "@tiptap-pro:registry" "https://registry.tiptap.dev/"
+          pnpm config set "//registry.tiptap.dev/:_authToken" "$TIPTAP_PRO_TOKEN"
 
       - name: Get pnpm store directory
         id: pnpm-cache
