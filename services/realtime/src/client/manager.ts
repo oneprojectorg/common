@@ -64,33 +64,18 @@ export class RealtimeManager {
       this.config.supabaseAnonKey,
     );
 
-    this.registerSocketListeners(this.supabase);
-  }
-
-  /**
-   * realtime-js fans a single websocket drop out to every joined channel as
-   * `CHANNEL_ERROR` and then rejoins each one on its own backoff, so a page
-   * holding fifteen channels reports fifteen failures for one event. The drop is
-   * recorded once here, at the socket, instead of once per channel. It is
-   * recorded at info level because the client logger reports warn and error to
-   * PostHog error tracking, and a socket drop is expected, not a defect.
-   */
-  private registerSocketListeners(client: SupabaseClient): void {
-    const { stateChangeCallbacks } = client.realtime;
-
-    stateChangeCallbacks.error.push((error: unknown) => {
-      logger.info('[Realtime] Socket error', {
-        error,
-        openChannels: this.channels.size,
-      });
-    });
-
-    stateChangeCallbacks.close.push((event: unknown) => {
-      logger.info('[Realtime] Socket closed', {
-        ...closeDetails(event),
-        openChannels: this.channels.size,
-      });
-    });
+    // realtime-js reports one socket drop as CHANNEL_ERROR on every joined
+    // channel and rejoins them itself, so the drop is logged once here. Info, not
+    // warn: the client logger reports warn and error to PostHog error tracking.
+    this.supabase.realtime.stateChangeCallbacks.close.push(
+      (event: CloseEvent) => {
+        logger.info('[Realtime] Socket closed', {
+          code: event.code,
+          reason: event.reason,
+          openChannels: this.channels.size,
+        });
+      },
+    );
   }
 
   /**
@@ -177,19 +162,13 @@ export class RealtimeManager {
         } else if (status === 'CLOSED') {
           this.subscribedChannels.delete(channel);
           this.connectionListeners.forEach((listener) => listener(false));
-        } else if (status === 'CHANNEL_ERROR') {
-          this.subscribedChannels.delete(channel);
-          this.connectionListeners.forEach((listener) => listener(false));
-
-          // `err` is set only when the join itself was rejected — a server-side
-          // failure specific to this channel. Without it the status is the
-          // socket-drop fan-out, already logged once by the socket listeners.
-          if (err) {
-            logger.warn('[Realtime] Channel join rejected', {
-              error: err,
-              channel,
-            });
-          }
+        } else if (status === 'CHANNEL_ERROR' && err) {
+          // Set only when the server rejected this channel's join; a plain socket
+          // drop arrives without it and is logged once at the socket.
+          logger.warn('[Realtime] Channel join rejected', {
+            error: err,
+            channel,
+          });
         }
       });
 
@@ -261,22 +240,4 @@ export class RealtimeManager {
   removeConnectionListener(listener: (isConnected: boolean) => void) {
     this.connectionListeners.delete(listener);
   }
-}
-
-/** The socket close callback is handed a `CloseEvent` the types do not describe. */
-function closeDetails(event: unknown): { code?: number; reason?: string } {
-  if (typeof event !== 'object' || event === null) {
-    return {};
-  }
-
-  return {
-    code:
-      'code' in event && typeof event.code === 'number'
-        ? event.code
-        : undefined,
-    reason:
-      'reason' in event && typeof event.reason === 'string'
-        ? event.reason
-        : undefined,
-  };
 }
