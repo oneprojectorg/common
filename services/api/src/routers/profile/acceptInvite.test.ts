@@ -252,6 +252,64 @@ describe.concurrent('profile.acceptInvite', () => {
     });
   });
 
+  it('should resolve the pending invite when the user is already a member of the profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    // Given: a profile whose member set already includes the invitee
+    const { profile, adminUser, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+
+    const member = memberUsers[0];
+    if (!member) {
+      throw new Error('Failed to create member user');
+    }
+
+    // Given: a stale pending invite for that member (e.g. created before
+    // membership existed, or left behind after a partial accept)
+    const [invite] = await db
+      .insert(profileInvites)
+      .values({
+        email: member.email,
+        profileId: profile.id,
+        profileEntityType: EntityType.ORG,
+        accessRoleId: ROLES.MEMBER.id,
+        invitedBy: adminUser.userProfileId,
+      })
+      .returning();
+
+    if (!invite) {
+      throw new Error('Failed to create invite');
+    }
+
+    testData.trackProfileInvite(member.email, profile.id);
+
+    // When: the existing member accepts the invite
+    const { session } = await createIsolatedSession(member.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.acceptInvite({ inviteId: invite.id });
+
+    // Then: accepting succeeds and returns the existing membership
+    // (no duplicate profileUser row is created)
+    const memberships = await db.query.profileUsers.findMany({
+      where: { profileId: profile.id, authUserId: member.authUserId },
+    });
+
+    expect(memberships).toHaveLength(1);
+    expect(result.id).toBe(member.profileUserId);
+
+    // Then: the invite is marked accepted so it no longer appears as pending
+    const updatedInvite = await db.query.profileInvites.findFirst({
+      where: { id: invite.id },
+    });
+
+    expect(updatedInvite?.acceptedOn).not.toBeNull();
+  });
+
   it('should handle case-insensitive email matching', async ({
     task,
     onTestFinished,
