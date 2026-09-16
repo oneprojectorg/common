@@ -494,14 +494,15 @@ export const AuthSendCodeButton = ({
  * each surface keeps its own container.
  */
 export const AuthCodeStepActions = ({
-  token,
+  isVerifyDisabled,
   isBusy,
   isPhone,
   onVerify,
   onResend,
   onBack,
 }: {
-  token: string | undefined;
+  /** Left to the caller — not every flow disables verify the same way. */
+  isVerifyDisabled: boolean;
   isBusy: boolean;
   isPhone: boolean;
   onVerify: () => void;
@@ -515,7 +516,7 @@ export const AuthCodeStepActions = ({
       <Button
         className="w-full"
         loading={isBusy}
-        disabled={isBusy || !isValidOtpLength(token)}
+        disabled={isBusy || isVerifyDisabled}
         onClick={onVerify}
       >
         {t('Verify and continue')}

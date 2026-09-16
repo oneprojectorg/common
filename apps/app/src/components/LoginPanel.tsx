@@ -28,6 +28,7 @@ import {
   AuthSendCodeButton,
   CodeSentAnnouncement,
   codeSentToLabel,
+  isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
 import { CommonLogo } from './CommonLogo';
@@ -371,7 +372,12 @@ export const LoginPanel = () => {
           ) : isCodeStep ? (
             <div className="flex flex-col gap-2">
               <AuthCodeStepActions
-                token={token}
+                // Email leaves an empty field enabled; handleTokenSubmit no-ops instead.
+                isVerifyDisabled={
+                  isPhone
+                    ? !isValidOtpLength(token)
+                    : !!token && !isValidOtpLength(token)
+                }
                 isBusy={isBusy}
                 isPhone={isPhone}
                 onVerify={verifyCode}

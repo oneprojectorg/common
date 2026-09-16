@@ -37,6 +37,7 @@ import {
   AuthSendCodeButton,
   CodeSentAnnouncement,
   codeSentToLabel,
+  isValidOtpLength,
 } from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
@@ -381,7 +382,7 @@ const JoinAccountModalContent = () => {
       <DialogFooter className="flex-col sm:flex-col">
         {otpSent ? (
           <AuthCodeStepActions
-            token={token}
+            isVerifyDisabled={!isValidOtpLength(token)}
             isBusy={isSubmitting}
             isPhone={isPhone}
             onVerify={() => {
