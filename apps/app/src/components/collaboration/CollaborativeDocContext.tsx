@@ -32,7 +32,6 @@ const CollaborativeDocContext =
 interface CollaborativeDocProviderProps {
   /** Unique document identifier for collaboration */
   docId: string;
-  /** The proposal that owns `docId`; its collaboration token gates the socket. */
   proposalProfileId: string;
   /** User's display name for collaboration cursors */
   userName?: string;
@@ -44,8 +43,7 @@ interface CollaborativeDocProviderProps {
 /**
  * Provider for collaborative document editing.
  * Creates a single Yjs document and TipTap provider shared by all child collaborative fields.
- * Renders the fallback until the provider is ready. The first token fetch is a
- * suspense query, so mount it under a Suspense and a resource error boundary.
+ * Renders the fallback until the provider is ready. Suspends on the first token fetch.
  *
  * @example
  * ```tsx

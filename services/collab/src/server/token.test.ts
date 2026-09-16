@@ -44,7 +44,6 @@ describe('generateCollabToken', () => {
     expect(decoded.sub).toBe('user-1');
     expect(decoded.aud).toEqual(['Documents']);
     expect(decoded.permissions).toEqual([
-      { action: 'Documents:Read', resource: 'proposal-abc' },
       { action: 'Documents:Write', resource: 'proposal-abc' },
     ]);
 

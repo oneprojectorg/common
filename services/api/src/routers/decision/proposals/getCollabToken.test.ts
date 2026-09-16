@@ -23,7 +23,6 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-/** Derived from the key pair services/api/vitest.config.ts generates per run. */
 const TIPTAP_PUBLIC_KEY = createPublicKey(process.env.TIPTAP_PRIVATE_KEY ?? '');
 const TIPTAP_ENVIRONMENT_ID = 'test-tiptap-env';
 
@@ -80,7 +79,6 @@ describe.concurrent('decision.getCollabToken', () => {
 
     expect(payload.sub).toBe(setup.user.id);
     expect(payload.permissions).toEqual([
-      { action: 'Documents:Read', resource: collaborationDocId },
       { action: 'Documents:Write', resource: collaborationDocId },
     ]);
   });
@@ -132,14 +130,10 @@ describe.concurrent('decision.getCollabToken', () => {
 
     expect(payload.sub).toBe(invitee.authUserId);
     expect(payload.permissions).toEqual([
-      { action: 'Documents:Read', resource: collaborationDocId },
       { action: 'Documents:Write', resource: collaborationDocId },
     ]);
   });
 
-  // Today's gate admits any process Member holding `decisions: UPDATE`, which
-  // is wider than the proposal's own collaborators. #1879 narrows it; this
-  // asserts the rule as it stands so the tightening is visible as a diff.
   it('refuses an authenticated user with no standing on the process', async ({
     task,
     onTestFinished,
@@ -243,8 +237,6 @@ describe.concurrent('decision.getCollabToken', () => {
   });
 });
 
-// `authenticatedProcedure`: only a caller with no session is turned away by
-// the tier gate; every signed-in tier reaches the service-layer gate.
 describeAccessTierGating('decision.getCollabToken', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();

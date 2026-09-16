@@ -1,7 +1,4 @@
-/**
- * E2E stand-in for `@op/collab/server`. The editor never reaches Tiptap Cloud
- * in e2e, so the token only has to exist — no key material is needed.
- */
+/** E2E stand-in for `@op/collab/server`; the editor never reaches Tiptap Cloud there. */
 import type { GenerateCollabTokenInput } from '../src/server/token';
 
 export type { GenerateCollabTokenInput };

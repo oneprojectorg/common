@@ -7,13 +7,7 @@ import { parseProposalData } from './proposalDataSchema';
 import { getInstancePhases } from './schemas/instanceData';
 import { assertProposalUpdateAccess } from './updateProposal';
 
-/**
- * Mint a Tiptap Cloud collaboration token for one proposal's document.
- *
- * The token is scoped to that document alone and gated by the same rule that
- * guards `updateProposal`, so read/write access over the collaboration socket
- * matches read/write access over the API.
- */
+/** Mint a Tiptap token for one proposal's document, under the `updateProposal` gate. */
 export const getCollabToken = async ({
   proposalProfileId,
   user,

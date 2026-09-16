@@ -110,9 +110,7 @@ const config = {
     if (process.env.E2E === 'true') {
       config.resolve.alias = {
         ...(config.resolve.alias || {}),
-        // `$` keeps this to the root entry: a bare webpack alias also
-        // rewrites subpaths, and `@op/collab/server` (the JWT signer, pulled
-        // in through @op/common) has no counterpart in the mock.
+        // `$` keeps the alias off `@op/collab/server`, which the mock lacks.
         '@op/collab$': path.resolve(
           __dirname,
           '../../services/collab/__mocks__/index.ts',

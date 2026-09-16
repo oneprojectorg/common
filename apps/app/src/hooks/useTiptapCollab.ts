@@ -13,6 +13,8 @@ import { useProposalCollabToken } from './useProposalCollabToken';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
+const REJECTED_TOAST_ID = 'collab-token-rejected';
+
 export interface CollabUser {
   name: string;
   color: string;
@@ -20,7 +22,6 @@ export interface CollabUser {
 
 export interface UseTiptapCollabOptions {
   docId: string;
-  /** The proposal that owns `docId`; its collaboration token gates the socket. */
   proposalProfileId: string;
   /** User's display name for the collaboration cursor */
   userName?: string;
@@ -36,12 +37,7 @@ export interface UseTiptapCollabReturn {
   user: CollabUser;
 }
 
-/**
- * Initialize TipTap Cloud collaboration provider.
- *
- * The first token fetch is a suspense query, so mount this under a Suspense
- * and a resource error boundary.
- */
+/** Initialize TipTap Cloud collaboration provider. Suspends on the first token fetch. */
 export function useTiptapCollab({
   docId,
   proposalProfileId,
@@ -49,9 +45,6 @@ export function useTiptapCollab({
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const t = useTranslations();
 
-  // The provider awaits `getToken` on every authentication, so a reconnect
-  // picks up a fresh token without the Y.Doc being torn down. It is memoized —
-  // a new function identity would rebuild the provider.
   const { getToken, refreshToken } = useProposalCollabToken({
     proposalProfileId,
   });
@@ -78,11 +71,6 @@ export function useTiptapCollab({
       return;
     }
 
-    // A rejected token is most likely stale, so the first rejection drops the
-    // cached token and reconnects. A second rejection in a row means the fresh
-    // token was refused too, so the user is told and the retry loop stops.
-    let rejections = 0;
-
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
@@ -92,7 +80,7 @@ export function useTiptapCollab({
         setStatus('connected');
       },
       onAuthenticated: () => {
-        rejections = 0;
+        toast.dismiss(REJECTED_TOAST_ID);
       },
       onDisconnect: () => {
         setStatus('disconnected');
@@ -104,16 +92,9 @@ export function useTiptapCollab({
       onAuthenticationFailed: () => {
         setStatus('disconnected');
         setIsSynced(false);
-        rejections += 1;
-
-        if (rejections === 1) {
-          refreshToken();
-          newProvider.disconnect();
-          void newProvider.connect();
-          return;
-        }
-
-        logger.warn('Tiptap collaboration rejected a fresh token', {
+        // The provider reconnects on its own; make it fetch a new token.
+        refreshToken();
+        logger.warn('Tiptap collaboration rejected the token', {
           context: 'useTiptapCollab',
           docId,
         });
@@ -121,8 +102,8 @@ export function useTiptapCollab({
           t(
             'Could not reconnect to this document. Reload the page to try again.',
           ),
+          { id: REJECTED_TOAST_ID },
         );
-        newProvider.disconnect();
       },
     });
 
