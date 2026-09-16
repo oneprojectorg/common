@@ -19,6 +19,8 @@ import {
   AuthCodeField,
   AuthEmailField,
   AuthPanelShell,
+  CodeSentAnnouncement,
+  codeSentToLabel,
   isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
@@ -154,6 +156,12 @@ export const LinkAccountPanel = () => {
 
   const errorMessage = linkError || tokenError;
 
+  // Rendered by CodeSentAnnouncement on every shell below, so the live region
+  // is mounted (empty) before the code step arrives and its arrival is heard.
+  const sentTo = loginSuccess
+    ? codeSentToLabel(t, { isPhone: false, phone: '', email })
+    : undefined;
+
   const title = (() => {
     if (errorMessage) {
       return t('auth.errorTitle');
@@ -198,6 +206,7 @@ export const LinkAccountPanel = () => {
   if (errorMessage) {
     return (
       <AuthPanelShell title={title} subtitle={subtitle}>
+        <CodeSentAnnouncement sentTo={sentTo} />
         <Button
           className="flex w-full items-center justify-center"
           onClick={() => {
@@ -216,6 +225,7 @@ export const LinkAccountPanel = () => {
   if (loginSuccess) {
     return (
       <AuthPanelShell title={title} subtitle={subtitle}>
+        <CodeSentAnnouncement sentTo={sentTo} />
         <div className="flex flex-col gap-6">
           <AuthCodeField
             value={token}
@@ -256,6 +266,7 @@ export const LinkAccountPanel = () => {
   // Create account (email entry) — email + Continue grouped (figma: 16px).
   return (
     <AuthPanelShell title={title} subtitle={subtitle}>
+      <CodeSentAnnouncement sentTo={sentTo} />
       <div className="flex flex-col gap-4">
         <AuthEmailField
           label={t('Email')}
