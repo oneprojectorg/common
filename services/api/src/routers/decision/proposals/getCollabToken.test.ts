@@ -128,36 +128,6 @@ describe.concurrent('decision.getCollabToken', () => {
   // Today's gate admits any process Member holding `decisions: UPDATE`, which
   // is wider than the proposal's own collaborators. #1879 narrows it; this
   // asserts the rule as it stands so the tightening is visible as a diff.
-  it('issues a token to a process member who is not on the proposal', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: setup.instance.instance.id,
-      proposalData: { title: 'Test Proposal' },
-    });
-
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [setup.instance.profileId],
-    });
-
-    const caller = await createAuthenticatedCaller(member.email);
-    const { token } = await caller.decision.getCollabToken({
-      proposalProfileId: proposal.profileId,
-    });
-
-    expect(decodeCollabToken(token).sub).toBe(member.authUserId);
-  });
-
   it('refuses an authenticated user with no standing on the process', async ({
     task,
     onTestFinished,

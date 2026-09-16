@@ -259,10 +259,6 @@ export const updateProposal = async ({
   return updatedProposal;
 };
 
-/**
- * The proposal-edit gate. Exported so `getCollabToken` mints a Tiptap
- * collaboration token under exactly the rule that guards `updateProposal`.
- */
 export async function assertProposalUpdateAccess({
   user,
   data,
@@ -271,8 +267,7 @@ export async function assertProposalUpdateAccess({
   instancePhases,
 }: {
   user: User;
-  /** Only the admin-only fields are read, so a token check can pass `{}`. */
-  data: Pick<UpdateProposalInput, 'status' | 'visibility'>;
+  data: UpdateProposalInput;
   proposal: { id: string; profileId: string; status: string | null };
   processInstance: {
     profileId: string | null;

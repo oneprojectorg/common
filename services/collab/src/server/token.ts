@@ -13,11 +13,12 @@ export interface GenerateCollabTokenInput {
 /**
  * Mint a Tiptap Cloud collaboration JWT scoped to one document.
  *
- * Signed with the same app secret the REST client uses, so Tiptap Cloud can
- * verify it. `allowedDocumentNames` holds exactly one name, so a leaked token
- * opens nothing else.
+ * Uses Tiptap's legacy `allowedDocumentNames` format, signed with the same
+ * app secret the REST client uses. Tiptap routes tokens in this format to the
+ * previous verification path automatically; the newer key-pair scheme with
+ * `permissions` claims is a separate migration.
  *
- * @see https://tiptap.dev/docs/collaboration/getting-started/authenticate
+ * @see https://tiptap.dev/docs/authentication/legacy
  */
 export function generateCollabToken({
   userId,

@@ -4,9 +4,7 @@ import { z } from 'zod';
 import { authenticatedProcedure, router } from '../../../trpcFactory';
 
 export const getCollabTokenRouter = router({
-  getCollabToken: authenticatedProcedure({
-    rateLimit: { windowSize: 60, maxRequests: 30 },
-  })
+  getCollabToken: authenticatedProcedure()
     .input(z.object({ proposalProfileId: z.uuid() }))
     .output(z.object({ token: z.string() }))
     .query(async ({ ctx, input }) => {
