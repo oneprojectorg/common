@@ -59,7 +59,18 @@ export const acceptProfileInvite = async ({
   });
 
   if (existingMembership) {
-    throw new CommonError('You are already a member of this profile');
+    // Accepting is idempotent: a stale pending invite for an existing
+    // member (left behind by the proposal-invite flow, a template copy,
+    // or a failed accept) is resolved so it stops showing, and the
+    // existing membership is returned. The invite's role is not applied
+    // — the membership already exists, and inviting an existing member
+    // is blocked when the invite is created.
+    await db
+      .update(profileInvites)
+      .set({ acceptedOn: new Date().toISOString() })
+      .where(eq(profileInvites.id, inviteId));
+
+    return { profileUser: existingMembership };
   }
 
   // 4. Transaction: create profileUser, assign role, mark accepted
