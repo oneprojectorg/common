@@ -13,8 +13,6 @@ import { useProposalCollabToken } from './useProposalCollabToken';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
-const REJECTED_TOAST_ID = 'collab-token-rejected';
-
 export interface CollabUser {
   name: string;
   color: string;
@@ -77,9 +75,6 @@ export function useTiptapCollab({
       onConnect: () => {
         setStatus('connected');
       },
-      onAuthenticated: () => {
-        toast.dismiss(REJECTED_TOAST_ID);
-      },
       onDisconnect: () => {
         setStatus('disconnected');
         setIsSynced(false);
@@ -99,7 +94,6 @@ export function useTiptapCollab({
           t(
             'Could not reconnect to this document. Reload the page to try again.',
           ),
-          { id: REJECTED_TOAST_ID },
         );
       },
     });
