@@ -13,6 +13,10 @@ import { useProposalCollabToken } from './useProposalCollabToken';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
+/** Rejections in a row before giving up. The first is a normal token expiry. */
+const MAX_TOKEN_REJECTIONS = 3;
+const RECONNECT_DELAY_MS = 2000;
+
 export interface CollabUser {
   name: string;
   color: string;
@@ -67,6 +71,12 @@ export function useTiptapCollab({
       return;
     }
 
+    // Tiptap Cloud keeps the socket open after it rejects a token — including
+    // one that has merely expired — and the provider never re-authenticates on
+    // its own, so a rejection has to be answered with an explicit reconnect.
+    let rejections = 0;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
@@ -74,6 +84,9 @@ export function useTiptapCollab({
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
+      },
+      onAuthenticated: () => {
+        rejections = 0;
       },
       onDisconnect: () => {
         setStatus('disconnected');
@@ -85,8 +98,17 @@ export function useTiptapCollab({
       onAuthenticationFailed: () => {
         setStatus('disconnected');
         setIsSynced(false);
-        // The provider reconnects on its own and fetches a fresh token.
-        logger.warn('Tiptap collaboration rejected the token', {
+        rejections += 1;
+        newProvider.disconnect();
+
+        if (rejections < MAX_TOKEN_REJECTIONS) {
+          reconnectTimer = setTimeout(() => {
+            void newProvider.connect();
+          }, RECONNECT_DELAY_MS);
+          return;
+        }
+
+        logger.warn('Tiptap collaboration rejected the token repeatedly', {
           context: 'useTiptapCollab',
           docId,
         });
@@ -100,6 +122,7 @@ export function useTiptapCollab({
 
     setProvider(newProvider);
     return () => {
+      clearTimeout(reconnectTimer);
       newProvider.destroy();
       setProvider(null);
     };
