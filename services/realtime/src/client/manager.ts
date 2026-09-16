@@ -63,19 +63,6 @@ export class RealtimeManager {
       this.config.supabaseUrl,
       this.config.supabaseAnonKey,
     );
-
-    // realtime-js reports one socket drop as CHANNEL_ERROR on every joined
-    // channel and rejoins them itself, so the drop is logged once here. Info, not
-    // warn: the client logger reports warn and error to PostHog error tracking.
-    this.supabase.realtime.stateChangeCallbacks.close.push(
-      (event: CloseEvent) => {
-        logger.info('[Realtime] Socket closed', {
-          code: event.code,
-          reason: event.reason,
-          openChannels: this.channels.size,
-        });
-      },
-    );
   }
 
   /**
@@ -163,8 +150,9 @@ export class RealtimeManager {
           this.subscribedChannels.delete(channel);
           this.connectionListeners.forEach((listener) => listener(false));
         } else if (status === 'CHANNEL_ERROR' && err) {
-          // Set only when the server rejected this channel's join; a plain socket
-          // drop arrives without it and is logged once at the socket.
+          // `err` is set only when the server rejected this channel's join.
+          // Without it the status is a socket drop, which realtime-js fans out to
+          // every channel and recovers from itself, so it is not logged.
           logger.warn('[Realtime] Channel join rejected', {
             error: err,
             channel,
