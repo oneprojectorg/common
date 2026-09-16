@@ -30,8 +30,7 @@ export function generateCollabToken({
       // Write implies Read and Comment.
       permissions: [{ action: 'Documents:Write', resource: documentName }],
     },
-    // A PEM stored on one line carries literal `\n`.
-    privateKey.replace(/\\n/g, '\n'),
+    privateKey,
     {
       algorithm: 'ES256',
       issuer: environmentId,
