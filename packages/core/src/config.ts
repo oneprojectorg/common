@@ -244,6 +244,7 @@ export const GLOBAL_USER_IDS = [GLOBAL_USER_PUBLIC] as const;
 
 // NOTE: This allowlist will eventually be moved to the database
 export const platformAdminEmails = new Set([
+  'elana@oneproject.org',
   'iza@oneproject.org',
   'casimiro@oneproject.org',
   'nour@oneproject.org',
