@@ -436,10 +436,6 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  /**
-   * Phase relations. `processInstanceId` is NOT NULL so the instance side is
-   * `optional: false`; `profileId` is nullable while the minting path lands.
-   */
   processPhases: {
     processInstance: r.one.processInstances({
       from: r.processPhases.processInstanceId,
@@ -450,6 +446,7 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processPhases.profileId,
       to: r.profiles.id,
       alias: 'processPhase_profile',
+      optional: false,
     }),
   },
 
