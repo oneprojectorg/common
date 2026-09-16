@@ -1,7 +1,10 @@
 import jwt from 'jsonwebtoken';
 
-/** Tiptap Cloud tokens live for one hour; the client refetches before reconnecting. */
-const TOKEN_LIFETIME_SECONDS = 60 * 60;
+/**
+ * Tiptap asks for 30 minutes or less. The client refetches a token once it is
+ * five minutes old, so a live session never presents an expired one.
+ */
+const TOKEN_LIFETIME_SECONDS = 30 * 60;
 
 export interface GenerateCollabTokenInput {
   /** The authenticated user's identifier, carried as the `sub` claim. */
@@ -13,33 +16,39 @@ export interface GenerateCollabTokenInput {
 /**
  * Mint a Tiptap Cloud collaboration JWT scoped to one document.
  *
- * Uses Tiptap's legacy `allowedDocumentNames` format, signed with the same
- * app secret the REST client uses. Tiptap routes tokens in this format to the
- * previous verification path automatically; the newer key-pair scheme with
- * `permissions` claims is a separate migration.
+ * Signed with the ES256 private key of a key pair created in the Tiptap
+ * dashboard, issued for that dashboard environment. The `permissions` name
+ * exactly one resource, so a leaked token opens nothing else.
  *
- * @see https://tiptap.dev/docs/authentication/legacy
+ * @see https://tiptap.dev/docs/authentication
  */
 export function generateCollabToken({
   userId,
   documentName,
 }: GenerateCollabTokenInput): string {
-  const secret = process.env.TIPTAP_SECRET;
+  const privateKey = process.env.TIPTAP_PRIVATE_KEY;
+  const environmentId = process.env.TIPTAP_ENVIRONMENT_ID;
 
-  if (!secret) {
+  if (!privateKey || !environmentId) {
     throw new Error(
-      'TIPTAP_SECRET is not set — cannot sign a Tiptap collaboration token',
+      'TIPTAP_PRIVATE_KEY and TIPTAP_ENVIRONMENT_ID must be set to sign a Tiptap collaboration token',
     );
   }
 
   return jwt.sign(
     {
-      sub: userId,
-      allowedDocumentNames: [documentName],
+      permissions: [
+        { action: 'Documents:Read', resource: documentName },
+        { action: 'Documents:Write', resource: documentName },
+      ],
     },
-    secret,
+    // A PEM kept on one line, as most env editors store it, carries literal `\n`.
+    privateKey.replace(/\\n/g, '\n'),
     {
-      algorithm: 'HS256',
+      algorithm: 'ES256',
+      issuer: environmentId,
+      audience: ['Documents'],
+      subject: userId,
       expiresIn: TOKEN_LIFETIME_SECONDS,
     },
   );

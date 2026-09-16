@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import { EntityType, profileInvites } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import jwt from 'jsonwebtoken';
+import { createPublicKey } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -22,8 +23,9 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-/** Matches TIPTAP_SECRET in services/api/vitest.config.ts. */
-const TIPTAP_SECRET = 'test-tiptap-secret';
+/** Derived from the key pair services/api/vitest.config.ts generates per run. */
+const TIPTAP_PUBLIC_KEY = createPublicKey(process.env.TIPTAP_PRIVATE_KEY ?? '');
+const TIPTAP_ENVIRONMENT_ID = 'test-tiptap-env';
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -32,9 +34,13 @@ async function createAuthenticatedCaller(email: string) {
 
 function decodeCollabToken(token: string): {
   sub?: string;
-  allowedDocumentNames?: unknown;
+  permissions?: unknown;
 } {
-  const payload = jwt.verify(token, TIPTAP_SECRET, { algorithms: ['HS256'] });
+  const payload = jwt.verify(token, TIPTAP_PUBLIC_KEY, {
+    algorithms: ['ES256'],
+    issuer: TIPTAP_ENVIRONMENT_ID,
+    audience: 'Documents',
+  });
 
   if (typeof payload === 'string') {
     throw new Error('Expected a decoded JWT payload, got a string');
@@ -73,7 +79,10 @@ describe.concurrent('decision.getCollabToken', () => {
     const payload = decodeCollabToken(token);
 
     expect(payload.sub).toBe(setup.user.id);
-    expect(payload.allowedDocumentNames).toEqual([collaborationDocId]);
+    expect(payload.permissions).toEqual([
+      { action: 'Documents:Read', resource: collaborationDocId },
+      { action: 'Documents:Write', resource: collaborationDocId },
+    ]);
   });
 
   it('issues a token to an invited collaborator on the proposal', async ({
@@ -122,7 +131,10 @@ describe.concurrent('decision.getCollabToken', () => {
     const payload = decodeCollabToken(token);
 
     expect(payload.sub).toBe(invitee.authUserId);
-    expect(payload.allowedDocumentNames).toEqual([collaborationDocId]);
+    expect(payload.permissions).toEqual([
+      { action: 'Documents:Read', resource: collaborationDocId },
+      { action: 'Documents:Write', resource: collaborationDocId },
+    ]);
   });
 
   // Today's gate admits any process Member holding `decisions: UPDATE`, which

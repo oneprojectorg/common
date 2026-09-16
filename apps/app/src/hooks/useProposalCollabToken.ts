@@ -3,11 +3,11 @@
 import { trpc } from '@op/api/client';
 import { useCallback, useMemo } from 'react';
 
-/** Refetch a token once it is five minutes old; the JWT itself lives an hour. */
+/** Refetch a token once it is five minutes old; the JWT itself lives 30 minutes. */
 const TOKEN_STALE_TIME_MS = 5 * 60 * 1000;
 
 /** Keep the mount-time suspense query from refetching inside the token's life. */
-const INITIAL_STALE_TIME_MS = 50 * 60 * 1000;
+const INITIAL_STALE_TIME_MS = 25 * 60 * 1000;
 
 /**
  * Resolve Tiptap Cloud collaboration tokens for one proposal.

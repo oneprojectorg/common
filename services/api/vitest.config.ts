@@ -1,5 +1,13 @@
 import { coverageConfig } from '@op/vitest-config/coverage';
+import { generateKeyPairSync } from 'node:crypto';
 import { defineConfig } from 'vitest/config';
+
+// A throwaway ES256 key pair per run; tests derive the public key from it.
+const { privateKey: TIPTAP_PRIVATE_KEY } = generateKeyPairSync('ec', {
+  namedCurve: 'prime256v1',
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+});
 
 // Test environment values - used for both `env` (runtime) and `define` (compile-time)
 const TEST_ENV = {
@@ -16,6 +24,8 @@ const TEST_ENV = {
   // TipTap Cloud credentials - required for collab mock to be invoked
   NEXT_PUBLIC_TIPTAP_APP_ID: 'test-tiptap-app',
   TIPTAP_SECRET: 'test-tiptap-secret',
+  TIPTAP_PRIVATE_KEY,
+  TIPTAP_ENVIRONMENT_ID: 'test-tiptap-env',
 };
 
 export default defineConfig({

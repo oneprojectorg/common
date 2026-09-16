@@ -34,6 +34,8 @@ const config = {
       ...(process.env.E2E === 'true'
         ? {
             '@op/collab': '../../services/collab/__mocks__/index.ts',
+            // The JWT signer needs a real key pair; e2e hands out a fixed token.
+            '@op/collab/server': '../../services/collab/__mocks__/server.ts',
             '@op/analytics/client':
               '../../packages/analytics/src/client.testing.ts',
           }
