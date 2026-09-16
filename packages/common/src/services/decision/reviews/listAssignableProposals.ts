@@ -1,5 +1,4 @@
-import { and, db, ne } from '@op/db/client';
-import { ProposalStatus } from '@op/db/schema';
+import { and, db, notInArray } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -10,44 +9,36 @@ import {
   getCursorCondition,
 } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
-import { getInstance } from '../getInstance';
 import { getProposalDocumentsContent } from '../getProposalDocumentsContent';
-import { isAnonymousAuthor, proposalAuthorRelation } from '../proposalAuthor';
 import { parseProposalData } from '../proposalDataSchema';
 import { buildProposalListPreview } from '../proposalListPreview';
 import { resolveProposalListScope } from '../resolveProposalListScope';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import type { InstancePhaseRef } from '../schemas/instance';
+import { getInstancePhases } from '../schemas/instanceData';
 import {
   type AssignableProposalList,
   assignableProposalListSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
+import { PIPELINE_INELIGIBLE_STATUSES } from '../votingEligibility';
 
 export interface ListAssignableProposalsInput extends InstancePhaseRef {
   user: User;
-  /** Whose assignment state each row is annotated with. */
   reviewerProfileId: string;
-  /** Free-text title search, as every other proposal list spells it. */
   search?: string;
-  /** Opaque position from the previous page's `next`. */
   cursor?: string | null;
   limit: number;
 }
 
 /**
  * One page of the proposals an admin could assign to a reviewer in a phase,
- * each row carrying that reviewer's assignment state for the phase.
+ * with that reviewer's assignment for the phase joined onto each row.
  *
- * The state is a `LEFT JOIN` in this page's own query, so a row is correct
- * however much of the reviewer's queue the caller has loaded — the reason this
- * read exists rather than the dialog cross-referencing two lists.
- *
- * Scope, visibility and search come from `resolveProposalListScope`, the same
- * resolver `listProposals` uses, so the pick list can't offer a proposal the
- * proposal list would hide. Drafts are dropped here rather than filtered by
- * the caller: `assignReviewsToReviewer` rejects the whole request when any id
- * is outside the phase pool, and a draft never is.
+ * Rows must match the pool `assignReviewsToReviewer` accepts, because one
+ * out-of-pool id rejects a whole save: list visibility comes from
+ * `resolveProposalListScope`, and `PIPELINE_INELIGIBLE_STATUSES` is what the
+ * pool adds on top of it.
  */
 export async function listAssignableProposals({
   user,
@@ -58,7 +49,13 @@ export async function listAssignableProposals({
   cursor,
   limit,
 }: ListAssignableProposalsInput): Promise<AssignableProposalList> {
-  const instance = await getInstance({ instanceId: processInstanceId, user });
+  // The resolver loads the instance and the pool predicates together, so this
+  // read never asks for the cached instance payload (every proposal in it).
+  const scope = await resolveProposalListScope({
+    input: { processInstanceId, phaseId, search },
+    user,
+  });
+  const instance = scope.instance;
 
   // No org fallback: legacy instances without their own profile fail closed.
   if (!instance.profileId) {
@@ -70,11 +67,11 @@ export async function listAssignableProposals({
     permissions: { decisions: permission.ADMIN },
   });
 
-  assertInstancePhase({ instance, phaseId });
-
-  const scope = await resolveProposalListScope({
-    input: { processInstanceId, phaseId, search },
-    user,
+  assertInstancePhase({
+    instance: {
+      instanceData: { phases: getInstancePhases(instance.instanceData) },
+    },
+    phaseId,
   });
 
   if (scope.isEmpty) {
@@ -91,7 +88,7 @@ export async function listAssignableProposals({
         RAW: (table) =>
           and(
             scope.buildWhereClause(table),
-            ne(table.status, ProposalStatus.DRAFT),
+            notInArray(table.status, PIPELINE_INELIGIBLE_STATUSES),
             getCursorCondition({
               column: table.createdAt,
               tieBreakerColumn: table.id,
@@ -104,24 +101,20 @@ export async function listAssignableProposals({
         id: true,
         profileId: true,
         proposalData: true,
-        status: true,
         submittedByProfileId: true,
         createdAt: true,
       },
       with: {
         profile: { columns: { name: true } },
-        submittedBy: proposalAuthorRelation,
-        // The whole point of this read: the reviewer's own row for the phase,
-        // decided by the join rather than by anything the client holds.
+        submittedBy: { columns: { name: true } },
         reviewAssignments: {
           where: { processInstanceId, phaseId, reviewerProfileId },
-          columns: { id: true, status: true },
+          columns: { id: true },
         },
       },
-      // `id` tie-break: rows sharing a `createdAt` would otherwise page in an
-      // undefined order, which skips and repeats rows across pages.
+      // `id` tie-break: rows sharing a `createdAt` page in an undefined order
+      // without it, which skips and repeats rows.
       orderBy: (table, { desc }) => [desc(table.createdAt), desc(table.id)],
-      // One extra row to detect whether a next page exists.
       limit: limit + 1,
     }),
     resolveProposalTemplate(
@@ -133,8 +126,8 @@ export async function listAssignableProposals({
   const hasMore = rows.length > limit;
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
-  // Same resolution the proposal list performs, so a title or a category chip
-  // here reads identically to the same proposal elsewhere in the app.
+  // Resolved as the proposal list resolves them, so a title or category chip
+  // reads the same here as everywhere else.
   const documentContentMap = await getProposalDocumentsContent(
     pageRows.map((row) => {
       const parsed = parseProposalData(row.proposalData);
@@ -145,7 +138,6 @@ export async function listAssignableProposals({
         collaborationDocVersionId: parsed.collaborationDocVersionId,
       };
     }),
-    // A single unavailable document must not break the whole list.
     { onFetchError: 'omit' },
   );
 
@@ -156,23 +148,16 @@ export async function listAssignableProposals({
       proposalTemplate,
       existingBudget: parsedProposalData.budget,
     });
-    const author = row.submittedBy ?? null;
 
     return {
       id: row.id,
       profileId: row.profileId,
       proposalData: { ...parsedProposalData, ...systemFieldOverrides },
       profileName: row.profile?.name ?? null,
-      author: author
-        ? {
-            name: author.name,
-            slug: author.slug,
-            isAnonymous: isAnonymousAuthor(author.profileUsers),
-          }
-        : null,
-      assignment: row.reviewAssignments[0] ?? null,
-      // Matches the insert's own self-filter (`insertReviewAssignments`), so a
-      // row this flags is exactly a row the write would refuse to create.
+      authorName: row.submittedBy?.name ?? null,
+      isAssigned: row.reviewAssignments.length > 0,
+      // `submittedByProfileId`, matching the self-filter in
+      // `insertReviewAssignments` — the write would refuse to create this row.
       isOwn: row.submittedByProfileId === reviewerProfileId,
     };
   });

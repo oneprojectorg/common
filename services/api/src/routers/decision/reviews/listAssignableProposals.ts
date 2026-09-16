@@ -13,23 +13,18 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 import { paginationSchema } from '../../../utils';
 
 export const listAssignableProposalsRouter = router({
-  /**
-   * One page of proposals an admin could assign to a reviewer in a phase, each
-   * row carrying that reviewer's assignment state for the phase.
-   */
   listAssignableProposals: networkAuthenticatedProcedure()
     .input(
       instancePhaseRefSchema
         .extend({
           reviewerProfileId: z.uuid(),
-          search: proposalSearchSchema.optional(),
+          search: proposalSearchSchema,
         })
         .merge(paginationSchema),
     )
     .output(assignableProposalListSchema)
     .query(async ({ ctx, input }) => {
-      // Assignment writes publish here, so a save refreshes the pick list's
-      // per-row state along with the queue.
+      // Assignment writes publish here, so a save refreshes each row's state.
       ctx.registerQueryChannels([
         Channels.reviewAssignments(input.processInstanceId),
       ]);

@@ -17,10 +17,9 @@ export interface AssignPhaseReviewsInput extends InstancePhaseRef {
  * The decision-scoped counterpart of `platform.admin.assignReviews`.
  * Returns the number of assignments created.
  *
- * Gated on the decision profile alone, with no org fallback: the reads that
- * feed the assignment UI and `removeReviewAssignments` all assert exactly
- * this, and a write must not be reachable by a caller who cannot see what
- * they are writing to.
+ * Decision profile only, no org fallback: this is what the assignment reads
+ * and `removeReviewAssignments` already assert, and a write must not be
+ * reachable by a caller who cannot see what they are writing to.
  */
 export async function assignPhaseReviews({
   processInstanceId,
@@ -31,7 +30,6 @@ export async function assignPhaseReviews({
 }: AssignPhaseReviewsInput): Promise<number> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  // Legacy instances without their own profile fail closed.
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }

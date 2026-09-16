@@ -88,8 +88,8 @@ export async function listReviewerAssignments({
   return reviewerAssignmentsSchema.parse({
     reviewer: isAssociated ? (reviewer ?? null) : null,
     isEligible,
-    // What `removeReviewAssignments` asserts before it deletes anything, so
-    // the caller doesn't offer a removal the write would refuse.
+    // What `removeReviewAssignments` asserts, so the caller doesn't offer a
+    // removal the write would refuse.
     canModifyAssignments: isInstanceCurrentPhase(instance, phaseId),
     ...totals,
     items: queue.items,

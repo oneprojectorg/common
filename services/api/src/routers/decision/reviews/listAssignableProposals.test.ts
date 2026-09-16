@@ -1,4 +1,4 @@
-import { ProposalReviewAssignmentStatus } from '@op/db/schema';
+import { ProposalReviewAssignmentStatus, ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -55,14 +55,9 @@ describe.concurrent('decision.listAssignableProposals', () => {
     );
     const freeRow = result.items.find((row) => row.id === free.proposal.id);
 
-    // The state is the reviewer's own row for the phase, not a client-side
-    // cross-reference — the whole reason this read exists.
-    expect(assignedRow?.assignment?.id).toBe(assigned.assignment.id);
-    expect(assignedRow?.assignment?.status).toBe(
-      ProposalReviewAssignmentStatus.PENDING,
-    );
+    expect(assignedRow?.isAssigned).toBe(true);
     // Assigned to someone else, so free for this reviewer.
-    expect(freeRow?.assignment).toBeNull();
+    expect(freeRow?.isAssigned).toBe(false);
     expect(assignedRow?.profileName).toBe(`Assigned proposal ${task.id}`);
   });
 
@@ -100,10 +95,9 @@ describe.concurrent('decision.listAssignableProposals', () => {
     const ownRow = result.items.find((row) => row.id === own.proposal.id);
     const otherRow = result.items.find((row) => row.id === created.proposal.id);
 
-    // Present and marked: the import path reports "already assigned or own"
-    // rather than "not found", which a missing row would read as.
+    // Marked, not hidden: a missing row would read as "not found" on import.
     expect(ownRow?.isOwn).toBe(true);
-    expect(ownRow?.assignment).toBeNull();
+    expect(ownRow?.isAssigned).toBe(false);
     expect(otherRow?.isOwn).toBe(false);
   });
 
@@ -115,9 +109,8 @@ describe.concurrent('decision.listAssignableProposals', () => {
     const context = await testData.createContext();
     const instanceId = context.instance.instance.id;
 
-    // A draft authored by the admin doing the assigning: the proposal list
-    // shows a caller their own drafts, and `assignReviews` rejects the whole
-    // request if one is picked. Authored before the phase moves to `review`.
+    // The proposal list shows a caller their own drafts, and one picked draft
+    // rejects the whole save. Authored before the fixture advances to review.
     const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
     const draft = await decisions.createProposal({
       userEmail: context.defaultReviewer.email,
@@ -142,6 +135,44 @@ describe.concurrent('decision.listAssignableProposals', () => {
     });
 
     expect(result.items.map((row) => row.id)).not.toContain(draft.id);
+    expect(result.items.map((row) => row.id)).toContain(created.proposal.id);
+  });
+
+  it('omits a rejected proposal, which the assignment pool also excludes', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const instanceId = context.instance.instance.id;
+
+    // `PIPELINE_INELIGIBLE_STATUSES` keeps rejected proposals out of the pool,
+    // and one out-of-pool id rejects the whole save.
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const rejected = await decisions.createProposal({
+      userEmail: context.defaultReviewer.email,
+      processInstanceId: instanceId,
+      proposalData: { title: `Rejected proposal ${task.id}` },
+      status: ProposalStatus.REJECTED,
+      seedCollabDoc: true,
+    });
+
+    const created = await testData.createReviewAssignment({
+      context,
+      title: `Live proposal ${task.id}`,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listAssignableProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+    });
+
+    expect(result.items.map((row) => row.id)).not.toContain(rejected.id);
     expect(result.items.map((row) => row.id)).toContain(created.proposal.id);
   });
 
@@ -205,10 +236,11 @@ describe.concurrent('decision.listAssignableProposals', () => {
     });
     expect(page2.items).toHaveLength(1);
 
+    expect(page2.next).toBeNull();
+
+    // Newest first, and the cursor is exclusive: no repeats, nothing skipped.
     const ids = [...page1.items, ...page2.items].map((row) => row.id);
-    expect(new Set(ids).size).toBe(2);
-    expect(ids).toContain(first.proposal.id);
-    expect(ids).toContain(second.proposal.id);
+    expect(ids).toEqual([second.proposal.id, first.proposal.id]);
   });
 
   it('rejects a phaseId the instance does not have', async ({

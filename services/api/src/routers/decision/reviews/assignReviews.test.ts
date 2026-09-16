@@ -3,11 +3,13 @@ import {
   ProposalStatus,
   proposals,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
@@ -101,6 +103,33 @@ describe.concurrent('decision.assignReviews', () => {
 
     expect(queue.assignedCount).toBe(1);
     expect(queue.items[0]?.assignment.proposal.id).toBe(proposal.id);
+  });
+
+  it('rejects an org admin with no grant on the instance profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { context, processInstanceId, proposal, reviewer } =
+      await createAssignSetup(task.id, onTestFinished);
+
+    // Org Admin with no role on the instance profile. The assignment reads
+    // already refuse this caller, so the write does too.
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const orgAdmin = await decisions.createMemberUser({
+      organization: context.organization,
+      orgRoleId: ROLES.ADMIN.id,
+    });
+
+    const caller = await createAuthenticatedCaller(orgAdmin.email);
+
+    await expect(
+      caller.decision.assignReviews({
+        processInstanceId,
+        phaseId: 'review',
+        reviewerProfileId: reviewer.profileId,
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects a reviewer who is not an instance admin', async ({
