@@ -16,6 +16,9 @@ jobs:
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
+      # Tiptap Pro registry authentication. pnpm >= 10.34.2 ignores ${...} in a
+      # repository's own .npmrc, so point userconfig at it to keep expansion.
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
 
     steps:
@@ -68,6 +71,9 @@ jobs:
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
+      # Tiptap Pro registry authentication. pnpm >= 10.34.2 ignores ${...} in a
+      # repository's own .npmrc, so point userconfig at it to keep expansion.
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
 
     steps:
