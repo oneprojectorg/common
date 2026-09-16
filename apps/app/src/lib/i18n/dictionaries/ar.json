@@ -1205,7 +1205,8 @@
       "searchByTitlePlaceholder": "البحث بالعنوان",
       "keepProposalAssignedLabel": "أبقِ {title} معيَّنًا",
       "removeProposalLabel": "أزل {title}",
-      "alreadyAssignedBadge": "معيَّنة بالفعل"
+      "alreadyAssignedBadge": "معيَّنة بالفعل",
+      "phaseEndedAssignmentsLockedHint": "انتهت هذه المرحلة، لذلك لم يعد بالإمكان تغيير التعيينات."
     },
     "proposals": {
       "amountRequested": "تم طلب {amount}",

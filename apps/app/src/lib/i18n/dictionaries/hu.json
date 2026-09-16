@@ -1205,7 +1205,8 @@
       "searchByTitlePlaceholder": "Keresés cím szerint",
       "keepProposalAssignedLabel": "{title} kiosztva marad",
       "removeProposalLabel": "{title} eltávolítása",
-      "alreadyAssignedBadge": "Már hozzárendelve"
+      "alreadyAssignedBadge": "Már hozzárendelve",
+      "phaseEndedAssignmentsLockedHint": "Ez a szakasz lezárult, ezért a kiosztások már nem módosíthatók."
     },
     "proposals": {
       "amountRequested": "{amount} igényelve",

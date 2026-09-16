@@ -1205,7 +1205,8 @@
       "searchByTitlePlaceholder": "Buscar por título",
       "keepProposalAssignedLabel": "Mantener {title} asignada",
       "removeProposalLabel": "Quitar {title}",
-      "alreadyAssignedBadge": "Ya asignada"
+      "alreadyAssignedBadge": "Ya asignada",
+      "phaseEndedAssignmentsLockedHint": "Esta fase ha terminado, por lo que las asignaciones ya no se pueden cambiar."
     },
     "proposals": {
       "amountRequested": "{amount} solicitado",

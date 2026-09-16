@@ -1205,7 +1205,8 @@
       "searchByTitlePlaceholder": "Rechercher par titre",
       "keepProposalAssignedLabel": "Garder {title} attribuée",
       "removeProposalLabel": "Retirer {title}",
-      "alreadyAssignedBadge": "Déjà attribuée"
+      "alreadyAssignedBadge": "Déjà attribuée",
+      "phaseEndedAssignmentsLockedHint": "Cette phase est terminée, les affectations ne peuvent donc plus être modifiées."
     },
     "proposals": {
       "amountRequested": "{amount} demandé",

@@ -1205,7 +1205,8 @@
       "searchByTitlePlaceholder": "Raadi cinwaanka",
       "keepProposalAssignedLabel": "Sii wad in {title} la qoondeeyo",
       "removeProposalLabel": "Ka saar {title}",
-      "alreadyAssignedBadge": "Mar hore la qoonday"
+      "alreadyAssignedBadge": "Mar hore la qoonday",
+      "phaseEndedAssignmentsLockedHint": "Wejigan wuu dhammaaday, sidaas darteed qoondooyinka lama beddeli karo."
     },
     "proposals": {
       "amountRequested": "{amount} la codsaday",

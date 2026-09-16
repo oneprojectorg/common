@@ -1205,7 +1205,8 @@
       "searchByTitlePlaceholder": "Pesquisar por título",
       "keepProposalAssignedLabel": "Manter {title} atribuída",
       "removeProposalLabel": "Remover {title}",
-      "alreadyAssignedBadge": "Já atribuída"
+      "alreadyAssignedBadge": "Já atribuída",
+      "phaseEndedAssignmentsLockedHint": "Esta fase terminou, por isso as atribuições já não podem ser alteradas."
     },
     "proposals": {
       "amountRequested": "{amount} solicitado",

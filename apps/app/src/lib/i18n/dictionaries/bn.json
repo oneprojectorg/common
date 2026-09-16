@@ -1205,7 +1205,8 @@
       "searchByTitlePlaceholder": "শিরোনাম দিয়ে খুঁজুন",
       "keepProposalAssignedLabel": "{title} নির্ধারিত রাখুন",
       "removeProposalLabel": "{title} সরান",
-      "alreadyAssignedBadge": "ইতিমধ্যেই নিয়োজিত"
+      "alreadyAssignedBadge": "ইতিমধ্যেই নিয়োজিত",
+      "phaseEndedAssignmentsLockedHint": "এই ধাপটি শেষ হয়ে গেছে, তাই অ্যাসাইনমেন্ট আর পরিবর্তন করা যাবে না।"
     },
     "proposals": {
       "amountRequested": "{amount} অনুরোধ করা হয়েছে",
