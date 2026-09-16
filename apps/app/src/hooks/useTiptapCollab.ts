@@ -6,6 +6,8 @@ import { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
+import { useProposalCollabToken } from './useProposalCollabToken';
+
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
 export interface CollabUser {
@@ -14,15 +16,9 @@ export interface CollabUser {
 }
 
 export interface UseTiptapCollabOptions {
-  docId: string | null;
-  enabled?: boolean;
-  /**
-   * Resolves a Tiptap Cloud JWT scoped to `docId`. The provider awaits it on
-   * every authentication, so a reconnect picks up a fresh token without the
-   * Y.Doc being torn down. Must be referentially stable (`useCallback`) —
-   * a new function identity rebuilds the provider.
-   */
-  getToken: () => Promise<string>;
+  docId: string;
+  /** The proposal that owns `docId`; its collaboration token gates the socket. */
+  proposalProfileId: string;
   /** User's display name for the collaboration cursor */
   userName?: string;
 }
@@ -37,13 +33,22 @@ export interface UseTiptapCollabReturn {
   user: CollabUser;
 }
 
-/** Initialize TipTap Cloud collaboration provider */
+/**
+ * Initialize TipTap Cloud collaboration provider.
+ *
+ * The first token fetch is a suspense query, so mount this under a Suspense
+ * and a resource error boundary.
+ */
 export function useTiptapCollab({
   docId,
-  enabled = true,
-  getToken,
+  proposalProfileId,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
+  // The provider awaits this on every authentication, so a reconnect picks up
+  // a fresh token without the Y.Doc being torn down. It is memoized — a new
+  // function identity would rebuild the provider.
+  const getToken = useProposalCollabToken({ proposalProfileId });
+
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
@@ -65,11 +70,6 @@ export function useTiptapCollab({
   }, [userName]);
 
   useEffect(() => {
-    if (!enabled || !docId) {
-      setStatus('disconnected');
-      return;
-    }
-
     const appId = process.env.NEXT_PUBLIC_TIPTAP_APP_ID;
     if (!appId) {
       logger.error('NEXT_PUBLIC_TIPTAP_APP_ID not set', {
@@ -109,7 +109,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, enabled, getToken, ydoc]);
+  }, [docId, getToken, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {

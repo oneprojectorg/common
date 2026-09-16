@@ -9,8 +9,6 @@ import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { type ReactNode, createContext, useContext } from 'react';
 import type { Doc } from 'yjs';
 
-import { useProposalCollabToken } from './useProposalCollabToken';
-
 /**
  * Context value for collaborative document editing.
  * Provides access to the shared Yjs document and TipTap collaboration provider.
@@ -64,12 +62,9 @@ export function CollaborativeDocProvider({
   fallback = null,
   children,
 }: CollaborativeDocProviderProps) {
-  const getToken = useProposalCollabToken({ proposalProfileId });
-
   const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
     docId,
-    enabled: true,
-    getToken,
+    proposalProfileId,
     userName,
   });
 
