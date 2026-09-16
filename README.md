@@ -46,7 +46,7 @@ Otherwise, install these manually:
   pnpm config set "//registry.tiptap.dev/:_authToken" "<token>"
   ```
 
-  pnpm 10.34.2 and later ignore `${...}` placeholders in a repository's own `.npmrc`, and discard the whole file when one cannot be expanded — so the `@tiptap-pro:registry` line goes too, and the install fails with a 404 from `registry.npmjs.org` rather than a 403 from Tiptap. Both keys therefore have to come from your user config. To use the env var instead, prefix installs with `NPM_CONFIG_USERCONFIG=.npmrc`, which declares this repository's `.npmrc` trusted; that is what CI and the docker build do.
+  pnpm 10.34.2 and later ignore `${...}` placeholders in a repository's own `.npmrc`, and discard the whole file when one cannot be expanded — so the `@tiptap-pro:registry` line goes too, and the install fails with a 404 from `registry.npmjs.org` rather than a 403 from Tiptap. Both keys therefore have to come from your user config. To use the env var instead, prefix installs with `NPM_CONFIG_USERCONFIG="$PWD/.npmrc"`, which declares this repository's `.npmrc` trusted; that is what CI, the docker build and Vercel do. Give it an absolute path — a relative one is resolved against the process working directory, which is why the same setting silently fails on Vercel when written as `.npmrc`.
 - **`TIPTAP_PRO_TOKEN`** — still needed for the Docker path: set it in your shell before running, or put it in `.env.local` at the repo root (`.env.local` is sourced by your workflow; `.env.docker` is tracked and must not contain the real token).
 - **Platform** — tested on arm64 macOS. amd64 Linux should work but isn't verified in CI.
 
