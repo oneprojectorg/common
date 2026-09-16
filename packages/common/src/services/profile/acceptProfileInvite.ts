@@ -50,6 +50,10 @@ export const acceptProfileInvite = async ({
     throw new UnauthorizedError('This invite is for a different email address');
   }
 
+  // One "accepted at" instant for both accept paths (idempotent resolve and
+  // fresh accept), so the stamp has a single definition.
+  const acceptedOn = new Date().toISOString();
+
   // 3. Check user isn't already a member
   const existingMembership = await db.query.profileUsers.findFirst({
     where: {
@@ -67,7 +71,7 @@ export const acceptProfileInvite = async ({
     // is blocked when the invite is created.
     await db
       .update(profileInvites)
-      .set({ acceptedOn: new Date().toISOString() })
+      .set({ acceptedOn })
       .where(eq(profileInvites.id, inviteId));
 
     return { profileUser: existingMembership };
@@ -97,7 +101,7 @@ export const acceptProfileInvite = async ({
       }),
       tx
         .update(profileInvites)
-        .set({ acceptedOn: new Date().toISOString() })
+        .set({ acceptedOn })
         .where(eq(profileInvites.id, inviteId)),
     ]);
 
