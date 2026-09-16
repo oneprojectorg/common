@@ -62,9 +62,11 @@ namespace, keyed by ID, in one nested file per locale.
 +t('emailCodeHint');
 ```
 
-- **Top level** holds copy that two or more features share. A plain label
-  keeps its English text as key (`Cancel`, `Back`, `No results`). A shared
-  sentence, or any message with ICU syntax, gets a camelCase ID.
+- **Top level** holds generic UI vocabulary that belongs to no feature:
+  `Cancel`, `Back`, `Save`, `No results`, `Try again`. A plain label keeps
+  its English text as key; a generic sentence, or any message with ICU
+  syntax, gets a camelCase ID. A string owned by a feature lives in that
+  feature's namespace even when another feature reads it.
 - A **namespace** is a top-level object per feature area (`decisions`,
   `profile`, `onboarding`). Its keys are camelCase IDs that name the string's
   role, not its wording, at most one level deep.
@@ -96,8 +98,10 @@ yet (oxc-project/oxc#21644).
 
 ## Consequences
 
-- Of the 310 keys used by more than one file, 288 stay as they are; only
-  the 22 with a period and the ICU messages get an ID.
+- About 50 generic labels stay at the top level; the other ~1,700 keys move
+  under a namespace. Using a string from several files does not make it
+  generic: `Untitled Proposal` is read from 20 files and is still
+  `decisions` copy.
 - Features write to different namespaces, so concurrent PRs collide only
   when they touch the same feature.
 - A wording change is one value per locale, not a rename in eight files and
