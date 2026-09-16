@@ -2,12 +2,11 @@
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
+import { isJoinEligible } from '@/utils/isJoinEligible';
 import { userCanInteract } from '@/utils/userCanInteract';
 import type { DecisionAccess } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { usePathname, useRouter } from 'next/navigation';
-
-import { isJoinEligible } from '@/components/decisions/JoinAccountModal';
 
 /**
  * Whether the viewer's access on a decision admits Like/Follow.
