@@ -1,15 +1,14 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { getAvatarColorForString } from '@op/styles/constants';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 import { useTranslations } from '@/lib/i18n';
-
-import { useProposalCollabToken } from './useProposalCollabToken';
 
 export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
@@ -46,8 +45,16 @@ export function useTiptapCollab({
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const t = useTranslations();
+  const utils = trpc.useUtils();
 
-  const getToken = useProposalCollabToken({ proposalProfileId });
+  // Awaited by the provider on every connect; each call mints a fresh token.
+  const getToken = useCallback(
+    () =>
+      utils.decision.getCollabToken
+        .fetch({ proposalProfileId })
+        .then((result) => result.token),
+    [utils, proposalProfileId],
+  );
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
