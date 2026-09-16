@@ -71,20 +71,22 @@ export class RealtimeManager {
    * realtime-js fans a single websocket drop out to every joined channel as
    * `CHANNEL_ERROR` and then rejoins each one on its own backoff, so a page
    * holding fifteen channels reports fifteen failures for one event. The drop is
-   * recorded once here, at the socket, instead of once per channel.
+   * recorded once here, at the socket, instead of once per channel. It is
+   * recorded at info level because the client logger reports warn and error to
+   * PostHog error tracking, and a socket drop is expected, not a defect.
    */
   private registerSocketListeners(client: SupabaseClient): void {
     const { stateChangeCallbacks } = client.realtime;
 
     stateChangeCallbacks.error.push((error: unknown) => {
-      logger.warn('[Realtime] Socket error', {
+      logger.info('[Realtime] Socket error', {
         error,
         openChannels: this.channels.size,
       });
     });
 
     stateChangeCallbacks.close.push((event: unknown) => {
-      logger.warn('[Realtime] Socket closed', {
+      logger.info('[Realtime] Socket closed', {
         ...closeDetails(event),
         openChannels: this.channels.size,
       });
