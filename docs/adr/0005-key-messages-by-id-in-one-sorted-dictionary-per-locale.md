@@ -8,99 +8,144 @@ Proposed
 
 ## Context
 
-The app keys its next-intl messages by the English source string. Each
-locale is one flat JSON file of about 1,760 entries, and a new string is
-appended to the bottom of all eight files. Three problems follow.
+Messages are keyed by their English text, one flat file per locale, and every
+new string is appended at the bottom of all eight files:
 
-**Rebase conflicts.** Two branches that each append to the same tail collide
-on the same lines. In the three months to 2026-09-16, 93 of 478 commits on
-`dev` touched `en.json`; 29 of them appended at the tail, and 61% of all added
-dictionary lines landed there. Of the 218 conflict resolutions `git rerere`
-recorded on one contributor's machine, 122 are dictionary files. Replaying
-PR #2042 and PR #2010 from their common base reproduces the conflict; the same
-two edits merge cleanly when the file is kept sorted by key. Appending, not the
-key style, causes the conflicts.
+```text
+apps/app/src/lib/i18n/dictionaries/en.json        1,760 keys, 8 locales
+{
+  "Invite more people": "Invite more people",
+  ...
+  "Text me a code": "Text me a code",
+  "We'll email you a code to confirm it's yours.": "We'll email you a code to confirm it's yours."
+}                                                  ← every PR appends here
+```
 
-**Copy edits are key renames.** A wording change rewrites the key at every
-call site and in all eight dictionaries; 22 of the 93 commits both added and
-removed keys. A period in a key collides with next-intl's path separator, so
-`messageKeys.ts` rewrites every key on both sides of the lookup, `translate.ts`
-wraps `useTranslations` and `getTranslations`, and the wrapper flattens the
-per-key value types next-intl would otherwise infer. next-intl itself
-recommends IDs as keys and forbids `.` in them.
+Two PRs that append at the same time collide on rebase. PR #2042 and PR #2010,
+both merged on 2026-09-13, replayed from their common base:
 
-**The rule already has exceptions.** 29 entries are IDs in all but name
-(`COWOPHEADER`, `platformAdmin_allUsers`, `Duplicate_noun`, `{roleName} plural`,
-every ICU plural). 296 keys are shared by more than one file (`Cancel` by 27),
-so shared copy has no owner.
+```text
+  "Older version reviewed by {name}": "Older version reviewed by {name}",
+<<<<<<< #2042
+  "Participants can comment on proposals during this phase.": "...",
+  "Comments off": "Comments off"
+=======
+  "Reject": "Reject",
+  "Your Privacy": "Your Privacy",
+  "We use essential cookies to make Common work, ...": "..."
+>>>>>>> #2010
+}
+```
 
-In scope: the dictionary layout, the key format, and the call-site API in
-`apps/app`. Out of scope: how translations are produced, and user content
-translated at runtime.
+The same two edits merge cleanly when the file is sorted. Three months of
+`dev` up to 2026-09-16:
+
+| | |
+| --- | --- |
+| Commits that touched `en.json` | 93 of 478 |
+| Of those, appended at the tail | 29 |
+| Of those, renamed keys because copy changed | 22 |
+| `git rerere` conflict resolutions that are dictionary files | 122 of 218 |
+
+The sentence keys carry two more costs. A copy change renames the key in eight
+files and at every call site. A period in a key is next-intl's path separator,
+so `messageKeys.ts` rewrites every key and `translate.ts` wraps every hook,
+which drops next-intl's per-key value types. The rule already has 29
+exceptions (`COWOPHEADER`, `Duplicate_noun`, `{roleName} plural`, every ICU
+plural), and 296 keys such as `Cancel` are shared across files with no owner.
+
+In scope: dictionary layout, key format, call-site API in `apps/app`. Out of
+scope: how translations are produced; user content translated at runtime.
 
 ## Decision
 
-We will key messages by ID, grouped into namespaces, in one nested JSON file
-per locale, sorted by key at every level:
+We will key messages by ID inside feature namespaces, in one nested file per
+locale, sorted by key at every level.
 
-```
-apps/app/src/lib/i18n/dictionaries/<locale>.json
+```diff
+ apps/app/src/lib/i18n/dictionaries/en.json
+ {
+-  "Cancel": "Cancel",
+-  "Comments off": "Comments off",
+-  "Duplicate_noun": "Duplicate",
+-  "Invite more people": "Invite more people"
++  "common": {
++    "cancel": "Cancel",
++    "duplicateNoun": "Duplicate"
++  },
++  "decisions": {
++    "comments": { "off": "Comments off" }
++  },
++  "invites": {
++    "inviteMore": "Invite more people"
++  }
+ }
 ```
 
-- A **namespace** is a top-level object named after a feature area
-  (`decisions`, `profile`, `onboarding`, ...) plus `common` for copy that two
-  or more features share.
-- A **key** is a camelCase ID that names the role of the string, not its
-  wording (`reviewQueue.emptyTitle`, `submit`). Nesting goes at most one level
-  below the namespace. No key contains `.`.
+```diff
+-const t = useTranslations();
+-t('Comments off');
+-t("We'll email you a code to confirm it's yours.");
++const t = useTranslations('decisions.comments');
++t('off');
++t('emailCodeHint');
+```
+
+- A **namespace** is a top-level object per feature area, plus `common` for
+  copy two or more features share.
+- A **key** is a camelCase ID naming the string's role, not its wording. At
+  most one level below the namespace. No `.` in a key.
 - The English value is the copy. A copy change edits the value only.
-- Call sites take the narrowest namespace that covers their strings:
-  `const t = useTranslations('decisions.reviewQueue')`. The variable stays `t`.
-- Every object in every dictionary is sorted by key in code-point order.
-  `oxfmt` cannot sort JSON keys (oxc-project/oxc#21644 is open), so a script,
-  `pnpm i18n:sort`, rewrites the files and the dictionaries test fails on an
-  unsorted object, a duplicate key, or a key set that differs between
-  locales. When the formatter learns to sort JSON, it takes over.
-- `messageKeys.ts`, the `translate.ts` wrapper, and our `getTranslations`
-  re-export go away once no key contains a period. Call sites use next-intl's
-  own hooks and get its per-key value typing back.
+- Every object is sorted in code-point order. `oxfmt` cannot sort JSON keys
+  (oxc-project/oxc#21644), so `pnpm i18n:sort` rewrites the files and the
+  dictionaries test fails on an unsorted object, a duplicate key, or a key
+  set that differs between locales.
 
-We migrate in two steps, each behaviour-neutral for users:
+```diff
+ apps/app/src/lib/i18n/
+ ├── dictionaries/<locale>.json   # nested, sorted
+ ├── dictionaries.test.ts         # + sorted, + same keys in every locale
+-├── messageKeys.ts               # "." → "_" on both sides of the lookup
+-├── translate.ts                 # wrapper that re-applies it
+-├── server.ts                    # wrapped getTranslations
++├── sort.ts                      # pnpm i18n:sort
+ └── request.ts
+```
 
-1. Sort the eight flat files by key, add the sort script, and enforce the
-   order in the test. One PR, no call-site change. This removes the conflicts
-   on its own.
-2. Move strings into namespaces one feature at a time, together with the
-   feature's call sites, by codemod where the key is a literal. The flat keys
-   stay at the top level as the namespace-less remainder until none is left;
-   new strings go into a namespace from the day step 1 merges.
+Migration, each step behaviour-neutral for users:
+
+```text
+step 1  sort the eight flat files, add the sort script, enforce in the test
+        one PR, no call-site change → the conflicts stop here
+step 2  one feature at a time: keys → namespace IDs, call sites → useTranslations('ns')
+        codemod where the key is a literal; the flat remainder shrinks
+        new strings go into a namespace from the day step 1 merges
+        remainder empty → delete messageKeys.ts, translate.ts, server.ts
+```
 
 ## Consequences
 
-- Concurrent PRs stop colliding in dictionaries: a sorted insert lands where
-  its key belongs, not at the tail, and features write to different
-  namespaces.
-- A wording change is a one-value edit per locale, not a rename in eight
-  files and every call site.
-- Homonyms and plurals get a name instead of a disguised ID.
-- The call site no longer shows the English text. A reader opens `en.json`,
-  or hovers the key in an editor with next-intl's type information.
+- Concurrent PRs stop colliding: a sorted insert lands where its key belongs,
+  and features write to different namespaces.
+- A wording change is one value per locale, not a rename in eight files and
+  every call site.
+- Call sites use next-intl's own hooks and get per-key value typing back.
+- The call site no longer shows the English text; a reader opens `en.json`
+  or hovers the key.
 - Every new string needs a name and a namespace, and reviewers check both.
-- About 2,280 literal call sites and 16 dynamic-key sites move during step 2.
-  The `as TranslationKey` escapes (5 sites) map to typed namespaces or
-  `t.has`.
-- Sort order is enforced by a test and a script rather than by the
-  formatter, so an unsorted file fails CI instead of being fixed on save.
-- `apps/app/scripts/check-missing-intl-keys.ts`, already stale, is replaced by
-  the dictionaries test.
-- The `i18n-strings` skill and `CLAUDE.md` change to the new layout when
-  step 1 merges.
+- About 2,280 literal call sites and 16 dynamic-key sites move in step 2; the
+  5 `as TranslationKey` escapes map to typed namespaces or `t.has`.
+- Sort order is enforced by a test, not fixed on save, until `oxfmt` sorts
+  JSON.
+- `apps/app/scripts/check-missing-intl-keys.ts` is replaced by the
+  dictionaries test. The `i18n-strings` skill and `CLAUDE.md` change with
+  step 1.
 
 ## References
 
 - next-intl, [Translations](https://next-intl.dev/docs/usage/translations):
   "it's generally recommended to use IDs as keys"; "Namespace keys cannot
   contain the character '.'".
-- PR #2042 and PR #2010: the reproduced tail conflict (2026-09-13).
+- PR #2042 and PR #2010: the reproduced tail conflict.
 - [oxc-project/oxc#21644](https://github.com/oxc-project/oxc/issues/21644):
   open request for JSON key sorting in `oxfmt`.
