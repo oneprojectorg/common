@@ -50,6 +50,10 @@ export const acceptProfileInvite = async ({
     throw new UnauthorizedError('This invite is for a different email address');
   }
 
+  // One "accepted at" instant for both accept paths (idempotent resolve and
+  // fresh accept), so the stamp has a single definition.
+  const acceptedOn = new Date().toISOString();
+
   // 3. Check user isn't already a member
   const existingMembership = await db.query.profileUsers.findFirst({
     where: {
@@ -59,7 +63,18 @@ export const acceptProfileInvite = async ({
   });
 
   if (existingMembership) {
-    throw new CommonError('You are already a member of this profile');
+    // Accepting is idempotent: a stale pending invite for an existing
+    // member (left behind by the proposal-invite flow, a template copy,
+    // or a failed accept) is resolved so it stops showing, and the
+    // existing membership is returned. The invite's role is not applied
+    // — the membership already exists, and inviting an existing member
+    // is blocked when the invite is created.
+    await db
+      .update(profileInvites)
+      .set({ acceptedOn })
+      .where(eq(profileInvites.id, inviteId));
+
+    return { profileUser: existingMembership };
   }
 
   // 4. Transaction: create profileUser, assign role, mark accepted
@@ -86,7 +101,7 @@ export const acceptProfileInvite = async ({
       }),
       tx
         .update(profileInvites)
-        .set({ acceptedOn: new Date().toISOString() })
+        .set({ acceptedOn })
         .where(eq(profileInvites.id, inviteId)),
     ]);
 

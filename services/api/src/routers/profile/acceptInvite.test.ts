@@ -203,13 +203,13 @@ describe.concurrent('profile.acceptInvite', () => {
     });
   });
 
-  it('should fail when user is already a member of the profile', async ({
+  it('should not change the member role when an existing member accepts an invite for another role', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestProfileUserDataManager(task.id, onTestFinished);
 
-    // Create profile with an existing member
+    // Given: a profile with an existing member
     const { profile, adminUser, memberUsers } = await testData.createProfile({
       users: { admin: 1, member: 1 },
     });
@@ -219,14 +219,14 @@ describe.concurrent('profile.acceptInvite', () => {
       throw new Error('Failed to create member user');
     }
 
-    // Create invite for the existing member (for a different/upgraded role)
+    // Given: an invite for the member with a different (higher) role
     const [invite] = await db
       .insert(profileInvites)
       .values({
         email: existingMember.email,
         profileId: profile.id,
         profileEntityType: EntityType.ORG,
-        accessRoleId: ROLES.ADMIN.id, // Try to upgrade to admin
+        accessRoleId: ROLES.ADMIN.id, // A stale invite that offers an upgrade
         invitedBy: adminUser.userProfileId,
       })
       .returning();
@@ -237,19 +237,86 @@ describe.concurrent('profile.acceptInvite', () => {
 
     testData.trackProfileInvite(existingMember.email, profile.id);
 
-    // Try to accept invite when already a member
+    // When: the existing member accepts the invite
     const { session } = await createIsolatedSession(existingMember.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    await expect(
-      caller.acceptInvite({
-        inviteId: invite.id,
-      }),
-    ).rejects.toMatchObject({
-      cause: {
-        name: 'CommonError',
+    const result = await caller.acceptInvite({ inviteId: invite.id });
+
+    // Then: the existing membership is returned and its role is unchanged
+    expect(result.id).toBe(existingMember.profileUserId);
+
+    const profileUserWithRoles = await db.query.profileUsers.findFirst({
+      where: { id: result.id },
+      with: {
+        roles: {
+          with: {
+            accessRole: true,
+          },
+        },
       },
     });
+
+    expect(profileUserWithRoles?.roles).toHaveLength(1);
+    expect(profileUserWithRoles?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
+  });
+
+  it('should resolve the pending invite when the user is already a member of the profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+
+    // Given: a profile whose member set already includes the invitee
+    const { profile, adminUser, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+
+    const member = memberUsers[0];
+    if (!member) {
+      throw new Error('Failed to create member user');
+    }
+
+    // Given: a stale pending invite for that member (e.g. created before
+    // membership existed, or left behind after a partial accept)
+    const [invite] = await db
+      .insert(profileInvites)
+      .values({
+        email: member.email,
+        profileId: profile.id,
+        profileEntityType: EntityType.ORG,
+        accessRoleId: ROLES.MEMBER.id,
+        invitedBy: adminUser.userProfileId,
+      })
+      .returning();
+
+    if (!invite) {
+      throw new Error('Failed to create invite');
+    }
+
+    testData.trackProfileInvite(member.email, profile.id);
+
+    // When: the existing member accepts the invite
+    const { session } = await createIsolatedSession(member.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.acceptInvite({ inviteId: invite.id });
+
+    // Then: accepting succeeds and returns the existing membership
+    // (no duplicate profileUser row is created)
+    const memberships = await db.query.profileUsers.findMany({
+      where: { profileId: profile.id, authUserId: member.authUserId },
+    });
+
+    expect(memberships).toHaveLength(1);
+    expect(result.id).toBe(member.profileUserId);
+
+    // Then: the invite is marked accepted so it no longer appears as pending
+    const updatedInvite = await db.query.profileInvites.findFirst({
+      where: { id: invite.id },
+    });
+
+    expect(updatedInvite?.acceptedOn).not.toBeNull();
   });
 
   it('should handle case-insensitive email matching', async ({
