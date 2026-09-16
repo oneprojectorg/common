@@ -4479,7 +4479,7 @@
     {
       "type": "uuid",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -13609,7 +13609,7 @@
         "id"
       ],
       "onUpdate": "CASCADE",
-      "onDelete": "SET NULL",
+      "onDelete": "CASCADE",
       "name": "decision_process_phases_profile_id_profiles_id_fkey",
       "entityType": "fks",
       "schema": "public",
