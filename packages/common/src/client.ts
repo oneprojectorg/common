@@ -91,6 +91,10 @@ export {
   reviewerAssignmentsSchema,
   type ReviewerAssignments,
   type ReviewerQueueStatus,
+  assignableProposalSchema,
+  type AssignableProposal,
+  assignableProposalListSchema,
+  type AssignableProposalList,
 } from './services/decision/schemas/reviewAssignments';
 export {
   proposalSelectionSchema,

@@ -18,7 +18,7 @@ import {
   type ReviewerQueueStatus,
   reviewerAssignmentsSchema,
 } from '../schemas/reviewAssignments';
-import { assertInstancePhase } from '../utils/instance';
+import { assertInstancePhase, isInstanceCurrentPhase } from '../utils/instance';
 
 interface ReviewerQueueTotals {
   assignedCount: number;
@@ -88,6 +88,9 @@ export async function listReviewerAssignments({
   return reviewerAssignmentsSchema.parse({
     reviewer: isAssociated ? (reviewer ?? null) : null,
     isEligible,
+    // What `removeReviewAssignments` asserts, so the caller doesn't offer a
+    // removal the write would refuse.
+    canModifyAssignments: isInstanceCurrentPhase(instance, phaseId),
     ...totals,
     items: queue.items,
     next: queue.next,
