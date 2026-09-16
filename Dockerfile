@@ -66,9 +66,7 @@ COPY services/workflows/package.json ./services/workflows/
 COPY tests/core/package.json ./tests/core/
 COPY tests/e2e/package.json ./tests/e2e/
 
-# Declares the repository's own .npmrc trusted, for this build layer and for the
-# runtime installs docker-compose runs: pnpm >= 10.34.2 ignores ${...} in a
-# repository .npmrc otherwise, and the Tiptap Pro token would never be read.
+# pnpm >= 10.34.2 drops the ${...} credential from a repo .npmrc unless trusted.
 ENV NPM_CONFIG_USERCONFIG=/app/.npmrc
 
 # Install all workspace dependencies using the frozen lockfile.
