@@ -44,7 +44,6 @@ import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
 import { requiresSubmitConfirmation } from './submitConfirmation';
-import { useProposalCollabToken } from './useProposalCollabToken';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
 
@@ -95,12 +94,6 @@ export function ProposalEditor({
 
   const existingCollab = useOptionalCollaborativeDoc();
 
-  // Only the fallback provider below needs a token; when an outer
-  // `CollaborativeDocProvider` already owns the connection it holds its own.
-  const getCollabToken = useProposalCollabToken({
-    proposalProfileId: proposal.profileId,
-  });
-
   const inner = (
     <ProposalEditorInner
       instance={instance}
@@ -120,7 +113,7 @@ export function ProposalEditor({
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
-      getToken={getCollabToken}
+      proposalProfileId={proposal.profileId}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >

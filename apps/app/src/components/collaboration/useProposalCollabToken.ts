@@ -15,8 +15,8 @@ const INITIAL_STALE_TIME_MS = 50 * 60 * 1000;
  * The first fetch is a suspense query, so a FORBIDDEN or NOT_FOUND from the
  * endpoint reaches the surrounding `ResourceErrorBoundary` as a 403/404 page
  * instead of a silent failure to connect. The returned resolver is memoized
- * and handed to the provider as its `token`, which awaits it again on every
- * reconnect — the cache serves the same token until it goes stale.
+ * (a new identity would rebuild the Tiptap provider) and awaited again on
+ * every reconnect — the cache serves the same token until it goes stale.
  */
 export function useProposalCollabToken({
   proposalProfileId,

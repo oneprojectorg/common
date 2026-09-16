@@ -45,7 +45,6 @@ import {
   proposalEditorAsideValues,
   proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
-import { useProposalCollabToken } from '@/components/decisions/proposalEditor/useProposalCollabToken';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 import { useProposalReviewNotes } from '@/components/decisions/useProposalReviewNotes';
 
@@ -191,14 +190,10 @@ function EditProposalPageContent() {
 
   const userName = user.profile?.name ?? t('Anonymous');
 
-  const getCollabToken = useProposalCollabToken({
-    proposalProfileId: proposal.profileId,
-  });
-
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
-      getToken={getCollabToken}
+      proposalProfileId={proposal.profileId}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >

@@ -9,6 +9,8 @@ import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { type ReactNode, createContext, useContext } from 'react';
 import type { Doc } from 'yjs';
 
+import { useProposalCollabToken } from './useProposalCollabToken';
+
 /**
  * Context value for collaborative document editing.
  * Provides access to the shared Yjs document and TipTap collaboration provider.
@@ -32,11 +34,8 @@ const CollaborativeDocContext =
 interface CollaborativeDocProviderProps {
   /** Unique document identifier for collaboration */
   docId: string;
-  /**
-   * Resolves a Tiptap Cloud JWT scoped to `docId`, awaited again on every
-   * reconnect. Must be memoized, or the provider is rebuilt on each render.
-   */
-  getToken: () => Promise<string>;
+  /** The proposal that owns `docId`; its collaboration token gates the socket. */
+  proposalProfileId: string;
   /** User's display name for collaboration cursors */
   userName?: string;
   /** Loading state to show while the collaboration provider initializes */
@@ -47,11 +46,12 @@ interface CollaborativeDocProviderProps {
 /**
  * Provider for collaborative document editing.
  * Creates a single Yjs document and TipTap provider shared by all child collaborative fields.
- * Renders the fallback until the provider is ready.
+ * Renders the fallback until the provider is ready. The first token fetch is a
+ * suspense query, so mount it under a Suspense and a resource error boundary.
  *
  * @example
  * ```tsx
- * <CollaborativeDocProvider docId="proposal-123" getToken={getToken} userName="Alice" fallback={<Skeleton />}>
+ * <CollaborativeDocProvider docId="proposal-123" proposalProfileId={proposal.profileId} userName="Alice" fallback={<Skeleton />}>
  *   <CollaborativeTitleField />
  *   <CollaborativeEditor />
  * </CollaborativeDocProvider>
@@ -59,11 +59,13 @@ interface CollaborativeDocProviderProps {
  */
 export function CollaborativeDocProvider({
   docId,
-  getToken,
+  proposalProfileId,
   userName = 'Anonymous',
   fallback = null,
   children,
 }: CollaborativeDocProviderProps) {
+  const getToken = useProposalCollabToken({ proposalProfileId });
+
   const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
     docId,
     enabled: true,
