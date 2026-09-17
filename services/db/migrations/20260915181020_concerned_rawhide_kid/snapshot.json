@@ -10252,7 +10252,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "dpp_instance_sort_idx",
+      "name": "decision_process_phases_instance_sort_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_process_phases"
@@ -10273,7 +10273,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "dpp_profile_idx",
+      "name": "decision_process_phases_profile_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_process_phases"
