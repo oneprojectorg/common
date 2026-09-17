@@ -34,8 +34,11 @@ export const processPhases = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index('dpp_instance_sort_idx').on(table.processInstanceId, table.sortOrder),
-    index('dpp_profile_idx').on(table.profileId),
+    index('decision_process_phases_instance_sort_idx').on(
+      table.processInstanceId,
+      table.sortOrder,
+    ),
+    index('decision_process_phases_profile_idx').on(table.profileId),
   ],
 );
 
