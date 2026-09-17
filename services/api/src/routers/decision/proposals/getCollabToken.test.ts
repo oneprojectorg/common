@@ -1,3 +1,4 @@
+import { parseProposalData } from '@op/common';
 import jwt from 'jsonwebtoken';
 import { createPublicKey } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -59,9 +60,7 @@ describe.concurrent('decision.getCollabToken', () => {
       proposalData: { title: 'Test Proposal' },
     });
 
-    const { collaborationDocId } = proposal.proposalData as {
-      collaborationDocId?: string;
-    };
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const { token } = await caller.decision.getCollabToken({
