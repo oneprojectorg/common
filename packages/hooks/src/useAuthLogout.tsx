@@ -1,22 +1,20 @@
 'use client';
 
+import { clearPersistedQueryCache } from '@op/api/client';
 import type { AuthError } from '@op/supabase/lib';
-import { useQuery } from '@tanstack/react-query';
-import type { DefinedUseQueryResult } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import type { UseMutationResult } from '@tanstack/react-query';
 
 import nukeCookies from './utils/nukeCookies';
 
-const useAuthLogout: () => DefinedUseQueryResult<
-  {
-    error: AuthError | null;
-  } | null,
-  Error
+const useAuthLogout: () => UseMutationResult<
+  { error: AuthError | null },
+  Error,
+  void
 > = () => {
-  const logout = useQuery<{
-    error: AuthError | null;
-  } | null>({
-    queryKey: ['session', 'logout'],
-    queryFn: async () => {
+  const logout = useMutation<{ error: AuthError | null }, Error, void>({
+    mutationKey: ['session', 'logout'],
+    mutationFn: async () => {
       const createSBBrowserClient = (await import('@op/supabase/client'))
         .createSBBrowserClient;
       const supabase = createSBBrowserClient();
@@ -24,6 +22,11 @@ const useAuthLogout: () => DefinedUseQueryResult<
       const locData = await supabase.auth.signOut({ scope: 'local' });
 
       nukeCookies();
+
+      // The full-page navigation below tears down the in-memory cache, but
+      // not the copy the persister keeps in localStorage — that one outlives
+      // the session and would be restored for whoever signs in next.
+      await clearPersistedQueryCache();
 
       // No in-place cache update (neither getMyAccount invalidation nor an
       // auth-user refetch): both would re-render the still-mounted authed
@@ -35,9 +38,6 @@ const useAuthLogout: () => DefinedUseQueryResult<
 
       return locData;
     },
-    enabled: false,
-    staleTime: 0,
-    initialData: null,
   });
 
   return logout;
