@@ -83,13 +83,34 @@ Every decision capability check now needs a phase in hand. Call sites that pass
 Manage checks have to be told apart from the ones that are really participation
 checks.
 
+A new profile type is ungated until something gates it. `assertProfileTypeAccess`
+takes a partial map of type to required permission and treats a type it does not
+find as a no-op, which is deliberate for org and individual profiles. So the
+change that introduces the phase profile type has to give it an explicit policy
+at every one of those call sites in the same change. Omitting it is not a
+compile error and not a runtime error — it is a read that succeeds and should
+not have.
+
 `profiles` gains a role row and a permission row per capability per phase.
 Process-level role editors must keep listing only the process profile's roles, or
 phase roles surface where an admin cannot act on them.
 
+A phase's audience is an authorization input, not configuration. Decision 3 reads
+it on every participation check and decision 7 wants it to default to
+invite-only, so it needs storage that can express a default and cannot be absent.
+A key in a JSON payload that defaults to `{}` is neither: an unset audience means
+whatever the first `if` written against it happens to mean, and the permissive
+reading of it opens a private process to any signed-in viewer. The column set
+belongs to the proposals ADR, but audience has to fail closed by construction
+rather than by convention.
+
 The materialised process-level view grant is a fan-out write with a revoke rule.
 Getting the revoke wrong leaves someone able to view a private process they were
-removed from, and no foreign key catches it.
+removed from, and no foreign key catches it. A database-level cascade from the
+phase profile is the same failure with no code in the path at all: the grant
+lives on the process profile, so deleting a phase profile takes the phase and
+its grants and leaves the view grant behind. Phase deletion has to run the
+revoke itself.
 
 [ADR 0002](./0002-process-participant-for-notifications.md) defines a Participant
 as process-level and explicitly "across all phases". Someone invited to a single
