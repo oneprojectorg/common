@@ -2,6 +2,7 @@ import { logger } from '@op/logging';
 
 import { assertUserByAuthId } from '../../assert';
 import type {
+  ThemeAnalysisClaim,
   ThemeAnalysisErrorCode,
   ThemeAnalysisScope,
 } from '../schemas/themeAnalysis';
@@ -14,6 +15,7 @@ import {
 import { THEME_ANALYSIS_MIN_PROPOSALS } from './constants';
 import { fingerprintCorpus } from './corpusFingerprint';
 import type { CorpusProposal } from './corpusGrounding';
+import { extractClaims } from './extractClaims';
 import { findCommonGround } from './findCommonGround';
 
 /**
@@ -120,41 +122,63 @@ export const readCorpusForAnalysis = async ({
 };
 
 /**
- * Runs the themes pass over a corpus already read.
+ * Runs the claims pass over a corpus already read.
  *
- * Takes the corpus rather than reading it, so the caller can put the read in its
- * own step — and so the common-ground pass, running beside this one, is
- * guaranteed the same list. The indexes each pass grounds against are positions
- * in it, and a re-read that returned a different set would silently renumber
- * them.
+ * First of the three model passes, and the only one that reads proposals. Both
+ * passes after it group and reason about the claims instead, so its output has
+ * to stay fixed for the rest of the run: each answers in claim indexes, and a
+ * second extraction returning a different set would silently renumber what they
+ * are pointing at.
  */
-export const runThemesPass = async ({
+export const runClaimsPass = async ({
   proposals,
 }: {
   proposals: CorpusProposal[];
 }) => {
   try {
-    return { ok: true as const, themes: await analyzeThemes(proposals) };
+    return { ok: true as const, claims: await extractClaims(proposals) };
   } catch (error) {
     return toPassFailure(error);
   }
 };
 
 /**
- * Runs the common-ground pass over the same corpus the themes pass reads.
+ * Runs the themes pass over the claims the first pass extracted.
  *
- * Independent of that pass's output, which is what lets the caller run the two
- * at once. See {@link findCommonGround}.
+ * Takes the claims rather than extracting them, so each pass sits in its own
+ * step, and so both ground against the same claim list — which is what their
+ * indexes point into.
+ */
+export const runThemesPass = async ({
+  claims,
+}: {
+  claims: ThemeAnalysisClaim[];
+}) => {
+  try {
+    return { ok: true as const, themes: await analyzeThemes(claims) };
+  } catch (error) {
+    return toPassFailure(error);
+  }
+};
+
+/**
+ * Runs the common-ground pass over the claims and the corpus.
+ *
+ * Independent of the themes pass's output, which is what lets the caller run
+ * the two at once: the claims are an input both share rather than one pass's
+ * result. See {@link findCommonGround}.
  */
 export const runCommonGroundPass = async ({
+  claims,
   proposals,
 }: {
+  claims: ThemeAnalysisClaim[];
   proposals: CorpusProposal[];
 }) => {
   try {
     return {
       ok: true as const,
-      analysis: await findCommonGround({ corpus: proposals }),
+      analysis: await findCommonGround({ claims, corpus: proposals }),
     };
   } catch (error) {
     return toPassFailure(error);

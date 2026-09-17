@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import type {
   ThemeAnalysisOutlier,
   ThemeAnalysisResult,
+  ThemeAnalysisSuggestionKind,
 } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
@@ -30,7 +31,12 @@ import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
 import { type ReactNode, useCallback, useState } from 'react';
-import { LuArrowRightLeft, LuMerge, LuPencilLine } from 'react-icons/lu';
+import {
+  LuArrowRightLeft,
+  LuMerge,
+  LuPencilLine,
+  LuSplit,
+} from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -331,7 +337,7 @@ const ThemesSection = ({
         {/* Keyed by position. Nothing here reorders or filters after render,
             and the model can return two themes under one title — which would
             collide on any content-derived key. */}
-        {themes.map(({ title, summary, proposals }, position) => (
+        {themes.map(({ title, summary, claims, proposals }, position) => (
           <li key={position} className="flex flex-col gap-2">
             <p dir="auto" className="text-label font-strong">
               {title}
@@ -339,11 +345,60 @@ const ThemesSection = ({
             <p dir="auto" className="text-label text-muted-foreground">
               {summary}
             </p>
+            <ClaimList claims={claims} route={route} />
             <ProposalRefs proposals={proposals} route={route} />
           </li>
         ))}
       </ul>
     </Section>
+  );
+};
+
+/**
+ * The claims grouped under a theme, each with the proposal it came from.
+ *
+ * This is what the theme is actually about, so it sits above the proposal
+ * references rather than replacing them: the claims say what was argued, and the
+ * references are how a facilitator gets to the text.
+ *
+ * A claim's quote is shown only when there is one. An empty quote means the
+ * model's quote could not be found in the proposal it named, and the claim is
+ * kept without it — rendering the claim as if it were quoted would present the
+ * model's words as a participant's.
+ *
+ * Renders nothing at all for an analysis stored before claims existed, whose
+ * themes parse with an empty list.
+ */
+const ClaimList = ({
+  claims,
+  route,
+}: {
+  claims: ThemeAnalysisResult['claims'];
+  route: ThemeAnalysisRoute;
+}) => {
+  if (claims.length === 0) {
+    return null;
+  }
+
+  return (
+    <ul className="flex flex-col gap-2 border-s border-input ps-3">
+      {claims.map(({ claim, quote, proposal }, position) => (
+        <li key={position} className="flex flex-col gap-1">
+          <p dir="auto" className="text-label">
+            {claim}
+          </p>
+          {quote !== '' && (
+            <p
+              dir="auto"
+              className="text-label text-muted-foreground italic"
+            >{`"${quote}"`}</p>
+          )}
+          <p className="text-label text-muted-foreground">
+            <ProposalLink proposal={proposal} route={route} />
+          </p>
+        </li>
+      ))}
+    </ul>
   );
 };
 
@@ -436,6 +491,36 @@ const OutliersSection = ({
   );
 };
 
+/**
+ * What each kind of suggestion is called.
+ *
+ * A lookup keyed on the enum rather than a ternary chain, so adding a kind is a
+ * row here instead of another branch inside the list — and so a kind with no
+ * copy is a type error rather than a suggestion that renders as an icon and a
+ * blank line. `split` arrived exactly that way.
+ */
+const SUGGESTION_LABELS: Record<
+  ThemeAnalysisSuggestionKind,
+  (t: ReturnType<typeof useTranslations>) => string
+> = {
+  merge: (t) => t('Consider merging'),
+  modify: (t) => t('Consider revising'),
+  split: (t) => t('Consider splitting'),
+};
+
+/** The icon for a suggestion kind, paired with its label above. */
+const SuggestionIcon = ({ kind }: { kind: ThemeAnalysisSuggestionKind }) => {
+  if (kind === 'merge') {
+    return <LuArrowRightLeft aria-hidden />;
+  }
+
+  if (kind === 'split') {
+    return <LuSplit aria-hidden />;
+  }
+
+  return <LuPencilLine aria-hidden />;
+};
+
 const SuggestionsSection = ({
   suggestions,
   route,
@@ -453,14 +538,8 @@ const SuggestionsSection = ({
         {suggestions.map(({ kind, rationale, proposals }, position) => (
           <li key={position} className="flex flex-col gap-2">
             <p className="flex items-center gap-2 text-label font-strong">
-              {kind === 'merge' ? (
-                <LuArrowRightLeft aria-hidden />
-              ) : (
-                <LuPencilLine aria-hidden />
-              )}
-              {kind === 'merge'
-                ? t('Consider merging')
-                : t('Consider revising')}
+              <SuggestionIcon kind={kind} />
+              {SUGGESTION_LABELS[kind](t)}
             </p>
             <p dir="auto" className="text-label text-muted-foreground">
               {rationale}

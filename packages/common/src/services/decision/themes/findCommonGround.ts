@@ -1,10 +1,12 @@
 import type {
+  ThemeAnalysisClaim,
   ThemeAnalysisCommonGround,
   ThemeAnalysisOutlier,
   ThemeAnalysisSuggestion,
 } from '../schemas/themeAnalysis';
 import { commonGroundPassReplySchema } from '../schemas/themeAnalysis';
 import { askForJson } from './askForJson';
+import { renderClaimsForPrompt } from './claimGrounding';
 import type { CorpusProposal } from './corpusGrounding';
 import {
   assertCorpusHasProposals,
@@ -13,6 +15,8 @@ import {
 } from './corpusGrounding';
 
 const INSTRUCTIONS = `You help a facilitator find where a set of proposals already agrees, who is standing outside that agreement, and what small move would bring them closer.
+
+You are given the claims the proposals make, grouped into themes, and the proposals themselves. Reason about the claims: agreement and disagreement live in what proposals assert, not in which documents they arrived as.
 
 Three things, in this order. Be brief in each: a facilitator reads this, and every list below is capped because a long answer is a slower one, not a better one.
 
@@ -24,9 +28,10 @@ Outliers: at most six proposals sitting outside the common ground — the ones t
 An outlier is not a bad proposal, and being unusual is not a criticism. Give the reason it sits apart, in one sentence.
 
 Suggestions: concrete next moves, at most six.
-- "merge": two or more proposals close enough to become one. Say what the merged proposal would be.
-- "modify": one proposal and a small, specific change that would bring it inside the common ground without giving up what makes it worth keeping. Small means small. Do not suggest rewriting a proposal into a different proposal.
-One or two sentences of rationale each. Suggest nothing you cannot ground in the text. No suggestions is a valid answer.
+- "merge": two or more proposals whose claims are saying the same thing, close enough to become one. Say what the merged proposal would be. Name every proposal involved.
+- "modify": one proposal and a small, specific change that would bring it inside the common ground without giving up what makes it worth keeping. Small means small. Do not suggest rewriting a proposal into a different proposal. Name the one proposal.
+- "split": one proposal whose claims belong to themes that have little to do with each other, so it is really two proposals sharing a vote. Say which claims would go which way. Name the one proposal. A proposal making several claims about the same thing is not a candidate — the test is whether someone could support one part and reject the other.
+One or two sentences of rationale each. Suggest nothing you cannot ground in the claims. No suggestions is a valid answer.
 
 Answer with an object holding:
 - "commonGround": array of { "statement", "proposalIndexes" }
@@ -50,13 +55,18 @@ export interface CommonGroundAnalysis {
  * outlier split is what keeps it honest — a synthesis that reports only
  * agreement has quietly discarded the one proposal worth arguing about.
  *
- * Runs beside {@link analyzeThemes} rather than after it, over the same corpus
- * and nothing else. It used to be handed the first pass's themes as context,
- * which made the two passes sequential and put a whole model call between the
- * facilitator and the answer for the sake of a preamble the pass does not need:
- * it is given the corpus itself and does its own reading, and what it is asked
- * for — agreement, outliers, moves — is not phrased in themes. Independent, the
- * two run concurrently and the wait is the longer of them rather than the sum.
+ * Runs beside {@link analyzeThemes} rather than after it. It was once handed
+ * the first pass's themes as context, which made the two sequential and put a
+ * whole model call between the facilitator and the answer for the sake of a
+ * preamble the pass does not need: what it is asked for — agreement, outliers,
+ * moves — is not phrased in themes. Independent, the two run concurrently and
+ * the wait is the longer of them rather than the sum.
+ *
+ * It is given the claims, though, which is a different thing from being given
+ * the themes: the claims are the input both passes share, not one pass's output.
+ * A split suggestion needs them. From the proposal text a mixed proposal just
+ * looks like a proposal about two things; only its claims show that they are
+ * unrelated enough that someone could support one and reject the other.
  *
  * Every index is resolved against the corpus, so nothing here can name a
  * proposal the model invented. An outlier whose index does not resolve is
@@ -71,16 +81,24 @@ export interface CommonGroundAnalysis {
  *   {@link askForJson}.
  */
 export const findCommonGround = async ({
+  claims,
   corpus,
 }: {
+  claims: ThemeAnalysisClaim[];
   corpus: CorpusProposal[];
 }): Promise<CommonGroundAnalysis> => {
   assertCorpusHasProposals(corpus, 'proposal-common-ground');
 
+  // Empty when the claims pass found nothing assertable, which is a reachable
+  // state rather than a defensive one — and the pass still has a corpus to read.
+  const claimContext = claims.length
+    ? `These are the claims those proposals make:\n\n${renderClaimsForPrompt(claims)}\n\n`
+    : '';
+
   const reply = await askForJson({
     name: 'proposal-common-ground',
     instructions: INSTRUCTIONS,
-    prompt: `Find the common ground across these ${corpus.length} proposals, the outliers, and what to suggest.\n\n${renderCorpusForPrompt(corpus)}`,
+    prompt: `${claimContext}Find the common ground across these ${corpus.length} proposals, the outliers, and what to suggest.\n\n${renderCorpusForPrompt(corpus)}`,
     schema: commonGroundPassReplySchema,
   });
 

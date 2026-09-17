@@ -1572,6 +1572,7 @@
   "Low impact": "কম প্রভাব",
   "Suggestions": "পরামর্শ",
   "Consider merging": "একত্র করার কথা ভাবুন",
+  "Consider splitting": "ভাগ করার কথা ভাবুন",
   "Consider revising": "সংশোধনের কথা ভাবুন",
   "Merge": "একত্র করুন",
   "Merge {title} with another proposal": "{title} অন্য একটি প্রস্তাবের সঙ্গে একত্র করুন",

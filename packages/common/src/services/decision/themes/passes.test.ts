@@ -49,6 +49,29 @@ const corpus = [
   },
 ];
 
+/**
+ * The claims the themes pass groups, standing in for the first pass's output.
+ *
+ * One per proposal here; the interesting case — several claims from one
+ * proposal landing in different themes — is what `claimGrounding` covers.
+ */
+const claims = [
+  {
+    claim: 'Bike lanes should be built.',
+    quote: 'Build bike lanes',
+    proposal: {
+      id: 'proposal-a',
+      title: 'Bike lanes',
+      profileId: 'profile-a',
+    },
+  },
+  {
+    claim: 'Bus lanes should be built.',
+    quote: 'Build bus lanes',
+    proposal: { id: 'proposal-b', title: 'Bus lanes', profileId: 'profile-b' },
+  },
+];
+
 const replyWith = (text: string) => generate.mockResolvedValue({ text });
 
 const replyWithJson = (value: unknown) => replyWith(JSON.stringify(value));
@@ -360,21 +383,24 @@ describe('askForJson', () => {
 });
 
 describe('analyzeThemes', () => {
-  it('resolves each theme to the proposals it names', async () => {
+  it('groups the claims it names and derives their proposals', async () => {
     replyWithJson({
       themes: [
         {
           title: 'Street space',
           summary: 'Both want road space reallocated.',
-          proposalIndexes: [1, 2],
+          claimIndexes: [1, 2],
         },
       ],
     });
 
-    await expect(analyzeThemes(corpus)).resolves.toEqual([
+    await expect(analyzeThemes(claims)).resolves.toEqual([
       {
         title: 'Street space',
         summary: 'Both want road space reallocated.',
+        claims,
+        // Derived from the claims rather than reported by the model, so the two
+        // cannot disagree about which proposals a theme rests on.
         proposals: [
           { id: 'proposal-a', title: 'Bike lanes', profileId: 'profile-a' },
           { id: 'proposal-b', title: 'Bus lanes', profileId: 'profile-b' },
@@ -383,25 +409,87 @@ describe('analyzeThemes', () => {
     ]);
   });
 
-  // A theme is a claim about the text; losing its grounding is worth showing,
-  // where deleting the theme would hide that the grounding failed.
-  it('keeps a theme whose proposals all failed the corpus check, without them', async () => {
+  // The reason for grouping claims instead of proposals. One proposal arguing
+  // two unrelated things belongs in two themes; grouping documents would file it
+  // under one and lose the other.
+  it('lets one proposal reach several themes through different claims', async () => {
+    const mixed = [
+      {
+        claim: 'Buses should run later.',
+        quote: 'later buses',
+        proposal: { id: 'proposal-a', title: 'Two asks', profileId: 'p-a' },
+      },
+      {
+        claim: 'A footbridge should be built.',
+        quote: 'a footbridge',
+        proposal: { id: 'proposal-a', title: 'Two asks', profileId: 'p-a' },
+      },
+    ];
+
+    replyWithJson({
+      themes: [
+        { title: 'Transit', summary: 'Service hours.', claimIndexes: [1] },
+        { title: 'Crossings', summary: 'Getting across.', claimIndexes: [2] },
+      ],
+    });
+
+    const themes = await analyzeThemes(mixed);
+
+    expect(themes.map((theme) => [theme.title, theme.claims.length])).toEqual([
+      ['Transit', 1],
+      ['Crossings', 1],
+    ]);
+    expect(themes[0]?.proposals).toEqual([
+      { id: 'proposal-a', title: 'Two asks', profileId: 'p-a' },
+    ]);
+  });
+
+  // The same proposal behind two claims in one theme is one proposal, not two
+  // identical lines in the dialog.
+  it('deduplicates the proposals behind a theme', async () => {
+    const twoFromOne = [
+      {
+        claim: 'Buses should run later.',
+        quote: 'later buses',
+        proposal: { id: 'proposal-a', title: 'Two asks', profileId: 'p-a' },
+      },
+      {
+        claim: 'Buses should run more often.',
+        quote: 'more often',
+        proposal: { id: 'proposal-a', title: 'Two asks', profileId: 'p-a' },
+      },
+    ];
+
+    replyWithJson({
+      themes: [{ title: 'Transit', summary: 'Service.', claimIndexes: [1, 2] }],
+    });
+
+    const [theme] = await analyzeThemes(twoFromOne);
+
+    expect(theme?.claims).toHaveLength(2);
+    expect(theme?.proposals).toHaveLength(1);
+  });
+
+  // A theme is an assertion about the claims; losing its grounding is worth
+  // showing, where deleting the theme would hide that the grounding failed.
+  it('keeps a theme whose claims all failed the grounding check, without them', async () => {
     replyWithJson({
       themes: [
         {
           title: 'Invented',
           summary: 'Nothing in the corpus says this.',
-          proposalIndexes: [42],
+          claimIndexes: [42],
         },
       ],
     });
 
-    const themes = await analyzeThemes(corpus);
+    const themes = await analyzeThemes(claims);
 
     expect(themes).toEqual([
       {
         title: 'Invented',
         summary: 'Nothing in the corpus says this.',
+        claims: [],
         proposals: [],
       },
     ]);
@@ -415,12 +503,12 @@ describe('analyzeThemes', () => {
         {
           title: 'Street space',
           summary: 'x'.repeat(2_000),
-          proposalIndexes: [1],
+          claimIndexes: [1],
         },
       ],
     });
 
-    const themes = await analyzeThemes(corpus);
+    const themes = await analyzeThemes(claims);
 
     expect(themes[0]?.summary).toHaveLength(1_000);
   });
@@ -430,11 +518,11 @@ describe('analyzeThemes', () => {
       themes: Array.from({ length: 13 }, (_unused, position) => ({
         title: `Theme ${position + 1}`,
         summary: 'A summary.',
-        proposalIndexes: [1],
+        claimIndexes: [1],
       })),
     });
 
-    const themes = await analyzeThemes(corpus);
+    const themes = await analyzeThemes(claims);
 
     expect(themes).toHaveLength(12);
     expect(themes[0]?.title).toBe('Theme 1');
@@ -446,14 +534,13 @@ describe('analyzeThemes', () => {
       themes: [{ title: 'Street space', summary: '', proposalIndexes: [1] }],
     });
 
-    await expect(analyzeThemes(corpus)).rejects.toBeInstanceOf(CommonError);
+    await expect(analyzeThemes(claims)).rejects.toBeInstanceOf(CommonError);
   });
 
-  // The caller's count check and the corpus are read by different queries, so
-  // one can say eight while the other returns nothing. Without this the pass
-  // renders "these 0 proposals" and pays for a model call that has no material
-  // to answer from.
-  it('refuses an empty corpus without asking the model', async () => {
+  // A corpus with text in it can still yield no claims — every proposal might
+  // be a description with nothing assertable in it — so this is reachable, not
+  // defensive, and the pass must not pay for a call with nothing to group.
+  it('refuses an empty claim list without asking the model', async () => {
     await expect(analyzeThemes([])).rejects.toMatchObject({
       code: 'not-enough-text',
     });
@@ -461,12 +548,13 @@ describe('analyzeThemes', () => {
     expect(generate).not.toHaveBeenCalled();
   });
 
-  it('sends the fenced corpus as the prompt', async () => {
+  it('sends the fenced, numbered claims as the prompt', async () => {
     replyWithJson({ themes: [] });
 
-    await analyzeThemes(corpus);
+    await analyzeThemes(claims);
 
-    expect(promptSent()).toContain('<proposal index="1">');
+    expect(promptSent()).toContain('<claim index="1"');
+    expect(promptSent()).toContain('Bike lanes should be built.');
   });
 });
 
@@ -490,7 +578,7 @@ describe('findCommonGround', () => {
   it('resolves common ground, outliers, and suggestions to real proposals', async () => {
     replyWithJson(habermasReply);
 
-    await expect(findCommonGround({ corpus })).resolves.toEqual({
+    await expect(findCommonGround({ claims, corpus })).resolves.toEqual({
       commonGround: [
         {
           statement: 'Road space should be reallocated.',
@@ -533,7 +621,7 @@ describe('findCommonGround', () => {
       ],
     });
 
-    const { outliers } = await findCommonGround({ corpus });
+    const { outliers } = await findCommonGround({ claims, corpus });
 
     expect(outliers).toEqual([]);
   });
@@ -547,7 +635,7 @@ describe('findCommonGround', () => {
       ],
     });
 
-    const { suggestions } = await findCommonGround({ corpus });
+    const { suggestions } = await findCommonGround({ claims, corpus });
 
     expect(suggestions).toEqual([]);
   });
@@ -560,25 +648,41 @@ describe('findCommonGround', () => {
       ],
     });
 
-    await expect(findCommonGround({ corpus })).rejects.toBeInstanceOf(
+    await expect(findCommonGround({ claims, corpus })).rejects.toBeInstanceOf(
       CommonError,
     );
   });
 
   // Independent of the themes pass on purpose: a prompt that needed the first
-  // pass's output would put a whole model call between the facilitator and
-  // this answer. The corpus is the only thing it is shown.
-  it('sends the fenced corpus and nothing from another pass', async () => {
+  // pass's *output* would put a whole model call between the facilitator and
+  // this answer. The claims are a different matter — they are an input both
+  // passes share, so this one can have them without waiting for the other.
+  it('sends the corpus and the claims, but nothing from another pass', async () => {
     replyWithJson({ commonGround: [], outliers: [], suggestions: [] });
 
-    await findCommonGround({ corpus });
+    await findCommonGround({ claims, corpus });
 
     expect(promptSent()).toContain('<proposal index="1">');
-    expect(promptSent()).not.toContain('A first pass');
+    expect(promptSent()).toContain('<claim index="1"');
+    // The themes themselves. Their absence is what keeps the two concurrent.
+    expect(promptSent()).not.toContain('grouped the claims into these themes');
+  });
+
+  // Reachable rather than defensive: a corpus of pure description yields no
+  // claims, and this pass still has proposals to read.
+  it('runs without claims when the first pass found none', async () => {
+    replyWithJson({ commonGround: [], outliers: [], suggestions: [] });
+
+    await findCommonGround({ claims: [], corpus });
+
+    expect(promptSent()).toContain('<proposal index="1">');
+    expect(promptSent()).not.toContain('<claim index=');
   });
 
   it('refuses an empty corpus without asking the model', async () => {
-    await expect(findCommonGround({ corpus: [] })).rejects.toMatchObject({
+    await expect(
+      findCommonGround({ claims, corpus: [] }),
+    ).rejects.toMatchObject({
       code: 'not-enough-text',
     });
 

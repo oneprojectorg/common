@@ -99,12 +99,14 @@ export { THEME_ANALYSIS_MIN_PROPOSALS } from './services/decision/themes/constan
 // able to reach for.
 export type {
   LatestThemeAnalysisResponse,
+  ThemeAnalysisClaim,
   ThemeAnalysisErrorCode,
   ThemeAnalysisScope,
   ThemeAnalysisOutlier,
   ThemeAnalysisResponse,
   ThemeAnalysisResult,
   ThemeAnalysisSnapshot,
+  ThemeAnalysisSuggestionKind,
 } from './services/decision/schemas/themeAnalysis';
 export {
   MERGE_NOTE_MAX_LENGTH,

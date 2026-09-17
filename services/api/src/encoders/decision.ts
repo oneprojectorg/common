@@ -815,12 +815,14 @@ export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
 export type { Proposal, ProposalList } from '@op/common/client';
 export type {
   LatestThemeAnalysisResponse,
+  ThemeAnalysisClaim,
   ThemeAnalysisErrorCode,
   ThemeAnalysisScope,
   ThemeAnalysisOutlier,
   ThemeAnalysisResponse,
   ThemeAnalysisResult,
   ThemeAnalysisSnapshot,
+  ThemeAnalysisSuggestionKind,
 } from '@op/common/client';
 
 // Legacy type exports (for backwards compatibility during migration)

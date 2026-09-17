@@ -42,11 +42,22 @@ export type ThemeAnalysisOutlierImpact = z.infer<
  *
  * `merge` names two or more proposals that say close enough to the same thing
  * to become one. `modify` names a single proposal and a small change that would
- * bring it inside the common ground. Both are advisory: nothing in this pipeline
- * writes to a proposal, and the existing merge flow is where a merge actually
- * happens.
+ * bring it inside the common ground. `split` names one proposal that is really
+ * two: its claims sit in themes that have little to do with each other, so the
+ * parts compete for the same vote and neither can be supported on its own.
+ *
+ * `split` is the suggestion claims made possible. Reading whole proposals, a
+ * mixed one looks like a proposal about two things; reading its claims, the
+ * split is visible as claims landing in unrelated groups.
+ *
+ * All three are advisory: nothing in this pipeline writes to a proposal, and the
+ * existing merge flow is where a merge actually happens.
  */
-export const themeAnalysisSuggestionKindSchema = z.enum(['merge', 'modify']);
+export const themeAnalysisSuggestionKindSchema = z.enum([
+  'merge',
+  'modify',
+  'split',
+]);
 
 export type ThemeAnalysisSuggestionKind = z.infer<
   typeof themeAnalysisSuggestionKindSchema
@@ -87,6 +98,12 @@ const prose = clampTo(PROSE_MAX);
  * themes against a ceiling of twelve is a reply worth keeping twelve of.
  */
 const MAX_THEMES = 12;
+/**
+ * Claims are per-assertion rather than per-proposal, so this ceiling is an order
+ * of magnitude above the others: a hundred proposals making three points each is
+ * an ordinary corpus, not a runaway reply.
+ */
+const MAX_CLAIMS = 400;
 const MAX_COMMON_GROUND = 10;
 const MAX_OUTLIERS = 20;
 const MAX_SUGGESTIONS = 15;
@@ -106,6 +123,50 @@ const MAX_SUGGESTIONS = 15;
 const corpusIndex = z.number().int().positive();
 
 /**
+ * A claim's position in the numbered claim list the later passes are shown.
+ *
+ * The same device as {@link corpusIndex}, one level down. Once claims exist they
+ * are what the themes pass groups, so it needs a handle on them — and the handle
+ * has to be checkable against a list we hold rather than a string the model
+ * invented.
+ */
+const claimIndex = z.number().int().positive();
+
+/**
+ * Zod schema for what the claims pass is asked to return.
+ *
+ * A claim is one assertion a proposal makes, restated as a standalone sentence,
+ * plus the span of the proposal it comes from. The quote is the part that makes
+ * a claim checkable: a restatement is the model's words, and without the source
+ * text beside it a reader has no way to tell a faithful summary from an invented
+ * one. `collectClaims` verifies each quote appears in the proposal it is
+ * attributed to before the claim is stored.
+ *
+ * Claims are the unit everything downstream groups, which is the point of
+ * extracting them. A proposal that argues three things is three data points
+ * rather than one, so a theme can be about an argument instead of about a
+ * document that mentions it.
+ */
+export const claimsPassReplySchema = z.object({
+  claims: z
+    .array(
+      z.object({
+        proposalIndex: corpusIndex,
+        claim: prose,
+        /**
+         * Verbatim from the proposal. Clamped rather than rejected for length
+         * like the rest of the prose here, but checked for provenance against
+         * the corpus, which is a different question from how long it is.
+         */
+        quote: prose,
+      }),
+    )
+    .transform((claims) => claims.slice(0, MAX_CLAIMS)),
+});
+
+export type ClaimsPassReply = z.infer<typeof claimsPassReplySchema>;
+
+/**
  * Zod schema for what the themes pass is asked to return.
  *
  * The pass reads the corpus and names what it is about. Each theme carries the
@@ -118,7 +179,13 @@ export const themesPassReplySchema = z.object({
       z.object({
         title: label,
         summary: prose,
-        proposalIndexes: z.array(corpusIndex),
+        /**
+         * The claims this theme groups, not the proposals. Grouping claims is
+         * what lets one proposal belong to several themes for the several things
+         * it argues — and the proposals behind a theme are then derived from its
+         * claims rather than asserted separately, so the two cannot disagree.
+         */
+        claimIndexes: z.array(claimIndex),
       }),
     )
     .transform((themes) => themes.slice(0, MAX_THEMES)),
@@ -186,6 +253,25 @@ const analyzedProposalSchema = z.object({
 });
 
 /**
+ * Zod schema for one claim, as stored and served.
+ *
+ * `quote` is the span of the proposal the claim was read from, and it is empty
+ * when the model's quote could not be found in that proposal. Empty rather than
+ * dropped, for the same reason a theme whose proposals all fail grounding is
+ * kept without them: the claim is a finding about text the model did read, and
+ * deleting it would hide that its evidence did not check out, while keeping an
+ * unverified quote would present the model's words as the proposal's. The dialog
+ * shows the quote only when there is one.
+ */
+export const themeAnalysisClaimSchema = z.object({
+  claim: z.string(),
+  quote: z.string(),
+  proposal: analyzedProposalSchema,
+});
+
+export type ThemeAnalysisClaim = z.infer<typeof themeAnalysisClaimSchema>;
+
+/**
  * Zod schema for one theme, as stored and served.
  *
  * The corpus indexes of {@link themesPassReplySchema} are resolved to real
@@ -196,6 +282,20 @@ const analyzedProposalSchema = z.object({
 export const themeAnalysisThemeSchema = z.object({
   title: z.string(),
   summary: z.string(),
+  /**
+   * The claims grouped under this theme, each carrying the proposal it came
+   * from. This is what the theme is actually about.
+   */
+  claims: z.array(themeAnalysisClaimSchema).default([]),
+  /**
+   * The distinct proposals behind those claims, deduplicated and in first-seen
+   * order.
+   *
+   * Derived rather than reported, so a theme cannot name a proposal none of its
+   * claims came from. Kept beside the claims because the dialog and the coverage
+   * line both count proposals, and a record written before claims existed still
+   * parses with an empty claim list and its proposals intact.
+   */
   proposals: z.array(analyzedProposalSchema),
 });
 
@@ -232,12 +332,22 @@ export type ThemeAnalysisSuggestion = z.infer<
 >;
 
 /**
- * Zod schema for the finished analysis: both passes, grounded and merged.
+ * Zod schema for the finished analysis: all three passes, grounded and merged.
  *
  * Written to the record in one update when the run completes, so a reader that
- * sees `status: 'completed'` sees all four sections or none.
+ * sees `status: 'completed'` sees every section or none.
  */
 export const themeAnalysisResultSchema = z.object({
+  /**
+   * Every claim extracted from the corpus, in the order they were numbered.
+   *
+   * Stored whole as well as grouped under themes, because a claim that no theme
+   * picked up is still a thing someone proposed — and a section that silently
+   * omitted it would report the grouping as if it covered the field.
+   *
+   * Defaulted, so an analysis stored before this existed still parses.
+   */
+  claims: z.array(themeAnalysisClaimSchema).default([]),
   themes: z.array(themeAnalysisThemeSchema),
   commonGround: z.array(themeAnalysisCommonGroundSchema),
   outliers: z.array(themeAnalysisOutlierSchema),

@@ -8,6 +8,7 @@ import {
   type ThemeAnalysisScope,
   readCachedThemeAnalysisResult,
   readCorpusForAnalysis,
+  runClaimsPass,
   runCommonGroundPass,
   runThemesPass,
   storeCachedThemeAnalysisResult,
@@ -279,7 +280,7 @@ export const analyzeProposalThemes = inngest.createFunction(
         recordAndNotify(identity, { status: 'processing' }),
       );
 
-      // Its own step. The corpus read is not the model call, and giving it its
+      // Its own step. The corpus read is not a model call, and giving it its
       // own step means Inngest names whichever one is slow — and neither has to
       // finish inside the other's share of one invocation's budget.
       const corpus = await step.run('read-corpus', () =>
@@ -316,17 +317,36 @@ export const analyzeProposalThemes = inngest.createFunction(
         };
       }
 
-      // Both at once. Neither pass reads the other's output — the common-ground
-      // pass grounds against the corpus, not against the themes — so there was
-      // never a reason for the facilitator to wait for one before the other
-      // started. Inngest runs steps awaited together as parallel steps, each in
-      // its own invocation, so the wait here is the slower of the two rather
-      // than the sum, and each keeps its own timeout and its own line in the
-      // run.
+      // Claims first, and after this nothing groups proposals — both passes
+      // below group and reason about claims instead. One claim list for the
+      // whole run: the themes pass answers in its indexes, and the
+      // common-ground pass is shown the same list, so extracting twice would
+      // renumber what each is pointing at.
+      //
+      // After the cache check rather than before it, so a corpus that has not
+      // changed since the last analysis costs no model calls at all — this one
+      // included.
+      const extracted = await step.run('extract-claims', () =>
+        runClaimsPass({ proposals }),
+      );
+
+      if (!extracted.ok) {
+        return extracted;
+      }
+
+      const { claims } = extracted;
+
+      // Both at once. Neither pass reads the other's output — they both ground
+      // against the claims, and the common-ground pass never needed the themes
+      // themselves — so there is no reason for the facilitator to wait for one
+      // before the other starts. Inngest runs steps awaited together as
+      // parallel steps, each in its own invocation, so the wait here is the
+      // slower of the two rather than the sum, and each keeps its own timeout
+      // and its own line in the run.
       const [analysed, habermas] = await Promise.all([
-        step.run('analyze-themes', () => runThemesPass({ proposals })),
+        step.run('analyze-themes', () => runThemesPass({ claims })),
         step.run('find-common-ground', () =>
-          runCommonGroundPass({ proposals }),
+          runCommonGroundPass({ claims, proposals }),
         ),
       ]);
 
@@ -342,7 +362,7 @@ export const analyzeProposalThemes = inngest.createFunction(
 
       return {
         ok: true as const,
-        result: { themes: analysed.themes, ...habermas.analysis },
+        result: { claims, themes: analysed.themes, ...habermas.analysis },
         proposals,
         total,
         fingerprint,

@@ -1638,6 +1638,7 @@
   "Low impact": "Kis hatású",
   "Suggestions": "Javaslatok",
   "Consider merging": "Érdemes összevonni",
+  "Consider splitting": "Érdemes szétválasztani",
   "Consider revising": "Érdemes átdolgozni",
   "Merge": "Összevonás",
   "Merge {title} with another proposal": "{title} összevonása másik javaslattal",

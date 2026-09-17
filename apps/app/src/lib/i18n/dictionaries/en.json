@@ -1638,6 +1638,7 @@
   "Low impact": "Low impact",
   "Suggestions": "Suggestions",
   "Consider merging": "Consider merging",
+  "Consider splitting": "Consider splitting",
   "Consider revising": "Consider revising",
   "Merge": "Merge",
   "Merge {title} with another proposal": "Merge {title} with another proposal",

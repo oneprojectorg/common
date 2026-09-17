@@ -11,15 +11,18 @@ vi.mock('@op/logging', () => ({
 vi.mock('../../assert', () => ({ assertUserByAuthId: vi.fn() }));
 vi.mock('./collectProposalCorpus', () => ({ collectProposalCorpus: vi.fn() }));
 vi.mock('./analyzeThemes', () => ({ analyzeThemes: vi.fn() }));
+vi.mock('./extractClaims', () => ({ extractClaims: vi.fn() }));
 vi.mock('./findCommonGround', () => ({ findCommonGround: vi.fn() }));
 
 import { assertUserByAuthId } from '../../assert';
 import { ThemeAnalysisFailure } from './ThemeAnalysisFailure';
 import { analyzeThemes } from './analyzeThemes';
 import { collectProposalCorpus } from './collectProposalCorpus';
+import { extractClaims } from './extractClaims';
 import { findCommonGround } from './findCommonGround';
 import {
   readCorpusForAnalysis,
+  runClaimsPass,
   runCommonGroundPass,
   runThemesPass,
 } from './runPasses';
@@ -39,8 +42,16 @@ const corpusOf = (count: number, total = count, read = count) => ({
   total,
 });
 
+const claims = [
+  {
+    claim: 'Road space should be reallocated.',
+    quote: 'reallocate road space',
+    proposal: { id: 'proposal-1', title: 'Proposal 1' },
+  },
+];
+
 const themes = [
-  { title: 'Street space', summary: 'Road space.', proposals: [] },
+  { title: 'Street space', summary: 'Road space.', claims, proposals: [] },
 ];
 
 const habermas = { commonGround: [], outliers: [], suggestions: [] };
@@ -52,11 +63,12 @@ const readCorpus = (scope: 'phase' | 'process' = 'phase') =>
     scope,
   });
 
-const runThemes = () => runThemesPass({ proposals: corpusOf(4).proposals });
+const runThemes = () => runThemesPass({ claims });
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(collectProposalCorpus).mockResolvedValue(corpusOf(4));
+  vi.mocked(extractClaims).mockResolvedValue(claims);
   vi.mocked(analyzeThemes).mockResolvedValue(themes);
   vi.mocked(findCommonGround).mockResolvedValue(habermas);
 });
@@ -155,16 +167,39 @@ describe('readCorpusForAnalysis', () => {
   });
 });
 
-describe('runThemesPass', () => {
-  // Takes the corpus rather than reading it, so the read can sit in its own
-  // Inngest step — which is what lets Inngest name the slow half.
-  it('analyses the corpus it is handed, reading nothing itself', async () => {
-    await expect(runThemes()).resolves.toEqual({ ok: true, themes });
+describe('runClaimsPass', () => {
+  // First of the three model passes, and the one whose output the other two
+  // point at by index — so it runs once, in its own step.
+  it('extracts claims from the corpus it is handed', async () => {
+    await expect(
+      runClaimsPass({ proposals: corpusOf(4).proposals }),
+    ).resolves.toEqual({ ok: true, claims });
 
     expect(vi.mocked(collectProposalCorpus)).not.toHaveBeenCalled();
-    expect(vi.mocked(analyzeThemes)).toHaveBeenCalledWith(
-      corpusOf(4).proposals,
+  });
+
+  it('reports an unusable reply rather than throwing', async () => {
+    vi.mocked(extractClaims).mockRejectedValue(
+      new ThemeAnalysisFailure('analysis-unusable', 'No JSON.'),
     );
+
+    await expect(
+      runClaimsPass({ proposals: corpusOf(4).proposals }),
+    ).resolves.toMatchObject({ ok: false, code: 'analysis-unusable' });
+  });
+});
+
+describe('runThemesPass', () => {
+  // Takes the claims rather than extracting them, so each pass sits in its own
+  // Inngest step — and so the common-ground pass is shown the same claim list
+  // the themes were grouped from, which its indexes point into.
+  it('groups the claims it is handed, extracting nothing itself', async () => {
+    await expect(runThemes()).resolves.toEqual({ ok: true, themes });
+
+    expect(vi.mocked(extractClaims)).not.toHaveBeenCalled();
+
+    expect(vi.mocked(collectProposalCorpus)).not.toHaveBeenCalled();
+    expect(vi.mocked(analyzeThemes)).toHaveBeenCalledWith(claims);
   });
 
   it('reports an unusable model reply with its code', async () => {
@@ -193,18 +228,21 @@ describe('runThemesPass', () => {
 });
 
 describe('runCommonGroundPass', () => {
-  const run = () => runCommonGroundPass({ proposals: corpusOf(4).proposals });
+  const run = () =>
+    runCommonGroundPass({ claims, proposals: corpusOf(4).proposals });
 
   it('returns the analysis it produced', async () => {
     await expect(run()).resolves.toEqual({ ok: true, analysis: habermas });
   });
 
-  // Independent of the themes pass, which is what lets the workflow run the
-  // two at once: the corpus is all it is given and all it asks for.
-  it('reads the corpus alone, not the themes pass', async () => {
+  // Independent of the themes pass's *output*, which is what lets the workflow
+  // run the two at once. It does get the claims — an input both passes share,
+  // not something it has to wait for — and a split suggestion needs them.
+  it('reads the claims and the corpus, not the themes pass', async () => {
     await run();
 
     expect(vi.mocked(findCommonGround)).toHaveBeenCalledWith({
+      claims,
       corpus: corpusOf(4).proposals,
     });
   });

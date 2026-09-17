@@ -35,8 +35,10 @@ export {
   resolveThemeAnalysisErrorCode,
 } from './ThemeAnalysisFailure';
 export { analyzeThemes } from './analyzeThemes';
+export { extractClaims } from './extractClaims';
 export {
   readCorpusForAnalysis,
+  runClaimsPass,
   runCommonGroundPass,
   runThemesPass,
   type PassFailure,

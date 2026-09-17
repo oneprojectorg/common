@@ -6,6 +6,7 @@ import {
   readCachedThemeAnalysisResult,
   readCorpusForAnalysis,
   readLatestThemeAnalysis,
+  runClaimsPass,
   runCommonGroundPass,
   runThemesPass,
   storeCachedThemeAnalysisResult,
@@ -104,14 +105,7 @@ export const refreshProposalThemesOnCorpusChange = inngest.createFunction(
       scope: ThemeAnalysisScope;
       proposals: CorpusProposal[];
     }): Promise<ThemeAnalysisResult | null> => {
-      const [analysed, habermas] = await Promise.all([
-        step.run(`analyze-themes-${scope}`, () => runThemesPass({ proposals })),
-        step.run(`find-common-ground-${scope}`, () =>
-          runCommonGroundPass({ proposals }),
-        ),
-      ]);
-
-      // The first failure, when both report one. There is no record to carry
+      // The first failure, when one is reported. There is no record to carry
       // a code, so this is logged and the scope is left on its last snapshot.
       const reportFailure = (failure: PassFailure) => {
         logger.error('Theme analysis refresh failed', {
@@ -124,6 +118,27 @@ export const refreshProposalThemesOnCorpusChange = inngest.createFunction(
         return null;
       };
 
+      // Claims first here too, and for the same reason: both passes below group
+      // and reason about claims, and they have to be shown the same list for
+      // their indexes to mean the same thing. A refresh that skipped this would
+      // write a snapshot of a different shape from a manual run's.
+      const extracted = await step.run(`extract-claims-${scope}`, () =>
+        runClaimsPass({ proposals }),
+      );
+
+      if (!extracted.ok) {
+        return reportFailure(extracted);
+      }
+
+      const { claims } = extracted;
+
+      const [analysed, habermas] = await Promise.all([
+        step.run(`analyze-themes-${scope}`, () => runThemesPass({ claims })),
+        step.run(`find-common-ground-${scope}`, () =>
+          runCommonGroundPass({ claims, proposals }),
+        ),
+      ]);
+
       if (!analysed.ok) {
         return reportFailure(analysed);
       }
@@ -132,7 +147,7 @@ export const refreshProposalThemesOnCorpusChange = inngest.createFunction(
         return reportFailure(habermas);
       }
 
-      return { themes: analysed.themes, ...habermas.analysis };
+      return { claims, themes: analysed.themes, ...habermas.analysis };
     };
 
     // Sequential, not parallel. The two scopes usually share a corpus, and the

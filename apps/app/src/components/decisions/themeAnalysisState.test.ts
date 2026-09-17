@@ -39,7 +39,15 @@ const record = (
 ): ThemeAnalysisRecord => ({ ...RECORD_BASE, ...fields });
 
 const result: ThemeAnalysisResult = {
-  themes: [{ title: 'Street space', summary: 'Road space.', proposals: [] }],
+  claims: [],
+  themes: [
+    {
+      title: 'Street space',
+      summary: 'Road space.',
+      claims: [],
+      proposals: [],
+    },
+  ],
   commonGround: [],
   outliers: [],
   suggestions: [],

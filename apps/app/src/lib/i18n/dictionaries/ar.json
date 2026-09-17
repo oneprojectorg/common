@@ -1571,6 +1571,7 @@
   "Low impact": "تأثير محدود",
   "Suggestions": "اقتراحات",
   "Consider merging": "يمكن الدمج",
+  "Consider splitting": "يمكن التقسيم",
   "Consider revising": "يمكن التعديل",
   "Merge": "دمج",
   "Merge {title} with another proposal": "دمج {title} مع مقترح آخر",
