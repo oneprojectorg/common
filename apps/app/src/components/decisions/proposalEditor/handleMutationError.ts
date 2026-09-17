@@ -17,12 +17,14 @@ export function handleMutationError(
     context: `handleMutationError.${operationType}`,
   });
 
+  // The API's error formatter copies ValidationError.fieldErrors onto the
+  // error's `data` (services/api/src/lib/error.ts).
   const errorData = error.data as
-    | { cause?: { fieldErrors?: Record<string, string> } }
+    | { fieldErrors?: Record<string, string> }
     | undefined;
 
-  if (errorData?.cause?.fieldErrors) {
-    const fieldErrors = errorData.cause.fieldErrors;
+  if (errorData?.fieldErrors) {
+    const fieldErrors = errorData.fieldErrors;
     const errorMessages = Object.values(fieldErrors);
 
     if (errorMessages.length === 1) {

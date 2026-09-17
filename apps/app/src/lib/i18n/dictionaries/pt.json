@@ -1769,5 +1769,7 @@
   "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected based on voting results!\n\nWe will follow up with next steps and the final amount shortly.": "Olá {name},\n\nBoas notícias: sua proposta \"{proposal}\" foi selecionada com base nos resultados da votação!\n\nEm breve enviaremos os próximos passos e o valor final.",
   "Needs a message": "Precisa de uma mensagem",
   "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "Publicar envia e-mails às pessoas autoras de {fundedCount, plural, one {# proposta financiada} other {# propostas financiadas}} e {notFundedCount, plural, one {# proposta não financiada} other {# propostas não financiadas}}. Não é possível desfazer.",
-  "Use {name} for the submitter’s name and {proposal} for proposal title.": "Use {name} para o nome de quem enviou e {proposal} para o título da proposta."
+  "Use {name} for the submitter’s name and {proposal} for proposal title.": "Use {name} para o nome de quem enviou e {proposal} para o título da proposta.",
+  "Your changes are still syncing": "Suas alterações ainda estão sendo sincronizadas",
+  "Please wait a moment and try again.": "Aguarde um momento e tente novamente."
 }

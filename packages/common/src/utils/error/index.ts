@@ -53,6 +53,20 @@ export class UnauthorizedError extends CommonError {
   }
 }
 
+export class DocumentFetchError extends CommonError {
+  public readonly statusCode: number = 503;
+
+  constructor(message?: string, cause?: unknown) {
+    super(
+      message ??
+        'Your proposal could not be validated right now. Please try again in a moment.',
+    );
+    if (cause !== undefined) {
+      this.cause = cause;
+    }
+  }
+}
+
 /**
  * The caller's position on the access ladder. Procedures declare a minimum
  * required tier; the gate compares it against the caller's actual tier.

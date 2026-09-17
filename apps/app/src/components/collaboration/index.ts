@@ -14,3 +14,9 @@ export { CollaborativeBudgetField } from './CollaborativeBudgetField';
 export { CollaborativeLocationField } from './CollaborativeLocationField';
 export { CollaborativePresence } from './CollaborativePresence';
 export { CollaborativeTextField } from './CollaborativeTextField';
+export {
+  isDocSynced,
+  waitForDocSync,
+  type SyncedDocProvider,
+  type WaitForDocSyncOptions,
+} from './waitForDocSync';

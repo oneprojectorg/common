@@ -1,4 +1,4 @@
-import { CommonError, UnauthorizedError } from '@op/common';
+import { CommonError, UnauthorizedError, ValidationError } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
 import {
@@ -35,6 +35,12 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
 }) => {
   const cause = error.cause;
   const commonErrorToTRPCError = (cause: CommonError) => {
+    // Per-field validation messages render as toasts on the client
+    // (handleMutationError). Everything else about the cause is omitted
+    // before it goes to the client.
+    const fieldErrors =
+      cause instanceof ValidationError ? cause.fieldErrors : undefined;
+
     return {
       ...shape,
       message: cause.message,
@@ -43,7 +49,7 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
         code: getStatusKeyFromCode(cause.statusCode ?? 500),
         httpStatus: cause.statusCode ?? 500,
         timestamp: cause.timestamp,
-        // Omit the entire error object before it goes to the client
+        ...(fieldErrors ? { fieldErrors } : {}),
       },
     };
   };

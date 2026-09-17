@@ -30,6 +30,7 @@ import {
   CollaborativePresence,
   useCollaborativeDoc,
   useOptionalCollaborativeDoc,
+  waitForDocSync,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
@@ -50,6 +51,10 @@ import { useProposalValidation } from './useProposalValidation';
 
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;
+
+// How long to wait for TipTap Cloud to acknowledge the user's latest edits
+// before the server re-validates the document on submit.
+const SUBMIT_SYNC_TIMEOUT_MS = 10_000;
 
 export function ProposalEditor({
   instance,
@@ -280,6 +285,18 @@ function ProposalEditorInner({
   }, [isPreviewMode, isSynced, provider, ydoc]);
 
   const finalizeSubmit = useCallback(async () => {
+    // Re-check: the updateProposal round trip or an open custom-form modal
+    // can outlast the provider's sync, so gate the submit call itself too.
+    const synced = await waitForDocSync(provider, {
+      timeoutMs: SUBMIT_SYNC_TIMEOUT_MS,
+    });
+    if (!synced) {
+      toast.error(t('Your changes are still syncing'), {
+        description: t('Please wait a moment and try again.'),
+      });
+      throw new Error('Proposal changes not synced before submit');
+    }
+
     const didSubmitDraft = isDraft && Boolean(proposal);
     if (didSubmitDraft && proposal) {
       await submitProposalMutation.mutateAsync({
@@ -299,6 +316,8 @@ function ProposalEditorInner({
     router,
     isAnonymous,
     backHref,
+    provider,
+    t,
   ]);
 
   // Reads the refs at call time: the user can keep typing with the dialog open.
@@ -319,6 +338,21 @@ function ProposalEditorInner({
     try {
       if (!proposal) {
         throw new Error('No proposal to update');
+      }
+
+      // Gate on the server acknowledging our latest edits before any
+      // server-side validation: submitProposal (and updateProposal for
+      // non-drafts) re-validates against TipTap Cloud, and submitting
+      // before the cloud has seen our updates surfaces false "required"
+      // errors for fields the user has filled.
+      const synced = await waitForDocSync(provider, {
+        timeoutMs: SUBMIT_SYNC_TIMEOUT_MS,
+      });
+      if (!synced) {
+        toast.error(t('Your changes are still syncing'), {
+          description: t('Please wait a moment and try again.'),
+        });
+        return;
       }
 
       const categorySchema = template.properties?.category;
@@ -383,6 +417,8 @@ function ProposalEditorInner({
     updateProposalMutation,
     draftRef,
     finalizeSubmit,
+    provider,
+    t,
   ]);
 
   // -- Client-side schema validation (validates ALL template fields) ----------
