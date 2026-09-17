@@ -49,50 +49,49 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             <span className="sr-only">{t('Back to proposals')}</span>
           </>
         }
-      >
-        <div className="flex items-center gap-4">
-          {reviewSettings.allowRevisions && !isEditing && (
-            <Button
-              variant="outline"
-              disabled={!canRequestRevision}
-              onClick={() => setIsRequestModalOpen(true)}
-            >
-              <LuRefreshCw className="size-4" />
-              {t('Request revision')}
-            </Button>
-          )}
-
-          {isEditing ? (
-            <Button
-              onClick={handleUpdate}
-              disabled={!canUpdate}
-              loading={isUpdating}
-            >
-              <LuCheck className="size-4" />
-              {t('Update review')}
-            </Button>
-          ) : isSubmitted ? (
-            canEditReview && (
-              <Button variant="outline" onClick={startEditing}>
-                <LuPencil className="size-4" />
-                {t('Edit review')}
-              </Button>
-            )
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              loading={isSubmitting}
-            >
-              <LuCheck className="size-4" />
-              {t('Submit review')}
-            </Button>
-          )}
-
-          {userCanInteract(user) && (
+        accountSlot={
+          userCanInteract(user) ? (
             <UserAvatarMenu className="hidden sm:block" />
-          )}
-        </div>
+          ) : null
+        }
+      >
+        {reviewSettings.allowRevisions && !isEditing && (
+          <Button
+            variant="outline"
+            disabled={!canRequestRevision}
+            onClick={() => setIsRequestModalOpen(true)}
+          >
+            <LuRefreshCw className="size-4" />
+            {t('Request revision')}
+          </Button>
+        )}
+
+        {isEditing ? (
+          <Button
+            onClick={handleUpdate}
+            disabled={!canUpdate}
+            loading={isUpdating}
+          >
+            <LuCheck className="size-4" />
+            {t('Update review')}
+          </Button>
+        ) : isSubmitted ? (
+          canEditReview && (
+            <Button variant="outline" onClick={startEditing}>
+              <LuPencil className="size-4" />
+              {t('Edit review')}
+            </Button>
+          )
+        ) : (
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            loading={isSubmitting}
+          >
+            <LuCheck className="size-4" />
+            {t('Submit review')}
+          </Button>
+        )}
       </DecisionSubpageHeader>
 
       <RequestRevisionModal

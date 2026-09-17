@@ -4,6 +4,7 @@ import { LuArrowLeft } from 'react-icons/lu';
 import { getTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
+import { LocaleChooser } from '@/components/LocaleChooser';
 
 /** Shared shell: the Back + action row inside the content column, then the body. */
 export async function AssignmentsPageShell({
@@ -29,7 +30,12 @@ export async function AssignmentsPageShell({
             <LuArrowLeft className="size-4 rtl:-scale-x-100" />
             {t('Back')}
           </ButtonLink>
-          {action}
+          {/* This row is the only chrome on these routes — they render outside
+              SiteHeader — so the locale chooser belongs here. */}
+          <div className="flex items-center gap-4">
+            {action}
+            <LocaleChooser />
+          </div>
         </div>
         {children}
       </AssignmentsMain>
