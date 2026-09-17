@@ -1,3 +1,5 @@
+// Signs with the private key; must never reach a client bundle.
+import 'server-only';
 import jwt from 'jsonwebtoken';
 
 /** Tiptap asks for 30 minutes or less. */
