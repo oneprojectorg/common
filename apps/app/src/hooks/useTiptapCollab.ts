@@ -21,10 +21,7 @@ export interface CollabUser {
 
 export interface UseTiptapCollabOptions {
   docId: string;
-  /**
-   * Awaited by the provider on every connect. Must be referentially stable
-   * (memoize it) because it is an effect dependency.
-   */
+  /** Called on every connect; must be referentially stable. */
   getToken: () => Promise<string>;
   /** User's display name for the collaboration cursor */
   userName?: string;
@@ -70,9 +67,8 @@ export function useTiptapCollab({
       return;
     }
 
-    // Tiptap keeps the socket open after rejecting a token and the provider
-    // does not retry on its own. `connect()` is a no-op until the socket's
-    // close handler has run, so the reconnect is issued from `onDisconnect`.
+    // Tiptap keeps the socket open after rejecting a token, and `connect()` is
+    // a no-op until the close handler runs; reconnect starts in `onDisconnect`.
     let rejections = 0;
     let reconnectAfterClose = false;
 

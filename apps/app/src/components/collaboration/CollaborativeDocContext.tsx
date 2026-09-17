@@ -32,10 +32,7 @@ const CollaborativeDocContext =
 interface CollaborativeDocProviderProps {
   /** Unique document identifier for collaboration */
   docId: string;
-  /**
-   * Resolves a fresh collaboration token; called on every connect. Must be
-   * referentially stable (memoize it).
-   */
+  /** Fresh collaboration token per connect; must be referentially stable. */
   getToken: () => Promise<string>;
   /** User's display name for collaboration cursors */
   userName?: string;
