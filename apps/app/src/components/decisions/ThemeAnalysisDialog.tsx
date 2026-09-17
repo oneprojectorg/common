@@ -25,7 +25,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Header3 } from '@op/sense/Header';
 import {
   Item,
   ItemActions,
@@ -182,7 +181,12 @@ export const ThemeAnalysisDialog = ({
               )}
             </p>
           ) : (
-            <>
+            // Every section open to begin with, so the dialog still answers the
+            // question it was opened to answer. Collapsing is a tool for
+            // working through them one at a time, not the state to arrive in —
+            // four shut headers would make a finished analysis look like it had
+            // found nothing. `multiple`, for the same reason the themes are.
+            <Accordion multiple defaultValue={[...SECTION_VALUES]}>
               <ThemesSection themes={result.themes} route={route} />
               <CommonGroundSection
                 commonGround={result.commonGround}
@@ -194,7 +198,7 @@ export const ThemeAnalysisDialog = ({
                 route={route}
                 canMerge={canMerge}
               />
-            </>
+            </Accordion>
           )}
         </div>
 
@@ -225,10 +229,13 @@ const isEmpty = (result: ThemeAnalysisResult): boolean =>
  * only one of them is true here — every section was asked for.
  */
 const Section = ({
+  value,
   title,
   isEmpty,
   children,
 }: {
+  /** Stable key for the open/closed set. See {@link SECTION_VALUES}. */
+  value: SectionValue;
   title: string;
   isEmpty: boolean;
   children: React.ReactNode;
@@ -238,10 +245,19 @@ const Section = ({
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <Header3>{title}</Header3>
-      {children}
-    </section>
+    <AccordionItem value={value}>
+      {/* No type override here, unlike the theme rows inside. The trigger's
+          default is the serif title face, which is exactly what `Header3` gave
+          these headings before — and Base UI's header is an `<h3>`, the same
+          element, so the heading outline is unchanged. */}
+      <AccordionTrigger>{title}</AccordionTrigger>
+      {/* Cancels the panel's prose rule for the same reason the theme panels
+          do: every section's content is lists and paragraphs with their own
+          explicit gaps, and a 16px margin under each paragraph fights them. */}
+      <AccordionContent className="flex flex-col gap-3 [&_p:not(:last-child)]:mb-0">
+        {children}
+      </AccordionContent>
+    </AccordionItem>
   );
 };
 
@@ -330,6 +346,24 @@ const ProposalRefs = ({
 };
 
 /**
+ * The sections, in the order they are rendered, as the accordion's values.
+ *
+ * Named constants rather than the titles, which are translated: a value that
+ * changed with the reader's locale would mean the open/closed set could not be
+ * reasoned about, and `defaultValue` would have to be built from `t()` calls.
+ *
+ * Doubles as the "everything open" default, which is the order below too.
+ */
+const SECTION_VALUES = [
+  'themes',
+  'common-ground',
+  'outliers',
+  'suggestions',
+] as const;
+
+type SectionValue = (typeof SECTION_VALUES)[number];
+
+/**
  * The accordion value for one theme's panel.
  *
  * Position rather than title: two themes can share a title, and a duplicated
@@ -347,7 +381,7 @@ const ThemesSection = ({
   const t = useTranslations();
 
   return (
-    <Section title={t('Themes')} isEmpty={themes.length === 0}>
+    <Section value="themes" title={t('Themes')} isEmpty={themes.length === 0}>
       {/* Above the list rather than beside it: the list is the chart's
           table-view twin — every theme with its claims, in text — and the two
           belong next to each other. */}
@@ -367,10 +401,15 @@ const ThemesSection = ({
         {themes.map(({ title, summary, claims, proposals }, position) => (
           <AccordionItem key={position} value={themeItemValue(position)}>
             <AccordionTrigger
+              // A theme sits inside the Themes section, so its heading is a
+              // level down. Base UI's header is an `<h3>` at any depth, which
+              // would tell a reader navigating by heading that a theme and the
+              // section containing it are siblings.
+              header={<h4 />}
               // The dialog's own weight for a theme title. Left alone, the
               // trigger wears the serif title face this design system gives an
-              // accordion, which competes with the section headings when there
-              // are a dozen of them stacked inside one modal.
+              // accordion — right for the section headings, and competing with
+              // them when a dozen theme rows are stacked inside one.
               className="items-center gap-2 py-3 font-sans text-label font-strong"
             >
               <span dir="auto">{title}</span>
@@ -459,7 +498,11 @@ const CommonGroundSection = ({
   const t = useTranslations();
 
   return (
-    <Section title={t('Common ground')} isEmpty={commonGround.length === 0}>
+    <Section
+      value="common-ground"
+      title={t('Common ground')}
+      isEmpty={commonGround.length === 0}
+    >
       <ul className="flex flex-col gap-4">
         {commonGround.map(({ statement, proposals }, position) => (
           <li key={position} className="flex flex-col gap-2">
@@ -514,7 +557,11 @@ const OutliersSection = ({
   ];
 
   return (
-    <Section title={t('Outliers')} isEmpty={sorted.length === 0}>
+    <Section
+      value="outliers"
+      title={t('Outliers')}
+      isEmpty={sorted.length === 0}
+    >
       <ul className="flex flex-col gap-4">
         {/* Also keyed by position: the model can list one proposal twice, and
             two entries sharing a proposal id would collide. */}
@@ -580,7 +627,11 @@ const SuggestionsSection = ({
   const t = useTranslations();
 
   return (
-    <Section title={t('Suggestions')} isEmpty={suggestions.length === 0}>
+    <Section
+      value="suggestions"
+      title={t('Suggestions')}
+      isEmpty={suggestions.length === 0}
+    >
       <ul className="flex flex-col gap-4">
         {suggestions.map(({ kind, rationale, proposals }, position) => (
           <li key={position} className="flex flex-col gap-2">

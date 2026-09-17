@@ -26,10 +26,22 @@ function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
 function AccordionTrigger({
   className,
   children,
+  header,
   ...props
-}: AccordionPrimitive.Trigger.Props) {
+}: AccordionPrimitive.Trigger.Props & {
+  /**
+   * Replaces the `<h3>` the header renders by default.
+   *
+   * Needed when an accordion nests. Base UI's header is an `<h3>` whatever its
+   * depth, so an accordion inside another accordion's panel gives its rows the
+   * same heading level as the sections containing them — and a reader
+   * navigating by heading is told the two are siblings. Pass `<h4 />` for the
+   * inner one.
+   */
+  header?: AccordionPrimitive.Header.Props['render'];
+}) {
   return (
-    <AccordionPrimitive.Header className="flex">
+    <AccordionPrimitive.Header className="flex" render={header}>
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
