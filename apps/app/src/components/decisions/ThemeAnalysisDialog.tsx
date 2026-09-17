@@ -9,6 +9,12 @@ import type {
 } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@op/sense/Accordion';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
@@ -323,6 +329,14 @@ const ProposalRefs = ({
   );
 };
 
+/**
+ * The accordion value for one theme's panel.
+ *
+ * Position rather than title: two themes can share a title, and a duplicated
+ * value makes one click open both panels.
+ */
+const themeItemValue = (position: number) => `theme-${position}`;
+
 const ThemesSection = ({
   themes,
   route,
@@ -338,23 +352,51 @@ const ThemesSection = ({
           table-view twin — every theme with its claims, in text — and the two
           belong next to each other. */}
       <ThemeSizeChart themes={themes} />
-      <ul className="flex flex-col gap-4">
-        {/* Keyed by position. Nothing here reorders or filters after render,
-            and the model can return two themes under one title — which would
-            collide on any content-derived key. */}
+      {/* `multiple`, because the question a facilitator brings here is usually
+          comparative — two themes open side by side is the point, and a single
+          -open accordion closes the one they were reading to show the next.
+
+          The first panel opens by default: the themes arrive in the model's
+          importance order, so that is the one most worth reading, and a section
+          of nothing but closed rows gives a reader nothing to react to. */}
+      <Accordion multiple defaultValue={[themeItemValue(0)]}>
+        {/* Valued and keyed by position, not by title. Nothing here reorders or
+            filters after render, and the model can return two themes under one
+            title — which would collide on any content-derived value and make
+            opening one panel open both. */}
         {themes.map(({ title, summary, claims, proposals }, position) => (
-          <li key={position} className="flex flex-col gap-2">
-            <p dir="auto" className="text-label font-strong">
-              {title}
-            </p>
-            <p dir="auto" className="text-label text-muted-foreground">
-              {summary}
-            </p>
-            <ClaimList claims={claims} route={route} />
-            <ProposalRefs proposals={proposals} route={route} />
-          </li>
+          <AccordionItem key={position} value={themeItemValue(position)}>
+            <AccordionTrigger
+              // The dialog's own weight for a theme title. Left alone, the
+              // trigger wears the serif title face this design system gives an
+              // accordion, which competes with the section headings when there
+              // are a dozen of them stacked inside one modal.
+              className="items-center gap-2 py-3 font-sans text-label font-strong"
+            >
+              <span dir="auto">{title}</span>
+              {/* Beside the title rather than inside the panel: it is how a
+                  reader decides which panel to open, so it has to be legible
+                  while every panel is shut. Matches the chart above. */}
+              <span className="ms-auto shrink-0 text-label font-normal text-muted-foreground">
+                {t('{count} claims', { count: claims.length })}
+              </span>
+            </AccordionTrigger>
+            {/* `[&_p:not(:last-child)]:mb-0` cancels a style the panel applies
+                for prose: every descendant paragraph but the last gets a 16px
+                bottom margin, which suits an FAQ answer and not this. The claim
+                list is paragraphs three-deep inside list items, so left alone it
+                spaces every claim, quote and proposal line apart and the gap
+                here stacks on top of it. */}
+            <AccordionContent className="flex flex-col gap-2 pb-4 [&_p:not(:last-child)]:mb-0">
+              <p dir="auto" className="text-label text-muted-foreground">
+                {summary}
+              </p>
+              <ClaimList claims={claims} route={route} />
+              <ProposalRefs proposals={proposals} route={route} />
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </ul>
+      </Accordion>
     </Section>
   );
 };
