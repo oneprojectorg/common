@@ -44,6 +44,7 @@ import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
 import { requiresSubmitConfirmation } from './submitConfirmation';
+import { useProposalCollabToken } from './useProposalCollabToken';
 import { useProposalDraft } from './useProposalDraft';
 import { useProposalValidation } from './useProposalValidation';
 
@@ -67,6 +68,8 @@ export function ProposalEditor({
   const t = useTranslations();
 
   // -- Collaboration ---------------------------------------------------------
+
+  const getToken = useProposalCollabToken(proposal.profileId);
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
@@ -113,7 +116,7 @@ export function ProposalEditor({
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
-      proposalProfileId={proposal.profileId}
+      getToken={getToken}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >

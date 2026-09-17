@@ -1,11 +1,10 @@
 'use client';
 
-import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { getAvatarColorForString } from '@op/styles/constants';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Y from 'yjs';
 
 import { useTranslations } from '@/lib/i18n';
@@ -14,7 +13,6 @@ export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 
 /** The first rejection is a normal token expiry. */
 const MAX_TOKEN_REJECTIONS = 3;
-const RECONNECT_DELAY_MS = 2000;
 
 export interface CollabUser {
   name: string;
@@ -23,7 +21,8 @@ export interface CollabUser {
 
 export interface UseTiptapCollabOptions {
   docId: string;
-  proposalProfileId: string;
+  /** Awaited by the provider on every connect. */
+  getToken: () => Promise<string>;
   /** User's display name for the collaboration cursor */
   userName?: string;
 }
@@ -41,11 +40,15 @@ export interface UseTiptapCollabReturn {
 /** Initialize TipTap Cloud collaboration provider. */
 export function useTiptapCollab({
   docId,
-  proposalProfileId,
+  getToken,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const t = useTranslations();
-  const utils = trpc.useUtils();
+
+  // Held in a ref so callers need not memoize the resolver and the provider is
+  // not re-created when its function identity changes.
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
@@ -70,20 +73,15 @@ export function useTiptapCollab({
     }
 
     // Tiptap keeps the socket open after rejecting a token and the provider
-    // never retries on its own, so a rejection needs an explicit reconnect.
+    // does not retry on its own. `connect()` is a no-op until the socket's
+    // close handler has run, so the reconnect is issued from `onDisconnect`.
     let rejections = 0;
-    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
-
-    // Awaited by the provider on every connect; each call mints a fresh token.
-    const getToken = () =>
-      utils.decision.getCollabToken
-        .fetch({ proposalProfileId })
-        .then((result) => result.token);
+    let reconnectAfterClose = false;
 
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
-      token: getToken,
+      token: () => getTokenRef.current(),
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
@@ -94,40 +92,42 @@ export function useTiptapCollab({
       onDisconnect: () => {
         setStatus('disconnected');
         setIsSynced(false);
+
+        if (reconnectAfterClose) {
+          reconnectAfterClose = false;
+          void newProvider.connect();
+        }
       },
       onSynced: () => {
         setIsSynced(true);
       },
       onAuthenticationFailed: () => {
         rejections += 1;
-        newProvider.disconnect();
 
         if (rejections < MAX_TOKEN_REJECTIONS) {
-          reconnectTimer = setTimeout(() => {
-            void newProvider.connect();
-          }, RECONNECT_DELAY_MS);
-          return;
+          reconnectAfterClose = true;
+        } else {
+          logger.warn('Tiptap collaboration rejected the token repeatedly', {
+            context: 'useTiptapCollab',
+            docId,
+          });
+          toast.error(
+            t(
+              'Could not reconnect to this document. Reload the page to try again.',
+            ),
+          );
         }
 
-        logger.warn('Tiptap collaboration rejected the token repeatedly', {
-          context: 'useTiptapCollab',
-          docId,
-        });
-        toast.error(
-          t(
-            'Could not reconnect to this document. Reload the page to try again.',
-          ),
-        );
+        newProvider.disconnect();
       },
     });
 
     setProvider(newProvider);
     return () => {
-      clearTimeout(reconnectTimer);
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, proposalProfileId, t, utils, ydoc]);
+  }, [docId, t, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {
