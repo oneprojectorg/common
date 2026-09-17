@@ -3,6 +3,7 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { trpc } from '@op/api/client';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
@@ -54,13 +55,6 @@ interface DecisionOverviewProps {
   instanceId: string;
   decisionSlug: string;
   /**
-   * The decision's process instance, fetched once on the server via
-   * loadDecision (getDecisionBySlug, enriched by the router with `access` +
-   * encoded `instanceData`). Passed as a prop so the overview renders from the
-   * single slug fetch the route already makes — no client `getInstance` query.
-   */
-  processInstance: ProcessInstance;
-  /**
    * The "About" body, pre-rendered on the server (RSC) from the overview's
    * TipTap JSON via RichTextRenderer, so the prose ships as server HTML with no
    * client JS. Null when there's no body (falls back to the plain description).
@@ -83,14 +77,17 @@ interface DecisionOverviewProps {
  * `instanceData.overview`, authored in the process builder's Overview tab.
  * Falls back to the instance name/description for processes authored before
  * that tab was filled in.
+ *
+ * The instance comes from the `getDecisionBySlug` query the (decision-view)
+ * layout hydrates with its own server fetch: the first render uses that
+ * snapshot (no spinner, no extra round trip) and the refetch on mount
+ * registers the `decisionInstance` realtime channel, which is what keeps the
+ * phase timeline and the "Start a proposal" CTA in step with a phase advance
+ * made in another client.
  */
-// Renders from server-fetched props (no useSuspenseQuery), so it does not
-// suspend — no `Suspense` suffix. Keeps the page-level APIErrorBoundary as a
-// defensive catch for render errors.
 export function DecisionOverview({
   instanceId,
   decisionSlug,
-  processInstance,
   aboutSlot,
   isActive,
 }: DecisionOverviewProps) {
@@ -119,7 +116,6 @@ export function DecisionOverview({
       <DecisionOverviewContent
         instanceId={instanceId}
         decisionSlug={decisionSlug}
-        processInstance={processInstance}
         aboutSlot={aboutSlot}
         isActive={isActive}
       />
@@ -130,11 +126,18 @@ export function DecisionOverview({
 function DecisionOverviewContent({
   instanceId,
   decisionSlug,
-  processInstance: instance,
   aboutSlot,
   isActive,
 }: DecisionOverviewProps) {
   const t = useTranslations();
+  // `always` for the same reason as in DecisionHeader: PersistQueryClientProvider
+  // swallows a hydrated query's default mount refetch, and that refetch is what
+  // registers the `decisionInstance` channel this screen needs.
+  const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery(
+    { slug: decisionSlug },
+    { refetchOnMount: 'always' },
+  );
+  const instance = decisionProfile.processInstance;
 
   // Translation: the banner offers to translate the overview into the viewer's
   // locale. translateDecision returns the authored overview fields, which we
