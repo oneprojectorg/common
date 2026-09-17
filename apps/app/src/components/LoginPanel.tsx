@@ -329,6 +329,7 @@ export const LoginPanel = () => {
               smsEnabled={smsLoginEnabled}
               value={activeChannel}
               onValueChange={switchChannel}
+              isTriggersDisabled={isBusy}
               email={{
                 value: email,
                 isDisabled: isBusy,

@@ -403,8 +403,7 @@ export const AuthContactFields = ({
     <AuthEmailField
       label={t('Email')}
       description={t("We'll email you a code to confirm it's yours.")}
-      // Example-email placeholders are deliberately untranslated.
-      placeholder="name@example.com"
+      placeholder={t('name@example.com')}
       value={email.value}
       isDisabled={email.isDisabled}
       onChange={email.onChange}
