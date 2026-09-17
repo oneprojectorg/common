@@ -3,11 +3,6 @@ import jwt from 'jsonwebtoken';
 /** Tiptap asks for 30 minutes or less. */
 const TOKEN_LIFETIME_SECONDS = 30 * 60;
 
-export interface GenerateCollabTokenInput {
-  userId: string;
-  documentName: string;
-}
-
 /**
  * Mint a Tiptap Cloud JWT that may write one document.
  * @see https://tiptap.dev/docs/authentication
@@ -15,7 +10,10 @@ export interface GenerateCollabTokenInput {
 export function generateCollabToken({
   userId,
   documentName,
-}: GenerateCollabTokenInput): string {
+}: {
+  userId: string;
+  documentName: string;
+}): string {
   const privateKey = process.env.TIPTAP_PRIVATE_KEY;
   const environmentId = process.env.TIPTAP_ENVIRONMENT_ID;
 

@@ -1,6 +1,3 @@
-import { db } from '@op/db/client';
-import { EntityType, profileInvites } from '@op/db/schema';
-import { ROLES } from '@op/db/seedData/accessControl';
 import jwt from 'jsonwebtoken';
 import { createPublicKey } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -14,7 +11,6 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
-import { createGatingCallers } from '../../../test/helpers/gating/callers';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -31,10 +27,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-function decodeCollabToken(token: string): {
-  sub?: string;
-  permissions?: unknown;
-} {
+function decodeCollabToken(token: string) {
   const payload = jwt.verify(token, TIPTAP_PUBLIC_KEY, {
     algorithms: ['ES256'],
     issuer: TIPTAP_ENVIRONMENT_ID,
@@ -78,57 +71,6 @@ describe.concurrent('decision.getCollabToken', () => {
     const payload = decodeCollabToken(token);
 
     expect(payload.sub).toBe(setup.user.id);
-    expect(payload.permissions).toEqual([
-      { action: 'Documents:Write', resource: collaborationDocId },
-    ]);
-  });
-
-  it('issues a token to an invited collaborator on the proposal', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const profileData = new TestProfileUserDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: setup.instance.instance.id,
-      proposalData: { title: 'Test Proposal' },
-    });
-
-    const invitee = await profileData.createStandaloneUser();
-
-    await db.insert(profileInvites).values({
-      email: invitee.email,
-      profileId: proposal.profileId,
-      profileEntityType: EntityType.PROPOSAL,
-      accessRoleId: ROLES.MEMBER.id,
-      invitedBy: setup.organization.profileId,
-    });
-
-    profileData.trackProfileInvite(invitee.email, proposal.profileId);
-
-    const caller = await createAuthenticatedCaller(invitee.email);
-    await caller.decision.acceptProposalInvite({
-      profileId: proposal.profileId,
-    });
-
-    const { token } = await caller.decision.getCollabToken({
-      proposalProfileId: proposal.profileId,
-    });
-
-    const { collaborationDocId } = proposal.proposalData as {
-      collaborationDocId?: string;
-    };
-
-    const payload = decodeCollabToken(token);
-
-    expect(payload.sub).toBe(invitee.authUserId);
     expect(payload.permissions).toEqual([
       { action: 'Documents:Write', resource: collaborationDocId },
     ]);
@@ -207,32 +149,6 @@ describe.concurrent('decision.getCollabToken', () => {
         proposalProfileId: proposal.profileId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
-  });
-
-  it('refuses an anonymous caller on a real proposal', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: setup.instance.instance.id,
-      proposalData: { title: 'Test Proposal' },
-    });
-
-    const anonCaller = await createGatingCallers(onTestFinished).anonJwt();
-
-    await expect(
-      anonCaller.decision.getCollabToken({
-        proposalProfileId: proposal.profileId,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });
 

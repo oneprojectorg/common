@@ -5,7 +5,7 @@ import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { getAvatarColorForString } from '@op/styles/constants';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 import { useTranslations } from '@/lib/i18n';
@@ -47,15 +47,6 @@ export function useTiptapCollab({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  // Awaited by the provider on every connect; each call mints a fresh token.
-  const getToken = useCallback(
-    () =>
-      utils.decision.getCollabToken
-        .fetch({ proposalProfileId })
-        .then((result) => result.token),
-    [utils, proposalProfileId],
-  );
-
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
@@ -83,6 +74,12 @@ export function useTiptapCollab({
     let rejections = 0;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
+    // Awaited by the provider on every connect; each call mints a fresh token.
+    const getToken = () =>
+      utils.decision.getCollabToken
+        .fetch({ proposalProfileId })
+        .then((result) => result.token);
+
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
@@ -102,8 +99,6 @@ export function useTiptapCollab({
         setIsSynced(true);
       },
       onAuthenticationFailed: () => {
-        setStatus('disconnected');
-        setIsSynced(false);
         rejections += 1;
         newProvider.disconnect();
 
@@ -132,7 +127,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, getToken, t, ydoc]);
+  }, [docId, proposalProfileId, t, utils, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {
