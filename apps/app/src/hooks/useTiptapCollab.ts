@@ -4,7 +4,7 @@ import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { getAvatarColorForString } from '@op/styles/constants';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 import { useTranslations } from '@/lib/i18n';
@@ -21,7 +21,10 @@ export interface CollabUser {
 
 export interface UseTiptapCollabOptions {
   docId: string;
-  /** Awaited by the provider on every connect. */
+  /**
+   * Awaited by the provider on every connect. Must be referentially stable
+   * (memoize it) because it is an effect dependency.
+   */
   getToken: () => Promise<string>;
   /** User's display name for the collaboration cursor */
   userName?: string;
@@ -44,11 +47,6 @@ export function useTiptapCollab({
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
   const t = useTranslations();
-
-  // Held in a ref so callers need not memoize the resolver and the provider is
-  // not re-created when its function identity changes.
-  const getTokenRef = useRef(getToken);
-  getTokenRef.current = getToken;
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
@@ -81,7 +79,7 @@ export function useTiptapCollab({
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
-      token: () => getTokenRef.current(),
+      token: getToken,
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
@@ -127,7 +125,7 @@ export function useTiptapCollab({
       newProvider.destroy();
       setProvider(null);
     };
-  }, [docId, t, ydoc]);
+  }, [docId, getToken, t, ydoc]);
 
   // Update awareness when user info changes
   useEffect(() => {
