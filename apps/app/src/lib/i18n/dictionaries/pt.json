@@ -1753,5 +1753,6 @@
   "(opens in a new tab)": "(abre num novo separador)",
   "Claims per theme, largest first": "Afirmações por tema, da maior para a menor",
   "{count} claims": "{count} afirmações",
-  "{claims} claims from {proposals} proposals": "{claims} afirmações de {proposals} propostas"
+  "{claims} claims from {proposals} proposals": "{claims} afirmações de {proposals} propostas",
+  "{count} smaller themes": "{count} temas menores"
 }

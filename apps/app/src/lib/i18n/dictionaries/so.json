@@ -1753,5 +1753,6 @@
   "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)",
   "Claims per theme, largest first": "Sheegashooyin mawduuc kasta, kuwa badan hore",
   "{count} claims": "{count} sheegasho",
-  "{claims} claims from {proposals} proposals": "{claims} sheegasho oo ka socda {proposals} soo jeedin"
+  "{claims} claims from {proposals} proposals": "{claims} sheegasho oo ka socda {proposals} soo jeedin",
+  "{count} smaller themes": "{count} mawduucyo yaryar"
 }

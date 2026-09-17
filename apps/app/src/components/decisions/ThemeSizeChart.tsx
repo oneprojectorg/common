@@ -3,73 +3,58 @@
 import type { ThemeAnalysisResult } from '@op/api/encoders';
 import type { ChartConfig } from '@op/sense/Chart';
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
+  Cell,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  LabelList,
-  XAxis,
-  YAxis,
+  Pie,
+  PieChart,
 } from '@op/sense/Chart';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  proposalsInPayload,
-  resolveThemeChartRows,
-  truncateThemeTitle,
-} from './themeChartRows';
+import type { ThemeSlice } from './themeChartRows';
+import { resolveThemeSlices } from './themeChartRows';
 
-/** Rendered height of one bar's row, and the band the value axis needs below. */
-const ROW_HEIGHT = 28;
-const AXIS_BAND = 28;
+/** Outer and inner radius of the ring, in pixels. */
+const OUTER_RADIUS = 84;
+const INNER_RADIUS = 52;
 
-/** Width given to the theme titles in the category axis. */
-const TITLE_WIDTH = 160;
+/** Height of the plot. Twice the outer radius, plus room to breathe. */
+const PLOT_HEIGHT = OUTER_RADIUS * 2 + 16;
 
 /**
- * Room at the end of the plot for the value labels.
+ * Empty, and deliberately so.
  *
- * They sit outside the bar end, and the default margin is a few pixels — enough
- * to clip a two-digit count on the longest bar, which is the one a reader looks
- * at first.
+ * `ChartContainer` requires a config, and it is how a chart with fixed series
+ * declares their labels and colours. A pie's categories are the themes, which
+ * are whatever the analysis found, so there is nothing static to declare — each
+ * slice carries its own fill and the legend below is built from the same data.
  */
-const LABEL_GUTTER = 28;
+const CHART_CONFIG = {} satisfies ChartConfig;
 
 /**
- * One series, so one colour for every bar.
- *
- * Colouring each bar darker-where-bigger would encode the bar length a second
- * time and spend the only free channel on something the chart already shows.
- * Themes have no intrinsic order either — the rows are sorted by the measure,
- * which is not the same thing as an ordinal category.
- */
-const CHART_CONFIG = {
-  claims: { label: 'Claims', color: 'var(--color-chart-1)' },
-} satisfies ChartConfig;
-
-/**
- * How much of the field each theme carries, as a bar per theme.
+ * How much of the discussion each theme carries, as a ring.
  *
  * Claims rather than proposals, because a claim is what a theme groups: two
- * themes can name the same three proposals while one of them holds eight of
- * their claims and the other holds two, and it is the claim count that says
- * which the process is mostly arguing about. The proposal count travels in the
- * tooltip, where it answers the follow-up question rather than competing with
- * the first — a second series would need a legend and double the marks to say
- * something the list below already lists.
+ * themes can name the same three proposals while one holds eight of their
+ * claims and the other two, and it is the claim count that says which the
+ * process is mostly arguing about.
  *
- * Horizontal bars because the category labels are phrases. Sorted by size
- * rather than kept in the model's importance order: the chart's whole job is
- * magnitude comparison, and a reader scanning for the biggest should not have to
- * hunt for it.
+ * The largest four themes get a slice each and the rest fold into one neutral
+ * slice. That bound comes from the palette rather than from taste — see
+ * `themeChartRows` — and folding beats cycling hues, because a pie carries
+ * identity in colour alone and a fifth theme wearing the first one's blue reads
+ * as the first one.
  *
- * Each bar carries its value as a label. That is not decoration — this palette's
- * one colour sits at 2.82:1 against the dialog's white surface, below the 3:1 a
- * fill needs to be read on its own, and a visible label is the relief. It also
- * means every number is readable without hovering anything.
+ * Counts, not percentages. The slices are shares of their own sum, and a claim
+ * grouped under two themes is counted in both, so a percentage would be a share
+ * of placements while reading as a share of claims.
+ *
+ * The legend is a list rather than the chart library's: it carries each theme's
+ * count beside its swatch, which makes it the readable equivalent of the ring
+ * for anyone who cannot separate the colours — and every number in the chart is
+ * then legible without hovering anything.
  *
  * @param themes - The themes to chart, from a completed analysis.
  * @returns The chart, or null when there are too few themes to compare.
@@ -80,98 +65,154 @@ export const ThemeSizeChart = ({
   themes: ThemeAnalysisResult['themes'];
 }) => {
   const t = useTranslations();
-  const rows = resolveThemeChartRows(themes);
+  const slices = resolveThemeSlices(themes);
 
-  if (!rows) {
+  if (!slices) {
     return null;
   }
 
+  const labelled = slices.map((slice) => ({
+    ...slice,
+    // The folded tail has no title of its own. Named here rather than in the
+    // derivation, which is pure and has no translator.
+    label: slice.label || t('{count} smaller themes', { count: slice.themes }),
+  }));
+
   return (
-    <figure className="flex flex-col gap-2">
+    <figure className="flex flex-col gap-3">
       <figcaption className="sr-only">
         {t('Claims per theme, largest first')}
       </figcaption>
       <ChartContainer
         config={CHART_CONFIG}
-        // Computed from the row count rather than fixed, so the plot and the
-        // value axis both fit: a container sized for the plot alone gives the
-        // dialog a second, tiny scrollbar around the axis labels.
-        style={{ height: rows.length * ROW_HEIGHT + AXIS_BAND }}
+        style={{ height: PLOT_HEIGHT }}
         className="w-full"
       >
-        <BarChart
-          accessibilityLayer
-          data={rows}
-          layout="vertical"
-          margin={{ right: LABEL_GUTTER }}
-        >
-          {/* Along the value axis only, and solid: a dashed grid reads as a
-              threshold when it is just a grid. */}
-          <CartesianGrid horizontal={false} stroke="var(--color-border)" />
-          <XAxis
-            type="number"
-            // Half a claim is not a thing.
-            allowDecimals={false}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: 'var(--color-muted-foreground)' }}
-          />
-          <YAxis
-            type="category"
-            dataKey="title"
-            width={TITLE_WIDTH}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: 'var(--color-muted-foreground)' }}
-            // Cut with an ellipsis rather than left to overflow the band. The
-            // untruncated title is in the tooltip, and in the list below.
-            tickFormatter={truncateThemeTitle}
-          />
+        <PieChart>
           <ChartTooltip
             content={
               <ChartTooltipContent
-                // The label is the category value, which is the full title —
-                // the untruncated one, which the axis tick cannot show.
-                //
-                // Both counts, because their ratio is the thing claims made
-                // visible: many claims from few proposals is one participant
-                // arguing at length, and the same count spread across many is
-                // the process agreeing. A theme size alone does not separate
-                // them.
-                formatter={(value, _name, _item, _index, payload) => {
-                  const proposals = proposalsInPayload(payload);
-
-                  return proposals === null
-                    ? t('{count} claims', { count: Number(value) })
-                    : t('{claims} claims from {proposals} proposals', {
-                        claims: Number(value),
-                        proposals,
-                      });
-                }}
+                hideLabel
+                formatter={(_value, _name, item) => (
+                  <SliceTooltip slice={sliceOf(item)} />
+                )}
               />
             }
           />
-          <Bar
+          <Pie
+            data={labelled}
             dataKey="claims"
-            fill="var(--color-claims)"
-            // Rounded at the data end, square against the baseline — a bar
-            // rounded at both ends floats off its own axis.
-            radius={[0, 4, 4, 0]}
-            // Leaves a surface gap between adjacent bars instead of drawing a
-            // border around each one to separate them.
-            barSize={ROW_HEIGHT - 10}
+            nameKey="label"
+            outerRadius={OUTER_RADIUS}
+            // A ring rather than a disc. The centre of a pie is where slice
+            // angles are hardest to compare, so it carries no information and
+            // this gives it back as whitespace.
+            innerRadius={INNER_RADIUS}
           >
-            <LabelList
-              dataKey="claims"
-              position="right"
-              // A text token, not the series colour: the bar beside it already
-              // carries the identity.
-              fill="var(--color-muted-foreground)"
-              className="text-label"
-            />
-          </Bar>
-        </BarChart>
+            {labelled.map((slice) => (
+              // A surface-coloured stroke, not a border: it separates adjacent
+              // fills by leaving the background visible between them, rather
+              // than drawing a line around each one.
+              <Cell
+                key={slice.label}
+                fill={slice.color}
+                stroke="var(--color-background)"
+                strokeWidth={2}
+              />
+            ))}
+          </Pie>
+        </PieChart>
       </ChartContainer>
+      <ThemeLegend slices={labelled} />
     </figure>
   );
+};
+
+/**
+ * The legend, which is also the chart's readable twin.
+ *
+ * Every slice with its swatch and its count, so the ring never has to be the
+ * only way to read a number — the requirement a pie creates by carrying
+ * identity in colour alone.
+ *
+ * Text wears text tokens; only the swatch wears the series colour.
+ */
+const ThemeLegend = ({ slices }: { slices: ThemeSlice[] }) => (
+  <ul className="flex flex-col gap-1">
+    {slices.map((slice) => (
+      <li
+        key={slice.label}
+        className="flex items-center gap-2 text-label text-muted-foreground"
+      >
+        <span
+          aria-hidden
+          className="size-2 shrink-0 rounded-full"
+          style={{ backgroundColor: slice.color }}
+        />
+        <span dir="auto" className="truncate">
+          {slice.label}
+        </span>
+        <span className="ms-auto shrink-0 tabular-nums">{slice.claims}</span>
+      </li>
+    ))}
+  </ul>
+);
+
+/** One slice's line in the tooltip. */
+const SliceTooltip = ({ slice }: { slice: ThemeSlice | null }) => {
+  const t = useTranslations();
+
+  if (!slice) {
+    return null;
+  }
+
+  return (
+    <span>
+      <span className="font-strong">{slice.label}</span>
+      {' — '}
+      {slice.proposals === null
+        ? t('{count} claims', { count: slice.claims })
+        : t('{claims} claims from {proposals} proposals', {
+            claims: slice.claims,
+            proposals: slice.proposals,
+          })}
+    </span>
+  );
+};
+
+/**
+ * The slice behind a tooltip item, when it is there.
+ *
+ * Recharts hands the datum back untyped, so this checks rather than asserts: a
+ * payload shape that stops matching should make the tooltip say nothing, not
+ * render `undefined`.
+ */
+const sliceOf = (item: unknown): ThemeSlice | null => {
+  if (typeof item !== 'object' || item === null || !('payload' in item)) {
+    return null;
+  }
+
+  const { payload } = item;
+
+  return typeof payload === 'object' &&
+    payload !== null &&
+    'label' in payload &&
+    typeof payload.label === 'string' &&
+    'claims' in payload &&
+    typeof payload.claims === 'number' &&
+    'color' in payload &&
+    typeof payload.color === 'string' &&
+    'themes' in payload &&
+    typeof payload.themes === 'number'
+    ? {
+        label: payload.label,
+        claims: payload.claims,
+        proposals:
+          'proposals' in payload && typeof payload.proposals === 'number'
+            ? payload.proposals
+            : null,
+        color: payload.color,
+        themes: payload.themes,
+      }
+    : null;
 };

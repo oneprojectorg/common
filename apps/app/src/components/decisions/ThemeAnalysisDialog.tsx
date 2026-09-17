@@ -181,12 +181,15 @@ export const ThemeAnalysisDialog = ({
               )}
             </p>
           ) : (
-            // Every section open to begin with, so the dialog still answers the
-            // question it was opened to answer. Collapsing is a tool for
-            // working through them one at a time, not the state to arrive in —
-            // four shut headers would make a finished analysis look like it had
-            // found nothing. `multiple`, for the same reason the themes are.
-            <Accordion multiple defaultValue={[...SECTION_VALUES]}>
+            // Everything shut on arrival, so the dialog opens as a contents
+            // page: four headers, and the reader picks where to start. The
+            // counts a reader chooses by are on the triggers, so a closed
+            // section is not a blank one.
+            //
+            // `multiple`, so opening the next section does not close the one
+            // just read — with everything collapsed that matters more, not
+            // less, because a reader is now moving between them deliberately.
+            <Accordion multiple>
               <ThemesSection themes={result.themes} route={route} />
               <CommonGroundSection
                 commonGround={result.commonGround}
@@ -346,22 +349,13 @@ const ProposalRefs = ({
 };
 
 /**
- * The sections, in the order they are rendered, as the accordion's values.
+ * The sections, as the accordion's values.
  *
  * Named constants rather than the titles, which are translated: a value that
  * changed with the reader's locale would mean the open/closed set could not be
- * reasoned about, and `defaultValue` would have to be built from `t()` calls.
- *
- * Doubles as the "everything open" default, which is the order below too.
+ * reasoned about.
  */
-const SECTION_VALUES = [
-  'themes',
-  'common-ground',
-  'outliers',
-  'suggestions',
-] as const;
-
-type SectionValue = (typeof SECTION_VALUES)[number];
+type SectionValue = 'themes' | 'common-ground' | 'outliers' | 'suggestions';
 
 /**
  * The accordion value for one theme's panel.
@@ -390,10 +384,10 @@ const ThemesSection = ({
           comparative — two themes open side by side is the point, and a single
           -open accordion closes the one they were reading to show the next.
 
-          The first panel opens by default: the themes arrive in the model's
-          importance order, so that is the one most worth reading, and a section
-          of nothing but closed rows gives a reader nothing to react to. */}
-      <Accordion multiple defaultValue={[themeItemValue(0)]}>
+          Nothing open to begin with, matching the sections: the chart and the
+          claim count on each row are what a reader chooses by, and both are
+          visible while every panel is shut. */}
+      <Accordion multiple>
         {/* Valued and keyed by position, not by title. Nothing here reorders or
             filters after render, and the model can return two themes under one
             title — which would collide on any content-derived value and make

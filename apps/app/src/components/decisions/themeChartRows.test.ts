@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  TITLE_MAX_CHARS,
-  proposalsInPayload,
+  MAX_NAMED_SLICES,
   resolveThemeChartRows,
-  truncateThemeTitle,
+  resolveThemeSlices,
 } from './themeChartRows';
 
 const theme = ({
@@ -54,6 +53,7 @@ describe('resolveThemeChartRows', () => {
 
   it('counts the claims and the proposals behind each theme', () => {
     const rows = resolveThemeChartRows([
+      theme({ title: 'Third', claims: 1 }),
       theme({ title: 'Broad', claims: 6, proposals: 6 }),
       // Six claims from one proposal: one participant arguing at length, which
       // is a different finding from six proposals agreeing. The tooltip shows
@@ -61,15 +61,16 @@ describe('resolveThemeChartRows', () => {
       theme({ title: 'Loud', claims: 6, proposals: 1 }),
     ]);
 
-    expect(rows).toEqual([
+    expect(rows?.slice(0, 2)).toEqual([
       { title: 'Broad', claims: 6, proposals: 6 },
       { title: 'Loud', claims: 6, proposals: 1 },
     ]);
   });
 
-  // A one-bar bar chart is a worse way of showing one number than the number
-  // itself, and with none there is nothing to draw at all.
-  it.each([0, 1])('draws nothing for %i themes', (count) => {
+  // Two slices are a pair of numbers wearing a circle: a reader gets more from
+  // the counts than from half a disc each, and with fewer there is nothing to
+  // draw at all.
+  it.each([0, 1, 2])('draws nothing for %i themes', (count) => {
     const themes = Array.from({ length: count }, (_unused, position) =>
       theme({ title: `Theme ${position + 1}`, claims: 3 }),
     );
@@ -81,47 +82,80 @@ describe('resolveThemeChartRows', () => {
   // before claims existed still parses — and charts as a row of zeroes rather
   // than throwing.
   it('handles a theme stored before claims existed', () => {
+    const older = (title: string) => ({
+      title,
+      summary: 'A summary.',
+      claims: [],
+      proposals: [],
+    });
+
     const rows = resolveThemeChartRows([
-      { title: 'Older', summary: 'A summary.', claims: [], proposals: [] },
-      { title: 'Also older', summary: 'A summary.', claims: [], proposals: [] },
+      older('Older'),
+      older('Also older'),
+      older('Older still'),
     ]);
 
-    expect(rows?.map(({ claims }) => claims)).toEqual([0, 0]);
+    expect(rows?.map(({ claims }) => claims)).toEqual([0, 0, 0]);
   });
 });
 
-describe('truncateThemeTitle', () => {
-  it('leaves a title that fits alone', () => {
-    expect(truncateThemeTitle('Safer routes to school')).toBe(
-      'Safer routes to school',
+describe('resolveThemeSlices', () => {
+  const themes = (counts: number[]) =>
+    counts.map((claims, position) =>
+      theme({ title: `Theme ${position + 1}`, claims }),
     );
+
+  it('gives each theme its own slice and hue while they fit', () => {
+    const slices = resolveThemeSlices(themes([5, 4, 3]));
+
+    expect(slices?.map(({ label, claims }) => [label, claims])).toEqual([
+      ['Theme 1', 5],
+      ['Theme 2', 4],
+      ['Theme 3', 3],
+    ]);
+    // Identity in a pie is carried by colour alone, so two slices sharing one
+    // would read as the same theme.
+    expect(new Set(slices?.map(({ color }) => color)).size).toBe(3);
   });
 
-  // Cut deliberately, with an ellipsis, rather than cropped mid-character by
-  // the plot's clip — which reads as a rendering fault rather than as "there is
-  // more of this".
-  it('cuts a long title to the axis width with an ellipsis', () => {
-    const cut = truncateThemeTitle('x'.repeat(TITLE_MAX_CHARS + 20));
+  // The palette is what bounds this. Cycling back through the same four hues
+  // would give a fifth theme the first one's blue, which a reader takes as the
+  // first one rather than as something new.
+  it('folds everything past the palette into one neutral slice', () => {
+    const slices = resolveThemeSlices(themes([9, 8, 7, 6, 3, 2, 1]));
 
-    expect(cut).toHaveLength(TITLE_MAX_CHARS);
-    expect(cut.endsWith('…')).toBe(true);
+    expect(slices).toHaveLength(MAX_NAMED_SLICES + 1);
+
+    const tail = slices?.at(-1);
+
+    // Summed, and standing for three themes — which is what lets the component
+    // label it without knowing how the fold was done.
+    expect(tail?.claims).toBe(6);
+    expect(tail?.themes).toBe(3);
+    // No title of its own: the component supplies a translated one.
+    expect(tail?.label).toBe('');
   });
-});
 
-describe('proposalsInPayload', () => {
-  it('reads the count off a row', () => {
-    expect(proposalsInPayload({ title: 'T', claims: 3, proposals: 2 })).toBe(2);
+  // Summing proposals across the folded themes would double-count any proposal
+  // appearing in two of them, and nothing here can tell. Null, so the tooltip
+  // says nothing rather than something wrong.
+  it('reports no proposal count for the folded slice', () => {
+    const slices = resolveThemeSlices(themes([9, 8, 7, 6, 3]));
+
+    expect(slices?.at(-1)?.proposals).toBeNull();
+    expect(slices?.[0]?.proposals).not.toBeNull();
   });
 
-  // Recharts hands the row back untyped. A shape that stops matching should
-  // make the tooltip say less, not render "undefined proposals".
-  it.each([
-    ['null', null],
-    ['undefined', undefined],
-    ['a string', 'proposals'],
-    ['a row without the field', { title: 'T', claims: 3 }],
-    ['a row whose field is not a number', { proposals: 'two' }],
-  ])('answers null for %s', (_name, payload) => {
-    expect(proposalsInPayload(payload)).toBeNull();
+  // The tail slice exists only when something was folded into it. Exactly four
+  // themes is four slices, not four and an empty fifth.
+  it('adds no tail slice when every theme fits', () => {
+    const slices = resolveThemeSlices(themes([4, 3, 2, 1]));
+
+    expect(slices).toHaveLength(MAX_NAMED_SLICES);
+    expect(slices?.every(({ themes: count }) => count === 1)).toBe(true);
+  });
+
+  it('draws nothing below the minimum', () => {
+    expect(resolveThemeSlices(themes([5, 4]))).toBeNull();
   });
 });

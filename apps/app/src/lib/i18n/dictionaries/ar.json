@@ -1753,5 +1753,6 @@
   "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)",
   "Claims per theme, largest first": "الادعاءات لكل موضوع، من الأكبر إلى الأصغر",
   "{count} claims": "{count} ادعاء",
-  "{claims} claims from {proposals} proposals": "{claims} ادعاء من {proposals} مقترح"
+  "{claims} claims from {proposals} proposals": "{claims} ادعاء من {proposals} مقترح",
+  "{count} smaller themes": "{count} موضوعات أصغر"
 }

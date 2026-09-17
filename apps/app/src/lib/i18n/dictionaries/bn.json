@@ -1753,5 +1753,6 @@
   "(opens in a new tab)": "(নতুন ট্যাবে খোলে)",
   "Claims per theme, largest first": "প্রতি থিমে দাবি, বড় থেকে ছোট",
   "{count} claims": "{count}টি দাবি",
-  "{claims} claims from {proposals} proposals": "{proposals}টি প্রস্তাব থেকে {claims}টি দাবি"
+  "{claims} claims from {proposals} proposals": "{proposals}টি প্রস্তাব থেকে {claims}টি দাবি",
+  "{count} smaller themes": "{count}টি ছোট থিম"
 }

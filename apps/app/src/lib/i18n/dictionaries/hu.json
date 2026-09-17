@@ -1753,5 +1753,6 @@
   "(opens in a new tab)": "(új lapon nyílik meg)",
   "Claims per theme, largest first": "Állítások témánként, a legnagyobbtól",
   "{count} claims": "{count} állítás",
-  "{claims} claims from {proposals} proposals": "{claims} állítás {proposals} javaslatból"
+  "{claims} claims from {proposals} proposals": "{claims} állítás {proposals} javaslatból",
+  "{count} smaller themes": "{count} kisebb téma"
 }

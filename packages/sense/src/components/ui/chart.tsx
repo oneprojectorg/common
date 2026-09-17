@@ -395,6 +395,8 @@ export const {
   LabelList,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   XAxis,
   YAxis,
 } = RechartsPrimitive;
