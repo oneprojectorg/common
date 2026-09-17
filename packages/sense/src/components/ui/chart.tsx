@@ -371,3 +371,30 @@ export {
   ChartLegendContent,
   ChartStyle,
 };
+
+/**
+ * The Recharts pieces a chart is assembled from, re-exported.
+ *
+ * This module is already the boundary between the design system and Recharts —
+ * it owns the dependency, pins its version, and wraps its container, tooltip and
+ * legend. An app building a chart needs the plot primitives too, and the
+ * alternative is every consumer declaring its own `recharts` dependency: a
+ * second place for the version to live, outside the overrides that keep shared
+ * versions in step, so two apps can end up on two Recharts majors with one set
+ * of wrappers between them.
+ *
+ * Named rather than `export *`. What a chart is built from should be a list
+ * someone chose, and a blanket re-export would put the whole Recharts surface
+ * behind a design-system import without anyone deciding it belonged there.
+ */
+export const {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} = RechartsPrimitive;

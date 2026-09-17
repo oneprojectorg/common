@@ -1750,5 +1750,8 @@
   "Check all that apply": "Check all that apply",
   "Reviewers select one or more options": "Reviewers select one or more options",
   "Comments could not be loaded": "Comments could not be loaded",
-  "(opens in a new tab)": "(opens in a new tab)"
+  "(opens in a new tab)": "(opens in a new tab)",
+  "Claims per theme, largest first": "Claims per theme, largest first",
+  "{count} claims": "{count} claims",
+  "{claims} claims from {proposals} proposals": "{claims} claims from {proposals} proposals"
 }

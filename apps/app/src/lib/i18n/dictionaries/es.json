@@ -1750,5 +1750,8 @@
   "Check all that apply": "Marca todas las opciones que correspondan",
   "Reviewers select one or more options": "Los revisores seleccionan una o varias opciones",
   "Comments could not be loaded": "No se pudieron cargar los comentarios",
-  "(opens in a new tab)": "(se abre en una pestaña nueva)"
+  "(opens in a new tab)": "(se abre en una pestaña nueva)",
+  "Claims per theme, largest first": "Afirmaciones por tema, de mayor a menor",
+  "{count} claims": "{count} afirmaciones",
+  "{claims} claims from {proposals} proposals": "{claims} afirmaciones de {proposals} propuestas"
 }

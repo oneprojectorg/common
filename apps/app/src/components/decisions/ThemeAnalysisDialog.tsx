@@ -41,6 +41,7 @@ import {
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { MergeProposalDialog } from './MergeProposalDialog';
+import { ThemeSizeChart } from './ThemeSizeChart';
 import { type ProposalRoute, proposalHref } from './proposalHrefs';
 
 /** One proposal as the analysis names it. */
@@ -333,6 +334,10 @@ const ThemesSection = ({
 
   return (
     <Section title={t('Themes')} isEmpty={themes.length === 0}>
+      {/* Above the list rather than beside it: the list is the chart's
+          table-view twin — every theme with its claims, in text — and the two
+          belong next to each other. */}
+      <ThemeSizeChart themes={themes} />
       <ul className="flex flex-col gap-4">
         {/* Keyed by position. Nothing here reorders or filters after render,
             and the model can return two themes under one title — which would

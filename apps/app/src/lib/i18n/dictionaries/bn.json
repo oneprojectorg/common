@@ -1750,5 +1750,8 @@
   "Check all that apply": "প্রযোজ্য সবগুলি নির্বাচন করুন",
   "Reviewers select one or more options": "পর্যালোচকরা এক বা একাধিক বিকল্প নির্বাচন করেন",
   "Comments could not be loaded": "মন্তব্য লোড করা যায়নি",
-  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)"
+  "(opens in a new tab)": "(নতুন ট্যাবে খোলে)",
+  "Claims per theme, largest first": "প্রতি থিমে দাবি, বড় থেকে ছোট",
+  "{count} claims": "{count}টি দাবি",
+  "{claims} claims from {proposals} proposals": "{proposals}টি প্রস্তাব থেকে {claims}টি দাবি"
 }
