@@ -110,7 +110,8 @@ const config = {
     if (process.env.E2E === 'true') {
       config.resolve.alias = {
         ...(config.resolve.alias || {}),
-        '@op/collab': path.resolve(
+        // `$` keeps the alias off `@op/collab/server`, which the mock lacks.
+        '@op/collab$': path.resolve(
           __dirname,
           '../../services/collab/__mocks__/index.ts',
         ),

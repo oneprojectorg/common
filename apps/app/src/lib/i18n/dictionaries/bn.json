@@ -1758,5 +1758,6 @@
   "Continue with": "চালিয়ে যান",
   "Email me a code": "আমাকে ইমেইলে একটি কোড পাঠান",
   "Text me a code": "আমাকে টেক্সটে একটি কোড পাঠান",
-  "We'll email you a code to confirm it's yours.": "এটি আপনার কিনা নিশ্চিত করতে আমরা আপনাকে ইমেইলে একটি কোড পাঠাব।"
+  "We'll email you a code to confirm it's yours.": "এটি আপনার কিনা নিশ্চিত করতে আমরা আপনাকে ইমেইলে একটি কোড পাঠাব।",
+  "Could not reconnect to this document. Reload the page to try again.": "এই নথির সাথে পুনরায় সংযোগ করা যায়নি। আবার চেষ্টা করতে পৃষ্ঠাটি পুনরায় লোড করুন।"
 }

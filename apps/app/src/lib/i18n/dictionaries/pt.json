@@ -1758,5 +1758,6 @@
   "Continue with": "Continuar com",
   "Email me a code": "Envie-me um código por e-mail",
   "Text me a code": "Envie-me um código por SMS",
-  "We'll email you a code to confirm it's yours.": "Enviaremos um código por e-mail para confirmar que é seu."
+  "We'll email you a code to confirm it's yours.": "Enviaremos um código por e-mail para confirmar que é seu.",
+  "Could not reconnect to this document. Reload the page to try again.": "Não foi possível reconectar a este documento. Recarregue a página para tentar novamente."
 }

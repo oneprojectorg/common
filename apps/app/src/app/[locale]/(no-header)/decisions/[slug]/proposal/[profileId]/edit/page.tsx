@@ -45,6 +45,7 @@ import {
   proposalEditorAsideValues,
   proposalEditorVersionIdParser,
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
+import { useProposalCollabToken } from '@/components/decisions/proposalEditor/useProposalCollabToken';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 import { useProposalReviewNotes } from '@/components/decisions/useProposalReviewNotes';
 
@@ -101,6 +102,7 @@ function EditProposalPageContent() {
   }, [proposalTitle, decisionProfile.name, t]);
 
   const { user } = useRequiredUser();
+  const getToken = useProposalCollabToken(proposal.profileId);
 
   // Not `review.revisions`: an author sees a pending request in any phase.
   const affordances = getProposalAffordances({ instance, proposal, user });
@@ -193,6 +195,7 @@ function EditProposalPageContent() {
   return (
     <CollaborativeDocProvider
       docId={collaborationDocId}
+      getToken={getToken}
       userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >

@@ -259,7 +259,7 @@ export const updateProposal = async ({
   return updatedProposal;
 };
 
-async function assertProposalUpdateAccess({
+export async function assertProposalUpdateAccess({
   user,
   data,
   proposal,

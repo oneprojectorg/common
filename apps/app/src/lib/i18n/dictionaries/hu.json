@@ -1758,5 +1758,6 @@
   "Continue with": "Folytatás ezzel",
   "Email me a code": "Küldjenek e-mailben kódot",
   "Text me a code": "Küldjenek SMS-ben kódot",
-  "We'll email you a code to confirm it's yours.": "E-mailben küldünk egy kódot, hogy megerősítsük, ez az Öné."
+  "We'll email you a code to confirm it's yours.": "E-mailben küldünk egy kódot, hogy megerősítsük, ez az Öné.",
+  "Could not reconnect to this document. Reload the page to try again.": "Nem sikerült újracsatlakozni ehhez a dokumentumhoz. Töltse újra az oldalt a próbálkozáshoz."
 }
