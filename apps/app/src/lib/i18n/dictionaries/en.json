@@ -1754,5 +1754,11 @@
   "Claims per theme, largest first": "Claims per theme, largest first",
   "{count} claims": "{count} claims",
   "{claims} claims from {proposals} proposals": "{claims} claims from {proposals} proposals",
-  "{count} smaller themes": "{count} smaller themes"
+  "{count} smaller themes": "{count} smaller themes",
+  "Analysis": "Analysis",
+  "Claims per proposal": "Claims per proposal",
+  "No analysis yet": "No analysis yet",
+  "Run one from All proposals, and it will appear here once it finishes.": "Run one from All proposals, and it will appear here once it finishes.",
+  "Claims": "Claims",
+  "Proposals worth a look": "Proposals worth a look"
 }

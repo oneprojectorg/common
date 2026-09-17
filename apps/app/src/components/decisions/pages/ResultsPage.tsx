@@ -39,6 +39,8 @@ import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
+import { ThemeAnalysisTab } from '../ThemeAnalysisTab';
+import { useLatestThemeAnalysis } from '../useLatestThemeAnalysis';
 
 // Common instance fields used by ResultsPage
 interface ResultsPageInstance {
@@ -140,6 +142,13 @@ function ResultsPageContent({
   const showBallotTab =
     isLegacy || hasVotingPhase(instance.instanceData?.phases ?? []);
 
+  // The Analysis tab only when there is an analysis to read. The panel cannot
+  // produce one, so an empty tab would be a row of text saying so — and this
+  // read is already on the page for the proposals list's control, so the tab
+  // costs nothing extra to decide.
+  const { snapshot: analysis } = useLatestThemeAnalysis(instanceId, 'process');
+  const hasAnalysis = analysis !== null;
+
   // Organization-specific content
   const heroContent = match<{
     title: string;
@@ -200,7 +209,10 @@ function ResultsPageContent({
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4">
-          <DecisionResultsTabs showBallotTab={showBallotTab}>
+          <DecisionResultsTabs
+            showBallotTab={showBallotTab}
+            showAnalysisTab={hasAnalysis}
+          >
             <DecisionResultsTabPanel value="funded">
               <APIErrorBoundary
                 fallbacks={{
@@ -247,6 +259,17 @@ function ResultsPageContent({
                 />
               </Suspense>
             </DecisionResultsTabPanel>
+
+            {hasAnalysis ? (
+              <DecisionResultsTabPanel value="analysis">
+                <ThemeAnalysisTab
+                  instanceId={instanceId}
+                  slug={profileSlug}
+                  decisionSlug={decisionSlug}
+                  permissions={instance.access}
+                />
+              </DecisionResultsTabPanel>
+            ) : null}
 
             {showBallotTab ? (
               <DecisionResultsTabPanel value="ballot">

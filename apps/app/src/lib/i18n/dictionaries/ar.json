@@ -1754,5 +1754,11 @@
   "Claims per theme, largest first": "الادعاءات لكل موضوع، من الأكبر إلى الأصغر",
   "{count} claims": "{count} ادعاء",
   "{claims} claims from {proposals} proposals": "{claims} ادعاء من {proposals} مقترح",
-  "{count} smaller themes": "{count} موضوعات أصغر"
+  "{count} smaller themes": "{count} موضوعات أصغر",
+  "Analysis": "التحليل",
+  "Claims per proposal": "الادعاءات لكل مقترح",
+  "No analysis yet": "لا يوجد تحليل بعد",
+  "Run one from All proposals, and it will appear here once it finishes.": "شغّل تحليلاً من كل المقترحات، وسيظهر هنا عند انتهائه.",
+  "Claims": "الادعاءات",
+  "Proposals worth a look": "مقترحات تستحق الاطلاع"
 }

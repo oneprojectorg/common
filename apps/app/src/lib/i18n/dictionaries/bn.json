@@ -1754,5 +1754,11 @@
   "Claims per theme, largest first": "প্রতি থিমে দাবি, বড় থেকে ছোট",
   "{count} claims": "{count}টি দাবি",
   "{claims} claims from {proposals} proposals": "{proposals}টি প্রস্তাব থেকে {claims}টি দাবি",
-  "{count} smaller themes": "{count}টি ছোট থিম"
+  "{count} smaller themes": "{count}টি ছোট থিম",
+  "Analysis": "বিশ্লেষণ",
+  "Claims per proposal": "প্রতি প্রস্তাবে দাবি",
+  "No analysis yet": "এখনও কোনও বিশ্লেষণ নেই",
+  "Run one from All proposals, and it will appear here once it finishes.": "সব প্রস্তাব থেকে একটি চালান, শেষ হলে সেটি এখানে দেখা যাবে।",
+  "Claims": "দাবি",
+  "Proposals worth a look": "দেখার যোগ্য প্রস্তাব"
 }

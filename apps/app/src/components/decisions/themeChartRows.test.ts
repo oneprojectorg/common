@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  MAX_CONTRIBUTOR_BARS,
   MAX_NAMED_SLICES,
+  resolveProposalClaimCounts,
   resolveThemeChartRows,
   resolveThemeSlices,
 } from './themeChartRows';
@@ -157,5 +159,57 @@ describe('resolveThemeSlices', () => {
 
   it('draws nothing below the minimum', () => {
     expect(resolveThemeSlices(themes([5, 4]))).toBeNull();
+  });
+});
+
+describe('resolveProposalClaimCounts', () => {
+  const claim = (proposalId: string, title = proposalId) => ({
+    claim: `A claim from ${proposalId}`,
+    quote: 'Quoted.',
+    proposal: { id: proposalId, title, profileId: null },
+  });
+
+  it("counts each proposal's claims, largest first", () => {
+    const counts = resolveProposalClaimCounts([
+      claim('a'),
+      claim('b'),
+      claim('a'),
+      claim('c'),
+      claim('a'),
+      claim('b'),
+    ]);
+
+    expect(counts.map(({ id, claims }) => [id, claims])).toEqual([
+      ['a', 3],
+      ['b', 2],
+      ['c', 1],
+    ]);
+  });
+
+  // Counted off the claim list rather than off the themes, so a claim no theme
+  // picked up still counts towards the proposal that made it. Contribution and
+  // grouping are separate questions.
+  it('counts a claim no theme grouped', () => {
+    expect(resolveProposalClaimCounts([claim('lonely')])).toEqual([
+      { id: 'lonely', title: 'lonely', claims: 1 },
+    ]);
+  });
+
+  it('keeps the title the analysis recorded', () => {
+    const [first] = resolveProposalClaimCounts([claim('a', 'Later buses')]);
+
+    expect(first?.title).toBe('Later buses');
+  });
+
+  it('caps the bars rather than drawing one per proposal', () => {
+    const many = Array.from({ length: MAX_CONTRIBUTOR_BARS + 6 }, (_u, index) =>
+      claim(`proposal-${index}`),
+    );
+
+    expect(resolveProposalClaimCounts(many)).toHaveLength(MAX_CONTRIBUTOR_BARS);
+  });
+
+  it('answers an empty list for an analysis with no claims', () => {
+    expect(resolveProposalClaimCounts([])).toEqual([]);
   });
 });

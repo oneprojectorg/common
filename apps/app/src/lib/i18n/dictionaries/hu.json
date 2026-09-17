@@ -1754,5 +1754,11 @@
   "Claims per theme, largest first": "Állítások témánként, a legnagyobbtól",
   "{count} claims": "{count} állítás",
   "{claims} claims from {proposals} proposals": "{claims} állítás {proposals} javaslatból",
-  "{count} smaller themes": "{count} kisebb téma"
+  "{count} smaller themes": "{count} kisebb téma",
+  "Analysis": "Elemzés",
+  "Claims per proposal": "Állítások javaslatonként",
+  "No analysis yet": "Még nincs elemzés",
+  "Run one from All proposals, and it will appear here once it finishes.": "Indíts egyet az Összes javaslat lapon, és elkészülte után itt megjelenik.",
+  "Claims": "Állítások",
+  "Proposals worth a look": "Érdemes megnézni ezeket a javaslatokat"
 }

@@ -160,3 +160,56 @@ export const resolveThemeSlices = (
     },
   ];
 };
+
+/** How many proposals get a bar of their own in the contributors chart. */
+export const MAX_CONTRIBUTOR_BARS = 8;
+
+/** One proposal's bar in the contributors chart. */
+export interface ProposalClaimCount {
+  id: string;
+  title: string;
+  claims: number;
+}
+
+/**
+ * How many claims each proposal contributed, largest first.
+ *
+ * A different question from the themes ring, which is why it is worth a second
+ * chart rather than a second series on the first. The ring says what the process
+ * is about; this says who is doing the arguing — whether the claims came evenly
+ * off twenty proposals or mostly off two. A corpus where one proposal supplies
+ * a third of the claims is a corpus a facilitator should read differently, and
+ * nothing else in the analysis surfaces that.
+ *
+ * Counted off the claim list rather than off the themes, so a claim no theme
+ * picked up still counts towards its proposal. Grouping is a separate question
+ * from contribution.
+ *
+ * @param claims - Every claim the analysis extracted.
+ * @returns The proposals that contributed at least one claim, largest first,
+ *   capped at {@link MAX_CONTRIBUTOR_BARS}.
+ */
+export const resolveProposalClaimCounts = (
+  claims: ThemeAnalysisResult['claims'],
+): ProposalClaimCount[] => {
+  const counts = new Map<string, ProposalClaimCount>();
+
+  for (const { proposal } of claims) {
+    const seen = counts.get(proposal.id);
+
+    if (seen) {
+      seen.claims += 1;
+      continue;
+    }
+
+    counts.set(proposal.id, {
+      id: proposal.id,
+      title: proposal.title,
+      claims: 1,
+    });
+  }
+
+  return [...counts.values()]
+    .sort((left, right) => right.claims - left.claims)
+    .slice(0, MAX_CONTRIBUTOR_BARS);
+};

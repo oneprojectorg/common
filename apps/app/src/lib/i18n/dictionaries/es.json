@@ -1754,5 +1754,11 @@
   "Claims per theme, largest first": "Afirmaciones por tema, de mayor a menor",
   "{count} claims": "{count} afirmaciones",
   "{claims} claims from {proposals} proposals": "{claims} afirmaciones de {proposals} propuestas",
-  "{count} smaller themes": "{count} temas menores"
+  "{count} smaller themes": "{count} temas menores",
+  "Analysis": "Análisis",
+  "Claims per proposal": "Afirmaciones por propuesta",
+  "No analysis yet": "Aún no hay análisis",
+  "Run one from All proposals, and it will appear here once it finishes.": "Ejecuta uno desde Todas las propuestas y aparecerá aquí al terminar.",
+  "Claims": "Afirmaciones",
+  "Proposals worth a look": "Propuestas que merecen atención"
 }

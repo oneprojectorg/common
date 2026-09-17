@@ -1,0 +1,670 @@
+'use client';
+
+import { trpc } from '@op/api/client';
+import type {
+  ThemeAnalysisOutlier,
+  ThemeAnalysisResult,
+  ThemeAnalysisSuggestionKind,
+} from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@op/sense/Accordion';
+import { Badge } from '@op/sense/Badge';
+import { Button } from '@op/sense/Button';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemTitle,
+} from '@op/sense/Item';
+import { toast } from '@op/sense/Toast';
+import { cn } from '@op/sense/lib/utils';
+import { useCallback, useState } from 'react';
+import {
+  LuArrowRightLeft,
+  LuMerge,
+  LuPencilLine,
+  LuSplit,
+} from 'react-icons/lu';
+
+import { Link, useTranslations } from '@/lib/i18n';
+
+import { MergeProposalDialog } from './MergeProposalDialog';
+import { ThemeSizeChart } from './ThemeSizeChart';
+import { type ProposalRoute, proposalHref } from './proposalHrefs';
+
+/** One proposal as the analysis names it. */
+type AnalyzedProposal =
+  ThemeAnalysisResult['themes'][number]['proposals'][number];
+
+/**
+ * Where a proposal reference points.
+ *
+ * The analysis carries each proposal's own `profileId`, so the route here is
+ * everything *except* that — the reference supplies the rest per proposal.
+ */
+export type ThemeAnalysisRoute = Omit<ProposalRoute, 'profileId'>;
+
+/**
+ * The analysis itself: four collapsible sections, or a line saying it found
+ * nothing.
+ *
+ * Shared by the dialog and the process tab rather than reimplemented in each.
+ * The two frame it differently — a modal around it, or a page with charts above
+ * it — but what a theme, an area of agreement, an outlier and a suggestion look
+ * like is one answer, and two copies of it would drift the moment either grew a
+ * field.
+ *
+ * @param result - The finished analysis.
+ * @param route - Where its proposal references point.
+ * @param canMerge - Whether the reader may act on a merge suggestion.
+ */
+export const ThemeAnalysisSections = ({
+  result,
+  route,
+  canMerge,
+}: {
+  result: ThemeAnalysisResult;
+  route: ThemeAnalysisRoute;
+  canMerge: boolean;
+}) => {
+  const t = useTranslations();
+
+  // Every section hides itself when empty, so a run that found nothing would
+  // otherwise render as a header and a void — which reads as a loading bug
+  // rather than as an answer.
+  if (isEmpty(result)) {
+    return (
+      <p className="text-label text-muted-foreground">
+        {t(
+          'The analysis finished but found nothing to report across these proposals.',
+        )}
+      </p>
+    );
+  }
+
+  // Everything shut on arrival, so this opens as a contents page: four headers,
+  // and the reader picks where to start. The counts a reader chooses by are on
+  // the triggers, so a closed section is not a blank one.
+  //
+  // `multiple`, so opening the next section does not close the one just read —
+  // with everything collapsed that matters more, not less, because a reader is
+  // now moving between them deliberately.
+  return (
+    <Accordion multiple>
+      <ThemesSection themes={result.themes} route={route} />
+      <CommonGroundSection commonGround={result.commonGround} route={route} />
+      <OutliersSection outliers={result.outliers} route={route} />
+      <SuggestionsSection
+        suggestions={result.suggestions}
+        route={route}
+        canMerge={canMerge}
+      />
+    </Accordion>
+  );
+};
+
+/**
+ * Did the run produce anything at all?
+ *
+ * A valid outcome, not a defect: a corpus of unrelated proposals genuinely has
+ * no themes and no common ground, and the model is told to report the little
+ * that is shared rather than manufacture agreement.
+ */
+const isEmpty = (result: ThemeAnalysisResult): boolean =>
+  result.themes.length === 0 &&
+  result.commonGround.length === 0 &&
+  result.outliers.length === 0 &&
+  result.suggestions.length === 0;
+
+/**
+ * A section heading with its body, or nothing when the section is empty.
+ *
+ * An empty section is dropped rather than rendered with a placeholder. "No
+ * common ground found" and "we did not look" read the same to a facilitator, and
+ * only one of them is true here — every section was asked for.
+ */
+const Section = ({
+  value,
+  title,
+  isEmpty,
+  children,
+}: {
+  /** Stable key for the open/closed set. See {@link SECTION_VALUES}. */
+  value: SectionValue;
+  title: string;
+  isEmpty: boolean;
+  children: React.ReactNode;
+}) => {
+  if (isEmpty) {
+    return null;
+  }
+
+  return (
+    <AccordionItem value={value}>
+      {/* No type override here, unlike the theme rows inside. The trigger's
+          default is the serif title face, which is exactly what `Header3` gave
+          these headings before — and Base UI's header is an `<h3>`, the same
+          element, so the heading outline is unchanged. */}
+      <AccordionTrigger>{title}</AccordionTrigger>
+      {/* Cancels the panel's prose rule for the same reason the theme panels
+          do: every section's content is lists and paragraphs with their own
+          explicit gaps, and a 16px margin under each paragraph fights them. */}
+      <AccordionContent className="flex flex-col gap-3 [&_p:not(:last-child)]:mb-0">
+        {children}
+      </AccordionContent>
+    </AccordionItem>
+  );
+};
+
+/**
+ * A proposal's title, linked to its page when it has one.
+ *
+ * The link is the card's link: the same `proposalHref` the grid, map and
+ * results list build, so a route change reaches here with them. A proposal
+ * with no profile — possible, the column is nullable — has no page to link to
+ * and is named as text instead, rather than as a link that goes nowhere.
+ *
+ * `dir="auto"` because the title is the participant's own text, in whatever
+ * script they wrote it, inside a dialog laid out for the facilitator's locale.
+ */
+const ProposalLink = ({
+  proposal,
+  route,
+  className,
+}: {
+  proposal: AnalyzedProposal;
+  route: ThemeAnalysisRoute;
+  className?: string;
+}) => {
+  const t = useTranslations();
+  const title = proposal.title || t('Untitled Proposal');
+
+  if (!proposal.profileId) {
+    return (
+      <span dir="auto" className={className}>
+        {title}
+      </span>
+    );
+  }
+
+  return (
+    <Button
+      variant="link"
+      size="inline"
+      dir="auto"
+      // `text-start` so a multi-line title wraps like the text around it rather
+      // than centring the way a button's label does; `whitespace-normal` for
+      // the same reason — a title can run to a sentence.
+      className={cn('text-start whitespace-normal', className)}
+      render={
+        <Link
+          href={proposalHref({ ...route, profileId: proposal.profileId })}
+        />
+      }
+    >
+      {title}
+    </Button>
+  );
+};
+
+/**
+ * The proposals a finding rests on, as linked titles.
+ *
+ * Rendered under every finding so a facilitator can check it against the text
+ * rather than take it on the model's word — and now can, in one click. A finding
+ * whose proposals all failed the grounding check renders nothing, which is the
+ * honest outcome: the claim survived and its evidence did not.
+ */
+const ProposalRefs = ({
+  proposals,
+  route,
+}: {
+  proposals: AnalyzedProposal[];
+  route: ThemeAnalysisRoute;
+}) => {
+  if (proposals.length === 0) {
+    return null;
+  }
+
+  // A bulleted list rather than badges: proposal titles run to a full sentence,
+  // and the badge is a fixed-height, non-wrapping element that would clip most
+  // of them. `ps-` rather than `pl-` so the markers sit inside the text in RTL.
+  return (
+    <ul className="flex list-disc flex-col gap-0.5 ps-5">
+      {proposals.map((proposal) => (
+        <li key={proposal.id} className="text-label text-muted-foreground">
+          <ProposalLink proposal={proposal} route={route} />
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+/**
+ * The sections, as the accordion's values.
+ *
+ * Named constants rather than the titles, which are translated: a value that
+ * changed with the reader's locale would mean the open/closed set could not be
+ * reasoned about.
+ */
+type SectionValue = 'themes' | 'common-ground' | 'outliers' | 'suggestions';
+
+/**
+ * The accordion value for one theme's panel.
+ *
+ * Position rather than title: two themes can share a title, and a duplicated
+ * value makes one click open both panels.
+ */
+const themeItemValue = (position: number) => `theme-${position}`;
+
+const ThemesSection = ({
+  themes,
+  route,
+}: {
+  themes: ThemeAnalysisResult['themes'];
+  route: ThemeAnalysisRoute;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Section value="themes" title={t('Themes')} isEmpty={themes.length === 0}>
+      {/* Above the list rather than beside it: the list is the chart's
+          table-view twin — every theme with its claims, in text — and the two
+          belong next to each other. */}
+      <ThemeSizeChart themes={themes} />
+      {/* `multiple`, because the question a facilitator brings here is usually
+          comparative — two themes open side by side is the point, and a single
+          -open accordion closes the one they were reading to show the next.
+
+          Nothing open to begin with, matching the sections: the chart and the
+          claim count on each row are what a reader chooses by, and both are
+          visible while every panel is shut. */}
+      <Accordion multiple>
+        {/* Valued and keyed by position, not by title. Nothing here reorders or
+            filters after render, and the model can return two themes under one
+            title — which would collide on any content-derived value and make
+            opening one panel open both. */}
+        {themes.map(({ title, summary, claims, proposals }, position) => (
+          <AccordionItem key={position} value={themeItemValue(position)}>
+            <AccordionTrigger
+              // A theme sits inside the Themes section, so its heading is a
+              // level down. Base UI's header is an `<h3>` at any depth, which
+              // would tell a reader navigating by heading that a theme and the
+              // section containing it are siblings.
+              header={<h4 />}
+              // The dialog's own weight for a theme title. Left alone, the
+              // trigger wears the serif title face this design system gives an
+              // accordion — right for the section headings, and competing with
+              // them when a dozen theme rows are stacked inside one.
+              className="items-center gap-2 py-3 font-sans text-label font-strong"
+            >
+              <span dir="auto">{title}</span>
+              {/* Beside the title rather than inside the panel: it is how a
+                  reader decides which panel to open, so it has to be legible
+                  while every panel is shut. Matches the chart above. */}
+              <span className="ms-auto shrink-0 text-label font-normal text-muted-foreground">
+                {t('{count} claims', { count: claims.length })}
+              </span>
+            </AccordionTrigger>
+            {/* `[&_p:not(:last-child)]:mb-0` cancels a style the panel applies
+                for prose: every descendant paragraph but the last gets a 16px
+                bottom margin, which suits an FAQ answer and not this. The claim
+                list is paragraphs three-deep inside list items, so left alone it
+                spaces every claim, quote and proposal line apart and the gap
+                here stacks on top of it. */}
+            <AccordionContent className="flex flex-col gap-2 pb-4 [&_p:not(:last-child)]:mb-0">
+              <p dir="auto" className="text-label text-muted-foreground">
+                {summary}
+              </p>
+              <ClaimList claims={claims} route={route} />
+              <ProposalRefs proposals={proposals} route={route} />
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </Section>
+  );
+};
+
+/**
+ * The claims grouped under a theme, each with the proposal it came from.
+ *
+ * This is what the theme is actually about, so it sits above the proposal
+ * references rather than replacing them: the claims say what was argued, and the
+ * references are how a facilitator gets to the text.
+ *
+ * A claim's quote is shown only when there is one. An empty quote means the
+ * model's quote could not be found in the proposal it named, and the claim is
+ * kept without it — rendering the claim as if it were quoted would present the
+ * model's words as a participant's.
+ *
+ * Renders nothing at all for an analysis stored before claims existed, whose
+ * themes parse with an empty list.
+ */
+const ClaimList = ({
+  claims,
+  route,
+}: {
+  claims: ThemeAnalysisResult['claims'];
+  route: ThemeAnalysisRoute;
+}) => {
+  if (claims.length === 0) {
+    return null;
+  }
+
+  return (
+    <ul className="flex flex-col gap-2 border-s border-input ps-3">
+      {claims.map(({ claim, quote, proposal }, position) => (
+        <li key={position} className="flex flex-col gap-1">
+          <p dir="auto" className="text-label">
+            {claim}
+          </p>
+          {quote !== '' && (
+            <p
+              dir="auto"
+              className="text-label text-muted-foreground italic"
+            >{`"${quote}"`}</p>
+          )}
+          <p className="text-label text-muted-foreground">
+            <ProposalLink proposal={proposal} route={route} />
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+const CommonGroundSection = ({
+  commonGround,
+  route,
+}: {
+  commonGround: ThemeAnalysisResult['commonGround'];
+  route: ThemeAnalysisRoute;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Section
+      value="common-ground"
+      title={t('Common ground')}
+      isEmpty={commonGround.length === 0}
+    >
+      <ul className="flex flex-col gap-4">
+        {commonGround.map(({ statement, proposals }, position) => (
+          <li key={position} className="flex flex-col gap-2">
+            <p dir="auto" className="text-label">
+              {statement}
+            </p>
+            <ProposalRefs proposals={proposals} route={route} />
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+};
+
+/**
+ * The impact badge on an outlier.
+ *
+ * Its own component so the label and the variant are decided together. They are
+ * the whole point of the outlier section: one list mixing "proposes something
+ * nobody else does" with "differs in a detail" tells a facilitator nothing about
+ * which one to read first.
+ */
+const OutlierImpactBadge = ({
+  impact,
+}: {
+  impact: ThemeAnalysisOutlier['impact'];
+}) => {
+  const t = useTranslations();
+
+  return impact === 'high-impact' ? (
+    <Badge variant="default">{t('High impact')}</Badge>
+  ) : (
+    <Badge variant="outline">{t('Low impact')}</Badge>
+  );
+};
+
+const OutliersSection = ({
+  outliers,
+  route,
+}: {
+  outliers: ThemeAnalysisResult['outliers'];
+  route: ThemeAnalysisRoute;
+}) => {
+  const t = useTranslations();
+
+  // High impact first, order preserved within each group. The section exists to
+  // separate the outlier worth a conversation from the one worth a line in the
+  // notes, and burying the first below six of the second undoes that.
+  const sorted = [
+    ...outliers.filter(({ impact }) => impact === 'high-impact'),
+    ...outliers.filter(({ impact }) => impact !== 'high-impact'),
+  ];
+
+  return (
+    <Section
+      value="outliers"
+      title={t('Outliers')}
+      isEmpty={sorted.length === 0}
+    >
+      <ul className="flex flex-col gap-4">
+        {/* Also keyed by position: the model can list one proposal twice, and
+            two entries sharing a proposal id would collide. */}
+        {sorted.map(({ proposal, impact, reason }, position) => (
+          <li key={position} className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <ProposalLink
+                proposal={proposal}
+                route={route}
+                className="text-label font-strong"
+              />
+              <OutlierImpactBadge impact={impact} />
+            </div>
+            <p dir="auto" className="text-label text-muted-foreground">
+              {reason}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+};
+
+/**
+ * What each kind of suggestion is called.
+ *
+ * A lookup keyed on the enum rather than a ternary chain, so adding a kind is a
+ * row here instead of another branch inside the list — and so a kind with no
+ * copy is a type error rather than a suggestion that renders as an icon and a
+ * blank line. `split` arrived exactly that way.
+ */
+const SUGGESTION_LABELS: Record<
+  ThemeAnalysisSuggestionKind,
+  (t: ReturnType<typeof useTranslations>) => string
+> = {
+  merge: (t) => t('Consider merging'),
+  modify: (t) => t('Consider revising'),
+  split: (t) => t('Consider splitting'),
+};
+
+/** The icon for a suggestion kind, paired with its label above. */
+const SuggestionIcon = ({ kind }: { kind: ThemeAnalysisSuggestionKind }) => {
+  if (kind === 'merge') {
+    return <LuArrowRightLeft aria-hidden />;
+  }
+
+  if (kind === 'split') {
+    return <LuSplit aria-hidden />;
+  }
+
+  return <LuPencilLine aria-hidden />;
+};
+
+const SuggestionsSection = ({
+  suggestions,
+  route,
+  canMerge,
+}: {
+  suggestions: ThemeAnalysisResult['suggestions'];
+  route: ThemeAnalysisRoute;
+  canMerge: boolean;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Section
+      value="suggestions"
+      title={t('Suggestions')}
+      isEmpty={suggestions.length === 0}
+    >
+      <ul className="flex flex-col gap-4">
+        {suggestions.map(({ kind, rationale, proposals }, position) => (
+          <li key={position} className="flex flex-col gap-2">
+            <p className="flex items-center gap-2 text-label font-strong">
+              <SuggestionIcon kind={kind} />
+              {SUGGESTION_LABELS[kind](t)}
+            </p>
+            <p dir="auto" className="text-label text-muted-foreground">
+              {rationale}
+            </p>
+            {/* Only a merge suggestion gets the action, and only for a reader
+                who could merge from the card menu. A revise suggestion has no
+                one-click action — the change is the author's to make. */}
+            {kind === 'merge' && canMerge ? (
+              <MergeableProposals proposals={proposals} route={route} />
+            ) : (
+              <ProposalRefs proposals={proposals} route={route} />
+            )}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+};
+
+/**
+ * The proposals a merge suggestion names, each with the card menu's Merge
+ * action beside it.
+ *
+ * Merge is directional — one proposal is merged away into another — and the
+ * suggestion names two or more without saying which survives. So the action
+ * sits on each proposal: pressing it opens the same merge dialog the card
+ * menu opens, with that proposal as the one being merged away, and the
+ * facilitator picks the target there exactly as they would from the card.
+ *
+ * The analysis carries only what it needs to render; the merge dialog needs the
+ * proposal itself. It is fetched on press, by profile id, through the same
+ * `getProposal` the proposal page reads — rather than loaded up front for every
+ * proposal in every suggestion, most of which will never be pressed.
+ */
+const MergeableProposals = ({
+  proposals,
+  route,
+}: {
+  proposals: AnalyzedProposal[];
+  route: ThemeAnalysisRoute;
+}) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+
+  // The proposal being merged away, held past the close so the dialog animates
+  // out rather than disappearing — the same shape as the list's provider.
+  const [mergeSource, setMergeSource] = useState<Proposal | null>(null);
+  const [isMergeOpen, setIsMergeOpen] = useState(false);
+  const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
+
+  const handleMerge = useCallback(
+    async (profileId: string) => {
+      setLoadingProfileId(profileId);
+
+      try {
+        const proposal = await utils.decision.getProposal.fetch({ profileId });
+        setMergeSource(proposal);
+        setIsMergeOpen(true);
+      } catch (error) {
+        // The suggestion is still on screen and the card menu still works, so
+        // the toast says where to go rather than what went wrong.
+        logger.error('Could not load a proposal to merge from the analysis', {
+          error,
+          profileId,
+        });
+        toast.error(
+          t("Couldn't open this proposal to merge. Try again from its card."),
+        );
+      } finally {
+        setLoadingProfileId(null);
+      }
+    },
+    [utils, t],
+  );
+
+  if (proposals.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <ItemGroup>
+        {proposals.map((proposal) => {
+          const title = proposal.title || t('Untitled Proposal');
+          // Its own binding so the narrowing below survives into the click
+          // handler, which a property access would not.
+          const { profileId } = proposal;
+
+          return (
+            <Item key={proposal.id} variant="outline" size="xs">
+              <ItemContent>
+                <ItemTitle>
+                  <ProposalLink
+                    proposal={proposal}
+                    route={route}
+                    className="text-label"
+                  />
+                </ItemTitle>
+              </ItemContent>
+              {/* A proposal with no profile cannot be loaded by the endpoint
+                  the dialog needs, so it gets no action rather than one that
+                  fails on press. */}
+              {profileId && (
+                <ItemActions>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    loading={loadingProfileId === profileId}
+                    // One load at a time. Two dialogs cannot be open, and a
+                    // second press while the first is loading would race to
+                    // decide which proposal the dialog shows.
+                    disabled={loadingProfileId !== null}
+                    aria-label={t('Merge {title} with another proposal', {
+                      title,
+                    })}
+                    onClick={() => handleMerge(profileId)}
+                  >
+                    <LuMerge aria-hidden />
+                    {t('Merge')}
+                  </Button>
+                </ItemActions>
+              )}
+            </Item>
+          );
+        })}
+      </ItemGroup>
+
+      {mergeSource ? (
+        <MergeProposalDialog
+          proposal={mergeSource}
+          open={isMergeOpen}
+          onOpenChange={setIsMergeOpen}
+        />
+      ) : null}
+    </>
+  );
+};

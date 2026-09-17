@@ -1754,5 +1754,11 @@
   "Claims per theme, largest first": "Sheegashooyin mawduuc kasta, kuwa badan hore",
   "{count} claims": "{count} sheegasho",
   "{claims} claims from {proposals} proposals": "{claims} sheegasho oo ka socda {proposals} soo jeedin",
-  "{count} smaller themes": "{count} mawduucyo yaryar"
+  "{count} smaller themes": "{count} mawduucyo yaryar",
+  "Analysis": "Falanqayn",
+  "Claims per proposal": "Sheegashooyin soo jeedin kasta",
+  "No analysis yet": "Weli falanqayn ma jirto",
+  "Run one from All proposals, and it will appear here once it finishes.": "Ka bilow Dhammaan soo jeedinta, waxaana halkan ka soo muuqan marka dhammaato.",
+  "Claims": "Sheegashooyin",
+  "Proposals worth a look": "Soo jeedinno mudan in la eego"
 }
