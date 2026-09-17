@@ -18,6 +18,7 @@ import { LuChartPie } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { MergeProposalDialogProvider } from './MergeProposalDialogContext';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalClaimsChart } from './ProposalClaimsChart';
 import { ThemeAnalysisSections } from './ThemeAnalysisSections';
@@ -269,18 +270,29 @@ const OutlierProposals = ({
   return (
     <section className="flex flex-col gap-3">
       <h3 className="font-serif text-title">{t('Proposals worth a look')}</h3>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {cards.map((proposal) => (
-          <ProposalBrowseCard
-            key={proposal.id}
-            proposal={proposal}
-            instanceId={instanceId}
-            slug={slug}
-            decisionSlug={decisionSlug}
-            permissions={permissions}
-          />
-        ))}
-      </div>
+      {/* The card's menu opens the merge dialog through a context rather than a
+          prop, and its hook throws without a provider rather than quietly doing
+          nothing — deliberately, because a Merge item that silently did nothing
+          would look like the bug the provider exists to fix. So a card cannot be
+          reused outside one, which is what this section learned the hard way.
+
+          Around the cards rather than the whole tab: the analysis sections below
+          render their own merge dialog inline, and one subtree with two ways to
+          open the same dialog is a question nobody should have to answer. */}
+      <MergeProposalDialogProvider>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {cards.map((proposal) => (
+            <ProposalBrowseCard
+              key={proposal.id}
+              proposal={proposal}
+              instanceId={instanceId}
+              slug={slug}
+              decisionSlug={decisionSlug}
+              permissions={permissions}
+            />
+          ))}
+        </div>
+      </MergeProposalDialogProvider>
     </section>
   );
 };

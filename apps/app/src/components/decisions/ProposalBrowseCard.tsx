@@ -32,6 +32,13 @@ interface ProposalBrowseCardProps {
  * The grid and the map's list column both render this, so the two views can't
  * disagree about what a card shows in a given phase. Anything genuinely
  * view-specific (the map's hover highlight) comes in through `className`.
+ *
+ * **Render this inside a `MergeProposalDialogProvider`.** The menu reaches the
+ * merge dialog through that context and its hook throws without one, so a card
+ * shown to an admin — or to the proposal's own author — takes the surface down
+ * with it. The requirement is invisible from the props, which is how the
+ * analysis tab found it: every other context the card reads degrades to a
+ * default, and this one does not.
  */
 export function ProposalBrowseCard({
   proposal,
