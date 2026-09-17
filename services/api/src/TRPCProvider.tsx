@@ -3,11 +3,9 @@
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { TRPCClientError } from '@trpc/client';
-import {
-  createTRPCReact,
-  getQueryKey as getQueryKeyTRPC,
-} from '@trpc/react-query';
+import { createTRPCReact } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import React, { createContext, useState } from 'react';
 
 import { createLinks } from './links';
@@ -28,10 +26,31 @@ export { clearPersistedQueryCache } from './queryPersister';
 
 export const trpc = createTRPCReact<AppRouter>();
 
+/**
+ * The `@trpc/tanstack-react-query` client, which replaces `trpc` above.
+ *
+ * Both clients run against the same `QueryClient` during the migration. That
+ * only works because they agree on the cache key: with no `keyPrefix`
+ * configured, `getQueryKeyInternal` returns `[splitPath, { input?, type? }]`,
+ * byte-for-byte what `createTRPCReact` produces and what
+ * `buildChannelQueryKey` in `links.ts` builds by hand for realtime
+ * invalidation.
+ *
+ * NEVER pass a `keyPrefix`. It prepends a `[prefix]` element to every key,
+ * which the channel-registration link cannot know about — realtime
+ * invalidation would silently stop matching, with no error anywhere.
+ * `links.test.ts` pins this.
+ */
+const {
+  TRPCProvider: TanStackTRPCProvider,
+  useTRPC,
+  useTRPCClient,
+} = createTRPCContext<AppRouter>();
+
+export { useTRPC, useTRPCClient };
+
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;
-
-export const getQueryKey = getQueryKeyTRPC;
 
 export function isTRPCClientError(
   cause: unknown,
@@ -107,7 +126,12 @@ export function TRPCProvider({
             },
           }}
         >
-          {children}
+          <TanStackTRPCProvider
+            trpcClient={trpcClient}
+            queryClient={queryClient}
+          >
+            {children}
+          </TanStackTRPCProvider>
         </PersistQueryClientProvider>
       </trpc.Provider>
     </SSRCookiesContext.Provider>
