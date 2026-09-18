@@ -95,6 +95,10 @@ export const createServerContext = cache(async (): Promise<TContext> => {
     getCookie: (name: string) => {
       return cookieStore.get(name)?.value;
     },
+    // Throws so a mutation that needs to write a cookie fails loudly instead
+    // of appearing to succeed. Supabase's own session writes are the one
+    // expected caller and never reach here: `supabase/server.ts` checks
+    // `isServerSideCall` first.
     setCookie: () => {
       throw new Error(
         'Cannot set cookies in server-side caller context. Use a route handler with fetchRequestHandler instead.',
