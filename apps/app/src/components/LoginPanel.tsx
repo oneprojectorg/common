@@ -180,7 +180,7 @@ export const LoginPanel = () => {
     if (data.user && data.session && data.user.role === 'authenticated') {
       finishSignIn();
     } else {
-      setTokenError(error?.message ?? t('Failed to verify code'));
+      setTokenError(error?.message ?? t('auth.verifyCodeError'));
     }
   }, [email, token, supabase, finishSignIn, setTokenError, t]);
 
@@ -244,9 +244,9 @@ export const LoginPanel = () => {
         combinedError?.includes('invite') ||
         combinedError?.includes('waitlist')
       ) {
-        return t('Stay tuned!');
+        return t('auth.waitlistTitle');
       }
-      return t('Oops!');
+      return t('auth.errorTitle');
     }
     // The phone flow never sets `loginSuccess`, so without this branch the
     // card still reads "Welcome to" while the person stares at a code field.
@@ -254,18 +254,18 @@ export const LoginPanel = () => {
       return (
         <div className="flex flex-col items-center justify-center gap-4">
           <CheckIcon />
-          <span className="text-headline">{t('Code sent!')}</span>
+          <span className="text-headline">{t('auth.smsCodeSentTitle')}</span>
         </div>
       );
     }
     if (!loginSuccess) {
       if (isSignup) {
-        return t('Sign up to {appName}', { appName: APP_NAME });
+        return t('auth.signUpHeading', { appName: APP_NAME });
       }
       return (
         <div className="flex flex-col gap-2">
           <span className="font-sans text-base font-normal tracking-normal text-muted-foreground">
-            {t('Welcome to')}
+            {t('auth.welcomeHeading')}
           </span>
           <span>
             <CommonLogo className="h-8 w-auto" />
@@ -276,44 +276,37 @@ export const LoginPanel = () => {
     return (
       <div className="flex flex-col items-center justify-center gap-4">
         <CheckIcon />
-        <span className="text-headline">{t('Email sent!')}</span>
+        <span className="text-headline">{t('auth.emailCodeSentTitle')}</span>
       </div>
     );
   })();
 
   const subtitle = (() => {
     if (isConnectionError) {
-      return t(
-        "{appName} can't connect to the internet. Please check your internet connection and try again.",
-        { appName: APP_NAME },
-      );
+      return t('auth.offlineError', { appName: APP_NAME });
     }
     if (combinedError || tokenError) {
       return (
         <span className={cn(tokenError && 'text-destructive')}>
-          {combinedError ||
-            tokenError ||
-            t('There was an error signing you in.')}
+          {combinedError || tokenError || t('auth.signInError')}
         </span>
       );
     }
     if (step === 'phone-code') {
       return (
         <span>
-          {t('A code was sent to {phone}. Type the code below to sign in.', {
+          {t('auth.phoneCodeHint', {
             phone: phoneFlow.normalized,
           })}
         </span>
       );
     }
     if (!loginSuccess) {
-      return t(
-        'Connect with aligned organizations and funders building a new economy together',
-      );
+      return t('auth.marketingTagline');
     }
     return (
       <span>
-        {t('A code was sent to {email}. Type the code below to sign in.', {
+        {t('auth.emailCodeHint', {
           email,
         })}
       </span>
@@ -349,21 +342,21 @@ export const LoginPanel = () => {
                   disabled={phoneFlow.isBusy}
                   onClick={phoneFlow.resend}
                 >
-                  {t('Send the code again')}
+                  {t('auth.resendCodeAction')}
                 </Button>
                 <Button
                   variant="link"
                   disabled={phoneFlow.isBusy}
                   onClick={phoneFlow.changeNumber}
                 >
-                  {t('Use a different number')}
+                  {t('auth.changePhoneAction')}
                 </Button>
               </div>
             </div>
           ) : step === 'phone-number' ? (
             <div className="flex flex-col gap-4">
               <AuthPhoneField
-                label={t('Phone Number')}
+                label={t('auth.phoneNumberLabel')}
                 description={t(
                   'We text you a code. Standard message and data rates may apply.',
                 )}
@@ -380,16 +373,14 @@ export const LoginPanel = () => {
                   setChannel('email');
                 }}
               >
-                {t('Use an email address instead')}
+                {t('auth.useEmailAction')}
               </Button>
             </div>
           ) : !loginSuccess ? (
             <div className="flex flex-col gap-4">
               <AuthEmailField
                 label={t('Email')}
-                description={t(
-                  'Use the email address associated with your organization',
-                )}
+                description={t('auth.orgEmailHint')}
                 value={email}
                 isDisabled={login.isFetching || loginSuccess || !!combinedError}
                 onChange={(val) => {
@@ -400,7 +391,7 @@ export const LoginPanel = () => {
               />
               {smsLoginEnabled && (
                 <Button variant="link" onClick={() => setChannel('phone')}>
-                  {t('Use a phone number instead')}
+                  {t('auth.usePhoneAction')}
                 </Button>
               )}
             </div>
@@ -444,12 +435,12 @@ export const LoginPanel = () => {
                 <Spinner className="size-6" />
               ) : submit.isFinalStep ? (
                 isSignup ? (
-                  t('Sign up')
+                  t('auth.signUpAction')
                 ) : (
-                  t('Login')
+                  t('auth.loginAction')
                 )
               ) : (
-                t('Sign in')
+                t('auth.signInAction')
               )}
             </Button>
           )
@@ -460,7 +451,7 @@ export const LoginPanel = () => {
               variant="default"
               className="flex w-full items-center justify-center"
             >
-              {t('Back to home')}
+              {t('auth.backToHomeAction')}
             </ButtonLink>
 
             <SocialLinks iconClassName="size-5 stroke-none text-muted-foreground" />
@@ -470,19 +461,11 @@ export const LoginPanel = () => {
         {!isConnectionError && !isErrorState && (
           <div className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground sm:text-sm">
             {isSignup ? (
-              <span>
-                {t(
-                  "You'll receive a code to confirm your account. Can't find it? Check your spam folder.",
-                )}
-              </span>
+              <span>{t('auth.codeDeliveryHint')}</span>
             ) : (
               <>
-                <span>{t("Don't have an account?")}</span>
-                <span>
-                  {t(
-                    'We’ll create one for you with your organization’s email.',
-                  )}
-                </span>
+                <span>{t('auth.noAccountPrompt')}</span>
+                <span>{t('auth.noAccountHint')}</span>
               </>
             )}
           </div>

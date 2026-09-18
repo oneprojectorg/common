@@ -111,7 +111,7 @@ export const OrganizationSearchScreen = ({
 
   const hasSelectedOrgs = selectedOrgs.length > 0;
 
-  const continueLabel = t('Continue with {count} organizations', {
+  const continueLabel = t('onboarding.continueWithOrgsAction', {
     count: selectedOrgs.length,
   });
 
@@ -127,10 +127,8 @@ export const OrganizationSearchScreen = ({
 
   return (
     <OnboardingCenterLayout
-      title={t('Find organizations you belong to')}
-      subtitle={t(
-        'Select the organization(s) you want to link to your Common profile. You can add more later from your profile.',
-      )}
+      title={t('onboarding.orgSearchTitle')}
+      subtitle={t('onboarding.orgSearchSubtitle')}
     >
       <div className="flex w-full flex-col gap-6">
         <div className="flex flex-col gap-4">
@@ -142,8 +140,8 @@ export const OrganizationSearchScreen = ({
               <InputGroupInput
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('Search or add your organization...')}
-                aria-label={t('Search or add your organization...')}
+                placeholder={t('onboarding.orgSearchPlaceholder')}
+                aria-label={t('onboarding.orgSearchPlaceholder')}
               />
             </InputGroup>
 
@@ -185,7 +183,7 @@ export const OrganizationSearchScreen = ({
               variant="outline"
               onClick={handleShowToS}
             >
-              {t('Skip for now')}
+              {t('onboarding.skipStepAction')}
             </Button>
           </>
         )}
@@ -267,7 +265,7 @@ function SearchDropdown({
         >
           <LuPlus className="size-4" />
           <span className="text-sm">
-            {t('Add {searchTerm}', { searchTerm: searchQuery })}
+            {t('onboarding.addOrgOption', { searchTerm: searchQuery })}
           </span>
         </button>
       )}

@@ -124,9 +124,9 @@ export const LinkAccountPanel = () => {
         goAfterLink();
         return;
       }
-      setTokenError(result.message ?? t('Failed to verify code'));
+      setTokenError(result.message ?? t('auth.verifyCodeError'));
     } catch {
-      setTokenError(t('Failed to verify code'));
+      setTokenError(t('auth.verifyCodeError'));
     }
     setIsSubmitting(false);
   }, [
@@ -156,15 +156,15 @@ export const LinkAccountPanel = () => {
 
   const title = (() => {
     if (errorMessage) {
-      return t('Oops!');
+      return t('auth.errorTitle');
     }
     if (!loginSuccess) {
-      return t('Create an account');
+      return t('auth.createAccountHeading');
     }
     return (
       <div className="flex flex-col items-center justify-center gap-4">
         <CheckIcon />
-        <span className="text-headline">{t('Email sent!')}</span>
+        <span className="text-headline">{t('auth.emailCodeSentTitle')}</span>
       </div>
     );
   })();
@@ -178,7 +178,7 @@ export const LinkAccountPanel = () => {
       );
     }
     if (!loginSuccess) {
-      return t.rich('Already have an account? <login>Log in</login>', {
+      return t.rich('auth.haveAccountPrompt', {
         login: (chunks: React.ReactNode) => (
           <a href={regularLoginHref} className="text-primary underline">
             {chunks}
@@ -188,12 +188,9 @@ export const LinkAccountPanel = () => {
     }
     return (
       <span>
-        {t(
-          'A code was sent to {email}. Type the code below to create your profile.',
-          {
-            email,
-          },
-        )}
+        {t('auth.createProfileCodeHint', {
+          email,
+        })}
       </span>
     );
   })();
@@ -240,7 +237,7 @@ export const LinkAccountPanel = () => {
               {isSubmitting ? (
                 <Spinner className="size-6" />
               ) : (
-                t('Create profile')
+                t('auth.createProfileAction')
               )}
             </Button>
             <Button

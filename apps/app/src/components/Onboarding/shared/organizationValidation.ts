@@ -14,13 +14,13 @@ export const createOrganizationFormValidator = (t: TranslateFn) =>
   z.object({
     name: z
       .string({
-        error: t('Enter a name for your organization'),
+        error: t('onboarding.orgNameRequired'),
       })
       .min(1, {
-        error: t('Enter a name for your organization'),
+        error: t('onboarding.orgNameRequired'),
       })
       .max(100, {
-        error: t('Must be at most 100 characters'),
+        error: t('onboarding.orgNameTooLong'),
       }),
     website: zodUrl({
       isRequired: true,
@@ -35,28 +35,28 @@ export const createOrganizationFormValidator = (t: TranslateFn) =>
       }),
     orgType: z
       .string({
-        error: t('Select an organization type'),
+        error: t('onboarding.orgTypeRequired'),
       })
       .max(200, {
         error: t('Must be at most 200 characters'),
       })
       .min(1, {
-        error: t('Select an organization type'),
+        error: t('onboarding.orgTypeRequired'),
       }),
     bio: z
       .string({
-        error: t('Enter an organization bio'),
+        error: t('onboarding.orgBioRequired'),
       })
       .max(150, {
-        error: t('Must be at most 150 characters'),
+        error: t('onboarding.orgBioTooLong'),
       })
       .min(1, {
-        error: t('Enter an organization bio'),
+        error: t('onboarding.orgBioRequired'),
       }),
     mission: z
       .string()
       .max(1500, {
-        error: t('Must be at most 1500 characters'),
+        error: t('onboarding.orgMissionTooLong'),
       })
       .optional(),
     whereWeWork: z.array(multiSelectOptionValidator).optional(),
