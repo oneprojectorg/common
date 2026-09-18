@@ -80,18 +80,13 @@ export const Sides: Story = {
   ),
 };
 
-// `anchor` positions the popup against something other than the trigger. Here
-// the suggestion list hangs off the whole field, so it lines up with the field
-// and matches its width, rather than off the small button that opened it.
+// The list hangs off the whole field, not the button that opened it.
 export const Anchored: Story = {
   render: () => <AnchoredExample />,
 };
 
-// `container` chooses the popup's DOM parent — here the scroll box rather than
-// the end of the document. It pairs with `positionMethod="fixed"`: the trigger
-// sits in a sticky bar, so it holds still on screen while moving in the box's
-// coordinates, and an absolutely positioned popup jitters chasing it on every
-// scroll frame. Scroll the box with the popover open.
+// Popup lives in the scroll box. `fixed` keeps it still under the sticky bar —
+// scroll the box with it open.
 export const PortalContainer: Story = {
   render: () => <PortalContainerExample />,
 };

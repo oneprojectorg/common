@@ -34,23 +34,17 @@ function PopoverContent({
     | 'positionMethod'
   > & { container?: PopoverPrimitive.Portal.Props['container'] }) {
   return (
-    // Portalled to the body by default. Pass a `container` when the popup has
-    // to live inside a particular subtree — a scroll box it belongs to — rather
-    // than at the end of the document.
+    // `container` puts the popup in a given subtree instead of the body.
     <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        // Position against something other than the trigger — a combobox anchors
-        // its list to the field, not to the caret that opened it.
+        // Anchor elsewhere than the trigger — a list on its field, not the caret.
         anchor={anchor}
-        // `fixed` for an anchor that moves in the document without moving on
-        // screen — a control in a sticky bar over a scrolling list. Positioned
-        // absolutely, the popup is measured in the scroll container's
-        // coordinates, which change on every scroll frame, so it jitters as it
-        // chases a trigger that is standing still.
+        // `fixed` for a trigger that holds still on screen while its container
+        // scrolls; measured absolutely, the popup jitters chasing it.
         positionMethod={positionMethod}
         className="isolate z-50"
       >
