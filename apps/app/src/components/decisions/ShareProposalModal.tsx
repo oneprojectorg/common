@@ -1,5 +1,6 @@
 'use client';
 
+import { useTrackProfileInvited } from '@/hooks/useTrackProfileInvited';
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -110,6 +111,7 @@ function ShareProposalModalContent({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const trackProfileInvited = useTrackProfileInvited();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
@@ -332,12 +334,17 @@ function ShareProposalModalContent({
     }
 
     try {
-      await inviteMutation.mutateAsync({
+      const result = await inviteMutation.mutateAsync({
         invitations: pendingInvites.map((item) => ({
           email: item.email,
           roleId: memberRole.id,
         })),
         profileId: proposalProfileId,
+      });
+
+      trackProfileInvited({
+        profileId: proposalProfileId,
+        invitationCount: result.details.successful.length,
       });
 
       toast.success(t('Invite sent successfully'));

@@ -1,5 +1,6 @@
 'use client';
 
+import { useCompleteOnboarding } from '@/hooks/useCompleteOnboarding';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
@@ -100,7 +101,7 @@ export const OnboardingFlow = ({
   const trpcUtils = trpc.useUtils();
   const { data: userAccount } = trpc.account.getMyAccount.useQuery();
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
-  const completeOnboarding = trpc.account.completeOnboarding.useMutation();
+  const completeOnboarding = useCompleteOnboarding();
   const createOrganization = trpc.organization.create.useMutation();
 
   // Handle hydration detection
@@ -181,7 +182,7 @@ export const OnboardingFlow = ({
           }
         }
 
-        await completeOnboarding.mutateAsync({ tos: true, privacy: true });
+        await completeOnboarding();
         await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
         router.push(completionDestination);
@@ -259,7 +260,7 @@ export const OnboardingFlow = ({
       .mutateAsync(processOrgInputs(combined))
       .then(async () => {
         sendOnboardingAnalytics(combined);
-        await completeOnboarding.mutateAsync({ tos: true, privacy: true });
+        await completeOnboarding();
         await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
         router.push(completionDestination);

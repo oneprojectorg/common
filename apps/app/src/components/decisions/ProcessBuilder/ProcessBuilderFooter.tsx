@@ -20,6 +20,7 @@ import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import { useProcessPhases } from './useProcessPhases';
+import { useTrackRubricSaved } from './useTrackRubricSaved';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderFooter = ({
@@ -33,6 +34,7 @@ export const ProcessBuilderFooter = ({
 }) => {
   const t = useTranslations();
   const router = useRouter();
+  const trackRubricSaved = useTrackRubricSaved(instanceId);
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
 
   const validation = useProcessBuilderValidation(decisionProfileId);
@@ -72,7 +74,8 @@ export const ProcessBuilderFooter = ({
   const utils = trpc.useUtils();
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: async (data, variables) => {
+      trackRubricSaved(variables);
       toast.success(t('Changes saved successfully'));
       // Clear stale store data so the editor reseeds from fresh server data
       clearInstance(decisionProfileId);

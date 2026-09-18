@@ -21,6 +21,7 @@ import {
   type SaveStatus,
   useProcessBuilderStore,
 } from './stores/useProcessBuilderStore';
+import { useTrackRubricSaved } from './useTrackRubricSaved';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
@@ -67,6 +68,7 @@ export function ProcessBuilderAutosaveProvider({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const trackRubricSaved = useTrackRubricSaved(instanceId);
 
   // Already cached by section queries — no extra request.
   const { data: liveInstance } = trpc.decision.getInstance.useQuery({
@@ -125,7 +127,10 @@ export function ProcessBuilderAutosaveProvider({
 
   const debouncedSaveRef = useRef<() => boolean>(null);
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
+    onSuccess: (_data, variables) => {
+      trackRubricSaved(variables);
+      markSaved(decisionProfileId);
+    },
     onError: (error) => {
       setSaveStatus(decisionProfileId, 'error');
       toast.error(t('Failed to save changes'), {

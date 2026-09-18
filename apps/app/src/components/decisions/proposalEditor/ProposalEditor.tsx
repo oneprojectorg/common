@@ -2,6 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
@@ -14,6 +15,7 @@ import { logger } from '@op/logging/client';
 import { Header2 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
+import { usePostHog } from 'posthog-js/react';
 import {
   type ReactNode,
   useCallback,
@@ -151,6 +153,7 @@ function ProposalEditorInner({
   const t = useTranslations();
   const { user } = useRequiredUser();
   const utils = trpc.useUtils();
+  const posthog = usePostHog();
 
   // Anon visitors get sent back with ?promote=1 so PromoteAccountModal offers an
   // upgrade. `isAnonymous` is session-derived, not the stale DB relation.
@@ -224,6 +227,16 @@ function ProposalEditorInner({
   // -- Mutations -------------------------------------------------------------
 
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
+    // Browser-side mirror of the server's `proposal_submitted`.
+    onSuccess: () =>
+      posthog.capture(
+        'proposal_submitted',
+        getDecisionCommonProperties({
+          decisionInstanceId: proposal.processInstanceId,
+          proposalId: proposal.id,
+          additionalProps: { created_timestamp: Date.now() },
+        }),
+      ),
     onError: (error) => handleMutationError(error, 'submit', t),
   });
 
