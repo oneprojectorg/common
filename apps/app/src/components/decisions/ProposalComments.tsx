@@ -245,7 +245,7 @@ function MergedCommentOrigin({
             rel="noopener noreferrer"
           >
             {chunks}
-            <span className="sr-only"> {t('(opens in a new tab)')}</span>
+            <span className="sr-only"> {t('shell.newTabHint')}</span>
           </Link>
         ),
       })}

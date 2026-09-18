@@ -24,21 +24,21 @@ export const createOrganizationFormValidator = (t: TranslateFn) =>
       }),
     website: zodUrl({
       isRequired: true,
-      error: t('Enter a valid website address'),
+      error: t('validWebsiteError'),
     }),
     email: z
       .email({
-        error: t('Enter a valid email address'),
+        error: t('validEmailError'),
       })
       .max(200, {
-        error: t('Must be at most 200 characters'),
+        error: t('maxLength200Error'),
       }),
     orgType: z
       .string({
         error: t('onboarding.orgTypeRequired'),
       })
       .max(200, {
-        error: t('Must be at most 200 characters'),
+        error: t('maxLength200Error'),
       })
       .min(1, {
         error: t('onboarding.orgTypeRequired'),

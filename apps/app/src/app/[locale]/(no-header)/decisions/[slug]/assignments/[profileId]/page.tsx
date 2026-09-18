@@ -23,9 +23,9 @@ export async function generateMetadata({
   params,
 }: ReviewerAssignmentsPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale });
+  const t = await getTranslations({ namespace: 'decisions', locale });
 
-  return { title: t('Review assignments') };
+  return { title: t('reviewAssignmentsPageTitle') };
 }
 
 export default async function ReviewerAssignmentsPage({

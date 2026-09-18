@@ -3,7 +3,7 @@
 import type { TranslationKey } from '@/lib/i18n';
 
 export const STEPS = [
-  { id: 'general', labelKey: 'General' },
+  { id: 'general', labelKey: 'decisions.processBuilder.generalStepLabel' },
   {
     id: 'template',
     labelKey: 'decisions.processBuilder.proposalTemplateSectionLabel',
@@ -18,7 +18,10 @@ export type StepId = (typeof STEPS)[number]['id'];
 
 export const SECTIONS_BY_STEP = {
   general: [
-    { id: 'generalInformation', labelKey: 'General Information' },
+    {
+      id: 'generalInformation',
+      labelKey: 'decisions.processBuilder.generalInformationSectionLabel',
+    },
     { id: 'overview', labelKey: 'decisions.overviewTab' },
     { id: 'phases', labelKey: 'decisions.processBuilder.phasesLabel' },
     {
@@ -26,7 +29,12 @@ export const SECTIONS_BY_STEP = {
       labelKey: 'decisions.processBuilder.proposalCategoriesSectionLabel',
     },
   ],
-  template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
+  template: [
+    {
+      id: 'templateEditor',
+      labelKey: 'decisions.processBuilder.templateEditorSectionLabel',
+    },
+  ],
   reviews: [
     {
       id: 'criteria',
@@ -39,7 +47,10 @@ export const SECTIONS_BY_STEP = {
     },
   ],
   participants: [
-    { id: 'roles', labelKey: 'Roles & Permissions' },
+    {
+      id: 'roles',
+      labelKey: 'decisions.processBuilder.rolesPermissionsSectionLabel',
+    },
     { id: 'participants', labelKey: 'decisions.participantsLabel' },
   ],
   summary: [
@@ -93,7 +104,7 @@ export type SidebarItem =
 export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'generalInformation',
-    labelKey: 'General Information',
+    labelKey: 'decisions.processBuilder.generalInformationSectionLabel',
     parentStepId: 'general',
   },
   {
@@ -134,7 +145,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'roles',
-    labelKey: 'Roles & Permissions',
+    labelKey: 'decisions.processBuilder.rolesPermissionsSectionLabel',
     parentStepId: 'participants',
   },
   {

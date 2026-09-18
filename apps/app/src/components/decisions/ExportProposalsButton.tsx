@@ -235,7 +235,7 @@ const CompletedExportAction = ({
         onClick={onTaken}
       >
         <LuDownload aria-hidden />
-        {t('Download CSV')}
+        {t('admin.downloadCsvAction')}
       </ButtonLink>
     </>
   );

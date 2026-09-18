@@ -52,7 +52,7 @@ export function useProposalRejectionActions(
     onSuccess: () => {
       // Inline Undo so a mis-click is one tap to reverse, per the design.
       toast.success(t('decisions.proposals.rejectSuccess'), {
-        action: { label: t('Undo'), onClick: unreject },
+        action: { label: t('editor.undoAction'), onClick: unreject },
       });
     },
   });

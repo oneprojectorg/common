@@ -54,7 +54,7 @@ export const ProposalSearchField = ({
         <InputGroupAddon align="inline-end">
           <InputGroupButton
             size="icon-xs"
-            aria-label={t('Clear search')}
+            aria-label={t('admin.clearSearchAction')}
             onClick={() => {
               // This button unmounts on the empty value, so focus it away first
               // or it lands on `<body>` and the caller loses their place.
