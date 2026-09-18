@@ -34,6 +34,7 @@ import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { LuEllipsis, LuFlag, LuLeaf } from 'react-icons/lu';
 
+import type { TranslateFn } from '@/lib/i18n';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
@@ -231,7 +232,10 @@ const formatLikerTooltip = ({
   likeUsers: Post['likeUsers'];
   likeCount: number;
   locale: string;
-  t: ReturnType<typeof useTranslations>;
+  // The root translator, not a namespaced one: `ReturnType<typeof
+  // useTranslations>` now widens to every namespace's keys at once, which no
+  // caller can satisfy.
+  t: TranslateFn;
 }) => {
   const named = likeUsers.map((liker) => liker.name).slice(0, 2);
 
