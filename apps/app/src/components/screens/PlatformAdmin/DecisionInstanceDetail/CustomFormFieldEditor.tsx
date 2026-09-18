@@ -116,7 +116,15 @@ export const CustomFormFieldEditor = ({
           // key ("short-text") in the trigger instead of its label.
           items={kindLabels}
           onValueChange={(next) => {
-            const kind = next as FormFieldKind;
+            // Matched against the list rather than asserted: base-ui types the
+            // value as a bare string, and only these seven are field kinds.
+            const kind = FORM_FIELD_KINDS.find(
+              (candidate) => candidate === next,
+            );
+            if (!kind) {
+              return;
+            }
+
             onChange({
               ...field,
               kind,
