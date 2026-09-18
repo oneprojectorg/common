@@ -28,11 +28,8 @@ interface PhaseCardProps {
 }
 
 /**
- * A single phase row in the decision Overview timeline. Renders a `div`: the
- * consumer owns the list, so it wraps each card in its own `<li>` and can hang
- * controls off that item. Dispatches to one of four self-contained treatments;
- * the consumer also owns the completed/current/upcoming derivation and which
- * phase is now open or advanceable.
+ * One phase row in the decision Overview timeline. Renders a `div` — the
+ * consumer owns the `<ol>`, each `<li>`, and the state derivation.
  */
 function PhaseCard(props: PhaseCardProps) {
   switch (props.state) {

@@ -12,8 +12,6 @@ export default meta;
 
 type Story = StoryObj<typeof PhaseCard>;
 
-// The consumer owns the list: each card goes in its own <li>. Single-state
-// stories wrap one card so each treatment can be reviewed on its own.
 const Row = ({ children }: { children: ReactNode }) => (
   <ol className="w-96">
     <li>{children}</li>
