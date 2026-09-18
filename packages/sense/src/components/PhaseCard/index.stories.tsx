@@ -93,6 +93,28 @@ export const Upcoming: Story = {
   ),
 };
 
+// `as="div"` for a consumer that owns the list item itself: a row that puts its
+// own controls around the card needs the `<li>`, and two nested list items are
+// invalid HTML.
+export const ConsumerOwnedRow: Story = {
+  render: () => (
+    <ol className="w-96">
+      <li className="flex flex-col">
+        <PhaseCard
+          as="div"
+          state="upcoming"
+          name="Voting"
+          startDate="2026-07-01"
+          endDate="2026-07-14"
+        />
+        <p className="px-4 pb-4 text-sm text-muted-foreground">
+          Not configured
+        </p>
+      </li>
+    </ol>
+  ),
+};
+
 // Advanceable: light card with a Start button.
 export const Advanceable: Story = {
   render: () => (
