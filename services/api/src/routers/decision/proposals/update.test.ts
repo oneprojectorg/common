@@ -1,5 +1,5 @@
 import { mockCollab } from '@op/collab/testing';
-import { getInstancePhases } from '@op/common';
+import { getInstancePhases, parseProposalData } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -803,7 +803,12 @@ describe.concurrent('updateProposal validation', () => {
     // Updating proposalData on a draft should succeed even with missing required fields
     const result = await caller.decision.updateProposal({
       proposalId: proposal.id,
-      data: { proposalData: { title: 'Updated Draft' } },
+      data: {
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Updated Draft',
+        },
+      },
     });
 
     expect(result.proposalData).toMatchObject({ title: 'Updated Draft' });
@@ -860,11 +865,139 @@ describe.concurrent('updateProposal validation', () => {
     await expect(
       caller.decision.updateProposal({
         proposalId: proposal.id,
-        data: { proposalData: { title: 'Updated Draft' } },
+        data: {
+          proposalData: {
+            ...parseProposalData(proposal.proposalData),
+            title: 'Updated Draft',
+          },
+        },
       }),
     ).rejects.toMatchObject({
       cause: { statusCode: 400 },
     });
+  });
+});
+
+describe.concurrent('updateProposal collaboration document id', () => {
+  it('should reject an update that points the proposal at another collaboration document', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Own Proposal' },
+    });
+
+    const currentData = parseProposalData(proposal.proposalData);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: {
+          proposalData: {
+            ...currentData,
+            collaborationDocId: 'proposal-00000000-0000-0000-0000-000000000000',
+          },
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+
+    const stored = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+    });
+
+    expect(parseProposalData(stored?.proposalData).collaborationDocId).toBe(
+      currentData.collaborationDocId,
+    );
+  });
+
+  it('should allow an update that resends the collaboration document id the proposal already has', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Own Proposal' },
+    });
+
+    const currentData = parseProposalData(proposal.proposalData);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: {
+          ...currentData,
+          collaborationDocId: currentData.collaborationDocId,
+        },
+      },
+    });
+
+    expect(parseProposalData(result.proposalData).collaborationDocId).toBe(
+      currentData.collaborationDocId,
+    );
+  });
+
+  it('should reject an update that omits the collaboration document id the proposal has', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Own Proposal' },
+    });
+
+    const { collaborationDocId: storedDocId, ...dataWithoutDocId } =
+      parseProposalData(proposal.proposalData);
+    expect(storedDocId).toBeDefined();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: {
+          proposalData: { ...dataWithoutDocId, budget: 4200 },
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+
+    const stored = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+    });
+
+    expect(parseProposalData(stored?.proposalData).collaborationDocId).toBe(
+      storedDocId,
+    );
   });
 });
 
@@ -900,7 +1033,10 @@ describe.concurrent('updateProposal checkpointVersion', () => {
     const result = await caller.decision.updateProposal({
       proposalId: proposal.id,
       data: {
-        proposalData: { title: 'Updated Proposal' },
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Updated Proposal',
+        },
         checkpointVersion: { type: 'update' },
       },
     });
@@ -942,7 +1078,10 @@ describe.concurrent('updateProposal checkpointVersion', () => {
     const result = await caller.decision.updateProposal({
       proposalId: proposal.id,
       data: {
-        proposalData: { title: 'Updated Proposal' },
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Updated Proposal',
+        },
       },
     });
 
