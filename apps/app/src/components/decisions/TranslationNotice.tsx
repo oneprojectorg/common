@@ -28,18 +28,18 @@ export const TranslationNotice = ({
   searchActive?: boolean;
   className?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <div className="flex flex-wrap items-center gap-1">
       <p className={cn('text-sm text-muted-foreground', className)}>
-        {t('Translated from {language}', { language: sourceLanguageName })}
+        {t('translatedFromNotice', { language: sourceLanguageName })}
       </p>
       {searchActive && (
         <>
           <Bullet />
           <p className={cn('text-sm text-muted-foreground', className)}>
-            {t('Search matches the original titles, not the translations.')}
+            {t('translationSearchNotice')}
           </p>
         </>
       )}
@@ -50,7 +50,7 @@ export const TranslationNotice = ({
         onClick={onViewOriginal}
         className="inline text-sm sm:text-sm"
       >
-        {t('View original')}
+        {t('viewOriginalAction')}
       </Button>
     </div>
   );

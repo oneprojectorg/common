@@ -36,7 +36,8 @@ export async function generateMetadata({
       fetchDecisionBySlug(slug),
     ]);
 
-    const proposalTitle = proposal.profile?.name || t('Untitled Proposal');
+    const proposalTitle =
+      proposal.profile?.name || t('decisions.proposals.untitledProposal');
     const decisionName = decisionProfile?.name;
     return {
       title: decisionName

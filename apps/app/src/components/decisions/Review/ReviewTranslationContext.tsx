@@ -61,7 +61,7 @@ export function ReviewTranslationProvider({
   assignmentId: string;
   children: ReactNode;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const locale = useLocale();
   const { assignment, rubricTemplate } = useReviewForm();
   const proposal = assignment.proposal;
@@ -93,7 +93,7 @@ export function ReviewTranslationProvider({
   const onTranslateError = useCallback(() => {
     translatingRef.current = false;
     setTranslated(null);
-    toast.error(t('Failed to translate content'));
+    toast.error(t('translateContentError'));
   }, [t]);
 
   const translateProposalMutation =

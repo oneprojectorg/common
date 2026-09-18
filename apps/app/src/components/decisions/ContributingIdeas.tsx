@@ -84,9 +84,11 @@ function ContributingIdeasSuspense({
             headings, which is Header3's own `text-title` (20px from `md`), and
             binds the description to the primary foreground — so it stays
             un-muted, unlike the sibling section subtitles. */}
-        <Header3 id={headingId}>{t('Contributing ideas')}</Header3>
+        <Header3 id={headingId}>
+          {t('decisions.proposals.contributingIdeasHeading')}
+        </Header3>
         <p className="text-base">
-          {t('These participant ideas were merged into this proposal.')}
+          {t('decisions.proposals.contributingIdeasHint')}
         </p>
       </div>
       <ul className="mt-6 flex flex-col gap-4">
@@ -133,7 +135,9 @@ function ContributingIdeasUnavailable({
           <EmptyMedia variant="icon">
             <LuTriangleAlert className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('Contributing ideas could not be loaded')}</EmptyTitle>
+          <EmptyTitle>
+            {t('decisions.proposals.contributingIdeasLoadError')}
+          </EmptyTitle>
         </EmptyHeader>
         <EmptyContent>
           <Button variant="outline" size="sm" onClick={onRetry}>

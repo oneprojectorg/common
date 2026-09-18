@@ -285,7 +285,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   return (
     <div className="flex flex-col gap-2 py-6 pb-2 sm:gap-0 sm:border-b sm:pt-4">
       <Header2 className="text-label leading-normal sm:px-6">
-        {t('Decisions')}
+        {t('decisions.decisionsLabel')}
       </Header2>
       {decisionProfiles.map((item, index) => (
         <Fragment key={item.id}>

@@ -21,7 +21,7 @@ export const CategoryFilterSelect = ({
   onSelectCategory: (category: string) => void;
   className?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   // TODO: This is a hardcoded, per-decision copy override — the Columbus
   // decision refers to its categories as "districts", matched here on its
@@ -36,14 +36,14 @@ export const CategoryFilterSelect = ({
       onSelectionChange={onSelectCategory}
       className={className}
       aria-label={
-        usesDistricts
-          ? t('Filter proposals by district')
-          : t('Filter proposals by category')
+        usesDistricts ? t('filterByDistrictLabel') : t('filterByCategoryLabel')
       }
       items={[
         {
           id: ALL_CATEGORIES,
-          label: usesDistricts ? t('All districts') : t('All categories'),
+          label: usesDistricts
+            ? t('allDistrictsOption')
+            : t('allCategoriesOption'),
         },
         ...categories.map((category) => ({
           id: category.id,

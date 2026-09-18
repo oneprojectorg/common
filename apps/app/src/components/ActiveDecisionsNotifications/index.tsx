@@ -51,7 +51,10 @@ const ActiveDecisionsNotificationsSuspense = () => {
 
   return (
     <NotificationPanel>
-      <NotificationPanelHeader title={t('Active Decisions')} count={count} />
+      <NotificationPanelHeader
+        title={t('decisions.activeDecisionsHeading')}
+        count={count}
+      />
       <NotificationPanelList>
         {revisionRequests.map((item) => (
           <RevisionRequestRow key={item.revisionRequest.id} item={item} />
@@ -79,7 +82,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
                   onClick={() => setNavigatingId(decision.id)}
                   loading={isNavigating}
                 >
-                  {t('Participate')}
+                  {t('decisions.participateAction')}
                 </ButtonLink>
               </NotificationPanelActions>
             </NotificationPanelItem>
@@ -128,8 +131,8 @@ const RevisionRequestRow = ({
     <NotificationPanelItem>
       <ProfileItem
         avatar={<RevisionRequestIcon />}
-        title={t('Revision Request')}
-        description={t('A reviewer has requested changes to {proposalName}', {
+        title={t('decisions.revisionRequestLabel')}
+        description={t('decisions.revisionRequestedNotification', {
           proposalName: title,
         })}
       />
@@ -139,7 +142,7 @@ const RevisionRequestRow = ({
           className="w-full sm:w-auto"
           onClick={() => setDismissed(true)}
         >
-          {t('Ignore')}
+          {t('decisions.ignoreAction')}
         </Button>
         <ButtonLink
           href={editHref}
@@ -147,7 +150,7 @@ const RevisionRequestRow = ({
           onClick={() => setNavigating(true)}
           loading={navigating}
         >
-          {t('Revise proposal')}
+          {t('decisions.proposals.reviseProposalAction')}
         </ButtonLink>
       </NotificationPanelActions>
     </NotificationPanelItem>

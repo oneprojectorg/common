@@ -40,7 +40,7 @@ const SlashCommandsList = forwardRef<
     command: (item: SlashCommandItem) => void;
   }
 >((props, ref) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const selectItem = (index: number) => {
@@ -112,7 +112,7 @@ const SlashCommandsList = forwardRef<
           </button>
         ))
       ) : (
-        <div className="item">{t('No result')}</div>
+        <div className="item">{t('slashCommandNoResult')}</div>
       )}
     </div>
   );

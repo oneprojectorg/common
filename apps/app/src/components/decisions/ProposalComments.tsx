@@ -93,7 +93,7 @@ export function ProposalComments({
     <div id={PROPOSAL_COMMENTS_ANCHOR_ID} ref={containerRef}>
       <div className="space-y-4 border-t pt-6 sm:pt-10">
         <Header3 className="text-label">
-          {t('Comments')} ({comments.length})
+          {t('decisions.proposals.commentsHeading')} ({comments.length})
         </Header3>
 
         {!readOnly && (
@@ -116,7 +116,7 @@ export function ProposalComments({
                 <LuUserRoundPlus />
               </EmptyMedia>
               <EmptyDescription id="join-to-comment-prompt">
-                {t('Join Common to comment on this proposal.')}
+                {t('decisions.proposals.commentsJoinPrompt')}
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
@@ -130,7 +130,7 @@ export function ProposalComments({
             className="py-8 text-center text-base text-muted-foreground"
             role="status"
           >
-            {t('Loading comments...')}
+            {t('decisions.proposals.commentsLoading')}
           </div>
         ) : commentsError ? (
           <CommentsUnavailable
@@ -171,7 +171,9 @@ export function ProposalComments({
             className="py-8 text-center text-base text-muted-foreground"
             role="status"
           >
-            {readOnly ? t('No comments yet.') : t('noCommentsYet')}
+            {readOnly
+              ? t('decisions.proposals.commentsEmpty')
+              : t('noCommentsYet')}
           </div>
         )}
       </div>
@@ -203,7 +205,7 @@ function CommentsUnavailable({
         <EmptyMedia variant="icon">
           <LuTriangleAlert className="size-6" />
         </EmptyMedia>
-        <EmptyTitle>{t('Comments could not be loaded')}</EmptyTitle>
+        <EmptyTitle>{t('decisions.proposals.commentsLoadError')}</EmptyTitle>
       </EmptyHeader>
       <EmptyContent>
         <Button variant="outline" size="sm" onClick={onRetry}>
@@ -229,7 +231,7 @@ function MergedCommentOrigin({
 
   return (
     <p className="text-base text-muted-foreground">
-      {t.rich('Comment originally appeared in <proposal>{name}</proposal>', {
+      {t.rich('decisions.proposals.commentOriginNotice', {
         name: origin.name,
         proposal: (chunks: ReactNode) => (
           // New tab on purpose: this component also mounts inside the

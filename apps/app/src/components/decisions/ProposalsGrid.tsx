@@ -132,9 +132,9 @@ export const NoProposalsFound = ({
           <EmptyMedia variant="icon">
             <LuLeaf className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('No other proposals')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.proposals.noOtherProposals')}</EmptyTitle>
           <EmptyDescription>
-            {t('There are no proposals outside your review queue.')}
+            {t('decisions.proposals.noProposalsOutsideQueue')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -145,20 +145,20 @@ export const NoProposalsFound = ({
   // Curly quotes, not straight: ICU reads `'{` as the start of an escaped
   // literal, which would print the placeholder instead of the term.
   const title = searchQuery
-    ? t('No proposals match “{query}”', { query: searchQuery })
+    ? t('decisions.proposals.noProposalsForQuery', { query: searchQuery })
     : hasFilter
-      ? t('No proposals found matching the current filters.')
-      : t('No proposals yet');
+      ? t('decisions.proposals.noProposalsForFilters')
+      : t('decisions.proposals.noProposalsYet');
 
   // Under a search the term is already in the title, so the only line worth
   // adding is the one that explains a miss the reader can see is wrong.
   const description = searchQuery
     ? isTranslated
-      ? t('Search matches the original titles, not the translations.')
+      ? t('decisions.proposals.translationSearchNotice')
       : null
     : hasFilter
-      ? t('Try adjusting your filter selection above.')
-      : t('You could be the first one to submit a proposal');
+      ? t('decisions.proposals.adjustFiltersHint')
+      : t('decisions.proposals.noProposalsFirstHint');
 
   return (
     <Empty className="border-0">
@@ -172,7 +172,7 @@ export const NoProposalsFound = ({
       {hasFilter && onClearFilters && (
         <EmptyContent>
           <Button variant="link" size="inline" onClick={onClearFilters}>
-            {t('Clear filters')}
+            {t('decisions.proposals.clearFiltersAction')}
           </Button>
         </EmptyContent>
       )}
@@ -190,7 +190,7 @@ const HiddenProposalsEmptyState = () => {
           <LuLeaf className="size-6" />
         </EmptyMedia>
         <EmptyDescription>
-          {t("You'll see your proposal here once you submit.")}
+          {t('decisions.proposals.myProposalsEmptyHint')}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -312,7 +312,7 @@ const VotingProposalsList = ({
         error,
         context: 'ProposalsGrid.handlePhaseFormSubmit',
       });
-      toast.error(t('Failed to submit form'));
+      toast.error(t('decisions.proposals.submitFormError'));
       return; // Keep the modal open so the user can retry.
     }
     setShowPhaseFormModal(false);
@@ -378,7 +378,9 @@ const VotingProposalsList = ({
                     <Checkbox
                       checked
                       disabled
-                      aria-label={t('Selected proposal')}
+                      aria-label={t(
+                        'decisions.proposals.selectedProposalLabel',
+                      )}
                       className="rounded-full"
                     />
                   ) : undefined
@@ -398,7 +400,9 @@ const VotingProposalsList = ({
                 role="button"
                 aria-pressed={isSelected}
                 aria-label={
-                  isSelected ? t('Deselect proposal') : t('Select proposal')
+                  isSelected
+                    ? t('decisions.proposals.deselectProposalLabel')
+                    : t('decisions.proposals.selectProposalLabel')
                 }
                 onClick={() => toggleProposal(proposal.id)}
                 className="cursor-pointer"
@@ -425,8 +429,8 @@ const VotingProposalsList = ({
                             }}
                             aria-label={
                               isSelected
-                                ? t('Deselect proposal')
-                                : t('Select proposal')
+                                ? t('decisions.proposals.deselectProposalLabel')
+                                : t('decisions.proposals.selectProposalLabel')
                             }
                             className="rounded-full"
                           />
@@ -437,7 +441,7 @@ const VotingProposalsList = ({
                 }
                 actions={
                   <ButtonLink href={href} variant="outline" className="w-full">
-                    {t('Read full proposal')}
+                    {t('decisions.proposals.readFullProposalAction')}
                   </ButtonLink>
                 }
               />
@@ -457,7 +461,7 @@ const VotingProposalsList = ({
                 }
                 actions={
                   <ButtonLink href={href} variant="outline" className="w-full">
-                    {t('Read full proposal')}
+                    {t('decisions.proposals.readFullProposalAction')}
                   </ButtonLink>
                 }
               />
@@ -471,25 +475,19 @@ const VotingProposalsList = ({
           <FooterBarStart>
             <span className="text-base">
               {maxVotesPerMember !== undefined
-                ? t.rich(
-                    '<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected',
-                    {
-                      numSelected,
-                      max: maxVotesPerMember,
-                      highlight: (chunks: ReactNode) => (
-                        <span className="text-primary">{chunks}</span>
-                      ),
-                    },
-                  )
-                : t.rich(
-                    '<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected',
-                    {
-                      numSelected,
-                      highlight: (chunks: ReactNode) => (
-                        <span className="text-primary">{chunks}</span>
-                      ),
-                    },
-                  )}
+                ? t.rich('decisions.proposals.selectedProposalsOfMaxCount', {
+                    numSelected,
+                    max: maxVotesPerMember,
+                    highlight: (chunks: ReactNode) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })
+                : t.rich('decisions.proposals.selectedProposalsCount', {
+                    numSelected,
+                    highlight: (chunks: ReactNode) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })}
             </span>
           </FooterBarStart>
           <FooterBarCenter />
@@ -498,7 +496,7 @@ const VotingProposalsList = ({
               <DialogTrigger
                 render={
                   <Button disabled={numSelected === 0} variant="default">
-                    {t('Submit my votes')}
+                    {t('decisions.proposals.submitVotesAction')}
                   </Button>
                 }
               />

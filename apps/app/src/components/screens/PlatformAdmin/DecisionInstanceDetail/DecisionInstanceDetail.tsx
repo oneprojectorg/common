@@ -277,7 +277,7 @@ const PhaseCard = ({
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         {phase.hasProposals ? (
-          <PhaseSection title={t('Proposals')}>
+          <PhaseSection title={t('decisions.proposalsLabel')}>
             <ComingSoon />
           </PhaseSection>
         ) : null}

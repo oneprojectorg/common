@@ -85,10 +85,10 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
         <TableHeader>
           <TableRow>
             <TableHead>{t('Name')}</TableHead>
-            <TableHead>{t('Current Phase')}</TableHead>
+            <TableHead>{t('decisions.currentPhaseLabel')}</TableHead>
             <TableHead>{t('admin.stewardLabel')}</TableHead>
-            <TableHead>{t('Proposals')}</TableHead>
-            <TableHead>{t('Participants')}</TableHead>
+            <TableHead>{t('decisions.proposalsLabel')}</TableHead>
+            <TableHead>{t('decisions.participantsLabel')}</TableHead>
             <TableHead>{t('admin.statusColumn')}</TableHead>
             <TableHead>{t('admin.createdLabel')}</TableHead>
             <TableHead className="text-end">
@@ -135,10 +135,10 @@ const DecisionsTableSkeleton = () => {
       <TableHeader>
         <TableRow>
           <TableHead>{t('Name')}</TableHead>
-          <TableHead>{t('Current Phase')}</TableHead>
+          <TableHead>{t('decisions.currentPhaseLabel')}</TableHead>
           <TableHead>{t('admin.stewardLabel')}</TableHead>
-          <TableHead>{t('Proposals')}</TableHead>
-          <TableHead>{t('Participants')}</TableHead>
+          <TableHead>{t('decisions.proposalsLabel')}</TableHead>
+          <TableHead>{t('decisions.participantsLabel')}</TableHead>
           <TableHead>{t('admin.statusColumn')}</TableHead>
           <TableHead>{t('admin.createdLabel')}</TableHead>
           <TableHead className="text-end">{t('admin.actionsColumn')}</TableHead>

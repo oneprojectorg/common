@@ -104,7 +104,9 @@ export const ComposeNotificationsDialog = ({
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('Compose Notifications')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.proposals.composeNotificationsTitle')}
+          </DialogTitle>
         </DialogHeader>
 
         <Tabs
@@ -120,17 +122,17 @@ export const ComposeNotificationsDialog = ({
             <TabsList
               variant="line"
               className="flex gap-6"
-              aria-label={t('Notification audiences')}
+              aria-label={t('decisions.proposals.notificationAudiencesLabel')}
             >
               <OutcomeTabTrigger
                 value="selected"
-                label={t('Funded')}
+                label={t('decisions.proposals.fundedStatus')}
                 count={counts.selected}
                 isInvalid={invalid.selected}
               />
               <OutcomeTabTrigger
                 value="notSelected"
-                label={t('Not funded')}
+                label={t('decisions.proposals.notFundedStatus')}
                 count={counts.notSelected}
                 isInvalid={invalid.notSelected}
               />
@@ -142,10 +144,7 @@ export const ComposeNotificationsDialog = ({
           <Alert variant="info" role="note" id={hintId}>
             <LuCircleAlert aria-hidden />
             <AlertDescription>
-              {t(
-                'Use {name} for the submitter’s name and {proposal} for proposal title.',
-                TOKENS,
-              )}
+              {t('decisions.proposals.notificationPlaceholderHint', TOKENS)}
             </AlertDescription>
           </Alert>
 
@@ -175,13 +174,10 @@ export const ComposeNotificationsDialog = ({
           </TabsContent>
 
           <p className="text-sm text-muted-foreground">
-            {t(
-              'Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.',
-              {
-                fundedCount: counts.selected,
-                notFundedCount: counts.notSelected,
-              },
-            )}
+            {t('decisions.proposals.publishResultsWarning', {
+              fundedCount: counts.selected,
+              notFundedCount: counts.notSelected,
+            })}
           </p>
         </Tabs>
 
@@ -198,7 +194,7 @@ export const ComposeNotificationsDialog = ({
             disabled={hasError}
             loading={isSubmitting}
           >
-            {t('Send & publish results')}
+            {t('decisions.proposals.publishResultsAction')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -226,8 +222,10 @@ const OutcomeTabTrigger = ({
         {count}
       </BadgeNumber>
       <span className="sr-only">
-        {t('{count} proposals', { count })}
-        {isInvalid ? ` ${t('Needs a message')}` : ''}
+        {t('decisions.proposals.proposalCountPlain', { count })}
+        {isInvalid
+          ? ` ${t('decisions.proposals.notificationMessageRequired')}`
+          : ''}
       </span>
     </TabsTrigger>
   );
@@ -251,7 +249,9 @@ const MessageField = ({
 
   return (
     <Field>
-      <FieldLabel htmlFor={id}>{t('Notification Message')}</FieldLabel>
+      <FieldLabel htmlFor={id}>
+        {t('decisions.proposals.notificationMessageLabel')}
+      </FieldLabel>
       <Textarea
         id={id}
         value={value}
@@ -263,7 +263,7 @@ const MessageField = ({
       />
       {isInvalid ? (
         <FieldError id={errorId}>
-          {t('Write a message before publishing results.')}
+          {t('decisions.proposals.publishResultsMessageRequired')}
         </FieldError>
       ) : null}
     </Field>

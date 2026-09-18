@@ -758,7 +758,7 @@ const ProposalsListContent = ({
               fallbacks={{
                 default: () => (
                   <div className="py-8 text-center text-sm">
-                    {t("Couldn't load the map. Refresh to try again.")}
+                    {t('decisions.proposals.mapLoadError')}
                   </div>
                 ),
               }}

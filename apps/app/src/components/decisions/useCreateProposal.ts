@@ -28,7 +28,7 @@ export function useCreateProposal({
   /** Submit access for the viewer; permits anon sign-in for public visitors. */
   canSubmitProposal: boolean;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const router = useRouter();
   const { user } = useUser();
   // Gate the CTA until mount: creating a proposal is entirely client-side, and
@@ -66,7 +66,7 @@ export function useCreateProposal({
 
         router.push(navigateTo(proposal));
       } catch (error) {
-        toast.error(t('Failed to create proposal'), {
+        toast.error(t('createProposalError'), {
           description: error instanceof Error ? error.message : undefined,
         });
       }

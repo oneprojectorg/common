@@ -144,7 +144,7 @@ const Image = async ({
     const stats: string[] = [];
     if (instance.proposalCount != null) {
       stats.push(
-        t('{count, plural, one {# proposal} other {# proposals}}', {
+        t('decisions.proposals.proposalCount', {
           count: instance.proposalCount,
         }),
       );
@@ -160,7 +160,7 @@ const Image = async ({
     return new ImageResponse(
       <Card
         title={getTextPreview({
-          content: decisionProfile.name || t('Decision'),
+          content: decisionProfile.name || t('decisions.decisionLabel'),
           maxLength: 80,
         })}
         byline={byName ? t('by {name}', { name: byName }) : undefined}

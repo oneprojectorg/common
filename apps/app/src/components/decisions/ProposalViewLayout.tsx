@@ -59,7 +59,7 @@ export function ProposalViewLayout({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const backLabel = t('Back to Proposals');
+  const backLabel = t('decisions.proposals.backToProposalsAction');
 
   return (
     <div className="grid h-screen min-h-0 min-w-0 grid-cols-1 grid-rows-[auto_1fr] bg-white">
@@ -105,7 +105,7 @@ export function ProposalViewLayout({
               href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
               variant="outline"
               size="icon"
-              aria-label={t('View comments')}
+              aria-label={t('decisions.proposals.viewCommentsAction')}
               className="sm:hidden"
             >
               <LuMessageCircle className="size-4" />

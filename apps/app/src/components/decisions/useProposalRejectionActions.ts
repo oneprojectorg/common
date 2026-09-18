@@ -36,12 +36,10 @@ export function useProposalRejectionActions(
 
   const unrejectMutation = trpc.decision.unrejectProposal.useMutation({
     onError: (error) => {
-      toast.error(
-        error.message || t('Could not undo the rejection. Please try again.'),
-      );
+      toast.error(error.message || t('decisions.proposals.undoRejectionError'));
     },
     onSuccess: () => {
-      toast.success(t('Rejection undone'));
+      toast.success(t('decisions.proposals.undoRejectionSuccess'));
     },
   });
 
@@ -49,13 +47,11 @@ export function useProposalRejectionActions(
 
   const rejectMutation = trpc.decision.rejectProposal.useMutation({
     onError: (error) => {
-      toast.error(
-        error.message || t('Could not reject this proposal. Please try again.'),
-      );
+      toast.error(error.message || t('decisions.proposals.rejectError'));
     },
     onSuccess: () => {
       // Inline Undo so a mis-click is one tap to reverse, per the design.
-      toast.success(t('Proposal rejected'), {
+      toast.success(t('decisions.proposals.rejectSuccess'), {
         action: { label: t('Undo'), onClick: unreject },
       });
     },

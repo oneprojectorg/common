@@ -43,7 +43,7 @@ function ProposalMergeNoticeSuspense({
   proposal: Proposal;
   decisionRoot: string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   // Pinning the source end asks what this was merged into: at most one row.
   const [{ items: mergedAway }] =
@@ -61,7 +61,7 @@ function ProposalMergeNoticeSuspense({
     <p className="flex min-w-0 items-center gap-2 text-muted-foreground">
       <LuMerge className="size-4 shrink-0" aria-hidden />
       <span className="truncate">
-        {t.rich('Merged into <target>{name}</target>', {
+        {t.rich('mergedIntoNotice', {
           name: supersededBy.proposal.profile.name,
           target: (chunks: ReactNode) => (
             <Link

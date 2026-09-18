@@ -69,7 +69,11 @@ const assignmentBadges: Record<AssignmentStatusValue, BadgeSpec> = {
     icon: LuCircleAlert,
     label: 'decisions.review.statusNeedsReview',
   },
-  draft: { variant: 'warning', icon: LuPencilLine, label: 'Draft' },
+  draft: {
+    variant: 'warning',
+    icon: LuPencilLine,
+    label: 'decisions.draftStatus',
+  },
   submitted: {
     variant: 'success',
     icon: LuCircleCheck,

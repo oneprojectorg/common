@@ -86,7 +86,7 @@ export function ProposalCategoriesSectionContent({
     if (existingTemplate) {
       payload.proposalTemplate = ensureLockedFields(existingTemplate, {
         titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
-        categoryLabel: t('Category'),
+        categoryLabel: t('decisions.categoryLabel'),
         categories: updated.categories,
         allowMultipleCategories: updated.allowMultipleCategories,
         requireCategorySelection: updated.requireCategorySelection,

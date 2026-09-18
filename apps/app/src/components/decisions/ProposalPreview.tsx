@@ -145,9 +145,7 @@ export function ProposalPreview({
         {isDraft && (
           <Alert variant="info">
             <AlertDescription>
-              {t(
-                'This proposal is currently in draft mode, only you and collaborators can access it.',
-              )}
+              {t('decisions.proposals.draftModeNotice')}
             </AlertDescription>
           </Alert>
         )}
@@ -162,23 +160,23 @@ export function ProposalPreview({
             <div className="flex flex-wrap gap-2">
               {isRejected && (
                 <StatusBadge variant="alert" icon={LuCircleX}>
-                  {t('Not advanced')}
+                  {t('decisions.proposals.notAdvancedStatus')}
                 </StatusBadge>
               )}
               {isHidden && (
                 <StatusBadge variant="warning" icon={LuEyeOff}>
-                  {t('Hidden from public view')}
+                  {t('decisions.proposals.hiddenFromPublicNotice')}
                 </StatusBadge>
               )}
               {/* Only the author and admins ever receive a flagged proposal. */}
               {proposal.isFlagged && (
                 <StatusBadge variant="alert" icon={LuFlag}>
-                  {t('Hidden from members after a moderation review')}
+                  {t('decisions.proposals.hiddenModerationNotice')}
                 </StatusBadge>
               )}
               {selection && (
                 <StatusBadge variant="success" icon={LuBadgeCheck}>
-                  {t('Selected')}
+                  {t('decisions.proposals.selectedStatus')}
                 </StatusBadge>
               )}
             </div>
@@ -187,7 +185,7 @@ export function ProposalPreview({
           <div className="flex flex-col gap-4">
             {/* 30px serif at 300 — `text-headline` at this column's step. */}
             <Header1 className="text-headline font-light">
-              {title || t('Untitled Proposal')}
+              {title || t('decisions.proposals.untitledProposal')}
             </Header1>
 
             {/* Translation attribution */}
@@ -216,7 +214,7 @@ export function ProposalPreview({
                 )}
                 {selection?.allocated != null && budget && (
                   <Tag size="lg">
-                    {t('{amount} requested', {
+                    {t('decisions.proposals.amountRequested', {
                       amount: formatBudget(budget) ?? '',
                     })}
                   </Tag>
@@ -255,7 +253,8 @@ export function ProposalPreview({
                     {!isDraft && (
                       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <span>
-                          {t('Submitted on')} {formatDate(proposal.createdAt)}
+                          {t('decisions.proposals.submittedOnLabel')}{' '}
+                          {formatDate(proposal.createdAt)}
                         </span>
                         {submissionMetaSuffix && (
                           <>
@@ -298,7 +297,9 @@ export function ProposalPreview({
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
         <div className="border-t pt-6 sm:pt-10">
-          <Header3 className="mb-4 text-label">{t('Attachments')}</Header3>
+          <Header3 className="mb-4 text-label">
+            {t('decisions.proposals.attachmentsHeading')}
+          </Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
       )}
@@ -326,9 +327,15 @@ function EngagementRow({
 
   // The noun is separate from the number so the number can animate on its own;
   // together they still read as the toggle's accessible name ("3 Likes").
-  const likesNoun = likesCount === 1 ? t('Like') : t('Likes');
+  const likesNoun =
+    likesCount === 1
+      ? t('decisions.proposals.likeAction')
+      : t('decisions.proposals.likesLabel');
   const followersNoun = followersCount === 1 ? t('Follower') : t('Followers');
-  const commentsNoun = commentsCount === 1 ? t('Comment') : t('Comments');
+  const commentsNoun =
+    commentsCount === 1
+      ? t('Comment')
+      : t('decisions.proposals.commentsHeading');
 
   return (
     <div className="flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground">

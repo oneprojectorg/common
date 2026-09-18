@@ -82,7 +82,7 @@ export function ManageAssignmentsDialogContent({
                 {t('decisions.review.loadAssignmentsError')}
               </DialogTitle>
               <DialogDescription>
-                {t('Please refresh the page to try again.')}
+                {t('decisions.proposals.refreshPageHint')}
               </DialogDescription>
             </DialogHeader>
           ),
@@ -379,7 +379,7 @@ function ManageAssignmentsForm({
 
         <Field>
           <FieldLabel htmlFor={filterId} className="sr-only">
-            {t('Filter proposals')}
+            {t('decisions.proposals.filterProposalsLabel')}
           </FieldLabel>
           <Input
             id={filterId}
@@ -486,7 +486,7 @@ function ProposalCheckRow({
         />
         <span className="flex min-w-0 flex-col">
           <span className="truncate" dir="auto">
-            {proposal.title ?? t('Untitled Proposal')}
+            {proposal.title ?? t('decisions.proposals.untitledProposal')}
           </span>
           {authorName ? (
             <span className="truncate text-sm text-muted-foreground" dir="auto">

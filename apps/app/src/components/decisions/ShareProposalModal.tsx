@@ -79,7 +79,9 @@ export function ShareProposalModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
       <DialogContent className="overflow-hidden sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('Share Proposal')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.proposals.shareProposalTitle')}
+          </DialogTitle>
         </DialogHeader>
 
         <ErrorBoundary>
@@ -278,7 +280,7 @@ function ShareProposalModalContent({
       try {
         await removeUserMutation.mutateAsync({ profileUserId });
       } catch {
-        toast.error(t('Failed to remove user'));
+        toast.error(t('decisions.removeUserError'));
       }
       await utils.profile.listUsers.invalidate({
         profileId: proposalProfileId,
@@ -292,7 +294,7 @@ function ShareProposalModalContent({
       try {
         await deleteInviteMutation.mutateAsync({ inviteId });
       } catch {
-        toast.error(t('Failed to cancel invite'));
+        toast.error(t('decisions.cancelInviteError'));
       }
       await utils.profile.listProfileInvites.invalidate({
         profileId: proposalProfileId,
@@ -314,9 +316,9 @@ function ShareProposalModalContent({
           : path;
       const inviteUrl = `${window.location.origin}${basePath}/invite`;
       await navigator.clipboard.writeText(inviteUrl);
-      toast.success(t('Link copied to clipboard'));
+      toast.success(t('decisions.proposals.copyLinkSuccess'));
     } catch {
-      toast.error(t('Failed to copy link'));
+      toast.error(t('decisions.proposals.copyLinkError'));
     }
   };
 
@@ -340,7 +342,7 @@ function ShareProposalModalContent({
         profileId: proposalProfileId,
       });
 
-      toast.success(t('Invite sent successfully'));
+      toast.success(t('decisions.inviteSentSuccess'));
       setPendingInvites([]);
       setSearchQuery('');
       onOpenChange(false);
@@ -416,7 +418,9 @@ function ShareProposalModalContent({
           <ComboboxChips className="w-full" onPaste={handlePaste}>
             <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
             <ComboboxChipsInput
-              placeholder={t('Invite collaborators by name or email')}
+              placeholder={t(
+                'decisions.proposals.inviteCollaboratorsPlaceholder',
+              )}
             />
           </ComboboxChips>
           {debouncedQuery.length >= 2 && (
@@ -429,7 +433,9 @@ function ShareProposalModalContent({
                   <ComboboxItem key={option.value} value={option}>
                     {option.addEmail ? (
                       <span className="text-sm">
-                        {t('Invite {email}', { email: debouncedQuery })}
+                        {t('decisions.inviteEmailAction', {
+                          email: debouncedQuery,
+                        })}
                       </span>
                     ) : (
                       <ProfileItem
@@ -454,7 +460,9 @@ function ShareProposalModalContent({
         </Combobox>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm">{t('People with access')}</span>
+          <span className="text-sm">
+            {t('decisions.peopleWithAccessHeading')}
+          </span>
 
           <div className="flex flex-col gap-2">
             {pendingInvites.map((item) => (
@@ -470,7 +478,7 @@ function ShareProposalModalContent({
                   ) : undefined
                 }
                 onRemove={() => handleRemovePending(item.id)}
-                removeLabel={t('Remove {name}', { name: item.name })}
+                removeLabel={t('decisions.removeNamed', { name: item.name })}
               />
             ))}
 
@@ -493,12 +501,14 @@ function ShareProposalModalContent({
                         </>
                       )}
                       <span className="text-sm text-muted-foreground">
-                        {t('Invited')}
+                        {t('decisions.invitedStatus')}
                       </span>
                     </div>
                   }
                   onRemove={() => handleDeleteInvite(invite.id)}
-                  removeLabel={t('Remove {name}', { name: displayName })}
+                  removeLabel={t('decisions.removeNamed', {
+                    name: displayName,
+                  })}
                 />
               );
             })}
@@ -510,7 +520,7 @@ function ShareProposalModalContent({
                     <LuUsers />
                   </EmptyMedia>
                   <EmptyDescription>
-                    {t('No one has been invited yet')}
+                    {t('decisions.proposals.collaboratorsEmpty')}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -540,7 +550,9 @@ function ShareProposalModalContent({
                         ? undefined
                         : () => handleRemoveExistingUser(user.id)
                     }
-                    removeLabel={t('Remove {name}', { name: displayName })}
+                    removeLabel={t('decisions.removeNamed', {
+                      name: displayName,
+                    })}
                   />
                 );
               })
@@ -552,7 +564,7 @@ function ShareProposalModalContent({
       <DialogFooter className="flex-row items-center justify-between sm:justify-between">
         <Button variant="outline" onClick={handleCopyLink}>
           <LuLink className="size-4" />
-          {t('Copy link')}
+          {t('decisions.proposals.copyLinkAction')}
         </Button>
         <Button onClick={handleDone} loading={inviteMutation.isPending}>
           {t('Done')}
