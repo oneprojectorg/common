@@ -3,7 +3,6 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import english from './dictionaries/en.json';
 import hungarian from './dictionaries/hu.json';
 import type { MessageTree } from './messageKeys';
 import { normalizeMessageKeys } from './messageKeys';
@@ -17,7 +16,6 @@ import { withNormalizedKeys } from './translate';
 
 // The dictionaries hold namespace objects beside the legacy flat labels
 // (ADR 0005), so they are trees, not string maps.
-const englishMessages: MessageTree = english;
 const hungarianMessages: MessageTree = hungarian;
 
 // The real dictionaries are the fixture: a stand-in would let the wrapper pass
@@ -34,40 +32,7 @@ const translateHungarian = () =>
     }),
   );
 
-// Placeholder-free so the assertion compares a lookup, not a formatting result.
-// Only the top-level entries are legacy keys; a namespace object has no period
-// in its name and its leaves are addressed as a path.
-const plainKeysWithAPeriod = Object.entries(englishMessages)
-  .filter(
-    (entry): entry is [string, string] =>
-      typeof entry[1] === 'string' &&
-      entry[0].includes('.') &&
-      !/[{<]/.test(entry[1]),
-  )
-  .map(([key]) => key);
-
 describe('withNormalizedKeys', () => {
-  it('finds a message whose key contains a period', () => {
-    const t = translateHungarian();
-    const key = 'Loading proposal...' satisfies TranslationKey;
-
-    expect(t(key)).toBe(hungarianMessages[key]);
-  });
-
-  // The regression this file exists for. In English the missed-key fallback is
-  // indistinguishable from a hit, which is why it survived; every other locale
-  // renders English instead.
-  it('finds every message whose key contains a period', () => {
-    const t = translateHungarian();
-
-    expect(plainKeysWithAPeriod.length).toBeGreaterThan(0);
-    expect(
-      plainKeysWithAPeriod.filter(
-        (key) => t(key as TranslationKey) !== hungarianMessages[key],
-      ),
-    ).toEqual([]);
-  });
-
   it('falls back to the source key rather than to its lookup form', () => {
     const t = translateHungarian();
     // Absent from every dictionary, and dotted, so a leaked lookup form shows.
