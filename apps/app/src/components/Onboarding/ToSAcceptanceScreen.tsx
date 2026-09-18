@@ -38,10 +38,8 @@ export const ToSAcceptanceScreen = ({
 
   return (
     <OnboardingCenterLayout
-      title={t('One last step')}
-      subtitle={t(
-        'Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.',
-      )}
+      title={t('onboarding.policiesTitle')}
+      subtitle={t('onboarding.policiesSubtitle')}
     >
       <div className="flex w-full flex-col gap-6">
         <div className="flex flex-col gap-3">
@@ -68,7 +66,7 @@ export const ToSAcceptanceScreen = ({
             loading={isSubmitting}
             onClick={onAccept}
           >
-            {t('Join Common')}
+            {t('onboarding.joinCommonAction')}
           </Button>
 
           <Button
@@ -112,7 +110,7 @@ function PolicyCheckbox({
         onCheckedChange={(value) => onChange(value)}
       />
       <FieldLabel htmlFor={checkboxId} className="text-sm">
-        {t('I accept the')}
+        {t('onboarding.acceptPolicyPrefix')}
       </FieldLabel>
       <Dialog>
         <DialogTrigger

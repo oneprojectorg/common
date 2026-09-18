@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 export const NewlyJoinedModal = () => {
-  const t = useTranslations();
+  const t = useTranslations('onboarding');
   const searchParams = useSearchParams();
   const router = useRouter();
   const isNew = searchParams.get('new');
@@ -41,24 +41,18 @@ export const NewlyJoinedModal = () => {
         className="justify-center shadow-green inset-shadow-none"
         showCloseButton={false}
       >
-        <DialogTitle className="sr-only">{t("You're all set!")}</DialogTitle>
+        <DialogTitle className="sr-only">{t('joinedTitle')}</DialogTitle>
         <div className="p-12 text-center">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center justify-center gap-4">
               <CheckIcon className="size-20" />
               <div className="flex flex-col gap-2">
-                <Header1 className="text-headline">
-                  {t("You're all set!")}
-                </Header1>
-                <p className="text-muted-foreground">
-                  {t(
-                    "You've successfully joined Common. Your organization's profile is now visible to aligned collaborators and funders.",
-                  )}
-                </p>
+                <Header1 className="text-headline">{t('joinedTitle')}</Header1>
+                <p className="text-muted-foreground">{t('joinedBody')}</p>
               </div>
             </div>
             <Button className="w-full" onClick={() => handleModalChange(false)}>
-              {t('Take me to Common')}
+              {t('joinedCta')}
             </Button>
           </div>
         </div>

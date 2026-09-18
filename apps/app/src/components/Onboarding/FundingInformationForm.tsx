@@ -96,10 +96,8 @@ export const FundingInformationForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Funding information')}>
-          {t(
-            'Specify if your organization is currently seeking funding and offers funding.',
-          )}
+        <FormHeader text={t('onboarding.fundingTitle')}>
+          {t('onboarding.fundingSubtitle')}
         </FormHeader>
 
         <form.AppField
@@ -171,9 +169,7 @@ export const FundingInformationForm = ({
                             <TermsMultiSelect
                               taxonomy="necFunding"
                               value={(field.state.value as Array<Option>) ?? []}
-                              label={t(
-                                'What types of funding are you offering?',
-                              )}
+                              label={t('onboarding.fundingOfferedLabel')}
                               onChange={field.handleChange}
                               errorMessage={getFieldErrorMessage(field)}
                             />

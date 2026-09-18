@@ -106,12 +106,10 @@ export const DecisionInvitesForm = ({
         {/* Header section - gap-2 (8px) between title and subtitle */}
         <div className="flex flex-col gap-2 text-center">
           <Header1 className="text-foreground">
-            {t('Join decision-making processes')}
+            {t('onboarding.decisionInvitesTitle')}
           </Header1>
           <p className="text-sm text-muted-foreground">
-            {t(
-              "You've been invited to join the following decision-making processes",
-            )}
+            {t('onboarding.decisionInvitesSubtitle')}
           </p>
         </div>
 

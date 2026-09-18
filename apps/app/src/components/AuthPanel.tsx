@@ -162,7 +162,7 @@ export const AuthGoogleButton = ({ onPress }: { onPress: () => void }) => {
   return (
     <Button variant="outline" className="w-full" onClick={onPress}>
       <GoogleIcon className="size-4 stroke-none" />
-      {t('Continue with Google')}
+      {t('auth.googleSignInAction')}
     </Button>
   );
 };

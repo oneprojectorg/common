@@ -83,22 +83,18 @@ const PolicyReacceptanceModalContent = () => {
           slot's chrome is for a titled dialog with an X, which this isn't. */}
         <DialogHeader className="shrink-0 border-b-0 px-8 pt-8 pb-0 text-center sm:px-10 sm:pt-10">
           <DialogTitle className="text-headline">
-            {t("We've updated our policies.")}
+            {t('auth.policyUpdateTitle')}
           </DialogTitle>
           {/* Not muted: this line is content, not a subtitle. */}
           <DialogDescription className="text-foreground">
-            {t('Review the changes and accept to keep using Common.')}
+            {t('auth.policyUpdateSubtitle')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-8 py-6 sm:px-10">
           <div className="flex flex-col gap-2 rounded-xl border bg-muted p-4">
-            <Header3>{t("What's changed")}</Header3>
-            <p>
-              {t(
-                'Common now works with a third-party service that automatically reviews content posted on the platform to keep the community safe and uphold our Code of Conduct. Our Terms of Use and Privacy Policy now explain how this works and what it means for your data.',
-              )}
-            </p>
+            <Header3>{t('auth.policyChangesTitle')}</Header3>
+            <p>{t('auth.policyChangesBody')}</p>
           </div>
 
           <div className="flex items-start gap-2">
@@ -108,20 +104,17 @@ const PolicyReacceptanceModalContent = () => {
               onCheckedChange={setAgreed}
             />
             <span id="policy-consent-label" className="-mt-1 text-base">
-              {t.rich(
-                'I have read and agree to the <terms>Terms of Use</terms>, <privacy>Privacy Policy</privacy>, and <conduct>Code of Conduct</conduct>.',
-                {
-                  terms: (chunks: ReactNode) => (
-                    <PolicyDocumentDialog document="terms" trigger={chunks} />
-                  ),
-                  privacy: (chunks: ReactNode) => (
-                    <PolicyDocumentDialog document="privacy" trigger={chunks} />
-                  ),
-                  conduct: (chunks: ReactNode) => (
-                    <PolicyDocumentDialog document="conduct" trigger={chunks} />
-                  ),
-                },
-              )}
+              {t.rich('auth.policyConsent', {
+                terms: (chunks: ReactNode) => (
+                  <PolicyDocumentDialog document="terms" trigger={chunks} />
+                ),
+                privacy: (chunks: ReactNode) => (
+                  <PolicyDocumentDialog document="privacy" trigger={chunks} />
+                ),
+                conduct: (chunks: ReactNode) => (
+                  <PolicyDocumentDialog document="conduct" trigger={chunks} />
+                ),
+              })}
             </span>
           </div>
         </div>
@@ -135,7 +128,7 @@ const PolicyReacceptanceModalContent = () => {
             loading={isSubmitting}
             onClick={handleAgree}
           >
-            {t('Agree and continue')}
+            {t('auth.policyAgreeAction')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -170,9 +163,9 @@ const PolicyDocumentDialog = ({
 }) => {
   const t = useTranslations();
   const documentTitle: Record<PolicyDocument, string> = {
-    terms: t('Terms of Use'),
+    terms: t('auth.termsOfUseLabel'),
     privacy: t('Privacy Policy'),
-    conduct: t('Code of Conduct'),
+    conduct: t('auth.codeOfConductLabel'),
   };
   const Content = documentContent[document];
   const scrollRef = useRef<HTMLDivElement>(null);

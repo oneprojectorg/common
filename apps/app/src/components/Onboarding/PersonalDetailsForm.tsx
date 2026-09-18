@@ -188,8 +188,8 @@ export const PersonalDetailsForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Add your personal details')}>
-          {t('Tell us about yourself so others can find you.')}
+        <FormHeader text={t('onboarding.personalDetailsTitle')}>
+          {t('onboarding.personalDetailsSubtitle')}
         </FormHeader>
 
         {/* Header Images */}
@@ -214,7 +214,7 @@ export const PersonalDetailsForm = ({
           children={(field) => (
             <field.TextField
               isRequired
-              label={t('Full name')}
+              label={t('onboarding.fullNameLabel')}
               placeholder={t('Enter your full name')}
             />
           )}

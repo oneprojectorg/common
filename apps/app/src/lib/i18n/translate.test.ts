@@ -104,18 +104,21 @@ describe('withNormalizedKeys', () => {
     expect(t('fullName')).toBe('Teljes nev');
   });
 
+  // The key is arbitrary: any legacy key that contains a period and wraps a
+  // value in a tag shows that the substitution reaches the formatter intact.
+  // Pick another one when the migration moves this one into a namespace.
   it('formats tags and values under a key containing a period', () => {
     const t = translateHungarian();
     const key =
-      "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>." satisfies TranslationKey;
+      'Merge <source>{name}</source> into <source>{target}</source>.' satisfies TranslationKey;
 
     expect(
       t.markup(key, {
-        bold: (chunks: string) => `<b>${chunks}</b>`,
-        email: 'ada@example.com',
-        organization: 'Common',
+        source: (chunks: string) => `<b>${chunks}</b>`,
+        name: 'Bike lanes',
+        target: 'Safer streets',
       }),
-    ).toContain('<b>ada@example.com</b>');
+    ).toContain('<b>Bike lanes</b>');
   });
 });
 
