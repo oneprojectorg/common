@@ -1,8 +1,6 @@
-import { cache } from '@op/cache';
 import { allowedEmailDomains } from '@op/core';
 import { and, db, eq, sql } from '@op/db/client';
 import {
-  allowList,
   organizationUsers,
   organizations,
   users,
@@ -12,49 +10,14 @@ import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
-import { AllowListUser, allowListMetadataSchema } from './validators';
+import { getCachedAllowListUser } from './allowList';
+
+export * from './allowList';
 
 export interface User {
   id: number;
   email: string;
 }
-
-/**
- * Fetch an allow list entry by email.
- */
-export const getAllowListUser = async ({
-  email,
-}: {
-  email?: string;
-}): Promise<AllowListUser | undefined> => {
-  if (!email) {
-    return;
-  }
-
-  const [allowedResult] = await db
-    .select({
-      email: allowList.email,
-      organizationId: allowList.organizationId,
-      metadata: allowList.metadata,
-    })
-    .from(allowList)
-    .where(eq(allowList.email, email.toLowerCase()))
-    .limit(1);
-
-  if (!allowedResult) {
-    return;
-  }
-
-  // Extract role from allowListUser metadata if present
-  const metadata = allowListMetadataSchema.safeParse(
-    allowedResult.metadata ?? {},
-  );
-
-  return {
-    ...allowedResult,
-    metadata: metadata.success ? metadata.data : null,
-  };
-};
 
 /** Cached closed-network ("walled garden") membership: a network email domain or an allow-list entry. */
 export const getNetworkMembership = async (
@@ -70,14 +33,7 @@ export const getNetworkMembership = async (
     return true;
   }
 
-  const allowed = await cache({
-    type: 'allowList',
-    params: [email.toLowerCase()],
-    fetch: () => getAllowListUser({ email: email.toLowerCase() }),
-    options: {
-      ttl: 30 * 60 * 1000,
-    },
-  });
+  const allowed = await getCachedAllowListUser({ email });
 
   return Boolean(allowed);
 };

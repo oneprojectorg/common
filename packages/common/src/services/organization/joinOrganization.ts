@@ -1,4 +1,3 @@
-import { cache } from '@op/cache';
 import { type DbClient, and, db as defaultDb, eq } from '@op/db/client';
 import {
   type AccessRole,
@@ -11,7 +10,7 @@ import {
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertGlobalRole } from '../assert';
-import { getAllowListUser } from '../user';
+import { getCachedAllowListUser } from '../user';
 
 /**
  * Adds a user to an organization with the specified or default role.
@@ -55,17 +54,7 @@ export const joinOrganization = async ({
       )
       .limit(1)
       .then(([row]) => row),
-    roleId
-      ? null
-      : cache<ReturnType<typeof getAllowListUser>>({
-          type: 'allowList',
-          params: [userEmailDomain],
-          fetch: () => getAllowListUser({ email: userEmail }),
-          options: {
-            skipMemCache: true,
-            ttl: 30 * 60 * 1000,
-          },
-        }),
+    roleId ? null : getCachedAllowListUser({ email: userEmail }),
   ]);
 
   if (existingMembership) {
