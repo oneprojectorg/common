@@ -42,7 +42,7 @@ export const PinnedResourceCard = ({
   resource: ResourceInCollection;
   signedUrl?: string | null;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('resources');
   const decisionTranslation = useDecisionTranslation();
   const title =
     decisionTranslation?.resources[resource.id]?.title ?? resource.title;
@@ -67,7 +67,7 @@ export const PinnedResourceCard = ({
           </p>
           {resource.createdAt ? (
             <p className="truncate text-sm text-muted-foreground">
-              {t('Added {date}', { date: formatDate(resource.createdAt) })}
+              {t('addedOnShort', { date: formatDate(resource.createdAt) })}
             </p>
           ) : null}
         </div>

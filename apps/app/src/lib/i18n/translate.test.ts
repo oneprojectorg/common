@@ -49,7 +49,7 @@ const plainKeysWithAPeriod = Object.entries(englishMessages)
 describe('withNormalizedKeys', () => {
   it('finds a message whose key contains a period', () => {
     const t = translateHungarian();
-    const key = 'Check your connection and try again.' satisfies TranslationKey;
+    const key = 'Loading...' satisfies TranslationKey;
 
     expect(t(key)).toBe(hungarianMessages[key]);
   });

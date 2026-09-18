@@ -14,7 +14,7 @@ const SUPPORT_URL =
   'https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b';
 
 export const SupportLink = () => {
-  const t = useTranslations();
+  const t = useTranslations('shell');
   const { user } = useUser();
 
   // Non-anonymous signed-in users already have this link in their avatar menu.
@@ -25,7 +25,7 @@ export const SupportLink = () => {
   return (
     <>
       <ButtonLink
-        aria-label={t('Feature Requests & Support')}
+        aria-label={t('supportLinkLabel')}
         variant="outline"
         className="hidden sm:flex"
         size="icon"

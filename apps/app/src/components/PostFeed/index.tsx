@@ -203,7 +203,7 @@ const PostLikeButton = ({
   return (
     <LikeButton
       count={likeCount}
-      label={t('{count} likes', { count: likeCount })}
+      label={t('posts.likeCount', { count: likeCount })}
       isLiked={post.userHasLiked}
       tooltip={formatLikerTooltip({
         likeUsers: post.likeUsers,
@@ -252,7 +252,9 @@ const formatLikerTooltip = ({
     style: 'long',
     type: 'conjunction',
   }).format(
-    others > 0 ? [...named, t('{count} others', { count: others })] : named,
+    others > 0
+      ? [...named, t('posts.otherLikersCount', { count: others })]
+      : named,
   );
 };
 
@@ -317,7 +319,7 @@ const PostMenu = ({
             <Button
               variant="ghost"
               size="icon-xs"
-              aria-label={t('Post options')}
+              aria-label={t('posts.optionsLabel')}
               className="absolute end-0 top-0 aspect-square aria-expanded:bg-secondary"
             >
               <LuEllipsis className="size-4" />
@@ -350,7 +352,7 @@ export const EmptyPostsState = () => {
           <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-secondary">
             <LuLeaf />
           </div>
-          <span>{t('No posts yet')}</span>
+          <span>{t('posts.emptyFeed')}</span>
         </FeedContent>
       </FeedMain>
     </FeedItem>
@@ -610,7 +612,7 @@ export const usePostFeedActions = () => {
       void utils.posts.listProposalComments.invalidate();
     },
     onError: (err) => {
-      toast.error(err.message || t('Failed to update like'));
+      toast.error(err.message || t('posts.likeError'));
     },
   });
 

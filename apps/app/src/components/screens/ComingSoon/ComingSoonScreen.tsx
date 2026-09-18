@@ -21,7 +21,7 @@ import {
 import { WaitlistSignup } from './WaitlistSignup';
 
 export const ComingSoonScreen = () => {
-  const t = useTranslations();
+  const t = useTranslations('shell');
   return (
     <>
       <div className="pointer-events-none absolute bottom-0 z-10 h-30 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
@@ -34,25 +34,22 @@ export const ComingSoonScreen = () => {
         >
           <div className="pointer-events-none absolute inset-x-0 top-full h-30 bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
           <p>
-            {t.rich(
-              "Columbus' participatory budgeting is now open. <participate>Participate</participate>",
-              {
-                participate: (chunks: ReactNode) => (
-                  // Plain anchor, not the i18n Link: the vanity slug only
-                  // resolves via the afterFiles rewrite on a full-page
-                  // request. SPA/RSC navigation matches the (main)/[...rest]
-                  // catch-all instead and bounces anonymous visitors to
-                  // /login.
-                  <a
-                    href="/columbus"
-                    className="inline-flex items-center gap-1 align-bottom whitespace-nowrap text-primary underline hover:no-underline"
-                  >
-                    {chunks}
-                    <LuArrowRight className="size-4 rtl:-scale-x-100" />
-                  </a>
-                ),
-              },
-            )}
+            {t.rich('columbusBanner', {
+              participate: (chunks: ReactNode) => (
+                // Plain anchor, not the i18n Link: the vanity slug only
+                // resolves via the afterFiles rewrite on a full-page
+                // request. SPA/RSC navigation matches the (main)/[...rest]
+                // catch-all instead and bounces anonymous visitors to
+                // /login.
+                <a
+                  href="/columbus"
+                  className="inline-flex items-center gap-1 align-bottom whitespace-nowrap text-primary underline hover:no-underline"
+                >
+                  {chunks}
+                  <LuArrowRight className="size-4 rtl:-scale-x-100" />
+                </a>
+              ),
+            })}
           </p>
         </motion.div>
         <motion.header
@@ -63,7 +60,7 @@ export const ComingSoonScreen = () => {
         >
           <CommonLogo className="h-4 w-auto" />
           <ButtonLink href="/login" variant="outline">
-            {t('Log in')}
+            {t('logInAction')}
           </ButtonLink>
         </motion.header>
       </div>
@@ -76,12 +73,10 @@ export const ComingSoonScreen = () => {
             transition={{ duration: 2, delay: 0.25 }}
           >
             <h1 className="flex flex-col font-serif text-headline font-normal text-balance">
-              <span>
-                {t('Helping people decide together how to use their resources')}
-              </span>
+              <span>{t('comingSoonTagline')}</span>
               <span className="font-serif text-headline font-normal">
                 <AnimatedGradientText>
-                  {t('simply, intuitively, and effectively.')}
+                  {t('comingSoonTaglineEnd')}
                 </AnimatedGradientText>
               </span>
             </h1>
@@ -111,32 +106,28 @@ export const ComingSoonScreen = () => {
           <FadeInWrapper>
             <p className="flex flex-col space-y-4 text-balance sm:block sm:max-w-196 sm:text-xl">
               <span>
-                {t.rich(
-                  'Built for <fancy>communities</fancy> ready to share power and co-create <fancy>social change</fancy> — and <fancy>funders</fancy> who trust them to lead.',
-                  {
-                    fancy: (chunks: React.ReactNode) => (
-                      <FancyWord className="bg-redPurple">{chunks}</FancyWord>
-                    ),
-                  },
-                )}
+                {t.rich('comingSoonAudience', {
+                  fancy: (chunks: React.ReactNode) => (
+                    <FancyWord className="bg-redPurple">{chunks}</FancyWord>
+                  ),
+                })}
               </span>{' '}
-              <span>{t('No setup headaches. No learning curve.')} </span>
+              <span>{t('comingSoonSetup')} </span>
               <span>
-                {t.rich(
-                  'Common just works, instantly, for <fancy>everyone</fancy>.',
-                  {
-                    fancy: (chunks: React.ReactNode) => (
-                      <FancyWord className="bg-redPurple">{chunks}</FancyWord>
-                    ),
-                  },
-                )}
+                {t.rich('comingSoonPromise', {
+                  fancy: (chunks: React.ReactNode) => (
+                    <FancyWord className="bg-redPurple">{chunks}</FancyWord>
+                  ),
+                })}
               </span>
             </p>
           </FadeInWrapper>
         </section>
         <FadeInWrapper>
           <section className="space-y-6">
-            <Header3 className="font-sans text-base">{t('Trusted by')}</Header3>
+            <Header3 className="font-sans text-base">
+              {t('trustedByHeading')}
+            </Header3>
             <LogoLoop
               logos={logos}
               speed={20}
@@ -146,29 +137,25 @@ export const ComingSoonScreen = () => {
               hoverSpeed={5}
               fadeOut
               fadeOutColor="var(--color-background)"
-              ariaLabel={t('Technology partners')}
+              ariaLabel={t('technologyPartnersHeading')}
             />
           </section>
         </FadeInWrapper>
         <FadeInWrapper>
           <section className="flex flex-col items-center gap-6 p-6">
-            <Header2>{t('Get early access')}</Header2>
+            <Header2>{t('earlyAccessHeading')}</Header2>
             <div className="sm:text-lg">
-              <p>
-                {t(
-                  "We're getting ready to welcome more organizations to Common.",
-                )}
-              </p>
-              <p>{t('Sign up now to hold your spot.')}</p>
+              <p>{t('earlyAccessBody')}</p>
+              <p>{t('earlyAccessCta')}</p>
             </div>
             <WaitlistSignup />
             <p>
-              {t('Already have an account?')}{' '}
+              {t('haveAccountPrompt')}{' '}
               <Link
                 className="text-primary underline hover:no-underline"
                 href="/login"
               >
-                {t('Log in')}
+                {t('logInAction')}
               </Link>
             </p>
           </section>

@@ -5,19 +5,19 @@ import { ButtonLink } from '@/components/ButtonLink';
 import { StatusScreen } from '../StatusScreen';
 
 export default async function PageNotFound() {
-  const t = await getTranslations();
+  const t = await getTranslations({ namespace: 'shell' });
 
   return (
     <StatusScreen
       code={404}
       description={
         <p className="text-center">
-          {t("Oops! We can't find that page.")}
+          {t('notFoundTitle')}
           <br />
-          {t('It might have been moved, deleted, or maybe it never existed.')}
+          {t('notFoundBody')}
         </p>
       }
-      actions={<ButtonLink href="/">{t('Take me home')}</ButtonLink>}
+      actions={<ButtonLink href="/">{t('notFoundHomeAction')}</ButtonLink>}
     />
   );
 }

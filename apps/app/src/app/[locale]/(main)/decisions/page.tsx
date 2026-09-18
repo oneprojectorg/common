@@ -23,9 +23,9 @@ const DecisionsListingPage = async () => {
     <ListPageLayout className="max-w-none gap-4 pt-8 sm:gap-10 sm:py-14">
       <div className="flex flex-col gap-2">
         <Header1 className="text-headline">
-          {t('Decision-making processes')}
+          {t('shell.decisionsPageTitle')}
         </Header1>
-        <p>{t('Discover new ways to collectively decide together.')}</p>
+        <p>{t('shell.decisionsPageSubtitle')}</p>
       </div>
       <AllDecisions />
     </ListPageLayout>

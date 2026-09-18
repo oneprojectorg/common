@@ -27,7 +27,7 @@ export function CharacterCounter({
   max,
   className,
 }: CharacterCounterProps) {
-  const t = useTranslations();
+  const t = useTranslations('editor');
   const isAtLimit = count >= max;
 
   return (
@@ -44,12 +44,10 @@ export function CharacterCounter({
         <span aria-hidden="true" dir="ltr">
           {count}/{max}
         </span>
-        <span className="sr-only">
-          {t('{count} of {max} characters used', { count, max })}
-        </span>
+        <span className="sr-only">{t('characterCount', { count, max })}</span>
       </span>
       <span role="status" className="sr-only">
-        {isAtLimit ? t('Character limit reached') : ''}
+        {isAtLimit ? t('characterLimitReached') : ''}
       </span>
     </>
   );

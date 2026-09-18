@@ -69,7 +69,7 @@ const DecisionInstanceDetailContent = ({
           className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <LuArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          {t('All Decisions')}
+          {t('admin.allDecisionsTitle')}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-serif text-headline font-light">{detail.name}</h1>
@@ -83,7 +83,7 @@ const DecisionInstanceDetailContent = ({
               href={`/decisions/${detail.slug}`}
               className={`${buttonVariants({ variant: 'outline', size: 'sm' })} ms-auto`}
             >
-              {t('View decision')}
+              {t('admin.viewDecisionAction')}
               <LuArrowUpRight
                 data-icon="inline-end"
                 className="rtl:-scale-x-100"
@@ -92,10 +92,16 @@ const DecisionInstanceDetailContent = ({
           ) : null}
         </div>
         <dl className="flex flex-wrap gap-x-10 gap-y-2">
-          <MetaItem label={t('Owner')} value={detail.owner?.name ?? '—'} />
-          <MetaItem label={t('Steward')} value={detail.steward?.name ?? '—'} />
           <MetaItem
-            label={t('Process type')}
+            label={t('admin.ownerLabel')}
+            value={detail.owner?.name ?? '—'}
+          />
+          <MetaItem
+            label={t('admin.stewardLabel')}
+            value={detail.steward?.name ?? '—'}
+          />
+          <MetaItem
+            label={t('admin.processTypeLabel')}
             value={
               detail.processType
                 ? detail.templateVersion
@@ -105,11 +111,11 @@ const DecisionInstanceDetailContent = ({
             }
           />
           <MetaItem
-            label={t('Reviews policy')}
+            label={t('admin.reviewsPolicyLabel')}
             value={detail.reviewsPolicy?.replaceAll('_', ' ') ?? '—'}
           />
           <MetaItem
-            label={t('Created')}
+            label={t('admin.createdLabel')}
             value={
               createdAt
                 ? format.dateTime(createdAt, { dateStyle: 'medium' })
@@ -122,7 +128,9 @@ const DecisionInstanceDetailContent = ({
       <Tabs defaultValue="phases">
         <TabsList variant="line">
           <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
-          <TabsTrigger value="configuration">{t('Configuration')}</TabsTrigger>
+          <TabsTrigger value="configuration">
+            {t('admin.configurationHeading')}
+          </TabsTrigger>
           <TabsTrigger value="members">{t('profile.membersTab')}</TabsTrigger>
         </TabsList>
         <TabsContent value="phases" className="flex flex-col gap-6 pt-4">
@@ -148,9 +156,7 @@ const DecisionInstanceDetailContent = ({
           <Card>
             <CardHeader>
               <CardTitle>{t('profile.membersTab')}</CardTitle>
-              <CardDescription>
-                {t('Members, roles, and invite statuses')}
-              </CardDescription>
+              <CardDescription>{t('admin.membersSectionHint')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ComingSoon />
@@ -199,7 +205,7 @@ const PhaseCard = ({
   const endDate = formatDate(phase.endDate);
   const dates =
     startDate && endDate
-      ? t('{start} – {end}', { start: startDate, end: endDate })
+      ? t('admin.dateRange', { start: startDate, end: endDate })
       : (startDate ?? endDate);
 
   const hasAnySection =
@@ -209,23 +215,23 @@ const PhaseCard = ({
   const ruleParts = [
     phase.hasProposals &&
       (phase.proposalsHiddenByDefault
-        ? t('Proposal submissions (hidden by default)')
-        : t('Proposal submissions')),
+        ? t('admin.proposalSubmissionsHidden')
+        : t('admin.proposalSubmissionsLabel')),
     phase.canEditProposals && t('Proposal editing'),
     phase.hasReviews && t('Reviews'),
     phase.hasVoting &&
       (phase.maxVotesPerMember != null
-        ? t('Voting (max {count} per member)', {
+        ? t('admin.votingWithMax', {
             count: phase.maxVotesPerMember,
           })
         : t('Voting')),
-    phase.canEditVotes && t('Vote editing'),
+    phase.canEditVotes && t('admin.voteEditingLabel'),
     // Only the exception is worth a row: comments are on unless turned off.
-    !phase.allowsComments && t('Comments off'),
+    !phase.allowsComments && t('admin.commentsOffLabel'),
     phase.advancementMethod === 'manual'
-      ? t('Advances manually')
+      ? t('admin.advancesManually')
       : phase.advancementMethod === 'date'
-        ? t('Advances by date')
+        ? t('admin.advancesByDate')
         : null,
   ].filter(Boolean);
 
@@ -241,10 +247,10 @@ const PhaseCard = ({
     >
       <CardHeader className={hasAnySection ? 'border-b' : undefined}>
         <CardTitle>
-          {phase.name ?? t('Phase {number}', { number: index + 1 })}
+          {phase.name ?? t('admin.phaseNumber', { number: index + 1 })}
         </CardTitle>
         <CardDescription>
-          {t('Phase {number} of {total}', { number: index + 1, total })}
+          {t('admin.phaseNumberOfTotal', { number: index + 1, total })}
           {dates ? <span> · {dates}</span> : null}
           {ruleParts.length > 0 ? (
             <span className="mt-0.5 block text-sm">
@@ -255,11 +261,11 @@ const PhaseCard = ({
         {currentIndex >= 0 ? (
           <CardAction>
             {phase.isCurrent ? (
-              <Badge>{t('Current phase')}</Badge>
+              <Badge>{t('admin.currentPhaseLabel')}</Badge>
             ) : index < currentIndex ? (
               <Badge variant="secondary">{t('Completed')}</Badge>
             ) : (
-              <Badge variant="outline">{t('Upcoming')}</Badge>
+              <Badge variant="outline">{t('admin.upcomingLabel')}</Badge>
             )}
           </CardAction>
         ) : null}
@@ -288,17 +294,18 @@ const PhaseCard = ({
         ) : null}
         {!hasAnySection ? (
           <p className="text-sm text-muted-foreground">
-            {t('Nothing to manage in this phase.')}
+            {t('admin.nothingToManage')}
           </p>
         ) : null}
         {phase.isCurrent && previousPhase ? (
-          <PhaseSection title={t('Danger zone')}>
+          <PhaseSection title={t('admin.dangerZoneHeading')}>
             <div className="w-fit">
               <RevertPhaseButton
                 instanceId={instanceId}
                 phaseId={phase.phaseId}
                 previousPhaseName={
-                  previousPhase.name ?? t('Phase {number}', { number: index })
+                  previousPhase.name ??
+                  t('admin.phaseNumber', { number: index })
                 }
               />
             </div>
@@ -321,13 +328,16 @@ const ConfigurationCard = ({
   const rawConfig = JSON.stringify(instanceData, null, 2);
 
   const settings: Array<{ label: string; value: string | boolean }> = [
-    { label: t('Private process'), value: config.isPrivate },
-    { label: t('Hide budget'), value: config.hideBudget },
+    { label: t('admin.privateProcessLabel'), value: config.isPrivate },
+    { label: t('admin.hideBudgetLabel'), value: config.hideBudget },
     { label: t('Proposal template'), value: config.hasProposalTemplate },
-    { label: t('Review rubric'), value: config.hasRubric },
-    { label: t('Review revisions'), value: config.reviewsAllowRevisions },
+    { label: t('admin.reviewRubricLabel'), value: config.hasRubric },
     {
-      label: t('Anonymous review feedback'),
+      label: t('admin.reviewRevisionsLabel'),
+      value: config.reviewsAllowRevisions,
+    },
+    {
+      label: t('admin.anonymousReviewFeedbackLabel'),
       value: config.reviewsAnonymousFeedback,
     },
     {
@@ -338,7 +348,10 @@ const ConfigurationCard = ({
       label: t('Allow multiple categories'),
       value: config.allowMultipleCategories,
     },
-    { label: t('Organize by categories'), value: config.organizeByCategories },
+    {
+      label: t('admin.organizeByCategoriesLabel'),
+      value: config.organizeByCategories,
+    },
     {
       label: t('Require collaborative proposals'),
       value: config.requireCollaborativeProposals,
@@ -349,10 +362,8 @@ const ConfigurationCard = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('Configuration')}</CardTitle>
-        <CardDescription>
-          {t('Process-level settings for this decision')}
-        </CardDescription>
+        <CardTitle>{t('admin.configurationHeading')}</CardTitle>
+        <CardDescription>{t('admin.configurationHint')}</CardDescription>
         <CardAction className="flex gap-2">
           <Button
             variant="outline"
@@ -361,7 +372,9 @@ const ConfigurationCard = ({
             aria-controls="raw-config"
             onClick={() => setIsRawShown((shown) => !shown)}
           >
-            {isRawShown ? t('Hide raw config') : t('View raw config')}
+            {isRawShown
+              ? t('admin.hideRawConfigAction')
+              : t('admin.viewRawConfigAction')}
           </Button>
           <CopyRawConfigButton value={rawConfig} />
         </CardAction>
@@ -377,7 +390,7 @@ const ConfigurationCard = ({
               <dd>
                 {typeof setting.value === 'boolean' ? (
                   <Badge variant={setting.value ? 'default' : 'outline'}>
-                    {setting.value ? t('On') : t('Off')}
+                    {setting.value ? t('admin.toggleOn') : t('admin.toggleOff')}
                   </Badge>
                 ) : (
                   <span className="text-sm text-muted-foreground">
@@ -409,11 +422,11 @@ const CopyRawConfigButton = ({ value }: { value: string }) => {
     try {
       await navigator.clipboard.writeText(value);
       setHasCopied(true);
-      toast.success(t('Raw config copied to your clipboard.'));
+      toast.success(t('admin.rawConfigCopied'));
       // Revert the icon so a second copy still reads as a fresh action
       setTimeout(() => setHasCopied(false), 2000);
     } catch {
-      toast.error(t('Failed to copy'));
+      toast.error(t('admin.copyError'));
     }
   };
 
@@ -447,7 +460,7 @@ const ComingSoon = () => {
 
   return (
     <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-      {t('Coming soon')}
+      {t('admin.comingSoonLabel')}
     </p>
   );
 };

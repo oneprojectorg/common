@@ -26,11 +26,7 @@ export default function PageError({ error }: ErrorProps) {
   const errorData = match(error.message, {
     UNAUTHORIZED: () => ({
       code: 403,
-      description: (
-        <p className="text-center">
-          {t('You do not have permission to view this page')}
-        </p>
-      ),
+      description: <p className="text-center">{t('shell.forbiddenTitle')}</p>,
       actions: (
         <Button onClick={() => window.history.back()}>{t('Go back')}</Button>
       ),
@@ -39,9 +35,9 @@ export default function PageError({ error }: ErrorProps) {
       code: 500,
       description: (
         <p className="text-center">
-          {t("Something went wrong on our end. We're working to fix it.")}
+          {t('shell.errorTitle')}
           <br />
-          {t('Please try again in a moment')}
+          {t('shell.errorHint')}
         </p>
       ),
       actions: (

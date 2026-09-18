@@ -22,18 +22,12 @@ export const toastStatus = (
     case 200:
       return;
     case 404:
-      return toast.error(t('Oops! Not found'), {
-        description:
-          message ??
-          t("We can't seem to find that. It might have been removed."),
+      return toast.error(t('shell.notFoundToastTitle'), {
+        description: message ?? t('shell.notFoundToastBody'),
       });
     case 403:
-      return toast.error(t('Permission needed'), {
-        description:
-          message ??
-          t(
-            "You'll need additional access to do that. Contact your organization's admin for help.",
-          ),
+      return toast.error(t('shell.forbiddenToastTitle'), {
+        description: message ?? t('shell.forbiddenToastBody'),
       });
     default:
       return toast.error(t("That didn't work"), {

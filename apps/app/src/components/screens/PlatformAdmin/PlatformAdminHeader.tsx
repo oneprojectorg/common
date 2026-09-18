@@ -9,13 +9,13 @@ import { useTranslations } from '@/lib/i18n';
 
 /** Platform admin header with title and action buttons */
 export const PlatformAdminHeader = () => {
-  const t = useTranslations();
+  const t = useTranslations('admin');
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
         <Header1 className="text-headline text-foreground">
-          {t('Platform admin')}
+          {t('platformAdminTitle')}
         </Header1>
       </div>
       <Button
@@ -27,7 +27,7 @@ export const PlatformAdminHeader = () => {
         }}
       >
         <LuArrowUpRight className="size-4 rtl:-scale-x-100" />
-        {t('View all analytics')}
+        {t('viewAllAnalyticsAction')}
       </Button>
     </div>
   );

@@ -39,7 +39,9 @@ export const RevertPhaseButton = ({
 
   const revertPhase = trpc.platform.admin.revertDecisionPhase.useMutation({
     onSuccess: () => {
-      toast.success(t('Moved back to {phase}', { phase: previousPhaseName }));
+      toast.success(
+        t('admin.phaseRevertedToast', { phase: previousPhaseName }),
+      );
       utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
       utils.platform.admin.listDecisionReviewAssignments.invalidate({
         instanceId,
@@ -55,17 +57,15 @@ export const RevertPhaseButton = ({
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
         <LuUndo2 data-icon="inline-start" />
-        {t('Move back a phase')}
+        {t('admin.revertPhaseAction')}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {t('Move back to {phase}?', { phase: previousPhaseName })}
+            {t('admin.revertPhaseConfirmTitle', { phase: previousPhaseName })}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {t(
-              'This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.',
-            )}
+            {t('admin.revertPhaseConfirmBody')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -79,7 +79,9 @@ export const RevertPhaseButton = ({
               revertPhase.mutate({ instanceId, fromPhaseId: phaseId })
             }
           >
-            {revertPhase.isPending ? t('Moving…') : t('Move back')}
+            {revertPhase.isPending
+              ? t('admin.revertPhaseProgress')
+              : t('admin.revertPhaseConfirmAction')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

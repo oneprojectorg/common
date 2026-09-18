@@ -85,7 +85,7 @@ const AddUserToOrgModalContent = ({
     e.preventDefault();
 
     if (!selectedOrgId || !selectedRoleId) {
-      toast.error(t('Please select both an organization and a role'));
+      toast.error(t('admin.addUserMissingSelection'));
       return;
     }
 
@@ -103,7 +103,7 @@ const AddUserToOrgModalContent = ({
 
         onOpenChange(false);
 
-        toast.success(t('User added to organization successfully'));
+        toast.success(t('admin.addUserSuccess'));
 
         utils.platform.admin.listAllUsers.invalidate();
 
@@ -111,7 +111,7 @@ const AddUserToOrgModalContent = ({
         setSelectedOrgId('');
         setSelectedRoleId('');
       } catch (error) {
-        toast.error(t('Failed to add user to organization'));
+        toast.error(t('admin.addUserError'));
       }
     });
   };
@@ -119,13 +119,13 @@ const AddUserToOrgModalContent = ({
   const avatarUrl = user.avatarImage?.name
     ? (getPublicUrl(user.avatarImage.name) ?? undefined)
     : undefined;
-  const userName = user.profile?.name ?? user.name ?? t('Unknown user');
+  const userName = user.profile?.name ?? user.name ?? t('admin.unknownUser');
 
   return (
     <form onSubmit={handleSubmit} className="contents">
       {/* Header */}
       <DialogHeader>
-        <DialogTitle>{t('Add user to organization')}</DialogTitle>
+        <DialogTitle>{t('admin.addUserToOrgTitle')}</DialogTitle>
       </DialogHeader>
 
       {/* Body */}
@@ -151,7 +151,7 @@ const AddUserToOrgModalContent = ({
           <>
             <div>
               <div className="mb-2 text-sm font-medium">
-                {t('Current organizations')}
+                {t('admin.currentOrganizationsLabel')}
               </div>
               <div className="space-y-2">
                 {user.organizationUsers.map((orgUser) => {
@@ -162,7 +162,7 @@ const AddUserToOrgModalContent = ({
                   const roles =
                     orgUser.roles && orgUser.roles.length > 0
                       ? orgUser.roles.map((r) => r.accessRole.name)
-                      : [t('No roles')];
+                      : [t('admin.noRoles')];
 
                   return (
                     <Card key={orgUser.organizationId} className="gap-2 p-3">
@@ -286,7 +286,7 @@ const OrganizationAndRoleSelection = ({
     <>
       {/* Organization Selection */}
       <div className="flex flex-col gap-2">
-        <Label>{t('Select organization')}</Label>
+        <Label>{t('admin.selectOrganizationPlaceholder')}</Label>
         <Combobox
           items={orgItems}
           value={orgItems.find((item) => item.value === selectedOrgId) ?? null}
@@ -297,7 +297,9 @@ const OrganizationAndRoleSelection = ({
             a.value === b.value
           }
         >
-          <ComboboxInput placeholder={t('Select organization')} />
+          <ComboboxInput
+            placeholder={t('admin.selectOrganizationPlaceholder')}
+          />
           <ComboboxContent>
             <ComboboxList>
               <ComboboxCollection>
@@ -324,7 +326,7 @@ const OrganizationAndRoleSelection = ({
                   );
                 }}
               </ComboboxCollection>
-              <ComboboxEmpty>{t('No organizations found')}</ComboboxEmpty>
+              <ComboboxEmpty>{t('admin.noOrganizationsFound')}</ComboboxEmpty>
             </ComboboxList>
           </ComboboxContent>
         </Combobox>
@@ -332,7 +334,7 @@ const OrganizationAndRoleSelection = ({
 
       {/* Role Selection */}
       <div className="flex flex-col gap-2">
-        <Label>{t('Select role')}</Label>
+        <Label>{t('admin.selectRolePlaceholder')}</Label>
         <Combobox
           items={roleItems}
           value={
@@ -345,7 +347,7 @@ const OrganizationAndRoleSelection = ({
             a.value === b.value
           }
         >
-          <ComboboxInput placeholder={t('Select role')} />
+          <ComboboxInput placeholder={t('admin.selectRolePlaceholder')} />
           <ComboboxContent>
             <ComboboxList>
               <ComboboxCollection>
@@ -368,7 +370,7 @@ const OrganizationAndRoleSelection = ({
                   );
                 }}
               </ComboboxCollection>
-              <ComboboxEmpty>{t('No roles found')}</ComboboxEmpty>
+              <ComboboxEmpty>{t('admin.noRolesFound')}</ComboboxEmpty>
             </ComboboxList>
           </ComboboxContent>
         </Combobox>

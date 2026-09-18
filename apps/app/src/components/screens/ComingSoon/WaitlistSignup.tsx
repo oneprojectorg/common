@@ -22,7 +22,7 @@ export const WaitlistSignup = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   return (
     <Dialog>
-      <DialogTrigger render={<Button>{t('Join the waitlist')}</Button>} />
+      <DialogTrigger render={<Button>{t('shell.waitlistHeading')}</Button>} />
       <DialogContent className="font-sans sm:max-w-md">
         {isSubmitted ? (
           <WaitlistSignupSuccess />
@@ -38,9 +38,9 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const t = useTranslations();
 
   const validator = z.object({
-    firstName: z.string().min(1, t('Please enter your first name')),
-    lastName: z.string().min(1, t('Please enter your last name')),
-    email: z.email({ error: t('Please enter a valid email address') }),
+    firstName: z.string().min(1, t('shell.waitlistFirstNameRequired')),
+    lastName: z.string().min(1, t('shell.waitlistLastNameRequired')),
+    email: z.email({ error: t('shell.waitlistEmailInvalid') }),
     organizationName: z.string(),
   });
 
@@ -74,9 +74,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
             response: JSON.stringify(errorBody),
           });
           toast.error(t('Something went wrong'), {
-            description: t(
-              'We were not able to sign you up. Please try again.',
-            ),
+            description: t('shell.waitlistSubmitError'),
           });
           return;
         }
@@ -90,14 +88,10 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
     <>
       <div className="p-6 pt-10">
         <DialogTitle className="w-full bg-blueGreen bg-clip-text text-center font-serif text-xl font-extralight tracking-tight text-transparent italic sm:text-2xl">
-          {t('Common')}
+          {t('shell.brandName')}
         </DialogTitle>
       </div>
-      <p className="px-8 text-center">
-        {t(
-          "Get early access. We're getting ready to welcome more organizations to Common. Sign up now to hold your spot.",
-        )}
-      </p>
+      <p className="px-8 text-center">{t('shell.waitlistIntro')}</p>
       <form
         noValidate
         className="flex flex-col gap-6 p-8"
@@ -112,9 +106,9 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           children={(field) => (
             <field.TextField
               autoFocus
-              label={t('First name')}
+              label={t('shell.firstNameLabel')}
               isRequired
-              placeholder={t('First name here')}
+              placeholder={t('shell.firstNamePlaceholder')}
             />
           )}
         />
@@ -122,9 +116,9 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           name="lastName"
           children={(field) => (
             <field.TextField
-              label={t('Last name')}
+              label={t('shell.lastNameLabel')}
               isRequired
-              placeholder={t('Last name here')}
+              placeholder={t('shell.lastNamePlaceholder')}
             />
           )}
         />
@@ -132,7 +126,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           name="email"
           children={(field) => (
             <field.TextField
-              label={t('Email address')}
+              label={t('shell.emailLabel')}
               type="email"
               isRequired
               placeholder="mail@example.com"
@@ -144,7 +138,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           children={(field) => (
             <field.TextField
               label={t('Organization')}
-              placeholder={t('Organization name')}
+              placeholder={t('shell.organizationNameLabel')}
             />
           )}
         />
@@ -156,7 +150,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
               disabled={isSubmitting}
               loading={isSubmitting}
             >
-              {t('Join the waitlist')}
+              {t('shell.waitlistHeading')}
             </form.SubmitButton>
           )}
         </form.Subscribe>
@@ -171,16 +165,12 @@ const WaitlistSignupSuccess = () => {
     <>
       <div className="px-6 pt-12">
         <DialogTitle className="w-full text-center font-serif text-xl font-extralight tracking-tight sm:text-2xl">
-          {t("You're on the list!")}
+          {t('shell.waitlistSuccessTitle')}
         </DialogTitle>
       </div>
       <div className="flex flex-col items-center gap-6 p-8 text-center">
-        <p>
-          {t(
-            "We can't wait to see you on Common, as an early collaborator in creating an economy that works for everyone.",
-          )}
-        </p>
-        <p>{t("We'll be in touch soon!")}</p>
+        <p>{t('shell.waitlistSuccessBody')}</p>
+        <p>{t('shell.waitlistSuccessFooter')}</p>
         <DialogClose
           render={<Button variant="outline" className="mt-2 w-9/10" />}
         >

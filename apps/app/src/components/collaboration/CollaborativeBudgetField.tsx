@@ -68,8 +68,8 @@ export function CollaborativeBudgetField({
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount
-    ? t('Max {amount}', { amount: maxAmount.toLocaleString() })
-    : t('Enter amount');
+    ? t('editor.budgetMaxHint', { amount: maxAmount.toLocaleString() })
+    : t('editor.budgetPlaceholder');
 
   const handleChange = (value: number | null) => {
     if (value === null) {
