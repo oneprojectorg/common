@@ -1,11 +1,8 @@
 import { listProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
-import { and, count, db, eq, sql } from '@op/db/client';
-import {
-  ProposalReviewAssignmentStatus,
-  proposalReviewAssignments,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
+import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { OPBatchSend, ReviewSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
@@ -84,34 +81,6 @@ export const sendReviewSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // The reviewer's own phase progress ("N of M reviews done in this phase").
-    const progress = await step.run('get-review-progress', async () => {
-      const [row] = await db
-        .select({
-          total: count(),
-          completed: sql<number>`count(*) filter (where ${eq(
-            proposalReviewAssignments.status,
-            ProposalReviewAssignmentStatus.COMPLETED,
-          )})`.mapWith(Number),
-        })
-        .from(proposalReviewAssignments)
-        .where(
-          and(
-            eq(
-              proposalReviewAssignments.processInstanceId,
-              assignment.processInstanceId,
-            ),
-            eq(proposalReviewAssignments.phaseId, assignment.phaseId),
-            eq(
-              proposalReviewAssignments.reviewerProfileId,
-              assignment.reviewerProfileId,
-            ),
-          ),
-        );
-
-      return row ?? null;
-    });
-
     const proposalName = proposal.profile.name;
     const processTitle = processProfile.name;
     const reviewUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfile.slug}/reviews/${assignmentId}`;
@@ -125,8 +94,6 @@ export const sendReviewSubmittedNotification = inngest.createFunction(
             proposalName,
             processTitle,
             reviewUrl,
-            completedCount: progress?.completed,
-            totalCount: progress?.total,
           }),
       }));
 
