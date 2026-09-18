@@ -75,8 +75,6 @@ const OwnReviewPanelError = () => {
   const t = useTranslations();
 
   return (
-    <p className="text-base text-muted-foreground">
-      {t('Something went wrong on our end. Please try again')}
-    </p>
+    <p className="text-base text-muted-foreground">{t('somethingWentWrong')}</p>
   );
 };

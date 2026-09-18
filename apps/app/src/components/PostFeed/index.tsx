@@ -271,7 +271,7 @@ const PostCommentButton = ({
   return (
     <CommentButton
       count={count}
-      label={t('{count} comments', { count })}
+      label={t('commentCount', { count })}
       onClick={onCommentClick}
     />
   );
@@ -547,7 +547,7 @@ export const PostItemOnDetailPage = ({
             <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             <CommentButton
               count={commentCount}
-              label={t('{count} comments', { count: commentCount })}
+              label={t('commentCount', { count: commentCount })}
               disabled
             />
           </div>

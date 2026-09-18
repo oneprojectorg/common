@@ -87,7 +87,7 @@ export function useOverviewHeroImage({
       !file.type.startsWith('image/')
     ) {
       toast.error(
-        t('That file type is not supported. Accepted types: {types}', {
+        t('unsupportedFileType', {
           types: ACCEPTED_IMAGE_LABEL,
         }),
       );
@@ -95,7 +95,7 @@ export function useOverviewHeroImage({
     }
     if (file.size > IMAGE_UPLOAD_SIZE_LIMIT) {
       toast.error(
-        t('File too large. Maximum size: {size}MB', {
+        t('fileTooLarge', {
           size: Math.floor(IMAGE_UPLOAD_SIZE_LIMIT / 1024 / 1024),
         }),
       );

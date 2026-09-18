@@ -128,7 +128,7 @@ export function DiscussionModal({
           ) : comments.length > 0 ? (
             <div
               role="feed"
-              aria-label={t('{count} comments', { count: comments.length })}
+              aria-label={t('commentCount', { count: comments.length })}
             >
               <PostFeed className="border-none pt-6">
                 {comments.map((comment, i) => (
@@ -159,9 +159,7 @@ export function DiscussionModal({
                 <EmptyMedia variant="icon">
                   <LuLeaf />
                 </EmptyMedia>
-                <EmptyDescription>
-                  {t('No comments yet. Be the first to comment!')}
-                </EmptyDescription>
+                <EmptyDescription>{t('noCommentsYet')}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

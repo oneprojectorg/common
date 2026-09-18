@@ -136,9 +136,7 @@ export const OnboardingFlow = ({
     async (selectedOrgs: Array<{ id: string; profileId: string }>) => {
       if (!isOnline) {
         toast.error(t('No connection'), {
-          description: t(
-            'Please check your internet connection and try again.',
-          ),
+          description: t('checkConnectionHint'),
         });
         return;
       }
@@ -150,7 +148,7 @@ export const OnboardingFlow = ({
 
         if (selectedOrgs.length > 0 && !userProfileId) {
           toast.error(t("That didn't work"), {
-            description: t('Please try submitting the form again.'),
+            description: t('resubmitFormHint'),
           });
           setIsSubmitting(false);
           return;
@@ -169,14 +167,14 @@ export const OnboardingFlow = ({
           const failures = results.filter((r) => r.status === 'rejected');
           if (failures.length === results.length) {
             toast.error(t("That didn't work"), {
-              description: t('Please try submitting the form again.'),
+              description: t('resubmitFormHint'),
             });
             setIsSubmitting(false);
             return;
           }
           if (failures.length > 0) {
             toast.error(t("That didn't work"), {
-              description: t('Please try submitting the form again.'),
+              description: t('resubmitFormHint'),
             });
           }
         }
@@ -190,7 +188,7 @@ export const OnboardingFlow = ({
         const errorInfo = analyzeError(err);
         if (errorInfo.isConnectionError) {
           toast.error(t('Connection issue'), {
-            description: t('Please try submitting the form again.'),
+            description: t('resubmitFormHint'),
           });
         } else {
           toast.error(t("That didn't work"), {
@@ -240,7 +238,7 @@ export const OnboardingFlow = ({
   const submitOrganization = useCallback(() => {
     if (!isOnline) {
       toast.error(t('No connection'), {
-        description: t('Please check your internet connection and try again.'),
+        description: t('checkConnectionHint'),
       });
       return;
     }
@@ -274,7 +272,7 @@ export const OnboardingFlow = ({
         const errorInfo = analyzeError(err);
         if (errorInfo.isConnectionError) {
           toast.error(t('Connection issue'), {
-            description: t('Please try submitting the form again.'),
+            description: t('resubmitFormHint'),
           });
         } else {
           toast.error(t("That didn't work"), {
