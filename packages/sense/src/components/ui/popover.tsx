@@ -19,19 +19,27 @@ function PopoverContent({
   alignOffset = 0,
   side = 'bottom',
   sideOffset = 4,
+  anchor,
+  container,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
-    'align' | 'alignOffset' | 'side' | 'sideOffset'
-  >) {
+    'align' | 'alignOffset' | 'side' | 'sideOffset' | 'anchor'
+  > & { container?: PopoverPrimitive.Portal.Props['container'] }) {
   return (
-    <PopoverPrimitive.Portal>
+    // Portalled to the body by default. Pass a `container` when the trigger sits
+    // in something that moves on its own — a sticky bar over a scrolling list —
+    // so the popup travels with it.
+    <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        // Position against something other than the trigger — a combobox anchors
+        // its list to the field, not to the caret that opened it.
+        anchor={anchor}
         className="isolate z-50"
       >
         <PopoverPrimitive.Popup
