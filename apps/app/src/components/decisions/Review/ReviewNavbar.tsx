@@ -60,9 +60,11 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             variant="outline"
             disabled={!canRequestRevision}
             onClick={() => setIsRequestModalOpen(true)}
+            className="max-sm:size-11"
+            aria-label={t('Request revision')}
           >
             <LuRefreshCw className="size-4" />
-            {t('Request revision')}
+            <span className="hidden sm:inline">{t('Request revision')}</span>
           </Button>
         )}
 
@@ -71,15 +73,22 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             onClick={handleUpdate}
             disabled={!canUpdate}
             loading={isUpdating}
+            className="max-sm:size-11"
+            aria-label={t('Update review')}
           >
             <LuCheck className="size-4" />
-            {t('Update review')}
+            <span className="hidden sm:inline">{t('Update review')}</span>
           </Button>
         ) : isSubmitted ? (
           canEditReview && (
-            <Button variant="outline" onClick={startEditing}>
+            <Button
+              variant="outline"
+              onClick={startEditing}
+              className="max-sm:size-11"
+              aria-label={t('Edit review')}
+            >
               <LuPencil className="size-4" />
-              {t('Edit review')}
+              <span className="hidden sm:inline">{t('Edit review')}</span>
             </Button>
           )
         ) : (
@@ -87,9 +96,11 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             onClick={handleSubmit}
             disabled={!canSubmit}
             loading={isSubmitting}
+            className="max-sm:size-11"
+            aria-label={t('Submit review')}
           >
             <LuCheck className="size-4" />
-            {t('Submit review')}
+            <span className="hidden sm:inline">{t('Submit review')}</span>
           </Button>
         )}
       </DecisionSubpageHeader>

@@ -7,6 +7,7 @@ import {
   createInstanceMember,
   createReviewScenario,
   getSeededTemplate,
+  grantInstanceReviewerRole,
 } from '@op/test';
 import type { Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -62,13 +63,33 @@ const REVIEW_SCHEMA = {
       description: 'Reviewers evaluate proposals.',
       rules: {
         proposals: { submit: false, review: true },
-        reviews: { submit: true },
+        reviews: { submit: true, allowRevisions: true },
         voting: { submit: false },
         advancement: { method: 'manual' as const },
       },
     },
   ],
 } satisfies DecisionSchemaDefinition;
+
+const RUBRIC_TEMPLATE = {
+  type: 'object',
+  required: ['innovation'],
+  'x-field-order': ['innovation'],
+  properties: {
+    innovation: {
+      type: 'integer',
+      title: 'Innovation',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 3,
+      oneOf: [
+        { const: 1, title: '1' },
+        { const: 2, title: '2' },
+        { const: 3, title: '3' },
+      ],
+    },
+  },
+};
 
 async function createDecisionInReview({
   org,
@@ -93,7 +114,13 @@ async function createDecisionInReview({
   const [, { user: reviewer }] = await Promise.all([
     db
       .update(processInstances)
-      .set({ currentStateId: 'review' })
+      .set({
+        instanceData: {
+          ...(instance.instance.instanceData as Record<string, unknown>),
+          rubricTemplate: RUBRIC_TEMPLATE,
+        },
+        currentStateId: 'review',
+      })
       .where(eq(processInstances.id, instance.instance.id)),
     createInstanceMember({
       supabaseAdmin,
@@ -102,7 +129,14 @@ async function createDecisionInReview({
     }),
   ]);
 
-  const { proposal } = await createReviewScenario({
+  await grantInstanceReviewerRole({
+    instanceProfileId: instance.profileId,
+    authUserId: reviewer.authUserId,
+    email: reviewer.email,
+    roleName: `Reviewer-${testId}`,
+  });
+
+  const { proposal, assignment } = await createReviewScenario({
     instance: { id: instance.instance.id },
     author: {
       profileId: org.organizationProfile.id,
@@ -110,10 +144,13 @@ async function createDecisionInReview({
       email: org.adminUser.email,
     },
     reviewer: { profileId: reviewer.profileId },
-    proposalData: { title: 'Locale chooser coverage proposal' },
+    proposalData: {
+      title: 'Locale chooser coverage proposal',
+      collaborationDocId: 'test-proposal-view-doc',
+    },
   });
 
-  return { instance, proposal };
+  return { instance, proposal, assignment, reviewer };
 }
 
 test.describe('Locale chooser in headers', () => {
@@ -174,6 +211,50 @@ test.describe('Locale chooser in headers', () => {
       page.getByRole('heading', { name: "You don't have access to this page" }),
     ).toBeVisible({ timeout: 36_000 });
     await expectLocaleChooser(page);
+  });
+
+  test('stays on screen at a phone width with every review action shown', async ({
+    browser,
+    org,
+    supabaseAdmin,
+  }, testInfo) => {
+    const { instance, assignment, reviewer } = await createDecisionInReview({
+      org,
+      supabaseAdmin,
+      testId: `locale-mobile-${testInfo.workerIndex}-${Date.now()}`,
+    });
+
+    const context = await browser.newContext({
+      viewport: { width: 375, height: 800 },
+    });
+    const page = await context.newPage();
+    await authenticateAsUser(page, {
+      email: reviewer.email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await page.goto(`/en/decisions/${instance.slug}/reviews/${assignment.id}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const chooser = page.getByRole('button', { name: LOCALE_CHOOSER_NAME });
+    await expect(chooser).toBeVisible({ timeout: 30_000 });
+    // Request revision and Submit review are both in the row at this width.
+    await expect(
+      page.getByRole('button', { name: 'Request revision' }),
+    ).toBeVisible();
+
+    const header = page.locator('header').first();
+    const overflow = await header.evaluate(
+      (el) => el.scrollWidth - el.clientWidth,
+    );
+    expect(overflow).toBe(0);
+
+    const box = await chooser.boundingBox();
+    expect(box).not.toBeNull();
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(375);
+
+    await context.close();
   });
 
   test('appears on the onboarding screen', async ({ page, supabaseAdmin }) => {
