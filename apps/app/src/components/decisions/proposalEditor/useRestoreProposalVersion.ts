@@ -13,6 +13,7 @@ import type { JSONContent } from '@tiptap/react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../collaboration';
+import { ensureRestoreSynced } from './ensureRestoreSynced';
 import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
 
 interface UseRestoreProposalVersionOptions {
@@ -84,7 +85,8 @@ export function useRestoreProposalVersion({
    *
    * Returns false without touching anything when the version's contents aren't
    * available — the preview arrives asynchronously, and reverting on an empty
-   * map would blank the title, category and budget.
+   * map would blank the title, category and budget. Also returns false if the
+   * revert doesn't sync to TipTap Cloud before persisting the restored data.
    */
   async function restoreVersion(
     versionId: number,
@@ -109,6 +111,10 @@ export function useRestoreProposalVersion({
       // next edit anyway.
       newVersionName: false,
     });
+
+    if (!(await ensureRestoreSynced(provider, t))) {
+      return false;
+    }
 
     await updateProposalMutation.mutateAsync({
       proposalId,
