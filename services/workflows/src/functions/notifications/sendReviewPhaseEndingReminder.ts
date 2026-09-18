@@ -18,8 +18,6 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
-import { REMINDER_DAYS_BEFORE_END } from '../modules/decisions/sendReviewPhaseEndingReminders';
-
 const { reviewPhaseEndingSoon } = Events;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -33,7 +31,8 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
   },
   { event: reviewPhaseEndingSoon.name },
   async ({ event, step, runId }) => {
-    const { transitionId } = reviewPhaseEndingSoon.schema.parse(event.data);
+    const { transitionId, reminderWindowEnd } =
+      reviewPhaseEndingSoon.schema.parse(event.data);
 
     const transitionData = await step.run('get-transition-data', async () => {
       const rows = await db
@@ -103,7 +102,12 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       };
     }
 
-    if (msLeft > REMINDER_DAYS_BEFORE_END * MS_PER_DAY) {
+    // Past this sweep's own bucket the deadline belongs to a later one, which
+    // sends its own reminder — this event must not send a second.
+    if (
+      new Date(transitionData.scheduledDate).getTime() >
+      new Date(reminderWindowEnd).getTime()
+    ) {
       return {
         message: `Skipped: transition ${transitionId} is no longer ending soon`,
       };
@@ -119,7 +123,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     }
 
     const processTitle = transitionData.processName;
-    const phaseName = phase.name ?? phaseId;
+    const phaseName = phase.name || phaseId;
     const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${transitionData.profileSlug}/current`;
 
     const emails = await step.run('plan-reviewer-emails', async () => {

@@ -10,7 +10,7 @@ import { and, eq, gt, isNull, lte } from 'drizzle-orm';
 
 const { reviewPhaseEndingSoon } = Events;
 
-export const REMINDER_DAYS_BEFORE_END = 3;
+const REMINDER_DAYS_BEFORE_END = 3;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
