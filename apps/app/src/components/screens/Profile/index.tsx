@@ -14,7 +14,7 @@ import {
   IndividualProfileTabsRenderer,
   ProfileTabsRenderer,
 } from './ProfileTabsRenderer';
-import { fetchOrganizationBySlug, fetchProfileBySlug } from './cachedFetches';
+import { fetchProfileScreenData } from './cachedFetches';
 
 const ProfileWithData = async ({
   slug,
@@ -24,14 +24,8 @@ const ProfileWithData = async ({
   initialTab?: string;
 }) => {
   try {
-    // Fire profile + organization in parallel. The org lookup throws
-    // NotFoundError for user-profile slugs; swallow it to null and gate
-    // on profile.type below. profile.getBySlug is the source of truth for
-    // whether the slug is an org — the org fetch is only consumed when it is.
-    const [profile, organization] = await Promise.all([
-      fetchProfileBySlug(slug),
-      fetchOrganizationBySlug(slug).catch(() => null),
-    ]);
+    const profileScreenData = await fetchProfileScreenData(slug);
+    const { profile } = profileScreenData;
 
     const { headerImage, avatarImage } = profile;
     const headerUrl = getPublicUrl(headerImage?.name);
@@ -42,25 +36,33 @@ const ProfileWithData = async ({
       profile.name + 'C' || 'Common',
     );
 
-    if (profile.type === 'org') {
-      return organization ? (
+    // Identical in both layouts — the header is keyed off the profile, which
+    // both branches share; only what follows it differs.
+    const imageHeader = (
+      <ImageHeader
+        headerImage={
+          headerUrl ? (
+            <Image src={headerUrl} alt="" fill className="object-cover" />
+          ) : (
+            <div className={cn('h-full w-full', gradientBgHeader)} />
+          )
+        }
+        avatarImage={
+          avatarUrl ? (
+            <Image src={avatarUrl} alt="" fill className="object-cover" />
+          ) : (
+            <div className={cn('h-full w-full', gradientBg)} />
+          )
+        }
+      />
+    );
+
+    if (profileScreenData.kind === 'organization') {
+      const { organization } = profileScreenData;
+
+      return (
         <>
-          <ImageHeader
-            headerImage={
-              headerUrl ? (
-                <Image src={headerUrl} alt="" fill className="object-cover" />
-              ) : (
-                <div className={cn('h-full w-full', gradientBgHeader)} />
-              )
-            }
-            avatarImage={
-              avatarUrl ? (
-                <Image src={avatarUrl} alt="" fill className="object-cover" />
-              ) : (
-                <div className={cn('h-full w-full', gradientBg)} />
-              )
-            }
-          />
+          {imageHeader}
 
           <ProfileDetails organization={organization} />
           <ProfileTabsRenderer
@@ -69,7 +71,7 @@ const ProfileWithData = async ({
             initialTab={initialTab}
           />
         </>
-      ) : null;
+      );
     }
 
     // For user profiles, create a simplified profile object based on the profile data
@@ -101,22 +103,7 @@ const ProfileWithData = async ({
 
     return (
       <>
-        <ImageHeader
-          headerImage={
-            headerUrl ? (
-              <Image src={headerUrl} alt="" fill className="object-cover" />
-            ) : (
-              <div className={cn('h-full w-full', gradientBgHeader)} />
-            )
-          }
-          avatarImage={
-            avatarUrl ? (
-              <Image src={avatarUrl} alt="" fill className="object-cover" />
-            ) : (
-              <div className={cn('h-full w-full', gradientBg)} />
-            )
-          }
-        />
+        {imageHeader}
 
         <ProfileDetails organization={userProfile} />
         <IndividualProfileTabsRenderer
