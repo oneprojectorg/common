@@ -34,7 +34,7 @@ export default async function ReviewAssignmentsPage({
 }: ReviewAssignmentsPageProps) {
   const { slug } = await params;
   const [t, { processInstanceId, phaseId }] = await Promise.all([
-    getTranslations({ namespace: 'decisions' }),
+    getTranslations('decisions'),
     loadReviewAssignmentsPage(slug),
   ]);
 
