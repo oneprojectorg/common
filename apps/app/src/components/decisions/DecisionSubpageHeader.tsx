@@ -7,9 +7,7 @@ import { LocaleChooser } from '../LocaleChooser';
 interface DecisionSubpageHeaderProps {
   backHref: string;
   backLabel: ReactNode;
-  /** Page actions for the end of the bar, before the locale chooser. */
   children?: ReactNode;
-  /** Account menu. Rendered last, after the locale chooser. */
   accountSlot?: ReactNode;
 }
 
@@ -25,9 +23,6 @@ export function DecisionSubpageHeader({
         <LuArrowLeft className="size-4 rtl:-scale-x-100" />
         {backLabel}
       </ButtonLink>
-      {/* The chooser lives here rather than in each caller so every decision
-          subpage gets it. Order matches DecisionInstanceHeader and
-          ProposalEditorHeader: page actions, locale, then the account menu. */}
       <div className="flex items-center gap-4">
         {children}
         <LocaleChooser />

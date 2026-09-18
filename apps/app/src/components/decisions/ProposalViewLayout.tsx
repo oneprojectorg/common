@@ -125,8 +125,6 @@ export function ProposalViewLayout({
               backHref={backHref}
             />
           ) : null}
-          {/* Shown at every width, like every other header's chooser — a
-              mobile reader needs the language switch as much as a desktop one. */}
           <LocaleChooser />
           {/* Outside the sm-only cluster: Join stays visible on mobile (the
               avatar keeps its desktop-only treatment via userMenuClassName). */}

@@ -191,7 +191,7 @@ export function ReviewSummaryView({
         backHref={`/decisions/${decisionSlug}/current`}
         backLabel={t('Back')}
       >
-        {/* Swaps without a navigation. The header owns the row's layout. */}
+        {/* Swaps without a navigation. */}
         <div aria-live="polite">
           {isOwnFormOpen
             ? ownFormStatus && (

@@ -30,8 +30,6 @@ export async function AssignmentsPageShell({
             <LuArrowLeft className="size-4 rtl:-scale-x-100" />
             {t('Back')}
           </ButtonLink>
-          {/* This row is the only chrome on these routes — they render outside
-              SiteHeader — so the locale chooser belongs here. */}
           <div className="flex items-center gap-4">
             {action}
             <LocaleChooser />
