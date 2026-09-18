@@ -62,14 +62,12 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
-      # Key parity and ICU placeholders, plus: a message whose English value
-      # changed has to change in every other locale, which the natural-text
-      # keys used to force. Diffed against the PR's base branch, which the
-      # `fetch-depth: 0` checkout above leaves under `origin/`.
-      - name: Check translation dictionaries
+      # An English copy change must reach every translation. Diffed against
+      # the PR's base branch, which `fetch-depth: 0` leaves under `origin/`.
+      - name: Check translations follow English copy changes
         env:
           I18N_BASE: origin/${{ github.base_ref }}
-        run: pnpm i18n:check
+        run: pnpm i18n:check "$I18N_BASE"
 
       - name: Run TypeScript checks - App
         run: pnpm typecheck
