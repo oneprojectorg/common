@@ -6,6 +6,5 @@ export { useRichTextEditor } from './useRichTextEditor';
 export {
   defaultEditorExtensions,
   defaultViewerExtensions,
-  StyledHeading,
 } from './editorConfig';
 export { baseEditorStyles, viewerProseStyles } from './viewerStyles';

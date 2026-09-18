@@ -4,6 +4,8 @@ import { cn } from '../../lib/utils';
 
 // Serif headings on the sense semantic type scale (Figma Typography
 // collection): display 24→48, headline 20→30, title 18→20, label 16.
+// Rich-text content does NOT use these — prose headings are a separate role on
+// prose's own scale; see `viewerProseStyles` in RichTextEditor.
 // `dir="auto"` by default — headings always carry real content, so the
 // direction resolves from it.
 
