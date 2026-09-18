@@ -5,7 +5,10 @@ import type { BuilderField, BuilderForm } from './formDefinition';
 import {
   buildDefinition,
   deriveFieldKey,
+  initialDraftFor,
   parseDefinition,
+  resolvePhaseBadge,
+  validateDraft,
 } from './formDefinition';
 
 const field = (overrides: Partial<BuilderField> = {}): BuilderField => {
@@ -234,6 +237,165 @@ describe('parseDefinition', () => {
     });
 
     expect(parsed.phaseId).toBe('submission');
+  });
+});
+
+describe('initialDraftFor', () => {
+  const phases = [
+    { phaseId: 'submission' },
+    { phaseId: 'review' },
+    { phaseId: 'voting' },
+  ];
+
+  it('points a new form at the first phase with room for one', () => {
+    const { form: draft } = initialDraftFor({
+      phases,
+      occupiedPhaseIds: ['submission', 'review'],
+    });
+
+    expect(draft.phaseId).toBe('voting');
+    expect(draft.fields).toEqual([]);
+  });
+
+  it('leaves the phase unset when every phase is taken', () => {
+    const { form: draft } = initialDraftFor({
+      phases,
+      occupiedPhaseIds: ['submission', 'review', 'voting'],
+    });
+
+    expect(draft.phaseId).toBe('');
+  });
+
+  it('opens a stored form on the phase the server resolved', () => {
+    const { form: draft } = initialDraftFor({
+      form: {
+        schema: buildDefinition(form([field({ key: 'answer' })])),
+        phaseId: 'review',
+        name: 'Mid-process check',
+      },
+      phases,
+      occupiedPhaseIds: [],
+    });
+
+    expect(draft.phaseId).toBe('review');
+    expect(draft.name).toBe('Mid-process check');
+  });
+
+  it('falls back to the first phase when the server resolved none', () => {
+    const { form: draft } = initialDraftFor({
+      form: {
+        schema: { type: 'object', title: 'Legacy', properties: {} },
+        phaseId: null,
+        name: 'Legacy',
+      },
+      phases,
+      occupiedPhaseIds: [],
+    });
+
+    expect(draft.phaseId).toBe('submission');
+  });
+});
+
+describe('resolvePhaseBadge', () => {
+  const phases = [{ phaseId: 'voting', name: 'Voting' }];
+
+  it('names a phase the process still configures', () => {
+    expect(
+      resolvePhaseBadge({ phaseId: 'voting', phases, unsetLabel: 'No phase' }),
+    ).toEqual({ label: 'Voting', isKnownPhase: true });
+  });
+
+  it('shows the raw id of a phase the process no longer has', () => {
+    // The form is still served to participants, so it must stay visible.
+    expect(
+      resolvePhaseBadge({ phaseId: 'retired', phases, unsetLabel: 'No phase' }),
+    ).toEqual({ label: 'retired', isKnownPhase: false });
+  });
+
+  it('falls back to the unset label when there is no phase at all', () => {
+    expect(
+      resolvePhaseBadge({ phaseId: null, phases, unsetLabel: 'No phase' }),
+    ).toEqual({ label: 'No phase', isKnownPhase: false });
+  });
+
+  it('shows the raw id when the phase is configured but unnamed', () => {
+    expect(
+      resolvePhaseBadge({
+        phaseId: 'voting',
+        phases: [{ phaseId: 'voting', name: null }],
+        unsetLabel: 'No phase',
+      }),
+    ).toEqual({ label: 'voting', isKnownPhase: true });
+  });
+});
+
+describe('validateDraft', () => {
+  const problemCodes = (draft: BuilderForm) => {
+    const result = validateDraft(draft);
+    return result.ok ? [] : result.problems.map((problem) => problem.code);
+  };
+
+  it('returns the definition to save when the draft is complete', () => {
+    const result = validateDraft(form([field({ key: 'answer' })]));
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.definition['x-phase']).toBe('voting');
+  });
+
+  it('reports a missing internal name', () => {
+    expect(
+      problemCodes({ ...form([field({ key: 'answer' })]), name: '  ' }),
+    ).toContain('missing-name');
+  });
+
+  it('reports a missing phase', () => {
+    expect(
+      problemCodes({ ...form([field({ key: 'answer' })]), phaseId: '' }),
+    ).toContain('missing-phase');
+  });
+
+  it('reports a missing participant heading', () => {
+    expect(
+      problemCodes({ ...form([field({ key: 'answer' })]), title: '' }),
+    ).toContain('missing-title');
+  });
+
+  it('reports a form with no fields', () => {
+    expect(problemCodes(form([]))).toContain('no-fields');
+  });
+
+  it('reports a field with no question, by its position', () => {
+    const result = validateDraft(
+      form([
+        field({ key: 'first' }),
+        field({ key: 'second', title: '   ', localId: 'b' }),
+      ]),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.problems).toEqual([
+      { code: 'field-missing-question', position: 2 },
+    ]);
+  });
+
+  it('reports a choice field with no options', () => {
+    const result = validateDraft(
+      form([field({ key: 'pick', kind: 'dropdown', options: [] })]),
+    );
+
+    expect(result.ok === false && result.problems).toEqual([
+      { code: 'field-missing-options', position: 1 },
+    ]);
+  });
+
+  it('does not ask a text field for options', () => {
+    expect(problemCodes(form([field({ key: 'answer' })]))).toEqual([]);
+  });
+
+  it('prefers its own codes over a raw schema message', () => {
+    // An empty draft breaks both the explicit checks and the schema; the
+    // author should see the translated copy, not a Zod issue.
+    expect(problemCodes(form([]))).not.toContain('schema');
   });
 });
 

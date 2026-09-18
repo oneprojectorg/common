@@ -1,11 +1,10 @@
-import { db } from '@op/db/client';
 import type { CustomForm } from '@op/db/schema';
 import { customForms } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError } from '../../utils';
 import { assertCustomFormAdmin } from './customFormAuth';
-import { assertPhaseAvailable, lockProfileForms } from './phaseBinding';
+import { writeWithPhaseLock } from './phaseBinding';
 import type { CreateCustomFormInput } from './schemas/customForm';
 
 /**
@@ -27,24 +26,21 @@ export const createCustomForm = async ({
     profileId: input.profileId,
   });
 
-  const form = await db.transaction(async (tx) => {
-    await lockProfileForms({ tx, profileId: process.profileId });
-    await assertPhaseAvailable({
-      tx,
-      process,
-      phaseId: input.schema['x-phase'],
-    });
+  const form = await writeWithPhaseLock({
+    process,
+    phaseId: input.schema['x-phase'],
+    write: async (tx) => {
+      const [inserted] = await tx
+        .insert(customForms)
+        .values({
+          profileId: process.profileId,
+          name: input.name,
+          schema: input.schema,
+        })
+        .returning();
 
-    const [inserted] = await tx
-      .insert(customForms)
-      .values({
-        profileId: process.profileId,
-        name: input.name,
-        schema: input.schema,
-      })
-      .returning();
-
-    return inserted;
+      return inserted;
+    },
   });
 
   if (!form) {

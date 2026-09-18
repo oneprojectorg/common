@@ -156,60 +156,91 @@ export const customFormFieldSchema = z
   })
   .superRefine((field, ctx) => {
     if (field.type === 'array') {
-      if (!field.items) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'A multi-select field needs at least one option',
-          path: ['items'],
-        });
-      }
-      if (field.enum) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'A multi-select field lists its options under `items`',
-          path: ['enum'],
-        });
-      }
+      refineMultiSelectField(field, ctx);
       return;
     }
 
-    if (field.items) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Only a multi-select field may declare `items`',
-        path: ['items'],
-      });
-    }
-
-    if (field.enum && field.type !== 'string') {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Only a text field may offer a fixed list of options',
-        path: ['enum'],
-      });
-    }
-
-    // `radio` and `dropdown` are choice controls: without options the renderer
-    // has nothing to draw.
-    const format = field['x-format'];
-    if ((format === 'radio' || format === 'dropdown') && !field.enum) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'A choice field needs at least one option',
-        path: ['enum'],
-      });
-    }
-
-    if (format === 'long-text' && field.enum) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'A long-text field cannot offer a fixed list of options',
-        path: ['x-format'],
-      });
-    }
+    refineSingleValueField(field, ctx);
   });
 
 export type CustomFormField = z.infer<typeof customFormFieldSchema>;
+
+/** Shape of a field as parsed, before the cross-key refinements run. */
+type UnrefinedField = {
+  type: 'string' | 'number' | 'integer' | 'boolean' | 'array';
+  'x-format'?: 'short-text' | 'long-text' | 'dropdown' | 'radio';
+  enum?: string[];
+  items?: { type: 'string'; enum: string[] };
+};
+
+/** A multi-select carries its options under `items`, never under `enum`. */
+const refineMultiSelectField = (
+  field: UnrefinedField,
+  ctx: z.RefinementCtx,
+): void => {
+  if (!field.items) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'A multi-select field needs at least one option',
+      path: ['items'],
+    });
+  }
+
+  if (field.enum) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'A multi-select field lists its options under `items`',
+      path: ['enum'],
+    });
+  }
+};
+
+/** Everything that is not a multi-select: one value, options under `enum`. */
+const refineSingleValueField = (
+  field: UnrefinedField,
+  ctx: z.RefinementCtx,
+): void => {
+  if (field.items) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Only a multi-select field may declare `items`',
+      path: ['items'],
+    });
+  }
+
+  if (field.enum && field.type !== 'string') {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Only a text field may offer a fixed list of options',
+      path: ['enum'],
+    });
+  }
+
+  const format = field['x-format'];
+
+  // `radio` and `dropdown` are choice controls: without options the renderer
+  // has nothing to draw.
+  if (CHOICE_FORMATS.has(format) && !field.enum) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'A choice field needs at least one option',
+      path: ['enum'],
+    });
+  }
+
+  if (format === 'long-text' && field.enum) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'A long-text field cannot offer a fixed list of options',
+      path: ['x-format'],
+    });
+  }
+};
+
+const CHOICE_FORMATS = new Set<UnrefinedField['x-format']>([
+  'radio',
+  'dropdown',
+]);
 
 /**
  * A full authored definition. `x-phase` is required here even though the stored
@@ -259,39 +290,52 @@ export const customFormDefinitionInputSchema = z
       }
     }
 
-    // `x-field-order` is what the renderer walks, so a key missing from it is a
-    // field nobody ever sees, and a key that isn't a field renders nothing.
-    const ordered = new Set(definition['x-field-order']);
-    if (ordered.size !== definition['x-field-order'].length) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Field order lists the same field twice',
-        path: ['x-field-order'],
-      });
-    }
-    for (const key of definition['x-field-order']) {
-      if (!known.has(key)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `Field order references "${key}", which is not one of this form's fields`,
-          path: ['x-field-order'],
-        });
-      }
-    }
-    for (const key of keys) {
-      if (!ordered.has(key)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `Field "${key}" is missing from the field order`,
-          path: ['x-field-order'],
-        });
-      }
-    }
+    refineFieldOrder({ order: definition['x-field-order'], known }, ctx);
 
     if (JSON.stringify(definition).length > CUSTOM_FORM_DEFINITION_MAX_BYTES) {
       ctx.addIssue({ code: 'custom', message: 'Form definition is too large' });
     }
   });
+
+/**
+ * `x-field-order` is what the renderer walks, so it has to name each field
+ * exactly once: a key missing from it is a field nobody ever sees, and a key
+ * that is not a field renders nothing.
+ */
+const refineFieldOrder = (
+  { order, known }: { order: string[]; known: Set<string> },
+  ctx: z.RefinementCtx,
+): void => {
+  const ordered = new Set(order);
+
+  if (ordered.size !== order.length) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Field order lists the same field twice',
+      path: ['x-field-order'],
+    });
+  }
+
+  for (const key of order) {
+    if (!known.has(key)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `Field order references "${key}", which is not one of this form's fields`,
+        path: ['x-field-order'],
+      });
+    }
+  }
+
+  for (const key of known) {
+    if (!ordered.has(key)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `Field "${key}" is missing from the field order`,
+        path: ['x-field-order'],
+      });
+    }
+  }
+};
 
 export type CustomFormDefinitionInput = z.infer<
   typeof customFormDefinitionInputSchema

@@ -399,7 +399,7 @@ const ConfigurationCard = ({
         {isRawShown ? (
           <pre
             id="raw-config"
-            className="max-h-[60vh] overflow-y-auto rounded-lg bg-muted p-4 text-xs break-words whitespace-pre-wrap"
+            className="max-h-96 overflow-y-auto rounded-lg bg-muted p-4 text-xs break-words whitespace-pre-wrap"
           >
             {rawConfig}
           </pre>

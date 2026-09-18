@@ -1,11 +1,11 @@
-import { and, db, eq, isNull } from '@op/db/client';
+import { and, eq, isNull } from '@op/db/client';
 import type { CustomForm } from '@op/db/schema';
 import { customForms } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { CommonError, NotFoundError } from '../../utils';
-import { assertCustomFormAdmin } from './customFormAuth';
-import { assertPhaseAvailable, lockProfileForms } from './phaseBinding';
+import { CommonError } from '../../utils';
+import { loadFormForWrite } from './loadFormForWrite';
+import { writeWithPhaseLock } from './phaseBinding';
 import type { UpdateCustomFormInput } from './schemas/customForm';
 
 /**
@@ -14,7 +14,7 @@ import type { UpdateCustomFormInput } from './schemas/customForm';
  * the shape they were validated under.
  *
  * Authorization: platform admin, or admin on the decision process that owns the
- * form (see {@link assertCustomFormAdmin}).
+ * form (see {@link loadFormForWrite}).
  */
 export const updateCustomForm = async ({
   data: input,
@@ -23,40 +23,23 @@ export const updateCustomForm = async ({
   data: UpdateCustomFormInput;
   user: User;
 }): Promise<CustomForm> => {
-  const existing = await db.query.customForms.findFirst({
-    where: { id: input.id, deletedAt: { isNull: true } },
-    columns: { id: true, profileId: true },
-  });
+  const { formId, process } = await loadFormForWrite({ id: input.id, user });
 
-  if (!existing) {
-    throw new NotFoundError('Custom form', input.id);
-  }
+  const form = await writeWithPhaseLock({
+    process,
+    phaseId: input.schema['x-phase'],
+    excludeFormId: formId,
+    write: async (tx) => {
+      // `deletedAt IS NULL` again in the WHERE: the row could have been deleted
+      // between the read above and this statement.
+      const [updated] = await tx
+        .update(customForms)
+        .set({ name: input.name, schema: input.schema })
+        .where(and(eq(customForms.id, formId), isNull(customForms.deletedAt)))
+        .returning();
 
-  const process = await assertCustomFormAdmin({
-    user,
-    profileId: existing.profileId,
-  });
-
-  const form = await db.transaction(async (tx) => {
-    await lockProfileForms({ tx, profileId: process.profileId });
-    await assertPhaseAvailable({
-      tx,
-      process,
-      phaseId: input.schema['x-phase'],
-      excludeFormId: existing.id,
-    });
-
-    // `deletedAt IS NULL` again in the WHERE: the row could have been deleted
-    // between the read above and this statement.
-    const [updated] = await tx
-      .update(customForms)
-      .set({ name: input.name, schema: input.schema })
-      .where(
-        and(eq(customForms.id, existing.id), isNull(customForms.deletedAt)),
-      )
-      .returning();
-
-    return updated;
+      return updated;
+    },
   });
 
   if (!form) {

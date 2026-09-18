@@ -2,6 +2,7 @@ import type {
   CustomFormDefinitionInput,
   CustomFormField,
 } from '@op/common/client';
+import { customFormDefinitionInputSchema } from '@op/common/client';
 
 /**
  * The field kinds the builder offers. Each maps onto one branch of
@@ -56,7 +57,7 @@ export type BuilderForm = {
   fields: BuilderField[];
 };
 
-export const createEmptyForm = (phaseId: string): BuilderForm => ({
+const createEmptyForm = (phaseId: string): BuilderForm => ({
   name: '',
   title: '',
   description: '',
@@ -178,6 +179,150 @@ export const parseDefinition = ({
 };
 
 /**
+ * The draft the editor opens on: a stored form read back, or a new one already
+ * pointed at the first phase that has room for it.
+ */
+export const initialDraftFor = ({
+  form,
+  phases,
+  occupiedPhaseIds,
+}: {
+  form?: {
+    schema: Record<string, unknown>;
+    phaseId: string | null;
+    name: string;
+  };
+  phases: readonly { phaseId: string }[];
+  occupiedPhaseIds: readonly string[];
+}): { form: BuilderForm; unsupportedKeys: string[] } => {
+  if (!form) {
+    const firstFree = phases.find(
+      (phase) => !occupiedPhaseIds.includes(phase.phaseId),
+    );
+
+    return {
+      form: createEmptyForm(firstFree?.phaseId ?? ''),
+      unsupportedKeys: [],
+    };
+  }
+
+  return parseDefinition({
+    schema: form.schema,
+    // A form whose phase the server could not resolve still has to open on
+    // something; the first phase keeps the select from starting empty.
+    phaseId: form.phaseId ?? phases[0]?.phaseId ?? '',
+    name: form.name,
+  });
+};
+
+/**
+ * How a form's phase reads in the list: the phase's name when the process still
+ * configures it, else the raw id — a form bound to a phase that has since been
+ * removed is still served to participants, so hiding it would hide a live form.
+ */
+export const resolvePhaseBadge = ({
+  phaseId,
+  phases,
+  unsetLabel,
+}: {
+  phaseId: string | null;
+  phases: readonly { phaseId: string; name: string | null }[];
+  unsetLabel: string;
+}): { label: string; isKnownPhase: boolean } => {
+  if (!phaseId) {
+    return { label: unsetLabel, isKnownPhase: false };
+  }
+
+  const phase = phases.find((entry) => entry.phaseId === phaseId);
+
+  return {
+    label: phase?.name ?? phaseId,
+    isKnownPhase: phase !== undefined,
+  };
+};
+
+/**
+ * What is wrong with a draft, as a code the caller renders through `t()`.
+ * `position` is the 1-based field number for the per-field codes.
+ *
+ * Codes rather than sentences: the messages belong to the app's dictionaries,
+ * and keeping this function free of them keeps it a pure, testable check.
+ */
+export type DraftProblem = {
+  code: DraftProblemCode;
+  position?: number;
+  /** Set only on `schema`: the raw issue, for a shape we failed to anticipate. */
+  detail?: string;
+};
+
+export type DraftProblemCode =
+  | 'missing-name'
+  | 'missing-phase'
+  | 'missing-title'
+  | 'no-fields'
+  | 'field-missing-question'
+  | 'field-missing-options'
+  | 'schema';
+
+/**
+ * A draft checked against everything the server will enforce, returning the
+ * definition to save or the reasons it cannot be.
+ *
+ * The explicit checks come first so an author sees copy in their own language;
+ * a `schema` problem is the backstop for a shape those checks did not predict.
+ */
+export const validateDraft = (
+  draft: BuilderForm,
+):
+  | { ok: true; definition: CustomFormDefinitionInput }
+  | { ok: false; problems: DraftProblem[] } => {
+  const problems = describeDraftProblems(draft);
+  const parsed = customFormDefinitionInputSchema.safeParse(
+    buildDefinition(draft),
+  );
+
+  if (problems.length > 0) {
+    return { ok: false, problems };
+  }
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      problems: parsed.error.issues.map((issue) => ({
+        code: 'schema' as const,
+        detail: issue.message,
+      })),
+    };
+  }
+
+  return { ok: true, definition: parsed.data };
+};
+
+/** Every explicit rule an author can break, in the order the form reads. */
+const describeDraftProblems = (draft: BuilderForm): DraftProblem[] => {
+  const problems: DraftProblem[] = [
+    ...(draft.name.trim() ? [] : [{ code: 'missing-name' as const }]),
+    ...(draft.phaseId ? [] : [{ code: 'missing-phase' as const }]),
+    ...(draft.title.trim() ? [] : [{ code: 'missing-title' as const }]),
+    ...(draft.fields.length > 0 ? [] : [{ code: 'no-fields' as const }]),
+  ];
+
+  draft.fields.forEach((field, index) => {
+    const position = index + 1;
+
+    if (!field.title.trim()) {
+      problems.push({ code: 'field-missing-question', position });
+    }
+
+    if (CHOICE_FIELD_KINDS.includes(field.kind) && field.options.length === 0) {
+      problems.push({ code: 'field-missing-options', position });
+    }
+  });
+
+  return problems;
+};
+
+/**
  * A JSON Schema property name derived from a label, made unique against
  * `takenKeys`.
  *
@@ -258,8 +403,6 @@ const buildField = (field: BuilderField): CustomFormField => {
 const resolveFieldKind = (
   property: Record<string, unknown>,
 ): FormFieldKind | null => {
-  const format = property['x-format'];
-
   if (property.type === 'boolean') {
     return 'checkbox';
   }
@@ -268,21 +411,34 @@ const resolveFieldKind = (
     return readOptions(property).length > 0 ? 'multi-select' : null;
   }
 
+  return resolveChoiceKind(property) ?? resolveTypedTextKind(property);
+};
+
+/**
+ * The choice half of the cascade: a field with options, or one that asks for a
+ * choice control and has none (which the renderer leaves blank, so the editor
+ * refuses it rather than showing an answerable-looking control).
+ *
+ * Returns undefined when the property is not a choice field at all, which is
+ * how {@link resolveFieldKind} knows to keep looking.
+ */
+const resolveChoiceKind = (
+  property: Record<string, unknown>,
+): FormFieldKind | null | undefined => {
+  const format = property['x-format'];
   const hasOptions = readOptions(property).length > 0;
 
-  if (format === 'radio' && hasOptions) {
-    return 'radio';
-  }
-
   if (hasOptions) {
-    return 'dropdown';
+    return format === 'radio' ? 'radio' : 'dropdown';
   }
 
-  // A choice control with nothing to choose from: not editable, not answerable.
-  if (format === 'dropdown' || format === 'radio') {
-    return null;
-  }
+  return format === 'dropdown' || format === 'radio' ? null : undefined;
+};
 
+/** The remaining kinds, keyed off `type` and then `x-format`. */
+const resolveTypedTextKind = (
+  property: Record<string, unknown>,
+): FormFieldKind | null => {
   if (property.type === 'number' || property.type === 'integer') {
     return 'number';
   }
@@ -290,6 +446,8 @@ const resolveFieldKind = (
   if (property.type !== 'string') {
     return null;
   }
+
+  const format = property['x-format'];
 
   if (format === 'long-text') {
     return 'long-text';

@@ -3,9 +3,9 @@
 import { trpc } from '@op/api/client';
 import type {
   AdminDecisionPhase,
+  CustomFormDefinitionInput,
   CustomFormWithPhaseDTO,
 } from '@op/common/client';
-import { customFormDefinitionInputSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -30,17 +30,24 @@ import { toast } from '@op/sense/Toast';
 import { useId, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
-import { type TranslateFn, useTranslations } from '@/lib/i18n';
+import {
+  type TranslateFn,
+  type TranslationKey,
+  useTranslations,
+} from '@/lib/i18n';
 
 import { CustomFormFieldEditor } from './CustomFormFieldEditor';
-import type { BuilderField, BuilderForm } from './formDefinition';
+import type {
+  BuilderField,
+  BuilderForm,
+  DraftProblem,
+  DraftProblemCode,
+} from './formDefinition';
 import {
-  CHOICE_FIELD_KINDS,
-  buildDefinition,
   createEmptyField,
-  createEmptyForm,
   deriveFieldKey,
-  parseDefinition,
+  initialDraftFor,
+  validateDraft,
 } from './formDefinition';
 
 interface CustomFormBuilderDialogProps {
@@ -91,91 +98,36 @@ const BuilderContent = ({
   form,
 }: Omit<CustomFormBuilderDialogProps, 'isOpen'>) => {
   const t = useTranslations();
-  const fieldId = useId();
-
-  const initial = form
-    ? parseDefinition({
-        schema: form.schema,
-        phaseId: form.phaseId ?? phases[0]?.phaseId ?? '',
-        name: form.name,
-      })
-    : {
-        form: createEmptyForm(
-          firstFreePhaseId({ phases, occupiedPhaseIds }) ?? '',
-        ),
-        unsupportedKeys: [],
-      };
+  const initial = initialDraftFor({ form, phases, occupiedPhaseIds });
 
   const [draft, setDraft] = useState<BuilderForm>(initial.form);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const createForm = trpc.customForm.create.useMutation();
-  const updateForm = trpc.customForm.update.useMutation();
-  const isSaving = createForm.isPending || updateForm.isPending;
+  const { save, isSaving } = useSaveCustomForm({
+    form,
+    profileId,
+    onSaved: () => onOpenChange(false),
+    onFailed: setErrors,
+  });
 
   const handleSave = () => {
-    const parsed = customFormDefinitionInputSchema.safeParse(
-      buildDefinition(draft),
-    );
+    const result = validateDraft(draft);
 
-    // Translated copy for everything an author can actually get wrong. The raw
-    // schema issues are only a fallback, so a shape we failed to anticipate
-    // still says something rather than saving silently.
-    const messages = describeDraftProblems({ draft, t });
-
-    if (!parsed.success || messages.length > 0) {
-      setErrors(
-        messages.length > 0
-          ? messages
-          : parsed.success
-            ? []
-            : parsed.error.issues.map((issue) => issue.message),
-      );
+    if (!result.ok) {
+      setErrors(result.problems.map((problem) => describeProblem(problem, t)));
       return;
     }
 
     setErrors([]);
-
-    const onSuccess = () => {
-      toast.success(form ? t('Form updated') : t('Form created'));
-      onOpenChange(false);
-    };
-    const onError = (error: { message: string }) => {
-      setErrors([error.message]);
-    };
-
-    if (form) {
-      updateForm.mutate(
-        { id: form.id, name: draft.name.trim(), schema: parsed.data },
-        { onSuccess, onError },
-      );
-      return;
-    }
-
-    createForm.mutate(
-      { profileId, name: draft.name.trim(), schema: parsed.data },
-      { onSuccess, onError },
-    );
+    save({ name: draft.name.trim(), definition: result.definition });
   };
 
   if (initial.unsupportedKeys.length > 0) {
     return (
-      <>
-        <DialogHeader>
-          <DialogTitle>{t('This form needs an engineer')}</DialogTitle>
-          <DialogDescription>
-            {t(
-              'It uses field types this editor cannot show: {fields}. Saving here would drop them, so edit it directly instead.',
-              { fields: initial.unsupportedKeys.join(', ') },
-            )}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('Close')}
-          </Button>
-        </DialogFooter>
-      </>
+      <UnsupportedFormNotice
+        unsupportedKeys={initial.unsupportedKeys}
+        onClose={() => onOpenChange(false)}
+      />
     );
   }
 
@@ -191,133 +143,14 @@ const BuilderContent = ({
       {/* DialogContent is the scroll container and pins the header and footer;
           this body only needs its own padding. */}
       <div className="flex flex-col gap-6 px-6 py-4">
-        <Field>
-          <FieldLabel htmlFor={`${fieldId}-name`}>
-            {t('Internal name')}
-          </FieldLabel>
-          <Input
-            id={`${fieldId}-name`}
-            value={draft.name}
-            onChange={(event) =>
-              setDraft({ ...draft, name: event.target.value })
-            }
-          />
-          <FieldDescription>
-            {t('Only admins see this. Participants see the heading below.')}
-          </FieldDescription>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${fieldId}-phase`}>{t('Phase')}</FieldLabel>
-          <Select
-            value={draft.phaseId || null}
-            onValueChange={(next) =>
-              setDraft({ ...draft, phaseId: next == null ? '' : String(next) })
-            }
-          >
-            <SelectTrigger id={`${fieldId}-phase`} className="w-full">
-              <SelectValue placeholder={t('Select a phase')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {phases.map((phase) => (
-                  <SelectItem
-                    key={phase.phaseId}
-                    value={phase.phaseId}
-                    disabled={occupiedPhaseIds.includes(phase.phaseId)}
-                  >
-                    {phase.name ?? phase.phaseId}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <FieldDescription>
-            {t(
-              'A phase can hold one form. Phases that already have one are unavailable.',
-            )}
-          </FieldDescription>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${fieldId}-title`}>{t('Heading')}</FieldLabel>
-          <Input
-            id={`${fieldId}-title`}
-            value={draft.title}
-            onChange={(event) =>
-              setDraft({ ...draft, title: event.target.value })
-            }
-          />
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${fieldId}-description`}>
-            {t('Intro text')}
-          </FieldLabel>
-          <Textarea
-            id={`${fieldId}-description`}
-            rows={2}
-            value={draft.description}
-            onChange={(event) =>
-              setDraft({ ...draft, description: event.target.value })
-            }
-          />
-        </Field>
-
-        {draft.fields.map((field, index) => (
-          <CustomFormFieldEditor
-            key={field.localId}
-            field={field}
-            index={index}
-            total={draft.fields.length}
-            onChange={(next) =>
-              setDraft({
-                ...draft,
-                fields: withFieldAt({ fields: draft.fields, index, next }),
-              })
-            }
-            onMove={(offset) =>
-              setDraft({
-                ...draft,
-                fields: moveField({ fields: draft.fields, index, offset }),
-              })
-            }
-            onRemove={() =>
-              setDraft({
-                ...draft,
-                fields: draft.fields.filter((_, at) => at !== index),
-              })
-            }
-          />
-        ))}
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-fit"
-          onClick={() =>
-            setDraft({
-              ...draft,
-              fields: [
-                ...draft.fields,
-                createEmptyField(`new-${draft.fields.length}-${Date.now()}`),
-              ],
-            })
-          }
-        >
-          <LuPlus data-icon="inline-start" />
-          {t('Add field')}
-        </Button>
-
-        {errors.length > 0 ? (
-          <div aria-live="polite" className="flex flex-col gap-1">
-            {errors.map((message) => (
-              <p key={message} className="text-sm text-destructive">
-                {message}
-              </p>
-            ))}
-          </div>
-        ) : null}
+        <FormDetailsFields
+          draft={draft}
+          phases={phases}
+          occupiedPhaseIds={occupiedPhaseIds}
+          onChange={setDraft}
+        />
+        <FormFieldList draft={draft} onChange={setDraft} />
+        <ValidationErrors messages={errors} />
       </div>
 
       <DialogFooter>
@@ -337,53 +170,266 @@ const BuilderContent = ({
 };
 
 /**
- * Everything wrong with a draft, in the author's language. Mirrors the checks
- * `customFormDefinitionInputSchema` enforces on the server, which has no
- * translations of its own to offer.
+ * Saves the draft through whichever mutation fits — update when the dialog
+ * opened on an existing form, create otherwise — so the component above only
+ * has to know that saving happened.
  */
-const describeDraftProblems = ({
+const useSaveCustomForm = ({
+  form,
+  profileId,
+  onSaved,
+  onFailed,
+}: {
+  form?: CustomFormWithPhaseDTO;
+  profileId: string;
+  onSaved: () => void;
+  onFailed: (messages: string[]) => void;
+}) => {
+  const t = useTranslations();
+  const createForm = trpc.customForm.create.useMutation();
+  const updateForm = trpc.customForm.update.useMutation();
+
+  const handlers = {
+    onSuccess: () => {
+      toast.success(form ? t('Form updated') : t('Form created'));
+      onSaved();
+    },
+    onError: (error: { message: string }) => onFailed([error.message]),
+  };
+
+  const save = ({
+    name,
+    definition,
+  }: {
+    name: string;
+    definition: CustomFormDefinitionInput;
+  }) => {
+    if (form) {
+      updateForm.mutate({ id: form.id, name, schema: definition }, handlers);
+      return;
+    }
+
+    createForm.mutate({ profileId, name, schema: definition }, handlers);
+  };
+
+  return { save, isSaving: createForm.isPending || updateForm.isPending };
+};
+
+/** Form-level settings: the admin label, the phase, and the participant copy. */
+const FormDetailsFields = ({
   draft,
-  t,
+  phases,
+  occupiedPhaseIds,
+  onChange,
 }: {
   draft: BuilderForm;
-  t: TranslateFn;
-}): string[] => {
-  const problems: string[] = [];
+  phases: AdminDecisionPhase[];
+  occupiedPhaseIds: string[];
+  onChange: (draft: BuilderForm) => void;
+}) => {
+  const t = useTranslations();
+  const fieldId = useId();
 
-  if (!draft.name.trim()) {
-    problems.push(t('Give the form an internal name.'));
-  }
+  return (
+    <>
+      <Field>
+        <FieldLabel htmlFor={`${fieldId}-name`}>
+          {t('Internal name')}
+        </FieldLabel>
+        <Input
+          id={`${fieldId}-name`}
+          value={draft.name}
+          onChange={(event) => onChange({ ...draft, name: event.target.value })}
+        />
+        <FieldDescription>
+          {t('Only admins see this. Participants see the heading below.')}
+        </FieldDescription>
+      </Field>
 
-  if (!draft.phaseId) {
-    problems.push(t('Choose the phase this form appears on.'));
-  }
+      <Field>
+        <FieldLabel htmlFor={`${fieldId}-phase`}>{t('Phase')}</FieldLabel>
+        <Select
+          value={draft.phaseId || null}
+          onValueChange={(next) =>
+            onChange({ ...draft, phaseId: next == null ? '' : String(next) })
+          }
+        >
+          <SelectTrigger id={`${fieldId}-phase`} className="w-full">
+            <SelectValue placeholder={t('Select a phase')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {phases.map((phase) => (
+                <SelectItem
+                  key={phase.phaseId}
+                  value={phase.phaseId}
+                  disabled={occupiedPhaseIds.includes(phase.phaseId)}
+                >
+                  {phase.name ?? phase.phaseId}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <FieldDescription>
+          {t(
+            'A phase can hold one form. Phases that already have one are unavailable.',
+          )}
+        </FieldDescription>
+      </Field>
 
-  if (!draft.title.trim()) {
-    problems.push(t('Give the form a heading participants will see.'));
-  }
+      <Field>
+        <FieldLabel htmlFor={`${fieldId}-title`}>{t('Heading')}</FieldLabel>
+        <Input
+          id={`${fieldId}-title`}
+          value={draft.title}
+          onChange={(event) =>
+            onChange({ ...draft, title: event.target.value })
+          }
+        />
+      </Field>
 
-  if (draft.fields.length === 0) {
-    problems.push(t('Add at least one field.'));
-  }
-
-  draft.fields.forEach((field, index) => {
-    const position = index + 1;
-
-    if (!field.title.trim()) {
-      problems.push(
-        t('Field {number} needs a question.', { number: position }),
-      );
-    }
-
-    if (CHOICE_FIELD_KINDS.includes(field.kind) && field.options.length === 0) {
-      problems.push(
-        t('Field {number} needs at least one option.', { number: position }),
-      );
-    }
-  });
-
-  return problems;
+      <Field>
+        <FieldLabel htmlFor={`${fieldId}-description`}>
+          {t('Intro text')}
+        </FieldLabel>
+        <Textarea
+          id={`${fieldId}-description`}
+          rows={2}
+          value={draft.description}
+          onChange={(event) =>
+            onChange({ ...draft, description: event.target.value })
+          }
+        />
+      </Field>
+    </>
+  );
 };
+
+/** The ordered field list plus its add control. */
+const FormFieldList = ({
+  draft,
+  onChange,
+}: {
+  draft: BuilderForm;
+  onChange: (draft: BuilderForm) => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <>
+      {draft.fields.map((field, index) => (
+        <CustomFormFieldEditor
+          key={field.localId}
+          field={field}
+          index={index}
+          total={draft.fields.length}
+          onChange={(next) =>
+            onChange({
+              ...draft,
+              fields: withFieldAt({ fields: draft.fields, index, next }),
+            })
+          }
+          onMove={(offset) =>
+            onChange({
+              ...draft,
+              fields: moveField({ fields: draft.fields, index, offset }),
+            })
+          }
+          onRemove={() =>
+            onChange({
+              ...draft,
+              fields: draft.fields.filter((_, at) => at !== index),
+            })
+          }
+        />
+      ))}
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-fit"
+        onClick={() =>
+          onChange({
+            ...draft,
+            fields: [...draft.fields, createEmptyField(nextLocalId(draft))],
+          })
+        }
+      >
+        <LuPlus data-icon="inline-start" />
+        {t('Add field')}
+      </Button>
+    </>
+  );
+};
+
+const ValidationErrors = ({ messages }: { messages: string[] }) => {
+  if (messages.length === 0) {
+    return null;
+  }
+
+  return (
+    <div aria-live="polite" className="flex flex-col gap-1">
+      {messages.map((message) => (
+        <p key={message} className="text-sm text-destructive">
+          {message}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+const UnsupportedFormNotice = ({
+  unsupportedKeys,
+  onClose,
+}: {
+  unsupportedKeys: string[];
+  onClose: () => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t('This form needs an engineer')}</DialogTitle>
+        <DialogDescription>
+          {t(
+            'It uses field types this editor cannot show: {fields}. Saving here would drop them, so edit it directly instead.',
+            { fields: unsupportedKeys.join(', ') },
+          )}
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          {t('Close')}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+};
+
+/**
+ * Copy for each problem code. Keyed rather than switched so adding a code is a
+ * compile error here rather than a silently unrendered message. `schema` is
+ * absent on purpose: it carries its own raw detail, because it only fires for a
+ * shape we have no specific copy for.
+ */
+const PROBLEM_MESSAGES: Record<
+  Exclude<DraftProblemCode, 'schema'>,
+  TranslationKey
+> = {
+  'missing-name': 'Give the form an internal name.',
+  'missing-phase': 'Choose the phase this form appears on.',
+  'missing-title': 'Give the form a heading participants will see.',
+  'no-fields': 'Add at least one field.',
+  'field-missing-question': 'Field {number} needs a question.',
+  'field-missing-options': 'Field {number} needs at least one option.',
+};
+
+const describeProblem = (problem: DraftProblem, t: TranslateFn): string =>
+  problem.code === 'schema'
+    ? (problem.detail ?? '')
+    : t(PROBLEM_MESSAGES[problem.code], { number: problem.position });
 
 /**
  * Replaces one field, re-deriving its key from the label while the key is still
@@ -435,11 +481,18 @@ const moveField = ({
   return reordered;
 };
 
-const firstFreePhaseId = ({
-  phases,
-  occupiedPhaseIds,
-}: {
-  phases: AdminDecisionPhase[];
-  occupiedPhaseIds: string[];
-}): string | undefined =>
-  phases.find((phase) => !occupiedPhaseIds.includes(phase.phaseId))?.phaseId;
+/**
+ * A local id no current field holds. Counting upward from the highest `new-N`
+ * already in the draft keeps it unique after a removal, where the field count
+ * alone would repeat an id and collapse two React rows into one.
+ */
+const nextLocalId = (draft: BuilderForm): string => {
+  const used = new Set(draft.fields.map((field) => field.localId));
+
+  let index = draft.fields.length;
+  while (used.has(`new-${index}`)) {
+    index += 1;
+  }
+
+  return `new-${index}`;
+};

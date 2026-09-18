@@ -1,9 +1,35 @@
+import { db } from '@op/db/client';
 import type { TransactionType } from '@op/db/client';
 import { sql } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
 import type { CustomFormProcessContext } from './customFormAuth';
 import { getEffectiveFormPhase } from './utils';
+
+/**
+ * Runs a form write inside the transaction that owns the phase binding: the
+ * profile's forms are locked, the target phase is proven free, and only then
+ * does `write` run. The single entry point for create and update, so neither
+ * can reach the insert without holding the lock that makes the check mean
+ * anything.
+ */
+export const writeWithPhaseLock = async <TResult>({
+  process,
+  phaseId,
+  excludeFormId,
+  write,
+}: {
+  process: CustomFormProcessContext;
+  phaseId: string;
+  excludeFormId?: string;
+  write: (tx: TransactionType) => Promise<TResult>;
+}): Promise<TResult> =>
+  db.transaction(async (tx) => {
+    await lockProfileForms({ tx, profileId: process.profileId });
+    await assertPhaseAvailable({ tx, process, phaseId, excludeFormId });
+
+    return write(tx);
+  });
 
 /**
  * Serializes concurrent form writes on one profile for the transaction.

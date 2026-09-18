@@ -33,6 +33,7 @@ import { LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { CustomFormBuilderDialog } from './CustomFormBuilderDialog';
+import { resolvePhaseBadge } from './formDefinition';
 
 interface CustomFormsPanelProps {
   /** The decision's own profile; null on instances that never got one. */
@@ -123,15 +124,7 @@ const CustomFormsPanelSuspense = ({
             />
           ))
         )}
-        {phases.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {t('This decision has no phases to attach a form to.')}
-          </p>
-        ) : !canAdd ? (
-          <p className="text-sm text-muted-foreground">
-            {t('Every phase already has a form.')}
-          </p>
-        ) : null}
+        <PhaseAvailabilityNote hasPhases={phases.length > 0} canAdd={canAdd} />
       </CardContent>
 
       <CustomFormBuilderDialog
@@ -161,6 +154,29 @@ const CustomFormsPanelSuspense = ({
   );
 };
 
+/** Why the New form button is unavailable, when it is. */
+const PhaseAvailabilityNote = ({
+  hasPhases,
+  canAdd,
+}: {
+  hasPhases: boolean;
+  canAdd: boolean;
+}) => {
+  const t = useTranslations();
+
+  if (canAdd) {
+    return null;
+  }
+
+  return (
+    <p className="text-sm text-muted-foreground">
+      {hasPhases
+        ? t('Every phase already has a form.')
+        : t('This decision has no phases to attach a form to.')}
+    </p>
+  );
+};
+
 const CustomFormRow = ({
   form,
   phases,
@@ -171,10 +187,6 @@ const CustomFormRow = ({
   onEdit: () => void;
 }) => {
   const t = useTranslations();
-  const fieldCount = Object.keys(
-    isRecord(form.schema.properties) ? form.schema.properties : {},
-  ).length;
-  const phase = phases.find((entry) => entry.phaseId === form.phaseId);
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3">
@@ -182,19 +194,11 @@ const CustomFormRow = ({
         <span className="truncate text-sm font-medium">{form.name}</span>
         <span className="truncate text-sm text-muted-foreground">
           {t('{count, plural, one {# field} other {# fields}}', {
-            count: fieldCount,
+            count: countFields(form.schema),
           })}
         </span>
       </div>
-      {form.phaseId ? (
-        // A phase the instance no longer configures still shows, by its raw id
-        // — hiding the row would hide a form participants can still be served.
-        <Badge variant={phase ? 'secondary' : 'outline'}>
-          {phase?.name ?? form.phaseId}
-        </Badge>
-      ) : (
-        <Badge variant="outline">{t('No phase')}</Badge>
-      )}
+      <FormPhaseBadge phaseId={form.phaseId} phases={phases} />
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
@@ -209,6 +213,28 @@ const CustomFormRow = ({
     </div>
   );
 };
+
+const FormPhaseBadge = ({
+  phaseId,
+  phases,
+}: {
+  phaseId: string | null;
+  phases: AdminDecisionPhase[];
+}) => {
+  const t = useTranslations();
+  const { label, isKnownPhase } = resolvePhaseBadge({
+    phaseId,
+    phases,
+    unsetLabel: t('No phase'),
+  });
+
+  return (
+    <Badge variant={isKnownPhase ? 'secondary' : 'outline'}>{label}</Badge>
+  );
+};
+
+const countFields = (schema: Record<string, unknown>): number =>
+  Object.keys(isRecord(schema.properties) ? schema.properties : {}).length;
 
 const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
   const t = useTranslations();
