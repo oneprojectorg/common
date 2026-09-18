@@ -25,6 +25,7 @@ import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { CustomFormsPanel } from './CustomFormsPanel';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
 
@@ -122,6 +123,7 @@ const DecisionInstanceDetailContent = ({
       <Tabs defaultValue="phases">
         <TabsList variant="line">
           <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
+          <TabsTrigger value="forms">{t('Forms')}</TabsTrigger>
           <TabsTrigger value="configuration">{t('Configuration')}</TabsTrigger>
           <TabsTrigger value="members">{t('Members')}</TabsTrigger>
         </TabsList>
@@ -137,6 +139,12 @@ const DecisionInstanceDetailContent = ({
               currentIndex={detail.phases.findIndex((p) => p.isCurrent)}
             />
           ))}
+        </TabsContent>
+        <TabsContent value="forms" className="pt-4">
+          <CustomFormsPanel
+            profileId={detail.profileId}
+            phases={detail.phases}
+          />
         </TabsContent>
         <TabsContent value="configuration" className="pt-4">
           <ConfigurationCard
@@ -391,7 +399,7 @@ const ConfigurationCard = ({
         {isRawShown ? (
           <pre
             id="raw-config"
-            className="max-h-[60vh] overflow-y-auto rounded-lg bg-muted p-4 text-xs break-words whitespace-pre-wrap"
+            className="max-h-96 overflow-y-auto rounded-lg bg-muted p-4 text-xs break-words whitespace-pre-wrap"
           >
             {rawConfig}
           </pre>
