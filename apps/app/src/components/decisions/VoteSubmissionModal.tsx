@@ -66,9 +66,9 @@ export const VoteSubmissionModal = ({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{t('Review your votes')}</DialogTitle>
+        <DialogTitle>{t('decisions.proposals.voteReviewTitle')}</DialogTitle>
         <DialogDescription>
-          {t('Please confirm your selections before submitting')}
+          {t('decisions.proposals.voteConfirmHint')}
         </DialogDescription>
       </DialogHeader>
 
@@ -81,7 +81,7 @@ export const VoteSubmissionModal = ({
           {t('Cancel')}
         </DialogClose>
         <Button onClick={handleSubmit} loading={submitVoteMutation.isPending}>
-          {t('Submit votes')}
+          {t('decisions.proposals.submitVotesConfirmAction')}
         </Button>
       </DialogFooter>
     </>

@@ -105,13 +105,13 @@ export function ProposalVersionsAside({
     <>
       <ProposalEditorAside
         open={open}
-        title={t('Version history')}
+        title={t('decisions.proposals.versionHistoryTitle')}
         onClose={onClose}
       >
         <ItemGroup className="gap-2">
           <VersionItem
-            label={t('Current version')}
-            sublabel={t('Latest')}
+            label={t('decisions.proposals.currentVersionLabel')}
+            sublabel={t('decisions.proposals.latestVersionLabel')}
             isSelected={versionId === null}
             isPending={isPending}
             onSelect={() => onSelectVersion(null)}
@@ -227,7 +227,7 @@ function VersionItem({
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
         <div className="px-4 pb-4">
           <Button size="sm" onClick={onRestore} disabled={isPending}>
-            {t('Restore this version')}
+            {t('decisions.proposals.restoreVersionAction')}
           </Button>
         </div>
       </CollapsibleContent>
@@ -262,7 +262,7 @@ function SavedVersionItem({
   return (
     <VersionItem
       label={label}
-      sublabel={t('Auto saved')}
+      sublabel={t('decisions.proposals.autoSavedStatus')}
       isSelected={isSelected}
       isPending={isPending}
       onRestore={onRestore}

@@ -85,7 +85,8 @@ export function ProposalEditor({
     );
   }, [proposal?.proposalData]);
 
-  const userName = user.profile?.name ?? t('Anonymous');
+  const userName =
+    user.profile?.name ?? t('decisions.proposals.anonymousAuthor');
 
   // -- Schema compilation ----------------------------------------------------
 
@@ -208,7 +209,7 @@ function ProposalEditorInner({
   const proposalFields = compileProposalSchema(proposalTemplate);
   const previewTitle = getFragmentText(versionPreview?.fragmentContents.title);
   const viewingLabel = versionPreview?.tiptapVersion
-    ? t('Viewing {date}', {
+    ? t('decisions.proposals.viewingVersionDate', {
         date: formatDate(
           new Date(versionPreview.tiptapVersion.date).toISOString(),
           locale,
@@ -392,7 +393,7 @@ function ProposalEditorInner({
       return true;
     }
 
-    toast.error(t('Please fix the following issues:'), {
+    toast.error(t('decisions.proposals.validationIssuesHeading'), {
       description: Object.values(result.errors).join(', '),
     });
 
@@ -486,7 +487,9 @@ function ProposalEditorInner({
           attachments={
             proposal.attachments?.map((pa) => ({
               id: pa.attachmentId,
-              fileName: pa.attachment?.fileName ?? t('Unknown'),
+              fileName:
+                pa.attachment?.fileName ??
+                t('decisions.proposals.unknownAuthor'),
               fileSize: pa.attachment?.fileSize ?? null,
               url: pa.attachment?.url,
             })) ?? []
@@ -529,7 +532,9 @@ function ProposalEditorInner({
           <div className="px-4 py-8 sm:px-6 sm:py-14">
             <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
               <Header2>
-                {isEditMode ? t('Edit proposal') : t('Create proposal')}
+                {isEditMode
+                  ? t('decisions.proposals.editProposalTitle')
+                  : t('decisions.proposals.createProposalTitle')}
               </Header2>
               {editorBody}
             </div>
@@ -559,7 +564,7 @@ function ProposalEditorInner({
           isSubmitting={isSubmitting}
           onSubmit={handleCustomFormSubmit}
           onOpenChange={handleCustomFormOpenChange}
-          submitLabel={t('Submit my idea')}
+          submitLabel={t('decisions.proposals.submitIdeaAction')}
         />
       )}
     </ProposalEditorLayout>

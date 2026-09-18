@@ -493,7 +493,7 @@ function PhaseDetailForm({
           </ToggleRow>
         )}
         <ToggleRow
-          label={t('Comments')}
+          label={t('decisions.proposals.commentsHeading')}
           description={t('decisions.processBuilder.commentsHint')}
         >
           <Switch

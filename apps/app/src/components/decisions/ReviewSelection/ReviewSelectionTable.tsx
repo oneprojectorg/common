@@ -61,7 +61,10 @@ export function ReviewSelectionTable({
 
   if (isMobile) {
     return (
-      <ul className="flex flex-col gap-3" aria-label={t('All proposals')}>
+      <ul
+        className="flex flex-col gap-3"
+        aria-label={t('decisions.proposals.allProposalsOption')}
+      >
         {items.map((item) => {
           const advancing = advancingIds.has(item.proposal.id);
           return (
@@ -82,11 +85,11 @@ export function ReviewSelectionTable({
   }
 
   return (
-    <Table aria-label={t('All proposals')}>
+    <Table aria-label={t('decisions.proposals.allProposalsOption')}>
       <TableHeader>
         <TableRow>
           <TableHead scope="col" className="w-56">
-            {t('Proposal')}
+            {t('decisions.proposals.proposalLabel')}
           </TableHead>
           {showBudget ? <TableHead scope="col">{t('Budget')}</TableHead> : null}
           <TableHead scope="col">{t('Category')}</TableHead>
@@ -245,7 +248,8 @@ function ProposalCard({
   showBudget: boolean;
 }) {
   const t = useTranslations();
-  const title = item.proposal.profile.name || t('Untitled Proposal');
+  const title =
+    item.proposal.profile.name || t('decisions.proposals.untitledProposal');
   const submitterName = item.proposal.submittedBy?.name ?? null;
   const budget = item.proposal.proposalData.budget;
 

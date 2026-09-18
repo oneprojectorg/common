@@ -10,13 +10,13 @@ export const ProposalCount = ({
   count: number;
   total?: number;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const narrowed = total != null && count < total;
 
   if (!narrowed) {
     return (
       <span className="font-serif text-title font-light">
-        {t('{count, plural, one {# proposal} other {# proposals}}', {
+        {t('proposalCount', {
           count: total ?? count,
         })}
       </span>
@@ -27,7 +27,7 @@ export const ProposalCount = ({
     <span className="flex items-baseline gap-1">
       <span className="font-serif text-title font-light">{count}</span>
       <span className="text-base text-muted-foreground">
-        {t('of {total, plural, one {# proposal} other {# proposals}}', {
+        {t('ofTotalProposals', {
           total,
         })}
       </span>

@@ -100,12 +100,16 @@ export function ProposalAttachments({
 
     for (const file of filesToUpload) {
       if (file.size > MAX_PROPOSAL_ATTACHMENT_FILE_SIZE) {
-        toast.error(t('File too large: {name}', { name: file.name }));
+        toast.error(
+          t('decisions.proposals.attachmentTooLargeError', { name: file.name }),
+        );
         continue;
       }
       const mimeType = file.type;
       if (!isAllowedUploadMimeType(mimeType)) {
-        toast.error(t('Unsupported file type: {name}', { name: file.name }));
+        toast.error(
+          t('decisions.proposals.attachmentTypeError', { name: file.name }),
+        );
         continue;
       }
 
@@ -136,7 +140,7 @@ export function ProposalAttachments({
             body: file,
           });
           if (!putRes.ok) {
-            throw new Error(t('Could not upload attachment'));
+            throw new Error(t('decisions.proposals.attachmentUploadError'));
           }
 
           await recordMutation.mutateAsync({
@@ -149,7 +153,7 @@ export function ProposalAttachments({
           toast.error(
             err instanceof Error
               ? err.message
-              : t('Could not upload attachment'),
+              : t('decisions.proposals.attachmentUploadError'),
           );
           onMutate();
         }
@@ -175,13 +179,11 @@ export function ProposalAttachments({
 
   return (
     <LabeledFieldSet
-      legend={t('Attachments ({count}/{max})', {
+      legend={t('decisions.proposals.attachmentsCountHeading', {
         count: optimisticAttachments.length,
         max: MAX_FILES,
       })}
-      description={t(
-        'Support your proposal with relevant documents like budgets or supporting research.',
-      )}
+      description={t('decisions.proposals.attachmentsHint')}
     >
       <ProposalAttachmentList files={displayFiles} onRemove={handleRemove} />
 
@@ -196,7 +198,7 @@ export function ProposalAttachments({
         // Figma reads "Accepts PDF, DOCX, XLSX up to 10MB" (no MP4, no "and
         // more"); the code list is kept as the source of truth for what upload
         // actually accepts — copy delta flagged, not applied.
-        description={t('Accepts {types} and more up to {size}MB', {
+        description={t('decisions.proposals.attachmentFormatHint', {
           types: 'MP4, PDF, DOCX, XLSX',
           size: MAX_SIZE_MB,
         })}

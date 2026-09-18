@@ -147,7 +147,7 @@ const RevisionRequestRow = ({
           onClick={() => setNavigating(true)}
           loading={navigating}
         >
-          {t('Revise proposal')}
+          {t('decisions.proposals.reviseProposalAction')}
         </ButtonLink>
       </NotificationPanelActions>
     </NotificationPanelItem>

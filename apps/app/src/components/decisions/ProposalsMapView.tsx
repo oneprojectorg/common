@@ -81,7 +81,7 @@ export function ProposalsMapView({
   listFooter,
   emptyState,
 }: ProposalsMapViewProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
   const isMobile = useIsMobile();
@@ -183,7 +183,7 @@ export function ProposalsMapView({
       activeId={activeId}
       onMarkerClick={handleMarkerClick}
       renderHovercard={renderHovercard}
-      ariaLabel={t('Map of proposals')}
+      ariaLabel={t('proposalsMapLabel')}
       className="h-full sm:h-full"
       {...breakpointProps}
     />

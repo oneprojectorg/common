@@ -46,8 +46,8 @@ export const ProposalSearchField = ({
         // Matches the endpoint's cap: over it the query fails input validation
         // and the error boundary swallows the list — this field included.
         maxLength={PROPOSAL_SEARCH_MAX_LENGTH}
-        placeholder={t('Search proposals')}
-        aria-label={t('Search proposals')}
+        placeholder={t('decisions.proposals.searchProposalsLabel')}
+        aria-label={t('decisions.proposals.searchProposalsLabel')}
         onChange={(event) => onChange(event.target.value)}
       />
       {value && (

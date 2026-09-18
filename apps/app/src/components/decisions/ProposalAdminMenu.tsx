@@ -73,10 +73,7 @@ function ProposalAdminMenuItems({
   // No invalidation needed: the endpoint registers the affected proposal channels.
   const unmergeMutation = trpc.decision.unmergeProposal.useMutation({
     onError: (error) => {
-      toast.error(
-        error.message ||
-          t('Could not unmerge this proposal. Please try again.'),
-      );
+      toast.error(error.message || t('decisions.proposals.unmergeError'));
       logger.error('Failed to unmerge proposal', {
         error,
         context: 'ProposalAdminMenu',
@@ -99,7 +96,7 @@ function ProposalAdminMenuItems({
   );
   const supersededBy = mergedAway?.items[0];
 
-  const triggerLabel = t('Proposal options');
+  const triggerLabel = t('decisions.proposals.proposalOptionsLabel');
   const showMergeDialog = mergeEnabled && !supersededBy;
 
   const handleUnmerge = () =>
@@ -109,8 +106,11 @@ function ProposalAdminMenuItems({
         // Per-call so the toast can name it; the input carries only an id.
         onSuccess: () =>
           toast.success(
-            t('{source} is listed on its own again.', {
-              source: getProposalDisplayTitle(proposal, t('Untitled Proposal')),
+            t('decisions.proposals.unmergeSuccess', {
+              source: getProposalDisplayTitle(
+                proposal,
+                t('decisions.proposals.untitledProposal'),
+              ),
             }),
           ),
       },
@@ -120,11 +120,11 @@ function ProposalAdminMenuItems({
   const mergeItem = mergeEnabled
     ? buildMergeMenuItem({
         isDisabled: isLoading || unmergeMutation.isPending,
-        mergeLabel: t('Merge with another proposal'),
+        mergeLabel: t('decisions.proposals.mergeProposalAction'),
         onMerge: () => setIsMergeModalOpen(true),
         unmerge: {
           isSuperseded: Boolean(supersededBy),
-          label: t('Unmerge'),
+          label: t('decisions.proposals.unmergeAction'),
           onAction: handleUnmerge,
         },
       })
@@ -138,8 +138,8 @@ function ProposalAdminMenuItems({
           isRejecting ||
           isUnrejecting,
         isRejected,
-        rejectLabel: t('Do not advance'),
-        undoLabel: t('Undo rejection'),
+        rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
+        undoLabel: t('decisions.proposals.undoRejectionAction'),
         onReject: () => setIsRejectModalOpen(true),
         onUndo: unreject,
       })
@@ -155,7 +155,9 @@ function ProposalAdminMenuItems({
       ) : (
         <LuEyeOff className="size-5" />
       ),
-      label: isHidden ? t('Unhide proposal') : t('Hide proposal'),
+      label: isHidden
+        ? t('decisions.proposals.unhideProposalAction')
+        : t('decisions.proposals.hideProposalAction'),
       onAction: toggleVisibility,
       isDisabled: isLoading,
     },

@@ -233,7 +233,7 @@ export function ProposalView({
               two sections it separates. */}
           <SplitPane.Pane
             id="proposal"
-            label={t('Proposal')}
+            label={t('decisions.proposals.proposalLabel')}
             className="gap-6 sm:gap-10"
           >
             {proposalBody}

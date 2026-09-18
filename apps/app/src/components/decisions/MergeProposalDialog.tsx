@@ -94,13 +94,14 @@ export function MergeProposalDialog({
   // No invalidation needed: the endpoint registers the affected proposal channels.
   const mergeMutation = trpc.decision.mergeProposals.useMutation({
     onError: (error) => {
-      toast.error(
-        error.message || t('Could not merge this proposal. Please try again.'),
-      );
+      toast.error(error.message || t('decisions.proposals.mergeError'));
     },
   });
 
-  const sourceTitle = getProposalDisplayTitle(proposal, t('Untitled Proposal'));
+  const sourceTitle = getProposalDisplayTitle(
+    proposal,
+    t('decisions.proposals.untitledProposal'),
+  );
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -128,7 +129,7 @@ export function MergeProposalDialog({
           // Per-call so the toast can name both ends; the input carries only ids.
           onSuccess: () =>
             toast.success(
-              t('{source} has now been merged with {target}', {
+              t('decisions.proposals.mergeSuccess', {
                 source: sourceTitle,
                 target: target.title,
               }),
@@ -150,7 +151,9 @@ export function MergeProposalDialog({
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-144">
         <DialogHeader>
           <DialogTitle>
-            {step === 'select' ? t('Merge proposal') : t('Confirm merge')}
+            {step === 'select'
+              ? t('decisions.proposals.mergeProposalTitle')
+              : t('decisions.proposals.confirmMergeAction')}
           </DialogTitle>
         </DialogHeader>
 
@@ -212,14 +215,16 @@ function SelectMergeTargetStep({
       >
         {/* Figma renders this at body colour, not the muted default. */}
         <DialogDescription className="text-foreground">
-          {t.rich(
-            'Select the proposal to merge <source>{name}</source> into. It keeps its own page, but leaves the proposal list, voting, and review.',
-            { name: sourceTitle, source },
-          )}
+          {t.rich('decisions.proposals.mergeTargetHint', {
+            name: sourceTitle,
+            source,
+          })}
         </DialogDescription>
 
         <section className="flex flex-col gap-4">
-          <h3 className="font-serif text-label">{t('Merging from')}</h3>
+          <h3 className="font-serif text-label">
+            {t('decisions.proposals.mergingFromLabel')}
+          </h3>
           <MergeProposalSummaryCard proposal={proposal} className="bg-muted" />
         </section>
 
@@ -227,7 +232,7 @@ function SelectMergeTargetStep({
             suggestions are two ways of answering "merge into what?". */}
         <section className="flex min-h-0 flex-1 flex-col gap-4">
           <h3 id={mergeIntoHeadingId} className="font-serif text-label">
-            {t('Merge into')}
+            {t('decisions.proposals.mergeIntoLabel')}
           </h3>
 
           {target ? (
@@ -242,7 +247,7 @@ function SelectMergeTargetStep({
                 className="self-start px-0"
                 onClick={() => onSelect(null)}
               >
-                {t('Select a different proposal')}
+                {t('decisions.proposals.mergeSelectDifferent')}
               </Button>
             </>
           ) : (
@@ -271,9 +276,7 @@ function SelectMergeTargetStep({
                   fallbacks={{
                     default: () => (
                       <p className="text-destructive" role="alert">
-                        {t(
-                          'Could not load the other proposals. Please try again.',
-                        )}
+                        {t('decisions.proposals.mergeCandidatesLoadError')}
                       </p>
                     ),
                   }}
@@ -336,24 +339,21 @@ function ConfirmMergeStep({
       <div className="flex flex-1 flex-col gap-8 overflow-x-hidden overflow-y-auto px-6 pt-8 pb-10">
         {/* Figma renders this at body colour, not the muted default. */}
         <DialogDescription className="text-foreground">
-          {t.rich(
-            'Merge <source>{name}</source> into <source>{target}</source>.',
-            {
-              name: sourceTitle,
-              target: targetTitle,
-              source,
-            },
-          )}
+          {t.rich('decisions.proposals.mergeSummary', {
+            name: sourceTitle,
+            target: targetTitle,
+            source,
+          })}
         </DialogDescription>
 
         <div className="flex flex-col gap-2">
-          <p>{t('What happens:')}</p>
+          <p>{t('decisions.proposals.mergeOutcomeHeading')}</p>
           <ul className="list-disc space-y-2 ps-5">
             <li>
-              {t.rich(
-                '<source>{name}</source> will be removed from the active proposals list. Its page stays viewable as a record.',
-                { name: sourceTitle, source },
-              )}
+              {t.rich('decisions.proposals.mergeRemovalNotice', {
+                name: sourceTitle,
+                source,
+              })}
             </li>
           </ul>
         </div>
@@ -363,21 +363,21 @@ function ConfirmMergeStep({
         <Field>
           <FieldLabel htmlFor="merge-note">
             {authorName
-              ? t('Add a note for {name} (optional)', { name: authorName })
-              : t('Add a note (optional)')}
+              ? t('decisions.proposals.mergeNoteForAuthorLabel', {
+                  name: authorName,
+                })
+              : t('decisions.proposals.mergeNoteLabel')}
           </FieldLabel>
           <Textarea
             id="merge-note"
             value={note}
             maxLength={MERGE_NOTE_MAX_LENGTH}
             onChange={(event) => onNoteChange(event.target.value)}
-            placeholder={t(
-              'Explain why these proposals were merged. This will be included in their notification.',
-            )}
+            placeholder={t('decisions.proposals.mergeNoteHint')}
             className="min-h-24"
           />
           <FieldDescription>
-            {t('{count} of {max} characters', {
+            {t('decisions.proposals.characterCount', {
               count: note.length,
               max: MERGE_NOTE_MAX_LENGTH,
             })}
@@ -399,7 +399,7 @@ function ConfirmMergeStep({
           onClick={onConfirm}
           loading={isMerging}
         >
-          {t('Confirm merge')}
+          {t('decisions.proposals.confirmMergeAction')}
         </Button>
       </DialogFooter>
     </div>
@@ -451,7 +451,7 @@ function MergeTargetSearchField({
     >
       <ComboboxInput
         aria-labelledby={labelledBy}
-        placeholder={t('Search proposals')}
+        placeholder={t('decisions.proposals.searchProposalsLabel')}
         showTrigger={false}
         onKeyDown={(event) => {
           // With the list closed Base UI reads Escape as "clear the field" and
@@ -525,7 +525,7 @@ function useMergeCandidateSearch({
     },
   );
 
-  const untitledLabel = t('Untitled Proposal');
+  const untitledLabel = t('decisions.proposals.untitledProposal');
   const matchingProposals = query.data?.items;
   const results = useMemo(
     () =>
@@ -571,13 +571,13 @@ function MergeSearchEmptyState({
 }) {
   const t = useTranslations();
 
-  let message = t('No proposals match your search');
+  let message = t('decisions.proposals.mergeNoSearchMatches');
   if (!hasQuery) {
-    message = t('Type to search proposals');
+    message = t('decisions.proposals.searchProposalsPlaceholder');
   } else if (isError) {
-    message = t('Could not search proposals. Please try again.');
+    message = t('decisions.proposals.proposalSearchError');
   } else if (isSearching) {
-    message = t('Searching…');
+    message = t('decisions.proposals.searchingProgress');
   }
 
   return <ComboboxEmpty>{message}</ComboboxEmpty>;
@@ -626,7 +626,7 @@ function MergeCandidateListSuspense({
       },
     );
 
-  const untitledLabel = t('Untitled Proposal');
+  const untitledLabel = t('decisions.proposals.untitledProposal');
   const candidates = useMemo(
     () =>
       getMergeCandidates({
@@ -656,11 +656,11 @@ function MergeCandidateListSuspense({
       {candidates.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyTitle>{t('No other proposals yet')}</EmptyTitle>
+            <EmptyTitle>
+              {t('decisions.proposals.mergeNoCandidates')}
+            </EmptyTitle>
             <EmptyDescription>
-              {t(
-                'A proposal can only be merged into another one in this decision.',
-              )}
+              {t('decisions.proposals.mergeSameDecisionHint')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -674,7 +674,7 @@ function MergeCandidateListSuspense({
               onSelect(candidate);
             }
           }}
-          aria-label={t('Proposal to merge into')}
+          aria-label={t('decisions.proposals.mergeTargetLabel')}
           className="gap-4"
         >
           {candidates.map((candidate) => (

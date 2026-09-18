@@ -66,7 +66,7 @@ function SentAtLine({
   return (
     <p className="text-sm text-muted-foreground">
       {meta === 'anonymousReviewer'
-        ? t('Reviewer · {timeAgo}', { timeAgo })
+        ? t('decisions.proposals.reviewerFeedbackMeta', { timeAgo })
         : meta === 'bare'
           ? timeAgo
           : t('decisions.review.sentTimeAgo', { timeAgo })}

@@ -364,8 +364,14 @@ export function ReviewAssignmentsList({
                   id: 'leastReviewed',
                   label: t('decisions.review.sortLeastReviewed'),
                 },
-                { id: 'newest', label: t('Newest First') },
-                { id: 'oldest', label: t('Oldest First') },
+                {
+                  id: 'newest',
+                  label: t('decisions.proposals.sortNewestOption'),
+                },
+                {
+                  id: 'oldest',
+                  label: t('decisions.proposals.sortOldestOption'),
+                },
               ]}
             />
             {hasLocationField && (
@@ -406,7 +412,7 @@ export function ReviewAssignmentsList({
             </EmptyTitle>
             <EmptyDescription>
               {statusFilter
-                ? t('Try adjusting your filter selection above.')
+                ? t('decisions.proposals.adjustFiltersHint')
                 : t('decisions.review.noReviewAssignmentsHint')}
             </EmptyDescription>
           </EmptyHeader>
@@ -421,7 +427,7 @@ export function ReviewAssignmentsList({
               fallbacks={{
                 default: () => (
                   <div className="py-8 text-center text-base">
-                    {t("Couldn't load the map. Refresh to try again.")}
+                    {t('decisions.proposals.mapLoadError')}
                   </div>
                 ),
               }}

@@ -217,7 +217,10 @@ export function ReviewSummaryView({
       </DecisionSubpageHeader>
 
       <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="summary">
-        <SplitPane.Pane id="proposal" label={t('Proposal')}>
+        <SplitPane.Pane
+          id="proposal"
+          label={t('decisions.proposals.proposalLabel')}
+        >
           {selectedStaleReview && !isOwnFormOpen ? (
             <ReviewedVersionPane
               // Remount per reviewer so the skeleton covers the next read.

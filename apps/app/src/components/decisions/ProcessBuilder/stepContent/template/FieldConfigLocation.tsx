@@ -35,7 +35,7 @@ export function FieldConfigLocation({
 
   return (
     <div className="space-y-2">
-      <Header4>{t('Map view')}</Header4>
+      <Header4>{t('decisions.proposals.mapViewOption')}</Header4>
       <p className="text-sm text-muted-foreground">
         {t('decisions.processBuilder.mapPositionHint')}
       </p>

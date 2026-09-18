@@ -15,7 +15,7 @@ import { useTranslations } from '@/lib/i18n';
  * their `APIErrorBoundary` default fallback.
  */
 export const ProposalsLoadError = () => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <Empty>
@@ -23,10 +23,8 @@ export const ProposalsLoadError = () => {
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle>{t("We couldn't load proposals")}</EmptyTitle>
-        <EmptyDescription>
-          {t('Please refresh the page to try again.')}
-        </EmptyDescription>
+        <EmptyTitle>{t('proposalsLoadError')}</EmptyTitle>
+        <EmptyDescription>{t('refreshPageHint')}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );

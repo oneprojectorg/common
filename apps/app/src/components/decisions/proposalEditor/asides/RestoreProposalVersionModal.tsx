@@ -33,7 +33,7 @@ export function RestoreProposalVersionModal({
   onConfirm,
 }: RestoreProposalVersionModalProps) {
   const locale = useLocale();
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   const formattedDate = formatDate(versionDate, locale, DATE_TIME_UTC_FORMAT);
 
@@ -57,32 +57,25 @@ export function RestoreProposalVersionModal({
           >
             <LuHistory className="size-5 rtl:-scale-x-100" />
           </span>
-          <DialogTitle>{t('Restore this version?')}</DialogTitle>
+          <DialogTitle>{t('restoreVersionTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 py-4 text-base">
           <p>
-            {t.rich(
-              'Your proposal will be restored to the version from <bold>{date}</bold>.',
-              {
-                date: formattedDate,
-                bold: (chunks: React.ReactNode) => (
-                  <span className="font-bold">{chunks}</span>
-                ),
-              },
-            )}
+            {t.rich('restoreVersionDescription', {
+              date: formattedDate,
+              bold: (chunks: React.ReactNode) => (
+                <span className="font-bold">{chunks}</span>
+              ),
+            })}
           </p>
-          <p>
-            {t(
-              'Your current version will be saved and you can restore it anytime.',
-            )}
-          </p>
+          <p>{t('restoreVersionReassurance')}</p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isPending}>
-            {t('Keep current')}
+            {t('keepCurrentVersionAction')}
           </Button>
           <Button onClick={onConfirm} loading={isPending}>
-            {t('Restore')}
+            {t('restoreAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

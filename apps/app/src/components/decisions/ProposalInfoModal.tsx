@@ -29,7 +29,7 @@ export function ProposalInfoModal({
   title,
   content,
 }: ProposalInfoModalProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   // This is a hack for people powered needing translated content before we support it in user-generated content
   const translatedContent = !!content.match('INFOTRANSLATION');
@@ -49,14 +49,14 @@ export function ProposalInfoModal({
             className={viewerProseStyles}
             dangerouslySetInnerHTML={{
               __html: translatedContent
-                ? he.decode(t('INFOTRANSLATION'))
+                ? he.decode(t('infoTranslationNotice'))
                 : content,
             }}
           />
         </div>
 
         <DialogFooter>
-          <Button onClick={onClose}>{t('OK')}</Button>
+          <Button onClick={onClose}>{t('acknowledgeAction')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -144,7 +144,7 @@ const Image = async ({
     const stats: string[] = [];
     if (instance.proposalCount != null) {
       stats.push(
-        t('{count, plural, one {# proposal} other {# proposals}}', {
+        t('decisions.proposals.proposalCount', {
           count: instance.proposalCount,
         }),
       );
