@@ -118,7 +118,6 @@ export const Events = {
   reviewPhaseEndingSoon: {
     name: 'review/phase-ending-soon' as const,
     schema: z.object({
-      transitionId: z.string().uuid(),
       processInstanceId: z.string().uuid(),
       phaseId: z.string().min(1),
       reminderWindowEnd: z.string().min(1),

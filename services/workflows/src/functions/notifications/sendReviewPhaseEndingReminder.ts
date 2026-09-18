@@ -1,135 +1,155 @@
 import {
-  type DecisionInstanceData,
-  isReviewPhase,
+  computeDaysLeft,
+  getInstancePhases,
   listProfileRecipients,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  ProcessStatus,
-  ProposalReviewAssignmentStatus,
-  decisionProcessTransitions,
-  processInstances,
-  profiles,
-} from '@op/db/schema';
+import { ProcessStatus, ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { OPBatchSend, ReviewPhaseEndingReminderEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { eq } from 'drizzle-orm';
 
 const { reviewPhaseEndingSoon } = Events;
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export const sendReviewPhaseEndingReminder = inngest.createFunction(
   {
     id: 'sendReviewPhaseEndingReminder',
     // Bucket-scoped: a deadline pushed into a later bucket must not look like
     // a duplicate of the earlier one.
-    idempotency: 'event.data.transitionId + "-" + event.data.reminderWindowEnd',
+    idempotency:
+      'event.data.processInstanceId + "-" + event.data.phaseId + "-" + event.data.reminderWindowEnd',
   },
   { event: reviewPhaseEndingSoon.name },
   async ({ event, step, runId }) => {
-    const { transitionId, reminderWindowEnd } =
+    const { processInstanceId, phaseId, reminderWindowEnd } =
       reviewPhaseEndingSoon.schema.parse(event.data);
 
-    const transitionData = await step.run('get-transition-data', async () => {
-      const rows = await db
-        .select({
-          fromStateId: decisionProcessTransitions.fromStateId,
-          scheduledDate: decisionProcessTransitions.scheduledDate,
-          completedAt: decisionProcessTransitions.completedAt,
-          processInstanceId: processInstances.id,
-          processName: processInstances.name,
-          processStatus: processInstances.status,
-          currentStateId: processInstances.currentStateId,
-          instanceData: processInstances.instanceData,
-          profileSlug: profiles.slug,
-        })
-        .from(decisionProcessTransitions)
-        .innerJoin(
-          processInstances,
-          eq(decisionProcessTransitions.processInstanceId, processInstances.id),
-        )
-        .leftJoin(profiles, eq(processInstances.profileId, profiles.id))
-        .where(eq(decisionProcessTransitions.id, transitionId))
-        .limit(1);
+    const instanceData = await step.run('get-instance-data', async () => {
+      const instance = await db.query.processInstances.findFirst({
+        where: { id: processInstanceId },
+        columns: {
+          id: true,
+          name: true,
+          status: true,
+          currentStateId: true,
+          instanceData: true,
+          deletedAt: true,
+        },
+        with: {
+          profile: { columns: { slug: true } },
+        },
+      });
 
-      const row = rows[0];
-
-      if (!row) {
+      if (!instance) {
         return undefined;
       }
 
       // daysLeft reads observedAt, not a live clock: a retry that re-rounded
       // it would 409 the already-delivered chunk on its Resend key.
-      return { ...row, observedAt: new Date().toISOString() };
+      return { ...instance, observedAt: new Date().toISOString() };
     });
 
-    if (!transitionData) {
-      logger.error('No transition found for id', { transitionId });
-      return;
-    }
-
-    const phaseId = transitionData.fromStateId;
-    if (
-      transitionData.completedAt !== null ||
-      transitionData.processStatus !== ProcessStatus.PUBLISHED ||
-      !phaseId ||
-      transitionData.currentStateId !== phaseId
-    ) {
-      return {
-        message: `Skipped: transition ${transitionId} is no longer pending for the current phase`,
-      };
-    }
-
-    const instanceData = transitionData.instanceData as DecisionInstanceData;
-    const phase = instanceData?.phases?.find((p) => p.phaseId === phaseId);
-
-    if (!phase || !isReviewPhase(phase)) {
-      return {
-        message: `Skipped: phase ${phaseId} is not a review phase`,
-      };
-    }
-
-    const msLeft =
-      new Date(transitionData.scheduledDate).getTime() -
-      new Date(transitionData.observedAt).getTime();
-    if (msLeft <= 0) {
-      return {
-        message: `Skipped: transition ${transitionId} is already due`,
-      };
-    }
-
-    // Past this sweep's own bucket the deadline belongs to a later one, which
-    // sends its own reminder — this event must not send a second.
-    if (
-      new Date(transitionData.scheduledDate).getTime() >
-      new Date(reminderWindowEnd).getTime()
-    ) {
-      return {
-        message: `Skipped: transition ${transitionId} is no longer ending soon`,
-      };
-    }
-
-    const daysLeft = Math.ceil(msLeft / MS_PER_DAY);
-
-    if (!transitionData.profileSlug) {
-      logger.error('No profile slug found for process instance', {
-        processInstanceId: transitionData.processInstanceId,
+    if (!instanceData) {
+      logger.info('No process instance found for review phase reminder', {
+        processInstanceId,
       });
       return;
     }
 
-    const processTitle = transitionData.processName;
+    if (
+      instanceData.status !== ProcessStatus.PUBLISHED ||
+      instanceData.deletedAt !== null
+    ) {
+      logger.info('Skipping review phase reminder: instance is not published', {
+        processInstanceId,
+      });
+      return;
+    }
+
+    if (instanceData.currentStateId !== phaseId) {
+      logger.info(
+        'Skipping review phase reminder: phase is no longer current',
+        {
+          processInstanceId,
+          phaseId,
+        },
+      );
+      return;
+    }
+
+    const phases = getInstancePhases(instanceData.instanceData);
+    const phase = phases.find((p) => p.phaseId === phaseId);
+
+    if (phase?.rules?.reviews?.submit !== true) {
+      logger.info('Skipping review phase reminder: not a review phase', {
+        processInstanceId,
+        phaseId,
+      });
+      return;
+    }
+
+    const endDate = phase.endDate ? new Date(phase.endDate) : undefined;
+
+    if (!endDate || Number.isNaN(endDate.getTime())) {
+      logger.info('Skipping review phase reminder: phase has no end date', {
+        processInstanceId,
+        phaseId,
+      });
+      return;
+    }
+
+    // Past this reminder's own bucket the end date belongs to a later one,
+    // which sends its own reminder — this event must not send a second.
+    if (endDate.getTime() > new Date(reminderWindowEnd).getTime()) {
+      logger.info('Skipping review phase reminder: end date moved later', {
+        processInstanceId,
+        phaseId,
+      });
+      return;
+    }
+
+    const now = new Date(instanceData.observedAt);
+
+    if (endDate.getTime() <= now.getTime()) {
+      logger.info(
+        'Skipping review phase reminder: phase is already past its end',
+        {
+          processInstanceId,
+          phaseId,
+        },
+      );
+      return;
+    }
+
+    const daysLeft = computeDaysLeft({ phaseId, phases, now });
+
+    if (!daysLeft) {
+      logger.info('Skipping review phase reminder: no days left to report', {
+        processInstanceId,
+        phaseId,
+      });
+      return;
+    }
+
+    const profileSlug = instanceData.profile?.slug;
+
+    if (!profileSlug) {
+      logger.error('No profile slug found for process instance', {
+        processInstanceId,
+      });
+      return;
+    }
+
+    const processTitle = instanceData.name;
     const phaseName = phase.name || phaseId;
-    const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${transitionData.profileSlug}/current`;
+    const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${profileSlug}/current`;
 
     const emails = await step.run('plan-reviewer-emails', async () => {
       const assignments = await db.query.proposalReviewAssignments.findMany({
         where: {
-          processInstanceId: transitionData.processInstanceId,
+          processInstanceId,
           phaseId,
           // AWAITING_AUTHOR_REVISION is the author's turn, not the reviewer's.
           status: {
@@ -183,7 +203,8 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
 
       if (reviewerProfileIdsWithoutAddress.length > 0) {
         logger.warn('Skipped reviewers with no delivery address', {
-          transitionId,
+          processInstanceId,
+          phaseId,
           reviewerProfileIds: reviewerProfileIdsWithoutAddress,
         });
       }
@@ -193,7 +214,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
 
     if (emails.length === 0) {
       return {
-        message: `Skipped: no reviewers to remind for transition ${transitionId}`,
+        message: `Skipped: no reviewers to remind for phase ${phaseId}`,
       };
     }
 
@@ -221,7 +242,8 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
 
       if (errors.length > 0) {
         logger.error('Some review phase ending reminders failed to send', {
-          transitionId,
+          processInstanceId,
+          phaseId,
           failedCount: errors.length,
         });
         throw new Error(
