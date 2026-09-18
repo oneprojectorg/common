@@ -1,13 +1,10 @@
 import { invalidate } from '@op/cache';
 import {
   NotFoundError,
-  UnauthorizedError,
-  getNormalizedRoles,
-  getUserForProfileSwitch,
+  assertCanActAsProfile,
   updateUserCurrentProfile,
 } from '@op/common';
 import type { Profile } from '@op/db/schema';
-import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { encodeUser, userEncoder } from '../../encoders';
@@ -20,30 +17,10 @@ export const switchProfile = router({
     .mutation(async ({ input, ctx }) => {
       const { id } = ctx.user;
 
-      // Verify the profile exists and the user has access to it
-      const user = await getUserForProfileSwitch({ authUserId: id });
-
-      if (!user) {
-        throw new NotFoundError('User', id);
-      }
-
-      // Check if switching to user's own individual profile
-      if (user.profile && (user.profile as Profile).id === input.profileId) {
-        // Allow switching to user's own individual profile
-      } else {
-        // Check organization profiles - must have admin role
-        const orgUser = user.organizationUsers.find((orgUser) => {
-          const profile = orgUser.organization?.profile as Profile;
-          return profile && profile.id === input.profileId;
-        });
-
-        if (!orgUser) {
-          throw new UnauthorizedError('Access denied to this profile');
-        }
-
-        const normalizedRoles = getNormalizedRoles(orgUser.roles);
-        assertAccess({ profile: permission.ADMIN }, normalizedRoles ?? []);
-      }
+      const user = await assertCanActAsProfile({
+        authUserId: id,
+        profileId: input.profileId,
+      });
 
       const org = user.organizationUsers.find((orgUser) => {
         const profile = orgUser.organization?.profile as Profile;

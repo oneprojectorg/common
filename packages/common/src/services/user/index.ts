@@ -2,13 +2,19 @@ import { cache } from '@op/cache';
 import { allowedEmailDomains } from '@op/core';
 import { and, db, eq, sql } from '@op/db/client';
 import {
+  type Profile,
   allowList,
   organizationUsers,
   organizations,
   users,
   usersUsedStorage,
 } from '@op/db/schema';
-import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
+import {
+  type UserWithRoles,
+  assertAccess,
+  getGlobalPermissions,
+  permission,
+} from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
@@ -306,6 +312,46 @@ export const getUserForProfileSwitch = async ({
       },
     },
   });
+};
+
+/**
+ * The identities a user may act as: their own profile, or an organization they
+ * administer. Throws rather than returning a boolean so the two call sites —
+ * switching profile and stewarding a new process — cannot diverge on the rule.
+ */
+export const assertCanActAsProfile = async ({
+  authUserId,
+  profileId,
+}: {
+  authUserId: string;
+  profileId: string;
+}) => {
+  const user = await getUserForProfileSwitch({ authUserId });
+
+  if (!user) {
+    throw new NotFoundError('User', authUserId);
+  }
+
+  if ((user.profile as Profile | null)?.id === profileId) {
+    return user;
+  }
+
+  const orgUser = user.organizationUsers.find(
+    (candidate) =>
+      (candidate.organization?.profile as Profile | undefined)?.id ===
+      profileId,
+  );
+
+  if (!orgUser) {
+    throw new UnauthorizedError('Access denied to this profile');
+  }
+
+  assertAccess(
+    { profile: permission.ADMIN },
+    getNormalizedRoles(orgUser.roles) ?? [],
+  );
+
+  return user;
 };
 
 export interface UpdateUserCurrentProfileOptions {

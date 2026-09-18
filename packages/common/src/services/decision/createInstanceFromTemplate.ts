@@ -12,6 +12,7 @@ import { randomUUID } from 'crypto';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { assertCanActAsProfile } from '../user';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -130,6 +131,8 @@ export const createDecisionInstance = async ({
 export type CreateInstanceFromTemplateOptions = {
   templateId: string;
   name: string;
+  /** Defaults to the profile the user is acting as. */
+  stewardProfileId?: string;
   user: User;
 };
 
@@ -140,6 +143,7 @@ export type CreateInstanceFromTemplateOptions = {
 export const createInstanceFromTemplate = async ({
   templateId,
   name,
+  stewardProfileId: requestedStewardProfileId,
   user,
 }: CreateInstanceFromTemplateOptions) => {
   const dbUser = await assertUserByAuthId(
@@ -154,7 +158,15 @@ export const createInstanceFromTemplate = async ({
     // TODO: profileId should not be nullable in the schema
     throw new UnauthorizedError('User must have a profile');
   }
-  const stewardProfileId = dbUser.currentProfileId ?? ownerProfileId;
+  let stewardProfileId = dbUser.currentProfileId ?? ownerProfileId;
+
+  if (requestedStewardProfileId) {
+    await assertCanActAsProfile({
+      authUserId: user.id,
+      profileId: requestedStewardProfileId,
+    });
+    stewardProfileId = requestedStewardProfileId;
+  }
 
   // TODO: This shouldn't be a requirement in the future and we need to resolve that (SMS accounts for instance)
   if (!user.email) {
