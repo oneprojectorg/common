@@ -1,8 +1,7 @@
 import { getInstancePhases } from '@op/common';
 import { db } from '@op/db/client';
-import { ProcessStatus, processInstances } from '@op/db/schema';
+import { ProcessStatus } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 
 const { reviewPhaseEndingSoon } = Events;
 
@@ -17,33 +16,29 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
     id: 'decisions-review-phase-ending-reminders',
     name: 'Send Review Phase Ending Reminders',
   },
-  // 00:30, not 00:00: processTransitions runs at midnight and sweeping in the
-  // same minute races the advance that makes the phase current.
+  // 00:30, not 00:00: processTransitions runs at midnight and would race us.
   { cron: '30 0 * * *' },
   async ({ step }) => {
     const reminders = await step.run('find-ending-review-phases', async () => {
-      // Exclusive lower bound, measured from UTC midnight, so consecutive
-      // daily buckets tile without re-sending.
+      // Exclusive lower bound so consecutive daily buckets tile without re-sending.
       const midnightUtc = new Date().setUTCHours(0, 0, 0, 0);
       const windowStart =
         midnightUtc + (REMINDER_DAYS_BEFORE_END - 1) * MS_PER_DAY;
       const windowEnd = midnightUtc + REMINDER_DAYS_BEFORE_END * MS_PER_DAY;
       const reminderWindowEnd = new Date(windowEnd).toISOString();
 
-      const rows = await db
-        .select({
-          id: processInstances.id,
-          currentStateId: processInstances.currentStateId,
-          instanceData: processInstances.instanceData,
-        })
-        .from(processInstances)
-        .where(
-          and(
-            eq(processInstances.status, ProcessStatus.PUBLISHED),
-            isNull(processInstances.deletedAt),
-            isNotNull(processInstances.currentStateId),
-          ),
-        );
+      const rows = await db.query.processInstances.findMany({
+        where: {
+          status: ProcessStatus.PUBLISHED,
+          deletedAt: { isNull: true },
+          currentStateId: { isNotNull: true },
+        },
+        columns: {
+          id: true,
+          currentStateId: true,
+          instanceData: true,
+        },
+      });
 
       return rows.flatMap((row) => {
         const phaseId = row.currentStateId;
@@ -56,8 +51,7 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
           (p) => p.phaseId === phaseId,
         );
 
-        // Not isReviewPhase: it falls back to the legacy
-        // `rules.proposals.review` flag, which this reminder skips.
+        // Not isReviewPhase: this reminder skips the legacy `proposals.review` flag.
         if (phase?.rules?.reviews?.submit !== true || !phase.endDate) {
           return [];
         }

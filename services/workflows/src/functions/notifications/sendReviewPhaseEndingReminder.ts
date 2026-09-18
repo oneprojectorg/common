@@ -16,8 +16,6 @@ const { reviewPhaseEndingSoon } = Events;
 export const sendReviewPhaseEndingReminder = inngest.createFunction(
   {
     id: 'sendReviewPhaseEndingReminder',
-    // Bucket-scoped: a deadline pushed into a later bucket must not look like
-    // a duplicate of the earlier one.
     idempotency:
       'event.data.processInstanceId + "-" + event.data.phaseId + "-" + event.data.reminderWindowEnd',
   },
@@ -46,8 +44,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         return undefined;
       }
 
-      // daysLeft reads observedAt, not a live clock: a retry that re-rounded
-      // it would 409 the already-delivered chunk on its Resend key.
       return { ...instance, observedAt: new Date().toISOString() };
     });
 
@@ -100,8 +96,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    // Past this reminder's own bucket the end date belongs to a later one,
-    // which sends its own reminder — this event must not send a second.
     if (endDate.getTime() > new Date(reminderWindowEnd).getTime()) {
       logger.info('Skipping review phase reminder: end date moved later', {
         processInstanceId,
@@ -151,7 +145,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         where: {
           processInstanceId,
           phaseId,
-          // AWAITING_AUTHOR_REVISION is the author's turn, not the reviewer's.
           status: {
             in: [
               ProposalReviewAssignmentStatus.PENDING,
