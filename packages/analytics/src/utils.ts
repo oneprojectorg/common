@@ -2,6 +2,7 @@ import PostHogClient from '@op/analytics/client';
 
 import {
   type DecisionCommonProperties,
+  areFeatureFlagsForcedOn,
   getDecisionCommonProperties,
 } from './client-utils';
 
@@ -656,4 +657,29 @@ export async function trackPhaseEndDateChanged(
       additionalProps,
     }),
   );
+}
+
+/**
+ * Whether a feature flag is on for this user, read on the server.
+ *
+ * The browser counterpart is `useFeatureFlag`. Both answer `true` in
+ * development and end-to-end runs via {@link areFeatureFlagsForcedOn}, so a
+ * server-gated route is reachable without a PostHog project behind it.
+ *
+ * Fails closed on a PostHog error: the flag's whole job is to keep an
+ * unreleased surface shut, so a brownout must not open it.
+ */
+export async function isFeatureFlagEnabled(
+  key: string,
+  distinctId: string,
+): Promise<boolean> {
+  if (areFeatureFlagsForcedOn()) {
+    return true;
+  }
+
+  try {
+    return (await posthog.isFeatureEnabled(key, distinctId)) ?? false;
+  } catch {
+    return false;
+  }
 }
