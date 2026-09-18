@@ -103,26 +103,6 @@ export const Upcoming: Story = {
   ),
 };
 
-// A row that hangs its own content off the card — the list item is the
-// consumer's, so there is nothing to opt out of.
-export const ConsumerOwnedRow: Story = {
-  render: () => (
-    <ol className="w-96">
-      <li className="flex flex-col">
-        <PhaseCard
-          state="upcoming"
-          name="Voting"
-          startDate="2026-07-01"
-          endDate="2026-07-14"
-        />
-        <p className="px-4 pb-4 text-sm text-muted-foreground">
-          Not configured
-        </p>
-      </li>
-    </ol>
-  ),
-};
-
 // Advanceable: light card with a Start button.
 export const Advanceable: Story = {
   render: () => (
