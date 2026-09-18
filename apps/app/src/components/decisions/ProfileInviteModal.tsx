@@ -682,7 +682,7 @@ function ProfileInviteModalContent({
                   !user.isOwner ? () => handleRemoveUser(user) : undefined
                 }
                 removeLabel={t('decisions.removeNamed', {
-                  name: user.name ?? user.email,
+                  name: user.name ?? user.email ?? '',
                 })}
               />
             ))}
