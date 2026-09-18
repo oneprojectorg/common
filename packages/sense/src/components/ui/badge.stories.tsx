@@ -1,4 +1,5 @@
 import { Badge } from '@op/sense/Badge';
+import { Card, CardHeader, CardTitle } from '@op/sense/Card';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuCheck, LuTriangleAlert } from 'react-icons/lu';
 
@@ -70,5 +71,19 @@ export const Count: Story = {
         20+
       </Badge>
     </div>
+  ),
+};
+
+// Regression: the badge stays sans in a serif heading.
+export const InSerifHeading: Story = {
+  render: () => (
+    <Card className="w-96">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          Submissions
+          <Badge variant="secondary">Now open</Badge>
+        </CardTitle>
+      </CardHeader>
+    </Card>
   ),
 };
