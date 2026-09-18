@@ -1,5 +1,6 @@
 'use client';
 
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Alert, AlertDescription } from '@op/sense/Alert';
@@ -13,6 +14,7 @@ import {
 } from '@op/sense/Dialog';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
+import { usePostHog } from 'posthog-js/react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -34,6 +36,7 @@ export const LaunchProcessModal = ({
 }) => {
   const t = useTranslations();
   const router = useRouter();
+  const posthog = usePostHog();
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
@@ -56,8 +59,26 @@ export const LaunchProcessModal = ({
 
   const utils = trpc.useUtils();
 
+  // Already cached by the builder's autosave provider — no extra request. Read
+  // so the capture below can gate on the same DRAFT -> PUBLISHED transition the
+  // server gates on, rather than on "the request succeeded": a second admin
+  // whose footer still shows Launch re-publishes an already-published process,
+  // which the server records as a no-op.
+  const { data: liveInstance } = trpc.decision.getInstance.useQuery({
+    instanceId,
+  });
+
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
+      // Browser-side mirror of the server's `admin_set_process`. An unresolved
+      // or failed query counts as launchable: a missed milestone is a survey
+      // that never fires, which is worse than one spurious event.
+      if (!liveInstance || liveInstance.status === ProcessStatus.DRAFT) {
+        posthog.capture(
+          'admin_set_process',
+          getDecisionCommonProperties({ decisionInstanceId: instanceId }),
+        );
+      }
       onOpenChange(false);
       // Leftover dirty fields would otherwise overlay the published instance
       clearInstance(decisionProfileId);

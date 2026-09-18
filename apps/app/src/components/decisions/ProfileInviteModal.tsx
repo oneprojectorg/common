@@ -1,5 +1,6 @@
 'use client';
 
+import { useTrackProfileInvited } from '@/hooks/useTrackProfileInvited';
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -124,6 +125,7 @@ function ProfileInviteModalContent({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const trackProfileInvited = useTrackProfileInvited();
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
   const [requestedRoleId, setRequestedRoleId] = useState<string>();
@@ -439,6 +441,13 @@ function ProfileInviteModalContent({
         const result = await inviteMutation.mutateAsync({
           invitations,
           profileId,
+        });
+
+        // Above the partial-failure return below, so a mixed batch still
+        // reports the invites that did land.
+        trackProfileInvited({
+          profileId,
+          invitationCount: result.details.successful.length,
         });
 
         if (result.details.failed.length > 0) {

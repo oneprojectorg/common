@@ -1,5 +1,6 @@
 'use client';
 
+import { useTrackUserInvited } from '@/hooks/useTrackUserInvited';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
@@ -20,6 +21,7 @@ export const InviteToOrganizationButton = ({
 }: InviteToOrganizationButtonProps) => {
   const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
+  const trackUserInvited = useTrackUserInvited();
 
   const [[{ items: roles }, membershipData]] = trpc.useSuspenseQueries((t) => [
     t.organization.getRoles(),
@@ -34,7 +36,12 @@ export const InviteToOrganizationButton = ({
   const [isMember, setIsMember] = useState(membershipData.isMember);
 
   const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
+      trackUserInvited({
+        variables,
+        inviteCount: result.details?.successful.length ?? 0,
+      });
+
       const successfulInvites = result.details?.successful || [];
       const failedInvites = result.details?.failed || [];
 

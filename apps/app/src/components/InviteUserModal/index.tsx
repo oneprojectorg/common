@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useTrackUserInvited } from '@/hooks/useTrackUserInvited';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
@@ -53,6 +54,7 @@ export const InviteUserModal = ({
   const t = useTranslations();
   const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
+  const trackUserInvited = useTrackUserInvited();
   const organizationItems = useAdminOrganizations();
 
   const inviteUserEnabled =
@@ -69,7 +71,12 @@ export const InviteUserModal = ({
   const collectEmails = () => [...emailBadges, ...parseEmails(emails).emails];
 
   const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
+      trackUserInvited({
+        variables,
+        inviteCount: result.details?.successful.length ?? 0,
+      });
+
       // A 200 only means the request was accepted. The server reports per-email
       // outcomes in the payload, and `success` is merely "at least one landed",
       // so an all-failed batch arrives here rather than in onError.
