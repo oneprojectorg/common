@@ -150,12 +150,12 @@ function useRoleMutation({
           return;
         }
       }
-      toast.success(t('Role created successfully'));
+      toast.success(t('decisions.processBuilder.createRoleSuccess'));
       utils.profile.listRoles.invalidate();
       onComplete();
     },
     onError: () => {
-      toast.error(t('Failed to create role'));
+      toast.error(t('decisions.processBuilder.createRoleError'));
     },
   });
 
@@ -218,7 +218,7 @@ function RoleNameForm({
 
   return (
     <Input
-      placeholder={t('Role name…')}
+      placeholder={t('decisions.processBuilder.roleNamePlaceholder')}
       value={roleName}
       onChange={(e) => onRoleNameChange(e.target.value)}
       autoFocus
@@ -293,7 +293,7 @@ function RoleRow({
                 size="icon-sm"
                 onClick={handleSave}
                 disabled={!roleName.trim() || isPending}
-                aria-label={t('Save role')}
+                aria-label={t('decisions.processBuilder.saveRoleAction')}
                 className="ms-auto"
               >
                 <LuCheck className="size-4" />
@@ -314,7 +314,7 @@ function RoleRow({
                   <Button
                     variant="outline"
                     size="icon-sm"
-                    aria-label={t('Role options')}
+                    aria-label={t('decisions.processBuilder.roleOptionsLabel')}
                     className="ms-auto"
                   >
                     <LuEllipsis className="size-4" />
@@ -375,11 +375,15 @@ function AddRoleDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('Add role')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.processBuilder.addRoleAction')}
+          </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 py-4">
           <Field>
-            <FieldLabel htmlFor="add-role-name">{t('Role name')}</FieldLabel>
+            <FieldLabel htmlFor="add-role-name">
+              {t('decisions.processBuilder.roleNameLabel')}
+            </FieldLabel>
             <Input
               id="add-role-name"
               value={roleName}
@@ -432,7 +436,9 @@ function RolesSectionContent({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <Header1 className="text-headline">{t('Roles & permissions')}</Header1>
+        <Header1 className="text-headline">
+          {t('decisions.processBuilder.rolesHeading')}
+        </Header1>
         <Button
           variant="ghost"
           className="text-primary hover:text-teal-600"
@@ -440,7 +446,7 @@ function RolesSectionContent({
           disabled={isAdding}
         >
           <LuPlus className="size-4" />
-          {t('Add role')}
+          {t('decisions.processBuilder.addRoleAction')}
         </Button>
       </div>
 
@@ -609,7 +615,7 @@ function MobileRoleCard({
                 <Button
                   variant="outline"
                   size="icon-sm"
-                  aria-label={t('Role options')}
+                  aria-label={t('decisions.processBuilder.roleOptionsLabel')}
                 >
                   <LuEllipsis className="size-4" />
                 </Button>
@@ -671,7 +677,7 @@ function MobileRoleFormCard({
     <div className="flex flex-col gap-4 rounded-md border border-border p-4">
       <div className="flex items-center justify-between gap-2">
         <Input
-          placeholder={t('Role name…')}
+          placeholder={t('decisions.processBuilder.roleNamePlaceholder')}
           value={roleName}
           onChange={(e) => setRoleName(e.target.value)}
           autoFocus
@@ -691,7 +697,7 @@ function MobileRoleFormCard({
           size="icon-sm"
           onClick={handleSave}
           disabled={!roleName.trim() || isPending}
-          aria-label={t('Save role')}
+          aria-label={t('decisions.processBuilder.saveRoleAction')}
         >
           <LuCheck className="size-4" />
         </Button>
@@ -764,7 +770,7 @@ function AddRoleRow({
             size="icon-sm"
             onClick={handleSave}
             disabled={!roleName.trim() || isPending}
-            aria-label={t('Save role')}
+            aria-label={t('decisions.processBuilder.saveRoleAction')}
             className="ms-auto"
           >
             <LuCheck className="size-4" />
@@ -799,12 +805,12 @@ function RolesTable({
 
   const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
     onSuccess: () => {
-      toast.success(t('Role deleted successfully'));
+      toast.success(t('decisions.processBuilder.deleteRoleSuccess'));
       utils.profile.listRoles.invalidate();
       setRoleToDelete(null);
     },
     onError: () => {
-      toast.error(t('Failed to delete role'));
+      toast.error(t('decisions.processBuilder.deleteRoleError'));
     },
   });
 
@@ -815,7 +821,9 @@ function RolesTable({
           <EmptyMedia variant="icon">
             <LuLeaf className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('No roles configured')}</EmptyTitle>
+          <EmptyTitle>
+            {t('decisions.processBuilder.noRolesConfigured')}
+          </EmptyTitle>
         </EmptyHeader>
       </Empty>
     );
@@ -860,7 +868,7 @@ function RolesTable({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <Table aria-label={t('Roles & permissions')}>
+          <Table aria-label={t('decisions.processBuilder.rolesHeading')}>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('Role')}</TableHead>
@@ -907,13 +915,10 @@ function RolesTable({
                 : t('Remove {name}', { name: roleToDelete?.name ?? '' })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                'Are you sure you want to remove {roleName} from "{processName}"?',
-                {
-                  roleName: roleToDelete?.name ?? '',
-                  processName: decisionName,
-                },
-              )}
+              {t('decisions.processBuilder.removeRoleConfirm', {
+                roleName: roleToDelete?.name ?? '',
+                processName: decisionName,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -19,7 +19,7 @@ export function FieldConfigText({
   fieldSchema,
   onUpdateJsonSchema,
 }: FieldConfigProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const defaultMaxLength =
     field.fieldType === 'long_text'
       ? DEFAULT_TEXT_FIELD_MAX_LENGTH.long_text
@@ -32,7 +32,7 @@ export function FieldConfigText({
   return (
     <NumberField
       id={`text-char-limit-${field.id}`}
-      label={t('Character limit')}
+      label={t('characterLimitLabel')}
       className="w-32"
       value={value}
       // Ignore the empty step: clearing the box used to write `undefined`,
@@ -46,7 +46,7 @@ export function FieldConfigText({
       }}
       errorMessage={
         value < MIN_CHAR_LIMIT
-          ? t('Must be at least {min}', {
+          ? t('mustBeAtLeastError', {
               min: MIN_CHAR_LIMIT.toLocaleString(),
             })
           : undefined

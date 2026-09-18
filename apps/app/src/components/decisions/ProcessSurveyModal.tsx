@@ -119,37 +119,31 @@ export const ProcessSurveyModal = ({
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
   const promoterLabels: Record<string, string> = {
-    features: t('It has the specific features my organization needs'),
-    intuitive: t("It's intuitive and easy to use"),
-    fair: t('The decision-making processes feel fair and transparent'),
-    data: t('It handles our data responsibly'),
+    features: t('decisions.processBuilder.surveyPromoterFeatures'),
+    intuitive: t('decisions.processBuilder.surveyPromoterEaseOfUse'),
+    fair: t('decisions.processBuilder.surveyPromoterFairness'),
+    data: t('decisions.processBuilder.surveyPromoterDataResponsibility'),
     'better-decisions': t(
-      'It helps us make better decisions than we would otherwise',
+      'decisions.processBuilder.surveyPromoterBetterDecisions',
     ),
-    'no-tech-issues': t('I had no technical issues'),
-    values: t("It aligns with our community's values"),
-    support: t('The support and documentation are helpful'),
-    'designed-for-us': t("It's designed for organizations like ours"),
+    'no-tech-issues': t('decisions.processBuilder.surveyPromoterNoIssues'),
+    values: t('decisions.processBuilder.surveyPromoterValues'),
+    support: t('decisions.processBuilder.surveyPromoterSupport'),
+    'designed-for-us': t('decisions.processBuilder.surveyPromoterFit'),
   };
 
   const detractorLabels: Record<string, string> = {
-    'missing-features': t("It's missing critical features I need"),
-    complicated: t("It's too complicated or hard to figure out"),
-    'not-fair': t(
-      "The decision-making process didn't feel fair or transparent",
+    'missing-features': t(
+      'decisions.processBuilder.surveyDetractorMissingFeatures',
     ),
-    'data-concerns': t("I'm concerned about data privacy or security"),
-    'doesnt-fit': t(
-      "It doesn't fit how my organization actually makes decisions",
-    ),
-    'tech-issues': t(
-      'I had technical issues (bugs, slow performance, mobile problems)',
-    ),
-    alternatives: t('There are better alternatives that do what I need'),
-    'no-help': t('I could not find help when I had issues'),
-    'different-org': t(
-      "It feels like it's built for a different type of organization than mine",
-    ),
+    complicated: t('decisions.processBuilder.surveyDetractorComplexity'),
+    'not-fair': t('decisions.processBuilder.surveyDetractorFairness'),
+    'data-concerns': t('decisions.processBuilder.surveyDetractorPrivacy'),
+    'doesnt-fit': t('decisions.processBuilder.surveyDetractorFit'),
+    'tech-issues': t('decisions.processBuilder.surveyDetractorTechnicalIssues'),
+    alternatives: t('decisions.processBuilder.surveyDetractorAlternatives'),
+    'no-help': t('decisions.processBuilder.surveyDetractorSupport'),
+    'different-org': t('decisions.processBuilder.surveyDetractorAudience'),
   };
 
   const promoterOrder = useMemo(() => shuffle(PROMOTER_OPTION_IDS), []);
@@ -168,7 +162,9 @@ export const ProcessSurveyModal = ({
       );
     },
     onError: (err) => {
-      toast.error(err.message || t('Failed to submit survey'));
+      toast.error(
+        err.message || t('decisions.processBuilder.surveySubmitError'),
+      );
     },
   });
 
@@ -176,30 +172,38 @@ export const ProcessSurveyModal = ({
     const next: Record<string, string | undefined> = {};
 
     if (wasAdmin == null) {
-      next.wasAdmin = t('Please select an option');
+      next.wasAdmin = t('decisions.processBuilder.surveySelectOptionError');
     }
     if (npsScore == null) {
-      next.npsScore = t('Please select a rating');
+      next.npsScore = t('decisions.processBuilder.surveySelectRatingError');
     }
     if (isPromoterCohort && promoterReasons.length === 0) {
-      next.promoterReasons = t('Please select at least one option');
+      next.promoterReasons = t(
+        'decisions.processBuilder.surveySelectAtLeastOneError',
+      );
     }
     if (
       isPromoterCohort &&
       promoterReasons.includes(OTHER_OPTION_ID) &&
       !promoterReasonsOther.trim()
     ) {
-      next.promoterReasonsOther = t('Please describe your answer');
+      next.promoterReasonsOther = t(
+        'decisions.processBuilder.surveyDescribeAnswerError',
+      );
     }
     if (isDetractorCohort && detractorReasons.length === 0) {
-      next.detractorReasons = t('Please select at least one option');
+      next.detractorReasons = t(
+        'decisions.processBuilder.surveySelectAtLeastOneError',
+      );
     }
     if (
       isDetractorCohort &&
       detractorReasons.includes(OTHER_OPTION_ID) &&
       !detractorReasonsOther.trim()
     ) {
-      next.detractorReasonsOther = t('Please describe your answer');
+      next.detractorReasonsOther = t(
+        'decisions.processBuilder.surveyDescribeAnswerError',
+      );
     }
 
     setErrors(next);
@@ -251,7 +255,7 @@ export const ProcessSurveyModal = ({
         className="gap-0 overflow-hidden p-0 sm:max-w-120"
       >
         <DialogHeader>
-          <DialogTitle>{t('Your voice shapes Common.')}</DialogTitle>
+          <DialogTitle>{t('decisions.processBuilder.surveyTitle')}</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={handleSubmit}
@@ -259,14 +263,12 @@ export const ProcessSurveyModal = ({
         >
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
             <p className="text-base">
-              {t(
-                'Take our 1-minute survey. Your responses are always anonymous.',
-              )}
+              {t('decisions.processBuilder.surveySubtitle')}
             </p>
 
             <FieldSet>
               <FieldLegend variant="label">
-                {t('Were you an admin during this process?')}{' '}
+                {t('decisions.processBuilder.surveyAdminQuestion')}{' '}
                 <RequiredAsterisk />
               </FieldLegend>
               <RadioGroup
@@ -295,9 +297,7 @@ export const ProcessSurveyModal = ({
             {isMobile ? (
               <Field data-invalid={!!errors.npsScore}>
                 <FieldLabel htmlFor="nps-select">
-                  {t(
-                    'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
-                  )}{' '}
+                  {t('decisions.processBuilder.surveyNpsQuestion')}{' '}
                   <RequiredAsterisk />
                 </FieldLabel>
                 <Select
@@ -313,7 +313,11 @@ export const ProcessSurveyModal = ({
                     className="w-full"
                     aria-invalid={!!errors.npsScore}
                   >
-                    <SelectValue placeholder={t('Select a rating')} />
+                    <SelectValue
+                      placeholder={t(
+                        'decisions.processBuilder.surveyRatingPlaceholder',
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -326,7 +330,7 @@ export const ProcessSurveyModal = ({
                   </SelectContent>
                 </Select>
                 <FieldDescription>
-                  {t('0 ("Not at all likely") to 10 ("Extremely likely")')}
+                  {t('decisions.processBuilder.surveyNpsScaleHint')}
                 </FieldDescription>
                 {errors.npsScore ? (
                   <FieldError>{errors.npsScore}</FieldError>
@@ -335,9 +339,7 @@ export const ProcessSurveyModal = ({
             ) : (
               <FieldSet>
                 <FieldLegend variant="label">
-                  {t(
-                    'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
-                  )}{' '}
+                  {t('decisions.processBuilder.surveyNpsQuestion')}{' '}
                   <RequiredAsterisk />
                 </FieldLegend>
                 <RadioGroup
@@ -366,7 +368,7 @@ export const ProcessSurveyModal = ({
                   ))}
                 </RadioGroup>
                 <FieldDescription>
-                  {t('0 ("Not at all likely") to 10 ("Extremely likely")')}
+                  {t('decisions.processBuilder.surveyNpsScaleHint')}
                 </FieldDescription>
                 {errors.npsScore ? (
                   <FieldError>{errors.npsScore}</FieldError>
@@ -377,7 +379,7 @@ export const ProcessSurveyModal = ({
             {isPromoterCohort && (
               <FieldSet>
                 <FieldLegend variant="label">
-                  {t('What makes Common worth recommending?')}
+                  {t('decisions.processBuilder.surveyPromoterQuestion')}
                   <RequiredAsterisk />
                 </FieldLegend>
                 <FieldDescription>
@@ -426,13 +428,15 @@ export const ProcessSurveyModal = ({
                       }));
                     }}
                   />
-                  <FieldLabel htmlFor="promoter-other">{t('Other')}</FieldLabel>
+                  <FieldLabel htmlFor="promoter-other">
+                    {t('decisions.processBuilder.surveyOtherOption')}
+                  </FieldLabel>
                 </Field>
                 {promoterReasons.includes(OTHER_OPTION_ID) && (
                   <Textarea
-                    aria-label={t('Other')}
+                    aria-label={t('decisions.processBuilder.surveyOtherOption')}
                     rows={2}
-                    placeholder={t('Tell us more')}
+                    placeholder={t('decisions.processBuilder.surveyTellUsMore')}
                     value={promoterReasonsOther}
                     onChange={(e) => {
                       setPromoterReasonsOther(e.target.value);
@@ -456,7 +460,7 @@ export const ProcessSurveyModal = ({
             {isDetractorCohort && (
               <FieldSet>
                 <FieldLegend>
-                  {t('What prevents you from recommending Common?')}{' '}
+                  {t('decisions.processBuilder.surveyDetractorQuestion')}{' '}
                   <RequiredAsterisk />
                 </FieldLegend>
                 <FieldDescription>
@@ -506,14 +510,14 @@ export const ProcessSurveyModal = ({
                     }}
                   />
                   <FieldLabel htmlFor="detractor-other">
-                    {t('Other')}
+                    {t('decisions.processBuilder.surveyOtherOption')}
                   </FieldLabel>
                 </Field>
                 {detractorReasons.includes(OTHER_OPTION_ID) && (
                   <Textarea
-                    aria-label={t('Other')}
+                    aria-label={t('decisions.processBuilder.surveyOtherOption')}
                     rows={2}
-                    placeholder={t('Tell us more')}
+                    placeholder={t('decisions.processBuilder.surveyTellUsMore')}
                     value={detractorReasonsOther}
                     onChange={(e) => {
                       setDetractorReasonsOther(e.target.value);
@@ -536,9 +540,7 @@ export const ProcessSurveyModal = ({
 
             <Field>
               <FieldLabel htmlFor="additional-feedback">
-                {t(
-                  'Any specific features we should fix, improve or keep? Any features we should add? We actually read these!',
-                )}
+                {t('decisions.processBuilder.surveyFeedbackQuestion')}
               </FieldLabel>
               <Textarea
                 id="additional-feedback"
@@ -550,7 +552,7 @@ export const ProcessSurveyModal = ({
 
             <Field>
               <FieldLabel htmlFor="additional-comments">
-                {t("Anything else you'd like to share?")}
+                {t('decisions.processBuilder.surveyAnythingElseQuestion')}
               </FieldLabel>
               <Textarea
                 id="additional-comments"
@@ -568,7 +570,7 @@ export const ProcessSurveyModal = ({
               disabled={submitSurvey.isPending}
               className="w-full sm:w-auto"
             >
-              {t('Maybe later')}
+              {t('decisions.processBuilder.surveyDismissAction')}
             </Button>
             <Button
               type="submit"
@@ -578,7 +580,7 @@ export const ProcessSurveyModal = ({
             >
               {submitSurvey.isPending
                 ? t('Submitting...')
-                : t('Submit & view results')}
+                : t('decisions.processBuilder.surveySubmitAction')}
             </Button>
           </DialogFooter>
         </form>

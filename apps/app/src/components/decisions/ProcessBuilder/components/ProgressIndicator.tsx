@@ -11,9 +11,9 @@ export function ProgressIndicator({
   percentage: number;
   variant: 'bar' | 'strip';
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const clamped = Math.min(100, Math.max(0, percentage));
-  const label = t('{count}% complete', { count: clamped });
+  const label = t('percentComplete', { count: clamped });
 
   // Progress owns role="progressbar" and the aria-value* attributes, so the
   // only thing left to supply is the accessible name.

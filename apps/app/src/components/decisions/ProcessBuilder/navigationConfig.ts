@@ -4,10 +4,13 @@ import type { TranslationKey } from '@/lib/i18n';
 
 export const STEPS = [
   { id: 'general', labelKey: 'General' },
-  { id: 'template', labelKey: 'Proposal Template' },
+  {
+    id: 'template',
+    labelKey: 'decisions.processBuilder.proposalTemplateSectionLabel',
+  },
   { id: 'reviews', labelKey: 'Reviews' },
   { id: 'participants', labelKey: 'Participants' },
-  { id: 'summary', labelKey: 'Summary' },
+  { id: 'summary', labelKey: 'decisions.processBuilder.summaryHeading' },
 ] as const;
 
 // Derive StepId first so we can use it in SECTIONS_BY_STEP
@@ -17,20 +20,31 @@ export const SECTIONS_BY_STEP = {
   general: [
     { id: 'generalInformation', labelKey: 'General Information' },
     { id: 'overview', labelKey: 'Overview' },
-    { id: 'phases', labelKey: 'Phases' },
-    { id: 'proposalCategories', labelKey: 'Proposal Categories' },
+    { id: 'phases', labelKey: 'decisions.processBuilder.phasesLabel' },
+    {
+      id: 'proposalCategories',
+      labelKey: 'decisions.processBuilder.proposalCategoriesSectionLabel',
+    },
   ],
   template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
   reviews: [
-    { id: 'criteria', labelKey: 'Review Rubric' },
+    {
+      id: 'criteria',
+      labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
+    },
     { id: 'reviewSettings', labelKey: 'Reviews' },
-    { id: 'reviewRubric', labelKey: 'Review Rubric' },
+    {
+      id: 'reviewRubric',
+      labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
+    },
   ],
   participants: [
     { id: 'roles', labelKey: 'Roles & Permissions' },
     { id: 'participants', labelKey: 'Participants' },
   ],
-  summary: [{ id: 'summary', labelKey: 'Summary' }],
+  summary: [
+    { id: 'summary', labelKey: 'decisions.processBuilder.summaryHeading' },
+  ],
 } as const satisfies Record<
   StepId,
   readonly { id: string; labelKey: TranslationKey }[]
@@ -83,20 +97,24 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     parentStepId: 'general',
   },
   { id: 'overview', labelKey: 'Overview', parentStepId: 'general' },
-  { id: 'phases', labelKey: 'Phases', parentStepId: 'general' },
+  {
+    id: 'phases',
+    labelKey: 'decisions.processBuilder.phasesLabel',
+    parentStepId: 'general',
+  },
   {
     id: 'proposalCategories',
-    labelKey: 'Proposal Categories',
+    labelKey: 'decisions.processBuilder.proposalCategoriesSectionLabel',
     parentStepId: 'general',
   },
   {
     id: 'templateEditor',
-    labelKey: 'Proposal Template',
+    labelKey: 'decisions.processBuilder.proposalTemplateSectionLabel',
     parentStepId: 'template',
   },
   {
     id: 'criteria',
-    labelKey: 'Review Rubric',
+    labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
     parentStepId: 'reviews',
   },
   {
@@ -106,7 +124,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'reviewRubric',
-    labelKey: 'Review Rubric',
+    labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
     parentStepId: 'reviews',
     parentSectionId: 'reviewSettings',
   },
@@ -122,7 +140,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'summary',
-    labelKey: 'Summary',
+    labelKey: 'decisions.processBuilder.summaryHeading',
     parentStepId: 'summary',
   },
 ];

@@ -85,7 +85,7 @@ export function SidebarNavItems({
   return (
     <SidebarGroup className="p-0">
       <SidebarGroupLabel className="text-sm text-muted-foreground">
-        {t('Process Settings')}
+        {t('decisions.processBuilder.processSettingsSectionLabel')}
       </SidebarGroupLabel>
       <SidebarMenu className="gap-1">
         {visibleSections
@@ -201,7 +201,7 @@ function PhaseItem({
   return (
     <SidebarMenuSubItem>
       <NavRow
-        label={phase.name || t('Untitled phase')}
+        label={phase.name || t('decisions.processBuilder.untitledPhase')}
         isActive={isActive}
         incomplete={phaseValidation[phase.phaseId] === false}
         onClick={() => onSectionClick(phaseSectionId)}

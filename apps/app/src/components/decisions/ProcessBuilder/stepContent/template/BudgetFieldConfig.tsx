@@ -87,8 +87,8 @@ export function BudgetFieldConfig({
 
   const badgeLabel = showBudget
     ? budgetRequired
-      ? t('Required')
-      : t('Optional')
+      ? t('decisions.processBuilder.requiredLabel')
+      : t('decisions.processBuilder.optionalLabel')
     : undefined;
 
   const handleShowBudgetChange = useCallback(
@@ -201,7 +201,9 @@ export function BudgetFieldConfig({
         {showBudget && (
           <>
             <Field>
-              <FieldLabel htmlFor="budget-currency">{t('Currency')}</FieldLabel>
+              <FieldLabel htmlFor="budget-currency">
+                {t('decisions.processBuilder.currencyLabel')}
+              </FieldLabel>
               <Select
                 value={budgetCurrency}
                 onValueChange={(currency) =>
@@ -225,9 +227,9 @@ export function BudgetFieldConfig({
             </Field>
             <NumberField
               id="budget-max"
-              label={t('Max amount')}
+              label={t('decisions.processBuilder.maxAmountLabel')}
               prefixText={budgetCurrencySymbol}
-              placeholder={t('Set maximum amount')}
+              placeholder={t('decisions.processBuilder.setMaxAmountLabel')}
               value={budgetMaxAmount ?? null}
               onChange={handleBudgetMaxChange}
             />
@@ -237,12 +239,16 @@ export function BudgetFieldConfig({
         <div className="flex items-center justify-between gap-4 pt-2">
           {showBudget ? (
             <Field orientation="horizontal" className="w-auto">
-              <FieldLabel htmlFor={requiredId}>{t('Required?')}</FieldLabel>
+              <FieldLabel htmlFor={requiredId}>
+                {t('decisions.processBuilder.criterionRequiredQuestion')}
+              </FieldLabel>
               <Switch
                 id={requiredId}
                 checked={budgetRequired}
                 onCheckedChange={handleBudgetRequiredChange}
-                aria-label={t('Required?')}
+                aria-label={t(
+                  'decisions.processBuilder.criterionRequiredQuestion',
+                )}
               />
             </Field>
           ) : (
@@ -250,13 +256,13 @@ export function BudgetFieldConfig({
           )}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel htmlFor={showInTemplateId}>
-              {t('Show in template?')}
+              {t('decisions.processBuilder.showInTemplateLabel')}
             </FieldLabel>
             <Switch
               id={showInTemplateId}
               checked={showBudget}
               onCheckedChange={handleShowBudgetChange}
-              aria-label={t('Show in template?')}
+              aria-label={t('decisions.processBuilder.showInTemplateLabel')}
               data-testid="budget-show-in-template-toggle"
             />
           </Field>

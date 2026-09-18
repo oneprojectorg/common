@@ -127,7 +127,9 @@ const DecisionInstanceDetailContent = ({
 
       <Tabs defaultValue="phases">
         <TabsList variant="line">
-          <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
+          <TabsTrigger value="phases">
+            {t('decisions.processBuilder.phasesLabel')}
+          </TabsTrigger>
           <TabsTrigger value="configuration">
             {t('admin.configurationHeading')}
           </TabsTrigger>
@@ -217,14 +219,15 @@ const PhaseCard = ({
       (phase.proposalsHiddenByDefault
         ? t('admin.proposalSubmissionsHidden')
         : t('admin.proposalSubmissionsLabel')),
-    phase.canEditProposals && t('Proposal editing'),
+    phase.canEditProposals &&
+      t('decisions.processBuilder.proposalEditingLabel'),
     phase.hasReviews && t('Reviews'),
     phase.hasVoting &&
       (phase.maxVotesPerMember != null
         ? t('admin.votingWithMax', {
             count: phase.maxVotesPerMember,
           })
-        : t('Voting')),
+        : t('decisions.processBuilder.votingLabel')),
     phase.canEditVotes && t('admin.voteEditingLabel'),
     // Only the exception is worth a row: comments are on unless turned off.
     !phase.allowsComments && t('admin.commentsOffLabel'),
@@ -288,7 +291,7 @@ const PhaseCard = ({
           </PhaseSection>
         ) : null}
         {phase.hasVoting ? (
-          <PhaseSection title={t('Voting')}>
+          <PhaseSection title={t('decisions.processBuilder.votingLabel')}>
             <ComingSoon />
           </PhaseSection>
         ) : null}
@@ -330,7 +333,10 @@ const ConfigurationCard = ({
   const settings: Array<{ label: string; value: string | boolean }> = [
     { label: t('admin.privateProcessLabel'), value: config.isPrivate },
     { label: t('admin.hideBudgetLabel'), value: config.hideBudget },
-    { label: t('Proposal template'), value: config.hasProposalTemplate },
+    {
+      label: t('decisions.processBuilder.proposalTemplateHeading'),
+      value: config.hasProposalTemplate,
+    },
     { label: t('admin.reviewRubricLabel'), value: config.hasRubric },
     {
       label: t('admin.reviewRevisionsLabel'),
@@ -341,11 +347,11 @@ const ConfigurationCard = ({
       value: config.reviewsAnonymousFeedback,
     },
     {
-      label: t('Require category selection'),
+      label: t('decisions.processBuilder.requireCategorySelectionLabel'),
       value: config.requireCategorySelection,
     },
     {
-      label: t('Allow multiple categories'),
+      label: t('decisions.processBuilder.allowMultipleCategoriesLabel'),
       value: config.allowMultipleCategories,
     },
     {
@@ -353,10 +359,13 @@ const ConfigurationCard = ({
       value: config.organizeByCategories,
     },
     {
-      label: t('Require collaborative proposals'),
+      label: t('decisions.processBuilder.requireCollaborativeProposalsLabel'),
       value: config.requireCollaborativeProposals,
     },
-    { label: t('Categories'), value: String(config.categoriesCount) },
+    {
+      label: t('decisions.processBuilder.categoriesLabel'),
+      value: String(config.categoriesCount),
+    },
   ];
 
   return (
