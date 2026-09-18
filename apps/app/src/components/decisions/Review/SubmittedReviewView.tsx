@@ -72,10 +72,8 @@ export function SubmittedReviewView({
 
       {review.overallComment && (
         <ResultSection
-          title={t('Feedback to Author')}
-          description={t(
-            'Shared anonymously with the author after the review phase',
-          )}
+          title={t('decisions.review.feedbackToAuthorHeading')}
+          description={t('decisions.review.feedbackAnonymousAfterPhaseHint')}
         >
           <ReviewResultCard className="mt-1">
             <ReviewResultText>{review.overallComment}</ReviewResultText>

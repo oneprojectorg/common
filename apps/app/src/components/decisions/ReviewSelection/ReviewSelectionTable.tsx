@@ -90,11 +90,13 @@ export function ReviewSelectionTable({
           </TableHead>
           {showBudget ? <TableHead scope="col">{t('Budget')}</TableHead> : null}
           <TableHead scope="col">{t('Category')}</TableHead>
-          <TableHead scope="col">{t('Overall recommendation')}</TableHead>
+          <TableHead scope="col">
+            {t('decisions.review.overallRecommendationLabel')}
+          </TableHead>
           {showScore && (
             <TableHead scope="col">
               <span className="underline decoration-dotted">
-                {t('Score ({pts}pts)', { pts: totalPoints })}
+                {t('decisions.review.scoreWithPoints', { pts: totalPoints })}
               </span>
             </TableHead>
           )}
@@ -314,13 +316,10 @@ function OutOfDateReviewsBadge({
   return (
     <Badge variant="warning">
       <LuRefreshCcw aria-hidden className="text-warning" />
-      {t(
-        '{n} of {total, plural, one {# review} other {# reviews}} out of date',
-        {
-          n: outOfDateCount,
-          total: submittedCount,
-        },
-      )}
+      {t('decisions.review.reviewsOutOfDateShort', {
+        n: outOfDateCount,
+        total: submittedCount,
+      })}
     </Badge>
   );
 }
@@ -367,5 +366,5 @@ function ScoreText({ value }: { value: number }) {
   // Render with at most one decimal — most rubrics produce integers but
   // averageScore-derived values can drift; keep the column compact.
   const display = Number.isInteger(value) ? value.toString() : value.toFixed(1);
-  return <>{t('{pts} pts', { pts: display })}</>;
+  return <>{t('decisions.review.ptsValue', { pts: display })}</>;
 }

@@ -28,7 +28,7 @@ export function RequestRevisionModal({
   isOpen,
   onOpenChange,
 }: RequestRevisionModalProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const { requestRevision, isRequestingRevision } = useReviewForm();
   const [comment, setComment] = useState('');
 
@@ -53,23 +53,23 @@ export function RequestRevisionModal({
     >
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('Request Revision')}</DialogTitle>
+          <DialogTitle>{t('requestRevisionTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 px-6 pt-6 pb-8">
           <Field>
             <FieldLabel htmlFor={FEEDBACK_FIELD_ID}>
-              {t('What should the author change?')}
+              {t('revisionRequestQuestion')}
             </FieldLabel>
             <FieldDescription id={FEEDBACK_DESCRIPTION_ID}>
-              {t('Shared anonymously with the author and other reviewers.')}
+              {t('feedbackAnonymousHint')}
             </FieldDescription>
             <Textarea
               id={FEEDBACK_FIELD_ID}
               aria-describedby={FEEDBACK_DESCRIPTION_ID}
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              placeholder={t("Describe what's unclear or missing")}
+              placeholder={t('revisionRequestPlaceholder')}
               rows={6}
             />
           </Field>
@@ -81,7 +81,7 @@ export function RequestRevisionModal({
             disabled={!comment.trim()}
             loading={isRequestingRevision}
           >
-            {t('Request revision')}
+            {t('requestRevisionAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

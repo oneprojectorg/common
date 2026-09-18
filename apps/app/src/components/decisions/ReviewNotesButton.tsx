@@ -18,8 +18,8 @@ export function ReviewNotesButton({
   isExpanded,
   hasUnread = false,
 }: ReviewNotesButtonProps) {
-  const t = useTranslations();
-  const label = t('Review notes');
+  const t = useTranslations('decisions.review');
+  const label = t('reviewNotesHeading');
 
   return (
     <div className="relative flex">
@@ -36,7 +36,7 @@ export function ReviewNotesButton({
       {hasUnread ? (
         <span
           role="img"
-          aria-label={t('Unread review notes')}
+          aria-label={t('unreadReviewNotes')}
           className="absolute -end-1 -top-1 size-3 rounded-full border-2 border-background bg-destructive"
         />
       ) : null}

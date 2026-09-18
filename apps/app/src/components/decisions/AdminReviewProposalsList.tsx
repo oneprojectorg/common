@@ -81,12 +81,12 @@ export function AdminReviewProposalsList({
 
 /** "Proposals in review · 30" — replaces the list's plain proposal count. */
 const AdminReviewHeader = ({ count }: { count: number }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
 
   return (
     // The count follows the active filter, which changes without a navigation.
     <h2 aria-live="polite" className="font-serif text-title font-light">
-      {t('Proposals in review · {count}', { count })}
+      {t('proposalsInReviewHeading', { count })}
     </h2>
   );
 };

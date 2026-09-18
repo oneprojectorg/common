@@ -30,7 +30,7 @@ export const FinalPhaseSelectionFooter = ({
   onConfirm,
   isSubmitting,
 }: FinalPhaseSelectionFooterProps) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
 
   return (
     <FooterBar position="fixed" className="bg-muted/95">
@@ -39,7 +39,7 @@ export const FinalPhaseSelectionFooter = ({
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
           {/* Keeps "winning": this footer drives the irreversible final-phase
               publish, and Figma has no frame for this variant. */}
-          {t('{count} winning proposals selected', { count: numSelected })}
+          {t('winningProposalsSelectedCount', { count: numSelected })}
         </span>
       </FooterBarStart>
       <FooterBarCenter />
@@ -53,9 +53,9 @@ export const FinalPhaseSelectionFooter = ({
           isSubmitting={isSubmitting}
           triggerLabel={
             <>
-              <span className="sm:hidden">{t('Confirm')}</span>
+              <span className="sm:hidden">{t('confirmAction')}</span>
               <span className="hidden sm:inline">
-                {t('Confirm winning proposals')}
+                {t('confirmWinningProposalsTitle')}
               </span>
             </>
           }

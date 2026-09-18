@@ -255,7 +255,9 @@ export const ProposalCardView = ({
     : undefined;
 
   const badge = revisionRequested ? (
-    <StatusBadge variant="revision">{t('Revision requested')}</StatusBadge>
+    <StatusBadge variant="revision">
+      {t('decisions.review.revisionRequestedLabel')}
+    </StatusBadge>
   ) : (
     headerBadge
   );

@@ -217,7 +217,7 @@ function EditProposalPageContent() {
           >
             <ProposalEditorAsideSheet
               open={reviewNotes.isOpen}
-              title={t('Review notes')}
+              title={t('decisions.review.reviewNotesHeading')}
               onClose={() => reviewNotes.setOpen(false)}
             >
               <ReviewNotesPanel

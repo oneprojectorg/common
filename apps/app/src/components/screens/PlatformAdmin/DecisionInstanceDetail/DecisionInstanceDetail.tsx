@@ -221,7 +221,7 @@ const PhaseCard = ({
         : t('admin.proposalSubmissionsLabel')),
     phase.canEditProposals &&
       t('decisions.processBuilder.proposalEditingLabel'),
-    phase.hasReviews && t('Reviews'),
+    phase.hasReviews && t('decisions.review.reviewsLabel'),
     phase.hasVoting &&
       (phase.maxVotesPerMember != null
         ? t('admin.votingWithMax', {
@@ -266,7 +266,9 @@ const PhaseCard = ({
             {phase.isCurrent ? (
               <Badge>{t('admin.currentPhaseLabel')}</Badge>
             ) : index < currentIndex ? (
-              <Badge variant="secondary">{t('Completed')}</Badge>
+              <Badge variant="secondary">
+                {t('decisions.review.statusCompleted')}
+              </Badge>
             ) : (
               <Badge variant="outline">{t('admin.upcomingLabel')}</Badge>
             )}
@@ -280,7 +282,7 @@ const PhaseCard = ({
           </PhaseSection>
         ) : null}
         {phase.hasReviews ? (
-          <PhaseSection title={t('Reviews')}>
+          <PhaseSection title={t('decisions.review.reviewsLabel')}>
             <Suspense fallback={<Skeleton className="h-32 w-full" />}>
               <ReviewPhasePanel
                 instanceId={instanceId}

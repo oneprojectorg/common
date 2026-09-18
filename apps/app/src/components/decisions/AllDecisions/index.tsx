@@ -142,7 +142,9 @@ const AllDecisionsTabs = () => {
       <div className="border-b">
         <TabsList variant="line">
           <TabsTrigger value="active">{t('Active')}</TabsTrigger>
-          <TabsTrigger value="completed">{t('Completed')}</TabsTrigger>
+          <TabsTrigger value="completed">
+            {t('decisions.review.statusCompleted')}
+          </TabsTrigger>
           {hasDrafts && <TabsTrigger value="drafts">{t('Drafts')}</TabsTrigger>}
         </TabsList>
       </div>

@@ -39,7 +39,7 @@ export function ReviewAssignmentCard({
   showCategory = true,
   className,
 }: ReviewAssignmentCardProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
   // `ready_for_re_review` already tells the reviewer to look again.
@@ -64,14 +64,14 @@ export function ReviewAssignmentCard({
       alert={
         isRevised ? (
           <StatusBadge variant="revision" icon={LuRefreshCw}>
-            {t('Revised')}
+            {t('revisedLabel')}
           </StatusBadge>
         ) : undefined
       }
       status={
         showOutOfDate ? (
           <StatusBadge variant="warning" icon={LuRefreshCw}>
-            {t('Review out of date')}
+            {t('reviewOutOfDateLabel')}
           </StatusBadge>
         ) : (
           <ReviewStatusBadge status={status} />

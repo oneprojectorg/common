@@ -57,7 +57,7 @@ export function ReviewerAssignmentsSection(
                 <LuUsers className="size-6" />
               </EmptyMedia>
               <EmptyTitle>
-                {t("We couldn't load review assignments")}
+                {t('decisions.review.loadAssignmentsError')}
               </EmptyTitle>
               <EmptyDescription>
                 {t('Please refresh the page to try again.')}
@@ -132,9 +132,9 @@ function ReviewerAssignmentsContent({
           <EmptyMedia variant="icon">
             <LuUserX className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('Reviewer not found')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.review.reviewerNotFound')}</EmptyTitle>
           <EmptyDescription>
-            {t('This person does not review in this phase.')}
+            {t('decisions.review.reviewerNotInPhase')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -153,12 +153,14 @@ function ReviewerAssignmentsContent({
 
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           <Header3 className="font-light">
-            {t('Assigned proposals ({count})', { count: summary.total })}
+            {t('decisions.review.assignedProposalsHeading', {
+              count: summary.total,
+            })}
           </Header3>
 
           {assignments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {t('Nothing assigned to this reviewer yet.')}
+              {t('decisions.review.noReviewerAssignments')}
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
@@ -191,7 +193,9 @@ function ReviewerAssignmentsContent({
             </div>
           ) : null}
           <p aria-live="polite" className="sr-only">
-            {isFetchingNextPage ? t('Loading more proposals') : ''}
+            {isFetchingNextPage
+              ? t('decisions.review.loadingMoreProposals')
+              : ''}
           </p>
         </div>
       </div>
@@ -218,17 +222,19 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
 
   return (
     <div className="flex w-full flex-col gap-3 lg:order-last lg:w-80 lg:shrink-0">
-      <Header3 className="font-light">{t('Review progress')}</Header3>
+      <Header3 className="font-light">
+        {t('decisions.review.reviewProgressLabel')}
+      </Header3>
       <p aria-live="polite" className="text-sm text-muted-foreground">
-        {t('{submitted} out of {assigned} assigned reviews are submitted', {
+        {t('decisions.review.assignedReviewsSubmittedProgress', {
           submitted: reviewer.submittedCount,
           assigned: reviewer.assignedCount,
         })}
       </p>
 
       <StatCard
-        label={t('Submitted')}
-        value={t('{submitted}/{assigned} reviews', {
+        label={t('decisions.review.statusSubmitted')}
+        value={t('decisions.review.reviewsSubmittedRatio', {
           submitted: reviewer.submittedCount,
           assigned: reviewer.assignedCount,
         })}
@@ -248,7 +254,7 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
       ) : null}
 
       <StatCard
-        label={t('Last submission')}
+        label={t('decisions.review.lastSubmissionLabel')}
         value={
           lastSubmittedAt
             ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
