@@ -19,6 +19,7 @@ export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 
 // Instance management
+export * from './assertCanStewardToProfile';
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';
