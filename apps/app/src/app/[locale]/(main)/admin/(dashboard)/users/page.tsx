@@ -11,7 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: `${t('Users')} | ${t('Admin')}` };
+  return { title: `${t('shell.usersNavTitle')} | ${t('Admin')}` };
 }
 
 export default function AdminUsersPage() {

@@ -46,9 +46,9 @@ export const CollaborativeEditor = ({
   ariaLabelledBy,
   ariaDescribedBy,
 }: CollaborativeEditorProps) => {
-  const t = useTranslations();
+  const t = useTranslations('editor');
   const { ydoc, provider, user } = useCollaborativeDoc();
-  const resolvedPlaceholder = placeholder ?? t('Start writing...');
+  const resolvedPlaceholder = placeholder ?? t('editorPlaceholder');
 
   // Build collaborative extensions with cursor support
   const collaborativeExtensions = useMemo(

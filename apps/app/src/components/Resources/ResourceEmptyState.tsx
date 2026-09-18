@@ -22,7 +22,7 @@ export const ResourceEmptyState = ({
   variant: Variant;
   onAddResource?: () => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('resources');
 
   if (variant === 'no-access') {
     return (
@@ -31,9 +31,7 @@ export const ResourceEmptyState = ({
           <EmptyMedia variant="icon">
             <LuLock />
           </EmptyMedia>
-          <EmptyDescription>
-            {t("You don't have access to this resource collection")}
-          </EmptyDescription>
+          <EmptyDescription>{t('noAccess')}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -45,20 +43,18 @@ export const ResourceEmptyState = ({
         <EmptyMedia variant="icon">
           <LuLeaf className="size-4" />
         </EmptyMedia>
-        <EmptyTitle>{t('No resources added')}</EmptyTitle>
+        <EmptyTitle>{t('emptyTitle')}</EmptyTitle>
         <EmptyDescription className="max-w-72">
           {variant === 'admin-empty'
-            ? t(
-                'Share documents, guidelines, and links to help participants through the process.',
-              )
-            : t("The organizers haven't shared any documents or links yet")}
+            ? t('emptyAdminHint')
+            : t('emptyParticipantHint')}
         </EmptyDescription>
       </EmptyHeader>
       {variant === 'admin-empty' && onAddResource ? (
         <EmptyContent>
           <Button onClick={onAddResource}>
             <LuPlus className="size-4" />
-            {t('Add resource')}
+            {t('addAction')}
           </Button>
         </EmptyContent>
       ) : null}

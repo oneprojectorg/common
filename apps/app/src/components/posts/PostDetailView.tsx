@@ -55,7 +55,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
           <div className="border-y py-4">
             <PostUpdate
               parentPostId={post.id}
-              placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
+              placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('posts.commentAsJoiner')} ${user?.currentProfile?.name}` : ''}...`}
               label={t('Comment')}
             />
           </div>
