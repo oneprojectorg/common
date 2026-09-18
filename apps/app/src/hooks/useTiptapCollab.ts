@@ -33,6 +33,7 @@ export interface UseTiptapCollabReturn {
   status: CollabStatus;
   isSynced: boolean;
   isConnected: boolean;
+  hasSyncedOnce: boolean;
   /** User object with assigned color for this session */
   user: CollabUser;
 }
@@ -47,6 +48,7 @@ export function useTiptapCollab({
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
+  const [hasSyncedOnce, setHasSyncedOnce] = useState(false);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
 
   const ydoc = useMemo(() => new Y.Doc(), []);
@@ -94,6 +96,7 @@ export function useTiptapCollab({
       },
       onSynced: () => {
         setIsSynced(true);
+        setHasSyncedOnce(true);
       },
       onAuthenticationFailed: () => {
         rejections += 1;
@@ -136,6 +139,7 @@ export function useTiptapCollab({
     status,
     isSynced,
     isConnected: status === 'connected',
+    hasSyncedOnce,
     user,
   };
 }

@@ -13,7 +13,7 @@ import type { JSONContent } from '@tiptap/react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../collaboration';
-import { ensureRestoreSynced } from './ensureRestoreSynced';
+import { ensureDocSynced } from './ensureDocSynced';
 import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
 
 interface UseRestoreProposalVersionOptions {
@@ -35,7 +35,7 @@ export function useRestoreProposalVersion({
   fragmentNames,
 }: UseRestoreProposalVersionOptions) {
   const t = useTranslations();
-  const { provider } = useCollaborativeDoc();
+  const { provider, hasSyncedOnce } = useCollaborativeDoc();
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: () => {
       toast.success(t('Proposal version restored'));
@@ -112,7 +112,7 @@ export function useRestoreProposalVersion({
       newVersionName: false,
     });
 
-    if (!(await ensureRestoreSynced(provider, t))) {
+    if (!(await ensureDocSynced(provider, hasSyncedOnce, t))) {
       return false;
     }
 

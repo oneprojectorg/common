@@ -8,7 +8,7 @@ vi.mock('@op/sense/Toast', () => ({
 
 import { toast } from '@op/sense/Toast';
 
-import { ensureRestoreSynced } from './ensureRestoreSynced';
+import { ensureDocSynced } from './ensureDocSynced';
 
 type ProviderMock = { synced: boolean; hasUnsyncedChanges: boolean };
 
@@ -22,16 +22,16 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('ensureRestoreSynced', () => {
+describe('ensureDocSynced', () => {
   it('resolves true and shows no toast for a null provider', async () => {
-    await expect(ensureRestoreSynced(null, t)).resolves.toBe(true);
+    await expect(ensureDocSynced(null, true, t)).resolves.toBe(true);
     expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('resolves true and shows no toast when already synced', async () => {
     const provider = makeProvider({ synced: true, hasUnsyncedChanges: false });
 
-    await expect(ensureRestoreSynced(provider, t)).resolves.toBe(true);
+    await expect(ensureDocSynced(provider, true, t)).resolves.toBe(true);
     expect(toast.error).not.toHaveBeenCalled();
   });
 
@@ -43,7 +43,7 @@ describe('ensureRestoreSynced', () => {
     }, 20);
 
     await expect(
-      ensureRestoreSynced(provider, t, { timeoutMs: 2_000, pollMs: 10 }),
+      ensureDocSynced(provider, true, t, { timeoutMs: 2_000, pollMs: 10 }),
     ).resolves.toBe(true);
     expect(toast.error).not.toHaveBeenCalled();
   });
@@ -52,11 +52,23 @@ describe('ensureRestoreSynced', () => {
     const provider = makeProvider();
 
     await expect(
-      ensureRestoreSynced(provider, t, { timeoutMs: 100, pollMs: 20 }),
+      ensureDocSynced(provider, true, t, { timeoutMs: 100, pollMs: 20 }),
     ).resolves.toBe(false);
 
     expect(toast.error).toHaveBeenCalledWith('Your changes are still syncing', {
       description: 'Please wait a moment and try again.',
     });
+  });
+
+  it('resolves true without waiting or toasting when the doc has never synced', async () => {
+    const provider = makeProvider();
+    const start = Date.now();
+
+    await expect(
+      ensureDocSynced(provider, false, t, { timeoutMs: 2_000 }),
+    ).resolves.toBe(true);
+
+    expect(Date.now() - start).toBeLessThan(50);
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

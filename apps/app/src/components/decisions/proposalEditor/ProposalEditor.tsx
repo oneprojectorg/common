@@ -30,7 +30,6 @@ import {
   CollaborativePresence,
   useCollaborativeDoc,
   useOptionalCollaborativeDoc,
-  waitForDocSync,
 } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
@@ -42,6 +41,7 @@ import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { SubmitProposalConfirmModal } from './SubmitProposalConfirmModal';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
+import { ensureDocSynced } from './ensureDocSynced';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
 import { requiresSubmitConfirmation } from './submitConfirmation';
@@ -51,10 +51,6 @@ import { useProposalValidation } from './useProposalValidation';
 
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;
-
-// How long to wait for TipTap Cloud to acknowledge the user's latest edits
-// before the server re-validates the document on submit.
-const SUBMIT_SYNC_TIMEOUT_MS = 10_000;
 
 export function ProposalEditor({
   instance,
@@ -160,7 +156,7 @@ function ProposalEditorInner({
   // Anon visitors get sent back with ?promote=1 so PromoteAccountModal offers an
   // upgrade. `isAnonymous` is session-derived, not the stale DB relation.
   const isAnonymous = Boolean(user?.isAnonymous);
-  const { ydoc, provider, isSynced } = useCollaborativeDoc();
+  const { ydoc, provider, isSynced, hasSyncedOnce } = useCollaborativeDoc();
   const versionPreview = useOptionalVersionPreview();
 
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -287,13 +283,7 @@ function ProposalEditorInner({
   const finalizeSubmit = useCallback(async () => {
     // Re-check: the updateProposal round trip or an open custom-form modal
     // can outlast the provider's sync, so gate the submit call itself too.
-    const synced = await waitForDocSync(provider, {
-      timeoutMs: SUBMIT_SYNC_TIMEOUT_MS,
-    });
-    if (!synced) {
-      toast.error(t('Your changes are still syncing'), {
-        description: t('Please wait a moment and try again.'),
-      });
+    if (!(await ensureDocSynced(provider, hasSyncedOnce, t))) {
       throw new Error('Proposal changes not synced before submit');
     }
 
@@ -317,6 +307,7 @@ function ProposalEditorInner({
     isAnonymous,
     backHref,
     provider,
+    hasSyncedOnce,
     t,
   ]);
 
@@ -345,13 +336,7 @@ function ProposalEditorInner({
       // non-drafts) re-validates against TipTap Cloud, and submitting
       // before the cloud has seen our updates surfaces false "required"
       // errors for fields the user has filled.
-      const synced = await waitForDocSync(provider, {
-        timeoutMs: SUBMIT_SYNC_TIMEOUT_MS,
-      });
-      if (!synced) {
-        toast.error(t('Your changes are still syncing'), {
-          description: t('Please wait a moment and try again.'),
-        });
+      if (!(await ensureDocSynced(provider, hasSyncedOnce, t))) {
         return;
       }
 
@@ -418,6 +403,7 @@ function ProposalEditorInner({
     draftRef,
     finalizeSubmit,
     provider,
+    hasSyncedOnce,
     t,
   ]);
 
