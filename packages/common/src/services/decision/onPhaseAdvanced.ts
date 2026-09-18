@@ -47,7 +47,24 @@ export async function onPhaseAdvanced(
   if (isLastPhase(input.toPhaseId, input.phases)) {
     // Best-effort: processResults stamps its own failure row; don't abort the post-advance flow.
     try {
-      await processResults({ processInstanceId: input.instanceId });
+      const processResultId = await processResults({
+        processInstanceId: input.instanceId,
+      });
+
+      event
+        .send({
+          name: Events.resultsProcessed.name,
+          data: {
+            processInstanceId: input.instanceId,
+            processResultId,
+          },
+        })
+        .catch((err) => {
+          logger.error('Failed to send results processed event', {
+            instanceId: input.instanceId,
+            error: err,
+          });
+        });
     } catch (error) {
       logger.error('Error processing results for process instance', {
         instanceId: input.instanceId,
