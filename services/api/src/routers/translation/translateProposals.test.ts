@@ -427,6 +427,7 @@ describe('translation.translateProposals', () => {
       translatedText: '[ES-CACHED] Cached Batch Proposal',
       sourceLocale: 'EN',
       targetLocale: 'ES',
+      format: 'text',
     });
 
     onTestFinished(async () => {

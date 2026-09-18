@@ -119,6 +119,7 @@ export async function translatePosts({
     entries.push({
       contentKey: `post:${row.id}:content`,
       text: row.content,
+      format: 'text',
     });
   }
 

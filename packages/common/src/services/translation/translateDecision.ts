@@ -141,12 +141,14 @@ function buildEntries(
     entries.push({
       contentKey: `${prefix}:headline`,
       text: currentPhase.headline,
+      format: 'text',
     });
   }
   if (currentPhase?.description) {
     entries.push({
       contentKey: `${prefix}:phaseDescription`,
       text: currentPhase.description,
+      format: 'text',
     });
   }
   if (currentPhase?.additionalInfo) {
@@ -161,6 +163,7 @@ function buildEntries(
       entries.push({
         contentKey: `${prefix}:phase:${phase.phaseId}:name`,
         text: phase.name,
+        format: 'text',
       });
     }
   }
@@ -169,6 +172,7 @@ function buildEntries(
     entries.push({
       contentKey: `${prefix}:description`,
       text: processDescription,
+      format: 'text',
     });
   }
 
@@ -177,12 +181,14 @@ function buildEntries(
     entries.push({
       contentKey: `${prefix}:overviewHeadline`,
       text: overview.headline,
+      format: 'text',
     });
   }
   if (overview?.description) {
     entries.push({
       contentKey: `${prefix}:overviewDescription`,
       text: overview.description,
+      format: 'text',
     });
   }
   if (overview?.body) {

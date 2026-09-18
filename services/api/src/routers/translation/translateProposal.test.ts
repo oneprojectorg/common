@@ -1,4 +1,4 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
 import { db, eq } from '@op/db/client';
 import { contentTranslations, ProposalStatus, proposals } from '@op/db/schema';
 import { like } from 'drizzle-orm';
@@ -23,15 +23,32 @@ process.env.DEEPL_API_KEY = 'test-fake-key';
 
 // Mock DeepL's translateText — prefixes each text with [ES] so we can
 // distinguish mock translations from seeded cache entries ([ES-CACHED]).
-const mockTranslateText = vi.fn((texts: string | string[]) => {
-  const arr = Array.isArray(texts) ? texts : [texts];
-  const results = arr.map((t) => ({
-    text: `[ES] ${t}`,
-    detectedSourceLang: 'en',
-  }));
-  // Mirror deepl-node: a single-string input returns a single result object.
-  return Array.isArray(texts) ? results : results[0];
-});
+//
+// It also mirrors the behaviour this file exists to pin: with tagHandling on,
+// DeepL parses the input as a document, so a bare string comes back wrapped in
+// a namespaced <p>. Plain fields must therefore be sent without tagHandling.
+const mockTranslateText = vi.fn(
+  (
+    texts: string | string[],
+    _sourceLang?: unknown,
+    _targetLang?: unknown,
+    options?: { tagHandling?: string },
+  ) => {
+    const arr = Array.isArray(texts) ? texts : [texts];
+    const results = arr.map((t) => {
+      const looksLikeMarkup = /^\s*</.test(t);
+      const translated =
+        options?.tagHandling === 'html' && !looksLikeMarkup
+          ? `<p xmlns="http://www.w3.org/1999/xhtml">[ES] ${t}</p>`
+          : `[ES] ${t}`;
+
+      return { text: translated, detectedSourceLang: 'en' };
+    });
+
+    // Mirror deepl-node: a single-string input returns a single result object.
+    return Array.isArray(texts) ? results : results[0];
+  },
+);
 
 // Mock deepl-node so we never hit the real API
 vi.mock('deepl-node', () => ({
@@ -258,13 +275,21 @@ describe('translation.translateProposal', () => {
       },
     });
 
+    // The title is a bare string. If it were sent with tagHandling, DeepL
+    // would hand back `<p xmlns=…>[ES] Community Garden Project</p>` and the
+    // proposal header would render that markup as literal text.
+    expect(result.translated.title).toBe('[ES] Community Garden Project');
+    expect(result.translated.title).not.toContain('<p');
+
     // Verify what was sent to DeepL (mapped from 'es' → 'ES'). DeepL is called
     // once per text so batch size can't exceed its per-request cap.
     expect(mockTranslateText).toHaveBeenCalledWith(
       'Community Garden Project',
       null,
       'ES',
-      expect.objectContaining({ tagHandling: 'html' }),
+      // No options at all — asserting `objectContaining({ tagHandling:
+      // undefined })` would pass on a request that never omitted the key.
+      {},
     );
     expect(mockTranslateText).toHaveBeenCalledWith(
       '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
@@ -314,6 +339,7 @@ describe('translation.translateProposal', () => {
       translatedText: '[ES-CACHED] Community Garden Project',
       sourceLocale: 'EN',
       targetLocale: 'ES',
+      format: 'text',
     });
 
     // Clean up translations inserted by translateBatch for the body
@@ -392,6 +418,7 @@ describe('translation.translateProposal', () => {
       translatedText: '[ES-CACHED] Fully Cached Proposal',
       sourceLocale: 'EN',
       targetLocale: 'ES',
+      format: 'text',
     });
 
     await translationData.seedTranslation({
@@ -487,7 +514,9 @@ describe('translation.translateProposal', () => {
       'Legacy Proposal',
       null,
       'ES',
-      expect.objectContaining({ tagHandling: 'html' }),
+      // No options at all — asserting `objectContaining({ tagHandling:
+      // undefined })` would pass on a request that never omitted the key.
+      {},
     );
     expect(mockTranslateText).toHaveBeenCalledWith(
       '<p>Old-style HTML content</p>',
@@ -600,6 +629,74 @@ describe('translation.translateProposal', () => {
     expect(result.translated['title']).toBe('[ES] Template Fields Test');
     expect(result.sourceLocale).toBe('EN');
     expect(result.targetLocale).toBe('es');
+  });
+
+  it('keeps the plain-text title when a colliding title document fragment exists', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // A template that exposes `title` as a field means `title` also comes back
+    // as a TipTap document fragment, whose generated HTML carries the
+    // `<p xmlns="…xhtml">` wrapper. That fragment shares the plain title's
+    // content key, so before the fix it clobbered the plain-text translation
+    // and leaked the tag into the title (ONE-395).
+    const proposalTemplate = {
+      type: 'object',
+      properties: {
+        title: { type: 'string', title: 'Proposal title', 'x-format': 'text' },
+        summary: {
+          type: 'string',
+          title: 'Summary',
+          'x-format': 'textarea',
+        },
+      },
+    };
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Playground made of ice cream' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Playground made of ice cream'),
+      summary: textFragment('There are no playgrounds made of ice cream'),
+    });
+
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    // Title stays plain text — the document fragment's HTML wrapper never leaks.
+    expect(result.translated.title).toBe('[ES] Playground made of ice cream');
+    expect(String(result.translated.title)).not.toContain('xmlns');
+    // The rich-text body fragment still comes through as HTML.
+    expect(String(result.translated.summary)).toContain(
+      'There are no playgrounds made of ice cream',
+    );
   });
 
   it('should preserve multi-category structure when translating categories', async ({
@@ -720,6 +817,7 @@ describe('translation.translateProposal', () => {
       translatedText: '[ES-CACHED] Target Region',
       sourceLocale: 'EN',
       targetLocale: 'ES',
+      format: 'text',
     });
 
     onTestFinished(async () => {

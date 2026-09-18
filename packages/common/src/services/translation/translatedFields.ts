@@ -21,6 +21,10 @@ const ARRAY_ELEMENT_PATTERN = /^(?<field>.+)\[(?<index>\d+)\]$/;
 /**
  * Flattens string and string[] fields into translation entries while keeping a
  * reversible content-key structure for arrays.
+ *
+ * Everything here is a bare string — titles, categories, previews — so entries
+ * are marked `text`. Rich-text fields are rendered to HTML and pushed by their
+ * own callers.
  */
 export function flattenTranslatableFields(
   prefix: string,
@@ -37,6 +41,7 @@ export function flattenTranslatableFields(
       entries.push({
         contentKey: `${prefix}${fieldName}`,
         text: value,
+        format: 'text',
       });
       continue;
     }
@@ -49,6 +54,7 @@ export function flattenTranslatableFields(
       entries.push({
         contentKey: `${prefix}${fieldName}[${index}]`,
         text: item,
+        format: 'text',
       });
     });
   }
