@@ -91,22 +91,23 @@ export function DecisionPhaseTimeline({
           const isAdvanceable = isAdmin === true && phase.id === nextPhaseId;
 
           return (
-            <PhaseCard
-              key={phase.id}
-              state={state}
-              name={phaseName(phase)}
-              startDate={phase.phase?.startDate}
-              endDate={phase.phase?.endDate}
-              locale={locale}
-              isNowOpen={
-                state === 'current' && phase.config?.allowProposals === true
-              }
-              nowOpenLabel={t('Now open!')}
-              isAdvanceable={isAdvanceable}
-              advanceLabel={t('Advance')}
-              onAdvance={isAdvanceable ? requestAdvance : undefined}
-              href={state === 'current' ? currentHref : undefined}
-            />
+            <li key={phase.id}>
+              <PhaseCard
+                state={state}
+                name={phaseName(phase)}
+                startDate={phase.phase?.startDate}
+                endDate={phase.phase?.endDate}
+                locale={locale}
+                isNowOpen={
+                  state === 'current' && phase.config?.allowProposals === true
+                }
+                nowOpenLabel={t('Now open!')}
+                isAdvanceable={isAdvanceable}
+                advanceLabel={t('Advance')}
+                onAdvance={isAdvanceable ? requestAdvance : undefined}
+                href={state === 'current' ? currentHref : undefined}
+              />
+            </li>
           );
         })}
       </ol>

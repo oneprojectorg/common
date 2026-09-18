@@ -12,39 +12,47 @@ export default meta;
 
 type Story = StoryObj<typeof PhaseCard>;
 
-// Each card is an <li>; the consumer owns the <ol>. Single-state stories
-// wrap one card so each treatment can be reviewed on its own.
 const Row = ({ children }: { children: ReactNode }) => (
-  <ol className="w-96">{children}</ol>
+  <ol className="w-96">
+    <li>{children}</li>
+  </ol>
 );
 
 // The states composed into the decision Overview timeline — the default view.
 export const Timeline: Story = {
   render: () => (
     <ol className="flex w-96 flex-col gap-2">
-      <PhaseCard
-        state="completed"
-        name="Submissions"
-        startDate="2026-06-01"
-        endDate="2026-06-14"
-      />
-      <PhaseCard
-        state="current"
-        name="Review"
-        startDate="2026-06-15"
-        endDate="2026-06-28"
-        isNowOpen
-        href="#"
-      />
-      <PhaseCard
-        state="upcoming"
-        name="Voting"
-        startDate="2026-07-01"
-        endDate="2026-07-14"
-        isAdvanceable
-        onAdvance={() => {}}
-      />
-      <PhaseCard state="upcoming" name="Results" />
+      <li>
+        <PhaseCard
+          state="completed"
+          name="Submissions"
+          startDate="2026-06-01"
+          endDate="2026-06-14"
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="current"
+          name="Review"
+          startDate="2026-06-15"
+          endDate="2026-06-28"
+          isNowOpen
+          href="#"
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="upcoming"
+          name="Voting"
+          startDate="2026-07-01"
+          endDate="2026-07-14"
+          isAdvanceable
+          onAdvance={() => {}}
+        />
+      </li>
+      <li>
+        <PhaseCard state="upcoming" name="Results" />
+      </li>
     </ol>
   ),
 };
