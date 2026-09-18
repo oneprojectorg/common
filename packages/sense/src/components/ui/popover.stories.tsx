@@ -87,10 +87,11 @@ export const Anchored: Story = {
   render: () => <AnchoredExample />,
 };
 
-// `container` chooses the popup's DOM parent. Portalled to the body by default;
-// with `container` the popup renders inside the scroll box, so it travels with
-// the sticky bar its trigger sits in instead of staying where the page was when
-// it opened. Scroll the box with the popover open to see the difference.
+// `container` chooses the popup's DOM parent — here the scroll box rather than
+// the end of the document. It pairs with `positionMethod="fixed"`: the trigger
+// sits in a sticky bar, so it holds still on screen while moving in the box's
+// coordinates, and an absolutely positioned popup jitters chasing it on every
+// scroll frame. Scroll the box with the popover open.
 export const PortalContainer: Story = {
   render: () => <PortalContainerExample />,
 };
@@ -142,7 +143,12 @@ function PortalContainerExample() {
           <PopoverTrigger render={<Button variant="outline" size="sm" />}>
             Filter
           </PopoverTrigger>
-          <PopoverContent container={box} align="end" className="w-56">
+          <PopoverContent
+            container={box}
+            positionMethod="fixed"
+            align="end"
+            className="w-56"
+          >
             <PopoverHeader>
               <PopoverTitle>Filter</PopoverTitle>
               <PopoverDescription>
