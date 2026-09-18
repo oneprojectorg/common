@@ -178,6 +178,10 @@ export const parseDefinition = ({
   };
 };
 
+/** How many fields a stored definition holds. */
+export const countFields = (schema: Record<string, unknown>): number =>
+  Object.keys(isRecord(schema.properties) ? schema.properties : {}).length;
+
 /**
  * The draft the editor opens on: a stored form read back, or a new one already
  * pointed at the first phase that has room for it.

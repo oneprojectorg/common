@@ -112,6 +112,9 @@ export const CustomFormFieldEditor = ({
         <FieldLabel htmlFor={`${fieldId}-kind`}>{t('Answer type')}</FieldLabel>
         <Select
           value={field.kind}
+          // value → label map, or base-ui's `SelectValue` shows the raw kind
+          // key ("short-text") in the trigger instead of its label.
+          items={kindLabels}
           onValueChange={(next) => {
             const kind = next as FormFieldKind;
             onChange({

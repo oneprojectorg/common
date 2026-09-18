@@ -114,7 +114,12 @@ const BuilderContent = ({
     const result = validateDraft(draft);
 
     if (!result.ok) {
-      setErrors(result.problems.map((problem) => describeProblem(problem, t)));
+      setErrors(
+        result.problems
+          .map((problem) => describeProblem(problem, t))
+          // A schema issue with no detail would render an empty line.
+          .filter(Boolean),
+      );
       return;
     }
 
@@ -250,6 +255,11 @@ const FormDetailsFields = ({
         <FieldLabel htmlFor={`${fieldId}-phase`}>{t('Phase')}</FieldLabel>
         <Select
           value={draft.phaseId || null}
+          // value → label map, or base-ui's `SelectValue` shows the raw phase
+          // id in the trigger instead of the phase's name.
+          items={Object.fromEntries(
+            phases.map((phase) => [phase.phaseId, phase.name ?? phase.phaseId]),
+          )}
           onValueChange={(next) =>
             onChange({ ...draft, phaseId: next == null ? '' : String(next) })
           }
@@ -370,8 +380,10 @@ const ValidationErrors = ({ messages }: { messages: string[] }) => {
 
   return (
     <div aria-live="polite" className="flex flex-col gap-1">
-      {messages.map((message) => (
-        <p key={message} className="text-sm text-destructive">
+      {/* Keyed by position: two schema issues can carry the same text, and a
+          repeated key would drop one of them silently. */}
+      {messages.map((message, index) => (
+        <p key={index} className="text-sm text-destructive">
           {message}
         </p>
       ))}

@@ -53,6 +53,9 @@ export const assertCustomFormAdmin = async ({
   user: User;
   profileId: string;
 }): Promise<CustomFormProcessContext> => {
+  // `profileId` identifies one instance: the column holds the instance's OWN
+  // profile, created with it, so no two instances share one. (Same lookup
+  // `createCustomFormSubmission` makes to resolve a form's process.)
   const instance = await db.query.processInstances.findFirst({
     where: { profileId },
     columns: { profileId: true, ownerProfileId: true, instanceData: true },

@@ -14,6 +14,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@op/sense/AlertDialog';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
@@ -33,7 +34,7 @@ import { LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { CustomFormBuilderDialog } from './CustomFormBuilderDialog';
-import { resolvePhaseBadge } from './formDefinition';
+import { countFields, resolvePhaseBadge } from './formDefinition';
 
 interface CustomFormsPanelProps {
   /** The decision's own profile; null on instances that never got one. */
@@ -86,10 +87,9 @@ const CustomFormsPanelSuspense = ({
     .map((form) => form.phaseId)
     .filter((phaseId): phaseId is string => phaseId !== null);
 
-  const isEvery = phases.every((phase) =>
-    occupiedPhaseIds.includes(phase.phaseId),
+  const canAdd = phases.some(
+    (phase) => !occupiedPhaseIds.includes(phase.phaseId),
   );
-  const canAdd = phases.length > 0 && !isEvery;
 
   return (
     <Card>
@@ -233,9 +233,6 @@ const FormPhaseBadge = ({
   );
 };
 
-const countFields = (schema: Record<string, unknown>): number =>
-  Object.keys(isRecord(schema.properties) ? schema.properties : {}).length;
-
 const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
@@ -252,14 +249,19 @@ const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={t('Delete {name}', { name: form.name })}
-        onClick={() => setIsOpen(true)}
+      {/* Through AlertDialogTrigger, not a bare Button: the trigger is what
+          base-ui returns focus to when the dialog closes. */}
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t('Delete {name}', { name: form.name })}
+          />
+        }
       >
         <LuTrash2 />
-      </Button>
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
@@ -287,6 +289,3 @@ const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
     </AlertDialog>
   );
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);

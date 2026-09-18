@@ -1,4 +1,7 @@
-import { customFormDefinitionInputSchema } from '@op/common/client';
+import {
+  customFormDefinitionInputSchema,
+  schemaValidator,
+} from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
 import type { BuilderField, BuilderForm } from './formDefinition';
@@ -100,6 +103,52 @@ describe('buildDefinition', () => {
       items: { type: 'string', enum: ['Features', 'Ease of use'] },
       uniqueItems: true,
     });
+  });
+
+  it('produces a schema the submit-time validator accepts answers against', () => {
+    // The definition has to survive the round trip the builder does not own:
+    // AJV compiles it when a participant submits. A keyword AJV rejects would
+    // fail there, long after the form looked saved.
+    const definition = buildDefinition(
+      form([
+        field({ key: 'wasAdmin', kind: 'radio', options: ['Yes', 'No'] }),
+        field({
+          key: 'reasons',
+          kind: 'multi-select',
+          options: ['Features', 'Ease of use'],
+          localId: 'b',
+        }),
+        field({ key: 'score', kind: 'number', localId: 'c', isRequired: true }),
+        field({ key: 'notes', kind: 'long-text', localId: 'd' }),
+      ]),
+    );
+
+    expect(
+      schemaValidator.validate(definition, {
+        wasAdmin: 'Yes',
+        reasons: ['Features'],
+        score: 7,
+        notes: 'Worked well.',
+      }),
+    ).toEqual({ valid: true, errors: {} });
+  });
+
+  it('produces a schema that rejects an answer outside the options', () => {
+    const definition = buildDefinition(
+      form([field({ key: 'wasAdmin', kind: 'radio', options: ['Yes', 'No'] })]),
+    );
+
+    expect(
+      schemaValidator.validate(definition, { wasAdmin: 'Maybe' }).valid,
+    ).toBe(false);
+  });
+
+  it('produces a schema that holds a required field to being answered', () => {
+    const definition = buildDefinition(
+      form([field({ key: 'answer', isRequired: true })]),
+    );
+
+    expect(schemaValidator.validate(definition, {}).valid).toBe(false);
   });
 
   it('omits an empty description rather than storing a blank string', () => {
