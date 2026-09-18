@@ -117,6 +117,13 @@ export const Events = {
       revisionRequestId: z.string().uuid(),
     }),
   },
+  // Emitted from submitReview only; updateReview must not re-send it.
+  reviewSubmitted: {
+    name: 'review/submitted' as const,
+    schema: z.object({
+      assignmentId: z.string().uuid(),
+    }),
+  },
   decisionUpdatePosted: {
     name: 'decision/update-posted' as const,
     schema: z.object({
