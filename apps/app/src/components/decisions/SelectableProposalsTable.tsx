@@ -72,8 +72,10 @@ export const SelectableProposalsTable = ({
       <TableHeader>
         <TableRow>
           <TableHead>{t('decisions.proposals.proposalLabel')}</TableHead>
-          {showBudget ? <TableHead>{t('Budget')}</TableHead> : null}
-          <TableHead>{t('Category')}</TableHead>
+          {showBudget ? (
+            <TableHead>{t('decisions.budgetLabel')}</TableHead>
+          ) : null}
+          <TableHead>{t('decisions.categoryLabel')}</TableHead>
           {showVotes ? (
             <TableHead>{t('decisions.review.votesLabel')}</TableHead>
           ) : null}

@@ -71,7 +71,7 @@ export function ReviewPage({
     (canReview &&
       getPhaseReviewSettings({ phases }, currentPhase.phaseId).openReviews);
 
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   // In the URL so a reload or shared link lands on the same tab.
   const [tab, setTab] = useQueryState(
@@ -106,7 +106,7 @@ export function ReviewPage({
   const actionBarDescription =
     phaseAdditionalInfo ?? translation?.description ?? description;
   const actionBarLabel = phaseAdditionalInfo
-    ? t('About this phase')
+    ? t('aboutPhaseHeading')
     : undefined;
   // Only the reviewer-facing phase copy is author-written, so only it
   // goes through translation.
@@ -125,7 +125,7 @@ export function ReviewPage({
   useRegisterTranslationSamples('review-phase', phaseSamples);
 
   const assignmentsTabTrigger = (
-    <TabsTrigger value="assignments">{t('Assignments')}</TabsTrigger>
+    <TabsTrigger value="assignments">{t('assignmentsTab')}</TabsTrigger>
   );
 
   // Same table as /decisions/[slug]/assignments — the tab and the dedicated
@@ -164,8 +164,8 @@ export function ReviewPage({
           <DecisionHero
             title={
               isAdmin
-                ? t('decisions.review.reviewProgressHeading')
-                : (heroHeadline ?? t('Review proposals.'))
+                ? t('review.reviewProgressHeading')
+                : (heroHeadline ?? t('reviewProposalsHeading'))
             }
             description={
               !isAdmin && heroDescription ? <p>{heroDescription}</p> : undefined
@@ -203,10 +203,10 @@ export function ReviewPage({
               <div className="w-full border-b">
                 <TabsList variant="line" className="flex gap-6">
                   <TabsTrigger value="to-review">
-                    {t('Proposals to review')}
+                    {t('proposalsToReviewTab')}
                   </TabsTrigger>
                   <TabsTrigger value="other-proposals">
-                    {t('Other proposals')}
+                    {t('otherProposalsTab')}
                   </TabsTrigger>
                   {showAssignmentsTab ? assignmentsTabTrigger : null}
                 </TabsList>
@@ -267,7 +267,7 @@ export function ReviewPage({
                 <div className="w-full border-b">
                   <TabsList variant="line" className="flex gap-6">
                     <TabsTrigger value={DEFAULT_REVIEW_TAB}>
-                      {t('decisions.review.reviewProgressLabel')}
+                      {t('review.reviewProgressLabel')}
                     </TabsTrigger>
                     {assignmentsTabTrigger}
                   </TabsList>

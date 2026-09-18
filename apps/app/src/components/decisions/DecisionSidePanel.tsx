@@ -86,7 +86,7 @@ export const DecisionSidePanel = ({
         className="gap-0 p-0 sm:max-w-lg"
       >
         <SheetTitle className="sr-only">
-          {t('Decision updates panel')}
+          {t('decisions.updatesPanelLabel')}
         </SheetTitle>
         <PanelContents
           isOpen={isOpen}
@@ -137,14 +137,14 @@ const PanelContents = ({
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border pe-4 sm:pt-4">
         <TabsList
           variant="line"
-          aria-label={t('Decision side panel tabs')}
+          aria-label={t('decisions.sidePanelTabsLabel')}
           className="grow justify-start border-b-0 px-4 sm:px-6"
         >
           <TabsTrigger value="updates" className="h-auto flex-none">
             {t('posts.updatesTab')}
           </TabsTrigger>
           <TabsTrigger value="resources" className="h-auto flex-none">
-            {t('Resources')}
+            {t('decisions.resourcesTab')}
           </TabsTrigger>
         </TabsList>
         <Button
@@ -212,7 +212,7 @@ const UpdatesTabContent = ({
         {canPostUpdate ? (
           <PostUpdate
             profileId={decisionProfileId}
-            placeholder={t('Share an update with participants…')}
+            placeholder={t('decisions.updateComposerPlaceholder')}
             label={t('Post')}
             onSuccess={handlePostSuccess}
           />
@@ -233,7 +233,7 @@ const UpdatesTabContent = ({
                 <MegaphoneIcon />
               </EmptyMedia>
               <EmptyDescription>
-                {t("You don't have access to updates for this decision.")}
+                {t('decisions.updatesForbidden')}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -309,9 +309,9 @@ const UpdatesFeed = ({
           <EmptyMedia variant="icon">
             <MegaphoneIcon />
           </EmptyMedia>
-          <EmptyTitle>{t('No updates yet')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.noUpdatesYet')}</EmptyTitle>
           <EmptyDescription className="max-w-72">
-            {t("The organizers haven't posted any updates yet")}
+            {t('decisions.updatesEmptyHint')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>

@@ -108,22 +108,20 @@ export const ProfileUsersAccess = ({
       <div className="flex flex-col gap-10">
         <div className="flex items-center justify-between gap-4">
           <Header1 className="text-headline">
-            {t('Manage Participants')}
+            {t('decisions.manageParticipantsTitle')}
           </Header1>
           <Button onClick={() => setIsInviteModalOpen(true)}>
             <LuUserPlus className="size-4" />
-            {t('Invite')}
+            {t('decisions.inviteAction')}
           </Button>
         </div>
 
         {isDraft && (
           <Alert variant="warning">
             <LuCircleAlert />
-            <AlertTitle>{t('Invites will send when you launch')}</AlertTitle>
+            <AlertTitle>{t('decisions.invitesPendingLaunchHint')}</AlertTitle>
             <AlertDescription>
-              {t(
-                'This process is still in draft. Participants with "Manage Process" access will be invited immediately. Everyone else is invited when the process launches.',
-              )}
+              {t('decisions.draftInvitesAdminNotice')}
             </AlertDescription>
           </Alert>
         )}

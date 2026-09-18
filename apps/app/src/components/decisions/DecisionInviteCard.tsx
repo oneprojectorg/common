@@ -42,7 +42,7 @@ export const DecisionInviteCard = ({
   isDeclining,
   showDecline = true,
 }: DecisionInviteCardProps) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const { profile } = invite;
   const processInstance = profile?.processInstance;
   const steward = processInstance?.steward;
@@ -86,9 +86,12 @@ export const DecisionInviteCard = ({
         <div className="flex items-end gap-4 sm:items-center sm:gap-12">
           <DecisionStat
             number={invite.participantCount}
-            label={t('Participants')}
+            label={t('participantsLabel')}
           />
-          <DecisionStat number={invite.proposalCount} label={t('Proposals')} />
+          <DecisionStat
+            number={invite.proposalCount}
+            label={t('proposalsLabel')}
+          />
         </div>
       </div>
 
@@ -103,7 +106,7 @@ export const DecisionInviteCard = ({
           {isDeclining ? (
             <Spinner className="size-4" />
           ) : (
-            t("I don't want to participate")
+            t('declineInviteAction')
           )}
         </Button>
       )}

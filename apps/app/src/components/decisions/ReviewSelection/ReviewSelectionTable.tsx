@@ -91,8 +91,10 @@ export function ReviewSelectionTable({
           <TableHead scope="col" className="w-56">
             {t('decisions.proposals.proposalLabel')}
           </TableHead>
-          {showBudget ? <TableHead scope="col">{t('Budget')}</TableHead> : null}
-          <TableHead scope="col">{t('Category')}</TableHead>
+          {showBudget ? (
+            <TableHead scope="col">{t('decisions.budgetLabel')}</TableHead>
+          ) : null}
+          <TableHead scope="col">{t('decisions.categoryLabel')}</TableHead>
           <TableHead scope="col">
             {t('decisions.review.overallRecommendationLabel')}
           </TableHead>
@@ -104,7 +106,7 @@ export function ReviewSelectionTable({
             </TableHead>
           )}
           <TableHead scope="col" className="w-28">
-            <span className="sr-only">{t('Advance')}</span>
+            <span className="sr-only">{t('decisions.advanceAction')}</span>
           </TableHead>
         </TableRow>
       </TableHeader>

@@ -110,7 +110,9 @@ export const ProposalRestrictionBadge = ({
   const t = useTranslations();
 
   return match(restrictionOf(proposal), {
-    draft: <StatusBadge variant="inactive">{t('Draft')}</StatusBadge>,
+    draft: (
+      <StatusBadge variant="inactive">{t('decisions.draftStatus')}</StatusBadge>
+    ),
     flagged: <StatusBadge variant="alert">{t('Flagged')}</StatusBadge>,
     hidden: (
       <StatusBadge variant="warning">

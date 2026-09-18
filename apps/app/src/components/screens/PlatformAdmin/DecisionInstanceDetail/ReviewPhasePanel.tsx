@@ -176,7 +176,9 @@ const ReviewersTable = ({
         <TableRow>
           <TableHead>{t('admin.reviewerLabel')}</TableHead>
           <TableHead>{t('decisions.review.progressLabel')}</TableHead>
-          <TableHead className="text-end">{t('Drafts')}</TableHead>
+          <TableHead className="text-end">
+            {t('decisions.draftsFilter')}
+          </TableHead>
           <TableHead>{t('decisions.review.lastSubmissionLabel')}</TableHead>
         </TableRow>
       </TableHeader>

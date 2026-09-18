@@ -97,7 +97,7 @@ export const ProfileUsersAccessTable = ({
     return (
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>{t('Members could not be loaded')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.membersLoadError')}</EmptyTitle>
         </EmptyHeader>
         <EmptyContent>
           <Button onClick={onRetry} variant="outline" size="sm">
@@ -157,7 +157,9 @@ const InviteStatusLabel = ({
   const isPendingLaunch = isDraft && !notifiedAt;
   return (
     <span className="text-sm text-muted-foreground">
-      {isPendingLaunch ? t('Pending launch') : t('Invited')}
+      {isPendingLaunch
+        ? t('decisions.pendingLaunchStatus')
+        : t('decisions.invitedStatus')}
     </span>
   );
 };
@@ -196,19 +198,16 @@ const RemoveFromProcessDialog = ({
             {/* Email-only members (no display name) would blow out the title;
                 fall back to a generic title — the description still names them. */}
             {/^\S+@\S+$/.test(name)
-              ? t('Remove member?')
-              : t('Remove {name}?', { name })}
+              ? t('decisions.removeMemberTitle')
+              : t('decisions.removeParticipantTitle', { name })}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {processName
-              ? t(
-                  'Are you sure you want to remove {name} from "{processName}"?',
-                  {
-                    name,
-                    processName,
-                  },
-                )
-              : t('Are you sure you want to remove {name} from this process?', {
+              ? t('decisions.removeParticipantConfirmNamed', {
+                  name,
+                  processName,
+                })
+              : t('decisions.removeParticipantConfirm', {
                   name,
                 })}
           </AlertDialogDescription>
@@ -290,7 +289,7 @@ const RoleSelectWithRemove = ({
                 variant="destructive"
                 onClick={() => onRemoveOpenChange(true)}
               >
-                {t('Remove from process')}
+                {t('decisions.removeFromProcessAction')}
               </DropdownMenuItem>
             </>
           )}
@@ -335,22 +334,22 @@ const ProfileUserRoleSelect = ({
 
   const updateRoles = trpc.profile.updateUserRoles.useMutation({
     onSuccess: () => {
-      toast.success(t('Role updated successfully'));
+      toast.success(t('decisions.updateRoleSuccess'));
       void utils.profile.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to update role'));
+      toast.error(error.message || t('decisions.updateRoleError'));
     },
   });
 
   const removeUser = trpc.profile.removeUser.useMutation({
     onSuccess: () => {
-      toast.success(t('User removed from process'));
+      toast.success(t('decisions.removeUserSuccess'));
       void utils.profile.listUsers.invalidate({ profileId });
       setIsRemoveModalOpen(false);
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to remove user'));
+      toast.error(error.message || t('decisions.removeUserError'));
     },
   });
 
@@ -406,22 +405,22 @@ const InviteRoleSelect = ({
 
   const updateInvite = trpc.profile.updateProfileInvite.useMutation({
     onSuccess: () => {
-      toast.success(t('Role updated successfully'));
+      toast.success(t('decisions.updateRoleSuccess'));
       void utils.profile.listProfileInvites.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to update role'));
+      toast.error(error.message || t('decisions.updateRoleError'));
     },
   });
 
   const deleteInvite = trpc.profile.deleteProfileInvite.useMutation({
     onSuccess: () => {
-      toast.success(t('Invite removed from process'));
+      toast.success(t('decisions.removeInviteSuccess'));
       void utils.profile.listProfileInvites.invalidate({ profileId });
       setIsRemoveModalOpen(false);
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to remove invite'));
+      toast.error(error.message || t('decisions.removeInviteError'));
     },
   });
 
@@ -687,7 +686,10 @@ const ProfileUsersAccessTableContent = ({
           <Skeleton className="h-8 w-full" />
         </div>
       )}
-      <Table aria-label={t('Participants list')} className="w-full">
+      <Table
+        aria-label={t('decisions.participantsListLabel')}
+        className="w-full"
+      >
         <TableHeader>
           <TableRow>
             <SortableHead

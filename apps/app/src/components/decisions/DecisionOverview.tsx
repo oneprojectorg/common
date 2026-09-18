@@ -106,10 +106,10 @@ export function DecisionOverview({
                 <LuTriangleAlert className="size-6" />
               </EmptyMedia>
               <EmptyTitle className="font-light">
-                {t("Couldn't load the overview")}
+                {t('decisions.overviewLoadError')}
               </EmptyTitle>
               <EmptyDescription className="text-base text-foreground">
-                {t('Refresh the page to try again.')}
+                {t('decisions.refreshPageHint')}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -227,7 +227,7 @@ function DecisionOverviewContent({
         <div className="flex flex-col gap-6 md:col-span-4">
           <div className="flex flex-col gap-4">
             <Header3 className="font-sans text-sm text-muted-foreground">
-              {t('Process Overview')}
+              {t('decisions.processOverviewHeading')}
             </Header3>
             <DecisionPhaseTimeline
               phases={phases}
@@ -380,7 +380,7 @@ const OverviewHero = ({
                     <AvatarFallback name={stewardName} />
                   </Avatar>
                   <span>
-                    {t('Stewarded by')}{' '}
+                    {t('decisions.stewardedByLabel')}{' '}
                     {canLinkToSteward ? (
                       // Underline keeps the link distinguishable from
                       // surrounding text without relying on color alone —
@@ -410,7 +410,7 @@ const OverviewHero = ({
               {isPublic ? (
                 <span className="flex items-center gap-1.5">
                   <LuBookOpen className="size-4" aria-hidden="true" />
-                  {t('Open for learning')}
+                  {t('decisions.openForLearningLabel')}
                 </span>
               ) : null}
             </div>
@@ -434,7 +434,7 @@ const OverviewHero = ({
               variant="outline"
               className="w-auto"
             >
-              {t('Browse proposals')}
+              {t('decisions.browseProposalsAction')}
             </ButtonLink>
             {canSubmitProposal ? (
               <Button
@@ -443,7 +443,7 @@ const OverviewHero = ({
                 onClick={createProposal}
               >
                 {isCreating ? <Spinner /> : null}
-                {t('Start a proposal')}
+                {t('decisions.startProposalAction')}
               </Button>
             ) : null}
           </div>

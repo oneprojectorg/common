@@ -24,7 +24,7 @@ export function ReviewSelectionPage({
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const phases = instance.instanceData?.phases ?? [];
   const previousPhase = phases.find(
     (phase): phase is InstancePhaseData => phase.phaseId === previousPhaseId,
@@ -49,10 +49,8 @@ export function ReviewSelectionPage({
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
         <DecisionHero
-          title={previousPhase?.headline ?? t('REVIEWS COMPLETE')}
-          description={
-            <p>{t('Select which proposals move on to the next phase')}</p>
-          }
+          title={previousPhase?.headline ?? t('reviewsCompleteBadge')}
+          description={<p>{t('selectAdvancingHeading')}</p>}
           variant="standard"
         />
       </div>

@@ -91,7 +91,7 @@ export function TemplateEditorContent({
     // Ensure locked system fields are present (backward compat)
     return ensureLockedFields(base, {
       titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
-      categoryLabel: t('Category'),
+      categoryLabel: t('decisions.categoryLabel'),
       categories,
       allowMultipleCategories,
       requireCategorySelection,
@@ -130,7 +130,7 @@ export function TemplateEditorContent({
     setTemplate((prev) =>
       ensureLockedFields(prev, {
         titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
-        categoryLabel: t('Category'),
+        categoryLabel: t('decisions.categoryLabel'),
         categories,
         allowMultipleCategories,
         requireCategorySelection,
@@ -178,7 +178,7 @@ export function TemplateEditorContent({
 
     const normalized = ensureLockedFields(template, {
       titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
-      categoryLabel: t('Category'),
+      categoryLabel: t('decisions.categoryLabel'),
       categories,
       allowMultipleCategories,
       requireCategorySelection,
@@ -415,7 +415,7 @@ export function TemplateEditorContent({
             />
             {hasCategories && (
               <CollapsibleConfigCard
-                label={t('Category')}
+                label={t('decisions.categoryLabel')}
                 badgeLabel={
                   requireCategorySelection
                     ? t('decisions.processBuilder.requiredLabel')

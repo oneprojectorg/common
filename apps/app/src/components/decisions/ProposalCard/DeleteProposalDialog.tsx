@@ -90,7 +90,9 @@ export const DeleteProposalDialog = ({
             onClick={handleDelete}
             disabled={deleteProposalMutation.isPending}
           >
-            {deleteProposalMutation.isPending ? t('Deleting...') : t('Delete')}
+            {deleteProposalMutation.isPending
+              ? t('decisions.deletingProgress')
+              : t('Delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

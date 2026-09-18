@@ -47,7 +47,8 @@ export const SidebarNav = () => {
             <LuUsers className="size-4" /> {t('Organizations')}
           </NavLink>
           <NavLink href="/decisions" active={pathname.startsWith('/decisions')}>
-            <LuMessageCircle className="size-4" /> {t('Decisions')}
+            <LuMessageCircle className="size-4" />{' '}
+            {t('decisions.decisionsLabel')}
           </NavLink>
         </SidebarMenu>
       </SidebarContent>
