@@ -96,7 +96,7 @@ export function CollaborativeBudgetField({
 
   return (
     <NumberField
-      label={title ?? t('Funding amount')}
+      label={title ?? t('decisions.proposals.fundingAmountLabel')}
       description={description}
       required={required}
       aria-required={required || undefined}

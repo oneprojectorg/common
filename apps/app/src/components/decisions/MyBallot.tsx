@@ -109,7 +109,7 @@ const MyBallotProposals = ({
                 <Checkbox
                   checked
                   disabled
-                  aria-label={t('Selected proposal')}
+                  aria-label={t('decisions.proposals.selectedProposalLabel')}
                   className="rounded-full"
                 />
               }

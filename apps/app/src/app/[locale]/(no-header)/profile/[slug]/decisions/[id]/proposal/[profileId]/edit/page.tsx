@@ -41,7 +41,8 @@ export async function generateMetadata({
       fetchInstance(id),
     ]);
 
-    const proposalTitle = proposal.profile?.name || t('Untitled Proposal');
+    const proposalTitle =
+      proposal.profile?.name || t('decisions.proposals.untitledProposal');
     const label = `${proposalTitle} (${t('Editing')})`;
     return { title: instance?.name ? `${label} | ${instance.name}` : label };
   } catch {

@@ -31,9 +31,13 @@ export const DecisionResultsTabs = ({
           <TabsTrigger value="funded">
             {t('decisions.review.selectedProposalsHeading')}
           </TabsTrigger>
-          <TabsTrigger value="all-proposals">{t('All proposals')}</TabsTrigger>
+          <TabsTrigger value="all-proposals">
+            {t('decisions.proposals.allProposalsOption')}
+          </TabsTrigger>
           {showBallotTab ? (
-            <TabsTrigger value="ballot">{t('My ballot')}</TabsTrigger>
+            <TabsTrigger value="ballot">
+              {t('decisions.proposals.myBallotOption')}
+            </TabsTrigger>
           ) : null}
         </TabsList>
       </div>

@@ -22,12 +22,12 @@ export function ReadonlyTitleField({
   required?: boolean;
   value: string | null;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <ReadonlyField title={title} required={required}>
       <ReadonlyValueBox isEmpty={!value}>
-        {value || t('Untitled Proposal')}
+        {value || t('untitledProposal')}
       </ReadonlyValueBox>
     </ReadonlyField>
   );

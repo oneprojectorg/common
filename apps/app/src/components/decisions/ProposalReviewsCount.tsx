@@ -47,7 +47,7 @@ export function ProposalReviewsCount({
   access,
   variant = 'reviews',
 }: ProposalReviewsCountProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   const completedReviewers = getCompletedReviewers(reviewers);
   const count = completedReviewers.length;
@@ -58,8 +58,8 @@ export function ProposalReviewsCount({
 
   const label =
     variant === 'reviewed'
-      ? t('{count} Reviewed', { count })
-      : t('{count} Reviews', { count });
+      ? t('reviewedCount', { count })
+      : t('reviewsCount', { count });
   // Dotted underline reads as "explicable", not "navigable" — the tooltip is
   // the payload for everyone, and admins additionally get a real link. The ring
   // is the sense focus treatment, replacing react-aria's useFocusable.

@@ -28,18 +28,18 @@ export function handleMutationError(
     if (errorMessages.length === 1) {
       toast.error(errorMessages[0]);
     } else {
-      toast.error(t('Please fix the following issues:'), {
+      toast.error(t('decisions.proposals.validationIssuesHeading'), {
         description: errorMessages.join(', '),
       });
     }
   } else {
     const titleMap = {
-      create: t('Failed to create proposal'),
-      update: t('Failed to update proposal'),
-      submit: t('Failed to submit proposal'),
+      create: t('decisions.proposals.createProposalError'),
+      update: t('decisions.proposals.updateProposalError'),
+      submit: t('decisions.proposals.submitProposalError'),
     } as const;
     toast.error(titleMap[operationType], {
-      description: error.message || t('An unexpected error occurred'),
+      description: error.message || t('decisions.proposals.unexpectedError'),
     });
   }
 }

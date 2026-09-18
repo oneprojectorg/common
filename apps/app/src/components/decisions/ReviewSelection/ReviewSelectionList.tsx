@@ -110,7 +110,7 @@ export function ReviewSelectionList({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <span className="font-serif text-title font-light">
-            {t('All proposals')}
+            {t('decisions.proposals.allProposalsOption')}
           </span>
           <Bullet />
           <span className="font-serif text-title font-light">

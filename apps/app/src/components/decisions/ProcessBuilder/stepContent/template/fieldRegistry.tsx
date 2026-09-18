@@ -53,13 +53,13 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
   dropdown: {
     icon: LuChevronDown,
     labelKey: 'Dropdown',
-    placeholderKey: 'Select an option',
+    placeholderKey: 'decisions.proposals.selectOptionPlaceholder',
     ConfigComponent: FieldConfigDropdown,
   },
   location: {
     icon: LuMapPin,
-    labelKey: 'Location',
-    placeholderKey: 'Location',
+    labelKey: 'decisions.proposals.locationLabel',
+    placeholderKey: 'decisions.proposals.locationLabel',
     ConfigComponent: FieldConfigLocation,
   },
 };
@@ -84,7 +84,7 @@ export const FIELD_CATEGORIES: {
   },
   {
     id: 'map',
-    labelKey: 'Map',
+    labelKey: 'decisions.proposals.mapViewShortOption',
     types: ['location'],
   },
 ];

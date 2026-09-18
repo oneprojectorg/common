@@ -64,7 +64,7 @@ export function ProposalCardMenu({
       items.push(
         buildMergeMenuItem({
           isDisabled: isLoading,
-          mergeLabel: t('Merge with another proposal'),
+          mergeLabel: t('decisions.proposals.mergeProposalAction'),
           onMerge: () => openMergeDialog(proposal),
         }),
       );
@@ -75,7 +75,9 @@ export function ProposalCardMenu({
         ) : (
           <LuEyeOff className="size-5" />
         ),
-        label: isHidden ? t('Unhide proposal') : t('Hide proposal'),
+        label: isHidden
+          ? t('decisions.proposals.unhideProposalAction')
+          : t('decisions.proposals.hideProposalAction'),
         onAction: handleToggleVisibility,
         isDisabled: isLoading,
       });
@@ -88,8 +90,8 @@ export function ProposalCardMenu({
         buildRejectMenuItem({
           isDisabled: isLoading || isUnrejecting,
           isRejected,
-          rejectLabel: t('Do not advance'),
-          undoLabel: t('Undo rejection'),
+          rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
+          undoLabel: t('decisions.proposals.undoRejectionAction'),
           onReject: () => openRejectDialog(proposal),
           onUndo: unreject,
         }),
@@ -130,7 +132,7 @@ export function ProposalCardMenu({
   return (
     <ProposalOptionsMenu
       groups={[menuItems]}
-      label={t('Proposal options')}
+      label={t('decisions.proposals.proposalOptionsLabel')}
       triggerProps={{ variant: 'ghost', size: 'icon-xs' }}
     />
   );

@@ -142,7 +142,8 @@ export function CustomFormModal({
       <DialogContent className="gap-0 p-0 sm:max-w-120">
         <DialogHeader>
           <DialogTitle>
-            {definition.title ?? t('Additional details')}
+            {definition.title ??
+              t('decisions.proposals.additionalDetailsHeading')}
           </DialogTitle>
         </DialogHeader>
         {/* `noValidate`: validation is AJV's (`schemaValidator`), and its
@@ -192,7 +193,7 @@ export function CustomFormModal({
           </div>
           <DialogFooter className="shrink-0">
             <Button type="submit" className="w-full" loading={isSubmitting}>
-              {submitLabel ?? t('Submit')}
+              {submitLabel ?? t('decisions.proposals.submitAction')}
             </Button>
           </DialogFooter>
         </form>
@@ -467,7 +468,9 @@ function EnumSelectField({
           className="w-full"
           aria-invalid={Boolean(error)}
         >
-          <SelectValue placeholder={t('Select an option')} />
+          <SelectValue
+            placeholder={t('decisions.proposals.selectOptionPlaceholder')}
+          />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>

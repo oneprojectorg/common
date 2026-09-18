@@ -44,10 +44,12 @@ export const DeleteProposalDialog = ({
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
     onError: (error) => {
-      toast.error(error.message || t('Failed to delete proposal'));
+      toast.error(
+        error.message || t('decisions.proposals.deleteProposalError'),
+      );
     },
     onSuccess: () => {
-      toast.success(t('Proposal deleted successfully'));
+      toast.success(t('decisions.proposals.deleteProposalSuccess'));
       // Nothing else drops the deleted row, so any list still holding it —
       // the grid, the map, the ballot — would keep rendering it.
       utils.decision.invalidate();
@@ -74,11 +76,11 @@ export const DeleteProposalDialog = ({
       {trigger ? <AlertDialogTrigger render={trigger} /> : null}
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('Delete Proposal')}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t('decisions.proposals.deleteProposalTitle')}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            {t(
-              'Are you sure you want to delete this proposal? This action cannot be undone.',
-            )}
+            {t('decisions.proposals.deleteProposalConfirm')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

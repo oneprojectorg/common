@@ -79,7 +79,9 @@ export function ShareProposalModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
       <DialogContent className="overflow-hidden sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('Share Proposal')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.proposals.shareProposalTitle')}
+          </DialogTitle>
         </DialogHeader>
 
         <ErrorBoundary>
@@ -314,9 +316,9 @@ function ShareProposalModalContent({
           : path;
       const inviteUrl = `${window.location.origin}${basePath}/invite`;
       await navigator.clipboard.writeText(inviteUrl);
-      toast.success(t('Link copied to clipboard'));
+      toast.success(t('decisions.proposals.copyLinkSuccess'));
     } catch {
-      toast.error(t('Failed to copy link'));
+      toast.error(t('decisions.proposals.copyLinkError'));
     }
   };
 
@@ -416,7 +418,9 @@ function ShareProposalModalContent({
           <ComboboxChips className="w-full" onPaste={handlePaste}>
             <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
             <ComboboxChipsInput
-              placeholder={t('Invite collaborators by name or email')}
+              placeholder={t(
+                'decisions.proposals.inviteCollaboratorsPlaceholder',
+              )}
             />
           </ComboboxChips>
           {debouncedQuery.length >= 2 && (
@@ -510,7 +514,7 @@ function ShareProposalModalContent({
                     <LuUsers />
                   </EmptyMedia>
                   <EmptyDescription>
-                    {t('No one has been invited yet')}
+                    {t('decisions.proposals.collaboratorsEmpty')}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -552,7 +556,7 @@ function ShareProposalModalContent({
       <DialogFooter className="flex-row items-center justify-between sm:justify-between">
         <Button variant="outline" onClick={handleCopyLink}>
           <LuLink className="size-4" />
-          {t('Copy link')}
+          {t('decisions.proposals.copyLinkAction')}
         </Button>
         <Button onClick={handleDone} loading={inviteMutation.isPending}>
           {t('Done')}

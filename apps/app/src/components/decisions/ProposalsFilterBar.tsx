@@ -56,7 +56,11 @@ export const ProposalsListHeader = ({
 export const MyProposalsHeader = () => {
   const t = useTranslations();
 
-  return <span className="font-serif text-title">{t('My proposals')}</span>;
+  return (
+    <span className="font-serif text-title">
+      {t('decisions.proposals.myProposalsOption')}
+    </span>
+  );
 };
 
 /**
@@ -95,16 +99,27 @@ export const ProposalsFilterBar = ({
   // Every option maps to a server-side query param in ProposalsList's
   // queryParams, so pagination and counts stay accurate.
   const filterItems = [
-    { id: ProposalFilter.ALL, label: t('All proposals') },
+    {
+      id: ProposalFilter.ALL,
+      label: t('decisions.proposals.allProposalsOption'),
+    },
     {
       id: ProposalFilter.MY_PROPOSALS,
-      label: t('My proposals'),
+      label: t('decisions.proposals.myProposalsOption'),
       isDisabled: !controls.currentProfileId,
     },
     ...(controls.hasVoted
-      ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
+      ? [
+          {
+            id: ProposalFilter.MY_BALLOT,
+            label: t('decisions.proposals.myBallotOption'),
+          },
+        ]
       : []),
-    { id: ProposalFilter.REJECTED, label: t('Not advanced') },
+    {
+      id: ProposalFilter.REJECTED,
+      label: t('decisions.proposals.notAdvancedStatus'),
+    },
   ];
 
   return (
@@ -139,7 +154,7 @@ export const ProposalsFilterBar = ({
             }
             controls.setProposalFilter(key);
           }}
-          aria-label={t('Filter proposals')}
+          aria-label={t('decisions.proposals.filterProposalsLabel')}
           items={filterItems}
           className="ms-auto min-w-40 shrink-0"
         />
@@ -153,11 +168,11 @@ export const ProposalsFilterBar = ({
         <ResponsiveSelect
           selectedKey={controls.sortOrder}
           onSelectionChange={controls.setSortOrder}
-          aria-label={t('Sort proposals')}
+          aria-label={t('decisions.proposals.sortProposalsLabel')}
           className="min-w-40 shrink-0"
           items={[
-            { id: 'newest', label: t('Newest First') },
-            { id: 'oldest', label: t('Oldest First') },
+            { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
+            { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
         {view && (

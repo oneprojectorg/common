@@ -56,7 +56,7 @@ export function ReviewersTableSection(props: ReviewersTableSectionProps) {
                 {t('decisions.review.loadAssignmentsError')}
               </EmptyTitle>
               <EmptyDescription>
-                {t('Please refresh the page to try again.')}
+                {t('decisions.proposals.refreshPageHint')}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

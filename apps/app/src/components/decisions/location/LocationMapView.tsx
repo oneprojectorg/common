@@ -19,7 +19,7 @@ interface LocationMapViewProps {
  * this view needs no live boundary lookup.
  */
 export function LocationMapView({ value }: LocationMapViewProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const styleUrl = useMapStyleUrl();
 
   if (!value) {
@@ -32,7 +32,7 @@ export function LocationMapView({ value }: LocationMapViewProps) {
         styleUrl={styleUrl}
         center={{ lng: value.lng, lat: value.lat }}
         marker={{ lng: value.lng, lat: value.lat }}
-        ariaLabel={t('Project location map')}
+        ariaLabel={t('locationMapLabel')}
         className="border-b border-border"
       />
       <div className="flex flex-col gap-0.5 p-4">

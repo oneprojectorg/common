@@ -144,7 +144,7 @@ function renderField(
     if (isReadonlyMode) {
       return (
         <ReadonlyTitleField
-          title={schema.title ?? t('Proposal name')}
+          title={schema.title ?? t('decisions.proposals.proposalNameLabel')}
           required={field.required}
           value={getFragmentText(previewContent) || null}
         />
@@ -153,13 +153,13 @@ function renderField(
 
     return (
       <CollaborativeTitleField
-        title={schema.title ?? t('Proposal name')}
+        title={schema.title ?? t('decisions.proposals.proposalNameLabel')}
         required={field.required}
         maxLength={Math.min(
           schema.maxLength ?? TITLE_MAX_LENGTH,
           TITLE_MAX_LENGTH,
         )}
-        placeholder={t('Untitled Proposal')}
+        placeholder={t('decisions.proposals.untitledProposal')}
         onChange={(value) => onFieldChange('title', value)}
       />
     );
@@ -170,7 +170,8 @@ function renderField(
   if (key === 'category') {
     const options = extractOptions(schema);
     const isMultipleSelection = schemaAllowsMultipleSelection(schema);
-    const categoryLabel = schema.title ?? t('Select a category');
+    const categoryLabel =
+      schema.title ?? t('decisions.proposals.selectCategoryPlaceholder');
 
     if (isReadonlyMode) {
       const selectedValues = parseCategoryFragmentValue(
@@ -189,7 +190,7 @@ function renderField(
           }
           title={categoryLabel}
           required={field.required}
-          placeholder={t('Select category')}
+          placeholder={t('decisions.proposals.selectCategoryLabel')}
         />
       );
     }
@@ -209,7 +210,10 @@ function renderField(
           onChange={(value) => onFieldChange('category', value)}
           fragmentName="category"
           title={categoryLabel}
-          description={schema.description ?? t('Select all that apply')}
+          description={
+            schema.description ??
+            t('decisions.proposals.selectAllThatApplyHint')
+          }
           required={field.required}
         />
       );
@@ -236,17 +240,17 @@ function renderField(
       return (
         <ReadonlyBudgetField
           value={formatPreviewBudget(previewContent)}
-          title={schema.title ?? t('Funding amount')}
+          title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
           description={schema.description}
           required={field.required}
-          placeholder={t('Add budget')}
+          placeholder={t('decisions.proposals.addBudgetAction')}
         />
       );
     }
 
     return (
       <CollaborativeBudgetField
-        title={schema.title ?? t('Funding amount')}
+        title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
         description={schema.description}
         required={field.required}
         minAmount={schema.minimum}
@@ -298,17 +302,17 @@ function renderField(
         return (
           <ReadonlyBudgetField
             value={formatPreviewBudget(previewContent)}
-            title={schema.title ?? t('Funding amount')}
+            title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
             description={schema.description}
             required={field.required}
-            placeholder={t('Add budget')}
+            placeholder={t('decisions.proposals.addBudgetAction')}
           />
         );
       }
 
       return (
         <CollaborativeBudgetField
-          title={schema.title ?? t('Funding amount')}
+          title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
           description={schema.description}
           required={field.required}
           minAmount={schema.minimum}
@@ -325,7 +329,7 @@ function renderField(
 
         return (
           <LabeledFieldSet
-            legend={schema.title ?? t('Location')}
+            legend={schema.title ?? t('decisions.proposals.locationLabel')}
             description={schema.description}
             required={field.required}
             data-testid={`field-${key}`}
@@ -340,7 +344,7 @@ function renderField(
         // search + map + "use my location"), and each part carries its own
         // accessible name.
         <LabeledFieldSet
-          legend={schema.title ?? t('Location')}
+          legend={schema.title ?? t('decisions.proposals.locationLabel')}
           description={schema.description}
           required={field.required}
           data-testid={`field-${key}`}
@@ -369,10 +373,10 @@ function renderField(
         return (
           <ReadonlyDropdownField
             value={selectedOption?.label ?? null}
-            title={schema.title ?? t('Select option')}
+            title={schema.title ?? t('decisions.proposals.selectOptionLabel')}
             description={schema.description}
             required={field.required}
-            placeholder={t('Select option')}
+            placeholder={t('decisions.proposals.selectOptionLabel')}
           />
         );
       }
@@ -385,7 +389,7 @@ function renderField(
           initialValue={(draft[key] as string | null) ?? null}
           onChange={(value) => onFieldChange(key, value)}
           fragmentName={key}
-          title={schema.title ?? t('Select option')}
+          title={schema.title ?? t('decisions.proposals.selectOptionLabel')}
           description={schema.description}
           allowEmpty={!field.required}
           required={field.required}

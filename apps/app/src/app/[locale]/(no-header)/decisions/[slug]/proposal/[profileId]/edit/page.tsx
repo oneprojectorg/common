@@ -118,7 +118,7 @@ function EditProposalPageContent() {
     [proposalTemplate],
   );
 
-  const versionHistoryLabel = t('Version history');
+  const versionHistoryLabel = t('decisions.proposals.versionHistoryTitle');
   const asideState = getProposalEditorAsideState(
     normalizeProposalEditorAsideQueryState({ aside, versionId }),
   );
@@ -190,7 +190,8 @@ function EditProposalPageContent() {
     );
   }, [proposal.proposalData]);
 
-  const userName = user.profile?.name ?? t('Anonymous');
+  const userName =
+    user.profile?.name ?? t('decisions.proposals.anonymousAuthor');
 
   return (
     <CollaborativeDocProvider

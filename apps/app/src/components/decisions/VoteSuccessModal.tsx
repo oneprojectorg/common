@@ -29,7 +29,7 @@ const VoteSuccessModalSuspense = ({
   onClose,
   instanceId,
 }: VoteSuccessModalProps) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   const [processInstance] = trpc.decision.getInstance.useSuspenseQuery({
     instanceId,
@@ -54,27 +54,22 @@ const VoteSuccessModalSuspense = ({
 
               <div className="flex flex-col gap-2">
                 <DialogTitle className="font-serif text-2xl font-light">
-                  {t('Your ballot is in!')}
+                  {t('voteSuccessTitle')}
                 </DialogTitle>
 
                 <DialogDescription className="text-base">
                   {processTitle
-                    ? t(
-                        'Thank you for participating in {title}. Your voice helps shape how we invest in our community.',
-                        {
-                          title: processTitle,
-                        },
-                      )
-                    : t(
-                        'Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.',
-                      )}
+                    ? t('voteSuccessThanks', {
+                        title: processTitle,
+                      })
+                    : t('voteSuccessThanksFallback')}
                 </DialogDescription>
               </div>
 
               {nextSteps.length > 0 && (
                 <div className="flex w-full flex-col gap-6 text-start text-base">
                   <Header3 className="font-sans">
-                    {t("Here's what will happen next:")}
+                    {t('voteSuccessNextHeading')}
                   </Header3>
                   <ul className="flex flex-col gap-4 ps-4">
                     {nextSteps.map((step) => (
@@ -89,7 +84,7 @@ const VoteSuccessModalSuspense = ({
             </div>
 
             <Button onClick={onClose} className="w-full">
-              {t('View all proposals')}
+              {t('viewAllProposalsAction')}
             </Button>
           </div>
         </div>

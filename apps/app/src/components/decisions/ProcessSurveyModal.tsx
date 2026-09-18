@@ -383,7 +383,7 @@ export const ProcessSurveyModal = ({
                   <RequiredAsterisk />
                 </FieldLegend>
                 <FieldDescription>
-                  {t('Select all that apply')}
+                  {t('decisions.proposals.selectAllThatApplyHint')}
                 </FieldDescription>
                 {promoterOrder.map((id) => (
                   <Field
@@ -464,7 +464,7 @@ export const ProcessSurveyModal = ({
                   <RequiredAsterisk />
                 </FieldLegend>
                 <FieldDescription>
-                  {t('Select all that apply')}
+                  {t('decisions.proposals.selectAllThatApplyHint')}
                 </FieldDescription>
                 {detractorOrder.map((id) => (
                   <Field

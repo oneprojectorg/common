@@ -34,7 +34,7 @@ export function ResubmitProposalModal({
   proposalId,
   backHref,
 }: ResubmitProposalModalProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const router = useRouter();
   const noteId = useId();
   const noteDescriptionId = useId();
@@ -44,13 +44,13 @@ export function ResubmitProposalModal({
   const submitProposalRevision =
     trpc.decision.submitProposalRevision.useMutation({
       onSuccess: () => {
-        toast.success(t('Proposal resubmitted'));
+        toast.success(t('resubmitSuccess'));
         onOpenChange(false);
         setNote('');
         router.push(backHref);
       },
       onError: () => {
-        toast.error(t('Failed to resubmit proposal'));
+        toast.error(t('resubmitError'));
       },
     });
 
@@ -68,17 +68,13 @@ export function ResubmitProposalModal({
     >
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('Submit revision')}</DialogTitle>
+          <DialogTitle>{t('submitRevisionAction')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 py-6">
           <Field>
-            <FieldLabel htmlFor={noteId}>
-              {t('What did you change?')}
-            </FieldLabel>
+            <FieldLabel htmlFor={noteId}>{t('revisionNoteLabel')}</FieldLabel>
             <FieldDescription id={noteDescriptionId}>
-              {t(
-                'Briefly describe your revisions so reviewers know what to look for.',
-              )}
+              {t('revisionNoteHint')}
             </FieldDescription>
             {/* `Field` does not wire `aria-describedby` itself, so the hint
                 below the field is listed here too — it states the one-shot
@@ -88,7 +84,7 @@ export function ResubmitProposalModal({
               id={noteId}
               aria-describedby={`${noteDescriptionId} ${noteHintId}`}
               rows={6}
-              placeholder={t('Add note for reviewers...')}
+              placeholder={t('revisionNotePlaceholder')}
               value={note}
               onChange={(event) => setNote(event.target.value)}
             />
@@ -99,9 +95,7 @@ export function ResubmitProposalModal({
             className="flex items-start gap-2 text-sm text-muted-foreground"
           >
             <LuCircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-            {t(
-              "After you submit, you can't edit unless a reviewer requests another revision.",
-            )}
+            {t('resubmitFinalWarning')}
           </p>
         </div>
         <DialogFooter>
@@ -112,7 +106,7 @@ export function ResubmitProposalModal({
             disabled={trimmedNote.length === 0}
             loading={submitProposalRevision.isPending}
           >
-            {t('Submit revision')}
+            {t('submitRevisionAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

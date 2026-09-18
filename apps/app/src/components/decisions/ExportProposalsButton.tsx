@@ -124,9 +124,7 @@ const ExportStatusUnreadable = ({
   // compete with it to describe the same event.
   useEffect(() => {
     logger.error('Could not read proposals export status', { error });
-    toast.error(
-      t("Couldn't check the export's status. It may still be running."),
-    );
+    toast.error(t('decisions.proposals.exportStatusError'));
   }, [error, t]);
 
   return (
@@ -188,8 +186,8 @@ const CompletedExportAction = ({
   // reason to look again. This region announces both settled states, so the two
   // branches below do not each need one.
   const settledAnnouncement = signedUrl
-    ? t('Export ready')
-    : t('Could not prepare the download. Please try again.');
+    ? t('decisions.proposals.exportReady')
+    : t('decisions.proposals.exportPrepareError');
 
   const announcement = (
     <span role="status" aria-live="polite" className="sr-only">
@@ -213,7 +211,9 @@ const CompletedExportAction = ({
           aria-busy={isRetrying}
         >
           <LuDownload aria-hidden />
-          {isRetrying ? t('Preparing...') : t('Retry download')}
+          {isRetrying
+            ? t('decisions.proposals.exportPreparing')
+            : t('decisions.proposals.exportRetryAction')}
         </Button>
       </>
     );
@@ -275,7 +275,7 @@ const ExportProposalsButtonContent = ({
     },
     onError: (error) => {
       logger.error('Failed to start proposals export', { error });
-      toast.error(error.message || t('Failed to start export'));
+      toast.error(error.message || t('decisions.proposals.exportStartError'));
     },
   });
 
@@ -328,7 +328,7 @@ const ExportProposalsButtonContent = ({
     const message =
       status && 'errorMessage' in status ? status.errorMessage : undefined;
     logger.error('Proposals export failed', { error: message });
-    toast.error(message || t('Export failed'));
+    toast.error(message || t('decisions.proposals.exportFailed'));
     setExportId(null);
   }, [isFailed, status, t]);
 
@@ -355,7 +355,9 @@ const ExportProposalsButtonContent = ({
   // The record can also be missing on an early read. That is still "accepted",
   // so it reads as pending rather than as an error.
   const runningLabel =
-    reportedState === 'processing' ? t('Generating...') : t('Preparing...');
+    reportedState === 'processing'
+      ? t('decisions.proposals.exportGenerating')
+      : t('decisions.proposals.exportPreparing');
 
   useEffect(() => {
     if (!isRunning) {
@@ -363,7 +365,7 @@ const ExportProposalsButtonContent = ({
     }
     const timer = setTimeout(() => {
       setHasTimedOut(true);
-      toast.error(t('Export timed out. Please try again.'));
+      toast.error(t('decisions.proposals.exportTimeout'));
       setExportId(null);
     }, EXPORT_WAIT_TIMEOUT_MS);
 
@@ -385,7 +387,7 @@ const ExportProposalsButtonContent = ({
       return;
     }
 
-    toast.error(t('Could not prepare the download. Please try again.'));
+    toast.error(t('decisions.proposals.exportPrepareError'));
 
     if (outcome === 'record-gone') {
       setExportId(null);
@@ -465,7 +467,7 @@ const ExportProposalsButtonContent = ({
         {/* Named for what it covers, not for where it sits. The control lives in
           the filter bar and no longer follows it, so a bare "Export" beside an
           active filter would read as exporting that selection. */}
-        {isRunning ? runningLabel : t('Export all')}
+        {isRunning ? runningLabel : t('decisions.proposals.exportAllAction')}
       </Button>
     </>
   );
@@ -504,13 +506,10 @@ const ExportTruncationNotice = ({
       <LuTriangleAlert aria-hidden />
       {/* ICU `number` rather than bare interpolation: these run to five
           figures, and grouping separators are locale-specific. */}
-      {t(
-        'Only {rowCount, number} of {total, number} proposals are in this file.',
-        {
-          rowCount,
-          total,
-        },
-      )}
+      {t('decisions.proposals.exportPartialNotice', {
+        rowCount,
+        total,
+      })}
     </p>
   );
 };

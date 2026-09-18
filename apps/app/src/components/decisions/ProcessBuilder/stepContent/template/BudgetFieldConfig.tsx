@@ -192,7 +192,7 @@ export function BudgetFieldConfig({
 
   return (
     <CollapsibleConfigCard
-      label={t('Funding amount')}
+      label={t('decisions.proposals.fundingAmountLabel')}
       badgeLabel={badgeLabel}
       isCollapsible
       locked
