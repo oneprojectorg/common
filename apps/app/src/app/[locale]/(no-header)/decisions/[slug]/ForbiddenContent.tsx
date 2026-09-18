@@ -52,7 +52,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.reload();
     },
     onError: () => {
-      toast.error(t('Failed to accept invitations'));
+      toast.error(t('decisions.acceptInvitesError'));
     },
   });
 
@@ -61,7 +61,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.href = '/';
     },
     onError: () => {
-      toast.error(t('Failed to decline invitation'));
+      toast.error(t('decisions.declineInviteError'));
     },
   });
 
@@ -123,7 +123,7 @@ const ForbiddenWithInviteCheck = () => {
               disabled={acceptInvite.isPending || declineInvite.isPending}
               loading={declineInvite.isPending}
             >
-              {t("I don't want to participate")}
+              {t('decisions.declineInviteAction')}
             </Button>
           </div>
         </FormContainer>

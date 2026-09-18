@@ -20,7 +20,7 @@ export function AdvanceToggleButton({
   title: string;
   className?: string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   return (
     <Toggle
@@ -29,8 +29,8 @@ export function AdvanceToggleButton({
       onPressedChange={onPress}
       aria-label={
         isSelected
-          ? t('decisions.review.dontAdvanceProposalLabel', { title })
-          : t('decisions.review.advanceProposalLabel', { title })
+          ? t('review.dontAdvanceProposalLabel', { title })
+          : t('review.advanceProposalLabel', { title })
       }
       // rounded-lg overrides the sm default (rounded-md) so the radius matches
       // the Confirm button in the FooterBar.
@@ -41,11 +41,11 @@ export function AdvanceToggleButton({
        * toggle reserves the checked-state width and doesn't reflow on press. */}
       <span className="invisible flex items-center gap-1">
         <LuCheck className="size-4" />
-        {t('Advance')}
+        {t('advanceAction')}
       </span>
       <span className="absolute inset-0 flex items-center justify-center gap-1">
         {isSelected && <LuCheck className="size-4" />}
-        {t('Advance')}
+        {t('advanceAction')}
       </span>
     </Toggle>
   );

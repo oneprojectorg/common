@@ -160,7 +160,7 @@ const Image = async ({
     return new ImageResponse(
       <Card
         title={getTextPreview({
-          content: decisionProfile.name || t('Decision'),
+          content: decisionProfile.name || t('decisions.decisionLabel'),
           maxLength: 80,
         })}
         byline={byName ? t('by {name}', { name: byName }) : undefined}

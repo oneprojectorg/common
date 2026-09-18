@@ -579,7 +579,7 @@ export const ProcessSurveyModal = ({
               disabled={submitSurvey.isPending}
             >
               {submitSurvey.isPending
-                ? t('Submitting...')
+                ? t('decisions.submittingProgress')
                 : t('decisions.processBuilder.surveySubmitAction')}
             </Button>
           </DialogFooter>

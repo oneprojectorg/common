@@ -34,7 +34,7 @@ type ProposalPreviewTranslation =
  * The review screen previously had none (ONE COWOP report).
  */
 export const useTranslateProposal = (proposal: Proposal) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const locale = useLocale();
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
     locale,
@@ -56,7 +56,7 @@ export const useTranslateProposal = (proposal: Proposal) => {
       });
     },
     onError: () => {
-      toast.error(t('Failed to translate content'));
+      toast.error(t('translateContentError'));
     },
   });
 

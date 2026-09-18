@@ -126,7 +126,7 @@ function ResultsPageContent({
   isLegacy?: boolean;
   pinOffset?: number;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   // The "My Ballot" tab only makes sense when a voting phase took place.
   // Legacy instances always had voting, so they keep showing it.
@@ -140,21 +140,21 @@ function ResultsPageContent({
     about?: string;
   }>(profileSlug, {
     'people-powered': () => ({
-      title: t('The results are in.'),
+      title: t('resultsReadyHeading'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
     cowop: () => ({
-      title: t('The results are in.'),
-      description: t('COWOPRESULTSHEADER'),
-      about: t('COWOPRESULTSABOUT'),
+      title: t('resultsReadyHeading'),
+      description: t('cowopResultsHeader'),
+      about: t('cowopResultsAbout'),
     }),
     'one-project': () => ({
-      title: t('The results are in.'),
+      title: t('resultsReadyHeading'),
       description: `Thank you to everyone who participated in ${instance.name}`,
-      about: t('HORIZONRESULTSABOUT'),
+      about: t('horizonResultsAbout'),
     }),
     _: () => ({
-      title: t('The results are in.'),
+      title: t('resultsReadyHeading'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
   });
@@ -203,11 +203,9 @@ function ResultsPageContent({
                         <EmptyMedia variant="icon">
                           <LuLeaf className="size-6" />
                         </EmptyMedia>
-                        <EmptyTitle>
-                          {t('Results are still being processed.')}
-                        </EmptyTitle>
+                        <EmptyTitle>{t('resultsProcessingNotice')}</EmptyTitle>
                         <EmptyDescription>
-                          {t('Check back again shortly for the results.')}
+                          {t('resultsPendingHint')}
                         </EmptyDescription>
                       </EmptyHeader>
                     </Empty>

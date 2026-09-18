@@ -285,7 +285,7 @@ export function ProcessSettingsForm({
               name="isPrivate"
               children={(field) => (
                 <ToggleRow
-                  label={t('Open for learning')}
+                  label={t('decisions.openForLearningLabel')}
                   description={t('decisions.processBuilder.visibilityOpenHint')}
                 >
                   <Switch

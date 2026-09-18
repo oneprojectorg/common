@@ -32,7 +32,7 @@ export const DecisionActionBar = ({
   markup?: boolean;
   showSubmitButton?: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const { slug } = useParams<{ slug: string }>();
 
   const {
@@ -54,14 +54,14 @@ export const DecisionActionBar = ({
             <DialogTrigger
               render={
                 <Button variant="outline" className="w-full sm:w-auto">
-                  {label ?? t('Learn more')}
+                  {label ?? t('learnMoreAction')}
                 </Button>
               }
             />
 
             <DialogContent className="sm:max-w-3xl">
               <DialogHeader>
-                <DialogTitle>{label ?? t('About the process')}</DialogTitle>
+                <DialogTitle>{label ?? t('aboutProcessAction')}</DialogTitle>
               </DialogHeader>
               <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
                 {markup && description ? (
@@ -90,7 +90,7 @@ export const DecisionActionBar = ({
             onClick={handleCreateProposal}
           >
             {isCreating ? <Spinner /> : null}
-            {t('Start a proposal')}
+            {t('startProposalAction')}
           </Button>
         )}
       </div>

@@ -86,9 +86,7 @@ export const ProfileInviteModal = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
       <DialogContent className="overflow-hidden sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {t('Invite participants to your decision-making process')}
-          </DialogTitle>
+          <DialogTitle>{t('decisions.inviteParticipantsTitle')}</DialogTitle>
         </DialogHeader>
 
         <ErrorBoundary>
@@ -395,7 +393,7 @@ function ProfileInviteModalContent({
       try {
         await deleteInviteMutation.mutateAsync({ inviteId });
       } catch {
-        toast.error(t('Failed to cancel invite'));
+        toast.error(t('decisions.cancelInviteError'));
       }
       await utils.profile.listProfileInvites.invalidate({ profileId });
     });
@@ -410,7 +408,7 @@ function ProfileInviteModalContent({
         // no manual cache patching needed here.
         await removeUserMutation.mutateAsync({ profileUserId: id });
       } catch {
-        toast.error(t('Failed to remove user'));
+        toast.error(t('decisions.removeUserError'));
       }
     });
   };
@@ -465,7 +463,7 @@ function ProfileInviteModalContent({
           return;
         }
 
-        toast.success(t('Invite sent successfully'));
+        toast.success(t('decisions.inviteSentSuccess'));
         setSelectedItemsByRole({});
         setSearchQuery('');
         onOpenChange(false);
@@ -530,9 +528,7 @@ function ProfileInviteModalContent({
         {showDraftBanner && (
           <Alert variant="warning">
             <AlertDescription>
-              {t(
-                'This process is still in draft. Participant invites will be sent when the process launches.',
-              )}
+              {t('decisions.draftInvitesNotice')}
             </AlertDescription>
           </Alert>
         )}
@@ -553,7 +549,9 @@ function ProfileInviteModalContent({
         >
           <ComboboxChips className="w-full" onPaste={handlePaste}>
             <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
-            <ComboboxChipsInput placeholder={t('Search by name or email...')} />
+            <ComboboxChipsInput
+              placeholder={t('decisions.participantSearchPlaceholder')}
+            />
           </ComboboxChips>
           {debouncedQuery.length >= 2 && (
             <ComboboxContent>
@@ -565,7 +563,9 @@ function ProfileInviteModalContent({
                   <ComboboxItem key={option.value} value={option}>
                     {option.addEmail ? (
                       <span className="text-sm">
-                        {t('Invite {email}', { email: debouncedQuery })}
+                        {t('decisions.inviteEmailAction', {
+                          email: debouncedQuery,
+                        })}
                       </span>
                     ) : (
                       <ProfileItem
@@ -600,7 +600,9 @@ function ProfileInviteModalContent({
         {/* People list for current role */}
         <div className="flex flex-col gap-2">
           {!hasNoItems && (
-            <span className="text-sm">{t('People with access')}</span>
+            <span className="text-sm">
+              {t('decisions.peopleWithAccessHeading')}
+            </span>
           )}
 
           <div
@@ -621,7 +623,7 @@ function ProfileInviteModalContent({
                   ) : undefined
                 }
                 onRemove={() => handleRemoveItem(item.id)}
-                removeLabel={t('Remove {name}', { name: item.name })}
+                removeLabel={t('decisions.removeNamed', { name: item.name })}
               />
             ))}
 
@@ -645,12 +647,14 @@ function ProfileInviteModalContent({
                         </>
                       )}
                       <span className="text-sm text-muted-foreground">
-                        {t('Invited')}
+                        {t('decisions.invitedStatus')}
                       </span>
                     </div>
                   }
                   onRemove={() => handleDeleteInvite(invite.id)}
-                  removeLabel={t('Remove {name}', { name: displayName })}
+                  removeLabel={t('decisions.removeNamed', {
+                    name: displayName,
+                  })}
                 />
               );
             })}
@@ -677,7 +681,7 @@ function ProfileInviteModalContent({
                 onRemove={
                   !user.isOwner ? () => handleRemoveUser(user) : undefined
                 }
-                removeLabel={t('Remove {name}', {
+                removeLabel={t('decisions.removeNamed', {
                   name: user.name ?? user.email,
                 })}
               />
@@ -702,7 +706,7 @@ function ProfileInviteModalContent({
                     <LuLeaf />
                   </EmptyMedia>
                   <EmptyDescription>
-                    {t('No {roleName}s have been added', {
+                    {t('decisions.noRoleMembers', {
                       roleName: selectedRoleName,
                     })}
                   </EmptyDescription>
@@ -716,7 +720,7 @@ function ProfileInviteModalContent({
       <DialogFooter className="flex-row items-center justify-between sm:justify-between">
         <div className="text-base">
           {totalPeople > 0
-            ? t('{count, plural, =1 {1 person} other {# people}}', {
+            ? t('decisions.peopleCount', {
                 count: totalPeople,
               })
             : null}

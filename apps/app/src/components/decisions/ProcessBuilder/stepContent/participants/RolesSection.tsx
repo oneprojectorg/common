@@ -144,7 +144,7 @@ function useRoleMutation({
             decisionPermissions,
           });
         } catch {
-          toast.error(t('Failed to update role'));
+          toast.error(t('decisions.updateRoleError'));
           utils.profile.listRoles.invalidate();
           onComplete();
           return;
@@ -161,12 +161,12 @@ function useRoleMutation({
 
   const updateRole = trpc.profile.updateRole.useMutation({
     onSuccess: () => {
-      toast.success(t('Role updated successfully'));
+      toast.success(t('decisions.updateRoleSuccess'));
       utils.profile.listRoles.invalidate();
       onComplete();
     },
     onError: () => {
-      toast.error(t('Failed to update role'));
+      toast.error(t('decisions.updateRoleError'));
     },
   });
 
@@ -499,9 +499,9 @@ function usePermissionToggle(roleId: string, profileId: string) {
               setLocalPermissions(null);
             }
             if (error) {
-              toast.error(t('Failed to update role'));
+              toast.error(t('decisions.updateRoleError'));
             } else {
-              toast.success(t('Role updated successfully'));
+              toast.success(t('decisions.updateRoleSuccess'));
             }
             utils.profile.getDecisionRole.invalidate({ roleId, profileId });
           },
@@ -911,8 +911,10 @@ function RolesTable({
                   so fall back to a generic title — the description still names
                   the member. */}
               {roleToDelete && /^\S+@\S+$/.test(roleToDelete.name)
-                ? t('Remove member?')
-                : t('Remove {name}', { name: roleToDelete?.name ?? '' })}
+                ? t('decisions.removeMemberTitle')
+                : t('decisions.removeNamed', {
+                    name: roleToDelete?.name ?? '',
+                  })}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {t('decisions.processBuilder.removeRoleConfirm', {

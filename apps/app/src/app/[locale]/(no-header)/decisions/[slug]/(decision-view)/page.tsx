@@ -21,7 +21,7 @@ export async function generateMetadata({
       loadDecision(slug),
       getTranslations({ locale }),
     ]);
-    const name = decisionProfile.name || t('Decision');
+    const name = decisionProfile.name || t('decisions.decisionLabel');
     const steward = decisionProfile.processInstance?.steward?.name;
     const description =
       getTextPreview({

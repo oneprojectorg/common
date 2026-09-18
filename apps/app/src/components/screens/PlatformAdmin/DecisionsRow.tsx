@@ -105,7 +105,7 @@ export const DecisionsRowCells = ({
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label={t('Decision options')}
+                  aria-label={t('decisions.decisionOptionsLabel')}
                 >
                   <LuEllipsis />
                 </Button>

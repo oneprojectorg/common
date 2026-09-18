@@ -87,7 +87,7 @@ const DecisionsListSuspense = ({
   if (paginatedItems.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground">
-        {t('No processes found')}
+        {t('decisions.noProcessesFound')}
       </div>
     );
   }
@@ -141,11 +141,17 @@ const AllDecisionsTabs = () => {
     >
       <div className="border-b">
         <TabsList variant="line">
-          <TabsTrigger value="active">{t('Active')}</TabsTrigger>
+          <TabsTrigger value="active">
+            {t('decisions.activeFilter')}
+          </TabsTrigger>
           <TabsTrigger value="completed">
             {t('decisions.review.statusCompleted')}
           </TabsTrigger>
-          {hasDrafts && <TabsTrigger value="drafts">{t('Drafts')}</TabsTrigger>}
+          {hasDrafts && (
+            <TabsTrigger value="drafts">
+              {t('decisions.draftsFilter')}
+            </TabsTrigger>
+          )}
         </TabsList>
       </div>
       <TabsContent value="active">
@@ -177,7 +183,7 @@ export const AllDecisions = () => {
   const { user } = useRequiredUser();
 
   return (
-    <ErrorBoundary fallback={<div>{t('Could not load decisions')}</div>}>
+    <ErrorBoundary fallback={<div>{t('decisions.decisionsLoadError')}</div>}>
       <Suspense fallback={<DecisionsListSkeleton />}>
         <AllDecisionsTabs key={user.currentProfile?.id} />
       </Suspense>

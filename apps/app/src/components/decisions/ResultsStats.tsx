@@ -45,7 +45,7 @@ interface ResultsStatsProps {
 }
 
 export function ResultsStats({ instanceId }: ResultsStatsProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   const [stats] = trpc.decision.getResultsStats.useSuspenseQuery({
     instanceId,
@@ -62,7 +62,7 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
           <>
             <Stat>
               <StatNumber>{stats.membersVoted}</StatNumber>
-              <StatLabel>{t('Members Voted')}</StatLabel>
+              <StatLabel>{t('membersVotedStat')}</StatLabel>
             </Stat>
             <hr
               aria-hidden="true"
@@ -72,7 +72,7 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
         )}
         <Stat>
           <StatNumber>{stats.proposalsFunded}</StatNumber>
-          <StatLabel>{t('Proposals Selected')}</StatLabel>
+          <StatLabel>{t('proposalsSelectedStat')}</StatLabel>
         </Stat>
         <hr
           aria-hidden="true"
@@ -80,7 +80,7 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
         />
         <Stat>
           <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
-          <StatLabel>{t('Total Allocated')}</StatLabel>
+          <StatLabel>{t('totalAllocatedStat')}</StatLabel>
         </Stat>
       </div>
     </div>

@@ -45,7 +45,7 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
 
   return (
     <TabsTrigger value="decisions">
-      {t('Decisions')}
+      {t('decisions.decisionsLabel')}
       {hasPublishedDecisions && (
         <span className="ms-1.5 inline-block size-1 rounded-full bg-success" />
       )}
@@ -69,7 +69,9 @@ export const DecisionsTabPanel = ({
         className,
       )}
     >
-      <Header2 className="text-title sm:hidden">{t('Decisions')}</Header2>
+      <Header2 className="text-title sm:hidden">
+        {t('decisions.decisionsLabel')}
+      </Header2>
       {children}
     </TabsContent>
   );

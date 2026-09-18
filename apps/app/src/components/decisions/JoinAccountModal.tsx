@@ -292,7 +292,7 @@ const JoinAccountModalContent = () => {
             ? isPhone
               ? t('auth.smsCodeSentTitle')
               : t('auth.emailCodeSentTitle')
-            : t("Don't lose track of this idea")}
+            : t('decisions.joinPromptTitle')}
         </DialogTitle>
         <DialogDescription className="text-center">
           {otpSent
@@ -302,9 +302,7 @@ const JoinAccountModalContent = () => {
                   { phone: normalizePhoneNumber(phone) },
                 )
               : t('auth.createProfileCodeHint', { email })
-            : t(
-                'Followers get updates as this idea moves through the process. Sign up in seconds.',
-              )}
+            : t('decisions.joinPromptDescription')}
         </DialogDescription>
       </DialogHeader>
 
