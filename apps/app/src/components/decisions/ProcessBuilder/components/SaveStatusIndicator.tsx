@@ -19,7 +19,7 @@ export function SaveStatusIndicator({
   status: SaveStatus;
   savedAt?: Date | string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
 
   if (status === 'idle') {
     return null;
@@ -30,7 +30,7 @@ export function SaveStatusIndicator({
       {status === 'saving' && (
         <>
           <Spinner className="size-4" />
-          <span className="text-muted-foreground">{t('Saving...')}</span>
+          <span className="text-muted-foreground">{t('savingProgress')}</span>
         </>
       )}
       {status === 'saved' && (
@@ -38,15 +38,15 @@ export function SaveStatusIndicator({
           <LuCheck className="size-4 text-success" />
           <span className="text-muted-foreground">
             {savedAt
-              ? t('Saved at {time}', { time: formatTime(savedAt) })
-              : t('Saved')}
+              ? t('savedAtTime', { time: formatTime(savedAt) })
+              : t('savedStatus')}
           </span>
         </>
       )}
       {status === 'error' && (
         <>
           <LuX className="size-4 text-destructive" />
-          <span className="text-destructive">{t('Failed to save')}</span>
+          <span className="text-destructive">{t('saveError')}</span>
         </>
       )}
     </div>

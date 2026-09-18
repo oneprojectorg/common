@@ -56,7 +56,7 @@ const MobileSidebar = ({
   instanceId: string;
   decisionProfileId?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
   const { openMobile, setOpenMobile } = useSidebar();
   const { sections: validationSections } =
@@ -81,7 +81,7 @@ const MobileSidebar = ({
   return (
     <Sheet open={openMobile} onOpenChange={setOpenMobile}>
       <SheetContent side="bottom" showCloseButton={false} className="md:hidden">
-        <SheetTitle className="sr-only">{t('Process steps')}</SheetTitle>
+        <SheetTitle className="sr-only">{t('processStepsHeading')}</SheetTitle>
         <nav className="flex flex-col gap-2 p-4">
           <SidebarNavItems
             visibleSections={visibleSections}

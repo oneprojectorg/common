@@ -495,7 +495,7 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
 
   if (criterion.criterionType === 'single_select') {
     if (criterion.options.length < 2) {
-      errors.push('At least two options are required');
+      errors.push('decisions.processBuilder.optionsMinimumError');
     }
     if (criterion.options.some((option) => !option.title.trim())) {
       errors.push('Options cannot be empty');

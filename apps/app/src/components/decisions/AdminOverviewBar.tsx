@@ -92,7 +92,7 @@ export function AdminOverviewBar({
                 setBannerOpen(true);
               }}
             >
-              {t('Edit banner')}
+              {t('decisions.processBuilder.editBannerTitle')}
             </button>
             <button
               type="button"

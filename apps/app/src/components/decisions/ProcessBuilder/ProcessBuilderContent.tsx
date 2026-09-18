@@ -15,7 +15,7 @@ export function ProcessBuilderContent({
   instanceId,
   decisionName,
 }: SectionProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
 
   const phases = useProcessPhases(instanceId, decisionProfileId);
@@ -34,7 +34,7 @@ export function ProcessBuilderContent({
   );
 
   if (!ContentComponent) {
-    return <div>{t('Section not found')}</div>;
+    return <div>{t('sectionNotFound')}</div>;
   }
 
   return (

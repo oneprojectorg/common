@@ -47,7 +47,9 @@ export const DuplicateProcessModal = ({
     >
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('Duplicate process')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.processBuilder.duplicateProcessTitle')}
+          </DialogTitle>
         </DialogHeader>
         <ErrorBoundary fallback={null}>
           <Suspense fallback={<DuplicateFormSkeleton />}>
@@ -77,18 +79,35 @@ const DuplicateFormContent = ({
   const utils = trpc.useUtils();
 
   const [name, setName] = useState(
-    t('Duplicate of {name}', { name: item.name || item.processInstance.name }),
+    t('decisions.processBuilder.duplicateProcessDefaultName', {
+      name: item.name || item.processInstance.name,
+    }),
   );
   const [stewardProfileId, setStewardProfileId] = useState('');
 
   const includeOptions = [
-    { key: 'processSettings', label: t('Process Settings') },
-    { key: 'phases', label: t('Phases') },
-    { key: 'proposalCategories', label: t('Proposal Categories') },
-    { key: 'proposalTemplate', label: t('Proposal Template') },
-    { key: 'reviewSettings', label: t('Review Settings') },
-    { key: 'reviewRubric', label: t('Review Rubric') },
-    { key: 'roles', label: t('Roles') },
+    {
+      key: 'processSettings',
+      label: t('decisions.processBuilder.processSettingsSectionLabel'),
+    },
+    { key: 'phases', label: t('decisions.processBuilder.phasesLabel') },
+    {
+      key: 'proposalCategories',
+      label: t('decisions.processBuilder.proposalCategoriesSectionLabel'),
+    },
+    {
+      key: 'proposalTemplate',
+      label: t('decisions.processBuilder.proposalTemplateSectionLabel'),
+    },
+    {
+      key: 'reviewSettings',
+      label: t('decisions.processBuilder.reviewSettingsSectionLabel'),
+    },
+    {
+      key: 'reviewRubric',
+      label: t('decisions.processBuilder.reviewRubricSectionLabel'),
+    },
+    { key: 'roles', label: t('decisions.processBuilder.rolesSectionLabel') },
   ] as const;
 
   const [selectedIncludes, setSelectedIncludes] = useState<string[]>(
@@ -97,13 +116,13 @@ const DuplicateFormContent = ({
 
   const duplicateMutation = trpc.decision.duplicateInstance.useMutation({
     onSuccess: () => {
-      toast.success(t('Decision duplicated successfully'));
+      toast.success(t('decisions.processBuilder.duplicateProcessSuccess'));
       utils.decision.listDecisionProfiles.invalidate();
       onClose();
       router.push('/decisions?tab=drafts');
     },
     onError: () => {
-      toast.error(t('Failed to duplicate decision'));
+      toast.error(t('decisions.processBuilder.duplicateProcessError'));
     },
   });
 
@@ -131,7 +150,8 @@ const DuplicateFormContent = ({
           <div className="flex-1">
             <Field>
               <FieldLabel htmlFor="duplicate-process-name">
-                {t('Process Name')} <RequiredAsterisk />
+                {t('decisions.processBuilder.processNameLabel')}{' '}
+                <RequiredAsterisk />
               </FieldLabel>
               <Input
                 id="duplicate-process-name"
@@ -152,7 +172,7 @@ const DuplicateFormContent = ({
 
         <FieldSet className="gap-2">
           <FieldLegend className="font-serif text-label">
-            {t('Include')}
+            {t('decisions.processBuilder.duplicateIncludeLabel')}
           </FieldLegend>
           <div className="grid grid-cols-2 gap-2">
             {includeOptions.map((option) => (
@@ -186,8 +206,8 @@ const DuplicateFormContent = ({
           }
         >
           {duplicateMutation.isPending
-            ? t('Duplicating...')
-            : t('Duplicate process')}
+            ? t('decisions.processBuilder.duplicatingProgress')
+            : t('decisions.processBuilder.duplicateProcessTitle')}
         </Button>
       </DialogFooter>
     </>
@@ -256,7 +276,7 @@ const StewardSelect = ({
   return (
     <Field>
       <FieldLabel htmlFor="steward-select">
-        {t('Who is stewarding this process?')} <RequiredAsterisk />
+        {t('decisions.processBuilder.stewardQuestion')} <RequiredAsterisk />
       </FieldLabel>
       <Select
         required
