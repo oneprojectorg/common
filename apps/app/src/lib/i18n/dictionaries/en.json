@@ -1813,5 +1813,6 @@
   "Give the form a heading participants will see.": "Give the form a heading participants will see.",
   "Add at least one field.": "Add at least one field.",
   "Field {number} needs a question.": "Field {number} needs a question.",
-  "Field {number} needs at least one option.": "Field {number} needs at least one option."
+  "Field {number} needs at least one option.": "Field {number} needs at least one option.",
+  "Couldn't load the forms. Refresh to try again.": "Couldn't load the forms. Refresh to try again."
 }

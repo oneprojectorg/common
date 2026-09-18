@@ -232,6 +232,40 @@ describe('parseDefinition', () => {
     expect(parsed.fields.map((entry) => entry.key)).toEqual(['note']);
   });
 
+  it('reports a field carrying a constraint the builder would drop on save', () => {
+    const { unsupportedKeys } = parseDefinition({
+      schema: {
+        type: 'object',
+        title: 'Limits',
+        properties: {
+          bio: { type: 'string', title: 'Bio', maxLength: 500 },
+          plain: { type: 'string', title: 'Plain' },
+        },
+        'x-field-order': ['bio', 'plain'],
+      },
+      phaseId: 'submission',
+      name: 'Limits',
+    });
+
+    expect(unsupportedKeys).toEqual(['bio']);
+  });
+
+  it('reports a keyword on the definition itself', () => {
+    const { unsupportedKeys } = parseDefinition({
+      schema: {
+        type: 'object',
+        title: 'Strict',
+        additionalProperties: false,
+        properties: { note: { type: 'string', title: 'Note' } },
+        'x-field-order': ['note'],
+      },
+      phaseId: 'submission',
+      name: 'Strict',
+    });
+
+    expect(unsupportedKeys).toContain('additionalProperties');
+  });
+
   it('reports a choice field with no options — the renderer draws nothing for it', () => {
     const { unsupportedKeys } = parseDefinition({
       schema: {

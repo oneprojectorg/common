@@ -1813,5 +1813,6 @@
   "Give the form a heading participants will see.": "Adjon az űrlapnak címet, amelyet a résztvevők látnak.",
   "Add at least one field.": "Adjon hozzá legalább egy mezőt.",
   "Field {number} needs a question.": "A(z) {number}. mezőhöz kérdés szükséges.",
-  "Field {number} needs at least one option.": "A(z) {number}. mezőhöz legalább egy lehetőség szükséges."
+  "Field {number} needs at least one option.": "A(z) {number}. mezőhöz legalább egy lehetőség szükséges.",
+  "Couldn't load the forms. Refresh to try again.": "Az űrlapokat nem sikerült betölteni. Frissítsen az újrapróbálkozáshoz."
 }

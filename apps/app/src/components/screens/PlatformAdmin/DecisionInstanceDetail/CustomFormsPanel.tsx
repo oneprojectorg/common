@@ -1,5 +1,6 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type {
   AdminDecisionPhase,
@@ -64,9 +65,26 @@ export const CustomFormsPanel = ({
   }
 
   return (
-    <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-      <CustomFormsPanelSuspense profileId={profileId} phases={phases} />
-    </Suspense>
+    <APIErrorBoundary
+      fallbacks={{
+        default: () => (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('Forms')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {t("Couldn't load the forms. Refresh to try again.")}
+              </p>
+            </CardContent>
+          </Card>
+        ),
+      }}
+    >
+      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+        <CustomFormsPanelSuspense profileId={profileId} phases={phases} />
+      </Suspense>
+    </APIErrorBoundary>
   );
 };
 

@@ -1813,5 +1813,6 @@
   "Give the form a heading participants will see.": "Donnez au formulaire un titre que les participants verront.",
   "Add at least one field.": "Ajoutez au moins un champ.",
   "Field {number} needs a question.": "Le champ {number} a besoin d’une question.",
-  "Field {number} needs at least one option.": "Le champ {number} a besoin d’au moins une option."
+  "Field {number} needs at least one option.": "Le champ {number} a besoin d’au moins une option.",
+  "Couldn't load the forms. Refresh to try again.": "Impossible de charger les formulaires. Actualisez pour réessayer."
 }

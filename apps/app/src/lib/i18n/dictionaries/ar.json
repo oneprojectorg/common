@@ -1813,5 +1813,6 @@
   "Give the form a heading participants will see.": "أعطِ النموذج عنوانًا سيراه المشاركون.",
   "Add at least one field.": "أضف حقلًا واحدًا على الأقل.",
   "Field {number} needs a question.": "يحتاج الحقل {number} إلى سؤال.",
-  "Field {number} needs at least one option.": "يحتاج الحقل {number} إلى خيار واحد على الأقل."
+  "Field {number} needs at least one option.": "يحتاج الحقل {number} إلى خيار واحد على الأقل.",
+  "Couldn't load the forms. Refresh to try again.": "تعذّر تحميل النماذج. حدّث الصفحة لإعادة المحاولة."
 }

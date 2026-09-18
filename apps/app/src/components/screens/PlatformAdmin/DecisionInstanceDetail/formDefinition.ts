@@ -91,6 +91,32 @@ export const buildDefinition = (
 };
 
 /**
+ * Keywords `buildDefinition` writes back. Anything else on a field — `minimum`,
+ * `maxLength`, `pattern`, `minItems` — would be dropped on save, so a field
+ * carrying one counts as unsupported rather than silently losing it.
+ */
+const ROUND_TRIPPED_FIELD_KEYS = new Set([
+  'type',
+  'title',
+  'description',
+  'x-format',
+  'enum',
+  'items',
+  'uniqueItems',
+]);
+
+/** The same, for the definition itself. */
+const ROUND_TRIPPED_DEFINITION_KEYS = new Set([
+  'type',
+  'title',
+  'description',
+  'x-phase',
+  'required',
+  'properties',
+  'x-field-order',
+]);
+
+/**
  * `unsupportedKeys` names fields this editor cannot represent. Saving would
  * drop them, so a caller that gets any must refuse to edit the form.
  */
@@ -132,7 +158,7 @@ export const parseDefinition = ({
     }
 
     const kind = resolveFieldKind(property);
-    if (!kind) {
+    if (!kind || !isRoundTrippable(property)) {
       unsupportedKeys.push(key);
       continue;
     }
@@ -150,6 +176,11 @@ export const parseDefinition = ({
     });
   }
 
+  // A keyword on the definition itself would be dropped just as silently.
+  const unsupportedRoot = Object.keys(schema).filter(
+    (key) => !ROUND_TRIPPED_DEFINITION_KEYS.has(key),
+  );
+
   return {
     form: {
       name,
@@ -159,9 +190,12 @@ export const parseDefinition = ({
       phaseId,
       fields,
     },
-    unsupportedKeys,
+    unsupportedKeys: [...unsupportedKeys, ...unsupportedRoot],
   };
 };
+
+const isRoundTrippable = (property: Record<string, unknown>): boolean =>
+  Object.keys(property).every((key) => ROUND_TRIPPED_FIELD_KEYS.has(key));
 
 export const countFields = (schema: Record<string, unknown>): number =>
   Object.keys(isRecord(schema.properties) ? schema.properties : {}).length;

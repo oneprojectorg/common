@@ -1813,5 +1813,6 @@
   "Give the form a heading participants will see.": "Foomka sii cinwaan ay ka qaybgalayaashu arki doonaan.",
   "Add at least one field.": "Ku dar ugu yaraan hal meel.",
   "Field {number} needs a question.": "Meesha {number} waxay u baahan tahay su’aal.",
-  "Field {number} needs at least one option.": "Meesha {number} waxay u baahan tahay ugu yaraan hal ikhtiyaar."
+  "Field {number} needs at least one option.": "Meesha {number} waxay u baahan tahay ugu yaraan hal ikhtiyaar.",
+  "Couldn't load the forms. Refresh to try again.": "Foomamka lama soo rari karin. Cusboonaysii si aad mar kale u isku daydo."
 }

@@ -1813,5 +1813,6 @@
   "Give the form a heading participants will see.": "ফর্মটিকে এমন একটি শিরোনাম দিন যা অংশগ্রহণকারীরা দেখবেন।",
   "Add at least one field.": "অন্তত একটি ক্ষেত্র যোগ করুন।",
   "Field {number} needs a question.": "ক্ষেত্র {number}-এর জন্য একটি প্রশ্ন দরকার।",
-  "Field {number} needs at least one option.": "ক্ষেত্র {number}-এর জন্য অন্তত একটি বিকল্প দরকার।"
+  "Field {number} needs at least one option.": "ক্ষেত্র {number}-এর জন্য অন্তত একটি বিকল্প দরকার।",
+  "Couldn't load the forms. Refresh to try again.": "ফর্মগুলি লোড করা যায়নি। আবার চেষ্টা করতে রিফ্রেশ করুন।"
 }
