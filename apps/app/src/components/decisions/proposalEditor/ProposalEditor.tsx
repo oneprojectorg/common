@@ -6,7 +6,6 @@ import { trpc } from '@op/api/client';
 import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
-  type ProposalDataInput,
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
@@ -36,14 +35,15 @@ import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
-import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { SubmitProposalConfirmModal } from './SubmitProposalConfirmModal';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
+import { buildUpdateProposalPayload } from './buildUpdateProposalPayload';
 import { ensureDocSynced } from './ensureDocSynced';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
+import { resolveSubmitRedirect } from './resolveSubmitRedirect';
 import { requiresSubmitConfirmation } from './submitConfirmation';
 import { useProposalCollabToken } from './useProposalCollabToken';
 import { useProposalDraft } from './useProposalDraft';
@@ -295,9 +295,12 @@ function ProposalEditorInner({
     }
 
     router.push(
-      didSubmitDraft && isAnonymous && proposal
-        ? `${backHref}?promote=1&proposal=${proposal.profileId}`
-        : backHref,
+      resolveSubmitRedirect({
+        didSubmitDraft,
+        isAnonymous,
+        profileId: proposal?.profileId,
+        backHref,
+      }),
     );
   }, [
     isDraft,
@@ -340,29 +343,15 @@ function ProposalEditorInner({
         return;
       }
 
-      const categorySchema = template.properties?.category;
-      const hasCategories =
-        typeof categorySchema === 'object' && schemaHasOptions(categorySchema);
-
-      const proposalData: ProposalDataInput = {
-        ...parseProposalData(proposal.proposalData),
-        collaborationDocId,
-        category: hasCategories
-          ? currentDraft.category.length > 0
-            ? currentDraft.category
-            : undefined
-          : undefined,
-        budget: currentDraft.budget ?? undefined,
-      };
-
-      await updateProposalMutation.mutateAsync({
-        proposalId: proposal.id,
-        data: {
-          title: currentDraft.title,
-          proposalData,
-          ...(!isDraft ? { checkpointVersion: { type: 'update' } } : {}),
-        },
-      });
+      await updateProposalMutation.mutateAsync(
+        buildUpdateProposalPayload({
+          proposal,
+          currentDraft,
+          collaborationDocId,
+          categorySchema: template.properties?.category,
+          isDraft,
+        }),
+      );
 
       // The custom form gates proposal submission only (the draft -> submit
       // transition). The phase params select the form tied to the current

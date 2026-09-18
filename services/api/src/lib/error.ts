@@ -35,9 +35,6 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
 }) => {
   const cause = error.cause;
   const commonErrorToTRPCError = (cause: CommonError) => {
-    // Per-field validation messages render as toasts on the client
-    // (handleMutationError). Everything else about the cause is omitted
-    // before it goes to the client.
     const fieldErrors =
       cause instanceof ValidationError ? cause.fieldErrors : undefined;
 
