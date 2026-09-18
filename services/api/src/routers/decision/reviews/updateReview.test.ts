@@ -4,8 +4,9 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
+import { inngest } from '@op/events';
 import { closeOpenProposalHistory, reviseProposal } from '@op/test';
-import { describe, expect, it } from 'vitest';
+import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
@@ -68,6 +69,22 @@ async function submitEditableReview(testData: TestReviewsDataManager) {
   return { created, reviewerCaller };
 }
 
+/**
+ * The `review/submitted` events emitted for one assignment. The mock is shared
+ * by every concurrent test in the file, so filter rather than clear it.
+ */
+function reviewSubmittedCalls(assignmentId: string) {
+  const mockSend = inngest.send as unknown as MockInstance;
+
+  return mockSend.mock.calls.filter(
+    (call: unknown[]) =>
+      (call[0] as { name: string; data: { assignmentId: string } }).name ===
+        'review/submitted' &&
+      (call[0] as { data: { assignmentId: string } }).data.assignmentId ===
+        assignmentId,
+  );
+}
+
 describe.concurrent('updateReview', () => {
   it('edits a submitted review in place, preserving submission state', async ({
     task,
@@ -108,6 +125,28 @@ describe.concurrent('updateReview', () => {
     expect(assignment?.reviews[0]?.reviewData).toMatchObject({
       answers: { impact: 2 },
     });
+  });
+
+  it('does not emit review/submitted again on an edit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    // The one event comes from the first submission; the edit adds none, so
+    // the reviewer is never emailed a second confirmation.
+    expect(reviewSubmittedCalls(created.assignment.id)).toHaveLength(1);
+
+    await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { impact: 2 },
+        rationales: { impact: 'Reassessed after committee discussion' },
+      },
+    });
+
+    expect(reviewSubmittedCalls(created.assignment.id)).toHaveLength(1);
   });
 
   it('re-affirms an out-of-date review: re-anchors it and advances submittedAt', async ({
