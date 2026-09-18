@@ -638,4 +638,234 @@ describe.concurrent('category rename reconciles category-keyed rows', () => {
     expect(await linkedTermIds(proposal.id)).toEqual([termIdB]);
     expect(await storedCategoryLabels(proposal.id)).toEqual([labelB]);
   });
+
+  it('re-points a second rename whose stored label is another instance’s term text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 2,
+      grantAccess: true,
+    });
+    const [instanceA, instanceB] = setup.instances;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const suffix = labelSuffix(task.id);
+    const existingLabel = `Affordable Housing ${suffix}`;
+    const originalLabel = `Housing ${suffix}`;
+    // Same slug as `existingLabel`, so the first rename lands on A's term and
+    // the stored copy becomes A's capitalisation rather than this label.
+    const renamedLabel = `affordable housing ${suffix}`;
+    const finalLabel = `Transport ${suffix}`;
+    cleanupTermsByLabel(
+      [existingLabel, originalLabel, renamedLabel, finalLabel],
+      onTestFinished,
+    );
+    await ensureProposalTaxonomy();
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instanceA!.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: existingLabel, description: 'Housing' },
+        ],
+      },
+    });
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instanceB!.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: originalLabel, description: 'Housing' },
+        ],
+      },
+    });
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: instanceB!.instance.id,
+      proposalData: {
+        title: `Housing units ${suffix}`,
+        category: [originalLabel],
+      },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    // First rename: `Housing` → `affordable housing`, which slugs onto A's term.
+    await caller.decision.updateDecisionInstance({
+      instanceId: instanceB!.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: renamedLabel, description: 'Housing' },
+        ],
+      },
+    });
+    expect(await storedCategoryLabels(proposal.id)).toEqual([existingLabel]);
+
+    // Second rename of the same category. The config's old label is
+    // `affordable housing`, but the stored copy says `Affordable Housing`, so a
+    // map keyed only on the config label would leave the copy stale.
+    await caller.decision.updateDecisionInstance({
+      instanceId: instanceB!.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: finalLabel, description: 'Housing' },
+        ],
+      },
+    });
+
+    const finalTermId = (
+      await caller.decision.getCategories({
+        processInstanceId: instanceB!.instance.id,
+      })
+    ).items[0]!.id;
+
+    expect(await linkedTermIds(proposal.id)).toEqual([finalTermId]);
+    expect(await storedCategoryLabels(proposal.id)).toEqual([finalLabel]);
+
+    // A title-only edit re-resolves the stored labels; a stale copy would drag
+    // the link back to the previous term.
+    await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: {
+          ...proposal.proposalData,
+          title: `Housing units revised ${suffix}`,
+          category: await storedCategoryLabels(proposal.id),
+        },
+      },
+    });
+
+    expect(await linkedTermIds(proposal.id)).toEqual([finalTermId]);
+  });
+
+  it('does not add the new link when the proposal no longer holds the old one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const suffix = labelSuffix(task.id);
+    const labelA = `Retag Alpha ${suffix}`;
+    const labelB = `Retag Bravo ${suffix}`;
+    const labelD = `Retag Delta ${suffix}`;
+    cleanupTermsByLabel([labelA, labelB, labelD], onTestFinished);
+    await ensureProposalTaxonomy();
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: labelA, description: 'A' },
+          { id: 'cat-2', label: labelD, description: 'D' },
+        ],
+      },
+    });
+
+    const before = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+    const termIdD = before.items.find((c) => c.name === labelD)!.id;
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Retagged ${suffix}`, category: [labelA] },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    // The author moves the proposal off A before the admin renames A.
+    await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: {
+          ...proposal.proposalData,
+          title: `Retagged ${suffix}`,
+          category: [labelD],
+        },
+      },
+    });
+    expect(await linkedTermIds(proposal.id)).toEqual([termIdD]);
+
+    // A→B. The proposal holds no A link any more, so the rename must add
+    // nothing: an insert derived from the pre-delete snapshot would give it B.
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: labelB, description: 'A' },
+          { id: 'cat-2', label: labelD, description: 'D' },
+        ],
+      },
+    });
+
+    expect(await linkedTermIds(proposal.id)).toEqual([termIdD]);
+    expect(await storedCategoryLabels(proposal.id)).toEqual([labelD]);
+  });
+
+  it('skips a rename whose old label is shared by two config categories', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const suffix = labelSuffix(task.id);
+    const labelA = `Ambiguous Alpha ${suffix}`;
+    const labelB = `Ambiguous Bravo ${suffix}`;
+    cleanupTermsByLabel([labelA, labelB], onTestFinished);
+    await ensureProposalTaxonomy();
+
+    // The API accepts two categories with distinct ids and the same label, so
+    // both config rows resolve to the one taxonomy term.
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: labelA, description: 'first' },
+          { id: 'cat-2', label: labelA, description: 'second' },
+        ],
+      },
+    });
+
+    const before = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+    const termIdA = before.items.find((c) => c.name === labelA)!.id;
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Ambiguous ${suffix}`, category: [labelA] },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+    expect(await linkedTermIds(proposal.id)).toEqual([termIdA]);
+
+    // Renaming ONE of them leaves the other still labelled A, so the term's
+    // rows can't be attributed to either category. The rename is skipped.
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      config: {
+        categories: [
+          { id: 'cat-1', label: labelB, description: 'first' },
+          { id: 'cat-2', label: labelA, description: 'second' },
+        ],
+      },
+    });
+
+    expect(await linkedTermIds(proposal.id)).toEqual([termIdA]);
+    expect(await storedCategoryLabels(proposal.id)).toEqual([labelA]);
+  });
 });

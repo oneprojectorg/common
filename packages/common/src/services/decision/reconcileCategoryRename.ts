@@ -26,6 +26,8 @@ export interface CategoryRename {
 interface ResolvedRename extends CategoryRename {
   oldTermId: string;
   newTermId: string;
+  /** The old term's own `label`, which may differ in text from `oldLabel`. */
+  oldTermLabel: string;
   /** The new term's own `label`, which may differ in text from `newLabel`. */
   newTermLabel: string;
 }
@@ -36,6 +38,13 @@ interface ResolvedRename extends CategoryRename {
  * Keys on the config-local `id`: a category present before with the same id but
  * a different label was renamed, whereas delete + add changes the id. Pure, so
  * it's testable without a database.
+ *
+ * Drops a rename whose old label is still carried by a category that is *not*
+ * itself being renamed away. Labels are not unique in the config, so the old
+ * taxonomy term then stays in use and its rows can't be attributed to the
+ * renamed category — moving them would steal the other category's proposals. A
+ * swap (`A→B`, `B→A`) is not this case: there the other holder of A is itself a
+ * rename source, so its own old term moves too.
  */
 export function detectCategoryRenames(
   previous: ProposalCategory[],
@@ -45,9 +54,24 @@ export function detectCategoryRenames(
     previous.map((category) => [category.id, category.label]),
   );
 
+  const isRenamed = (category: ProposalCategory): boolean => {
+    const previousLabel = previousLabelById.get(category.id);
+    return previousLabel !== undefined && previousLabel !== category.label;
+  };
+
+  // Compared by slug, not text: a case-only difference resolves to one term.
+  const retainedSlugs = new Set(
+    next
+      .filter((category) => !isRenamed(category))
+      .map((category) => categoryTermUri(category.label)),
+  );
+
   return next.flatMap((category) => {
     const previousLabel = previousLabelById.get(category.id);
     if (previousLabel === undefined || previousLabel === category.label) {
+      return [];
+    }
+    if (retainedSlugs.has(categoryTermUri(previousLabel))) {
       return [];
     }
     return [{ oldLabel: previousLabel, newLabel: category.label }];
@@ -129,8 +153,9 @@ export async function reconcileCategoryRenames({
       ),
   ]);
 
-  // Resolve each row's destination term now, while the snapshot is still the
-  // only source of truth, so the inserts below need no further lookup.
+  // Pair each snapshot row with its destination term now, while the snapshot is
+  // still the only source of truth: this fixes the set of rows the renames may
+  // move, so a cascade or a swap can't sweep a row twice.
   const linkSnapshot = withNewTermId(linkRows, newTermIdByOldTermId, {
     instanceId,
     table: 'decision_categories',
@@ -144,57 +169,91 @@ export async function reconcileCategoryRenames({
     return;
   }
 
-  const proposalIds = [...new Set(linkSnapshot.map((link) => link.proposalId))];
+  const snapshotProposalIds = [
+    ...new Set(linkSnapshot.map((link) => link.proposalId)),
+  ];
+
+  let proposalIds: string[] = [];
+  let movedScopeRowCount = 0;
 
   if (linkSnapshot.length > 0) {
     // Delete before insert: with a swap, inserting first would then delete the
-    // rows just written. Deleting by (old term, snapshot proposal) can only
-    // match pairs that are in the snapshot, since the snapshot already holds
-    // every old-term row belonging to these proposals.
-    await tx
+    // rows just written. The snapshot decides which (old term, proposal) pairs
+    // are candidates; RETURNING then reports which of them the delete actually
+    // removed, so a row a concurrent `updateProposal` re-tagged in the meantime
+    // is not re-created from the stale snapshot.
+    const removedLinks = await tx
       .delete(proposalCategories)
       .where(
         and(
           inArray(proposalCategories.taxonomyTermId, oldTermIds),
-          inArray(proposalCategories.proposalId, proposalIds),
+          inArray(proposalCategories.proposalId, snapshotProposalIds),
         ),
-      );
-
-    // Idempotent on the composite PK (proposalId, taxonomyTermId): a proposal
-    // may already carry the new term (e.g. tagged after the rename).
-    await tx
-      .insert(proposalCategories)
-      .values(
-        linkSnapshot.map((link) => ({
-          proposalId: link.proposalId,
-          taxonomyTermId: link.newTermId,
-        })),
       )
-      .onConflictDoNothing();
+      .returning({
+        proposalId: proposalCategories.proposalId,
+        taxonomyTermId: proposalCategories.taxonomyTermId,
+      });
+
+    const movedLinks = withNewTermId(removedLinks, newTermIdByOldTermId, {
+      instanceId,
+      table: 'decision_categories',
+    });
+    proposalIds = [...new Set(movedLinks.map((link) => link.proposalId))];
+
+    if (movedLinks.length > 0) {
+      // Idempotent on the composite PK (proposalId, taxonomyTermId): a proposal
+      // may already carry the new term (e.g. tagged after the rename).
+      await tx
+        .insert(proposalCategories)
+        .values(
+          movedLinks.map((link) => ({
+            proposalId: link.proposalId,
+            taxonomyTermId: link.newTermId,
+          })),
+        )
+        .onConflictDoNothing();
+    }
   }
 
   if (scopeSnapshot.length > 0) {
-    // Same delete-then-insert, keyed on the surrogate id. An UPDATE would risk
-    // `category_reviewers_unique` when the reviewer already covers the new
-    // term, and drizzle can't express onConflictDoNothing for an update.
-    await tx.delete(categoryReviewers).where(
-      inArray(
-        categoryReviewers.id,
-        scopeSnapshot.map((scope) => scope.id),
-      ),
-    );
-
-    await tx
-      .insert(categoryReviewers)
-      .values(
-        scopeSnapshot.map((scope) => ({
-          processInstanceId: instanceId,
-          taxonomyTermId: scope.newTermId,
-          reviewerProfileId: scope.reviewerProfileId,
-          phaseId: scope.phaseId,
-        })),
+    // Same delete-then-re-insert-what-was-removed, keyed on the surrogate id.
+    // An UPDATE would risk `category_reviewers_unique` when the reviewer
+    // already covers the new term, and drizzle can't express
+    // onConflictDoNothing for an update.
+    const removedScopes = await tx
+      .delete(categoryReviewers)
+      .where(
+        inArray(
+          categoryReviewers.id,
+          scopeSnapshot.map((scope) => scope.id),
+        ),
       )
-      .onConflictDoNothing();
+      .returning({
+        taxonomyTermId: categoryReviewers.taxonomyTermId,
+        reviewerProfileId: categoryReviewers.reviewerProfileId,
+        phaseId: categoryReviewers.phaseId,
+      });
+
+    const movedScopes = withNewTermId(removedScopes, newTermIdByOldTermId, {
+      instanceId,
+      table: 'decision_category_reviewers',
+    });
+    movedScopeRowCount = movedScopes.length;
+
+    if (movedScopes.length > 0) {
+      await tx
+        .insert(categoryReviewers)
+        .values(
+          movedScopes.map((scope) => ({
+            processInstanceId: instanceId,
+            taxonomyTermId: scope.newTermId,
+            reviewerProfileId: scope.reviewerProfileId,
+            phaseId: scope.phaseId,
+          })),
+        )
+        .onConflictDoNothing();
+    }
   }
 
   await migrateProposalDataLabels({ tx, proposalIds, renames: resolved });
@@ -203,7 +262,7 @@ export async function reconcileCategoryRenames({
     instanceId,
     renameCount: resolved.length,
     proposalCount: proposalIds.length,
-    scopeRowCount: scopeSnapshot.length,
+    scopeRowCount: movedScopeRowCount,
   });
 
   // Assignments are derived from scope rows ⨝ proposal categories, so both
@@ -220,9 +279,9 @@ export async function reconcileCategoryRenames({
 }
 
 /**
- * Pairs each snapshot row with the term it moves to. Every `taxonomyTermId` in
- * a snapshot was selected by the map's own keys, so a miss is unreachable —
- * warn rather than drop it silently.
+ * Pairs each row with the term it moves to. Every row handed here — snapshot or
+ * delete-returned — was matched on the map's own keys, so a miss is
+ * unreachable: warn rather than drop it silently.
  */
 function withNewTermId<T extends { taxonomyTermId: string }>(
   rows: T[],
@@ -294,7 +353,7 @@ async function resolveRenames({
   });
   const termByUri = new Map(terms.map((term) => [term.termUri, term]));
 
-  return slugChanging.flatMap((rename) => {
+  const resolved = slugChanging.flatMap((rename) => {
     const oldTerm = termByUri.get(categoryTermUri(rename.oldLabel));
     const newTerm = termByUri.get(categoryTermUri(rename.newLabel));
 
@@ -319,10 +378,49 @@ async function resolveRenames({
         ...rename,
         oldTermId: oldTerm.id,
         newTermId: newTerm.id,
+        oldTermLabel: oldTerm.label,
         newTermLabel: newTerm.label,
       },
     ];
   });
+
+  // The config permits two categories with the same label, so two renames can
+  // claim the same old term. Which rows belong to which destination is then
+  // undefined, and last-write-wins would move them arbitrarily — drop every
+  // rename sharing that old term and leave its rows where they are. (Two
+  // renames arriving at the same NEW term from different old terms is a merge,
+  // which is well defined.)
+  const renameCountByOldTermId = new Map<string, number>();
+  for (const rename of resolved) {
+    renameCountByOldTermId.set(
+      rename.oldTermId,
+      (renameCountByOldTermId.get(rename.oldTermId) ?? 0) + 1,
+    );
+  }
+
+  const ambiguousOldTermIds = new Set(
+    [...renameCountByOldTermId]
+      .filter(([, count]) => count > 1)
+      .map(([oldTermId]) => oldTermId),
+  );
+
+  if (ambiguousOldTermIds.size === 0) {
+    return resolved;
+  }
+
+  logger.warn(
+    'Category rename reconciliation skipped: one taxonomy term claimed by several renames',
+    {
+      instanceId,
+      renames: resolved
+        .filter((rename) => ambiguousOldTermIds.has(rename.oldTermId))
+        .map(({ oldLabel, newLabel }) => ({ oldLabel, newLabel })),
+    },
+  );
+
+  return resolved.filter(
+    (rename) => !ambiguousOldTermIds.has(rename.oldTermId),
+  );
 }
 
 /**
@@ -352,9 +450,15 @@ async function migrateProposalDataLabels({
     return;
   }
 
-  const newLabelByOldLabel = new Map(
-    renames.map(({ oldLabel, newTermLabel }) => [oldLabel, newTermLabel]),
-  );
+  // Key on the config's old label AND the old term's own text: a previous
+  // reconcile wrote the term's label into the copy, and `setProposalCategories`
+  // only resolves exact term labels, so the two can differ ("affordable
+  // housing" in the config, "Affordable Housing" in the stored copy).
+  const newLabelByOldLabel = new Map<string, string>();
+  for (const { oldLabel, oldTermLabel, newTermLabel } of renames) {
+    newLabelByOldLabel.set(oldLabel, newTermLabel);
+    newLabelByOldLabel.set(oldTermLabel, newTermLabel);
+  }
 
   const rows = await tx
     .select({ id: proposals.id, proposalData: proposals.proposalData })

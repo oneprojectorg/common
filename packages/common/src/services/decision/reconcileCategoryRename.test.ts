@@ -72,4 +72,36 @@ describe('detectCategoryRenames', () => {
       { oldLabel: 'Transit', newLabel: 'Public Transit' },
     ]);
   });
+
+  it('detects nothing when another category still carries the old label', () => {
+    // Two categories share a label, so they share one taxonomy term. Renaming
+    // one leaves the term in use by the other: the rows can't be attributed.
+    expect(
+      detectCategoryRenames(
+        [category('cat-1', 'Parks'), category('cat-2', 'Parks')],
+        [category('cat-1', 'Parks and Recreation'), category('cat-2', 'Parks')],
+      ),
+    ).toEqual([]);
+  });
+
+  it('detects nothing when the retained duplicate differs only in case', () => {
+    expect(
+      detectCategoryRenames(
+        [category('cat-1', 'Parks'), category('cat-2', 'parks')],
+        [category('cat-1', 'Parks and Recreation'), category('cat-2', 'parks')],
+      ),
+    ).toEqual([]);
+  });
+
+  it('still detects a swap, where each old label belongs to a rename source', () => {
+    expect(
+      detectCategoryRenames(
+        [category('cat-1', 'Parks'), category('cat-2', 'Transit')],
+        [category('cat-1', 'Transit'), category('cat-2', 'Parks')],
+      ),
+    ).toEqual([
+      { oldLabel: 'Parks', newLabel: 'Transit' },
+      { oldLabel: 'Transit', newLabel: 'Parks' },
+    ]);
+  });
 });
