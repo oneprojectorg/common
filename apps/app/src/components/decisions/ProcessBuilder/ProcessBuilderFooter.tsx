@@ -16,11 +16,11 @@ import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderAutosave } from './ProcessBuilderAutosaveContext';
 import { ProgressIndicator } from './components/ProgressIndicator';
 import { toOverviewInput, toPhasesInput } from './headlinePatch';
+import { trackRubricSaved } from './rubricAnalytics';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import { useProcessPhases } from './useProcessPhases';
-import { useTrackRubricSaved } from './useTrackRubricSaved';
 import { useProcessBuilderValidation } from './validation/useProcessBuilderValidation';
 
 export const ProcessBuilderFooter = ({
@@ -34,7 +34,6 @@ export const ProcessBuilderFooter = ({
 }) => {
   const t = useTranslations();
   const router = useRouter();
-  const trackRubricSaved = useTrackRubricSaved(instanceId);
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
 
   const validation = useProcessBuilderValidation(decisionProfileId);
@@ -75,7 +74,9 @@ export const ProcessBuilderFooter = ({
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data, variables) => {
-      trackRubricSaved(variables);
+      if (variables.rubricTemplate !== undefined) {
+        trackRubricSaved(instanceId);
+      }
       toast.success(t('Changes saved successfully'));
       // Clear stale store data so the editor reseeds from fresh server data
       clearInstance(decisionProfileId);

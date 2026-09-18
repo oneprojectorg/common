@@ -233,7 +233,6 @@ function ProposalEditorInner({
         getDecisionCommonProperties({
           decisionInstanceId: proposal.processInstanceId,
           proposalId: proposal.id,
-          additionalProps: { created_timestamp: Date.now() },
         }),
       ),
     onError: (error) => handleMutationError(error, 'submit', t),

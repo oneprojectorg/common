@@ -1,9 +1,9 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { useTrackUserInvited } from '@/hooks/useTrackUserInvited';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
+import { trackUserInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -54,7 +54,6 @@ export const InviteUserModal = ({
   const t = useTranslations();
   const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
-  const trackUserInvited = useTrackUserInvited();
   const organizationItems = useAdminOrganizations();
 
   const inviteUserEnabled =
@@ -73,7 +72,7 @@ export const InviteUserModal = ({
   const inviteUser = trpc.organization.invite.useMutation({
     onSuccess: (result, variables) => {
       trackUserInvited({
-        variables,
+        organizationId: variables.organizationId,
         inviteCount: result.details?.successful.length ?? 0,
       });
 

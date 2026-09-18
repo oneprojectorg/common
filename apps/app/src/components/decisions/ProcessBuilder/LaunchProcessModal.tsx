@@ -59,15 +59,9 @@ export const LaunchProcessModal = ({
 
   const utils = trpc.useUtils();
 
-  // Already cached by the builder's autosave provider — no extra request.
-  const { data: liveInstance } = trpc.decision.getInstance.useQuery({
-    instanceId,
-  });
-
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
-      // Unresolved counts as launchable — a missed survey beats a spurious one.
-      if (!liveInstance || liveInstance.status === ProcessStatus.DRAFT) {
+      if (data.didPublish) {
         posthog.capture(
           'admin_set_process',
           getDecisionCommonProperties({ decisionInstanceId: instanceId }),
