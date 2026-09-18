@@ -13,13 +13,10 @@ The spike covers two places an LLM could sit in the SMS system:
 - Outbound: generate or personalize notification copy, instead of sending a
   static template, at the point the Twilio adapter sends from.
 
-The team has added a third requirement: store the LLM-based conversation
-whenever a user starts one, from the web application, from SMS, or from
-WhatsApp. This is wider than the Asana task's original title. The
-original task did not name the web application. ADR 0004 names WhatsApp
-as a target channel, but this spike's task did not name it either. This
-document tracks the requirement as given. The Asana task should be
-updated to match.
+In a meeting, Design asked whether an LLM flow could support these
+conversations. Engineering agreed to look into it, and this document is
+the result. The requirement covers a user starting a conversation from
+the web application, from SMS, or from WhatsApp.
 
 ## How Twilio delivers an inbound SMS reply
 
@@ -38,12 +35,20 @@ account auth token. Twilio's own guidance says to validate this signature
 with its SDK, not with a hand-written check, because the parameter set can
 change.
 
-Our handler must answer with TwiML: an XML document with a `<Response>` root
-element and `Content-Type: text/xml`. An empty `<Response/>` is valid when we
-have nothing to send back synchronously. Twilio's public docs do not state
-an exact timeout or retry policy for messaging webhooks. Confirm this with
-Twilio support or the console before a synchronous-processing design depends
-on it.
+Our handler must answer with TwiML: an XML document with a `<Response>`
+root element and `Content-Type: text/xml`. An empty `<Response/>` is
+valid when we have nothing to send back synchronously.
+
+Twilio's webhook connection defaults, documented on the [connection
+overrides page](https://www.twilio.com/docs/usage/webhooks/webhooks-connection-overrides),
+give the real numbers: a 5-second connect timeout, a 15-second read
+timeout, and a 15-second total time budget across the whole request,
+including retries. Twilio retries once by default, but only on a
+connection failure (a failed TCP connect or TLS handshake) — a request
+that connects fine but is slow to respond does not get a default retry.
+All of these are configurable per request through URL-fragment
+overrides (`#ct=`, `#rt=`, `#tt=`, `#rc=`, `#rp=`), but the defaults are
+what a synchronous handler has to fit inside unless we change them.
 
 ## Inbound handling: compliance and edge cases
 
@@ -69,8 +74,7 @@ flowchart TD
   unparseable --> conversation
 ```
 
-This is the shape the subsections below argue for, not a decided design —
-the exact keyword set is still open.
+This isn't a final design. We still need to pick the exact keyword set.
 
 ### Opt-out keywords must be checked before any vote parsing
 
@@ -101,23 +105,25 @@ count in `NumSegments`. No extra reassembly work is needed in our code.
 
 ### No path exists from a phone number to an identity
 
-Confirmed absent: no `findByPhone`, no `.where(eq(phone, ...))`, no query
-anywhere in the repository that resolves a phone number to a `profiles`
-or `authUsers` row. Phone sign-in today runs entirely through GoTrue's
+No `findByPhone` exists. No `.where(eq(phone, ...))`, and no query
+anywhere in the repository, resolves a phone number to a `profiles` or
+`authUsers` row. Phone sign-in today runs entirely through GoTrue's
 phone-OTP flow from the browser. The app server only ever reads `phone`
 off an already-authenticated session's JWT claims
 (`services/api/src/utils/userFromClaims.ts`). It never uses `phone` as a
 search key. `profiles.phone` is not indexed or unique the way
 `authUsers.phone` is.
 
+
+## TODO (Ivan) Review this section.
+
 An inbound webhook's `From` number would need a new lookup. The team has
 decided the behavior for a number that matches nobody: ignore the event.
 No vote is recorded, no conversation is stored, and no reply is sent. The
-handler still must return a valid TwiML response to Twilio's own HTTP
-request. Ignoring the event means skipping our application logic, not
-skipping Twilio's response contract.
+handler still has to send Twilio a valid TwiML response. Ignoring the
+event just means we skip our own logic — we still have to answer Twilio.
 
-This decision has a cost worth naming. A participant might not have
+That decision isn't free. A participant might not have
 verified a phone number yet, or might be texting from a number that does
 not match the one on file. That participant gets silently dropped, the
 same as actual spam and wrong numbers. Nothing in this repository today
@@ -132,8 +138,10 @@ login. It does not survive multiple server instances. Every inbound
 Twilio webhook call also arrives from Twilio's own IPs, not the end
 user's. This limiter cannot bound how many messages one phone number
 sends. No phone-keyed or durable rate limiter exists anywhere in the
-repository. Bounding the LLM spend that a single flooding sender could
-cause needs new infrastructure, not a reuse of the existing pattern.
+repository. Stopping one sender from running up our LLM bill needs new
+infrastructure. We can't just reuse the existing limiter.
+
+## TODO (Ivan) Look into using redis for this.
 
 ## Current state of this repository
 
@@ -177,7 +185,7 @@ sessions.
 
 The rejection does not cover an inbound vote-reply webhook: a vote reply
 carries no session and no identity claim. ADR 0004 is silent on inbound
-vote replies, so this spike is not re-litigating a closed question.
+vote replies, so this spike isn't reopening a settled question.
 
 ### A status-callback webhook is anticipated but not built
 
@@ -228,8 +236,8 @@ them has a working caller today.
 - **A documented router that does not exist.** `services/api/README.md`
   describes an `llm` tRPC router at `src/routers/llm/chat.ts` that
   "integrates with Anthropic models." No such file or directory exists
-  under `services/api/src/routers`. This is a stale or aspirational doc
-  entry, tracked separately from this spike.
+  under `services/api/src/routers`. That doc entry is stale or
+  aspirational. Fixing it is separate from this spike.
 
 ### `@op/ai` already fits Together.ai; the other two paths do not
 
@@ -262,8 +270,8 @@ target Together.ai. The Vercel AI SDK does ship a separate
 `@ai-sdk/openai-compatible` provider that could, but it is not a
 dependency of this repository today. `@op/ai` already speaks the exact
 wire format Together.ai expects, and it is already tested and
-workspace-local. It is the path to build on. This resolves the earlier
-open question about which of the three paths to use.
+workspace-local. It's the path to build on, and that settles which of
+the three paths we should use.
 
 ### No existing keyword or regex classifier to compare against
 
@@ -292,8 +300,8 @@ A keyword-first design built on English keywords (`YES`, `NO`) only
 bounds misread risk for participants replying in English. A participant
 replying in Arabic or another supported locale would miss the keyword
 match on every reply. Every one of their messages would fall through to
-the LLM instead. That undercuts both the cost savings and the
-correctness argument the keyword-first design is meant to provide.
+the LLM instead. That defeats the point of keyword-first: it's supposed
+to be cheaper and safer, and for these replies it would be neither.
 Closing this gap needs either a localized keyword set per language or a
 stored per-participant language, neither of which exists yet.
 
@@ -321,22 +329,138 @@ A classification call over a short SMS body is a small request regardless
 of model. Twilio caps `Body` at 1600 characters, and a real reply is far
 shorter. Together.ai hosts many models at different sizes and prices. A
 concrete cost-per-message and latency figure depends on which model is
-chosen for this path. That choice is still open. The latency question
-matters more than cost here. A non-streaming call to a small model
-usually returns in one to two seconds. This spike's open question about
-Twilio's exact timeout (see above) decides whether that fits inside one
-synchronous webhook request. If it does not fit, parsing must move to the
-async Inngest path outbound sends already use.
+chosen for this path. That choice is still open, so this spike has no
+verified number for how long a call to that model will actually take.
+
+Twilio's own timeout is no longer the open question it was — the
+connect, read, and total-time defaults are documented (see above). But
+fitting the LLM call inside them is not the only option, and probably
+not the one to build toward. An empty `<Response/>` acknowledges Twilio
+immediately, whether or not we have picked a model, whether or not that
+model is fast that day, and whether or not Twilio's defaults change.
+Parsing can run after that ack, on the same async Inngest path outbound
+sends already use, with any reply sent as its own outbound message. The
+webhook timeout only becomes a real constraint if we choose to make the
+LLM call before responding to Twilio — and nothing forces that choice.
 
 ### Generation for the outbound path
 
-Generating notification copy is not latency-bound the way inbound parsing
-is: nothing is waiting on a synchronous webhook response. It can run ahead
-of send time, inside the existing Inngest step that already builds and
-sends each batch. This removes the inbound path's timeout pressure from
-the outbound half of the spike entirely.
+Generating notification copy is not latency-bound the way inbound
+parsing is: nothing is waiting on a synchronous webhook response. It can
+run ahead of send time, inside the existing Inngest step that already
+builds and sends each batch. So the outbound half of the spike doesn't
+have this timeout problem at all.
+
+## The SMS conversation as a state machine
+
+This is a proposed design, not a decision. It models one participant's
+vote-reply conversation, built from what the sections above already
+establish. An unrecognized sender never enters this state machine at
+all — that case is already decided: ignore the event before a
+conversation exists. Everything below assumes the sender is a
+recognized participant.
+
+Using an LLM to ask a clarifying question has to be optional. Some
+participant, or some org, may not want an AI-authored message sent on
+their behalf. The diagram below branches on that:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Started: first recognized inbound message
+
+    Started --> VoteRecorded: keyword or LLM parses a vote
+    Started --> AwaitingClarification: unparsed, LLM clarification is on
+    Started --> NeedsManualReview: unparsed, LLM clarification is off
+    Started --> OptedOut: STOP / UNSUBSCRIBE / etc.
+
+    AwaitingClarification --> VoteRecorded: retry parses a vote
+    AwaitingClarification --> AwaitingClarification: retry still fails
+    AwaitingClarification --> Abandoned: no reply before a timeout
+    AwaitingClarification --> OptedOut: STOP / UNSUBSCRIBE / etc.
+
+    VoteRecorded --> [*]
+    Abandoned --> [*]
+    NeedsManualReview --> [*]
+    OptedOut --> [*]
+```
+
+Six states:
+
+- **Started**: created on the first recognized inbound message.
+- **VoteRecorded**: a keyword match or an LLM parse succeeded. Terminal.
+- **AwaitingClarification**: neither the keyword match nor the LLM parse
+  found a vote, and LLM clarification is turned on. We send an
+  AI-authored clarification reply and wait for a retry.
+- **NeedsManualReview**: same unparsed case, but LLM clarification is
+  turned off. No AI-authored message goes out. Terminal, at least for
+  this state machine — a human still has to do something with it.
+- **Abandoned**: the participant never replies to the clarification
+  request. Terminal.
+- **OptedOut**: reachable from any open state, matching the opt-out
+  handling described above. Terminal.
+
+This raises questions the diagram doesn't answer:
+
+- Who sets "LLM clarification is on/off," and at what level: the org,
+  the process, or the participant? Nothing in this repository has that
+  setting today.
+- Whether the same on/off switch should also cover LLM-based vote
+  *parsing*, not just the clarification question, or whether those are
+  two separate switches.
+- What `NeedsManualReview` actually does: notify an organizer, sit in a
+  queue, or something else. Right now it is just a label with no
+  behavior behind it.
+- How many times should `AwaitingClarification` retry before giving up
+  and moving to `Abandoned`? The self-loop above allows unlimited
+  retries, which is probably not what we want.
+- How long is the timeout before `Abandoned` fires?
+- Does `Abandoned` trigger any follow-up, like a nudge from a human
+  organizer, or does it just sit there?
+- Does this state live on the `conversations` row itself, as a column,
+  or does something compute it from the message history each time?
 
 ## Storing a conversation across web, SMS, and WhatsApp
+
+Here's one way the storage could look, based on precedent elsewhere in
+the schema. It is not a decision.
+
+```mermaid
+erDiagram
+  PROFILE_USERS ||--o{ CONVERSATIONS : "initiates (web only)"
+  PROPOSALS ||--o{ CONVERSATIONS : "vote reply on (open question)"
+  CONVERSATIONS ||--o{ CONVERSATION_MESSAGES : contains
+
+  PROFILE_USERS {
+    uuid id PK
+  }
+
+  PROPOSALS {
+    uuid id PK
+  }
+
+  CONVERSATIONS {
+    uuid id PK
+    string channel "web | sms | whatsapp"
+    uuid initiatedByProfileUserId FK "nullable, set only when channel = web"
+    string phoneNumber "nullable, set only when channel = sms or whatsapp"
+    uuid proposalId FK "nullable, still open whether this exists at all"
+    timestamp createdAt
+  }
+
+  CONVERSATION_MESSAGES {
+    uuid id PK
+    uuid conversationId FK
+    string role "participant | assistant"
+    text content
+    timestamp createdAt
+  }
+```
+
+None of this is built yet. How a conversation connects to a user and to
+a proposal is something the team needs to weigh in on — it is not a call
+engineering research can make alone. See "Vote reply and conversation
+are not yet the same concept" below for the proposal side of that
+question.
 
 ### No conversation storage exists today
 
@@ -345,16 +469,8 @@ the outbound half of the spike entirely.
 and `packages/common/src/services/notification/` for `whatsapp` or
 `channel` returns nothing. The notification package today only models
 SMS: a `PhoneNumber` type, an `SmsProvider` interface, and the Twilio
-adapter. A channel enum covering web, SMS, and WhatsApp would be new
-vocabulary, not an extension of something that exists.
-
-### ADR 0004's phone and preference storage is still unbuilt
-
-`profiles` already has a `phone` column, but it is a contact-info field on
-the org/individual profile entity, unrelated to a per-membership
-notification phone number. `profileUsers` — the membership row ADR 0004's
-fan-out reads from — has no phone column and no notification-preference
-column. ADR 0004's statement that both are still needed holds today.
+adapter. A channel enum covering web, SMS, and WhatsApp would be built
+from scratch, not an extension of something that exists.
 
 ### This repo's precedent favors a concrete shape over a bare polymorphic one
 
@@ -379,12 +495,15 @@ several different kinds of thing":
 A conversation's origin needs a real foreign key on the web case: it must
 resolve to an actual `profileUsers` row. On the SMS or WhatsApp case, it
 needs only a phone number. That asymmetry matches the second pattern, not
-the first. The direction is a `channel` enum on a `conversations` table,
-with a nullable `initiatedByProfileUserId` foreign key. That key would be
-set, and constrained, only when `channel = web`, rather than one generic,
-FK-less origin column covering all three channels. This is a direction
-from precedent, not a finished schema — the exact column set is a design
-task, not a research one.
+the first. One way to shape that is a `channel` enum on a `conversations`
+table, with a nullable `initiatedByProfileUserId` foreign key set only
+when `channel = web`, rather than one generic, FK-less origin column
+covering all three channels.
+
+This is precedent, not a recommendation. How a conversation connects to
+a user, and how it connects to a proposal, are both open questions the
+team needs to weigh in on. This research only shows what shape the
+existing schema already favors.
 
 ### WhatsApp is not "SMS with a different channel label"
 
@@ -396,15 +515,15 @@ pre-approved message template can be sent, capped at 550 characters.
 Twilio returns error 63016 if free text is attempted. Template approval
 is a Meta review process, not something Twilio or our code controls.
 
-This bears directly on the outbound path's LLM-generated copy. On
+This matters for the outbound path's LLM-generated copy too. On
 WhatsApp, it is only usable as free text inside the 24-hour window that a
 participant's own reply opens. Outside that window, the choice is
 between two options. Submit generated copy as a pre-approved template
 ahead of time — a content-approval workflow, not a runtime one. Or do not
 send on WhatsApp at all for that message. A single `channel` enum value
 for WhatsApp on the `conversations` table records which channel a
-message used. By itself, it does not express this constraint anywhere
-the sending code would see it.
+message used. On its own, that doesn't tell the sending code about this
+constraint — something else has to handle it.
 
 ### Vote reply and conversation are not yet the same concept
 
@@ -417,7 +536,7 @@ on. Or vote parsing might be a separate concept. It writes to whatever
 vote-recording tables the reply-to-vote path builds. Conversation storage
 would then be a parallel, generic log alongside it.
 
-This choice is not just naming. It decides whether `conversations`
+This isn't just a naming question. It decides whether `conversations`
 carries a nullable proposal or decision foreign key. It also decides
 whether the vote-parsing code and the conversation-storage code are the
 same write path, or two.
@@ -431,8 +550,8 @@ already store instead. A phone number falls in that same category. This
 is a constraint on what a log statement may print through `@op/logging`.
 It says nothing about what may live in a Postgres row. Storing a phone
 number and a message transcript in a `conversations` table does not
-violate it. That holds provided no code path later logs that row's
-content through the shared logger.
+violate it, as long as nothing later logs that row's content through
+the shared logger.
 
 The README also states that log retention is set in PostHog project
 settings, not in this repository. A stored conversation transcript has
@@ -441,21 +560,21 @@ does not answer anywhere today.
 
 ## Open questions
 
-- Twilio's exact timeout and retry policy for a messaging webhook, confirmed
-  with Twilio rather than assumed from other webhook types.
-- Whether inbound parsing must run outside the webhook request, given the
-  TwiML response deadline.
-- Whether it should hand off to the existing Inngest Workflow system the
-  way outbound sends do.
+- Whether to accept the default TwiML-empty-response, always-async
+  design, or deliberately choose synchronous parsing for some models —
+  since the timeout defaults are now known, this is a design choice, not
+  a blocked question.
 - Cost and latency per message at the volume SMS Notifications targets.
 - Whether a keyword-first, LLM-fallback design bounds the risk of a
   misread vote.
 - Which specific Together.ai model to use for inbound parsing, and
   whether it supports `response_format` or `tools`.
 - Cost and latency for that specific model, once chosen.
-- The `conversations` schema: the channel enum, the per-channel columns,
-  and the v1/v2 relation blocks it needs — a design task this document
-  only points toward.
+- How a conversation connects to a user and to a proposal. This document
+  shows what the existing schema favors, but the team needs to weigh in
+  before it becomes a real column.
+- The rest of the `conversations` schema: the channel enum, the
+  per-channel columns, and the v1/v2 relation blocks it needs.
 - Whether a conversation is scoped to one proposal or vote, or is generic
   across the app.
 - Whether the web, SMS, and WhatsApp requirement belongs in this Asana
