@@ -53,7 +53,7 @@ export function ReviewersTableSection(props: ReviewersTableSectionProps) {
                 <LuUsers className="size-6" />
               </EmptyMedia>
               <EmptyTitle>
-                {t("We couldn't load review assignments")}
+                {t('decisions.review.loadAssignmentsError')}
               </EmptyTitle>
               <EmptyDescription>
                 {t('Please refresh the page to try again.')}
@@ -104,7 +104,7 @@ function ReviewersTableContent({
   return (
     <div className="flex flex-col gap-3">
       <p aria-live="polite">
-        {t('{count, plural, one {# reviewer} other {# reviewers}}', {
+        {t('decisions.review.reviewerCount', {
           count: totalReviewers,
         })}
       </p>
@@ -115,28 +115,32 @@ function ReviewersTableContent({
             <EmptyMedia variant="icon">
               <LuUsers className="size-6" />
             </EmptyMedia>
-            <EmptyTitle>{t('No reviewers yet')}</EmptyTitle>
+            <EmptyTitle>{t('decisions.review.noReviewers')}</EmptyTitle>
             <EmptyDescription>
-              {t(
-                'Give people the reviewer role and they will appear here, ready to take proposals.',
-              )}
+              {t('decisions.review.noReviewersHint')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
         <>
           <Table
-            aria-label={t('Reviewers')}
+            aria-label={t('decisions.review.reviewersHeading')}
             className="w-full [&_tbody_th]:px-5 [&_tbody_th]:py-3 [&_td]:px-5 [&_td]:py-3 [&_th]:px-5 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-3 [&_tr>*:last-child]:pe-3"
           >
             <TableHeader>
               <TableRow>
                 <TableHead>{t('Name')}</TableHead>
-                <TableHead className="text-end">{t('Assigned')}</TableHead>
-                <TableHead>{t('Progress')}</TableHead>
-                <TableHead>{t('Last submission')}</TableHead>
                 <TableHead className="text-end">
-                  <span className="sr-only">{t('Open')}</span>
+                  {t('decisions.review.assignedLabel')}
+                </TableHead>
+                <TableHead>{t('decisions.review.progressLabel')}</TableHead>
+                <TableHead>
+                  {t('decisions.review.lastSubmissionLabel')}
+                </TableHead>
+                <TableHead className="text-end">
+                  <span className="sr-only">
+                    {t('decisions.review.openStatus')}
+                  </span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -156,7 +160,7 @@ function ReviewersTableContent({
               {isFetchingNextPage ? (
                 <>
                   <span aria-live="polite" className="sr-only">
-                    {t('Loading more reviewers...')}
+                    {t('decisions.review.loadingMoreReviewers')}
                   </span>
                   <Skeleton className="h-12 w-full" aria-hidden />
                   <Skeleton className="h-12 w-full" aria-hidden />
@@ -212,17 +216,17 @@ function ReviewerRowCells({
       <TableCell>
         {row.assignedCount === 0 ? (
           <span className="text-sm text-muted-foreground">
-            {t('No assignments')}
+            {t('decisions.review.noAssignments')}
           </span>
         ) : (
           <span className="flex items-center gap-2.5">
             <Progress
               value={percent}
               className="w-24"
-              aria-label={t('Review progress')}
+              aria-label={t('decisions.review.reviewProgressLabel')}
             />
             <span className="text-sm whitespace-nowrap text-muted-foreground">
-              {t('{submitted} of {assigned} submitted', {
+              {t('decisions.review.submittedOfAssigned', {
                 submitted: row.submittedCount,
                 assigned: row.assignedCount,
               })}
@@ -242,7 +246,9 @@ function ReviewerRowCells({
           variant="ghost"
           size="icon-sm"
           className="relative z-10"
-          aria-label={t("Open {name}'s assignments", { name })}
+          aria-label={t('decisions.review.openReviewerAssignmentsAction', {
+            name,
+          })}
         >
           <LuChevronRight className="rtl:-scale-x-100" />
         </ButtonLink>

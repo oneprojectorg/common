@@ -202,15 +202,15 @@ export function ReviewSummaryView({
                 >
                   <LuCheck className="size-4" />
                   {ownReviewIsSubmitted
-                    ? t('Update review')
-                    : t('Submit review')}
+                    ? t('decisions.review.updateReviewAction')
+                    : t('decisions.review.submitReviewAction')}
                 </Button>
               )
             : isOwnDetailOpen &&
               canEditOwnReview && (
                 <Button variant="outline" onClick={openOwnForm}>
                   <LuPencil className="size-4" />
-                  {t('Edit review')}
+                  {t('decisions.review.editReviewAction')}
                 </Button>
               )}
         </div>
@@ -236,12 +236,18 @@ export function ReviewSummaryView({
         </SplitPane.Pane>
         <SplitPane.Pane
           id="summary"
-          label={isPhaseInProgress ? t('Review Progress') : t('Review Summary')}
+          label={
+            isPhaseInProgress
+              ? t('decisions.review.reviewProgressHeading')
+              : t('decisions.review.reviewSummaryHeading')
+          }
         >
           {/* Outside the panel: a live region around the form would announce
               every keystroke. */}
           <span role="status" className="sr-only">
-            {isOwnFormOpen ? t('Review Proposal') : t('Review Progress')}
+            {isOwnFormOpen
+              ? t('decisions.review.reviewProposalHeading')
+              : t('decisions.review.reviewProgressHeading')}
           </span>
 
           {isOwnFormOpen && ownAssignment ? (
@@ -260,7 +266,11 @@ export function ReviewSummaryView({
               rubricTemplate={rubricTemplate}
               selectedAssignmentId={selectedAssignmentId}
               onSelectAssignment={setSelectedAssignmentId}
-              title={isPhaseInProgress ? t('Review Progress') : undefined}
+              title={
+                isPhaseInProgress
+                  ? t('decisions.review.reviewProgressHeading')
+                  : undefined
+              }
               ownReview={ownReview}
             />
           )}

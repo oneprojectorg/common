@@ -46,7 +46,9 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
           // stays in the accessible name so screen readers keep the context.
           <>
             <span aria-hidden="true">{t('Back')}</span>
-            <span className="sr-only">{t('Back to proposals')}</span>
+            <span className="sr-only">
+              {t('decisions.review.backToProposalsAction')}
+            </span>
           </>
         }
         accountSlot={
@@ -61,10 +63,12 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             disabled={!canRequestRevision}
             onClick={() => setIsRequestModalOpen(true)}
             className="max-sm:size-11"
-            aria-label={t('Request revision')}
+            aria-label={t('decisions.review.requestRevisionAction')}
           >
             <LuRefreshCw className="size-4" />
-            <span className="hidden sm:inline">{t('Request revision')}</span>
+            <span className="hidden sm:inline">
+              {t('decisions.review.requestRevisionAction')}
+            </span>
           </Button>
         )}
 
@@ -74,10 +78,12 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             disabled={!canUpdate}
             loading={isUpdating}
             className="max-sm:size-11"
-            aria-label={t('Update review')}
+            aria-label={t('decisions.review.updateReviewAction')}
           >
             <LuCheck className="size-4" />
-            <span className="hidden sm:inline">{t('Update review')}</span>
+            <span className="hidden sm:inline">
+              {t('decisions.review.updateReviewAction')}
+            </span>
           </Button>
         ) : isSubmitted ? (
           canEditReview && (
@@ -85,10 +91,12 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
               variant="outline"
               onClick={startEditing}
               className="max-sm:size-11"
-              aria-label={t('Edit review')}
+              aria-label={t('decisions.review.editReviewAction')}
             >
               <LuPencil className="size-4" />
-              <span className="hidden sm:inline">{t('Edit review')}</span>
+              <span className="hidden sm:inline">
+                {t('decisions.review.editReviewAction')}
+              </span>
             </Button>
           )
         ) : (
@@ -97,10 +105,12 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             disabled={!canSubmit}
             loading={isSubmitting}
             className="max-sm:size-11"
-            aria-label={t('Submit review')}
+            aria-label={t('decisions.review.submitReviewAction')}
           >
             <LuCheck className="size-4" />
-            <span className="hidden sm:inline">{t('Submit review')}</span>
+            <span className="hidden sm:inline">
+              {t('decisions.review.submitReviewAction')}
+            </span>
           </Button>
         )}
       </DecisionSubpageHeader>

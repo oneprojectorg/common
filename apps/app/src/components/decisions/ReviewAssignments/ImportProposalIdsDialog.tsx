@@ -61,15 +61,14 @@ export function ImportProposalIdsDialog({
   // has to pluralize on its own count, so they are two messages, not one.
   const rejectedParts = [
     summary.notFoundCount > 0
-      ? t('{count, plural, one {# ID not found} other {# IDs not found}}', {
+      ? t('decisions.review.importIdsNotFoundCount', {
           count: summary.notFoundCount,
         })
       : null,
     summary.skippedCount > 0
-      ? t(
-          "{count, plural, one {# proposal skipped (already assigned or the reviewer's own)} other {# proposals skipped (already assigned or the reviewer's own)}}",
-          { count: summary.skippedCount },
-        )
+      ? t('decisions.review.importProposalsSkippedCount', {
+          count: summary.skippedCount,
+        })
       : null,
   ].filter((part) => part !== null);
 
@@ -95,23 +94,23 @@ export function ImportProposalIdsDialog({
         {/* Clipboard rather than an upload glyph: this opens a paste box, and a
             file icon would promise a file picker that isn't there. */}
         <LuClipboardPaste data-icon="inline-start" />
-        {t('Import')}
+        {t('decisions.review.importAction')}
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('Import proposal IDs')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.review.importProposalIdsTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {t(
-              'Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.',
-            )}
+            {t('decisions.review.importPasteHint')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-4">
           <Field>
             <FieldLabel htmlFor={pasteId}>
-              {t('Pasted spreadsheet content')}
+              {t('decisions.review.importPasteLabel')}
             </FieldLabel>
             {/* `field-sizing-content` grows the box with the paste, and a
                 spreadsheet column is long enough to swallow the dialog
@@ -123,7 +122,7 @@ export function ImportProposalIdsDialog({
               className="max-h-48 min-h-32 resize-none overflow-y-auto"
               value={pastedText}
               onChange={(event) => setPastedText(event.target.value)}
-              placeholder={t('Paste a column of proposal IDs, or whole rows')}
+              placeholder={t('decisions.review.importPastePlaceholder')}
             />
             {/* Updates on every keystroke with no navigation, so it is a live
                 region — and the same text a sighted admin reads. */}
@@ -135,11 +134,10 @@ export function ImportProposalIdsDialog({
                       disabled Add button leaves unsaid. */}
                   <span className="block">
                     {foundNoIds
-                      ? t('No proposal IDs found in what you pasted.')
-                      : t(
-                          '{count, plural, one {# proposal matched} other {# proposals matched}}',
-                          { count: summary.matchedIds.length },
-                        )}
+                      ? t('decisions.review.importNoIdsFound')
+                      : t('decisions.review.importProposalsMatchedCount', {
+                          count: summary.matchedIds.length,
+                        })}
                   </span>
                   {rejectedParts.length > 0 ? (
                     <span className="block">{rejectedParts.join(' · ')}</span>
@@ -161,7 +159,7 @@ export function ImportProposalIdsDialog({
               close();
             }}
           >
-            {t('Add to selection')}
+            {t('decisions.review.addToSelectionAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

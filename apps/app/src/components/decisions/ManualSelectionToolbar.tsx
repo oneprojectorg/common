@@ -60,7 +60,7 @@ export const ManualSelectionToolbar = ({
           aria-label={t('Sort proposals')}
           className="min-w-40"
           items={[
-            { id: 'votes', label: t('Most votes') },
+            { id: 'votes', label: t('decisions.review.sortMostVotes') },
             { id: 'newest', label: t('Newest First') },
             { id: 'oldest', label: t('Oldest First') },
           ]}

@@ -21,7 +21,7 @@ export const NoVoteFound = () => {
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle>{t('You did not vote in this process.')}</EmptyTitle>
+        <EmptyTitle>{t('decisions.review.noVoteCast')}</EmptyTitle>
       </EmptyHeader>
     </Empty>
   );
@@ -81,7 +81,7 @@ const MyBallotProposals = ({
 
   return (
     <div className="flex flex-col gap-4 pb-12">
-      <Header3>{t('My Ballot')}</Header3>
+      <Header3>{t('decisions.review.myBallotHeading')}</Header3>
 
       <ProposalMasonry>
         {proposals.map((proposal) => {

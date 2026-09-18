@@ -192,7 +192,7 @@ export const ManualSelectionList = ({
           <EmptyMedia variant="icon">
             <LuTriangleAlert className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('Failed to load proposals')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.review.loadProposalsError')}</EmptyTitle>
         </EmptyHeader>
         <EmptyContent>
           <Button
@@ -220,9 +220,9 @@ export const ManualSelectionList = ({
           <EmptyMedia variant="icon">
             <LuLeaf className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('No proposals available to select')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.review.noProposalsToSelect')}</EmptyTitle>
           <EmptyDescription>
-            {t('The previous phase did not leave any eligible proposals.')}
+            {t('decisions.review.noEligibleProposalsHint')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -265,7 +265,7 @@ export const ManualSelectionList = ({
               <LuLeaf className="size-6" />
             </EmptyMedia>
             <EmptyTitle>
-              {t('No proposals match the current filter')}
+              {t('decisions.review.noProposalsMatchFilter')}
             </EmptyTitle>
           </EmptyHeader>
         </Empty>

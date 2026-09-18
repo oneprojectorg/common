@@ -42,7 +42,7 @@ function ReviewedVersion({
   reviewerName,
   children,
 }: ReviewedVersionPaneProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const [version] = trpc.decision.getReviewedVersion.useSuspenseQuery({
     reviewId,
   });
@@ -55,7 +55,7 @@ function ReviewedVersion({
     <div className="flex flex-col gap-6 sm:gap-10">
       <div className="flex">
         <StatusBadge variant="revision">
-          {t('Older version reviewed by {name}', { name: reviewerName })}
+          {t('olderVersionReviewedBy', { name: reviewerName })}
         </StatusBadge>
       </div>
       <ProposalPreview

@@ -56,7 +56,7 @@ export function AuthorNotesAccordion({
         data-testid="author-notes"
         className="flex flex-col gap-4 rounded-lg border border-border bg-muted p-6"
       >
-        <Header3>{t('Author notes')}</Header3>
+        <Header3>{t('decisions.review.authorNotesHeading')}</Header3>
         {entries}
       </section>
     );
@@ -72,7 +72,7 @@ export function AuthorNotesAccordion({
       <AccordionItem value={NOTES_ITEM}>
         {/* The card is the frame, so the trigger drops its own border. */}
         <AccordionTrigger className="items-center py-0 hover:no-underline focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-ring">
-          {t('Author notes')}
+          {t('decisions.review.authorNotesHeading')}
         </AccordionTrigger>
         <AccordionContent className="pt-4 pb-0">{entries}</AccordionContent>
       </AccordionItem>
@@ -96,7 +96,7 @@ function AuthorNoteEntry({
         {note.comment}
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-        <span>{t('Revised {timeAgo}', { timeAgo })}</span>
+        <span>{t('decisions.review.revisedTimeAgo', { timeAgo })}</span>
         {note.requestIds.length > 0 ? (
           <Button
             variant="link"
@@ -105,8 +105,8 @@ function AuthorNoteEntry({
             onClick={() => onViewRequests(note.requestIds)}
           >
             {note.requestIds.length === 1
-              ? t('View revision request')
-              : t('View revision requests')}
+              ? t('decisions.review.viewRevisionRequestAction')
+              : t('decisions.review.viewRevisionRequestsAction')}
           </Button>
         ) : null}
       </div>

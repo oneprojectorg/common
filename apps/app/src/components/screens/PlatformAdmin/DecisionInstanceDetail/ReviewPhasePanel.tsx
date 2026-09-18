@@ -175,9 +175,9 @@ const ReviewersTable = ({
       <TableHeader>
         <TableRow>
           <TableHead>{t('admin.reviewerLabel')}</TableHead>
-          <TableHead>{t('Progress')}</TableHead>
+          <TableHead>{t('decisions.review.progressLabel')}</TableHead>
           <TableHead className="text-end">{t('Drafts')}</TableHead>
-          <TableHead>{t('Last submission')}</TableHead>
+          <TableHead>{t('decisions.review.lastSubmissionLabel')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -238,10 +238,10 @@ const ReviewerRow = ({
           <Progress
             value={percent}
             className="w-24"
-            aria-label={t('Review progress')}
+            aria-label={t('decisions.review.reviewProgressLabel')}
           />
           <span className="text-sm whitespace-nowrap text-muted-foreground">
-            {t('{submitted} of {assigned} submitted', {
+            {t('decisions.review.submittedOfAssigned', {
               submitted: reviewer.submittedCount,
               assigned: reviewer.assignedCount,
             })}

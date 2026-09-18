@@ -85,12 +85,9 @@ export const AssignReviewsDialog = ({
   const assignReviews = trpc.platform.admin.assignReviews.useMutation({
     onSuccess: ({ createdCount }) => {
       toast.success(
-        t(
-          '{count, plural, one {# review assignment created} other {# review assignments created}}',
-          {
-            count: createdCount,
-          },
-        ),
+        t('decisions.review.assignmentsCreatedCount', {
+          count: createdCount,
+        }),
       );
       utils.platform.admin.listDecisionReviewAssignments.invalidate({
         instanceId,
@@ -226,7 +223,7 @@ export const AssignReviewsDialog = ({
                       </span>
                       {isOwnProposal ? (
                         <Badge variant="outline" className="ms-auto shrink-0">
-                          {t("Reviewer's own proposal")}
+                          {t('decisions.review.reviewerOwnProposal')}
                         </Badge>
                       ) : null}
                     </Label>
@@ -235,7 +232,7 @@ export const AssignReviewsDialog = ({
               })}
               {proposals.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-muted-foreground">
-                  {t('No proposals in this phase yet.')}
+                  {t('decisions.review.noProposalsInPhase')}
                 </li>
               ) : null}
             </ul>

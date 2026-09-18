@@ -47,20 +47,32 @@ const assignmentBadges: Record<AssignmentStatusValue, BadgeSpec> = {
   pending: {
     variant: 'inactive',
     icon: LuCircleDashed,
-    label: 'Not Started',
+    label: 'decisions.review.statusNotStarted',
   },
-  in_progress: { variant: 'in-progress', icon: LuTimer, label: 'In Progress' },
-  completed: { variant: 'success', icon: LuCircleCheck, label: 'Completed' },
+  in_progress: {
+    variant: 'in-progress',
+    icon: LuTimer,
+    label: 'decisions.review.statusInProgress',
+  },
+  completed: {
+    variant: 'success',
+    icon: LuCircleCheck,
+    label: 'decisions.review.statusCompleted',
+  },
   awaiting_author_revision: {
     variant: 'revision',
     icon: LuRefreshCw,
-    label: 'Revision Requested',
+    label: 'decisions.review.statusRevisionRequested',
   },
   ready_for_re_review: {
     variant: 'warning',
     icon: LuCircleAlert,
-    label: 'Needs Review',
+    label: 'decisions.review.statusNeedsReview',
   },
   draft: { variant: 'warning', icon: LuPencilLine, label: 'Draft' },
-  submitted: { variant: 'success', icon: LuCircleCheck, label: 'Submitted' },
+  submitted: {
+    variant: 'success',
+    icon: LuCircleCheck,
+    label: 'decisions.review.statusSubmitted',
+  },
 };
