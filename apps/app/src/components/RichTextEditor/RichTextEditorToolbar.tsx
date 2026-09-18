@@ -126,19 +126,19 @@ export function RichTextEditorToolbar({
   const headingOptions = [
     {
       value: '1',
-      label: t('Heading {level}', { level: 1 }),
+      label: t('editor.headingLevelAction', { level: 1 }),
       Icon: LuHeading1,
       run: () => editor?.chain().focus().toggleHeading({ level: 1 }).run(),
     },
     {
       value: '2',
-      label: t('Heading {level}', { level: 2 }),
+      label: t('editor.headingLevelAction', { level: 2 }),
       Icon: LuHeading2,
       run: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(),
     },
     {
       value: '3',
-      label: t('Heading {level}', { level: 3 }),
+      label: t('editor.headingLevelAction', { level: 3 }),
       Icon: LuHeading3,
       run: () => editor?.chain().focus().toggleHeading({ level: 3 }).run(),
     },
@@ -150,19 +150,19 @@ export function RichTextEditorToolbar({
   const alignOptions = [
     {
       value: 'left',
-      label: t('Align Left'),
+      label: t('editor.alignLeftAction'),
       Icon: LuAlignLeft,
       run: () => editor?.chain().focus().setTextAlign('left').run(),
     },
     {
       value: 'center',
-      label: t('Align Center'),
+      label: t('editor.alignCenterAction'),
       Icon: LuAlignCenter,
       run: () => editor?.chain().focus().setTextAlign('center').run(),
     },
     {
       value: 'right',
-      label: t('Align Right'),
+      label: t('editor.alignRightAction'),
       Icon: LuAlignRight,
       run: () => editor?.chain().focus().setTextAlign('right').run(),
     },
@@ -174,25 +174,25 @@ export function RichTextEditorToolbar({
   const markOptions = [
     {
       value: 'bold',
-      label: t('Bold'),
+      label: t('editor.boldAction'),
       Icon: LuBold,
       run: () => editor?.chain().focus().toggleBold().run(),
     },
     {
       value: 'italic',
-      label: t('Italic'),
+      label: t('editor.italicAction'),
       Icon: LuItalic,
       run: () => editor?.chain().focus().toggleItalic().run(),
     },
     {
       value: 'underline',
-      label: t('Underline'),
+      label: t('editor.underlineAction'),
       Icon: LuUnderline,
       run: () => editor?.chain().focus().toggleUnderline().run(),
     },
     {
       value: 'strike',
-      label: t('Strikethrough'),
+      label: t('editor.strikethroughAction'),
       Icon: LuStrikethrough,
       run: () => editor?.chain().focus().toggleStrike().run(),
     },
@@ -210,19 +210,19 @@ export function RichTextEditorToolbar({
   const listOptions = [
     {
       value: 'bulletList',
-      label: t('Bullet List'),
+      label: t('editor.bulletListAction'),
       Icon: LuList,
       run: () => editor?.chain().focus().toggleBulletList().run(),
     },
     {
       value: 'orderedList',
-      label: t('Numbered List'),
+      label: t('editor.numberedListAction'),
       Icon: LuListOrdered,
       run: () => editor?.chain().focus().toggleOrderedList().run(),
     },
     {
       value: 'blockquote',
-      label: t('Blockquote'),
+      label: t('editor.blockquoteAction'),
       Icon: LuQuote,
       run: () => editor?.chain().focus().toggleBlockquote().run(),
     },
@@ -247,7 +247,7 @@ export function RichTextEditorToolbar({
     <div className={cn('border-b px-6 py-2', className)}>
       <div
         role="toolbar"
-        aria-label={t('Formatting toolbar')}
+        aria-label={t('editor.toolbarLabel')}
         aria-orientation="horizontal"
         // overflow-x-auto also clips overflow-y (cutting off each control's
         // focus ring); p-1 + scroll-p-1 give the ring-3 room to paint.
@@ -266,7 +266,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={noEditor || !editor.can().redo()}
           noEditor={noEditor}
-          label={t('Redo')}
+          label={t('editor.redoAction')}
         >
           <LuRedo className="size-4 rtl:-scale-x-100" />
         </ActionButton>
@@ -278,7 +278,7 @@ export function RichTextEditorToolbar({
           size="icon-sm"
           spacing={1}
           disabled={noEditor}
-          aria-label={t('Headings')}
+          aria-label={t('editor.headingsGroupLabel')}
           value={activeHeadings}
           onValueChange={(next: string[]) =>
             runChanged(headingOptions, activeHeadings, next)
@@ -303,7 +303,7 @@ export function RichTextEditorToolbar({
           size="icon-sm"
           spacing={1}
           disabled={noEditor}
-          aria-label={t('Text formatting')}
+          aria-label={t('editor.textFormattingGroupLabel')}
           value={activeMarks}
           onValueChange={(next: string[]) =>
             runChanged(markOptions, activeMarks, next)
@@ -328,7 +328,7 @@ export function RichTextEditorToolbar({
           size="icon-sm"
           spacing={1}
           disabled={noEditor}
-          aria-label={t('Lists')}
+          aria-label={t('editor.listsGroupLabel')}
           value={activeLists}
           onValueChange={(next: string[]) =>
             runChanged(listOptions, activeLists, next)
@@ -353,7 +353,7 @@ export function RichTextEditorToolbar({
           size="icon-sm"
           spacing={1}
           disabled={noEditor}
-          aria-label={t('Text alignment')}
+          aria-label={t('editor.textAlignmentGroupLabel')}
           value={activeAligns}
           onValueChange={(next: string[]) =>
             runChanged(alignOptions, activeAligns, next)
@@ -378,28 +378,28 @@ export function RichTextEditorToolbar({
           active={editor?.isActive('link') ?? false}
           onToggle={addLink}
           noEditor={noEditor}
-          label={t('Add Link')}
+          label={t('editor.addLinkAction')}
         >
           <LuLink className="size-4" />
         </ToggleButton>
         <ActionButton
           onClick={addEmbedLink}
           noEditor={noEditor}
-          label={t('Embed Link Preview')}
+          label={t('editor.embedLinkPreviewAction')}
         >
           <LuLink2 className="size-4" />
         </ActionButton>
         <ActionButton
           onClick={handleImageUpload}
           noEditor={noEditor}
-          label={t('Add Image')}
+          label={t('editor.addImageAction')}
         >
           <LuImage className="size-4" />
         </ActionButton>
         <ActionButton
           onClick={() => editor?.chain().focus().setHorizontalRule().run()}
           noEditor={noEditor}
-          label={t('Add Horizontal Rule')}
+          label={t('editor.addHorizontalRuleAction')}
         >
           <LuMinus className="size-4" />
         </ActionButton>

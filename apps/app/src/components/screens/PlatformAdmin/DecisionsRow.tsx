@@ -51,7 +51,7 @@ export const DecisionsRowCells = ({
             </span>
             {phaseEndDate ? (
               <span className="text-xs text-muted-foreground">
-                {t('Ends {date}', {
+                {t('admin.decisionEndsOn', {
                   date: format.dateTime(phaseEndDate, { dateStyle: 'medium' }),
                 })}
               </span>
@@ -67,13 +67,10 @@ export const DecisionsRowCells = ({
       <TableCell className="text-muted-foreground">
         {decision.totalProposalCount > decision.proposalCount ? (
           <TimestampTooltip
-            title={t(
-              '{nonDraft} non-draft proposals, {total} total including drafts',
-              {
-                nonDraft: decision.proposalCount,
-                total: decision.totalProposalCount,
-              },
-            )}
+            title={t('admin.decisionProposalCounts', {
+              nonDraft: decision.proposalCount,
+              total: decision.totalProposalCount,
+            })}
           >
             {decision.proposalCount} ({decision.totalProposalCount})
           </TimestampTooltip>
@@ -118,7 +115,7 @@ export const DecisionsRowCells = ({
               <DropdownMenuItem
                 onClick={() => router.push(`/admin/decisions/${decision.id}`)}
               >
-                {t('View details')}
+                {t('admin.viewDetailsAction')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

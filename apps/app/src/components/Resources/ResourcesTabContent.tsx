@@ -26,7 +26,7 @@ export const ResourcesTabContent = ({
   canManage: boolean;
   canRead: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('resources');
   const [adding, setAdding] = useState(false);
   // Shares the cache with ResourcesFeed's suspense query — used only to hide
   // the footer when the list is empty (the empty state has its own CTA).
@@ -72,7 +72,7 @@ export const ResourcesTabContent = ({
             className="w-full justify-center"
           >
             <LuPlus className="size-4" />
-            {t('Add resource')}
+            {t('addAction')}
           </Button>
         </div>
       ) : null}

@@ -144,30 +144,28 @@ export const AssignReviewsDialog = ({
       <DialogTrigger
         render={
           <Button size="sm" disabled={eligibleReviewers.length === 0}>
-            {t('Assign reviews')}
+            {t('admin.assignReviewsTitle')}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('Assign reviews')}</DialogTitle>
-          <DialogDescription>
-            {t(
-              'Assign the selected proposals to a reviewer. Existing assignments are kept as they are.',
-            )}
-          </DialogDescription>
+          <DialogTitle>{t('admin.assignReviewsTitle')}</DialogTitle>
+          <DialogDescription>{t('admin.assignReviewsHint')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-5 px-6 py-4">
           <div className="flex flex-col gap-2">
-            <Label>{t('Reviewer')}</Label>
+            <Label>{t('admin.reviewerLabel')}</Label>
             <Select
               items={reviewerItems}
               value={reviewerId}
               onValueChange={(value) => setReviewerId(value)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('Select a reviewer')} />
+                <SelectValue
+                  placeholder={t('admin.selectReviewerPlaceholder')}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -184,7 +182,7 @@ export const AssignReviewsDialog = ({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
               <Label>
-                {t('Proposals ({selected} of {total})', {
+                {t('admin.assignProposalsCount', {
                   selected: selectedAssignableIds.length,
                   total: assignableProposals.length,
                 })}
@@ -243,9 +241,7 @@ export const AssignReviewsDialog = ({
             </ul>
             {proposals.length > 0 && assignableProposals.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t(
-                  'This reviewer authored every proposal in this phase, so there is nothing to assign to them.',
-                )}
+                {t('admin.assignNothingToAssign')}
               </p>
             ) : null}
           </div>
@@ -269,7 +265,9 @@ export const AssignReviewsDialog = ({
               });
             }}
           >
-            {assignReviews.isPending ? t('Assigning…') : t('Assign')}
+            {assignReviews.isPending
+              ? t('admin.assigningProgress')
+              : t('admin.assignAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

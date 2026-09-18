@@ -97,7 +97,7 @@ export function DiscussionModal({
       <DialogContent className="overflow-hidden p-0 text-start sm:max-w-lg sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
-            {t.rich("<bdi>{authorName}</bdi>'s Post", {
+            {t.rich('posts.authorPostTitle', {
               authorName,
               bdi: (chunks: React.ReactNode) => <bdi>{chunks}</bdi>,
             })}
@@ -171,10 +171,10 @@ export function DiscussionModal({
             parentPostId={post.id}
             placeholder={
               user?.currentProfile?.name
-                ? t('Comment as {name}...', {
+                ? t('posts.commentAsPlaceholder', {
                     name: user.currentProfile.name,
                   })
-                : t('Comment...')
+                : t('posts.commentPlaceholder')
             }
             label={t('Comment')}
             onSuccess={scrollToOriginalPost}

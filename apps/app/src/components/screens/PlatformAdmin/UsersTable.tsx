@@ -88,8 +88,8 @@ export const UsersTable = () => {
   const [isExporting, startExportTransition] = useTransition();
 
   const anonFilterItems: Array<{ value: AnonFilter; label: string }> = [
-    { value: 'exclude', label: t('Exclude anonymous users') },
-    { value: 'include', label: t('Include anonymous users') },
+    { value: 'exclude', label: t('admin.excludeAnonymousUsers') },
+    { value: 'include', label: t('admin.includeAnonymousUsers') },
   ];
 
   const handleExportAllUsers = useCallback(() => {
@@ -110,10 +110,10 @@ export const UsersTable = () => {
         }));
 
         exportUsersToCSV(allUsers);
-        toast.success(t('Users exported successfully'));
+        toast.success(t('admin.exportUsersSuccess'));
       } catch (error) {
         logger.error('Export failed', { error, context: 'UsersTable.export' });
-        toast.error(t('Failed to export users'));
+        toast.error(t('admin.exportUsersError'));
       }
     });
   }, [utils, t, includeAnonymous]);
@@ -121,12 +121,12 @@ export const UsersTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <Header2 className="text-title">{t('platformAdmin_allUsers')}</Header2>
+        <Header2 className="text-title">{t('admin.allUsersTitle')}</Header2>
         <div className="flex flex-wrap items-center gap-2">
           <TableSearchField
             className="w-full sm:w-64"
-            aria-label={t('Search users by name or email')}
-            placeholder={t('Search users by name or email')}
+            aria-label={t('admin.searchUsersLabel')}
+            placeholder={t('admin.searchUsersLabel')}
             value={searchQuery}
             onChange={setSearchQuery}
           />
@@ -140,7 +140,7 @@ export const UsersTable = () => {
             }}
           >
             <SelectTrigger
-              aria-label={t('Filter anonymous users')}
+              aria-label={t('admin.filterAnonymousUsersLabel')}
               className="min-w-36 flex-1 sm:w-36 sm:flex-none"
             >
               <SelectValue />
@@ -161,7 +161,7 @@ export const UsersTable = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label={t('User options')}
+                  aria-label={t('admin.userOptionsLabel')}
                   className="me-1"
                 >
                   <LuEllipsis />
@@ -174,7 +174,7 @@ export const UsersTable = () => {
                 disabled={isExporting}
               >
                 <LuDownload className="size-4" />
-                {t('Export all users')}
+                {t('admin.exportUsersAction')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -233,16 +233,18 @@ const UsersTableContent = ({
 
   return (
     <>
-      <Table aria-label={t('platformAdmin_allUsers')}>
+      <Table aria-label={t('admin.allUsersTitle')}>
         <TableHeader>
           <TableRow>
             <TableHead>{t('Name')}</TableHead>
             <TableHead>{t('Email')}</TableHead>
             <TableHead>{t('Role')}</TableHead>
             <TableHead>{t('Organization')}</TableHead>
-            <TableHead>{t('Created')}</TableHead>
-            <TableHead>{t('Last sign in')}</TableHead>
-            <TableHead className="text-end">{t('Actions')}</TableHead>
+            <TableHead>{t('admin.createdLabel')}</TableHead>
+            <TableHead>{t('admin.lastSignInColumn')}</TableHead>
+            <TableHead className="text-end">
+              {t('admin.actionsColumn')}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -257,16 +259,16 @@ const UsersTableContent = ({
         <PaginationBar
           range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
           renderRange={({ start, end, total: count }) =>
-            t('{start} - {end} of {total} {label}', {
+            t('admin.paginationRange', {
               start,
               end,
               total: count,
-              label: t('users'),
+              label: t('admin.usersUnit'),
             })
           }
-          previousLabel={t('Previous')}
+          previousLabel={t('admin.previousPageAction')}
           nextLabel={t('Next')}
-          navLabel={t('Pagination Navigation')}
+          navLabel={t('admin.paginationLabel')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />

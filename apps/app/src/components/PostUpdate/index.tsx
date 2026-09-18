@@ -79,7 +79,7 @@ const PostUpdateWithUser = ({
     attachmentIds: string[];
   } | null>(null);
   const optimisticCommentRef = useRef<string | null>(null);
-  const t = useTranslations();
+  const t = useTranslations('posts');
   const utils = trpc.useUtils();
   const router = useRouter();
   const isOnline = useConnectionStatus();
@@ -501,9 +501,7 @@ const PostUpdateWithUser = ({
     if (content.trim() || fileUpload.hasUploadedFiles()) {
       // Check if offline
       if (!isOnline) {
-        toast.error(
-          t('You are offline. Please check your connection and try again.'),
-        );
+        toast.error(t('offlineError'));
         return;
       }
 
@@ -626,7 +624,7 @@ const PostUpdateWithUser = ({
           <InputGroupTextarea
             ref={textareaRef as RefObject<HTMLTextAreaElement>}
             className="min-h-0 overflow-y-hidden ps-1 pt-1"
-            placeholder={placeholder || t('Post an update…')}
+            placeholder={placeholder || t('composerPlaceholder')}
             value={content}
             onChange={(e) => handleContentChange(e.target.value ?? '')}
             onKeyDown={handleKeyDown}
@@ -716,7 +714,7 @@ const PostUpdateWithUser = ({
               }}
               disabled={fileUpload.filePreviews.length >= 1}
             >
-              <LuImage /> {t('Media')}
+              <LuImage /> {t('mediaAction')}
             </InputGroupButton>
             <div className="flex items-center gap-2">
               <TextCounter text={content} max={characterLimit} />
@@ -730,8 +728,8 @@ const PostUpdateWithUser = ({
                   }
                 >
                   {createPost.isPending || createOrganizationPost.isPending
-                    ? t('Retrying...')
-                    : t('Retry Failed Post')}
+                    ? t('retryProgress')
+                    : t('retryAction')}
                 </InputGroupButton>
               )}
               <InputGroupButton

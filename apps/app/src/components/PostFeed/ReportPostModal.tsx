@@ -32,11 +32,11 @@ export function ReportPostModal({
 
   const reportMutation = trpc.moderation.flagItem.useMutation({
     onSuccess: () => {
-      toast.success(t('Reported for moderation review'));
+      toast.success(t('posts.reportSuccess'));
       onOpenChange(false);
     },
     onError: () => {
-      toast.error(t('Could not report this content. Please try again.'));
+      toast.error(t('posts.reportError'));
     },
   });
 
@@ -44,14 +44,10 @@ export function ReportPostModal({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('Report this comment')}</DialogTitle>
+          <DialogTitle>{t('posts.reportCommentTitle')}</DialogTitle>
         </DialogHeader>
         <div className="px-6 py-4">
-          <p>
-            {t(
-              "This comment will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.",
-            )}
-          </p>
+          <p>{t('posts.reportCommentBody')}</p>
         </div>
         <DialogFooter>
           <Button

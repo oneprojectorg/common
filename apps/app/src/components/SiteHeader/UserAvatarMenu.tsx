@@ -368,7 +368,7 @@ const AvatarMenuContent = ({
           className="font-normal text-foreground"
           onClick={onClose}
         >
-          <LuCircleHelp className="size-4" /> {t('Feature Requests & Support')}
+          <LuCircleHelp className="size-4" /> {t('shell.supportLinkLabel')}
         </LinkRow>
         <ActionRow
           asMenuItem={asMenuItem}
@@ -380,7 +380,8 @@ const AvatarMenuContent = ({
             onClose?.();
           }}
         >
-          <LuLogOut className="size-4 rtl:-scale-x-100" /> {t('Log out')}
+          <LuLogOut className="size-4 rtl:-scale-x-100" />{' '}
+          {t('shell.logOutAction')}
         </ActionRow>
       </MenuSection>
 
@@ -403,7 +404,7 @@ const AvatarMenuContent = ({
           asMenuItem={asMenuItem}
           onClick={() => onOpenLegal('community')}
         >
-          {t('Community Commitments')}
+          {t('shell.communityCommitmentsTitle')}
         </LegalTrigger>
         {deleteOrganizationEnabled ? (
           <ActionRow
@@ -411,7 +412,7 @@ const AvatarMenuContent = ({
             className="justify-start px-2 py-1 text-sm font-strong text-foreground hover:bg-muted hover:underline"
             onClick={onDeleteAccount}
           >
-            {t('Delete my account')}
+            {t('shell.deleteAccountAction')}
           </ActionRow>
         ) : null}
 
@@ -426,7 +427,7 @@ const AvatarMenuContent = ({
               rel="noopener noreferrer"
               className="inline h-auto rounded-none p-0 text-xs hover:bg-transparent hover:underline"
             >
-              {t('Ethical Open Source')}
+              {t('shell.ethicalOpenSourceLink')}
             </DropdownMenuLinkItem>
           ) : (
             <Link
@@ -435,7 +436,7 @@ const AvatarMenuContent = ({
               target="_blank"
               rel="noopener noreferrer"
             >
-              {t('Ethical Open Source')}
+              {t('shell.ethicalOpenSourceLink')}
             </Link>
           )}
           <Bullet />
@@ -451,7 +452,7 @@ const AvatarMenuContent = ({
 const legalTitles = {
   privacy: 'Privacy Policy',
   tos: 'Terms of Service',
-  community: 'Community Commitments',
+  community: 'shell.communityCommitmentsTitle',
 } as const;
 
 const LegalDialogs = ({
@@ -605,7 +606,9 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             showCloseButton={false}
             className="top-auto bottom-0 max-h-[85svh] rounded-t p-0"
           >
-            <DialogTitle className="sr-only">{t('Open menu')}</DialogTitle>
+            <DialogTitle className="sr-only">
+              {t('shell.openMenuLabel')}
+            </DialogTitle>
             <div className="pb-safe flex min-h-0 w-full flex-1 flex-col gap-3 overflow-y-auto py-4 pb-8">
               <AvatarMenuContent
                 onClose={() => setIsDrawerOpen(false)}

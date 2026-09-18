@@ -29,7 +29,9 @@ export const RevertPhaseButton = ({
 
   const revertPhase = trpc.platform.admin.revertDecisionPhase.useMutation({
     onSuccess: () => {
-      toast.success(t('Moved back to {phase}', { phase: previousPhaseName }));
+      toast.success(
+        t('admin.phaseRevertedToast', { phase: previousPhaseName }),
+      );
       utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
       utils.platform.admin.listDecisionReviewAssignments.invalidate({
         instanceId,
@@ -44,17 +46,15 @@ export const RevertPhaseButton = ({
   return (
     <AdminActionConfirmation
       trigger={{
-        label: t('Move back a phase'),
+        label: t('admin.revertPhaseAction'),
         icon: <LuUndo2 data-icon="inline-start" />,
         variant: 'destructive',
       }}
-      title={t('Move back to {phase}?', { phase: previousPhaseName })}
-      description={t(
-        'This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.',
-      )}
+      title={t('admin.revertPhaseConfirmTitle', { phase: previousPhaseName })}
+      description={t('admin.revertPhaseConfirmBody')}
       confirm={{
-        label: t('Move back'),
-        pendingLabel: t('Moving…'),
+        label: t('admin.revertPhaseConfirmAction'),
+        pendingLabel: t('admin.revertPhaseProgress'),
         variant: 'destructive',
       }}
       isPending={revertPhase.isPending}

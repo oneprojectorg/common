@@ -27,7 +27,7 @@ export const ResourcesList = ({
   data: ResourceList;
   canManage: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('resources');
   const decisionTranslation = useDecisionTranslation();
   const utils = trpc.useUtils();
   const [deleteTarget, setDeleteTarget] = useState<ResourceInCollection | null>(
@@ -82,13 +82,13 @@ export const ResourcesList = ({
       if (ctx?.previous && ctx?.key) {
         utils.resources.listByCollection.setData(ctx.key, ctx.previous);
       }
-      toast.error(t('Could not reorder resource'));
+      toast.error(t('reorderError'));
     },
   });
 
   const remove = trpc.resources.delete.useMutation({
-    onSuccess: () => toast.success(t('Resource deleted')),
-    onError: () => toast.error(t('Could not delete resource')),
+    onSuccess: () => toast.success(t('deletedToast')),
+    onError: () => toast.error(t('deleteError')),
   });
 
   const collectionId = data.collectionId ?? null;
@@ -143,7 +143,7 @@ export const ResourcesList = ({
         {resources.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input px-6 py-10 text-center text-muted-foreground">
             <LuUpload className="size-6" />
-            <p className="text-sm">{t('Drag a file or link here to add it')}</p>
+            <p className="text-sm">{t('dropHint')}</p>
           </div>
         ) : (
           <Sortable
@@ -162,8 +162,8 @@ export const ResourcesList = ({
       </ResourceDropZone>
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
-        title={t('Delete this resource?')}
-        message={t('This action cannot be undone.')}
+        title={t('deleteConfirmTitle')}
+        message={t('deleteConfirmBody')}
         onConfirm={() => {
           if (deleteTarget) {
             remove.mutate({ id: deleteTarget.id });

@@ -111,7 +111,7 @@ export const ReviewPhasePanel = ({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
-          {t('{reviewers} reviewers, {assignments} assignments', {
+          {t('admin.reviewPhaseSummary', {
             reviewers: data.reviewers.length,
             assignments: data.totalAssignments,
           })}
@@ -139,7 +139,7 @@ export const ReviewPhasePanel = ({
 
       {data.reviewers.length === 0 ? (
         <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-          {t('No review assignments in this phase yet.')}
+          {t('admin.noReviewAssignments')}
         </p>
       ) : (
         <div className="overflow-hidden rounded-md border">
@@ -174,7 +174,7 @@ const ReviewersTable = ({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>{t('Reviewer')}</TableHead>
+          <TableHead>{t('admin.reviewerLabel')}</TableHead>
           <TableHead>{t('Progress')}</TableHead>
           <TableHead className="text-end">{t('Drafts')}</TableHead>
           <TableHead>{t('Last submission')}</TableHead>

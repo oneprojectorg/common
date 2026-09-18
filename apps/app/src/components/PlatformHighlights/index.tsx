@@ -32,7 +32,7 @@ export const PlatformHighlights = () => {
                 {stats.newOrganizations}
               </HighlightNumber>
               <HighlightLabel>
-                {t('new organizations to explore')}
+                {t('posts.highlightsNewOrganizations')}
               </HighlightLabel>
             </Highlight>
             <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
@@ -43,10 +43,9 @@ export const PlatformHighlights = () => {
             {stats.totalRelationships}
           </HighlightNumber>
           <HighlightLabel>
-            {t(
-              '{count, plural, =1 {active relationship} other {active relationships}}',
-              { count: stats.totalRelationships },
-            )}
+            {t('posts.highlightsActiveRelationships', {
+              count: stats.totalRelationships,
+            })}
           </HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
@@ -54,14 +53,16 @@ export const PlatformHighlights = () => {
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
-          <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
+          <HighlightLabel>
+            {t('posts.highlightsOrganizationCount')}
+          </HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
           </HighlightNumber>
-          <HighlightLabel>{t('people on Common')}</HighlightLabel>
+          <HighlightLabel>{t('posts.highlightsPeopleCount')}</HighlightLabel>
         </Highlight>
       </div>
       <div className="flex flex-col justify-center gap-2 border-0 border-t bg-muted p-6 text-sm sm:flex-row sm:items-center">
@@ -69,7 +70,7 @@ export const PlatformHighlights = () => {
           <div className="flex max-w-full items-center gap-2">
             <OrganizationFacePile>
               <span className="whitespace-nowrap">
-                {t('are collaborating on Common')}
+                {t('posts.highlightsCollaborating')}
               </span>
             </OrganizationFacePile>
           </div>

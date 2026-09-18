@@ -15,11 +15,7 @@ export const ForbiddenScreen = () => {
   return (
     <StatusScreen
       code={403}
-      description={
-        <p className="text-center">
-          {t('You do not have permission to view this page')}
-        </p>
-      }
+      description={<p className="text-center">{t('shell.forbiddenTitle')}</p>}
       actions={
         <Button onClick={() => window.history.back()}>{t('Go back')}</Button>
       }

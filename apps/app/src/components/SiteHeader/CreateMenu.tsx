@@ -58,7 +58,7 @@ export const CreateMenu = () => {
       router.push(`/decisions/${decisionProfile.slug}/edit`);
     },
     onError: () => {
-      toast.error(t('Failed to create decision'));
+      toast.error(t('shell.createDecisionError'));
     },
   });
   const isCreatingDecision =
@@ -94,14 +94,15 @@ export const CreateMenu = () => {
               ) : (
                 <LuMessageCircle className="size-4" />
               )}{' '}
-              {t('Decision-making process')}
+              {t('shell.createDecisionAction')}
             </DropdownMenuItem>
           )}
           {isOrg && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setIsInviteModalOpen(true)}>
-                <LuUserPlus className="size-4" /> {t('Invite member')}
+                <LuUserPlus className="size-4" />{' '}
+                {t('shell.inviteMemberAction')}
               </DropdownMenuItem>
             </>
           )}

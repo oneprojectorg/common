@@ -141,7 +141,7 @@ const PanelContents = ({
           className="grow justify-start border-b-0 px-4 sm:px-6"
         >
           <TabsTrigger value="updates" className="h-auto flex-none">
-            {t('Updates')}
+            {t('posts.updatesTab')}
           </TabsTrigger>
           <TabsTrigger value="resources" className="h-auto flex-none">
             {t('Resources')}

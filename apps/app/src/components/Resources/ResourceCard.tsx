@@ -106,7 +106,7 @@ const ResourceDocumentCard = ({
   signedUrl: string | null;
   trailing?: ReactNode;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('resources');
   const { title, description } = useTranslatedResourceCopy(resource);
   const attachment = resource.attachment;
   const isImage = attachment?.mimeType.startsWith('image/') === true;
@@ -125,7 +125,7 @@ const ResourceDocumentCard = ({
     if (!resource.createdAt) {
       return ext;
     }
-    const added = t('Added on {date}', {
+    const added = t('addedOn', {
       date: formatDate(resource.createdAt),
     });
     return ext ? `${ext} • ${added}` : added;
