@@ -1,4 +1,4 @@
-import { getInstancePhases } from '@op/common';
+import { getInstanceCurrentPhase, getInstancePhases } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
@@ -41,15 +41,10 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
       });
 
       return rows.flatMap((row) => {
-        const phaseId = row.currentStateId;
-
-        if (!phaseId) {
-          return [];
-        }
-
-        const phase = getInstancePhases(row.instanceData).find(
-          (p) => p.phaseId === phaseId,
-        );
+        const phase = getInstanceCurrentPhase({
+          currentStateId: row.currentStateId,
+          instanceData: { phases: getInstancePhases(row.instanceData) },
+        });
 
         if (phase?.rules?.reviews?.submit !== true || !phase.endDate) {
           return [];
@@ -65,7 +60,13 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
           return [];
         }
 
-        return [{ processInstanceId: row.id, phaseId, reminderWindowEnd }];
+        return [
+          {
+            processInstanceId: row.id,
+            phaseId: phase.phaseId,
+            reminderWindowEnd,
+          },
+        ];
       });
     });
 

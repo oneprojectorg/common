@@ -1,6 +1,8 @@
 import {
   computeDaysLeft,
+  getInstanceCurrentPhase,
   getInstancePhases,
+  isInstanceCurrentPhase,
   listProfileRecipients,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
@@ -64,7 +66,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    if (instanceData.currentStateId !== phaseId) {
+    if (!isInstanceCurrentPhase(instanceData, phaseId)) {
       logger.info(
         'Skipping review phase reminder: phase is no longer current',
         {
@@ -76,7 +78,10 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     }
 
     const phases = getInstancePhases(instanceData.instanceData);
-    const phase = phases.find((p) => p.phaseId === phaseId);
+    const phase = getInstanceCurrentPhase({
+      currentStateId: instanceData.currentStateId,
+      instanceData: { phases },
+    });
 
     if (phase?.rules?.reviews?.submit !== true) {
       logger.info('Skipping review phase reminder: not a review phase', {
