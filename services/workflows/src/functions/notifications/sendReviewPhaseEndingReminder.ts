@@ -3,7 +3,7 @@ import {
   getInstanceCurrentPhase,
   getInstancePhases,
   isInstanceCurrentPhase,
-  listIndividualProfileRecipients,
+  listIndividualProfileRecipientsByProfileId,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -171,12 +171,17 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         )
         .groupBy(proposalReviewAssignments.reviewerProfileId);
 
+      const recipientsByProfileId =
+        await listIndividualProfileRecipientsByProfileId(
+          remainingByReviewer.map((row) => row.reviewerProfileId),
+        );
+
       const planned: Array<{ to: string; remainingCount: number }> = [];
       const reviewerProfileIdsWithoutAddress: Array<string> = [];
 
       for (const { reviewerProfileId, remaining } of remainingByReviewer) {
         const recipients = selectEmailRecipients(
-          await listIndividualProfileRecipients(reviewerProfileId),
+          recipientsByProfileId.get(reviewerProfileId) ?? [],
         );
 
         if (recipients.length === 0) {
