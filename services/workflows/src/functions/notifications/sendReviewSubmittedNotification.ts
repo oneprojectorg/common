@@ -93,15 +93,17 @@ export const sendReviewSubmittedNotification = inngest.createFunction(
         { idempotencyKeyPrefix: `review-submitted/${runId}` },
       );
 
-      // Counts only — `errors` carries the address, which must not be logged.
+      // Counts only — `errors` carries the address, which must reach neither
+      // the log nor the thrown message.
       if (errors.length > 0) {
         logger.error('Review submitted notification failed to send', {
           assignmentId,
           failedCount: errors.length,
         });
+        throw new Error('Review submitted notification failed to send');
       }
 
-      return { sent: errors.length === 0 };
+      return { sent: true };
     });
   },
 );
