@@ -3,14 +3,7 @@
 import { usePostHog } from 'posthog-js/react';
 import { useCallback } from 'react';
 
-/**
- * Browser-side mirror of the server's `admin_invited_participants`, for every
- * client caller of `profile.invite`.
- *
- * Gated on the same predicate as the server: a batch where one invite bounced
- * still invited everyone else, so reporting only clean batches would bias the
- * survey away from exactly the admins who hit friction.
- */
+/** Counts a partly failed batch — skipping it would bias the survey to clean runs. */
 export function useTrackProfileInvited() {
   const posthog = usePostHog();
 

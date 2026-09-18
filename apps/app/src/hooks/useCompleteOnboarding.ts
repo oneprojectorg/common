@@ -5,11 +5,7 @@ import { logger } from '@op/logging/client';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback } from 'react';
 
-/**
- * Finishes onboarding and fires the browser-side `user_completed_onboarding`
- * that PostHog surveys key on. `PolicyReacceptanceModal` calls the same
- * endpoint to re-accept an updated policy and deliberately stays off this hook.
- */
+/** `PolicyReacceptanceModal` reuses this endpoint and deliberately stays off here. */
 export function useCompleteOnboarding() {
   const posthog = usePostHog();
   // Destructured because the mutation object is a new snapshot every render.
@@ -18,9 +14,8 @@ export function useCompleteOnboarding() {
   return useCallback(async () => {
     await mutateAsync({ tos: true, privacy: true });
 
-    // Onboarding is already complete by here. A throw would surface to the
-    // caller's catch as a failed signup, and the retry that invites would
-    // create a second organization, so analytics never propagates.
+    // Onboarding already succeeded; a throw would reach the caller's catch as a
+    // failed signup, whose retry creates a second organization.
     try {
       posthog.capture('user_completed_onboarding');
     } catch (error) {
