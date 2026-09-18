@@ -364,7 +364,9 @@ test.describe('Decision Manual Selection — full flow', () => {
     const activeMessageBox = dialog
       .locator('[role="tabpanel"]:not([inert])')
       .getByRole('textbox', { name: 'Notification Message' });
-    await expect(activeMessageBox).toHaveValue(/selected for funding/);
+    await expect(activeMessageBox).toHaveValue(
+      /has been selected based on voting results/,
+    );
 
     // Type into both tabs: the feature's premise is admin-authored copy, so the
     // markers below are what prove it reached the DB rather than the defaults.
@@ -372,7 +374,9 @@ test.describe('Decision Manual Selection — full flow', () => {
     const notSelectedMessage = `Not selected copy ${instance.slug}`;
     await activeMessageBox.fill(selectedMessage);
     await dialog.getByRole('tab', { name: /Not funded/ }).click();
-    await expect(activeMessageBox).toHaveValue(/not selected for funding/);
+    await expect(activeMessageBox).toHaveValue(
+      /was not selected in this round/,
+    );
     await activeMessageBox.fill(notSelectedMessage);
 
     await dialog

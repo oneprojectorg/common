@@ -60,11 +60,11 @@ export const ComposeNotificationsDialog = ({
 
   const [messages, setMessages] = useState<ResultNotificationMessages>(() => ({
     selected: t(
-      'Hi {name},\n\nGreat news — your proposal "{proposal}" has been selected for funding based on community voting results!\n\nWe will follow up with next steps and the final amount shortly.',
+      'Hi {name},\n\nGreat news — your proposal "{proposal}" has been selected based on voting results!\n\nWe will follow up with next steps and the final amount shortly.',
       TOKENS,
     ),
     notSelected: t(
-      'Hi {name},\n\nThank you for submitting "{proposal}". After community voting, it was not selected for funding in this round.\n\nThe results are published on the decision page, and we hope you will take part again.',
+      'Hi {name},\n\nThank you for submitting "{proposal}". After community voting, it was not selected in this round.\n\nThe results are published on the decision page, and we hope you will take part again.',
       TOKENS,
     ),
   }));

@@ -24,14 +24,12 @@ export const DecisionResultEmail = ({
     <EmailTemplate
       previewText={
         isSelected
-          ? `Your proposal was selected for funding in ${processTitle}`
+          ? `Your proposal was selected in ${processTitle}`
           : `Results are in for ${processTitle}`
       }
     >
       <Header>
-        {isSelected
-          ? 'Your proposal was selected for funding.'
-          : 'The results are in.'}
+        {isSelected ? 'Your proposal was selected.' : 'The results are in.'}
       </Header>
 
       <Text className="my-8 text-lg whitespace-pre-line">{message}</Text>
@@ -54,7 +52,7 @@ DecisionResultEmail.subject = (processTitle: string, isSelected: boolean) =>
 DecisionResultEmail.PreviewProps = {
   processTitle: 'Participatory Budgeting 2026',
   message:
-    'Hi Ada,\n\nGreat news — your proposal "Community Garden Revamp" has been selected for funding based on community voting results!\n\nWe\'ll follow up with next steps shortly.',
+    'Hi Ada,\n\nGreat news — your proposal "Community Garden Revamp" has been selected based on voting results!\n\nWe\'ll follow up with next steps shortly.',
   proposalUrl: 'https://common.oneproject.org/',
   isSelected: true,
 } satisfies Parameters<typeof DecisionResultEmail>[0];
