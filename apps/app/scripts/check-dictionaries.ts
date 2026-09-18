@@ -105,6 +105,9 @@ const main = (): void => {
 /** Nested namespaces flattened to dot-joined paths; flat files pass through. */
 const flatten = (value: unknown, prefix = '', into: Dictionary = new Map()) => {
   if (typeof value === 'string') {
+    if (into.has(prefix)) {
+      throw new Error(`"${prefix}" is both a dotted key and a nested path`);
+    }
     into.set(prefix, value);
   } else if (typeof value === 'object' && value !== null) {
     for (const [key, child] of Object.entries(value)) {
