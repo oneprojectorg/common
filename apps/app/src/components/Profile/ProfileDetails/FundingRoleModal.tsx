@@ -45,13 +45,11 @@ export const FundingRoleModal = ({
   return (
     <DialogContent className="sm:min-w-[29rem]">
       <DialogHeader>
-        <DialogTitle>{t('Specify your funding relationship')}</DialogTitle>
+        <DialogTitle>{t('profile.fundingRoleTitle')}</DialogTitle>
       </DialogHeader>
       <div className="px-6 py-4">
         <FieldSet>
-          <FieldLegend>
-            {t('How do your organizations support each other?')}
-          </FieldLegend>
+          <FieldLegend>{t('profile.fundingRolePrompt')}</FieldLegend>
           <RadioGroup
             value={selectedRole ?? ''}
             onValueChange={(value) => setSelectedRole(value as FundingRole)}
@@ -60,45 +58,37 @@ export const FundingRoleModal = ({
               <div className="flex items-center gap-2">
                 <RadioGroupItem id="funder" value="funder" />
                 <FieldLabel htmlFor="funder">
-                  {t('Your organization funds {organizationName}', {
+                  {t('profile.fundingRoleWeFund', {
                     organizationName,
                   })}
                 </FieldLabel>
               </div>
               <FieldDescription className="ps-6">
-                {t(
-                  'Your organization provides financial support to {organizationName}.',
-                  { organizationName },
-                )}
+                {t('profile.fundingRoleWeFundHint', { organizationName })}
               </FieldDescription>
             </Field>
             <Field>
               <div className="flex items-center gap-2">
                 <RadioGroupItem id="fundee" value="fundee" />
                 <FieldLabel htmlFor="fundee">
-                  {t('{organizationName} funds your organization', {
+                  {t('profile.fundingRoleTheyFund', {
                     organizationName,
                   })}
                 </FieldLabel>
               </div>
               <FieldDescription className="ps-6">
-                {t(
-                  '{organizationName} provides financial support to your organization.',
-                  { organizationName },
-                )}
+                {t('profile.fundingRoleTheyFundHint', { organizationName })}
               </FieldDescription>
             </Field>
             <Field>
               <div className="flex items-center gap-2">
                 <RadioGroupItem id="funderAndFundee" value="funderAndFundee" />
                 <FieldLabel htmlFor="funderAndFundee">
-                  {t('Mutual funding')}
+                  {t('profile.fundingRoleMutual')}
                 </FieldLabel>
               </div>
               <FieldDescription className="ps-6">
-                {t(
-                  'Both organizations provide financial support to each other.',
-                )}
+                {t('profile.fundingRoleMutualHint')}
               </FieldDescription>
             </Field>
           </RadioGroup>

@@ -210,7 +210,7 @@ const AddUserToOrgModalContent = ({
           disabled={!selectedOrgId || !selectedRoleId || isSubmitting}
         >
           {isSubmitting ? <Spinner className="size-4" /> : null}
-          {t('Add to organization')}
+          {t('org.addToOrgLabel')}
         </Button>
       </DialogFooter>
     </form>

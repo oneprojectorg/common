@@ -135,7 +135,7 @@ export const TermsMultiSelect = ({
             <ComboboxChip key={option.id}>{option.label}</ComboboxChip>
           ))}
           <ComboboxChipsInput
-            placeholder={placeholder ?? t('Select one or more')}
+            placeholder={placeholder ?? t('org.termsPlaceholder')}
             aria-invalid={errorMessage ? true : undefined}
           />
         </ComboboxChips>

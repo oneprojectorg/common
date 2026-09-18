@@ -132,7 +132,7 @@ const DecisionInstanceDetailContent = ({
           <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
           <TabsTrigger value="forms">{t('Forms')}</TabsTrigger>
           <TabsTrigger value="configuration">{t('Configuration')}</TabsTrigger>
-          <TabsTrigger value="members">{t('Members')}</TabsTrigger>
+          <TabsTrigger value="members">{t('profile.membersTab')}</TabsTrigger>
         </TabsList>
         <TabsContent value="phases" className="flex flex-col gap-6 pt-4">
           {detail.phases.map((phase, index) => (
@@ -165,7 +165,7 @@ const DecisionInstanceDetailContent = ({
         <TabsContent value="members" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('Members')}</CardTitle>
+              <CardTitle>{t('profile.membersTab')}</CardTitle>
               <CardDescription>
                 {t('Members, roles, and invite statuses')}
               </CardDescription>

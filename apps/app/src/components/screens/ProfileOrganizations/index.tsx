@@ -28,7 +28,7 @@ export const ProfileOrganizationsSuspense = ({
   slug: string;
   showBreadcrumb?: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('profile');
   const [profile] = trpc.profile.getBySlug.useSuspenseQuery({
     slug,
   });
@@ -58,10 +58,7 @@ export const ProfileOrganizationsSuspense = ({
         ) : null}
         <div className="flex items-center justify-between">
           <Header2>
-            {t(
-              'Member of {count, plural, =1 {# Organization} other {# Organizations}}',
-              { count: organizations.length },
-            )}
+            {t('memberOfCount', { count: organizations.length })}
           </Header2>
         </div>
       </div>

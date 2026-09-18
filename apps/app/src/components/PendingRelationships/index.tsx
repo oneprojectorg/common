@@ -61,7 +61,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
   return (
     <NotificationPanel>
       <NotificationPanelHeader
-        title={t('Relationship Requests')}
+        title={t('profile.relationshipRequestsTitle')}
         count={count}
       />
       <NotificationPanelList>
@@ -91,21 +91,20 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     {isAccepted ? (
                       <span className="font-normal">
                         {' '}
-                        {t(
-                          'will now appear as a {relationship} on your profile.',
-                          {
-                            relationship:
-                              relationships ?? t('related organization'),
-                          },
-                        )}
+                        {t('profile.relationshipAcceptedHint', {
+                          relationship:
+                            relationships ??
+                            t('profile.relatedOrganizationFallback'),
+                        })}
                       </span>
                     ) : null}
                   </span>
                   {!isAccepted ? (
                     <span>
-                      {t('Added you as a {relationship}', {
+                      {t('profile.relationshipRequestSummary', {
                         relationship:
-                          relationships ?? t('related organization'),
+                          relationships ??
+                          t('profile.relatedOrganizationFallback'),
                       })}
                     </span>
                   ) : null}
@@ -126,7 +125,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       loading={remove.isPending}
                       disabled={isPending}
                     >
-                      {t('Decline')}
+                      {t('profile.declineAction')}
                     </Button>
                     <Button
                       className="w-full sm:w-auto"
