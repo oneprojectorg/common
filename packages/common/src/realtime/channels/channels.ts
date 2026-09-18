@@ -103,6 +103,13 @@ export const Channels = {
    * subscription when that query unmounts.
    */
   proposalExport: (exportId: string) => `proposalExport:${exportId}` as const,
+
+  /**
+   * Channel for a single personal data export run. Scoped per run, like
+   * {@link Channels.proposalExport}: the run belongs to one data subject.
+   */
+  personalDataExport: (exportId: string) =>
+    `personalDataExport:${exportId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -142,6 +149,9 @@ export type ProfileCollectionsChannel = ReturnType<
 >;
 export type ProfileMembersChannel = ReturnType<typeof Channels.profileMembers>;
 export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
+export type PersonalDataExportChannel = ReturnType<
+  typeof Channels.personalDataExport
+>;
 
 /**
  * Union of all valid channel types
@@ -163,4 +173,5 @@ export type ChannelName =
   | CollectionResourcesChannel
   | ProfileCollectionsChannel
   | ProfileMembersChannel
-  | ProposalExportChannel;
+  | ProposalExportChannel
+  | PersonalDataExportChannel;
