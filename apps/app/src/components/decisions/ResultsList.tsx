@@ -73,6 +73,9 @@ export const ResultsList = ({
               key={proposal.id}
               proposal={proposal}
               href={viewHref}
+              // No status badge: every card here is a result selection, so
+              // "Selected" would only repeat the heading above.
+              showStatusBadge={false}
               showMetrics
               totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
               awardedLabel={
