@@ -1,4 +1,4 @@
-import { listProfileRecipientsByProfileId } from '@op/common';
+import { listIndividualProfileRecipientsByProfileId } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -25,8 +25,6 @@ export const sendProposalRevisionResubmittedNotification =
       const { proposalId, proposalHistoryId, revisionRequestIds } =
         reviewProposalRevisionSubmitted.schema.parse(event.data);
 
-      // Reading and planning share one step so the reviewer profile types stay
-      // typed; a step boundary would widen them to plain JSON strings.
       const plan = await step.run('plan-requester-emails', async () => {
         const requests = await db.query.proposalReviewRequests.findMany({
           where: { id: { in: revisionRequestIds } },
@@ -39,7 +37,6 @@ export const sendProposalRevisionResubmittedNotification =
                 reviewerProfileId: true,
               },
               with: {
-                reviewer: { columns: { id: true, type: true } },
                 proposal: {
                   columns: {},
                   with: { profile: { columns: { name: true } } },
@@ -87,15 +84,12 @@ export const sendProposalRevisionResubmittedNotification =
         const assignmentIdsWithoutAddress: Array<string> = [];
         const seenReviewerProfileIds = new Set<string>();
 
-        const reviewersByProfileId = new Map(
-          answered.map(({ assignment }) => [
-            assignment.reviewerProfileId,
-            assignment.reviewer,
-          ]),
-        );
-        const recipientsByProfileId = await listProfileRecipientsByProfileId([
-          ...reviewersByProfileId.values(),
-        ]);
+        const recipientsByProfileId =
+          await listIndividualProfileRecipientsByProfileId([
+            ...new Set(
+              answered.map(({ assignment }) => assignment.reviewerProfileId),
+            ),
+          ]);
 
         // One resubmission answers several requests, so the fan-out is per
         // requester: a reviewer holding two answered requests gets one email,

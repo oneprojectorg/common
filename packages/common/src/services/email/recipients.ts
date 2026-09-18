@@ -103,45 +103,6 @@ export const listProfileRecipients = (
   }
 };
 
-/** The same as `listProfileRecipients`, for many profiles at once. */
-export const listProfileRecipientsByProfileId = async (
-  profiles: ReadonlyArray<Pick<Profile, 'id' | 'type'>>,
-): Promise<Map<string, Array<EmailRecipient>>> => {
-  const individualProfileIds: Array<string> = [];
-  const organizationProfileIds: Array<string> = [];
-  const memberProfileIds: Array<string> = [];
-
-  for (const profile of profiles) {
-    switch (profile.type) {
-      case EntityType.INDIVIDUAL:
-      case EntityType.USER:
-        individualProfileIds.push(profile.id);
-        break;
-      case EntityType.ORG:
-        organizationProfileIds.push(profile.id);
-        break;
-      default:
-        memberProfileIds.push(profile.id);
-    }
-  }
-
-  const byProfileId =
-    await listIndividualProfileRecipientsByProfileId(individualProfileIds);
-
-  for (const profileId of organizationProfileIds) {
-    byProfileId.set(
-      profileId,
-      await listOrganizationProfileRecipients(profileId),
-    );
-  }
-
-  for (const profileId of memberProfileIds) {
-    byProfileId.set(profileId, await listMemberProfileRecipients(profileId));
-  }
-
-  return byProfileId;
-};
-
 const toRecipient = (row: {
   authUserId: string;
   authUser: { email: string | null };
