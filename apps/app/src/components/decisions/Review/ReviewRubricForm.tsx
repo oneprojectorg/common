@@ -705,7 +705,7 @@ function RubricFieldInput({
           aria-describedby={describedBy}
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={t('Start typing...')}
+          placeholder={t('startTypingPlaceholder')}
           rows={3}
         />
       );
@@ -717,7 +717,7 @@ function RubricFieldInput({
           aria-describedby={describedBy}
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={t('Start typing...')}
+          placeholder={t('startTypingPlaceholder')}
         />
       );
 

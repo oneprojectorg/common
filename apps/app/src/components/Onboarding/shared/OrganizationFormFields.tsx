@@ -99,7 +99,7 @@ export const OrganizationFormFields = ({
       if (!acceptedTypes.includes(file.type)) {
         const types = acceptedTypes.map((t) => t.split('/')[1]).join(', ');
         toast.error(
-          t('That file type is not supported. Accepted types: {types}', {
+          t('unsupportedFileType', {
             types,
           }),
         );
@@ -109,7 +109,7 @@ export const OrganizationFormFields = ({
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
         toast.error(
-          t('File too large. Maximum size: {size}MB', {
+          t('fileTooLarge', {
             size: maxSizeMB,
           }),
         );

@@ -4,10 +4,15 @@ import { defineRouting } from 'next-intl/routing';
 import { useMemo } from 'react';
 
 import { i18nConfig } from './config';
-import type { TranslateFn } from './translate';
+import type { KeysIn, MessageNamespace, TranslateFn } from './translate';
 import { withNormalizedKeys } from './translate';
 
-export type { TranslateFn, TranslationKey } from './translate';
+export type {
+  KeysIn,
+  MessageNamespace,
+  TranslateFn,
+  TranslationKey,
+} from './translate';
 
 export const routing = defineRouting(i18nConfig);
 
@@ -20,10 +25,22 @@ export const {
   useRouter,
 } = createNavigation(routing);
 
-const useTranslations = (): TranslateFn => {
-  const translator = _useTranslations();
+/**
+ * `next-intl`'s hook, with the key substitution `translate.ts` documents.
+ * Pass a namespace to key a feature's messages by ID relative to it
+ * (ADR 0005); omit it for the shared top-level labels.
+ */
+const useTranslations = <
+  Namespace extends MessageNamespace | undefined = undefined,
+>(
+  namespace?: Namespace,
+): TranslateFn<KeysIn<Namespace>> => {
+  const translator = _useTranslations(namespace);
 
-  return useMemo(() => withNormalizedKeys(translator), [translator]);
+  return useMemo(
+    () => withNormalizedKeys<KeysIn<Namespace>>(translator),
+    [translator],
+  );
 };
 
 export { useTranslations };

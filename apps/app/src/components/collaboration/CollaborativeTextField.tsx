@@ -136,7 +136,7 @@ export function CollaborativeTextField({
         <CollaborativeEditor
           field={fragmentName}
           extensions={extensions}
-          placeholder={placeholder ?? t('Start typing...')}
+          placeholder={placeholder ?? t('startTypingPlaceholder')}
           onEditorReady={handleEditorReady}
           className="w-full"
           editorClassName={`px-3 py-2.5 focus-visible:ring-0 ${multiline ? 'min-h-32' : 'min-h-8'}`}

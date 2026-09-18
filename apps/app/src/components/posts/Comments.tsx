@@ -58,9 +58,9 @@ export function Comments({
       <div
         className="py-8 text-center text-muted-foreground"
         role="status"
-        aria-label={t('No comments yet. Be the first to comment!')}
+        aria-label={t('noCommentsYet')}
       >
-        {t('No comments yet. Be the first to comment!')}
+        {t('noCommentsYet')}
       </div>
     );
   }

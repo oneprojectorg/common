@@ -37,8 +37,7 @@ export const toastStatus = (
       });
     default:
       return toast.error(t("That didn't work"), {
-        description:
-          message ?? t('Something went wrong on our end. Please try again'),
+        description: message ?? t('somethingWentWrong'),
       });
   }
 };

@@ -65,7 +65,7 @@ const PolicyReacceptanceModalContent = () => {
     } catch {
       setIsSubmitting(false);
       toast.error(t("That didn't work"), {
-        description: t('Please try submitting the form again.'),
+        description: t('resubmitFormHint'),
       });
     }
   };
