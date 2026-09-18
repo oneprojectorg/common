@@ -62,6 +62,13 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      # An English copy change must reach every translation. Diffed against
+      # the PR's base branch, which `fetch-depth: 0` leaves under `origin/`.
+      - name: Check translations follow English copy changes
+        env:
+          I18N_BASE: origin/${{ github.base_ref }}
+        run: pnpm i18n:check "$I18N_BASE"
+
       - name: Run TypeScript checks - App
         run: pnpm typecheck
 
