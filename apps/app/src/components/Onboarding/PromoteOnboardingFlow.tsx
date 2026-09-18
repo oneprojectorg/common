@@ -69,7 +69,7 @@ export const PromoteOnboardingFlow = ({
   const handleComplete = useCallback(async () => {
     if (!isOnline) {
       toast.error(t('No connection'), {
-        description: t('Please check your internet connection and try again.'),
+        description: t('checkConnectionHint'),
       });
       return;
     }
@@ -97,7 +97,7 @@ export const PromoteOnboardingFlow = ({
           : t("That didn't work"),
         {
           description: errorInfo.isConnectionError
-            ? t('Please try submitting the form again.')
+            ? t('resubmitFormHint')
             : errorInfo.message,
         },
       );

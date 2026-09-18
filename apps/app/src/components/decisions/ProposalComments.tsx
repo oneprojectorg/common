@@ -140,7 +140,7 @@ export function ProposalComments({
         ) : comments.length > 0 ? (
           <div
             role="feed"
-            aria-label={t('{count} comments', { count: comments.length })}
+            aria-label={t('commentCount', { count: comments.length })}
           >
             <PostFeed>
               {comments.map(({ post, originProposal }, i) => (
@@ -171,9 +171,7 @@ export function ProposalComments({
             className="py-8 text-center text-base text-muted-foreground"
             role="status"
           >
-            {readOnly
-              ? t('No comments yet.')
-              : t('No comments yet. Be the first to comment!')}
+            {readOnly ? t('No comments yet.') : t('noCommentsYet')}
           </div>
         )}
       </div>

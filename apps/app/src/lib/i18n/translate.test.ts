@@ -6,7 +6,12 @@ import { describe, expect, it } from 'vitest';
 import english from './dictionaries/en.json';
 import hungarian from './dictionaries/hu.json';
 import { normalizeMessageKeys } from './messageKeys';
-import type { TranslationKey } from './translate';
+import type {
+  LeafPaths,
+  NamespacePaths,
+  Subtree,
+  TranslationKey,
+} from './translate';
 import { withNormalizedKeys } from './translate';
 
 const englishMessages: Record<string, string> = english;
@@ -62,6 +67,43 @@ describe('withNormalizedKeys', () => {
     expect(t.has(missing)).toBe(false);
   });
 
+  // A namespaced key is a real path into the dictionary, so the substitution
+  // must not touch it. Both forms have to resolve from the same translator,
+  // which is the whole job of this layer until PR 8 of ADR 0005's migration
+  // retires the flat keys.
+  it('resolves a namespace path verbatim and a legacy key through the substitution', () => {
+    const t = withNormalizedKeys<'onboarding.fullName' | 'Please try again.'>(
+      createTranslator({
+        locale: 'hu',
+        messages: normalizeMessageKeys({
+          'Please try again.': 'Probalja ujra.',
+          onboarding: { fullName: 'Teljes nev' },
+        }),
+        onError: () => {},
+      }),
+    );
+
+    expect(t('onboarding.fullName')).toBe('Teljes nev');
+    expect(t('Please try again.')).toBe('Probalja ujra.');
+    expect(t.has('onboarding.fullName')).toBe(true);
+    expect(t.has('Please try again.')).toBe(true);
+  });
+
+  it('scopes a translator to a namespace', () => {
+    const t = withNormalizedKeys<'fullName'>(
+      createTranslator({
+        locale: 'hu',
+        messages: normalizeMessageKeys({
+          onboarding: { fullName: 'Teljes nev' },
+        }),
+        namespace: 'onboarding',
+        onError: () => {},
+      }),
+    );
+
+    expect(t('fullName')).toBe('Teljes nev');
+  });
+
   it('formats tags and values under a key containing a period', () => {
     const t = translateHungarian();
     const key =
@@ -111,3 +153,43 @@ const importsGetTranslations = (source: string): boolean =>
   [...source.matchAll(/import\s*\{([^}]*)\}\s*from\s*'next-intl\/server'/g)]
     .flatMap((match) => (match[1] ?? '').split(','))
     .some((binding) => binding.trim().split(/\s+/)[0] === 'getTranslations');
+
+// The type layer carries the same distinction as the lookup above, against a
+// fixture rather than the real dictionary: `en.json` holds no namespace yet,
+// so nothing here would be exercised by the live types until PR 2 lands.
+interface FixtureTree {
+  Cancel: string;
+  'Please try again.': string;
+  onboarding: { fullName: string };
+  decisions: { processBuilder: { addPhase: string } };
+}
+
+type Expect<Assertion extends true> = Assertion;
+type Equals<Left, Right> =
+  (<T>() => T extends Left ? 1 : 2) extends <T>() => T extends Right ? 1 : 2
+    ? true
+    : false;
+
+export type LeavesAreDottedPaths = Expect<
+  Equals<
+    LeafPaths<FixtureTree>,
+    | 'Cancel'
+    | 'Please try again.'
+    | 'onboarding.fullName'
+    | 'decisions.processBuilder.addPhase'
+  >
+>;
+
+export type NamespacesAreTheObjects = Expect<
+  Equals<
+    NamespacePaths<FixtureTree>,
+    'onboarding' | 'decisions' | 'decisions.processBuilder'
+  >
+>;
+
+export type KeysAreRelativeToTheNamespace = Expect<
+  Equals<
+    LeafPaths<Subtree<FixtureTree, 'decisions.processBuilder'>>,
+    'addPhase'
+  >
+>;

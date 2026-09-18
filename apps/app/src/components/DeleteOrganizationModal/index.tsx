@@ -310,7 +310,7 @@ const ConfirmProfileStep = ({
           onClick={submitButtonAction}
           loading={isSubmitting}
         >
-          {isSubmitting ? t('Removing...') : t('Remove')}
+          {isSubmitting ? t('removingProgress') : t('Remove')}
         </Button>
       </DialogFooter>
     </>

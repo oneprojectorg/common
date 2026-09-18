@@ -923,7 +923,9 @@ function RolesTable({
               onClick={handleDeleteConfirm}
               disabled={deleteRoleMutation.isPending}
             >
-              {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
+              {deleteRoleMutation.isPending
+                ? t('removingProgress')
+                : t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

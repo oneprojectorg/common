@@ -139,7 +139,7 @@ export const UpdateOrganizationForm = forwardRef<
   const submitUpdate = async (formData: any) => {
     if (!isOnline) {
       toast.error(t('No connection'), {
-        description: t('Please check your internet connection and try again.'),
+        description: t('checkConnectionHint'),
       });
       return;
     }
@@ -177,7 +177,7 @@ export const UpdateOrganizationForm = forwardRef<
 
       if (errorInfo.isConnectionError) {
         toast.error(t('Connection issue'), {
-          description: t('Please try submitting the form again.'),
+          description: t('resubmitFormHint'),
         });
       } else {
         toast.error(t('Update failed'), {
@@ -222,7 +222,7 @@ export const UpdateOrganizationForm = forwardRef<
       ];
       if (!acceptedTypes.includes(file.type)) {
         toast.error(
-          t('That file type is not supported. Accepted types: {types}', {
+          t('unsupportedFileType', {
             types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
           }),
         );
@@ -232,7 +232,7 @@ export const UpdateOrganizationForm = forwardRef<
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
         toast.error(
-          t('File too large. Maximum size: {size}MB', {
+          t('fileTooLarge', {
             size: maxSizeMB,
           }),
         );
