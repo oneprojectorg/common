@@ -79,6 +79,7 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 - **Use `getTranslations` for server components**: `const t = await getTranslations({ locale })`. Import it from `@/lib/i18n`, never from `next-intl/server` — ours applies the dot-to-underscore key substitution that `request.ts` applied to the dictionary, and the unwrapped one returns the raw English string for any key containing a period.
 - **ALWAYS** wrap user-facing strings with `t('...')` — never hardcode user-facing text
 - **For dynamic values**, use interpolation: `t('Hello {name}', { name: userName })` and `t.rich()` for strings that are broken up with styles/components
+- **Check the dictionaries**: `pnpm i18n` (key parity across locales, and every translation carries English's `{arguments}` and `<tags>`) and `pnpm i18n:check` (the same plus a diff against `origin/dev`: a key whose English value changed must change in every other locale, so a copy edit can't leave the seven translations stale). CI runs the second one against the PR's base branch.
 
 ### Logging
 

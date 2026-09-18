@@ -38,6 +38,8 @@
     "health:full": "node ./scripts/fallow-health.mjs --full",
     "health:baseline": "node ./scripts/fallow-baseline.mjs",
     "health:trend": "node ./scripts/fallow-baseline.mjs --trend",
+    "i18n": "pnpm w:app i18n",
+    "i18n:check": "pnpm w:app i18n --base ${I18N_BASE:-origin/dev}",
     "tmux": "bash scripts/tmux.sh",
     "typecheck": "turbo typecheck",
     "w:ai": "pnpm -C ./packages/ai",
