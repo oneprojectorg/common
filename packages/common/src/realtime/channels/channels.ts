@@ -87,6 +87,14 @@ export const Channels = {
   profileMembers: (profileId: string) => `profileMembers:${profileId}` as const,
 
   /**
+   * Channel for the custom forms attached to a decision process's profile.
+   * Subscribed to by customForm.list, broadcast to by customForm.create /
+   * update / delete.
+   */
+  profileCustomForms: (profileId: string) =>
+    `profileCustomForms:${profileId}` as const,
+
+  /**
    * Channel for a single proposals-export run. Subscribed to by
    * decision.getExportStatus, broadcast to by the `exportProposals` workflow
    * when the run reaches `completed` or `failed`.
@@ -141,6 +149,9 @@ export type ProfileCollectionsChannel = ReturnType<
   typeof Channels.profileCollections
 >;
 export type ProfileMembersChannel = ReturnType<typeof Channels.profileMembers>;
+export type ProfileCustomFormsChannel = ReturnType<
+  typeof Channels.profileCustomForms
+>;
 export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
 
 /**
@@ -163,4 +174,5 @@ export type ChannelName =
   | CollectionResourcesChannel
   | ProfileCollectionsChannel
   | ProfileMembersChannel
+  | ProfileCustomFormsChannel
   | ProposalExportChannel;

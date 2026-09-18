@@ -1,7 +1,7 @@
 import { db } from '@op/db/client';
 import type { CustomForm } from '@op/db/schema';
 
-import type { CustomFormDefinitionSchema } from './schemas/customForm';
+import { getEffectiveFormPhase } from './utils';
 
 /**
  * Returns the custom form attached to `profileId` that applies to a given
@@ -42,11 +42,11 @@ export const getCustomFormForProfile = async ({
     },
   });
 
-  const match = forms.find((form) => {
-    const xPhase = (form.schema as CustomFormDefinitionSchema)['x-phase'];
-    const effectivePhase = xPhase ?? initialPhaseId;
-    return effectivePhase === phaseId;
-  });
+  const match = forms.find(
+    (form) =>
+      getEffectiveFormPhase({ schema: form.schema, initialPhaseId }) ===
+      phaseId,
+  );
 
   return match ?? null;
 };
