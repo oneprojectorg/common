@@ -239,6 +239,9 @@ function CustomFormField({
           return typeof option === 'string';
         })
       : [];
+    if (multiOptions.length === 0) {
+      return null;
+    }
     const selected = Array.isArray(value)
       ? value.filter((entry): entry is string => typeof entry === 'string')
       : [];
@@ -278,6 +281,12 @@ function CustomFormField({
         return typeof option === 'string';
       })
     : [];
+
+  // A choice control with nothing to choose from is unanswerable, and a
+  // required one would block the form with no way to satisfy it.
+  if (CHOICE_FORMATS.has(field['x-format']) && enumOptions.length === 0) {
+    return null;
+  }
 
   // NPS-style numeric scale — matches the ProcessSurveyModal control:
   // horizontal radio row with the label under each number on desktop,
@@ -483,6 +492,11 @@ function EnumSelectField({
     </Field>
   );
 }
+
+const CHOICE_FORMATS = new Set<XFormatPropertySchema['x-format']>([
+  'radio',
+  'dropdown',
+]);
 
 function isCustomFormDefinition(
   schema: Record<string, unknown>,
