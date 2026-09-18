@@ -1,4 +1,4 @@
-import { listProfileRecipients } from '@op/common';
+import { listIndividualProfileRecipients } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -12,8 +12,6 @@ const { reviewSubmitted } = Events;
 export const sendReviewSubmittedNotification = inngest.createFunction(
   {
     id: 'sendReviewSubmittedNotification',
-    // One confirmation per assignment. A reviewer submits an assignment once;
-    // later edits go through updateReview, which emits nothing.
     idempotency: 'event.data.assignmentId',
   },
   { event: reviewSubmitted.name },
@@ -34,12 +32,6 @@ export const sendReviewSubmittedNotification = inngest.createFunction(
               profile: true,
             },
           },
-          reviewer: {
-            columns: {
-              id: true,
-              type: true,
-            },
-          },
         },
       });
     });
@@ -49,8 +41,7 @@ export const sendReviewSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    // Verify the review is still submitted before confirming it — the
-    // assignment may have moved on (e.g. back to revision) since the event.
+    // The assignment may have moved on (e.g. back to revision) since the event.
     if (assignment.status !== ProposalReviewAssignmentStatus.COMPLETED) {
       logger.info('Assignment is no longer completed', {
         assignmentId,
@@ -59,15 +50,15 @@ export const sendReviewSubmittedNotification = inngest.createFunction(
       return;
     }
 
-    const { proposal, processInstance, reviewer } = assignment;
+    const { proposal, processInstance } = assignment;
 
-    const reviewerRecipients = await step.run('get-reviewer-recipients', () =>
-      listProfileRecipients(reviewer),
+    const owners = await step.run('get-reviewer-recipients', () =>
+      listIndividualProfileRecipients(assignment.reviewerProfileId),
     );
-    const recipients = selectEmailRecipients(reviewerRecipients);
+    const [reviewerEmail] = selectEmailRecipients(owners);
 
-    if (recipients.length === 0) {
-      logger.warn('No reviewer addresses found for reviewer profile', {
+    if (!reviewerEmail) {
+      logger.warn('No reviewer address found for reviewer profile', {
         reviewerProfileId: assignment.reviewerProfileId,
       });
       return;
@@ -85,41 +76,32 @@ export const sendReviewSubmittedNotification = inngest.createFunction(
     const processTitle = processProfile.name;
     const reviewUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfile.slug}/reviews/${assignmentId}`;
 
-    const result = await step.run('send-emails', async () => {
-      const emails = recipients.map((email) => ({
-        to: email,
-        subject: ReviewSubmittedEmail.subject(proposalName),
-        component: () =>
-          ReviewSubmittedEmail({
-            proposalName,
-            processTitle,
-            reviewUrl,
-          }),
-      }));
+    await step.run('send-email', async () => {
+      const { errors } = await OPBatchSend(
+        [
+          {
+            to: reviewerEmail,
+            subject: ReviewSubmittedEmail.subject(proposalName),
+            component: () =>
+              ReviewSubmittedEmail({
+                proposalName,
+                processTitle,
+                reviewUrl,
+              }),
+          },
+        ],
+        { idempotencyKeyPrefix: `review-submitted/${runId}` },
+      );
 
-      const { errors } = await OPBatchSend(emails, {
-        // Stable across retries, unique per run: a step retry replays what
-        // already went out instead of sending the reviewer a second copy.
-        idempotencyKeyPrefix: `review-submitted/${runId}`,
-      });
-
-      // Counts only — `errors` carries the recipient address, which must not
-      // reach the log sink.
+      // Counts only — `errors` carries the address, which must not be logged.
       if (errors.length > 0) {
-        logger.error('Some review submitted notifications failed to send', {
+        logger.error('Review submitted notification failed to send', {
           assignmentId,
           failedCount: errors.length,
         });
       }
 
-      return {
-        sent: emails.length - errors.length,
-        failed: errors.length,
-      };
+      return { sent: errors.length === 0 };
     });
-
-    return {
-      message: `${result.sent} review submitted notification(s) sent, ${result.failed} failed`,
-    };
   },
 );

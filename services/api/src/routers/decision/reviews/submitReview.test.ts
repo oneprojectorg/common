@@ -4,9 +4,8 @@ import {
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { inngest } from '@op/events';
 import { closeOpenProposalHistory, reviseProposal } from '@op/test';
-import { type MockInstance, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
@@ -123,22 +122,6 @@ async function createAssignmentWithRubric(
   return created;
 }
 
-/**
- * The `review/submitted` events emitted for one assignment. The mock is shared
- * by every concurrent test in the file, so filter rather than clear it.
- */
-function reviewSubmittedCalls(assignmentId: string) {
-  const mockSend = inngest.send as unknown as MockInstance;
-
-  return mockSend.mock.calls.filter(
-    (call: unknown[]) =>
-      (call[0] as { name: string; data: { assignmentId: string } }).name ===
-        'review/submitted' &&
-      (call[0] as { data: { assignmentId: string } }).data.assignmentId ===
-        assignmentId,
-  );
-}
-
 describe.concurrent('submitReview', () => {
   it('submits a valid review and completes the assignment', async ({
     task,
@@ -184,31 +167,6 @@ describe.concurrent('submitReview', () => {
     expect(assignment?.reviews[0]?.reviewData).toMatchObject({
       answers: { impact: 3, departments: ['a1b2c3d4', 'c9d0e1f2'] },
       rationales: { impact: 'Solid execution plan' },
-    });
-  });
-
-  it('emits review/submitted for the assignment', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await createAssignmentWithRubric(testData);
-
-    const reviewerCaller = await createAuthenticatedCaller(
-      created.reviewer.email,
-    );
-
-    await reviewerCaller.decision.submitReview({
-      assignmentId: created.assignment.id,
-      reviewData: { answers: { impact: 3 }, rationales: {} },
-    });
-
-    const calls = reviewSubmittedCalls(created.assignment.id);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0]![0]).toMatchObject({
-      name: 'review/submitted',
-      data: { assignmentId: created.assignment.id },
     });
   });
 

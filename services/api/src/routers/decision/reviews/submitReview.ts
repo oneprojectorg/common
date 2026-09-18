@@ -32,8 +32,6 @@ export const submitReviewRouter = router({
         Channels.reviewAssignments(processInstanceId),
       ]);
 
-      // Confirmation email to the reviewer. Emitted only here (first
-      // submission) — updateReview edits must not re-send it.
       waitUntil(
         inngest.send({
           name: Events.reviewSubmitted.name,

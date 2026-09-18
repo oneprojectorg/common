@@ -117,8 +117,7 @@ export const Events = {
       revisionRequestId: z.string().uuid(),
     }),
   },
-  // Emitted only on first submission (the submitReview router); edits to an
-  // already-submitted review (updateReview) must not re-send the confirmation.
+  // Emitted from submitReview only; updateReview must not re-send it.
   reviewSubmitted: {
     name: 'review/submitted' as const,
     schema: z.object({
