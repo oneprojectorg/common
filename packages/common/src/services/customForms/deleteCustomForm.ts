@@ -10,8 +10,8 @@ import type { DeleteCustomFormInput } from './schemas/customForm';
  * already recorded against it are kept — a deleted definition still has to
  * explain the data collected under it.
  *
- * Returns the profile the form hung off, so the caller can fan invalidation out
- * to it without re-reading a row that no longer lists.
+ * Returns the deleted form's id, and the profile it hung off so the caller can
+ * fan invalidation out to it without re-reading a row that no longer lists.
  *
  * Authorization: platform admin, or admin on the decision process that owns the
  * form (see {@link loadFormForWrite}).
@@ -22,7 +22,7 @@ export const deleteCustomForm = async ({
 }: {
   data: DeleteCustomFormInput;
   user: User;
-}): Promise<{ profileId: string }> => {
+}): Promise<{ deletedId: string; profileId: string }> => {
   const { formId, process } = await loadFormForWrite({ id: input.id, user });
 
   // `deletedAt IS NULL` in the WHERE as well, so a concurrent delete doesn't
@@ -32,5 +32,5 @@ export const deleteCustomForm = async ({
     .set({ deletedAt: new Date().toISOString() })
     .where(and(eq(customForms.id, formId), isNull(customForms.deletedAt)));
 
-  return { profileId: process.profileId };
+  return { deletedId: formId, profileId: process.profileId };
 };
