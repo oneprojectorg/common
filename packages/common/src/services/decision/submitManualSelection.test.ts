@@ -39,7 +39,10 @@ vi.mock('@op/db/schema', () => ({
 }));
 
 vi.mock('@op/events', () => ({
-  Events: { manualSelectionsConfirmed: { name: 'manualSelectionsConfirmed' } },
+  Events: {
+    manualSelectionsConfirmed: { name: 'manualSelectionsConfirmed' },
+    decisionResultsNotified: { name: 'decisionResultsNotified' },
+  },
   event: { send: vi.fn(() => Promise.resolve()) },
 }));
 
@@ -109,8 +112,10 @@ function instanceData(review: boolean) {
  * same object; awaiting the chain dequeues the next queued result in call
  * order. `tx` awaits happen sequentially in submitManualSelection, so a single
  * FIFO queue mirrors execution.
+ *
+ * Pass `recorded` to capture the payloads handed to `.set(...)`.
  */
-function makeTx(results: unknown[]) {
+function makeTx(results: unknown[], recorded?: { set: unknown[] }) {
   const builder: Record<string, unknown> = {};
   const chain = () => builder;
   for (const method of [
@@ -122,12 +127,15 @@ function makeTx(results: unknown[]) {
     'limit',
     'for',
     'update',
-    'set',
     'insert',
     'values',
   ]) {
     builder[method] = vi.fn(chain);
   }
+  builder.set = vi.fn((value: unknown) => {
+    recorded?.set.push(value);
+    return builder;
+  });
   builder.then = (
     resolve: (v: unknown) => unknown,
     reject: (e: unknown) => unknown,
@@ -276,6 +284,205 @@ describe('submitManualSelection', () => {
     ).rejects.toThrow();
 
     expect(mockRunGenerateReviewAssignments).not.toHaveBeenCalled();
+    expect(event.send).not.toHaveBeenCalled();
+  });
+});
+
+describe('submitManualSelection author notifications', () => {
+  const PROCESS_RESULT_ID = 'result-1';
+  const messages = {
+    selected: 'You were selected',
+    notSelected: 'Not this round',
+  };
+
+  /** Three phases with the CURRENT one last, so this call publishes results. */
+  const lastPhaseInstanceData = () => ({
+    phases: [
+      { phaseId: 'phase-0', name: 'Submission', rules: {} },
+      { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
+      { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
+    ],
+    config: { reviewsPolicy: 'full_coverage' },
+  });
+
+  const lastPhaseResults = () => {
+    const results = happyPathResults();
+    results[0] = [
+      {
+        currentStateId: CURRENT_PHASE_ID,
+        status: 'published',
+        instanceData: lastPhaseInstanceData(),
+      },
+    ];
+    return results;
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAssertUserByAuthId.mockResolvedValue({
+      profileId: USER_PROFILE_ID,
+    } as never);
+    mockAssertProfileAccess.mockResolvedValue(undefined as never);
+    mockGetProposalIdsForPhase.mockResolvedValue(['prop-1', 'prop-2']);
+    mockProcessResults.mockResolvedValue(PROCESS_RESULT_ID);
+    mockFindFirst.mockResolvedValue({
+      profileId: DECISION_PROFILE_ID,
+      status: 'published',
+      currentStateId: CURRENT_PHASE_ID,
+      instanceData: lastPhaseInstanceData(),
+    } as never);
+  });
+
+  it('stamps the messages on the transition row and announces the result row', async () => {
+    const recorded = { set: [] as unknown[] };
+    mockTransaction.mockImplementation(
+      async (cb) =>
+        await (cb as (tx: unknown) => Promise<unknown>)(
+          makeTx(lastPhaseResults(), recorded),
+        ),
+    );
+
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: ['prop-1', 'prop-2'],
+      resultNotifications: messages,
+      user,
+    });
+
+    expect(recorded.set[0]).toMatchObject({
+      transitionData: {
+        manualSelection: { resultNotifications: messages },
+      },
+    });
+    expect(event.send).toHaveBeenCalledWith({
+      name: 'decisionResultsNotified',
+      data: {
+        processInstanceId: INSTANCE_ID,
+        processResultId: PROCESS_RESULT_ID,
+        transitionHistoryId: TRANSITION_HISTORY_ID,
+        previousPhaseId: PREVIOUS_PHASE_ID,
+      },
+    });
+  });
+
+  it('trims the stored copy so trailing whitespace is not emailed', async () => {
+    const recorded = { set: [] as unknown[] };
+    mockTransaction.mockImplementation(
+      async (cb) =>
+        await (cb as (tx: unknown) => Promise<unknown>)(
+          makeTx(lastPhaseResults(), recorded),
+        ),
+    );
+
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: ['prop-1', 'prop-2'],
+      resultNotifications: {
+        selected: '  You were selected\n',
+        notSelected: '\tNot this round  ',
+      },
+      user,
+    });
+
+    expect(recorded.set[0]).toMatchObject({
+      transitionData: {
+        manualSelection: { resultNotifications: messages },
+      },
+    });
+    expect(recorded.set).toHaveLength(1);
+  });
+
+  // The review-selection flow reaches this path composing nothing.
+  it('publishes without announcing anything when no messages are supplied', async () => {
+    const recorded = { set: [] as unknown[] };
+    mockTransaction.mockImplementation(
+      async (cb) =>
+        await (cb as (tx: unknown) => Promise<unknown>)(
+          makeTx(lastPhaseResults(), recorded),
+        ),
+    );
+
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: ['prop-1', 'prop-2'],
+      user,
+    });
+
+    expect(mockProcessResults).toHaveBeenCalledTimes(1);
+    expect(recorded.set[0]).not.toMatchObject({
+      transitionData: { manualSelection: { resultNotifications: {} } },
+    });
+    expect(event.send).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'decisionResultsNotified' }),
+    );
+  });
+
+  // The message has to name the offending side, or the admin is sent to the
+  // wrong tab.
+  it.each([
+    [
+      'the selected message is blank',
+      { selected: '   ', notSelected: 'Not this round' },
+      /selected message must be between/,
+    ],
+    [
+      'the not-selected message is blank',
+      { selected: 'You were selected', notSelected: '   ' },
+      /notSelected message must be between/,
+    ],
+    [
+      'a message is over the length cap',
+      { selected: 'a'.repeat(4001), notSelected: 'Not this round' },
+      /selected message must be between 1 and 4000/,
+    ],
+  ])(
+    'refuses to publish results when %s',
+    async (_label, notifications, message) => {
+      await expect(
+        submitManualSelection({
+          processInstanceId: INSTANCE_ID,
+          proposalIds: ['prop-1', 'prop-2'],
+          resultNotifications: notifications,
+          user,
+        }),
+      ).rejects.toThrow(message);
+
+      expect(mockTransaction).not.toHaveBeenCalled();
+      expect(mockProcessResults).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects messages on a phase that publishes nothing', async () => {
+    mockFindFirst.mockResolvedValue({
+      profileId: DECISION_PROFILE_ID,
+      status: 'published',
+      currentStateId: CURRENT_PHASE_ID,
+      instanceData: instanceData(false),
+    } as never);
+    const results = happyPathResults();
+    results[0] = [
+      {
+        currentStateId: CURRENT_PHASE_ID,
+        status: 'published',
+        instanceData: instanceData(false),
+      },
+    ];
+    mockTransaction.mockImplementation(
+      async (cb) =>
+        await (cb as (tx: unknown) => Promise<unknown>)(makeTx(results)),
+    );
+
+    await expect(
+      submitManualSelection({
+        processInstanceId: INSTANCE_ID,
+        proposalIds: ['prop-1', 'prop-2'],
+        resultNotifications: messages,
+        user,
+      }),
+      // Pinned: four other guards on this path also throw ValidationError.
+    ).rejects.toThrow(/only sent when confirming the final phase/);
+
+    expect(mockProcessResults).not.toHaveBeenCalled();
     expect(event.send).not.toHaveBeenCalled();
   });
 });

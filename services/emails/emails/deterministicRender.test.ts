@@ -1,10 +1,11 @@
 import { render } from 'react-email';
 import { describe, expect, it } from 'vitest';
 
+import { DecisionResultEmail } from './DecisionResultEmail';
 import { DecisionUpdateNotificationEmail } from './DecisionUpdateNotificationEmail';
 import { PhaseTransitionEmail } from './PhaseTransitionEmail';
 
-// Both templates ride a Resend idempotency key, which 409s if a retry's
+// These templates ride a Resend idempotency key, which 409s if a retry's
 // payload differs — so a deterministic render is a contract.
 describe('email render determinism', () => {
   it('renders PhaseTransitionEmail identically for identical props', async () => {
@@ -37,4 +38,23 @@ describe('email render determinism', () => {
 
     expect(second).toBe(first);
   });
+
+  it.each([true, false])(
+    'renders DecisionResultEmail identically for identical props (selected: %s)',
+    async (isSelected) => {
+      const props = {
+        processTitle: 'Participatory Budgeting 2026',
+        message:
+          'Hi Ada,\n\nYour proposal "Community Garden Revamp" has an outcome.\n\nThanks for taking part.',
+        proposalUrl:
+          'https://common.oneproject.org/decisions/pb-2026/proposal/abc',
+        isSelected,
+      };
+
+      const first = await render(DecisionResultEmail(props));
+      const second = await render(DecisionResultEmail(props));
+
+      expect(second).toBe(first);
+    },
+  );
 });
