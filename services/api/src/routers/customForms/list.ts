@@ -7,9 +7,7 @@ import { authenticatedConfirmedProcedure, router } from '../../trpcFactory';
 
 export const listCustomFormsRouter = router({
   // This tier only rules out anonymous sessions; the service layer authorizes.
-  list: authenticatedConfirmedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 60 },
-  })
+  list: authenticatedConfirmedProcedure()
     .input(listCustomFormsInputSchema)
     .output(z.array(customFormWithPhaseEncoder))
     .query(async ({ input, ctx }) => {
