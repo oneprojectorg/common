@@ -92,6 +92,11 @@
   --animate-count-in: count-in var(--duration-count) var(--ease-count);
   --animate-count-out: count-out var(--duration-count) var(--ease-count)
     forwards;
+  /* A short rise into place, for a screen that settles in on arrival. Callers
+   * stagger it with `[animation-delay:…]` and pair it with
+   * `motion-reduce:animate-none`. `backwards` so a delayed element starts
+   * hidden rather than flashing at full opacity before its turn. */
+  --animate-rise-in: rise-in 0.5s ease-out backwards;
 }
 
 /* The sense radius and text scales are now the global defaults (declared in
@@ -247,6 +252,47 @@
   }
   to {
     height: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* The create-process wizard's intro backdrop. Two tracks running opposite each
+ * other so the blobs cross rather than slide together, with three waypoints so
+ * a cycle turns instead of retracing its own path. The travel has to be this
+ * large to register at all on a shape this soft. */
+@keyframes intro-blob-a {
+  0% {
+    transform: translate3d(-40%, 22%, 0) scale(0.9);
+  }
+  33% {
+    transform: translate3d(50%, -26%, 0) scale(1.35);
+  }
+  66% {
+    transform: translate3d(18%, 30%, 0) scale(1.1);
+  }
+  100% {
+    transform: translate3d(-40%, 22%, 0) scale(0.9);
+  }
+}
+
+@keyframes intro-blob-b {
+  0% {
+    transform: translate3d(45%, -22%, 0) scale(1.3);
+  }
+  33% {
+    transform: translate3d(-45%, 26%, 0) scale(0.9);
+  }
+  66% {
+    transform: translate3d(-14%, -30%, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(45%, -22%, 0) scale(1.3);
   }
 }
 
