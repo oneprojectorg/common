@@ -422,6 +422,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processInstances.id,
       to: r.categoryReviewers.processInstanceId,
     }),
+    phases: r.many.processPhases({
+      from: r.processInstances.id,
+      to: r.processPhases.processInstanceId,
+    }),
     surveyResponses: r.many.decisionProcessSurveyResponses({
       from: r.processInstances.id,
       to: r.decisionProcessSurveyResponses.processInstanceId,
@@ -429,6 +433,20 @@ export const relations = defineRelations(schema, (r) => ({
     surveySubmitters: r.many.decisionProcessSurveySubmitters({
       from: r.processInstances.id,
       to: r.decisionProcessSurveySubmitters.processInstanceId,
+    }),
+  },
+
+  processPhases: {
+    processInstance: r.one.processInstances({
+      from: r.processPhases.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.processPhases.profileId,
+      to: r.profiles.id,
+      alias: 'processPhase_profile',
+      optional: false,
     }),
   },
 
