@@ -5,6 +5,7 @@ import {
   updateDecisionInstance,
 } from '@op/common';
 import { waitUntil } from '@vercel/functions';
+import { z } from 'zod';
 
 import {
   decisionProfileWithSchemaEncoder,
@@ -12,17 +13,22 @@ import {
 } from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
+/** The profile, plus whether this write was the DRAFT -> PUBLISHED transition. */
+const updateDecisionInstanceOutputSchema =
+  decisionProfileWithSchemaEncoder.extend({ didPublish: z.boolean() });
+
 export const updateDecisionInstanceRouter = router({
   updateDecisionInstance: authenticatedConfirmedProcedure()
     .input(updateDecisionInstanceInputSchema)
-    .output(decisionProfileWithSchemaEncoder)
+    .output(updateDecisionInstanceOutputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const { profile, phaseEndDateChanges } = await updateDecisionInstance({
-        ...input,
-        user,
-      });
+      const { profile, phaseEndDateChanges, didPublish } =
+        await updateDecisionInstance({
+          ...input,
+          user,
+        });
 
       // Await — the client refetches `getInstance` immediately after this
       // mutation lands (via the `Channels.decisionInstance` subscription), so
@@ -44,6 +50,9 @@ export const updateDecisionInstanceRouter = router({
         );
       }
 
-      return decisionProfileWithSchemaEncoder.parse(profile);
+      return updateDecisionInstanceOutputSchema.parse({
+        ...profile,
+        didPublish,
+      });
     }),
 });

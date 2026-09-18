@@ -1,7 +1,7 @@
 'use client';
 
-import { useTrackProfileInvited } from '@/hooks/useTrackProfileInvited';
 import { getPublicUrl } from '@/utils';
+import { trackProfileInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { PAGE_LIMIT, hasEmail, nextCursor } from '@op/common/client';
@@ -125,7 +125,9 @@ function ProfileInviteModalContent({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const trackProfileInvited = useTrackProfileInvited();
+  const inviteMutation = trpc.profile.invite.useMutation({
+    onSuccess: trackProfileInvited,
+  });
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
   const [requestedRoleId, setRequestedRoleId] = useState<string>();
@@ -326,7 +328,6 @@ function ProfileInviteModalContent({
   };
 
   // Mutations
-  const inviteMutation = trpc.profile.invite.useMutation();
   const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
   const removeUserMutation = trpc.profile.removeUser.useMutation();
 
@@ -441,12 +442,6 @@ function ProfileInviteModalContent({
         const result = await inviteMutation.mutateAsync({
           invitations,
           profileId,
-        });
-
-        // Must stay above the partial-failure return below.
-        trackProfileInvited({
-          profileId,
-          invitationCount: result.details.successful.length,
         });
 
         if (result.details.failed.length > 0) {
