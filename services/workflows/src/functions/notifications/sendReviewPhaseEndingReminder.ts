@@ -3,15 +3,20 @@ import {
   getInstanceCurrentPhase,
   getInstancePhases,
   isInstanceCurrentPhase,
-  listProfileRecipients,
+  listIndividualProfileRecipients,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { ProcessStatus, ProposalReviewAssignmentStatus } from '@op/db/schema';
+import {
+  ProcessStatus,
+  ProposalReviewAssignmentStatus,
+  proposalReviewAssignments,
+} from '@op/db/schema';
 import { OPBatchSend, ReviewPhaseEndingReminderEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
+import { and, count, eq, inArray, isNull } from 'drizzle-orm';
 
 const { reviewPhaseEndingSoon } = Events;
 
@@ -146,56 +151,41 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${profileSlug}/current`;
 
     const emails = await step.run('plan-reviewer-emails', async () => {
-      const assignments = await db.query.proposalReviewAssignments.findMany({
-        where: {
-          processInstanceId,
-          phaseId,
-          status: {
-            in: [
+      const remainingByReviewer = await db
+        .select({
+          reviewerProfileId: proposalReviewAssignments.reviewerProfileId,
+          remaining: count(),
+        })
+        .from(proposalReviewAssignments)
+        .where(
+          and(
+            eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+            eq(proposalReviewAssignments.phaseId, phaseId),
+            inArray(proposalReviewAssignments.status, [
               ProposalReviewAssignmentStatus.PENDING,
               ProposalReviewAssignmentStatus.IN_PROGRESS,
               ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
-            ],
-          },
-        },
-        columns: { reviewerProfileId: true },
-        with: {
-          reviewer: { columns: { id: true, type: true } },
-        },
-      });
-
-      const remainingByReviewer = new Map<
-        string,
-        { reviewer: (typeof assignments)[number]['reviewer']; count: number }
-      >();
-
-      for (const assignment of assignments) {
-        const existing = remainingByReviewer.get(assignment.reviewerProfileId);
-        if (existing) {
-          existing.count++;
-        } else {
-          remainingByReviewer.set(assignment.reviewerProfileId, {
-            reviewer: assignment.reviewer,
-            count: 1,
-          });
-        }
-      }
+            ]),
+            isNull(proposalReviewAssignments.deletedAt),
+          ),
+        )
+        .groupBy(proposalReviewAssignments.reviewerProfileId);
 
       const planned: Array<{ to: string; remainingCount: number }> = [];
       const reviewerProfileIdsWithoutAddress: Array<string> = [];
 
-      for (const { reviewer, count } of remainingByReviewer.values()) {
+      for (const { reviewerProfileId, remaining } of remainingByReviewer) {
         const recipients = selectEmailRecipients(
-          await listProfileRecipients(reviewer),
+          await listIndividualProfileRecipients(reviewerProfileId),
         );
 
         if (recipients.length === 0) {
-          reviewerProfileIdsWithoutAddress.push(reviewer.id);
+          reviewerProfileIdsWithoutAddress.push(reviewerProfileId);
           continue;
         }
 
         for (const to of recipients) {
-          planned.push({ to, remainingCount: count });
+          planned.push({ to, remainingCount: remaining });
         }
       }
 
