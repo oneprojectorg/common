@@ -20,12 +20,12 @@ export const ReviewPhaseEndingReminderEmail = ({
 }) => {
   return (
     <EmailTemplate
-      previewText={`The ${phaseName} phase of ${processTitle} ends in ${formatDaysLeft(daysLeft)} and you still have reviews to complete`}
+      previewText={`The ${phaseName} phase of ${processTitle} is planned to end in ${formatDaysLeft(daysLeft)} and you still have reviews to complete`}
     >
       <Header>Review phase ending soon</Header>
       <Text className="my-8 text-lg">
         The <strong>{phaseName}</strong> phase of{' '}
-        <strong>{processTitle}</strong> ends in{' '}
+        <strong>{processTitle}</strong> is planned to end in{' '}
         <strong>{formatDaysLeft(daysLeft)}</strong>. You still have{' '}
         <strong>
           {remainingCount === 1 ? '1 review' : `${remainingCount} reviews`}
