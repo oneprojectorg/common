@@ -23,9 +23,9 @@ export async function generateMetadata({
   params,
 }: ReviewAssignmentsPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale });
+  const t = await getTranslations({ namespace: 'decisions', locale });
 
-  return { title: t('Review assignments') };
+  return { title: t('reviewAssignmentsPageTitle') };
 }
 
 /** The reviewers table — admin only. */
@@ -34,7 +34,7 @@ export default async function ReviewAssignmentsPage({
 }: ReviewAssignmentsPageProps) {
   const { slug } = await params;
   const [t, { processInstanceId, phaseId }] = await Promise.all([
-    getTranslations(),
+    getTranslations('decisions'),
     loadReviewAssignmentsPage(slug),
   ]);
 
@@ -57,7 +57,9 @@ export default async function ReviewAssignmentsPage({
     <AssignmentsPageShell
       backHref={`/decisions/${slug}/current?tab=assignments`}
     >
-      <Header1 className="text-headline">{t('Review assignments')}</Header1>
+      <Header1 className="text-headline">
+        {t('reviewAssignmentsPageTitle')}
+      </Header1>
 
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ReviewersTableSection

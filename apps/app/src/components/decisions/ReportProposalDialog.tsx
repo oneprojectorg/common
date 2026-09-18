@@ -43,7 +43,7 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
   const reported = reportMutation.isSuccess;
   const triggerLabel = reported
     ? t('decisions.proposals.reportedStatus')
-    : t('Report');
+    : t('posts.reportAction');
 
   return (
     <>
@@ -91,7 +91,7 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
               }
               loading={reportMutation.isPending}
             >
-              {t('Report')}
+              {t('posts.reportAction')}
             </Button>
           </DialogFooter>
         </DialogContent>

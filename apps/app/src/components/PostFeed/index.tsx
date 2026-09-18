@@ -108,7 +108,7 @@ const PostFlaggedIndicator = ({ post }: { post: Post }) => {
   return (
     <div className="flex items-center gap-1 text-sm text-destructive">
       <LuFlag className="size-4" />
-      <span>{t('Flagged')}</span>
+      <span>{t('posts.flaggedBadge')}</span>
     </div>
   );
 };
@@ -329,7 +329,7 @@ const PostMenu = ({
         <DropdownMenuContent side="bottom" align="end" className="min-w-28">
           {canModerate ? <DeletePostMenuItem post={post} /> : null}
           <DropdownMenuItem onClick={() => setIsReportOpen(true)}>
-            {t('Report')}
+            {t('posts.reportAction')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

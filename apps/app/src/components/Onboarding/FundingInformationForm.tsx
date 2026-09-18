@@ -29,22 +29,22 @@ const createFundingValidator = (t: TranslateFn) =>
     receivingFundsDescription: z
       .string()
       .max(200, {
-        error: t('Must be at most 200 characters'),
+        error: t('maxLength200Error'),
       })
       .optional(),
     receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
     receivingFundsLink: zodUrl({
-      error: t('Enter a valid website address'),
+      error: t('validWebsiteError'),
     }),
     offeringFundsTerms: z.array(multiSelectOptionValidator).optional(),
     offeringFundsDescription: z
       .string()
       .max(200, {
-        error: t('Must be at most 200 characters'),
+        error: t('maxLength200Error'),
       })
       .optional(),
     offeringFundsLink: zodUrl({
-      error: t('Enter a valid website address'),
+      error: t('validWebsiteError'),
     }),
   });
 

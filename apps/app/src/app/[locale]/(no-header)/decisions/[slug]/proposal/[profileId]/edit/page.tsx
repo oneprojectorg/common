@@ -94,7 +94,9 @@ function EditProposalPageContent() {
   const proposalTitle = proposal.profile?.name;
   useEffect(() => {
     const parts = [
-      proposalTitle ? `${proposalTitle} (${t('Editing')})` : null,
+      proposalTitle
+        ? `${proposalTitle} (${t('decisions.editingPageTitle')})`
+        : null,
       decisionProfile.name,
       APP_NAME,
     ].filter(Boolean);

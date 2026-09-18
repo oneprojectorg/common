@@ -682,7 +682,7 @@ function ProfileInviteModalContent({
                   !user.isOwner ? () => handleRemoveUser(user) : undefined
                 }
                 removeLabel={t('decisions.removeNamed', {
-                  name: user.name ?? user.email,
+                  name: user.name ?? user.email ?? '',
                 })}
               />
             ))}
@@ -730,7 +730,7 @@ function ProfileInviteModalContent({
           disabled={allSelectedItems.length === 0}
           loading={isSubmitting}
         >
-          {isSubmitting ? t('Adding...') : t('Add')}
+          {isSubmitting ? t('resources.addingProgress') : t('Add')}
         </Button>
       </DialogFooter>
     </>

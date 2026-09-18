@@ -20,6 +20,8 @@ import {
   schemaHasOptions,
 } from '@op/common/client';
 
+import type { TranslationKey } from '@/lib/i18n';
+
 import {
   addProperty,
   getPropertyDescription,
@@ -294,19 +296,21 @@ export function getFields(template: ProposalTemplateSchema): FieldView[] {
  * Returns translation keys for validation errors on a field.
  * Pass each key through `t()` in the UI layer.
  */
-export function getFieldErrors(field: FieldView): string[] {
-  const errors: string[] = [];
+export function getFieldErrors(field: FieldView): TranslationKey[] {
+  // Typed, not `string[]`: these keys are pushed rather than passed to `t()`,
+  // so the compiler is the only thing that notices when one is renamed.
+  const errors: TranslationKey[] = [];
 
   if (!field.label.trim()) {
-    errors.push('Field label is required');
+    errors.push('decisions.processBuilder.fieldLabelRequiredError');
   }
 
   if (field.fieldType === 'dropdown') {
     if (field.options.length < 2) {
-      errors.push('At least two options are required');
+      errors.push('decisions.processBuilder.optionsMinimumError');
     }
     if (field.options.some((o) => !o.value.trim())) {
-      errors.push('Options cannot be empty');
+      errors.push('decisions.processBuilder.optionsEmptyError');
     }
   }
 

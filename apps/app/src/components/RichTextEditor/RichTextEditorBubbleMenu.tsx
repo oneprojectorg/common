@@ -307,7 +307,7 @@ export function RichTextEditorBubbleMenu({
       },
       {
         key: 'code',
-        label: t('Code'),
+        label: t('editor.inlineCodeLabel'),
         icon: LuCode,
         isActive: activeStates.code,
         toggle: () => editor.chain().focus().toggleCode().run(),
@@ -666,7 +666,7 @@ function LinkEditor({
         className="h-8 w-full"
       />
       {isInvalid && (
-        <p className="text-sm text-destructive">{t('Enter a valid URL')}</p>
+        <p className="text-sm text-destructive">{t('validUrlError')}</p>
       )}
       <div className="flex gap-2">
         <Button type="submit" size="sm" variant="outline" className="flex-1">
@@ -758,7 +758,7 @@ function EmbedEditor({
         className="h-8 w-full"
       />
       {isInvalid && (
-        <p className="text-sm text-destructive">{t('Enter a valid URL')}</p>
+        <p className="text-sm text-destructive">{t('validUrlError')}</p>
       )}
       <Button type="submit" size="sm" variant="outline" className="w-full">
         <LuLink2 />

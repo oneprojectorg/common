@@ -152,7 +152,7 @@ export const ProfileDecisionsSuspense = ({
     <Suspense
       fallback={
         <div className="flex min-h-96 items-center justify-center">
-          <div className="animate-pulse text-base">{t('Loading...')}</div>
+          <div className="animate-pulse text-base">{t('loadingProgress')}</div>
         </div>
       }
     >

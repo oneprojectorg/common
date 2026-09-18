@@ -71,7 +71,7 @@ export const AddResourceLinkForm = ({
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!urlValid || normalizedUrl === null) {
-      setUrlError(t('Enter a valid URL'));
+      setUrlError(t('validUrlError'));
       return;
     }
     if (!title.trim()) {
@@ -164,7 +164,9 @@ export const AddResourceLinkForm = ({
           disabled={!urlValid || !title.trim() || submitting}
           className="flex-1 justify-center"
         >
-          {submitting ? t('Adding...') : t('resources.addAction')}
+          {submitting
+            ? t('resources.addingProgress')
+            : t('resources.addAction')}
         </Button>
       </div>
     </form>

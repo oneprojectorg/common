@@ -14,6 +14,7 @@ import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
+import type { TranslationKey } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
@@ -141,7 +142,7 @@ export function TemplateEditorContent({
   // "Show on blur, clear on change" validation: errors are snapshotted when
   // a field card loses focus, but resolved errors disappear immediately
   // while editing (see renderFieldCard intersection logic).
-  const [fieldErrors, setFieldErrors] = useState<Map<string, string[]>>(
+  const [fieldErrors, setFieldErrors] = useState<Map<string, TranslationKey[]>>(
     new Map(),
   );
 

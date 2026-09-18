@@ -27,7 +27,9 @@ export async function generateMetadata({
     ]);
     const decisionProfile = await client.decision.getDecisionBySlug({ slug });
     return decisionProfile?.name
-      ? { title: `${decisionProfile.name} (${t('Editing')})` }
+      ? {
+          title: `${decisionProfile.name} (${t('decisions.editingPageTitle')})`,
+        }
       : {};
   } catch {
     return {};

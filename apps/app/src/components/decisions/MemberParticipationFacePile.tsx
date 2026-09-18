@@ -24,7 +24,7 @@ export const MemberParticipationFacePile = ({
   /** Over a banner image the charcoal label loses contrast — use white. */
   hasImage?: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const canLinkToProfile = useCanLinkToProfile();
 
   if (total === 0) {
@@ -73,10 +73,7 @@ export const MemberParticipationFacePile = ({
             hasImage ? 'text-white' : 'text-foreground',
           )}
         >
-          {t(
-            '{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}',
-            { count: total },
-          )}
+          {t('membersSubmittedCount', { count: total })}
         </span>
       </GrowingFacePile>
     </div>

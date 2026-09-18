@@ -32,7 +32,9 @@ export async function generateMetadata({
       reviewedProposal.profile?.name ||
       t('decisions.proposals.untitledProposal');
 
-    const reviewLabel = t('Review {title}', { title: proposalTitle });
+    const reviewLabel = t('decisions.reviewPageTitle', {
+      title: proposalTitle,
+    });
     const decisionName = decisionProfile?.name;
     return {
       title: decisionName ? `${reviewLabel} | ${decisionName}` : reviewLabel,

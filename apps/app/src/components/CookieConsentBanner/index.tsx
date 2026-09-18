@@ -21,15 +21,12 @@ export const CookieConsentBanner = () => {
       title={t('auth.cookieConsentTitle')}
       description={t.rich('auth.cookieConsentBody', {
         privacy: (chunks: ReactNode) => (
-          <PolicyLink
-            href="/info/privacy"
-            newTabLabel={t('(opens in a new tab)')}
-          >
+          <PolicyLink href="/info/privacy" newTabLabel={t('shell.newTabHint')}>
             {chunks}
           </PolicyLink>
         ),
         terms: (chunks: ReactNode) => (
-          <PolicyLink href="/info/tos" newTabLabel={t('(opens in a new tab)')}>
+          <PolicyLink href="/info/tos" newTabLabel={t('shell.newTabHint')}>
             {chunks}
           </PolicyLink>
         ),
