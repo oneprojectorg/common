@@ -455,7 +455,7 @@ function ProfileInviteModalContent({
           const failureDetail = result.details.failed
             .map((failure) => `${failure.email}: ${failure.reason}`)
             .join('; ');
-          toast.error(`${t('Failed to send invite')}: ${failureDetail}`);
+          toast.error(`${t('org.inviteSendError')}: ${failureDetail}`);
 
           if (result.details.successful.length > 0) {
             utils.profile.listUsers.invalidate({ profileId });
@@ -476,7 +476,7 @@ function ProfileInviteModalContent({
         utils.profile.listRoles.invalidate({ profileId });
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : t('Failed to send invite');
+          error instanceof Error ? error.message : t('org.inviteSendError');
         toast.error(message);
       }
     });

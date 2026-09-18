@@ -56,7 +56,7 @@ export const CreateOrganizationModal = ({
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{t('Create Organization')}</DialogTitle>
+            <DialogTitle>{t('profile.createOrganizationTitle')}</DialogTitle>
           </DialogHeader>
           <CreateOrganizationForm
             onSubmit={onSubmit}
@@ -84,7 +84,7 @@ export const CreateOrganizationModalTrigger = () => {
         className="min-w-full sm:min-w-fit"
       >
         <LuPlus className="size-4" />
-        {t('Create Organization')}
+        {t('profile.createOrganizationTitle')}
       </Button>
       <CreateOrganizationModal isOpen={isOpen} onOpenChange={setIsOpen} />
     </>

@@ -54,13 +54,13 @@ const JoinProfileRequestsNotificationsSuspense = ({
     onSuccess: (_, variables) => {
       toast.success(
         variables.status === JoinProfileRequestStatus.APPROVED
-          ? t('Request accepted')
-          : t('Request declined'),
+          ? t('profile.joinRequestAcceptedToast')
+          : t('profile.joinRequestDeclinedToast'),
       );
       utils.profile.listJoinRequests.invalidate();
     },
     onError: () => {
-      toast.error(t('Failed to update request'));
+      toast.error(t('profile.joinRequestUpdateError'));
     },
   });
 
@@ -82,7 +82,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
   return (
     <NotificationPanel>
       <NotificationPanelHeader
-        title={t('Join requests')}
+        title={t('profile.joinRequestsTitle')}
         // TODO: count is not actually correct - will be addressed separately
         count={count}
       />
@@ -109,7 +109,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
               <ProfileItem
                 avatar={<OrganizationAvatar profile={requestProfile} />}
                 title={requestProfile.name}
-                description={t('{name} wants to join your organization', {
+                description={t('profile.joinRequestSummary', {
                   name: requestProfile.name,
                 })}
               />
@@ -126,7 +126,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
                   loading={isLoadingReject}
                   disabled={isPendingForRequest}
                 >
-                  {t('Decline')}
+                  {t('profile.declineAction')}
                 </Button>
                 <Button
                   className="w-full sm:w-auto"
@@ -159,11 +159,14 @@ const JoinProfileRequestsNotificationsError = () => {
 
   return (
     <NotificationPanel>
-      <NotificationPanelHeader title={t('Join requests')} count={0} />
+      <NotificationPanelHeader
+        title={t('profile.joinRequestsTitle')}
+        count={0}
+      />
       <NotificationPanelList>
         <NotificationPanelItem>
           <p className="text-sm text-secondary">
-            {t('Failed to load join requests')}
+            {t('profile.joinRequestsLoadError')}
           </p>
         </NotificationPanelItem>
       </NotificationPanelList>

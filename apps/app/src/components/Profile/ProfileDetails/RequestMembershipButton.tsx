@@ -74,7 +74,7 @@ const RequestMembershipButtonSuspense = ({
 
   const handleRequestMembership = () => {
     if (!currentProfileId) {
-      toast.error(t('You must be logged in to request membership'));
+      toast.error(t('profile.membershipRequestSignInError'));
       return;
     }
 
@@ -86,12 +86,12 @@ const RequestMembershipButtonSuspense = ({
         });
 
         toast.success(
-          t('Your membership request has been sent to {orgName}', {
+          t('profile.membershipRequestSentToast', {
             orgName: profile.profile.name,
           }),
         );
       } catch (error) {
-        toast.error(t('Failed to send membership request'));
+        toast.error(t('profile.membershipRequestError'));
       }
     });
   };
@@ -107,9 +107,9 @@ const RequestMembershipButtonSuspense = ({
           requestId: existingRequest.id,
         });
 
-        toast.success(t('Membership request cancelled'));
+        toast.success(t('profile.membershipRequestCancelledToast'));
       } catch (error) {
-        toast.error(t('Failed to cancel membership request'));
+        toast.error(t('profile.cancelMembershipRequestError'));
       }
 
       close();
@@ -130,27 +130,28 @@ const RequestMembershipButtonSuspense = ({
                       className="min-w-full sm:min-w-fit"
                     >
                       <LuClock className="size-4" />
-                      {t('Requested')}
+                      {t('profile.membershipRequestedLabel')}
                     </Button>
                   }
                 />
               }
             />
             <TooltipContent>
-              {t('Your membership request is pending approval')}
+              {t('profile.membershipRequestPending')}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('Cancel membership request')}</DialogTitle>
+            <DialogTitle>
+              {t('profile.cancelMembershipRequestTitle')}
+            </DialogTitle>
           </DialogHeader>
           <div className="px-6 py-4">
             <p>
-              {t(
-                'Are you sure you want to cancel your membership request to {orgName}?',
-                { orgName: profile.profile.name },
-              )}
+              {t('profile.cancelMembershipRequestConfirm', {
+                orgName: profile.profile.name,
+              })}
             </p>
           </div>
           <DialogFooter>
@@ -187,13 +188,11 @@ const RequestMembershipButtonSuspense = ({
               className="min-w-full sm:min-w-fit"
             >
               <LuUserPlus className="size-4" />
-              {t('Request')}
+              {t('profile.requestMembershipAction')}
             </Button>
           }
         />
-        <TooltipContent>
-          {t('Request to join this organization as a member')}
-        </TooltipContent>
+        <TooltipContent>{t('profile.requestMembershipHint')}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

@@ -91,15 +91,11 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
       <div className="flex max-w-md flex-col gap-2">
         <Header2 className="text-title">
           {isProcessAdmin
-            ? t('Set up your decision-making process')
-            : t('There are no current decision-making processes')}
+            ? t('profile.noDecisionsCta')
+            : t('profile.noDecisionsTitle')}
         </Header2>
         {isProcessAdmin && (
-          <p className="text-base">
-            {t(
-              'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
-            )}
-          </p>
+          <p className="text-base">{t('profile.noDecisionsBody')}</p>
         )}
       </div>
     </div>

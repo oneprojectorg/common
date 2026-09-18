@@ -23,27 +23,27 @@ export const createValidator = (t: TranslateFn) =>
   z
     .object({
       fullName: z
-        .string({ message: t('Enter your full name') })
+        .string({ message: t('profile.fullNamePrompt') })
         .trim()
         .min(1, {
-          message: t('Enter your full name'),
+          message: t('profile.fullNamePrompt'),
         })
         .max(200, {
           message: t('Must be at most 200 characters'),
         }),
       title: z
         .string({
-          message: t('Enter your professional title'),
+          message: t('profile.titlePrompt'),
         })
         .trim()
         .min(1, {
-          message: t('Enter your professional title'),
+          message: t('profile.titlePrompt'),
         })
         .max(200, {
           message: t('Must be at most 200 characters'),
         }),
       pronouns: z
-        .string({ message: t('Pronouns') })
+        .string({ message: t('profile.pronounsLabel') })
         .trim()
         .optional(),
       customPronouns: z.string().optional(),
@@ -51,7 +51,7 @@ export const createValidator = (t: TranslateFn) =>
         .email({ error: t('Enter a valid email address') })
         .trim()
         .refine((val) => val.length <= 255, {
-          message: t('Must be at most 255 characters'),
+          message: t('profile.emailTooLong'),
         }),
       website: zodUrl({ error: t('Enter a valid website address') }),
       focusAreas: z
@@ -74,7 +74,7 @@ export const createValidator = (t: TranslateFn) =>
         return true;
       },
       {
-        message: t('Please provide your custom pronouns'),
+        message: t('profile.customPronounsRequired'),
         path: ['customPronouns'],
       },
     );
@@ -201,7 +201,7 @@ export const PersonalDetailsForm = ({
             error={bannerUpload.uploadError}
           />
           <AvatarUploader
-            label={t('Profile Picture')}
+            label={t('profile.pictureLabel')}
             className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
             value={avatarUpload.url}
             onChange={avatarUpload.upload}
@@ -215,7 +215,7 @@ export const PersonalDetailsForm = ({
             <field.TextField
               isRequired
               label={t('onboarding.fullNameLabel')}
-              placeholder={t('Enter your full name')}
+              placeholder={t('profile.fullNamePrompt')}
             />
           )}
         />
@@ -225,10 +225,8 @@ export const PersonalDetailsForm = ({
             <field.TextField
               isRequired
               label={t('Headline')}
-              description={t(
-                'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
-              )}
-              placeholder={t('Enter your headline')}
+              description={t('profile.headlineHint')}
+              placeholder={t('profile.headlinePlaceholder')}
             />
           )}
         />
@@ -236,13 +234,13 @@ export const PersonalDetailsForm = ({
           name="pronouns"
           children={(field) => (
             <field.Select
-              label={t('Pronouns')}
-              placeholder={t('Select your preferred pronouns')}
+              label={t('profile.pronounsLabel')}
+              placeholder={t('profile.pronounsPlaceholder')}
               options={[
-                { value: 'she/her', label: t('She/Her') },
-                { value: 'he/him', label: t('He/Him') },
-                { value: 'they/them', label: t('They/Them') },
-                { value: 'custom', label: t('Custom') },
+                { value: 'she/her', label: t('profile.pronounsSheHer') },
+                { value: 'he/him', label: t('profile.pronounsHeHim') },
+                { value: 'they/them', label: t('profile.pronounsTheyThem') },
+                { value: 'custom', label: t('profile.pronounsCustomOption') },
               ]}
             />
           )}
@@ -255,9 +253,9 @@ export const PersonalDetailsForm = ({
                 name="customPronouns"
                 children={(field) => (
                   <field.TextField
-                    label={t('Custom Pronouns')}
+                    label={t('profile.customPronounsLabel')}
                     isRequired
-                    placeholder={t('Enter your custom pronouns')}
+                    placeholder={t('profile.customPronounsPlaceholder')}
                   />
                 )}
               />
@@ -270,7 +268,7 @@ export const PersonalDetailsForm = ({
             <field.TextField
               label={t('Email')}
               isRequired
-              placeholder={t('Enter your email address')}
+              placeholder={t('profile.emailPlaceholder')}
               type="email"
             />
           )}
@@ -280,7 +278,7 @@ export const PersonalDetailsForm = ({
           children={(field) => (
             <field.TextField
               label={t('Website')}
-              placeholder={t('Enter your website URL')}
+              placeholder={t('profile.websitePlaceholder')}
               // Not `type="url"`: our zodUrl validation accepts a bare domain
               // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
               // browser's native URL validation rejects the scheme-less value

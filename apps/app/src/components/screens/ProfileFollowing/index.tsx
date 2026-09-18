@@ -19,7 +19,7 @@ export const ProfileFollowingSuspense = ({
 }: {
   profileId: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('profile');
 
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     sourceProfileId: profileId,
@@ -40,10 +40,7 @@ export const ProfileFollowingSuspense = ({
     <div className="flex flex-col gap-4 text-base sm:gap-8 sm:py-8">
       <RelationshipList
         profiles={following}
-        title={t(
-          'Following {count, plural, =1 {# organization} other {# organizations}}',
-          { count: following.length },
-        )}
+        title={t('followingCount', { count: following.length })}
       />
     </div>
   );

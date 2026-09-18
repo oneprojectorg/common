@@ -157,7 +157,7 @@ export const OrganizationFormFields = ({
       <form.AppField
         name="name"
         children={(field) => (
-          <field.TextField label={t('Organization Name')} isRequired />
+          <field.TextField label={t('org.nameLabel')} isRequired />
         )}
       />
 
@@ -168,7 +168,7 @@ export const OrganizationFormFields = ({
             label={t('Website')}
             isRequired
             icon={<LuLink className="size-4 text-foreground" />}
-            placeholder={t("Enter your organization's website here")}
+            placeholder={t('org.websitePlaceholder')}
             // Not `type="url"`: our zodUrl validation accepts a bare domain
             // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
             // browser's native URL validation rejects the scheme-less value
@@ -190,7 +190,7 @@ export const OrganizationFormFields = ({
         name="whereWeWork"
         children={(field) => (
           <GeoNamesMultiSelect
-            label={t('Where we work')}
+            label={t('org.whereWeWorkLabel')}
             onChange={(value) => field.handleChange(value)}
             value={(field.state.value as Array<Option>) ?? []}
           />
@@ -201,13 +201,13 @@ export const OrganizationFormFields = ({
         name="orgType"
         children={(field) => (
           <field.Select
-            label={t('Organizational Status')}
+            label={t('org.statusLabel')}
             isRequired
             placeholder={t('Select')}
             options={[
-              { value: 'nonprofit', label: t('Nonprofit') },
-              { value: 'forprofit', label: t('Forprofit') },
-              { value: 'government', label: t('Government Entity') },
+              { value: 'nonprofit', label: t('org.statusNonprofit') },
+              { value: 'forprofit', label: t('org.statusForprofit') },
+              { value: 'government', label: t('org.statusGovernment') },
             ]}
           />
         )}
@@ -218,9 +218,9 @@ export const OrganizationFormFields = ({
         children={(field) => (
           <field.TextArea
             isRequired
-            label={t('Organization headline')}
+            label={t('org.headlineLabel')}
             className="min-h-28"
-            placeholder={t('Enter a brief description for your organization')}
+            placeholder={t('org.headlinePlaceholder')}
           />
         )}
       />
@@ -229,9 +229,9 @@ export const OrganizationFormFields = ({
         name="mission"
         children={(field) => (
           <field.TextArea
-            label={t('Mission statement')}
+            label={t('org.missionLabel')}
             className="min-h-28"
-            placeholder={t('Enter your mission statement or a brief bio')}
+            placeholder={t('org.missionPlaceholder')}
           />
         )}
       />
@@ -240,7 +240,7 @@ export const OrganizationFormFields = ({
         name="focusAreas"
         children={(field) => (
           <TermsMultiSelect
-            label={t('Focus Areas')}
+            label={t('org.focusAreasLabel')}
             taxonomy="necSimple:focusArea"
             value={(field.state.value as Array<Option>) ?? []}
             onChange={field.handleChange}
@@ -253,7 +253,7 @@ export const OrganizationFormFields = ({
         name="communitiesServed"
         children={(field) => (
           <TermsMultiSelect
-            label={t('Communities Served')}
+            label={t('org.communitiesServedLabel')}
             taxonomy="candid:POPULATION"
             value={(field.state.value as Array<Option>) ?? []}
             onChange={field.handleChange}
@@ -266,7 +266,7 @@ export const OrganizationFormFields = ({
         name="strategies"
         children={(field) => (
           <TermsMultiSelect
-            label={t('Strategies/Tactics')}
+            label={t('org.strategiesLabel')}
             taxonomy="splcStrategies"
             value={(field.state.value as Array<Option>) ?? []}
             onChange={field.handleChange}
@@ -279,11 +279,7 @@ export const OrganizationFormFields = ({
       <form.AppField
         name="networkOrganization"
         children={(field) => (
-          <ToggleRow
-            label={t(
-              'Does your organization serve as a network or coalition with member organizations?',
-            )}
-          >
+          <ToggleRow label={t('org.networkQuestion')}>
             <field.Switch />
           </ToggleRow>
         )}
