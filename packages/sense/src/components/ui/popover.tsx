@@ -19,19 +19,32 @@ function PopoverContent({
   alignOffset = 0,
   side = 'bottom',
   sideOffset = 4,
+  anchor,
+  positionMethod,
+  container,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
-    'align' | 'alignOffset' | 'side' | 'sideOffset'
-  >) {
+    | 'align'
+    | 'alignOffset'
+    | 'side'
+    | 'sideOffset'
+    | 'anchor'
+    | 'positionMethod'
+  > & { container?: PopoverPrimitive.Portal.Props['container'] }) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        // Anchor elsewhere than the trigger — a list on its field, not the caret.
+        anchor={anchor}
+        // `fixed` for a trigger that holds still on screen while its container
+        // scrolls; measured absolutely, the popup jitters chasing it.
+        positionMethod={positionMethod}
         className="isolate z-50"
       >
         <PopoverPrimitive.Popup
