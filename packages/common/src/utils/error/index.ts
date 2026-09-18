@@ -53,14 +53,17 @@ export class UnauthorizedError extends CommonError {
   }
 }
 
+// Stable code the client maps to translated copy — @op/common has no
+// useTranslations, so this error's message (below) is server-diagnostic
+// only and must never reach a user untranslated.
+export const DOCUMENT_FETCH_ERROR_CODE = 'DOCUMENT_FETCH_FAILED';
+
 export class DocumentFetchError extends CommonError {
   public readonly statusCode: number = 503;
+  public readonly errorCode = DOCUMENT_FETCH_ERROR_CODE;
 
   constructor(message?: string, cause?: unknown) {
-    super(
-      message ??
-        'Your proposal could not be validated right now. Please try again in a moment.',
-    );
+    super(message ?? 'Failed to fetch the collaboration document.');
     if (cause !== undefined) {
       this.cause = cause;
     }

@@ -1,3 +1,4 @@
+import { DOCUMENT_FETCH_ERROR_CODE } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 
@@ -17,11 +18,22 @@ export function handleMutationError(
     context: `handleMutationError.${operationType}`,
   });
 
-  // The API's error formatter copies ValidationError.fieldErrors onto the
-  // error's `data` (services/api/src/lib/error.ts).
+  // The API's error formatter copies ValidationError.fieldErrors, and a
+  // stable errorCode for errors whose message is server-diagnostic only
+  // (never user-facing English), onto the error's `data`
+  // (services/api/src/lib/error.ts).
   const errorData = error.data as
-    | { fieldErrors?: Record<string, string> }
+    | { fieldErrors?: Record<string, string>; errorCode?: string }
     | undefined;
+
+  // DocumentFetchError's message is diagnostic, not translated — render our
+  // own copy instead of falling through to `error.message` below.
+  if (errorData?.errorCode === DOCUMENT_FETCH_ERROR_CODE) {
+    toast.error(t('Your proposal could not be validated right now'), {
+      description: t('Please try again in a moment'),
+    });
+    return;
+  }
 
   if (errorData?.fieldErrors) {
     const fieldErrors = errorData.fieldErrors;

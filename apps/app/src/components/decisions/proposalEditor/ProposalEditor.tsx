@@ -156,7 +156,7 @@ function ProposalEditorInner({
   // Anon visitors get sent back with ?promote=1 so PromoteAccountModal offers an
   // upgrade. `isAnonymous` is session-derived, not the stale DB relation.
   const isAnonymous = Boolean(user?.isAnonymous);
-  const { ydoc, provider, isSynced, hasSyncedOnce } = useCollaborativeDoc();
+  const { ydoc, provider, isSynced } = useCollaborativeDoc();
   const versionPreview = useOptionalVersionPreview();
 
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -283,7 +283,7 @@ function ProposalEditorInner({
   const finalizeSubmit = useCallback(async () => {
     // Re-check: the updateProposal round trip or an open custom-form modal
     // can outlast the provider's sync, so gate the submit call itself too.
-    if (!(await ensureDocSynced(provider, hasSyncedOnce, t))) {
+    if (!(await ensureDocSynced(provider, t))) {
       throw new Error('Proposal changes not synced before submit');
     }
 
@@ -310,7 +310,6 @@ function ProposalEditorInner({
     isAnonymous,
     backHref,
     provider,
-    hasSyncedOnce,
     t,
   ]);
 
@@ -339,7 +338,7 @@ function ProposalEditorInner({
       // non-drafts) re-validates against TipTap Cloud, and submitting
       // before the cloud has seen our updates surfaces false "required"
       // errors for fields the user has filled.
-      if (!(await ensureDocSynced(provider, hasSyncedOnce, t))) {
+      if (!(await ensureDocSynced(provider, t))) {
         return;
       }
 
@@ -392,7 +391,6 @@ function ProposalEditorInner({
     draftRef,
     finalizeSubmit,
     provider,
-    hasSyncedOnce,
     t,
   ]);
 

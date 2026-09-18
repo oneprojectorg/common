@@ -13,7 +13,7 @@ import type { JSONContent } from '@tiptap/react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from '../../collaboration';
-import { ensureDocSynced } from './ensureDocSynced';
+import { waitForDocSync } from '../../collaboration/waitForDocSync';
 import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
 
 interface UseRestoreProposalVersionOptions {
@@ -35,7 +35,7 @@ export function useRestoreProposalVersion({
   fragmentNames,
 }: UseRestoreProposalVersionOptions) {
   const t = useTranslations();
-  const { provider, hasSyncedOnce } = useCollaborativeDoc();
+  const { provider } = useCollaborativeDoc();
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: () => {
       toast.success(t('Proposal version restored'));
@@ -85,8 +85,14 @@ export function useRestoreProposalVersion({
    *
    * Returns false without touching anything when the version's contents aren't
    * available — the preview arrives asynchronously, and reverting on an empty
-   * map would blank the title, category and budget. Also returns false if the
-   * revert doesn't sync to TipTap Cloud before persisting the restored data.
+   * map would blank the title, category and budget.
+   *
+   * `revertToVersion` is fire-and-forget (the SDK gives no way to cancel or
+   * undo it), so once it's called the revert is in flight regardless of what
+   * happens next. This gives it a best-effort window to reach TipTap Cloud
+   * before persisting, but a timeout there must not abort the persist —
+   * that would leave the document reverted with stale metadata and no way
+   * to tell the user anything actually changed.
    */
   async function restoreVersion(
     versionId: number,
@@ -112,9 +118,7 @@ export function useRestoreProposalVersion({
       newVersionName: false,
     });
 
-    if (!(await ensureDocSynced(provider, hasSyncedOnce, t))) {
-      return false;
-    }
+    await waitForDocSync(provider);
 
     await updateProposalMutation.mutateAsync({
       proposalId,

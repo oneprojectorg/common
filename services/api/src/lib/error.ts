@@ -37,6 +37,13 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
   const commonErrorToTRPCError = (cause: CommonError) => {
     const fieldErrors =
       cause instanceof ValidationError ? cause.fieldErrors : undefined;
+    // A stable code the client maps to translated copy, for errors whose
+    // message is server-diagnostic only (e.g. DocumentFetchError) and must
+    // not reach a user untranslated.
+    const errorCode =
+      'errorCode' in cause && typeof cause.errorCode === 'string'
+        ? cause.errorCode
+        : undefined;
 
     return {
       ...shape,
@@ -47,6 +54,7 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
         httpStatus: cause.statusCode ?? 500,
         timestamp: cause.timestamp,
         ...(fieldErrors ? { fieldErrors } : {}),
+        ...(errorCode ? { errorCode } : {}),
       },
     };
   };

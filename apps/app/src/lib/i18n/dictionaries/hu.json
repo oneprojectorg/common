@@ -1771,5 +1771,6 @@
   "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "A közzététel e-mailt küld {fundedCount, plural, one {# támogatott javaslat} other {# támogatott javaslat}} és {notFundedCount, plural, one {# nem támogatott javaslat} other {# nem támogatott javaslat}} szerzőinek. Ez nem vonható vissza.",
   "Use {name} for the submitter’s name and {proposal} for proposal title.": "A {name} a beküldő nevét, a {proposal} pedig a javaslat címét helyettesíti.",
   "Your changes are still syncing": "A változtatásaid szinkronizálása még folyamatban van",
-  "Please wait a moment and try again.": "Kérjük, várjon egy kicsit, majd próbálja újra."
+  "Please wait a moment and try again.": "Kérjük, várjon egy kicsit, majd próbálja újra.",
+  "Your proposal could not be validated right now": "A javaslatodat jelenleg nem sikerült érvényesíteni"
 }

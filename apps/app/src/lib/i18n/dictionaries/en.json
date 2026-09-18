@@ -1771,5 +1771,6 @@
   "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.",
   "Use {name} for the submitter’s name and {proposal} for proposal title.": "Use {name} for the submitter’s name and {proposal} for proposal title.",
   "Your changes are still syncing": "Your changes are still syncing",
-  "Please wait a moment and try again.": "Please wait a moment and try again."
+  "Please wait a moment and try again.": "Please wait a moment and try again.",
+  "Your proposal could not be validated right now": "Your proposal could not be validated right now"
 }
