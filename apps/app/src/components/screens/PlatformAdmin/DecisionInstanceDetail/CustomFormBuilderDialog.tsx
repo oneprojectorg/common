@@ -53,12 +53,10 @@ import {
 interface CustomFormBuilderDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The decision process's own profile — what the form attaches to. */
   profileId: string;
   phases: AdminDecisionPhase[];
-  /** Phases already holding a form, excluding the one being edited. */
+  /** Excludes the phase of the form being edited. */
   occupiedPhaseIds: string[];
-  /** The form being edited; absent when authoring a new one. */
   form?: CustomFormWithPhaseDTO;
 }
 
@@ -174,11 +172,6 @@ const BuilderContent = ({
   );
 };
 
-/**
- * Saves the draft through whichever mutation fits — update when the dialog
- * opened on an existing form, create otherwise — so the component above only
- * has to know that saving happened.
- */
 const useSaveCustomForm = ({
   form,
   profileId,
@@ -220,7 +213,6 @@ const useSaveCustomForm = ({
   return { save, isSaving: createForm.isPending || updateForm.isPending };
 };
 
-/** Form-level settings: the admin label, the phase, and the participant copy. */
 const FormDetailsFields = ({
   draft,
   phases,
@@ -316,7 +308,6 @@ const FormDetailsFields = ({
   );
 };
 
-/** The ordered field list plus its add control. */
 const FormFieldList = ({
   draft,
   onChange,
@@ -420,12 +411,8 @@ const UnsupportedFormNotice = ({
   );
 };
 
-/**
- * Copy for each problem code. Keyed rather than switched so adding a code is a
- * compile error here rather than a silently unrendered message. `schema` is
- * absent on purpose: it carries its own raw detail, because it only fires for a
- * shape we have no specific copy for.
- */
+/** Keyed, not switched, so a new code is a compile error here. `schema` is
+ *  absent on purpose — it carries its own raw detail. */
 const PROBLEM_MESSAGES: Record<
   Exclude<DraftProblemCode, 'schema'>,
   TranslationKey
@@ -443,11 +430,7 @@ const describeProblem = (problem: DraftProblem, t: TranslateFn): string =>
     ? (problem.detail ?? '')
     : t(PROBLEM_MESSAGES[problem.code], { number: problem.position });
 
-/**
- * Replaces one field, re-deriving its key from the label while the key is still
- * free to change. Once a field has been saved its key is frozen — submissions
- * are stored under it, and renaming it would orphan every answer already given.
- */
+/** Re-derives the key from the label while it is still free to change. */
 const withFieldAt = ({
   fields,
   index,
@@ -493,11 +476,8 @@ const moveField = ({
   return reordered;
 };
 
-/**
- * A local id no current field holds. Counting upward from the highest `new-N`
- * already in the draft keeps it unique after a removal, where the field count
- * alone would repeat an id and collapse two React rows into one.
- */
+/** Counts up rather than using the field count, which repeats an id after a
+ *  removal and collapses two React rows into one. */
 const nextLocalId = (draft: BuilderForm): string => {
   const used = new Set(draft.fields.map((field) => field.localId));
 

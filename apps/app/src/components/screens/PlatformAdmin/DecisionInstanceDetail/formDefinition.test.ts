@@ -27,7 +27,6 @@ const field = (overrides: Partial<BuilderField> = {}): BuilderField => {
     ...overrides,
   };
 
-  // Keep the local id distinct per field without every call site passing one.
   return { ...base, localId: overrides.localId ?? base.key };
 };
 
@@ -106,9 +105,8 @@ describe('buildDefinition', () => {
   });
 
   it('produces a schema the submit-time validator accepts answers against', () => {
-    // The definition has to survive the round trip the builder does not own:
-    // AJV compiles it when a participant submits. A keyword AJV rejects would
-    // fail there, long after the form looked saved.
+    // AJV compiles the definition at submit time — a keyword it rejects fails
+    // there, long after the form looked saved.
     const definition = buildDefinition(
       form([
         field({ key: 'wasAdmin', kind: 'radio', options: ['Yes', 'No'] }),
@@ -273,8 +271,6 @@ describe('parseDefinition', () => {
   });
 
   it('uses the phase the server resolved, not the stored x-phase', () => {
-    // A legacy form has no `x-phase`; the server resolves it to the initial
-    // phase, and the editor must open on that phase rather than a blank one.
     const { form: parsed } = parseDefinition({
       schema: {
         type: 'object',
@@ -442,8 +438,6 @@ describe('validateDraft', () => {
   });
 
   it('prefers its own codes over a raw schema message', () => {
-    // An empty draft breaks both the explicit checks and the schema; the
-    // author should see the translated copy, not a Zod issue.
     expect(problemCodes(form([]))).not.toContain('schema');
   });
 });

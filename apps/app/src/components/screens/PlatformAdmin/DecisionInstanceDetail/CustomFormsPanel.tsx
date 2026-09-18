@@ -37,12 +37,11 @@ import { CustomFormBuilderDialog } from './CustomFormBuilderDialog';
 import { countFields, resolvePhaseBadge } from './formDefinition';
 
 interface CustomFormsPanelProps {
-  /** The decision's own profile; null on instances that never got one. */
+  /** Null on instances that never got one. */
   profileId: string | null;
   phases: AdminDecisionPhase[];
 }
 
-/** Platform-admin editor for the custom forms attached to a decision process. */
 export const CustomFormsPanel = ({
   profileId,
   phases,
@@ -154,7 +153,6 @@ const CustomFormsPanelSuspense = ({
   );
 };
 
-/** Why the New form button is unavailable, when it is. */
 const PhaseAvailabilityNote = ({
   hasPhases,
   canAdd,

@@ -30,7 +30,6 @@ interface CustomFormFieldEditorProps {
   onRemove: () => void;
 }
 
-/** One field's row in the builder: label, control type, options, required. */
 export const CustomFormFieldEditor = ({
   field,
   index,
@@ -116,8 +115,7 @@ export const CustomFormFieldEditor = ({
           // key ("short-text") in the trigger instead of its label.
           items={kindLabels}
           onValueChange={(next) => {
-            // Matched against the list rather than asserted: base-ui types the
-            // value as a bare string, and only these seven are field kinds.
+            // base-ui types the value as a bare string; match, don't assert.
             const kind = FORM_FIELD_KINDS.find(
               (candidate) => candidate === next,
             );
@@ -128,8 +126,8 @@ export const CustomFormFieldEditor = ({
             onChange({
               ...field,
               kind,
-              // Options belong to choice fields only; keeping them on a text
-              // field would silently turn it back into a dropdown on save.
+              // Kept on a text field, options would turn it back into a
+              // dropdown on save.
               options: CHOICE_FIELD_KINDS.includes(kind) ? field.options : [],
             });
           }}
@@ -185,12 +183,8 @@ export const CustomFormFieldEditor = ({
 };
 
 /**
- * Options as free text, one per line.
- *
- * The textarea holds the raw text rather than `options.join('\n')`: a parsed
- * round-trip drops the newline the moment it is typed, so the author could
- * never start a second line. Mounted only while the field is a choice field, so
- * switching a field away from one and back starts from the cleared options.
+ * Holds raw text rather than `options.join('\n')`: a parsed round-trip drops
+ * the newline as it is typed, so the author could never start a second line.
  */
 const OptionsField = ({
   fieldId,
@@ -221,7 +215,6 @@ const OptionsField = ({
   );
 };
 
-/** Textarea lines to options, dropping blanks and repeats. */
 const parseOptions = (value: string): string[] => {
   const seen = new Set<string>();
 

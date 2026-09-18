@@ -4,12 +4,8 @@ import type {
 } from '@op/common/client';
 import { customFormDefinitionInputSchema } from '@op/common/client';
 
-/**
- * The field kinds the builder offers. Each maps onto one branch of
- * `CustomFormModal`'s renderer, so a form authored here always draws a control
- * a participant can answer. Anything the renderer supports but the builder does
- * not (`money`, `location`) is deliberately absent.
- */
+/** One branch each of `CustomFormModal`'s renderer. `money` and `location` are
+ *  deliberately absent — the builder has no editor for them. */
 export const FORM_FIELD_KINDS = [
   'short-text',
   'long-text',
@@ -22,7 +18,6 @@ export const FORM_FIELD_KINDS = [
 
 export type FormFieldKind = (typeof FORM_FIELD_KINDS)[number];
 
-/** Kinds that carry a fixed option list. */
 export const CHOICE_FIELD_KINDS: readonly FormFieldKind[] = [
   'dropdown',
   'radio',
@@ -30,15 +25,11 @@ export const CHOICE_FIELD_KINDS: readonly FormFieldKind[] = [
 ];
 
 export type BuilderField = {
-  /** React key and reorder handle. Local to the editor, never persisted. */
+  /** Editor-local; never persisted. */
   localId: string;
   /** JSON Schema property name — what submissions are keyed by. */
   key: string;
-  /**
-   * False until the field has been saved once. While false the key tracks the
-   * label; afterwards it is frozen, because renaming it would orphan every
-   * answer already recorded under the old key.
-   */
+  /** Once saved the key is frozen: renaming would orphan existing answers. */
   isKeyFrozen: boolean;
   kind: FormFieldKind;
   title: string;
@@ -48,9 +39,8 @@ export type BuilderField = {
 };
 
 export type BuilderForm = {
-  /** Admin-facing row label (`custom_forms.name`), not shown to participants. */
+  /** Admin-facing row label; participants see `title`. */
   name: string;
-  /** Heading participants see. */
   title: string;
   description: string;
   phaseId: string;
@@ -76,7 +66,6 @@ export const createEmptyField = (localId: string): BuilderField => ({
   options: [],
 });
 
-/** Builder state serialized into the stored JSON Schema dialect. */
 export const buildDefinition = (
   form: BuilderForm,
 ): CustomFormDefinitionInput => {
@@ -102,12 +91,8 @@ export const buildDefinition = (
 };
 
 /**
- * A stored definition read back into builder state.
- *
- * `unsupportedKeys` names fields this editor cannot represent — a `location` or
- * `money` field, say, written before the builder existed. Saving would drop
- * them, so a caller that gets a non-empty list must refuse to edit the form
- * rather than silently rewriting it.
+ * `unsupportedKeys` names fields this editor cannot represent. Saving would
+ * drop them, so a caller that gets any must refuse to edit the form.
  */
 export const parseDefinition = ({
   schema,
@@ -115,7 +100,7 @@ export const parseDefinition = ({
   name,
 }: {
   schema: Record<string, unknown>;
-  /** Effective phase resolved by the server (`x-phase` or the initial phase). */
+  /** Resolved by the server, not read off the schema. */
   phaseId: string;
   name: string;
 }): { form: BuilderForm; unsupportedKeys: string[] } => {
@@ -178,14 +163,9 @@ export const parseDefinition = ({
   };
 };
 
-/** How many fields a stored definition holds. */
 export const countFields = (schema: Record<string, unknown>): number =>
   Object.keys(isRecord(schema.properties) ? schema.properties : {}).length;
 
-/**
- * The draft the editor opens on: a stored form read back, or a new one already
- * pointed at the first phase that has room for it.
- */
 export const initialDraftFor = ({
   form,
   phases,
@@ -212,17 +192,15 @@ export const initialDraftFor = ({
 
   return parseDefinition({
     schema: form.schema,
-    // A form whose phase the server could not resolve still has to open on
-    // something; the first phase keeps the select from starting empty.
+    // An unresolved phase still has to open on something.
     phaseId: form.phaseId ?? phases[0]?.phaseId ?? '',
     name: form.name,
   });
 };
 
 /**
- * How a form's phase reads in the list: the phase's name when the process still
- * configures it, else the raw id — a form bound to a phase that has since been
- * removed is still served to participants, so hiding it would hide a live form.
+ * Falls back to the raw id: a form bound to a since-removed phase is still
+ * served to participants, so hiding it would hide a live form.
  */
 export const resolvePhaseBadge = ({
   phaseId,
@@ -245,17 +223,12 @@ export const resolvePhaseBadge = ({
   };
 };
 
-/**
- * What is wrong with a draft, as a code the caller renders through `t()`.
- * `position` is the 1-based field number for the per-field codes.
- *
- * Codes rather than sentences: the messages belong to the app's dictionaries,
- * and keeping this function free of them keeps it a pure, testable check.
- */
+/** Codes, not sentences: the copy lives in the dictionaries. `position` is the
+ *  1-based field number. */
 export type DraftProblem = {
   code: DraftProblemCode;
   position?: number;
-  /** Set only on `schema`: the raw issue, for a shape we failed to anticipate. */
+  /** Set only on `schema`. */
   detail?: string;
 };
 
@@ -268,13 +241,8 @@ export type DraftProblemCode =
   | 'field-missing-options'
   | 'schema';
 
-/**
- * A draft checked against everything the server will enforce, returning the
- * definition to save or the reasons it cannot be.
- *
- * The explicit checks come first so an author sees copy in their own language;
- * a `schema` problem is the backstop for a shape those checks did not predict.
- */
+/** Explicit checks first so the author sees translated copy; `schema` is the
+ *  backstop for a shape they did not predict. */
 export const validateDraft = (
   draft: BuilderForm,
 ):
@@ -302,7 +270,6 @@ export const validateDraft = (
   return { ok: true, definition: parsed.data };
 };
 
-/** Every explicit rule an author can break, in the order the form reads. */
 const describeDraftProblems = (draft: BuilderForm): DraftProblem[] => {
   const problems: DraftProblem[] = [
     ...(draft.name.trim() ? [] : [{ code: 'missing-name' as const }]),
@@ -326,14 +293,8 @@ const describeDraftProblems = (draft: BuilderForm): DraftProblem[] => {
   return problems;
 };
 
-/**
- * A JSON Schema property name derived from a label, made unique against
- * `takenKeys`.
- *
- * Falls back to a positional name when the label has no characters a key may
- * start with — a label written entirely in a non-Latin script slugs to nothing,
- * and a form still needs a key for it.
- */
+/** Falls back to a positional name: a label in a non-Latin script slugs to
+ *  nothing, and a form still needs a key for it. */
 export const deriveFieldKey = ({
   title,
   takenKeys,
@@ -399,11 +360,8 @@ const buildField = (field: BuilderField): CustomFormField => {
   }
 };
 
-/**
- * Which control `CustomFormModal` would draw for a stored property, or null
- * when it is one this editor cannot round-trip. The branch order mirrors the
- * renderer's, so the kind shown here is the control participants actually get.
- */
+/** Branch order mirrors the renderer's, so the kind shown is the control
+ *  participants actually get. Null when the editor can't round-trip it. */
 const resolveFieldKind = (
   property: Record<string, unknown>,
 ): FormFieldKind | null => {
@@ -418,14 +376,8 @@ const resolveFieldKind = (
   return resolveChoiceKind(property) ?? resolveTypedTextKind(property);
 };
 
-/**
- * The choice half of the cascade: a field with options, or one that asks for a
- * choice control and has none (which the renderer leaves blank, so the editor
- * refuses it rather than showing an answerable-looking control).
- *
- * Returns undefined when the property is not a choice field at all, which is
- * how {@link resolveFieldKind} knows to keep looking.
- */
+/** undefined when the property is not a choice field, so the caller keeps
+ *  looking; null when it is one the renderer would leave blank. */
 const resolveChoiceKind = (
   property: Record<string, unknown>,
 ): FormFieldKind | null | undefined => {
@@ -439,7 +391,6 @@ const resolveChoiceKind = (
   return format === 'dropdown' || format === 'radio' ? null : undefined;
 };
 
-/** The remaining kinds, keyed off `type` and then `x-format`. */
 const resolveTypedTextKind = (
   property: Record<string, unknown>,
 ): FormFieldKind | null => {
@@ -457,7 +408,7 @@ const resolveTypedTextKind = (
     return 'long-text';
   }
 
-  // `money` and `location` render controls the builder has no editor for.
+  // `money` and `location` have no editor here.
   return format === undefined || format === 'short-text' ? 'short-text' : null;
 };
 
@@ -490,9 +441,7 @@ const slugifyKey = (title: string): string => {
     )
     .join('');
 
-  // A key must start with a letter, so a label like "2024 budget" loses its
-  // leading digits. The word that ends up first is then lower-cased in turn,
-  // so dropping them leaves `budget`, not `Budget`.
+  // A key must start with a letter; re-lower-case whatever word ends up first.
   const trimmed = camel.replace(/^[^a-zA-Z]+/, '');
 
   return `${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`.slice(0, 64);
