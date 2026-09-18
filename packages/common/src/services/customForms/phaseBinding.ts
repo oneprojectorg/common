@@ -1,9 +1,11 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import type { TransactionType } from '@op/db/client';
+import { processInstances } from '@op/db/schema';
 import { sql } from 'drizzle-orm';
 
-import { ValidationError } from '../../utils';
+import { NotFoundError, ValidationError } from '../../utils';
 import type { CustomFormProcessContext } from './customFormAuth';
+import { parseInstancePhases } from './customFormAuth';
 import { getEffectiveFormPhase } from './utils';
 
 /** The only write path, so no insert can skip the lock the check depends on. */
@@ -20,10 +22,48 @@ export const writeWithPhaseLock = async <TResult>({
 }): Promise<TResult> =>
   db.transaction(async (tx) => {
     await lockProfileForms({ tx, profileId: process.profileId });
-    await assertPhaseAvailable({ tx, process, phaseId, excludeFormId });
+
+    // Re-read under the instance's row lock: the phase set was resolved before
+    // this transaction, and the process builder can remove a phase in between.
+    const phases = await lockInstancePhases({
+      tx,
+      profileId: process.profileId,
+    });
+
+    await assertPhaseAvailable({
+      tx,
+      process: { ...process, ...phases },
+      phaseId,
+      excludeFormId,
+    });
 
     return write(tx);
   });
+
+/**
+ * The instance's current phase set, holding the row until the transaction ends
+ * so a concurrent phase edit waits rather than racing this check.
+ */
+const lockInstancePhases = async ({
+  tx,
+  profileId,
+}: {
+  tx: TransactionType;
+  profileId: string;
+}) => {
+  const [instance] = await tx
+    .select({ instanceData: processInstances.instanceData })
+    .from(processInstances)
+    .where(eq(processInstances.profileId, profileId))
+    .for('update')
+    .limit(1);
+
+  if (!instance) {
+    throw new NotFoundError('Decision process', profileId);
+  }
+
+  return parseInstancePhases(instance.instanceData);
+};
 
 /**
  * `x-phase` lives inside the `schema` jsonb, so there is no unique index to

@@ -30,7 +30,7 @@ export const listCustomForms = async ({
         deletedAt: { isNull: true },
       },
       // `createdAt` isn't unique; `id` settles ties.
-      orderBy: { createdAt: 'asc' as const, id: 'asc' as const },
+      orderBy: { createdAt: 'asc', id: 'asc' },
     }),
   ]);
 

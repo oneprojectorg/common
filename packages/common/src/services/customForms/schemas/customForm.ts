@@ -66,6 +66,11 @@ export const CUSTOM_FORM_SUBMISSION_MAX_BYTES = 64 * 1024;
  *  future reader that merges or re-keys `submission.data`. */
 const FORBIDDEN_DATA_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
+/** UTF-8 bytes, not UTF-16 code units — CJK and emoji are 3-4 bytes each, so
+ *  `String.length` would let a payload past the cap it is meant to enforce. */
+const serializedByteLength = (value: unknown): number =>
+  new TextEncoder().encode(JSON.stringify(value)).length;
+
 /** Input for `createCustomFormSubmission`. */
 export const createCustomFormSubmissionInputSchema = z.object({
   customFormId: z.uuid(),
@@ -82,7 +87,7 @@ export const createCustomFormSubmissionInputSchema = z.object({
         });
       }
     }
-    if (JSON.stringify(value).length > CUSTOM_FORM_SUBMISSION_MAX_BYTES) {
+    if (serializedByteLength(value) > CUSTOM_FORM_SUBMISSION_MAX_BYTES) {
       ctx.addIssue({
         code: 'custom',
         message: 'Submission is too large',
@@ -174,7 +179,7 @@ export const customFormDefinitionInputSchema = z
 
     refineFieldOrder({ order: definition['x-field-order'], known }, ctx);
 
-    if (JSON.stringify(definition).length > CUSTOM_FORM_DEFINITION_MAX_BYTES) {
+    if (serializedByteLength(definition) > CUSTOM_FORM_DEFINITION_MAX_BYTES) {
       ctx.addIssue({ code: 'custom', message: 'Form definition is too large' });
     }
   });

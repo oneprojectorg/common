@@ -77,14 +77,20 @@ export const assertCustomFormAdminForInstance = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const parsed = instancePhasesSchema.safeParse(instance.instanceData);
+  return {
+    profileId: instance.profileId,
+    ...parseInstancePhases(instance.instanceData),
+  };
+};
+
+/** The phase set an `x-phase` may name, in order. */
+export const parseInstancePhases = (
+  instanceData: unknown,
+): Pick<CustomFormProcessContext, 'initialPhaseId' | 'phaseIds'> => {
+  const parsed = instancePhasesSchema.safeParse(instanceData);
   const phaseIds = (parsed.success ? (parsed.data.phases ?? []) : []).map(
     (phase) => phase.phaseId,
   );
 
-  return {
-    profileId: instance.profileId,
-    initialPhaseId: phaseIds[0] ?? null,
-    phaseIds,
-  };
+  return { initialPhaseId: phaseIds[0] ?? null, phaseIds };
 };
