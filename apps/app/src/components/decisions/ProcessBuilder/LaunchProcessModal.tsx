@@ -59,20 +59,14 @@ export const LaunchProcessModal = ({
 
   const utils = trpc.useUtils();
 
-  // Already cached by the builder's autosave provider — no extra request. Read
-  // so the capture below can gate on the same DRAFT -> PUBLISHED transition the
-  // server gates on, rather than on "the request succeeded": a second admin
-  // whose footer still shows Launch re-publishes an already-published process,
-  // which the server records as a no-op.
+  // Already cached by the builder's autosave provider — no extra request.
   const { data: liveInstance } = trpc.decision.getInstance.useQuery({
     instanceId,
   });
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
-      // Browser-side mirror of the server's `admin_set_process`. An unresolved
-      // or failed query counts as launchable: a missed milestone is a survey
-      // that never fires, which is worse than one spurious event.
+      // Unresolved counts as launchable — a missed survey beats a spurious one.
       if (!liveInstance || liveInstance.status === ProcessStatus.DRAFT) {
         posthog.capture(
           'admin_set_process',

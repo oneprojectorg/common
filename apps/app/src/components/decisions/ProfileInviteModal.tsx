@@ -438,8 +438,7 @@ function ProfileInviteModalContent({
           profileId,
         });
 
-        // Above the partial-failure return below, so a mixed batch still
-        // reports the invites that did land.
+        // Must stay above the partial-failure return below.
         trackProfileInvited({
           profileId,
           invitationCount: result.details.successful.length,

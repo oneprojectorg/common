@@ -227,7 +227,6 @@ function ProposalEditorInner({
   // -- Mutations -------------------------------------------------------------
 
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
-    // Browser-side mirror of the server's `proposal_submitted`.
     onSuccess: () =>
       posthog.capture(
         'proposal_submitted',

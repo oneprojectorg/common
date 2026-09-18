@@ -197,9 +197,8 @@ function ReviewFormProviderInner({
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
-      // Browser-side mirror of the server's `review_submitted`, carrying the
-      // subset of its properties the browser already holds — the scoring and
-      // timing fields would have to be recomputed here.
+      // The server copy adds scoring and timing; recomputing them here would
+      // mean redoing the rubric math.
       posthog.capture(
         'review_submitted',
         getDecisionCommonProperties({
