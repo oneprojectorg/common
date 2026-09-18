@@ -2,6 +2,7 @@ import { getInstanceCurrentPhase, getInstancePhases } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
+import { sql } from 'drizzle-orm';
 
 const { reviewPhaseEndingSoon } = Events;
 
@@ -32,6 +33,14 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
           status: ProcessStatus.PUBLISHED,
           deletedAt: { isNull: true },
           currentStateId: { isNotNull: true },
+          // Pre-filter only; the review-flag guard below stays the real test.
+          RAW: (table) =>
+            sql`(jsonb_typeof(${table.instanceData} -> 'phases') = 'array' AND EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(${table.instanceData} -> 'phases') AS p
+              WHERE p ->> 'phaseId' = ${table.currentStateId}
+                AND (p -> 'rules' -> 'reviews' ->> 'submit')::boolean IS TRUE
+            ))`,
         },
         columns: {
           id: true,
