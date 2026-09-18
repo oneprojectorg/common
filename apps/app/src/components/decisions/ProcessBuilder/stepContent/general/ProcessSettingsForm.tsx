@@ -20,11 +20,17 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
   z.object({
     stewardProfileId: z.string(),
     name: z
-      .string({ message: t('Enter a process name') })
-      .min(1, { message: t('Enter a process name') }),
+      .string({ message: t('decisions.processBuilder.processNamePlaceholder') })
+      .min(1, {
+        message: t('decisions.processBuilder.processNamePlaceholder'),
+      }),
     description: z
-      .string({ message: t('Enter a description') })
-      .min(1, { message: t('Enter a description') }),
+      .string({
+        message: t('decisions.processBuilder.processDescriptionPlaceholder'),
+      })
+      .min(1, {
+        message: t('decisions.processBuilder.processDescriptionPlaceholder'),
+      }),
     organizeByCategories: z.boolean(),
     requireCollaborativeProposals: z.boolean(),
     isPrivate: z.boolean(),
@@ -169,7 +175,7 @@ export function ProcessSettingsForm({
             <div>
               <div className="flex items-center justify-between">
                 <Header1 className="text-headline">
-                  {t('Process Settings')}
+                  {t('decisions.processBuilder.processSettingsSectionLabel')}
                 </Header1>
                 <SaveStatusIndicator
                   status={autosaveStatus.status}
@@ -177,7 +183,7 @@ export function ProcessSettingsForm({
                 />
               </div>
               <p className="mt-2 text-muted-foreground">
-                {t('Define the key details for your decision process.')}
+                {t('decisions.processBuilder.processSettingsHint')}
               </p>
             </div>
 
@@ -185,12 +191,10 @@ export function ProcessSettingsForm({
               name="stewardProfileId"
               children={(field) => (
                 <field.Select
-                  label={t('Who is stewarding this process?')}
+                  label={t('decisions.processBuilder.stewardQuestion')}
                   placeholder={t('Select')}
                   disabled={!isProcessOwner}
-                  description={t(
-                    'The organization, coalition, committee or individual responsible for running this process. Only the process owner can change the steward.',
-                  )}
+                  description={t('decisions.processBuilder.stewardHint')}
                   options={profileItems.map((item) => ({
                     value: item.id,
                     label: item.name,
@@ -203,9 +207,9 @@ export function ProcessSettingsForm({
               name="name"
               children={(field) => (
                 <field.TextField
-                  label={t('Process Name')}
+                  label={t('decisions.processBuilder.processNameLabel')}
                   isRequired
-                  placeholder={t('My new process')}
+                  placeholder={t('decisions.processBuilder.processNameExample')}
                   maxLength={50}
                 />
               )}
@@ -217,11 +221,11 @@ export function ProcessSettingsForm({
                 <field.TextArea
                   label={t('Description')}
                   isRequired
-                  placeholder={t('A description about my process')}
-                  maxLength={250}
-                  description={t(
-                    'This information appears when participants want to learn more about the process',
+                  placeholder={t(
+                    'decisions.processBuilder.processDescriptionExample',
                   )}
+                  maxLength={250}
+                  description={t('decisions.processBuilder.processAboutHint')}
                 />
               )}
             />
@@ -232,9 +236,11 @@ export function ProcessSettingsForm({
                 name="organizeByCategories"
                 children={(field) => (
                   <ToggleRow
-                    label={t('Organize proposals into categories')}
+                    label={t(
+                      'decisions.processBuilder.organizeCategoriesLabel',
+                    )}
                     description={t(
-                      'Group proposals into categories for better organization and evaluation.',
+                      'decisions.processBuilder.organizeCategoriesHint',
                     )}
                   >
                     <Switch
@@ -257,9 +263,11 @@ export function ProcessSettingsForm({
                 name="requireCollaborativeProposals"
                 children={(field) => (
                   <ToggleRow
-                    label={t('Require collaborative proposals')}
+                    label={t(
+                      'decisions.processBuilder.requireCollaborativeProposalsLabel',
+                    )}
                     description={t(
-                      'Require proposals to be co-authored by at least 2 participants.',
+                      'decisions.processBuilder.requireCollaborativeProposalsHint',
                     )}
                   >
                     <field.Switch />
@@ -271,16 +279,14 @@ export function ProcessSettingsForm({
 
           {/* Visibility Section */}
           <section className="space-y-6">
-            <Header3>{t('Visibility')}</Header3>
+            <Header3>{t('decisions.processBuilder.visibilityLabel')}</Header3>
 
             <form.AppField
               name="isPrivate"
               children={(field) => (
                 <ToggleRow
                   label={t('Open for learning')}
-                  description={t(
-                    'Anyone on Common can view this process. Only invited participants can submit.',
-                  )}
+                  description={t('decisions.processBuilder.visibilityOpenHint')}
                 >
                   <Switch
                     checked={!field.state.value}

@@ -139,7 +139,7 @@ export function RubricCriterionCard({
         isExpanded={isExpanded}
         onExpandedChange={onExpandedChange}
         controls={controls}
-        dragHandleAriaLabel={t('Drag to reorder criterion')}
+        dragHandleAriaLabel={t('decisions.processBuilder.dragCriterionLabel')}
         className={cn(
           'data-open:bg-muted',
           isNew && 'animate-border-highlight',
@@ -150,7 +150,8 @@ export function RubricCriterionCard({
           {/* Label */}
           <Field className="min-w-0 flex-1">
             <FieldLabel htmlFor={`${criterion.id}-label`}>
-              {t('Label')} <RequiredAsterisk />
+              {t('decisions.processBuilder.criterionLabel')}{' '}
+              <RequiredAsterisk />
             </FieldLabel>
             <InputGroup className="bg-white">
               <InputGroupInput
@@ -161,7 +162,7 @@ export function RubricCriterionCard({
                 onChange={(e) => onUpdateLabel?.(criterion.id, e.target.value)}
               />
               <InputGroupAddon align="inline-end">
-                {t('{count}/{max}', {
+                {t('decisions.processBuilder.characterCount', {
                   count: criterion.label.length,
                   max: MAX_LABEL_LENGTH,
                 })}
@@ -183,12 +184,12 @@ export function RubricCriterionCard({
                 }
                 maxLength={MAX_DESCRIPTION_LENGTH}
                 placeholder={t(
-                  'Provide additional guidance for participants...',
+                  'decisions.processBuilder.criterionGuidancePlaceholder',
                 )}
                 className="min-h-24"
               />
               <InputGroupAddon align="block-end" className="justify-end">
-                {t('{count}/{max}', {
+                {t('decisions.processBuilder.characterCount', {
                   count: criterion.description?.length ?? 0,
                   max: MAX_DESCRIPTION_LENGTH,
                 })}
@@ -243,7 +244,7 @@ export function RubricCriterionCard({
           <div className="flex items-center justify-between gap-4 border-t pt-4">
             <Field orientation="horizontal" className="w-auto">
               <FieldLabel htmlFor={requiredToggleId}>
-                {t('Required?')}
+                {t('decisions.processBuilder.criterionRequiredQuestion')}
               </FieldLabel>
               <Switch
                 id={requiredToggleId}
@@ -251,7 +252,7 @@ export function RubricCriterionCard({
                 onCheckedChange={(isSelected) =>
                   onUpdateRequired(criterion.id, isSelected)
                 }
-                aria-label={t('Required')}
+                aria-label={t('decisions.processBuilder.requiredLabel')}
               />
             </Field>
             {onRemove && (
@@ -289,7 +290,7 @@ function CriterionTypeSelector({
   return (
     <FieldSet>
       <FieldLegend className="text-base">
-        {t('How should reviewers score this?')}
+        {t('decisions.processBuilder.criterionScoringQuestion')}
       </FieldLegend>
       <RadioGroup
         value={value}
@@ -387,19 +388,19 @@ function ScoredCriterionConfig({
     <div className="space-y-4">
       <NumberField
         id={`${criterion.id}-max-points`}
-        label={t('Max points')}
+        label={t('decisions.processBuilder.maxPointsLabel')}
         className="w-32"
         value={max}
         onChange={handleMaxPointsChange}
-        errorMessage={max < 2 ? t('Minimum is 2') : undefined}
+        errorMessage={
+          max < 2 ? t('decisions.processBuilder.minimumIsTwoError') : undefined
+        }
       />
 
       <div className="space-y-2">
-        <h4>{t('Define what each score means')}</h4>
+        <h4>{t('decisions.processBuilder.scoreDescriptionsHeading')}</h4>
         <p className="text-sm">
-          {t(
-            'Help reviewers score consistently by describing what each point value represents',
-          )}
+          {t('decisions.processBuilder.scoreDescriptionsHint')}
         </p>
         <div className="space-y-4">
           {criterion.scoreLabels.map((_, i) => {
@@ -416,9 +417,12 @@ function ScoredCriterionConfig({
                   onChange={(e) =>
                     onUpdateScoreLabel(scoreValue, e.target.value)
                   }
-                  placeholder={t('Describe what earns {number} points...', {
-                    number: scoreValue,
-                  })}
+                  placeholder={t(
+                    'decisions.processBuilder.scoreDescriptionPlaceholder',
+                    {
+                      number: scoreValue,
+                    },
+                  )}
                   className="w-full"
                 />
               </div>
@@ -511,7 +515,7 @@ function SingleSelectCriterionConfig({
       <div className="flex items-center gap-2">
         <LuGripVertical className="size-4 text-muted-foreground" />
         <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 shadow-lg">
-          {item.value || t('Option')}
+          {item.value || t('decisions.processBuilder.optionLabel')}
         </span>
       </div>
     );
@@ -569,15 +573,19 @@ function SingleSelectCriterionConfig({
 
   return (
     <div ref={containerRef} className="space-y-2">
-      <h4 className="text-strong">{t('Options')}</h4>
+      <h4 className="text-strong">
+        {t('decisions.processBuilder.optionsLabel')}
+      </h4>
       <Sortable
         items={options}
         onChange={updateOptions}
         dragTrigger="handle"
-        getItemLabel={(item) => item.value || t('Option')}
+        getItemLabel={(item) =>
+          item.value || t('decisions.processBuilder.optionLabel')
+        }
         renderDragPreview={renderDragPreview}
         className="gap-4"
-        aria-label={t('Options')}
+        aria-label={t('decisions.processBuilder.optionsLabel')}
       >
         {(option, { dragHandleProps }) => {
           const index = options.findIndex((o) => o.id === option.id);
@@ -587,7 +595,7 @@ function SingleSelectCriterionConfig({
               <div className="flex items-center gap-2">
                 <DragHandle
                   {...dragHandleProps}
-                  aria-label={t('Drag to reorder option')}
+                  aria-label={t('decisions.processBuilder.dragOptionLabel')}
                   className="text-muted-foreground hover:text-muted-foreground"
                 />
                 <Input
@@ -596,7 +604,9 @@ function SingleSelectCriterionConfig({
                     handleUpdateOption(option.id, e.target.value)
                   }
                   onKeyDown={(e) => handleKeyDown(e, option)}
-                  placeholder={t('Option {number}', { number: index + 1 })}
+                  placeholder={t('decisions.processBuilder.optionNumber', {
+                    number: index + 1,
+                  })}
                   className="w-full bg-white"
                 />
 
@@ -610,7 +620,9 @@ function SingleSelectCriterionConfig({
                       <Button
                         variant="outline"
                         size="icon"
-                        aria-label={t('Remove option')}
+                        aria-label={t(
+                          'decisions.processBuilder.removeOptionAction',
+                        )}
                         aria-disabled={!canRemove || undefined}
                         className={cn(
                           !canRemove &&
@@ -627,7 +639,7 @@ function SingleSelectCriterionConfig({
                     }
                   />
                   <TooltipContent>
-                    {t('At least two options are required')}
+                    {t('decisions.processBuilder.optionsMinimumError')}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -651,7 +663,9 @@ function SingleSelectCriterionConfig({
                     className="ms-8 mb-4 self-start"
                   >
                     <LuX className="size-4" />
-                    <span>{t('Remove description')}</span>
+                    <span>
+                      {t('decisions.processBuilder.removeDescriptionAction')}
+                    </span>
                   </Button>
                 </div>
               ) : (
@@ -676,7 +690,7 @@ function SingleSelectCriterionConfig({
         className="mt-2 hover:bg-secondary"
       >
         <LuPlus className="size-4" />
-        <span>{t('Add option')}</span>
+        <span>{t('decisions.processBuilder.addOptionAction')}</span>
       </Button>
     </div>
   );

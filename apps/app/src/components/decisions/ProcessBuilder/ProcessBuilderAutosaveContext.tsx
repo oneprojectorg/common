@@ -65,7 +65,7 @@ export function ProcessBuilderAutosaveProvider({
   isDraft: boolean;
   children: React.ReactNode;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const utils = trpc.useUtils();
 
   // Already cached by section queries — no extra request.
@@ -128,7 +128,7 @@ export function ProcessBuilderAutosaveProvider({
     onSuccess: () => markSaved(decisionProfileId),
     onError: (error) => {
       setSaveStatus(decisionProfileId, 'error');
-      toast.error(t('Failed to save changes'), {
+      toast.error(t('saveChangesError'), {
         description: error.message,
       });
     },

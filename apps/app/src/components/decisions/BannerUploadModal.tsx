@@ -36,7 +36,9 @@ export function BannerUploadModal({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('Edit banner')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.processBuilder.editBannerTitle')}
+          </DialogTitle>
         </DialogHeader>
         <div className="px-6 py-4">
           <OverviewHeroImageField

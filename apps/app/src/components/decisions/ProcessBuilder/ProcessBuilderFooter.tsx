@@ -66,14 +66,16 @@ export const ProcessBuilderFooter = ({
   const hasUnsavedChanges =
     !isDraft && !!dirtyFields && Object.keys(dirtyFields).length > 0;
   const displayName =
-    storeData?.name || decisionProfile?.name || t('New process');
+    storeData?.name ||
+    decisionProfile?.name ||
+    t('decisions.processBuilder.newProcessTitle');
 
   const { flushPendingChanges } = useProcessBuilderAutosave();
   const utils = trpc.useUtils();
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
-      toast.success(t('Changes saved successfully'));
+      toast.success(t('decisions.processBuilder.saveChangesSuccess'));
       // Clear stale store data so the editor reseeds from fresh server data
       clearInstance(decisionProfileId);
       await utils.decision.getDecisionBySlug.invalidate({ slug });
@@ -83,7 +85,7 @@ export const ProcessBuilderFooter = ({
       router.push(`/decisions/${data.slug}`);
     },
     onError: (error) => {
-      toast.error(t('Failed to save changes'), {
+      toast.error(t('decisions.processBuilder.saveChangesError'), {
         description: error.message,
       });
     },
@@ -134,7 +136,7 @@ export const ProcessBuilderFooter = ({
           {/* Left: Exit + Back — matches sidebar width */}
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
             <ButtonLink variant="ghost" href={`/decisions/${slug}`}>
-              {t('Exit')}
+              {t('decisions.processBuilder.exitAction')}
             </ButtonLink>
             {hasPrev && (
               <Button
@@ -161,7 +163,7 @@ export const ProcessBuilderFooter = ({
             <div className="flex shrink-0 items-center gap-2">
               {hasUnsavedChanges && (
                 <span className="text-sm text-muted-foreground">
-                  {t('Unsaved changes')}
+                  {t('decisions.processBuilder.unsavedChanges')}
                 </span>
               )}
               {hasNext && (
@@ -177,7 +179,9 @@ export const ProcessBuilderFooter = ({
                   onClick={handleLaunchOrSave}
                   disabled={updateInstance.isPending}
                 >
-                  {isDraft ? t('Launch Process') : t('Update Process')}
+                  {isDraft
+                    ? t('decisions.processBuilder.launchProcessAction')
+                    : t('decisions.processBuilder.updateProcessAction')}
                 </Button>
               )}
             </div>
@@ -186,7 +190,7 @@ export const ProcessBuilderFooter = ({
           {/* Mobile: Menu + Back + Next + Launch */}
           <div className="flex items-center justify-end gap-2 md:hidden">
             <SidebarTrigger
-              aria-label={t('Open process steps')}
+              aria-label={t('decisions.processBuilder.openProcessStepsAction')}
               variant="outline"
               size="icon"
             >
@@ -208,7 +212,9 @@ export const ProcessBuilderFooter = ({
                 onClick={handleLaunchOrSave}
                 disabled={updateInstance.isPending}
               >
-                {isDraft ? t('Launch') : t('Update')}
+                {isDraft
+                  ? t('decisions.processBuilder.launchAction')
+                  : t('Update')}
               </Button>
             )}
           </div>
