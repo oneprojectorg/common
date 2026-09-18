@@ -357,9 +357,7 @@ export const LoginPanel = () => {
             <div className="flex flex-col gap-4">
               <AuthPhoneField
                 label={t('auth.phoneNumberLabel')}
-                description={t(
-                  'We text you a code. Standard message and data rates may apply.',
-                )}
+                description={t('auth.smsRatesHint')}
                 value={phone}
                 isDisabled={phoneFlow.isSending}
                 onChange={setPhone}

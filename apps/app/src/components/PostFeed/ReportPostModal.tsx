@@ -65,7 +65,7 @@ export function ReportPostModal({
             }
             disabled={reportMutation.isPending}
           >
-            {t('Report')}
+            {t('posts.reportAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

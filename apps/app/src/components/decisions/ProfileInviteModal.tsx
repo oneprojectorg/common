@@ -730,7 +730,7 @@ function ProfileInviteModalContent({
           disabled={allSelectedItems.length === 0}
           loading={isSubmitting}
         >
-          {isSubmitting ? t('Adding...') : t('Add')}
+          {isSubmitting ? t('resources.addingProgress') : t('Add')}
         </Button>
       </DialogFooter>
     </>

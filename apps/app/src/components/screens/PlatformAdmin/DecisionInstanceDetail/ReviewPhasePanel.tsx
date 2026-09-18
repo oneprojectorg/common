@@ -124,7 +124,7 @@ export const ReviewPhasePanel = ({
             disabled={data.totalAssignments === 0}
           >
             <LuDownload data-icon="inline-start" />
-            {t('Download CSV')}
+            {t('admin.downloadCsvAction')}
           </Button>
           {!isCompleted ? (
             <AssignReviewsDialog

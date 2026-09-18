@@ -160,7 +160,7 @@ const RequestMembershipButtonSuspense = ({
               variant="outline"
               className="w-full sm:w-fit"
             >
-              {t('decisions.review.keepRequestAction')}
+              {t('profile.keepMembershipRequestAction')}
             </Button>
             <Button
               variant="destructive"
@@ -168,7 +168,7 @@ const RequestMembershipButtonSuspense = ({
               loading={isPending}
               className="w-full sm:w-fit"
             >
-              {t('decisions.review.cancelRequestAction')}
+              {t('profile.cancelMembershipRequestAction')}
             </Button>
           </DialogFooter>
         </DialogContent>

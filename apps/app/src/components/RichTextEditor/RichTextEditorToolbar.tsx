@@ -198,7 +198,7 @@ export function RichTextEditorToolbar({
     },
     {
       value: 'code',
-      label: t('Code'),
+      label: t('editor.inlineCodeLabel'),
       Icon: LuCode,
       run: () => editor?.chain().focus().toggleCode().run(),
     },
@@ -258,7 +258,7 @@ export function RichTextEditorToolbar({
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={noEditor || !editor.can().undo()}
           noEditor={noEditor}
-          label={t('Undo')}
+          label={t('editor.undoAction')}
         >
           <LuUndo className="size-4 rtl:-scale-x-100" />
         </ActionButton>

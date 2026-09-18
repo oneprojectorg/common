@@ -96,7 +96,7 @@ export const JoinDecisionButton = ({
         void setJoin('1');
       }}
     >
-      {t('Join')}
+      {t('auth.joinAction')}
     </Button>
   );
 };
@@ -112,7 +112,7 @@ export const JoinDecisionButtonFallback = () => {
   // button and keep link semantics rather than its `role="button"`.
   return (
     <Button nativeButton={false} role={undefined} render={<a href="?join=1" />}>
-      {t('Join')}
+      {t('auth.joinAction')}
     </Button>
   );
 };
@@ -297,10 +297,9 @@ const JoinAccountModalContent = () => {
         <DialogDescription className="text-center">
           {otpSent
             ? isPhone
-              ? t(
-                  'A code was sent to {phone}. Type the code below to create your profile.',
-                  { phone: normalizePhoneNumber(phone) },
-                )
+              ? t('auth.createProfilePhoneCodeHint', {
+                  phone: normalizePhoneNumber(phone),
+                })
               : t('auth.createProfileCodeHint', { email })
             : t('decisions.joinPromptDescription')}
         </DialogDescription>
@@ -340,7 +339,7 @@ const JoinAccountModalContent = () => {
                 }}
               >
                 <span id="join-channel-label" className="text-label">
-                  {t('Continue with')}
+                  {t('auth.continueWithLabel')}
                 </span>
                 {/* TabsList is `w-fit`; the design splits the full width. */}
                 <TabsList
@@ -367,9 +366,7 @@ const JoinAccountModalContent = () => {
                     label={t('Email')}
                     // The design says "We'll email a link"; we send a
                     // six-digit code, so the copy says code.
-                    description={t(
-                      "We'll email you a code to confirm it's yours.",
-                    )}
+                    description={t('auth.emailOwnershipHint')}
                     // Example-email placeholders are deliberately untranslated.
                     placeholder="name@example.com"
                     value={email}
@@ -383,9 +380,7 @@ const JoinAccountModalContent = () => {
                 <TabsContent value="phone">
                   <AuthPhoneField
                     label={t('auth.phoneNumberLabel')}
-                    description={t(
-                      'We text you a code. Standard message and data rates may apply.',
-                    )}
+                    description={t('auth.smsRatesHint')}
                     value={phone}
                     isDisabled={isSubmitting}
                     onChange={setPhone}
@@ -398,7 +393,7 @@ const JoinAccountModalContent = () => {
             ) : (
               <AuthEmailField
                 label={t('Email')}
-                description={t("We'll email you a code to confirm it's yours.")}
+                description={t('auth.emailOwnershipHint')}
                 placeholder="name@example.com"
                 value={email}
                 isDisabled={isSubmitting}
@@ -447,7 +442,7 @@ const JoinAccountModalContent = () => {
               void submitContact();
             }}
           >
-            {isPhone ? t('Text me a code') : t('Email me a code')}
+            {isPhone ? t('auth.textCodeAction') : t('auth.emailCodeAction')}
           </Button>
         )}
       </DialogFooter>

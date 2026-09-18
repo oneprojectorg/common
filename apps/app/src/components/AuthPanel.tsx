@@ -323,7 +323,7 @@ export const AuthCodeField = ({
       >
         <Field>
           <Input
-            aria-label={t('Code')}
+            aria-label={t('auth.codeLabel')}
             placeholder="1234567890"
             spellCheck={false}
             autoFocus

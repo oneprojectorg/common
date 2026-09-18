@@ -17,31 +17,30 @@ export const CRITERION_TYPE_REGISTRY: Record<
   CriterionTypeRegistryEntry
 > = {
   scored: {
-    labelKey: 'Rating Scale',
-    descriptionKey:
-      'Reviewers select a number with descriptions for each point value',
+    labelKey: 'decisions.processBuilder.criterionTypeScoredLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeScoredHint',
   },
   yes_no: {
-    labelKey: 'Yes/No',
-    descriptionKey: 'Simple binary assessment',
+    labelKey: 'decisions.processBuilder.criterionTypeYesNoLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeYesNoHint',
   },
   single_select: {
-    labelKey: 'Multiple choice',
-    descriptionKey: 'Reviewers select one option',
+    labelKey: 'decisions.processBuilder.criterionTypeSingleSelectLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeSingleSelectHint',
   },
   // Template-authored, like `money`: absent from `CRITERION_TYPES`, so only
   // the label reaches the UI (the criterion card's type badge).
   multi_select: {
-    labelKey: 'Check all that apply',
-    descriptionKey: 'Reviewers select one or more options',
+    labelKey: 'decisions.processBuilder.criterionTypeMultiSelectLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeMultiSelectHint',
   },
   long_text: {
-    labelKey: 'Text response only',
-    descriptionKey: 'No score, just written feedback',
+    labelKey: 'decisions.processBuilder.criterionTypeLongTextLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeLongTextHint',
   },
   money: {
     labelKey: 'Amount',
-    descriptionKey: 'Reviewers enter an amount',
+    descriptionKey: 'decisions.processBuilder.criterionTypeMoneyHint',
   },
 };
 
