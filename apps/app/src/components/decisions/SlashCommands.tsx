@@ -2,14 +2,19 @@
 
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
-import { Suggestion, SuggestionOptions } from '@tiptap/suggestion';
+import { ReactRenderer } from '@tiptap/react';
+import {
+  Suggestion,
+  type SuggestionKeyDownProps,
+  type SuggestionOptions,
+  type SuggestionProps,
+} from '@tiptap/suggestion';
 import React, {
   forwardRef,
   useEffect,
   useImperativeHandle,
   useState,
 } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   LuCode,
   LuHeading1,
@@ -33,12 +38,18 @@ export interface SlashCommandItem {
   command: ({ editor, range }: { editor: any; range: any }) => void;
 }
 
+interface SlashCommandsListHandle {
+  onKeyDown: (props: SuggestionKeyDownProps) => boolean;
+}
+
+interface SlashCommandsListProps {
+  items: SlashCommandItem[];
+  command: (item: SlashCommandItem) => void;
+}
+
 const SlashCommandsList = forwardRef<
-  { onKeyDown: (props: { event: KeyboardEvent }) => boolean },
-  {
-    items: SlashCommandItem[];
-    command: (item: SlashCommandItem) => void;
-  }
+  SlashCommandsListHandle,
+  SlashCommandsListProps
 >((props, ref) => {
   const t = useTranslations();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -88,7 +99,10 @@ const SlashCommandsList = forwardRef<
   }));
 
   return (
-    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-lg border bg-white p-1 shadow-md">
+    <div
+      data-testid="slash-commands-menu"
+      className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-lg border bg-white p-1 shadow-md"
+    >
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
@@ -98,6 +112,10 @@ const SlashCommandsList = forwardRef<
                 : 'text-foreground'
             }`}
             key={index}
+            // Keep the caret in the editor: the default mousedown moves focus
+            // to the button, which exits the suggestion and unmounts this menu
+            // before the click lands, so the item's command never runs.
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => selectItem(index)}
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-white">
@@ -120,7 +138,9 @@ const SlashCommandsList = forwardRef<
 
 SlashCommandsList.displayName = 'SlashCommandsList';
 
-const suggestionOptions: Partial<SuggestionOptions> = {
+const suggestionOptions: Partial<
+  SuggestionOptions<SlashCommandItem, SlashCommandItem>
+> = {
   items: ({ query }: { query: string }): SlashCommandItem[] => {
     const items: SlashCommandItem[] = [
       {
@@ -263,72 +283,71 @@ const suggestionOptions: Partial<SuggestionOptions> = {
     });
   },
 
+  // The menu is rendered through TipTap's ReactRenderer rather than its own
+  // `createRoot`. ReactRenderer portals the component into the tree under
+  // `EditorContent`, so it keeps the app's React context — a detached root has
+  // none, and `useTranslations()` threw there for want of the next-intl
+  // provider. The portal only supplies the React tree; the element itself still
+  // lives on `document.body` so the menu escapes the editor's overflow.
   render: () => {
-    let component: any;
-    let popup: any;
-    let root: any;
+    let renderer:
+      | ReactRenderer<SlashCommandsListHandle, SlashCommandsListProps>
+      | undefined;
+
+    const positionMenu = (
+      clientRect: SuggestionProps<SlashCommandItem>['clientRect'],
+    ) => {
+      const rect = clientRect?.();
+      if (!renderer || !rect) {
+        return;
+      }
+
+      renderer.element.style.top = `${rect.bottom + 8}px`;
+      renderer.element.style.left = `${rect.left}px`;
+    };
+
+    const destroyMenu = () => {
+      // `destroy()` unregisters the portal and removes the element from the DOM.
+      renderer?.destroy();
+      renderer = undefined;
+    };
 
     return {
-      onStart: (props: any) => {
+      onStart: (props: SuggestionProps<SlashCommandItem>) => {
         if (!props.clientRect) {
           return;
         }
 
-        popup = document.createElement('div');
-        popup.style.position = 'absolute';
-        popup.style.top = `${props.clientRect().bottom + 8}px`;
-        popup.style.left = `${props.clientRect().left}px`;
-        popup.style.zIndex = '9999999';
-        document.body.appendChild(popup);
+        renderer = new ReactRenderer(SlashCommandsList, {
+          editor: props.editor,
+          props: { items: props.items, command: props.command },
+        });
 
-        root = createRoot(popup);
-        root.render(
-          <SlashCommandsList
-            ref={(ref) => {
-              component = ref;
-            }}
-            items={props.items}
-            command={props.command}
-          />,
-        );
+        renderer.element.style.position = 'absolute';
+        renderer.element.style.zIndex = '9999999';
+        document.body.appendChild(renderer.element);
+        positionMenu(props.clientRect);
       },
 
-      onUpdate(props: any) {
-        if (!popup || !root) return;
-
-        if (props.clientRect) {
-          popup.style.top = `${props.clientRect().bottom + 8}px`;
-          popup.style.left = `${props.clientRect().left}px`;
-        }
-
-        root.render(
-          <SlashCommandsList
-            ref={(ref) => {
-              component = ref;
-            }}
-            items={props.items}
-            command={props.command}
-          />,
-        );
+      onUpdate(props: SuggestionProps<SlashCommandItem>) {
+        renderer?.updateProps({
+          items: props.items,
+          command: props.command,
+        });
+        positionMenu(props.clientRect);
       },
 
-      onKeyDown(props: any) {
+      onKeyDown(props: SuggestionKeyDownProps) {
         if (props.event.key === 'Escape') {
-          if (root) {
-            root.unmount();
-          }
-          popup?.remove();
+          destroyMenu();
           return true;
         }
 
-        return component?.onKeyDown?.(props) || false;
+        return renderer?.ref?.onKeyDown(props) ?? false;
       },
 
       onExit() {
-        if (root) {
-          root.unmount();
-        }
-        popup?.remove();
+        destroyMenu();
       },
     };
   },
