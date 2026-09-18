@@ -85,8 +85,8 @@ export const Anchored: Story = {
   render: () => <AnchoredExample />,
 };
 
-// Popup lives in the scroll box. `fixed` keeps it still under the sticky bar —
-// scroll the box with it open.
+// `fixed` keeps the popup still under the sticky bar — scroll the box with it
+// open.
 export const PortalContainer: Story = {
   render: () => <PortalContainerExample />,
 };

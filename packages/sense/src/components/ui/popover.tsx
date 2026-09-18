@@ -34,7 +34,6 @@ function PopoverContent({
     | 'positionMethod'
   > & { container?: PopoverPrimitive.Portal.Props['container'] }) {
   return (
-    // `container` puts the popup in a given subtree instead of the body.
     <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Positioner
         align={align}
