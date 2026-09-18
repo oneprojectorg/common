@@ -124,6 +124,13 @@ export const Events = {
       transitionId: z.string().uuid(),
       processInstanceId: z.string().uuid(),
       phaseId: z.string().min(1),
+      /**
+       * End of the sweep bucket this event came from. Part of the consumer's
+       * idempotency key so a rescheduled deadline that lands in a later
+       * bucket is not mistaken for a duplicate of the earlier one — two
+       * consecutive sweeps can be less than the 24h key lifetime apart.
+       */
+      reminderWindowEnd: z.string().min(1),
     }),
   },
   reviewProposalRevisionSubmitted: {

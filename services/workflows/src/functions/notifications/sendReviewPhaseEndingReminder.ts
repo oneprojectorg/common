@@ -2,6 +2,7 @@ import {
   type DecisionInstanceData,
   isReviewPhase,
   listProfileRecipients,
+  notSuperseded,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -27,9 +28,12 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 export const sendReviewPhaseEndingReminder = inngest.createFunction(
   {
     id: 'sendReviewPhaseEndingReminder',
-    // Cross-day repeats are the cron's job; this only dedupes retries and
-    // double-fired events within one sweep.
-    idempotency: 'event.data.transitionId',
+    // Scoped to the sweep bucket, not the transition: this dedupes retries
+    // and double-fired events within one sweep, while a deadline pushed into
+    // a later bucket still gets its own reminder. Two consecutive sweeps can
+    // be under the 24h key lifetime apart, so a transition-only key would
+    // swallow the second one.
+    idempotency: 'event.data.transitionId + "-" + event.data.reminderWindowEnd',
   },
   { event: reviewPhaseEndingSoon.name },
   async ({ event, step, runId }) => {
@@ -131,9 +135,11 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     // profile types stay typed; a step boundary would widen them to plain
     // JSON strings.
     const emails = await step.run('plan-reviewer-emails', async () => {
+      const { processInstanceId } = transitionData;
+
       const assignments = await db.query.proposalReviewAssignments.findMany({
         where: {
-          processInstanceId: transitionData.processInstanceId,
+          processInstanceId,
           phaseId,
           // Only what the reviewer can act on now: AWAITING_AUTHOR_REVISION
           // is the author's turn.
@@ -144,6 +150,16 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
               ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
             ],
           },
+          // Removing a proposal from review does not remove the assignment
+          // row, so the queue's own filters have to be repeated here or the
+          // count overstates the work — and a reviewer whose only assignments
+          // are gone from their queue gets a reminder about an empty one.
+          proposal: {
+            deletedAt: { isNull: true },
+            moderationDetachedAt: { isNull: true },
+          },
+          RAW: (t) =>
+            notSuperseded({ proposalId: t.proposalId, processInstanceId }),
         },
         columns: { reviewerProfileId: true },
         with: {

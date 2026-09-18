@@ -15,6 +15,9 @@ export const REMINDER_DAYS_BEFORE_END = 3;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+/** Events per `sendEvent` request, well under Inngest's per-request cap. */
+const FAN_OUT_CHUNK = 500;
+
 /**
  * Finds pending phase transitions whose review phase is ending soon and fans
  * out a `review/phase-ending-soon` event per transition. The notification
@@ -26,18 +29,24 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
     id: 'decisions-review-phase-ending-reminders',
     name: 'Send Review Phase Ending Reminders',
   },
-  // Run every day at midnight, same grain as processTransitions — our tier of
-  // Inngest only supports up to 7 days advance scheduling, so a daily sweep
-  // is the right shape (not per-phase sleepUntil).
-  { cron: '0 0 * * *' },
+  // Daily sweep — our tier of Inngest only supports up to 7 days advance
+  // scheduling, so this is the right shape (not per-phase sleepUntil). Half
+  // an hour after midnight rather than on it: processTransitions runs at
+  // midnight, and a phase exactly REMINDER_DAYS_BEFORE_END days long is only
+  // ever in one bucket, the one on the day it is entered. Sweeping at the
+  // same minute would race the advance that makes it current and lose that
+  // one chance.
+  { cron: '30 0 * * *' },
   async ({ step }) => {
-    const endingTransitions = await step.run(
+    const transitions = await step.run(
       'find-ending-review-phases',
       async () => {
         // One-day-wide bucket (N-1, N] days out: with no reminder ledger,
         // landing in it exactly once is the only thing stopping a re-send.
         // Measured from UTC midnight so consecutive buckets tile exactly —
-        // run-clock edges leave gaps and overlaps of a few seconds.
+        // run-clock edges leave gaps and overlaps of a few seconds. Memoized
+        // with the query so a retry hours later still sweeps its own bucket
+        // instead of skipping to the next one.
         const midnightUtc = new Date().setUTCHours(0, 0, 0, 0);
         const windowStart = new Date(
           midnightUtc + (REMINDER_DAYS_BEFORE_END - 1) * MS_PER_DAY,
@@ -94,24 +103,30 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
               transitionId: row.id,
               processInstanceId: row.processInstanceId,
               phaseId: row.fromStateId,
+              reminderWindowEnd: windowEnd,
             },
           ];
         });
       },
     );
 
-    if (endingTransitions.length === 0) {
+    if (transitions.length === 0) {
       return { remindersQueued: 0 };
     }
 
-    await step.sendEvent(
-      'fan-out-reminders',
-      endingTransitions.map((transition) => ({
-        name: reviewPhaseEndingSoon.name,
-        data: transition,
-      })),
-    );
+    // Chunked: one request carrying every eligible transition would hit
+    // Inngest's per-request event cap and fail the whole sweep, and the next
+    // day's bucket cannot recover it.
+    for (let offset = 0; offset < transitions.length; offset += FAN_OUT_CHUNK) {
+      await step.sendEvent(
+        `fan-out-reminders-${offset / FAN_OUT_CHUNK}`,
+        transitions.slice(offset, offset + FAN_OUT_CHUNK).map((transition) => ({
+          name: reviewPhaseEndingSoon.name,
+          data: transition,
+        })),
+      );
+    }
 
-    return { remindersQueued: endingTransitions.length };
+    return { remindersQueued: transitions.length };
   },
 );
