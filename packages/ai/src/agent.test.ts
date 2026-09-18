@@ -123,6 +123,36 @@ describe('asking an agent a question', () => {
     expect(contents).toContain('Answer concisely.');
     expect(contents).toContain('What is the capital of France?');
   });
+
+  // What a deployment actually uses: the endpoint and key come from the env
+  // rather than the options object. The host stays unresolvable on purpose —
+  // if the fetch stub ever stops taking effect, this must fail rather than
+  // quietly post a real request to whichever vendor is configured.
+  it('reaches the endpoint configured in the env', async () => {
+    vi.stubEnv('AI_BASE_URL', 'https://inference.example.com/v1');
+    vi.stubEnv('AI_API_KEY', 'env-key');
+
+    const fetchMock = vi.fn().mockResolvedValue(chatCompletionResponse('Hi'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const agent = createAIAgent({
+      name: 'greeter',
+      instructions: 'Reply with a short greeting.',
+      model: { modelId: 'meta-llama/Llama-3.3-70B-Instruct-Turbo' },
+    });
+
+    await agent.generate('Say hello.');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toBe(
+      'https://inference.example.com/v1/chat/completions',
+    );
+    expect(new Headers(init?.headers).get('authorization')).toBe(
+      'Bearer env-key',
+    );
+  });
 });
 
 describe('holding a multi-turn conversation', () => {
