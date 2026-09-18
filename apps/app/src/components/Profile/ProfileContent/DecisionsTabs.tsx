@@ -79,7 +79,7 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   return (
     <AccessBoundary required={{ admin: { read: true } }} profileId={profileId}>
-      <TabsTrigger value="members">{t('Members')}</TabsTrigger>
+      <TabsTrigger value="members">{t('profile.membersTab')}</TabsTrigger>
     </AccessBoundary>
   );
 };

@@ -104,7 +104,7 @@ export const FundingInformationForm = ({
           name="isReceivingFunds"
           children={(field) => (
             <>
-              <ToggleRow label={t('Is your organization seeking funding?')}>
+              <ToggleRow label={t('org.seekingFundingQuestion')}>
                 <field.Switch />
               </ToggleRow>
               {field.state.value ? (
@@ -115,7 +115,7 @@ export const FundingInformationForm = ({
                       <TermsMultiSelect
                         taxonomy="necFunding"
                         value={(field.state.value as Array<Option>) ?? []}
-                        label={t('What types of funding are you seeking?')}
+                        label={t('org.fundingSoughtLabel')}
                         onChange={field.handleChange}
                         errorMessage={getFieldErrorMessage(field)}
                       />
@@ -127,16 +127,12 @@ export const FundingInformationForm = ({
                     children={(field) => (
                       <div className="flex flex-col gap-2">
                         <field.TextField
-                          label={t(
-                            'Where can people contribute to your organization?',
-                          )}
+                          label={t('org.fundingContributeLabel')}
                           icon={<LuLink className="size-4 text-foreground" />}
-                          placeholder={t('Add your contribution page here')}
+                          placeholder={t('org.fundingContributePlaceholder')}
                         />
                         <span className="text-sm text-muted-foreground">
-                          {t(
-                            'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
-                          )}
+                          {t('org.fundingContributeHint')}
                         </span>
                       </div>
                     )}
@@ -153,7 +149,7 @@ export const FundingInformationForm = ({
           name="isOfferingFunds"
           children={(field) => (
             <>
-              <ToggleRow label={t('Does your organization offer funding?')}>
+              <ToggleRow label={t('org.offersFundingQuestion')}>
                 <field.Switch />
               </ToggleRow>
 
@@ -183,28 +179,22 @@ export const FundingInformationForm = ({
                               <field.TextField
                                 label={
                                   acceptingApplicationsField.state.value
-                                    ? t('Where can organizations apply?')
-                                    : t('Where can organizations learn more?')
+                                    ? t('org.fundingApplyLabel')
+                                    : t('org.fundingLearnMoreLabel')
                                 }
                                 icon={
                                   <LuLink className="size-4 text-foreground" />
                                 }
                                 placeholder={
                                   acceptingApplicationsField.state.value
-                                    ? t(
-                                        'Add a link where organizations can apply for funding',
-                                      )
-                                    : t(
-                                        'Add a link to learn more about your funding process',
-                                      )
+                                    ? t('org.fundingApplyPlaceholder')
+                                    : t('org.fundingLearnMorePlaceholder')
                                 }
                               />
                               <span className="text-sm text-muted-foreground">
                                 {acceptingApplicationsField.state.value
                                   ? null
-                                  : t(
-                                      'Add a link where others can learn more about how to they might receive funding from your organization now or in the future.',
-                                    )}
+                                  : t('org.fundingLearnMoreHint')}
                               </span>
                             </div>
                           )}

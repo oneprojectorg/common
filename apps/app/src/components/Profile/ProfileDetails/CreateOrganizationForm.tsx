@@ -214,7 +214,7 @@ export const CreateOrganizationForm = forwardRef<
         <form.AppField
           name="name"
           children={(field) => (
-            <field.TextField label={t('Organization Name')} isRequired />
+            <field.TextField label={t('org.nameLabel')} isRequired />
           )}
         />
 
@@ -225,7 +225,7 @@ export const CreateOrganizationForm = forwardRef<
               label={t('Website')}
               isRequired
               icon={<LuLink className="size-4 text-foreground" />}
-              placeholder={t("Enter your organization's website here")}
+              placeholder={t('org.websitePlaceholder')}
               // Not `type="url"`: our zodUrl validation accepts a bare domain
               // (e.g. "venuecms.com") and auto-prefixes `https://`, but the
               // browser's native URL validation rejects the scheme-less value
@@ -247,7 +247,7 @@ export const CreateOrganizationForm = forwardRef<
           name="whereWeWork"
           children={(field) => (
             <GeoNamesMultiSelect
-              label={t('Where we work')}
+              label={t('org.whereWeWorkLabel')}
               onChange={(value) => {
                 // Convert Option[] to the expected format
                 const converted = value.map((item: any) => ({
@@ -276,14 +276,14 @@ export const CreateOrganizationForm = forwardRef<
           name="orgType"
           children={(field) => (
             <field.Select
-              label={t('Organizational Status')}
+              label={t('org.statusLabel')}
               isRequired
               placeholder={t('Select')}
               className="w-full"
               options={[
-                { value: 'nonprofit', label: t('Nonprofit') },
-                { value: 'forprofit', label: t('Forprofit') },
-                { value: 'government', label: t('Government Entity') },
+                { value: 'nonprofit', label: t('org.statusNonprofit') },
+                { value: 'forprofit', label: t('org.statusForprofit') },
+                { value: 'government', label: t('org.statusGovernment') },
               ]}
             />
           )}
@@ -294,9 +294,9 @@ export const CreateOrganizationForm = forwardRef<
           children={(field) => (
             <field.TextArea
               isRequired
-              label={t('Organization headline')}
+              label={t('org.headlineLabel')}
               className="min-h-28"
-              placeholder={t('Enter a brief description for your organization')}
+              placeholder={t('org.headlinePlaceholder')}
             />
           )}
         />
@@ -305,9 +305,9 @@ export const CreateOrganizationForm = forwardRef<
           name="mission"
           children={(field) => (
             <field.TextArea
-              label={t('Mission statement')}
+              label={t('org.missionLabel')}
               className="min-h-28"
-              placeholder={t('Enter your mission statement or a brief bio')}
+              placeholder={t('org.missionPlaceholder')}
             />
           )}
         />
@@ -316,7 +316,7 @@ export const CreateOrganizationForm = forwardRef<
           name="focusAreas"
           children={(field) => (
             <TermsMultiSelect
-              label={t('Focus Areas')}
+              label={t('org.focusAreasLabel')}
               taxonomy="necSimple:focusArea"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
@@ -329,7 +329,7 @@ export const CreateOrganizationForm = forwardRef<
           name="communitiesServed"
           children={(field) => (
             <TermsMultiSelect
-              label={t('Communities Served')}
+              label={t('org.communitiesServedLabel')}
               taxonomy="candid:POPULATION"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
@@ -342,7 +342,7 @@ export const CreateOrganizationForm = forwardRef<
           name="strategies"
           children={(field) => (
             <TermsMultiSelect
-              label={t('Strategies/Tactics')}
+              label={t('org.strategiesLabel')}
               taxonomy="splcStrategies"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
@@ -355,11 +355,7 @@ export const CreateOrganizationForm = forwardRef<
         <form.AppField
           name="networkOrganization"
           children={(field) => (
-            <ToggleRow
-              label={t(
-                'Does your organization serve as a network or coalition with member organizations?',
-              )}
-            >
+            <ToggleRow label={t('org.networkQuestion')}>
               <field.Switch />
             </ToggleRow>
           )}
@@ -372,7 +368,7 @@ export const CreateOrganizationForm = forwardRef<
             name="isReceivingFunds"
             children={(field) => (
               <>
-                <ToggleRow label={t('Is your organization seeking funding?')}>
+                <ToggleRow label={t('org.seekingFundingQuestion')}>
                   <field.Switch />
                 </ToggleRow>
                 {field.state.value ? (
@@ -383,7 +379,7 @@ export const CreateOrganizationForm = forwardRef<
                         <TermsMultiSelect
                           taxonomy="necFunding"
                           value={(field.state.value as Array<Option>) ?? []}
-                          label={t('What types of funding are you seeking?')}
+                          label={t('org.fundingSoughtLabel')}
                           onChange={field.handleChange}
                           errorMessage={getFieldErrorMessage(field)}
                         />
@@ -395,16 +391,12 @@ export const CreateOrganizationForm = forwardRef<
                       children={(field) => (
                         <div className="flex flex-col gap-2">
                           <field.TextField
-                            label={t(
-                              'Where can people contribute to your organization?',
-                            )}
+                            label={t('org.fundingContributeLabel')}
                             icon={<LuLink className="size-4 text-foreground" />}
-                            placeholder={t('Add your contribution page here')}
+                            placeholder={t('org.fundingContributePlaceholder')}
                           />
                           <span className="text-start text-sm text-muted-foreground">
-                            {t(
-                              'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
-                            )}
+                            {t('org.fundingContributeHint')}
                           </span>
                         </div>
                       )}
@@ -421,7 +413,7 @@ export const CreateOrganizationForm = forwardRef<
             name="isOfferingFunds"
             children={(field) => (
               <>
-                <ToggleRow label={t('Does your organization offer funding?')}>
+                <ToggleRow label={t('org.offersFundingQuestion')}>
                   <field.Switch />
                 </ToggleRow>
 
@@ -431,9 +423,7 @@ export const CreateOrganizationForm = forwardRef<
                     children={(acceptingApplicationsField) => (
                       <>
                         <ToggleRow
-                          label={t(
-                            'Are organizations currently able to apply for funding?',
-                          )}
+                          label={t('org.acceptingApplicationsQuestion')}
                         >
                           <acceptingApplicationsField.Switch />
                         </ToggleRow>
@@ -443,10 +433,10 @@ export const CreateOrganizationForm = forwardRef<
                               name="offeringFundsDescription"
                               children={(field) => (
                                 <field.TextArea
-                                  label={t('What is your funding process?')}
+                                  label={t('org.fundingProcessLabel')}
                                   className="min-h-32"
                                   placeholder={t(
-                                    "Enter a description of the type of funding you're seeking (e.g., grants, integrated capital, etc.)",
+                                    'org.fundingProcessPlaceholder',
                                   )}
                                 />
                               )}
@@ -460,28 +450,22 @@ export const CreateOrganizationForm = forwardRef<
                                 <field.TextField
                                   label={
                                     acceptingApplicationsField.state.value
-                                      ? t('Where can organizations apply?')
-                                      : t('Where can organizations learn more?')
+                                      ? t('org.fundingApplyLabel')
+                                      : t('org.fundingLearnMoreLabel')
                                   }
                                   icon={
                                     <LuLink className="size-4 text-foreground" />
                                   }
                                   placeholder={
                                     acceptingApplicationsField.state.value
-                                      ? t(
-                                          'Add a link where organizations can apply for funding',
-                                        )
-                                      : t(
-                                          'Add a link to learn more about your funding process',
-                                        )
+                                      ? t('org.fundingApplyPlaceholder')
+                                      : t('org.fundingLearnMorePlaceholder')
                                   }
                                 />
                                 <span className="text-sm text-muted-foreground">
                                   {acceptingApplicationsField.state.value
                                     ? null
-                                    : t(
-                                        'Add a link where others can learn more about how to they might receive funding from your organization now or in the future.',
-                                      )}
+                                    : t('org.fundingLearnMoreHint')}
                                 </span>
                               </div>
                             )}

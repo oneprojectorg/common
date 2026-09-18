@@ -80,7 +80,7 @@ export const InviteToExistingOrganization = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <p>{t('Expand your network and collaborate with others on Common.')}</p>
+      <p>{t('org.inviteExistingOrgSubtitle')}</p>
 
       <div className="flex flex-col gap-4">
         <EmailInviteField
@@ -93,12 +93,10 @@ export const InviteToExistingOrganization = ({
 
         <Field>
           <FieldLabel htmlFor="invite-organization">
-            {t('Add to organization')}
+            {t('org.addToOrgLabel')}
           </FieldLabel>
           {organizationItems.length === 0 ? (
-            <FieldDescription>
-              {t('You can only invite people to organizations you administer.')}
-            </FieldDescription>
+            <FieldDescription>{t('org.inviteAdminOnlyHint')}</FieldDescription>
           ) : (
             <Select
               items={organizationItems}
@@ -106,7 +104,7 @@ export const InviteToExistingOrganization = ({
               onValueChange={(value) => setSelectedOrganization(value ?? '')}
             >
               <SelectTrigger id="invite-organization" className="w-full">
-                <SelectValue placeholder={t('Select an organization')} />
+                <SelectValue placeholder={t('org.inviteOrgPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>

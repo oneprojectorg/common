@@ -91,7 +91,7 @@ export const GeoNamesMultiSelect = ({
           {selectedOptions.map((option) => (
             <ComboboxChip key={option.id}>{option.label}</ComboboxChip>
           ))}
-          <ComboboxChipsInput placeholder={t('Select locations')} />
+          <ComboboxChipsInput placeholder={t('org.locationsPlaceholder')} />
         </ComboboxChips>
         <ComboboxContent>
           <ComboboxEmpty>

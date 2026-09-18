@@ -87,7 +87,7 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableRow>
             <TableHead>{t('Name')}</TableHead>
             <TableHead>{t('Domain')}</TableHead>
-            <TableHead>{t('Members')}</TableHead>
+            <TableHead>{t('profile.membersTab')}</TableHead>
             <TableHead>{t('Created')}</TableHead>
             <TableHead className="text-end">{t('Actions')}</TableHead>
           </TableRow>

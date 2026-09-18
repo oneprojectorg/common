@@ -37,7 +37,7 @@ export const ProfileRelationshipsSuspense = ({
   showBreadcrumb?: boolean;
 }) => {
   const [searchTerm] = useState('');
-  const t = useTranslations();
+  const t = useTranslations('profile');
   const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
     slug,
   });
@@ -103,14 +103,14 @@ export const ProfileRelationshipsSuspense = ({
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{t('Relationships')}</BreadcrumbPage>
+                <BreadcrumbPage>{t('relationshipsTab')}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         ) : null}
         <div className="flex items-center justify-between">
           <Header2 className="w-full">
-            {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
+            {t('relationshipCount', {
               count,
             })}
           </Header2>
@@ -120,7 +120,7 @@ export const ProfileRelationshipsSuspense = ({
 
       <Tabs defaultValue="all">
         <TabsList className="px-4 sm:px-0">
-          <TabsTrigger value="all">{t('All relationships')}</TabsTrigger>
+          <TabsTrigger value="all">{t('allRelationshipsFilter')}</TabsTrigger>
           {relationshipsSegmented.map(([noun, items]) =>
             items?.length ? (
               <TabsTrigger value={noun} key={noun}>
