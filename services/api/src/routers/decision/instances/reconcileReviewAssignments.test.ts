@@ -5,6 +5,7 @@ import {
   advancePhase,
   createDecisionRole,
   generateReviewAssignments,
+  parseProposalData,
   reconcileReviewAssignments,
   removeCategoryReviewer,
   updateProposal,
@@ -740,7 +741,11 @@ describe.concurrent('reconcileReviewAssignments — recategorization', () => {
     await updateProposal({
       proposalId: proposal.id,
       data: {
-        proposalData: { title: 'Edited proposal', category: [termB!.label] },
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Edited proposal',
+          category: [termB!.label],
+        },
       },
       user: setup.user,
     });

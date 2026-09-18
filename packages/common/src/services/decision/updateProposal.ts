@@ -101,6 +101,21 @@ export const updateProposal = async ({
     instancePhases,
   });
 
+  // A proposal's collaboration document is minted once, in `createProposal`.
+  // The update replaces `proposalData` instead of merging it, so a payload that
+  // changes or drops the id would repoint or unbind the document. Refuse it.
+  if (data.proposalData) {
+    const storedCollaborationDocId = parseProposalData(
+      existingProposal.proposalData,
+    ).collaborationDocId;
+
+    if (data.proposalData.collaborationDocId !== storedCollaborationDocId) {
+      throw new ValidationError(
+        'The collaboration document of a proposal cannot be changed',
+      );
+    }
+  }
+
   // Validate proposal data against template schema when updating non-draft proposals.
   // Drafts are inherently incomplete — validation is enforced on submission.
   if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
