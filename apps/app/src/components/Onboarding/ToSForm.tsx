@@ -42,8 +42,8 @@ export const ToSForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Terms of Service Overview')}></FormHeader>
-        <span>{t('Effective Date: March 15, 2025')}</span>
+        <FormHeader text={t('onboarding.termsOverviewTitle')}></FormHeader>
+        <span>{t('onboarding.policyEffectiveDate')}</span>
 
         <ToSContentShort />
 
@@ -54,7 +54,9 @@ export const ToSForm = ({
           <form.Button variant="secondary" onClick={onBack}>
             {t('Back')}
           </form.Button>
-          <form.SubmitButton>{t('Accept & Continue')}</form.SubmitButton>
+          <form.SubmitButton>
+            {t('onboarding.acceptAndContinueAction')}
+          </form.SubmitButton>
         </div>
       </FormContainer>
     </form>

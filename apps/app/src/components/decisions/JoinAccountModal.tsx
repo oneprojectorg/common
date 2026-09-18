@@ -257,9 +257,9 @@ const JoinAccountModalContent = () => {
         goAfterClaim();
         return;
       }
-      setError(result.message ?? t('Failed to verify code'));
+      setError(result.message ?? t('auth.verifyCodeError'));
     } catch {
-      setError(t('Failed to verify code'));
+      setError(t('auth.verifyCodeError'));
     }
     setIsSubmitting(false);
   };
@@ -290,8 +290,8 @@ const JoinAccountModalContent = () => {
         <DialogTitle className="text-center">
           {otpSent
             ? isPhone
-              ? t('Code sent!')
-              : t('Email sent!')
+              ? t('auth.smsCodeSentTitle')
+              : t('auth.emailCodeSentTitle')
             : t("Don't lose track of this idea")}
         </DialogTitle>
         <DialogDescription className="text-center">
@@ -301,10 +301,7 @@ const JoinAccountModalContent = () => {
                   'A code was sent to {phone}. Type the code below to create your profile.',
                   { phone: normalizePhoneNumber(phone) },
                 )
-              : t(
-                  'A code was sent to {email}. Type the code below to create your profile.',
-                  { email },
-                )
+              : t('auth.createProfileCodeHint', { email })
             : t(
                 'Followers get updates as this idea moves through the process. Sign up in seconds.',
               )}
@@ -364,7 +361,7 @@ const JoinAccountModalContent = () => {
                     className="flex-1"
                     disabled={isSubmitting}
                   >
-                    {t('Phone Number')}
+                    {t('auth.phoneNumberLabel')}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="email">
@@ -387,7 +384,7 @@ const JoinAccountModalContent = () => {
                 </TabsContent>
                 <TabsContent value="phone">
                   <AuthPhoneField
-                    label={t('Phone Number')}
+                    label={t('auth.phoneNumberLabel')}
                     description={t(
                       'We text you a code. Standard message and data rates may apply.',
                     )}
@@ -414,7 +411,7 @@ const JoinAccountModalContent = () => {
               />
             )}
             <p className="text-muted-foreground">
-              {t.rich('Already have an account? <login>Log in</login>', {
+              {t.rich('auth.haveAccountPrompt', {
                 login: (chunks: ReactNode) => (
                   <a href={loginHref} className="underline">
                     {chunks}
@@ -437,7 +434,7 @@ const JoinAccountModalContent = () => {
                 void submitToken();
               }}
             >
-              {t('Create profile')}
+              {t('auth.createProfileAction')}
             </Button>
             <Button variant="outline" className="w-full" onClick={goBack}>
               {t('Go back')}

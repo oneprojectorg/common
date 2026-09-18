@@ -47,12 +47,10 @@ export function getClaimEmailErrorMessage(
   t: TranslateFn,
 ): string {
   if (result.alreadySignedIn) {
-    return t("You're already signed in. Reload the page to continue.");
+    return t('onboarding.alreadySignedInError');
   }
   if (result.code === 'email_exists') {
-    return t(
-      'An account with this email already exists. Try logging in instead.',
-    );
+    return t('onboarding.emailTakenError');
   }
   // The user sees localized generic copy; keep the code findable without
   // logging the raw Supabase message, which can echo the email back.
@@ -66,12 +64,10 @@ export function getClaimPhoneErrorMessage(
   t: TranslateFn,
 ): string {
   if (result.alreadySignedIn) {
-    return t("You're already signed in. Reload the page to continue.");
+    return t('onboarding.alreadySignedInError');
   }
   if (result.code === 'phone_exists') {
-    return t(
-      'An account with this phone number already exists. Try logging in instead.',
-    );
+    return t('onboarding.phoneTakenError');
   }
   // Same reasoning as getClaimEmailErrorMessage — the raw message can echo
   // the phone number back, so only the code is worth keeping.

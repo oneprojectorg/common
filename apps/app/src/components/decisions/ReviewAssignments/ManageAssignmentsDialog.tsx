@@ -28,6 +28,7 @@ import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { Suspense, useId, useMemo, useState } from 'react';
 
+import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
@@ -598,7 +599,10 @@ function toggled(
 
 /** Whole messages per arm so a translator can order the clauses. */
 function summaryMessage(
-  t: ReturnType<typeof useTranslations>,
+  // The root translator, not a namespaced one: `ReturnType<typeof
+  // useTranslations>` now widens to every namespace's keys at once, which no
+  // caller can satisfy.
+  t: TranslateFn,
   createdCount: number,
   removedCount: number,
 ): string {

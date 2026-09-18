@@ -4,6 +4,7 @@ import { usePhoneLogin } from '@/hooks/usePhoneLogin';
 import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
 import { useCallback, useState } from 'react';
 
+import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
 import { useAuthPanelStore } from '@/components/AuthPanel';
@@ -119,18 +120,21 @@ export const usePhoneLoginFlow = ({
  */
 const phoneFailureMessage = (
   reason: PhoneCodeFailure | PhoneVerifyFailure,
-  t: ReturnType<typeof useTranslations>,
+  // The root translator, not a namespaced one: `ReturnType<typeof
+  // useTranslations>` now widens to every namespace's keys at once, which no
+  // caller can satisfy.
+  t: TranslateFn,
 ): string => {
   switch (reason) {
     case 'expired':
-      return t('That code expired. Request a new one.');
+      return t('auth.codeExpiredError');
     case 'wrong_code':
-      return t('That code was wrong. Try again.');
+      return t('auth.codeIncorrectError');
     case 'rate_limited':
-      return t('Too many attempts. Wait a minute and try again.');
+      return t('auth.tooManyAttemptsError');
     case 'unavailable':
-      return t('Signing in by text is unavailable right now.');
+      return t('auth.smsUnavailableError');
     case 'unknown':
-      return t('We could not send a code.');
+      return t('auth.codeSendError');
   }
 };
