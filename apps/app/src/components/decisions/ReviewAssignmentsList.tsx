@@ -280,37 +280,37 @@ export function ReviewAssignmentsList({
     [
       {
         id: 'all',
-        label: t('All statuses'),
+        label: t('decisions.review.allStatusesOption'),
         icon: LuListFilter,
         iconClass: 'text-muted-foreground',
       },
       {
         id: 'pending',
-        label: t('Not Started'),
+        label: t('decisions.review.statusNotStarted'),
         icon: LuCircleDashed,
         iconClass: 'text-muted-foreground',
       },
       {
         id: 'in_progress',
-        label: t('In Progress'),
+        label: t('decisions.review.statusInProgress'),
         icon: LuTimer,
         iconClass: 'text-teal-600',
       },
       {
         id: 'completed',
-        label: t('Completed'),
+        label: t('decisions.review.statusCompleted'),
         icon: LuCircleCheck,
         iconClass: 'text-success',
       },
       {
         id: 'awaiting_author_revision',
-        label: t('Revision Requested'),
+        label: t('decisions.review.statusRevisionRequested'),
         icon: LuRefreshCw,
         iconClass: 'text-warning',
       },
       {
         id: 'ready_for_re_review',
-        label: t('Needs Review'),
+        label: t('decisions.review.statusNeedsReview'),
         icon: LuCircleAlert,
         iconClass: 'text-warning',
       },
@@ -348,7 +348,7 @@ export function ReviewAssignmentsList({
               onSelectionChange={(key) =>
                 setStatusFilter(key === 'all' ? null : key)
               }
-              aria-label={t('Filter by status')}
+              aria-label={t('decisions.review.filterByStatusLabel')}
               className="min-w-40"
               items={statusFilterItems}
             />
@@ -357,10 +357,13 @@ export function ReviewAssignmentsList({
               onSelectionChange={(key) =>
                 setSort(key as (typeof REVIEW_ASSIGNMENT_SORTS)[number])
               }
-              aria-label={t('Sort order')}
+              aria-label={t('decisions.review.sortOrderLabel')}
               className="min-w-40"
               items={[
-                { id: 'leastReviewed', label: t('Least reviewed') },
+                {
+                  id: 'leastReviewed',
+                  label: t('decisions.review.sortLeastReviewed'),
+                },
                 { id: 'newest', label: t('Newest First') },
                 { id: 'oldest', label: t('Oldest First') },
               ]}
@@ -398,15 +401,13 @@ export function ReviewAssignmentsList({
             </EmptyMedia>
             <EmptyTitle>
               {statusFilter
-                ? t('No reviews found matching the current filters.')
-                : t('No reviews assigned yet')}
+                ? t('decisions.review.noReviewsMatchFilters')
+                : t('decisions.review.noReviewsAssigned')}
             </EmptyTitle>
             <EmptyDescription>
               {statusFilter
                 ? t('Try adjusting your filter selection above.')
-                : t(
-                    'Review assignments will appear here once they are created.',
-                  )}
+                : t('decisions.review.noReviewAssignmentsHint')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -468,7 +469,7 @@ export function ReviewAssignmentsList({
       {!isMapMode && renderScrollSentinel(null)}
 
       <p aria-live="polite" className="sr-only">
-        {isFetchingNextPage ? t('Loading more proposals') : ''}
+        {isFetchingNextPage ? t('decisions.review.loadingMoreProposals') : ''}
       </p>
 
       {translation.showBanner && (
@@ -538,7 +539,7 @@ const AssignedCategoriesLabel = ({
     return null;
   }
 
-  const label = t('in {categories}', {
+  const label = t('decisions.review.inCategories', {
     categories: categories.map((category) => category.name).join(', '),
   });
 

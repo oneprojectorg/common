@@ -73,12 +73,14 @@ export function ReviewerList({
     <div className="flex flex-col gap-6">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
-          <Header3>{title ?? t('Review Summary')}</Header3>
+          <Header3>
+            {title ?? t('decisions.review.reviewSummaryHeading')}
+          </Header3>
           <p className="text-base">
-            {t(
-              '{submitted} out of {total} reviewers submitted a review for this proposal',
-              { submitted: reviewsSubmittedCount, total: assignmentsCount },
-            )}
+            {t('decisions.review.proposalReviewersSubmittedProgress', {
+              submitted: reviewsSubmittedCount,
+              total: assignmentsCount,
+            })}
           </p>
         </header>
       )}
@@ -88,16 +90,16 @@ export function ReviewerList({
         <Alert variant="warning">
           <LuRefreshCcw />
           <AlertTitle>
-            {t(
-              '{n, plural, one {# of {total, plural, one {# review} other {# reviews}} is out of date} other {# of {total} reviews are out of date}}',
-              { n: outOfDateReviewsCount, total: reviewsSubmittedCount },
-            )}
+            {t('decisions.review.reviewsOutOfDateCount', {
+              n: outOfDateReviewsCount,
+              total: reviewsSubmittedCount,
+            })}
           </AlertTitle>
           <AlertDescription>
-            {t(
-              '{n, plural, one {The author revised the proposal after this review was submitted.} other {The author revised the proposal after these reviews were submitted.}} {total, plural, one {The review counts toward the score.} other {All # reviews count toward the score.}}',
-              { n: outOfDateReviewsCount, total: reviewsSubmittedCount },
-            )}
+            {t('decisions.review.reviewsOutOfDateExplanation', {
+              n: outOfDateReviewsCount,
+              total: reviewsSubmittedCount,
+            })}
           </AlertDescription>
         </Alert>
       )}
@@ -133,7 +135,9 @@ export function ReviewerList({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <Header3 className="text-label">{t('Submitted Reviews')}</Header3>
+          <Header3 className="text-label">
+            {t('decisions.review.submittedReviewsStat')}
+          </Header3>
           <div className="flex flex-col gap-2">
             {reviews.map((item) => (
               <ReviewerRow
@@ -156,7 +160,7 @@ export function ReviewerList({
           onClick={ownReview.onOpenForm}
           className="self-start text-base"
         >
-          {t('+ Add review')}
+          {t('decisions.review.addReviewAction')}
         </Button>
       )}
     </div>
@@ -237,7 +241,7 @@ function ReviewerRow({
   const t = useTranslations();
   const reviewerName = item.reviewer.name ?? item.reviewer.slug;
   const rowLabel = isOwn
-    ? t('{name} (You)', { name: reviewerName })
+    ? t('decisions.review.reviewerNameYou', { name: reviewerName })
     : reviewerName;
 
   return (
@@ -250,8 +254,8 @@ function ReviewerRow({
       // aria-label replaces the row's visible text, so it must repeat the tag.
       aria-label={
         item.isReviewOutOfDate
-          ? t('View review by {name} (older version)', { name: rowLabel })
-          : t('View review by {name}', { name: rowLabel })
+          ? t('decisions.review.viewOlderReviewByName', { name: rowLabel })
+          : t('decisions.review.viewReviewByName', { name: rowLabel })
       }
     >
       <div className="flex items-center gap-2">
@@ -274,7 +278,7 @@ function ReviewerRow({
         {item.isReviewOutOfDate && (
           <Badge variant="warning">
             <LuCircleAlert aria-hidden className="text-warning" />
-            {t('Older version')}
+            {t('decisions.review.olderVersionLabel')}
           </Badge>
         )}
         <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />

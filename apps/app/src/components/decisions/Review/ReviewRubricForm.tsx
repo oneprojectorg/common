@@ -140,18 +140,18 @@ function MyReviewForm() {
             can land mid-rubric and must not cut off the current announcement. */}
         <Alert variant="warning" role="status" aria-live="polite">
           <LuRefreshCw />
-          <AlertTitle>{t('Revision requested')}</AlertTitle>
+          <AlertTitle>
+            {t('decisions.review.revisionRequestedLabel')}
+          </AlertTitle>
           <AlertDescription>
-            {t(
-              'The author has been notified, the proposal will update when they submit a revision.',
-            )}{' '}
+            {t('decisions.review.requestRevisionSuccessHint')}{' '}
             <Button
               variant="link"
               size="inline"
               className="text-sm underline"
               onClick={() => setIsViewModalOpen(true)}
             >
-              {t('View request')}
+              {t('decisions.review.viewRequestAction')}
             </Button>
           </AlertDescription>
         </Alert>
@@ -200,8 +200,8 @@ function MyReviewForm() {
             }
             rationalePlaceholder={
               isOverallRecommendationField(field.key)
-                ? t('Add overall notes...')
-                : t('Add reasons or insights...')
+                ? t('decisions.review.overallNotesPlaceholder')
+                : t('decisions.review.criterionNotesPlaceholder')
             }
           />
         ))}
@@ -222,7 +222,7 @@ function MyReviewForm() {
             onClick={() => setIsFeedbackOpen(true)}
           >
             <LuPlus className="size-4" />
-            {t('Feedback to author')}
+            {t('decisions.review.feedbackToAuthorLabel')}
           </Button>
         ) : null}
       </div>
@@ -236,11 +236,9 @@ function NewRevisionAlert() {
   return (
     <Alert variant="warning">
       <LuRefreshCw />
-      <AlertTitle>{t('New revision')}</AlertTitle>
+      <AlertTitle>{t('decisions.review.newRevisionLabel')}</AlertTitle>
       <AlertDescription>
-        {t(
-          'The author revised this proposal after you reviewed it. Your responses were carried over, update them if the changes affect your review',
-        )}
+        {t('decisions.review.ownReviewOutOfDateHint')}
       </AlertDescription>
     </Alert>
   );
@@ -277,8 +275,10 @@ function RubricCriterionSection({
   const descriptionId = useId();
 
   const criterionType = inferCriterionType(field.schema);
-  const scoreLabel = maxPoints > 0 ? `${maxPoints} ${t('pts')}` : null;
-  const badgeLabel = criterionType === 'yes_no' ? t('No/Yes') : scoreLabel;
+  const scoreLabel =
+    maxPoints > 0 ? `${maxPoints} ${t('decisions.review.ptsSuffix')}` : null;
+  const badgeLabel =
+    criterionType === 'yes_no' ? t('decisions.review.noYesLabel') : scoreLabel;
   const isTextInput =
     field.format === 'short-text' || field.format === 'long-text';
   const describedBy = field.schema.description ? descriptionId : undefined;
@@ -398,14 +398,16 @@ function RubricRationaleField({
         onClick={() => setIsOpen(true)}
       >
         <LuPlus className="size-4" />
-        {t('Add note')}
+        {t('decisions.review.addNoteAction')}
       </Button>
     );
   }
 
   return (
     <Field className="mt-4">
-      <FieldLabel htmlFor={noteId}>{t('Note')}</FieldLabel>
+      <FieldLabel htmlFor={noteId}>
+        {t('decisions.review.noteLabel')}
+      </FieldLabel>
       <Textarea
         id={noteId}
         className="min-h-20"
@@ -434,9 +436,11 @@ function FeedbackToAuthorField({
 
   return (
     <Field>
-      <FieldLabel htmlFor={fieldId}>{t('Feedback to Author')}</FieldLabel>
+      <FieldLabel htmlFor={fieldId}>
+        {t('decisions.review.feedbackToAuthorHeading')}
+      </FieldLabel>
       <FieldDescription>
-        {t('Shared anonymously with the author after the review phase')}
+        {t('decisions.review.feedbackAnonymousAfterPhaseHint')}
       </FieldDescription>
       <Textarea
         id={fieldId}

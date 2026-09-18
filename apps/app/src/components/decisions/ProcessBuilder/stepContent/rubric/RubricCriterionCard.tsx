@@ -111,7 +111,7 @@ export function RubricCriterionCard({
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
-      ? `${criterion.maxPoints} ${t('pts')}`
+      ? `${criterion.maxPoints} ${t('decisions.review.ptsSuffix')}`
       : t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey);
 
   // Only trigger validation when focus leaves the card entirely
@@ -711,7 +711,7 @@ export function RubricCriterionDragPreview({
       label={criterion.label || t('Untitled')}
       badgeLabel={
         criterion.criterionType === 'scored' && criterion.maxPoints
-          ? `${criterion.maxPoints} ${t('pts')}`
+          ? `${criterion.maxPoints} ${t('decisions.review.ptsSuffix')}`
           : t(CRITERION_TYPE_REGISTRY[criterion.criterionType].labelKey)
       }
     />

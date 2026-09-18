@@ -164,7 +164,7 @@ export function ReviewPage({
           <DecisionHero
             title={
               isAdmin
-                ? t('Review Progress')
+                ? t('decisions.review.reviewProgressHeading')
                 : (heroHeadline ?? t('Review proposals.'))
             }
             description={
@@ -267,7 +267,7 @@ export function ReviewPage({
                 <div className="w-full border-b">
                   <TabsList variant="line" className="flex gap-6">
                     <TabsTrigger value={DEFAULT_REVIEW_TAB}>
-                      {t('Review progress')}
+                      {t('decisions.review.reviewProgressLabel')}
                     </TabsTrigger>
                     {assignmentsTabTrigger}
                   </TabsList>

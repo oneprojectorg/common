@@ -72,8 +72,8 @@ export function RevisionRequestDialog({
             {/* The noun: RequestRevisionModal owns the verb phrase. */}
             <DialogTitle>
               {requests.length === 1
-                ? t('Revision request')
-                : t('Revision requests')}
+                ? t('decisions.review.revisionRequestHeading')
+                : t('decisions.review.revisionRequestsHeading')}
             </DialogTitle>
           </DialogHeader>
 
@@ -100,21 +100,23 @@ export function RevisionRequestDialog({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('Cancel revision request?')}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('decisions.review.cancelRevisionRequestTitle')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",
-              )}
+              {t('decisions.review.cancelRevisionRequestDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('Keep request')}</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t('decisions.review.keepRequestAction')}
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={handleConfirmCancel}
               loading={isCancelling}
             >
-              {t('Cancel request')}
+              {t('decisions.review.cancelRequestAction')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -145,7 +147,7 @@ function RevisionRequestCard({
         {request.requestedAt ? (
           <SentLine sentAt={request.requestedAt} isOwn={isOwn} />
         ) : isOwn ? (
-          <span>{t('Your request')}</span>
+          <span>{t('decisions.review.yourRequestHeading')}</span>
         ) : null}
         {isOwn && canCancel && (
           <Button
@@ -154,7 +156,7 @@ function RevisionRequestCard({
             className="text-sm underline"
             onClick={onCancel}
           >
-            {t('Cancel request')}
+            {t('decisions.review.cancelRequestAction')}
           </Button>
         )}
       </div>
@@ -169,8 +171,8 @@ function SentLine({ sentAt, isOwn }: { sentAt: string; isOwn: boolean }) {
   return (
     <span>
       {isOwn
-        ? t('Your request • Sent {timeAgo}', { timeAgo })
-        : t('Sent {timeAgo}', { timeAgo })}
+        ? t('decisions.review.yourRequestSentTimeAgo', { timeAgo })
+        : t('decisions.review.sentTimeAgo', { timeAgo })}
     </span>
   );
 }

@@ -24,10 +24,10 @@ export function ReviewNotesPanel({
   feedbackNotes,
   isAuthor,
 }: ReviewNotesPanelProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const noteTitle = isAuthor
-    ? t('Your revision note')
-    : t("Author's revision note");
+    ? t('yourRevisionNoteHeading')
+    : t('authorRevisionNoteHeading');
 
   return (
     // Fills in from a client query, with no navigation to announce it.
@@ -36,8 +36,8 @@ export function ReviewNotesPanel({
         <>
           <h3 className="font-serif text-label">
             {openRequests.length === 1
-              ? t('Revision request')
-              : t('Revision requests')}
+              ? t('revisionRequestHeading')
+              : t('revisionRequestsHeading')}
           </h3>
 
           {openRequests.map((request) => (
@@ -54,10 +54,10 @@ export function ReviewNotesPanel({
 
       {feedbackNotes.length > 0 ? (
         <>
-          <h3 className="font-serif text-label">{t('Feedback')}</h3>
+          <h3 className="font-serif text-label">{t('feedbackLabel')}</h3>
 
           <p className="text-base text-muted-foreground">
-            {t('Notes reviewers shared while this proposal was under review')}
+            {t('reviewNotesDescription')}
           </p>
 
           {feedbackNotes.map((item) => (

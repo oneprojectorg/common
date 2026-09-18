@@ -112,7 +112,9 @@ export function ReviewSettingsContent({
   return (
     <div className="mx-auto w-full space-y-8 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <Header1 className="text-headline">{t('Reviews')}</Header1>
+        <Header1 className="text-headline">
+          {t('decisions.review.reviewsLabel')}
+        </Header1>
         <SaveStatusIndicator
           status={autosaveStatus.status}
           savedAt={autosaveStatus.savedAt}

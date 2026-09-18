@@ -22,7 +22,7 @@ export const QUERY_PARAM = 'resultsLive';
  * don't re-open it.
  */
 export const FinalPhaseSubmissionSuccessDialog = () => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const searchParams = useSearchParams();
   const router = useRouter();
   // Local dismissal flips synchronously so pressing the button closes the
@@ -56,14 +56,14 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
         <CheckIcon />
         <div className="flex flex-col gap-3">
           <DialogTitle className="text-headline">
-            {t('Results are live!')}
+            {t('resultsPublishedTitle')}
           </DialogTitle>
           <DialogDescription className="max-w-sm text-base">
-            {t('All participants can now view the winning proposals.')}
+            {t('resultsPublishedDescription')}
           </DialogDescription>
         </div>
         <Button className="w-full" onClick={handleClose}>
-          {t('View public results page')}
+          {t('viewPublicResultsAction')}
         </Button>
       </DialogContent>
     </Dialog>

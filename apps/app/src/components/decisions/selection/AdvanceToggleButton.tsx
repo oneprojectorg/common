@@ -29,8 +29,8 @@ export function AdvanceToggleButton({
       onPressedChange={onPress}
       aria-label={
         isSelected
-          ? t("Don't advance {title}", { title })
-          : t('Advance {title}', { title })
+          ? t('decisions.review.dontAdvanceProposalLabel', { title })
+          : t('decisions.review.advanceProposalLabel', { title })
       }
       // rounded-lg overrides the sm default (rounded-md) so the radius matches
       // the Confirm button in the FooterBar.
