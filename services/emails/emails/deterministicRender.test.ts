@@ -74,8 +74,6 @@ describe('email render determinism', () => {
     expect(second).toBe(first);
   });
 
-  // daysLeft reaches subject and body, which is why the sender pins it to a
-  // memoized timestamp rather than a live clock.
   it('renders a different ReviewPhaseEndingReminderEmail when daysLeft changes', async () => {
     const props = {
       processTitle: 'Participatory Budgeting 2026',

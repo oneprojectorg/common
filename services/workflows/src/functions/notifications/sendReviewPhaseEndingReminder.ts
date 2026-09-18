@@ -2,7 +2,6 @@ import {
   type DecisionInstanceData,
   isReviewPhase,
   listProfileRecipients,
-  notSuperseded,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -28,11 +27,8 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 export const sendReviewPhaseEndingReminder = inngest.createFunction(
   {
     id: 'sendReviewPhaseEndingReminder',
-    // Scoped to the sweep bucket, not the transition: this dedupes retries
-    // and double-fired events within one sweep, while a deadline pushed into
-    // a later bucket still gets its own reminder. Two consecutive sweeps can
-    // be under the 24h key lifetime apart, so a transition-only key would
-    // swallow the second one.
+    // Bucket-scoped: a deadline pushed into a later bucket must not look like
+    // a duplicate of the earlier one.
     idempotency: 'event.data.transitionId + "-" + event.data.reminderWindowEnd',
   },
   { event: reviewPhaseEndingSoon.name },
@@ -40,7 +36,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     const { transitionId } = reviewPhaseEndingSoon.schema.parse(event.data);
 
     const transitionData = await step.run('get-transition-data', async () => {
-      // Explicit join: decisionProcessTransitions has no relations-v2 entry.
       const rows = await db
         .select({
           fromStateId: decisionProcessTransitions.fromStateId,
@@ -68,8 +63,8 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         return undefined;
       }
 
-      // daysLeft derives from observedAt, not a live clock: a retry that
-      // re-rounded it would 409 the already-delivered chunk on its Resend key.
+      // daysLeft reads observedAt, not a live clock: a retry that re-rounded
+      // it would 409 the already-delivered chunk on its Resend key.
       return { ...row, observedAt: new Date().toISOString() };
     });
 
@@ -78,9 +73,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    // Re-verify current DB state before sending — the phase may have
-    // advanced, been rescheduled, or the process unpublished since the cron
-    // queued this event.
     const phaseId = transitionData.fromStateId;
     if (
       transitionData.completedAt !== null ||
@@ -111,7 +103,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       };
     }
 
-    // An admin can push the deadline out between the sweep and this run.
     if (msLeft > REMINDER_DAYS_BEFORE_END * MS_PER_DAY) {
       return {
         message: `Skipped: transition ${transitionId} is no longer ending soon`,
@@ -131,18 +122,12 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     const phaseName = phase.name ?? phaseId;
     const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${transitionData.profileSlug}/current`;
 
-    // Reading, grouping and address resolution share one step so the reviewer
-    // profile types stay typed; a step boundary would widen them to plain
-    // JSON strings.
     const emails = await step.run('plan-reviewer-emails', async () => {
-      const { processInstanceId } = transitionData;
-
       const assignments = await db.query.proposalReviewAssignments.findMany({
         where: {
-          processInstanceId,
+          processInstanceId: transitionData.processInstanceId,
           phaseId,
-          // Only what the reviewer can act on now: AWAITING_AUTHOR_REVISION
-          // is the author's turn.
+          // AWAITING_AUTHOR_REVISION is the author's turn, not the reviewer's.
           status: {
             in: [
               ProposalReviewAssignmentStatus.PENDING,
@@ -150,16 +135,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
               ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
             ],
           },
-          // Removing a proposal from review does not remove the assignment
-          // row, so the queue's own filters have to be repeated here or the
-          // count overstates the work — and a reviewer whose only assignments
-          // are gone from their queue gets a reminder about an empty one.
-          proposal: {
-            deletedAt: { isNull: true },
-            moderationDetachedAt: { isNull: true },
-          },
-          RAW: (t) =>
-            notSuperseded({ proposalId: t.proposalId, processInstanceId }),
         },
         columns: { reviewerProfileId: true },
         with: {
@@ -167,7 +142,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         },
       });
 
-      // One reminder per reviewer, listing how many reviews they have left.
       const remainingByReviewer = new Map<
         string,
         { reviewer: (typeof assignments)[number]['reviewer']; count: number }
@@ -237,8 +211,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
             }),
         })),
         {
-          // Stable across retries, unique per run: a retry replays delivered
-          // chunks and only the failed ones go out again.
           idempotencyKeyPrefix: `review-phase-ending-reminder/${runId}`,
         },
       );

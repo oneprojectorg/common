@@ -178,10 +178,6 @@ export * from './voting';
 // Process survey
 export * from './processSurvey';
 
-// Merge-supersession predicate. Named rather than `export *`: the rest of the
-// module is internal to the merge implementation.
-export { notSuperseded } from './proposalSupersession';
-
 // Re-export VoteData type from schema for convenience
 export type { VoteData } from '@op/db/schema';
 
