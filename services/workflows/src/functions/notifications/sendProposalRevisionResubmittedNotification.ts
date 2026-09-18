@@ -1,4 +1,4 @@
-import { listProfileRecipients } from '@op/common';
+import { listProfileRecipientsByProfileId } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -87,6 +87,16 @@ export const sendProposalRevisionResubmittedNotification =
         const assignmentIdsWithoutAddress: Array<string> = [];
         const seenReviewerProfileIds = new Set<string>();
 
+        const reviewersByProfileId = new Map(
+          answered.map(({ assignment }) => [
+            assignment.reviewerProfileId,
+            assignment.reviewer,
+          ]),
+        );
+        const recipientsByProfileId = await listProfileRecipientsByProfileId([
+          ...reviewersByProfileId.values(),
+        ]);
+
         // One resubmission answers several requests, so the fan-out is per
         // requester: a reviewer holding two answered requests gets one email,
         // linked to their own assignment rather than a shared page.
@@ -97,7 +107,7 @@ export const sendProposalRevisionResubmittedNotification =
           seenReviewerProfileIds.add(assignment.reviewerProfileId);
 
           const recipients = selectEmailRecipients(
-            await listProfileRecipients(assignment.reviewer),
+            recipientsByProfileId.get(assignment.reviewerProfileId) ?? [],
           );
 
           if (recipients.length === 0) {

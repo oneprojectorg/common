@@ -26,6 +26,39 @@ export const listIndividualProfileRecipients = async (
   return owners.map(toRecipient);
 };
 
+/** The same as `listIndividualProfileRecipients`, for many profiles at once. */
+export const listIndividualProfileRecipientsByProfileId = async (
+  profileIds: ReadonlyArray<string>,
+): Promise<Map<string, Array<EmailRecipient>>> => {
+  const byProfileId = new Map<string, Array<EmailRecipient>>();
+
+  if (profileIds.length === 0) {
+    return byProfileId;
+  }
+
+  const owners = await db.query.users.findMany({
+    where: { profileId: { in: [...profileIds] } },
+    columns: { profileId: true, authUserId: true },
+    with: { authUser: { columns: { email: true } } },
+  });
+
+  for (const owner of owners) {
+    if (!owner.profileId) {
+      continue;
+    }
+
+    const recipients = byProfileId.get(owner.profileId);
+
+    if (recipients) {
+      recipients.push(toRecipient(owner));
+    } else {
+      byProfileId.set(owner.profileId, [toRecipient(owner)]);
+    }
+  }
+
+  return byProfileId;
+};
+
 /** The admins of the organization behind an org profile. */
 export const listOrganizationProfileRecipients = async (
   organizationProfileId: string,
@@ -68,6 +101,45 @@ export const listProfileRecipients = (
     default:
       return listMemberProfileRecipients(profile.id);
   }
+};
+
+/** The same as `listProfileRecipients`, for many profiles at once. */
+export const listProfileRecipientsByProfileId = async (
+  profiles: ReadonlyArray<Pick<Profile, 'id' | 'type'>>,
+): Promise<Map<string, Array<EmailRecipient>>> => {
+  const individualProfileIds: Array<string> = [];
+  const organizationProfileIds: Array<string> = [];
+  const memberProfileIds: Array<string> = [];
+
+  for (const profile of profiles) {
+    switch (profile.type) {
+      case EntityType.INDIVIDUAL:
+      case EntityType.USER:
+        individualProfileIds.push(profile.id);
+        break;
+      case EntityType.ORG:
+        organizationProfileIds.push(profile.id);
+        break;
+      default:
+        memberProfileIds.push(profile.id);
+    }
+  }
+
+  const byProfileId =
+    await listIndividualProfileRecipientsByProfileId(individualProfileIds);
+
+  for (const profileId of organizationProfileIds) {
+    byProfileId.set(
+      profileId,
+      await listOrganizationProfileRecipients(profileId),
+    );
+  }
+
+  for (const profileId of memberProfileIds) {
+    byProfileId.set(profileId, await listMemberProfileRecipients(profileId));
+  }
+
+  return byProfileId;
 };
 
 const toRecipient = (row: {
