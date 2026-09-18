@@ -19,19 +19,20 @@ export const listCustomForms = async ({
   data: ListCustomFormsInput;
   user: User;
 }): Promise<CustomFormWithPhase[]> => {
-  const process = await assertCustomFormAdmin({
-    user,
-    profileId: input.profileId,
-  });
-
-  const forms = await db.query.customForms.findMany({
-    where: {
-      profileId: process.profileId,
-      deletedAt: { isNull: true },
-    },
-    // `createdAt` isn't unique; `id` settles ties.
-    orderBy: { createdAt: 'asc' as const, id: 'asc' as const },
-  });
+  // The rows are keyed on the same `profileId` the authorization resolves, so
+  // both can be in flight at once. `Promise.all` rejects on a denial before any
+  // row is returned.
+  const [process, forms] = await Promise.all([
+    assertCustomFormAdmin({ user, profileId: input.profileId }),
+    db.query.customForms.findMany({
+      where: {
+        profileId: input.profileId,
+        deletedAt: { isNull: true },
+      },
+      // `createdAt` isn't unique; `id` settles ties.
+      orderBy: { createdAt: 'asc' as const, id: 'asc' as const },
+    }),
+  ]);
 
   return forms.map((form) => ({
     ...form,

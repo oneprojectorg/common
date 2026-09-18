@@ -22,6 +22,13 @@ export type CustomFormProcessContext = {
   phaseIds: string[];
 };
 
+/** The instance columns the authorization rule reads. */
+export type CustomFormInstance = {
+  profileId: string | null;
+  ownerProfileId: string | null;
+  instanceData: unknown;
+};
+
 /** Admits a platform admin or an admin on the profile's decision process. */
 export const assertCustomFormAdmin = async ({
   user,
@@ -40,6 +47,20 @@ export const assertCustomFormAdmin = async ({
     throw new NotFoundError('Decision process', profileId);
   }
 
+  return assertCustomFormAdminForInstance({ user, instance });
+};
+
+/**
+ * The same rule against an instance the caller already loaded, so a path that
+ * reached it by join doesn't re-query it.
+ */
+export const assertCustomFormAdminForInstance = async ({
+  user,
+  instance,
+}: {
+  user: User;
+  instance: CustomFormInstance;
+}): Promise<CustomFormProcessContext> => {
   const isPlatformAdmin = !!user.email && isUserEmailPlatformAdmin(user.email);
 
   if (!isPlatformAdmin) {

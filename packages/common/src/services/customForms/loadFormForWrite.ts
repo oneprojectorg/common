@@ -1,10 +1,15 @@
-import { db } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
+import { customForms, processInstances } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
 import type { CustomFormProcessContext } from './customFormAuth';
-import { assertCustomFormAdmin } from './customFormAuth';
+import { assertCustomFormAdminForInstance } from './customFormAuth';
 
+/**
+ * One round trip for both rows. Authorizing needs the form's `profileId`, so
+ * the two reads can't run in parallel — the join removes the second instead.
+ */
 export const loadFormForWrite = async ({
   id,
   user,
@@ -12,19 +17,38 @@ export const loadFormForWrite = async ({
   id: string;
   user: User;
 }): Promise<{ formId: string; process: CustomFormProcessContext }> => {
-  const existing = await db.query.customForms.findFirst({
-    where: { id, deletedAt: { isNull: true } },
-    columns: { id: true, profileId: true },
-  });
+  const [row] = await db
+    .select({
+      formId: customForms.id,
+      formProfileId: customForms.profileId,
+      instanceProfileId: processInstances.profileId,
+      ownerProfileId: processInstances.ownerProfileId,
+      instanceData: processInstances.instanceData,
+    })
+    .from(customForms)
+    .leftJoin(
+      processInstances,
+      eq(processInstances.profileId, customForms.profileId),
+    )
+    .where(and(eq(customForms.id, id), isNull(customForms.deletedAt)))
+    .limit(1);
 
-  if (!existing) {
+  if (!row) {
     throw new NotFoundError('Custom form', id);
   }
 
-  const process = await assertCustomFormAdmin({
+  if (!row.instanceProfileId) {
+    throw new NotFoundError('Decision process', row.formProfileId);
+  }
+
+  const process = await assertCustomFormAdminForInstance({
     user,
-    profileId: existing.profileId,
+    instance: {
+      profileId: row.instanceProfileId,
+      ownerProfileId: row.ownerProfileId,
+      instanceData: row.instanceData,
+    },
   });
 
-  return { formId: existing.id, process };
+  return { formId: row.formId, process };
 };
