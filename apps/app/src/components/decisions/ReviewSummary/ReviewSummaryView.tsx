@@ -192,7 +192,7 @@ export function ReviewSummaryView({
         backLabel={t('Back')}
       >
         {/* Swaps without a navigation. */}
-        <div className="flex items-center gap-4" aria-live="polite">
+        <div aria-live="polite">
           {isOwnFormOpen
             ? ownFormStatus && (
                 <Button

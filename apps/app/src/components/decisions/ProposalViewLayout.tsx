@@ -125,9 +125,7 @@ export function ProposalViewLayout({
               backHref={backHref}
             />
           ) : null}
-          <div className="hidden sm:block">
-            <LocaleChooser />
-          </div>
+          <LocaleChooser />
           {/* Outside the sm-only cluster: Join stays visible on mobile (the
               avatar keeps its desktop-only treatment via userMenuClassName). */}
           <JoinOrUserMenu
