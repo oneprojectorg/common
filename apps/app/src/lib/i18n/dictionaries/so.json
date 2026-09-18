@@ -1769,5 +1769,8 @@
   "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected based on voting results!\n\nWe will follow up with next steps and the final amount shortly.": "Salaan {name},\n\nWar wanaagsan — soo jeedintaada \"{proposal}\" waa la doortay iyadoo lagu saleynayo natiijada codbixinta!\n\nDhawaan waxaan kula soo xiriiri doonnaa talaabooyinka xiga iyo qaddarka ugu dambeeya.",
   "Needs a message": "Waxay u baahan tahay fariin",
   "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.": "Daabicidda waxay iimayl u dirtaa qorayaasha {fundedCount, plural, one {# soo jeedin la maalgeliyay} other {# soo jeedimo la maalgeliyay}} iyo {notFundedCount, plural, one {# soo jeedin aan la maalgelin} other {# soo jeedimo aan la maalgelin}}. Tan dib looma celin karo.",
-  "Use {name} for the submitter’s name and {proposal} for proposal title.": "Isticmaal {name} magaca soo gudbiyaha iyo {proposal} cinwaanka soo jeedinta."
+  "Use {name} for the submitter’s name and {proposal} for proposal title.": "Isticmaal {name} magaca soo gudbiyaha iyo {proposal} cinwaanka soo jeedinta.",
+  "Your changes are still syncing": "Isbedeladaadu weli waynayaan",
+  "Please wait a moment and try again.": "Fadlan sugo daqiiqad kadibna isku day mar kale.",
+  "Your proposal could not be validated right now": "Hadda lama xaqiijin karo soo jeedintaada"
 }

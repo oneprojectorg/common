@@ -227,6 +227,11 @@ export {
   isVotingEligible,
 } from './services/decision/votingEligibility';
 
+// Stable error code for a failed TipTap document fetch during proposal
+// validation (no server dependencies) — lets the client map it to
+// translated copy instead of the service layer's diagnostic message.
+export { DOCUMENT_FETCH_ERROR_CODE } from './utils/error';
+
 // Shared upload defaults (no server dependencies). The allowlist and size
 // cap apply to every user-uploaded storage object; per-feature modules
 // still expose their own bucket / path prefix / etc.

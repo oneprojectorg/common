@@ -328,6 +328,22 @@ export const mockCollab = {
 // Resolution
 // ---------------------------------------------------------------------------
 
+function httpError(
+  status: number,
+  message: string,
+): Error & {
+  name: 'HTTPError';
+  response: { status: number };
+} {
+  const error = new Error(message) as Error & {
+    name: 'HTTPError';
+    response: { status: number };
+  };
+  error.name = 'HTTPError';
+  error.response = { status };
+  return error;
+}
+
 /** Resolve a document request: seeded response or 404. */
 function resolveDoc(docName: string, version?: number): Promise<unknown> {
   if (version !== undefined) {
@@ -341,7 +357,7 @@ function resolveDoc(docName: string, version?: number): Promise<unknown> {
   if (handler) {
     return handler();
   }
-  return Promise.reject(new Error('404 Not Found'));
+  return Promise.reject(httpError(404, '404 Not Found'));
 }
 
 // ---------------------------------------------------------------------------

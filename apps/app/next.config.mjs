@@ -76,6 +76,11 @@ const config = {
             '@op/collab': '../../services/collab/__mocks__/index.ts',
             '@op/analytics/client':
               '../../packages/analytics/src/client.testing.ts',
+            // The real hook opens a websocket straight to TipTap Cloud;
+            // there's no reachable collab server in e2e. See
+            // useTiptapCollab.testing.ts for why this is a swap rather than
+            // an `if (E2E)` in the real hook.
+            '@/hooks/useTiptapCollab': './src/hooks/useTiptapCollab.testing.ts',
           }
         : {}),
     },
@@ -95,6 +100,19 @@ const config = {
     // Turbopack (dev) resolves it natively from tsconfig.
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
+      // In e2e mode, swap in the collab test double (see
+      // useTiptapCollab.testing.ts) before the `@` alias below — webpack's
+      // alias matching walks entries in insertion order, and `@` prefix-
+      // matches every `@/*` specifier, so the more specific key must come
+      // first or it never gets a chance to match.
+      ...(process.env.E2E === 'true'
+        ? {
+            '@/hooks/useTiptapCollab$': path.resolve(
+              __dirname,
+              'src/hooks/useTiptapCollab.testing.ts',
+            ),
+          }
+        : {}),
       '@': path.resolve(__dirname, 'src'),
     };
     if (!isServer) {

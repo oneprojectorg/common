@@ -1,4 +1,4 @@
-import { CommonError, UnauthorizedError } from '@op/common';
+import { CommonError, UnauthorizedError, ValidationError } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
 import {
@@ -35,6 +35,16 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
 }) => {
   const cause = error.cause;
   const commonErrorToTRPCError = (cause: CommonError) => {
+    const fieldErrors =
+      cause instanceof ValidationError ? cause.fieldErrors : undefined;
+    // A stable code the client maps to translated copy, for errors whose
+    // message is server-diagnostic only (e.g. DocumentFetchError) and must
+    // not reach a user untranslated.
+    const errorCode =
+      'errorCode' in cause && typeof cause.errorCode === 'string'
+        ? cause.errorCode
+        : undefined;
+
     return {
       ...shape,
       message: cause.message,
@@ -43,7 +53,8 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
         code: getStatusKeyFromCode(cause.statusCode ?? 500),
         httpStatus: cause.statusCode ?? 500,
         timestamp: cause.timestamp,
-        // Omit the entire error object before it goes to the client
+        ...(fieldErrors ? { fieldErrors } : {}),
+        ...(errorCode ? { errorCode } : {}),
       },
     };
   };

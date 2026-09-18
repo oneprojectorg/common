@@ -6,7 +6,6 @@ import { trpc } from '@op/api/client';
 import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
-  type ProposalDataInput,
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
@@ -36,13 +35,15 @@ import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
-import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { SubmitProposalConfirmModal } from './SubmitProposalConfirmModal';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
+import { buildUpdateProposalPayload } from './buildUpdateProposalPayload';
+import { ensureDocSynced } from './ensureDocSynced';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
+import { resolveSubmitRedirect } from './resolveSubmitRedirect';
 import { requiresSubmitConfirmation } from './submitConfirmation';
 import { useProposalCollabToken } from './useProposalCollabToken';
 import { useProposalDraft } from './useProposalDraft';
@@ -280,6 +281,12 @@ function ProposalEditorInner({
   }, [isPreviewMode, isSynced, provider, ydoc]);
 
   const finalizeSubmit = useCallback(async () => {
+    // Re-check: the updateProposal round trip or an open custom-form modal
+    // can outlast the provider's sync, so gate the submit call itself too.
+    if (!(await ensureDocSynced(provider, t))) {
+      throw new Error('Proposal changes not synced before submit');
+    }
+
     const didSubmitDraft = isDraft && Boolean(proposal);
     if (didSubmitDraft && proposal) {
       await submitProposalMutation.mutateAsync({
@@ -288,9 +295,12 @@ function ProposalEditorInner({
     }
 
     router.push(
-      didSubmitDraft && isAnonymous && proposal
-        ? `${backHref}?promote=1&proposal=${proposal.profileId}`
-        : backHref,
+      resolveSubmitRedirect({
+        didSubmitDraft,
+        isAnonymous,
+        profileId: proposal?.profileId,
+        backHref,
+      }),
     );
   }, [
     isDraft,
@@ -299,6 +309,8 @@ function ProposalEditorInner({
     router,
     isAnonymous,
     backHref,
+    provider,
+    t,
   ]);
 
   // Reads the refs at call time: the user can keep typing with the dialog open.
@@ -321,29 +333,24 @@ function ProposalEditorInner({
         throw new Error('No proposal to update');
       }
 
-      const categorySchema = template.properties?.category;
-      const hasCategories =
-        typeof categorySchema === 'object' && schemaHasOptions(categorySchema);
+      // Gate on the server acknowledging our latest edits before any
+      // server-side validation: submitProposal (and updateProposal for
+      // non-drafts) re-validates against TipTap Cloud, and submitting
+      // before the cloud has seen our updates surfaces false "required"
+      // errors for fields the user has filled.
+      if (!(await ensureDocSynced(provider, t))) {
+        return;
+      }
 
-      const proposalData: ProposalDataInput = {
-        ...parseProposalData(proposal.proposalData),
-        collaborationDocId,
-        category: hasCategories
-          ? currentDraft.category.length > 0
-            ? currentDraft.category
-            : undefined
-          : undefined,
-        budget: currentDraft.budget ?? undefined,
-      };
-
-      await updateProposalMutation.mutateAsync({
-        proposalId: proposal.id,
-        data: {
-          title: currentDraft.title,
-          proposalData,
-          ...(!isDraft ? { checkpointVersion: { type: 'update' } } : {}),
-        },
-      });
+      await updateProposalMutation.mutateAsync(
+        buildUpdateProposalPayload({
+          proposal,
+          currentDraft,
+          collaborationDocId,
+          categorySchema: template.properties?.category,
+          isDraft,
+        }),
+      );
 
       // The custom form gates proposal submission only (the draft -> submit
       // transition). The phase params select the form tied to the current
@@ -383,6 +390,8 @@ function ProposalEditorInner({
     updateProposalMutation,
     draftRef,
     finalizeSubmit,
+    provider,
+    t,
   ]);
 
   // -- Client-side schema validation (validates ALL template fields) ----------

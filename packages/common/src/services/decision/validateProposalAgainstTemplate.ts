@@ -1,6 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 import type { JSONContent } from '@tiptap/core';
 
+import { DocumentFetchError } from '../../utils';
 import { assembleProposalData } from './assembleProposalData';
 import { fillCategoryFromBoundary } from './boundaryCategory';
 import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
@@ -8,6 +9,15 @@ import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
 import type { ProposalTemplateSchema } from './types';
+
+function getHttpStatusCode(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') {
+    return undefined;
+  }
+  const status = (error as { response?: { status?: unknown } }).response
+    ?.status;
+  return typeof status === 'number' ? status : undefined;
+}
 
 /**
  * Validates proposal data against a proposal template schema.
@@ -51,9 +61,19 @@ export async function validateProposalAgainstTemplate(
     // the user opened the editor but never typed). Treat that as "all
     // fragments empty" so the validator surfaces required-field errors
     // instead of leaking an HTTP error.
+    //
+    // Any OTHER failure (5xx, timeout, network) means the fetch itself
+    // failed — the cloud may hold a stale copy of the doc, and validating
+    // against it would surface false "required" errors for fields the user
+    // has filled. Surface a retryable DocumentFetchError instead.
     const fragmentDocs = await client
       .getDocumentFragments(parsed.collaborationDocId, fragmentNames)
-      .catch(() => ({}) as Record<string, never>);
+      .catch((error: unknown) => {
+        if (getHttpStatusCode(error) === 404) {
+          return {} as Record<string, never>;
+        }
+        throw new DocumentFetchError(undefined, error);
+      });
     const fragmentTexts: Record<string, string> = Object.fromEntries(
       fragmentNames.map((name) => [
         name,
