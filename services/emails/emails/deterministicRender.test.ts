@@ -65,7 +65,7 @@ describe('email render determinism', () => {
       phaseName: 'Review',
       remainingCount: 4,
       daysLeft: 3,
-      reviewsUrl: 'https://common.oneproject.org/decisions/pb-2026/reviews',
+      reviewsUrl: 'https://common.oneproject.org/decisions/pb-2026/current',
     };
 
     const first = await render(ReviewPhaseEndingReminderEmail(props));
@@ -81,7 +81,7 @@ describe('email render determinism', () => {
       processTitle: 'Participatory Budgeting 2026',
       phaseName: 'Review',
       remainingCount: 4,
-      reviewsUrl: 'https://common.oneproject.org/decisions/pb-2026/reviews',
+      reviewsUrl: 'https://common.oneproject.org/decisions/pb-2026/current',
     };
 
     const threeDays = await render(

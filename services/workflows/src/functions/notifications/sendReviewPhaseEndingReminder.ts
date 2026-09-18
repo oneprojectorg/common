@@ -125,7 +125,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
 
     const processTitle = transitionData.processName;
     const phaseName = phase.name ?? phaseId;
-    const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${transitionData.profileSlug}/reviews`;
+    const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${transitionData.profileSlug}/current`;
 
     // Reading, grouping and address resolution share one step so the reviewer
     // profile types stay typed; a step boundary would widen them to plain
