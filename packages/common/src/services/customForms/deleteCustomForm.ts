@@ -6,15 +6,8 @@ import { loadFormForWrite } from './loadFormForWrite';
 import type { DeleteCustomFormInput } from './schemas/customForm';
 
 /**
- * Soft-deletes a custom form, freeing its phase for a new one. Submissions
- * already recorded against it are kept — a deleted definition still has to
- * explain the data collected under it.
- *
- * Returns the deleted form's id, and the profile it hung off so the caller can
- * fan invalidation out to it without re-reading a row that no longer lists.
- *
- * Authorization: platform admin, or admin on the decision process that owns the
- * form (see {@link loadFormForWrite}).
+ * Soft delete: submissions outlive the form, and a deleted definition still has
+ * to explain the data collected under it.
  */
 export const deleteCustomForm = async ({
   data: input,
@@ -25,8 +18,7 @@ export const deleteCustomForm = async ({
 }): Promise<{ deletedId: string; profileId: string }> => {
   const { formId, process } = await loadFormForWrite({ id: input.id, user });
 
-  // `deletedAt IS NULL` in the WHERE as well, so a concurrent delete doesn't
-  // move the timestamp a second time.
+  // `deletedAt IS NULL` so a concurrent delete doesn't move the timestamp twice.
   await db
     .update(customForms)
     .set({ deletedAt: new Date().toISOString() })

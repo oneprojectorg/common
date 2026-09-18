@@ -38,8 +38,7 @@ export const customFormSchema = z.object({
 
 export type CustomFormDTO = z.infer<typeof customFormSchema>;
 
-/** Wire schema for the admin list: each row carries the phase it resolves to,
- *  so the editor doesn't re-derive `x-phase`-or-initial-phase on the client. */
+/** The resolved phase travels with the row so the client can't re-derive it. */
 export const customFormWithPhaseSchema = customFormSchema.extend({
   phaseId: z.string().nullable(),
 });
@@ -96,24 +95,14 @@ export type CreateCustomFormSubmissionInput = z.infer<
   typeof createCustomFormSubmissionInputSchema
 >;
 
-// ── Form definition authoring ──────────────────────────────────────────
-//
-// The schemas below describe what the platform-admin form builder may write.
-// They are deliberately narrower than `CustomFormDefinitionSchema` (which types
-// anything already stored): a definition only goes in if `CustomFormModal` can
-// render it, so the builder cannot persist a field participants would see as a
-// blank or unanswerable control.
+// What the form builder may write. Narrower than `CustomFormDefinitionSchema`,
+// which types anything already stored: a definition only goes in if
+// `CustomFormModal` can render it.
 
-/** Serialized definition cap, matching {@link CUSTOM_FORM_SUBMISSION_MAX_BYTES}. */
 export const CUSTOM_FORM_DEFINITION_MAX_BYTES = 64 * 1024;
-
-/** Upper bounds on a single form. Far above any survey we run; low enough that
- *  one form can't become an unreviewable wall of controls. */
 export const CUSTOM_FORM_MAX_FIELDS = 50;
 export const CUSTOM_FORM_MAX_OPTIONS = 100;
 
-/** JSON Schema property names the builder may use. Excludes `__proto__` by
- *  shape and `constructor` / `prototype` by {@link FORBIDDEN_DATA_KEYS}. */
 const CUSTOM_FORM_FIELD_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
 
 const customFormFieldKeySchema = z
@@ -132,12 +121,6 @@ const optionListSchema = z
   .min(1)
   .max(CUSTOM_FORM_MAX_OPTIONS);
 
-/**
- * One authored field. `type` plus `enum` / `items` describe the data, and
- * `x-format` picks between the controls `CustomFormModal` renders for that
- * shape (long-text vs single-line for a string; radio row vs dropdown for a
- * single-choice enum).
- */
 export const customFormFieldSchema = z
   .object({
     type: z.enum(['string', 'number', 'integer', 'boolean', 'array']),
@@ -146,9 +129,7 @@ export const customFormFieldSchema = z
     'x-format': z
       .enum(['short-text', 'long-text', 'dropdown', 'radio'])
       .optional(),
-    /** Single-choice options; only valid on a `string` field. */
     enum: optionListSchema.optional(),
-    /** Multi-choice options; only valid on an `array` field. */
     items: z
       .object({ type: z.literal('string'), enum: optionListSchema })
       .optional(),
@@ -165,7 +146,7 @@ export const customFormFieldSchema = z
 
 export type CustomFormField = z.infer<typeof customFormFieldSchema>;
 
-/** Shape of a field as parsed, before the cross-key refinements run. */
+/** A field as parsed, before the cross-key refinements run. */
 type UnrefinedField = {
   type: 'string' | 'number' | 'integer' | 'boolean' | 'array';
   'x-format'?: 'short-text' | 'long-text' | 'dropdown' | 'radio';
@@ -173,7 +154,6 @@ type UnrefinedField = {
   items?: { type: 'string'; enum: string[] };
 };
 
-/** A multi-select carries its options under `items`, never under `enum`. */
 const refineMultiSelectField = (
   field: UnrefinedField,
   ctx: z.RefinementCtx,
@@ -195,7 +175,6 @@ const refineMultiSelectField = (
   }
 };
 
-/** Everything that is not a multi-select: one value, options under `enum`. */
 const refineSingleValueField = (
   field: UnrefinedField,
   ctx: z.RefinementCtx,
@@ -218,8 +197,7 @@ const refineSingleValueField = (
 
   const format = field['x-format'];
 
-  // `radio` and `dropdown` are choice controls: without options the renderer
-  // has nothing to draw.
+  // A choice control with no options renders nothing.
   if (CHOICE_FORMATS.has(format) && !field.enum) {
     ctx.addIssue({
       code: 'custom',
@@ -243,10 +221,8 @@ const CHOICE_FORMATS = new Set<UnrefinedField['x-format']>([
 ]);
 
 /**
- * A full authored definition. `x-phase` is required here even though the stored
- * type allows it to be absent: every form the builder writes states its phase
- * outright, so the phase a participant sees it on never depends on which phase
- * happens to be first.
+ * `x-phase` is required here though the stored type allows it to be absent, so
+ * an authored form's phase never depends on which phase happens to be first.
  */
 export const customFormDefinitionInputSchema = z
   .object({
@@ -298,9 +274,8 @@ export const customFormDefinitionInputSchema = z
   });
 
 /**
- * `x-field-order` is what the renderer walks, so it has to name each field
- * exactly once: a key missing from it is a field nobody ever sees, and a key
- * that is not a field renders nothing.
+ * The renderer walks `x-field-order`, so a field missing from it is one nobody
+ * ever sees.
  */
 const refineFieldOrder = (
   { order, known }: { order: string[]; known: Set<string> },
@@ -343,7 +318,7 @@ export type CustomFormDefinitionInput = z.infer<
 
 const customFormNameSchema = z.string().trim().min(1).max(256);
 
-/** Input for `createCustomForm`. `profileId` is the decision process's profile. */
+/** `profileId` is the decision process's own profile. */
 export const createCustomFormInputSchema = z.object({
   profileId: z.uuid(),
   name: customFormNameSchema,
@@ -352,7 +327,6 @@ export const createCustomFormInputSchema = z.object({
 
 export type CreateCustomFormInput = z.infer<typeof createCustomFormInputSchema>;
 
-/** Input for `updateCustomForm`. */
 export const updateCustomFormInputSchema = z.object({
   id: z.uuid(),
   name: customFormNameSchema,
@@ -361,12 +335,10 @@ export const updateCustomFormInputSchema = z.object({
 
 export type UpdateCustomFormInput = z.infer<typeof updateCustomFormInputSchema>;
 
-/** Input for `listCustomForms`. */
 export const listCustomFormsInputSchema = z.object({ profileId: z.uuid() });
 
 export type ListCustomFormsInput = z.infer<typeof listCustomFormsInputSchema>;
 
-/** Input for `deleteCustomForm`. */
 export const deleteCustomFormInputSchema = z.object({ id: z.uuid() });
 
 export type DeleteCustomFormInput = z.infer<typeof deleteCustomFormInputSchema>;

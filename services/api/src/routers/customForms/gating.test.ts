@@ -5,12 +5,8 @@ import {
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
-/**
- * Authoring a form is admin work, so these four sit one tier above
- * `customForm.submit`: an anonymous session is refused at the gate, and only a
- * confirmed account reaches the service layer's platform-admin /
- * decision-process-admin check.
- */
+// One tier above `customForm.submit`: an anonymous session is refused at the
+// gate, and only a confirmed account reaches the service layer's check.
 
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 

@@ -8,14 +8,7 @@ import { loadFormForWrite } from './loadFormForWrite';
 import { writeWithPhaseLock } from './phaseBinding';
 import type { UpdateCustomFormInput } from './schemas/customForm';
 
-/**
- * Replaces a custom form's name and definition, including the phase it binds
- * to. Submissions already recorded against the form are left alone — they keep
- * the shape they were validated under.
- *
- * Authorization: platform admin, or admin on the decision process that owns the
- * form (see {@link loadFormForWrite}).
- */
+/** Submissions already recorded keep the shape they were validated under. */
 export const updateCustomForm = async ({
   data: input,
   user,
@@ -30,8 +23,7 @@ export const updateCustomForm = async ({
     phaseId: input.schema['x-phase'],
     excludeFormId: formId,
     write: async (tx) => {
-      // `deletedAt IS NULL` again in the WHERE: the row could have been deleted
-      // between the read above and this statement.
+      // The row could have been deleted between the read above and here.
       const [updated] = await tx
         .update(customForms)
         .set({ name: input.name, schema: input.schema })

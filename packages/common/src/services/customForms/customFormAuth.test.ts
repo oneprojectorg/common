@@ -138,8 +138,6 @@ describe('assertCustomFormAdmin', () => {
   });
 
   it('refuses a platform admin when the instance has no profile of its own', async () => {
-    // The column is still nullable, and the platform-admin path skips the
-    // assert that would otherwise catch it.
     findFirst.mockResolvedValue({
       profileId: null,
       ownerProfileId: 'org-profile',

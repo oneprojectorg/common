@@ -6,10 +6,7 @@ import { customFormWithPhaseEncoder } from '../../encoders';
 import { authenticatedConfirmedProcedure, router } from '../../trpcFactory';
 
 export const listCustomFormsRouter = router({
-  // Every form definition on a decision process, for the admin editor.
-  // Participants read a single form through `getForProfile` instead.
-  // Authorization (platform admin or decision-process admin) is the service
-  // layer's — this tier only rules out anonymous sessions.
+  // This tier only rules out anonymous sessions; the service layer authorizes.
   list: authenticatedConfirmedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 60 },
   })

@@ -7,13 +7,6 @@ import { assertCustomFormAdmin } from './customFormAuth';
 import { writeWithPhaseLock } from './phaseBinding';
 import type { CreateCustomFormInput } from './schemas/customForm';
 
-/**
- * Attaches a new custom form to a decision process, bound to the phase named by
- * its `x-phase`.
- *
- * Authorization: platform admin, or admin on the decision process that owns
- * `profileId` (see {@link assertCustomFormAdmin}).
- */
 export const createCustomForm = async ({
   data: input,
   user,

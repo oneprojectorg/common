@@ -6,13 +6,7 @@ import { ValidationError } from '../../utils';
 import type { CustomFormProcessContext } from './customFormAuth';
 import { getEffectiveFormPhase } from './utils';
 
-/**
- * Runs a form write inside the transaction that owns the phase binding: the
- * profile's forms are locked, the target phase is proven free, and only then
- * does `write` run. The single entry point for create and update, so neither
- * can reach the insert without holding the lock that makes the check mean
- * anything.
- */
+/** The only write path, so no insert can skip the lock the check depends on. */
 export const writeWithPhaseLock = async <TResult>({
   process,
   phaseId,
@@ -32,12 +26,9 @@ export const writeWithPhaseLock = async <TResult>({
   });
 
 /**
- * Serializes concurrent form writes on one profile for the transaction.
- *
- * `x-phase` lives inside the `schema` jsonb, so Postgres has no unique index to
- * enforce one-form-per-phase for us. Two admins saving a form for the same
- * phase at the same moment would both read an empty phase and both insert;
- * `getCustomFormForProfile` would then return whichever row came back first.
+ * `x-phase` lives inside the `schema` jsonb, so there is no unique index to
+ * enforce one-form-per-phase. Without this lock two concurrent saves both read
+ * the phase as free and both insert.
  */
 export const lockProfileForms = async ({
   tx,
@@ -51,13 +42,7 @@ export const lockProfileForms = async ({
   );
 };
 
-/**
- * Refuses a phase that is not configured on the process, or that another live
- * form already occupies. Caller holds {@link lockProfileForms}.
- *
- * @param excludeFormId - The form being updated, so re-saving it under its own
- *   phase isn't read as a collision with itself.
- */
+/** Caller holds {@link lockProfileForms}. */
 export const assertPhaseAvailable = async ({
   tx,
   process,

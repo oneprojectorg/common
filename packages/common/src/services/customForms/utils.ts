@@ -1,14 +1,7 @@
 /**
- * The decision phase a stored form applies to: its `x-phase` when present, else
- * the process's initial phase (so legacy forms written before `x-phase` existed
- * keep gating the submission phase).
- *
- * The single definition of that rule — the read path, the duplicate check on
- * write, and the admin UI all resolve a form's phase through here, so they
- * cannot drift into disagreeing about which phase a form belongs to.
- *
- * `schema` is raw jsonb, so a non-string `x-phase` is possible in principle and
- * falls back rather than being trusted as a phase id.
+ * Forms written before `x-phase` existed have none, and apply to the initial
+ * phase. Shared by the read path, the write check and the admin UI so they
+ * cannot disagree about which phase a form belongs to.
  */
 export const getEffectiveFormPhase = ({
   schema,
