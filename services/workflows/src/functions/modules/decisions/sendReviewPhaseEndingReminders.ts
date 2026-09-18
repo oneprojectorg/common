@@ -51,7 +51,6 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
           (p) => p.phaseId === phaseId,
         );
 
-        // Not isReviewPhase: this reminder skips the legacy `proposals.review` flag.
         if (phase?.rules?.reviews?.submit !== true || !phase.endDate) {
           return [];
         }
