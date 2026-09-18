@@ -95,13 +95,11 @@ export type CreateCustomFormSubmissionInput = z.infer<
   typeof createCustomFormSubmissionInputSchema
 >;
 
-// What the form builder may write. Narrower than `CustomFormDefinitionSchema`,
-// which types anything already stored: a definition only goes in if
-// `CustomFormModal` can render it.
+// What the form builder may write. Structural only — the shape the renderer
+// walks, plus caps. What each field *is* stays the renderer's business.
 
 export const CUSTOM_FORM_DEFINITION_MAX_BYTES = 64 * 1024;
 export const CUSTOM_FORM_MAX_FIELDS = 50;
-export const CUSTOM_FORM_MAX_OPTIONS = 100;
 
 const CUSTOM_FORM_FIELD_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
 
@@ -116,109 +114,17 @@ const customFormFieldKeySchema = z
     message: 'Field key is not allowed',
   });
 
-const optionListSchema = z
-  .array(z.string().min(1).max(500))
-  .min(1)
-  .max(CUSTOM_FORM_MAX_OPTIONS);
-
-export const customFormFieldSchema = z
-  .object({
-    type: z.enum(['string', 'number', 'integer', 'boolean', 'array']),
-    title: z.string().min(1).max(500),
-    description: z.string().max(1000).optional(),
-    'x-format': z
-      .enum(['short-text', 'long-text', 'dropdown', 'radio'])
-      .optional(),
-    enum: optionListSchema.optional(),
-    items: z
-      .object({ type: z.literal('string'), enum: optionListSchema })
-      .optional(),
-    uniqueItems: z.boolean().optional(),
-  })
-  .superRefine((field, ctx) => {
-    if (field.type === 'array') {
-      refineMultiSelectField(field, ctx);
-      return;
-    }
-
-    refineSingleValueField(field, ctx);
-  });
+/**
+ * Permissive on purpose: the renderer decides what it can draw, and skips what
+ * it can't. Enumerating the field kinds here would mean editing this file every
+ * time one is added to `CustomFormModal`.
+ */
+export const customFormFieldSchema = z.looseObject({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(1000).optional(),
+});
 
 export type CustomFormField = z.infer<typeof customFormFieldSchema>;
-
-/** A field as parsed, before the cross-key refinements run. */
-type UnrefinedField = {
-  type: 'string' | 'number' | 'integer' | 'boolean' | 'array';
-  'x-format'?: 'short-text' | 'long-text' | 'dropdown' | 'radio';
-  enum?: string[];
-  items?: { type: 'string'; enum: string[] };
-};
-
-const refineMultiSelectField = (
-  field: UnrefinedField,
-  ctx: z.RefinementCtx,
-): void => {
-  if (!field.items) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'A multi-select field needs at least one option',
-      path: ['items'],
-    });
-  }
-
-  if (field.enum) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'A multi-select field lists its options under `items`',
-      path: ['enum'],
-    });
-  }
-};
-
-const refineSingleValueField = (
-  field: UnrefinedField,
-  ctx: z.RefinementCtx,
-): void => {
-  if (field.items) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'Only a multi-select field may declare `items`',
-      path: ['items'],
-    });
-  }
-
-  if (field.enum && field.type !== 'string') {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'Only a text field may offer a fixed list of options',
-      path: ['enum'],
-    });
-  }
-
-  const format = field['x-format'];
-
-  // A choice control with no options renders nothing.
-  if (CHOICE_FORMATS.has(format) && !field.enum) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'A choice field needs at least one option',
-      path: ['enum'],
-    });
-  }
-
-  if (format === 'long-text' && field.enum) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'A long-text field cannot offer a fixed list of options',
-      path: ['x-format'],
-    });
-  }
-};
-
-const CHOICE_FORMATS = new Set<UnrefinedField['x-format']>([
-  'radio',
-  'dropdown',
-]);
 
 /**
  * `x-phase` is required here though the stored type allows it to be absent, so

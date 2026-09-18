@@ -203,7 +203,6 @@ export {
   updateCustomFormInputSchema,
   CUSTOM_FORM_DEFINITION_MAX_BYTES,
   CUSTOM_FORM_MAX_FIELDS,
-  CUSTOM_FORM_MAX_OPTIONS,
   CUSTOM_FORM_SUBMISSION_MAX_BYTES,
   type CustomFormDTO,
   type CustomFormWithPhaseDTO,

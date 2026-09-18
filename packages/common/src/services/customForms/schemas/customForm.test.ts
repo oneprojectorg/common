@@ -96,25 +96,28 @@ describe('customFormDefinitionInputSchema', () => {
     expect(parse(definition({ required: ['ghost'] })).success).toBe(false);
   });
 
-  it('rejects a choice field with no options', () => {
+  it('accepts a field kind it has never heard of', () => {
+    // The renderer decides what it can draw. Enumerating kinds here would mean
+    // editing this schema every time one is added.
     expect(
       parse(
         definition({
           properties: {
-            choice: { type: 'string', title: 'Pick', 'x-format': 'dropdown' },
+            when: { type: 'string', title: 'When?', 'x-format': 'date-picker' },
+            where: { type: 'object', title: 'Where?', 'x-format': 'location' },
           },
-          'x-field-order': ['choice'],
+          'x-field-order': ['when', 'where'],
         }),
       ).success,
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it('rejects a multi-select with no options', () => {
+  it('still refuses a key that could poison a prototype, whatever the field is', () => {
     expect(
       parse(
         definition({
-          properties: { reasons: { type: 'array', title: 'Why?' } },
-          'x-field-order': ['reasons'],
+          properties: { constructor: { type: 'anything', title: 'Hi' } },
+          'x-field-order': ['constructor'],
         }),
       ).success,
     ).toBe(false);
@@ -136,19 +139,6 @@ describe('customFormDefinitionInputSchema', () => {
         }),
       ).success,
     ).toBe(true);
-  });
-
-  it('rejects options on a field whose type cannot carry them', () => {
-    expect(
-      parse(
-        definition({
-          properties: {
-            amount: { type: 'number', title: 'How much?', enum: ['1', '2'] },
-          },
-          'x-field-order': ['amount'],
-        }),
-      ).success,
-    ).toBe(false);
   });
 
   it('rejects more fields than one form may hold', () => {
