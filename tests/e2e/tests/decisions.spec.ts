@@ -69,8 +69,10 @@ test.describe('Decisions', () => {
     authenticatedPage,
     org,
   }) => {
-    // Seed a decision whose slug matches the `VANITY_DECISION_SLUGS` allowlist
-    // in `apps/app/next.config.mjs`. The rewrite turns `/en/columbus` into the
+    // Seed a decision whose slug matches the vanity allowlist — `columbus` is
+    // the default in `apps/app/vanityDecisionSlugs.mjs`, which the e2e build
+    // uses because it sets no `VANITY_DECISION_SLUGS`. The rewrite turns
+    // `/en/columbus` into the
     // existing `/en/decisions/columbus` route on the server while the URL bar
     // keeps the vanity path.
     const template = await getSeededTemplate();

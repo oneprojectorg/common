@@ -7,6 +7,11 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  buildVanityDecisionRewrite,
+  parseVanityDecisionSlugs,
+} from './vanityDecisionSlugs.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
@@ -43,11 +48,14 @@ dotenv.config({
 const DEPLOY_ENV = process.env.VERCEL_ENV;
 const PREVIEW_BRANCH_URL = process.env.VERCEL_BRANCH_URL;
 
-// Decision-process slugs exposed at the vanity URL `/[locale]/<slug>`.
-// Keep this list narrow — each entry must match the `slug` column on a
-// public DECISION profile. Add a new entry only when a process is going live
-// on its vanity path.
-const VANITY_DECISION_SLUGS = ['columbus'];
+// Decision-process slugs exposed at the vanity URL `/[locale]/<slug>`. Each
+// entry must match the `slug` column on a public DECISION profile. Defaults to
+// `columbus`; set `VANITY_DECISION_SLUGS` to expose a different public process
+// without a code change. Rewrites are baked in at build time, so a change here
+// needs a redeploy.
+const VANITY_DECISION_SLUGS = parseVanityDecisionSlugs(
+  process.env.VANITY_DECISION_SLUGS,
+);
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -218,15 +226,16 @@ const config = {
         ]
       : [];
 
+    // Vanity URL for decision processes: `/en/columbus` resolves to the same
+    // page as `/en/decisions/columbus`. Absent when no slug is allow-listed.
+    const vanityRewrite = buildVanityDecisionRewrite({
+      locales: SUPPORTED_LOCALES,
+      slugs: VANITY_DECISION_SLUGS,
+    });
+
     return [
       ...previewApiRewrites,
-      // Vanity URL for decision processes: `/en/columbus` resolves to the same
-      // page as `/en/decisions/columbus`. Allow-listed one slug at a time —
-      // extend `VANITY_DECISION_SLUGS` when adding a new vanity process.
-      {
-        source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})/:path*`,
-        destination: '/:locale/decisions/:slug/:path*',
-      },
+      ...(vanityRewrite ? [vanityRewrite] : []),
       {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
