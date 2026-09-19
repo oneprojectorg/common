@@ -1822,5 +1822,6 @@
   "Make this decision public?": "Tornar esta decisão pública?",
   "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Qualquer pessoa com o link poderá ler esta decisão sem ter conta, e qualquer pessoa com sessão iniciada poderá enviar uma proposta e votar. As propostas e os comentários que já estão na decisão também passam a ser legíveis. Não há como fechá-la novamente por esta tela.",
   "Publishing…": "Publicando…",
-  "This decision is now public.": "Esta decisão agora é pública."
+  "This decision is now public.": "Esta decisão agora é pública.",
+  "Only a published decision can be opened to the public.": "Apenas uma decisão publicada pode ser tornada pública."
 }

@@ -10,12 +10,7 @@ export const makeDecisionPublicRouter = router({
   makeDecisionPublic: networkAuthenticatedProcedure()
     .use(withAuthenticatedPlatformAdmin)
     .input(z.object({ instanceId: z.uuid() }))
-    .output(
-      z.object({
-        profileId: z.string(),
-        isPublic: z.boolean(),
-      }),
-    )
+    .output(z.object({ profileId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // The service invalidates the access and instance caches itself, so the
       // admin screen's refetch already sees the decision as public.

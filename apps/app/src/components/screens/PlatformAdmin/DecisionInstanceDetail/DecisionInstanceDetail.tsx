@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type {
   AdminDecisionConfig,
   AdminDecisionPhase,
@@ -29,6 +30,10 @@ import { CustomFormsPanel } from './CustomFormsPanel';
 import { MakePublicButton } from './MakePublicButton';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
+import {
+  type PublicAccessState,
+  getPublicAccessState,
+} from './publicAccessState';
 
 const STATUS_DISPLAY: Record<string, string> = {
   draft: 'Draft',
@@ -151,6 +156,7 @@ const DecisionInstanceDetailContent = ({
           <ConfigurationCard
             instanceId={instanceId}
             isPublic={detail.isPublic}
+            status={detail.status}
             config={detail.config}
             instanceData={detail.instanceData}
           />
@@ -323,11 +329,13 @@ const PhaseCard = ({
 const ConfigurationCard = ({
   instanceId,
   isPublic,
+  status,
   config,
   instanceData,
 }: {
   instanceId: string;
   isPublic: boolean;
+  status: ProcessStatus | null;
   config: AdminDecisionConfig;
   instanceData: unknown;
 }) => {
@@ -382,20 +390,11 @@ const ConfigurationCard = ({
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
-        <DetailSection title={t('Public access')}>
-          <p className="text-sm text-muted-foreground">
-            {isPublic
-              ? t(
-                  'Anyone with the link can read this decision without an account.',
-                )
-              : t('Only members of this decision can see it.')}
-          </p>
-          {isPublic ? null : (
-            <div className="w-fit">
-              <MakePublicButton instanceId={instanceId} />
-            </div>
-          )}
-        </DetailSection>
+        <PublicAccessSection
+          instanceId={instanceId}
+          isPublic={isPublic}
+          status={status}
+        />
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
           {settings.map((setting) => (
             <div
@@ -427,6 +426,43 @@ const ConfigurationCard = ({
         ) : null}
       </CardContent>
     </Card>
+  );
+};
+
+/**
+ * Whether a visitor with no account can read the decision, and the one-way
+ * action that opens it. Reports the grant, not `config.isPrivate` — that flag
+ * is a display setting the grant is authoritative over.
+ */
+const PublicAccessSection = ({
+  instanceId,
+  isPublic,
+  status,
+}: {
+  instanceId: string;
+  isPublic: boolean;
+  status: ProcessStatus | null;
+}) => {
+  const t = useTranslations();
+  const state = getPublicAccessState({ isPublic, status });
+
+  const summaries: Record<PublicAccessState, string> = {
+    public: t(
+      'Anyone with the link can read this decision without an account.',
+    ),
+    openable: t('Only members of this decision can see it.'),
+    unpublished: t('Only a published decision can be opened to the public.'),
+  };
+
+  return (
+    <DetailSection title={t('Public access')}>
+      <p className="text-sm text-muted-foreground">{summaries[state]}</p>
+      {state === 'openable' ? (
+        <div className="w-fit">
+          <MakePublicButton instanceId={instanceId} />
+        </div>
+      ) : null}
+    </DetailSection>
   );
 };
 

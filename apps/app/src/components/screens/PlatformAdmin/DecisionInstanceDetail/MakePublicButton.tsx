@@ -1,23 +1,13 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@op/sense/AlertDialog';
-import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuGlobe } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { AdminActionConfirmation } from './AdminActionConfirmation';
 
 /**
  * Platform-admin escape hatch: open a decision to the public. There is no
@@ -41,32 +31,21 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
   });
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger render={<Button variant="outline" size="sm" />}>
-        <LuGlobe data-icon="inline-start" />
-        {t('Make public')}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t('Make this decision public?')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t(
-              'Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.',
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={makePublic.isPending}>
-            {t('Cancel')}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            disabled={makePublic.isPending}
-            onClick={() => makePublic.mutate({ instanceId })}
-          >
-            {makePublic.isPending ? t('Publishing…') : t('Make public')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <AdminActionConfirmation
+      triggerLabel={t('Make public')}
+      triggerIcon={<LuGlobe data-icon="inline-start" />}
+      triggerVariant="outline"
+      title={t('Make this decision public?')}
+      description={t(
+        'Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.',
+      )}
+      confirmLabel={t('Make public')}
+      pendingLabel={t('Publishing…')}
+      confirmVariant="default"
+      isPending={makePublic.isPending}
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      onConfirm={() => makePublic.mutate({ instanceId })}
+    />
   );
 };

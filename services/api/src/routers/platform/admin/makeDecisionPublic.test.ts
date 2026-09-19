@@ -1,4 +1,4 @@
-import { decisionPermission } from '@op/common';
+import { type DecisionInstanceData, decisionPermission } from '@op/common';
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
@@ -143,7 +143,7 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
     const result = await caller.platform.admin.makeDecisionPublic({
       instanceId,
     });
-    expect(result).toEqual({ profileId, isPublic: true });
+    expect(result).toEqual({ profileId });
 
     const visible = await visitor.decision.getDecisionBySlug({ slug: slug! });
     expect(visible.processInstance.id).toBe(instanceId);
@@ -191,13 +191,13 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
       where: { id: instanceId },
       columns: { instanceData: true },
     });
-    const instanceData = before!.instanceData as Record<string, unknown>;
+    const instanceData = before!.instanceData as DecisionInstanceData;
     await db
       .update(processInstances)
       .set({
         instanceData: {
           ...instanceData,
-          config: { ...(instanceData.config ?? {}), isPrivate: true },
+          config: { ...instanceData.config, isPrivate: true },
         },
       })
       .where(eq(processInstances.id, instanceId));
