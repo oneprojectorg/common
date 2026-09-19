@@ -66,7 +66,6 @@ export const adminDecisionPhaseSchema = z.object({
 
 /** Process-level configuration toggles surfaced to platform admins. */
 export const adminDecisionConfigSchema = z.object({
-  isPrivate: z.boolean(),
   hideBudget: z.boolean(),
   hasProposalTemplate: z.boolean(),
   hasRubric: z.boolean(),
@@ -92,6 +91,8 @@ export const adminDecisionInstanceDetailSchema = z.object({
   profileId: z.string().nullable(),
   status: z.enum(ProcessStatus).nullable(),
   createdAt: z.string().nullable(),
+  /** Whether a visitor with no account can read the decision. */
+  isPublic: z.boolean(),
   owner: adminProfileRefSchema.nullable(),
   steward: adminProfileRefSchema.nullable(),
   reviewsPolicy: z.string().nullable(),

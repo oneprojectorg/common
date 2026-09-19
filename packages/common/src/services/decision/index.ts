@@ -40,6 +40,12 @@ export * from './triggerPhaseAdvancement';
 // Platform-admin reversal of the most recent advancement
 export * from './revertPhase';
 
+// Platform-admin public access
+export * from './isDecisionPublic';
+export * from './makeDecisionPublic';
+export * from './removeDecisionPublicAccess';
+export * from './resolvePublicGrantTarget';
+
 // Transition management
 export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';
