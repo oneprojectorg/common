@@ -1814,5 +1814,13 @@
   "Add at least one field.": "أضف حقلًا واحدًا على الأقل.",
   "Field {number} needs a question.": "يحتاج الحقل {number} إلى سؤال.",
   "Field {number} needs at least one option.": "يحتاج الحقل {number} إلى خيار واحد على الأقل.",
-  "Couldn't load the forms. Refresh to try again.": "تعذّر تحميل النماذج. حدّث الصفحة لإعادة المحاولة."
+  "Couldn't load the forms. Refresh to try again.": "تعذّر تحميل النماذج. حدّث الصفحة لإعادة المحاولة.",
+  "Public access": "الوصول العام",
+  "Anyone with the link can read this decision without an account.": "يمكن لأي شخص لديه الرابط قراءة هذا القرار دون حساب.",
+  "Only members of this decision can see it.": "لا يمكن رؤيته إلا لأعضاء هذا القرار.",
+  "Make public": "جعله عامًا",
+  "Make this decision public?": "هل تريد جعل هذا القرار عامًا؟",
+  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "عندئذ يمكن لأي شخص لديه الرابط قراءة هذا القرار دون حساب، ويمكن لأي شخص مسجّل الدخول تقديم مقترح والتصويت. كما تصبح المقترحات والتعليقات الموجودة بالفعل قابلة للقراءة. ولا توجد طريقة لإغلاقه مرة أخرى من هذه الشاشة.",
+  "Publishing…": "جارٍ النشر…",
+  "This decision is now public.": "هذا القرار عام الآن."
 }

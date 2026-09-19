@@ -92,6 +92,11 @@ export const adminDecisionInstanceDetailSchema = z.object({
   profileId: z.string().nullable(),
   status: z.enum(ProcessStatus).nullable(),
   createdAt: z.string().nullable(),
+  /**
+   * True when a visitor with no account can read the decision — the public
+   * grant, not the `isPrivate` display setting on `config`.
+   */
+  isPublic: z.boolean(),
   owner: adminProfileRefSchema.nullable(),
   steward: adminProfileRefSchema.nullable(),
   reviewsPolicy: z.string().nullable(),

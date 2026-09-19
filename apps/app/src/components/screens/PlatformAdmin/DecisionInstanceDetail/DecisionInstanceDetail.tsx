@@ -26,6 +26,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { CustomFormsPanel } from './CustomFormsPanel';
+import { MakePublicButton } from './MakePublicButton';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
 
@@ -148,6 +149,8 @@ const DecisionInstanceDetailContent = ({
         </TabsContent>
         <TabsContent value="configuration" className="pt-4">
           <ConfigurationCard
+            instanceId={instanceId}
+            isPublic={detail.isPublic}
             config={detail.config}
             instanceData={detail.instanceData}
           />
@@ -274,12 +277,12 @@ const PhaseCard = ({
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         {phase.hasProposals ? (
-          <PhaseSection title={t('Proposals')}>
+          <DetailSection title={t('Proposals')}>
             <ComingSoon />
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {phase.hasReviews ? (
-          <PhaseSection title={t('Reviews')}>
+          <DetailSection title={t('Reviews')}>
             <Suspense fallback={<Skeleton className="h-32 w-full" />}>
               <ReviewPhasePanel
                 instanceId={instanceId}
@@ -287,12 +290,12 @@ const PhaseCard = ({
                 isCompleted={isCompleted}
               />
             </Suspense>
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {phase.hasVoting ? (
-          <PhaseSection title={t('Voting')}>
+          <DetailSection title={t('Voting')}>
             <ComingSoon />
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {!hasAnySection ? (
           <p className="text-sm text-muted-foreground">
@@ -300,7 +303,7 @@ const PhaseCard = ({
           </p>
         ) : null}
         {phase.isCurrent && previousPhase ? (
-          <PhaseSection title={t('Danger zone')}>
+          <DetailSection title={t('Danger zone')}>
             <div className="w-fit">
               <RevertPhaseButton
                 instanceId={instanceId}
@@ -310,7 +313,7 @@ const PhaseCard = ({
                 }
               />
             </div>
-          </PhaseSection>
+          </DetailSection>
         ) : null}
       </CardContent>
     </Card>
@@ -318,9 +321,13 @@ const PhaseCard = ({
 };
 
 const ConfigurationCard = ({
+  instanceId,
+  isPublic,
   config,
   instanceData,
 }: {
+  instanceId: string;
+  isPublic: boolean;
   config: AdminDecisionConfig;
   instanceData: unknown;
 }) => {
@@ -375,6 +382,20 @@ const ConfigurationCard = ({
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
+        <DetailSection title={t('Public access')}>
+          <p className="text-sm text-muted-foreground">
+            {isPublic
+              ? t(
+                  'Anyone with the link can read this decision without an account.',
+                )
+              : t('Only members of this decision can see it.')}
+          </p>
+          {isPublic ? null : (
+            <div className="w-fit">
+              <MakePublicButton instanceId={instanceId} />
+            </div>
+          )}
+        </DetailSection>
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
           {settings.map((setting) => (
             <div
@@ -433,7 +454,7 @@ const CopyRawConfigButton = ({ value }: { value: string }) => {
   );
 };
 
-const PhaseSection = ({
+const DetailSection = ({
   title,
   children,
 }: {

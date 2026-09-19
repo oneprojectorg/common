@@ -14,6 +14,31 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import { profileUserCacheKey } from './cacheKeys';
 
+/** Drops the durable access records cached for each (profile, auth user) pair. */
+async function invalidateProfileUserCaches(
+  affectedUsers: Array<{ profileId: string; authUserId: string }>,
+) {
+  if (affectedUsers.length === 0) {
+    return;
+  }
+
+  await Promise.all([
+    invalidateMultiple({
+      type: 'profileUser',
+      paramsList: affectedUsers.map((u) =>
+        profileUserCacheKey({
+          user: { id: u.authUserId },
+          profileId: u.profileId,
+        }),
+      ),
+    }),
+    invalidateMultiple({
+      type: 'user',
+      paramsList: affectedUsers.map((u) => [u.authUserId]),
+    }),
+  ]);
+}
+
 export async function invalidateProfileUserCacheForRole(roleId: string) {
   const affectedUsers = await db
     .select({
@@ -27,23 +52,25 @@ export async function invalidateProfileUserCacheForRole(roleId: string) {
     )
     .where(eq(profileUserToAccessRoles.accessRoleId, roleId));
 
-  if (affectedUsers.length > 0) {
-    await Promise.all([
-      invalidateMultiple({
-        type: 'profileUser',
-        paramsList: affectedUsers.map((u) =>
-          profileUserCacheKey({
-            user: { id: u.authUserId },
-            profileId: u.profileId,
-          }),
-        ),
-      }),
-      invalidateMultiple({
-        type: 'user',
-        paramsList: affectedUsers.map((u) => [u.authUserId]),
-      }),
-    ]);
-  }
+  await invalidateProfileUserCaches(affectedUsers);
+}
+
+/**
+ * Sibling of {@link invalidateProfileUserCacheForRole} for a write that changes
+ * what a profile grants rather than what a role carries. Covers the public
+ * sentinel's row too, so a decision that just went public stops serving a
+ * visitor the "no access" record cached before the grant existed.
+ */
+export async function invalidateProfileUserCacheForProfile(profileId: string) {
+  const affectedUsers = await db
+    .select({
+      profileId: profileUsers.profileId,
+      authUserId: profileUsers.authUserId,
+    })
+    .from(profileUsers)
+    .where(eq(profileUsers.profileId, profileId));
+
+  await invalidateProfileUserCaches(affectedUsers);
 }
 
 export type Permissions = {

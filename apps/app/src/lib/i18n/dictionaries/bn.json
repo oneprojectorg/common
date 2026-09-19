@@ -1814,5 +1814,13 @@
   "Add at least one field.": "অন্তত একটি ক্ষেত্র যোগ করুন।",
   "Field {number} needs a question.": "ক্ষেত্র {number}-এর জন্য একটি প্রশ্ন দরকার।",
   "Field {number} needs at least one option.": "ক্ষেত্র {number}-এর জন্য অন্তত একটি বিকল্প দরকার।",
-  "Couldn't load the forms. Refresh to try again.": "ফর্মগুলি লোড করা যায়নি। আবার চেষ্টা করতে রিফ্রেশ করুন।"
+  "Couldn't load the forms. Refresh to try again.": "ফর্মগুলি লোড করা যায়নি। আবার চেষ্টা করতে রিফ্রেশ করুন।",
+  "Public access": "সার্বজনীন অ্যাক্সেস",
+  "Anyone with the link can read this decision without an account.": "লিঙ্ক থাকলে যে কেউ অ্যাকাউন্ট ছাড়াই এই সিদ্ধান্তটি পড়তে পারবেন।",
+  "Only members of this decision can see it.": "কেবল এই সিদ্ধান্তের সদস্যরাই এটি দেখতে পারবেন।",
+  "Make public": "সার্বজনীন করুন",
+  "Make this decision public?": "এই সিদ্ধান্তটি সার্বজনীন করবেন?",
+  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "তখন লিঙ্ক থাকলে যে কেউ অ্যাকাউন্ট ছাড়াই এই সিদ্ধান্তটি পড়তে পারবেন, এবং লগ-ইন করা যে কেউ প্রস্তাব জমা দিতে ও ভোট দিতে পারবেন। সিদ্ধান্তে ইতিমধ্যে থাকা প্রস্তাব ও মন্তব্যও পড়া যাবে। এই স্ক্রিন থেকে এটি আবার বন্ধ করার উপায় নেই।",
+  "Publishing…": "প্রকাশ করা হচ্ছে…",
+  "This decision is now public.": "এই সিদ্ধান্তটি এখন সার্বজনীন।"
 }

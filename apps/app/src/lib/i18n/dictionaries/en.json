@@ -1814,5 +1814,13 @@
   "Add at least one field.": "Add at least one field.",
   "Field {number} needs a question.": "Field {number} needs a question.",
   "Field {number} needs at least one option.": "Field {number} needs at least one option.",
-  "Couldn't load the forms. Refresh to try again.": "Couldn't load the forms. Refresh to try again."
+  "Couldn't load the forms. Refresh to try again.": "Couldn't load the forms. Refresh to try again.",
+  "Public access": "Public access",
+  "Anyone with the link can read this decision without an account.": "Anyone with the link can read this decision without an account.",
+  "Only members of this decision can see it.": "Only members of this decision can see it.",
+  "Make public": "Make public",
+  "Make this decision public?": "Make this decision public?",
+  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.",
+  "Publishing…": "Publishing…",
+  "This decision is now public.": "This decision is now public."
 }

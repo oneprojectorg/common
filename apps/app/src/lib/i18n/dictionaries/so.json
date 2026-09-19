@@ -1814,5 +1814,13 @@
   "Add at least one field.": "Ku dar ugu yaraan hal meel.",
   "Field {number} needs a question.": "Meesha {number} waxay u baahan tahay su’aal.",
   "Field {number} needs at least one option.": "Meesha {number} waxay u baahan tahay ugu yaraan hal ikhtiyaar.",
-  "Couldn't load the forms. Refresh to try again.": "Foomamka lama soo rari karin. Cusboonaysii si aad mar kale u isku daydo."
+  "Couldn't load the forms. Refresh to try again.": "Foomamka lama soo rari karin. Cusboonaysii si aad mar kale u isku daydo.",
+  "Public access": "Gelitaanka dadweynaha",
+  "Anyone with the link can read this decision without an account.": "Qof kasta oo haysta linkiga wuu akhrin karaa go'aankan isaga oo aan koonto lahayn.",
+  "Only members of this decision can see it.": "Waxaa arki kara oo keliya xubnaha go'aankan.",
+  "Make public": "Ka dhig mid dadweyne",
+  "Make this decision public?": "Ma ka dhigaysaa go'aankan mid dadweyne?",
+  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Markaas qof kasta oo haysta linkiga wuu akhrin karaa go'aankan isaga oo aan koonto lahayn, qof kasta oo gashanna wuxuu soo gudbin karaa soo jeedin oo codayn karaa. Soo jeedinnada iyo faallooyinka hore ugu jiray go'aanka sidoo kale waa la akhrin karaa. Shaashaddan lagama xiri karo mar kale.",
+  "Publishing…": "Waa la daabacayaa…",
+  "This decision is now public.": "Go'aankan hadda waa mid dadweyne."
 }

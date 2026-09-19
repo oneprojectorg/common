@@ -1814,5 +1814,13 @@
   "Add at least one field.": "Adicione pelo menos um campo.",
   "Field {number} needs a question.": "O campo {number} precisa de uma pergunta.",
   "Field {number} needs at least one option.": "O campo {number} precisa de pelo menos uma opção.",
-  "Couldn't load the forms. Refresh to try again.": "Não foi possível carregar os formulários. Atualize para tentar novamente."
+  "Couldn't load the forms. Refresh to try again.": "Não foi possível carregar os formulários. Atualize para tentar novamente.",
+  "Public access": "Acesso público",
+  "Anyone with the link can read this decision without an account.": "Qualquer pessoa com o link pode ler esta decisão sem ter conta.",
+  "Only members of this decision can see it.": "Apenas os membros desta decisão podem vê-la.",
+  "Make public": "Tornar pública",
+  "Make this decision public?": "Tornar esta decisão pública?",
+  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Qualquer pessoa com o link poderá ler esta decisão sem ter conta, e qualquer pessoa com sessão iniciada poderá enviar uma proposta e votar. As propostas e os comentários que já estão na decisão também passam a ser legíveis. Não há como fechá-la novamente por esta tela.",
+  "Publishing…": "Publicando…",
+  "This decision is now public.": "Esta decisão agora é pública."
 }

@@ -1814,5 +1814,13 @@
   "Add at least one field.": "Adjon hozzá legalább egy mezőt.",
   "Field {number} needs a question.": "A(z) {number}. mezőhöz kérdés szükséges.",
   "Field {number} needs at least one option.": "A(z) {number}. mezőhöz legalább egy lehetőség szükséges.",
-  "Couldn't load the forms. Refresh to try again.": "Az űrlapokat nem sikerült betölteni. Frissítsen az újrapróbálkozáshoz."
+  "Couldn't load the forms. Refresh to try again.": "Az űrlapokat nem sikerült betölteni. Frissítsen az újrapróbálkozáshoz.",
+  "Public access": "Nyilvános hozzáférés",
+  "Anyone with the link can read this decision without an account.": "Bárki elolvashatja ezt a döntést a linkkel, fiók nélkül is.",
+  "Only members of this decision can see it.": "Csak a döntés tagjai láthatják.",
+  "Make public": "Közzététel",
+  "Make this decision public?": "Nyilvánossá teszi ezt a döntést?",
+  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Ezután bárki elolvashatja ezt a döntést a linkkel, fiók nélkül is, és minden bejelentkezett felhasználó javaslatot nyújthat be és szavazhat. A döntésben már meglévő javaslatok és hozzászólások szintén olvashatóvá válnak. Errol a képernyőről nem lehet újra lezárni.",
+  "Publishing…": "Közzététel…",
+  "This decision is now public.": "Ez a döntés mostantól nyilvános."
 }
