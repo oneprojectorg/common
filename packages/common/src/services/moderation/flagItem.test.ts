@@ -30,6 +30,7 @@ const fullDeps = () => ({
     submittedRefs: plannedRefs,
   }),
   reportForReview: vi.fn().mockResolvedValue(undefined),
+  openInquiry: vi.fn().mockResolvedValue(undefined),
   planRefs: vi.fn().mockReturnValue(plannedRefs),
   recordRound: vi.fn().mockResolvedValue(undefined),
   rollback: vi.fn().mockResolvedValue(undefined),
@@ -109,7 +110,41 @@ describe('flagItem', () => {
     expect(deps.rollback).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
     expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('user report failed to file'),
+      expect.stringContaining('community report failed to file'),
+      expect.objectContaining({ itemId: 'p1', roundId: ROUND_ID }),
+    );
+    // The report and the inquiry are independent: losing the reporter context
+    // must not cost us the case that actually reaches a moderator.
+    expect(deps.openInquiry).toHaveBeenCalled();
+  });
+
+  it('opens the inquiry after the submit so the incident attaches to the ingested content', async () => {
+    const deps = fullDeps();
+
+    await flagItem(input, deps);
+
+    expect(deps.openInquiry).toHaveBeenCalledWith({
+      itemType: 'post',
+      itemId: 'p1',
+      roundId: ROUND_ID,
+      reason: undefined,
+    });
+    expect(deps.openInquiry.mock.invocationCallOrder[0] ?? 0).toBeGreaterThan(
+      deps.submitForReview.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('keeps the flag and round when the inquiry fails, and tells ops no case was raised', async () => {
+    const deps = fullDeps();
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    deps.openInquiry.mockRejectedValue(new Error('inquiry rejected'));
+
+    const result = await flagItem(input, deps);
+
+    expect(deps.rollback).not.toHaveBeenCalled();
+    expect(result).toEqual({ flag: pendingRow });
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('no human-review case was raised'),
       expect.objectContaining({ itemId: 'p1', roundId: ROUND_ID }),
     );
   });
@@ -125,6 +160,7 @@ describe('flagItem', () => {
     expect(deps.recordRound).not.toHaveBeenCalled();
     // At most one report per item, however many users report it.
     expect(deps.reportForReview).not.toHaveBeenCalled();
+    expect(deps.openInquiry).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 
@@ -143,6 +179,7 @@ describe('flagItem', () => {
     expect(deps.submitForReview).not.toHaveBeenCalled();
     // The race winner owns the single report for this item.
     expect(deps.reportForReview).not.toHaveBeenCalled();
+    expect(deps.openInquiry).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 
@@ -157,6 +194,7 @@ describe('flagItem', () => {
     expect(deps.rollback).toHaveBeenCalledWith(pendingRow);
     // Nothing was ingested, so a report would exist in isolation.
     expect(deps.reportForReview).not.toHaveBeenCalled();
+    expect(deps.openInquiry).not.toHaveBeenCalled();
   });
 
   it('keeps the flag pending without submitting when nothing is reviewable', async () => {
@@ -169,6 +207,7 @@ describe('flagItem', () => {
     expect(deps.submitForReview).not.toHaveBeenCalled();
     // No ingested content for a report to attach to.
     expect(deps.reportForReview).not.toHaveBeenCalled();
+    expect(deps.openInquiry).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 
@@ -182,6 +221,7 @@ describe('flagItem', () => {
     expect(deps.recordRound).not.toHaveBeenCalled();
     // A report with no ingested content attaches to nothing.
     expect(deps.reportForReview).not.toHaveBeenCalled();
+    expect(deps.openInquiry).not.toHaveBeenCalled();
     expect(result).toEqual({ flag: pendingRow });
   });
 });
