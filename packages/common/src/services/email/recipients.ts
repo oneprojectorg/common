@@ -26,6 +26,39 @@ export const listIndividualProfileRecipients = async (
   return owners.map(toRecipient);
 };
 
+/** The same as `listIndividualProfileRecipients`, for many profiles at once. */
+export const listIndividualProfileRecipientsByProfileId = async (
+  profileIds: ReadonlyArray<string>,
+): Promise<Map<string, Array<EmailRecipient>>> => {
+  const byProfileId = new Map<string, Array<EmailRecipient>>();
+
+  if (profileIds.length === 0) {
+    return byProfileId;
+  }
+
+  const owners = await db.query.users.findMany({
+    where: { profileId: { in: [...profileIds] } },
+    columns: { profileId: true, authUserId: true },
+    with: { authUser: { columns: { email: true } } },
+  });
+
+  for (const owner of owners) {
+    if (!owner.profileId) {
+      continue;
+    }
+
+    const recipients = byProfileId.get(owner.profileId);
+
+    if (recipients) {
+      recipients.push(toRecipient(owner));
+    } else {
+      byProfileId.set(owner.profileId, [toRecipient(owner)]);
+    }
+  }
+
+  return byProfileId;
+};
+
 /** The admins of the organization behind an org profile. */
 export const listOrganizationProfileRecipients = async (
   organizationProfileId: string,
