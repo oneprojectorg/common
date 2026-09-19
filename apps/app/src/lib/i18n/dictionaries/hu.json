@@ -1819,8 +1819,11 @@
   "Only members of this decision can see it.": "Csak a döntés tagjai láthatják.",
   "Make public": "Közzététel",
   "Make this decision public?": "Nyilvánossá teszi ezt a döntést?",
-  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Ezután bárki elolvashatja ezt a döntést a linkkel, fiók nélkül is, és minden bejelentkezett felhasználó javaslatot nyújthat be és szavazhat. A döntésben már meglévő javaslatok és hozzászólások szintén olvashatóvá válnak. Errol a képernyőről nem lehet újra lezárni.",
   "Publishing…": "Közzététel…",
   "This decision is now public.": "Ez a döntés mostantól nyilvános.",
-  "Only a published decision can be opened to the public.": "Csak közzétett döntést lehet nyilvánossá tenni."
+  "Only a published decision can be opened to the public.": "Csak közzétett döntést lehet nyilvánossá tenni.",
+  "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "Ezután bárki elolvashatja ezt a döntést a linkkel, fiók nélkül is, és a benne már meglévő javaslatok és hozzászólások is olvashatóvá válnak. Erről a képernyőről nem lehet újra lezárni.",
+  "Public users can": "A nyilvánosság jogai",
+  "Read the decision": "A döntés olvasása",
+  "Submit proposals": "Javaslat benyújtása"
 }

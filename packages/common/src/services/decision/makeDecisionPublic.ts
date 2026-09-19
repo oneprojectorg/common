@@ -15,11 +15,23 @@ import { invalidateDecisionInstance } from './decisionCache';
 import { lockProcessInstance } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 
-/** SUBMIT_PROPOSALS is what makes the header offer Join rather than Log in. */
-const PUBLIC_DECISION_PERMISSION =
+/**
+ * What the public grant admits, chosen per decision. READ is not optional —
+ * it is what "public" means. SUBMIT_PROPOSALS is also what makes the header
+ * offer Join rather than Log in.
+ */
+export interface PublicDecisionPermissions {
+  submitProposals: boolean;
+  vote: boolean;
+}
+
+const toPublicBitField = ({
+  submitProposals,
+  vote,
+}: PublicDecisionPermissions): number =>
   permission.READ |
-  decisionPermission.SUBMIT_PROPOSALS |
-  decisionPermission.VOTE;
+  (submitProposals ? decisionPermission.SUBMIT_PROPOSALS : 0) |
+  (vote ? decisionPermission.VOTE : 0);
 
 /**
  * Grants the global `Public` role on this decision's own profile. Idempotent.
@@ -32,9 +44,13 @@ const PUBLIC_DECISION_PERMISSION =
  */
 export const makeDecisionPublic = async ({
   instanceId,
+  permissions,
 }: {
   instanceId: string;
+  permissions: PublicDecisionPermissions;
 }): Promise<{ profileId: string }> => {
+  const publicPermission = toPublicBitField(permissions);
+
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
     columns: { profileId: true },
@@ -110,7 +126,7 @@ export const makeDecisionPublic = async ({
       .values({
         accessRoleId: publicRole.id,
         accessZoneId: zone.id,
-        permission: PUBLIC_DECISION_PERMISSION,
+        permission: publicPermission,
         profileId,
       })
       .onConflictDoUpdate({
@@ -119,7 +135,7 @@ export const makeDecisionPublic = async ({
           accessRolePermissionsOnAccessZones.accessZoneId,
           accessRolePermissionsOnAccessZones.profileId,
         ],
-        set: { permission: PUBLIC_DECISION_PERMISSION },
+        set: { permission: publicPermission },
       });
   });
 
@@ -128,7 +144,11 @@ export const makeDecisionPublic = async ({
     invalidateDecisionInstance(instanceId),
   ]);
 
-  logger.info('Decision opened to the public', { instanceId, profileId });
+  logger.info('Decision opened to the public', {
+    instanceId,
+    profileId,
+    permissions,
+  });
 
   return { profileId };
 };

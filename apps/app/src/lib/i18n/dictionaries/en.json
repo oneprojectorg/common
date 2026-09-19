@@ -1819,8 +1819,11 @@
   "Only members of this decision can see it.": "Only members of this decision can see it.",
   "Make public": "Make public",
   "Make this decision public?": "Make this decision public?",
-  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.",
   "Publishing…": "Publishing…",
   "This decision is now public.": "This decision is now public.",
-  "Only a published decision can be opened to the public.": "Only a published decision can be opened to the public."
+  "Only a published decision can be opened to the public.": "Only a published decision can be opened to the public.",
+  "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.",
+  "Public users can": "Public users can",
+  "Read the decision": "Read the decision",
+  "Submit proposals": "Submit proposals"
 }

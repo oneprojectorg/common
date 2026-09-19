@@ -28,7 +28,13 @@ const EXPECTED_PUBLIC_PERMISSION =
   decisionPermission.SUBMIT_PROPOSALS |
   decisionPermission.VOTE;
 
-const gatingInput = { instanceId: crypto.randomUUID() };
+/** Every capability on — the default the dialog opens with. */
+const ALL_PERMISSIONS = { submitProposals: true, vote: true };
+
+const gatingInput = {
+  instanceId: crypto.randomUUID(),
+  permissions: ALL_PERMISSIONS,
+};
 
 describeAccessTierGating('platform.admin.makeDecisionPublic', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
@@ -142,6 +148,7 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
 
     const result = await caller.platform.admin.makeDecisionPublic({
       instanceId,
+      permissions: ALL_PERMISSIONS,
     });
     expect(result).toEqual({ profileId });
 
@@ -165,7 +172,10 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
       onTestFinished,
     );
 
-    await caller.platform.admin.makeDecisionPublic({ instanceId });
+    await caller.platform.admin.makeDecisionPublic({
+      instanceId,
+      permissions: ALL_PERMISSIONS,
+    });
 
     const { members, overrides } = await readPublicGrants(profileId);
     expect(members).toHaveLength(1);
@@ -177,6 +187,60 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
     });
     expect(roleLinks).toEqual([{ accessRoleId: ROLES.PUBLIC.id }]);
   });
+
+  const grantCases = [
+    {
+      name: 'read only',
+      permissions: { submitProposals: false, vote: false },
+      bits: permission.READ,
+      access: { read: true, submitProposals: false, vote: false },
+    },
+    {
+      name: 'read and vote',
+      permissions: { submitProposals: false, vote: true },
+      bits: permission.READ | decisionPermission.VOTE,
+      access: { read: true, submitProposals: false, vote: true },
+    },
+    {
+      name: 'read and propose',
+      permissions: { submitProposals: true, vote: false },
+      bits: permission.READ | decisionPermission.SUBMIT_PROPOSALS,
+      access: { read: true, submitProposals: true, vote: false },
+    },
+  ];
+
+  for (const { name, permissions, bits, access } of grantCases) {
+    it(`grants only what the admin picked: ${name}`, async ({
+      task,
+      onTestFinished,
+    }) => {
+      const { caller, instanceId, profileId } = await createPublishedInstance(
+        task.id,
+        onTestFinished,
+      );
+
+      await caller.platform.admin.makeDecisionPublic({
+        instanceId,
+        permissions,
+      });
+
+      const { overrides } = await readPublicGrants(profileId);
+      expect(overrides).toEqual([{ permission: bits }]);
+
+      const profile = await db.query.profiles.findFirst({
+        where: { id: profileId },
+        columns: { slug: true },
+      });
+      const visitor = createCaller(await createTestContextWithSession(null));
+      const visible = await visitor.decision.getDecisionBySlug({
+        slug: profile!.slug!,
+      });
+
+      // Read is never optional, so the decision is public either way.
+      expect(visible.processInstance.access).toMatchObject(access);
+      expect(visible.processInstance.isPublic).toBe(true);
+    });
+  }
 
   it('leaves every other decision private', async ({
     task,
@@ -190,6 +254,7 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
 
     await opened.caller.platform.admin.makeDecisionPublic({
       instanceId: opened.instanceId,
+      permissions: ALL_PERMISSIONS,
     });
 
     const grants = await readPublicGrants(untouched.profileId);
@@ -228,8 +293,14 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
       onTestFinished,
     );
 
-    await caller.platform.admin.makeDecisionPublic({ instanceId });
-    await caller.platform.admin.makeDecisionPublic({ instanceId });
+    await caller.platform.admin.makeDecisionPublic({
+      instanceId,
+      permissions: ALL_PERMISSIONS,
+    });
+    await caller.platform.admin.makeDecisionPublic({
+      instanceId,
+      permissions: ALL_PERMISSIONS,
+    });
 
     const { members, overrides } = await readPublicGrants(profileId);
     expect(members).toHaveLength(1);
@@ -244,7 +315,10 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
     );
 
     await expect(
-      caller.platform.admin.makeDecisionPublic({ instanceId }),
+      caller.platform.admin.makeDecisionPublic({
+        instanceId,
+        permissions: ALL_PERMISSIONS,
+      }),
     ).rejects.toThrow(/published/i);
 
     const { members, overrides } = await readPublicGrants(profileId);

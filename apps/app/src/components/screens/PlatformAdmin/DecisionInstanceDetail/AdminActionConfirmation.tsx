@@ -41,6 +41,7 @@ export const AdminActionConfirmation = ({
   isOpen,
   onOpenChange,
   onConfirm,
+  children,
 }: {
   trigger: AdminActionTrigger;
   title: string;
@@ -50,6 +51,8 @@ export const AdminActionConfirmation = ({
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onConfirm: () => void;
+  /** Options the action takes, rendered between the description and footer. */
+  children?: ReactNode;
 }) => {
   const t = useTranslations();
 
@@ -66,6 +69,7 @@ export const AdminActionConfirmation = ({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>
             {t('Cancel')}

@@ -1819,8 +1819,11 @@
   "Only members of this decision can see it.": "কেবল এই সিদ্ধান্তের সদস্যরাই এটি দেখতে পারবেন।",
   "Make public": "সার্বজনীন করুন",
   "Make this decision public?": "এই সিদ্ধান্তটি সার্বজনীন করবেন?",
-  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "তখন লিঙ্ক থাকলে যে কেউ অ্যাকাউন্ট ছাড়াই এই সিদ্ধান্তটি পড়তে পারবেন, এবং লগ-ইন করা যে কেউ প্রস্তাব জমা দিতে ও ভোট দিতে পারবেন। সিদ্ধান্তে ইতিমধ্যে থাকা প্রস্তাব ও মন্তব্যও পড়া যাবে। এই স্ক্রিন থেকে এটি আবার বন্ধ করার উপায় নেই।",
   "Publishing…": "প্রকাশ করা হচ্ছে…",
   "This decision is now public.": "এই সিদ্ধান্তটি এখন সার্বজনীন।",
-  "Only a published decision can be opened to the public.": "কেবল প্রকাশিত সিদ্ধান্তই সার্বজনীন করা যায়।"
+  "Only a published decision can be opened to the public.": "কেবল প্রকাশিত সিদ্ধান্তই সার্বজনীন করা যায়।",
+  "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "তখন লিঙ্ক থাকলে যে কেউ অ্যাকাউন্ট ছাড়াই এই সিদ্ধান্তটি পড়তে পারবেন, এবং এতে ইতিমধ্যে থাকা প্রস্তাব ও মন্তব্যও পড়া যাবে। এই স্ক্রিন থেকে এটি আবার বন্ধ করার উপায় নেই।",
+  "Public users can": "সর্বসাধারণ পারবেন",
+  "Read the decision": "সিদ্ধান্তটি পড়তে",
+  "Submit proposals": "প্রস্তাব জমা দিতে"
 }

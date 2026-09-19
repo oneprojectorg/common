@@ -1819,8 +1819,11 @@
   "Only members of this decision can see it.": "Seuls les membres de cette décision peuvent la voir.",
   "Make public": "Rendre publique",
   "Make this decision public?": "Rendre cette décision publique ?",
-  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Toute personne disposant du lien pourra alors lire cette décision sans compte, et toute personne connectée pourra soumettre une proposition et voter. Les propositions et les commentaires déjà présents dans la décision deviennent également lisibles. Il n'est pas possible de la refermer depuis cet écran.",
   "Publishing…": "Publication…",
   "This decision is now public.": "Cette décision est maintenant publique.",
-  "Only a published decision can be opened to the public.": "Seule une décision publiée peut être rendue publique."
+  "Only a published decision can be opened to the public.": "Seule une décision publiée peut être rendue publique.",
+  "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "Toute personne disposant du lien pourra alors lire cette décision sans compte, et les propositions et commentaires qui s'y trouvent déjà deviennent lisibles. Il n'est pas possible de la refermer depuis cet écran.",
+  "Public users can": "Le public peut",
+  "Read the decision": "Lire la décision",
+  "Submit proposals": "Soumettre des propositions"
 }

@@ -1819,8 +1819,11 @@
   "Only members of this decision can see it.": "Waxaa arki kara oo keliya xubnaha go'aankan.",
   "Make public": "Ka dhig mid dadweyne",
   "Make this decision public?": "Ma ka dhigaysaa go'aankan mid dadweyne?",
-  "Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.": "Markaas qof kasta oo haysta linkiga wuu akhrin karaa go'aankan isaga oo aan koonto lahayn, qof kasta oo gashanna wuxuu soo gudbin karaa soo jeedin oo codayn karaa. Soo jeedinnada iyo faallooyinka hore ugu jiray go'aanka sidoo kale waa la akhrin karaa. Shaashaddan lagama xiri karo mar kale.",
   "Publishing…": "Waa la daabacayaa…",
   "This decision is now public.": "Go'aankan hadda waa mid dadweyne.",
-  "Only a published decision can be opened to the public.": "Kaliya go'aan la daabacay ayaa la dhigi karaa mid dadweyne."
+  "Only a published decision can be opened to the public.": "Kaliya go'aan la daabacay ayaa la dhigi karaa mid dadweyne.",
+  "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "Markaas qof kasta oo haysta linkiga wuu akhrin karaa go'aankan isaga oo aan koonto lahayn, soo jeedinnada iyo faallooyinka hore ugu jirayna waa la akhrin karaa. Shaashaddan lagama xiri karo mar kale.",
+  "Public users can": "Dadweynaha waxay awoodaan",
+  "Read the decision": "Akhrinta go'aanka",
+  "Submit proposals": "Soo gudbinta soo jeedinno"
 }
