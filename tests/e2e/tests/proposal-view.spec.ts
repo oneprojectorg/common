@@ -690,7 +690,7 @@ test.describe('Proposal View', () => {
     ).toBeVisible({ timeout: 30_000 });
   });
 
-  test('gates write actions per viewer: post like/Like/Follow members-only, Report visible to all', async ({
+  test('Like/Follow render for every viewer on a public decision, Report visible to all', async ({
     authenticatedPage,
     org,
     browser,
@@ -739,9 +739,10 @@ test.describe('Proposal View', () => {
     const proposalUrl = `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`;
 
     // Every viewer sees the proposal, the comment, the seeded like, and the
-    // Report action (moderation is open to any caller). Only a signed-in
-    // member also gets the interact-only write controls (the comment's like
-    // toggle, Like, Follow).
+    // Report action (moderation is open to any caller). Like and Follow render
+    // for every viewer on a public decision: a member gets real toggles, a
+    // visitor or anonymous account gets buttons that open the claim flow. The
+    // comment's like is still a member toggle (disabled for everyone else).
     const expectProposalView = async (
       page: Page,
       { canInteract }: { canInteract: boolean },
@@ -766,19 +767,21 @@ test.describe('Proposal View', () => {
         await expect(commentLike).toHaveAttribute('aria-disabled', 'true');
       }
 
-      // The like and follow toggles are named by the stat they show
-      // ("0 Likes"), so match the noun rather than a bare verb.
+      // Like and Follow are named by the stat they show ("0 Likes"), so match
+      // the noun rather than a bare verb. They render for every viewer on a
+      // public decision (real toggles for a member, claim-flow buttons for a
+      // visitor or anonymous account), so all three cases see exactly one each.
       const writeControls = [
         page.getByRole('button', { name: /^\d+ Likes?$/ }),
         page.getByRole('button', { name: /^\d+ Followers?$/ }),
       ];
       for (const control of writeControls) {
-        await expect(control).toHaveCount(canInteract ? 1 : 0);
+        await expect(control).toHaveCount(1);
       }
 
-      // A count of 0 above is satisfied by the stats vanishing as well as by
-      // them rendering as plain text, so assert the text is there either way —
-      // read-only viewers still see the counts, just not as toggles.
+      // The count text renders inside the toggle for every viewer, so assert
+      // it's there — a visitor still sees the live count, just behind a
+      // claim-flow button rather than a dead stat.
       await expect(page.getByText(/^\d+ Likes?$/)).toBeVisible();
       await expect(page.getByText(/^\d+ Followers?$/)).toBeVisible();
 
@@ -799,15 +802,17 @@ test.describe('Proposal View', () => {
       }
     };
 
-    // 1) Signed-in member: reactions/Like/Follow + Report all visible.
+    // 1) Signed-in member: real Like/Follow toggles + Report all visible.
     await expectProposalView(authenticatedPage, { canInteract: true });
 
-    // 2) Anonymous account: reactions/Like/Follow hidden, Report still visible.
+    // 2) Anonymous account: Like/Follow render as claim-flow buttons, Report
+    // still visible.
     await withCleanPage(async (page) => {
       await authenticateAnonymously(page);
       await expectProposalView(page, { canInteract: false });
     });
-    // 3) Logged-out visitor: same as anonymous — read-only but can still report.
+    // 3) Logged-out visitor: same as anonymous — Like/Follow open the claim
+    // flow, Report still visible.
     await withCleanPage((page) =>
       expectProposalView(page, { canInteract: false }),
     );

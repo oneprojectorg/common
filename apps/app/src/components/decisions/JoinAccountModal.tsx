@@ -9,7 +9,7 @@ import {
 } from '@/hooks/useClaimAccount';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
-import type { CommonUser } from '@op/api/encoders';
+import { isJoinEligible } from '@/utils/isJoinEligible';
 import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -20,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
@@ -29,11 +28,15 @@ import { type ReactNode, Suspense, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import {
+  type AuthChannel,
   AuthCodeField,
+  AuthCodeStepActions,
+  AuthContactFields,
   AuthDivider,
-  AuthEmailField,
   AuthGoogleButton,
-  AuthPhoneField,
+  AuthSendCodeButton,
+  CodeSentAnnouncement,
+  codeSentToLabel,
   isValidOtpLength,
 } from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
@@ -50,14 +53,6 @@ import { isValidEmail } from './emailUtils';
  * anonymous visitors; a full account never sees the Join button and the modal
  * won't open for one.
  */
-
-/**
- * Who may claim: logged-out visitors and anonymous accounts. NOT the same as
- * `!userCanInteract` — a full account without a currentProfile must see the
- * user menu, not Join.
- */
-export const isJoinEligible = (user: CommonUser | null | undefined): boolean =>
-  !user || user.isAnonymous;
 
 export const JoinAccountModal = () => {
   const { user } = useUser();
@@ -159,6 +154,12 @@ const JoinAccountModalContent = () => {
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
+  // Shares the `join` key with the parent JoinAccountModal's own instance, so
+  // clearing it here closes the dialog the same way the dismiss X does.
+  const [, setJoin] = useQueryState('join');
+  const close = () => {
+    void setJoin(null);
+  };
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -270,10 +271,13 @@ const JoinAccountModalContent = () => {
     setError(undefined);
   };
 
-  // Switching channel abandons whatever was typed in the other one, so a
-  // half-entered address can't be submitted against the wrong endpoint.
-  const switchChannel = () => {
-    setChannel(isPhone ? 'email' : 'phone');
+  const resendCode = () => {
+    setToken(undefined);
+    void submitContact();
+  };
+
+  const switchChannel = (next: AuthChannel) => {
+    setChannel(next);
     setError(undefined);
     setEmail('');
     setPhone('');
@@ -283,6 +287,10 @@ const JoinAccountModalContent = () => {
   // /en/login (same as HeaderUserMenu).
   const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
 
+  const sentTo = otpSent
+    ? codeSentToLabel(t, { isPhone, phone: normalizePhoneNumber(phone), email })
+    : undefined;
+
   return (
     <>
       {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
@@ -290,26 +298,19 @@ const JoinAccountModalContent = () => {
         <DialogTitle className="text-center">
           {otpSent
             ? isPhone
-              ? t('Code sent!')
-              : t('Email sent!')
-            : t("Don't lose track of this idea")}
+              ? t('Check your texts')
+              : t('Check your email')
+            : t('Add your voice to this idea')}
         </DialogTitle>
         <DialogDescription className="text-center">
-          {otpSent
-            ? isPhone
-              ? t(
-                  'A code was sent to {phone}. Type the code below to create your profile.',
-                  { phone: normalizePhoneNumber(phone) },
-                )
-              : t(
-                  'A code was sent to {email}. Type the code below to create your profile.',
-                  { email },
-                )
-            : t(
-                'Followers get updates as this idea moves through the process. Sign up in seconds.',
-              )}
+          {sentTo ??
+            t(
+              'Liking shows others which ideas matter most. Sign up in seconds and your like will be counted.',
+            )}
         </DialogDescription>
       </DialogHeader>
+
+      <CodeSentAnnouncement sentTo={sentTo} />
 
       <div className="flex flex-col gap-4 px-6 py-4">
         {/* role="alert" so async claim errors are announced while focus stays on
@@ -335,84 +336,28 @@ const JoinAccountModalContent = () => {
               }}
             />
             <AuthDivider />
-            {smsEnabled ? (
-              <Tabs
-                value={activeChannel}
-                onValueChange={(next) => {
-                  if (next !== activeChannel) {
-                    switchChannel();
-                  }
-                }}
-              >
-                <span id="join-channel-label" className="text-label">
-                  {t('Continue with')}
-                </span>
-                {/* TabsList is `w-fit`; the design splits the full width. */}
-                <TabsList
-                  className="w-full"
-                  aria-labelledby="join-channel-label"
-                >
-                  <TabsTrigger
-                    value="email"
-                    className="flex-1"
-                    disabled={isSubmitting}
-                  >
-                    {t('Email')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="phone"
-                    className="flex-1"
-                    disabled={isSubmitting}
-                  >
-                    {t('Phone Number')}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="email">
-                  <AuthEmailField
-                    label={t('Email')}
-                    // The design says "We'll email a link"; we send a
-                    // six-digit code, so the copy says code.
-                    description={t(
-                      "We'll email you a code to confirm it's yours.",
-                    )}
-                    // Example-email placeholders are deliberately untranslated.
-                    placeholder="name@example.com"
-                    value={email}
-                    isDisabled={isSubmitting}
-                    onChange={setEmail}
-                    onSubmit={() => {
-                      void submitContact();
-                    }}
-                  />
-                </TabsContent>
-                <TabsContent value="phone">
-                  <AuthPhoneField
-                    label={t('Phone Number')}
-                    description={t(
-                      'We text you a code. Standard message and data rates may apply.',
-                    )}
-                    value={phone}
-                    isDisabled={isSubmitting}
-                    onChange={setPhone}
-                    onSubmit={() => {
-                      void submitContact();
-                    }}
-                  />
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <AuthEmailField
-                label={t('Email')}
-                description={t("We'll email you a code to confirm it's yours.")}
-                placeholder="name@example.com"
-                value={email}
-                isDisabled={isSubmitting}
-                onChange={setEmail}
-                onSubmit={() => {
+            <AuthContactFields
+              smsEnabled={smsEnabled}
+              value={activeChannel}
+              onValueChange={switchChannel}
+              email={{
+                value: email,
+                isDisabled: isSubmitting,
+                onChange: setEmail,
+                onSubmit: () => {
                   void submitContact();
-                }}
-              />
-            )}
+                },
+              }}
+              phone={{
+                value: phone,
+                isDisabled: isSubmitting,
+                onChange: setPhone,
+                onSubmit: () => {
+                  void submitContact();
+                },
+              }}
+              isTriggersDisabled={isSubmitting}
+            />
             <p className="text-muted-foreground">
               {t.rich('Already have an account? <login>Log in</login>', {
                 login: (chunks: ReactNode) => (
@@ -428,32 +373,30 @@ const JoinAccountModalContent = () => {
 
       <DialogFooter className="flex-col sm:flex-col">
         {otpSent ? (
+          <AuthCodeStepActions
+            isVerifyDisabled={!isValidOtpLength(token)}
+            isBusy={isSubmitting}
+            isPhone={isPhone}
+            onVerify={() => {
+              void submitToken();
+            }}
+            onResend={resendCode}
+            onBack={goBack}
+          />
+        ) : (
           <>
-            <Button
-              className="w-full"
-              loading={isSubmitting}
-              disabled={isSubmitting || !isValidOtpLength(token)}
-              onClick={() => {
-                void submitToken();
+            <AuthSendCodeButton
+              isPhone={isPhone}
+              isBusy={isSubmitting}
+              isDisabled={isSubmitting || !contactIsValid}
+              onSubmit={() => {
+                void submitContact();
               }}
-            >
-              {t('Create profile')}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={goBack}>
-              {t('Go back')}
+            />
+            <Button variant="link" onClick={close}>
+              {t('Browse proposals for now')}
             </Button>
           </>
-        ) : (
-          <Button
-            className="w-full"
-            loading={isSubmitting}
-            disabled={isSubmitting || !contactIsValid}
-            onClick={() => {
-              void submitContact();
-            }}
-          >
-            {isPhone ? t('Text me a code') : t('Email me a code')}
-          </Button>
         )}
       </DialogFooter>
     </>

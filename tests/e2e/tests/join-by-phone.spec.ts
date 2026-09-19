@@ -67,7 +67,7 @@ test.describe('Join by phone (public decision)', () => {
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
     await expect(
-      page.getByRole('heading', { name: "Don't lose track of this idea" }),
+      page.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).toBeVisible({ timeout: 15000 });
 
     // Both up front, not one behind a "use a phone instead" link — the design
@@ -117,11 +117,23 @@ test.describe('Join by phone (public decision)', () => {
     // This is the assertion the config comment promises: GoTrue answers with a
     // code to enter, not with a claimed account. Landing on /start here would
     // mean autoconfirm had handed out the account for the number alone.
-    await expect(page.getByRole('heading', { name: 'Code sent!' })).toBeVisible(
-      { timeout: 20000 },
-    );
-    await expect(dialog.getByRole('textbox', { name: 'Code' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Check your texts' }),
+    ).toBeVisible({ timeout: 20000 });
+    await expect(
+      dialog.getByRole('textbox', { name: '6-digit code' }),
+    ).toBeVisible();
     await expect(page).not.toHaveURL(/\/start/);
+
+    // The step swaps in place, and focus lands on the code field, which
+    // announces only its own label — so the address the code went to needs a
+    // live region or a screen-reader user never learns where to look.
+    // Scoped to the dialog and filtered by text: the comments list carries
+    // another role="status" outside it, and the submit spinner uses that role
+    // transiently inside it.
+    await expect(
+      dialog.getByRole('status').filter({ hasText: 'We sent a code to' }),
+    ).toBeVisible();
 
     // The number is still free: asking for a code attaches nothing.
     expect(await findAuthUserByPhone(phone)).toBeNull();
@@ -148,21 +160,21 @@ test.describe('Join by phone (public decision)', () => {
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
     await expect(
-      page.getByRole('heading', { name: "Don't lose track of this idea" }),
+      page.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).toBeVisible({ timeout: 15000 });
 
     await dialog.getByRole('tab', { name: 'Phone number' }).click();
     await dialog.getByRole('textbox', { name: 'Phone number' }).fill(phone);
     await dialog.getByRole('button', { name: 'Text me a code' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Code sent!' })).toBeVisible(
-      { timeout: 20000 },
-    );
-    await dialog.getByRole('textbox', { name: 'Code' }).fill(code);
-    await dialog.getByRole('button', { name: 'Create profile' }).click();
-
-    // Same destination as the email claim: the promote onboarding, not the
-    // walled-garden 403 a non-member used to get here.
+    await expect(
+      page.getByRole('heading', { name: 'Check your texts' }),
+    ).toBeVisible({ timeout: 20000 });
+    await dialog.getByRole('textbox', { name: '6-digit code' }).fill(code);
+    // The code field submits itself the moment all six digits are in — there
+    // is no button press to make. Same destination as the email claim: the
+    // promote onboarding, not the walled-garden 403 a non-member used to get
+    // here.
     await page.waitForURL(/\/start\?.*promote=1/, { timeout: 30000 });
     await expect(
       page.getByText('You do not have permission to view this page'),
