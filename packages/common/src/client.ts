@@ -191,15 +191,31 @@ export {
 } from './services/decision/schemaValidator';
 export {
   customFormSchema,
+  customFormWithPhaseSchema,
   customFormSubmissionSchema,
+  customFormFieldSchema,
+  customFormDefinitionInputSchema,
+  createCustomFormInputSchema,
   createCustomFormSubmissionInputSchema,
+  deleteCustomFormInputSchema,
   getCustomFormForProfileInputSchema,
+  listCustomFormsInputSchema,
+  updateCustomFormInputSchema,
+  CUSTOM_FORM_DEFINITION_MAX_BYTES,
+  CUSTOM_FORM_MAX_FIELDS,
   CUSTOM_FORM_SUBMISSION_MAX_BYTES,
   type CustomFormDTO,
+  type CustomFormWithPhaseDTO,
   type CustomFormSubmissionDTO,
   type CustomFormDefinitionSchema,
+  type CustomFormDefinitionInput,
+  type CustomFormField,
+  type CreateCustomFormInput,
   type CreateCustomFormSubmissionInput,
+  type DeleteCustomFormInput,
   type GetCustomFormForProfileInput,
+  type ListCustomFormsInput,
+  type UpdateCustomFormInput,
 } from './services/customForms/schemas/customForm';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';

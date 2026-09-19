@@ -88,6 +88,8 @@ export const adminDecisionInstanceDetailSchema = z.object({
   name: z.string(),
   /** Slug of the decision's profile, used for the public decision URL. */
   slug: z.string().nullable(),
+  /** Null on instances created before the column was populated. */
+  profileId: z.string().nullable(),
   status: z.enum(ProcessStatus).nullable(),
   createdAt: z.string().nullable(),
   owner: adminProfileRefSchema.nullable(),

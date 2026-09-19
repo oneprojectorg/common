@@ -127,6 +127,7 @@ export const getDecisionInstanceRouter = router({
         id: instance.id,
         name: instance.name,
         slug: instance.profile?.slug ?? null,
+        profileId: instance.profileId,
         status: instance.status,
         createdAt: instance.createdAt,
         owner: instance.owner ?? null,
