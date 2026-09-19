@@ -1,0 +1,30 @@
+import dotenv from 'dotenv';
+
+try {
+  if (process.env.NODE_ENV === 'development') {
+    process.stdout.write(`\x1B]2;${'ZOOM-BOT'}\x1B\x5C`);
+    process.stdout.write(`\x1B];${'ZOOM-BOT'}\x07`);
+  }
+} catch (error) {
+  console.error(error);
+  // Ignore error
+}
+
+dotenv.config({
+  override: true,
+});
+
+// For local development, we need to load the .env.local file from the root of the monorepo
+dotenv.config({
+  path: '../../.env.local',
+});
+
+// For local development with git worktrees, we need to load the .env.local file from the root *bare* repository
+dotenv.config({
+  path: '../../../.env.local',
+});
+
+/** @type {import('next').NextConfig} */
+const config = {};
+
+export default config;

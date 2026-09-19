@@ -51,7 +51,8 @@
     "w:sense": "pnpm -C ./packages/sense",
     "w:supabase": "pnpm -C ./services/supabase",
     "w:translation": "pnpm -C ./services/translation",
-    "w:workflows": "pnpm -C ./services/workflows"
+    "w:workflows": "pnpm -C ./services/workflows",
+    "w:zoom-bot": "pnpm -C ./apps/zoom-bot"
   },
   "dependencies": {},
   "devDependencies": {
