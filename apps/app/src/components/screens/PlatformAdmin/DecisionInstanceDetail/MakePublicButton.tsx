@@ -9,11 +9,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { AdminActionConfirmation } from './AdminActionConfirmation';
 
-/**
- * Platform-admin escape hatch: open a decision to the public. There is no
- * user-facing equivalent, and no reversal in the product — the confirmation
- * spells out what the grant admits.
- */
 export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();

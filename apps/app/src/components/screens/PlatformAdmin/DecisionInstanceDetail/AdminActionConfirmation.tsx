@@ -31,12 +31,7 @@ export interface AdminActionConfirm {
   variant: ButtonVariant;
 }
 
-/**
- * Confirmation shell for the platform-admin actions in this drill-down. Each
- * action owns its own mutation and copy; this owns the dialog, the cancel
- * affordance, and keeping both controls disabled while the mutation is in
- * flight.
- */
+/** Confirmation shell shared by the admin actions in this drill-down. */
 export const AdminActionConfirmation = ({
   trigger,
   title,

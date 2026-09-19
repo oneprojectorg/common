@@ -55,12 +55,7 @@ export async function invalidateProfileUserCacheForRole(roleId: string) {
   await invalidateProfileUserCaches(affectedUsers);
 }
 
-/**
- * Sibling of {@link invalidateProfileUserCacheForRole} for a write that changes
- * what a profile grants rather than what a role carries. Covers the public
- * sentinel's row too, so a decision that just went public stops serving a
- * visitor the "no access" record cached before the grant existed.
- */
+/** For a write that changes what a profile grants, sentinel row included. */
 export async function invalidateProfileUserCacheForProfile(profileId: string) {
   const affectedUsers = await db
     .select({

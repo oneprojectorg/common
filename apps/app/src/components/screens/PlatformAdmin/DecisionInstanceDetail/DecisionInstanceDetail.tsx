@@ -344,7 +344,6 @@ const ConfigurationCard = ({
   const rawConfig = JSON.stringify(instanceData, null, 2);
 
   const settings: Array<{ label: string; value: string | boolean }> = [
-    { label: t('Private process'), value: config.isPrivate },
     { label: t('Hide budget'), value: config.hideBudget },
     { label: t('Proposal template'), value: config.hasProposalTemplate },
     { label: t('Review rubric'), value: config.hasRubric },
@@ -429,11 +428,6 @@ const ConfigurationCard = ({
   );
 };
 
-/**
- * Whether a visitor with no account can read the decision, and the one-way
- * action that opens it. Reports the grant, not `config.isPrivate` — that flag
- * is a display setting the grant is authoritative over.
- */
 const PublicAccessSection = ({
   instanceId,
   isPublic,

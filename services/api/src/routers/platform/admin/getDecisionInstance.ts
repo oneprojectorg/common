@@ -48,7 +48,6 @@ const detailInstanceData = z
         reviewsPolicy: z.string().optional(),
         reviewsAllowRevisions: z.boolean().optional(),
         reviewsAnonymousFeedback: z.boolean().optional(),
-        isPrivate: z.boolean().optional(),
         hideBudget: z.boolean().optional(),
         requireCategorySelection: z.boolean().optional(),
         allowMultipleCategories: z.boolean().optional(),
@@ -114,8 +113,7 @@ export const getDecisionInstanceRouter = router({
       const parsed = detailInstanceData.safeParse(instance.instanceData);
       const instanceData = parsed.success ? parsed.data : {};
 
-      // A legacy instance with no profile of its own carries no grant, so it
-      // can never be public.
+      // No profile of its own means no grant to carry.
       const isPublic = instance.profileId
         ? await isDecisionPublic({ profileId: instance.profileId })
         : false;
@@ -144,7 +142,6 @@ export const getDecisionInstanceRouter = router({
           instanceData.templateName ?? instance.process?.name ?? null,
         templateVersion: instanceData.templateVersion ?? null,
         config: {
-          isPrivate: instanceData.config?.isPrivate ?? false,
           hideBudget: instanceData.config?.hideBudget ?? false,
           hasProposalTemplate: instanceData.proposalTemplate != null,
           hasRubric: instanceData.rubricTemplate != null,

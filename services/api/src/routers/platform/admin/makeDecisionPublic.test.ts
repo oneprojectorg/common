@@ -1,7 +1,7 @@
-import { type DecisionInstanceData, decisionPermission } from '@op/common';
+import { decisionPermission } from '@op/common';
 import { GLOBAL_USER_PUBLIC } from '@op/core';
-import { db, eq } from '@op/db/client';
-import { ProcessStatus, processInstances } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { ProcessStatus } from '@op/db/schema';
 import { ROLES, ZONES } from '@op/db/seedData/accessControl';
 import { permission } from 'access-zones';
 import { describe, expect, it } from 'vitest';
@@ -178,37 +178,45 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
     expect(roleLinks).toEqual([{ accessRoleId: ROLES.PUBLIC.id }]);
   });
 
-  it('clears the private flag so the decision stops presenting as private', async ({
+  it('leaves every other decision private', async ({
     task,
     onTestFinished,
   }) => {
-    const { caller, instanceId } = await createPublishedInstance(
-      task.id,
+    const opened = await createPublishedInstance(task.id, onTestFinished);
+    const untouched = await createPublishedInstance(
+      `${task.id}-other`,
       onTestFinished,
     );
 
-    const before = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
-      columns: { instanceData: true },
+    await opened.caller.platform.admin.makeDecisionPublic({
+      instanceId: opened.instanceId,
     });
-    const instanceData = before!.instanceData as DecisionInstanceData;
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: {
-          ...instanceData,
-          config: { ...instanceData.config, isPrivate: true },
-        },
-      })
-      .where(eq(processInstances.id, instanceId));
 
-    await caller.platform.admin.makeDecisionPublic({ instanceId });
+    const grants = await readPublicGrants(untouched.profileId);
+    expect(grants.members).toHaveLength(0);
+    expect(grants.overrides).toHaveLength(0);
+
+    const detail = await untouched.caller.platform.admin.getDecisionInstance({
+      instanceId: untouched.instanceId,
+    });
+    expect(detail.isPublic).toBe(false);
+  });
+
+  it('reports a decision opened by the runbook shape as public', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { caller, testData, instanceId, profileId } =
+      await createPublishedInstance(task.id, onTestFinished);
+
+    // The hand-written runbook, not this endpoint — `isPublic` reads the
+    // grant, so both routes to it have to agree.
+    await testData.makeDecisionPublic(profileId);
 
     const detail = await caller.platform.admin.getDecisionInstance({
       instanceId,
     });
     expect(detail.isPublic).toBe(true);
-    expect(detail.config.isPrivate).toBe(false);
   });
 
   it('is a no-op on a decision that is already public', async ({

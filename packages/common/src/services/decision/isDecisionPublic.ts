@@ -3,13 +3,8 @@ import { checkPermission, permission } from 'access-zones';
 import { getProfileAccessRoles } from '../access';
 
 /**
- * True when a visitor with no account can read this decision — i.e. the public
- * sentinel resolves `decisions:READ` on the decision's own profile.
- *
- * Resolved through the same path the runtime authorizes with (an undefined
- * caller resolves to the public sentinel alone) rather than re-deriving which
- * rows add up to "public", so the admin screen can never disagree with what a
- * visitor actually gets.
+ * Whether a visitor with no account can read this decision. An undefined caller
+ * resolves to the public sentinel alone, so this is the grant a visitor gets.
  */
 export const isDecisionPublic = async ({
   profileId,
