@@ -1825,5 +1825,11 @@
   "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "তখন লিঙ্ক থাকলে যে কেউ অ্যাকাউন্ট ছাড়াই এই সিদ্ধান্তটি পড়তে পারবেন, এবং এতে ইতিমধ্যে থাকা প্রস্তাব ও মন্তব্যও পড়া যাবে। এই স্ক্রিন থেকে এটি আবার বন্ধ করার উপায় নেই।",
   "Public users can": "সর্বসাধারণ পারবেন",
   "Read the decision": "সিদ্ধান্তটি পড়তে",
-  "Submit proposals": "প্রস্তাব জমা দিতে"
+  "Submit proposals": "প্রস্তাব জমা দিতে",
+  "Remove public access": "সার্বজনীন অ্যাক্সেস সরান",
+  "Remove public access?": "সার্বজনীন অ্যাক্সেস সরাবেন?",
+  "Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.": "অ্যাকাউন্ট নেই এমন দর্শকরা এই সিদ্ধান্ত ও এর ভেতরের সবকিছুর অ্যাক্সেস হারাবেন। যাঁরা ইতিমধ্যে যোগ দিয়েছেন তাঁরা নিজেদের অ্যাক্সেস রাখবেন, এবং তাঁদের জমা দেওয়া কিছুই মুছে যাবে না।",
+  "Remove access": "অ্যাক্সেস সরান",
+  "Removing…": "সরানো হচ্ছে…",
+  "This decision is no longer public.": "এই সিদ্ধান্তটি আর সার্বজনীন নয়।"
 }

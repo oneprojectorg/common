@@ -1825,5 +1825,11 @@
   "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.",
   "Public users can": "Public users can",
   "Read the decision": "Read the decision",
-  "Submit proposals": "Submit proposals"
+  "Submit proposals": "Submit proposals",
+  "Remove public access": "Remove public access",
+  "Remove public access?": "Remove public access?",
+  "Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.": "Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.",
+  "Remove access": "Remove access",
+  "Removing…": "Removing…",
+  "This decision is no longer public.": "This decision is no longer public."
 }

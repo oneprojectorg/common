@@ -1,4 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
+import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
@@ -57,7 +58,7 @@ export async function invalidateProfileUserCacheForRole(roleId: string) {
 
 /** For a write that changes what a profile grants, sentinel row included. */
 export async function invalidateProfileUserCacheForProfile(profileId: string) {
-  const affectedUsers = await db
+  const members = await db
     .select({
       profileId: profileUsers.profileId,
       authUserId: profileUsers.authUserId,
@@ -65,7 +66,15 @@ export async function invalidateProfileUserCacheForProfile(profileId: string) {
     .from(profileUsers)
     .where(eq(profileUsers.profileId, profileId));
 
-  await invalidateProfileUserCaches(affectedUsers);
+  // Unconditionally, not just when the row is present: revoking public access
+  // deletes the sentinel row, and its cached record has to go with it.
+  const withSentinel = members.some(
+    (member) => member.authUserId === GLOBAL_USER_PUBLIC,
+  )
+    ? members
+    : [...members, { profileId, authUserId: GLOBAL_USER_PUBLIC }];
+
+  await invalidateProfileUserCaches(withSentinel);
 }
 
 export type Permissions = {

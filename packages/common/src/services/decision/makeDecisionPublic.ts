@@ -14,6 +14,7 @@ import { invalidateProfileUserCacheForProfile } from '../access/permissions';
 import { invalidateDecisionInstance } from './decisionCache';
 import { lockProcessInstance } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
+import { resolvePublicGrantTarget } from './resolvePublicGrantTarget';
 
 /**
  * What the public grant admits, chosen per decision. READ is not optional —
@@ -51,38 +52,9 @@ export const makeDecisionPublic = async ({
 }): Promise<{ profileId: string }> => {
   const publicPermission = toPublicBitField(permissions);
 
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-    columns: { profileId: true },
+  const { profileId, zoneId, publicRoleId } = await resolvePublicGrantTarget({
+    instanceId,
   });
-
-  if (!instance) {
-    throw new NotFoundError('Process instance', instanceId);
-  }
-
-  const { profileId } = instance;
-
-  if (!profileId) {
-    throw new ValidationError(
-      'This decision has no profile of its own, so it cannot be opened to the public',
-    );
-  }
-
-  const [zone, publicRole] = await Promise.all([
-    db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
-    db.query.accessRoles.findFirst({
-      where: { name: 'Public', profileId: { isNull: true } },
-      columns: { id: true },
-    }),
-  ]);
-
-  if (!zone) {
-    throw new NotFoundError('Zone', 'decisions');
-  }
-
-  if (!publicRole) {
-    throw new NotFoundError('Role', 'Public');
-  }
 
   await db.transaction(async (tx) => {
     // No unique key on (profile, auth user), so the lock is what stops two
@@ -117,15 +89,15 @@ export const makeDecisionPublic = async ({
 
     await tx
       .insert(profileUserToAccessRoles)
-      .values({ profileUserId: sentinel.id, accessRoleId: publicRole.id })
+      .values({ profileUserId: sentinel.id, accessRoleId: publicRoleId })
       .onConflictDoNothing();
 
     // Update, not do-nothing: a hand-written override may carry narrower bits.
     await tx
       .insert(accessRolePermissionsOnAccessZones)
       .values({
-        accessRoleId: publicRole.id,
-        accessZoneId: zone.id,
+        accessRoleId: publicRoleId,
+        accessZoneId: zoneId,
         permission: publicPermission,
         profileId,
       })

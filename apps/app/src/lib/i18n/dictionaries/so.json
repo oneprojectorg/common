@@ -1825,5 +1825,11 @@
   "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "Markaas qof kasta oo haysta linkiga wuu akhrin karaa go'aankan isaga oo aan koonto lahayn, soo jeedinnada iyo faallooyinka hore ugu jirayna waa la akhrin karaa. Shaashaddan lagama xiri karo mar kale.",
   "Public users can": "Dadweynaha waxay awoodaan",
   "Read the decision": "Akhrinta go'aanka",
-  "Submit proposals": "Soo gudbinta soo jeedinno"
+  "Submit proposals": "Soo gudbinta soo jeedinno",
+  "Remove public access": "Ka saar gelitaanka dadweynaha",
+  "Remove public access?": "Ma ka saaraysaa gelitaanka dadweynaha?",
+  "Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.": "Booqdayaasha aan koonto lahayn way lumiyaan gelitaanka go'aankan iyo wax kasta oo ku jira. Qofkii horey u soo biiray wuxuu haystaa gelitaankiisa, waxna lagama tirtirayo wixii uu soo gudbiyay.",
+  "Remove access": "Ka saar gelitaanka",
+  "Removing…": "Waa la saarayaa…",
+  "This decision is no longer public.": "Go'aankan hadda ma aha mid dadweyne."
 }

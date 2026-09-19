@@ -1825,5 +1825,11 @@
   "Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.": "Toute personne disposant du lien pourra alors lire cette décision sans compte, et les propositions et commentaires qui s'y trouvent déjà deviennent lisibles. Il n'est pas possible de la refermer depuis cet écran.",
   "Public users can": "Le public peut",
   "Read the decision": "Lire la décision",
-  "Submit proposals": "Soumettre des propositions"
+  "Submit proposals": "Soumettre des propositions",
+  "Remove public access": "Retirer l'accès public",
+  "Remove public access?": "Retirer l'accès public ?",
+  "Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.": "Les personnes sans compte perdent l'accès à cette décision et à tout son contenu. Celles qui l'ont déjà rejointe conservent leur propre accès, et rien de ce qu'elles ont soumis n'est supprimé.",
+  "Remove access": "Retirer l'accès",
+  "Removing…": "Retrait…",
+  "This decision is no longer public.": "Cette décision n'est plus publique."
 }

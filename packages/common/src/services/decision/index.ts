@@ -43,6 +43,8 @@ export * from './revertPhase';
 // Platform-admin public access
 export * from './isDecisionPublic';
 export * from './makeDecisionPublic';
+export * from './removeDecisionPublicAccess';
+export * from './resolvePublicGrantTarget';
 
 // Transition management
 export * from './buildExpectedTransitions';

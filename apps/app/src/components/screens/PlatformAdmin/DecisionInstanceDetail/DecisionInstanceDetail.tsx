@@ -28,6 +28,7 @@ import { Link } from '@/lib/i18n/routing';
 
 import { CustomFormsPanel } from './CustomFormsPanel';
 import { MakePublicButton } from './MakePublicButton';
+import { RemovePublicAccessButton } from './RemovePublicAccessButton';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
 import {
@@ -454,6 +455,11 @@ const PublicAccessSection = ({
       {state === 'openable' ? (
         <div className="w-fit">
           <MakePublicButton instanceId={instanceId} />
+        </div>
+      ) : null}
+      {state === 'public' ? (
+        <div className="w-fit">
+          <RemovePublicAccessButton instanceId={instanceId} />
         </div>
       ) : null}
     </DetailSection>
