@@ -2,6 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
+import { trackUserInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
@@ -34,7 +35,12 @@ export const InviteToOrganizationButton = ({
   const [isMember, setIsMember] = useState(membershipData.isMember);
 
   const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
+      trackUserInvited({
+        organizationId: variables.organizationId,
+        inviteCount: result.details?.successful.length ?? 0,
+      });
+
       const successfulInvites = result.details?.successful || [];
       const failedInvites = result.details?.failed || [];
 

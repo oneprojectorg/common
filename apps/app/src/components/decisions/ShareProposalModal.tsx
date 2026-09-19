@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { trackProfileInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
@@ -110,6 +111,9 @@ function ShareProposalModalContent({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const inviteMutation = trpc.profile.invite.useMutation({
+    onSuccess: trackProfileInvited,
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
@@ -218,7 +222,6 @@ function ShareProposalModalContent({
   );
   type PickerOption = (typeof pickerOptions)[number];
 
-  const inviteMutation = trpc.profile.invite.useMutation();
   const removeUserMutation = trpc.profile.removeUser.useMutation();
   const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
 

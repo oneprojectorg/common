@@ -1,5 +1,6 @@
 'use client';
 
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Alert, AlertDescription } from '@op/sense/Alert';
@@ -13,6 +14,7 @@ import {
 } from '@op/sense/Dialog';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
+import { usePostHog } from 'posthog-js/react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -34,6 +36,7 @@ export const LaunchProcessModal = ({
 }) => {
   const t = useTranslations();
   const router = useRouter();
+  const posthog = usePostHog();
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
@@ -58,6 +61,12 @@ export const LaunchProcessModal = ({
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
+      if (data.didPublish) {
+        posthog.capture(
+          'admin_set_process',
+          getDecisionCommonProperties({ decisionInstanceId: instanceId }),
+        );
+      }
       onOpenChange(false);
       // Leftover dirty fields would otherwise overlay the published instance
       clearInstance(decisionProfileId);

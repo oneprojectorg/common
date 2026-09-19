@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { trackProfileInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { PAGE_LIMIT, hasEmail, nextCursor } from '@op/common/client';
@@ -125,6 +126,9 @@ function ProfileInviteModalContent({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const inviteMutation = trpc.profile.invite.useMutation({
+    onSuccess: trackProfileInvited,
+  });
   const [selectedItemsByRole, setSelectedItemsByRole] =
     useState<SelectedItemsByRole>({});
   const [requestedRoleId, setRequestedRoleId] = useState<string>();
@@ -319,7 +323,6 @@ function ProfileInviteModalContent({
   };
 
   // Mutations
-  const inviteMutation = trpc.profile.invite.useMutation();
   const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
   const removeUserMutation = trpc.profile.removeUser.useMutation();
 
