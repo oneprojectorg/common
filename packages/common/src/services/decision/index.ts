@@ -81,6 +81,7 @@ export * from './unmergeProposal';
 export * from './listProposalRelationships';
 export * from './listContributingProposals';
 export * from './listProposalMergeRecipients';
+export { notSuperseded } from './proposalSupersession';
 
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
@@ -191,7 +192,10 @@ export type {
   PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
-export { createInstanceDataFromTemplate } from './schemas/instanceData';
+export {
+  createInstanceDataFromTemplate,
+  getInstancePhases,
+} from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,
