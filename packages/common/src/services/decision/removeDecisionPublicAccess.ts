@@ -8,7 +8,7 @@ import { logger } from '@op/logging';
 
 import { invalidateProfileUserCacheForProfile } from '../access/permissions';
 import { invalidateDecisionInstance } from './decisionCache';
-import { lockProcessInstance } from './lockProcessInstance';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { resolvePublicGrantTarget } from './resolvePublicGrantTarget';
 
 /**
@@ -33,7 +33,7 @@ export const removeDecisionPublicAccess = async ({
   await db.transaction(async (tx) => {
     // Same lock the grant takes, so the two can't interleave into a profile
     // that holds an override with no member row behind it.
-    await lockProcessInstance({ db: tx, instanceId });
+    await lockProcessInstanceOrThrow({ db: tx, instanceId });
 
     await tx
       .delete(profileUsers)

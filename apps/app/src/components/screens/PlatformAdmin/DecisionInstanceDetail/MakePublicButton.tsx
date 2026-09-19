@@ -46,7 +46,7 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
       }}
       title={t('Make this decision public?')}
       description={t(
-        'Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. There is no way to close it again from this screen.',
+        'Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. You can remove public access again from this screen.',
       )}
       confirm={{
         label: t('Make public'),

@@ -9,10 +9,10 @@ import {
 import { logger } from '@op/logging';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
+import { CommonError, ValidationError } from '../../utils';
 import { invalidateProfileUserCacheForProfile } from '../access/permissions';
 import { invalidateDecisionInstance } from './decisionCache';
-import { lockProcessInstance } from './lockProcessInstance';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 import { resolvePublicGrantTarget } from './resolvePublicGrantTarget';
 
@@ -59,11 +59,7 @@ export const makeDecisionPublic = async ({
   await db.transaction(async (tx) => {
     // No unique key on (profile, auth user), so the lock is what stops two
     // admins clicking at once from writing two sentinel rows.
-    const locked = await lockProcessInstance({ db: tx, instanceId });
-
-    if (!locked) {
-      throw new NotFoundError('Process instance', instanceId);
-    }
+    const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
 
     if (locked.status !== ProcessStatus.PUBLISHED) {
       throw new ValidationError(
