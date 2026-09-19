@@ -43,16 +43,20 @@ export const RevertPhaseButton = ({
 
   return (
     <AdminActionConfirmation
-      triggerLabel={t('Move back a phase')}
-      triggerIcon={<LuUndo2 data-icon="inline-start" />}
-      triggerVariant="destructive"
+      trigger={{
+        label: t('Move back a phase'),
+        icon: <LuUndo2 data-icon="inline-start" />,
+        variant: 'destructive',
+      }}
       title={t('Move back to {phase}?', { phase: previousPhaseName })}
       description={t(
         'This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.',
       )}
-      confirmLabel={t('Move back')}
-      pendingLabel={t('Moving…')}
-      confirmVariant="destructive"
+      confirm={{
+        label: t('Move back'),
+        pendingLabel: t('Moving…'),
+        variant: 'destructive',
+      }}
       isPending={revertPhase.isPending}
       isOpen={isOpen}
       onOpenChange={setIsOpen}

@@ -18,6 +18,19 @@ import { useTranslations } from '@/lib/i18n';
 
 type ButtonVariant = ComponentProps<typeof Button>['variant'];
 
+export interface AdminActionTrigger {
+  label: string;
+  icon: ReactNode;
+  variant: ButtonVariant;
+}
+
+export interface AdminActionConfirm {
+  label: string;
+  /** Replaces `label` while the mutation runs. */
+  pendingLabel: string;
+  variant: ButtonVariant;
+}
+
 /**
  * Confirmation shell for the platform-admin actions in this drill-down. Each
  * action owns its own mutation and copy; this owns the dialog, the cancel
@@ -25,28 +38,19 @@ type ButtonVariant = ComponentProps<typeof Button>['variant'];
  * flight.
  */
 export const AdminActionConfirmation = ({
-  triggerLabel,
-  triggerIcon,
-  triggerVariant,
+  trigger,
   title,
   description,
-  confirmLabel,
-  pendingLabel,
-  confirmVariant,
+  confirm,
   isPending,
   isOpen,
   onOpenChange,
   onConfirm,
 }: {
-  triggerLabel: string;
-  triggerIcon: ReactNode;
-  triggerVariant: ButtonVariant;
+  trigger: AdminActionTrigger;
   title: string;
   description: string;
-  confirmLabel: string;
-  /** Replaces `confirmLabel` while the mutation runs. */
-  pendingLabel: string;
-  confirmVariant: ButtonVariant;
+  confirm: AdminActionConfirm;
   isPending: boolean;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -57,10 +61,10 @@ export const AdminActionConfirmation = ({
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogTrigger
-        render={<Button variant={triggerVariant} size="sm" />}
+        render={<Button variant={trigger.variant} size="sm" />}
       >
-        {triggerIcon}
-        {triggerLabel}
+        {trigger.icon}
+        {trigger.label}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -72,11 +76,11 @@ export const AdminActionConfirmation = ({
             {t('Cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
-            variant={confirmVariant}
+            variant={confirm.variant}
             disabled={isPending}
             onClick={onConfirm}
           >
-            {isPending ? pendingLabel : confirmLabel}
+            {isPending ? confirm.pendingLabel : confirm.label}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

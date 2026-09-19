@@ -32,16 +32,20 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
 
   return (
     <AdminActionConfirmation
-      triggerLabel={t('Make public')}
-      triggerIcon={<LuGlobe data-icon="inline-start" />}
-      triggerVariant="outline"
+      trigger={{
+        label: t('Make public'),
+        icon: <LuGlobe data-icon="inline-start" />,
+        variant: 'outline',
+      }}
       title={t('Make this decision public?')}
       description={t(
         'Anyone with the link can then read this decision without an account, and anyone signed in can submit a proposal and vote. Proposals and comments already in the decision become readable too. There is no way to close it again from this screen.',
       )}
-      confirmLabel={t('Make public')}
-      pendingLabel={t('Publishing…')}
-      confirmVariant="default"
+      confirm={{
+        label: t('Make public'),
+        pendingLabel: t('Publishing…'),
+        variant: 'default',
+      }}
       isPending={makePublic.isPending}
       isOpen={isOpen}
       onOpenChange={setIsOpen}
