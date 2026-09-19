@@ -8,7 +8,7 @@ export interface Env {
   zoomWebhookSecretToken: string;
   /** When set, webhooks from any other Zoom account are ignored. */
   zoomAccountId: string | null;
-  /** Managed Agent id created by `pnpm w:zoom-bot run setup`. */
+  /** Managed Agent id created by `pnpm w:zoom-bot setup:agent`. */
   anthropicAgentId: string;
   /** Managed Agent environment id created by the same script. */
   anthropicEnvironmentId: string;

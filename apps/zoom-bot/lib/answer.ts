@@ -56,7 +56,7 @@ export const answerQuestion = async ({
 
     const client = new Anthropic();
 
-    // The agent and environment are created once by `pnpm w:zoom-bot run setup`.
+    // The agent and environment are created once by `pnpm w:zoom-bot setup:agent`.
     // Never create them here — that would make a new version per question.
     const session = await client.beta.sessions.create({
       agent: env.anthropicAgentId,

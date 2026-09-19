@@ -8,7 +8,7 @@
     "build": "next build",
     "dev": "next dev -p 3400",
     "format:check": "oxfmt --check",
-    "setup": "tsx scripts/setup.ts",
+    "setup:agent": "tsx scripts/setup.ts",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   },

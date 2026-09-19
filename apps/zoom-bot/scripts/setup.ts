@@ -7,7 +7,7 @@
  * no redeploy is needed.
  *
  *   export ANTHROPIC_API_KEY=...
- *   pnpm w:zoom-bot run setup
+ *   pnpm w:zoom-bot setup:agent
  *
  * This is a CLI, so it writes to stdout directly rather than through a logger.
  */

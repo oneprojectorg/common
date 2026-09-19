@@ -25,8 +25,7 @@ one-time.
 
 - Create an API key in the Claude Console (<https://platform.claude.com>).
 - `export ANTHROPIC_API_KEY=...`
-- `pnpm w:zoom-bot run setup` (the `run` is required — `pnpm setup` is a
-  built-in pnpm command that would shadow the script)
+- `pnpm w:zoom-bot setup:agent`
 - Copy the two ids it prints: `ANTHROPIC_ENVIRONMENT_ID` and
   `ANTHROPIC_AGENT_ID`.
 
@@ -84,7 +83,7 @@ trace URL the bot prints at the bottom of every answer.
 ### 7. Changing the bot's behaviour
 
 Edit [`agent/system-prompt.md`](./agent/system-prompt.md) and re-run
-`pnpm w:zoom-bot run setup`. That creates a new agent version; the app always uses
+`pnpm w:zoom-bot setup:agent`. That creates a new agent version; the app always uses
 the latest one, so no redeploy is needed.
 
 ## Cost
