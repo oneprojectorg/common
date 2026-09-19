@@ -4,6 +4,7 @@ import {
   getInstancePhases,
   isInstanceCurrentPhase,
   listIndividualProfileRecipientsByProfileId,
+  notSuperseded,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -167,6 +168,12 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
               ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
             ]),
             isNull(proposalReviewAssignments.deletedAt),
+            // Merging doesn't delete assignments, and the reviewer's queue
+            // hides a merged proposal's, so this count has to hide them too.
+            notSuperseded({
+              proposalId: proposalReviewAssignments.proposalId,
+              processInstanceId,
+            }),
           ),
         )
         .groupBy(proposalReviewAssignments.reviewerProfileId);
