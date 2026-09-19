@@ -65,11 +65,14 @@ export const AdminActionConfirmation = ({
         {trigger.label}
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <AlertDialogHeader>
+        {/* AlertDialog has no body slot: the header and footer carry their own
+            px-6, so body content has to match it or it sits at the card edge.
+            The header's pb-8 assumes it is the last thing before the footer. */}
+        <AlertDialogHeader className={children ? 'pb-4' : undefined}>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        {children}
+        {children ? <div className="px-6 pb-6">{children}</div> : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>
             {t('Cancel')}

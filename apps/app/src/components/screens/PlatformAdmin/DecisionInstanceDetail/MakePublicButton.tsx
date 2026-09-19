@@ -70,7 +70,7 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
         <legend className="text-xs tracking-wide text-muted-foreground uppercase">
           {t('Public users can')}
         </legend>
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
           <Label className="flex items-center gap-2 font-normal text-muted-foreground">
             <Checkbox checked disabled />
             {t('Read the decision')}
