@@ -1,23 +1,13 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@op/sense/AlertDialog';
-import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuUndo2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { AdminActionConfirmation } from './AdminActionConfirmation';
 
 /**
  * Platform-admin escape hatch: undo the most recent phase advancement. There
@@ -52,37 +42,25 @@ export const RevertPhaseButton = ({
   });
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
-        <LuUndo2 data-icon="inline-start" />
-        {t('Move back a phase')}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {t('Move back to {phase}?', { phase: previousPhaseName })}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t(
-              'This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.',
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={revertPhase.isPending}>
-            {t('Cancel')}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            disabled={revertPhase.isPending}
-            onClick={() =>
-              revertPhase.mutate({ instanceId, fromPhaseId: phaseId })
-            }
-          >
-            {revertPhase.isPending ? t('Moving…') : t('Move back')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <AdminActionConfirmation
+      trigger={{
+        label: t('Move back a phase'),
+        icon: <LuUndo2 data-icon="inline-start" />,
+        variant: 'destructive',
+      }}
+      title={t('Move back to {phase}?', { phase: previousPhaseName })}
+      description={t(
+        'This undoes the last advancement. Proposals carried into this phase stop belonging to it, and any review assignments it created are deleted. Votes and recorded results are kept. Notification emails that were already sent cannot be recalled.',
+      )}
+      confirm={{
+        label: t('Move back'),
+        pendingLabel: t('Moving…'),
+        variant: 'destructive',
+      }}
+      isPending={revertPhase.isPending}
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      onConfirm={() => revertPhase.mutate({ instanceId, fromPhaseId: phaseId })}
+    />
   );
 };

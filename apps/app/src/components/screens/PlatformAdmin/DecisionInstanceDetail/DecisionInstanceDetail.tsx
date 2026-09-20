@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type {
   AdminDecisionConfig,
   AdminDecisionPhase,
@@ -26,8 +27,14 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { CustomFormsPanel } from './CustomFormsPanel';
+import { MakePublicButton } from './MakePublicButton';
+import { RemovePublicAccessButton } from './RemovePublicAccessButton';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
+import {
+  type PublicAccessState,
+  getPublicAccessState,
+} from './publicAccessState';
 
 const STATUS_DISPLAY: Record<string, string> = {
   draft: 'Draft',
@@ -148,6 +155,9 @@ const DecisionInstanceDetailContent = ({
         </TabsContent>
         <TabsContent value="configuration" className="pt-4">
           <ConfigurationCard
+            instanceId={instanceId}
+            isPublic={detail.isPublic}
+            status={detail.status}
             config={detail.config}
             instanceData={detail.instanceData}
           />
@@ -274,12 +284,12 @@ const PhaseCard = ({
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         {phase.hasProposals ? (
-          <PhaseSection title={t('Proposals')}>
+          <DetailSection title={t('Proposals')}>
             <ComingSoon />
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {phase.hasReviews ? (
-          <PhaseSection title={t('Reviews')}>
+          <DetailSection title={t('Reviews')}>
             <Suspense fallback={<Skeleton className="h-32 w-full" />}>
               <ReviewPhasePanel
                 instanceId={instanceId}
@@ -287,12 +297,12 @@ const PhaseCard = ({
                 isCompleted={isCompleted}
               />
             </Suspense>
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {phase.hasVoting ? (
-          <PhaseSection title={t('Voting')}>
+          <DetailSection title={t('Voting')}>
             <ComingSoon />
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {!hasAnySection ? (
           <p className="text-sm text-muted-foreground">
@@ -300,7 +310,7 @@ const PhaseCard = ({
           </p>
         ) : null}
         {phase.isCurrent && previousPhase ? (
-          <PhaseSection title={t('Danger zone')}>
+          <DetailSection title={t('Danger zone')}>
             <div className="w-fit">
               <RevertPhaseButton
                 instanceId={instanceId}
@@ -310,7 +320,7 @@ const PhaseCard = ({
                 }
               />
             </div>
-          </PhaseSection>
+          </DetailSection>
         ) : null}
       </CardContent>
     </Card>
@@ -318,9 +328,15 @@ const PhaseCard = ({
 };
 
 const ConfigurationCard = ({
+  instanceId,
+  isPublic,
+  status,
   config,
   instanceData,
 }: {
+  instanceId: string;
+  isPublic: boolean;
+  status: ProcessStatus | null;
   config: AdminDecisionConfig;
   instanceData: unknown;
 }) => {
@@ -375,6 +391,11 @@ const ConfigurationCard = ({
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
+        <PublicAccessSection
+          instanceId={instanceId}
+          isPublic={isPublic}
+          status={status}
+        />
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
           {settings.map((setting) => (
             <div
@@ -409,6 +430,43 @@ const ConfigurationCard = ({
   );
 };
 
+const PublicAccessSection = ({
+  instanceId,
+  isPublic,
+  status,
+}: {
+  instanceId: string;
+  isPublic: boolean;
+  status: ProcessStatus | null;
+}) => {
+  const t = useTranslations();
+  const state = getPublicAccessState({ isPublic, status });
+
+  const summaries: Record<PublicAccessState, string> = {
+    public: t(
+      'Anyone with the link can read this decision without an account.',
+    ),
+    openable: t('Only members of this decision can see it.'),
+    unpublished: t('Only a published decision can be opened to the public.'),
+  };
+
+  return (
+    <DetailSection title={t('Public access')}>
+      <p className="text-sm text-muted-foreground">{summaries[state]}</p>
+      {state === 'openable' ? (
+        <div className="w-fit">
+          <MakePublicButton instanceId={instanceId} />
+        </div>
+      ) : null}
+      {state === 'public' ? (
+        <div className="w-fit">
+          <RemovePublicAccessButton instanceId={instanceId} />
+        </div>
+      ) : null}
+    </DetailSection>
+  );
+};
+
 const CopyRawConfigButton = ({ value }: { value: string }) => {
   const t = useTranslations();
   const [hasCopied, setHasCopied] = useState(false);
@@ -433,7 +491,7 @@ const CopyRawConfigButton = ({ value }: { value: string }) => {
   );
 };
 
-const PhaseSection = ({
+const DetailSection = ({
   title,
   children,
 }: {

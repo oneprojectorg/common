@@ -1,4 +1,4 @@
-import { NotFoundError } from '@op/common';
+import { NotFoundError, isDecisionPublic } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
@@ -114,6 +114,11 @@ export const getDecisionInstanceRouter = router({
       const parsed = detailInstanceData.safeParse(instance.instanceData);
       const instanceData = parsed.success ? parsed.data : {};
 
+      // No profile of its own means no grant to carry.
+      const isPublic = instance.profileId
+        ? await isDecisionPublic({ profileId: instance.profileId })
+        : false;
+
       const schemaParsed = detailProcessSchema.safeParse(
         instance.process?.processSchema,
       );
@@ -130,6 +135,7 @@ export const getDecisionInstanceRouter = router({
         profileId: instance.profileId,
         status: instance.status,
         createdAt: instance.createdAt,
+        isPublic,
         owner: instance.owner ?? null,
         steward: instance.steward ?? null,
         reviewsPolicy: instanceData.config?.reviewsPolicy ?? null,

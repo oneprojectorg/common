@@ -1,4 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
+import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db } from '@op/db/client';
 import {
   accessRolePermissionsOnAccessZones,
@@ -14,6 +15,31 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 import { profileUserCacheKey } from './cacheKeys';
 
+/** Drops the durable access records cached for each (profile, auth user) pair. */
+async function invalidateProfileUserCaches(
+  affectedUsers: Array<{ profileId: string; authUserId: string }>,
+) {
+  if (affectedUsers.length === 0) {
+    return;
+  }
+
+  await Promise.all([
+    invalidateMultiple({
+      type: 'profileUser',
+      paramsList: affectedUsers.map((u) =>
+        profileUserCacheKey({
+          user: { id: u.authUserId },
+          profileId: u.profileId,
+        }),
+      ),
+    }),
+    invalidateMultiple({
+      type: 'user',
+      paramsList: affectedUsers.map((u) => [u.authUserId]),
+    }),
+  ]);
+}
+
 export async function invalidateProfileUserCacheForRole(roleId: string) {
   const affectedUsers = await db
     .select({
@@ -27,23 +53,28 @@ export async function invalidateProfileUserCacheForRole(roleId: string) {
     )
     .where(eq(profileUserToAccessRoles.accessRoleId, roleId));
 
-  if (affectedUsers.length > 0) {
-    await Promise.all([
-      invalidateMultiple({
-        type: 'profileUser',
-        paramsList: affectedUsers.map((u) =>
-          profileUserCacheKey({
-            user: { id: u.authUserId },
-            profileId: u.profileId,
-          }),
-        ),
-      }),
-      invalidateMultiple({
-        type: 'user',
-        paramsList: affectedUsers.map((u) => [u.authUserId]),
-      }),
-    ]);
-  }
+  await invalidateProfileUserCaches(affectedUsers);
+}
+
+/** For a write that changes what a profile grants, sentinel row included. */
+export async function invalidateProfileUserCacheForProfile(profileId: string) {
+  const members = await db
+    .select({
+      profileId: profileUsers.profileId,
+      authUserId: profileUsers.authUserId,
+    })
+    .from(profileUsers)
+    .where(eq(profileUsers.profileId, profileId));
+
+  // Unconditionally, not just when the row is present: revoking public access
+  // deletes the sentinel row, and its cached record has to go with it.
+  const withSentinel = members.some(
+    (member) => member.authUserId === GLOBAL_USER_PUBLIC,
+  )
+    ? members
+    : [...members, { profileId, authUserId: GLOBAL_USER_PUBLIC }];
+
+  await invalidateProfileUserCaches(withSentinel);
 }
 
 export type Permissions = {
