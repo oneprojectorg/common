@@ -124,7 +124,7 @@ describe.concurrent('platform.admin.removeDecisionPublicAccess', () => {
 
     // Read it first, so the removal has to beat the cached access record.
     const visible = await visitor.decision.getDecisionBySlug({ slug });
-    expect(visible.processInstance.isPublic).toBe(true);
+    expect(visible.processInstance.id).toBe(instanceId);
 
     const result = await caller.platform.admin.removeDecisionPublicAccess({
       instanceId,
@@ -225,7 +225,7 @@ describe.concurrent('platform.admin.removeDecisionPublicAccess', () => {
     const visible = await visitor.decision.getDecisionBySlug({
       slug: other.slug,
     });
-    expect(visible.processInstance.isPublic).toBe(true);
+    expect(visible.processInstance.id).toBe(other.instanceId);
   });
 
   it('can be re-opened after removal', async ({ task, onTestFinished }) => {
@@ -242,7 +242,6 @@ describe.concurrent('platform.admin.removeDecisionPublicAccess', () => {
 
     const visitor = createCaller(await createTestContextWithSession(null));
     const visible = await visitor.decision.getDecisionBySlug({ slug });
-    expect(visible.processInstance.isPublic).toBe(true);
     expect(visible.processInstance.access).toMatchObject({
       read: true,
       submitProposals: false,

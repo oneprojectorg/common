@@ -3,7 +3,6 @@ import {
   fromDecisionBitField,
   getDecisionBySlug,
   getProfileAccessRoles,
-  isDecisionPublic,
 } from '@op/common';
 import { collapseRoles } from 'access-zones';
 import { z } from 'zod';
@@ -37,11 +36,10 @@ export const getDecisionBySlugRouter = router({
         throw new Error('Decision profile ID is missing');
       }
 
-      // `access` is this viewer's grant; `isPublic` is the sentinel's.
-      const [roles, isPublic] = await Promise.all([
-        getProfileAccessRoles({ user, profileId }),
-        isDecisionPublic({ profileId }),
-      ]);
+      const roles = await getProfileAccessRoles({
+        user,
+        profileId,
+      });
 
       const decisionsBitField = collapseRoles(roles)['decisions'] ?? 0;
 
@@ -54,7 +52,6 @@ export const getDecisionBySlugRouter = router({
         processInstance: {
           ...parsed.processInstance,
           access: fromDecisionBitField(decisionsBitField),
-          isPublic,
         },
       });
     }),

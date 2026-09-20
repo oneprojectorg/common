@@ -236,9 +236,8 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
         slug: profile!.slug!,
       });
 
-      // Read is never optional, so the decision is public either way.
+      // Read is never optional, so the visitor reaches it either way.
       expect(visible.processInstance.access).toMatchObject(access);
-      expect(visible.processInstance.isPublic).toBe(true);
     });
   }
 

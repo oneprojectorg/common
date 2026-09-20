@@ -345,6 +345,7 @@ const ConfigurationCard = ({
   const rawConfig = JSON.stringify(instanceData, null, 2);
 
   const settings: Array<{ label: string; value: string | boolean }> = [
+    { label: t('Private process'), value: config.isPrivate },
     { label: t('Hide budget'), value: config.hideBudget },
     { label: t('Proposal template'), value: config.hasProposalTemplate },
     { label: t('Review rubric'), value: config.hasRubric },

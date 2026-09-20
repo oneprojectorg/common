@@ -182,7 +182,7 @@ function DecisionOverviewContent({
   // DecisionListItem). "Open for learning" shows only for public processes;
   // private processes hide the badge entirely.
   const steward = instance.steward ?? instance.owner;
-  const isPublic = instance.isPublic === true;
+  const isPublic = !instance.instanceData?.config?.isPrivate;
 
   // Same gate as StandardDecisionPage: the phase must accept proposals and
   // the viewer must have submit access.

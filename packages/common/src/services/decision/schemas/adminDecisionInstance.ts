@@ -66,6 +66,7 @@ export const adminDecisionPhaseSchema = z.object({
 
 /** Process-level configuration toggles surfaced to platform admins. */
 export const adminDecisionConfigSchema = z.object({
+  isPrivate: z.boolean(),
   hideBudget: z.boolean(),
   hasProposalTemplate: z.boolean(),
   hasRubric: z.boolean(),
