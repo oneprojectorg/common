@@ -1249,6 +1249,89 @@ describe.concurrent('updateDecisionInstance', () => {
 
     expect(result.processInstance.name).toBe(newName);
   });
+
+  // The rules object is written wholesale, and tRPC strips whatever the
+  // encoder does not declare — so a key missing from `phaseRulesEncoder` is
+  // silently erased by any unrelated phase edit, with nothing to show for it.
+  it('keeps the ballot-constraint rules across an unrelated phase edit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          budget: { type: 'object', 'x-format': 'money' },
+        },
+      },
+    });
+
+    const instance = setup.instance;
+    const phaseId = await getFirstPhaseId(instance.instance.id);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [
+        {
+          phaseId,
+          rules: {
+            voting: {
+              submit: true,
+              maxVotesPerMember: 3,
+              voterBudget: 5000,
+              ranked: true,
+            },
+          },
+        },
+      ],
+    });
+
+    // Read back through the same procedure the phase editor uses, so a key
+    // the read encoder strips shows up here rather than in production.
+    const reread = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+    const storedRules = reread.instanceData?.phases?.find(
+      (p) => p.phaseId === phaseId,
+    )?.rules;
+
+    expect(storedRules?.voting).toMatchObject({
+      voterBudget: 5000,
+      ranked: true,
+    });
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [
+        {
+          phaseId,
+          rules: {
+            ...storedRules,
+            voting: { ...storedRules?.voting, maxVotesPerMember: 2 },
+          },
+        },
+      ],
+    });
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const voting = (
+      dbInstance!.instanceData as DecisionInstanceData
+    ).phases.find((p) => p.phaseId === phaseId)?.rules?.voting;
+
+    expect(voting).toMatchObject({
+      maxVotesPerMember: 2,
+      voterBudget: 5000,
+      ranked: true,
+    });
+  });
 });
 
 describeDecisionAccessTierGating('updateDecisionInstance', {
