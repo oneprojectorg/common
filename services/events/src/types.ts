@@ -115,6 +115,14 @@ export const Events = {
       processInstanceId: z.string().uuid(),
     }),
   },
+  reviewPhaseEndingSoon: {
+    name: 'review/phase-ending-soon' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      phaseId: z.string().min(1),
+      reminderWindowEnd: z.string().min(1),
+    }),
+  },
   reviewProposalRevisionSubmitted: {
     name: 'review/proposal-revision-submitted' as const,
     schema: z.object({
