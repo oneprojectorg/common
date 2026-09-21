@@ -14,11 +14,12 @@
  * of the answers.
  *
  * stdout is exactly one line with no newline, so the workflow can carry it as
- * a job output. Two optional files hold the longer forms: `--summary` gets the
- * blast-radius section verbatim and a per-function CRAP table (the job summary
- * and the check run), `--comment` gets the middle ground for the sticky
- * comment — the line, split in two, plus the functions at risk, and nothing
- * else.
+ * a job output. Two optional files hold the report: `--summary` gets the
+ * per-function CRAP table and then the blast-radius section verbatim (the job
+ * summary and the check run), `--comment` gets the same two sections under a
+ * header line, with the table capped so the comment stays readable and under
+ * GitHub's size limit. CRAP leads in both: the table is what a reviewer opens
+ * the report for, so it sits in the PR rather than one click away.
  */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -88,8 +89,16 @@ const crapLine = (crap) => {
   return `${head}, ${verdict}${stale}`;
 };
 
-/** The `## CRAP metrics` section for the job summary. */
-const crapSection = (crap) => {
+// Rows the sticky comment shows before deferring to the full report. The
+// scored list arrives worst first, so the cap keeps the rows that matter.
+const COMMENT_ROWS = 30;
+
+/**
+ * The `## CRAP metrics` section: the line, a per-function table, and the
+ * repo-wide scope it was scored in. `rowLimit` caps the table for the
+ * comment; the report has no cap.
+ */
+const crapSection = (crap, rowLimit = Infinity) => {
   const lines = ['## CRAP metrics', '', crapLine(crap), ''];
   if (!crap || crap.status === 'UNAVAILABLE') {
     if (crap?.error) lines.push(crap.error, '');
@@ -97,15 +106,20 @@ const crapSection = (crap) => {
   }
 
   if (crap.scored.length > 0) {
+    const shown = crap.scored.slice(0, rowLimit);
     lines.push(
       '| Function | File | Cognitive | Coverage | CRAP |',
       '|---|---|---|---|---|',
-      ...crap.scored.map(
+      ...shown.map(
         (row) =>
           `| \`${row.name}\` | \`${row.path}:${row.line}\` | ${row.cognitive} | ${percent(row.coverage)} | ${whole(row.crap)} |`,
       ),
       '',
     );
+    const hidden = crap.scored.length - shown.length;
+    if (hidden > 0) {
+      lines.push(`${plural(hidden, 'more function')} in the full report.`, '');
+    }
   }
 
   const unscored = crap.changed.length - crap.scored.length;
@@ -117,40 +131,38 @@ const crapSection = (crap) => {
   }
 
   const { summary } = crap;
-  lines.push(
-    `Scope: ${plural(summary.scored, 'file')} scored, ` +
-      `${percent(summary.clean / summary.scored)} clean, ` +
-      `${summary.atRisk} at risk, median ${summary.median.toFixed(1)}, ` +
-      `p90 ${summary.p90.toFixed(1)}. Scored on cognitive complexity against ` +
-      'measured coverage; see `configs/fallow/README.md`.',
-    '',
-  );
+  if (summary) {
+    lines.push(
+      `Scope: ${plural(summary.scored, 'file')} scored, ` +
+        `${percent(summary.clean / summary.scored)} clean, ` +
+        `${summary.atRisk} at risk, median ${summary.median.toFixed(1)}, ` +
+        `p90 ${summary.p90.toFixed(1)}. Scored on cognitive complexity against ` +
+        'measured coverage; see `configs/fallow/README.md`.',
+      '',
+    );
+  }
   return lines;
 };
 
+/** The `## Blast radius` section, as `pnpm blast-radius` rendered it. */
+const blastSection = (blastMd) =>
+  blastMd?.trimEnd() ?? '## Blast radius\n\nUnavailable.';
+
 /**
- * The sticky comment: more than the line, less than the report. The at-risk
- * rows are the one piece of detail a reader acts on without opening anything.
+ * The report: CRAP first, then the blast radius. The job summary and the
+ * check run carry it whole.
  */
-const commentBody = (blast, crap, sha, runUrl) => {
-  const lines = [
-    `**PR metrics** for \`${sha}\`${runUrl ? ` · [full report](${runUrl})` : ''}`,
-    '',
-    blastLine(blast),
-    '',
-    crapLine(crap),
-  ];
-  if (crap?.risky?.length > 0) {
-    lines.push(
-      '',
-      `At risk, CRAP ${crap.at_risk_threshold} or worse:`,
-      ...crap.risky.map(
-        (row) =>
-          `- \`${row.name}\` in \`${row.path}:${row.line}\` — cognitive ${row.cognitive}, ${percent(row.coverage)} covered, CRAP ${whole(row.crap)}`,
-      ),
-    );
-  }
-  return `${lines.join('\n')}\n`;
+const report = (blastMd, crap) =>
+  [...crapSection(crap), blastSection(blastMd)].join('\n');
+
+/**
+ * The sticky comment: the report under a header line, with the CRAP table
+ * capped. This is the surface a reviewer reads without leaving the PR, so it
+ * carries the whole of what they asked to see rather than a pointer to it.
+ */
+const commentBody = (blastMd, crap, sha, runUrl) => {
+  const header = `**PR metrics** for \`${sha}\`${runUrl ? ` · [full report](${runUrl})` : ''}`;
+  return `${[header, '', ...crapSection(crap, COMMENT_ROWS), blastSection(blastMd)].join('\n')}\n`;
 };
 
 const blast = readJson(values.blast);
@@ -166,20 +178,14 @@ const line = [blastLine(blast), crapLine(crap), link]
   .filter(Boolean)
   .join(' · ');
 
+const blastMd = read(values['blast-md']);
+
 if (values.summary) {
-  const blastMd = read(values['blast-md']);
-  appendFileSync(
-    values.summary,
-    [
-      blastMd?.trimEnd() ?? '## Blast radius\n\nUnavailable.',
-      '',
-      ...crapSection(crap),
-    ].join('\n'),
-  );
+  appendFileSync(values.summary, `${report(blastMd, crap)}\n`);
 }
 
 if (values.comment) {
-  writeFileSync(values.comment, commentBody(blast, crap, sha, runUrl));
+  writeFileSync(values.comment, commentBody(blastMd, crap, sha, runUrl));
 }
 
 process.stdout.write(line.replace(/\s*\n\s*/g, ' '));
