@@ -40,6 +40,9 @@ import {
 } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
+/** The per-selection ballot snapshot, as `vote_data` stores it. */
+type BallotSelections = NonNullable<VoteData['selections']>;
+
 interface PhaseConfig {
   allowProposals: boolean;
   allowDecisions: boolean;
@@ -83,11 +86,13 @@ function getCurrentPhaseConfig(processInstance: {
 }
 
 /**
- * The budget unit this process counts in, and — when a budget cap applies —
- * what each of `selectedProposals` costs in it.
+ * What each of `selectedProposals` costs, in the unit the process counts in.
  *
  * The costs come from the live document fragments, not the proposalData
  * snapshot, so a budget edited after submission is the one enforced.
+ *
+ * A phase with no budget cap resolves nothing — neither the template nor the
+ * documents — because every cost would go unread.
  */
 async function resolveBallotCosts({
   processInstance,
@@ -98,18 +103,17 @@ async function resolveBallotCosts({
   selectedProposals: Array<{ id: string; proposalData: unknown }>;
   voterBudget: number | undefined;
 }): Promise<{ unit: AmountUnit; costs: Map<string, BudgetData | null> }> {
+  if (voterBudget === undefined) {
+    return { unit: DEFAULT_AMOUNT_UNIT, costs: new Map() };
+  }
+
   const proposalTemplate = await resolveProposalTemplate(
     processInstance.instanceData as Record<string, unknown> | null,
     processInstance.processId,
   );
-  const unit = getTemplateBudgetUnit(proposalTemplate) ?? DEFAULT_AMOUNT_UNIT;
-
-  if (voterBudget === undefined) {
-    return { unit, costs: new Map() };
-  }
 
   return {
-    unit,
+    unit: getTemplateBudgetUnit(proposalTemplate) ?? DEFAULT_AMOUNT_UNIT,
     costs: await resolveProposalBudgets(selectedProposals, proposalTemplate),
   };
 }
@@ -148,30 +152,30 @@ async function priceAndValidateBallot({
   data,
   phaseConfig,
   processInstance,
-  eligibleProposals,
+  selectedProposals,
+  eligibleProposalIds,
   maxVotesPerMember,
 }: {
   data: SubmitVoteInput;
   phaseConfig: PhaseConfig;
   processInstance: { instanceData: unknown; processId: string };
-  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
+  selectedProposals: Array<{ id: string; proposalData: unknown }>;
+  eligibleProposalIds: ReadonlySet<string>;
   maxVotesPerMember: number | undefined;
 }): Promise<{
   unit: AmountUnit;
-  costs: ReadonlyMap<string, BudgetData | null>;
+  selections: BallotSelections;
   totalCost: number;
 }> {
   const selection = validateVoteSelection(
     data.selectedProposalIds,
     maxVotesPerMember,
-    eligibleProposals.map((p) => p.id),
+    [...eligibleProposalIds],
   );
 
   const { unit, costs } = await resolveBallotCosts({
     processInstance,
-    selectedProposals: eligibleProposals.filter((p) =>
-      data.selectedProposalIds.includes(p.id),
-    ),
+    selectedProposals,
     voterBudget: phaseConfig.voterBudget,
   });
 
@@ -182,14 +186,22 @@ async function priceAndValidateBallot({
     unit,
   );
 
-  if (phaseConfig.voterBudget !== undefined) {
-    warnOnUnresolvableCosts({
-      processInstanceId: data.processInstanceId,
-      selectedProposalIds: data.selectedProposalIds,
-      costs,
-      unit,
-    });
-  }
+  // What the ballot was made of, kept on the submission so tallying can read
+  // it later without re-resolving budgets that may have moved on.
+  const selections = data.selectedProposalIds.map((proposalId, index) => ({
+    proposalId,
+    cost: resolveUnitAmount(costs.get(proposalId), unit)?.amount ?? null,
+    ...(phaseConfig.ranked && { rank: index + 1 }),
+  }));
+
+  // Before the throw: a rejection caused by a cost nobody could price is
+  // exactly the case worth seeing in the logs.
+  warnOnUnpricedSelections({
+    processInstanceId: data.processInstanceId,
+    selections,
+    costs,
+    unit,
+  });
 
   const errors = [...selection.errors, ...budget.errors];
 
@@ -197,29 +209,29 @@ async function priceAndValidateBallot({
     throw new ValidationError(`Invalid vote selection: ${errors.join(', ')}`);
   }
 
-  return { unit, costs, totalCost: budget.totalCost };
+  return { unit, selections, totalCost: budget.totalCost };
 }
 
 /**
- * Flags selections a budget cap could not price, so a template whose unit no
- * longer matches its stored values is visible rather than silently free.
- * Never names the voter — a ballot is secret.
+ * Flags a selection that carried a budget the process unit could not price, so
+ * a template whose unit no longer matches its stored values is visible rather
+ * than silently free. Never names the voter — a ballot is secret.
  */
-function warnOnUnresolvableCosts({
+function warnOnUnpricedSelections({
   processInstanceId,
-  selectedProposalIds,
+  selections,
   costs,
   unit,
 }: {
   processInstanceId: string;
-  selectedProposalIds: string[];
+  selections: BallotSelections;
   costs: ReadonlyMap<string, BudgetData | null>;
   unit: AmountUnit;
 }): void {
-  for (const proposalId of selectedProposalIds) {
-    const budget = costs.get(proposalId);
-
-    if (budget != null && resolveUnitAmount(budget, unit) === null) {
+  for (const { proposalId, cost } of selections) {
+    // A proposal with no stored budget is free by design; only one that has
+    // a budget we failed to read is worth a warning.
+    if (cost === null && costs.get(proposalId) != null) {
       logger.warn('Proposal budget is unresolvable in the process unit', {
         processInstanceId,
         proposalId,
@@ -401,10 +413,11 @@ export const submitVote = async ({
     const eligibleProposals = availableProposals.filter((p) =>
       isVotingEligible(p.status),
     );
+    const eligibleProposalIds = new Set(eligibleProposals.map((p) => p.id));
 
     // Check if all selected proposals are eligible
     const hasIneligibleSelections = data.selectedProposalIds.some(
-      (id) => !eligibleProposals.some((p) => p.id === id),
+      (id) => !eligibleProposalIds.has(id),
     );
 
     if (hasIneligibleSelections) {
@@ -413,11 +426,14 @@ export const submitVote = async ({
       );
     }
 
-    const { unit, costs, totalCost } = await priceAndValidateBallot({
+    const { unit, selections, totalCost } = await priceAndValidateBallot({
       data,
       phaseConfig,
       processInstance,
-      eligibleProposals,
+      selectedProposals: eligibleProposals.filter((p) =>
+        data.selectedProposalIds.includes(p.id),
+      ),
+      eligibleProposalIds,
       maxVotesPerMember: votingConfig.maxVotesPerMember,
     });
 
@@ -433,13 +449,7 @@ export const submitVote = async ({
         data.selectedProposalIds,
         profileId,
       ),
-      // What the ballot was made of, kept on the submission so tallying can
-      // read it later without re-resolving budgets that may have moved on.
-      selections: data.selectedProposalIds.map((proposalId, index) => ({
-        proposalId,
-        cost: resolveUnitAmount(costs.get(proposalId), unit)?.amount ?? null,
-        ...(phaseConfig.ranked && { rank: index + 1 }),
-      })),
+      selections,
       // Only meaningful when a cap actually applied.
       ...(phaseConfig.voterBudget !== undefined && {
         voterBudget: phaseConfig.voterBudget,
