@@ -107,7 +107,7 @@ jobs:
         id: pnpm-cache
         shell: bash
         run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
 
       - name: Setup pnpm cache
         uses: actions/cache@v4
@@ -206,8 +206,6 @@ jobs:
       # Produced by the `measure` job while running PR code. Passed through
       # the environment and files, never interpolated into a script.
       METRICS_LINE: ${{ needs.measure.outputs.line }}
-      COMMENT_FILE: ${{ runner.temp }}/in/comment.md
-      REPORT_FILE: ${{ runner.temp }}/in/report.md
 
     steps:
       - name: Checkout the publishing script from the base branch
@@ -223,5 +221,10 @@ jobs:
           name: pr-metrics
           path: ${{ runner.temp }}/in
 
+      # `runner` is a step-level context; naming it in the job's `env` makes
+      # GitHub reject the whole workflow file before any job starts.
       - name: Rewrite the body line, the comment and the check run
+        env:
+          COMMENT_FILE: ${{ runner.temp }}/in/comment.md
+          REPORT_FILE: ${{ runner.temp }}/in/report.md
         run: node scripts/pr-metrics-publish.mjs publish
