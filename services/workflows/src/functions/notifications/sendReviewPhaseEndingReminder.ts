@@ -51,7 +51,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         return undefined;
       }
 
-      return { ...instance, observedAt: new Date().toISOString() };
+      return instance;
     });
 
     if (!instanceData) {
@@ -114,7 +114,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const now = new Date(instanceData.observedAt);
+    const now = new Date();
 
     if (endDate.getTime() <= now.getTime()) {
       logger.info(
@@ -124,16 +124,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
           phaseId,
         },
       );
-      return;
-    }
-
-    const daysLeft = computeDaysLeft({ phaseId, phases, now });
-
-    if (!daysLeft) {
-      logger.info('Skipping review phase reminder: no days left to report', {
-        processInstanceId,
-        phaseId,
-      });
       return;
     }
 
@@ -150,7 +140,11 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     const phaseName = phase.name || phaseId;
     const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${profileSlug}/current`;
 
-    const emails = await step.run('plan-reviewer-emails', async () => {
+    const plan = await step.run('plan-reviewer-emails', async () => {
+      // Computed inside the step so a retry renders the same email: the
+      // Resend idempotency key rejects a retry whose payload differs.
+      const daysLeft = computeDaysLeft({ phaseId, phases });
+
       const remainingByReviewer = await db
         .select({
           reviewerProfileId: proposalReviewAssignments.reviewerProfileId,
@@ -202,8 +196,18 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         });
       }
 
-      return planned;
+      return { daysLeft, emails: planned };
     });
+
+    if (!plan.daysLeft) {
+      logger.info('Skipping review phase reminder: no days left to report', {
+        processInstanceId,
+        phaseId,
+      });
+      return;
+    }
+
+    const { daysLeft, emails } = plan;
 
     if (emails.length === 0) {
       return {

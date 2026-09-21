@@ -10,8 +10,6 @@ const REMINDER_DAYS_BEFORE_END = 3;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-const FAN_OUT_CHUNK = 500;
-
 export const sendReviewPhaseEndingReminders = inngest.createFunction(
   {
     id: 'decisions-review-phase-ending-reminders',
@@ -83,15 +81,13 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
       return { remindersQueued: 0 };
     }
 
-    for (let offset = 0; offset < reminders.length; offset += FAN_OUT_CHUNK) {
-      await step.sendEvent(
-        `fan-out-reminders-${offset / FAN_OUT_CHUNK}`,
-        reminders.slice(offset, offset + FAN_OUT_CHUNK).map((reminder) => ({
-          name: reviewPhaseEndingSoon.name,
-          data: reminder,
-        })),
-      );
-    }
+    await step.sendEvent(
+      'fan-out-reminders',
+      reminders.map((reminder) => ({
+        name: reviewPhaseEndingSoon.name,
+        data: reminder,
+      })),
+    );
 
     return { remindersQueued: reminders.length };
   },
