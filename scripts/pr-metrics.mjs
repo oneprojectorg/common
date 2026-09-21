@@ -5,20 +5,22 @@
  *
  *   node scripts/pr-metrics.mjs --blast <blast.json> --blast-md <blast.md>
  *                               --crap <crap.json> --run-url <url> --sha <sha>
- *                               [--summary <file>]
+ *                               [--summary <file>] [--comment <file>]
  *
- * Inputs are the `--json` and markdown outputs of the toolkit's
- * `blast-radius.ts` and the `--json` output of `pnpm health`. Any input that
- * is missing or unreadable turns into the word "unavailable" in its slot
- * rather than a failure: the line is a report of what CI could measure, and
- * "could not measure" is one of the answers.
+ * Inputs are the `--json` and markdown outputs of `pnpm blast-radius` and the
+ * `--json` output of `pnpm health`. Any input that is missing or unreadable
+ * turns into the word "unavailable" in its slot rather than a failure: the
+ * line is a report of what CI could measure, and "could not measure" is one
+ * of the answers.
  *
  * stdout is exactly one line with no newline, so the workflow can carry it as
- * a job output. The summary file (`$GITHUB_STEP_SUMMARY`) gets the blast-radius
- * section verbatim and a per-function CRAP table, which is where the detail the
- * `pr-description` skill used to paste into the body now lives.
+ * a job output. Two optional files hold the longer forms: `--summary` gets the
+ * blast-radius section verbatim and a per-function CRAP table (the job summary
+ * and the check run), `--comment` gets the middle ground for the sticky
+ * comment — the line, split in two, plus the functions at risk, and nothing
+ * else.
  */
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 const { values } = parseArgs({
@@ -29,6 +31,7 @@ const { values } = parseArgs({
     'run-url': { type: 'string' },
     sha: { type: 'string' },
     summary: { type: 'string' },
+    comment: { type: 'string' },
   },
 });
 
@@ -125,12 +128,38 @@ const crapSection = (crap) => {
   return lines;
 };
 
+/**
+ * The sticky comment: more than the line, less than the report. The at-risk
+ * rows are the one piece of detail a reader acts on without opening anything.
+ */
+const commentBody = (blast, crap, sha, runUrl) => {
+  const lines = [
+    `**PR metrics** for \`${sha}\`${runUrl ? ` · [full report](${runUrl})` : ''}`,
+    '',
+    blastLine(blast),
+    '',
+    crapLine(crap),
+  ];
+  if (crap?.risky?.length > 0) {
+    lines.push(
+      '',
+      `At risk, CRAP ${crap.at_risk_threshold} or worse:`,
+      ...crap.risky.map(
+        (row) =>
+          `- \`${row.name}\` in \`${row.path}:${row.line}\` — cognitive ${row.cognitive}, ${percent(row.coverage)} covered, CRAP ${whole(row.crap)}`,
+      ),
+    );
+  }
+  return `${lines.join('\n')}\n`;
+};
+
 const blast = readJson(values.blast);
 const crap = readJson(values.crap);
 const sha = (values.sha ?? '').slice(0, 7);
+const runUrl = values['run-url'];
 
-const link = values['run-url']
-  ? `[full report](${values['run-url']})${sha ? ` for ${sha}` : ''}`
+const link = runUrl
+  ? `[full report](${runUrl})${sha ? ` for ${sha}` : ''}`
   : null;
 
 const line = [blastLine(blast), crapLine(crap), link]
@@ -147,6 +176,10 @@ if (values.summary) {
       ...crapSection(crap),
     ].join('\n'),
   );
+}
+
+if (values.comment) {
+  writeFileSync(values.comment, commentBody(blast, crap, sha, runUrl));
 }
 
 process.stdout.write(line.replace(/\s*\n\s*/g, ' '));

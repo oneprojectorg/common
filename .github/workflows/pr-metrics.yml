@@ -1,16 +1,16 @@
 name: PR metrics
 
 # Measures the review metrics the `pr-description` skill asks for — blast
-# radius and CRAP — on every push to a PR, and rewrites one line at the end of
-# the PR body with the result. The full reports go to the job summary, linked
-# from that line. Nothing here is a required check: the numbers are for the
-# reviewer, and a failure to measure reads "unavailable" in the body rather
-# than blocking the merge.
+# radius and CRAP — on every push to a PR, and publishes the result to three
+# surfaces under trial: one line at the end of the PR body, a sticky comment,
+# and a check run. The full reports go to the job summary and the check run.
+# Nothing here is a required check: the numbers are for the reviewer, and a
+# failure to measure reads "unavailable" rather than blocking the merge.
 #
-# Two jobs, on purpose. `measure` checks out and runs the PR's code, so it gets
-# a read-only token. `publish` holds the token that can edit the PR, so it runs
-# no PR code: it checks out the splice script from the base branch and treats
-# the measured line strictly as data.
+# Three jobs, on purpose. `measure` checks out and runs the PR's code, so it
+# gets a read-only token. `announce` and `publish` hold the token that can
+# write to the PR, so they run no PR code: they check out the publishing script
+# from the base branch and treat the measured text strictly as data.
 
 on:
   pull_request_target:
@@ -24,6 +24,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Posts the "measuring…" comment and opens an in-progress check run before
+  # the measurement starts, so the reader knows a result is coming.
+  announce:
+    name: Announce
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    outputs:
+      check_run_id: ${{ steps.announce.outputs.check_run_id }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Checkout the publishing script from the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: scripts
+
+      - name: Post the placeholder comment and open the check run
+        id: announce
+        run: node scripts/pr-metrics-publish.mjs announce
+
   measure:
     name: Measure
     runs-on: ubuntu-latest
@@ -92,8 +120,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Two passes: the markdown section for the job summary and the JSON the
-      # body line is built from. Around ten seconds each on a normal PR. Run
+      # Two passes: the markdown section for the report and the JSON the body
+      # line is built from. Around ten seconds each on a normal PR. Run
       # through pnpm so `fallow`, a root devDependency, is on PATH.
       - name: Measure the blast radius
         continue-on-error: true
@@ -128,57 +156,72 @@ jobs:
 
       # Runs even when Supabase or the install broke above: the line then reads
       # "unavailable" for what could not be measured, which is still an answer.
-      - name: Compose the PR line and the job summary
+      - name: Compose the line, the comment and the report
         id: compose
         if: always()
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          mkdir -p "$RUNNER_TEMP/out"
           line=$(node scripts/pr-metrics.mjs \
             --blast "$RUNNER_TEMP/blast.json" \
             --blast-md "$RUNNER_TEMP/blast.md" \
             --crap "$RUNNER_TEMP/crap.json" \
             --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --sha "$HEAD_SHA" \
-            --summary "$GITHUB_STEP_SUMMARY")
+            --summary "$RUNNER_TEMP/out/report.md" \
+            --comment "$RUNNER_TEMP/out/comment.md")
           echo "$line"
           echo "line=$line" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/out/report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      # The report is too long for a job output, so it travels as an artifact.
+      - name: Upload the report and the comment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-metrics
+          path: ${{ runner.temp }}/out
+          retention-days: 7
 
   publish:
-    name: Update the PR description
-    needs: measure
-    if: always() && needs.measure.outputs.line != ''
+    name: Publish
+    needs: [announce, measure]
+    # Always, so a failed measurement still replaces "measuring…" with a
+    # failure note and closes the check run.
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       pull-requests: write
+      checks: write
 
     env:
       GH_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      # Job outputs are strings the `measure` job produced while running PR
-      # code. Passed through the environment, never interpolated into a script.
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      CHECK_RUN_ID: ${{ needs.announce.outputs.check_run_id }}
+      # Produced by the `measure` job while running PR code. Passed through
+      # the environment and files, never interpolated into a script.
       METRICS_LINE: ${{ needs.measure.outputs.line }}
+      COMMENT_FILE: ${{ runner.temp }}/in/comment.md
+      REPORT_FILE: ${{ runner.temp }}/in/report.md
 
     steps:
-      # The splice script comes from the base branch, which is the code the
-      # repository already trusts — not from the PR under measurement.
-      - name: Checkout the splice script from the base branch
+      - name: Checkout the publishing script from the base branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           sparse-checkout: scripts
-          sparse-checkout-cone-mode: true
 
-      - name: Rewrite the metrics line in the PR body
-        run: |
-          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.body // ""' > "$RUNNER_TEMP/body.md"
-          printf '%s\n' "$METRICS_LINE" > "$RUNNER_TEMP/line.md"
-          node scripts/pr-metrics-body.mjs "$RUNNER_TEMP/body.md" "$RUNNER_TEMP/line.md" > "$RUNNER_TEMP/next.md"
-          if cmp --silent "$RUNNER_TEMP/body.md" "$RUNNER_TEMP/next.md"; then
-            echo "Body already carries this line."
-            exit 0
-          fi
-          jq --null-input --rawfile body "$RUNNER_TEMP/next.md" '{body: $body}' \
-            | gh api --method PATCH "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --input - --silent
+      - name: Download the report and the comment
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-metrics
+          path: ${{ runner.temp }}/in
+
+      - name: Rewrite the body line, the comment and the check run
+        run: node scripts/pr-metrics-publish.mjs publish
