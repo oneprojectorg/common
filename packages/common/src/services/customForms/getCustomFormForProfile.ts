@@ -1,5 +1,13 @@
-import { and, db, eq, inArray, isNull, or } from '@op/db/client';
-import type { CustomForm } from '@op/db/schema';
+import {
+  and,
+  db,
+  eq,
+  getTableColumns,
+  inArray,
+  isNull,
+  or,
+} from '@op/db/client';
+import type { CustomForm, CustomFormSubmission } from '@op/db/schema';
 import { customFormSubmissions, proposals } from '@op/db/schema';
 
 import { assertUserByAuthId } from '../assert';
@@ -37,9 +45,9 @@ export const getCustomFormForProfile = async ({
     return null;
   }
 
-  const answered = await hasAnswered({ formId: form.id, authUserId });
+  const answer = await getCallerSubmission({ formId: form.id, authUserId });
 
-  return answered ? null : form;
+  return answer ? null : form;
 };
 
 const getFormForPhase = async ({
@@ -79,18 +87,20 @@ const getFormForPhase = async ({
 };
 
 /**
+ * The caller's own answer to a form, or null when they have not given one.
+ *
  * A submission row points at the entity the answers were collected against, not
  * at the person who gave them — the proposal's profile for a submission form,
  * the participant's own profile for a post-vote one. Both attachment sites
  * `createCustomFormSubmission` accepts are resolved back to the caller here.
  */
-const hasAnswered = async ({
+const getCallerSubmission = async ({
   formId,
   authUserId,
 }: {
   formId: string;
   authUserId: string;
-}): Promise<boolean> => {
+}): Promise<CustomFormSubmission | null> => {
   const user = await assertUserByAuthId(authUserId);
 
   // A proposal records the profile its author was acting as, which can be an
@@ -101,11 +111,11 @@ const hasAnswered = async ({
   ].filter((id): id is string => id != null);
 
   if (callerProfileIds.length === 0) {
-    return false;
+    return null;
   }
 
   const [answer] = await db
-    .select({ id: customFormSubmissions.id })
+    .select(getTableColumns(customFormSubmissions))
     .from(customFormSubmissions)
     .leftJoin(
       proposals,
@@ -123,5 +133,5 @@ const hasAnswered = async ({
     )
     .limit(1);
 
-  return !!answer;
+  return answer ?? null;
 };

@@ -26,6 +26,7 @@ vi.mock('@op/db/client', () => ({
   },
   and: (...args: unknown[]) => args,
   eq: (...args: unknown[]) => args,
+  getTableColumns: (table: unknown) => table,
   inArray: (...args: unknown[]) => args,
   isNull: (...args: unknown[]) => args,
   or: (...args: unknown[]) => args,
@@ -127,7 +128,14 @@ describe('getCustomFormForProfile', () => {
 
   it('returns null when the caller already submitted the matched form', async () => {
     findMany.mockResolvedValue([form({ 'x-phase': 'submission' })]);
-    submissionLimit.mockResolvedValue([{ id: 'submission-row' }]);
+    submissionLimit.mockResolvedValue([
+      {
+        id: 'submission-row',
+        customFormId: 'form',
+        profileId: 'caller',
+        data: { neighborhood: 'Downtown' },
+      },
+    ]);
 
     const result = await getCustomFormForProfile({
       profileId: 'p1',
