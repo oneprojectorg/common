@@ -137,10 +137,10 @@ const BuilderContent = ({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{form ? t('Edit form') : t('New form')}</DialogTitle>
-        <DialogDescription>
-          {t('Participants fill this in during the phase you choose.')}
-        </DialogDescription>
+        <DialogTitle>
+          {form ? t('admin.editFormTitle') : t('admin.newFormAction')}
+        </DialogTitle>
+        <DialogDescription>{t('admin.formDialogSubtitle')}</DialogDescription>
       </DialogHeader>
 
       {/* DialogContent is the scroll container and pins the header and footer;
@@ -165,7 +165,7 @@ const BuilderContent = ({
           {t('Cancel')}
         </Button>
         <Button loading={isSaving} onClick={handleSave}>
-          {form ? t('Save changes') : t('Create form')}
+          {form ? t('Save changes') : t('admin.createFormAction')}
         </Button>
       </DialogFooter>
     </>
@@ -189,7 +189,9 @@ const useSaveCustomForm = ({
 
   const handlers = {
     onSuccess: () => {
-      toast.success(form ? t('Form updated') : t('Form created'));
+      toast.success(
+        form ? t('admin.formUpdatedToast') : t('admin.formCreatedToast'),
+      );
       onSaved();
     },
     onError: (error: { message: string }) => onFailed([error.message]),
@@ -231,20 +233,20 @@ const FormDetailsFields = ({
     <>
       <Field>
         <FieldLabel htmlFor={`${fieldId}-name`}>
-          {t('Internal name')}
+          {t('admin.formInternalNameLabel')}
         </FieldLabel>
         <Input
           id={`${fieldId}-name`}
           value={draft.name}
           onChange={(event) => onChange({ ...draft, name: event.target.value })}
         />
-        <FieldDescription>
-          {t('Only admins see this. Participants see the heading below.')}
-        </FieldDescription>
+        <FieldDescription>{t('admin.formInternalNameHint')}</FieldDescription>
       </Field>
 
       <Field>
-        <FieldLabel htmlFor={`${fieldId}-phase`}>{t('Phase')}</FieldLabel>
+        <FieldLabel htmlFor={`${fieldId}-phase`}>
+          {t('admin.formPhaseLabel')}
+        </FieldLabel>
         <Select
           value={draft.phaseId || null}
           // value → label map, or base-ui's `SelectValue` shows the raw phase
@@ -257,7 +259,7 @@ const FormDetailsFields = ({
           }
         >
           <SelectTrigger id={`${fieldId}-phase`} className="w-full">
-            <SelectValue placeholder={t('Select a phase')} />
+            <SelectValue placeholder={t('admin.formPhasePlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -273,15 +275,13 @@ const FormDetailsFields = ({
             </SelectGroup>
           </SelectContent>
         </Select>
-        <FieldDescription>
-          {t(
-            'A phase can hold one form. Phases that already have one are unavailable.',
-          )}
-        </FieldDescription>
+        <FieldDescription>{t('admin.formPhaseHint')}</FieldDescription>
       </Field>
 
       <Field>
-        <FieldLabel htmlFor={`${fieldId}-title`}>{t('Heading')}</FieldLabel>
+        <FieldLabel htmlFor={`${fieldId}-title`}>
+          {t('admin.formHeadingLabel')}
+        </FieldLabel>
         <Input
           id={`${fieldId}-title`}
           value={draft.title}
@@ -293,7 +293,7 @@ const FormDetailsFields = ({
 
       <Field>
         <FieldLabel htmlFor={`${fieldId}-description`}>
-          {t('Intro text')}
+          {t('admin.formIntroLabel')}
         </FieldLabel>
         <Textarea
           id={`${fieldId}-description`}
@@ -394,12 +394,11 @@ const UnsupportedFormNotice = ({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{t('This form needs an engineer')}</DialogTitle>
+        <DialogTitle>{t('admin.formUnsupportedTitle')}</DialogTitle>
         <DialogDescription>
-          {t(
-            'It uses field types this editor cannot show: {fields}. Saving here would drop them, so edit it directly instead.',
-            { fields: unsupportedKeys.join(', ') },
-          )}
+          {t('admin.formUnsupportedHint', {
+            fields: unsupportedKeys.join(', '),
+          })}
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
@@ -417,18 +416,21 @@ const PROBLEM_MESSAGES: Record<
   Exclude<DraftProblemCode, 'schema'>,
   TranslationKey
 > = {
-  'missing-name': 'Give the form an internal name.',
-  'missing-phase': 'Choose the phase this form appears on.',
-  'missing-title': 'Give the form a heading participants will see.',
-  'no-fields': 'Add at least one field.',
-  'field-missing-question': 'Field {number} needs a question.',
-  'field-missing-options': 'Field {number} needs at least one option.',
+  'missing-name': 'admin.formInternalNameRequiredError',
+  'missing-phase': 'admin.formPhaseRequiredError',
+  'missing-title': 'admin.formHeadingRequiredError',
+  'no-fields': 'admin.formFieldsRequiredError',
+  'field-missing-question': 'admin.fieldQuestionRequiredError',
+  'field-missing-options': 'admin.fieldOptionsRequiredError',
 };
 
 const describeProblem = (problem: DraftProblem, t: TranslateFn): string =>
   problem.code === 'schema'
     ? (problem.detail ?? '')
-    : t(PROBLEM_MESSAGES[problem.code], { number: problem.position });
+    : t(PROBLEM_MESSAGES[problem.code], {
+        // Only the two field messages read it; the other codes carry no position.
+        number: problem.position ?? 0,
+      });
 
 /** Re-derives the key from the label while it is still free to change. */
 const withFieldAt = ({

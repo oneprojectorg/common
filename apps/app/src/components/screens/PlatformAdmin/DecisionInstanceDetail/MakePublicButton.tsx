@@ -20,7 +20,7 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
 
   const makePublic = trpc.platform.admin.makeDecisionPublic.useMutation({
     onSuccess: () => {
-      toast.success(t('This decision is now public.'));
+      toast.success(t('admin.makePublicSuccess'));
       utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
       setIsOpen(false);
     },
@@ -40,17 +40,15 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
   return (
     <AdminActionConfirmation
       trigger={{
-        label: t('Make public'),
+        label: t('admin.makePublicAction'),
         icon: <LuGlobe data-icon="inline-start" />,
         variant: 'outline',
       }}
-      title={t('Make this decision public?')}
-      description={t(
-        'Anyone with the link can then read this decision without an account, and the proposals and comments already in it become readable too. You can remove public access again from this screen.',
-      )}
+      title={t('admin.makePublicConfirmTitle')}
+      description={t('admin.makePublicConfirmHint')}
       confirm={{
-        label: t('Make public'),
-        pendingLabel: t('Publishing…'),
+        label: t('admin.makePublicAction'),
+        pendingLabel: t('admin.publishingProgress'),
         variant: 'default',
       }}
       isPending={makePublic.isPending}
@@ -68,12 +66,12 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
     >
       <fieldset className="flex flex-col gap-2">
         <legend className="text-xs tracking-wide text-muted-foreground uppercase">
-          {t('Public users can')}
+          {t('admin.publicUsersCanLabel')}
         </legend>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           <Label className="flex items-center gap-2 font-normal text-muted-foreground">
             <Checkbox checked disabled />
-            {t('Read the decision')}
+            {t('admin.publicCanReadItem')}
           </Label>
           <Label className="flex items-center gap-2 font-normal">
             <Checkbox
@@ -81,7 +79,7 @@ export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
               disabled={makePublic.isPending}
               onCheckedChange={setCanSubmitProposals}
             />
-            {t('Submit proposals')}
+            {t('admin.publicCanSubmitItem')}
           </Label>
           <Label className="flex items-center gap-2 font-normal">
             <Checkbox

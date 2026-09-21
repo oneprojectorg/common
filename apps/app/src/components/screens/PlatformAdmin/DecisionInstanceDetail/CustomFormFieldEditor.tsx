@@ -45,10 +45,10 @@ export const CustomFormFieldEditor = ({
   const kindLabels: Record<FormFieldKind, string> = {
     'short-text': t('Short text'),
     'long-text': t('Long text'),
-    number: t('Number'),
-    checkbox: t('Checkbox'),
+    number: t('admin.fieldTypeNumber'),
+    checkbox: t('admin.fieldTypeCheckbox'),
     dropdown: t('Dropdown'),
-    radio: t('Radio buttons'),
+    radio: t('admin.fieldTypeRadio'),
     'multi-select': t('decisions.proposals.selectAllThatApplyHint'),
   };
 
@@ -56,14 +56,14 @@ export const CustomFormFieldEditor = ({
     <div className="flex flex-col gap-4 rounded-lg border p-4">
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-sm font-medium">
-          {t('Field {number}', { number: index + 1 })}
+          {t('admin.formFieldTitle', { number: index + 1 })}
         </h4>
         <div className="flex items-center gap-1">
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={t('Move field up')}
+            aria-label={t('admin.moveFieldUpAction')}
             disabled={index === 0}
             onClick={() => onMove(-1)}
           >
@@ -73,7 +73,7 @@ export const CustomFormFieldEditor = ({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={t('Move field down')}
+            aria-label={t('admin.moveFieldDownAction')}
             disabled={index === total - 1}
             onClick={() => onMove(1)}
           >
@@ -83,7 +83,7 @@ export const CustomFormFieldEditor = ({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={t('Remove field')}
+            aria-label={t('admin.removeFieldAction')}
             onClick={onRemove}
           >
             <LuTrash2 />
@@ -92,7 +92,9 @@ export const CustomFormFieldEditor = ({
       </div>
 
       <Field>
-        <FieldLabel htmlFor={`${fieldId}-title`}>{t('Question')}</FieldLabel>
+        <FieldLabel htmlFor={`${fieldId}-title`}>
+          {t('admin.fieldQuestionLabel')}
+        </FieldLabel>
         <Input
           id={`${fieldId}-title`}
           value={field.title}
@@ -102,13 +104,15 @@ export const CustomFormFieldEditor = ({
         />
         {field.key ? (
           <FieldDescription>
-            {t('Answers are stored under {key}', { key: field.key })}
+            {t('admin.fieldStorageKeyHint', { key: field.key })}
           </FieldDescription>
         ) : null}
       </Field>
 
       <Field>
-        <FieldLabel htmlFor={`${fieldId}-kind`}>{t('Answer type')}</FieldLabel>
+        <FieldLabel htmlFor={`${fieldId}-kind`}>
+          {t('admin.fieldAnswerTypeLabel')}
+        </FieldLabel>
         <Select
           value={field.kind}
           // value → label map, or base-ui's `SelectValue` shows the raw kind
@@ -157,7 +161,7 @@ export const CustomFormFieldEditor = ({
 
       <Field>
         <FieldLabel htmlFor={`${fieldId}-description`}>
-          {t('Helper text')}
+          {t('admin.fieldHelperTextLabel')}
         </FieldLabel>
         <Input
           id={`${fieldId}-description`}
@@ -214,7 +218,7 @@ const OptionsField = ({
           onChange(parseOptions(event.target.value));
         }}
       />
-      <FieldDescription>{t('One option per line.')}</FieldDescription>
+      <FieldDescription>{t('admin.fieldOptionsHint')}</FieldDescription>
     </Field>
   );
 };
