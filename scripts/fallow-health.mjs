@@ -6,6 +6,7 @@
  *   node scripts/fallow-health.mjs               # filtered against the committed baseline
  *   node scripts/fallow-health.mjs --full        # every standing finding, no baseline
  *   node scripts/fallow-health.mjs --base <ref>  # compare changed files against <ref>
+ *   node scripts/fallow-health.mjs --json        # the CRAP verdict alone, as one JSON object
  *
  * Fallow renders a fixed section order — score, complexity findings, file
  * scores, hotspots, targets — and opens every run with the one-line metrics
@@ -26,13 +27,19 @@
  * both of those differ from the `crap` column fallow prints in the file-scores
  * section above it.
  *
- * Deliberately not wired into CI. It needs an instrumented run, which needs
- * Docker and the test Supabase and about four minutes; `.github/workflows`
- * keeps the fast checks. This is a local tool.
+ * The prose output is for a terminal. `--json` skips fallow's rendered sections
+ * and prints the CRAP verdict as one object, always exiting 0: it is a report
+ * for another program to render — `.github/workflows/pr-metrics.yml` turns it
+ * into one line in the PR body via `scripts/pr-metrics.mjs` — not a gate. A
+ * missing coverage report comes back as `status: "UNAVAILABLE"` there rather
+ * than a crash, so the PR line can say so.
+ *
+ * Not part of the required checks. It needs an instrumented run, which needs
+ * the test Supabase and several minutes; `pr-checks.yml` keeps the fast gates.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 import {
   AT_RISK,
@@ -51,6 +58,7 @@ import {
 const BASELINE = join(ROOT, 'configs', 'fallow', 'health-baseline.json');
 
 const full = process.argv.includes('--full');
+const json = process.argv.includes('--json');
 
 /** `--base <ref>` or `--base=<ref>`; unset means the default branch chain. */
 const baseOverride = (() => {
@@ -61,7 +69,7 @@ const baseOverride = (() => {
     ?.slice('--base='.length);
 })();
 
-if (!existsSync(COVERAGE)) {
+if (!existsSync(COVERAGE) && !json) {
   console.error(
     `No merged coverage at ${COVERAGE}.\n` +
       'Run `pnpm test:coverage` first — without it there is no per-function coverage\n' +
@@ -183,23 +191,68 @@ const printRisky = (risky, changed) => {
   );
 };
 
-/** The CRAP roll-up and the verdict. Returns true when the change owes work. */
-const crapVerdict = () => {
+/**
+ * The CRAP roll-up as data: the aggregates, the changed files in scope, the
+ * ones at risk, the ones edited after the coverage report, and the verdict
+ * those add up to. Both renderers below read from this.
+ */
+const crapReport = () => {
+  if (!existsSync(COVERAGE)) {
+    return {
+      status: 'UNAVAILABLE',
+      error: `No merged coverage at ${relative(ROOT, COVERAGE)}; run pnpm test:coverage first.`,
+    };
+  }
+
   let scores;
   try {
     scores = crapScores();
   } catch (error) {
-    console.error(`\nCRAP: UNAVAILABLE — ${error.message}`);
-    return false;
+    return { status: 'UNAVAILABLE', error: error.message };
   }
 
   const { files, worst, stats } = scores;
-  printAggregates(summarize(files), comparableTrend(), stats);
-
   const { base, paths } = changedFiles(baseOverride);
   const changed = paths.filter(inCrapScope);
   const risky = crossings(files, worst, changed);
   const stale = staleAmong(changed);
+
+  // Every changed file the report could score, worst first. `risky` is the
+  // slice of this at or above the line; the JSON consumer wants the rest too,
+  // so it can name the worst function even when nothing is at risk.
+  const scored = changed
+    .filter((path) => files[path] !== undefined)
+    .map((path) => ({ path, ...worst[path] }))
+    .sort((a, b) => b.crap - a.crap);
+
+  const status =
+    risky.length > 0 ? 'AT_RISK' : stale.length > 0 ? 'STALE' : 'OK';
+
+  return {
+    status,
+    metric: 'cognitive',
+    at_risk_threshold: AT_RISK,
+    base,
+    changed,
+    scored,
+    risky,
+    stale,
+    summary: summarize(files),
+    trend: comparableTrend(),
+    stats,
+  };
+};
+
+/** The CRAP roll-up and the verdict. Returns true when the change owes work. */
+const crapVerdict = () => {
+  const report = crapReport();
+  if (report.status === 'UNAVAILABLE') {
+    console.error(`\nCRAP: UNAVAILABLE — ${report.error}`);
+    return false;
+  }
+
+  const { base, changed, risky, stale, summary, trend, stats } = report;
+  printAggregates(summary, trend, stats);
 
   console.log(
     `\n  ${changed.length} changed file(s) in scope, against ${base ?? 'HEAD (no base branch resolved)'}`,
@@ -232,6 +285,11 @@ const crapVerdict = () => {
   );
   return false;
 };
+
+if (json) {
+  console.log(JSON.stringify(crapReport(), null, 2));
+  process.exit(0);
+}
 
 // 1. Per-file scores first — fan-in, fan-out, dead code, maintainability.
 run(['--file-scores']);
