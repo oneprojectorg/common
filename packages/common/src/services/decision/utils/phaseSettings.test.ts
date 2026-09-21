@@ -5,6 +5,7 @@ import {
   areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
+  getVoterBudget,
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
   isReviewPhase,
@@ -55,6 +56,44 @@ describe('isVotingPhase', () => {
     expect(isVotingPhase({ rules: { voting: { submit: true } } })).toBe(true);
     expect(isVotingPhase({ rules: { voting: { submit: false } } })).toBe(false);
     expect(isVotingPhase({})).toBe(false);
+  });
+});
+
+describe('getVoterBudget', () => {
+  it('reads a positive cap', () => {
+    expect(getVoterBudget({ rules: { voting: { voterBudget: 5000 } } })).toBe(
+      5000,
+    );
+    expect(getVoterBudget({ rules: { voting: { voterBudget: 0.5 } } })).toBe(
+      0.5,
+    );
+  });
+
+  it('is undefined when no cap is set', () => {
+    expect(getVoterBudget({ rules: { voting: { submit: true } } })).toBe(
+      undefined,
+    );
+    expect(getVoterBudget({ rules: {} })).toBe(undefined);
+    expect(getVoterBudget({})).toBe(undefined);
+  });
+
+  // A cap that is not a usable number degrades to "no cap" — a misconfigured
+  // rule must not take voting down.
+  it('degrades an unusable cap to no cap', () => {
+    expect(getVoterBudget({ rules: { voting: { voterBudget: 0 } } })).toBe(
+      undefined,
+    );
+    expect(getVoterBudget({ rules: { voting: { voterBudget: -10 } } })).toBe(
+      undefined,
+    );
+    expect(
+      getVoterBudget({ rules: { voting: { voterBudget: Number.NaN } } }),
+    ).toBe(undefined);
+    expect(
+      getVoterBudget({
+        rules: { voting: { voterBudget: Number.POSITIVE_INFINITY } },
+      }),
+    ).toBe(undefined);
   });
 });
 

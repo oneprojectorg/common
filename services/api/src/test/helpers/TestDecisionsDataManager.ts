@@ -1,5 +1,6 @@
 import { mockCollab } from '@op/collab/testing';
 import {
+  type BudgetInput,
   type DecisionInstanceData,
   advancePhase,
   createDecisionInstance,
@@ -624,6 +625,11 @@ export class TestDecisionsDataManager {
       title: string;
       description?: string;
       collaborationDocId?: string;
+      /**
+       * Priced proposals — what knapsack voting charges a voter. Typed as the
+       * schema's input so a legacy plain number is still expressible.
+       */
+      budget?: BudgetInput;
     };
     status?: ProposalStatus;
     seedCollabDoc?: boolean;

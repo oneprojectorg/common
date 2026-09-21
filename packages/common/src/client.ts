@@ -17,6 +17,7 @@ export {
   areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
+  getVoterBudget,
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
@@ -195,6 +196,13 @@ export {
   resolveUnitAmount,
   toFixedPointUnits,
 } from './services/decision/budgetUnit';
+// The client reuses these so its affordability check matches the server's.
+export {
+  type ProposalCosts,
+  canAffordProposal,
+  getProposalCost,
+  sumSelectedCost,
+} from './services/decision/voteBudget';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

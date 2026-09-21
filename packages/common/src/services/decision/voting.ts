@@ -20,17 +20,28 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import {
+  type AmountUnit,
+  DEFAULT_AMOUNT_UNIT,
+  getTemplateBudgetUnit,
+  resolveUnitAmount,
+} from './budgetUnit';
 import { decisionPermission } from './permissions';
+import type { BudgetData } from './proposalDataSchema';
+import { resolveProposalBudgets } from './resolveProposalBudgets';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
-import { validateVoteSelection } from './schemaValidators';
+import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { isVotingPhase } from './utils/phaseSettings';
+import { getVoterBudget, isVotingPhase } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
 interface PhaseConfig {
   allowProposals: boolean;
   allowDecisions: boolean;
   maxVotesPerMember: number | undefined;
+  /** Knapsack cap, in the template's budget unit. Undefined = no cap. */
+  voterBudget: number | undefined;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -60,7 +71,69 @@ function getCurrentPhaseConfig(processInstance: {
     allowProposals: currentPhase.rules?.proposals?.submit ?? false,
     allowDecisions: isVotingPhase(currentPhase),
     maxVotesPerMember: currentPhase.rules?.voting?.maxVotesPerMember,
+    voterBudget: getVoterBudget(currentPhase),
   };
+}
+
+/**
+ * The budget unit this process counts in, and — when a budget cap applies —
+ * what each of `selectedProposals` costs in it.
+ *
+ * The costs come from the live document fragments, not the proposalData
+ * snapshot, so a budget edited after submission is the one enforced.
+ */
+async function resolveBallotCosts({
+  processInstance,
+  selectedProposals,
+  voterBudget,
+}: {
+  processInstance: { instanceData: unknown; processId: string };
+  selectedProposals: Array<{ id: string; proposalData: unknown }>;
+  voterBudget: number | undefined;
+}): Promise<{ unit: AmountUnit; costs: Map<string, BudgetData | null> }> {
+  const proposalTemplate = await resolveProposalTemplate(
+    processInstance.instanceData as Record<string, unknown> | null,
+    processInstance.processId,
+  );
+  const unit = getTemplateBudgetUnit(proposalTemplate) ?? DEFAULT_AMOUNT_UNIT;
+
+  if (voterBudget === undefined) {
+    return { unit, costs: new Map() };
+  }
+
+  return {
+    unit,
+    costs: await resolveProposalBudgets(selectedProposals, proposalTemplate),
+  };
+}
+
+/**
+ * Flags selections a budget cap could not price, so a template whose unit no
+ * longer matches its stored values is visible rather than silently free.
+ * Never names the voter — a ballot is secret.
+ */
+function warnOnUnresolvableCosts({
+  processInstanceId,
+  selectedProposalIds,
+  costs,
+  unit,
+}: {
+  processInstanceId: string;
+  selectedProposalIds: string[];
+  costs: ReadonlyMap<string, BudgetData | null>;
+  unit: AmountUnit;
+}): void {
+  for (const proposalId of selectedProposalIds) {
+    const budget = costs.get(proposalId);
+
+    if (budget != null && resolveUnitAmount(budget, unit) === null) {
+      logger.warn('Proposal budget is unresolvable in the process unit', {
+        processInstanceId,
+        proposalId,
+        unitKind: unit.kind,
+      });
+    }
+  }
 }
 
 function buildVotingSchemaResult(phaseConfig: PhaseConfig) {
@@ -115,12 +188,15 @@ export interface VotingStatusResult {
   selectedProposals: Array<{
     id: string;
     title: string;
-    amount?: number;
     schemaSpecificDisplay?: any;
   }> | null;
   votingConfiguration: {
     allowDecisions: boolean;
     maxVotesPerMember: number | undefined;
+    /** Knapsack cap, in `budgetUnit`. Undefined = no budget cap. */
+    voterBudget: number | undefined;
+    /** Unit the cap is counted in; undefined when the template collects no budget. */
+    budgetUnit: AmountUnit | undefined;
     schemaType: string;
     isReadOnly: boolean;
   };
@@ -144,7 +220,10 @@ export interface VoteValidationResult {
 
 const createVoteSignature = (proposalIds: string[], userId: string): string => {
   const data = {
-    proposalIds: proposalIds.sort(),
+    // Copy before sorting: `sort` is in place, and the caller's array is the
+    // ballot in submission order — which the snapshot (and ranked voting)
+    // depends on.
+    proposalIds: [...proposalIds].sort(),
     userId,
     timestamp: new Date().toISOString(),
   };
@@ -173,6 +252,7 @@ export const submitVote = async ({
         id: true,
         profileId: true,
         ownerProfileId: true,
+        processId: true,
         instanceData: true,
         currentStateId: true,
       },
@@ -261,10 +341,35 @@ export const submitVote = async ({
       eligibleProposalIds,
     );
 
-    if (!validation.isValid) {
-      throw new ValidationError(
-        `Invalid vote selection: ${validation.errors.join(', ')}`,
-      );
+    // The count cap and the budget cap are independent, so both run and the
+    // voter sees everything that is wrong with the ballot at once.
+    const { unit, costs } = await resolveBallotCosts({
+      processInstance,
+      selectedProposals: eligibleProposals.filter((p) =>
+        data.selectedProposalIds.includes(p.id),
+      ),
+      voterBudget: phaseConfig.voterBudget,
+    });
+    const budgetValidation = validateVoteBudget(
+      data.selectedProposalIds,
+      phaseConfig.voterBudget,
+      costs,
+      unit,
+    );
+
+    if (phaseConfig.voterBudget !== undefined) {
+      warnOnUnresolvableCosts({
+        processInstanceId: data.processInstanceId,
+        selectedProposalIds: data.selectedProposalIds,
+        costs,
+        unit,
+      });
+    }
+
+    const errors = [...validation.errors, ...budgetValidation.errors];
+
+    if (errors.length > 0) {
+      throw new ValidationError(`Invalid vote selection: ${errors.join(', ')}`);
     }
 
     // Create vote submission record
@@ -279,6 +384,18 @@ export const submitVote = async ({
         data.selectedProposalIds,
         profileId,
       ),
+      // What the ballot was made of, kept on the submission so tallying can
+      // read it later without re-resolving budgets that may have moved on.
+      selections: data.selectedProposalIds.map((proposalId) => ({
+        proposalId,
+        cost: resolveUnitAmount(costs.get(proposalId), unit)?.amount ?? null,
+      })),
+      // Only meaningful when a cap actually applied.
+      ...(phaseConfig.voterBudget !== undefined && {
+        voterBudget: phaseConfig.voterBudget,
+        budgetUnit: unit,
+        totalCost: budgetValidation.totalCost,
+      }),
     };
 
     // Use transaction to create vote submission and join table entries
@@ -369,6 +486,7 @@ export const getVotingStatus = async ({
         id: true,
         profileId: true,
         ownerProfileId: true,
+        processId: true,
         instanceData: true,
         currentStateId: true,
       },
@@ -434,11 +552,17 @@ export const getVotingStatus = async ({
       selectedProposals = voteSubmission.voteProposals.map((vp) => ({
         id: vp.proposal.id,
         title: vp.proposal.profile?.name || 'Untitled',
-        amount: (vp.proposal.proposalData as any)?.amount,
         schemaSpecificDisplay: (vp.proposal.proposalData as any)
           ?.schemaSpecificDisplay,
       }));
     }
+
+    // The unit the cap is expressed in lives on the template, so the client
+    // can render "x of y" without re-deriving it.
+    const proposalTemplate = await resolveProposalTemplate(
+      processInstance.instanceData as Record<string, unknown> | null,
+      processInstance.processId,
+    );
 
     return {
       hasVoted: !!voteSubmission,
@@ -458,6 +582,8 @@ export const getVotingStatus = async ({
       votingConfiguration: {
         allowDecisions: votingConfig.allowDecisions,
         maxVotesPerMember: votingConfig.maxVotesPerMember,
+        voterBudget: phaseConfig.voterBudget,
+        budgetUnit: getTemplateBudgetUnit(proposalTemplate),
         schemaType: schemaResult.schemaType,
         isReadOnly: !!voteSubmission || !votingConfig.allowDecisions,
       },

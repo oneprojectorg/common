@@ -1,3 +1,5 @@
+import { mockCollab } from '@op/collab/testing';
+import type { AmountUnit, BudgetData } from '@op/common/client';
 import { ProposalStatus, processInstances } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
@@ -23,16 +25,55 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+interface VotingSchemaOptions {
+  maxVotesPerMember?: number;
+  /** Knapsack cap on the voting phase, in `budgetUnit`. */
+  voterBudget?: number;
+  /**
+   * Unit the proposal template's budget field declares. Omit to leave the
+   * template without a budget field at all.
+   */
+  budgetUnit?: AmountUnit;
+}
+
+/** The proposal template a process counting in `unit` would carry. */
+function buildProposalTemplate(unit: AmountUnit) {
+  return {
+    type: 'object',
+    properties: {
+      title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+      budget: {
+        type: 'object',
+        title: 'Budget',
+        'x-format': 'money',
+        'x-unit': unit,
+        properties: {
+          amount: { type: 'number' },
+          ...(unit.kind === 'currency'
+            ? { currency: { type: 'string', default: unit.code } }
+            : {}),
+        },
+      },
+    },
+    required: ['title'],
+  };
+}
+
 /**
  * Voting schema with three phases: submission, voting, results.
  * `maxVotesPerMember` can be overridden per test by caller-side edits to the returned object.
  */
-function buildVotingSchema(maxVotesPerMember?: number) {
+function buildVotingSchema({
+  maxVotesPerMember,
+  voterBudget,
+  budgetUnit,
+}: VotingSchemaOptions = {}) {
   return {
     id: 'voting-test',
     version: '1.0.0',
     name: 'Voting Test Schema',
     description: 'Schema for voting integration tests',
+    ...(budgetUnit && { proposalTemplate: buildProposalTemplate(budgetUnit) }),
     phases: [
       {
         id: 'submission',
@@ -51,6 +92,7 @@ function buildVotingSchema(maxVotesPerMember?: number) {
           voting: {
             submit: true,
             ...(maxVotesPerMember !== undefined && { maxVotesPerMember }),
+            ...(voterBudget !== undefined && { voterBudget }),
           },
           advancement: { method: 'manual' as const },
         },
@@ -70,16 +112,20 @@ function buildVotingSchema(maxVotesPerMember?: number) {
 
 async function setupVotingInstance(
   testData: TestDecisionsDataManager,
-  opts: {
-    maxVotesPerMember?: number;
+  opts: VotingSchemaOptions & {
     proposalCount: number;
     votingEnabled?: boolean;
+    /**
+     * Budget for the proposal at each index, so a test can price its pool.
+     * A shorter array leaves the remaining proposals without a budget.
+     */
+    proposalBudgets?: Array<BudgetData | undefined>;
   },
 ) {
   const setup = await testData.createDecisionSetup({
     instanceCount: 1,
     grantAccess: true,
-    processSchema: buildVotingSchema(opts.maxVotesPerMember),
+    processSchema: buildVotingSchema(opts),
   });
 
   const instance = setup.instance;
@@ -89,7 +135,12 @@ async function setupVotingInstance(
       testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
-        proposalData: { title: `Proposal ${i + 1}` },
+        proposalData: {
+          title: `Proposal ${i + 1}`,
+          ...(opts.proposalBudgets?.[i] && {
+            budget: opts.proposalBudgets[i],
+          }),
+        },
         status: ProposalStatus.SUBMITTED,
       }),
     ),
@@ -186,7 +237,331 @@ describe.concurrent('submitVote', () => {
   });
 });
 
+describe.concurrent('submitVote knapsack budget', () => {
+  const USD: AmountUnit = { kind: 'currency', code: 'USD' };
+  const POINTS: AmountUnit = { kind: 'custom', label: 'points' };
+
+  /** The ballot snapshot the submission stored. */
+  async function readVoteData(voteSubmissionId: string) {
+    const row = await db.query.decisionsVoteSubmissions.findFirst({
+      where: { id: voteSubmissionId },
+    });
+
+    return row?.voteData;
+  }
+
+  it('accepts a ballot under the voter budget and snapshots what it enforced', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 1000,
+      budgetUnit: USD,
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 300 }, { amount: 450 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: proposals.map((p) => p.id),
+    });
+
+    expect(await readVoteData(result.id)).toMatchObject({
+      voterBudget: 1000,
+      budgetUnit: USD,
+      totalCost: 750,
+      selections: [
+        { proposalId: proposals[0]!.id, cost: 300 },
+        { proposalId: proposals[1]!.id, cost: 450 },
+      ],
+    });
+  });
+
+  it('accepts a ballot exactly at the voter budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 750,
+      budgetUnit: USD,
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 300 }, { amount: 450 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: proposals.map((p) => p.id),
+    });
+
+    expect(result.selectedProposalIds).toHaveLength(2);
+  });
+
+  it('rejects a ballot over the voter budget and writes no submission', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 700,
+      budgetUnit: USD,
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 300 }, { amount: 450 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: proposals.map((p) => p.id),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const submissions = await db.query.decisionsVoteSubmissions.findMany({
+      where: { processInstanceId: instance.instance.id },
+    });
+
+    expect(submissions).toHaveLength(0);
+  });
+
+  // A misconfigured or unpriced proposal must stay votable rather than
+  // silently disappear from the ballot.
+  it('charges nothing for a proposal with no budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 300,
+      budgetUnit: USD,
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 300 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: proposals.map((p) => p.id),
+    });
+
+    expect(await readVoteData(result.id)).toMatchObject({
+      totalCost: 300,
+      selections: [
+        { proposalId: proposals[0]!.id, cost: 300 },
+        { proposalId: proposals[1]!.id, cost: null },
+      ],
+    });
+  });
+
+  it('charges nothing for a budget stored in another currency', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 300,
+      budgetUnit: USD,
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 300 }, { amount: 9000, currency: 'EUR' }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: proposals.map((p) => p.id),
+    });
+
+    expect(await readVoteData(result.id)).toMatchObject({ totalCost: 300 });
+  });
+
+  it('enforces the cap on a custom-unit template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 10,
+      budgetUnit: POINTS,
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 7 }, { amount: 5 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: proposals.map((p) => p.id),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    expect(await readVoteData(result.id)).toMatchObject({
+      budgetUnit: POINTS,
+      totalCost: 7,
+    });
+  });
+
+  // The two caps are independent: either can reject a ballot the other
+  // would accept.
+  it('applies the count cap and the budget cap independently', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      maxVotesPerMember: 2,
+      voterBudget: 800,
+      budgetUnit: USD,
+      proposalCount: 3,
+      proposalBudgets: [{ amount: 300 }, { amount: 450 }, { amount: 900 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Within budget, over the count cap.
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: proposals.map((p) => p.id),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    // Within the count cap, over budget.
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id, proposals[2]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id, proposals[1]!.id],
+    });
+
+    expect(result.selectedProposalIds).toHaveLength(2);
+  });
+
+  // A collaborative proposal keeps its live budget in the Yjs fragment, so a
+  // budget raised after submission is the one a voter is charged.
+  it('charges the document fragment’s budget, not the stale snapshot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 500,
+      budgetUnit: USD,
+      proposalCount: 1,
+      proposalBudgets: [{ amount: 100 }],
+    });
+
+    const proposal = proposals[0]!;
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId?: string;
+    };
+
+    mockCollab.setDocFragments(collaborationDocId!, {
+      title: 'Proposal 1',
+      budget: JSON.stringify({ amount: 900, currency: 'USD' }),
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('leaves the budget keys off a submission with no cap', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      budgetUnit: USD,
+      proposalCount: 1,
+      proposalBudgets: [{ amount: 300 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    const voteData = await readVoteData(result.id);
+
+    expect(voteData?.voterBudget).toBeUndefined();
+    expect(voteData?.budgetUnit).toBeUndefined();
+    expect(voteData?.totalCost).toBeUndefined();
+    expect(voteData?.selections).toEqual([
+      { proposalId: proposals[0]!.id, cost: null },
+    ]);
+  });
+});
+
 describe.concurrent('getVotingStatus', () => {
+  it('echoes the voter budget and its unit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await setupVotingInstance(testData, {
+      voterBudget: 5000,
+      budgetUnit: { kind: 'custom', label: 'points' },
+      proposalCount: 0,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(status.votingConfiguration.voterBudget).toBe(5000);
+    expect(status.votingConfiguration.budgetUnit).toEqual({
+      kind: 'custom',
+      label: 'points',
+    });
+  });
+
+  it('reports no budget unit when the template collects no budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await setupVotingInstance(testData, {
+      proposalCount: 0,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(status.votingConfiguration.voterBudget).toBeUndefined();
+    expect(status.votingConfiguration.budgetUnit).toBeUndefined();
+  });
+
   it('returns undefined maxVotesPerMember when phase has no cap', async ({
     task,
     onTestFinished,

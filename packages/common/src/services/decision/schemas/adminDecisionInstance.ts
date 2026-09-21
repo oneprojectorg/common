@@ -59,6 +59,8 @@ export const adminDecisionPhaseSchema = z.object({
   allowsComments: z.boolean(),
   /** Null = no limit. */
   maxVotesPerMember: z.number().nullable(),
+  /** Knapsack cap in the template's budget unit; null = no budget cap. */
+  voterBudget: z.number().nullable(),
   proposalsHiddenByDefault: z.boolean(),
   /** 'date' | 'manual' | null when unset. */
   advancementMethod: z.string().nullable(),

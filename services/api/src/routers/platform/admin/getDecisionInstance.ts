@@ -2,6 +2,7 @@ import { NotFoundError, isDecisionPublic } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
+  getVoterBudget,
   isReviewPhase,
 } from '@op/common/client';
 import { db } from '@op/db/client';
@@ -30,6 +31,7 @@ const phaseRulesSchema = z
         submit: z.boolean().optional(),
         edit: z.boolean().optional(),
         maxVotesPerMember: z.number().optional(),
+        voterBudget: z.number().optional(),
       })
       .partial()
       .optional(),
@@ -180,6 +182,7 @@ export const getDecisionInstanceRouter = router({
             canEditVotes: rules?.voting?.edit ?? false,
             allowsComments: allowsComments({ rules }),
             maxVotesPerMember: rules?.voting?.maxVotesPerMember ?? null,
+            voterBudget: getVoterBudget({ rules }) ?? null,
             proposalsHiddenByDefault:
               rules?.proposals?.defaults?.hidden ?? false,
             advancementMethod: rules?.advancement?.method ?? null,

@@ -78,6 +78,10 @@ const phaseRulesEncoder = z.object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
       maxVotesPerMember: z.number().int().positive().optional(),
+      // Read and write both go through this encoder, and
+      // `updateDecisionInstance` spreads `phase.rules` wholesale — so
+      // omitting the key on write is what turns the cap off.
+      voterBudget: z.number().finite().positive().optional(),
     })
     .optional(),
   comments: z.object({ submit: z.boolean().optional() }).optional(),
