@@ -33,7 +33,11 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { getVoterBudget, isVotingPhase } from './utils/phaseSettings';
+import {
+  getVoterBudget,
+  isRankedVoting,
+  isVotingPhase,
+} from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
 interface PhaseConfig {
@@ -42,6 +46,8 @@ interface PhaseConfig {
   maxVotesPerMember: number | undefined;
   /** Knapsack cap, in the template's budget unit. Undefined = no cap. */
   voterBudget: number | undefined;
+  /** Selection order is persisted as a rank on each join row. */
+  ranked: boolean;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -72,6 +78,7 @@ function getCurrentPhaseConfig(processInstance: {
     allowDecisions: isVotingPhase(currentPhase),
     maxVotesPerMember: currentPhase.rules?.voting?.maxVotesPerMember,
     voterBudget: getVoterBudget(currentPhase),
+    ranked: isRankedVoting(currentPhase),
   };
 }
 
@@ -195,6 +202,8 @@ export interface VotingStatusResult {
     maxVotesPerMember: number | undefined;
     /** Knapsack cap, in `budgetUnit`. Undefined = no budget cap. */
     voterBudget: number | undefined;
+    /** Ballots persist their selection order as a rank. */
+    ranked: boolean;
     /** Unit the cap is counted in; undefined when the template collects no budget. */
     budgetUnit: AmountUnit | undefined;
     schemaType: string;
@@ -386,9 +395,10 @@ export const submitVote = async ({
       ),
       // What the ballot was made of, kept on the submission so tallying can
       // read it later without re-resolving budgets that may have moved on.
-      selections: data.selectedProposalIds.map((proposalId) => ({
+      selections: data.selectedProposalIds.map((proposalId, index) => ({
         proposalId,
         cost: resolveUnitAmount(costs.get(proposalId), unit)?.amount ?? null,
+        ...(phaseConfig.ranked && { rank: index + 1 }),
       })),
       // Only meaningful when a cap actually applied.
       ...(phaseConfig.voterBudget !== undefined && {
@@ -416,11 +426,13 @@ export const submitVote = async ({
         throw new CommonError('Failed to create vote submission');
       }
 
-      // Create join table entries for selected proposals
+      // Create join table entries for selected proposals. On a ranked phase
+      // the incoming order IS the rank; everything else leaves it null.
       const voteProposalEntries = data.selectedProposalIds.map(
-        (proposalId) => ({
+        (proposalId, index) => ({
           voteSubmissionId: voteSubmission.id,
           proposalId,
+          rank: phaseConfig.ranked ? index + 1 : null,
         }),
       );
 
@@ -515,16 +527,17 @@ export const getVotingStatus = async ({
     // Check if user has voted
     let voteSubmission = null;
     if (profileId) {
-      voteSubmission = await db._query.decisionsVoteSubmissions.findFirst({
-        where: and(
-          eq(
-            decisionsVoteSubmissions.processInstanceId,
-            data.processInstanceId,
-          ),
-          eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-        ),
+      voteSubmission = await db.query.decisionsVoteSubmissions.findFirst({
+        where: {
+          processInstanceId: data.processInstanceId,
+          submittedByProfileId: profileId,
+        },
         with: {
           voteProposals: {
+            // Ranked ballots read back in the order they were cast. Ordered
+            // in SQL so the caller never re-sorts; Postgres puts NULLs last
+            // on ASC, which is where an unranked selection belongs.
+            orderBy: { rank: 'asc', createdAt: 'asc' },
             with: {
               proposal: {
                 with: {
@@ -584,6 +597,7 @@ export const getVotingStatus = async ({
         maxVotesPerMember: votingConfig.maxVotesPerMember,
         voterBudget: phaseConfig.voterBudget,
         budgetUnit: getTemplateBudgetUnit(proposalTemplate),
+        ranked: phaseConfig.ranked,
         schemaType: schemaResult.schemaType,
         isReadOnly: !!voteSubmission || !votingConfig.allowDecisions,
       },

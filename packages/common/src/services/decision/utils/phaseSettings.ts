@@ -61,6 +61,16 @@ export function getVoterBudget(phase: {
 }
 
 /**
+ * Ballots cast in this phase are ranked — the order of `selectedProposalIds`
+ * is persisted as a rank. The only reader of `rules.voting.ranked`.
+ */
+export function isRankedVoting(phase: {
+  rules?: { voting?: { ranked?: boolean } };
+}): boolean {
+  return phase.rules?.voting?.ranked === true;
+}
+
+/**
  * Participants may comment during this phase — the Process Builder's
  * "Comments" toggle.
  *

@@ -39,6 +39,11 @@ export interface PhaseRules {
      * are never enforced.
      */
     voterBudget?: number;
+    /**
+     * Ranked-choice: the order of `selectedProposalIds` on submission is
+     * persisted as a rank per selection. Read through `isRankedVoting`.
+     */
+    ranked?: boolean;
   };
   comments?: {
     /** Unlike its siblings this defaults to TRUE — see `allowsComments`. */

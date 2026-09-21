@@ -8,6 +8,7 @@ import {
   getVoterBudget,
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
+  isRankedVoting,
   isReviewPhase,
   isVotingPhase,
   resolveReviewSettings,
@@ -94,6 +95,18 @@ describe('getVoterBudget', () => {
         rules: { voting: { voterBudget: Number.POSITIVE_INFINITY } },
       }),
     ).toBe(undefined);
+  });
+});
+
+describe('isRankedVoting', () => {
+  it('is true only when the rule says so', () => {
+    expect(isRankedVoting({ rules: { voting: { ranked: true } } })).toBe(true);
+    expect(isRankedVoting({ rules: { voting: { ranked: false } } })).toBe(
+      false,
+    );
+    expect(isRankedVoting({ rules: { voting: { submit: true } } })).toBe(false);
+    expect(isRankedVoting({ rules: {} })).toBe(false);
+    expect(isRankedVoting({})).toBe(false);
   });
 });
 

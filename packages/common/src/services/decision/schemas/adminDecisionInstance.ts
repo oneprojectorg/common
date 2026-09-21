@@ -61,6 +61,8 @@ export const adminDecisionPhaseSchema = z.object({
   maxVotesPerMember: z.number().nullable(),
   /** Knapsack cap in the template's budget unit; null = no budget cap. */
   voterBudget: z.number().nullable(),
+  /** Ballots in this phase persist their selection order as a rank. */
+  ranked: z.boolean().nullable(),
   proposalsHiddenByDefault: z.boolean(),
   /** 'date' | 'manual' | null when unset. */
   advancementMethod: z.string().nullable(),

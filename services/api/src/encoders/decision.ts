@@ -82,6 +82,7 @@ const phaseRulesEncoder = z.object({
       // `updateDecisionInstance` spreads `phase.rules` wholesale — so
       // omitting the key on write is what turns the cap off.
       voterBudget: z.number().finite().positive().optional(),
+      ranked: z.boolean().optional(),
     })
     .optional(),
   comments: z.object({ submit: z.boolean().optional() }).optional(),

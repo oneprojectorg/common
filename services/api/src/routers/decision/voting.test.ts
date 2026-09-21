@@ -29,6 +29,8 @@ interface VotingSchemaOptions {
   maxVotesPerMember?: number;
   /** Knapsack cap on the voting phase, in `budgetUnit`. */
   voterBudget?: number;
+  /** Persist the order of `selectedProposalIds` as a rank per selection. */
+  ranked?: boolean;
   /**
    * Unit the proposal template's budget field declares. Omit to leave the
    * template without a budget field at all.
@@ -66,6 +68,7 @@ function buildProposalTemplate(unit: AmountUnit) {
 function buildVotingSchema({
   maxVotesPerMember,
   voterBudget,
+  ranked,
   budgetUnit,
 }: VotingSchemaOptions = {}) {
   return {
@@ -93,6 +96,7 @@ function buildVotingSchema({
             submit: true,
             ...(maxVotesPerMember !== undefined && { maxVotesPerMember }),
             ...(voterBudget !== undefined && { voterBudget }),
+            ...(ranked !== undefined && { ranked }),
           },
           advancement: { method: 'manual' as const },
         },
@@ -515,6 +519,173 @@ describe.concurrent('submitVote knapsack budget', () => {
     expect(voteData?.selections).toEqual([
       { proposalId: proposals[0]!.id, cost: null },
     ]);
+  });
+});
+
+describe.concurrent('submitVote ranked ballots', () => {
+  /** The join rows a ballot wrote, as the database holds them. */
+  async function readSelections(voteSubmissionId: string) {
+    return db.query.decisionsVoteProposals.findMany({
+      where: { voteSubmissionId },
+      orderBy: { rank: 'asc', createdAt: 'asc' },
+    });
+  }
+
+  it('persists the submission order as a rank', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      ranked: true,
+      proposalCount: 3,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Deliberately not the creation order — the ballot's order is the rank.
+    const ballot = [proposals[2]!.id, proposals[0]!.id, proposals[1]!.id];
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: ballot,
+    });
+
+    expect(await readSelections(result.id)).toMatchObject([
+      { proposalId: ballot[0], rank: 1 },
+      { proposalId: ballot[1], rank: 2 },
+      { proposalId: ballot[2], rank: 3 },
+    ]);
+  });
+
+  it('reads a ranked ballot back in the order it was cast', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      ranked: true,
+      proposalCount: 3,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const ballot = [proposals[2]!.id, proposals[0]!.id, proposals[1]!.id];
+
+    await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: ballot,
+    });
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(status.votingConfiguration.ranked).toBe(true);
+    expect(status.selectedProposals?.map((p) => p.id)).toEqual(ballot);
+  });
+
+  it('leaves rank null on an unranked phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: proposals.map((p) => p.id),
+    });
+
+    const selections = await readSelections(result.id);
+
+    expect(selections).toHaveLength(2);
+    expect(selections.every((s) => s.rank === null)).toBe(true);
+  });
+
+  it('records the rank alongside the cost in the ballot snapshot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      ranked: true,
+      voterBudget: 1000,
+      budgetUnit: { kind: 'currency', code: 'USD' },
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 300 }, { amount: 450 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const ballot = [proposals[1]!.id, proposals[0]!.id];
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: ballot,
+    });
+
+    const row = await db.query.decisionsVoteSubmissions.findFirst({
+      where: { id: result.id },
+    });
+
+    expect(row?.voteData.selections).toEqual([
+      { proposalId: ballot[0], cost: 450, rank: 1 },
+      { proposalId: ballot[1], cost: 300, rank: 2 },
+    ]);
+  });
+
+  it('still rejects duplicate selections on a ranked ballot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      ranked: true,
+      proposalCount: 2,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id, proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  // Budget validation runs first, so nothing is ranked on a ballot that was
+  // never going to be accepted.
+  it('writes nothing when a ranked ballot overruns the voter budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      ranked: true,
+      voterBudget: 700,
+      budgetUnit: { kind: 'currency', code: 'USD' },
+      proposalCount: 2,
+      proposalBudgets: [{ amount: 300 }, { amount: 450 }],
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: proposals.map((p) => p.id),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const submissions = await db.query.decisionsVoteSubmissions.findMany({
+      where: { processInstanceId: instance.instance.id },
+    });
+
+    expect(submissions).toHaveLength(0);
   });
 });
 
