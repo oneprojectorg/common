@@ -281,7 +281,7 @@ const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {t('Delete {name}?', { name: form.name })}
+            {t('decisions.deleteDecisionTitle', { name: form.name })}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {t(
