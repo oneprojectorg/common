@@ -121,12 +121,20 @@ without it. `crap-trend.json` therefore keeps aggregates only, and records the
 `metric` it was taken under: `pnpm health` drops the delta rather than
 differencing against a trend recorded on a different measure.
 
-## Why this is not in CI
+## Where it runs
 
-A real verdict needs an instrumented run: Docker, the test Supabase, and about
-four minutes, most of it the `services/api` suite. `.github/workflows` keeps the
-checks that are cheap enough to run on every push. Run `pnpm health` locally
-after `pnpm test:coverage`; without a fresh report it says `CRAP: STALE` rather
-than reporting a green it cannot back up — coverage matched by line span goes
-wrong in both directions once the file has been edited under it, so a stale
-report is worse than none.
+A real verdict needs an instrumented run: the test Supabase and several
+minutes, most of it the `services/api` suite. That is too slow for a required
+check, so it is not one. `.github/workflows/pr-metrics.yml` runs it on every
+push to a PR as a report instead: `pnpm test:coverage`, then
+`node scripts/fallow-health.mjs --json --base origin/<base>`, and the verdict
+lands as part of one line at the end of the PR body, with the per-function
+table in the job summary. `scripts/pr-metrics.mjs` builds the line;
+`scripts/pr-metrics-body.mjs` splices it in between two marker comments so a
+new push replaces the old line rather than stacking another. The blast radius
+from the toolkit's `blast-radius` skill travels on the same line.
+
+Locally, run `pnpm health` after `pnpm test:coverage`; without a fresh report
+it says `CRAP: STALE` rather than reporting a green it cannot back up —
+coverage matched by line span goes wrong in both directions once the file has
+been edited under it, so a stale report is worse than none.
