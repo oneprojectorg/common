@@ -28,7 +28,7 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
       const windowEnd = midnightUtc + REMINDER_DAYS_BEFORE_END * MS_PER_DAY;
       const reminderWindowEnd = new Date(windowEnd).toISOString();
 
-      const rows = await db.query.processInstances.findMany({
+      const reviewPhaseInstances = await db.query.processInstances.findMany({
         where: {
           status: ProcessStatus.PUBLISHED,
           deletedAt: { isNull: true },
@@ -49,10 +49,10 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
         },
       });
 
-      return rows.flatMap((row) => {
+      return reviewPhaseInstances.flatMap((instance) => {
         const phase = getInstanceCurrentPhase({
-          currentStateId: row.currentStateId,
-          instanceData: { phases: getInstancePhases(row.instanceData) },
+          currentStateId: instance.currentStateId,
+          instanceData: { phases: getInstancePhases(instance.instanceData) },
         });
 
         if (phase?.rules?.reviews?.submit !== true || !phase.endDate) {
@@ -71,7 +71,7 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
 
         return [
           {
-            processInstanceId: row.id,
+            processInstanceId: instance.id,
             phaseId: phase.phaseId,
             reminderWindowEnd,
           },

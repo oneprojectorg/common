@@ -180,7 +180,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
 
       const recipientsByProfileId =
         await listIndividualProfileRecipientsByProfileId(
-          remainingByReviewer.map((row) => row.reviewerProfileId),
+          remainingByReviewer.map(({ reviewerProfileId }) => reviewerProfileId),
         );
 
       const planned: Array<{ to: string; remainingCount: number }> = [];
