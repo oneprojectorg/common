@@ -5,12 +5,41 @@ import {
   getPlaceCoordinates,
   getSchemaFieldTitle,
   isDistrictCategoryLabel,
+  normalizeBudget,
   normalizeLocation,
   normalizeProposalCategories,
   parseProposalData,
   parseSchemaOptions,
 } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
+
+describe('normalizeBudget', () => {
+  // A legacy number carries no unit of its own — stamping USD in here is
+  // exactly what ADR 0005 moved onto the template.
+  it('leaves a legacy plain number unqualified', () => {
+    expect(normalizeBudget(1200)).toEqual({ amount: 1200 });
+    expect(normalizeBudget('1200')).toEqual({ amount: 1200 });
+  });
+
+  it('accepts an amount with no currency', () => {
+    expect(normalizeBudget({ amount: 40 })).toEqual({ amount: 40 });
+  });
+
+  it('accepts an amount with a currency', () => {
+    expect(normalizeBudget({ amount: 40, currency: 'EUR' })).toEqual({
+      amount: 40,
+      currency: 'EUR',
+    });
+  });
+
+  it('rejects an amount that cannot be summed', () => {
+    expect(
+      normalizeBudget({ amount: Number.POSITIVE_INFINITY }),
+    ).toBeUndefined();
+    expect(normalizeBudget({ currency: 'USD' })).toBeUndefined();
+    expect(normalizeBudget('not a budget')).toBeUndefined();
+  });
+});
 
 describe('proposalDataSchema category normalization', () => {
   it('normalizes serialized category arrays into string arrays', () => {

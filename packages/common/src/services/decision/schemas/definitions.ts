@@ -28,6 +28,11 @@ export const simpleVoting: DecisionSchemaDefinition = {
         title: 'Proposal summary',
         'x-format': 'long-text',
       },
+      // `x-unit` is the source of truth for a budget's unit (ADR 0005), and
+      // `properties.currency` exists only for currency-kind budgets. This
+      // canonical field declares no `x-unit`, so `getFieldUnit` reads the
+      // currency below — which is what every template written before
+      // `x-unit` existed does.
       budget: {
         type: 'object',
         title: 'Budget',

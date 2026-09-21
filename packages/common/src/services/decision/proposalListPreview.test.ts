@@ -20,10 +20,15 @@ describe('resolveBudgetOverride', () => {
     ).toEqual({ amount: 500, currency: 'EUR' });
   });
 
-  it('defaults to USD for a nonzero numeric override with no snapshot currency to preserve', () => {
-    expect(resolveBudgetOverride(500, null)).toEqual({
+  // No currency is stamped in: an unqualified amount takes the template's
+  // unit at resolution time, which may not be a currency at all (ADR 0005).
+  it('leaves a nonzero numeric override unqualified when there is no snapshot currency', () => {
+    expect(resolveBudgetOverride(500, null)).toEqual({ amount: 500 });
+  });
+
+  it('leaves the amount unqualified when the snapshot itself carries no currency', () => {
+    expect(resolveBudgetOverride(500, { amount: 100 })).toEqual({
       amount: 500,
-      currency: 'USD',
     });
   });
 

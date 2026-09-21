@@ -182,6 +182,19 @@ export {
   isMoneyFieldSchema,
   resolveMoneyDisplayCurrency,
 } from './services/decision/rubric/money';
+export {
+  DEFAULT_AMOUNT_UNIT,
+  type AmountUnit,
+  type UnitAmount,
+  amountUnitSchema,
+  getFieldUnit,
+  getTemplateBudgetUnit,
+  getUnitLabel,
+  isSameUnit,
+  normalizeBudgetForTemplate,
+  resolveUnitAmount,
+  toFixedPointUnits,
+} from './services/decision/budgetUnit';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

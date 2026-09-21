@@ -88,7 +88,9 @@ export const getResultsStats = async ({
     };
   }
 
-  // Sum up the allocated amounts (or fall back to budgets from proposalData)
+  // Sum up the allocated amounts (or fall back to budgets from proposalData).
+  // Unitless by design: it assumes one unit per process, which the template
+  // guarantees (ADR 0005) — the caller renders it with the template's unit.
   const totalAllocated = selectedProposalsWithData.reduce((sum, item) => {
     // Use allocated amount if it exists, otherwise fall back to budget
     if (item.allocated !== null) {

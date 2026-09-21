@@ -33,6 +33,8 @@ export class SchemaValidator {
     this.ajv.addKeyword('x-field-order');
     this.ajv.addKeyword('x-format');
     this.ajv.addKeyword('x-map-default');
+    // Budget unit on a `money` field (see `getFieldUnit`).
+    this.ajv.addKeyword('x-unit');
     // Phase designation on custom forms (see CustomFormDefinitionSchema).
     this.ajv.addKeyword('x-phase');
   }

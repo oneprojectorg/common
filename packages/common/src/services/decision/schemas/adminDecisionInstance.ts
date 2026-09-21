@@ -5,7 +5,7 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
-import { moneyAmountSchema } from '../../../money';
+import { budgetDataSchema } from '../proposalDataSchema';
 import { proposalCategorySchema } from './proposalCategory';
 
 const adminDecisionCurrentPhaseSchema = z.object({
@@ -123,8 +123,12 @@ export const adminReviewAssignmentSchema = z.object({
   author: adminProfileRefSchema.nullable(),
   /** Plain-text body preview, resolved like the proposal list rows'; null when there is nothing to preview. */
   previewText: z.string().nullable(),
-  /** Budget from the document fragments, falling back to the proposalData snapshot. */
-  budget: moneyAmountSchema.nullable(),
+  /**
+   * Budget from the document fragments, falling back to the proposalData
+   * snapshot. `currency` rides along only for currency-kind budgets — the
+   * unit lives on the template (ADR 0005).
+   */
+  budget: budgetDataSchema.nullable(),
 });
 
 export type AdminReviewAssignment = z.infer<typeof adminReviewAssignmentSchema>;

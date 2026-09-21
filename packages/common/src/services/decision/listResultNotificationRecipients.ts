@@ -12,8 +12,13 @@ import {
   type EmailRecipient,
   listMemberProfileRecipientsByProfile,
 } from '../email/recipients';
+import {
+  type AmountUnit,
+  DEFAULT_AMOUNT_UNIT,
+  getTemplateBudgetUnit,
+} from './budgetUnit';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
-import { normalizeBudget } from './proposalDataSchema';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   type ResultNotificationMessages,
   type ResultNotificationOutcome,
@@ -134,12 +139,21 @@ export async function listResultNotificationRecipients({
     [...audiences.values()].flat().map(({ authUserId }) => authUserId),
   );
 
+  // The unit every allocated figure is rendered in comes from the template,
+  // not from the proposals — a process states its unit once (ADR 0005).
+  const proposalTemplate = await resolveProposalTemplate(
+    instance.instanceData as Record<string, unknown> | null,
+    instance.processId,
+  );
+  const unit = getTemplateBudgetUnit(proposalTemplate) ?? DEFAULT_AMOUNT_UNIT;
+
   const recipients = reachable.flatMap((proposal) =>
     toRecipients({
       proposal,
       allocated: allocatedByProposalId.get(proposal.id),
       audience: audiences.get(proposal.profileId) ?? [],
       names,
+      unit,
     }),
   );
 
@@ -176,27 +190,23 @@ function toRecipients({
   allocated,
   audience,
   names,
+  unit,
 }: {
   proposal: {
     id: string;
     profileId: string;
-    proposalData: unknown;
     profile: { name: string };
   };
   allocated: string | null | undefined;
   audience: Array<EmailRecipient>;
   names: Map<string, string>;
+  unit: AmountUnit;
 }): Array<ResultNotificationRecipient> {
   const outcome: ResultNotificationOutcome =
     allocated === undefined ? 'notSelected' : 'selected';
   const amount =
     outcome === 'selected'
-      ? formatResultAmount({
-          allocated: allocated ?? null,
-          budget: normalizeBudget(
-            (proposal.proposalData as { budget?: unknown } | null)?.budget,
-          ),
-        })
+      ? formatResultAmount({ allocated: allocated ?? null, unit })
       : '';
 
   const seen = new Set<string>();
