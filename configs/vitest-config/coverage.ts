@@ -92,6 +92,14 @@ export const coverageConfig = (
     // `json` is the reporter that writes coverage-final.json; text-summary keeps
     // the terminal useful without generating an HTML tree nobody opens in CI.
     reporter: ['json', 'text-summary'],
+    // Vitest defaults this to false: one failing test and it writes no report at
+    // all. `services/api` holds the integration tests that are the only cover
+    // for `@op/common`, and a suite of ~2000 auth-creating tests is rarely all
+    // green on a developer machine — so the workspace CRAP depends on most has
+    // been contributing nothing, and its files merge at the zero-fill instead.
+    // A report from a run with failures is partial, not wrong: the lines a
+    // passing test covered are still covered.
+    reportOnFailure: true,
     reportsDirectory: './coverage',
     // Vitest reports only files a test actually loaded unless `include` is set.
     // Untested files have to show up at zero coverage or CRAP silently skips the
