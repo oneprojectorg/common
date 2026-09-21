@@ -114,6 +114,92 @@ async function resolveBallotCosts({
   };
 }
 
+/** The instance columns both ballot entry points read. */
+async function loadVotingInstance(processInstanceId: string) {
+  const processInstance = await db._query.processInstances.findFirst({
+    where: eq(processInstances.id, processInstanceId),
+    columns: {
+      id: true,
+      profileId: true,
+      ownerProfileId: true,
+      processId: true,
+      instanceData: true,
+      currentStateId: true,
+    },
+  });
+
+  if (!processInstance) {
+    throw new NotFoundError('Process instance', processInstanceId);
+  }
+
+  return processInstance;
+}
+
+/**
+ * Checks a ballot against every cap the phase applies, and prices it.
+ *
+ * The count cap and the budget cap are independent, so both run and the voter
+ * is told everything that is wrong with the ballot at once rather than one
+ * problem per attempt.
+ *
+ * @throws {ValidationError} when the ballot fails either cap
+ */
+async function priceAndValidateBallot({
+  data,
+  phaseConfig,
+  processInstance,
+  eligibleProposals,
+  maxVotesPerMember,
+}: {
+  data: SubmitVoteInput;
+  phaseConfig: PhaseConfig;
+  processInstance: { instanceData: unknown; processId: string };
+  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
+  maxVotesPerMember: number | undefined;
+}): Promise<{
+  unit: AmountUnit;
+  costs: ReadonlyMap<string, BudgetData | null>;
+  totalCost: number;
+}> {
+  const selection = validateVoteSelection(
+    data.selectedProposalIds,
+    maxVotesPerMember,
+    eligibleProposals.map((p) => p.id),
+  );
+
+  const { unit, costs } = await resolveBallotCosts({
+    processInstance,
+    selectedProposals: eligibleProposals.filter((p) =>
+      data.selectedProposalIds.includes(p.id),
+    ),
+    voterBudget: phaseConfig.voterBudget,
+  });
+
+  const budget = validateVoteBudget(
+    data.selectedProposalIds,
+    phaseConfig.voterBudget,
+    costs,
+    unit,
+  );
+
+  if (phaseConfig.voterBudget !== undefined) {
+    warnOnUnresolvableCosts({
+      processInstanceId: data.processInstanceId,
+      selectedProposalIds: data.selectedProposalIds,
+      costs,
+      unit,
+    });
+  }
+
+  const errors = [...selection.errors, ...budget.errors];
+
+  if (errors.length > 0) {
+    throw new ValidationError(`Invalid vote selection: ${errors.join(', ')}`);
+  }
+
+  return { unit, costs, totalCost: budget.totalCost };
+}
+
 /**
  * Flags selections a budget cap could not price, so a template whose unit no
  * longer matches its stored values is visible rather than silently free.
@@ -254,22 +340,7 @@ export const submitVote = async ({
   try {
     const profileId = await getIndividualProfileId(authUserId);
 
-    // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      columns: {
-        id: true,
-        profileId: true,
-        ownerProfileId: true,
-        processId: true,
-        instanceData: true,
-        currentStateId: true,
-      },
-    });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance', data.processInstanceId);
-    }
+    const processInstance = await loadVotingInstance(data.processInstanceId);
 
     if (!processInstance.profileId) {
       throw new NotFoundError('Decision profile', data.processInstanceId);
@@ -330,11 +401,10 @@ export const submitVote = async ({
     const eligibleProposals = availableProposals.filter((p) =>
       isVotingEligible(p.status),
     );
-    const eligibleProposalIds = eligibleProposals.map((p) => p.id);
 
     // Check if all selected proposals are eligible
     const hasIneligibleSelections = data.selectedProposalIds.some(
-      (id) => !eligibleProposalIds.includes(id),
+      (id) => !eligibleProposals.some((p) => p.id === id),
     );
 
     if (hasIneligibleSelections) {
@@ -343,43 +413,13 @@ export const submitVote = async ({
       );
     }
 
-    // Validate the vote selection
-    const validation = validateVoteSelection(
-      data.selectedProposalIds,
-      votingConfig.maxVotesPerMember,
-      eligibleProposalIds,
-    );
-
-    // The count cap and the budget cap are independent, so both run and the
-    // voter sees everything that is wrong with the ballot at once.
-    const { unit, costs } = await resolveBallotCosts({
+    const { unit, costs, totalCost } = await priceAndValidateBallot({
+      data,
+      phaseConfig,
       processInstance,
-      selectedProposals: eligibleProposals.filter((p) =>
-        data.selectedProposalIds.includes(p.id),
-      ),
-      voterBudget: phaseConfig.voterBudget,
+      eligibleProposals,
+      maxVotesPerMember: votingConfig.maxVotesPerMember,
     });
-    const budgetValidation = validateVoteBudget(
-      data.selectedProposalIds,
-      phaseConfig.voterBudget,
-      costs,
-      unit,
-    );
-
-    if (phaseConfig.voterBudget !== undefined) {
-      warnOnUnresolvableCosts({
-        processInstanceId: data.processInstanceId,
-        selectedProposalIds: data.selectedProposalIds,
-        costs,
-        unit,
-      });
-    }
-
-    const errors = [...validation.errors, ...budgetValidation.errors];
-
-    if (errors.length > 0) {
-      throw new ValidationError(`Invalid vote selection: ${errors.join(', ')}`);
-    }
 
     // Create vote submission record
     const voteData: VoteData = {
@@ -404,7 +444,7 @@ export const submitVote = async ({
       ...(phaseConfig.voterBudget !== undefined && {
         voterBudget: phaseConfig.voterBudget,
         budgetUnit: unit,
-        totalCost: budgetValidation.totalCost,
+        totalCost,
       }),
     };
 
@@ -491,22 +531,7 @@ export const getVotingStatus = async ({
       }
     }
 
-    // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      columns: {
-        id: true,
-        profileId: true,
-        ownerProfileId: true,
-        processId: true,
-        instanceData: true,
-        currentStateId: true,
-      },
-    });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance', data.processInstanceId);
-    }
+    const processInstance = await loadVotingInstance(data.processInstanceId);
 
     await assertInstanceProfileAccess({
       user,

@@ -75,10 +75,14 @@ export function toFixedPointUnits(amount: number): number {
 /**
  * The unit declared on a template budget field.
  *
- * `x-unit` wins. Templates written before it existed fall back to the
- * currency pinned on `properties.currency` (`const`, else `default`), and
- * finally to {@link DEFAULT_AMOUNT_UNIT}. This is the only reader of
- * `x-unit`.
+ * `x-unit` is the source of truth and wins outright. `properties.currency`
+ * belongs to currency-kind budgets only, and survives as the fallback for
+ * every template written before `x-unit` existed — including the canonical
+ * `budget` field in `schemas/definitions.ts`, which declares no `x-unit` and
+ * so resolves through the currency it pins (`const`, else `default`). With
+ * neither, {@link DEFAULT_AMOUNT_UNIT}.
+ *
+ * This is the only reader of `x-unit`.
  */
 export function getFieldUnit(
   schema: XFormatPropertySchema | undefined,
