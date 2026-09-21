@@ -16,7 +16,12 @@
  * Everything arrives through the environment:
  *
  *   GH_TOKEN, GITHUB_REPOSITORY, PR_NUMBER, HEAD_SHA, RUN_URL      both modes
- *   METRICS_LINE, COMMENT_FILE, REPORT_FILE, CHECK_RUN_ID           publish
+ *   METRICS_LINE, COMMENT_FILE, REPORT_FILE, CHECK_RUN_ID, FINAL    publish
+ *
+ * `publish` runs twice per push: once a minute in with the blast radius and
+ * CRAP marked as measuring (`FINAL=false`, the check run stays in progress),
+ * and once more after the coverage run (`FINAL=true`, the check concludes).
+ * When no instrumented source changed, the first publish is already final.
  *
  * Runs in the workflow jobs that hold the write token, which check this file
  * out from the base branch and never run PR code. The line and the two files
@@ -123,7 +128,11 @@ const plainTitle = (line) =>
     .replace(/\*\*|`/g, '')
     .slice(0, 1000);
 
-const completeCheck = async (id, title, summary) => {
+/**
+ * Write the line and the report onto the check run. A partial update keeps
+ * it in progress with the new text showing; the final one concludes it.
+ */
+const updateCheck = async (id, title, summary, final) => {
   const output = {
     title,
     summary:
@@ -131,19 +140,21 @@ const completeCheck = async (id, title, summary) => {
         ? `${summary.slice(0, SUMMARY_LIMIT)}\n\n… truncated; the job summary has the rest.`
         : summary,
   };
-  const completed = {
-    status: 'completed',
-    conclusion: 'neutral',
-    details_url: runUrl,
-    output,
-  };
+  const state = final
+    ? {
+        status: 'completed',
+        conclusion: 'neutral',
+        details_url: runUrl,
+        output,
+      }
+    : { status: 'in_progress', details_url: runUrl, output };
   if (id) {
-    await api('PATCH', `/repos/${repo}/check-runs/${id}`, completed);
+    await api('PATCH', `/repos/${repo}/check-runs/${id}`, state);
   } else {
     await api('POST', `/repos/${repo}/check-runs`, {
       name: CHECK_NAME,
       head_sha: sha,
-      ...completed,
+      ...state,
     });
   }
 };
@@ -175,24 +186,32 @@ const announce = async () => {
   });
 };
 
-const publish = async () => {
-  const line = (process.env.METRICS_LINE ?? '').trim();
-  const checkId = process.env.CHECK_RUN_ID || null;
-
-  if (!line) {
-    const failed = `**PR metrics** · measurement failed for \`${short}\` — see the [run](${runUrl}).`;
-    await upsertComment(failed);
-    await quietly('check run', () =>
-      completeCheck(checkId, 'PR metrics unavailable', failed),
-    );
-    return;
-  }
-
+const spliceBody = async (line) => {
   const current = await api('GET', `/repos/${repo}/pulls/${pr}`);
   const next = splice(current.body, line);
   if (next !== (current.body ?? '')) {
     await api('PATCH', `/repos/${repo}/pulls/${pr}`, { body: next });
   }
+};
+
+const publish = async () => {
+  const line = (process.env.METRICS_LINE ?? '').trim();
+  const checkId = process.env.CHECK_RUN_ID || null;
+  // FINAL=false is the radius stage with a coverage stage still to come: the
+  // check run stays in progress and the text says "measuring".
+  const final = (process.env.FINAL ?? 'true') !== 'false';
+
+  if (!line) {
+    const failed = `**PR metrics** · measurement failed for \`${short}\` — see the [run](${runUrl}).`;
+    await spliceBody(failed);
+    await upsertComment(failed);
+    await quietly('check run', () =>
+      updateCheck(checkId, 'PR metrics unavailable', failed, true),
+    );
+    return;
+  }
+
+  await spliceBody(line);
 
   const comment =
     readOptional(process.env.COMMENT_FILE) ??
@@ -203,7 +222,7 @@ const publish = async () => {
     readOptional(process.env.REPORT_FILE) ??
     `${line}\n\nThe full report did not reach this job; the [run](${runUrl}) has it.`;
   await quietly('check run', () =>
-    completeCheck(checkId, plainTitle(line), report),
+    updateCheck(checkId, plainTitle(line), report, final),
   );
 };
 

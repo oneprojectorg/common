@@ -7,6 +7,7 @@
  *   node scripts/fallow-health.mjs --full        # every standing finding, no baseline
  *   node scripts/fallow-health.mjs --base <ref>  # compare changed files against <ref>
  *   node scripts/fallow-health.mjs --json        # the CRAP verdict alone, as one JSON object
+ *   node scripts/fallow-health.mjs --json --changed  # only the changed files in scope; no coverage needed
  *
  * Fallow renders a fixed section order — score, complexity findings, file
  * scores, hotspots, targets — and opens every run with the one-line metrics
@@ -59,6 +60,9 @@ const BASELINE = join(ROOT, 'configs', 'fallow', 'health-baseline.json');
 
 const full = process.argv.includes('--full');
 const json = process.argv.includes('--json');
+// `--json --changed`: only the changed files in scope, no coverage needed.
+// The workflow asks this first, to decide whether a coverage run is owed.
+const changedOnly = process.argv.includes('--changed');
 
 /** `--base <ref>` or `--base=<ref>`; unset means the default branch chain. */
 const baseOverride = (() => {
@@ -197,6 +201,24 @@ const printRisky = (risky, changed) => {
  * those add up to. Both renderers below read from this.
  */
 const crapReport = () => {
+  // Before any coverage exists: which changed files would be scored at all.
+  // `PENDING` says a measurement is owed; `OK` with nothing changed says the
+  // coverage run can be skipped, because CRAP only looks at changed files.
+  if (changedOnly) {
+    const { base, paths } = changedFiles(baseOverride);
+    const changed = paths.filter(inCrapScope);
+    return {
+      status: changed.length > 0 ? 'PENDING' : 'OK',
+      metric: 'cognitive',
+      at_risk_threshold: AT_RISK,
+      base,
+      changed,
+      scored: [],
+      risky: [],
+      stale: [],
+    };
+  }
+
   if (!existsSync(COVERAGE)) {
     return {
       status: 'UNAVAILABLE',

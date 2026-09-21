@@ -133,8 +133,15 @@ surfaces under trial: one line at the end of the PR body, a sticky comment
 the line and whose summary is the full report. `scripts/pr-metrics.mjs` builds
 the line, the comment and the report; `scripts/pr-metrics-publish.mjs` posts
 them, splicing the body line between two marker comments so a new push
-replaces the old line rather than stacking another. The blast radius from
-`scripts/blast-radius.ts` (`pnpm blast-radius` locally) travels with it.
+replaces the old line rather than stacking another.
+
+It publishes in two stages. The blast radius from `scripts/blast-radius.ts`
+(`pnpm blast-radius` locally) is ready about a minute after the push and goes
+out first, with CRAP marked as measuring. `pnpm health --json --changed` runs
+in that first stage too: it lists the changed files in scope without needing a
+coverage report, and when the list is empty the first publish is final and the
+instrumented suite never starts. Otherwise the coverage stage runs and a second
+publish fills in the CRAP half.
 
 Locally, run `pnpm health` after `pnpm test:coverage`; without a fresh report
 it says `CRAP: STALE` rather than reporting a green it cannot back up —

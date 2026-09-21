@@ -8,10 +8,17 @@ name: PR metrics
 # Nothing here is a required check: the numbers are for the reviewer, and a
 # failure to measure reads "unavailable" rather than blocking the merge.
 #
-# Three jobs, on purpose. `measure` checks out and runs the PR's code, so it
-# gets a read-only token. `announce` and `publish` hold the token that can
-# write to the PR, so they run no PR code: they check out the publishing script
-# from the base branch and treat the measured text strictly as data.
+# Two stages, because the two metrics cost very different amounts. The blast
+# radius takes about a minute end to end, so `radius` measures it and
+# `publish-radius` posts it with CRAP marked as measuring. CRAP needs the
+# instrumented suite behind a Supabase, so `coverage` runs it afterwards and
+# `publish` rewrites the CRAP half. When the diff touches no file CRAP would
+# score, the first publish is already final and `coverage` never starts.
+#
+# The jobs that run the PR's code (`radius`, `coverage`) get a read-only
+# token. The jobs that hold the token that can write to the PR (`announce`,
+# `publish-radius`, `publish`) run no PR code: they check out the publishing
+# script from the base branch and treat the measured text strictly as data.
 
 on:
   pull_request_target:
@@ -53,27 +60,22 @@ jobs:
         id: announce
         run: node scripts/pr-metrics-publish.mjs announce
 
-  measure:
-    name: Measure
+  # Stage one: the blast radius, plus the list of changed files CRAP would
+  # score, which decides whether stage two is owed at all.
+  radius:
+    name: Blast radius
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 15
     # Fork PRs route through the `fork-ci` environment so a maintainer must
     # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     outputs:
       line: ${{ steps.compose.outputs.line }}
+      coverage_needed: ${{ steps.scope.outputs.coverage_needed }}
 
     env:
       BASE_REF: origin/${{ github.event.pull_request.base.ref }}
-      # Supabase test instance environment variables (using local dev keys)
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-      SUPABASE_URL: http://127.0.0.1:55321
-      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
-      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
-      NEXT_PUBLIC_POSTHOG_KEY: test_posthog_key
 
     steps:
       - name: Checkout repository
@@ -130,6 +132,164 @@ jobs:
           pnpm --silent blast-radius --base "$BASE_REF" --quiet > "$RUNNER_TEMP/blast.md"
           pnpm --silent blast-radius --base "$BASE_REF" --quiet --json > "$RUNNER_TEMP/blast.json"
 
+      # No coverage yet; only which changed files CRAP would score. An older
+      # branch whose health script lacks `--changed` answers UNAVAILABLE, and
+      # that counts as "needed" so the coverage stage still runs for it.
+      - name: List the changed files in CRAP scope
+        id: scope
+        if: always()
+        run: |
+          pnpm --silent health --json --changed --base "$BASE_REF" > "$RUNNER_TEMP/scope.json" || echo '{"status":"UNAVAILABLE"}' > "$RUNNER_TEMP/scope.json"
+          needed=$(jq -r 'if .status == "UNAVAILABLE" then true else ((.changed // []) | length > 0) end' "$RUNNER_TEMP/scope.json")
+          echo "coverage_needed=$needed"
+          echo "coverage_needed=$needed" >> "$GITHUB_OUTPUT"
+
+      - name: Compose the line, the comment and the report
+        id: compose
+        if: always()
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          line=$(node scripts/pr-metrics.mjs \
+            --stage radius \
+            --blast "$RUNNER_TEMP/blast.json" \
+            --blast-md "$RUNNER_TEMP/blast.md" \
+            --crap "$RUNNER_TEMP/scope.json" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --sha "$HEAD_SHA" \
+            --summary "$RUNNER_TEMP/out/report.md" \
+            --comment "$RUNNER_TEMP/out/comment.md")
+          echo "$line"
+          echo "line=$line" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/out/report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      # The report is too long for a job output, so it travels as an artifact.
+      - name: Upload the report and the comment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-metrics-radius
+          path: ${{ runner.temp }}/out
+          retention-days: 7
+
+  publish-radius:
+    name: Publish the blast radius
+    needs: [announce, radius]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      CHECK_RUN_ID: ${{ needs.announce.outputs.check_run_id }}
+      # Produced by the `radius` job while running PR code. Passed through
+      # the environment and files, never interpolated into a script.
+      METRICS_LINE: ${{ needs.radius.outputs.line }}
+      # Final only when nothing CRAP would score changed; otherwise the
+      # coverage stage still has to fill in its half.
+      FINAL: ${{ needs.radius.outputs.coverage_needed != 'true' }}
+
+    steps:
+      - name: Checkout the publishing script from the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: scripts
+
+      - name: Download the report and the comment
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-metrics-radius
+          path: ${{ runner.temp }}/in
+
+      - name: Rewrite the body line, the comment and the check run
+        env:
+          COMMENT_FILE: ${{ runner.temp }}/in/comment.md
+          REPORT_FILE: ${{ runner.temp }}/in/report.md
+        run: node scripts/pr-metrics-publish.mjs publish
+
+  # Stage two: the instrumented suite, only when the diff touched a file CRAP
+  # would score. Re-measures the blast radius rather than downloading it —
+  # same commit, same answer, and it costs less than the artifact plumbing.
+  coverage:
+    name: Coverage
+    needs: radius
+    if: needs.radius.outputs.coverage_needed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
+
+    outputs:
+      line: ${{ steps.compose.outputs.line }}
+
+    env:
+      BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+      # Supabase test instance environment variables (using local dev keys)
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SUPABASE_URL: http://127.0.0.1:55321
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
+      NEXT_PUBLIC_POSTHOG_KEY: test_posthog_key
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install pnpm
+        run: corepack prepare pnpm@latest --activate
+
+      - name: Authenticate to the Tiptap Pro registry
+        env:
+          TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+        run: |
+          pnpm config set "@tiptap-pro:registry" "https://registry.tiptap.dev/"
+          pnpm config set "//registry.tiptap.dev/:_authToken" "$TIPTAP_PRO_TOKEN"
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Measure the blast radius
+        continue-on-error: true
+        run: |
+          pnpm --silent blast-radius --base "$BASE_REF" --quiet > "$RUNNER_TEMP/blast.md"
+          pnpm --silent blast-radius --base "$BASE_REF" --quiet --json > "$RUNNER_TEMP/blast.json"
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -165,6 +325,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/out"
           line=$(node scripts/pr-metrics.mjs \
+            --stage coverage \
             --blast "$RUNNER_TEMP/blast.json" \
             --blast-md "$RUNNER_TEMP/blast.md" \
             --crap "$RUNNER_TEMP/crap.json" \
@@ -176,21 +337,21 @@ jobs:
           echo "line=$line" >> "$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/out/report.md" >> "$GITHUB_STEP_SUMMARY"
 
-      # The report is too long for a job output, so it travels as an artifact.
       - name: Upload the report and the comment
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr-metrics
+          name: pr-metrics-coverage
           path: ${{ runner.temp }}/out
           retention-days: 7
 
   publish:
-    name: Publish
-    needs: [announce, measure]
-    # Always, so a failed measurement still replaces "measuring…" with a
-    # failure note and closes the check run.
-    if: always()
+    name: Publish CRAP
+    # After the first publish, so the two never write at the same time. Runs
+    # whenever the coverage stage ran at all, so a failed measurement still
+    # replaces "measuring…" with a failure note and closes the check run.
+    needs: [announce, radius, publish-radius, coverage]
+    if: always() && needs.coverage.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -204,9 +365,10 @@ jobs:
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       CHECK_RUN_ID: ${{ needs.announce.outputs.check_run_id }}
-      # Produced by the `measure` job while running PR code. Passed through
+      # Produced by the `coverage` job while running PR code. Passed through
       # the environment and files, never interpolated into a script.
-      METRICS_LINE: ${{ needs.measure.outputs.line }}
+      METRICS_LINE: ${{ needs.coverage.outputs.line }}
+      FINAL: 'true'
 
     steps:
       - name: Checkout the publishing script from the base branch
@@ -219,7 +381,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: pr-metrics
+          name: pr-metrics-coverage
           path: ${{ runner.temp }}/in
 
       # `runner` is a step-level context; naming it in the job's `env` makes

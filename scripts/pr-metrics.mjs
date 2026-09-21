@@ -6,6 +6,12 @@
  *   node scripts/pr-metrics.mjs --blast <blast.json> --blast-md <blast.md>
  *                               --crap <crap.json> --run-url <url> --sha <sha>
  *                               [--summary <file>] [--comment <file>]
+ *                               [--stage radius|coverage]
+ *
+ * Two stages publish the same line. `radius` runs a minute after the push
+ * with the blast radius measured and CRAP still pending — or already final,
+ * when no instrumented source changed. `coverage` runs after the instrumented
+ * suite and fills in the CRAP half. The default is `coverage`.
  *
  * Inputs are the `--json` and markdown outputs of `pnpm blast-radius` and the
  * `--json` output of `pnpm health`. Any input that is missing or unreadable
@@ -33,6 +39,7 @@ const { values } = parseArgs({
     sha: { type: 'string' },
     summary: { type: 'string' },
     comment: { type: 'string' },
+    stage: { type: 'string', default: 'coverage' },
   },
 });
 
@@ -74,6 +81,7 @@ const blastLine = (blast) => {
 /** One clause on the worst CRAP score among the changed files. */
 const crapLine = (crap) => {
   if (!crap || crap.status === 'UNAVAILABLE') return 'CRAP unavailable';
+  if (crap.status === 'PENDING') return 'CRAP measuring…';
   if (crap.changed.length === 0) return 'CRAP: no instrumented source changed';
   if (crap.scored.length === 0) {
     return 'CRAP: no test loaded the changed files';
@@ -100,8 +108,15 @@ const COMMENT_ROWS = 30;
  */
 const crapSection = (crap, rowLimit = Infinity) => {
   const lines = ['## CRAP metrics', '', crapLine(crap), ''];
-  if (!crap || crap.status === 'UNAVAILABLE') {
+  if (!crap || crap.status === 'UNAVAILABLE' || crap.status === 'PENDING') {
     if (crap?.error) lines.push(crap.error, '');
+    if (crap?.status === 'PENDING') {
+      const scope =
+        crap.changed?.length > 0
+          ? `${plural(crap.changed.length, 'changed file')} in scope; `
+          : '';
+      lines.push(`${scope}the coverage run fills this in.`, '');
+    }
     return lines;
   }
 
@@ -165,8 +180,20 @@ const commentBody = (blastMd, crap, sha, runUrl) => {
   return `${[header, '', ...crapSection(crap, COMMENT_ROWS), blastSection(blastMd)].join('\n')}\n`;
 };
 
+/**
+ * In the `radius` stage no coverage has run yet, so the only CRAP answer that
+ * is final is "nothing in scope changed". Anything else — a pending list, a
+ * script on an older branch that reports UNAVAILABLE, a missing file — reads
+ * as "measuring", because the coverage stage is about to replace it.
+ */
+const forStage = (crap, stage) => {
+  if (stage !== 'radius') return crap;
+  if (crap?.status === 'OK' && crap.changed?.length === 0) return crap;
+  return { status: 'PENDING', changed: crap?.changed ?? [] };
+};
+
 const blast = readJson(values.blast);
-const crap = readJson(values.crap);
+const crap = forStage(readJson(values.crap), values.stage);
 const sha = (values.sha ?? '').slice(0, 7);
 const runUrl = values['run-url'];
 
