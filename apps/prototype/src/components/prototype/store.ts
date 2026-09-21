@@ -1422,6 +1422,18 @@ export function deleteProcess(processId: string): void {
 }
 
 /**
+ * Take a live process off the active list. The record is kept and shows under
+ * Archived. There is no unarchive; whether there should be is an open
+ * question (HANDOFF).
+ */
+export function archiveProcess(processId: string): void {
+  updateProcess(processId, (process) => ({
+    ...process,
+    archivedAt: Date.now(),
+  }));
+}
+
+/**
  * Put a seeded process back the way it ships. The demo processes are what a
  * walkthrough starts from, and a walkthrough that edits them has no way back
  * short of clearing the browser.
@@ -1480,8 +1492,10 @@ export function duplicateProcess(
       name,
       steward,
       status: 'draft',
-      // Nothing has run in it yet, and nothing is carried over that could have.
+      // Nothing has run in it yet, and nothing is carried over that could
+      // have. archivedAt included: a duplicate must not start archived.
       currentPhaseIndex: -1,
+      archivedAt: undefined,
       admins: undefined,
       targetParticipants: undefined,
       targetSubmissions: undefined,

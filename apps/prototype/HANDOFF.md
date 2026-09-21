@@ -323,6 +323,26 @@ Decisions we did not make, in rough order of how much they matter.
 7. **Card contents during the launch sequence** — the rail's outer height animates
    smoothly, but the cards inside swap treatment in one frame. Invisible to most
    eyes, and the honest fix is one card component rather than two.
+8. **Unarchive, and what an archived row shows** — archiving (list overflow
+   menu, or Settings → Process details) is destructive-styled and confirmed
+   via the shared `PrototypeArchiveConfirm`. From Settings the alert stacks
+   over the dialog; that is deliberate — an inline confirm was tried and read
+   worse. It moves the process to the Archived tab and keeps everything.
+   There is no way back in the UI: Reset (FPP) exists only on the mock Small
+   Grants process, so anything else archived is recoverable only by clearing
+   `op-prototype-processes` from localStorage. The tab is named Archived, not
+   Completed (Raphael): nothing computes completion — a process that finishes
+   Share results stays in Active, where its results stay reachable — so the
+   shelf holds only what admins archived. The product's DB does have a
+   `completed` status; whether a computed Completed and a manual Archived are
+   one shelf or two is engineering's question.
+   Archived processes stay editable — deliberate (Raphael): typo fixes,
+   visibility, and admin changes are valuable after a process ends. The line
+   to hold in the real thing: presentation and access can change, the record
+   of what ran (phases, dates, proposals, results) should not. Unspecified:
+   whether unarchive should exist and who may use it, and what an archived
+   row shows (the live phase name and closing date are suppressed, not
+   answered). `archiveProcess` in `store.ts` is the single writer.
 
 ---
 

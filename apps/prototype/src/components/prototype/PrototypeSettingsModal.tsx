@@ -28,6 +28,8 @@ import { toast } from '@op/sense/Toast';
 import { useEffect, useState } from 'react';
 import { LuCopy, LuLink } from 'react-icons/lu';
 
+import { useRouter } from '@/lib/i18n';
+
 import { CountedInput } from './CountedInput';
 import {
   ADMIN_BLURB,
@@ -35,6 +37,7 @@ import {
   AdminList,
   addAdmin,
 } from './PrototypeAdminModal';
+import { PrototypeArchiveConfirm } from './PrototypeArchiveConfirm';
 import { PROTOTYPE_STEWARDS } from './fakeUser';
 import {
   NAME_LIMIT,
@@ -76,10 +79,13 @@ export function PrototypeSettingsModal({
   process: PrototypeProcess;
   onChange: (patch: (current: PrototypeProcess) => PrototypeProcess) => void;
 }) {
+  const router = useRouter();
+
   /* The only thing held locally: an email half-typed is not a change to the
      process, and it has to survive the re-render each real change causes. */
   const [email, setEmail] = useState('');
   const [section, setSection] = useState<Section>('details');
+  const [isConfirmingArchive, setIsConfirmingArchive] = useState(false);
 
   const admins = processAdmins(process);
   const visibility = process.visibility ?? 'listed';
@@ -91,6 +97,7 @@ export function PrototypeSettingsModal({
       setEmail('');
       // Reopening starts at the top of the rail, not wherever you last were.
       setSection('details');
+      setIsConfirmingArchive(false);
     }
   }, [isOpen]);
 
@@ -115,195 +122,236 @@ export function PrototypeSettingsModal({
   const isValid = /.+@.+\..+/.test(trimmed) && !isDuplicate;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      {/* One frame, three panes. Stacked they were a scroll you had to get to
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        {/* One frame, three panes. Stacked they were a scroll you had to get to
           the bottom of to know what was down there; side by side the rail says
           what the dialog contains before you open any of it, and the frame
           holds still as you move between them. */}
-      <DialogContent className="gap-0 p-0 sm:h-130 sm:w-160 sm:max-w-160">
-        <DialogHeader className="shrink-0 border-b">
-          <DialogTitle>Settings</DialogTitle>
-        </DialogHeader>
+        <DialogContent className="gap-0 p-0 sm:h-130 sm:w-160 sm:max-w-160">
+          <DialogHeader className="shrink-0 border-b">
+            <DialogTitle>Settings</DialogTitle>
+          </DialogHeader>
 
-        <div className="flex min-h-0 flex-1">
-          <nav
-            aria-label="Settings sections"
-            className="flex w-48 shrink-0 flex-col gap-1 border-e bg-muted/40 p-2"
-          >
-            {SECTIONS.map((item) => (
-              <Button
-                key={item.key}
-                variant={item.key === section ? 'secondary' : 'ghost'}
-                className="justify-start"
-                aria-current={item.key === section ? 'page' : undefined}
-                onClick={() => setSection(item.key)}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </nav>
+          <div className="flex min-h-0 flex-1">
+            <nav
+              aria-label="Settings sections"
+              className="flex w-48 shrink-0 flex-col gap-1 border-e bg-muted/40 p-2"
+            >
+              {SECTIONS.map((item) => (
+                <Button
+                  key={item.key}
+                  variant={item.key === section ? 'secondary' : 'ghost'}
+                  className="justify-start"
+                  aria-current={item.key === section ? 'page' : undefined}
+                  onClick={() => setSection(item.key)}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </nav>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-6">
-            {section === 'details' ? (
-              <>
-                <Field>
-                  <FieldLabel htmlFor="settings-name">Process name</FieldLabel>
-                  <CountedInput
-                    id="settings-name"
-                    autoFocus
-                    value={process.name}
-                    limit={NAME_LIMIT}
-                    onChange={(event) =>
-                      onChange((current) => ({
-                        ...current,
-                        name: event.target.value,
-                      }))
-                    }
-                  />
-                </Field>
+            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-6">
+              {section === 'details' ? (
+                <>
+                  <Field>
+                    <FieldLabel htmlFor="settings-name">
+                      Process name
+                    </FieldLabel>
+                    <CountedInput
+                      id="settings-name"
+                      autoFocus
+                      value={process.name}
+                      limit={NAME_LIMIT}
+                      onChange={(event) =>
+                        onChange((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
 
-                <Field>
-                  <FieldLabel htmlFor="settings-steward">
-                    Stewarded by
-                  </FieldLabel>
-                  <Select
-                    value={process.steward}
-                    onValueChange={(value) =>
-                      onChange((current) => ({
-                        ...current,
-                        steward:
-                          typeof value === 'string' ? value : current.steward,
-                      }))
-                    }
-                    items={Object.fromEntries(
-                      PROTOTYPE_STEWARDS.map((option) => [
-                        option.name,
-                        option.name,
-                      ]),
-                    )}
-                  >
-                    <SelectTrigger id="settings-steward" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {PROTOTYPE_STEWARDS.map((option) => (
-                          <SelectItem key={option.id} value={option.name}>
-                            <span className="flex min-w-0 items-center gap-2">
-                              <ProfileAvatar
-                                name={option.name}
-                                alt={option.name}
-                                size="sm"
-                              />
-                              <span className="truncate">{option.name}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </Field>
+                  <Field>
+                    <FieldLabel htmlFor="settings-steward">
+                      Stewarded by
+                    </FieldLabel>
+                    <Select
+                      value={process.steward}
+                      onValueChange={(value) =>
+                        onChange((current) => ({
+                          ...current,
+                          steward:
+                            typeof value === 'string' ? value : current.steward,
+                        }))
+                      }
+                      items={Object.fromEntries(
+                        PROTOTYPE_STEWARDS.map((option) => [
+                          option.name,
+                          option.name,
+                        ]),
+                      )}
+                    >
+                      <SelectTrigger id="settings-steward" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {PROTOTYPE_STEWARDS.map((option) => (
+                            <SelectItem key={option.id} value={option.name}>
+                              <span className="flex min-w-0 items-center gap-2">
+                                <ProfileAvatar
+                                  name={option.name}
+                                  alt={option.name}
+                                  size="sm"
+                                />
+                                <span className="truncate">{option.name}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </Field>
 
-                {/* Read-only, and said out loud rather than left to be found: the
+                  {/* Read-only, and said out loud rather than left to be found: the
                   link is the thing an admin hands to people, so the place they
                   come to check the process's own details is where it belongs.
                   `FieldTitle`, not `FieldLabel` — there is no control here to
                   label, and a label pointing at nothing is worse than none. */}
-                <Field>
-                  <FieldTitle>Process link</FieldTitle>
-                  <div className="flex h-11 items-center gap-2 rounded-lg border border-input bg-muted/50 ps-3 pe-1">
-                    <LuLink
-                      className="size-4 shrink-0 text-muted-foreground"
-                      aria-hidden
-                    />
-                    <span className="min-w-0 flex-1 truncate" dir="ltr">
-                      {link}
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={copyLink}>
-                      <LuCopy className="size-4" aria-hidden />
-                      Copy
-                    </Button>
-                  </div>
-                </Field>
-              </>
-            ) : null}
+                  <Field>
+                    <FieldTitle>Process link</FieldTitle>
+                    <div className="flex h-11 items-center gap-2 rounded-lg border border-input bg-muted/50 ps-3 pe-1">
+                      <LuLink
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      <span className="min-w-0 flex-1 truncate" dir="ltr">
+                        {link}
+                      </span>
+                      <Button variant="ghost" size="sm" onClick={copyLink}>
+                        <LuCopy className="size-4" aria-hidden />
+                        Copy
+                      </Button>
+                    </div>
+                  </Field>
 
-            {/* Inline rather than behind its own dialog: a dialog opened from a
+                  {/* Last because it is the exit. Confirmed via
+                    `PrototypeArchiveConfirm` — a small alert over this dialog
+                    is deliberate; an inline confirm read worse. On confirm we
+                    leave for the list, where the change is visible. Hidden
+                    once archived. */}
+                  {process.archivedAt ? null : (
+                    <Field className="border-t pt-5">
+                      <FieldTitle>Archive process</FieldTitle>
+                      <FieldDescription>
+                        Takes this process off the active list. It moves to the
+                        Archived tab with everything kept.
+                      </FieldDescription>
+                      {/* Wrapped because `Field` stretches direct children
+                        (`*:w-full`); the div takes the stretch and the button
+                        keeps its natural width. */}
+                      <div>
+                        <Button
+                          variant="destructive"
+                          onClick={() => setIsConfirmingArchive(true)}
+                        >
+                          Archive process
+                        </Button>
+                      </div>
+                    </Field>
+                  )}
+                </>
+              ) : null}
+
+              {/* Inline rather than behind its own dialog: a dialog opened from a
                 dialog to type one email is a detour. */}
-            {section === 'admins' ? (
-              <>
-                <FieldDescription>{ADMIN_BLURB}</FieldDescription>
-                <AdminInvite
-                  email={email}
-                  onEmailChange={setEmail}
-                  isValid={isValid}
-                  isDuplicate={isDuplicate}
-                  admins={admins}
-                  onAdd={(person) => {
-                    onChange((current) => ({
-                      ...current,
-                      admins: addAdmin(processAdmins(current), person),
-                    }));
-                    setEmail('');
-                  }}
-                />
-                <AdminList
-                  admins={admins}
-                  onChange={(next) =>
-                    onChange((current) => ({ ...current, admins: next }))
-                  }
-                />
-              </>
-            ) : null}
+              {section === 'admins' ? (
+                <>
+                  <FieldDescription>{ADMIN_BLURB}</FieldDescription>
+                  <AdminInvite
+                    email={email}
+                    onEmailChange={setEmail}
+                    isValid={isValid}
+                    isDuplicate={isDuplicate}
+                    admins={admins}
+                    onAdd={(person) => {
+                      onChange((current) => ({
+                        ...current,
+                        admins: addAdmin(processAdmins(current), person),
+                      }));
+                      setEmail('');
+                    }}
+                  />
+                  <AdminList
+                    admins={admins}
+                    onChange={(next) =>
+                      onChange((current) => ({ ...current, admins: next }))
+                    }
+                  />
+                </>
+              ) : null}
 
-            {/* Who can *find* the page, which is a different question from who
+              {/* Who can *find* the page, which is a different question from who
                 can take part in it — the description says so out loud, because
                 conflating the two is the mistake this pane exists to prevent. */}
-            {section === 'visibility' ? (
-              <>
-                <FieldDescription>
-                  Who can find and see this process page — separate from who can
-                  take part.
-                </FieldDescription>
-                <RadioGroup
-                  value={visibility}
-                  onValueChange={(next) =>
-                    onChange((current) => ({
-                      ...current,
-                      visibility: next === 'unlisted' ? 'unlisted' : 'listed',
-                    }))
-                  }
-                  className="gap-3"
-                >
-                  {VISIBILITY_OPTIONS.map((option) => (
-                    <OptionBox
-                      key={option.value}
-                      htmlFor={`visibility-${option.value}`}
-                      controlPlacement="end"
-                      control={
-                        <RadioGroupItem
-                          id={`visibility-${option.value}`}
-                          value={option.value}
-                        />
-                      }
-                      label={
-                        <span className="flex items-center gap-2">
-                          <option.icon
-                            className="size-4 shrink-0 text-muted-foreground"
-                            aria-hidden
+              {section === 'visibility' ? (
+                <>
+                  <FieldDescription>
+                    Who can find and see this process page — separate from who
+                    can take part.
+                  </FieldDescription>
+                  <RadioGroup
+                    value={visibility}
+                    onValueChange={(next) =>
+                      onChange((current) => ({
+                        ...current,
+                        visibility: next === 'unlisted' ? 'unlisted' : 'listed',
+                      }))
+                    }
+                    className="gap-3"
+                  >
+                    {VISIBILITY_OPTIONS.map((option) => (
+                      <OptionBox
+                        key={option.value}
+                        htmlFor={`visibility-${option.value}`}
+                        controlPlacement="end"
+                        control={
+                          <RadioGroupItem
+                            id={`visibility-${option.value}`}
+                            value={option.value}
                           />
-                          {option.label}
-                        </span>
-                      }
-                      description={option.description}
-                    />
-                  ))}
-                </RadioGroup>
-              </>
-            ) : null}
+                        }
+                        label={
+                          <span className="flex items-center gap-2">
+                            <option.icon
+                              className="size-4 shrink-0 text-muted-foreground"
+                              aria-hidden
+                            />
+                            {option.label}
+                          </span>
+                        }
+                        description={option.description}
+                      />
+                    ))}
+                  </RadioGroup>
+                </>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <PrototypeArchiveConfirm
+        process={process}
+        isOpen={isConfirmingArchive}
+        onOpenChange={setIsConfirmingArchive}
+        onArchived={() => {
+          onOpenChange(false);
+          router.push('/prototype/decisions');
+          toast.success(`${process.name} archived`);
+        }}
+      />
+    </>
   );
 }

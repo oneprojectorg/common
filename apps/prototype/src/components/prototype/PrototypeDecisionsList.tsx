@@ -21,6 +21,7 @@ import type { TranslationKey } from '@/lib/i18n';
 
 import { DecisionCardHeader } from '@/components/decisions/DecisionCardHeader';
 
+import { PrototypeArchiveConfirm } from './PrototypeArchiveConfirm';
 import { formatLongDate } from './formatDate';
 import {
   deleteProcess,
@@ -35,8 +36,11 @@ import {
  * PROTOTYPE ONLY — delete with the rest of `components/prototype`.
  *
  * The decisions index: the seeded running process plus anything created through
- * the wizard in this browser. Mirrors the real page — Active / Completed /
- * Drafts tabs over full-width rows — and reuses the product's own
+ * the wizard in this browser. Mirrors the real page's layout with Active /
+ * Archived / Drafts tabs over full-width rows — Archived rather than the
+ * product's Completed, because nothing here (or yet in the product) computes
+ * completion; archiving is the only way off the active list — and reuses the
+ * product's own
  * `DecisionCardHeader` so a row reads exactly as it does in the app. The stat
  * and closing-date bits are private to `DecisionListItem`, so they are copied.
  */
@@ -48,15 +52,12 @@ export function PrototypeDecisionsList() {
   const drafts = processes.filter(
     (process) => process.currentPhaseIndex < 0 && !process.archivedAt,
   );
-  /* Archived lands under Completed: the prototype has no shelf of its own, and
-     a process taken off the active list has finished as far as anyone reading
-     the page is concerned. */
   const archived = processes.filter((process) => Boolean(process.archivedAt));
   const active = processes.filter(
     (process) => process.currentPhaseIndex >= 0 && !process.archivedAt,
   );
   const shown =
-    tab === 'drafts' ? drafts : tab === 'completed' ? archived : active;
+    tab === 'drafts' ? drafts : tab === 'archived' ? archived : active;
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-8 sm:gap-10 sm:px-6 sm:py-14">
@@ -71,7 +72,7 @@ export function PrototypeDecisionsList() {
         <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
           <TabsList variant="line">
             <TabsTrigger value="active">{t('Active')}</TabsTrigger>
-            <TabsTrigger value="completed">{t('Completed')}</TabsTrigger>
+            <TabsTrigger value="archived">{t('Archived')}</TabsTrigger>
             <TabsTrigger value="drafts">
               {t('Drafts')}
               {drafts.length > 0 ? ` (${drafts.length})` : ''}
@@ -81,8 +82,8 @@ export function PrototypeDecisionsList() {
 
         {shown.length === 0 ? (
           <p className="py-10 text-muted-foreground" aria-live="polite">
-            {tab === 'completed'
-              ? 'Prototype: nothing has completed yet.'
+            {tab === 'archived'
+              ? 'Prototype: nothing archived yet.'
               : 'Prototype: create a process from the Create menu.'}
           </p>
         ) : (
@@ -112,7 +113,9 @@ function ProcessRow({
   onChanged: () => void;
 }) {
   const t = useTranslations();
+  const [isConfirmingArchive, setIsConfirmingArchive] = useState(false);
   const isDraft = process.currentPhaseIndex < 0;
+  const isArchived = Boolean(process.archivedAt);
   const currentPhase = process.phases[process.currentPhaseIndex];
 
   return (
@@ -121,12 +124,15 @@ function ProcessRow({
         href={`/prototype/decisions/${process.id}`}
         className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
       >
+        {/* Archived rows keep their stats but drop the phase name and closing
+            date; a future "Closes on" reads as an open process. What to show
+            instead is an open question (HANDOFF). */}
         <DecisionCardHeader
           name={process.name}
-          currentState={currentPhase?.name}
+          currentState={isArchived ? undefined : currentPhase?.name}
           stewardName="East Side Collective"
         >
-          {currentPhase?.endDate ? (
+          {!isArchived && currentPhase?.endDate ? (
             <ClosingDate closingDate={currentPhase.endDate} />
           ) : null}
         </DecisionCardHeader>
@@ -160,13 +166,8 @@ function ProcessRow({
             <LuEllipsis className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="end">
-            <DropdownMenuItem
-              onClick={() =>
-                toast.info('Prototype: opens the process page in edit mode.')
-              }
-            >
-              {t('Edit process')}
-            </DropdownMenuItem>
+            {/* No Edit item: there is no separate edit mode. The row opens
+                the process page, where everything is edited in place. */}
             <DropdownMenuItem
               onClick={() =>
                 toast.info('Prototype: duplicating is out of scope')
@@ -191,10 +192,20 @@ function ProcessRow({
               </DropdownMenuItem>
             ) : null}
 
-            {/* A draft can be deleted because nothing has happened in it. A
-                live process can't, and there is nothing to offer instead yet —
-                what becomes of a process people have taken part in is a
-                decision this prototype hasn't made. */}
+            {/* A live process gets archive where a draft gets delete: the
+                record moves to Archived instead of disappearing. Destructive
+                and confirmed because people may be in it and there is no
+                unarchive. */}
+            {!isDraft && !isArchived ? (
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setIsConfirmingArchive(true)}
+              >
+                {t('Archive process')}
+              </DropdownMenuItem>
+            ) : null}
+
+            {/* A draft can be deleted because nothing has happened in it. */}
             {isDraft ? (
               <DropdownMenuItem
                 variant="destructive"
@@ -210,6 +221,16 @@ function ProcessRow({
             ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <PrototypeArchiveConfirm
+          process={process}
+          isOpen={isConfirmingArchive}
+          onOpenChange={setIsConfirmingArchive}
+          onArchived={() => {
+            onChanged();
+            toast.success(`${process.name} archived`);
+          }}
+        />
       </div>
     </div>
   );
