@@ -23,12 +23,6 @@ concurrency:
   group: pr-metrics-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-env:
-  FALLOW_VERSION: 3.27.0
-  # common-agent-toolkit commit the blast-radius script is taken from. Bump it
-  # when the toolkit's `blast-radius` skill changes.
-  BLAST_RADIUS_REF: f50427925d886453e9ccad75b7445d26d2af0378
-
 jobs:
   measure:
     name: Measure
@@ -98,22 +92,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install fallow
-        run: npm install --global "fallow@$FALLOW_VERSION"
-
-      - name: Fetch the blast-radius script
-        run: |
-          curl --fail --silent --show-error --location \
-            "https://raw.githubusercontent.com/oneprojectorg/common-agent-toolkit/$BLAST_RADIUS_REF/plugins/devtools/skills/blast-radius/scripts/blast-radius.ts" \
-            --output "$RUNNER_TEMP/blast-radius.ts"
-
       # Two passes: the markdown section for the job summary and the JSON the
-      # body line is built from. Around ten seconds each on a normal PR.
+      # body line is built from. Around ten seconds each on a normal PR. Run
+      # through pnpm so `fallow`, a root devDependency, is on PATH.
       - name: Measure the blast radius
         continue-on-error: true
         run: |
-          node --no-warnings "$RUNNER_TEMP/blast-radius.ts" --base "$BASE_REF" --quiet > "$RUNNER_TEMP/blast.md"
-          node --no-warnings "$RUNNER_TEMP/blast-radius.ts" --base "$BASE_REF" --quiet --json > "$RUNNER_TEMP/blast.json"
+          pnpm --silent blast-radius --base "$BASE_REF" --quiet > "$RUNNER_TEMP/blast.md"
+          pnpm --silent blast-radius --base "$BASE_REF" --quiet --json > "$RUNNER_TEMP/blast.json"
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -138,7 +124,7 @@ jobs:
 
       - name: Score CRAP on the changed files
         continue-on-error: true
-        run: node scripts/fallow-health.mjs --json --base "$BASE_REF" > "$RUNNER_TEMP/crap.json"
+        run: pnpm --silent health --json --base "$BASE_REF" > "$RUNNER_TEMP/crap.json"
 
       # Runs even when Supabase or the install broke above: the line then reads
       # "unavailable" for what could not be measured, which is still an answer.
