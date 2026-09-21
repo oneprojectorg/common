@@ -81,7 +81,6 @@ export * from './unmergeProposal';
 export * from './listProposalRelationships';
 export * from './listContributingProposals';
 export * from './listProposalMergeRecipients';
-export { notSuperseded } from './proposalSupersession';
 
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
