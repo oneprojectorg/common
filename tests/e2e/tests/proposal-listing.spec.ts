@@ -279,7 +279,8 @@ test.describe('Proposal Listing', () => {
   /**
    * Legacy COWOP process: proposalTemplate lives in
    * `decision_processes.process_schema` (NOT in instanceData). Budget is stored
-   * as a plain number and must be normalised to { amount, currency: 'USD' }.
+   * as a plain number and normalises to a bare { amount } — the unit is the
+   * template's, not the value's (ADR 0005).
    *
    * This mirrors real production COWOP data where older processes never had
    * proposalTemplate at the instance level.

@@ -274,8 +274,9 @@ test.describe('Proposal View', () => {
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', 'https://example.org');
 
-    // Legacy plain-number budget (5000) is normalised to { value: 5000, currency: 'USD' }
-    // and rendered as "$5,000" via formatCurrency
+    // Legacy plain-number budget (5000) normalises to a bare { amount: 5000 }
+    // — it declares no unit — and renders as "$5,000" via formatCurrency,
+    // which falls back to USD.
     await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
   });
 
@@ -565,7 +566,8 @@ test.describe('Proposal View', () => {
       }),
     ).toBeVisible({ timeout: 30_000 });
 
-    // Plain-number budget (15000) normalised to { amount: 15000, currency: 'USD' }.
+    // Plain-number budget (15000) normalises to a bare { amount: 15000 };
+    // formatCurrency falls back to USD for the display.
     await expect(authenticatedPage.getByText('$15,000').first()).toBeVisible();
 
     await expect(
