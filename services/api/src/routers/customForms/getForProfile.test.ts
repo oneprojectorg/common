@@ -94,7 +94,7 @@ describe.concurrent('customForm.getForProfile', () => {
     expect(result).toBeNull();
   });
 
-  it('stops returning a form the caller answered on their own proposal', async ({
+  it('stops asking after a submit-phase answer attached to a proposal the caller submitted', async ({
     task,
     onTestFinished,
   }) => {
@@ -127,7 +127,7 @@ describe.concurrent('customForm.getForProfile', () => {
     ).resolves.toBeNull();
   });
 
-  it('stops returning a form the caller answered on their own profile', async ({
+  it("stops asking after a post-vote answer attached to the caller's own profile", async ({
     task,
     onTestFinished,
   }) => {
