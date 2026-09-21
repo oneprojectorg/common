@@ -2,8 +2,9 @@ name: PR metrics
 
 # Measures the review metrics the `pr-description` skill asks for — blast
 # radius and CRAP — on every push to a PR, and publishes the result to three
-# surfaces under trial: one line at the end of the PR body, a sticky comment,
-# and a check run. The full reports go to the job summary and the check run.
+# surfaces under trial: one line at the end of the PR body, a sticky comment
+# carrying the CRAP table and the blast-radius section, and a check run. The
+# full report also goes to the job summary.
 # Nothing here is a required check: the numbers are for the reviewer, and a
 # failure to measure reads "unavailable" rather than blocking the merge.
 #

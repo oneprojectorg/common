@@ -9,8 +9,8 @@
  * `announce` posts (or rewrites) the sticky comment as "measuring…" and opens
  * an in-progress check run, the way Vercel's bot does, so the reader knows a
  * result is coming. `publish` rewrites the body line, fills the comment with
- * the line plus the at-risk functions, and completes the check run with the
- * full report as its summary. The check run concludes `neutral` whatever the
+ * the CRAP table and the blast-radius section, and completes the check run
+ * with the full report as its summary. The check run concludes `neutral` whatever the
  * numbers say: this is a report, not a gate.
  *
  * Everything arrives through the environment:
@@ -34,8 +34,10 @@ import { splice } from './pr-metrics-body.mjs';
 
 const COMMENT_MARKER = '<!-- pr-metrics:comment -->';
 const CHECK_NAME = 'PR metrics';
-// GitHub caps a check run's summary at 65535 characters.
+// GitHub caps a check run's summary and an issue comment at 65535 characters
+// each. The composer already caps the table; this is the backstop.
 const SUMMARY_LIMIT = 60000;
+const COMMENT_LIMIT = 60000;
 
 const env = (name, fallback) => {
   const value = process.env[name];
@@ -99,7 +101,11 @@ const findComment = async () => {
 };
 
 const upsertComment = async (text) => {
-  const body = `${COMMENT_MARKER}\n${text.trim()}\n`;
+  const fitted =
+    text.length > COMMENT_LIMIT
+      ? `${text.slice(0, COMMENT_LIMIT)}\n\n… truncated; the [full report](${runUrl}) has the rest.`
+      : text;
+  const body = `${COMMENT_MARKER}\n${fitted.trim()}\n`;
   const existing = await findComment();
   if (existing) {
     await api('PATCH', `/repos/${repo}/issues/comments/${existing.id}`, {

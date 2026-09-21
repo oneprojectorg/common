@@ -39,7 +39,7 @@
       "dependsOn": ["topo"]
     },
     "test:coverage": {
-      "dependsOn": ["topo"],
+      "dependsOn": ["topo", "@op/styles#build"],
       "outputs": ["coverage/**"]
     },
     "dev": {
