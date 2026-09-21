@@ -3,12 +3,7 @@ import { defineRouting } from 'next-intl/routing';
 
 import { i18nConfig } from './config';
 
-export type {
-  KeysIn,
-  MessageNamespace,
-  TranslateFn,
-  TranslationKey,
-} from './translate';
+export type { TranslateFn, TranslationKey } from './translate';
 
 export const routing = defineRouting(i18nConfig);
 

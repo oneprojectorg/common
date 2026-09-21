@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest';
 
 import { i18nConfig } from './config';
 import english from './dictionaries/en.json';
-import type { MessageTree } from './translate';
+
+/** A dictionary: shared labels plus at most two levels of namespace. */
+type MessageTree = { [key: string]: string | MessageTree };
 
 type MessageValues = Record<
   string,
