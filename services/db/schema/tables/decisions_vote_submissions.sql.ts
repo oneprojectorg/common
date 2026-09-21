@@ -45,6 +45,8 @@ export interface VoteData extends Record<string, unknown> {
   selections?: Array<{
     proposalId: string;
     cost: number | null;
+    /** 1-based position on a ranked ballot; absent on an unranked one. */
+    rank?: number;
   }>;
   /** The sum of the costs above, as enforced. */
   totalCost?: number;

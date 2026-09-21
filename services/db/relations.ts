@@ -433,6 +433,42 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Ballot relations. A submission owns its selections; each selection points
+   * at the proposal it is a vote for.
+   */
+  decisionsVoteSubmissions: {
+    processInstance: r.one.processInstances({
+      from: r.decisionsVoteSubmissions.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    submittedBy: r.one.profiles({
+      from: r.decisionsVoteSubmissions.submittedByProfileId,
+      to: r.profiles.id,
+      alias: 'decisionsVoteSubmission_submittedBy',
+      optional: false,
+    }),
+    voteProposals: r.many.decisionsVoteProposals({
+      from: r.decisionsVoteSubmissions.id,
+      to: r.decisionsVoteProposals.voteSubmissionId,
+    }),
+  },
+
+  decisionsVoteProposals: {
+    voteSubmission: r.one.decisionsVoteSubmissions({
+      from: r.decisionsVoteProposals.voteSubmissionId,
+      to: r.decisionsVoteSubmissions.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.decisionsVoteProposals.proposalId,
+      to: r.proposals.id,
+      alias: 'decisionsVoteProposal_proposal',
+      optional: false,
+    }),
+  },
+
+  /**
    * Process survey response relations. Intentionally has no submitter
    * relation so responses cannot be joined back to a profile.
    */
