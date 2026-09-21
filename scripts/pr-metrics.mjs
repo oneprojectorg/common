@@ -84,8 +84,15 @@ const crapLine = (crap) => {
     crap.risky.length > 0
       ? `${crap.risky.length} of ${plural(crap.changed.length, 'changed file')} at ${crap.at_risk_threshold} or worse`
       : `nothing at ${crap.at_risk_threshold} or worse`;
-  const stale = crap.status === 'STALE' ? ', coverage stale' : '';
-  return `${head}, ${verdict}${stale}`;
+  // Off the data, not the status: `AT_RISK` outranks both of these, and a
+  // finding measured against a partial or stale report still owes the caveat.
+  const caveat =
+    crap.partial?.length > 0
+      ? ', coverage partial'
+      : crap.stale?.length > 0
+        ? ', coverage stale'
+        : '';
+  return `${head}, ${verdict}${caveat}`;
 };
 
 /** The `## CRAP metrics` section for the job summary. */

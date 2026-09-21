@@ -61,6 +61,27 @@ export const ROOT = resolve(
   '..',
 );
 export const COVERAGE = join(ROOT, 'coverage', 'coverage-final.json');
+const MANIFEST = join(ROOT, 'coverage', 'workspaces.json');
+
+/**
+ * Workspaces that owed an instrumented report and wrote none, per
+ * `scripts/merge-coverage.mjs`. Empty when every suite finished, and when the
+ * report predates the manifest — an older report gets the benefit of the doubt
+ * rather than a retroactive warning nothing can act on.
+ *
+ * While this is non-empty a zero is not a measurement. The per-workspace
+ * `include` zero-fills sources a workspace owns but its own tests never load,
+ * counting on another workspace's run to put the hits back; the report cannot
+ * distinguish a line no test reached from a line whose test never reported.
+ */
+const unreportedWorkspaces = () => {
+  if (!existsSync(MANIFEST)) return [];
+  try {
+    return JSON.parse(readFileSync(MANIFEST, 'utf8')).missing ?? [];
+  } catch {
+    return [];
+  }
+};
 
 /**
  * Scope-wide CRAP aggregates, committed so `pnpm health` can show a delta.
@@ -265,6 +286,7 @@ const functionCoverage = (file, fn) => {
  */
 export const crapScores = () => {
   const coverage = readCoverage();
+  const partial = unreportedWorkspaces();
   const files = {};
   const worst = {};
   let measured = 0;
@@ -275,7 +297,9 @@ export const crapScores = () => {
     if (!inCrapScope(fn.path)) continue;
 
     const covered = functionCoverage(coverage.get(fn.path), fn);
-    if (covered === null) {
+    // A missing report can only ever understate, so a hit stays a hit while the
+    // merge is partial. A zero is the reading it cannot back.
+    if (covered === null || (covered === 0 && partial.length > 0)) {
       unmeasured += 1;
       absent.add(fn.path);
       continue;
@@ -300,6 +324,7 @@ export const crapScores = () => {
     worst,
     stats: {
       metric: 'cognitive',
+      partial,
       functions_measured: measured,
       functions_unmeasured: unmeasured,
       files_scored: Object.keys(files).length,

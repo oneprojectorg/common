@@ -161,6 +161,15 @@ const printAggregates = (now, before, stats) => {
   }
 };
 
+const printPartial = (partial) => {
+  console.log(
+    `\n  ! ${partial.length} workspace(s) owed a coverage report and wrote none:\n` +
+      partial.map((workspace) => `      ${workspace}`).join('\n') +
+      '\n    Functions reading 0% are scored as unmeasured, not untested, until\n' +
+      '    those suites finish.',
+  );
+};
+
 const printStale = (stale) => {
   const listed = stale.slice(0, 5).map((path) => `      ${path}`);
   if (stale.length > listed.length) {
@@ -225,8 +234,17 @@ const crapReport = () => {
     .map((path) => ({ path, ...worst[path] }))
     .sort((a, b) => b.crap - a.crap);
 
+  // A partial merge still scores whatever did report, so a finding survives it;
+  // only a clean result does not, the same way a stale one does not.
+  const partial = stats.partial ?? [];
   const status =
-    risky.length > 0 ? 'AT_RISK' : stale.length > 0 ? 'STALE' : 'OK';
+    risky.length > 0
+      ? 'AT_RISK'
+      : partial.length > 0
+        ? 'PARTIAL'
+        : stale.length > 0
+          ? 'STALE'
+          : 'OK';
 
   return {
     status,
@@ -237,6 +255,7 @@ const crapReport = () => {
     scored,
     risky,
     stale,
+    partial,
     summary: summarize(files),
     trend: comparableTrend(),
     stats,
@@ -251,12 +270,14 @@ const crapVerdict = () => {
     return false;
   }
 
-  const { base, changed, risky, stale, summary, trend, stats } = report;
+  const { base, changed, risky, stale, partial, summary, trend, stats } =
+    report;
   printAggregates(summary, trend, stats);
 
   console.log(
     `\n  ${changed.length} changed file(s) in scope, against ${base ?? 'HEAD (no base branch resolved)'}`,
   );
+  if (partial.length > 0) printPartial(partial);
   if (stale.length > 0) printStale(stale);
 
   if (risky.length > 0) {
@@ -269,6 +290,15 @@ const crapVerdict = () => {
   // lines the edit has since moved. Both come back with a flattering coverage
   // term and a clean verdict, so say so instead of "OK" — a false green here is
   // worse than no signal at all.
+  if (partial.length > 0) {
+    console.log(
+      '\nCRAP: PARTIAL — the workspaces above wrote no report, so the merge cannot\n' +
+        '  tell an uncovered line from one whose suite never ran. A clean result here\n' +
+        '  means only that nothing measurable is at risk.',
+    );
+    return false;
+  }
+
   if (stale.length > 0) {
     console.log(
       '\nCRAP: STALE — the files above changed after this coverage report was written,\n' +
