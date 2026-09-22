@@ -83,11 +83,14 @@ export function TemplateEditorContent({
     const base =
       saved && Object.keys(saved.properties ?? {}).length > 0
         ? saved
-        : createDefaultTemplate(t('Proposal summary'), t('Proposal title'));
+        : createDefaultTemplate(
+            t('decisions.processBuilder.proposalSummaryLabel'),
+            t('decisions.processBuilder.proposalTitleLabel'),
+          );
 
     // Ensure locked system fields are present (backward compat)
     return ensureLockedFields(base, {
-      titleLabel: t('Proposal title'),
+      titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
       categoryLabel: t('Category'),
       categories,
       allowMultipleCategories,
@@ -126,7 +129,7 @@ export function TemplateEditorContent({
     }
     setTemplate((prev) =>
       ensureLockedFields(prev, {
-        titleLabel: t('Proposal title'),
+        titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
         categoryLabel: t('Category'),
         categories,
         allowMultipleCategories,
@@ -174,7 +177,7 @@ export function TemplateEditorContent({
     }
 
     const normalized = ensureLockedFields(template, {
-      titleLabel: t('Proposal title'),
+      titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
       categoryLabel: t('Category'),
       categories,
       allowMultipleCategories,
@@ -389,7 +392,9 @@ export function TemplateEditorContent({
         <div className="mx-auto w-full max-w-160 space-y-8 p-4 pb-24 md:p-8 md:pb-8">
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <Header2>{t('Proposal template')}</Header2>
+              <Header2>
+                {t('decisions.processBuilder.proposalTemplateHeading')}
+              </Header2>
               <div className="flex items-center gap-3">
                 <SaveStatusIndicator
                   status={autosaveStatus.status}
@@ -398,27 +403,29 @@ export function TemplateEditorContent({
               </div>
             </div>
             <p className="text-muted-foreground">
-              {t('Build your proposal using the tools below')}
+              {t('decisions.processBuilder.templateEditorHint')}
             </p>
           </div>
           {/* Locked system fields (stored in schema) */}
           <div className="space-y-4">
             <CollapsibleConfigCard
-              label={t('Proposal title')}
-              badgeLabel={t('Required')}
+              label={t('decisions.processBuilder.proposalTitleLabel')}
+              badgeLabel={t('decisions.processBuilder.requiredLabel')}
               locked
             />
             {hasCategories && (
               <CollapsibleConfigCard
                 label={t('Category')}
                 badgeLabel={
-                  requireCategorySelection ? t('Required') : t('Optional')
+                  requireCategorySelection
+                    ? t('decisions.processBuilder.requiredLabel')
+                    : t('decisions.processBuilder.optionalLabel')
                 }
                 locked
               >
                 <div className="-mt-3 px-11 pb-4">
                   <p className="m-0 text-sm">
-                    {t('These are the categories you defined in')}{' '}
+                    {t('decisions.processBuilder.templateCategoriesIntro')}{' '}
                     <Button
                       variant="link"
                       size="inline"
@@ -428,7 +435,9 @@ export function TemplateEditorContent({
                         void setSection('proposalCategories');
                       }}
                     >
-                      {t('Proposal Categories')}
+                      {t(
+                        'decisions.processBuilder.proposalCategoriesSectionLabel',
+                      )}
                     </Button>
                     .
                   </p>
@@ -456,7 +465,7 @@ export function TemplateEditorContent({
                 return <FieldCardDragPreview field={field} />;
               }}
               renderDropIndicator={FieldCardDropIndicator}
-              aria-label={t('Form fields')}
+              aria-label={t('decisions.processBuilder.formFieldsHeading')}
             >
               {(field, controls) => renderFieldCard(field, controls)}
             </Sortable>
@@ -467,17 +476,15 @@ export function TemplateEditorContent({
             onClick={() => handleAddField('short_text')}
           >
             <LuPlus className="size-4" />
-            {t('Add field')}
+            {t('decisions.processBuilder.addFieldAction')}
           </Button>
         </div>
       </div>
 
       <ConfirmDeleteModal
         isOpen={fieldToDelete !== null}
-        title={t('Delete field')}
-        message={t(
-          'Are you sure you want to delete this field? This action cannot be undone.',
-        )}
+        title={t('decisions.processBuilder.deleteFieldTitle')}
+        message={t('decisions.processBuilder.deleteFieldConfirm')}
         onConfirm={confirmRemoveField}
         onCancel={() => setFieldToDelete(null)}
       />

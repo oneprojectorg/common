@@ -83,21 +83,20 @@ export function SummarySectionInner({
     return (
       <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted-foreground">{t('Summary')}</p>
+          <p className="text-sm text-muted-foreground">
+            {t('decisions.processBuilder.summaryHeading')}
+          </p>
           <Header1 className="text-headline">
-            {t('Your process still needs more information')}
+            {t('decisions.processBuilder.summaryIncompleteTitle')}
           </Header1>
         </div>
         <p className="text-base">
-          {t.rich(
-            '<highlight>{processName}</highlight> is missing information in order to go live.',
-            {
-              processName,
-              highlight: (chunks: React.ReactNode) => (
-                <span className="font-bold">{chunks}</span>
-              ),
-            },
-          )}
+          {t.rich('decisions.processBuilder.summaryIncompleteDescription', {
+            processName,
+            highlight: (chunks: React.ReactNode) => (
+              <span className="font-bold">{chunks}</span>
+            ),
+          })}
         </p>
         <div className="flex flex-col space-y-2 rounded-lg border p-4">
           {incompleteItems.map((item, index) => (
@@ -114,7 +113,7 @@ export function SummarySectionInner({
                     }
                   }}
                 >
-                  {t('Take me there')}
+                  {t('decisions.processBuilder.summaryGoToMissingAction')}
                 </Button>
               </div>
               {index < incompleteItems.length - 1 && (
@@ -130,26 +129,27 @@ export function SummarySectionInner({
   return (
     <div className="mx-auto flex w-full flex-col gap-6 p-4 md:max-w-160 md:p-8">
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">{t('Summary')} 🚀</p>
-        <Header1 className="text-headline">{t('Review your process')}</Header1>
+        <p className="text-sm text-muted-foreground">
+          {t('decisions.processBuilder.summaryHeading')} 🚀
+        </p>
+        <Header1 className="text-headline">
+          {t('decisions.processBuilder.summaryReadyTitle')}
+        </Header1>
       </div>
       <p>
-        {t.rich(
-          '<highlight>{processName}</highlight> is ready to go live. Launching your process will invite and notify participants.',
-          {
-            processName,
-            highlight: (chunks: React.ReactNode) => (
-              <span className="font-bold">{chunks}</span>
-            ),
-          },
-        )}
+        {t.rich('decisions.processBuilder.summaryReadyDescription', {
+          processName,
+          highlight: (chunks: React.ReactNode) => (
+            <span className="font-bold">{chunks}</span>
+          ),
+        })}
       </p>
-      <p>{t('You can always edit and invite participants after launching.')}</p>
+      <p>{t('decisions.processBuilder.summaryEditLaterHint')}</p>
       <div className="flex flex-col space-y-2 rounded-lg border p-4">
         <div>
           <div className="flex items-center justify-between">
             <span className="text-base text-muted-foreground">
-              {t('Phases')}
+              {t('decisions.processBuilder.phasesLabel')}
             </span>
             <span className="text-base">{phasesCount}</span>
           </div>
@@ -159,7 +159,7 @@ export function SummarySectionInner({
           <div>
             <div className="flex items-center justify-between">
               <span className="text-base text-muted-foreground">
-                {t('Categories')}
+                {t('decisions.processBuilder.categoriesLabel')}
               </span>
               <span className="text-base">{categories.length}</span>
             </div>
@@ -168,7 +168,7 @@ export function SummarySectionInner({
         )}
         <div className="flex items-center justify-between">
           <span className="text-base text-muted-foreground">
-            {t('Participants Invited')}
+            {t('decisions.processBuilder.summaryParticipantsInvited')}
           </span>
           <span className="text-base">{participantsCount}</span>
         </div>

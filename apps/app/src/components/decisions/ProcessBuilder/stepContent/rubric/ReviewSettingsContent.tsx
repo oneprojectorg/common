@@ -121,10 +121,12 @@ export function ReviewSettingsContent({
 
       {/* Scope */}
       <section className="space-y-4">
-        <Header3 className="text-label">{t('Scope')}</Header3>
+        <Header3 className="text-label">
+          {t('decisions.processBuilder.reviewScopeLabel')}
+        </Header3>
         <FieldSet>
           <FieldLegend className="mb-3 text-base">
-            {t('What should each reviewer be responsible for?')}
+            {t('decisions.processBuilder.reviewScopeQuestion')}
           </FieldLegend>
           <RadioGroup
             value={settings.scope}
@@ -142,7 +144,7 @@ export function ReviewSettingsContent({
               );
               updateSettings({ scope: value as ReviewsScope });
             }}
-            aria-label={t('Scope')}
+            aria-label={t('decisions.processBuilder.reviewScopeLabel')}
             className="gap-3"
           >
             <Field orientation="horizontal">
@@ -152,7 +154,7 @@ export function ReviewSettingsContent({
                   {t('All proposals')}
                 </FieldLabel>
                 <FieldDescription>
-                  {t('Reviewers can review any submission')}
+                  {t('decisions.processBuilder.reviewScopeAllHint')}
                 </FieldDescription>
               </FieldContent>
             </Field>
@@ -160,12 +162,10 @@ export function ReviewSettingsContent({
               <RadioGroupItem id="scope-by_category" value="by_category" />
               <FieldContent>
                 <FieldLabel htmlFor="scope-by_category">
-                  {t('By category')}
+                  {t('decisions.processBuilder.reviewScopeByCategory')}
                 </FieldLabel>
                 <FieldDescription>
-                  {t(
-                    'Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.',
-                  )}
+                  {t('decisions.processBuilder.reviewScopeByCategoryHint')}
                 </FieldDescription>
               </FieldContent>
             </Field>
@@ -184,13 +184,13 @@ export function ReviewSettingsContent({
 
       {/* Revisions */}
       <section className="space-y-4">
-        <Header3 className="text-label">{t('Revisions')}</Header3>
+        <Header3 className="text-label">
+          {t('decisions.processBuilder.revisionsLabel')}
+        </Header3>
         <div className="space-y-2">
           <ToggleRow
-            label={t('Reviewers can request revisions')}
-            description={t(
-              'Reviewers can ask authors to revise their proposal before scoring',
-            )}
+            label={t('decisions.processBuilder.revisionsToggleLabel')}
+            description={t('decisions.processBuilder.revisionsHint')}
           >
             <Switch
               checked={settings.reviewsAllowRevisions}

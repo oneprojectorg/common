@@ -85,7 +85,7 @@ export function ProposalCategoriesSectionContent({
 
     if (existingTemplate) {
       payload.proposalTemplate = ensureLockedFields(existingTemplate, {
-        titleLabel: t('Proposal title'),
+        titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
         categoryLabel: t('Category'),
         categories: updated.categories,
         allowMultipleCategories: updated.allowMultipleCategories,
@@ -171,7 +171,7 @@ export function ProposalCategoriesSectionContent({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Header1 className="text-headline">
-            {t('Proposal Categories')}
+            {t('decisions.processBuilder.proposalCategoriesSectionLabel')}
           </Header1>
           <SaveStatusIndicator
             status={autosaveStatus.status}
@@ -179,9 +179,7 @@ export function ProposalCategoriesSectionContent({
           />
         </div>
         <p className="text-muted-foreground">
-          {t(
-            'Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.',
-          )}
+          {t('decisions.processBuilder.categoriesSectionHint')}
         </p>
       </div>
 
@@ -192,17 +190,17 @@ export function ProposalCategoriesSectionContent({
               <EmptyMedia variant="icon">
                 <LuLeaf className="size-5" />
               </EmptyMedia>
-              <EmptyTitle>{t('No categories defined yet')}</EmptyTitle>
+              <EmptyTitle>
+                {t('decisions.processBuilder.noCategoriesDefined')}
+              </EmptyTitle>
               <EmptyDescription>
-                {t(
-                  'Categories help proposers understand what outcomes this process is trying to achieve.',
-                )}
+                {t('decisions.processBuilder.noCategoriesHint')}
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <Button className="mt-2" onClick={() => setIsFormVisible(true)}>
                 <LuPlus className="size-4" />
-                {t('Create first category')}
+                {t('decisions.processBuilder.createFirstCategoryAction')}
               </Button>
             </EmptyContent>
           </Empty>
@@ -267,7 +265,7 @@ export function ProposalCategoriesSectionContent({
               onClick={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />
-              {t('Add category')}
+              {t('decisions.processBuilder.addCategoryAction')}
             </Button>
           )}
         </div>
@@ -291,8 +289,10 @@ export function ProposalCategoriesSectionContent({
       {categories.length > 0 && (
         <div className="space-y-4 border-t pt-6">
           <ToggleRow
-            label={t('Require category selection')}
-            description={t('Proposers must select at least one category')}
+            label={t('decisions.processBuilder.requireCategorySelectionLabel')}
+            description={t(
+              'decisions.processBuilder.requireCategorySelectionHint',
+            )}
           >
             <Switch
               checked={requireCategorySelection}
@@ -300,8 +300,10 @@ export function ProposalCategoriesSectionContent({
             />
           </ToggleRow>
           <ToggleRow
-            label={t('Allow multiple categories')}
-            description={t('Proposers can select more than one category')}
+            label={t('decisions.processBuilder.allowMultipleCategoriesLabel')}
+            description={t(
+              'decisions.processBuilder.allowMultipleCategoriesHint',
+            )}
           >
             <Switch
               checked={allowMultipleCategories}
@@ -338,36 +340,42 @@ function CategoryForm({
   return (
     <div className="rounded border p-4">
       <Header3 className="mb-4">
-        {isEditing ? t('Edit category') : t('Add category')}
+        {isEditing
+          ? t('decisions.processBuilder.editCategoryTitle')
+          : t('decisions.processBuilder.addCategoryAction')}
       </Header3>
       <div className="space-y-4">
         <CategoryField
           id="category-shorthand"
-          label={t('Shorthand')}
+          label={t('decisions.processBuilder.categoryShorthandLabel')}
           isRequired
           value={label}
           onChange={onLabelChange}
-          placeholder={t('e.g., Education')}
-          description={t('1-3 words. Appears in dropdowns and cards.')}
+          placeholder={t(
+            'decisions.processBuilder.categoryShorthandPlaceholder',
+          )}
+          description={t('decisions.processBuilder.categoryShorthandHint')}
           maxLength={CATEGORY_TITLE_MAX_LENGTH}
         />
         <CategoryField
           id="category-description"
           multiline
-          label={t('Full description')}
+          label={t('decisions.processBuilder.categoryDescriptionLabel')}
           value={description}
           onChange={onDescriptionChange}
           placeholder={t(
-            'e.g., Expand access to quality education and workforce development in underserved communities',
+            'decisions.processBuilder.categoryDescriptionPlaceholder',
           )}
-          description={t('Help proposers understand what this category means')}
+          description={t('decisions.processBuilder.categoryDescriptionHint')}
         />
         <div className="flex items-center justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>
             {t('Cancel')}
           </Button>
           <Button onClick={onSubmit} disabled={!label.trim()}>
-            {isEditing ? t('Save changes') : t('Add category')}
+            {isEditing
+              ? t('Save changes')
+              : t('decisions.processBuilder.addCategoryAction')}
           </Button>
         </div>
       </div>

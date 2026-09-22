@@ -55,7 +55,7 @@ function FieldConfigDropdownOptions({
   initialOptions,
   onOptionsChange,
 }: FieldConfigDropdownOptionsProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldFocusNewRef = useRef(false);
 
@@ -89,7 +89,7 @@ function FieldConfigDropdownOptions({
       <div className="flex items-center gap-2">
         <LuGripVertical className="size-4 text-muted-foreground" />
         <span className="me-12 grow rounded-lg border border-input bg-white px-4 py-3 shadow-lg">
-          {item.value || t('Option')}
+          {item.value || t('optionLabel')}
         </span>
       </div>
     );
@@ -122,16 +122,16 @@ function FieldConfigDropdownOptions({
 
   return (
     <div ref={containerRef} className="space-y-4">
-      <h4 className="text-strong">{t('Options')}</h4>
+      <h4 className="text-strong">{t('optionsLabel')}</h4>
 
       <Sortable
         items={options}
         onChange={updateOptions}
         dragTrigger="handle"
-        getItemLabel={(item) => item.value || t('Option')}
+        getItemLabel={(item) => item.value || t('optionLabel')}
         renderDragPreview={renderDragPreview}
         className="gap-2"
-        aria-label={t('Dropdown options')}
+        aria-label={t('dropdownOptionsLabel')}
       >
         {(option, controls) => {
           const index = options.findIndex((o) => o.id === option.id);
@@ -139,13 +139,13 @@ function FieldConfigDropdownOptions({
             <div className="flex items-center gap-2">
               <DragHandle
                 {...controls.dragHandleProps}
-                aria-label={t('Drag to reorder option')}
+                aria-label={t('dragOptionLabel')}
               />
               <Input
                 value={option.value}
                 onChange={(e) => handleUpdateOption(option.id, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, option)}
-                placeholder={t('Option {number}', { number: index + 1 })}
+                placeholder={t('optionNumber', { number: index + 1 })}
                 className="w-full"
               />
               <Tooltip disabled={options.length > 2}>
@@ -158,7 +158,7 @@ function FieldConfigDropdownOptions({
                     <Button
                       variant="outline"
                       size="icon"
-                      aria-label={t('Remove option')}
+                      aria-label={t('removeOptionAction')}
                       aria-disabled={options.length <= 2 || undefined}
                       className={cn(
                         options.length <= 2 &&
@@ -174,9 +174,7 @@ function FieldConfigDropdownOptions({
                     </Button>
                   }
                 />
-                <TooltipContent>
-                  {t('At least two options are required')}
-                </TooltipContent>
+                <TooltipContent>{t('optionsMinimumError')}</TooltipContent>
               </Tooltip>
             </div>
           );
@@ -189,7 +187,7 @@ function FieldConfigDropdownOptions({
         className="hover:bg-secondary"
       >
         <LuPlus className="size-4" />
-        <span>{t('Add option')}</span>
+        <span>{t('addOptionAction')}</span>
       </Button>
     </div>
   );

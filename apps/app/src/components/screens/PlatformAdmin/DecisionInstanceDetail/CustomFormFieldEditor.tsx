@@ -176,7 +176,9 @@ export const CustomFormFieldEditor = ({
             onChange({ ...field, isRequired: checked === true })
           }
         />
-        <FieldLabel htmlFor={`${fieldId}-required`}>{t('Required')}</FieldLabel>
+        <FieldLabel htmlFor={`${fieldId}-required`}>
+          {t('decisions.processBuilder.requiredLabel')}
+        </FieldLabel>
       </Field>
     </div>
   );
@@ -200,7 +202,9 @@ const OptionsField = ({
 
   return (
     <Field>
-      <FieldLabel htmlFor={fieldId}>{t('Options')}</FieldLabel>
+      <FieldLabel htmlFor={fieldId}>
+        {t('decisions.processBuilder.optionsLabel')}
+      </FieldLabel>
       <Textarea
         id={fieldId}
         rows={4}

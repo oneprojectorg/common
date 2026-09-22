@@ -130,7 +130,7 @@ export function RubricEditorContent({
 
   const handleAddCriterion = useCallback(() => {
     const criterionId = crypto.randomUUID().slice(0, 8);
-    const label = t('Untitled field');
+    const label = t('decisions.processBuilder.untitledField');
     setTemplate((prev) => {
       let updated = addCriterion(prev, criterionId, 'scored', label);
       updated = setCriterionRequired(updated, criterionId, true);
@@ -341,7 +341,9 @@ export function RubricEditorContent({
       <main className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
         <div className="mx-auto w-full max-w-160 space-y-6 p-4 pb-24 md:p-8 md:pb-8">
           <div className="mb-10 flex items-center justify-between gap-4">
-            <Header1 className="text-headline">{t('Review Rubric')}</Header1>
+            <Header1 className="text-headline">
+              {t('decisions.processBuilder.reviewRubricSectionLabel')}
+            </Header1>
             <div className="flex items-center gap-3">
               <SaveStatusIndicator
                 status={autosaveStatus.status}
@@ -351,9 +353,9 @@ export function RubricEditorContent({
           </div>
 
           <ToggleRow
-            label={t('Overall Recommendation')}
+            label={t('decisions.processBuilder.overallRecommendationLabel')}
             description={t(
-              'Reviewers recommend Yes, Maybe, or No per proposal',
+              'decisions.processBuilder.overallRecommendationHint',
             )}
             className="p-0"
           >
@@ -379,7 +381,7 @@ export function RubricEditorContent({
                 return <RubricCriterionDragPreview criterion={item} />;
               }}
               renderDropIndicator={RubricCriterionDropIndicator}
-              aria-label={t('Rubric criteria')}
+              aria-label={t('decisions.processBuilder.rubricCriteriaHeading')}
             >
               {(criterion, controls) => {
                 const snapshotErrors = criterionErrors.get(criterion.id) ?? [];
@@ -420,17 +422,15 @@ export function RubricEditorContent({
             onClick={handleAddCriterion}
           >
             <LuPlus className="size-4" />
-            {t('Add criterion')}
+            {t('decisions.processBuilder.addCriterionAction')}
           </Button>
         </div>
       </main>
 
       <ConfirmDeleteModal
         isOpen={criterionToDelete !== null}
-        title={t('Delete criterion')}
-        message={t(
-          'Are you sure you want to delete this criterion? This action cannot be undone.',
-        )}
+        title={t('decisions.processBuilder.deleteCriterionTitle')}
+        message={t('decisions.processBuilder.deleteCriterionConfirm')}
         onConfirm={confirmRemoveCriterion}
         onCancel={() => setCriterionToDelete(null)}
       />

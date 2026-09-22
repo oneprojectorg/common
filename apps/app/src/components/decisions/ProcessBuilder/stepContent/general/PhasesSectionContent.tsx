@@ -117,7 +117,7 @@ export function PhasesSectionContent({
   const addPhase = () => {
     const newPhase: PhaseDefinition = {
       id: crypto.randomUUID().slice(0, 8),
-      name: t('New phase'),
+      name: t('decisions.processBuilder.newPhaseTitle'),
       rules: {},
     };
     const updated = [...phases, newPhase];
@@ -151,22 +151,24 @@ export function PhasesSectionContent({
   return (
     <div className="mx-auto w-full space-y-2 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <Header1 className="text-headline">{t('Phases')}</Header1>
+        <Header1 className="text-headline">
+          {t('decisions.processBuilder.phasesLabel')}
+        </Header1>
         <SaveStatusIndicator
           status={autosaveStatus.status}
           savedAt={autosaveStatus.savedAt}
         />
       </div>
       <p className="mb-10 text-muted-foreground">
-        {t(
-          'Arrange the stages of your decision process. Drag to reorder, click to configure.',
-        )}
+        {t('decisions.processBuilder.phasesSectionHint')}
       </p>
 
       {phases.length === 0 ? (
         <div className="space-y-4">
           <div className="rounded-lg border border-dashed border-input p-8 text-center">
-            <p className="text-muted-foreground">{t('No phases defined')}</p>
+            <p className="text-muted-foreground">
+              {t('decisions.processBuilder.noPhasesDefined')}
+            </p>
           </div>
           <Button
             variant="ghost"
@@ -174,7 +176,7 @@ export function PhasesSectionContent({
             onClick={addPhase}
           >
             <LuPlus className="size-4" />
-            {t('Add phase')}
+            {t('decisions.processBuilder.addPhaseAction')}
           </Button>
         </div>
       ) : (
@@ -221,7 +223,7 @@ export function PhasesSectionContent({
                         </span>
                       ) : (
                         <span className="text-sm text-muted-foreground">
-                          {t('Not configured yet')}
+                          {t('decisions.processBuilder.phaseNotConfigured')}
                         </span>
                       )}
                     </div>
@@ -231,13 +233,17 @@ export function PhasesSectionContent({
                         size="sm"
                         onClick={() => setSection(phaseToSectionId(phase.id))}
                       >
-                        {configured ? t('Edit') : t('Configure')}
+                        {configured
+                          ? t('Edit')
+                          : t('decisions.processBuilder.configureAction')}
                       </Button>
                       <Button
                         variant="destructive"
                         size="icon-sm"
                         onClick={() => setPhaseToDelete(phase.id)}
-                        aria-label={t('Delete phase?')}
+                        aria-label={t(
+                          'decisions.processBuilder.deletePhaseTitle',
+                        )}
                       >
                         <LuTrash2 className="size-4" />
                       </Button>
@@ -249,7 +255,7 @@ export function PhasesSectionContent({
           </Sortable>
           <Button variant="outline" className="w-full" onClick={addPhase}>
             <LuPlus className="size-4" />
-            {t('Add phase')}
+            {t('decisions.processBuilder.addPhaseAction')}
           </Button>
         </div>
       )}
@@ -267,11 +273,11 @@ export function PhasesSectionContent({
             <AlertDialogMedia className="bg-red-50">
               <LuCircleAlert className="text-destructive" />
             </AlertDialogMedia>
-            <AlertDialogTitle>{t('Delete phase?')}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('decisions.processBuilder.deletePhaseTitle')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                'Are you sure you want to delete this phase? This action cannot be undone.',
-              )}
+              {t('decisions.processBuilder.deletePhaseConfirm')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -317,7 +323,7 @@ const PhaseDragPreview = ({
             </span>
           ) : (
             <span className="text-sm text-muted-foreground">
-              {t('Not configured yet')}
+              {t('decisions.processBuilder.phaseNotConfigured')}
             </span>
           )}
         </div>
@@ -325,13 +331,15 @@ const PhaseDragPreview = ({
             no tab stops (aria-hidden on the wrapper below). */}
         <div className="flex shrink-0 items-center gap-3">
           <Button variant="outline" size="sm" tabIndex={-1}>
-            {configured ? t('Edit') : t('Configure')}
+            {configured
+              ? t('Edit')
+              : t('decisions.processBuilder.configureAction')}
           </Button>
           <Button
             variant="destructive"
             size="icon-sm"
             tabIndex={-1}
-            aria-label={t('Delete phase?')}
+            aria-label={t('decisions.processBuilder.deletePhaseTitle')}
           >
             <LuTrash2 className="size-4" />
           </Button>

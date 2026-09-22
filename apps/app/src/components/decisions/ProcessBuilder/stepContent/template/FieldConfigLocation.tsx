@@ -37,9 +37,7 @@ export function FieldConfigLocation({
     <div className="space-y-2">
       <Header4>{t('Map view')}</Header4>
       <p className="text-sm text-muted-foreground">
-        {t(
-          'Pan and zoom to set the starting map position participants see before they add a location.',
-        )}
+        {t('decisions.processBuilder.mapPositionHint')}
       </p>
 
       <div className="overflow-hidden rounded-lg border border-border">
@@ -49,7 +47,7 @@ export function FieldConfigLocation({
           zoom={initialView.current.zoom}
           marker={null}
           onMoveEnd={(view) => onUpdateJsonSchema({ 'x-map-default': view })}
-          ariaLabel={t('Default map position')}
+          ariaLabel={t('decisions.processBuilder.defaultMapPositionLabel')}
         />
       </div>
     </div>

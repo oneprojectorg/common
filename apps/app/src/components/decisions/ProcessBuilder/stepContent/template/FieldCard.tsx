@@ -136,8 +136,11 @@ export function FieldCard({
     onChangeFieldType?.(field.id, key as FieldType);
   };
 
-  const displayLabel = field.label || t('Untitled field');
-  const badgeLabel = field.required ? t('Required') : t('Optional');
+  const displayLabel =
+    field.label || t('decisions.processBuilder.untitledField');
+  const badgeLabel = field.required
+    ? t('decisions.processBuilder.requiredLabel')
+    : t('decisions.processBuilder.optionalLabel');
 
   return (
     <div
@@ -154,7 +157,7 @@ export function FieldCard({
         isExpanded={isExpanded}
         onExpandedChange={onExpandedChange}
         controls={controls}
-        dragHandleAriaLabel={t('Drag to reorder {field}', {
+        dragHandleAriaLabel={t('decisions.processBuilder.dragFieldLabel', {
           field: displayLabel,
         })}
         className={cn(
@@ -166,7 +169,7 @@ export function FieldCard({
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
           <Field className="min-w-0 flex-1">
             <FieldLabel htmlFor={fieldNameId}>
-              {t('Field name')}
+              {t('decisions.processBuilder.fieldNameLabel')}
               <RequiredAsterisk />
             </FieldLabel>
             <Input
@@ -181,7 +184,9 @@ export function FieldCard({
             />
           </Field>
           <Field className="w-40">
-            <FieldLabel htmlFor={fieldTypeId}>{t('Type')}</FieldLabel>
+            <FieldLabel htmlFor={fieldTypeId}>
+              {t('decisions.processBuilder.fieldTypeLabel')}
+            </FieldLabel>
             <Select
               value={field.fieldType}
               onValueChange={(value) => handleTypeChange(value)}
@@ -216,11 +221,13 @@ export function FieldCard({
               value={field.description ?? ''}
               onChange={(e) => onUpdateDescription?.(field.id, e.target.value)}
               maxLength={DESCRIPTION_MAX_LENGTH}
-              placeholder={t('Provide additional guidance for participants...')}
+              placeholder={t(
+                'decisions.processBuilder.criterionGuidancePlaceholder',
+              )}
               className="min-h-16"
             />
             <InputGroupAddon align="block-end" className="justify-end">
-              {t('{count}/{max}', {
+              {t('decisions.processBuilder.characterCount', {
                 count: field.description?.length ?? 0,
                 max: DESCRIPTION_MAX_LENGTH,
               })}
@@ -253,7 +260,9 @@ export function FieldCard({
         {/* Footer: Required toggle + Delete button */}
         <div className="flex items-center justify-between gap-4 border-t pt-4">
           <Field orientation="horizontal" className="w-auto">
-            <FieldLabel htmlFor={requiredToggleId}>{t('Required?')}</FieldLabel>
+            <FieldLabel htmlFor={requiredToggleId}>
+              {t('decisions.processBuilder.criterionRequiredQuestion')}
+            </FieldLabel>
             <Switch
               id={requiredToggleId}
               checked={isLocation || field.required}
@@ -261,7 +270,7 @@ export function FieldCard({
               onCheckedChange={(isSelected) =>
                 onUpdateRequired?.(field.id, isSelected)
               }
-              aria-label={t('Required')}
+              aria-label={t('decisions.processBuilder.requiredLabel')}
             />
           </Field>
           {onRemove && (
@@ -291,7 +300,11 @@ export function FieldCardDragPreview({ field }: { field: FieldView }) {
     <CollapsibleConfigCardDragPreview
       icon={Icon}
       label={field.label}
-      badgeLabel={field.required ? t('Required') : t('Optional')}
+      badgeLabel={
+        field.required
+          ? t('decisions.processBuilder.requiredLabel')
+          : t('decisions.processBuilder.optionalLabel')
+      }
     />
   );
 }

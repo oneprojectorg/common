@@ -358,7 +358,7 @@ const FormFieldList = ({
         }
       >
         <LuPlus data-icon="inline-start" />
-        {t('Add field')}
+        {t('decisions.processBuilder.addFieldAction')}
       </Button>
     </>
   );
