@@ -21,6 +21,8 @@ import {
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { UNMEASURABLE } from './lib/fallow-crap.mjs';
+
 const { createCoverageMap } = libCoverage;
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,8 +60,15 @@ const workspaces = WORKSPACE_ROOTS.flatMap((root) => {
  * `services/api`, whose integration tests reach it through `allowExternal`,
  * ever puts hits on those lines. Lose that one report and the layer holding the
  * business logic scores as untested.
+ *
+ * `UNMEASURABLE` workspaces are left out. Their files carry no CRAP score at
+ * all, so their reports cannot change one, and counting them here would let a
+ * failure in the very workspaces CRAP ignores — `apps/app` fails on seeding
+ * today — mute every honestly measured zero in the repo and hand back a false
+ * green.
  */
 const expected = workspaces.filter((workspace) => {
+  if (UNMEASURABLE.includes(workspace)) return false;
   const manifest = join(ROOT, workspace, 'package.json');
   if (!existsSync(manifest)) return false;
   try {

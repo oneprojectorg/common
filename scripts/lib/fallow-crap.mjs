@@ -61,25 +61,29 @@ export const ROOT = resolve(
   '..',
 );
 export const COVERAGE = join(ROOT, 'coverage', 'coverage-final.json');
-const MANIFEST = join(ROOT, 'coverage', 'workspaces.json');
+export const MANIFEST = join(ROOT, 'coverage', 'workspaces.json');
 
 /**
  * Workspaces that owed an instrumented report and wrote none, per
- * `scripts/merge-coverage.mjs`. Empty when every suite finished, and when the
- * report predates the manifest — an older report gets the benefit of the doubt
- * rather than a retroactive warning nothing can act on.
+ * `scripts/merge-coverage.mjs`.
  *
  * While this is non-empty a zero is not a measurement. The per-workspace
  * `include` zero-fills sources a workspace owns but its own tests never load,
- * counting on another workspace's run to put the hits back; the report cannot
- * distinguish a line no test reached from a line whose test never reported.
+ * counting on another workspace's run to put the hits back, so the report
+ * cannot tell a line no test reached from one whose test never reported.
+ *
+ * No manifest at all is the pre-manifest world, not a failure: an older report
+ * gets the benefit of the doubt. A manifest that exists but will not parse is a
+ * different thing — answering "nothing is missing" there is the most flattering
+ * answer available and the exact false green this file exists to remove.
  */
 const unreportedWorkspaces = () => {
   if (!existsSync(MANIFEST)) return [];
   try {
-    return JSON.parse(readFileSync(MANIFEST, 'utf8')).missing ?? [];
+    const { missing } = JSON.parse(readFileSync(MANIFEST, 'utf8'));
+    return Array.isArray(missing) ? missing : [];
   } catch {
-    return [];
+    return ['<unreadable coverage/workspaces.json>'];
   }
 };
 
@@ -322,9 +326,12 @@ export const crapScores = () => {
   return {
     files,
     worst,
+    // Beside `stats`, never inside it: `writeCrapTrend` spreads `stats` into
+    // the committed `crap-trend.json`, and a machine-local list of workspaces
+    // that happened to fail does not belong in a checked-in baseline.
+    partial,
     stats: {
       metric: 'cognitive',
-      partial,
       functions_measured: measured,
       functions_unmeasured: unmeasured,
       files_scored: Object.keys(files).length,

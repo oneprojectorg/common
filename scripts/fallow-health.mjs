@@ -220,7 +220,7 @@ const crapReport = () => {
     return { status: 'UNAVAILABLE', error: error.message };
   }
 
-  const { files, worst, stats } = scores;
+  const { files, worst, stats, partial } = scores;
   const { base, paths } = changedFiles(baseOverride);
   const changed = paths.filter(inCrapScope);
   const risky = crossings(files, worst, changed);
@@ -236,7 +236,6 @@ const crapReport = () => {
 
   // A partial merge still scores whatever did report, so a finding survives it;
   // only a clean result does not, the same way a stale one does not.
-  const partial = stats.partial ?? [];
   const status =
     risky.length > 0
       ? 'AT_RISK'
