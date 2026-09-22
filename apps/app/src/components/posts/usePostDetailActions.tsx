@@ -21,7 +21,7 @@ export const usePostDetailActions = ({
   user?: PostFeedUser;
 }) => {
   const utils = trpc.useUtils();
-  const t = useTranslations();
+  const t = useTranslations('posts');
 
   const toggleLike = trpc.organization.toggleLike.useMutation({
     onMutate: async ({ postId: likedPostId }) => {
@@ -91,7 +91,7 @@ export const usePostDetailActions = ({
         );
       }
 
-      toast.error(err.message || t('Failed to update like'));
+      toast.error(err.message || t('likeError'));
     },
     // The detail page never refetches on its own (`refetchOnWindowFocus` is
     // off), so without this a batched double-click — where both requests race

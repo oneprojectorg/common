@@ -29,11 +29,11 @@ export const DecisionsTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <Header2 className="text-title">{t('All Decisions')}</Header2>
+        <Header2 className="text-title">{t('admin.allDecisionsTitle')}</Header2>
         <TableSearchField
           className="w-64"
-          aria-label={t('Search decisions by name')}
-          placeholder={t('Search decisions by name')}
+          aria-label={t('admin.searchDecisionsLabel')}
+          placeholder={t('admin.searchDecisionsLabel')}
           value={searchQuery}
           onChange={setSearchQuery}
         />
@@ -81,17 +81,19 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <Table aria-label={t('All Decisions')}>
+      <Table aria-label={t('admin.allDecisionsTitle')}>
         <TableHeader>
           <TableRow>
             <TableHead>{t('Name')}</TableHead>
             <TableHead>{t('Current Phase')}</TableHead>
-            <TableHead>{t('Steward')}</TableHead>
+            <TableHead>{t('admin.stewardLabel')}</TableHead>
             <TableHead>{t('Proposals')}</TableHead>
             <TableHead>{t('Participants')}</TableHead>
-            <TableHead>{t('Status')}</TableHead>
-            <TableHead>{t('Created')}</TableHead>
-            <TableHead className="text-end">{t('Actions')}</TableHead>
+            <TableHead>{t('admin.statusColumn')}</TableHead>
+            <TableHead>{t('admin.createdLabel')}</TableHead>
+            <TableHead className="text-end">
+              {t('admin.actionsColumn')}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -106,16 +108,16 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
         <PaginationBar
           range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
           renderRange={({ start, end, total: count }) =>
-            t('{start} - {end} of {total} {label}', {
+            t('admin.paginationRange', {
               start,
               end,
               total: count,
-              label: t('decisions'),
+              label: t('admin.decisionsUnit'),
             })
           }
-          previousLabel={t('Previous')}
+          previousLabel={t('admin.previousPageAction')}
           nextLabel={t('Next')}
-          navLabel={t('Pagination Navigation')}
+          navLabel={t('admin.paginationLabel')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />
@@ -134,12 +136,12 @@ const DecisionsTableSkeleton = () => {
         <TableRow>
           <TableHead>{t('Name')}</TableHead>
           <TableHead>{t('Current Phase')}</TableHead>
-          <TableHead>{t('Steward')}</TableHead>
+          <TableHead>{t('admin.stewardLabel')}</TableHead>
           <TableHead>{t('Proposals')}</TableHead>
           <TableHead>{t('Participants')}</TableHead>
-          <TableHead>{t('Status')}</TableHead>
-          <TableHead>{t('Created')}</TableHead>
-          <TableHead className="text-end">{t('Actions')}</TableHead>
+          <TableHead>{t('admin.statusColumn')}</TableHead>
+          <TableHead>{t('admin.createdLabel')}</TableHead>
+          <TableHead className="text-end">{t('admin.actionsColumn')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

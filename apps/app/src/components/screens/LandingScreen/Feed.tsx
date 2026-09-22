@@ -30,7 +30,7 @@ export const Feed = () => {
 /** Feed content component with live data */
 const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
   const { user } = useRequiredUser();
-  const t = useTranslations();
+  const t = useTranslations('shell');
 
   const {
     data: paginatedData,
@@ -98,7 +98,7 @@ const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
 
       {allPosts.length > 0 && !shouldShowTrigger && (
         <p className="w-full p-4 text-center text-sm text-muted-foreground">
-          {t('No more updates.')}
+          {t('feedEnd')}
         </p>
       )}
 

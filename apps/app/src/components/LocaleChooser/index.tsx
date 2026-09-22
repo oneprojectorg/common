@@ -37,7 +37,7 @@ const localeDisplayNames: Record<Locale, string> = {
  * form value. DropdownMenuRadioGroup marks the current locale.
  */
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
-  const t = useTranslations();
+  const t = useTranslations('shell');
   const pathname = usePathname();
   const params = useParams();
   const localeParam = params.locale;
@@ -64,7 +64,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
           <Button
             variant="outline"
             size="icon"
-            aria-label={t('Select language')}
+            aria-label={t('localeChooserLabel')}
           />
         }
       >

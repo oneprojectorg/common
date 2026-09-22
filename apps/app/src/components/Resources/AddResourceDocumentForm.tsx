@@ -41,8 +41,8 @@ export const AddResourceDocumentForm = ({
 }) => {
   const t = useTranslations();
   const createDocument = trpc.resources.createDocument.useMutation({
-    onSuccess: () => toast.success(t('Resource added')),
-    onError: () => toast.error(t('Could not add resource')),
+    onSuccess: () => toast.success(t('resources.addedToast')),
+    onError: () => toast.error(t('resources.addError')),
   });
   const { upload, uploading, uploaded, reset } = useResourceUpload(profileId);
 
@@ -74,12 +74,12 @@ export const AddResourceDocumentForm = ({
     // rejected.
     if (selected) {
       if (!isAllowedUploadMimeType(selected.type)) {
-        toast.error(t('Unsupported file type'));
+        toast.error(t('resources.unsupportedFileTypeError'));
         return;
       }
       if (selected.size > MAX_RESOURCE_FILE_SIZE) {
         toast.error(
-          t('File is too large (max {size} MB)', {
+          t('resources.fileTooLargeError', {
             size: MAX_SIZE_MB,
           }),
         );
@@ -145,7 +145,7 @@ export const AddResourceDocumentForm = ({
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:px-6">
         <div className="flex flex-col gap-1">
-          <span className="text-sm">{t('Upload file')}</span>
+          <span className="text-sm">{t('resources.uploadFileAction')}</span>
           <input
             ref={inputRef}
             type="file"
@@ -174,7 +174,7 @@ export const AddResourceDocumentForm = ({
                   onClick={handleRemoveFile}
                   disabled={uploading}
                   className="absolute end-2 top-2 bg-white/90 shadow-sm hover:bg-white"
-                  aria-label={t('Remove file')}
+                  aria-label={t('resources.removeFileAction')}
                 >
                   <LuX className="size-5" />
                 </Button>
@@ -207,7 +207,7 @@ export const AddResourceDocumentForm = ({
                   onClick={handleRemoveFile}
                   disabled={uploading}
                   className="shrink-0"
-                  aria-label={t('Remove file')}
+                  aria-label={t('resources.removeFileAction')}
                 >
                   <LuX className="size-5" />
                 </Button>
@@ -249,7 +249,7 @@ export const AddResourceDocumentForm = ({
                   })}
                 </p>
                 <p className="text-muted-foreground">
-                  {t('Accepts PDF, DOCX, XLSX, and images up to {size} MB', {
+                  {t('resources.acceptedFileTypesHint', {
                     size: MAX_SIZE_MB,
                   })}
                 </p>
@@ -259,7 +259,7 @@ export const AddResourceDocumentForm = ({
         </div>
         <Field>
           <FieldLabel htmlFor="document-title">
-            {t('Title')}
+            {t('resources.titleLabel')}
             <RequiredAsterisk />
           </FieldLabel>
           <Input
@@ -269,7 +269,7 @@ export const AddResourceDocumentForm = ({
             required
             maxLength={RESOURCE_TITLE_MAX_LEN}
             disabled={!uploaded}
-            placeholder={t('Resource name')}
+            placeholder={t('resources.namePlaceholder')}
           />
         </Field>
         <Field>
@@ -282,7 +282,7 @@ export const AddResourceDocumentForm = ({
             onChange={(event) => setDescription(event.target.value)}
             maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
             disabled={!uploaded}
-            placeholder={t('Brief description of this resource')}
+            placeholder={t('resources.descriptionPlaceholder')}
           />
         </Field>
       </div>
@@ -300,7 +300,7 @@ export const AddResourceDocumentForm = ({
           disabled={!uploaded || !title.trim() || submitting}
           className="flex-1 justify-center"
         >
-          {submitting ? t('Adding...') : t('Add resource')}
+          {submitting ? t('Adding...') : t('resources.addAction')}
         </Button>
       </div>
     </form>

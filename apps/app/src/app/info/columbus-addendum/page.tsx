@@ -5,10 +5,10 @@ import { FormContainer } from '@/components/form/FormContainer';
 import { FormHeader } from '@/components/form/FormHeader';
 
 const ColumbusAddendumPage = () => {
-  const t = useTranslations();
+  const t = useTranslations('shell');
   return (
     <FormContainer className="max-w-lg">
-      <FormHeader text={t('Columbus Addendum')}></FormHeader>
+      <FormHeader text={t('columbusAddendumTitle')}></FormHeader>
       <ColumbusAddendumContent />
     </FormContainer>
   );

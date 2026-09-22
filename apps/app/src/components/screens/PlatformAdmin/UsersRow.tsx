@@ -95,7 +95,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label={t('User options')}
+                  aria-label={t('admin.userOptionsLabel')}
                 >
                   <LuEllipsis />
                 </Button>
@@ -110,7 +110,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
                   }
                 }}
               >
-                {t('Edit profile')}
+                {t('admin.editProfileAction')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsAddToOrgModalOpen(true)}>
                 {t('org.addToOrgLabel')}
@@ -119,17 +119,17 @@ export const UsersRowCells = ({ user }: { user: User }) => {
               <DropdownMenuItem
                 onClick={() => {
                   navigator.clipboard.writeText(user.authUserId);
-                  toast.success(t('Auth user ID copied to your clipboard.'));
+                  toast.success(t('admin.authUserIdCopied'));
                 }}
               >
-                {t('Copy authUserId')}
+                {t('admin.copyAuthUserIdAction')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
                   window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
                 }}
               >
-                {t('View analytics')}
+                {t('admin.viewAnalyticsAction')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -138,7 +138,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
                   alert('coming soon');
                 }}
               >
-                {t('Remove user')}
+                {t('admin.removeUserAction')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

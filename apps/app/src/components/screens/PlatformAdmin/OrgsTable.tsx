@@ -29,11 +29,13 @@ export const OrgsTable = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <Header2 className="text-title">{t('All Organizations')}</Header2>
+        <Header2 className="text-title">
+          {t('admin.allOrganizationsTitle')}
+        </Header2>
         <TableSearchField
           className="w-64"
-          aria-label={t('Search organizations by name')}
-          placeholder={t('Search organizations by name')}
+          aria-label={t('admin.searchOrganizationsLabel')}
+          placeholder={t('admin.searchOrganizationsLabel')}
           value={searchQuery}
           onChange={setSearchQuery}
         />
@@ -82,14 +84,16 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <Table aria-label={t('All Organizations')}>
+      <Table aria-label={t('admin.allOrganizationsTitle')}>
         <TableHeader>
           <TableRow>
             <TableHead>{t('Name')}</TableHead>
-            <TableHead>{t('Domain')}</TableHead>
+            <TableHead>{t('admin.domainColumn')}</TableHead>
             <TableHead>{t('profile.membersTab')}</TableHead>
-            <TableHead>{t('Created')}</TableHead>
-            <TableHead className="text-end">{t('Actions')}</TableHead>
+            <TableHead>{t('admin.createdLabel')}</TableHead>
+            <TableHead className="text-end">
+              {t('admin.actionsColumn')}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -104,16 +108,16 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
         <PaginationBar
           range={{ totalItems: total, itemsPerPage: limit, page: currentPage }}
           renderRange={({ start, end, total: count }) =>
-            t('{start} - {end} of {total} {label}', {
+            t('admin.paginationRange', {
               start,
               end,
               total: count,
               label: t('organizations'),
             })
           }
-          previousLabel={t('Previous')}
+          previousLabel={t('admin.previousPageAction')}
           nextLabel={t('Next')}
-          navLabel={t('Pagination Navigation')}
+          navLabel={t('admin.paginationLabel')}
           next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />

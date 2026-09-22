@@ -36,8 +36,8 @@ export const AddResourceLinkForm = ({
 }) => {
   const t = useTranslations();
   const createLink = trpc.resources.createLink.useMutation({
-    onSuccess: () => toast.success(t('Resource added')),
-    onError: () => toast.error(t('Could not add resource')),
+    onSuccess: () => toast.success(t('resources.addedToast')),
+    onError: () => toast.error(t('resources.addError')),
   });
 
   const [url, setUrl] = useState('');
@@ -125,7 +125,7 @@ export const AddResourceLinkForm = ({
         </Field>
         <Field>
           <FieldLabel htmlFor="resource-title">
-            {t('Title')}
+            {t('resources.titleLabel')}
             <RequiredAsterisk />
           </FieldLabel>
           <Input
@@ -134,7 +134,7 @@ export const AddResourceLinkForm = ({
             onChange={(event) => setTitleInput(event.target.value)}
             required
             maxLength={RESOURCE_TITLE_MAX_LEN}
-            placeholder={t('Add a title')}
+            placeholder={t('resources.titlePlaceholder')}
           />
         </Field>
         <Field>
@@ -164,7 +164,7 @@ export const AddResourceLinkForm = ({
           disabled={!urlValid || !title.trim() || submitting}
           className="flex-1 justify-center"
         >
-          {submitting ? t('Adding...') : t('Add resource')}
+          {submitting ? t('Adding...') : t('resources.addAction')}
         </Button>
       </div>
     </form>

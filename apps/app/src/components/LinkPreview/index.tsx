@@ -38,7 +38,7 @@ function getDomain(url: string): string {
 
 export const LinkPreview = memo(
   ({ url, className, onRemove }: LinkPreviewProps) => {
-    const t = useTranslations();
+    const t = useTranslations('editor');
     const {
       data: previewData,
       isLoading: loading,
@@ -122,7 +122,7 @@ export const LinkPreview = memo(
               onRemove();
             }}
             className="absolute end-2 top-2 z-10 flex size-8 items-center justify-center rounded border border-border bg-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-secondary focus-visible:opacity-100"
-            aria-label={t('Remove preview')}
+            aria-label={t('removePreviewAction')}
           >
             <LuX className="size-4" />
           </button>

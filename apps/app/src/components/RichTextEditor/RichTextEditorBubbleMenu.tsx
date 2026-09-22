@@ -198,8 +198,8 @@ export function RichTextEditorBubbleMenu({
         // Type and size rejections toast from inside `uploadFile`; this is the
         // upload itself failing, which used to be swallowed into a log line.
         logger.error('Failed to upload an image into the editor', { error });
-        toast.error(t("Couldn't add that image"), {
-          description: t('Check your connection and try again.'),
+        toast.error(t('editor.imageUploadErrorTitle'), {
+          description: t('editor.imageUploadErrorHint'),
         });
       } finally {
         setIsUploadingImage(false);
@@ -226,28 +226,28 @@ export function RichTextEditorBubbleMenu({
     [
       {
         key: 'bold',
-        label: t('Bold'),
+        label: t('editor.boldAction'),
         icon: LuBold,
         isActive: activeStates.bold,
         toggle: () => editor.chain().focus().toggleBold().run(),
       },
       {
         key: 'italic',
-        label: t('Italic'),
+        label: t('editor.italicAction'),
         icon: LuItalic,
         isActive: activeStates.italic,
         toggle: () => editor.chain().focus().toggleItalic().run(),
       },
       {
         key: 'underline',
-        label: t('Underline'),
+        label: t('editor.underlineAction'),
         icon: LuUnderline,
         isActive: activeStates.underline,
         toggle: () => editor.chain().focus().toggleUnderline().run(),
       },
       {
         key: 'strike',
-        label: t('Strikethrough'),
+        label: t('editor.strikethroughAction'),
         icon: LuStrikethrough,
         isActive: activeStates.strike,
         toggle: () => editor.chain().focus().toggleStrike().run(),
@@ -256,28 +256,28 @@ export function RichTextEditorBubbleMenu({
     [
       {
         key: 'heading1',
-        label: t('Heading 1'),
+        label: t('editor.heading1Action'),
         icon: LuHeading1,
         isActive: activeStates.heading1,
         toggle: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
       },
       {
         key: 'heading2',
-        label: t('Heading 2'),
+        label: t('editor.heading2Action'),
         icon: LuHeading2,
         isActive: activeStates.heading2,
         toggle: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
       },
       {
         key: 'heading3',
-        label: t('Heading 3'),
+        label: t('editor.heading3Action'),
         icon: LuHeading3,
         isActive: activeStates.heading3,
         toggle: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
       },
       {
         key: 'heading4',
-        label: t('Heading 4'),
+        label: t('editor.heading4Action'),
         icon: LuHeading4,
         isActive: activeStates.heading4,
         toggle: () => editor.chain().focus().toggleHeading({ level: 4 }).run(),
@@ -286,21 +286,21 @@ export function RichTextEditorBubbleMenu({
     [
       {
         key: 'bulletList',
-        label: t('Bullet List'),
+        label: t('editor.bulletListAction'),
         icon: LuList,
         isActive: activeStates.bulletList,
         toggle: () => editor.chain().focus().toggleBulletList().run(),
       },
       {
         key: 'orderedList',
-        label: t('Numbered List'),
+        label: t('editor.numberedListAction'),
         icon: LuListOrdered,
         isActive: activeStates.orderedList,
         toggle: () => editor.chain().focus().toggleOrderedList().run(),
       },
       {
         key: 'blockquote',
-        label: t('Blockquote'),
+        label: t('editor.blockquoteAction'),
         icon: LuQuote,
         isActive: activeStates.blockquote,
         toggle: () => editor.chain().focus().toggleBlockquote().run(),
@@ -314,21 +314,21 @@ export function RichTextEditorBubbleMenu({
       },
       {
         key: 'alignLeft',
-        label: t('Align Left'),
+        label: t('editor.alignLeftAction'),
         icon: LuAlignLeft,
         isActive: activeStates.alignLeft,
         toggle: () => editor.chain().focus().setTextAlign('left').run(),
       },
       {
         key: 'alignCenter',
-        label: t('Align Center'),
+        label: t('editor.alignCenterAction'),
         icon: LuAlignCenter,
         isActive: activeStates.alignCenter,
         toggle: () => editor.chain().focus().setTextAlign('center').run(),
       },
       {
         key: 'alignRight',
-        label: t('Align Right'),
+        label: t('editor.alignRightAction'),
         icon: LuAlignRight,
         isActive: activeStates.alignRight,
         toggle: () => editor.chain().focus().setTextAlign('right').run(),
@@ -337,7 +337,7 @@ export function RichTextEditorBubbleMenu({
         ? [
             {
               key: 'details',
-              label: t('Collapsible'),
+              label: t('editor.collapsibleAction'),
               icon: LuChevronRight,
               isActive: activeStates.details,
               // No `toggleDetails` exists — branch on the active state.
@@ -455,8 +455,8 @@ export function RichTextEditorBubbleMenu({
                   <Toggle
                     size="sm"
                     pressed={isEditingLink || activeStates.link}
-                    aria-label={t('Add Link')}
-                    title={t('Add Link')}
+                    aria-label={t('editor.addLinkAction')}
+                    title={t('editor.addLinkAction')}
                     className="h-8 aria-pressed:bg-primary aria-pressed:text-white"
                   >
                     <LuLink className="size-4" />
@@ -488,8 +488,8 @@ export function RichTextEditorBubbleMenu({
                     <Toggle
                       size="sm"
                       pressed={isEditingEmbed}
-                      aria-label={t('Embed Link Preview')}
-                      title={t('Embed Link Preview')}
+                      aria-label={t('editor.embedLinkPreviewAction')}
+                      title={t('editor.embedLinkPreviewAction')}
                       className="h-8 aria-pressed:bg-primary aria-pressed:text-white"
                     >
                       <LuLink2 className="size-4" />
@@ -509,8 +509,8 @@ export function RichTextEditorBubbleMenu({
                 size="icon-sm"
                 pressed={isUploadingImage}
                 onPressedChange={pickImage}
-                aria-label={t('Add Image')}
-                title={t('Add Image')}
+                aria-label={t('editor.addImageAction')}
+                title={t('editor.addImageAction')}
                 className="aria-pressed:bg-accent aria-pressed:text-primary"
               >
                 <LuImage className="size-4" />
@@ -762,7 +762,7 @@ function EmbedEditor({
       )}
       <Button type="submit" size="sm" variant="outline" className="w-full">
         <LuLink2 />
-        {t('Embed Link Preview')}
+        {t('editor.embedLinkPreviewAction')}
       </Button>
     </form>
   );

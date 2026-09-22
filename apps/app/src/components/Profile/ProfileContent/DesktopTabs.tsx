@@ -21,7 +21,7 @@ export const DesktopOrganizationTabs = () => {
 
   return (
     <>
-      <TabsTrigger value="home">{t('Updates')}</TabsTrigger>
+      <TabsTrigger value="home">{t('posts.updatesTab')}</TabsTrigger>
       <TabsTrigger value="relationships">
         {t('profile.relationshipsTab')}
       </TabsTrigger>

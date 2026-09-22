@@ -442,7 +442,7 @@ export const ProfileTabsMobile = ({
           {!isIndividual && <TabsTrigger value="home">{t('Home')}</TabsTrigger>}
           {!isIndividual ? (
             <>
-              <TabsTrigger value="updates">{t('Updates')}</TabsTrigger>
+              <TabsTrigger value="updates">{t('posts.updatesTab')}</TabsTrigger>
               <FollowersTab />
               <MembersTab profileId={profile.profile.id} />
               <DecisionsTab profileId={profile.profile.id} />

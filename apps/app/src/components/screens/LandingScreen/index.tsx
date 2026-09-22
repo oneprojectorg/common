@@ -67,11 +67,11 @@ export const LandingScreenSkeleton: React.FC = async () => {
       <div className="flex flex-col gap-2">
         <Skeleton>
           <Header1 className="text-center text-transparent">
-            {t('Welcome back, to Common!')}
+            {t('shell.welcomeBackTitle')}
           </Header1>
         </Skeleton>
         <Skeleton className="text-center text-transparent">
-          {t('Explore new connections and strengthen existing relationships.')}
+          {t('shell.landingSubtitle')}
         </Skeleton>
       </div>
 
@@ -89,7 +89,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
         <div className="col-span-5">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
             <Skeleton className="text-label text-transparent">
-              {t('New Organizations')}
+              {t('shell.newOrganizationsHeading')}
             </Skeleton>
             <OrganizationListSkeleton />
           </Card>
@@ -98,14 +98,14 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
       <Tabs defaultValue="discover" className="pb-8 sm:hidden">
         <TabsList>
-          <TabsTrigger value="discover">{t('Discover')}</TabsTrigger>
-          <TabsTrigger value="recent">{t('Recent')}</TabsTrigger>
+          <TabsTrigger value="discover">{t('shell.discoverTab')}</TabsTrigger>
+          <TabsTrigger value="recent">{t('shell.recentTab')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="discover" className="p-0">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
             <Skeleton className="text-label text-transparent">
-              {t('New Organizations')}
+              {t('shell.newOrganizationsHeading')}
             </Skeleton>
             <div className="flex flex-col gap-2">
               <Skeleton className="h-4 w-full" />
@@ -127,7 +127,7 @@ const NewOrganizationsList = async () => {
   return (
     <div className="flex flex-col gap-6 border-0 py-0 sm:mx-0 sm:border sm:p-5">
       <Header3 className="px-4 text-label sm:px-0">
-        {t('New Organizations')}
+        {t('shell.newOrganizationsHeading')}
       </Header3>
       <NewOrganizations />
     </div>
@@ -163,7 +163,7 @@ const PostFeedSection = async ({
       <ErrorBoundary
         fallback={
           <div className="flex flex-col items-center justify-center py-8">
-            <span>{t('Unable to load posts. Please try refreshing.')}</span>
+            <span>{t('shell.feedLoadError')}</span>
           </div>
         }
       >
@@ -195,8 +195,8 @@ const LandingScreenFeeds = async ({
       </div>
       <Tabs defaultValue="discover" className="gap-8 pb-8 sm:hidden">
         <TabsList>
-          <TabsTrigger value="discover">{t('Discover')}</TabsTrigger>
-          <TabsTrigger value="recent">{t('Recent')}</TabsTrigger>
+          <TabsTrigger value="discover">{t('shell.discoverTab')}</TabsTrigger>
+          <TabsTrigger value="recent">{t('shell.recentTab')}</TabsTrigger>
         </TabsList>
         <TabsContent value="discover" className="-mx-4 p-0">
           <NewOrganizationsList />
@@ -220,9 +220,7 @@ const WelcomeSection = async () => {
   return (
     <div className="flex flex-col gap-2">
       <Welcome user={user} />
-      <span className="text-center">
-        {t('Explore new connections and strengthen existing relationships.')}
-      </span>
+      <span className="text-center">{t('shell.landingSubtitle')}</span>
     </div>
   );
 };
@@ -234,11 +232,11 @@ const WelcomeSkeleton = async () => {
     <div className="flex flex-col gap-2">
       <Skeleton>
         <Header1 className="text-center text-transparent">
-          {t('Welcome back, to Common!')}
+          {t('shell.welcomeBackTitle')}
         </Header1>
       </Skeleton>
       <Skeleton className="text-center text-transparent">
-        {t('Explore new connections and strengthen existing relationships.')}
+        {t('shell.landingSubtitle')}
       </Skeleton>
     </div>
   );
@@ -293,7 +291,7 @@ const UserContentSkeleton = async () => {
         <div className="col-span-5">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
             <Skeleton className="text-label text-transparent">
-              {t('New Organizations')}
+              {t('shell.newOrganizationsHeading')}
             </Skeleton>
             <OrganizationListSkeleton />
           </Card>

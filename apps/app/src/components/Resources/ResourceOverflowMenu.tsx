@@ -16,24 +16,20 @@ export const ResourceOverflowMenu = ({
 }: {
   onDelete: () => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('resources');
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={t('Resource options')}
-          >
+          <Button variant="ghost" size="icon-xs" aria-label={t('optionsLabel')}>
             <LuEllipsis className="size-4" />
           </Button>
         }
       />
       <DropdownMenuContent side="bottom" align="end" className="min-w-36">
         <DropdownMenuItem variant="destructive" onClick={onDelete}>
-          {t('Delete resource')}
+          {t('deleteAction')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

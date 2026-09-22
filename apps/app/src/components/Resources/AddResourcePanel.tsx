@@ -27,7 +27,7 @@ export const AddResourcePanel = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between p-4 sm:p-6">
-        <Header3>{t('Add Resource')}</Header3>
+        <Header3>{t('resources.addPanelTitle')}</Header3>
         <Button
           variant="ghost"
           size="icon-xs"
@@ -44,7 +44,7 @@ export const AddResourcePanel = ({
             @op/sense/ToggleGroup for true segmented-toggle semantics. */}
         <ToggleGroup
           className="w-full"
-          aria-label={t('Resource type')}
+          aria-label={t('resources.typeLabel')}
           spacing={0}
           defaultValue={['link']}
         >
@@ -55,7 +55,7 @@ export const AddResourcePanel = ({
             className="flex-1"
           >
             <LuLink className="size-4" />
-            {t('Link')}
+            {t('resources.typeLink')}
           </ToggleGroupItem>
           <ToggleGroupItem
             variant={'outline'}
@@ -64,7 +64,7 @@ export const AddResourcePanel = ({
             className="flex-1"
           >
             <LuFile className="size-4" />
-            {t('Document')}
+            {t('resources.typeDocument')}
           </ToggleGroupItem>
         </ToggleGroup>
       </div>

@@ -43,7 +43,7 @@ export function useTiptapCollab({
   getToken,
   userName = 'Anonymous',
 }: UseTiptapCollabOptions): UseTiptapCollabReturn {
-  const t = useTranslations();
+  const t = useTranslations('editor');
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
@@ -105,11 +105,7 @@ export function useTiptapCollab({
             context: 'useTiptapCollab',
             docId,
           });
-          toast.error(
-            t(
-              'Could not reconnect to this document. Reload the page to try again.',
-            ),
-          );
+          toast.error(t('reconnectError'));
         }
 
         newProvider.disconnect();
