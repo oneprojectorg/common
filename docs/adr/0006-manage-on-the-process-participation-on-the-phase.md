@@ -28,10 +28,10 @@ private process, open or invite-only phase.
 
 ### The matrix
 
-The decisions below are what these four tables say. Read them as the acceptance
-criteria; the prose is the reasoning. "Process perms" is any grant on the
-process profile short of admin. An open phase has no membership rows at all
-(decision 4), so its "phase perms" rows are `n/a` rather than denied.
+These four tables are the acceptance criteria; the decisions below are the
+reasoning. "Process perms" is any grant on the process profile short of admin.
+An open phase has no membership rows at all (decision 4), so its "phase perms"
+rows are `n/a` rather than denied.
 
 **Public process — open phase**
 
@@ -75,13 +75,6 @@ process profile short of admin. An open phase has no membership rows at all
 | Process admin, no phase perms | ✓ | ✗ | ✗ | ✗ | ✓ |
 | Process admin, phase perms | ✓ | ✓ | ✓ | ✓ | ✓ |
 
-Three readings are worth stating because they are the ones an implementation
-gets wrong. The View column never differs between a process's open and
-invite-only phases — view is a process-level question (decision 3). A process
-admin has `✗` under Submit, Vote and Review in both invite-only tables — Manage
-does not confer participation (decision 1). And "process perms" carries `✗`
-under Manage everywhere — only the admin role manages.
-
 ## Decision
 
 1. **Manage resolves against the process profile. Submit, review and vote
@@ -89,8 +82,7 @@ under Manage everywhere — only the admin role manages.
    participation by virtue of being an admin; they are invited to a phase like
    anybody else. The ADMIN bit must not short-circuit a capability check, which
    is the obvious implementation and the wrong one. Manage means the process's
-   **admin role specifically**, not any grant on the process profile: a process
-   member holds view, and participation where the phase is open, and no Manage.
+   **admin role specifically**, not any grant on the process profile.
 2. **Participation is:** the phase's state allows the capability, **and** the
    caller is signed in, **and** either they hold that capability on the phase
    profile, or the phase's audience is open and they can view the process.
@@ -100,9 +92,7 @@ under Manage everywhere — only the admin role manages.
    callers, invite-only ones included; a private process's phases are all
    visible to anyone holding anything anywhere in that process, and to nobody
    else. So answering "may this caller see this phase" never reads a phase
-   profile, which is what decision 6 exists to guarantee. The cell most likely
-   to be implemented wrong is *public process, invite-only phase, signed-out
-   caller* — that is a view, because "invite-only" is not "hidden".
+   profile, which is what decision 6 exists to guarantee.
 4. **"Open" means open to whoever can view the process** — every signed-in user
    for a public process, the process's members for a private one. So an open
    phase needs no membership rows at all, and only invite-only phases put
@@ -115,11 +105,6 @@ under Manage everywhere — only the admin role manages.
    object per capability. The invite therefore carries a permission rather than
    resolving an `access_role_id`, which is the question an admin could not
    answer well.
-
-   **This decision is blocked on a capability that does not exist.**
-   access-zones cannot currently attach a permission to a profile without going
-   through a role, and `profile_invites.access_role_id` is non-nullable and
-   assumes one. Both have to be built before any of this ships.
 6. **A phase grant confers view on a private process, materialised rather than
    derived — and it is the only way a participant holds anything on the
    process profile.** The invite writes a read-only grant there, and losing the
@@ -170,68 +155,37 @@ Every decision capability check now needs a phase in hand. Call sites that pass
 Manage checks have to be told apart from the ones that are really participation
 checks.
 
-A new profile type is ungated until something gates it. `assertProfileTypeAccess`
-takes a partial map of type to required permission and treats a type it does not
-find as a no-op, which is deliberate for org and individual profiles. So the
-change that introduces the phase profile type has to give it an explicit policy
-at every one of those call sites in the same change. Omitting it is not a
-compile error and not a runtime error — it is a read that succeeds and should
-not have.
+A new profile type is ungated until something gates it.
+`assertProfileTypeAccess` treats a type absent from its policy map as a no-op,
+deliberately, so the change introducing the phase type has to give it a policy
+at every call site in the same change. Omitting one is neither a compile error
+nor a runtime error — it is a read that succeeds and should not have.
 
 Process-level role editors must keep listing only the process profile's own
 grants, or phase grants surface where an admin cannot act on them.
 
-**Three live mechanisms contradict decision 6 and have to go or change.** All
-three put a participant-facing grant on a process profile, which decision 6
-says only a phase invite may do:
+Decision 5 needs a primitive the permission layer does not have: access-zones
+attaches permissions to roles, not to a profile directly, and
+`profile_invites.access_role_id` is non-nullable and assumes a role exists to
+point at. Both have to be built before any of this can ship.
 
-- **The `Participant` role.** `createDefaultDecisionRoles` mints it on every
-  process beside Admin, carrying `submitProposals` and `vote` **on the process
-  profile**. Under decision 1 those come from the phase and nowhere else, so a
-  surviving Participant grant lets a holder submit and vote irrespective of a
-  phase's audience — it bypasses the phase check entirely. This is a hole, not
-  a leftover, and it has to be dropped or narrowed to READ in the same change.
-- **`acceptProfileInvite`.** It inserts a `profile_users` row against the
-  decision profile and emits `emitDecisionMemberRolesChanged`; it is the
-  process-level invite path. It becomes a phase-level path. Changing the dialog
-  is not enough — the service has to move with it.
-- **`makeDecisionPublic`.** The right mechanism for "public process", and it
-  stays, but the bits are caller-supplied via `toPublicBitField(permissions)`.
-  Any caller passing submit or vote makes a public process grant participation
-  on every phase, invite-only ones included. The public grant has to be READ.
+Existing process-level grants that carry participation bits contradict decision
+6 and cannot stay where they are — the seeded `Participant` role is one. Finding
+them, and deciding what happens to the people holding them, is migration work
+this ADR does not do.
 
-**Existing Participant grants are held by real people**, so dropping the role
-revokes submit and vote from them. Converting them instead means choosing which
-phase each grant lands on, which is a guess about intent. That belongs to the
-port's migration work; this ADR only records that the grants cannot stay where
-they are.
+A phase's audience is an authorization input, not configuration. Decision 2
+reads it on every participation check and decision 8 wants it to default to
+invite-only, so it needs storage that can express a default and cannot be
+absent. A key in a payload defaulting to `{}` is neither, and the permissive
+reading of an unset audience opens a private process to any signed-in viewer.
+It has to fail closed by construction rather than by convention.
 
-**Open, and blocking implementation: does a phase check fall back to the
-process?** A parallel note from 2026-09-22 records "cascading permissions where
-phase-level permissions are checked first, falling back to process-level". Read
-one way that is decision 2 restated — an open phase has no grants, so the check
-falls back to "can they view the process". Read the other way it is a union,
-which decision 1 forbids and which would turn every `✗` under Submit in the
-invite-only tables into a `✓`. The two readings produce different code and the
-naive implementation is the wrong one. Settle this in writing before anyone
-builds the check.
-
-A phase's audience is an authorization input, not configuration. Decision 2 reads
-it on every participation check and decision 8 wants it to default to
-invite-only, so it needs storage that can express a default and cannot be absent.
-A key in a JSON payload that defaults to `{}` is neither: an unset audience means
-whatever the first `if` written against it happens to mean, and the permissive
-reading of it opens a private process to any signed-in viewer. The column set
-belongs to the proposals ADR, but audience has to fail closed by construction
-rather than by convention.
-
-The materialised process-level view grant is a fan-out write with a revoke rule.
-Getting the revoke wrong leaves someone able to view a private process they were
-removed from, and no foreign key catches it. A database-level cascade from the
-phase profile is the same failure with no code in the path at all: the grant
-lives on the process profile, so deleting a phase profile takes the phase and
-its grants and leaves the view grant behind. Phase deletion has to run the
-revoke itself.
+The materialised view grant is a fan-out write with a revoke rule, and getting
+the revoke wrong leaves someone viewing a private process they were removed
+from, with no foreign key to catch it. A database cascade does not help: the
+grant lives on the process profile, so deleting a phase profile leaves it
+behind. Phase deletion has to run the revoke itself.
 
 [ADR 0002](./0002-process-participant-for-notifications.md) defines a Participant
 as process-level and explicitly "across all phases". Someone invited to a single
