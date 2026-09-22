@@ -63,8 +63,6 @@ export function StandardDecisionPage({
   const allowProposals = currentPhase?.rules?.proposals?.submit === true;
   const proposalsHidden =
     currentPhase?.rules?.proposals?.defaults?.hidden === true;
-  const description =
-    instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
   const isAdmin = Boolean(instance.access?.admin);
   // Non-admin landing on the last phase before the admin has confirmed
@@ -81,10 +79,7 @@ export function StandardDecisionPage({
   const heroDescription =
     translation?.phaseDescription ?? currentPhase?.description;
   const actionBarDescription =
-    translation?.additionalInfo ??
-    currentPhase?.additionalInfo ??
-    translation?.description ??
-    description;
+    translation?.additionalInfo ?? currentPhase?.additionalInfo;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 

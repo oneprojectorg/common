@@ -55,9 +55,6 @@ export function VotingPage({
 
   const hasVoted = voteStatus.hasVoted;
 
-  const description =
-    instance.description ?? instance.instanceData?.templateDescription;
-
   const heroTitle = hasVoted
     ? t('decisions.ballotSubmittedNotice')
     : (translation?.headline ??
@@ -78,10 +75,7 @@ export function VotingPage({
     : (translation?.phaseDescription ?? currentPhase?.description);
 
   const actionBarDescription =
-    translation?.additionalInfo ??
-    currentPhase?.additionalInfo ??
-    translation?.description ??
-    description;
+    translation?.additionalInfo ?? currentPhase?.additionalInfo;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 

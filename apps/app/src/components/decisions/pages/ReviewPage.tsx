@@ -99,12 +99,8 @@ export function ReviewPage({
   };
 
   const translation = useDecisionTranslation();
-  const description =
-    instance.description ?? instance.instanceData?.templateDescription;
   const phaseAdditionalInfo =
     translation?.additionalInfo ?? currentPhase.additionalInfo;
-  const actionBarDescription =
-    phaseAdditionalInfo ?? translation?.description ?? description;
   const actionBarLabel = phaseAdditionalInfo
     ? t('aboutPhaseHeading')
     : undefined;
@@ -182,7 +178,7 @@ export function ReviewPage({
             ) : (
               <DecisionActionBar
                 instanceId={instance.id}
-                description={actionBarDescription}
+                description={phaseAdditionalInfo}
                 label={actionBarLabel}
                 markup={!!translation?.additionalInfo}
                 showSubmitButton={false}
