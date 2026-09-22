@@ -14,7 +14,8 @@ import { createChannelRegistrationLink } from './links';
  *
  * `isServer` is simulated by toggling `globalThis.window`: vitest's node env
  * starts with no `window`, so the server case is the default; the client case
- * stubs an empty object. `vi.unstubAllGlobals()` in `afterEach` resets it.
+ * stubs a minimal browser-shaped object. `vi.unstubAllGlobals()` in `afterEach`
+ * resets it.
  */
 function runLink({
   isServer,
@@ -28,7 +29,7 @@ function runLink({
   if (isServer) {
     vi.stubGlobal('window', undefined);
   } else {
-    vi.stubGlobal('window', {});
+    vi.stubGlobal('window', { location: { href: 'http://localhost:3100/' } });
   }
 
   const link = createChannelRegistrationLink()({} as never);
