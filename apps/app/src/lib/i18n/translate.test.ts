@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import english from './dictionaries/en.json';
 import hungarian from './dictionaries/hu.json';
+import type { MessageTree } from './messageKeys';
 import { normalizeMessageKeys } from './messageKeys';
 import type {
   LeafPaths,
@@ -14,8 +15,10 @@ import type {
 } from './translate';
 import { withNormalizedKeys } from './translate';
 
-const englishMessages: Record<string, string> = english;
-const hungarianMessages: Record<string, string> = hungarian;
+// The dictionaries hold namespace objects beside the legacy flat labels
+// (ADR 0005), so they are trees, not string maps.
+const englishMessages: MessageTree = english;
+const hungarianMessages: MessageTree = hungarian;
 
 // The real dictionaries are the fixture: a stand-in would let the wrapper pass
 // against keys ours don't look like. Hungarian is an arbitrary non-default
@@ -32,9 +35,16 @@ const translateHungarian = () =>
   );
 
 // Placeholder-free so the assertion compares a lookup, not a formatting result.
-const plainKeysWithAPeriod = Object.keys(englishMessages).filter(
-  (key) => key.includes('.') && !/[{<]/.test(englishMessages[key] ?? ''),
-);
+// Only the top-level entries are legacy keys; a namespace object has no period
+// in its name and its leaves are addressed as a path.
+const plainKeysWithAPeriod = Object.entries(englishMessages)
+  .filter(
+    (entry): entry is [string, string] =>
+      typeof entry[1] === 'string' &&
+      entry[0].includes('.') &&
+      !/[{<]/.test(entry[1]),
+  )
+  .map(([key]) => key);
 
 describe('withNormalizedKeys', () => {
   it('finds a message whose key contains a period', () => {
@@ -104,18 +114,31 @@ describe('withNormalizedKeys', () => {
     expect(t('fullName')).toBe('Teljes nev');
   });
 
-  it('formats tags and values under a key containing a period', () => {
-    const t = translateHungarian();
-    const key =
-      "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>." satisfies TranslationKey;
-
-    expect(
-      t.markup(key, {
-        bold: (chunks: string) => `<b>${chunks}</b>`,
-        email: 'ada@example.com',
-        organization: 'Common',
+  // Tags and values have to survive the substitution, on a legacy key and on a
+  // namespace path alike. The messages are inline: keyed on a real dictionary
+  // entry, this test broke every time the migration moved that entry.
+  it('formats tags and values under a legacy key and under a namespace path', () => {
+    const t = withNormalizedKeys<'Merge <b>{name}</b>.' | 'decisions.merge'>(
+      createTranslator({
+        locale: 'hu',
+        messages: normalizeMessageKeys({
+          'Merge <b>{name}</b>.': '<b>{name}</b> osszevonasa.',
+          decisions: { merge: '<b>{name}</b> osszevonasa.' },
+        }),
+        onError: () => {},
       }),
-    ).toContain('<b>ada@example.com</b>');
+    );
+    const values = {
+      b: (chunks: string) => `<strong>${chunks}</strong>`,
+      name: 'Bike lanes',
+    };
+
+    expect(t.markup('Merge <b>{name}</b>.', values)).toContain(
+      '<strong>Bike lanes</strong>',
+    );
+    expect(t.markup('decisions.merge', values)).toContain(
+      '<strong>Bike lanes</strong>',
+    );
   });
 });
 

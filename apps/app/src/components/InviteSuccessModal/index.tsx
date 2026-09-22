@@ -47,23 +47,21 @@ export const InviteSuccessModal = ({
               <LuCheck className="size-8 text-success" />
             </div>
             <DialogTitle className="text-display font-light">
-              {t('Sent')}
+              {t('onboarding.inviteSentTitle')}
             </DialogTitle>
           </div>
           <p>
             {invitedCount && invitedCount > 1
-              ? t.rich(
-                  "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.",
-                  { bold, count: invitedCount, organization: organizationName },
-                )
-              : t.rich(
-                  "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.",
-                  {
-                    bold,
-                    email: invitedEmail ?? '',
-                    organization: organizationName,
-                  },
-                )}
+              ? t.rich('onboarding.invitedPeopleSummary', {
+                  bold,
+                  count: invitedCount,
+                  organization: organizationName,
+                })
+              : t.rich('onboarding.invitedPersonSummary', {
+                  bold,
+                  email: invitedEmail ?? '',
+                  organization: organizationName,
+                })}
           </p>
           <div className="flex w-full flex-col gap-2">
             <Button onClick={onClose} className="w-full">
@@ -74,7 +72,7 @@ export const InviteSuccessModal = ({
               onClick={onInviteMore}
               className="w-full"
             >
-              {t('Invite more people')}
+              {t('onboarding.inviteMoreAction')}
             </Button>
           </div>
         </div>

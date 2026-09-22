@@ -18,29 +18,23 @@ export const CookieConsentBanner = () => {
 
   return (
     <CookieBanner
-      title={t('Your Privacy')}
-      description={t.rich(
-        'We use essential cookies to make Common work, and analytics cookies to understand how the platform is used. Read our <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms> to learn more.',
-        {
-          privacy: (chunks: ReactNode) => (
-            <PolicyLink
-              href="/info/privacy"
-              newTabLabel={t('(opens in a new tab)')}
-            >
-              {chunks}
-            </PolicyLink>
-          ),
-          terms: (chunks: ReactNode) => (
-            <PolicyLink
-              href="/info/tos"
-              newTabLabel={t('(opens in a new tab)')}
-            >
-              {chunks}
-            </PolicyLink>
-          ),
-        },
-      )}
-      rejectLabel={t('Reject')}
+      title={t('auth.cookieConsentTitle')}
+      description={t.rich('auth.cookieConsentBody', {
+        privacy: (chunks: ReactNode) => (
+          <PolicyLink
+            href="/info/privacy"
+            newTabLabel={t('(opens in a new tab)')}
+          >
+            {chunks}
+          </PolicyLink>
+        ),
+        terms: (chunks: ReactNode) => (
+          <PolicyLink href="/info/tos" newTabLabel={t('(opens in a new tab)')}>
+            {chunks}
+          </PolicyLink>
+        ),
+      })}
+      rejectLabel={t('auth.cookieRejectAction')}
       acceptLabel={t('Accept')}
       onReject={reject}
       onAccept={accept}
