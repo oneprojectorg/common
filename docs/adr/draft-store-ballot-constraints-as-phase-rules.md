@@ -1,4 +1,4 @@
-# Draft. Store ballot constraints as voting-phase rules and rank on the vote-proposal row
+# NNNN. Store ballot constraints as voting-phase rules and rank on the vote-proposal row
 
 Date: 2026-09-21
 
