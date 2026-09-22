@@ -60,9 +60,6 @@ const PROPOSALS = [
   },
 ];
 
-// The feed inside a page-like scroll container: scroll to move the focal
-// point — the card nearest the center reads at full opacity while its
-// neighbors dim and settle back by distance.
 export const Default: Story = {
   render: () => (
     <div className="[container-type:size] h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
@@ -77,8 +74,6 @@ export const Default: Story = {
   ),
 };
 
-// dimStrength={0} turns the focal treatment off entirely — the feed becomes a
-// plain single-column list, which is also what screen readers experience.
 export const NoDimming: Story = {
   render: () => (
     <div className="[container-type:size] h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
@@ -93,8 +88,6 @@ export const NoDimming: Story = {
   ),
 };
 
-// Keyboard pass: tab through the cards — an item holding focus always lifts
-// to full opacity, even when it is not the scroll-focal item.
 export const KeyboardFocus: Story = {
   render: () => (
     <div className="[container-type:size] h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
