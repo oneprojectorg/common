@@ -7,7 +7,7 @@ import { useTranslations } from '@/lib/i18n';
 
 /** Returns any panel state that replaced the reviewer list back to it. */
 export function BackToReviewers({ onClick }: { onClick: () => void }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
 
   return (
     <Button
@@ -17,7 +17,7 @@ export function BackToReviewers({ onClick }: { onClick: () => void }) {
       className="self-start text-base"
     >
       <LuArrowLeft className="size-4 rtl:-scale-x-100" />
-      {t('Back to all reviewers')}
+      {t('backToReviewersAction')}
     </Button>
   );
 }

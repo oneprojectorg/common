@@ -79,7 +79,7 @@ export function ManageAssignmentsDialogContent({
           default: () => (
             <DialogHeader>
               <DialogTitle>
-                {t("We couldn't load review assignments")}
+                {t('decisions.review.loadAssignmentsError')}
               </DialogTitle>
               <DialogDescription>
                 {t('Please refresh the page to try again.')}
@@ -92,7 +92,9 @@ export function ManageAssignmentsDialogContent({
           fallback={
             <>
               <DialogHeader>
-                <DialogTitle>{t('Manage assignments')}</DialogTitle>
+                <DialogTitle>
+                  {t('decisions.review.manageAssignmentsAction')}
+                </DialogTitle>
               </DialogHeader>
               <div className="flex flex-col gap-3 px-6 py-4">
                 <Skeleton className="h-6 w-64" aria-hidden />
@@ -282,7 +284,7 @@ function ManageAssignmentsForm({
           reviewerProfileId: reviewer.profile.id,
         });
         // Nothing committed yet — every selection is still worth retrying.
-        toast.error(t('Could not save the changes. Please try again.'));
+        toast.error(t('decisions.review.saveChangesError'));
         return;
       }
     }
@@ -308,11 +310,9 @@ function ManageAssignmentsForm({
         if (createdCount > 0) {
           // The assign half committed — drop it so a retry only re-sends the removals.
           setToAssign(new Set());
-          toast.error(
-            t('Assignments were saved, but unassigning failed — try again.'),
-          );
+          toast.error(t('decisions.review.unassignPartialFailure'));
         } else {
-          toast.error(t('Could not save the changes. Please try again.'));
+          toast.error(t('decisions.review.saveChangesError'));
         }
         return;
       }
@@ -322,12 +322,12 @@ function ManageAssignmentsForm({
       toast.success(summaryMessage(t, createdCount, removedCount));
     } else if (skippedIds.length === 0) {
       // Server deduped every pick; "0 unassigned" would read as a failure.
-      toast.info(t('No changes were needed.'));
+      toast.info(t('decisions.review.noChangesNeeded'));
     }
 
     // Skipped = no longer pending, for a reason the API doesn't report.
     if (skippedIds.length > 0) {
-      toast.error(t('Could not unassign — the assignment has changed.'));
+      toast.error(t('decisions.review.unassignConflictError'));
     }
 
     onSaved();
@@ -336,11 +336,11 @@ function ManageAssignmentsForm({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{t("Manage {name}'s assignments", { name })}</DialogTitle>
+        <DialogTitle>
+          {t('decisions.review.manageReviewerAssignmentsTitle', { name })}
+        </DialogTitle>
         <DialogDescription>
-          {t(
-            "Check a proposal to assign it; uncheck a pending one to unassign it. Started reviews can't be removed.",
-          )}
+          {t('decisions.review.manageAssignmentsHint')}
         </DialogDescription>
       </DialogHeader>
 
@@ -348,7 +348,9 @@ function ManageAssignmentsForm({
         <div className="flex items-center justify-between gap-3">
           {/* Not the filter's label — a moving count would rename the control. */}
           <Header3 aria-live="polite" className="font-light">
-            {t('Proposals ({count} assigned)', { count: assignedCount })}
+            {t('decisions.review.proposalsAssignedHeading', {
+              count: assignedCount,
+            })}
           </Header3>
           <div className="flex items-center gap-2">
             {/* Import builds the selection like Select all does, so it sits beside it. */}
@@ -371,9 +373,7 @@ function ManageAssignmentsForm({
 
         {canAssign ? null : (
           <p className="text-sm text-muted-foreground">
-            {t(
-              'This reviewer no longer has the reviewer role, so they cannot take new proposals.',
-            )}
+            {t('decisions.review.reviewerRoleRemovedHint')}
           </p>
         )}
 
@@ -386,17 +386,14 @@ function ManageAssignmentsForm({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={t('Filter by title or category…')}
+            placeholder={t('decisions.review.filterProposalsPlaceholder')}
           />
         </Field>
 
         <p aria-live="polite" className="sr-only">
-          {t(
-            '{count, plural, one {# proposal shown} other {# proposals shown}}',
-            {
-              count: visibleRows.length,
-            },
-          )}
+          {t('decisions.review.proposalsShownCount', {
+            count: visibleRows.length,
+          })}
         </p>
 
         <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border">
@@ -412,8 +409,10 @@ function ManageAssignmentsForm({
           {visibleRows.length === 0 ? (
             <li className="px-3 py-2 text-sm text-muted-foreground">
               {proposals.length === 0
-                ? t('No proposals in this phase yet.')
-                : t('No proposals match "{query}".', { query: query.trim() })}
+                ? t('decisions.review.noProposalsInPhase')
+                : t('decisions.review.noProposalsMatchQuery', {
+                    query: query.trim(),
+                  })}
             </li>
           ) : null}
         </ul>
@@ -425,11 +424,11 @@ function ManageAssignmentsForm({
           className="text-sm text-muted-foreground sm:self-center"
         >
           {hasChanges
-            ? t('{assign} to assign · {unassign} to unassign', {
+            ? t('decisions.review.assignHotkeyHint', {
                 assign: assignIds.length,
                 unassign: unassignAssignmentIds.length,
               })
-            : t('No changes yet')}
+            : t('decisions.review.noChangesYet')}
         </p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row">
           <DialogClose render={<Button variant="outline" />}>
@@ -497,7 +496,9 @@ function ProposalCheckRow({
         </span>
         <span className="ms-auto flex shrink-0 items-center gap-2">
           {isOwn ? (
-            <Badge variant="outline">{t("Reviewer's own proposal")}</Badge>
+            <Badge variant="outline">
+              {t('decisions.review.reviewerOwnProposal')}
+            </Badge>
           ) : null}
           {kind === 'locked' && assignment ? (
             <ReviewStatusBadge
@@ -607,19 +608,17 @@ function summaryMessage(
   removedCount: number,
 ): string {
   if (createdCount > 0 && removedCount > 0) {
-    return t(
-      '{created, plural, one {# review assignment created} other {# review assignments created}} · {removed, plural, one {# proposal unassigned} other {# proposals unassigned}}',
-      { created: createdCount, removed: removedCount },
-    );
+    return t('decisions.review.assignmentsSavedSummary', {
+      created: createdCount,
+      removed: removedCount,
+    });
   }
   if (createdCount > 0) {
-    return t(
-      '{count, plural, one {# review assignment created} other {# review assignments created}}',
-      { count: createdCount },
-    );
+    return t('decisions.review.assignmentsCreatedCount', {
+      count: createdCount,
+    });
   }
-  return t(
-    '{count, plural, one {# proposal unassigned} other {# proposals unassigned}}',
-    { count: removedCount },
-  );
+  return t('decisions.review.proposalsUnassignedCount', {
+    count: removedCount,
+  });
 }

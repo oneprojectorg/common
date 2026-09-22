@@ -13,16 +13,22 @@ export const assignmentStatusSpecs: Record<
   AssignmentStatusValue,
   { label: TranslationKey; intent: StatusDotIntent }
 > = {
-  pending: { label: 'Not Started', intent: 'neutral' },
-  in_progress: { label: 'In Progress', intent: 'neutral' },
-  completed: { label: 'Completed', intent: 'success' },
+  pending: { label: 'decisions.review.statusNotStarted', intent: 'neutral' },
+  in_progress: {
+    label: 'decisions.review.statusInProgress',
+    intent: 'neutral',
+  },
+  completed: { label: 'decisions.review.statusCompleted', intent: 'success' },
   awaiting_author_revision: {
-    label: 'Revision Requested',
+    label: 'decisions.review.statusRevisionRequested',
     intent: 'danger',
   },
-  ready_for_re_review: { label: 'Needs Review', intent: 'warning' },
+  ready_for_re_review: {
+    label: 'decisions.review.statusNeedsReview',
+    intent: 'warning',
+  },
   draft: { label: 'Draft', intent: 'warning' },
-  submitted: { label: 'Submitted', intent: 'success' },
+  submitted: { label: 'decisions.review.statusSubmitted', intent: 'success' },
 };
 
 // Breakdown reading order. A rank, not an array — the values are enum

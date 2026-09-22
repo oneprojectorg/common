@@ -20,13 +20,13 @@ export function ManageAssignmentsAction({
   phaseId,
   reviewerProfileId,
 }: ManageAssignmentsActionProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger render={<Button />}>
-        {t('Manage assignments')}
+        {t('manageAssignmentsAction')}
       </DialogTrigger>
 
       <ManageAssignmentsDialogContent

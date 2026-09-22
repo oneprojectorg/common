@@ -18,7 +18,7 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const decisionProfile = await client.decision.getDecisionBySlug({ slug });
-    const label = t('Reviews');
+    const label = t('decisions.review.reviewsLabel');
     return {
       title: decisionProfile?.name
         ? `${label} | ${decisionProfile.name}`

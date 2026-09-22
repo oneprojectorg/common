@@ -92,13 +92,15 @@ export function ReviewTabs({
       <div className="w-full border-b">
         <TabsList
           variant="line"
-          aria-label={t('Review Proposal')}
+          aria-label={t('decisions.review.reviewProposalHeading')}
           className="flex gap-4 overflow-x-auto"
         >
-          <TabsTrigger value={MY_REVIEW_TAB}>{t('My review')}</TabsTrigger>
+          <TabsTrigger value={MY_REVIEW_TAB}>
+            {t('decisions.review.myReviewTab')}
+          </TabsTrigger>
           {showOtherReviews ? (
             <TabsTrigger value={OTHER_REVIEWS_TAB}>
-              {t('Other reviews')}
+              {t('decisions.review.otherReviewsTab')}
             </TabsTrigger>
           ) : null}
           {previousPhases.map((phase) => (
@@ -106,7 +108,7 @@ export function ReviewTabs({
               key={phase.id}
               value={`${PHASE_TAB_PREFIX}${phase.id}`}
             >
-              {t('Reviews from {phase}', { phase: phase.name })}
+              {t('decisions.review.reviewsFromPhase', { phase: phase.name })}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -126,7 +128,7 @@ export function ReviewTabs({
           <PhaseReviews
             phaseId={assignment.phaseId}
             excludeOwnReview
-            emptyMessage={t('No other reviews yet')}
+            emptyMessage={t('decisions.review.noOtherReviews')}
           />
         </ReviewsTabPanel>
       ) : null}
@@ -138,7 +140,7 @@ export function ReviewTabs({
         >
           <PhaseReviews
             phaseId={phase.id}
-            emptyMessage={t('No reviews were submitted in this phase')}
+            emptyMessage={t('decisions.review.noReviewsInPhase')}
           />
         </ReviewsTabPanel>
       ))}
@@ -162,7 +164,7 @@ function ReviewsTabPanel({
         fallbacks={{
           default: () => (
             <p className="py-8 text-center text-base text-muted-foreground">
-              {t('Failed to load reviews')}
+              {t('decisions.review.loadReviewsError')}
             </p>
           ),
         }}

@@ -69,7 +69,7 @@ function SentAtLine({
         ? t('Reviewer · {timeAgo}', { timeAgo })
         : meta === 'bare'
           ? timeAgo
-          : t('Sent {timeAgo}', { timeAgo })}
+          : t('decisions.review.sentTimeAgo', { timeAgo })}
     </p>
   );
 }

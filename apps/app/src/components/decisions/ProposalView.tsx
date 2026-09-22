@@ -240,7 +240,7 @@ export function ProposalView({
           </SplitPane.Pane>
           <SplitPane.Pane
             id="reviewNotes"
-            label={t('Review notes')}
+            label={t('decisions.review.reviewNotesHeading')}
             className="bg-background"
             unpadded
           >

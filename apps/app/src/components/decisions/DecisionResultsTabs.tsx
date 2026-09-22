@@ -28,7 +28,9 @@ export const DecisionResultsTabs = ({
           className="flex gap-6"
           aria-label={t('Results sections')}
         >
-          <TabsTrigger value="funded">{t('Selected proposals')}</TabsTrigger>
+          <TabsTrigger value="funded">
+            {t('decisions.review.selectedProposalsHeading')}
+          </TabsTrigger>
           <TabsTrigger value="all-proposals">{t('All proposals')}</TabsTrigger>
           {showBallotTab ? (
             <TabsTrigger value="ballot">{t('My ballot')}</TabsTrigger>

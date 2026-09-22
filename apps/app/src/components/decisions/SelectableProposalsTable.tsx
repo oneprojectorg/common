@@ -44,7 +44,10 @@ export const SelectableProposalsTable = ({
 
   if (isMobile) {
     return (
-      <ul className="flex flex-col gap-3" aria-label={t('Eligible proposals')}>
+      <ul
+        className="flex flex-col gap-3"
+        aria-label={t('decisions.review.eligibleProposalsHeading')}
+      >
         {proposals.map((proposal) => (
           <li key={proposal.id}>
             <SelectableProposalCard
@@ -62,13 +65,18 @@ export const SelectableProposalsTable = ({
   }
 
   return (
-    <Table aria-label={t('Eligible proposals')} className="w-full">
+    <Table
+      aria-label={t('decisions.review.eligibleProposalsHeading')}
+      className="w-full"
+    >
       <TableHeader>
         <TableRow>
           <TableHead>{t('Proposal')}</TableHead>
           {showBudget ? <TableHead>{t('Budget')}</TableHead> : null}
           <TableHead>{t('Category')}</TableHead>
-          {showVotes ? <TableHead>{t('Votes')}</TableHead> : null}
+          {showVotes ? (
+            <TableHead>{t('decisions.review.votesLabel')}</TableHead>
+          ) : null}
           <TableHead className="w-32 text-end">
             <span className="sr-only">{t('Select proposal')}</span>
           </TableHead>
@@ -119,7 +127,9 @@ export const SelectableProposalsTable = ({
               {showVotes ? (
                 <TableCell>
                   <span className="text-base">
-                    {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+                    {t('decisions.review.votesCount', {
+                      count: proposal.voteCount ?? 0,
+                    })}
                   </span>
                 </TableCell>
               ) : null}
@@ -187,7 +197,9 @@ const SelectableProposalCard = ({
         <SelectionCategoryChips labels={fields.categories} />
         {showVotes ? (
           <span className="text-sm text-muted-foreground">
-            {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+            {t('decisions.review.votesCount', {
+              count: proposal.voteCount ?? 0,
+            })}
           </span>
         ) : null}
       </div>

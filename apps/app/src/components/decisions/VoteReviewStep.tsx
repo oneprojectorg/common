@@ -18,12 +18,12 @@ interface VoteReviewStepProps {
  * `DialogDescription` so screen readers announce it with the title.
  */
 export const VoteReviewStep = ({ proposals }: VoteReviewStepProps) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const labelId = useId();
 
   return (
     <div className="space-y-4">
-      <Header4 id={labelId}>{t('Selected proposals')}</Header4>
+      <Header4 id={labelId}>{t('selectedProposalsHeading')}</Header4>
 
       <ul aria-labelledby={labelId} className="space-y-4">
         {proposals.map((proposal) => (

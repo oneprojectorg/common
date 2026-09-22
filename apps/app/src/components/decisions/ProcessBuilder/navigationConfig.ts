@@ -8,7 +8,7 @@ export const STEPS = [
     id: 'template',
     labelKey: 'decisions.processBuilder.proposalTemplateSectionLabel',
   },
-  { id: 'reviews', labelKey: 'Reviews' },
+  { id: 'reviews', labelKey: 'decisions.review.reviewsLabel' },
   { id: 'participants', labelKey: 'Participants' },
   { id: 'summary', labelKey: 'decisions.processBuilder.summaryHeading' },
 ] as const;
@@ -32,7 +32,7 @@ export const SECTIONS_BY_STEP = {
       id: 'criteria',
       labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
     },
-    { id: 'reviewSettings', labelKey: 'Reviews' },
+    { id: 'reviewSettings', labelKey: 'decisions.review.reviewsLabel' },
     {
       id: 'reviewRubric',
       labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
@@ -119,7 +119,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'reviewSettings',
-    labelKey: 'Reviews',
+    labelKey: 'decisions.review.reviewsLabel',
     parentStepId: 'reviews',
   },
   {

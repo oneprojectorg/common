@@ -14,7 +14,7 @@ export function FormShell({ children }: { children: ReactNode }) {
   return (
     // One copy per breakpoint; tests need the visible one.
     <div data-slot="review-form" className="flex flex-col gap-6">
-      <Header3>{t('Review Proposal')}</Header3>
+      <Header3>{t('decisions.review.reviewProposalHeading')}</Header3>
       {children}
     </div>
   );
@@ -53,7 +53,9 @@ export function TotalScoreCard({
   return (
     // The one filled row in the panel: a 16/450 label against a 20px figure.
     <Card className="flex-row items-center justify-between bg-muted p-4">
-      <span className="text-base font-strong">{t('Total score:')}</span>
+      <span className="text-base font-strong">
+        {t('decisions.review.totalScoreLabel')}
+      </span>
       <span className="font-serif text-title">{display}</span>
     </Card>
   );

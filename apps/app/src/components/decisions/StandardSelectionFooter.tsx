@@ -33,14 +33,14 @@ export const StandardSelectionFooter = ({
   onConfirm,
   isSubmitting,
 }: StandardSelectionFooterProps) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
 
   return (
     <FooterBar position="fixed" className="bg-muted/95">
       <FooterBarStart>
         <span className="flex items-center gap-2 text-base">
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
-          {t('{count} proposals selected', { count: numSelected })}
+          {t('proposalsSelectedCount', { count: numSelected })}
         </span>
       </FooterBarStart>
       <FooterBarCenter />
@@ -49,23 +49,23 @@ export const StandardSelectionFooter = ({
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
           triggerDisabled={numSelected === 0}
-          triggerLabel={t('Confirm selections')}
-          headerLabel={t('Confirm advancing proposals')}
-          confirmLabel={t('Publish')}
+          triggerLabel={t('confirmSelectionsAction')}
+          headerLabel={t('confirmAdvancingTitle')}
+          confirmLabel={t('publishAction')}
           isSubmitting={isSubmitting}
           onConfirm={onConfirm}
         >
           <div className="space-y-4">
             <p className="text-base">
-              {t(
-                'These {numProposals} proposals will move on to the {phaseName} phase',
-                { numProposals: numSelected, phaseName },
-              )}
+              {t('proposalsAdvancingDescription', {
+                numProposals: numSelected,
+                phaseName,
+              })}
             </p>
 
             <div className="space-y-2">
               <div className="text-sm tracking-wider text-muted-foreground uppercase">
-                {t('PROPOSALS TO ADVANCE')}
+                {t('proposalsToAdvanceHeading')}
               </div>
 
               {selectedProposals.map((proposal) => (
