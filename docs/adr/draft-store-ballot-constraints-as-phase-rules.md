@@ -1,4 +1,4 @@
-# 0006. Store ballot constraints as voting-phase rules and rank on the vote-proposal row
+# Draft. Store ballot constraints as voting-phase rules and rank on the vote-proposal row
 
 Date: 2026-09-21
 
@@ -22,7 +22,7 @@ pipeline.
 - Both constraints are voting-phase rules, next to the existing count cap, not
   entries in the legacy schema registry. The budget rule stores only a number;
   its unit is the template's budget unit (see
-  [ADR 0005](./0005-declare-budget-units-on-the-template.md)).
+  [the budget-unit ADR](./draft-declare-budget-units-on-the-template.md)).
 - The count cap and the budget cap are independent. Either may be unset and
   both may apply.
 - A proposal whose cost is missing, unparseable, or in a unit that disagrees

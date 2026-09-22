@@ -1,4 +1,4 @@
-# 0005. Declare a budget's unit on the template field, not on each value
+# Draft. Declare a budget's unit on the template field, not on each value
 
 Date: 2026-09-21
 
