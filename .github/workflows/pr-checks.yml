@@ -72,6 +72,27 @@ jobs:
       - name: Run TypeScript checks - App
         run: pnpm typecheck
 
+  # Only adr-numbering.yml may create NNNN-*.md. The check runs the base
+  # branch's copy of the script. No token here, so no fork gate.
+  adr-numbers:
+    name: ADR numbers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check no ADR is numbered by hand
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: git show "$BASE:scripts/number-adrs.sh" | bash -s -- --check "$BASE"
+
+      - name: Test the numbering script
+        run: scripts/number-adrs.test.sh
+
   design-system:
     name: Design system
     runs-on: blacksmith-2vcpu-ubuntu-2204

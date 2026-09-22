@@ -1,0 +1,36 @@
+name: Number ADRs
+
+# pull_request_target so the token can push to dev for a fork's PR too. Only
+# dev is checked out, never the PR's code.
+
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - dev
+    paths:
+      - 'docs/adr/draft-*.md'
+  # Numbers whatever drafts sit on the chosen branch.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: adr-numbering
+  cancel-in-progress: false
+
+jobs:
+  number-adrs:
+    name: Number draft ADRs
+    if: github.event_name != 'pull_request_target' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
+
+      - name: Number and push
+        run: scripts/number-adrs.sh --push
