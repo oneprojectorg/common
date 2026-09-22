@@ -21,8 +21,7 @@ pipeline.
 
 - Both constraints are voting-phase rules, next to the existing count cap, not
   entries in the legacy schema registry. The budget rule stores only a number;
-  its unit is the template's budget unit (see
-  [the budget-unit ADR](./draft-declare-budget-units-on-the-template.md)).
+  its unit is the template's budget unit.
 - The count cap and the budget cap are independent. Either may be unset and
   both may apply.
 - A proposal whose cost is missing, unparseable, or in a unit that disagrees
