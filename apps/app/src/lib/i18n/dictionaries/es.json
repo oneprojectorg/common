@@ -1444,7 +1444,10 @@
       "unlikeError": "No se pudo quitar tu me gusta. Inténtalo de nuevo.",
       "unfollowError": "No se pudo dejar de seguir esta propuesta. Inténtalo de nuevo.",
       "notSelectedNotificationTemplate": "Hola {name}:\n\nGracias por presentar \"{proposal}\". Tras la votación comunitaria, no fue seleccionada en esta ronda.\n\nLos resultados están publicados en la página de la decisión y esperamos que vuelvas a participar.",
-      "selectedNotificationTemplate": "Hola {name}:\n\n¡Buenas noticias! Tu propuesta \"{proposal}\" ha sido seleccionada según los resultados de la votación.\n\nEn breve te daremos los siguientes pasos y el monto final."
+      "selectedNotificationTemplate": "Hola {name}:\n\n¡Buenas noticias! Tu propuesta \"{proposal}\" ha sido seleccionada según los resultados de la votación.\n\nEn breve te daremos los siguientes pasos y el monto final.",
+      "openFullProposalAction": "Abrir la propuesta completa",
+      "sheetLoadErrorTitle": "No se pudo cargar esta propuesta",
+      "sheetLoadErrorHint": "Puede que se haya eliminado o que no tengas acceso a ella."
     },
     "decisionsLabel": "Decisiones",
     "decisionLabel": "Decisión",

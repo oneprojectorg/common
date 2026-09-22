@@ -1444,7 +1444,10 @@
       "unlikeError": "Nem sikerült visszavonni a kedvelését. Kérjük, próbálja újra.",
       "unfollowError": "Nem sikerült megszüntetni a javaslat követését. Kérjük, próbálja újra.",
       "notSelectedNotificationTemplate": "Szia {name}!\n\nKöszönjük, hogy beküldted a(z) „{proposal}” javaslatot. A közösségi szavazás után ebben a körben nem választottuk ki.\n\nAz eredmények a döntés oldalán olvashatók, és reméljük, legközelebb is részt veszel.",
-      "selectedNotificationTemplate": "Szia {name}!\n\nJó hír: a(z) „{proposal}” javaslatodat a szavazás eredménye alapján kiválasztottuk.\n\nA következő lépésekről és a végleges összegről hamarosan jelentkezünk."
+      "selectedNotificationTemplate": "Szia {name}!\n\nJó hír: a(z) „{proposal}” javaslatodat a szavazás eredménye alapján kiválasztottuk.\n\nA következő lépésekről és a végleges összegről hamarosan jelentkezünk.",
+      "openFullProposalAction": "Teljes javaslat megnyitása",
+      "sheetLoadErrorTitle": "Nem sikerült betölteni ezt a javaslatot",
+      "sheetLoadErrorHint": "Lehet, hogy eltávolították, vagy nincs hozzáférésed."
     },
     "decisionsLabel": "Döntések",
     "decisionLabel": "Döntés",

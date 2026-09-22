@@ -238,6 +238,34 @@ export const Awarded: Story = {
   ),
 };
 
+// `onTitleClick` cancels the navigation so the caller can open the proposal in
+// a panel instead. The card keeps its `href`, so a modified click still opens
+// the proposal's own page — which is why the handler checks for one.
+export const TitleOpensAPanel: Story = {
+  render: function TitleOpensAPanelStory() {
+    const [opened, setOpened] = useState<string | null>(null);
+    return (
+      <div className="flex w-96 flex-col gap-4">
+        <ProposalCard
+          {...base}
+          href="#proposal"
+          onTitleClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey) {
+              return;
+            }
+            event.preventDefault();
+            setOpened(base.title);
+          }}
+          metrics={{ likes: 12, bookmarks: 4, comments: 8 }}
+        />
+        <p aria-live="polite" className="text-sm text-muted-foreground">
+          {opened ? `Panel opened for “${opened}”` : 'No panel open'}
+        </p>
+      </div>
+    );
+  },
+};
+
 // Compact form for map hovercards: title + authors + tags only.
 export const MapPin: Story = {
   render: () => (

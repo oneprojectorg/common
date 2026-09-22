@@ -43,6 +43,7 @@ import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
+import { ProposalSheetProvider } from './ProposalSheetProvider';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import type { ProposalControls } from './ProposalsFilterBar';
 import { NoProposalsFound, ProposalsGrid } from './ProposalsGrid';
@@ -269,7 +270,14 @@ const ResultsPhaseProposalsLoader = ({
 
 // fallow-ignore-next-line complexity
 export const ProposalsList = (props: ProposalsListProps) => {
-  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
+  const {
+    slug,
+    instanceId,
+    decisionSlug,
+    phase,
+    initialFilter,
+    excludeAssignedForReview,
+  } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
@@ -398,21 +406,27 @@ export const ProposalsList = (props: ProposalsListProps) => {
     />
   );
 
-  // The provider sits above the loaders, so a refreshed list re-parenting its
+  // Both providers sit above the loaders, so a refreshed list re-parenting its
   // cards can't close a merge, rejection or delete the admin is halfway
-  // through.
+  // through — nor the proposal sheet someone is reading.
   return (
-    <ProposalCardDialogProvider>
-      {phase === 'results' ? (
-        <ResultsPhaseProposalsLoader queryParams={queryParams}>
-          {renderContent}
-        </ResultsPhaseProposalsLoader>
-      ) : (
-        <CurrentPhaseProposalsLoader queryParams={queryParams}>
-          {renderContent}
-        </CurrentPhaseProposalsLoader>
-      )}
-    </ProposalCardDialogProvider>
+    <ProposalSheetProvider
+      slug={slug}
+      instanceId={instanceId}
+      decisionSlug={decisionSlug}
+    >
+      <ProposalCardDialogProvider>
+        {phase === 'results' ? (
+          <ResultsPhaseProposalsLoader queryParams={queryParams}>
+            {renderContent}
+          </ResultsPhaseProposalsLoader>
+        ) : (
+          <CurrentPhaseProposalsLoader queryParams={queryParams}>
+            {renderContent}
+          </CurrentPhaseProposalsLoader>
+        )}
+      </ProposalCardDialogProvider>
+    </ProposalSheetProvider>
   );
 };
 

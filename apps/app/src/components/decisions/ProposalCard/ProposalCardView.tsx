@@ -166,6 +166,12 @@ export interface ProposalCardViewProps extends Omit<
   proposal: Proposal;
   /** Detail link — when set the title becomes the card's stretched primary link. */
   href?: string;
+  /**
+   * Click handler on the title link — see the sense `ProposalCard` prop of the
+   * same name. Surfaces that open the proposal in a side sheet pass
+   * `useOpenProposalInSheet`'s handler here.
+   */
+  onTitleClick?: ComponentProps<'a'>['onClick'];
   /** Utility-corner slot (menu / select toggle). */
   aside?: ReactNode;
   /** Action row (Revise / Edit / Delete / Read full proposal). */
@@ -211,6 +217,7 @@ export interface ProposalCardViewProps extends Omit<
 export const ProposalCardView = ({
   proposal,
   href,
+  onTitleClick,
   aside,
   actions,
   showMetrics = false,
@@ -282,6 +289,7 @@ export const ProposalCardView = ({
     <SenseProposalCard
       title={titleText}
       href={href}
+      onTitleClick={onTitleClick}
       linkComponent={Link}
       className={className}
       selected={selected}

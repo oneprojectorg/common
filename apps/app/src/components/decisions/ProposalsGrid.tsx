@@ -23,7 +23,7 @@ import {
   FooterBarStart,
 } from '@op/sense/FooterBar';
 import { toast } from '@op/sense/Toast';
-import { type ReactNode, useState } from 'react';
+import { type ComponentProps, type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,6 +40,7 @@ import {
   type CustomFormValues,
 } from './proposalEditor/CustomFormModal';
 import { proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 export interface ProposalsProps {
   proposals?: Proposal[];
@@ -180,6 +181,33 @@ export const NoProposalsFound = ({
   );
 };
 
+/**
+ * "Show me this proposal" for the voting-phase cards, whose titles are not
+ * links: the whole card is the vote toggle, or it carries no link at all. So
+ * this is where the side sheet opens from on those cards — the action stays a
+ * link, so a modified click still reaches the proposal's own page.
+ */
+const ReadProposalAction = ({
+  href,
+  onClick,
+}: {
+  href: string;
+  onClick: ComponentProps<typeof ButtonLink>['onClick'];
+}) => {
+  const t = useTranslations();
+
+  return (
+    <ButtonLink
+      href={href}
+      onClick={onClick}
+      variant="outline"
+      className="w-full"
+    >
+      {t('decisions.proposals.readFullProposalAction')}
+    </ButtonLink>
+  );
+};
+
 const HiddenProposalsEmptyState = () => {
   const t = useTranslations();
 
@@ -219,6 +247,7 @@ const VotingProposalsList = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
   const t = useTranslations();
+  const openInSheet = useOpenProposalInSheet();
 
   const numSelected = selectedProposalIds.length;
 
@@ -368,6 +397,7 @@ const VotingProposalsList = ({
                 key={proposal.id}
                 proposal={proposal}
                 href={href}
+                onTitleClick={openInSheet(proposal.profileId)}
                 selected={isVotedFor}
                 headerBadge={null}
                 aside={
@@ -440,9 +470,10 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink href={href} variant="outline" className="w-full">
-                    {t('decisions.proposals.readFullProposalAction')}
-                  </ButtonLink>
+                  <ReadProposalAction
+                    href={href}
+                    onClick={openInSheet(proposal.profileId)}
+                  />
                 }
               />
             );
@@ -460,9 +491,10 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink href={href} variant="outline" className="w-full">
-                    {t('decisions.proposals.readFullProposalAction')}
-                  </ButtonLink>
+                  <ReadProposalAction
+                    href={href}
+                    onClick={openInSheet(proposal.profileId)}
+                  />
                 }
               />
             );

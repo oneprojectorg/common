@@ -13,15 +13,19 @@ export interface ProposalRoute {
   instanceId: string;
 }
 
-export function proposalHref({
-  profileId,
+/** The decision's own route prefix — what `ProposalView` calls `decisionRoot`. */
+export function decisionRootHref({
   decisionSlug,
   slug,
   instanceId,
-}: ProposalRoute): string {
+}: Omit<ProposalRoute, 'profileId'>): string {
   return decisionSlug
-    ? `/decisions/${decisionSlug}/proposal/${profileId}`
-    : `/profile/${slug}/decisions/${instanceId}/proposal/${profileId}`;
+    ? `/decisions/${decisionSlug}`
+    : `/profile/${slug}/decisions/${instanceId}`;
+}
+
+export function proposalHref(route: ProposalRoute): string {
+  return `${decisionRootHref(route)}/proposal/${route.profileId}`;
 }
 
 export function proposalEditHref(route: ProposalRoute): string {

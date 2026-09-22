@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
+import { ProposalSheetProvider } from './ProposalSheetProvider';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -153,15 +154,28 @@ export function DecisionStateRouter({
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
-  if (useLegacy) {
-    return <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />;
-  }
+  // One sheet for the whole phase page, so every proposal-card surface on it —
+  // the browse grid, the map, the results tabs, a reviewer's assignments —
+  // opens the same panel. Mounted here rather than per page because this is the
+  // one place every phase view passes through. `decisionSlug` is dropped on the
+  // legacy route, which builds its proposal links from `slug` + `instanceId`;
+  // the sheet's expand control has to resolve to the same URL the cards do.
   return (
-    <DecisionStateRouterNew
-      instanceId={instanceId}
+    <ProposalSheetProvider
       slug={slug}
-      decisionSlug={decisionSlug}
-      decisionProfileId={decisionProfileId}
-    />
+      instanceId={instanceId}
+      decisionSlug={useLegacy ? undefined : decisionSlug}
+    >
+      {useLegacy ? (
+        <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />
+      ) : (
+        <DecisionStateRouterNew
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+          decisionProfileId={decisionProfileId}
+        />
+      )}
+    </ProposalSheetProvider>
   );
 }

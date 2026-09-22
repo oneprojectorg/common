@@ -1444,7 +1444,10 @@
       "unlikeError": "Lama saari karin jeclaantaada. Fadlan mar kale isku day.",
       "unfollowError": "Lama joojin karin raacitaanka soo jeedintan. Fadlan mar kale isku day.",
       "notSelectedNotificationTemplate": "Salaan {name},\n\nWaad ku mahadsan tahay soo gudbintaada \"{proposal}\". Kadib codbixinta bulshada, wareeggan lama dooran.\n\nNatiijada waxaa lagu daabacay bogga go’aanka, waxaana rajaynaynaa inaad mar kale ka qaybgasho.",
-      "selectedNotificationTemplate": "Salaan {name},\n\nWar wanaagsan — soo jeedintaada \"{proposal}\" waa la doortay iyadoo lagu saleynayo natiijada codbixinta!\n\nDhawaan waxaan kula soo xiriiri doonnaa talaabooyinka xiga iyo qaddarka ugu dambeeya."
+      "selectedNotificationTemplate": "Salaan {name},\n\nWar wanaagsan — soo jeedintaada \"{proposal}\" waa la doortay iyadoo lagu saleynayo natiijada codbixinta!\n\nDhawaan waxaan kula soo xiriiri doonnaa talaabooyinka xiga iyo qaddarka ugu dambeeya.",
+      "openFullProposalAction": "Fur soo jeedinta oo dhan",
+      "sheetLoadErrorTitle": "Lama soo bixin karin soo jeedintan",
+      "sheetLoadErrorHint": "Waxaa laga yaabaa in la saaray, ama aadan marin u lahayn."
     },
     "decisionsLabel": "Go'aamada",
     "decisionLabel": "Go'aan",

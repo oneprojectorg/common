@@ -1444,7 +1444,10 @@
       "unlikeError": "Couldn't remove your like. Please try again.",
       "unfollowError": "Couldn't unfollow this proposal. Please try again.",
       "notSelectedNotificationTemplate": "Hi {name},\n\nThank you for submitting \"{proposal}\". After community voting, it was not selected in this round.\n\nThe results are published on the decision page, and we hope you will take part again.",
-      "selectedNotificationTemplate": "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected based on voting results!\n\nWe will follow up with next steps and the final amount shortly."
+      "selectedNotificationTemplate": "Hi {name},\n\nGreat news — your proposal \"{proposal}\" has been selected based on voting results!\n\nWe will follow up with next steps and the final amount shortly.",
+      "openFullProposalAction": "Open full proposal",
+      "sheetLoadErrorTitle": "Couldn't load this proposal",
+      "sheetLoadErrorHint": "It may have been removed, or you may not have access to it."
     },
     "decisionsLabel": "Decisions",
     "decisionLabel": "Decision",

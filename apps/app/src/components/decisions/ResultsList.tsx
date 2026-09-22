@@ -18,6 +18,7 @@ import { formatBudget } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 import { proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 export const ResultsList = ({
   slug,
@@ -30,6 +31,7 @@ export const ResultsList = ({
   decisionSlug?: string;
 }) => {
   const t = useTranslations();
+  const openInSheet = useOpenProposalInSheet();
 
   const [[instanceResults, resultStats]] = trpc.useSuspenseQueries((t) => [
     t.decision.getInstanceResults({
@@ -73,6 +75,7 @@ export const ResultsList = ({
               key={proposal.id}
               proposal={proposal}
               href={viewHref}
+              onTitleClick={openInSheet(proposal.profileId)}
               showMetrics
               totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
               awardedLabel={

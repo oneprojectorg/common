@@ -1,6 +1,9 @@
 'use client';
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
+// Aliased: this module exports its own `ProposalEngagement`, the prop shape the
+// hook's state is mapped onto below.
+import type { ProposalEngagement as EngagementState } from '@/hooks/useProposalEngagement';
 import { formatDate } from '@/utils/formatting';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
@@ -65,6 +68,23 @@ export type ProposalEngagement = {
   /** Disables both toggles while a like/follow write is in flight. */
   isPending?: boolean;
 };
+
+/**
+ * Bridges {@link useProposalEngagement}'s state onto this component's prop. The
+ * two shapes differ by one field name, and every surface that renders the
+ * preview with working toggles — the proposal page, the side sheet — has to
+ * cross it. Passes `undefined` straight through: a viewer who can't act gets
+ * the plain counts.
+ */
+export const toPreviewEngagement = (
+  engagement: EngagementState | undefined,
+): ProposalEngagement | undefined =>
+  engagement && {
+    isLiked: engagement.isLiked,
+    isFollowing: engagement.isFollowed,
+    onLike: engagement.onLike,
+    onFollow: engagement.onFollow,
+  };
 
 export type ProposalPreviewProps = {
   proposal: Proposal;

@@ -16,7 +16,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
-import { ProposalPreview } from './ProposalPreview';
+import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
@@ -153,16 +153,7 @@ export function ProposalView({
         documentState={documentState}
         // Everyone sees the counts; only a signed-in member with engagement
         // access gets the controls (the hook returns undefined otherwise).
-        engagement={
-          engagement
-            ? {
-                isLiked: engagement.isLiked,
-                isFollowing: engagement.isFollowed,
-                onLike: engagement.onLike,
-                onFollow: engagement.onFollow,
-              }
-            : undefined
-        }
+        engagement={toPreviewEngagement(engagement)}
         translation={translation}
         submissionMetaSuffix={
           latestRespondedAt ? (

@@ -12,6 +12,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 import { proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 export const NoVoteFound = () => {
   const t = useTranslations();
@@ -73,6 +74,7 @@ const MyBallotProposals = ({
   votedByProfileId: string;
 }) => {
   const t = useTranslations();
+  const openInSheet = useOpenProposalInSheet();
 
   const [{ items: proposals }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
@@ -96,6 +98,7 @@ const MyBallotProposals = ({
               key={proposal.id}
               proposal={proposal}
               href={viewHref}
+              onTitleClick={openInSheet(proposal.profileId)}
               selected
               headerBadge={null}
               // `voteCount` is null until results are published — a bare
