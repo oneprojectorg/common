@@ -1,31 +1,9 @@
-import { headingClasses } from '@op/styles/constants';
 import { Node, mergeAttributes } from '@tiptap/core';
 import Heading from '@tiptap/extension-heading';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import StarterKit from '@tiptap/starter-kit';
-
-/**
- * Server-side mirror of the `StyledHeading` extension in `@op/sense`. Bakes the
- * shared `headingClasses` onto each rendered heading tag so `generateHTML()`
- * output matches the live editor and the `Header1/2/3` design-system
- * components exactly.
- */
-const StyledHeading = Heading.extend({
-  renderHTML({ node, HTMLAttributes }) {
-    const level = node.attrs.level as 1 | 2 | 3;
-    const className =
-      headingClasses[`h${level}` as keyof typeof headingClasses];
-    return [
-      `h${level}`,
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        class: className,
-      }),
-      0,
-    ];
-  },
-});
 
 /**
  * Server-safe Iframely node extension for `generateHTML()`.
@@ -166,7 +144,7 @@ export const serverExtensions = [
   // Must match the editor (@op/sense editorConfig allows 1-4). TipTap's
   // Heading.renderHTML falls back to levels[0] for any out-of-range level, so a
   // narrower list here silently renders a stored H4 as H1.
-  StyledHeading.configure({
+  Heading.configure({
     levels: [1, 2, 3, 4],
   }),
   TextAlign.configure({

@@ -9,17 +9,22 @@
  * Prose typography styles shared between the TipTap editor/viewer and the
  * static HTML proposal viewer (`ProposalHtmlContent`).
  *
- * Covers link colors, list spacing, blockquote weight, prose-context heading
- * margins, and general text layout. Heading typography itself is applied on
- * the heading tags via `StyledHeading` so it stays in sync with the
- * `Header*` design-system components.
+ * Covers link colors, list spacing, blockquote weight, heading appearance, and
+ * general text layout.
  */
 export const viewerProseStyles = [
   'prose text-foreground leading-normal',
   '[&_a:hover]:underline [&_a]:text-primary [&_a]:no-underline',
   '[&_li>p:only-child]:my-0',
   '[&_blockquote]:font-normal',
-  '[&_:is(h1,h2,h3)]:my-4',
+  // Headings use prose's own scale (36/24/20/16 here), not the sense steps
+  // `Header*` uses — a prose heading is a different role from a page title, and
+  // prose's sizes land where the sense scale has no rung. Nothing is baked onto
+  // the tags, so these only correct prose's own look: it ships sans, 800/700/600,
+  // no tracking, stock-gray headings.
+  '[&_:is(h1,h2,h3,h4)]:font-serif [&_:is(h1,h2,h3,h4)]:tracking-tight',
+  '[&_:is(h1,h2)]:font-light [&_:is(h3,h4)]:font-normal',
+  '[--tw-prose-headings:var(--foreground)]',
   // Per-block bidi: each paragraph/heading/list-item resolves its own
   // direction from content, so mixed LTR/RTL prose aligns correctly without
   // a per-element dir attribute (text-align: start follows each block's dir).
