@@ -24,8 +24,9 @@ review when you are unsure.
 1. Copy [`adr-template.md`](./adr-template.md) to `draft-short-title.md`.
 2. Open a pull request. Review of the ADR is the decision meeting.
 3. Merge. CI renames the file to `NNNN-short-title.md` with the next free
-   number and pushes that commit to `dev` (`scripts/number-adrs.sh`). Do not
-   number it yourself: CI fails if two ADRs share a number.
+   number, fills in the `# NNNN.` heading, and pushes that commit to `dev`
+   (`scripts/number-adrs.sh`). Do not number it yourself: the pull request
+   checks reject a new numbered file.
 
 Write the title as a statement: "Use Drizzle relations v2 for new tables", not
 "Drizzle relations". Never reuse a number. Reference an ADR by its number only
@@ -46,8 +47,9 @@ commitment; whoever merges it then sets Accepted.
 
 ## Superseding a decision
 
-A reversal is a new ADR, not an edit. Write the new ADR, then set the old one's
-Status to `Superseded by ADR-NNNN` and link forward.
+A reversal is a new ADR, not an edit. Write the new ADR as a draft. Once it has
+merged and has its number, set the old one's Status to `Superseded by ADR-NNNN`
+and link forward in a follow-up pull request.
 
 Never rewrite the reasoning in a superseded ADR. Fix a typo, but do not change
 what it decided.

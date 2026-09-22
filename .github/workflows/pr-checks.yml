@@ -73,20 +73,25 @@ jobs:
         run: pnpm typecheck
 
   # A merged ADR is numbered by .github/workflows/adr-numbering.yml, so a PR
-  # that numbers one by hand can collide with it. Checked on the merge commit,
-  # not the PR head, because the collision is only visible once both sides are
-  # in one tree. No secrets here, so the fork gate is not needed.
+  # may only add docs/adr/draft-*.md; one numbered by hand would collide with
+  # whatever lands on dev first. The script is taken from the base branch, not
+  # the PR head, and the token is not persisted, so PR-authored code runs
+  # without credentials and needs no fork gate.
   adr-numbers:
     name: ADR numbers
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     steps:
-      - name: Checkout merge commit
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Check ADR numbers are unique
-        run: scripts/number-adrs.sh --check
+      - name: Check no ADR is numbered by hand
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: git show "$BASE:scripts/number-adrs.sh" | bash -s -- --check "$BASE"
 
   design-system:
     name: Design system
