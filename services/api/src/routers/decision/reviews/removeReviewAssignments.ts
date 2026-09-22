@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const removeReviewAssignmentsInputSchema = instancePhaseRefSchema.extend({
-  assignmentIds: z.uuid().array().min(1).max(500),
+  assignmentIds: z.uuid().array().min(1).max(1000),
 });
 
 export const removeReviewAssignmentsRouter = router({

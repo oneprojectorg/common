@@ -9,7 +9,7 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const assignReviewsInputSchema = instancePhaseRefSchema.extend({
   reviewerProfileId: z.uuid(),
-  proposalIds: z.array(z.uuid()).min(1).max(500),
+  proposalIds: z.array(z.uuid()).min(1).max(1000),
 });
 
 export const assignReviewsRouter = router({
