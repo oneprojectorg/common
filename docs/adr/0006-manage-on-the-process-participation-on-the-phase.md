@@ -26,34 +26,101 @@ The process builder port needs per-phase audiences and invitees, which forces
 the question. It was settled against a matrix of the four combinations: public or
 private process, open or invite-only phase.
 
+### The matrix
+
+The decisions below are what these four tables say. Read them as the acceptance
+criteria; the prose is the reasoning. "Process perms" is any grant on the
+process profile short of admin. An open phase has no membership rows at all
+(decision 4), so its "phase perms" rows are `n/a` rather than denied.
+
+**Public process — open phase**
+
+| Caller | View | Submit | Vote | Review | Manage |
+| --- | --- | --- | --- | --- | --- |
+| Signed out | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, no perms | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Signed in, process perms | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Signed in, phase perms | n/a | n/a | n/a | n/a | n/a |
+| Process admin | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+**Public process — invite-only phase**
+
+| Caller | View | Submit | Vote | Review | Manage |
+| --- | --- | --- | --- | --- | --- |
+| Signed out | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, no perms | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, process perms | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, phase perms | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Process admin, no phase perms | ✓ | ✗ | ✗ | ✗ | ✓ |
+| Process admin, phase perms | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+**Private process — open phase**
+
+| Caller | View | Submit | Vote | Review | Manage |
+| --- | --- | --- | --- | --- | --- |
+| Signed out | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, no perms | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, process perms | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Signed in, phase perms | n/a | n/a | n/a | n/a | n/a |
+| Process admin | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+**Private process — invite-only phase**
+
+| Caller | View | Submit | Vote | Review | Manage |
+| --- | --- | --- | --- | --- | --- |
+| Signed out | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, no perms | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, process perms | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Signed in, phase perms | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Process admin, no phase perms | ✓ | ✗ | ✗ | ✗ | ✓ |
+| Process admin, phase perms | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+Three readings are worth stating because they are the ones an implementation
+gets wrong. The View column never differs between a process's open and
+invite-only phases — view is a process-level question (decision 3). A process
+admin has `✗` under Submit, Vote and Review in both invite-only tables — Manage
+does not confer participation (decision 1). And "process perms" carries `✗`
+under Manage everywhere — only the admin role manages.
+
 ## Decision
 
 1. **Manage resolves against the process profile. Submit, review and vote
    resolve against the phase. The two never union.** A process admin holds no
    participation by virtue of being an admin; they are invited to a phase like
    anybody else. The ADMIN bit must not short-circuit a capability check, which
-   is the obvious implementation and the wrong one.
+   is the obvious implementation and the wrong one. Manage means the process's
+   **admin role specifically**, not any grant on the process profile: a process
+   member holds view, and participation where the phase is open, and no Manage.
 2. **Participation is:** the phase's state allows the capability, **and** the
    caller is signed in, **and** either they hold that capability on the phase
    profile, or the phase's audience is open and they can view the process.
-3. **"Open" means open to whoever can view the process** — every signed-in user
+3. **View resolves against the process alone. No property of a phase affects
+   it, and invite-only constrains participation only — never visibility.** A
+   public process's phases are all visible to everyone including anonymous
+   callers, invite-only ones included; a private process's phases are all
+   visible to anyone holding anything anywhere in that process, and to nobody
+   else. So answering "may this caller see this phase" never reads a phase
+   profile, which is what decision 6 exists to guarantee. The cell most likely
+   to be implemented wrong is *public process, invite-only phase, signed-out
+   caller* — that is a view, because "invite-only" is not "hidden".
+4. **"Open" means open to whoever can view the process** — every signed-in user
    for a public process, the process's members for a private one. So an open
    phase needs no membership rows at all, and only invite-only phases put
    `profile_users` on a phase profile.
-4. **The bits come from one profile-scoped role per capability the phase
+5. **The bits come from one profile-scoped role per capability the phase
    offers** — `access_roles.profile_id` set to the phase profile, permission set
    to that one bit plus READ, minted the way `createDecisionRole` already mints
    process roles. Per capability rather than per phase, because a phase holds
    reviewers and submitters at once and `profileUser_to_access_roles` is a join
    table. The invite therefore resolves its own `profile_invites.access_role_id`
    from the phase and the capability instead of asking an admin to pick a role.
-5. **A phase grant confers view on a private process, materialised rather than
+6. **A phase grant confers view on a private process, materialised rather than
    derived.** The invite writes a read-only grant on the process profile, and
    losing the last phase grant revokes it. The alternative is a reverse lookup
    over every phase profile on a path that runs on every read.
-6. **Anonymous callers top out at read, and only on a public process.** Submit,
+7. **Anonymous callers top out at read, and only on a public process.** Submit,
    review and vote all need an identity to attach the artefact to.
-7. **A review phase defaults to invite-only**, rather than inheriting the
+8. **A review phase defaults to invite-only**, rather than inheriting the
    process's audience. An open review phase admits any signed-in viewer to score
    proposals: a correct capability and a bad default.
 
@@ -62,14 +129,14 @@ role**, scoped to the phase profile — the mechanism that makes a process publi
 is cheaper, but gives a phase exactly one member shape, so it cannot hold
 reviewers and submitters together. **New global Reviewer / Submitter / Voter
 roles** read more simply, but put "pick a role" back into the invite UI, which is
-the thing decision 4 removes.
+the thing decision 5 removes.
 
 ## Consequences
 
 Per-phase authorization becomes the mechanism we already have, and the invite UI
 loses a question it could not answer well.
 
-Cross-phase participation follows from decisions 2 and 5, and is intended:
+Cross-phase participation follows from decisions 2 and 6, and is intended:
 someone invited to phase 1 of a private process thereby holds view on it, so an
 open phase 3 admits them. An admin who does not want that sets the phase to
 invite-only.
@@ -95,8 +162,8 @@ not have.
 Process-level role editors must keep listing only the process profile's roles, or
 phase roles surface where an admin cannot act on them.
 
-A phase's audience is an authorization input, not configuration. Decision 3 reads
-it on every participation check and decision 7 wants it to default to
+A phase's audience is an authorization input, not configuration. Decision 2 reads
+it on every participation check and decision 8 wants it to default to
 invite-only, so it needs storage that can express a default and cannot be absent.
 A key in a JSON payload that defaults to `{}` is neither: an unset audience means
 whatever the first `if` written against it happens to mean, and the permissive
