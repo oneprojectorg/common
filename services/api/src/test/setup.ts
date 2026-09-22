@@ -1,6 +1,8 @@
 import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import { beforeAll, beforeEach, vi } from 'vitest';
 
+// Mocks a test asserts against live in `./mocks` — see ./mocks/README.md.
+
 vi.mock('@op/common/src/services/profile/utils');
 vi.mock('@op/analytics/client', () => ({
   default: () => ({
@@ -10,6 +12,7 @@ vi.mock('@op/analytics/client', () => ({
   }),
 }));
 vi.mock('@op/collab', async () => import('@op/collab/testing'));
+vi.mock('deepl-node', async () => (await import('./mocks/deepl')).deeplMock);
 
 // Mock server-only modules before any other imports
 vi.mock('server-only', () => ({}));
@@ -22,29 +25,10 @@ vi.mock('next/server', () => ({
     delete: vi.fn(),
   }),
 }));
-vi.mock('@op/logging', () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    flush: vi.fn().mockResolvedValue(undefined),
-  },
-  metrics: {
-    getMeter: vi.fn(() => ({
-      createCounter: vi.fn(() => ({
-        add: vi.fn(),
-      })),
-    })),
-  },
-  transformMiddlewareRequest: vi.fn(() => ['test request', {}]),
-  withLogContext: vi.fn(<T>(fn: () => T): T => fn()),
-  setLogDistinctId: vi.fn(),
-  setLogSessionId: vi.fn(),
-  getPosthogCookieName: vi.fn(() => undefined),
-  parsePosthogDistinctId: vi.fn(() => undefined),
-  getPosthogDistinctIdFromCookieHeader: vi.fn(() => undefined),
-}));
+vi.mock(
+  '@op/logging',
+  async () => (await import('./mocks/logging')).loggingMock,
+);
 
 // Test environment configuration for isolated test Supabase instance
 // These values are defined in vitest.config.ts and injected via process.env
@@ -71,19 +55,9 @@ const mockPlatformAdminEmails = {
 };
 
 // Mock the event system to avoid Inngest API calls in tests
-vi.mock('@op/events', async () => {
-  const actual = await vi.importActual('@op/events');
-  const mockSend = vi.fn().mockResolvedValue({ ids: ['mock-event-id'] });
-  return {
-    ...actual,
-    inngest: {
-      send: mockSend,
-    },
-    event: {
-      send: mockSend,
-    },
-  };
-});
+vi.mock('@op/events', async () =>
+  (await import('./mocks/events')).eventsMock(),
+);
 
 // Mock @op/core to return test environment values and use mock platformAdminEmails
 vi.mock('@op/core', async () => {
@@ -99,6 +73,8 @@ vi.mock('@op/core', async () => {
       IS_PREVIEW: false,
       IS_DEVELOPMENT: false,
       IS_LOCAL: true,
+      // `src/links.ts` builds an httpLink from this and rejects an undefined url.
+      TRPC_URL: 'http://127.0.0.1:55399/api/v1/trpc',
     })),
   };
 });

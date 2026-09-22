@@ -21,17 +21,6 @@ import {
 import { createCallerFactory } from '../../trpcFactory';
 import { inviteProfileUserRouter } from './invite';
 
-// Mock the event system to avoid Inngest API calls in tests
-vi.mock('@op/events', async () => {
-  const actual = await vi.importActual('@op/events');
-  return {
-    ...actual,
-    event: {
-      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
-    },
-  };
-});
-
 describe.concurrent('Profile Invite Integration Tests', () => {
   const createCaller = createCallerFactory(inviteProfileUserRouter);
 

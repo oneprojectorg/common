@@ -6,7 +6,7 @@ import {
   ModerationSource,
 } from '@op/db/schema';
 import { eq, like } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
@@ -20,25 +20,6 @@ import {
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
-
-// Set a fake API key so the endpoint doesn't throw before reaching the mock.
-process.env.DEEPL_API_KEY = 'test-fake-key';
-
-const mockTranslateText = vi.fn((texts: string | string[]) => {
-  const arr = Array.isArray(texts) ? texts : [texts];
-  const results = arr.map((t) => ({
-    text: `[ES] ${t}`,
-    detectedSourceLang: 'en',
-  }));
-  // Mirror deepl-node: a single-string input returns a single result object.
-  return Array.isArray(texts) ? results : results[0];
-});
-
-vi.mock('deepl-node', () => ({
-  DeepLClient: class {
-    translateText = mockTranslateText;
-  },
-}));
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -104,10 +85,6 @@ describeAccessTierGating('translation.translatePosts', {
 });
 
 describe('translation.translatePosts', () => {
-  beforeEach(() => {
-    mockTranslateText.mockClear();
-  });
-
   it('translates the content of every top-level update on the decision profile', async ({
     task,
     onTestFinished,

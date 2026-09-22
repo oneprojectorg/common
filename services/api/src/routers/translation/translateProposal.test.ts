@@ -2,7 +2,7 @@ import { mockCollab } from '@op/collab/testing';
 import { db, eq } from '@op/db/client';
 import { contentTranslations, ProposalStatus, proposals } from '@op/db/schema';
 import { like } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
@@ -12,33 +12,12 @@ import {
   describeAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { mockTranslateText } from '../../test/mocks/deepl';
 import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
-
-// Set a fake API key so the endpoint doesn't throw before reaching the mock
-process.env.DEEPL_API_KEY = 'test-fake-key';
-
-// Mock DeepL's translateText — prefixes each text with [ES] so we can
-// distinguish mock translations from seeded cache entries ([ES-CACHED]).
-const mockTranslateText = vi.fn((texts: string | string[]) => {
-  const arr = Array.isArray(texts) ? texts : [texts];
-  const results = arr.map((t) => ({
-    text: `[ES] ${t}`,
-    detectedSourceLang: 'en',
-  }));
-  // Mirror deepl-node: a single-string input returns a single result object.
-  return Array.isArray(texts) ? results : results[0];
-});
-
-// Mock deepl-node so we never hit the real API
-vi.mock('deepl-node', () => ({
-  DeepLClient: class {
-    translateText = mockTranslateText;
-  },
-}));
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -104,10 +83,6 @@ describeAccessTierGating('translation.translateProposal', {
 });
 
 describe('translation.translateProposal', () => {
-  beforeEach(() => {
-    mockTranslateText.mockClear();
-  });
-
   it('should let a no-JWT visitor translate a proposal on a public decision', async ({
     task,
     onTestFinished,

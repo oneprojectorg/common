@@ -492,7 +492,7 @@ describe.concurrent('submitManualSelection', () => {
     }
   });
 
-  it('appends a new decision_process_results row when manual selection lands on the final phase', async ({
+  it.sequential('appends a new decision_process_results row when manual selection lands on the final phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -649,7 +649,7 @@ describe.concurrent('submitManualSelection', () => {
     });
   });
 
-  it('publishes without announcing when no author copy is composed', async ({
+  it.sequential('publishes without announcing when no author copy is composed', async ({
     task,
     onTestFinished,
   }) => {
@@ -759,7 +759,7 @@ describe.concurrent('submitManualSelection', () => {
     });
   });
 
-  it('dispatches a manualSelectionsConfirmed event after a successful manual selection', async ({
+  it.sequential('dispatches a manualSelectionsConfirmed event after a successful manual selection', async ({
     task,
     onTestFinished,
   }) => {
@@ -785,7 +785,6 @@ describe.concurrent('submitManualSelection', () => {
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
 
     const mockSend = event.send as unknown as MockInstance;
-    mockSend.mockClear();
 
     await caller.decision.submitManualSelection({
       processInstanceId: instanceId,
@@ -809,8 +808,7 @@ describe.concurrent('submitManualSelection', () => {
       },
     });
 
-    // submitManualSelection does not re-emit phaseTransitioned — the original
-    // advance already did.
+    // Only `onPhaseAdvanced` emits this, and nothing here calls it.
     const transitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
