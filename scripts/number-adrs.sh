@@ -56,15 +56,15 @@ check_no_hand_numbering() {
   fi
 }
 
+has_drafts() {
+  local drafts=("$ADR_DIR"/draft-*.md)
+  [[ ${#drafts[@]} -gt 0 ]]
+}
+
 # "<draft>\t<target>" per rename, for undo_renames.
 renames=()
 number_drafts() {
   local drafts=("$ADR_DIR"/draft-*.md)
-  if [[ ${#drafts[@]} -eq 0 ]]; then
-    echo "No draft ADRs to number."
-    return 1
-  fi
-
   local next=0 numbered num draft padded target
   # shellcheck disable=SC2231
   for numbered in $NUMBERED_GLOB; do
@@ -78,6 +78,7 @@ number_drafts() {
     next=$((next + 1))
     padded=$(printf '%04d' "$next")
     target="$ADR_DIR/$padded-${draft#"$ADR_DIR"/draft-}"
+    git add "$draft"
     git mv "$draft" "$target"
     sed "1s/^# NNNN\\./# $padded./" "$target" > "$target.tmp"
     mv "$target.tmp" "$target"
@@ -109,7 +110,11 @@ case $mode in
     exit 0
     ;;
   stage)
-    number_drafts || exit 0
+    if ! has_drafts; then
+      echo "No draft ADRs to number."
+      exit 0
+    fi
+    number_drafts
     echo "Renames are staged. CI numbers a draft on merge; this run is a preview."
     exit 0
     ;;
@@ -125,7 +130,11 @@ if [[ -n $(git status --porcelain) ]]; then
 fi
 
 for attempt in 1 2 3; do
-  number_drafts || exit 0
+  if ! has_drafts; then
+    echo "No draft ADRs to number."
+    exit 0
+  fi
+  number_drafts
   parent=$(git rev-parse HEAD)
   git -c user.name='github-actions[bot]' \
       -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
