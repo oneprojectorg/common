@@ -132,16 +132,15 @@ export function ProposalPreview({
     ? parseTranslatedMeta(translation.htmlContent)
     : null;
 
+  const authorName = proposal.submittedBy?.name || proposal.submittedBy?.slug;
+
   // Legacy proposals store HTML under a single "default" key with no collab doc.
   // Render them directly instead of going through the template-driven renderer.
   const legacyHtml = htmlContent?.default as string | undefined;
 
   return (
-    // Root carries the section rhythm (rule-separated regions, mirrored by
-    // each section's own `pt`); the preview's body stacks tighter at 16.
     <div className="flex flex-col gap-6 sm:gap-10">
-      <div className="flex flex-col gap-4">
-        {/* Draft mode banner */}
+      <div className="flex flex-col gap-10">
         {isDraft && (
           <Alert variant="info">
             <AlertDescription>
@@ -150,12 +149,7 @@ export function ProposalPreview({
           </Alert>
         )}
 
-        {/* Figma "Proposal Header" (17924:77055): status row / header / engagement
-          stacked at 24, with the header's own contents at 16. */}
         <div className="flex flex-col gap-6">
-          {/* Status badges. Unlike ProposalCardView's single-badge
-            `ProposalStatusBadge`, the header shows every applicable state at
-            once, with the longer copy the design spells out. */}
           {(isRejected || isHidden || proposal.isFlagged || selection) && (
             <div className="flex flex-wrap gap-2">
               {isRejected && (
@@ -183,12 +177,10 @@ export function ProposalPreview({
           )}
 
           <div className="flex flex-col gap-4">
-            {/* 30px serif at 300 — `text-headline` at this column's step. */}
             <Header1 className="text-headline font-light">
               {title || t('decisions.proposals.untitledProposal')}
             </Header1>
 
-            {/* Translation attribution */}
             {translation && (
               <TranslationNotice
                 sourceLanguageName={translation.sourceLanguageName}
@@ -196,7 +188,6 @@ export function ProposalPreview({
               />
             )}
 
-            {/* Budget + categories share a row; either can appear alone. */}
             {(budget != null ||
               selection?.allocated != null ||
               categories.length > 0) && (
@@ -227,47 +218,44 @@ export function ProposalPreview({
               </TagGroup>
             )}
 
-            {/* Author and submission info */}
-            <div className="flex items-center gap-2">
-              {proposal.submittedBy && (
-                <>
-                  <ProfileAvatar
-                    profile={proposal.submittedBy}
-                    withLink={!proposal.submittedBy.isAnonymous}
-                    className="size-8"
-                  />
-                  <div className="flex flex-col">
-                    {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
-                      <span className="text-base">
-                        {proposal.submittedBy.name || proposal.submittedBy.slug}
+            {proposal.submittedBy && (
+              <div className="flex items-center gap-2">
+                <ProfileAvatar
+                  profile={proposal.submittedBy}
+                  withLink={!proposal.submittedBy.isAnonymous}
+                  className="size-8"
+                />
+                <div className="flex flex-col">
+                  {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
+                    <span className="text-base">
+                      <bdi>{authorName}</bdi>
+                    </span>
+                  ) : (
+                    <NavLink
+                      href={`/profile/${proposal.submittedBy.slug}`}
+                      // Without this it falls through to the browser's ring.
+                      className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+                    >
+                      <bdi>{authorName}</bdi>
+                    </NavLink>
+                  )}
+                  {!isDraft && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span>
+                        {t('decisions.proposals.submittedOnLabel')}{' '}
+                        {formatDate(proposal.createdAt)}
                       </span>
-                    ) : (
-                      <NavLink
-                        href={`/profile/${proposal.submittedBy.slug}`}
-                        // Without this it falls through to the browser's ring.
-                        className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-                      >
-                        {proposal.submittedBy.name || proposal.submittedBy.slug}
-                      </NavLink>
-                    )}
-                    {!isDraft && (
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <span>
-                          {t('decisions.proposals.submittedOnLabel')}{' '}
-                          {formatDate(proposal.createdAt)}
-                        </span>
-                        {submissionMetaSuffix && (
-                          <>
-                            <Bullet />
-                            {submissionMetaSuffix}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+                      {submissionMetaSuffix && (
+                        <>
+                          <Bullet />
+                          {submissionMetaSuffix}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <EngagementRow proposal={proposal} engagement={engagement} />
@@ -275,7 +263,6 @@ export function ProposalPreview({
 
         {headerBanner}
 
-        {/* Proposal Content */}
         {documentState === 'pending' ? (
           <div className="flex justify-center py-8">
             <Spinner />
@@ -294,7 +281,6 @@ export function ProposalPreview({
         ) : null}
       </div>
 
-      {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
         <div className="border-t pt-6 sm:pt-10">
           <Header3 className="mb-4 text-label">
