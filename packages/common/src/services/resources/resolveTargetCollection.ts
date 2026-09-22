@@ -19,6 +19,7 @@ export const resolveTargetCollection = async ({
       collectionId: scope.collectionId,
       policies: {
         [EntityType.DECISION]: { decisions: permission.ADMIN },
+        [EntityType.PHASE]: { decisions: permission.ADMIN },
       },
     });
     return { collectionId: scope.collectionId, profileId: parentProfileId };
@@ -35,6 +36,7 @@ export const resolveTargetCollection = async ({
     profileIds: [scope.profileId],
     policies: {
       [EntityType.DECISION]: { decisions: permission.ADMIN },
+      [EntityType.PHASE]: { decisions: permission.ADMIN },
     },
   });
 

@@ -19,6 +19,7 @@ export const deleteResource = async ({
 }): Promise<void> => {
   const policies = {
     [EntityType.DECISION]: { decisions: permission.ADMIN },
+    [EntityType.PHASE]: { decisions: permission.ADMIN },
   };
   const { parentProfileIds } = await assertResourceAccess({
     user: { id: authUserId },

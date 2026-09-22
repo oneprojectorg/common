@@ -44,6 +44,9 @@ export const toggleLike = async ({
       [EntityType.DECISION]: {
         decisions: decisionPermission.SUBMIT_PROPOSALS,
       },
+      [EntityType.PHASE]: {
+        decisions: decisionPermission.SUBMIT_PROPOSALS,
+      },
     },
   });
 

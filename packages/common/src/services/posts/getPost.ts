@@ -134,6 +134,7 @@ export const getPost = async ({
     profileIds: profileIdsToAuthorize,
     policies: {
       [EntityType.DECISION]: { decisions: permission.READ },
+      [EntityType.PHASE]: { decisions: permission.READ },
     },
   });
 
