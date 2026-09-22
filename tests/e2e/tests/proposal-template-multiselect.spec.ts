@@ -19,7 +19,10 @@ test.describe('Proposal template — multi-select category', () => {
     await page.goto('/en/');
     await page.getByRole('button', { name: 'Create' }).click();
     await page
-      .getByRole('menuitem', { name: 'Decision-making process' })
+      // By testid, not copy: with new_process_admin_enabled forced on in e2e
+      // the menu also carries the wizard item, and both read as
+      // "Decision-making process".
+      .getByTestId('create-decision-process')
       .click();
     await page.waitForURL(/\/decisions\/[^/]+\/edit/, { timeout: 12_000 });
     await expect(
