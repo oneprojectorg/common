@@ -16,7 +16,10 @@ test.describe('Create Process Instance', () => {
 
     await authenticatedPage.getByRole('button', { name: 'Create' }).click();
     await authenticatedPage
-      .getByRole('menuitem', { name: 'Decision-making process' })
+      // By testid, not copy: with new_process_admin_enabled forced on in e2e
+      // the menu also carries the wizard item, and both read as
+      // "Decision-making process".
+      .getByTestId('create-decision-process')
       .click();
 
     await authenticatedPage.waitForURL(/\/decisions\/[^/]+\/edit/, {
