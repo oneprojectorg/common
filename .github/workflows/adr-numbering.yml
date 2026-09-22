@@ -1,10 +1,14 @@
 name: Number ADRs
 
-# A draft ADR (docs/adr/draft-*.md) takes its number when it lands on dev, so
-# two open ADR pull requests never fight over the same NNNN.
+# A draft ADR (docs/adr/draft-*.md) takes its number when its pull request
+# merges into dev, so two open ADR pull requests never fight over the same
+# NNNN. Runs as pull_request_target so the token can push to dev for a fork's
+# PR too; it checks out dev itself, never the PR's code.
 
 on:
-  push:
+  pull_request_target:
+    types:
+      - closed
     branches:
       - dev
     paths:
@@ -21,12 +25,13 @@ concurrency:
 jobs:
   number-adrs:
     name: Number draft ADRs
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout dev
         uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: ${{ github.event.pull_request.base.ref }}
 
       - name: Number and push
         run: scripts/number-adrs.sh --push

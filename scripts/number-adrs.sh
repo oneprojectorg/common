@@ -16,9 +16,9 @@
 #                                request may only add draft-*.md; CI assigns
 #                                the number on merge.
 #
-# CI runs --push when a draft lands on the default branch
-# (.github/workflows/adr-numbering.yml) and --check on every pull request
-# (.github/workflows/pr-checks.yml).
+# CI runs --push when a pull request that adds a draft merges into the default
+# branch (.github/workflows/adr-numbering.yml) and --check on every pull
+# request (.github/workflows/pr-checks.yml).
 set -euo pipefail
 
 ADR_DIR="docs/adr"

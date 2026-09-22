@@ -79,7 +79,7 @@ jobs:
   # without credentials and needs no fork gate.
   adr-numbers:
     name: ADR numbers
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
