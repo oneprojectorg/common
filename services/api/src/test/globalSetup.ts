@@ -5,11 +5,15 @@ import { count, eq, getTableName, inArray } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/postgres-js';
 
+import { widenAuthConnectionPool } from './authPool';
+
 /**
  * Global setup for Vitest - runs once before all test files
  * This ensures migrations and seeding happen only once per test run
  */
 export async function setup() {
+  await widenAuthConnectionPool();
+
   console.log('🔄 Running Drizzle migrations...');
 
   const { execSync } = await import('child_process');
