@@ -22,6 +22,11 @@ export interface ProposalFeedProps extends ComponentProps<'ul'> {
   children: ReactNode;
 }
 
+/** Fraction of the scroll container's height padded above and below the feed. */
+const CENTER_PADDING_RATIO = 0.3;
+/** Maximum scale reduction applied to the item furthest from the focal point. */
+const SETTLE_SCALE = 0.02;
+
 /**
  * Single-column reading feed for walking proposals one at a time — the "feed"
  * view that sits alongside the grid and map views of a proposal list. Items
@@ -37,6 +42,12 @@ export interface ProposalFeedProps extends ComponentProps<'ul'> {
  * normally), and an item containing keyboard focus is always lifted to full
  * opacity so focused content is never low-contrast. The subtle settle scale
  * is dropped when the user prefers reduced motion.
+ *
+ * The centering padding is served as `30cqh` before hydration so the first
+ * paint already sits where the measured value will land. Give the scroll
+ * container `container-type: size` (Tailwind `[container-type:size]`) for that to
+ * match exactly; without one the units fall back to the viewport, which is
+ * correct when the window itself scrolls.
  */
 export function ProposalFeed({
   dimStrength = 0.6,
@@ -46,6 +57,15 @@ export function ProposalFeed({
   ...rest
 }: ProposalFeedProps) {
   const listRef = useRef<HTMLUListElement>(null);
+  // Options live in a ref so a prop change re-runs the scroll pass without
+  // tearing down and re-registering every listener and observer.
+  const optionsRef = useRef({ dimStrength, centerFirstAndLast });
+  const scheduleRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    optionsRef.current = { dimStrength, centerFirstAndLast };
+    scheduleRef.current?.();
+  }, [dimStrength, centerFirstAndLast]);
 
   useEffect(() => {
     const list = listRef.current;
@@ -58,60 +78,75 @@ export function ProposalFeed({
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     let frame = 0;
+    // Last padding written to the list, so the write (which invalidates
+    // layout) only happens when the container height actually changes.
+    let appliedPadding: string | null = null;
 
     const update = () => {
       frame = 0;
 
+      const { dimStrength, centerFirstAndLast } = optionsRef.current;
+      const strength = clampStrength(dimStrength);
+      const settle = reducedMotion.matches ? 0 : SETTLE_SCALE;
+      // The item holding keyboard focus, resolved once rather than asking
+      // every item whether it contains the active element.
+      const focusedItem = document.activeElement?.closest<HTMLLIElement>(
+        '[data-slot=proposal-feed-item]',
+      );
+
+      // Read phase: every layout query happens before any style write so the
+      // browser lays out once per frame instead of once per item.
       const containerRect = scrollParent?.getBoundingClientRect();
       const containerTop = containerRect?.top ?? 0;
       const containerHeight = containerRect?.height ?? window.innerHeight;
       const containerCenter = containerTop + containerHeight / 2;
-
-      if (centerFirstAndLast) {
-        // Runtime padding (30% of the container) lets the first and last
-        // items reach the focal center instead of pinning to an edge.
-        list.style.paddingBlock = `${Math.round(containerHeight * 0.3)}px`;
-      }
+      const halfHeight = containerHeight / 2;
 
       const items = list.querySelectorAll<HTMLLIElement>(
         ':scope > [data-slot=proposal-feed-item]',
       );
-
+      const measured: Array<{ item: HTMLLIElement; t: number }> = [];
       let focal: HTMLLIElement | null = null;
       let focalDistance = Number.POSITIVE_INFINITY;
 
       for (const item of items) {
         const rect = item.getBoundingClientRect();
-        const center = rect.top + rect.height / 2;
-        const distance = Math.abs(center - containerCenter);
+        const distance = Math.abs(rect.top + rect.height / 2 - containerCenter);
         if (distance < focalDistance) {
           focalDistance = distance;
           focal = item;
         }
+        // 0 at the focal center → 1 at half a container away.
+        measured.push({ item, t: Math.min(distance / halfHeight, 1) });
       }
 
-      for (const item of items) {
-        const rect = item.getBoundingClientRect();
-        const center = rect.top + rect.height / 2;
-        // 0 at the focal center → 1 at half a container away.
-        const t = Math.min(
-          Math.abs(center - containerCenter) / (containerHeight / 2),
-          1,
-        );
-        const isFocal = item === focal;
+      // Write phase.
+      const padding = centerFirstAndLast
+        ? `${Math.round(containerHeight * CENTER_PADDING_RATIO)}px`
+        : '';
+      if (padding !== appliedPadding) {
+        list.style.paddingBlock = padding;
+        appliedPadding = padding;
+      }
+
+      for (const { item, t } of measured) {
         // Keyboard focus inside an item always lifts the dim: low-contrast
         // text under the reader's focus is an a11y failure, not a nicety.
-        const holdsFocus = item.contains(document.activeElement);
-        const lifted = isFocal || holdsFocus;
+        const lifted = item === focal || item === focusedItem;
+        const opacity = lifted ? '' : String(1 - t * strength);
+        const transform =
+          lifted || settle === 0 ? '' : `scale(${1 - t * settle})`;
 
-        item.dataset.focal = lifted ? 'true' : 'false';
-        item.style.opacity = lifted
-          ? ''
-          : String(1 - t * clampStrength(dimStrength));
-        if (reducedMotion.matches) {
-          item.style.transform = '';
-        } else {
-          item.style.transform = lifted ? '' : `scale(${1 - t * 0.02})`;
+        // Skip untouched items so a long feed only restyles what moved.
+        const focalFlag = lifted ? 'true' : 'false';
+        if (item.dataset.focal !== focalFlag) {
+          item.dataset.focal = focalFlag;
+        }
+        if (item.style.opacity !== opacity) {
+          item.style.opacity = opacity;
+        }
+        if (item.style.transform !== transform) {
+          item.style.transform = transform;
         }
       }
     };
@@ -121,6 +156,7 @@ export function ProposalFeed({
         frame = requestAnimationFrame(update);
       }
     };
+    scheduleRef.current = schedule;
 
     schedule();
     scrollTarget.addEventListener('scroll', schedule, { passive: true });
@@ -134,6 +170,7 @@ export function ProposalFeed({
     resizeObserver.observe(list);
 
     return () => {
+      scheduleRef.current = null;
       if (frame !== 0) {
         cancelAnimationFrame(frame);
       }
@@ -144,13 +181,19 @@ export function ProposalFeed({
       reducedMotion.removeEventListener('change', schedule);
       resizeObserver.disconnect();
     };
-  }, [dimStrength, centerFirstAndLast]);
+  }, []);
 
   return (
     <ul
       ref={listRef}
       data-slot="proposal-feed"
-      className={cn('mx-auto flex w-full max-w-3xl flex-col gap-6', className)}
+      className={cn(
+        'mx-auto flex w-full max-w-3xl flex-col gap-6',
+        // Pre-hydration stand-in for the measured centering padding; the
+        // scroll pass replaces it with the exact pixel value.
+        centerFirstAndLast && 'py-[30cqh]',
+        className,
+      )}
       {...rest}
     >
       {children}
@@ -172,9 +215,12 @@ export function ProposalFeedItem({
     <li
       data-slot="proposal-feed-item"
       // The transition eases the dim as the focal item changes; opacity and
-      // scale values themselves come from the feed's scroll pass.
+      // scale values themselves come from the feed's scroll pass. Off-screen
+      // items skip layout and paint until they approach the viewport; `auto`
+      // remembers each card's rendered height so the scrollbar stays stable.
       className={cn(
-        'transition-all duration-200 ease-out motion-reduce:transition-none',
+        '[contain-intrinsic-size:auto_16rem] [content-visibility:auto]',
+        'transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
         className,
       )}
       {...rest}
@@ -182,15 +228,22 @@ export function ProposalFeedItem({
   );
 }
 
-/** Nearest ancestor that actually scrolls vertically; null means the window. */
+/**
+ * Nearest ancestor that is a vertical scroll container; null means the window.
+ * Overflow alone decides it: a container that is empty or still loading at
+ * mount is not yet taller than its content, but it is where scrolling will
+ * happen once the feed fills.
+ */
 function findScrollParent(node: HTMLElement): HTMLElement | null {
   let parent = node.parentElement;
   while (parent) {
+    // Viewport scrolling reports on `document`, not on `html` or `body`, even
+    // when a stylesheet sets overflow on them; treat both as the window.
+    if (parent === document.body || parent === document.documentElement) {
+      return null;
+    }
     const { overflowY } = getComputedStyle(parent);
-    if (
-      (overflowY === 'auto' || overflowY === 'scroll') &&
-      parent.scrollHeight > parent.clientHeight
-    ) {
+    if (overflowY === 'auto' || overflowY === 'scroll') {
       return parent;
     }
     parent = parent.parentElement;

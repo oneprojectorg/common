@@ -65,7 +65,7 @@ const PROPOSALS = [
 // neighbors dim and settle back by distance.
 export const Default: Story = {
   render: () => (
-    <div className="h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
+    <div className="[container-type:size] h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
       <ProposalFeed>
         {PROPOSALS.map((proposal) => (
           <ProposalFeedItem key={proposal.title}>
@@ -81,7 +81,7 @@ export const Default: Story = {
 // plain single-column list, which is also what screen readers experience.
 export const NoDimming: Story = {
   render: () => (
-    <div className="h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
+    <div className="[container-type:size] h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
       <ProposalFeed dimStrength={0}>
         {PROPOSALS.slice(0, 3).map((proposal) => (
           <ProposalFeedItem key={proposal.title}>
@@ -97,7 +97,7 @@ export const NoDimming: Story = {
 // to full opacity, even when it is not the scroll-focal item.
 export const KeyboardFocus: Story = {
   render: () => (
-    <div className="h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
+    <div className="[container-type:size] h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
       <ProposalFeed dimStrength={0.8}>
         {PROPOSALS.map((proposal) => (
           <ProposalFeedItem key={proposal.title}>
