@@ -21,13 +21,15 @@ review when you are unsure.
 
 ## How to write one
 
-1. Copy [`adr-template.md`](./adr-template.md) to `NNNN-short-title.md`.
-2. Take the next free `NNNN`. Use four digits, and never reuse a number.
-3. Open a pull request. Review of the ADR is the decision meeting.
+1. Copy [`adr-template.md`](./adr-template.md) to `draft-short-title.md`.
+2. Open a pull request. Review of the ADR is the decision meeting.
+3. Merge. CI renames the file to `NNNN-short-title.md` with the next free
+   number and pushes that commit to `dev` (`scripts/number-adrs.sh`). Do not
+   number it yourself: CI fails if two ADRs share a number.
 
 Write the title as a statement: "Use Drizzle relations v2 for new tables", not
-"Drizzle relations". Renumber before you merge if another open pull request took
-your number.
+"Drizzle relations". Never reuse a number. Reference an ADR by its number only
+once it has one; until then, link the pull request.
 
 ## Status
 

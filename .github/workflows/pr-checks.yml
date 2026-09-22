@@ -72,6 +72,22 @@ jobs:
       - name: Run TypeScript checks - App
         run: pnpm typecheck
 
+  # A merged ADR is numbered by .github/workflows/adr-numbering.yml, so a PR
+  # that numbers one by hand can collide with it. Checked on the merge commit,
+  # not the PR head, because the collision is only visible once both sides are
+  # in one tree. No secrets here, so the fork gate is not needed.
+  adr-numbers:
+    name: ADR numbers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Check ADR numbers are unique
+        run: scripts/number-adrs.sh --check
+
   design-system:
     name: Design system
     runs-on: blacksmith-2vcpu-ubuntu-2204

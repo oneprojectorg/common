@@ -1,0 +1,32 @@
+name: Number ADRs
+
+# A draft ADR (docs/adr/draft-*.md) takes its number when it lands on dev, so
+# two open ADR pull requests never fight over the same NNNN.
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'docs/adr/draft-*.md'
+
+permissions:
+  contents: write
+
+# One run at a time, so two merges cannot both claim the same number.
+concurrency:
+  group: adr-numbering
+  cancel-in-progress: false
+
+jobs:
+  number-adrs:
+    name: Number draft ADRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Number and push
+        run: scripts/number-adrs.sh --push
