@@ -17,21 +17,11 @@ import {
 import { ROLES } from '@op/db/seedData/accessControl';
 import { event } from '@op/events';
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import { createIsolatedSession } from '../../../test/supabase-utils';
-
-vi.mock('@op/events', async () => {
-  const actual = await vi.importActual('@op/events');
-  return {
-    ...actual,
-    event: {
-      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
-    },
-  };
-});
 
 /**
  * Schema with a review-capable middle phase that also accepts submissions,
@@ -424,7 +414,7 @@ describe.concurrent('backfillReviewAssignments', () => {
   });
 });
 
-describe.concurrent('decision/member-roles-changed emission', () => {
+describe('decision/member-roles-changed emission', () => {
   it('emits for decision-profile role changes only, and only when roles actually change', async ({
     task,
     onTestFinished,

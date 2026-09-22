@@ -271,8 +271,8 @@ describe('processDecisionsTransitions', () => {
     });
     const updatedAtBefore = beforeInstance!.updatedAt;
 
+    // The sweep is global, so the assertions below filter by instance.
     const mockSend = event.send as unknown as MockInstance;
-    mockSend.mockClear();
 
     const result = await processDecisionsTransitions();
 
@@ -369,7 +369,6 @@ describe('processDecisionsTransitions', () => {
     });
 
     const mockSend = event.send as unknown as MockInstance;
-    mockSend.mockClear();
 
     await processDecisionsTransitions();
 
@@ -382,8 +381,12 @@ describe('processDecisionsTransitions', () => {
       expect(transition.completedAt).toBeNull();
     }
 
-    // No phase transition events should have been dispatched
-    expect(mockSend).not.toHaveBeenCalled();
+    const draftInstanceCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { data?: { processInstanceId?: string } }).data
+          ?.processInstanceId === result.processInstance.id,
+    );
+    expect(draftInstanceCalls).toHaveLength(0);
   });
 
   it('should NOT process future-dated transitions', async ({

@@ -3,7 +3,7 @@ import type { RubricTemplateSchema } from '@op/common';
 import { db } from '@op/db/client';
 import { contentTranslations } from '@op/db/schema';
 import { like } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestReviewsDataManager } from '../../test/helpers/TestReviewsDataManager';
@@ -12,30 +12,12 @@ import {
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../test/helpers/gating/decision';
+import { mockTranslateText } from '../../test/mocks/deepl';
 import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
-
-// Set a fake API key so the endpoint doesn't throw before reaching the mock
-process.env.DEEPL_API_KEY = 'test-fake-key';
-
-const mockTranslateText = vi.fn((texts: string | string[]) => {
-  const arr = Array.isArray(texts) ? texts : [texts];
-  const results = arr.map((t) => ({
-    text: `[ES] ${t}`,
-    detectedSourceLang: 'en',
-  }));
-  // Mirror deepl-node: a single-string input returns a single result object.
-  return Array.isArray(texts) ? results : results[0];
-});
-
-vi.mock('deepl-node', () => ({
-  DeepLClient: class {
-    translateText = mockTranslateText;
-  },
-}));
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -108,10 +90,6 @@ async function createRubricScenario(
 }
 
 describe('translation.translateRubric', () => {
-  beforeEach(() => {
-    mockTranslateText.mockClear();
-  });
-
   it('translates criterion prompts, descriptions, and option labels', async ({
     task,
     onTestFinished,
