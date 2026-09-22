@@ -113,7 +113,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
                 {t('Edit profile')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsAddToOrgModalOpen(true)}>
-                {t('Add to organization')}
+                {t('org.addToOrgLabel')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

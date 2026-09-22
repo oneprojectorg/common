@@ -9,9 +9,9 @@ export const DesktopIndividualTabs = () => {
 
   return (
     <>
-      <TabsTrigger value="about">{t('About')}</TabsTrigger>
+      <TabsTrigger value="about">{t('profile.aboutTab')}</TabsTrigger>
       <TabsTrigger value="organizations">{t('Organizations')}</TabsTrigger>
-      <TabsTrigger value="following">{t('Following')}</TabsTrigger>
+      <TabsTrigger value="following">{t('profile.followingTab')}</TabsTrigger>
     </>
   );
 };
@@ -22,7 +22,9 @@ export const DesktopOrganizationTabs = () => {
   return (
     <>
       <TabsTrigger value="home">{t('Updates')}</TabsTrigger>
-      <TabsTrigger value="relationships">{t('Relationships')}</TabsTrigger>
+      <TabsTrigger value="relationships">
+        {t('profile.relationshipsTab')}
+      </TabsTrigger>
     </>
   );
 };

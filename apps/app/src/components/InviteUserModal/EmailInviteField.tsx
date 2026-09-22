@@ -38,7 +38,7 @@ export const EmailInviteField = ({
   domain,
   description,
 }: EmailInviteFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslations('org');
   const id = useId();
 
   const removeEmailBadge = (emailToRemove: string) => {
@@ -81,9 +81,11 @@ export const EmailInviteField = ({
 
     if (invalidEmails.length > 0) {
       toast.error(
-        invalidEmails.length === 1 ? t('Invalid email') : t('Invalid emails'),
+        invalidEmails.length === 1
+          ? t('inviteInvalidEmailTitle')
+          : t('inviteInvalidEmailsTitle'),
         {
-          description: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('is not a valid email address') : t('are not valid email addresses')}`,
+          description: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('inviteInvalidEmailBody') : t('inviteInvalidEmailsBody')}`,
         },
       );
     }
@@ -91,10 +93,10 @@ export const EmailInviteField = ({
     if (duplicateEmails.length > 0) {
       toast.error(
         duplicateEmails.length === 1
-          ? t('Duplicate email')
-          : t('Duplicate emails'),
+          ? t('inviteDuplicateEmailTitle')
+          : t('inviteDuplicateEmailsTitle'),
         {
-          description: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('has already been added') : t('have already been added')}`,
+          description: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('inviteDuplicateEmailBody') : t('inviteDuplicateEmailsBody')}`,
         },
       );
     }
@@ -102,17 +104,17 @@ export const EmailInviteField = ({
 
   return (
     <Field>
-      <FieldLabel htmlFor={id}>{t('Send to')}</FieldLabel>
+      <FieldLabel htmlFor={id}>{t('inviteRecipientsLabel')}</FieldLabel>
       {/* The group owns the border and the focus ring, so the textarea inside
           stays chrome-less as the chips wrap alongside it. */}
       <InputGroup className="min-h-20 flex-wrap items-start gap-2 p-2">
-        <TagGroup aria-label={t('Selected emails')}>
+        <TagGroup aria-label={t('inviteSelectedEmailsLabel')}>
           {emailBadges.map((email) => (
             <Tag
               key={email}
               size="lg"
               onRemove={() => removeEmailBadge(email)}
-              removeLabel={t('Remove {email}', { email })}
+              removeLabel={t('inviteRemoveEmailAction', { email })}
             >
               {email}
             </Tag>
@@ -131,7 +133,7 @@ export const EmailInviteField = ({
           placeholder={
             emailBadges.length === 0
               ? `name1@${domain}, name2@${domain}, ...`
-              : t('Type emails followed by a comma or line break...')
+              : t('inviteEmailsPlaceholder')
           }
           className="min-h-0 min-w-50 px-0 pt-1 pb-0"
           rows={1}

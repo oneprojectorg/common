@@ -141,11 +141,11 @@ export const AddRelationshipForm = ({
     <DialogContent className="sm:min-w-[29rem]">
       <form onSubmit={handleSubmit} className="contents">
         <DialogHeader>
-          <DialogTitle>{t('Add relationship')}</DialogTitle>
+          <DialogTitle>{t('profile.addRelationshipTitle')}</DialogTitle>
         </DialogHeader>
         <div className="px-6 py-4">
           <p>
-            {t("Choose how you're in relationship with")}{' '}
+            {t('profile.addRelationshipPrompt')}{' '}
             <span className="font-strong">{profile.profile.name}:</span>
           </p>
           <FieldGroup className="mt-3 gap-4">

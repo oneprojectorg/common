@@ -18,7 +18,7 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const profile = await client.profile.getBySlug({ slug });
-    const label = t('Relationships');
+    const label = t('profile.relationshipsTab');
     return { title: profile.name ? `${label} | ${profile.name}` : label };
   } catch {
     return {};

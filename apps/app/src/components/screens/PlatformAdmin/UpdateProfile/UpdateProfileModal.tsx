@@ -24,13 +24,13 @@ export const UpdateProfileModal = ({
   onOpenChange: (isOpen: boolean) => void;
   onSuccess: () => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('profile');
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('Edit Profile')}</DialogTitle>
+          <DialogTitle>{t('editTitle')}</DialogTitle>
         </DialogHeader>
         <UpdateProfileForm
           authUserId={authUserId}

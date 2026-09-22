@@ -11,7 +11,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const RelationshipCount = ({ profile }: { profile: Organization }) => {
-  const t = useTranslations();
+  const t = useTranslations('profile');
   const [{ count }] = trpc.organization.listRelationships.useSuspenseQuery(
     {
       organizationId: profile.id,
@@ -25,7 +25,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
         <span className="text-primary">
-          {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
+          {t('relationshipCount', {
             count,
           })}
         </span>

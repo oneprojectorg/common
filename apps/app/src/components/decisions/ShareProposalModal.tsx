@@ -327,7 +327,7 @@ function ShareProposalModalContent({
     }
 
     if (!memberRole) {
-      toast.error(t('Failed to send invite'));
+      toast.error(t('org.inviteSendError'));
       return;
     }
 
@@ -350,7 +350,7 @@ function ShareProposalModalContent({
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : t('Failed to send invite');
+        error instanceof Error ? error.message : t('org.inviteSendError');
       toast.error(message);
     }
   };

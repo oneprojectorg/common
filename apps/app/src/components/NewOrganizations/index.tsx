@@ -13,7 +13,7 @@ export const NewOrganizationsSuspense = async ({
 }: {
   limit?: number;
 }) => {
-  const t = await getTranslations();
+  const t = await getTranslations({ namespace: 'org' });
 
   try {
     const client = await createClient();
@@ -29,7 +29,7 @@ export const NewOrganizationsSuspense = async ({
         <OrganizationList organizations={organizations} />
         <div className="px-4 sm:px-0">
           <Link href="/org" className="text-primary">
-            {t('See more')}
+            {t('seeMoreAction')}
           </Link>
         </div>
       </div>
