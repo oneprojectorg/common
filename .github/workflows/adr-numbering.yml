@@ -11,6 +11,8 @@ on:
       - dev
     paths:
       - 'docs/adr/draft-*.md'
+  # Numbers whatever drafts sit on the chosen branch.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,13 +24,13 @@ concurrency:
 jobs:
   number-adrs:
     name: Number draft ADRs
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout dev
+      - name: Checkout the target branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
 
       - name: Number and push
         run: scripts/number-adrs.sh --push
