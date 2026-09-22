@@ -11,6 +11,14 @@ import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 // Per-profile-type permission policy. Omitting a type from the record means
 // that type is NOT gated — the caller is opting into lenient pass-through
 // for, e.g., regular org or individual profiles.
+//
+// PHASE is therefore spelled out at every call site that gates DECISION, even
+// where no phase profile can reach it yet: omitting it is a read that succeeds
+// and should not, with no compile error to catch it. The bit chosen is the one
+// the site already requires of DECISION. That is deliberately conservative —
+// a phase profile's grants are per-capability, so almost nobody holds
+// `decisions: ADMIN` on one — and not yet the resolution rule, which puts
+// manage on the process and participation on the phase.
 export type ProfileTypePolicies = Partial<
   Record<EntityType, AccessZonePermission>
 >;
