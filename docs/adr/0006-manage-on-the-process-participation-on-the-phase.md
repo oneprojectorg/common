@@ -107,29 +107,49 @@ under Manage everywhere — only the admin role manages.
    for a public process, the process's members for a private one. So an open
    phase needs no membership rows at all, and only invite-only phases put
    `profile_users` on a phase profile.
-5. **The bits come from one profile-scoped role per capability the phase
-   offers** — `access_roles.profile_id` set to the phase profile, permission set
-   to that one bit plus READ, minted the way `createDecisionRole` already mints
-   process roles. Per capability rather than per phase, because a phase holds
-   reviewers and submitters at once and `profileUser_to_access_roles` is a join
-   table. The invite therefore resolves its own `profile_invites.access_role_id`
-   from the phase and the capability instead of asking an admin to pick a role.
+5. **Capability bits attach directly to the phase profile. There is no
+   intermediary role.** A grant is a permission on (profile, zone) held by a
+   user, not a role the user is then joined to. The bits are the ones the
+   decisions zone already defines, so capabilities collapse and combine in one
+   bitfield: a phase holding reviewers and submitters at once needs no separate
+   object per capability. The invite therefore carries a permission rather than
+   resolving an `access_role_id`, which is the question an admin could not
+   answer well.
+
+   **This decision is blocked on a capability that does not exist.**
+   access-zones cannot currently attach a permission to a profile without going
+   through a role, and `profile_invites.access_role_id` is non-nullable and
+   assumes one. Both have to be built before any of this ships.
 6. **A phase grant confers view on a private process, materialised rather than
-   derived.** The invite writes a read-only grant on the process profile, and
-   losing the last phase grant revokes it. The alternative is a reverse lookup
-   over every phase profile on a path that runs on every read.
+   derived — and it is the only way a participant holds anything on the
+   process profile.** The invite writes a read-only grant there, and losing the
+   last phase grant revokes it. The alternative is a reverse lookup over every
+   phase profile on a path that runs on every read.
+
+   **There is no direct process membership.** Nobody is invited to a process;
+   they are invited to a phase, and process view falls out of that. The sole
+   exception is the admin role, which is a direct grant on the process profile
+   and must stay one — otherwise an admin who was never invited to a phase
+   cannot view their own private process. So `canViewProcess` is one lookup on
+   the process profile: public, or any grant there.
 7. **Anonymous callers top out at read, and only on a public process.** Submit,
    review and vote all need an identity to attach the artefact to.
 8. **A review phase defaults to invite-only**, rather than inheriting the
    process's audience. An open review phase admits any signed-in viewer to score
    proposals: a correct capability and a bad default.
 
-Two alternatives were rejected. **Per-profile override rows on the global Member
-role**, scoped to the phase profile — the mechanism that makes a process public —
-is cheaper, but gives a phase exactly one member shape, so it cannot hold
-reviewers and submitters together. **New global Reviewer / Submitter / Voter
-roles** read more simply, but put "pick a role" back into the invite UI, which is
-the thing decision 5 removes.
+Three alternatives were rejected, all of them role-based. **Per-profile
+override rows on the global Member role**, scoped to the phase profile — the
+mechanism that makes a process public — is cheaper, but gives a phase exactly
+one member shape, so it cannot hold reviewers and submitters together. **New
+global Reviewer / Submitter / Voter roles** read more simply, but put "pick a
+role" back into the invite UI, which is the thing decision 5 removes. **One
+profile-scoped role per capability, minted per phase the way
+`createDecisionRole` mints process roles**, was this ADR's original decision 5
+and was reversed on 2026-09-22: it works, but it creates a role and a
+permission row per capability per phase to express a grant the permission
+system can hold directly, and it leaves every consumer resolving a role id to
+find out what someone may do.
 
 ## Consequences
 
@@ -158,9 +178,43 @@ at every one of those call sites in the same change. Omitting it is not a
 compile error and not a runtime error — it is a read that succeeds and should
 not have.
 
-`profiles` gains a role row and a permission row per capability per phase.
-Process-level role editors must keep listing only the process profile's roles, or
-phase roles surface where an admin cannot act on them.
+Process-level role editors must keep listing only the process profile's own
+grants, or phase grants surface where an admin cannot act on them.
+
+**Three live mechanisms contradict decision 6 and have to go or change.** All
+three put a participant-facing grant on a process profile, which decision 6
+says only a phase invite may do:
+
+- **The `Participant` role.** `createDefaultDecisionRoles` mints it on every
+  process beside Admin, carrying `submitProposals` and `vote` **on the process
+  profile**. Under decision 1 those come from the phase and nowhere else, so a
+  surviving Participant grant lets a holder submit and vote irrespective of a
+  phase's audience — it bypasses the phase check entirely. This is a hole, not
+  a leftover, and it has to be dropped or narrowed to READ in the same change.
+- **`acceptProfileInvite`.** It inserts a `profile_users` row against the
+  decision profile and emits `emitDecisionMemberRolesChanged`; it is the
+  process-level invite path. It becomes a phase-level path. Changing the dialog
+  is not enough — the service has to move with it.
+- **`makeDecisionPublic`.** The right mechanism for "public process", and it
+  stays, but the bits are caller-supplied via `toPublicBitField(permissions)`.
+  Any caller passing submit or vote makes a public process grant participation
+  on every phase, invite-only ones included. The public grant has to be READ.
+
+**Existing Participant grants are held by real people**, so dropping the role
+revokes submit and vote from them. Converting them instead means choosing which
+phase each grant lands on, which is a guess about intent. That belongs to the
+port's migration work; this ADR only records that the grants cannot stay where
+they are.
+
+**Open, and blocking implementation: does a phase check fall back to the
+process?** A parallel note from 2026-09-22 records "cascading permissions where
+phase-level permissions are checked first, falling back to process-level". Read
+one way that is decision 2 restated — an open phase has no grants, so the check
+falls back to "can they view the process". Read the other way it is a union,
+which decision 1 forbids and which would turn every `✗` under Submit in the
+invite-only tables into a `✓`. The two readings produce different code and the
+naive implementation is the wrong one. Settle this in writing before anyone
+builds the check.
 
 A phase's audience is an authorization input, not configuration. Decision 2 reads
 it on every participation check and decision 8 wants it to default to
