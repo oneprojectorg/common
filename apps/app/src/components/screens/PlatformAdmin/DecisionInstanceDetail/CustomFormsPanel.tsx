@@ -53,11 +53,11 @@ export const CustomFormsPanel = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('Forms')}</CardTitle>
+          <CardTitle>{t('admin.formsTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            {t('This decision has no profile, so a form cannot attach to it.')}
+            {t('admin.formsNoProfileHint')}
           </p>
         </CardContent>
       </Card>
@@ -70,11 +70,11 @@ export const CustomFormsPanel = ({
         default: () => (
           <Card>
             <CardHeader>
-              <CardTitle>{t('Forms')}</CardTitle>
+              <CardTitle>{t('admin.formsTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                {t("Couldn't load the forms. Refresh to try again.")}
+                {t('admin.formsLoadError')}
               </p>
             </CardContent>
           </Card>
@@ -111,10 +111,8 @@ const CustomFormsPanelSuspense = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('Forms')}</CardTitle>
-        <CardDescription>
-          {t('Extra questions participants answer during a phase')}
-        </CardDescription>
+        <CardTitle>{t('admin.formsTitle')}</CardTitle>
+        <CardDescription>{t('admin.formsSubtitle')}</CardDescription>
         <CardAction>
           <Button
             size="sm"
@@ -122,14 +120,14 @@ const CustomFormsPanelSuspense = ({
             onClick={() => setIsCreating(true)}
           >
             <LuPlus data-icon="inline-start" />
-            {t('New form')}
+            {t('admin.newFormAction')}
           </Button>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {forms.length === 0 ? (
           <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-            {t('No forms yet.')}
+            {t('admin.noFormsEmpty')}
           </p>
         ) : (
           forms.map((form) => (
@@ -187,8 +185,8 @@ const PhaseAvailabilityNote = ({
   return (
     <p className="text-sm text-muted-foreground">
       {hasPhases
-        ? t('Every phase already has a form.')
-        : t('This decision has no phases to attach a form to.')}
+        ? t('admin.formsEveryPhaseTakenHint')
+        : t('admin.formsNoPhasesHint')}
     </p>
   );
 };
@@ -209,7 +207,7 @@ const CustomFormRow = ({
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-sm font-medium">{form.name}</span>
         <span className="truncate text-sm text-muted-foreground">
-          {t('{count, plural, one {# field} other {# fields}}', {
+          {t('admin.formFieldCount', {
             count: countFields(form.schema),
           })}
         </span>
@@ -219,7 +217,7 @@ const CustomFormRow = ({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={t('Edit {name}', { name: form.name })}
+          aria-label={t('admin.editNamedAction', { name: form.name })}
           onClick={onEdit}
         >
           <LuPencil />
@@ -241,7 +239,7 @@ const FormPhaseBadge = ({
   const { label, isKnownPhase } = resolvePhaseBadge({
     phaseId,
     phases,
-    unsetLabel: t('No phase'),
+    unsetLabel: t('admin.formNoPhaseLabel'),
   });
 
   return (
@@ -255,7 +253,7 @@ const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
 
   const deleteForm = trpc.customForm.delete.useMutation({
     onSuccess: () => {
-      toast.success(t('Form deleted'));
+      toast.success(t('admin.formDeletedToast'));
       setIsOpen(false);
     },
     onError: (error) => {
@@ -272,7 +270,7 @@ const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={t('Delete {name}', { name: form.name })}
+            aria-label={t('admin.deleteNamedAction', { name: form.name })}
           />
         }
       >
@@ -284,9 +282,7 @@ const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
             {t('decisions.deleteDecisionTitle', { name: form.name })}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {t(
-              'Participants stop seeing this form. Answers already submitted are kept.',
-            )}
+            {t('admin.deleteFormConfirmHint')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -298,7 +294,7 @@ const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
             disabled={deleteForm.isPending}
             onClick={() => deleteForm.mutate({ id: form.id })}
           >
-            {deleteForm.isPending ? t('Deleting…') : t('Delete')}
+            {deleteForm.isPending ? t('admin.deletingProgress') : t('Delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

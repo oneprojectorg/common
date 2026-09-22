@@ -113,7 +113,9 @@ export const ProposalRestrictionBadge = ({
     draft: (
       <StatusBadge variant="inactive">{t('decisions.draftStatus')}</StatusBadge>
     ),
-    flagged: <StatusBadge variant="alert">{t('Flagged')}</StatusBadge>,
+    flagged: (
+      <StatusBadge variant="alert">{t('posts.flaggedBadge')}</StatusBadge>
+    ),
     hidden: (
       <StatusBadge variant="warning">
         {t('decisions.proposals.hiddenStatus')}

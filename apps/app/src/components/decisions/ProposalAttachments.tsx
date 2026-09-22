@@ -190,7 +190,7 @@ export function ProposalAttachments({
       <FileDropZone
         acceptedFileTypes={[...ALLOWED_UPLOAD_MIME_TYPES]}
         onSelectFiles={handleSelectFiles}
-        label={t.rich('Drag a file here or <browse>browse</browse>', {
+        label={t.rich('resources.dragOrBrowseHint', {
           browse: (chunks: ReactNode) => (
             <span className="text-primary hover:underline">{chunks}</span>
           ),

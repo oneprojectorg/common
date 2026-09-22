@@ -242,7 +242,7 @@ export const AddResourceDocumentForm = ({
               </div>
               <div className="flex flex-col gap-2 text-base">
                 <p>
-                  {t.rich('Drag a file here or <browse>browse</browse>', {
+                  {t.rich('resources.dragOrBrowseHint', {
                     browse: (chunks: ReactNode) => (
                       <span className="text-primary underline">{chunks}</span>
                     ),
@@ -300,7 +300,9 @@ export const AddResourceDocumentForm = ({
           disabled={!uploaded || !title.trim() || submitting}
           className="flex-1 justify-center"
         >
-          {submitting ? t('Adding...') : t('resources.addAction')}
+          {submitting
+            ? t('resources.addingProgress')
+            : t('resources.addAction')}
         </Button>
       </div>
     </form>

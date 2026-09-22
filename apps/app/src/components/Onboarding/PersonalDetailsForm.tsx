@@ -29,7 +29,7 @@ export const createValidator = (t: TranslateFn) =>
           message: t('profile.fullNamePrompt'),
         })
         .max(200, {
-          message: t('Must be at most 200 characters'),
+          message: t('maxLength200Error'),
         }),
       title: z
         .string({
@@ -40,7 +40,7 @@ export const createValidator = (t: TranslateFn) =>
           message: t('profile.titlePrompt'),
         })
         .max(200, {
-          message: t('Must be at most 200 characters'),
+          message: t('maxLength200Error'),
         }),
       pronouns: z
         .string({ message: t('profile.pronounsLabel') })
@@ -48,12 +48,12 @@ export const createValidator = (t: TranslateFn) =>
         .optional(),
       customPronouns: z.string().optional(),
       email: z
-        .email({ error: t('Enter a valid email address') })
+        .email({ error: t('validEmailError') })
         .trim()
         .refine((val) => val.length <= 255, {
           message: t('profile.emailTooLong'),
         }),
-      website: zodUrl({ error: t('Enter a valid website address') }),
+      website: zodUrl({ error: t('validWebsiteError') }),
       focusAreas: z
         .array(
           z.object({

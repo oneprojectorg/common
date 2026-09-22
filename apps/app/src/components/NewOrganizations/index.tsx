@@ -13,7 +13,7 @@ export const NewOrganizationsSuspense = async ({
 }: {
   limit?: number;
 }) => {
-  const t = await getTranslations({ namespace: 'org' });
+  const t = await getTranslations('org');
 
   try {
     const client = await createClient();

@@ -6,9 +6,9 @@ import { describe, expect, it } from 'vitest';
 
 import { i18nConfig } from './config';
 import english from './dictionaries/en.json';
-import type { MessageTree } from './messageKeys';
-import { normalizeMessageKeys } from './messageKeys';
-import { withNormalizedKeys } from './translate';
+
+/** A dictionary: shared labels plus at most two levels of namespace. */
+type MessageTree = { [key: string]: string | MessageTree };
 
 type MessageValues = Record<
   string,
@@ -124,19 +124,27 @@ const parsedPathsOf = (tree: MessageTree, prefix = ''): Array<string> =>
 // Values come from the English message, not the translated one: the call site
 // passes what the English key implies, so a translation that renamed a
 // placeholder formats here exactly as badly as it would in the browser.
+/**
+ * A translator addressed by a path computed at runtime. next-intl types a
+ * translator's keys as the literal union of the messages it was handed, which
+ * a walk of the file cannot produce.
+ */
+interface MessageLookup {
+  rich(key: string, values?: MessageValues): ReactNode;
+}
+
 describe('dictionaries', () => {
   it.each(i18nConfig.locales)('formats every %s message', (locale) => {
     const messages = dictionaryOf(locale);
     const failures: Array<string> = [];
-    // Through the wrapper, so each message is read exactly as a call site
-    // reads it: a legacy key by its substituted form, a namespaced one by path.
-    const t = withNormalizedKeys<string>(
-      createTranslator({
-        locale,
-        messages: normalizeMessageKeys(messages),
-        onError: (error) => failures.push(error.message),
-      }),
-    );
+    // Read through `MessageLookup`: the paths come from walking the file, so
+    // they are strings, and next-intl types its keys as the literal union of
+    // the dictionary it was given.
+    const t: MessageLookup = createTranslator({
+      locale,
+      messages,
+      onError: (error) => failures.push(error.message),
+    });
 
     const leaves = leavesOf(messages);
     expect(leaves.length).toBeGreaterThan(0);
@@ -199,32 +207,44 @@ describe('dictionaries', () => {
     );
   });
 
-  // ADR 0005: a namespace name and an ID never hold a period, because next-intl
-  // reads one as a path separator. Only the legacy top-level keys may, and PR 8
-  // of the migration removes the last of them along with the substitution that
-  // makes them work.
+  // ADR 0005: no key holds a period, at any level, because next-intl reads one
+  // as a path separator. Nothing rewrites keys any more, so a dotted key is
+  // simply a message no call site can reach.
   it.each(i18nConfig.locales)('keys no %s message by a dotted ID', (locale) => {
-    expect(dottedIdsIn(dictionaryOf(locale))).toEqual([]);
+    expect(dottedKeysIn(dictionaryOf(locale))).toEqual([]);
+  });
+
+  // The top level is shared vocabulary, keyed by its English text: `Cancel`,
+  // `No results`. Anything longer, or carrying ICU syntax, is a sentence a
+  // feature owns, and it belongs in that feature's namespace under an ID.
+  // Checked on English alone — the key is the same in all eight files.
+  it('keys every shared label as an ID or a short label', () => {
+    const offenders = Object.entries(englishTree)
+      .filter(([, value]) => typeof value === 'string')
+      .map(([key]) => key)
+      .filter((key) => !isIdentifier(key) && !isShortLabel(key));
+
+    expect(offenders).toEqual([]);
   });
 });
 
-/**
- * Namespace names and IDs that hold a period. A legacy top-level message —
- * a string keyed by its English text — is exempt: those are what the
- * substitution in `messageKeys.ts` exists for.
- */
-const dottedIdsIn = (
+/** A camelCase ID, which any shared message may use and a sentence must. */
+const isIdentifier = (key: string): boolean => /^[a-z][A-Za-z0-9]*$/.test(key);
+
+/** A plain label, short enough that the English text reads as a name. */
+const isShortLabel = (key: string): boolean =>
+  key.trim().split(/\s+/).length <= 4 && !/[.{<]/.test(key);
+
+/** Every key in the tree that holds a period, as the path that reaches it. */
+const dottedKeysIn = (
   tree: MessageTree,
   prefix: Array<string> = [],
 ): Array<string> =>
   Object.entries(tree).flatMap(([key, value]) => {
-    const isLegacyTopLevelKey =
-      prefix.length === 0 && typeof value === 'string';
     const path = [...prefix, key];
-    const offender =
-      key.includes('.') && !isLegacyTopLevelKey ? [path.join(' → ')] : [];
+    const offender = key.includes('.') ? [path.join(' → ')] : [];
 
     return typeof value === 'string'
       ? offender
-      : [...offender, ...dottedIdsIn(value, path)];
+      : [...offender, ...dottedKeysIn(value, path)];
   });

@@ -138,7 +138,7 @@ const DecisionInstanceDetailContent = ({
           <TabsTrigger value="phases">
             {t('decisions.processBuilder.phasesLabel')}
           </TabsTrigger>
-          <TabsTrigger value="forms">{t('Forms')}</TabsTrigger>
+          <TabsTrigger value="forms">{t('admin.formsTitle')}</TabsTrigger>
           <TabsTrigger value="configuration">
             {t('admin.configurationHeading')}
           </TabsTrigger>
@@ -467,15 +467,13 @@ const PublicAccessSection = ({
   const state = getPublicAccessState({ isPublic, status });
 
   const summaries: Record<PublicAccessState, string> = {
-    public: t(
-      'Anyone with the link can read this decision without an account.',
-    ),
-    openable: t('Only members of this decision can see it.'),
-    unpublished: t('Only a published decision can be opened to the public.'),
+    public: t('admin.publicAccessOnHint'),
+    openable: t('admin.publicAccessOffHint'),
+    unpublished: t('admin.makePublicRequiresPublishedHint'),
   };
 
   return (
-    <DetailSection title={t('Public access')}>
+    <DetailSection title={t('admin.publicAccessTitle')}>
       <p className="text-sm text-muted-foreground">{summaries[state]}</p>
       {state === 'openable' ? (
         <div className="w-fit">

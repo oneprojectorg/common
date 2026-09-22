@@ -134,17 +134,17 @@ interface ChecklistItem {
 const LAUNCH_CHECKLIST: ChecklistItem[] = [
   {
     id: 'processNameDescription',
-    labelKey: 'Process name & description',
+    labelKey: 'decisions.processBuilder.checklistProcessDetails',
     validate: (data) => processSettingsSchema.safeParse(data).success,
   },
   {
     id: 'atLeastOnePhase',
-    labelKey: 'Add at least one phase',
+    labelKey: 'decisions.processBuilder.checklistAtLeastOnePhase',
     validate: (data) => (data?.phases?.length ?? 0) > 0,
   },
   {
     id: 'phaseDetails',
-    labelKey: 'Complete all required phase fields',
+    labelKey: 'decisions.processBuilder.checklistPhaseDetails',
     validate: (data) => {
       const phases = data?.phases;
       if (!phases?.length) {
@@ -155,7 +155,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
   {
     id: 'proposalTemplate',
-    labelKey: 'Create a proposal template',
+    labelKey: 'decisions.processBuilder.checklistProposalTemplate',
     validate: (data) => {
       if (!data?.proposalTemplate) {
         return false;
@@ -168,7 +168,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
   {
     id: 'proposalTemplateErrors',
-    labelKey: 'Fix errors in the proposal template',
+    labelKey: 'decisions.processBuilder.checklistProposalTemplateErrors',
     validate: (data) => {
       if (!data?.proposalTemplate) {
         return true;
@@ -181,17 +181,17 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   },
   {
     id: 'rubricCriteria',
-    labelKey: 'Add at least one rubric criterion',
+    labelKey: 'decisions.processBuilder.checklistRubricCriteria',
     validate: (data) => !hasReviewPhase(data) || hasRubricCriteria(data),
   },
   {
     id: 'rubricCriteriaErrors',
-    labelKey: 'Fix errors in rubric criteria',
+    labelKey: 'decisions.processBuilder.checklistRubricCriteriaErrors',
     validate: (data) => !hasReviewPhase(data) || allRubricCriteriaValid(data),
   },
   {
     id: 'inviteMembers',
-    labelKey: 'Invite participants',
+    labelKey: 'decisions.processBuilder.checklistInviteMembers',
     validate: () => true,
   },
 ];

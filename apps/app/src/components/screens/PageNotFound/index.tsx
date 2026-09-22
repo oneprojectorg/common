@@ -5,7 +5,7 @@ import { ButtonLink } from '@/components/ButtonLink';
 import { StatusScreen } from '../StatusScreen';
 
 export default async function PageNotFound() {
-  const t = await getTranslations({ namespace: 'shell' });
+  const t = await getTranslations('shell');
 
   return (
     <StatusScreen

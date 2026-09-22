@@ -151,7 +151,7 @@ const Image = async ({
     }
     if (instance.participantCount != null) {
       stats.push(
-        t('{count, plural, one {# participant} other {# participants}}', {
+        t('decisions.participantCount', {
           count: instance.participantCount,
         }),
       );
@@ -163,7 +163,9 @@ const Image = async ({
           content: decisionProfile.name || t('decisions.decisionLabel'),
           maxLength: 80,
         })}
-        byline={byName ? t('by {name}', { name: byName }) : undefined}
+        byline={
+          byName ? t('decisions.bylineLabel', { name: byName }) : undefined
+        }
         stats={stats}
         headerUrl={headerUrl}
         logoSrc={logoSrc}

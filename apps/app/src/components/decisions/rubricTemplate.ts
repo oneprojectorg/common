@@ -490,7 +490,7 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
   }
 
   if (!criterion.label.trim()) {
-    errors.push('Criterion label is required');
+    errors.push('decisions.processBuilder.criterionLabelRequiredError');
   }
 
   if (criterion.criterionType === 'single_select') {
@@ -498,7 +498,7 @@ export function getCriterionErrors(criterion: CriterionView): TranslationKey[] {
       errors.push('decisions.processBuilder.optionsMinimumError');
     }
     if (criterion.options.some((option) => !option.title.trim())) {
-      errors.push('Options cannot be empty');
+      errors.push('decisions.processBuilder.optionsEmptyError');
     }
   }
 

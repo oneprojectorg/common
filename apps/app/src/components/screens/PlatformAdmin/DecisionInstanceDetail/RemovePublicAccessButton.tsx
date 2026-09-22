@@ -14,14 +14,14 @@ export const RemovePublicAccessButton = ({
 }: {
   instanceId: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('admin');
   const utils = trpc.useUtils();
   const [isOpen, setIsOpen] = useState(false);
 
   const removeAccess =
     trpc.platform.admin.removeDecisionPublicAccess.useMutation({
       onSuccess: () => {
-        toast.success(t('This decision is no longer public.'));
+        toast.success(t('removePublicAccessSuccess'));
         utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
         setIsOpen(false);
       },
@@ -33,17 +33,15 @@ export const RemovePublicAccessButton = ({
   return (
     <AdminActionConfirmation
       trigger={{
-        label: t('Remove public access'),
+        label: t('removePublicAccessAction'),
         icon: <LuLock data-icon="inline-start" />,
         variant: 'destructive',
       }}
-      title={t('Remove public access?')}
-      description={t(
-        'Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.',
-      )}
+      title={t('removePublicAccessConfirmTitle')}
+      description={t('removePublicAccessConfirmHint')}
       confirm={{
-        label: t('Remove access'),
-        pendingLabel: t('Removing…'),
+        label: t('removeAccessAction'),
+        pendingLabel: t('removingProgress'),
         variant: 'destructive',
       }}
       isPending={removeAccess.isPending}
