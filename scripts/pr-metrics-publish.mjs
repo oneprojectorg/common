@@ -16,19 +16,24 @@
  * Everything arrives through the environment:
  *
  *   GH_TOKEN, GITHUB_REPOSITORY, PR_NUMBER, HEAD_SHA, RUN_URL      both modes
- *   METRICS_LINE, COMMENT_FILE, REPORT_FILE, CHECK_RUN_ID           publish
+ *   LINE_FILE, COMMENT_FILE, REPORT_FILE                            publish
  *
  * Runs in the workflow jobs that hold the write token, which check this file
- * out from the base branch and never run PR code. The line and the two files
- * were produced by a job that did run PR code, so they are treated as text to
- * post and nothing else. A PR author can already write anything into their
- * own PR's comments, so that is the whole exposure.
+ * out from the base branch and never run PR code. The three files were
+ * produced by a job that did run PR code, so they are treated as text to post
+ * and nothing else. A PR author can already write anything into their own PR's
+ * comments, so that is the whole exposure.
+ *
+ * The two modes run in different workflow runs — `announce` on the push,
+ * `publish` once the Tests run that measured has finished — so the check run
+ * `announce` opened cannot be handed over as a job output. `publish` finds it
+ * again by name on the same commit instead.
  *
  * The check run is the one call allowed to fail quietly: a fork's head commit
  * is not in this repository, and GitHub refuses a check run on a commit it
  * does not have. The comment and the body still update.
  */
-import { appendFileSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 import { splice } from './pr-metrics-body.mjs';
 
@@ -123,6 +128,28 @@ const plainTitle = (line) =>
     .replace(/\*\*|`/g, '')
     .slice(0, 1000);
 
+/**
+ * The check run `announce` opened for this commit, if it is still open.
+ *
+ * Null covers both "never opened" and "cannot look it up" — a fork's head
+ * commit is not in this repository — and `completeCheck` then posts a
+ * completed check run instead of updating one.
+ */
+const findCheckRun = async () => {
+  try {
+    const result = await api(
+      'GET',
+      `/repos/${repo}/commits/${sha}/check-runs?check_name=${encodeURIComponent(CHECK_NAME)}&per_page=100`,
+    );
+    const runs = result.check_runs ?? [];
+    return (
+      (runs.find((run) => run.status !== 'completed') ?? runs[0])?.id ?? null
+    );
+  } catch {
+    return null;
+  }
+};
+
 const completeCheck = async (id, title, summary) => {
   const output = {
     title,
@@ -162,22 +189,20 @@ const announce = async () => {
       'The result lands here and as one line at the end of the description.',
   );
 
-  await quietly('check run', async () => {
-    const check = await api('POST', `/repos/${repo}/check-runs`, {
+  // `publish` runs in another workflow run and finds this one back by name.
+  await quietly('check run', () =>
+    api('POST', `/repos/${repo}/check-runs`, {
       name: CHECK_NAME,
       head_sha: sha,
       status: 'in_progress',
       details_url: runUrl,
-    });
-    if (process.env.GITHUB_OUTPUT) {
-      appendFileSync(process.env.GITHUB_OUTPUT, `check_run_id=${check.id}\n`);
-    }
-  });
+    }),
+  );
 };
 
 const publish = async () => {
-  const line = (process.env.METRICS_LINE ?? '').trim();
-  const checkId = process.env.CHECK_RUN_ID || null;
+  const line = (readOptional(process.env.LINE_FILE) ?? '').trim();
+  const checkId = await findCheckRun();
 
   if (!line) {
     const failed = `**PR metrics** · measurement failed for \`${short}\` — see the [run](${runUrl}).`;

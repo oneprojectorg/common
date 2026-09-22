@@ -15,6 +15,7 @@
   "scripts": {
     "format:check": "oxfmt --check",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,8 +24,10 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
+    "@op/vitest-config": "workspace:*",
     "@types/he": "^1.2.3",
     "@types/node": "^24.13.3",
+    "@vitest/coverage-istanbul": "catalog:",
     "tailwindcss": "4.1.18",
     "typescript": "7.0.2",
     "vitest": "catalog:"
