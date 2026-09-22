@@ -18,6 +18,9 @@ export * from './removeOverviewHeroImage';
 export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 
+// Phase entities (profile-bearing; no production caller yet)
+export * from './createPhase';
+
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
