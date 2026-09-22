@@ -220,7 +220,7 @@ const RemoveFromProcessDialog = ({
             onClick={onConfirm}
             disabled={isPending}
           >
-            {isPending ? t('Removing...') : t('Remove')}
+            {isPending ? t('removingProgress') : t('Remove')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

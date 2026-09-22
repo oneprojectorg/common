@@ -262,7 +262,7 @@ function renderField(
   switch (format) {
     case 'short-text':
     case 'long-text': {
-      const placeholder = t('Start typing...');
+      const placeholder = t('startTypingPlaceholder');
 
       if (isReadonlyMode) {
         return (

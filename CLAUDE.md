@@ -79,6 +79,9 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 - **Use `getTranslations` for server components**: `const t = await getTranslations({ locale })`. Import it from `@/lib/i18n`, never from `next-intl/server` — ours applies the dot-to-underscore key substitution that `request.ts` applied to the dictionary, and the unwrapped one returns the raw English string for any key containing a period.
 - **ALWAYS** wrap user-facing strings with `t('...')` — never hardcode user-facing text
 - **For dynamic values**, use interpolation: `t('Hello {name}', { name: userName })` and `t.rich()` for strings that are broken up with styles/components
+- **A new feature string goes into a namespace under a camelCase ID that names its role, not its wording** (ADR 0005): `const t = useTranslations('onboarding')` then `t('fullName')`, with the English copy as the value in `en.json`
+- **A shared generic label keeps its English text as the key at the top level** — `Cancel`, `Back`, `Email`, `No results`; a generic sentence or an ICU message takes a top-level camelCase ID instead
+- **No key contains a period**, at any depth — next-intl reads one as a path separator, and the substitution that keeps the remaining flat English keys working goes away with the last of them
 - **Check the dictionaries**: key parity and message formatting are unit tests in `apps/app/src/lib/i18n/dictionaries.test.ts` (`pnpm w:app test`). `pnpm i18n:check [<ref>]` diffs against `origin/dev` (CI: the PR's base branch): a key whose English value changed must change in every other locale, so a copy edit can't leave the seven translations stale.
 
 ### Logging

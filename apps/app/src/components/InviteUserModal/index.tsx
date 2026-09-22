@@ -132,7 +132,7 @@ export const InviteUserModal = ({
   const sendInvite = (recipients: string[]) => {
     if (!isOnline) {
       toast.error(t('No connection'), {
-        description: t('Please check your internet connection and try again.'),
+        description: t('checkConnectionHint'),
       });
       return;
     }
