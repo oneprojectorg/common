@@ -72,11 +72,8 @@ jobs:
       - name: Run TypeScript checks - App
         run: pnpm typecheck
 
-  # A merged ADR is numbered by .github/workflows/adr-numbering.yml, so a PR
-  # may only add docs/adr/draft-*.md; one numbered by hand would collide with
-  # whatever lands on dev first. The script is taken from the base branch, not
-  # the PR head, and the token is not persisted, so PR-authored code runs
-  # without credentials and needs no fork gate.
+  # Only adr-numbering.yml may create NNNN-*.md. Runs the base branch's copy
+  # of the script with no token, so no fork gate.
   adr-numbers:
     name: ADR numbers
     runs-on: ubuntu-latest

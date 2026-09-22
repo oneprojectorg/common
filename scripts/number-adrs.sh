@@ -1,24 +1,11 @@
 #!/usr/bin/env bash
-# Number draft ADRs.
+# Renames docs/adr/draft-<title>.md to docs/adr/NNNN-<title>.md with the next
+# free number and sets the `# NNNN.` heading to match.
 #
-# Renames every docs/adr/draft-<title>.md to docs/adr/NNNN-<title>.md, where
-# NNNN is the next free four-digit number, rewrites the `# NNNN.` heading to
-# match, and stages the result with `git mv`.
-#
-#   number-adrs.sh               Preview the renames locally; leaves them staged.
-#   number-adrs.sh --push        Commit the renames as the Actions bot and push
-#                                them to the current branch. Needs a clean tree.
-#                                If the branch moved since checkout, undo, pull,
-#                                and number again against the fresh tree, so an
-#                                ADR that landed meanwhile never shares a number.
-#   number-adrs.sh --check [ref] Fail if two ADRs share a number, or if the tree
-#                                adds a numbered ADR relative to <ref>. A pull
-#                                request may only add draft-*.md; CI assigns
-#                                the number on merge.
-#
-# CI runs --push when a pull request that adds a draft merges into the default
-# branch (.github/workflows/adr-numbering.yml) and --check on every pull
-# request (.github/workflows/pr-checks.yml).
+#   number-adrs.sh               stage the renames
+#   number-adrs.sh --push        commit and push them; retries if the branch moved
+#   number-adrs.sh --check [ref] fail on a duplicate number, or on a numbered
+#                                ADR added since <ref>
 set -euo pipefail
 
 ADR_DIR="docs/adr"
@@ -42,11 +29,10 @@ esac
 cd "$(git rev-parse --show-toplevel)"
 shopt -s nullglob
 
-# Fails if two numbered ADRs share a number, e.g. one that was numbered by hand.
 check_unique() {
   local numbered dupes
   dupes=$(
-    # shellcheck disable=SC2231  # the glob is meant to expand
+    # shellcheck disable=SC2231
     for numbered in $NUMBERED_GLOB; do
       basename "$numbered" | cut -c1-4
     done | sort | uniq -d | tr '\n' ' '
@@ -57,10 +43,9 @@ check_unique() {
   fi
 }
 
-# Fails if the tree adds a numbered ADR that <base> does not have. Renames are
-# reported as an add plus a delete, so renaming a draft by hand is caught too.
 check_no_hand_numbering() {
   local added
+  # --no-renames so a draft renamed by hand shows up as an add.
   added=$(git diff --name-only --diff-filter=A --no-renames "$base" HEAD -- "$ADR_DIR" \
     | grep -E "^$ADR_DIR/[0-9]{4}-.*\.md$" || true)
   if [[ -n $added ]]; then
@@ -71,9 +56,7 @@ check_no_hand_numbering() {
   fi
 }
 
-# Renames every draft to the next free number, rewrites its heading, and
-# records each rename in $renames as "<draft><tab><target>". Returns 1 when
-# there is nothing to do.
+# "<draft>\t<target>" per rename, for undo_renames.
 renames=()
 number_drafts() {
   local drafts=("$ADR_DIR"/draft-*.md)
@@ -82,9 +65,8 @@ number_drafts() {
     return 1
   fi
 
-  # Highest number already taken, including any rename staged but not committed.
   local next=0 numbered num draft padded target
-  # shellcheck disable=SC2231  # the glob is meant to expand
+  # shellcheck disable=SC2231
   for numbered in $NUMBERED_GLOB; do
     num=$((10#$(basename "$numbered" | cut -c1-4)))
     if (( num > next )); then
@@ -97,7 +79,6 @@ number_drafts() {
     padded=$(printf '%04d' "$next")
     target="$ADR_DIR/$padded-${draft#"$ADR_DIR"/draft-}"
     git mv "$draft" "$target"
-    # The template's first line is "# NNNN. <title>"; give it the real number.
     sed "1s/^# NNNN\\./# $padded./" "$target" > "$target.tmp"
     mv "$target.tmp" "$target"
     git add "$target"
@@ -106,8 +87,6 @@ number_drafts() {
   done
 }
 
-# Moves every file recorded by number_drafts back to its draft name and
-# restores its heading.
 undo_renames() {
   local pair draft target
   for pair in ${renames[@]+"${renames[@]}"}; do
@@ -157,8 +136,7 @@ for attempt in 1 2 3; do
     exit 0
   fi
 
-  # Retry only when the branch moved. Any other rejection, such as branch
-  # protection refusing the token, will not fix itself.
+  # Only a moved branch is worth a retry.
   git fetch --quiet origin "$branch"
   if [[ $(git rev-parse "origin/$branch") == "$parent" ]]; then
     echo "Push to $branch was rejected and the branch has not moved; giving up. The numbering commit is still local." >&2

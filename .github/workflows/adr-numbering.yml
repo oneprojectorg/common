@@ -1,9 +1,7 @@
 name: Number ADRs
 
-# A draft ADR (docs/adr/draft-*.md) takes its number when its pull request
-# merges into dev, so two open ADR pull requests never fight over the same
-# NNNN. Runs as pull_request_target so the token can push to dev for a fork's
-# PR too; it checks out dev itself, never the PR's code.
+# pull_request_target so the token can push to dev for a fork's PR too. Only
+# dev is checked out, never the PR's code.
 
 on:
   pull_request_target:
@@ -17,7 +15,6 @@ on:
 permissions:
   contents: write
 
-# One run at a time, so two merges cannot both claim the same number.
 concurrency:
   group: adr-numbering
   cancel-in-progress: false
