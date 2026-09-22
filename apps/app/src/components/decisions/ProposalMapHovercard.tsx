@@ -26,10 +26,10 @@ export function ProposalMapHovercard({
   proposal,
   href,
 }: ProposalMapHovercardProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const { title, category } = parseProposalData(proposal.proposalData);
   // Match the list card's fallback ladder.
-  const titleText = title || proposal.profile.name || t('Untitled Proposal');
+  const titleText = title || proposal.profile.name || t('untitledProposal');
   // The boundary-import job tags each proposal with the boundary (council
   // district) it falls inside as a category — see `decision_boundaries`.
   const districts = normalizeProposalCategories(category);

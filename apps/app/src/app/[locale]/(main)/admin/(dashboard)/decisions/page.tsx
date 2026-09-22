@@ -11,7 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: `${t('Decisions')} | ${t('Admin')}` };
+  return { title: `${t('decisions.decisionsLabel')} | ${t('Admin')}` };
 }
 
 export default function AdminDecisionsPage() {

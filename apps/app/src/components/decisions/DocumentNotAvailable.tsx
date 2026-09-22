@@ -7,7 +7,7 @@ import { useTranslations } from '@/lib/i18n';
 
 /** Shown when document content failed to load from the collaboration server. */
 export function DocumentNotAvailable({ className }: { className?: string }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <div
@@ -20,7 +20,7 @@ export function DocumentNotAvailable({ className }: { className?: string }) {
         <LuFileQuestion className="size-4 text-muted-foreground" />
       </div>
       <p className="text-sm text-muted-foreground">
-        {t('Content could not be loaded')}
+        {t('documentUnavailable')}
       </p>
     </div>
   );

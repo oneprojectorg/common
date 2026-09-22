@@ -25,11 +25,11 @@ export function ProposalViewToggle({
   onChange,
   className,
 }: ProposalViewToggleProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   const options = [
-    { id: 'grid', label: t('Grid view'), Icon: LuLayoutGrid },
-    { id: 'map', label: t('Map view'), Icon: LuMap },
+    { id: 'grid', label: t('gridViewOption'), Icon: LuLayoutGrid },
+    { id: 'map', label: t('mapViewOption'), Icon: LuMap },
   ] as const;
 
   return (
@@ -46,7 +46,7 @@ export function ProposalViewToggle({
       variant="outline"
       size="icon"
       spacing={0}
-      aria-label={t('Proposal view')}
+      aria-label={t('proposalViewLabel')}
       className={className}
     >
       {options.map(({ id, label, Icon }) => (

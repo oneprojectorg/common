@@ -50,9 +50,9 @@ export function CollaborativeTitleField({
   maxLength,
   onChange,
 }: CollaborativeTitleFieldProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const { ydoc, provider, user } = useCollaborativeDoc();
-  const resolvedPlaceholder = placeholder ?? t('Untitled Proposal');
+  const resolvedPlaceholder = placeholder ?? t('untitledProposal');
   const labelId = useId();
   const counterId = useId();
   const [charCount, setCharCount] = useState(0);
@@ -186,7 +186,7 @@ export function CollaborativeTitleField({
     // field still reads correctly.
     <Field data-testid="field-title" dir="auto">
       <FieldTitle id={labelId}>
-        {title ?? t('Proposal name')}
+        {title ?? t('proposalNameLabel')}
         {required && <RequiredAsterisk />}
       </FieldTitle>
       {editor ? (

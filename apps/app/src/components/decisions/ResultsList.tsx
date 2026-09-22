@@ -51,7 +51,7 @@ export const ResultsList = ({
   return (
     <div className="flex flex-col gap-4 pb-12">
       <div className="flex items-center gap-4">
-        <Header3>{t('Selected Proposals')}</Header3>
+        <Header3>{t('decisions.selectedProposalsHeading')}</Header3>
       </div>
 
       <ProposalMasonry>
@@ -78,7 +78,7 @@ export const ResultsList = ({
               awardedLabel={
                 awardedText ? (
                   <StatusBadge variant="success" icon={LuBadgeCheck}>
-                    {t('{amount} Awarded', { amount: awardedText })}
+                    {t('decisions.amountAwarded', { amount: awardedText })}
                   </StatusBadge>
                 ) : undefined
               }
@@ -98,11 +98,9 @@ const NoProposalsFound = () => {
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle render={<h3 />}>
-          {t('No results yet for this decision.')}
-        </EmptyTitle>
+        <EmptyTitle render={<h3 />}>{t('decisions.noResultsYet')}</EmptyTitle>
         <EmptyDescription>
-          {t('Results are still being worked on.')}
+          {t('decisions.resultsInProgressNotice')}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>

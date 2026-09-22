@@ -67,11 +67,11 @@ export const DecisionListItem = ({
 
   const deleteMutation = trpc.decision.deleteDecision.useMutation({
     onSuccess: () => {
-      toast.success(t('Decision deleted successfully'));
+      toast.success(t('decisions.deleteDecisionSuccess'));
       utils.decision.listDecisionProfiles.invalidate();
     },
     onError: () => {
-      toast.error(t('Failed to delete decision'));
+      toast.error(t('decisions.deleteDecisionError'));
     },
   });
 
@@ -106,7 +106,9 @@ export const DecisionListItem = ({
           )}
         >
           <DecisionCardHeader
-            name={processInstance.name || item.name || t('Untitled')}
+            name={
+              processInstance.name || item.name || t('decisions.untitledLabel')
+            }
             currentState={currentPhaseName}
             stewardName={displayProfile?.name}
             stewardAvatarPath={displayProfile?.avatarImage?.name}
@@ -116,17 +118,17 @@ export const DecisionListItem = ({
 
           {isDraft ? (
             <StatusBadge variant="inactive" icon={false}>
-              {t('Draft')}
+              {t('decisions.draftStatus')}
             </StatusBadge>
           ) : (
             <div className="flex items-end gap-4 sm:items-center sm:gap-10">
               <DecisionStat
                 number={processInstance.participantCount ?? 0}
-                label="Participants"
+                label="decisions.participantsLabel"
               />
               <DecisionStat
                 number={processInstance.proposalCount ?? 0}
-                label="Proposals"
+                label="decisions.proposalsLabel"
               />
             </div>
           )}
@@ -138,7 +140,7 @@ export const DecisionListItem = ({
               <DropdownMenuTrigger
                 render={
                   <Button
-                    aria-label={t('Decision options')}
+                    aria-label={t('decisions.decisionOptionsLabel')}
                     variant="ghost"
                     size="icon"
                   />
@@ -152,12 +154,12 @@ export const DecisionListItem = ({
                     closeOnClick
                     render={<Link href={`/decisions/${item.slug}/edit`} />}
                   >
-                    {t('Settings')}
+                    {t('decisions.settingsAction')}
                   </DropdownMenuLinkItem>
                 )}
                 {canManage && (
                   <DropdownMenuItem onClick={() => setShowDuplicateModal(true)}>
-                    {t('Duplicate')}
+                    {t('decisions.duplicateAction')}
                   </DropdownMenuItem>
                 )}
                 {canDelete && (
@@ -192,8 +194,8 @@ export const DecisionListItem = ({
           <DialogHeader>
             <DialogTitle>
               {isDraft
-                ? t('Delete draft?')
-                : t('Delete {name}?', {
+                ? t('decisions.deleteDraftTitle')
+                : t('decisions.deleteDecisionTitle', {
                     name: processInstance.name || item.name,
                   })}
             </DialogTitle>
@@ -201,17 +203,13 @@ export const DecisionListItem = ({
           <div className="px-6 py-4">
             <p>
               {isDraft
-                ? t(
-                    "This draft will be permanently deleted and can't be recovered.",
-                  )
-                : t(
-                    "This decision will be permanently deleted and can't be recovered.",
-                  )}
+                ? t('decisions.deleteDraftWarning')
+                : t('decisions.deleteDecisionWarning')}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
-              {isDraft ? t('Keep draft') : t('Cancel')}
+              {isDraft ? t('decisions.keepDraftAction') : t('Cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -219,9 +217,9 @@ export const DecisionListItem = ({
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending
-                ? t('Deleting...')
+                ? t('decisions.deletingProgress')
                 : isDraft
-                  ? t('Delete draft')
+                  ? t('decisions.deleteDraftAction')
                   : t('Delete')}
             </Button>
           </DialogFooter>
@@ -263,12 +261,12 @@ export const ProfileDecisionListItem = ({
           <div className="flex items-end gap-4">
             <DecisionStat
               number={processInstance.participantCount ?? 0}
-              label="Participants"
+              label="decisions.participantsLabel"
               className="sm:flex-row"
             />
             <DecisionStat
               number={processInstance.proposalCount ?? 0}
-              label="Proposals"
+              label="decisions.proposalsLabel"
               className="sm:flex-row"
             />
           </div>
@@ -312,8 +310,11 @@ export const LegacyDecisionListItem = ({
       </DecisionCardHeader>
 
       <div className="flex items-end gap-4 sm:items-center sm:gap-10">
-        <DecisionStat number={participantCount} label="Participants" />
-        <DecisionStat number={proposalCount} label="Proposals" />
+        <DecisionStat
+          number={participantCount}
+          label="decisions.participantsLabel"
+        />
+        <DecisionStat number={proposalCount} label="decisions.proposalsLabel" />
       </div>
     </Link>
   );
@@ -351,7 +352,9 @@ const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
       )}
     >
       <LuCalendar className="size-4" aria-hidden />
-      {t('Closes on {date}', { date: formatDateShort(closingDate, locale) })}
+      {t('decisions.closesOnDate', {
+        date: formatDateShort(closingDate, locale),
+      })}
     </div>
   );
 };

@@ -29,7 +29,8 @@ export async function generateMetadata({
       return {};
     }
     const proposalTitle =
-      reviewedProposal.profile?.name || t('Untitled Proposal');
+      reviewedProposal.profile?.name ||
+      t('decisions.proposals.untitledProposal');
 
     const reviewLabel = t('Review {title}', { title: proposalTitle });
     const decisionName = decisionProfile?.name;

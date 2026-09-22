@@ -48,7 +48,7 @@ export function DecisionPhaseTimeline({
   className?: string;
 }) {
   const locale = useLocale();
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const translation = useDecisionTranslation();
   const translatedPhaseNames = useMemo(
     () =>
@@ -101,9 +101,9 @@ export function DecisionPhaseTimeline({
                 isNowOpen={
                   state === 'current' && phase.config?.allowProposals === true
                 }
-                nowOpenLabel={t('Now open!')}
+                nowOpenLabel={t('phaseNowOpen')}
                 isAdvanceable={isAdvanceable}
-                advanceLabel={t('Advance')}
+                advanceLabel={t('advanceAction')}
                 onAdvance={isAdvanceable ? requestAdvance : undefined}
                 href={state === 'current' ? currentHref : undefined}
               />

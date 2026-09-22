@@ -71,14 +71,18 @@ export const SelectableProposalsTable = ({
     >
       <TableHeader>
         <TableRow>
-          <TableHead>{t('Proposal')}</TableHead>
-          {showBudget ? <TableHead>{t('Budget')}</TableHead> : null}
-          <TableHead>{t('Category')}</TableHead>
+          <TableHead>{t('decisions.proposals.proposalLabel')}</TableHead>
+          {showBudget ? (
+            <TableHead>{t('decisions.budgetLabel')}</TableHead>
+          ) : null}
+          <TableHead>{t('decisions.categoryLabel')}</TableHead>
           {showVotes ? (
             <TableHead>{t('decisions.review.votesLabel')}</TableHead>
           ) : null}
           <TableHead className="w-32 text-end">
-            <span className="sr-only">{t('Select proposal')}</span>
+            <span className="sr-only">
+              {t('decisions.proposals.selectProposalLabel')}
+            </span>
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -87,7 +91,7 @@ export const SelectableProposalsTable = ({
           const isSelected = selectedSet.has(proposal.id);
           const fields = resolvePresentationFields({
             proposal,
-            defaultTitle: t('Untitled Proposal'),
+            defaultTitle: t('decisions.proposals.untitledProposal'),
           });
           const href = getProposalHref?.(proposal);
 
@@ -167,7 +171,7 @@ const SelectableProposalCard = ({
   const t = useTranslations();
   const fields = resolvePresentationFields({
     proposal,
-    defaultTitle: t('Untitled Proposal'),
+    defaultTitle: t('decisions.proposals.untitledProposal'),
   });
 
   return (

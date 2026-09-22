@@ -44,10 +44,13 @@ export const ManualSelectionToolbar = ({
         <ResponsiveSelect
           selectedKey={selectedCategory}
           onSelectionChange={(key) => onChange({ selectedCategory: key })}
-          aria-label={t('Filter proposals by category')}
+          aria-label={t('decisions.proposals.filterByCategoryLabel')}
           className="min-w-40"
           items={[
-            { id: 'all-categories', label: t('All categories') },
+            {
+              id: 'all-categories',
+              label: t('decisions.proposals.allCategoriesOption'),
+            },
             ...categories.map((category) => ({
               id: category.id,
               label: category.name,
@@ -57,12 +60,12 @@ export const ManualSelectionToolbar = ({
         <ResponsiveSelect
           selectedKey={sortOrder}
           onSelectionChange={(key) => onChange({ sortOrder: key })}
-          aria-label={t('Sort proposals')}
+          aria-label={t('decisions.proposals.sortProposalsLabel')}
           className="min-w-40"
           items={[
             { id: 'votes', label: t('decisions.review.sortMostVotes') },
-            { id: 'newest', label: t('Newest First') },
-            { id: 'oldest', label: t('Oldest First') },
+            { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
+            { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
       </div>

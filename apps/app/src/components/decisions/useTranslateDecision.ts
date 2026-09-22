@@ -57,7 +57,7 @@ export const useTranslateDecision = ({
    */
   needsTranslation: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const locale = useLocale();
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
     locale,
@@ -105,7 +105,7 @@ export const useTranslateDecision = ({
   );
 
   const onTranslateError = useCallback(() => {
-    toast.error(t('Failed to translate content'));
+    toast.error(t('translateContentError'));
   }, [t]);
 
   const translateBatchMutation =

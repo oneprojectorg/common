@@ -107,7 +107,7 @@ export function RubricCriterionCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const requiredToggleId = useId();
 
-  const displayLabel = criterion.label || t('Untitled');
+  const displayLabel = criterion.label || t('decisions.untitledLabel');
 
   const badgeLabel =
     criterion.criterionType === 'scored' && criterion.maxPoints
@@ -708,7 +708,7 @@ export function RubricCriterionDragPreview({
   const t = useTranslations();
   return (
     <CollapsibleConfigCardDragPreview
-      label={criterion.label || t('Untitled')}
+      label={criterion.label || t('decisions.untitledLabel')}
       badgeLabel={
         criterion.criterionType === 'scored' && criterion.maxPoints
           ? `${criterion.maxPoints} ${t('decisions.review.ptsSuffix')}`

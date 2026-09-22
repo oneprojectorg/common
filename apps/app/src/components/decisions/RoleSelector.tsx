@@ -20,7 +20,7 @@ export const RoleSelector = ({
   onSelectionChange,
   countsByRole,
 }: RoleSelectorProps) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   return (
     <Tabs
@@ -28,13 +28,13 @@ export const RoleSelector = ({
       value={selectedRoleId}
       onValueChange={onSelectionChange}
     >
-      <TabsList variant="line" aria-label={t('Select a role')}>
+      <TabsList variant="line" aria-label={t('selectRolePlaceholder')}>
         {roles.map((role) => {
           const count = countsByRole[role.id] ?? 0;
           return (
             <TabsTrigger key={role.id} value={role.id}>
               <span className="flex items-center gap-2">
-                {t('{roleName} plural', { roleName: role.name })}
+                {t('roleNamePlural', { roleName: role.name })}
                 {count > 0 && <BadgeNumber>{count}</BadgeNumber>}
               </span>
             </TabsTrigger>

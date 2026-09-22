@@ -86,8 +86,8 @@ const PromoteAccountModalContent = ({
       <div className="flex flex-col items-center gap-4 text-center">
         <CheckIcon />
         <div className="flex flex-col gap-2">
-          <Header2>{t('Your idea was submitted.')}</Header2>
-          <p className="text-base">{t('Want to follow what happens next?')}</p>
+          <Header2>{t('decisions.promoteAccountSubmittedTitle')}</Header2>
+          <p className="text-base">{t('decisions.promoteAccountTitle')}</p>
         </div>
       </div>
 
@@ -99,9 +99,7 @@ const PromoteAccountModalContent = ({
               {t('Continue as a guest')}
             </span>
           </div>
-          <p className="text-base">
-            {t('Stay anonymous. React to comments with emoji.')}
-          </p>
+          <p className="text-base">{t('decisions.promoteAccountAnonymity')}</p>
           {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
               acceptance isn't persisted for the anon account. Pending team
               decision on what accepting terms means for an anonymous user. */}
@@ -144,11 +142,7 @@ const PromoteAccountModalContent = ({
               {t('With an account')}
             </span>
           </div>
-          <p className="text-base">
-            {t(
-              'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
-            )}
-          </p>
+          <p className="text-base">{t('decisions.promoteAccountBenefits')}</p>
           <Button className="w-full" onClick={goToLogin}>
             {t('Create account')}
           </Button>

@@ -41,7 +41,9 @@ export function useProposalCardData(proposal: Proposal) {
 
   const titleText =
     cardTranslation?.title ??
-    (title || proposal.profile.name || t('Untitled Proposal'));
+    (title ||
+      proposal.profile.name ||
+      t('decisions.proposals.untitledProposal'));
 
   const budgetText = formatBudget(budget) ?? undefined;
 
@@ -108,9 +110,15 @@ export const ProposalRestrictionBadge = ({
   const t = useTranslations();
 
   return match(restrictionOf(proposal), {
-    draft: <StatusBadge variant="inactive">{t('Draft')}</StatusBadge>,
+    draft: (
+      <StatusBadge variant="inactive">{t('decisions.draftStatus')}</StatusBadge>
+    ),
     flagged: <StatusBadge variant="alert">{t('Flagged')}</StatusBadge>,
-    hidden: <StatusBadge variant="warning">{t('Hidden')}</StatusBadge>,
+    hidden: (
+      <StatusBadge variant="warning">
+        {t('decisions.proposals.hiddenStatus')}
+      </StatusBadge>
+    ),
     _: null,
   });
 };
@@ -127,16 +135,22 @@ export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
 
   // "Selected" is driven by results selection, not the editable `status`.
   if (isSelected) {
-    return <StatusBadge variant="success">{t('Selected')}</StatusBadge>;
+    return (
+      <StatusBadge variant="success">
+        {t('decisions.proposals.selectedStatus')}
+      </StatusBadge>
+    );
   }
 
   return match(status, {
     [ProposalStatus.APPROVED]: (
-      <StatusBadge variant="success">{t('Shortlisted')}</StatusBadge>
+      <StatusBadge variant="success">
+        {t('decisions.proposals.shortlistedStatus')}
+      </StatusBadge>
     ),
     [ProposalStatus.REJECTED]: (
       <StatusBadge variant="alert" icon={LuCircleX}>
-        {t('Not advanced')}
+        {t('decisions.proposals.notAdvancedStatus')}
       </StatusBadge>
     ),
     _: null,
@@ -230,7 +244,7 @@ export const ProposalCardView = ({
     ? {
         likes: {
           count: proposal.likesCount || 0,
-          label: t('Likes'),
+          label: t('decisions.proposals.likesLabel'),
           ...(engagement && {
             active: engagement.isLiked,
             onClick: engagement.onLike,
@@ -248,7 +262,7 @@ export const ProposalCardView = ({
         ...(commentsEnabled && {
           comments: {
             count: proposal.commentsCount || 0,
-            label: t('Comments'),
+            label: t('decisions.proposals.commentsHeading'),
           },
         }),
       }
@@ -277,7 +291,7 @@ export const ProposalCardView = ({
       description={description}
       metrics={metrics}
       totalVotes={totalVotes}
-      totalVotesLabel={t('Total Votes')}
+      totalVotesLabel={t('decisions.proposals.totalVotesLabel')}
       awardedLabel={awardedLabel}
       status={status}
       reviewedLabel={reviewedLabel ?? decoration.reviewedLabel}

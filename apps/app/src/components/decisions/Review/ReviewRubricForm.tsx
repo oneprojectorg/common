@@ -670,7 +670,9 @@ function RubricFieldInput({
               aria-describedby={describedBy}
               className="w-full"
             >
-              <SelectValue placeholder={t('Select an option')} />
+              <SelectValue
+                placeholder={t('decisions.proposals.selectOptionPlaceholder')}
+              />
             </SelectTrigger>
             {/* The popup is portaled, so it inherits nothing from the field —
                 it resolves its own direction from the option labels. */}

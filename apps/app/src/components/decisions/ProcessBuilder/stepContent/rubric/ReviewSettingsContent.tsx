@@ -153,7 +153,7 @@ export function ReviewSettingsContent({
               <RadioGroupItem id="scope-all" value="all" />
               <FieldContent>
                 <FieldLabel htmlFor="scope-all">
-                  {t('All proposals')}
+                  {t('decisions.proposals.allProposalsOption')}
                 </FieldLabel>
                 <FieldDescription>
                   {t('decisions.processBuilder.reviewScopeAllHint')}

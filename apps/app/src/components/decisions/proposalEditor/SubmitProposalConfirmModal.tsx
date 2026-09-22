@@ -34,21 +34,21 @@ export function SubmitProposalConfirmModal({
   onOpenChange,
   onConfirm,
 }: SubmitProposalConfirmModalProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('Submitting is final')}</AlertDialogTitle>
+          <AlertDialogTitle>{t('submitFinalTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t("You won't be able to edit your proposal after submitting")}
+            {t('submitFinalWarning')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('Keep editing')}</AlertDialogCancel>
+          <AlertDialogCancel>{t('keepEditingAction')}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
-            {t('Submit')}
+            {t('submitAction')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

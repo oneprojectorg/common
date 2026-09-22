@@ -30,7 +30,7 @@ export function ProposalCardReviseAction({
       onClick={() => setNavigating(true)}
       loading={navigating}
     >
-      {t('Revise proposal')}
+      {t('decisions.proposals.reviseProposalAction')}
     </ButtonLink>
   );
 }

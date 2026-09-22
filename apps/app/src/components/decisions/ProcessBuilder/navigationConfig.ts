@@ -9,7 +9,7 @@ export const STEPS = [
     labelKey: 'decisions.processBuilder.proposalTemplateSectionLabel',
   },
   { id: 'reviews', labelKey: 'decisions.review.reviewsLabel' },
-  { id: 'participants', labelKey: 'Participants' },
+  { id: 'participants', labelKey: 'decisions.participantsLabel' },
   { id: 'summary', labelKey: 'decisions.processBuilder.summaryHeading' },
 ] as const;
 
@@ -19,7 +19,7 @@ export type StepId = (typeof STEPS)[number]['id'];
 export const SECTIONS_BY_STEP = {
   general: [
     { id: 'generalInformation', labelKey: 'General Information' },
-    { id: 'overview', labelKey: 'Overview' },
+    { id: 'overview', labelKey: 'decisions.overviewTab' },
     { id: 'phases', labelKey: 'decisions.processBuilder.phasesLabel' },
     {
       id: 'proposalCategories',
@@ -40,7 +40,7 @@ export const SECTIONS_BY_STEP = {
   ],
   participants: [
     { id: 'roles', labelKey: 'Roles & Permissions' },
-    { id: 'participants', labelKey: 'Participants' },
+    { id: 'participants', labelKey: 'decisions.participantsLabel' },
   ],
   summary: [
     { id: 'summary', labelKey: 'decisions.processBuilder.summaryHeading' },
@@ -96,7 +96,11 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     labelKey: 'General Information',
     parentStepId: 'general',
   },
-  { id: 'overview', labelKey: 'Overview', parentStepId: 'general' },
+  {
+    id: 'overview',
+    labelKey: 'decisions.overviewTab',
+    parentStepId: 'general',
+  },
   {
     id: 'phases',
     labelKey: 'decisions.processBuilder.phasesLabel',
@@ -135,7 +139,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'participants',
-    labelKey: 'Manage Participants',
+    labelKey: 'decisions.manageParticipantsTitle',
     parentStepId: 'participants',
   },
   {

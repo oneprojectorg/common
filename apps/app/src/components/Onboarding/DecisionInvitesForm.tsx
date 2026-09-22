@@ -64,7 +64,7 @@ export const DecisionInvitesForm = ({
     try {
       await declineInvite.mutateAsync({ inviteId });
     } catch (error) {
-      toast.error(t('Failed to decline invitation'));
+      toast.error(t('decisions.declineInviteError'));
     }
   };
 
@@ -87,7 +87,7 @@ export const DecisionInvitesForm = ({
       onComplete();
     } catch (error) {
       setIsLoading(false);
-      toast.error(t('Failed to accept invitations'));
+      toast.error(t('decisions.acceptInvitesError'));
     }
   };
 
@@ -145,7 +145,7 @@ export const DecisionInvitesForm = ({
               onClick={() => handleDecline(invites[0]!.id)}
               disabled={declineInvite.isPending}
             >
-              {t("I don't want to participate")}
+              {t('decisions.declineInviteAction')}
             </Button>
           )}
         </div>

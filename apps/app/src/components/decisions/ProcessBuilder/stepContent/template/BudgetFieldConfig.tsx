@@ -55,7 +55,7 @@ export function BudgetFieldConfig({
     React.SetStateAction<ProposalTemplateSchema>
   >;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const locale = useLocale();
   const showInTemplateId = useId();
   const requiredId = useId();
@@ -87,8 +87,8 @@ export function BudgetFieldConfig({
 
   const badgeLabel = showBudget
     ? budgetRequired
-      ? t('decisions.processBuilder.requiredLabel')
-      : t('decisions.processBuilder.optionalLabel')
+      ? t('processBuilder.requiredLabel')
+      : t('processBuilder.optionalLabel')
     : undefined;
 
   const handleShowBudgetChange = useCallback(
@@ -100,7 +100,7 @@ export function BudgetFieldConfig({
             ...prev.properties,
             budget: {
               type: 'object',
-              title: t('Budget'),
+              title: t('budgetLabel'),
               'x-format': 'money',
               properties: {
                 amount: { type: 'number' },
@@ -192,7 +192,7 @@ export function BudgetFieldConfig({
 
   return (
     <CollapsibleConfigCard
-      label={t('Funding amount')}
+      label={t('proposals.fundingAmountLabel')}
       badgeLabel={badgeLabel}
       isCollapsible
       locked
@@ -202,7 +202,7 @@ export function BudgetFieldConfig({
           <>
             <Field>
               <FieldLabel htmlFor="budget-currency">
-                {t('decisions.processBuilder.currencyLabel')}
+                {t('processBuilder.currencyLabel')}
               </FieldLabel>
               <Select
                 value={budgetCurrency}
@@ -227,9 +227,9 @@ export function BudgetFieldConfig({
             </Field>
             <NumberField
               id="budget-max"
-              label={t('decisions.processBuilder.maxAmountLabel')}
+              label={t('processBuilder.maxAmountLabel')}
               prefixText={budgetCurrencySymbol}
-              placeholder={t('decisions.processBuilder.setMaxAmountLabel')}
+              placeholder={t('processBuilder.setMaxAmountLabel')}
               value={budgetMaxAmount ?? null}
               onChange={handleBudgetMaxChange}
             />
@@ -240,15 +240,13 @@ export function BudgetFieldConfig({
           {showBudget ? (
             <Field orientation="horizontal" className="w-auto">
               <FieldLabel htmlFor={requiredId}>
-                {t('decisions.processBuilder.criterionRequiredQuestion')}
+                {t('processBuilder.criterionRequiredQuestion')}
               </FieldLabel>
               <Switch
                 id={requiredId}
                 checked={budgetRequired}
                 onCheckedChange={handleBudgetRequiredChange}
-                aria-label={t(
-                  'decisions.processBuilder.criterionRequiredQuestion',
-                )}
+                aria-label={t('processBuilder.criterionRequiredQuestion')}
               />
             </Field>
           ) : (
@@ -256,13 +254,13 @@ export function BudgetFieldConfig({
           )}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel htmlFor={showInTemplateId}>
-              {t('decisions.processBuilder.showInTemplateLabel')}
+              {t('processBuilder.showInTemplateLabel')}
             </FieldLabel>
             <Switch
               id={showInTemplateId}
               checked={showBudget}
               onCheckedChange={handleShowBudgetChange}
-              aria-label={t('decisions.processBuilder.showInTemplateLabel')}
+              aria-label={t('processBuilder.showInTemplateLabel')}
               data-testid="budget-show-in-template-toggle"
             />
           </Field>

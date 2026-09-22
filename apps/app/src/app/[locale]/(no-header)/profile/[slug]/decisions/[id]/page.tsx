@@ -62,7 +62,7 @@ export async function generateMetadata({
       getTranslations({ locale }),
       fetchLegacyInstance(id),
     ]);
-    return { title: instance?.name || t('Decision') };
+    return { title: instance?.name || t('decisions.decisionLabel') };
   } catch {
     return {};
   }

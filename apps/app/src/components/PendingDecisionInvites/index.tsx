@@ -47,7 +47,7 @@ const PendingDecisionInvitesSuspense = () => {
   return (
     <NotificationPanel>
       <NotificationPanelHeader
-        title={t('Decision Invitations')}
+        title={t('decisions.decisionInvitationsHeading')}
         count={invites.length}
       />
       <NotificationPanelList>
@@ -96,13 +96,13 @@ const PendingDecisionInvitesSuspense = () => {
                     acceptInvite
                       .mutateAsync({ inviteId: invite.id })
                       .then(() => {
-                        toast.success(t('Invitation accepted'));
+                        toast.success(t('decisions.acceptInviteSuccess'));
                         if (profile.slug) {
                           router.push(`/decisions/${profile.slug}`);
                         }
                       })
                       .catch(() => {
-                        toast.error(t('Failed to accept invitation'));
+                        toast.error(t('decisions.acceptInviteError'));
                       })
                   }
                   loading={isAccepting}

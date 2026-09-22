@@ -19,7 +19,7 @@ export function TranslateBanner({
   isTranslating: boolean;
   languageName: string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <div className="fixed start-1/2 bottom-6 z-50 -translate-x-1/2">
@@ -29,10 +29,10 @@ export function TranslateBanner({
         isTranslating={isTranslating}
         label={
           isTranslating
-            ? t('Translating...')
-            : t('Translate to {language}', { language: languageName })
+            ? t('translatingProgress')
+            : t('translateToAction', { language: languageName })
         }
-        tooltip={t('Translated with DeepL')}
+        tooltip={t('translationProviderNotice')}
       />
     </div>
   );

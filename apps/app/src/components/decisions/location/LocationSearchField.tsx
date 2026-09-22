@@ -101,7 +101,7 @@ export function LocationSearchField({
 
   return (
     <Combobox
-      aria-label={t('Search for a location')}
+      aria-label={t('decisions.proposals.locationSearchLabel')}
       items={items}
       // Server-side search already filters, so disable base-ui's local filter
       // and drive the option list purely off the debounced query result.
@@ -121,7 +121,7 @@ export function LocationSearchField({
           magnifying glass becomes a spinner while a query is in flight so the
           user knows the picker is still working before any results land. */}
       <ComboboxInput
-        placeholder={t('Address, cross streets, or landmark')}
+        placeholder={t('decisions.proposals.locationSearchPlaceholder')}
         showTrigger={false}
       >
         <InputGroupAddon align="inline-start">
@@ -135,7 +135,7 @@ export function LocationSearchField({
       <ComboboxContent>
         <ComboboxEmpty>
           {isSearching
-            ? t('Searching…')
+            ? t('decisions.proposals.searchingProgress')
             : query.length >= MIN_QUERY_LENGTH
               ? t('No results')
               : null}

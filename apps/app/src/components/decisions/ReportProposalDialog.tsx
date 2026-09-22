@@ -30,18 +30,20 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
 
   const reportMutation = trpc.moderation.flagItem.useMutation({
     onSuccess: () => {
-      toast.success(t('Proposal reported for moderation review'));
+      toast.success(t('decisions.proposals.reportSuccess'));
       setIsOpen(false);
     },
     onError: () => {
-      toast.error(t('Could not report this proposal. Please try again.'));
+      toast.error(t('decisions.proposals.reportError'));
     },
   });
 
   // Reflects a successful report this session — the trigger reads "Reported"
   // and disables so the reporter doesn't re-open the dialog.
   const reported = reportMutation.isSuccess;
-  const triggerLabel = reported ? t('Reported') : t('Report');
+  const triggerLabel = reported
+    ? t('decisions.proposals.reportedStatus')
+    : t('Report');
 
   return (
     <>
@@ -59,14 +61,14 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('Report this proposal')}</DialogTitle>
+            <DialogTitle>
+              {t('decisions.proposals.reportProposalTitle')}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="px-6 py-4">
             <p className="text-base">
-              {t(
-                "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.",
-              )}
+              {t('decisions.proposals.reportModerationNotice')}
             </p>
           </div>
 

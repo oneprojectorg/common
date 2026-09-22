@@ -209,7 +209,7 @@ export function CategoryReviewerCard({
                       reviewerProfileId: reviewer.reviewerProfileId,
                     });
                   }}
-                  aria-label={t('Remove {name}', {
+                  aria-label={t('decisions.removeNamed', {
                     name: reviewer.profile.name,
                   })}
                 >

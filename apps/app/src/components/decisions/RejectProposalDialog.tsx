@@ -90,11 +90,16 @@ export const RejectProposalDialog = ({
       {/* Wide enough for the four reasons to sit on one row, as in Figma. */}
       <DialogContent className="sm:max-w-144">
         <DialogHeader>
-          <DialogTitle>{t('Do not advance')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.proposals.doNotAdvanceAction')}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-          <LabeledFieldSet legend={t('Reason')} legendId={`${fieldId}-reason`}>
+          <LabeledFieldSet
+            legend={t('decisions.proposals.rejectReasonLabel')}
+            legendId={`${fieldId}-reason`}
+          >
             <RadioGroup
               // A <legend> does not name a nested role="radiogroup".
               aria-labelledby={`${fieldId}-reason`}
@@ -128,20 +133,18 @@ export const RejectProposalDialog = ({
 
           <Field>
             <FieldLabel htmlFor={`${fieldId}-note`}>
-              {t('Note to proposal author')}
+              {t('decisions.proposals.rejectNoteLabel')}
             </FieldLabel>
             <Textarea
               id={`${fieldId}-note`}
               value={note}
               maxLength={REJECTION_NOTE_MAX_LENGTH}
               onChange={(event) => setNote(event.target.value)}
-              placeholder={t(
-                'Write an optional note to the proposal author here',
-              )}
+              placeholder={t('decisions.proposals.rejectNotePlaceholder')}
               className="min-h-24"
             />
             <FieldDescription>
-              {t('The author will receive this note as soon as you reject.')}
+              {t('decisions.proposals.rejectNoteHint')}
             </FieldDescription>
           </Field>
         </div>
@@ -161,7 +164,9 @@ export const RejectProposalDialog = ({
             onClick={handleConfirm}
             disabled={!reason || isPending}
           >
-            {isPending ? t('Rejecting...') : t('Reject & send note')}
+            {isPending
+              ? t('decisions.proposals.rejectingProgress')
+              : t('decisions.proposals.rejectAndNotifyAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

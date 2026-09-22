@@ -41,7 +41,7 @@ export const SelectionConfirmShell = ({
   onConfirm,
   children,
 }: SelectionConfirmShellProps) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -62,7 +62,7 @@ export const SelectionConfirmShell = ({
             onClick={onConfirm}
             disabled={isSubmitting}
           >
-            {isSubmitting ? t('Submitting...') : confirmLabel}
+            {isSubmitting ? t('submittingProgress') : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -176,7 +176,9 @@ const ReviewersTable = ({
         <TableRow>
           <TableHead>{t('admin.reviewerLabel')}</TableHead>
           <TableHead>{t('decisions.review.progressLabel')}</TableHead>
-          <TableHead className="text-end">{t('Drafts')}</TableHead>
+          <TableHead className="text-end">
+            {t('decisions.draftsFilter')}
+          </TableHead>
           <TableHead>{t('decisions.review.lastSubmissionLabel')}</TableHead>
         </TableRow>
       </TableHeader>
@@ -278,7 +280,8 @@ const AssignmentsList = ({
             className="flex items-center justify-between gap-3 text-sm"
           >
             <span className="truncate">
-              {assignment.proposalTitle ?? t('Untitled Proposal')}
+              {assignment.proposalTitle ??
+                t('decisions.proposals.untitledProposal')}
             </span>
             <Badge variant={statusBadgeVariant(assignment.reviewState)}>
               {STATUS_LABEL[state] ?? state}

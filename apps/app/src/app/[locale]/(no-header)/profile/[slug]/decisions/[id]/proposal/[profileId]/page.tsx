@@ -35,7 +35,8 @@ export async function generateMetadata({
       fetchProposal(profileId),
     ]);
     return {
-      title: proposal.profile?.name || t('Untitled Proposal'),
+      title:
+        proposal.profile?.name || t('decisions.proposals.untitledProposal'),
     };
   } catch {
     return {};

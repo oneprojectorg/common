@@ -184,7 +184,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
         instance.name ||
         instance.instanceData?.templateName ||
         instance.process?.name ||
-        t('Untitled')
+        t('decisions.untitledLabel')
       }
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}
@@ -209,7 +209,7 @@ function DecisionHeaderFromProps(
         instance.name ||
         instance.instanceData?.templateName ||
         instance.process?.name ||
-        t('Untitled')
+        t('decisions.untitledLabel')
       }
       phases={toProcessPhases(instance.instanceData)}
       currentStateId={instance.currentStateId || ''}

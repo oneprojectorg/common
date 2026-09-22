@@ -19,7 +19,7 @@ interface DecisionViewToggleProps {
  * so the toggle needs no per-page prop telling it which tab is active.
  */
 export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const segment = useSelectedLayoutSegment();
   const activeView = segment === 'current' ? 'current' : 'overview';
 
@@ -35,7 +35,7 @@ export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
           className="hover:no-underline"
           render={<Link href={`/decisions/${decisionSlug}`} />}
         >
-          {t('Overview')}
+          {t('overviewTab')}
         </TabsTrigger>
         <TabsTrigger
           value="current"
@@ -43,7 +43,7 @@ export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
           className="hover:no-underline"
           render={<Link href={`/decisions/${decisionSlug}/current`} />}
         >
-          {t('Current Phase')}
+          {t('currentPhaseLabel')}
         </TabsTrigger>
       </TabsList>
     </Tabs>

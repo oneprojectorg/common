@@ -16,7 +16,7 @@ export const DecisionResultsTabs = ({
   /** Whether to surface the "My ballot" tab — only when a voting phase took place. */
   showBallotTab?: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   return (
     <Tabs className={cn('gap-6', className)} defaultValue="funded">
@@ -26,14 +26,18 @@ export const DecisionResultsTabs = ({
         <TabsList
           variant="line"
           className="flex gap-6"
-          aria-label={t('Results sections')}
+          aria-label={t('resultsSectionsLabel')}
         >
           <TabsTrigger value="funded">
-            {t('decisions.review.selectedProposalsHeading')}
+            {t('review.selectedProposalsHeading')}
           </TabsTrigger>
-          <TabsTrigger value="all-proposals">{t('All proposals')}</TabsTrigger>
+          <TabsTrigger value="all-proposals">
+            {t('proposals.allProposalsOption')}
+          </TabsTrigger>
           {showBallotTab ? (
-            <TabsTrigger value="ballot">{t('My ballot')}</TabsTrigger>
+            <TabsTrigger value="ballot">
+              {t('proposals.myBallotOption')}
+            </TabsTrigger>
           ) : null}
         </TabsList>
       </div>

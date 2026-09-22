@@ -75,7 +75,9 @@ export function StandardDecisionPage({
     isLastPhase(currentPhaseId, phases);
 
   const heroTitle =
-    translation?.headline ?? currentPhase?.headline ?? t('Share your ideas.');
+    translation?.headline ??
+    currentPhase?.headline ??
+    t('decisions.shareIdeasHeading');
   const heroDescription =
     translation?.phaseDescription ?? currentPhase?.description;
   const actionBarDescription =
@@ -131,10 +133,10 @@ export function StandardDecisionPage({
                   <LuClock className="size-6" />
                 </EmptyMedia>
                 <EmptyTitle className="font-light">
-                  {t('Results pending')}
+                  {t('decisions.resultsPendingHeading')}
                 </EmptyTitle>
                 <EmptyDescription className="text-base text-foreground">
-                  {t("Results for this process haven't been processed yet.")}
+                  {t('decisions.resultsNotProcessedNotice')}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -148,10 +150,10 @@ export function StandardDecisionPage({
                         <LuTriangleAlert className="size-6" />
                       </EmptyMedia>
                       <EmptyTitle className="font-light">
-                        {t("Couldn't load manual selection")}
+                        {t('decisions.manualSelectionLoadError')}
                       </EmptyTitle>
                       <EmptyDescription className="text-base text-foreground">
-                        {t('Refresh the page to try again.')}
+                        {t('decisions.refreshPageHint')}
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -176,10 +178,10 @@ export function StandardDecisionPage({
                         <LuTriangleAlert className="size-6" />
                       </EmptyMedia>
                       <EmptyTitle className="font-light">
-                        {t("Couldn't load proposals")}
+                        {t('decisions.proposalsLoadError')}
                       </EmptyTitle>
                       <EmptyDescription className="text-base text-foreground">
-                        {t('Refresh the page to try again.')}
+                        {t('decisions.refreshPageHint')}
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>

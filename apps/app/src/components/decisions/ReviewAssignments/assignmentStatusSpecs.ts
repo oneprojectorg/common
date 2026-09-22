@@ -27,7 +27,7 @@ export const assignmentStatusSpecs: Record<
     label: 'decisions.review.statusNeedsReview',
     intent: 'warning',
   },
-  draft: { label: 'Draft', intent: 'warning' },
+  draft: { label: 'decisions.draftStatus', intent: 'warning' },
   submitted: { label: 'decisions.review.statusSubmitted', intent: 'success' },
 };
 

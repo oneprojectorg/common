@@ -49,7 +49,7 @@ export const CustomFormFieldEditor = ({
     checkbox: t('Checkbox'),
     dropdown: t('Dropdown'),
     radio: t('Radio buttons'),
-    'multi-select': t('Select all that apply'),
+    'multi-select': t('decisions.proposals.selectAllThatApplyHint'),
   };
 
   return (

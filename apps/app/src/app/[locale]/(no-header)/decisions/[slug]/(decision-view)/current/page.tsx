@@ -34,7 +34,7 @@ export async function generateMetadata({
     const currentPhase = instanceData?.phases?.find(
       (phase) => phase.phaseId === currentStateId,
     );
-    const label = currentPhase?.name || t('Current Phase');
+    const label = currentPhase?.name || t('decisions.currentPhaseLabel');
     const name = decisionProfile.name;
 
     // openGraph is redefined here (without images) so the root layout's static

@@ -102,7 +102,10 @@ export async function ReviewLayout({
               className="mx-auto max-w-6xl"
               defaultMobileTabId="review"
             >
-              <SplitPane.Pane id="proposal" label={t('Proposal')}>
+              <SplitPane.Pane
+                id="proposal"
+                label={t('decisions.proposals.proposalLabel')}
+              >
                 <ReviewProposalPane
                   decisionRoot={`/decisions/${decisionSlug}`}
                 />

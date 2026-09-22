@@ -25,7 +25,7 @@ export function FinalPhaseManualSelectionPage({
   instanceId,
   decisionSlug,
 }: FinalPhaseManualSelectionPageProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   return (
     <div className="min-h-full pt-8">
@@ -34,10 +34,8 @@ export function FinalPhaseManualSelectionPage({
           in-hero action. */}
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
         <DecisionHero
-          title={t('Confirm the winning proposals')}
-          description={t(
-            "We've selected the suggested winning proposals based on voting rules and total budget.",
-          )}
+          title={t('confirmWinnersHeading')}
+          description={t('suggestedWinnersHint')}
           variant="standard"
         />
       </div>
@@ -53,11 +51,9 @@ export function FinalPhaseManualSelectionPage({
                       <EmptyMedia variant="icon">
                         <LuTriangleAlert className="size-6" />
                       </EmptyMedia>
-                      <EmptyTitle>
-                        {t("Couldn't load manual selection")}
-                      </EmptyTitle>
+                      <EmptyTitle>{t('manualSelectionLoadError')}</EmptyTitle>
                       <EmptyDescription>
-                        {t('Refresh the page to try again.')}
+                        {t('refreshPageHint')}
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>

@@ -83,7 +83,7 @@ export function ProposalEditorHeader({
         />
 
         <Header4 className="hidden min-w-0 truncate sm:block">
-          {title ? title : t('Untitled Proposal')}
+          {title ? title : t('decisions.proposals.untitledProposal')}
         </Header4>
 
         {statusSlot}
@@ -104,7 +104,9 @@ export function ProposalEditorHeader({
               className="max-sm:size-11"
             >
               <LuUserPlus className="size-4" />
-              <span className="hidden sm:inline">{t('Share')}</span>
+              <span className="hidden sm:inline">
+                {t('decisions.proposals.shareAction')}
+              </span>
             </Button>
           )}
           {!readOnlyMode && canInteract && reviewNotes?.hasReviewNotes ? (
@@ -120,7 +122,9 @@ export function ProposalEditorHeader({
               loading={isSubmitting}
             >
               <LuCheck className="size-4" />
-              {isEditMode && !isDraft ? t('Update') : t('Submit')}
+              {isEditMode && !isDraft
+                ? t('Update')
+                : t('decisions.proposals.submitAction')}
             </Button>
           )}
           <LocaleChooser />
