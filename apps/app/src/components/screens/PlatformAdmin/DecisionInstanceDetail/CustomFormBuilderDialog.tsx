@@ -16,7 +16,6 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
-import { Input } from '@op/sense/Input';
 import {
   Select,
   SelectContent,
@@ -25,30 +24,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
-import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { useId, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
-import {
-  type TranslateFn,
-  type TranslationKey,
-  useTranslations,
-} from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
+import { CountedInputField, CountedTextareaField } from './CountedField';
 import { CustomFormFieldEditor } from './CustomFormFieldEditor';
-import type {
-  BuilderField,
-  BuilderForm,
-  DraftProblem,
-  DraftProblemCode,
-} from './formDefinition';
+import type { BuilderField, BuilderForm, DraftProblem } from './formDefinition';
 import {
+  FORM_CHARACTER_LIMITS,
   createEmptyField,
   deriveFieldKey,
   initialDraftFor,
   validateDraft,
 } from './formDefinition';
+import { ProblemMessages, getProblemsWithCode } from './formProblems';
 
 interface CustomFormBuilderDialogProps {
   isOpen: boolean;
@@ -99,29 +91,26 @@ const BuilderContent = ({
   const initial = initialDraftFor({ form, phases, occupiedPhaseIds });
 
   const [draft, setDraft] = useState<BuilderForm>(initial.form);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [problems, setProblems] = useState<DraftProblem[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const { save, isSaving } = useSaveCustomForm({
     form,
     profileId,
     onSaved: () => onOpenChange(false),
-    onFailed: setErrors,
+    onFailed: setSaveError,
   });
 
   const handleSave = () => {
     const result = validateDraft(draft);
+    setSaveError(null);
 
     if (!result.ok) {
-      setErrors(
-        result.problems
-          .map((problem) => describeProblem(problem, t))
-          // A schema issue with no detail would render an empty line.
-          .filter(Boolean),
-      );
+      setProblems(result.problems);
       return;
     }
 
-    setErrors([]);
+    setProblems([]);
     save({ name: draft.name.trim(), definition: result.definition });
   };
 
@@ -148,12 +137,13 @@ const BuilderContent = ({
       <div className="flex flex-col gap-6 px-6 py-4">
         <FormDetailsFields
           draft={draft}
+          problems={problems}
           phases={phases}
           occupiedPhaseIds={occupiedPhaseIds}
           onChange={setDraft}
         />
-        <FormFieldList draft={draft} onChange={setDraft} />
-        <ValidationErrors messages={errors} />
+        <FormFieldList draft={draft} problems={problems} onChange={setDraft} />
+        <SaveErrors problems={problems} saveError={saveError} />
       </div>
 
       <DialogFooter>
@@ -181,7 +171,7 @@ const useSaveCustomForm = ({
   form?: CustomFormWithPhaseDTO;
   profileId: string;
   onSaved: () => void;
-  onFailed: (messages: string[]) => void;
+  onFailed: (message: string) => void;
 }) => {
   const t = useTranslations();
   const createForm = trpc.customForm.create.useMutation();
@@ -194,7 +184,7 @@ const useSaveCustomForm = ({
       );
       onSaved();
     },
-    onError: (error: { message: string }) => onFailed([error.message]),
+    onError: (error: { message: string }) => onFailed(error.message),
   };
 
   const save = ({
@@ -217,11 +207,13 @@ const useSaveCustomForm = ({
 
 const FormDetailsFields = ({
   draft,
+  problems,
   phases,
   occupiedPhaseIds,
   onChange,
 }: {
   draft: BuilderForm;
+  problems: DraftProblem[];
   phases: AdminDecisionPhase[];
   occupiedPhaseIds: string[];
   onChange: (draft: BuilderForm) => void;
@@ -231,88 +223,117 @@ const FormDetailsFields = ({
 
   return (
     <>
-      <Field>
-        <FieldLabel htmlFor={`${fieldId}-name`}>
-          {t('admin.formInternalNameLabel')}
-        </FieldLabel>
-        <Input
-          id={`${fieldId}-name`}
-          value={draft.name}
-          onChange={(event) => onChange({ ...draft, name: event.target.value })}
-        />
-        <FieldDescription>{t('admin.formInternalNameHint')}</FieldDescription>
-      </Field>
+      <CountedInputField
+        id={`${fieldId}-name`}
+        label={t('admin.formInternalNameLabel')}
+        description={t('admin.formInternalNameHint')}
+        value={draft.name}
+        max={FORM_CHARACTER_LIMITS.name}
+        problems={getProblemsWithCode(
+          problems,
+          'missing-name',
+          'name-too-long',
+        )}
+        onChange={(name) => onChange({ ...draft, name })}
+      />
 
-      <Field>
-        <FieldLabel htmlFor={`${fieldId}-phase`}>
-          {t('admin.formPhaseLabel')}
-        </FieldLabel>
-        <Select
-          value={draft.phaseId || null}
-          // value → label map, or base-ui's `SelectValue` shows the raw phase
-          // id in the trigger instead of the phase's name.
-          items={Object.fromEntries(
-            phases.map((phase) => [phase.phaseId, phase.name ?? phase.phaseId]),
-          )}
-          onValueChange={(next) =>
-            onChange({ ...draft, phaseId: next == null ? '' : String(next) })
-          }
-        >
-          <SelectTrigger id={`${fieldId}-phase`} className="w-full">
-            <SelectValue placeholder={t('admin.formPhasePlaceholder')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {phases.map((phase) => (
-                <SelectItem
-                  key={phase.phaseId}
-                  value={phase.phaseId}
-                  disabled={occupiedPhaseIds.includes(phase.phaseId)}
-                >
-                  {phase.name ?? phase.phaseId}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <FieldDescription>{t('admin.formPhaseHint')}</FieldDescription>
-      </Field>
+      <PhaseField
+        id={`${fieldId}-phase`}
+        phaseId={draft.phaseId}
+        phases={phases}
+        occupiedPhaseIds={occupiedPhaseIds}
+        problems={getProblemsWithCode(problems, 'missing-phase')}
+        onChange={(phaseId) => onChange({ ...draft, phaseId })}
+      />
 
-      <Field>
-        <FieldLabel htmlFor={`${fieldId}-title`}>
-          {t('admin.formHeadingLabel')}
-        </FieldLabel>
-        <Input
-          id={`${fieldId}-title`}
-          value={draft.title}
-          onChange={(event) =>
-            onChange({ ...draft, title: event.target.value })
-          }
-        />
-      </Field>
+      <CountedInputField
+        id={`${fieldId}-title`}
+        label={t('admin.formHeadingLabel')}
+        value={draft.title}
+        max={FORM_CHARACTER_LIMITS.title}
+        problems={getProblemsWithCode(
+          problems,
+          'missing-title',
+          'title-too-long',
+        )}
+        onChange={(title) => onChange({ ...draft, title })}
+      />
 
-      <Field>
-        <FieldLabel htmlFor={`${fieldId}-description`}>
-          {t('admin.formIntroLabel')}
-        </FieldLabel>
-        <Textarea
-          id={`${fieldId}-description`}
-          rows={2}
-          value={draft.description}
-          onChange={(event) =>
-            onChange({ ...draft, description: event.target.value })
-          }
-        />
-      </Field>
+      <CountedTextareaField
+        id={`${fieldId}-description`}
+        label={t('admin.formIntroLabel')}
+        value={draft.description}
+        max={FORM_CHARACTER_LIMITS.description}
+        problems={getProblemsWithCode(problems, 'description-too-long')}
+        onChange={(description) => onChange({ ...draft, description })}
+      />
     </>
+  );
+};
+
+const PhaseField = ({
+  id,
+  phaseId,
+  phases,
+  occupiedPhaseIds,
+  problems,
+  onChange,
+}: {
+  id: string;
+  phaseId: string;
+  phases: AdminDecisionPhase[];
+  occupiedPhaseIds: string[];
+  problems: DraftProblem[];
+  onChange: (phaseId: string) => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>{t('admin.formPhaseLabel')}</FieldLabel>
+      <Select
+        value={phaseId || null}
+        // value → label map, or base-ui's `SelectValue` shows the raw phase
+        // id in the trigger instead of the phase's name.
+        items={Object.fromEntries(
+          phases.map((phase) => [phase.phaseId, phase.name ?? phase.phaseId]),
+        )}
+        onValueChange={(next) => onChange(next == null ? '' : String(next))}
+      >
+        <SelectTrigger
+          id={id}
+          className="w-full"
+          aria-invalid={problems.length > 0}
+        >
+          <SelectValue placeholder={t('admin.formPhasePlaceholder')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {phases.map((phase) => (
+              <SelectItem
+                key={phase.phaseId}
+                value={phase.phaseId}
+                disabled={occupiedPhaseIds.includes(phase.phaseId)}
+              >
+                {phase.name ?? phase.phaseId}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <FieldDescription>{t('admin.formPhaseHint')}</FieldDescription>
+      <ProblemMessages problems={problems} />
+    </Field>
   );
 };
 
 const FormFieldList = ({
   draft,
+  problems,
   onChange,
 }: {
   draft: BuilderForm;
+  problems: DraftProblem[];
   onChange: (draft: BuilderForm) => void;
 }) => {
   const t = useTranslations();
@@ -325,6 +346,9 @@ const FormFieldList = ({
           field={field}
           index={index}
           total={draft.fields.length}
+          problems={problems.filter(
+            (problem) => problem.fieldLocalId === field.localId,
+          )}
           onChange={(next) =>
             onChange({
               ...draft,
@@ -360,11 +384,30 @@ const FormFieldList = ({
         <LuPlus data-icon="inline-start" />
         {t('decisions.processBuilder.addFieldAction')}
       </Button>
+
+      <ProblemMessages
+        problems={getProblemsWithCode(problems, 'no-fields', 'too-many-fields')}
+      />
     </>
   );
 };
 
-const ValidationErrors = ({ messages }: { messages: string[] }) => {
+/**
+ * The problems no control owns: the `schema` backstop, and whatever the server
+ * rejected the save with.
+ */
+const SaveErrors = ({
+  problems,
+  saveError,
+}: {
+  problems: DraftProblem[];
+  saveError: string | null;
+}) => {
+  const messages = [
+    ...getProblemsWithCode(problems, 'schema').map((problem) => problem.detail),
+    saveError,
+  ].filter((message): message is string => Boolean(message));
+
   if (messages.length === 0) {
     return null;
   }
@@ -409,28 +452,6 @@ const UnsupportedFormNotice = ({
     </>
   );
 };
-
-/** Keyed, not switched, so a new code is a compile error here. `schema` is
- *  absent on purpose — it carries its own raw detail. */
-const PROBLEM_MESSAGES: Record<
-  Exclude<DraftProblemCode, 'schema'>,
-  TranslationKey
-> = {
-  'missing-name': 'admin.formInternalNameRequiredError',
-  'missing-phase': 'admin.formPhaseRequiredError',
-  'missing-title': 'admin.formHeadingRequiredError',
-  'no-fields': 'admin.formFieldsRequiredError',
-  'field-missing-question': 'admin.fieldQuestionRequiredError',
-  'field-missing-options': 'admin.fieldOptionsRequiredError',
-};
-
-const describeProblem = (problem: DraftProblem, t: TranslateFn): string =>
-  problem.code === 'schema'
-    ? (problem.detail ?? '')
-    : t(PROBLEM_MESSAGES[problem.code], {
-        // Only the two field messages read it; the other codes carry no position.
-        number: problem.position ?? 0,
-      });
 
 /** Re-derives the key from the label while it is still free to change. */
 const withFieldAt = ({

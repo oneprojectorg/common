@@ -1,4 +1,5 @@
 import {
+  CUSTOM_FORM_MAX_FIELDS,
   customFormDefinitionInputSchema,
   schemaValidator,
 } from '@op/common/client';
@@ -6,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { BuilderField, BuilderForm } from './formDefinition';
 import {
+  FORM_CHARACTER_LIMITS,
   buildDefinition,
   deriveFieldKey,
   initialDraftFor,
@@ -13,6 +15,8 @@ import {
   resolvePhaseBadge,
   validateDraft,
 } from './formDefinition';
+
+const overLimit = (max: number) => 'a'.repeat(max + 1);
 
 const field = (overrides: Partial<BuilderField> = {}): BuilderField => {
   const base: BuilderField = {
@@ -443,7 +447,7 @@ describe('validateDraft', () => {
     expect(problemCodes(form([]))).toContain('no-fields');
   });
 
-  it('reports a field with no question, by its position', () => {
+  it('reports a field with no question, by the field it belongs to', () => {
     const result = validateDraft(
       form([
         field({ key: 'first' }),
@@ -453,7 +457,7 @@ describe('validateDraft', () => {
 
     expect(result.ok).toBe(false);
     expect(result.ok === false && result.problems).toEqual([
-      { code: 'field-missing-question', position: 2 },
+      { code: 'field-missing-question', fieldLocalId: 'b' },
     ]);
   });
 
@@ -463,7 +467,7 @@ describe('validateDraft', () => {
     );
 
     expect(result.ok === false && result.problems).toEqual([
-      { code: 'field-missing-options', position: 1 },
+      { code: 'field-missing-options', fieldLocalId: 'pick' },
     ]);
   });
 
@@ -473,6 +477,114 @@ describe('validateDraft', () => {
 
   it('prefers its own codes over a raw schema message', () => {
     expect(problemCodes(form([]))).not.toContain('schema');
+  });
+
+  // A stored form authored before these caps opens with values past them, so
+  // the length checks are reachable even though `maxLength` bounds typing.
+  it('reports an internal name past the limit, naming the cap', () => {
+    const result = validateDraft({
+      ...form([field({ key: 'answer' })]),
+      name: overLimit(FORM_CHARACTER_LIMITS.name),
+    });
+
+    expect(result.ok === false && result.problems).toEqual([
+      { code: 'name-too-long', max: FORM_CHARACTER_LIMITS.name },
+    ]);
+  });
+
+  it('reports a heading past the limit', () => {
+    const result = validateDraft({
+      ...form([field({ key: 'answer' })]),
+      title: overLimit(FORM_CHARACTER_LIMITS.title),
+    });
+
+    expect(result.ok === false && result.problems).toEqual([
+      { code: 'title-too-long', max: FORM_CHARACTER_LIMITS.title },
+    ]);
+  });
+
+  it('reports intro text past the limit', () => {
+    const result = validateDraft({
+      ...form([field({ key: 'answer' })]),
+      description: overLimit(FORM_CHARACTER_LIMITS.description),
+    });
+
+    expect(result.ok === false && result.problems).toEqual([
+      { code: 'description-too-long', max: FORM_CHARACTER_LIMITS.description },
+    ]);
+  });
+
+  it('reports a question past the limit, by the field it belongs to', () => {
+    const result = validateDraft(
+      form([
+        field({ key: 'first' }),
+        field({
+          key: 'second',
+          localId: 'b',
+          title: overLimit(FORM_CHARACTER_LIMITS.fieldTitle),
+        }),
+      ]),
+    );
+
+    expect(result.ok === false && result.problems).toEqual([
+      {
+        code: 'field-question-too-long',
+        fieldLocalId: 'b',
+        max: FORM_CHARACTER_LIMITS.fieldTitle,
+      },
+    ]);
+  });
+
+  it('reports helper text past the limit, by the field it belongs to', () => {
+    const result = validateDraft(
+      form([
+        field({
+          key: 'answer',
+          description: overLimit(FORM_CHARACTER_LIMITS.fieldDescription),
+        }),
+      ]),
+    );
+
+    expect(result.ok === false && result.problems).toEqual([
+      {
+        code: 'field-description-too-long',
+        fieldLocalId: 'answer',
+        max: FORM_CHARACTER_LIMITS.fieldDescription,
+      },
+    ]);
+  });
+
+  it('measures a value as it would be stored, not as it was typed', () => {
+    // `buildDefinition` trims, so padding that a trim removes is not overflow.
+    const padded = `  ${'a'.repeat(FORM_CHARACTER_LIMITS.title)}  `;
+
+    expect(
+      problemCodes({ ...form([field({ key: 'answer' })]), title: padded }),
+    ).toEqual([]);
+  });
+
+  it('names the field by its editor id, which reordering does not change', () => {
+    const first = field({ key: 'first', localId: 'a' });
+    const blank = field({ key: 'second', localId: 'b', title: '   ' });
+
+    // The author moves the offending field while the message is on screen;
+    // a positional reference would now point at the other one.
+    expect(problemCodes(form([first, blank]))).toEqual(
+      problemCodes(form([blank, first])),
+    );
+    expect(validateDraft(form([blank, first]))).toEqual({
+      ok: false,
+      problems: [{ code: 'field-missing-question', fieldLocalId: 'b' }],
+    });
+  });
+
+  it('reports more fields than a form can hold, naming the cap', () => {
+    const tooMany = Array.from(
+      { length: CUSTOM_FORM_MAX_FIELDS + 1 },
+      (_, index) => field({ key: `answer${index}`, localId: `local${index}` }),
+    );
+
+    expect(problemCodes(form(tooMany))).toEqual(['too-many-fields']);
   });
 });
 
