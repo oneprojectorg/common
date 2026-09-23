@@ -86,6 +86,20 @@ export function PostHogProvider({
     // nothing to ask the visitor to consent to. Leaving the status unknown
     // keeps the toast off a local checkout that has no `.env.local`.
     if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      // Where we are not required to ask, `opt_out_capturing_by_default: false`
+      // already treats the visitor as opted in — cookies and all. posthog only
+      // writes that down once someone answers, though, and its surveys
+      // extension refuses to load for anyone still pending, so a survey could
+      // never reach the people we never prompt. Recording the answer we already
+      // assume grants posthog nothing it isn't doing; `captureEventName: false`
+      // keeps a consent nobody gave out of the event stream.
+      if (
+        !consentRequired &&
+        posthog.get_explicit_consent_status() === 'pending'
+      ) {
+        posthog.opt_in_capturing({ captureEventName: false });
+      }
+
       setStatus(posthog.get_explicit_consent_status());
     }
     // Init runs once. `consentRequired` is decided by the server render of the
