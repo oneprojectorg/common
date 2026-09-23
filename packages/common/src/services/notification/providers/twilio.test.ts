@@ -1,5 +1,4 @@
 import { createHmac } from 'node:crypto';
-
 import { describe, expect, it, vi } from 'vitest';
 
 import { CommonError } from '../../../utils/error';
