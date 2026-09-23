@@ -67,13 +67,24 @@ describe('linkifyText', () => {
 });
 
 describe('extractUrls', () => {
-  // The post feed renders a link preview per extracted URL beside the anchors
-  // `linkifyText` builds, so the two have to agree on where the URL ends.
-  it('agrees with linkifyText on where a URL ends', () => {
+  // `PostFeed` fetches a link preview per extracted URL, so this has to end a
+  // URL where `linkifyText` does or the preview requests a 404.
+  it('ends a URL where linkifyText ends it', () => {
     expect(extractUrls('Read https://example.com/guide.')).toEqual([
       'https://example.com/guide',
     ]);
   });
+
+  // Spelt out rather than read off the implementation's own set, so removing a
+  // character from that set fails here.
+  it.each([...'.,;:!?\'"', '،', '؛', '؟', '।', '॥', '…', '’', '”', '»'])(
+    'drops a trailing %s',
+    (punctuation) => {
+      expect(extractUrls(`See https://example.com/a${punctuation}`)).toEqual([
+        'https://example.com/a',
+      ]);
+    },
+  );
 });
 
 describe('linkifyOptionalText', () => {

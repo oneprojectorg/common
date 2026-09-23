@@ -238,7 +238,7 @@ function renderField(
   // -- Budget (system) and money fields ---------------------------------------
 
   // A legacy template's budget carries no `x-format`, so it is matched by key
-  // as well as by format. Only the draft value the two start from differs.
+  // as well as by format.
   if (key === 'budget' || format === 'money') {
     if (isReadonlyMode) {
       return (
