@@ -1,0 +1,30 @@
+{
+  "name": "zoom-bot",
+  "version": "1.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3400",
+    "format:check": "oxfmt --check",
+    "setup:agent": "tsx scripts/setup.ts",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.127.0",
+    "@op/logging": "workspace:*",
+    "dotenv": "^16.4.7",
+    "next": "catalog:",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
