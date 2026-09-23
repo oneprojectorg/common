@@ -7,6 +7,7 @@ import type { SmsProvider } from '../types';
 import {
   type TwilioRestClient,
   createTwilioProvider,
+  parseTwilioInboundMessage,
   parseTwilioStatusCallback,
   verifyTwilioWebhookSignature,
 } from './twilio';
@@ -273,6 +274,30 @@ describe('parseTwilioStatusCallback', () => {
       messageSid: '',
       status: 'unknown',
       errorCode: undefined,
+    });
+  });
+});
+
+describe('parseTwilioInboundMessage', () => {
+  it('extracts the sender, body, and message sid', () => {
+    expect(
+      parseTwilioInboundMessage({
+        From: '+15005550006',
+        Body: 'YES',
+        MessageSid: 'SM456',
+      }),
+    ).toEqual({
+      from: '+15005550006',
+      body: 'YES',
+      messageSid: 'SM456',
+    });
+  });
+
+  it('falls back to empty strings rather than throwing on a malformed message', () => {
+    expect(parseTwilioInboundMessage({})).toEqual({
+      from: '',
+      body: '',
+      messageSid: '',
     });
   });
 });
