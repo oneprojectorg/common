@@ -62,7 +62,6 @@ import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import { getProposalDetectionText } from './translationDetectionText';
-import { useProposalFilterItems } from './useProposalFilterItems';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -315,13 +314,20 @@ export const ProposalsList = (props: ProposalsListProps) => {
     filterParam ??
     initialFilter ??
     (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-  // "My proposals"/"My ballot" need a profile; for anonymous/stale-link visitors
-  // fall back to ALL so the label can't claim a filter the query didn't apply.
-  const requiresProfile =
-    requestedFilter === ProposalFilter.MY_PROPOSALS ||
-    requestedFilter === ProposalFilter.MY_BALLOT;
-  const proposalFilter =
-    requiresProfile && !currentProfileId ? ProposalFilter.ALL : requestedFilter;
+  // "My proposals"/"My ballot" need a profile, and "My ballot" needs a ballot;
+  // for anonymous or stale-link visitors fall back to ALL so the label can't
+  // claim a filter the query didn't apply. The ballot half matters because
+  // neither control offers that filter until `hasVoted` — a shared
+  // `?filter=my-ballot` opened by someone who hasn't voted otherwise selects a
+  // value with no control to show it, leaving the tab bar with nothing active
+  // over a list filtered by an invisible criterion.
+  const isUnavailableFilter =
+    (requestedFilter === ProposalFilter.MY_PROPOSALS && !currentProfileId) ||
+    (requestedFilter === ProposalFilter.MY_BALLOT &&
+      (!currentProfileId || !hasVoted));
+  const proposalFilter = isUnavailableFilter
+    ? ProposalFilter.ALL
+    : requestedFilter;
 
   // Deferred so a filter change is non-urgent: the suspense boundary wraps all
   // of ProposalsList, so an urgent update would swap the bar (and whatever has
@@ -645,8 +651,6 @@ const ProposalsListContent = ({
   // The filter bar's whole state in one object: the URL-backed values and
   // setters from above, plus the pieces only resolvable here (the category list,
   // ballot status, the caller's profile).
-  const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
-
   const controls: ProposalControls = {
     search,
     setSearch,
@@ -846,7 +850,8 @@ const ProposalsListContent = ({
     >
       {showTabs ? (
         <ProposalFilterTabs
-          items={filterItems}
+          hasVoted={hasVoted}
+          currentProfileId={currentProfileId}
           value={proposalFilter}
           onValueChange={setProposalFilter}
         >

@@ -1,4 +1,6 @@
-import { ProposalStatus } from '@op/db/schema';
+import { eq } from '@op/db/client';
+import { ProposalStatus, users } from '@op/db/schema';
+import { db } from '@op/db/test';
 import {
   createDecisionInstance,
   createDecisionProcess,
@@ -12,14 +14,30 @@ const OTHER_PROPOSAL_TITLE = 'Their Downtown Mural';
 
 /**
  * One proposal submitted by the signed-in user's own profile and one submitted
- * by the organization, so "My proposals" has something to exclude. The signup
- * trigger points `users.current_profile_id` at the individual profile, which is
- * the id the list filters on.
+ * by the organization, so "My proposals" has something to exclude.
+ *
+ * The owning profile is read back from `users.current_profile_id` rather than
+ * assumed to be `adminUser.profileId`: that column is what the app resolves
+ * `currentProfile` from, and it is what the list filters on. They match today
+ * because the signup trigger writes both, but a spec that switches profiles
+ * would otherwise invert this test silently instead of failing.
  */
 async function createListingWithOneOwnProposal(org: {
   organizationProfile: { id: string };
   adminUser: { authUserId: string; email: string; profileId: string };
 }) {
+  const [userRecord] = await db
+    .select({ currentProfileId: users.currentProfileId })
+    .from(users)
+    .where(eq(users.authUserId, org.adminUser.authUserId));
+
+  const myProfileId = userRecord?.currentProfileId;
+  if (!myProfileId) {
+    throw new Error(
+      'Expected the test user to have a current profile — the list filters "My proposals" on it',
+    );
+  }
+
   const process = await createDecisionProcess({
     createdByProfileId: org.organizationProfile.id,
     name: `Proposal Filter Tabs ${Date.now()}`,
@@ -35,7 +53,7 @@ async function createListingWithOneOwnProposal(org: {
 
   await createProposal({
     processInstanceId: instance.id,
-    submittedByProfileId: org.adminUser.profileId,
+    submittedByProfileId: myProfileId,
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
     status: ProposalStatus.SUBMITTED,
@@ -105,8 +123,14 @@ test.describe('Proposal filter tabs', () => {
     await expect(mine).toBeVisible();
     await expect(myTab).toHaveAttribute('aria-selected', 'true');
     // Filtered in SQL, so the count narrows to the tab's own total rather than
-    // counting the cards that happen to be loaded.
-    await expect(authenticatedPage.getByText('of 2 proposals')).toBeVisible();
+    // counting the cards that happen to be loaded. ProposalCount splits the
+    // narrowed form across two spans, so assert the pair — the denominator
+    // alone would also pass on a count of zero.
+    await expect(
+      authenticatedPage
+        .getByRole('status')
+        .filter({ hasText: 'of 2 proposals' }),
+    ).toHaveText(/^1\s*of 2 proposals$/);
 
     // The tab writes the same URL state the select used to, so the view is
     // shareable and survives a reload.

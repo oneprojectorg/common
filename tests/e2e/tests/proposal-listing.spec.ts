@@ -621,9 +621,9 @@ test.describe('Proposal Listing', () => {
       name: 'Search proposals',
     });
     // The category select, now the first control in the filter strip — the
-    // proposal filter moved to the tab bar above the list. The trigger's
-    // accessible name is its current value on mobile and "<value> Filter
-    // proposals by category" on desktop, so substring matches both.
+    // proposal filter moved to the tab bar above the list. At this viewport
+    // ResponsiveSelect renders a plain button named by its current value; the
+    // desktop trigger is a combobox named by its aria-label instead.
     const filterSelect = authenticatedPage.getByRole('button', {
       name: 'All categories',
     });

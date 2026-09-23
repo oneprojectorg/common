@@ -1,7 +1,6 @@
 'use client';
 
-import { ProposalFilter } from '@op/api/encoders';
-import { cn } from '@op/sense/lib/utils';
+import type { ProposalFilter } from '@op/api/encoders';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -125,23 +124,27 @@ export const ProposalsFilterBar = ({
           `grow`, not `w-full`: the negative margins bleed this box past the
           container, and only an auto width grows to absorb them — a fixed 100%
           would leave the padding stranding the last select short of the edge. */}
-      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8">
+      {/* The end-alignment belongs to the row, not to whichever control happens
+          to lead it — the proposal filter is optional, and so is anything added
+          ahead of the rest later. An auto margin rather than `justify-end`: it
+          collapses to zero once the row overflows, keeping the leading control
+          scrollable into view instead of stranded past the start edge. */}
+      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
         {showFilterSelect && (
           <ResponsiveSelect
             selectedKey={controls.proposalFilter}
+            // Resolved against the same list the tab bar reads, so a filter
+            // marked inert there — "My proposals" without a profile — can't be
+            // picked here either.
             onSelectionChange={(key) => {
-              // "My proposals" needs a profile; ignore the pick without one.
-              if (
-                key === ProposalFilter.MY_PROPOSALS &&
-                !controls.currentProfileId
-              ) {
-                return;
+              const selected = filterItems.find((item) => item.id === key);
+              if (selected && !selected.isDisabled) {
+                controls.setProposalFilter(selected.id);
               }
-              controls.setProposalFilter(key);
             }}
             aria-label={t('decisions.proposals.filterProposalsLabel')}
             items={filterItems}
-            className="ms-auto min-w-40 shrink-0"
+            className="min-w-40 shrink-0"
           />
         )}
         <CategoryFilterSelect
@@ -149,9 +152,7 @@ export const ProposalsFilterBar = ({
           categories={controls.categories}
           selectedCategory={controls.selectedCategory}
           onSelectCategory={controls.setSelectedCategory}
-          // `ms-auto` holds the select group to the end of the row, so it
-          // belongs to whichever select comes first.
-          className={cn('min-w-40 shrink-0', !showFilterSelect && 'ms-auto')}
+          className="min-w-40 shrink-0"
         />
         <ResponsiveSelect
           selectedKey={controls.sortOrder}

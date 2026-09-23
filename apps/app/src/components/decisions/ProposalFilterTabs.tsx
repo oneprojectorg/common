@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalFilterItem } from './useProposalFilterItems';
+import { useProposalFilterItems } from './useProposalFilterItems';
 
 /**
  * The proposal-filter dimension as a tab bar above the list, mirroring
@@ -17,19 +17,29 @@ import type { ProposalFilterItem } from './useProposalFilterItems';
  * to point, not a row of buttons wearing tab roles. One panel, always the
  * active one — switching filters re-renders the list in place instead of
  * remounting it, which is what keeps scroll position and the loaded pages.
+ * The trade that buys: Base UI registers panel ids by value, so only the
+ * selected tab carries `aria-controls`. The selected tab is the one a screen
+ * reader jumps from, and the panel's `aria-labelledby` is always right, so the
+ * wiring holds where it is used — a panel per filter would be correct on paper
+ * and would remount the list on every switch.
  */
 export const ProposalFilterTabs = ({
-  items,
+  hasVoted,
+  currentProfileId,
   value,
   onValueChange,
   children,
 }: {
-  items: ProposalFilterItem[];
+  hasVoted: boolean;
+  currentProfileId: string | undefined;
   value: ProposalFilter;
   onValueChange: (filter: ProposalFilter) => void;
   children: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
+  // Read here rather than handed down: both controls call the same hook at the
+  // point they render, so neither can be given a list the other doesn't have.
+  const items = useProposalFilterItems({ hasVoted, currentProfileId });
 
   return (
     <Tabs
@@ -64,7 +74,11 @@ export const ProposalFilterTabs = ({
           ))}
         </TabsList>
       </div>
-      <TabsContent value={value} className="flex grow flex-col gap-6">
+      {/* `relative` so the sticky filter bar's pin sentinel anchors here rather
+          than at the top of the list container: the rail sits above the panel,
+          and from the container the sentinel crossed the pin line a rail-height
+          early, fading the bar's hairline in mid-scroll. */}
+      <TabsContent value={value} className="relative flex grow flex-col gap-6">
         {children}
       </TabsContent>
     </Tabs>

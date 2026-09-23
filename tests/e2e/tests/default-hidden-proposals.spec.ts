@@ -293,8 +293,14 @@ test.describe('Default Hidden Proposals', () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Filters are hidden for non-admins when proposals are default-hidden.
+    // Both controls, not just the tab bar: the bar's select and the tab bar
+    // read the admin gate independently, so dropping either assertion lets one
+    // of them leak on its own.
     await expect(
       otherMemberPage.getByRole('tablist', { name: /Filter proposals$/ }),
+    ).toBeHidden();
+    await expect(
+      otherMemberPage.getByRole('combobox', { name: /Filter proposals$/ }),
     ).toBeHidden();
 
     // Wait for the empty-state copy (positive readiness signal) so we're not
@@ -384,6 +390,9 @@ test.describe('Default Hidden Proposals', () => {
     // their own proposal — the filter UI is admin-only in this phase.
     await expect(
       submitterPage.getByRole('tablist', { name: /Filter proposals$/ }),
+    ).toBeHidden();
+    await expect(
+      submitterPage.getByRole('combobox', { name: /Filter proposals$/ }),
     ).toBeHidden();
 
     const submitterProposalLink = submitterPage.getByRole('link', {
