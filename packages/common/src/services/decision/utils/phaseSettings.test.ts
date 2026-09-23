@@ -8,6 +8,7 @@ import {
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
   isReviewPhase,
+  isSingleChoiceVotingPhase,
   isVotingPhase,
   resolveReviewSettings,
 } from './phaseSettings';
@@ -55,6 +56,39 @@ describe('isVotingPhase', () => {
     expect(isVotingPhase({ rules: { voting: { submit: true } } })).toBe(true);
     expect(isVotingPhase({ rules: { voting: { submit: false } } })).toBe(false);
     expect(isVotingPhase({})).toBe(false);
+  });
+});
+
+describe('isSingleChoiceVotingPhase', () => {
+  it('is true only when voting is open and capped at one selection', () => {
+    expect(
+      isSingleChoiceVotingPhase({
+        rules: { voting: { submit: true, maxVotesPerMember: 1 } },
+      }),
+    ).toBe(true);
+  });
+
+  it('is false when the phase allows more than one selection', () => {
+    expect(
+      isSingleChoiceVotingPhase({
+        rules: { voting: { submit: true, maxVotesPerMember: 2 } },
+      }),
+    ).toBe(false);
+  });
+
+  it('is false when maxVotesPerMember is unset (no limit)', () => {
+    expect(
+      isSingleChoiceVotingPhase({ rules: { voting: { submit: true } } }),
+    ).toBe(false);
+  });
+
+  it('is false when the phase is not a voting phase at all', () => {
+    expect(
+      isSingleChoiceVotingPhase({
+        rules: { voting: { submit: false, maxVotesPerMember: 1 } },
+      }),
+    ).toBe(false);
+    expect(isSingleChoiceVotingPhase({})).toBe(false);
   });
 });
 
