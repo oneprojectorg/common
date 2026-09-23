@@ -7,8 +7,9 @@ import { useTranslations } from '@/lib/i18n';
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
-import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
+import { ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import type { ProposalView } from './proposalViews';
 
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
@@ -28,9 +29,11 @@ export interface ProposalControls {
   decisionSlug: string | undefined;
 }
 
-/** Grid/map switch, present only when the process collects a location. */
+/** Browse-view switch, present only when there is more than one view to be in. */
 export interface ProposalViewControls {
   value: ProposalView;
+  /** The views to offer, in display order — see `useProposalViewMode`. */
+  views: readonly ProposalView[];
   onChange: (next: ProposalView) => void;
 }
 
@@ -178,7 +181,11 @@ export const ProposalsFilterBar = ({
         {view && (
           <div className="hidden items-center gap-4 sm:flex">
             <span aria-hidden className="h-6 w-px bg-border" />
-            <ProposalViewToggle value={view.value} onChange={view.onChange} />
+            <ProposalViewToggle
+              value={view.value}
+              views={view.views}
+              onChange={view.onChange}
+            />
           </div>
         )}
         {exportControl && (

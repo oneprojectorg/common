@@ -27,9 +27,11 @@ interface ProposalLocationFilter {
   phase?: 'results';
 }
 
-/** Renders one proposal in the desktop list column. The view owns the active
- * highlight, so it hands the card the `className` carrying that policy. */
-type RenderProposalCard = (
+/** Renders one proposal in a view's card column. The view owns its own layout
+ * policy (the map's active highlight, the feed's width), so it hands the card
+ * the `className` carrying it. Shared with the feed view, which renders the
+ * same card the map's list column does. */
+export type RenderProposalCard = (
   proposal: Proposal,
   opts: { className: string },
 ) => ReactNode;

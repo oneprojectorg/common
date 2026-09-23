@@ -62,6 +62,11 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
   ...string[],
 ];
 
+// The queue renders assignment cards in a masonry or on the map. It has no
+// feed renderer, so it doesn't offer that view — and a `?view=feed` link from
+// browse falls back to the grid rather than showing a dead toggle option.
+const REVIEW_ASSIGNMENT_VIEWS = ['grid', 'map'] as const;
+
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
@@ -200,13 +205,14 @@ export function ReviewAssignmentsList({
   // flag), but leads with the grid: reviewing a queue is sequential work and
   // the map is the secondary lens.
   const {
-    hasLocationField,
     mapView,
+    availableViews,
     effectiveView,
     isMapMode,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
     defaultView: 'grid',
+    views: REVIEW_ASSIGNMENT_VIEWS,
   });
 
   // The proposal-keyed URL resolves per viewer (own review screen for a
@@ -374,13 +380,14 @@ export function ReviewAssignmentsList({
                 },
               ]}
             />
-            {hasLocationField && (
+            {availableViews.length > 1 && (
               // Desktop control; below `sm` the floating MobileViewSwitch
               // below takes over (same split as the proposals list).
               <div className="hidden items-center gap-4 sm:flex">
                 <span aria-hidden className="h-6 w-px bg-border" />
                 <ProposalViewToggle
                   value={effectiveView}
+                  views={availableViews}
                   onChange={handleViewChange}
                 />
               </div>
@@ -487,7 +494,7 @@ export function ReviewAssignmentsList({
         />
       )}
 
-      {hasLocationField && (
+      {availableViews.includes('map') && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>

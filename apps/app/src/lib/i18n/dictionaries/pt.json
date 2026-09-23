@@ -1406,6 +1406,7 @@
       "refreshPageHint": "Atualize a página para tentar novamente.",
       "mapLoadError": "Não foi possível carregar o mapa. Atualize para tentar novamente.",
       "gridViewOption": "Visualização em grade",
+      "feedViewOption": "Visualização em feed",
       "mapViewOption": "Visualização do mapa",
       "proposalViewLabel": "Visualização de propostas",
       "listViewOption": "Lista",

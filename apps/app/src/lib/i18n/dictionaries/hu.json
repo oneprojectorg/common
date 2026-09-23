@@ -1406,6 +1406,7 @@
       "refreshPageHint": "Kérjük, frissítse az oldalt az újrapróbálkozáshoz.",
       "mapLoadError": "Nem sikerült betölteni a térképet. Frissítsen az újrapróbálkozáshoz.",
       "gridViewOption": "Rácsnézet",
+      "feedViewOption": "Hírfolyam nézet",
       "mapViewOption": "Térképnézet",
       "proposalViewLabel": "Javaslatnézet",
       "listViewOption": "Lista",

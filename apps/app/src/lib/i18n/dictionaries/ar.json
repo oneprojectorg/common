@@ -1406,6 +1406,7 @@
       "refreshPageHint": "يرجى تحديث الصفحة للمحاولة مرة أخرى.",
       "mapLoadError": "تعذر تحميل الخريطة. أعد التحميل للمحاولة مرة أخرى.",
       "gridViewOption": "عرض الشبكة",
+      "feedViewOption": "عرض التدفق",
       "mapViewOption": "عرض الخريطة",
       "proposalViewLabel": "عرض المقترحات",
       "listViewOption": "قائمة",

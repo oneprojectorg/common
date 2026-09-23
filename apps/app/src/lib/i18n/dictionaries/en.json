@@ -1406,6 +1406,7 @@
       "refreshPageHint": "Please refresh the page to try again.",
       "mapLoadError": "Couldn't load the map. Refresh to try again.",
       "gridViewOption": "Grid view",
+      "feedViewOption": "Feed view",
       "mapViewOption": "Map view",
       "proposalViewLabel": "Proposal view",
       "listViewOption": "List",

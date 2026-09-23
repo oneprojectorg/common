@@ -20,7 +20,7 @@ export interface ProposalsStickyFilterBarProps {
    * to a plain label and no filters render.
    */
   controls?: ProposalControls;
-  /** Absent when the process collects no location. */
+  /** Absent when there is only one view to be in. */
   view?: ProposalViewControls;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;

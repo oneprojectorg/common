@@ -1406,6 +1406,7 @@
       "refreshPageHint": "Veuillez actualiser la page pour réessayer.",
       "mapLoadError": "Impossible de charger la carte. Actualisez pour réessayer.",
       "gridViewOption": "Vue en grille",
+      "feedViewOption": "Vue fil",
       "mapViewOption": "Vue carte",
       "proposalViewLabel": "Vue des propositions",
       "listViewOption": "Liste",

@@ -5,7 +5,7 @@ import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalView } from './ProposalViewToggle';
+import type { ProposalView } from './proposalViews';
 
 // Mobile-only view switch, sticky at the bottom of the screen. Reads "Map"
 // while listing, "List" while showing the map.

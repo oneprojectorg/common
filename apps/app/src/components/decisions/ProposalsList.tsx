@@ -44,6 +44,7 @@ import {
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
+import { ProposalsFeedView } from './ProposalsFeedView';
 import type { ProposalControls } from './ProposalsFilterBar';
 import { NoProposalsFound, ProposalsGrid } from './ProposalsGrid';
 import {
@@ -60,6 +61,7 @@ import {
 import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
+import { PROPOSAL_VIEWS } from './proposalViews';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
@@ -510,17 +512,19 @@ const ProposalsListContent = ({
       t.decision.getInstance({ instanceId }),
     ]);
 
-  // Map browse mode is offered only when the process collects a location and
-  // the GIS flag is on. Browse leads with the map when the process has one —
-  // users came here to see places, not titles.
+  // Browse offers every view; the map drops out when the process collects no
+  // location. It leads with the map when the process has one — users came here
+  // to see places, not titles.
   const {
-    hasLocationField,
     mapView,
+    availableViews,
     effectiveView,
     isMapMode,
+    isFeedMode,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
     defaultView: 'map',
+    views: PROPOSAL_VIEWS,
   });
 
   const hasVoted = voteStatus?.hasVoted || false;
@@ -698,10 +702,14 @@ const ProposalsListContent = ({
           header={header?.(total)}
           // Omitted when the phase hides proposals from non-admins.
           controls={hideFilters ? undefined : controls}
-          // Omitted when the process collects no location.
+          // Omitted when there is only one view to be in.
           view={
-            hasLocationField
-              ? { value: effectiveView, onChange: handleViewChange }
+            availableViews.length > 1
+              ? {
+                  value: effectiveView,
+                  views: availableViews,
+                  onChange: handleViewChange,
+                }
               : undefined
           }
           exportControl={
@@ -788,6 +796,13 @@ const ProposalsListContent = ({
               </Suspense>
             </APIErrorBoundary>
           )
+        ) : isFeedMode && !isEmptyUnfiltered ? (
+          <ProposalsFeedView
+            proposals={allProposals}
+            renderCard={renderCard}
+            listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
+            emptyState={<NoProposalsFound {...emptyStateProps} />}
+          />
         ) : (
           <ProposalsGrid
             proposals={allProposals}
@@ -806,8 +821,9 @@ const ProposalsListContent = ({
       </ProposalTranslationProvider>
 
       {/* Grid mode: the load-more skeletons render inside the masonry (see
-          ProposalMasonry `loadingMore`), so the sentinel is just the trigger. */}
-      {!isMapMode && renderScrollSentinel(null)}
+          ProposalMasonry `loadingMore`), so the sentinel is just the trigger.
+          Map and feed mode host their own sentinel inside their card column. */}
+      {!isMapMode && !isFeedMode && renderScrollSentinel(null)}
 
       {translation.showBanner && (
         <TranslateBanner
@@ -818,7 +834,9 @@ const ProposalsListContent = ({
         />
       )}
 
-      {hasLocationField && (
+      {/* Mobile swaps between the map and the cards; the desktop toggle (and
+          with it the feed) is hidden below `sm`. */}
+      {availableViews.includes('map') && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>
