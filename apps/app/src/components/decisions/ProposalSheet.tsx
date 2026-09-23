@@ -119,7 +119,10 @@ export function ProposalSheet({
               fallbacks={{ default: () => <ProposalUnavailable /> }}
             >
               <Suspense fallback={<ProposalSheetSkeleton />}>
-                <ProposalSheetBody profileId={shownProfileId} route={route} />
+                <ProposalSheetBody
+                  profileId={shownProfileId}
+                  decisionRoot={decisionRootHref(route)}
+                />
               </Suspense>
             </APIErrorBoundary>
           ) : null}
@@ -148,10 +151,11 @@ function useLastOpenProposal(profileId: string | null): string | null {
 
 function ProposalSheetBody({
   profileId,
-  route,
+  decisionRoot,
 }: {
   profileId: string;
-  route: ProposalSheetRoute;
+  /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
+  decisionRoot: string;
 }) {
   const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
 
@@ -162,7 +166,6 @@ function ProposalSheetBody({
     canEngage: canEngageWithProposals(proposal.access),
   });
   const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
-  const decisionRoot = decisionRootHref(route);
 
   return (
     // Same section rhythm as the proposal page: each section's own `pt` mirrors

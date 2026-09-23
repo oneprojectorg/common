@@ -43,7 +43,6 @@ import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
-import { ProposalSheetProvider } from './ProposalSheetProvider';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import type { ProposalControls } from './ProposalsFilterBar';
 import { NoProposalsFound, ProposalsGrid } from './ProposalsGrid';
@@ -270,14 +269,7 @@ const ResultsPhaseProposalsLoader = ({
 
 // fallow-ignore-next-line complexity
 export const ProposalsList = (props: ProposalsListProps) => {
-  const {
-    slug,
-    instanceId,
-    decisionSlug,
-    phase,
-    initialFilter,
-    excludeAssignedForReview,
-  } = props;
+  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
@@ -406,27 +398,22 @@ export const ProposalsList = (props: ProposalsListProps) => {
     />
   );
 
-  // Both providers sit above the loaders, so a refreshed list re-parenting its
+  // The provider sits above the loaders, so a refreshed list re-parenting its
   // cards can't close a merge, rejection or delete the admin is halfway
-  // through — nor the proposal sheet someone is reading.
+  // through. The proposal sheet is hosted higher still, on
+  // `DecisionStateRouter`, so it survives the same way for every surface.
   return (
-    <ProposalSheetProvider
-      slug={slug}
-      instanceId={instanceId}
-      decisionSlug={decisionSlug}
-    >
-      <ProposalCardDialogProvider>
-        {phase === 'results' ? (
-          <ResultsPhaseProposalsLoader queryParams={queryParams}>
-            {renderContent}
-          </ResultsPhaseProposalsLoader>
-        ) : (
-          <CurrentPhaseProposalsLoader queryParams={queryParams}>
-            {renderContent}
-          </CurrentPhaseProposalsLoader>
-        )}
-      </ProposalCardDialogProvider>
-    </ProposalSheetProvider>
+    <ProposalCardDialogProvider>
+      {phase === 'results' ? (
+        <ResultsPhaseProposalsLoader queryParams={queryParams}>
+          {renderContent}
+        </ResultsPhaseProposalsLoader>
+      ) : (
+        <CurrentPhaseProposalsLoader queryParams={queryParams}>
+          {renderContent}
+        </CurrentPhaseProposalsLoader>
+      )}
+    </ProposalCardDialogProvider>
   );
 };
 

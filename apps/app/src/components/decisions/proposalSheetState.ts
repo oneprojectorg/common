@@ -32,10 +32,11 @@ export const ProposalSheetContext = createContext<ProposalSheetApi | null>(
  * own page. That is also why these controls stay links: the sheet is the
  * default way in, not the only one.
  *
- * Returns `undefined` for a card with no provider above it, which leaves the
- * link a plain link. That is the wanted fallback, not a failure — a proposal
- * card outside a decision page (the merged-in ideas on the proposal page, say)
- * has no list to preserve, so navigating is the right answer there.
+ * Returns `undefined` off a decision page, where there is no provider, which
+ * leaves the link a plain link. That is the wanted fallback, not a failure — a
+ * proposal card with no list behind it (the merged-in ideas as rendered on the
+ * proposal page) has nothing to preserve, so navigating is right there. It is
+ * also what lets one wiring serve every card surface.
  */
 export function useOpenProposalInSheet() {
   const open = useContext(ProposalSheetContext)?.open;

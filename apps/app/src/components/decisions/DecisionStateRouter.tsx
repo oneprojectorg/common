@@ -155,16 +155,13 @@ export function DecisionStateRouter({
   useLegacy?: boolean;
 }) {
   // One sheet for the whole phase page, so every proposal-card surface on it —
-  // the browse grid, the map, the results tabs, a reviewer's assignments —
-  // opens the same panel. Mounted here rather than per page because this is the
-  // one place every phase view passes through. `decisionSlug` is dropped on the
-  // legacy route, which builds its proposal links from `slug` + `instanceId`;
-  // the sheet's expand control has to resolve to the same URL the cards do.
+  // the browse grid, the map, the results tabs — opens the same panel. Mounted
+  // here because this is the one place every phase view passes through.
   return (
     <ProposalSheetProvider
       slug={slug}
       instanceId={instanceId}
-      decisionSlug={useLegacy ? undefined : decisionSlug}
+      decisionSlug={decisionSlug}
     >
       {useLegacy ? (
         <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />

@@ -59,12 +59,6 @@ test.describe('Proposal side sheet', () => {
       ),
     );
 
-    // Exactly one panel. The decision page mounts a provider so every card
-    // surface on it shares one sheet, and `ProposalsList` mounts its own so it
-    // still works elsewhere — if the inner one stopped deferring, both would
-    // render on the same URL param and the reader would get two panels.
-    await expect(authenticatedPage.getByRole('dialog')).toHaveCount(1);
-
     // Browser Back is the other way out, and it leaves the list standing.
     await authenticatedPage.goBack();
     await expect(sheet).toBeHidden();

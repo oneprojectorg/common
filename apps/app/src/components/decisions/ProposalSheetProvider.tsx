@@ -1,7 +1,7 @@
 'use client';
 
 import { parseAsString, useQueryState } from 'nuqs';
-import { type ReactNode, useCallback, useContext, useMemo } from 'react';
+import { type ReactNode, useCallback, useMemo } from 'react';
 
 import { ProposalSheet, type ProposalSheetRoute } from './ProposalSheet';
 import {
@@ -11,8 +11,8 @@ import {
 } from './proposalSheetState';
 
 /**
- * Owns the proposal side sheet a decision surface can have open, above the
- * cards rather than inside the one whose title opened it.
+ * Owns the proposal side sheet a decision page can have open, above the cards
+ * rather than inside the one whose title opened it.
  *
  * Above the cards for the same reason {@link ProposalCardDialogProvider} is:
  * the grid lays its cards out with `react-masonry-css`, which hands child `i`
@@ -21,30 +21,14 @@ import {
  * column and React unmounts and remounts all of them. A sheet owned by the card
  * would close mid-read.
  *
+ * Mounted once, on `DecisionStateRouter`: every phase view passes through it, so
+ * one sheet serves every card surface on the page — the browse grid, the map,
+ * the results tabs.
+ *
  * The open proposal lives in the URL (`?proposal=<profileId>`), like
  * {@link DecisionSidePanel}, so the panel is linkable and Back closes it.
- *
- * Nesting is safe: an inner provider passes through rather than putting a
- * second panel on the same URL param. `DecisionStateRouter` mounts one around
- * every phase page so each page's card surfaces share one sheet, and
- * `ProposalsList` mounts its own so it still works anywhere else — on a phase
- * page the inner one defers.
  */
 export function ProposalSheetProvider({
-  children,
-  ...route
-}: ProposalSheetRoute & { children: ReactNode }) {
-  const outer = useContext(ProposalSheetContext);
-
-  if (outer) {
-    return <>{children}</>;
-  }
-
-  return <OwnedProposalSheet {...route}>{children}</OwnedProposalSheet>;
-}
-
-/** The half that owns the state, split out so the guard above can return early. */
-function OwnedProposalSheet({
   slug,
   instanceId,
   decisionSlug,
