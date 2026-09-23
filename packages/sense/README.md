@@ -234,3 +234,8 @@ published source lags its declared dependency versions. Reapply if you re-run
   chains, so `className` was silently ignored (the mobile `Sidebar`'s
   `w-(--sidebar-width)` lost to `data-[side=left]:w-7/8`). The `data-[side]`
   variants for insets, borders and translates are stock — keep them.
+- `sheet.tsx` — added the `fullScreenOnMobile` prop, which restates the inline
+  sides' border and translate at the same variant chain so `cn` drops the stock
+  ones, then restores both at `sm`. A `max-sm:` override cannot do this:
+  Tailwind orders variants in the stylesheet, so it loses regardless of class
+  order.

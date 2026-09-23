@@ -42,6 +42,7 @@ function SheetContent({
   side = 'right',
   showCloseButton = true,
   showOverlay = true,
+  fullScreenOnMobile = false,
   container,
   ...props
 }: SheetPrimitive.Popup.Props & {
@@ -54,6 +55,12 @@ function SheetContent({
    * page behind stays inert and scroll-locked regardless.
    */
   showOverlay?: boolean;
+  /**
+   * Below `sm`, present an inline sheet as a full-screen modal — no edge border
+   * and no slide, so it fades in like `Dialog`. The panel treatment resumes at
+   * `sm`. Pair it with a `w-full` caller class.
+   */
+  fullScreenOnMobile?: boolean;
   container?: SheetPrimitive.Portal.Props['container'];
 }) {
   const isInline = side === 'left' || side === 'right';
@@ -66,6 +73,9 @@ function SheetContent({
         data-side={side}
         className={cn(
           'fixed z-50 flex flex-col bg-background bg-clip-padding text-foreground shadow-lg transition duration-200 ease-in-out data-ending-style:opacity-0 data-starting-style:opacity-0 data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:translate-y-[2.5rem] data-[side=bottom]:data-starting-style:translate-y-[2.5rem] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:border-r data-[side=left]:data-ending-style:translate-x-[-2.5rem] data-[side=left]:data-starting-style:translate-x-[-2.5rem] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:border-l data-[side=right]:data-ending-style:translate-x-[2.5rem] data-[side=right]:data-starting-style:translate-x-[2.5rem] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=top]:data-ending-style:translate-y-[-2.5rem] data-[side=top]:data-starting-style:translate-y-[-2.5rem]',
+          isInline &&
+            fullScreenOnMobile &&
+            'data-[side=left]:border-r-0 data-[side=left]:data-ending-style:translate-x-0 data-[side=left]:data-starting-style:translate-x-0 data-[side=right]:border-l-0 data-[side=right]:data-ending-style:translate-x-0 data-[side=right]:data-starting-style:translate-x-0 sm:data-[side=left]:border-r sm:data-[side=left]:data-ending-style:translate-x-[-2.5rem] sm:data-[side=left]:data-starting-style:translate-x-[-2.5rem] sm:data-[side=right]:border-l sm:data-[side=right]:data-ending-style:translate-x-[2.5rem] sm:data-[side=right]:data-starting-style:translate-x-[2.5rem]',
           // Outside the data-[side] variants so a caller's own w-*/max-w-* wins.
           isInline && 'w-7/8 sm:max-w-sm',
           className,
