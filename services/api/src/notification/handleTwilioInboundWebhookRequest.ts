@@ -40,6 +40,7 @@ export const handleTwilioInboundWebhookRequest = async ({
   const message = parseTwilioInboundMessage(params);
 
   await inngest.send({
+    id: `sms-inbound-${message.messageSid}`,
     name: Events.smsInboundReceived.name,
     data: message,
   });
