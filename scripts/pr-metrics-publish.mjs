@@ -171,8 +171,7 @@ const quietly = async (label, work) => {
 };
 
 const announce = async () => {
-  // Nothing orders this run against the publishing one, so a slow announce
-  // must not overwrite a result that has already landed.
+  // Nothing orders this run against `publish`, which may already have landed.
   if ((await findCheckRun())?.status === 'completed') return;
 
   await upsertComment(
