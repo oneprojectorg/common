@@ -20,9 +20,11 @@ const SENTENCE_PUNCTUATION = new Set([
   '»',
 ]);
 
+/** Closing delimiter to the opener that would make it part of the URL. */
 const BRACKETS = new Map([
   [')', '('],
   [']', '['],
+  ['>', '<'],
 ]);
 
 export function extractUrls(text: string): string[] {

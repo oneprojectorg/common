@@ -66,6 +66,12 @@ describe('linkifyText', () => {
       'href="https://example.com/Foo_(bar)"',
     );
   });
+
+  it('drops the closing angle bracket of an autolink', () => {
+    expect(render('Docs at <https://example.com/a>')).toContain(
+      'href="https://example.com/a"',
+    );
+  });
 });
 
 describe('extractUrls', () => {
