@@ -61,7 +61,7 @@ import {
 import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
-import { PROPOSAL_VIEWS } from './proposalViews';
+import { PROPOSAL_VIEWS, type ProposalView } from './proposalViews';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
@@ -515,11 +515,16 @@ const ProposalsListContent = ({
   // Browse offers every view; the map drops out when the process collects no
   // location. It leads with the map when the process has one — users came here
   // to see places, not titles.
-  const { mapView, availableViews, effectiveView, handleViewChange } =
-    useProposalViewMode(instance.instanceData?.proposalTemplate, {
-      defaultView: 'map',
-      views: PROPOSAL_VIEWS,
-    });
+  const {
+    mapView,
+    availableViews,
+    effectiveView,
+    hasMapView,
+    handleViewChange,
+  } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
+    defaultView: 'map',
+    views: PROPOSAL_VIEWS,
+  });
 
   const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
@@ -671,6 +676,83 @@ const ProposalsListContent = ({
   // empty state can't disagree about which one is showing.
   const browseView = isEmptyUnfiltered ? 'grid' : effectiveView;
 
+  // One renderer per view, so a view the toggle can offer always has something
+  // to draw — adding to `PROPOSAL_VIEWS` fails to compile until it does.
+  const browseViews: Record<ProposalView, ReactNode> = {
+    map:
+      phase === 'results' ? (
+        // Results uses the phase-agnostic `listAllProposals` set; source pins
+        // from that same loaded data so pins match the results list.
+        <ProposalsMapView
+          proposals={allProposals}
+          pinProposals={allProposals}
+          renderCard={renderCard}
+          hrefFor={hrefFor}
+          mapView={mapView}
+          listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
+          emptyState={<NoProposalsFound {...emptyStateProps} />}
+        />
+      ) : (
+        // Local boundaries keep the pin query from suspending / erroring the
+        // whole list subtree (filter bar + view toggle stay mounted).
+        <APIErrorBoundary
+          fallbacks={{
+            default: () => (
+              <div className="py-8 text-center text-sm">
+                {t('decisions.proposals.mapLoadError')}
+              </div>
+            ),
+          }}
+        >
+          <Suspense fallback={<ProposalListSkeletonGrid />}>
+            <ProposalsMapWithLocations
+              proposals={allProposals}
+              renderCard={renderCard}
+              hrefFor={hrefFor}
+              mapView={mapView}
+              // Pins come from a dedicated all-locations query (not the loaded
+              // list pages) so the map isn't capped by the page size. Strip the
+              // list-only pagination fields from the filter.
+              locationFilter={{
+                processInstanceId: queryParams.processInstanceId,
+                categoryId: queryParams.categoryId,
+                search: queryParams.search,
+                submittedByProfileId: queryParams.submittedByProfileId,
+                votedByProfileId: queryParams.votedByProfileId,
+                status: queryParams.status,
+                excludeAssignedForReview: queryParams.excludeAssignedForReview,
+              }}
+              listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
+              emptyState={<NoProposalsFound {...emptyStateProps} />}
+            />
+          </Suspense>
+        </APIErrorBoundary>
+      ),
+    feed: (
+      <ProposalsFeedView
+        proposals={allProposals}
+        renderCard={renderCard}
+        listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
+        emptyState={<NoProposalsFound {...emptyStateProps} />}
+      />
+    ),
+    grid: (
+      <ProposalsGrid
+        proposals={allProposals}
+        instanceId={instanceId}
+        slug={slug}
+        decisionSlug={decisionSlug}
+        permissions={permissions}
+        votedProposalIds={selectedProposalIds}
+        {...emptyStateProps}
+        isVotingPhase={isInVotingPhase}
+        proposalsHidden={proposalsHidden}
+        proposalIdsWithRevisionRequest={proposalIdsWithRevisionRequest}
+        isFetchingNextPage={isFetchingNextPage}
+      />
+    ),
+  };
+
   // With nothing to filter, sort, or export, the control bar is just noise —
   // collapse to the empty state alone. A zero-result FILTERED list keeps the
   // bar so the filter can be cleared. Map mode is not an exception:
@@ -706,6 +788,7 @@ const ProposalsListContent = ({
               ? {
                   value: effectiveView,
                   views: availableViews,
+                  hasMapView,
                   onChange: handleViewChange,
                 }
               : undefined
@@ -744,83 +827,12 @@ const ProposalsListContent = ({
             : (translation.translationState?.translations ?? NO_TRANSLATIONS)
         }
       >
-        {browseView === 'map' ? (
-          phase === 'results' ? (
-            // Results uses the phase-agnostic `listAllProposals` set; source
-            // pins from that same loaded data so pins match the results list.
-            <ProposalsMapView
-              proposals={allProposals}
-              pinProposals={allProposals}
-              renderCard={renderCard}
-              hrefFor={hrefFor}
-              mapView={mapView}
-              listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
-              emptyState={<NoProposalsFound {...emptyStateProps} />}
-            />
-          ) : (
-            // Local boundaries keep the pin query from suspending / erroring
-            // the whole list subtree (filter bar + view toggle stay mounted).
-            <APIErrorBoundary
-              fallbacks={{
-                default: () => (
-                  <div className="py-8 text-center text-sm">
-                    {t('decisions.proposals.mapLoadError')}
-                  </div>
-                ),
-              }}
-            >
-              <Suspense fallback={<ProposalListSkeletonGrid />}>
-                <ProposalsMapWithLocations
-                  proposals={allProposals}
-                  renderCard={renderCard}
-                  hrefFor={hrefFor}
-                  mapView={mapView}
-                  // Pins come from a dedicated all-locations query (not the
-                  // loaded list pages) so the map isn't capped by the page
-                  // size. Strip the list-only pagination fields from the filter.
-                  locationFilter={{
-                    processInstanceId: queryParams.processInstanceId,
-                    categoryId: queryParams.categoryId,
-                    search: queryParams.search,
-                    submittedByProfileId: queryParams.submittedByProfileId,
-                    votedByProfileId: queryParams.votedByProfileId,
-                    status: queryParams.status,
-                    excludeAssignedForReview:
-                      queryParams.excludeAssignedForReview,
-                  }}
-                  listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
-                  emptyState={<NoProposalsFound {...emptyStateProps} />}
-                />
-              </Suspense>
-            </APIErrorBoundary>
-          )
-        ) : browseView === 'feed' ? (
-          <ProposalsFeedView
-            proposals={allProposals}
-            renderCard={renderCard}
-            listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
-            emptyState={<NoProposalsFound {...emptyStateProps} />}
-          />
-        ) : (
-          <ProposalsGrid
-            proposals={allProposals}
-            instanceId={instanceId}
-            slug={slug}
-            decisionSlug={decisionSlug}
-            permissions={permissions}
-            votedProposalIds={selectedProposalIds}
-            {...emptyStateProps}
-            isVotingPhase={isInVotingPhase}
-            proposalsHidden={proposalsHidden}
-            proposalIdsWithRevisionRequest={proposalIdsWithRevisionRequest}
-            isFetchingNextPage={isFetchingNextPage}
-          />
-        )}
+        {browseViews[browseView]}
       </ProposalTranslationProvider>
 
       {/* Grid mode: the load-more skeletons render inside the masonry (see
           ProposalMasonry `loadingMore`), so the sentinel is just the trigger.
-          Map and feed mode host their own sentinel inside their card column. */}
+          Map and feed host their own sentinel inside their card column. */}
       {browseView === 'grid' && renderScrollSentinel(null)}
 
       {translation.showBanner && (
@@ -832,9 +844,9 @@ const ProposalsListContent = ({
         />
       )}
 
-      {/* Mobile swaps between the map and the cards; the desktop toggle (and
-          with it the feed) is hidden below `sm`. */}
-      {availableViews.includes('map') && (
+      {/* Mobile swaps between the map and the cards; where a map exists the
+          desktop toggle (and with it the feed) stays hidden below `sm`. */}
+      {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>

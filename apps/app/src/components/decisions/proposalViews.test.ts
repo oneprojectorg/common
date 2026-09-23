@@ -6,14 +6,8 @@ import {
   resolveProposalViews,
 } from './proposalViews';
 
-describe('PROPOSAL_VIEWS', () => {
-  it('orders the feed between the grid and the map', () => {
-    expect(PROPOSAL_VIEWS).toEqual(['grid', 'feed', 'map']);
-  });
-});
-
 describe('resolveProposalViews', () => {
-  it('offers every view the surface has when the process collects a location', () => {
+  it('offers every view the surface has, feed between grid and map, when the process collects a location', () => {
     const { availableViews, effectiveView } = resolveProposalViews({
       views: PROPOSAL_VIEWS,
       hasLocationField: true,
@@ -69,6 +63,19 @@ describe('resolveProposalViews', () => {
 
     expect(availableViews).toEqual(['grid', 'map']);
     expect(effectiveView).toBe('grid');
+  });
+
+  it('offers no choice at all on the review queue when the process collects no location', () => {
+    const { availableViews } = resolveProposalViews({
+      views: REVIEW_ASSIGNMENT_VIEWS,
+      hasLocationField: false,
+      preferredView: 'grid',
+      requestedView: null,
+    });
+
+    // Both surfaces hide the toggle on a single available view — this is the
+    // only configuration that produces one.
+    expect(availableViews).toEqual(['grid']);
   });
 
   it('falls back to the default for a stale ?view=map from another process', () => {

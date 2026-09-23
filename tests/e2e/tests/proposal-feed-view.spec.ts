@@ -73,12 +73,21 @@ test.describe('Proposal Feed view', () => {
       authenticatedPage.getByRole('heading', { name, level: 2 }),
     ).toBeVisible({ timeout: 30_000 });
 
+    // Cards are on screen before the feed is asserted absent, so the absence
+    // means the grid is showing rather than that nothing rendered at all.
+    await expect(
+      authenticatedPage
+        .getByRole('link', { name: MOCK_PROPOSAL_TITLE })
+        .first(),
+    ).toBeVisible({ timeout: 30_000 });
+
     const feed = authenticatedPage.locator('[data-slot="proposal-feed"]');
     await expect(feed).toHaveCount(0);
 
-    await authenticatedPage
-      .getByRole('button', { name: 'Feed view' })
-      .click({ timeout: 30_000 });
+    const feedOption = authenticatedPage.getByRole('button', {
+      name: 'Feed view',
+    });
+    await feedOption.click({ timeout: 30_000 });
 
     await expect(feed).toBeVisible({ timeout: 30_000 });
     await expect(authenticatedPage).toHaveURL(/view=feed/);
@@ -102,10 +111,7 @@ test.describe('Proposal Feed view', () => {
     await expect
       .poll(
         async () => {
-          await proposalLink
-            .last()
-            .scrollIntoViewIfNeeded()
-            .catch(() => {});
+          await proposalLink.last().scrollIntoViewIfNeeded();
           return proposalLink.count();
         },
         {
@@ -115,5 +121,16 @@ test.describe('Proposal Feed view', () => {
         },
       )
       .toBe(TOTAL_PROPOSALS);
+
+    // This process has no map, so the floating MobileViewSwitch never renders
+    // and the toggle is the only way out of the feed — it has to survive down
+    // to a phone width or a shared `?view=feed` link strands the reader.
+    await authenticatedPage.setViewportSize({ width: 375, height: 800 });
+    await expect(feedOption).toBeVisible();
+
+    // Back on the default view the param is dropped rather than pinned.
+    await authenticatedPage.getByRole('button', { name: 'Grid view' }).click();
+    await expect(feed).toHaveCount(0);
+    await expect(authenticatedPage).not.toHaveURL(/view=/);
   });
 });

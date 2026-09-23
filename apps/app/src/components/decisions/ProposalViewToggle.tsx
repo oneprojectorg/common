@@ -16,7 +16,6 @@ interface ProposalViewToggleProps {
   className?: string;
 }
 
-// Read as a pair for every option, so one table rather than two keyed alike.
 const VIEW_OPTIONS = {
   grid: { Icon: LuLayoutGrid, labelKey: 'gridViewOption' },
   feed: { Icon: LuGalleryVertical, labelKey: 'feedViewOption' },
@@ -24,13 +23,14 @@ const VIEW_OPTIONS = {
 } as const satisfies Record<ProposalView, { Icon: IconType; labelKey: string }>;
 
 /**
- * Desktop-only segmented control switching a proposals list between its browse
- * views, built on the shared `ToggleGroup` (selected/unselected colors come
- * from its pressed styling). `spacing={0}` joins the items into a single
- * segmented control.
+ * Segmented control switching a proposals list between its browse views, built
+ * on the shared `ToggleGroup` (selected/unselected colors come from its pressed
+ * styling). `spacing={0}` joins the items into a single segmented control.
  *
  * The caller passes the views it can actually render, so an option can never
- * appear on a surface that would fall back to something else when it's picked.
+ * appear on a surface that would fall back to something else when it's picked,
+ * and owns the breakpoints it shows at — a surface whose `MobileViewSwitch`
+ * covers small widths renders this desktop-only.
  */
 export function ProposalViewToggle({
   value,

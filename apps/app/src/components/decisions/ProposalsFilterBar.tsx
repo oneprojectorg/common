@@ -1,6 +1,7 @@
 'use client';
 
 import { ProposalFilter } from '@op/api/encoders';
+import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -34,6 +35,8 @@ export interface ProposalViewControls {
   value: ProposalView;
   /** The views to offer, in display order — see `useProposalViewMode`. */
   views: readonly ProposalView[];
+  /** The surface has a floating `MobileViewSwitch` covering small widths. */
+  hasMapView: boolean;
   onChange: (next: ProposalView) => void;
 }
 
@@ -184,11 +187,10 @@ export const ProposalsFilterBar = ({
           // the only way out of a view, so it has to stay reachable at every
           // width or a shared `?view=` link strands a phone in it.
           <div
-            className={
-              view.views.includes('map')
-                ? 'hidden items-center gap-4 sm:flex'
-                : 'flex items-center gap-4'
-            }
+            className={cn(
+              'items-center gap-4',
+              view.hasMapView ? 'hidden sm:flex' : 'flex',
+            )}
           >
             <span aria-hidden className="h-6 w-px bg-border" />
             <ProposalViewToggle

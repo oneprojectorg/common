@@ -23,7 +23,7 @@ export const REVIEW_ASSIGNMENT_VIEWS = ['grid', 'map'] as const;
  */
 export type RenderProposalCard = (
   proposal: Proposal,
-  opts: { className: string },
+  options: { className: string },
 ) => ReactNode;
 
 export interface ProposalViewResolution {
@@ -31,7 +31,7 @@ export interface ProposalViewResolution {
   availableViews: ProposalView[];
   /** What renders with no `?view=` — stripped from the URL when selected. */
   defaultView: ProposalView;
-  /** What to render now. Always one of `availableViews`. */
+  /** What to render now. One of `availableViews` for every real surface. */
   effectiveView: ProposalView;
 }
 
@@ -61,6 +61,8 @@ export const resolveProposalViews = ({
     (view) => view !== 'map' || hasLocationField,
   );
 
+  // The `?? 'grid'` is unreachable for the surfaces that exist — both offer it
+  // — but `availableViews` is not typed non-empty, so the fallback stands.
   const defaultView = availableViews.includes(preferredView)
     ? preferredView
     : (availableViews[0] ?? 'grid');

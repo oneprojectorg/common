@@ -23,8 +23,7 @@ export interface ProposalsFeedViewProps {
   emptyState: ReactNode;
 }
 
-// `min-w-0` so a long title can't widen the feed column. Hoisted so the cards
-// aren't handed a fresh object each render.
+// `min-w-0` so a long title can't widen the feed column.
 const CARD_OPTIONS = { className: 'min-w-0' };
 
 /**

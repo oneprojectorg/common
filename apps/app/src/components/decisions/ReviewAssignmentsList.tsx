@@ -204,6 +204,7 @@ export function ReviewAssignmentsList({
     mapView,
     availableViews,
     effectiveView,
+    hasMapView,
     isMapMode,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
@@ -377,8 +378,9 @@ export function ReviewAssignmentsList({
               ]}
             />
             {availableViews.length > 1 && (
-              // Desktop control; below `sm` the floating MobileViewSwitch
-              // below takes over (same split as the proposals list).
+              // Desktop control; the queue only ever offers a second view when
+              // it has a map, so the floating MobileViewSwitch below always
+              // covers the small breakpoints this hides at.
               <div className="hidden items-center gap-4 sm:flex">
                 <span aria-hidden className="h-6 w-px bg-border" />
                 <ProposalViewToggle
@@ -490,7 +492,7 @@ export function ReviewAssignmentsList({
         />
       )}
 
-      {availableViews.includes('map') && (
+      {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>

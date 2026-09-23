@@ -25,6 +25,11 @@ interface ProposalViewMode {
   availableViews: ProposalView[];
   /** What to render now — always one of `availableViews`. */
   effectiveView: ProposalView;
+  /**
+   * The map is one of the offered views, so the floating `MobileViewSwitch`
+   * exists and covers the small breakpoints the desktop toggle hides at.
+   */
+  hasMapView: boolean;
   isMapMode: boolean;
   handleViewChange: (next: ProposalView) => void;
 }
@@ -77,6 +82,7 @@ export function useProposalViewMode(
     mapView,
     availableViews,
     effectiveView,
+    hasMapView: availableViews.includes('map'),
     isMapMode: effectiveView === 'map',
     handleViewChange,
   };
