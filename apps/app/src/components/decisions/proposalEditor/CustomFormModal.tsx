@@ -1,5 +1,6 @@
 'use client';
 
+import { linkifyOptionalText, linkifyText } from '@/utils/linkDetection';
 import type {
   CustomFormDefinitionSchema,
   XFormatPropertySchema,
@@ -37,6 +38,7 @@ import {
 } from '@op/sense/Select';
 import { Textarea } from '@op/sense/Textarea';
 import { screens } from '@op/styles/constants';
+import type { ReactNode } from 'react';
 import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -161,7 +163,7 @@ export function CustomFormModal({
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
             {definition.description ? (
               <p className="text-base text-muted-foreground">
-                {definition.description}
+                {linkifyText(definition.description)}
               </p>
             ) : null}
             {renderableKeys.map((key) => {
@@ -212,6 +214,7 @@ function CustomFormField({
 }: CustomFormFieldProps) {
   const fieldId = useId();
   const label = field.title ?? name;
+  const description = linkifyOptionalText(field.description);
   // Same breakpoint the NPS survey uses to swap its scale control between
   // a horizontal radio row (desktop) and a dropdown (mobile).
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
@@ -254,8 +257,8 @@ function CustomFormField({
           {label}
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
-        {field.description ? (
-          <FieldDescription>{field.description}</FieldDescription>
+        {description ? (
+          <FieldDescription>{description}</FieldDescription>
         ) : null}
         {multiOptions.map((option) => (
           <Field key={option} className="items-start" orientation="horizontal">
@@ -292,7 +295,7 @@ function CustomFormField({
         <EnumSelectField
           fieldId={fieldId}
           label={label}
-          description={field.description}
+          description={description}
           error={error}
           isRequired={isRequired}
           options={enumOptions}
@@ -308,8 +311,8 @@ function CustomFormField({
           {label}
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
-        {field.description ? (
-          <FieldDescription>{field.description}</FieldDescription>
+        {description ? (
+          <FieldDescription>{description}</FieldDescription>
         ) : null}
         <RadioGroup
           value={selected}
@@ -342,7 +345,7 @@ function CustomFormField({
       <EnumSelectField
         fieldId={fieldId}
         label={label}
-        description={field.description}
+        description={description}
         error={error}
         isRequired={isRequired}
         options={enumOptions}
@@ -384,8 +387,8 @@ function CustomFormField({
           }}
         />
         {error ? <FieldError>{error}</FieldError> : null}
-        {field.description ? (
-          <FieldDescription>{field.description}</FieldDescription>
+        {description ? (
+          <FieldDescription>{description}</FieldDescription>
         ) : null}
       </Field>
     );
@@ -418,9 +421,7 @@ function CustomFormField({
         />
       )}
       {error ? <FieldError>{error}</FieldError> : null}
-      {field.description ? (
-        <FieldDescription>{field.description}</FieldDescription>
-      ) : null}
+      {description ? <FieldDescription>{description}</FieldDescription> : null}
     </Field>
   );
 }
@@ -441,7 +442,7 @@ function EnumSelectField({
 }: {
   fieldId: string;
   label: string;
-  description?: string;
+  description?: ReactNode;
   error?: string;
   isRequired: boolean;
   options: string[];

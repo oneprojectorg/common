@@ -31,6 +31,10 @@ describe('linkifyText', () => {
     expect(nodes.map((node) => node.type)).toEqual(['span']);
   });
 
+  it('returns nothing for empty text', () => {
+    expect(linkifyText('')).toEqual([]);
+  });
+
   it('does not link a bare domain with no scheme', () => {
     const nodes = linkifyText('Ask us at example.com');
 

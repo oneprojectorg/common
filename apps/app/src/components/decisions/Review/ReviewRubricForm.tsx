@@ -39,6 +39,7 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
+import type { ReactNode } from 'react';
 import { useId, useMemo, useState } from 'react';
 import { LuPlus, LuRefreshCw } from 'react-icons/lu';
 
@@ -282,8 +283,8 @@ function RubricCriterionSection({
     criterionType === 'yes_no' ? t('decisions.review.noYesLabel') : scoreLabel;
   const isTextInput =
     field.format === 'short-text' || field.format === 'long-text';
-  const describedBy = field.schema.description ? descriptionId : undefined;
   const description = linkifyOptionalText(field.schema.description);
+  const describedBy = description ? descriptionId : undefined;
 
   // `labelId` goes on the title text, not the whole row: the badge is inside
   // the heading, and a control named by the row would announce "Innovation
@@ -317,6 +318,7 @@ function RubricCriterionSection({
         // Money uses the input's own label slot instead of the h4 field title.
         <MoneyFieldInput
           field={field}
+          description={description}
           value={value}
           onChange={onChange}
           required={field.required ?? false}
@@ -460,11 +462,13 @@ function FeedbackToAuthorField({
  */
 function MoneyFieldInput({
   field,
+  description,
   value,
   onChange,
   required,
 }: {
   field: FieldDescriptor;
+  description?: ReactNode;
   value: unknown;
   onChange: (value: unknown) => void;
   required: boolean;
@@ -478,7 +482,7 @@ function MoneyFieldInput({
   return (
     <NumberField
       label={field.schema.title || t('Amount')}
-      description={linkifyOptionalText(field.schema.description)}
+      description={description}
       required={required}
       prefixText={currencySymbol}
       value={getMoneyAmount(value)}
