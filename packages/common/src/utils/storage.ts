@@ -13,6 +13,13 @@ import { NotFoundError, ValidationError } from './error';
 // migration to per-feature buckets be a single-file change.
 export const ASSETS_BUCKET = 'assets';
 
+// ASSETS_BUCKET is world-readable and `apps/app/next.config.mjs` rewrites
+// `/assets/:path*` onto its public object root, so this URL serves the same
+// bytes a signed one would without ever expiring. Persist this form, never a
+// signed URL, in anything stored as content.
+export const assetPublicUrl = (storagePath: string): string =>
+  `/assets/${storagePath}`;
+
 export const getStorageObjectSize = (metadata: unknown): number | null => {
   if (
     metadata &&
