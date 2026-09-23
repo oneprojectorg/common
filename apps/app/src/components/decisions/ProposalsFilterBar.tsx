@@ -1,6 +1,7 @@
 'use client';
 
 import { ProposalFilter } from '@op/api/encoders';
+import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -9,6 +10,7 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import { useProposalFilterItems } from './useProposalFilterItems';
 
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
@@ -83,6 +85,7 @@ export const ProposalsFilterBar = ({
   total,
   header,
   exportControl,
+  showFilterSelect = true,
 }: {
   controls: ProposalControls;
   view?: ProposalViewControls;
@@ -94,33 +97,14 @@ export const ProposalsFilterBar = ({
   header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
+  /** Off where a tab bar above the list already owns the proposal filter. */
+  showFilterSelect?: boolean;
 }) => {
   const t = useTranslations();
-  // Every option maps to a server-side query param in ProposalsList's
-  // queryParams, so pagination and counts stay accurate.
-  const filterItems = [
-    {
-      id: ProposalFilter.ALL,
-      label: t('decisions.proposals.allProposalsOption'),
-    },
-    {
-      id: ProposalFilter.MY_PROPOSALS,
-      label: t('decisions.proposals.myProposalsOption'),
-      isDisabled: !controls.currentProfileId,
-    },
-    ...(controls.hasVoted
-      ? [
-          {
-            id: ProposalFilter.MY_BALLOT,
-            label: t('decisions.proposals.myBallotOption'),
-          },
-        ]
-      : []),
-    {
-      id: ProposalFilter.REJECTED,
-      label: t('decisions.proposals.notAdvancedStatus'),
-    },
-  ];
+  const filterItems = useProposalFilterItems({
+    hasVoted: controls.hasVoted,
+    currentProfileId: controls.currentProfileId,
+  });
 
   return (
     <>
@@ -142,28 +126,32 @@ export const ProposalsFilterBar = ({
           container, and only an auto width grows to absorb them — a fixed 100%
           would leave the padding stranding the last select short of the edge. */}
       <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8">
-        <ResponsiveSelect
-          selectedKey={controls.proposalFilter}
-          onSelectionChange={(key) => {
-            // "My proposals" needs a profile; ignore the pick without one.
-            if (
-              key === ProposalFilter.MY_PROPOSALS &&
-              !controls.currentProfileId
-            ) {
-              return;
-            }
-            controls.setProposalFilter(key);
-          }}
-          aria-label={t('decisions.proposals.filterProposalsLabel')}
-          items={filterItems}
-          className="ms-auto min-w-40 shrink-0"
-        />
+        {showFilterSelect && (
+          <ResponsiveSelect
+            selectedKey={controls.proposalFilter}
+            onSelectionChange={(key) => {
+              // "My proposals" needs a profile; ignore the pick without one.
+              if (
+                key === ProposalFilter.MY_PROPOSALS &&
+                !controls.currentProfileId
+              ) {
+                return;
+              }
+              controls.setProposalFilter(key);
+            }}
+            aria-label={t('decisions.proposals.filterProposalsLabel')}
+            items={filterItems}
+            className="ms-auto min-w-40 shrink-0"
+          />
+        )}
         <CategoryFilterSelect
           decisionSlug={controls.decisionSlug}
           categories={controls.categories}
           selectedCategory={controls.selectedCategory}
           onSelectCategory={controls.setSelectedCategory}
-          className="min-w-40 shrink-0"
+          // `ms-auto` holds the select group to the end of the row, so it
+          // belongs to whichever select comes first.
+          className={cn('min-w-40 shrink-0', !showFilterSelect && 'ms-auto')}
         />
         <ResponsiveSelect
           selectedKey={controls.sortOrder}

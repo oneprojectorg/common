@@ -620,10 +620,12 @@ test.describe('Proposal Listing', () => {
     const searchField = authenticatedPage.getByRole('searchbox', {
       name: 'Search proposals',
     });
-    // The trigger's accessible name is its current value on mobile and
-    // "<value> Filter proposals" on desktop — substring matches both.
+    // The category select, now the first control in the filter strip — the
+    // proposal filter moved to the tab bar above the list. The trigger's
+    // accessible name is its current value on mobile and "<value> Filter
+    // proposals by category" on desktop, so substring matches both.
     const filterSelect = authenticatedPage.getByRole('button', {
-      name: 'All proposals',
+      name: 'All categories',
     });
     await expect(searchField).toBeVisible({ timeout: 15_000 });
 

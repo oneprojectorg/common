@@ -39,6 +39,7 @@ import { ExportProposalsButton } from './ExportProposalsButton';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
+import { ProposalFilterTabs } from './ProposalFilterTabs';
 import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
@@ -61,6 +62,7 @@ import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import { getProposalDetectionText } from './translationDetectionText';
+import { useProposalFilterItems } from './useProposalFilterItems';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -83,6 +85,12 @@ export interface ProposalsListProps {
   proposalsHidden?: boolean;
   /** Exclude proposals the current user is assigned to review (Other proposals tab). */
   excludeAssignedForReview?: boolean;
+  /**
+   * Promote the proposal filter out of the bar's select and into a tab bar
+   * above the list. Opt-in: a surface that already nests this list inside its
+   * own tab row (the review page) would stack two rails.
+   */
+  showFilterTabs?: boolean;
   /**
    * Replaces the "N proposals" count in the filter bar; receives the count for
    * the active filter. The admin review surface titles itself
@@ -447,6 +455,7 @@ const ProposalsListContent = ({
   header,
   pinOffset,
   phase,
+  showFilterTabs = false,
   queryParams,
   allProposals,
   total,
@@ -636,6 +645,8 @@ const ProposalsListContent = ({
   // The filter bar's whole state in one object: the URL-backed values and
   // setters from above, plus the pieces only resolvable here (the category list,
   // ballot status, the caller's profile).
+  const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
+
   const controls: ProposalControls = {
     search,
     setSearch,
@@ -676,20 +687,13 @@ const ProposalsListContent = ({
   // toggle between two empty states.
   const showFilterBar = !isEmptyUnfiltered;
 
-  return (
-    <div
-      ref={listRef}
-      // Nothing visibly unmounts any more, so announce the stale window.
-      aria-busy={isFilterFetching || undefined}
-      // Clears the floating toggle the filter bar pins below, so a filter reset
-      // doesn't park the bar underneath it.
-      style={{ scrollMarginTop: pinOffset }}
-      className={cn(
-        'relative flex flex-col gap-6 pb-12',
-        // On mobile the map view is edge-to-edge and flush to the bottom.
-        isMapMode && 'max-sm:pb-0',
-      )}
-    >
+  // The tabs own the filter the bar's select otherwise would, so they appear on
+  // the same terms as that select: never where the phase hides proposals from
+  // non-admins, and never above an unfiltered-empty list with nothing to filter.
+  const showTabs = showFilterTabs && showFilterBar && !hideFilters;
+
+  const listBody = (
+    <>
       {showFilterBar && (
         <ProposalsStickyFilterBar
           pinOffset={pinOffset}
@@ -698,6 +702,8 @@ const ProposalsListContent = ({
           header={header?.(total)}
           // Omitted when the phase hides proposals from non-admins.
           controls={hideFilters ? undefined : controls}
+          // The tab bar above the list already owns this filter.
+          showFilterSelect={!showTabs}
           // Omitted when the process collects no location.
           view={
             hasLocationField
@@ -820,6 +826,34 @@ const ProposalsListContent = ({
 
       {hasLocationField && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
+      )}
+    </>
+  );
+
+  return (
+    <div
+      ref={listRef}
+      // Nothing visibly unmounts any more, so announce the stale window.
+      aria-busy={isFilterFetching || undefined}
+      // Clears the floating toggle the filter bar pins below, so a filter reset
+      // doesn't park the bar underneath it.
+      style={{ scrollMarginTop: pinOffset }}
+      className={cn(
+        'relative flex flex-col gap-6 pb-12',
+        // On mobile the map view is edge-to-edge and flush to the bottom.
+        isMapMode && 'max-sm:pb-0',
+      )}
+    >
+      {showTabs ? (
+        <ProposalFilterTabs
+          items={filterItems}
+          value={proposalFilter}
+          onValueChange={setProposalFilter}
+        >
+          {listBody}
+        </ProposalFilterTabs>
+      ) : (
+        listBody
       )}
     </div>
   );

@@ -192,6 +192,7 @@ export function StandardDecisionPage({
                   permissions={instance.access}
                   proposalsHidden={proposalsHidden}
                   pinOffset={pinOffset}
+                  showFilterTabs
                 />
               </Suspense>
             </APIErrorBoundary>

@@ -236,11 +236,12 @@ test.describe('Default Hidden Proposals', () => {
     });
     await expect(adminProposalLink).toBeVisible({ timeout: 15_000 });
 
-    // Admins keep the filter dropdowns visible. The sense Select trigger is a
-    // `combobox` (base-ui) with aria-label "Filter proposals"; anchor the regex
-    // at the end to avoid also matching "Filter proposals by category".
+    // Admins keep the filters visible. On this surface the proposal filter is
+    // the tab bar above the list — a base-ui `tablist` labelled "Filter
+    // proposals"; anchor the regex at the end so the category select's "Filter
+    // proposals by category" can't stand in for it.
     await expect(
-      authenticatedPage.getByRole('combobox', { name: /Filter proposals$/ }),
+      authenticatedPage.getByRole('tablist', { name: /Filter proposals$/ }),
     ).toBeVisible();
 
     // The "Hidden" badge is scoped to the proposal card containing the link.
@@ -293,7 +294,7 @@ test.describe('Default Hidden Proposals', () => {
 
     // Filters are hidden for non-admins when proposals are default-hidden.
     await expect(
-      otherMemberPage.getByRole('combobox', { name: /Filter proposals$/ }),
+      otherMemberPage.getByRole('tablist', { name: /Filter proposals$/ }),
     ).toBeHidden();
 
     // Wait for the empty-state copy (positive readiness signal) so we're not
@@ -382,7 +383,7 @@ test.describe('Default Hidden Proposals', () => {
     // Filters remain hidden for non-admin submitters even though they see
     // their own proposal — the filter UI is admin-only in this phase.
     await expect(
-      submitterPage.getByRole('combobox', { name: /Filter proposals$/ }),
+      submitterPage.getByRole('tablist', { name: /Filter proposals$/ }),
     ).toBeHidden();
 
     const submitterProposalLink = submitterPage.getByRole('link', {
