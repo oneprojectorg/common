@@ -24,11 +24,6 @@
  * and nothing else. A PR author can already write anything into their own PR's
  * comments, so that is the whole exposure.
  *
- * The two modes run in different workflow runs — `announce` on the push,
- * `publish` once the Tests run that measured has finished — so the check run
- * `announce` opened cannot be handed over as a job output. `publish` finds it
- * again by name on the same commit instead.
- *
  * The check run is the one call allowed to fail quietly: a fork's head commit
  * is not in this repository, and GitHub refuses a check run on a commit it
  * does not have. The comment and the body still update.
@@ -128,13 +123,7 @@ const plainTitle = (line) =>
     .replace(/\*\*|`/g, '')
     .slice(0, 1000);
 
-/**
- * The check run `announce` opened for this commit, if it is still open.
- *
- * Null covers both "never opened" and "cannot look it up" — a fork's head
- * commit is not in this repository — and `completeCheck` then posts a
- * completed check run instead of updating one.
- */
+/** The check run `announce` opened, which runs in a different workflow run. */
 const findCheckRun = async () => {
   try {
     const result = await api(
@@ -189,7 +178,6 @@ const announce = async () => {
       'The result lands here and as one line at the end of the description.',
   );
 
-  // `publish` runs in another workflow run and finds this one back by name.
   await quietly('check run', () =>
     api('POST', `/repos/${repo}/check-runs`, {
       name: CHECK_NAME,

@@ -1,33 +1,7 @@
 name: PR metrics
 
-# Publishes the review metrics the `pr-description` skill asks for — blast
-# radius and CRAP — to three surfaces under trial: one line at the end of the
-# PR body, a sticky comment carrying the CRAP table and the blast-radius
-# section, and a check run.
-# Nothing here is a required check: the numbers are for the reviewer, and a
-# failure to measure reads "unavailable" rather than blocking the merge.
-#
-# This workflow no longer measures anything. `tests.yml` already installs the
-# monorepo, starts the test Supabase and runs the suite; instrumenting that one
-# run costs about twenty seconds, and scoring the two metrics against the
-# coverage report it leaves behind costs a second or two more. Repeating all of
-# that here cost six to eight minutes for the same numbers, so the measurement
-# moved into `tests.yml` and this file kept only the two jobs that hold the
-# token that can write to the PR.
-#
-# Two triggers, on purpose:
-#
-#   pull_request_target  `announce` — the "measuring…" placeholder, posted as
-#                        soon as the push lands so the reader knows a result is
-#                        coming.
-#   workflow_run         `publish` — runs once the Tests run it belongs to has
-#                        finished, and downloads that run's `pr-metrics`
-#                        artifact. A `workflow_run` job checks out this
-#                        repository's default branch and never the PR's head, so
-#                        the measured text stays strictly data.
-#
-# `workflow_run` is only ever read from the default branch, so a change to this
-# file takes effect on the PRs that come after it merges, not on its own.
+# Publishes what `tests.yml` measured, to the PR body, a sticky comment and a
+# check run. Not a required check.
 
 on:
   pull_request_target:
@@ -38,17 +12,11 @@ on:
 permissions:
   contents: read
 
-# One run per PR at a time; a new push supersedes the one in flight. The two
-# triggers key on different things — a PR number and a commit — so they never
-# cancel each other, and a superseded measurement is caught by the head-SHA
-# check in `publish` instead.
 concurrency:
   group: pr-metrics-${{ github.event.pull_request.number || github.event.workflow_run.head_sha }}
   cancel-in-progress: true
 
 jobs:
-  # Posts the "measuring…" comment and opens an in-progress check run before the
-  # Tests run gets to the measurement, so the reader knows a result is coming.
   announce:
     name: Announce
     if: github.event_name == 'pull_request_target'
@@ -75,8 +43,6 @@ jobs:
 
   publish:
     name: Publish
-    # `completed` also covers a cancelled Tests run — usually one superseded by
-    # a newer push, whose own run will publish. Nothing to say about that one.
     if: >-
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.event == 'pull_request_target' &&
@@ -93,8 +59,6 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-      # The Tests run holds the job summary with the full report, so that is
-      # what "full report" should point the reader at.
       RUN_URL: ${{ github.event.workflow_run.html_url }}
 
     steps:
@@ -112,10 +76,8 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      # `pr.txt` comes out of a job that ran the PR's own code, so the number in
-      # it is a claim, not a fact: it is reduced to digits and then checked
-      # against the API. A PR whose head has moved on is skipped outright —
-      # its newer Tests run publishes the numbers that match.
+      # `pr.txt` left a job that ran the PR's own code, so the number in it is
+      # a claim: reduced to digits, then checked against the API.
       - name: Resolve and verify the pull request
         id: pr
         env:
@@ -124,9 +86,6 @@ jobs:
           set -uo pipefail
           claimed=$( (tr -cd '0-9' < "$PR_FILE" | head -c 9) 2>/dev/null || true)
           if [ -z "$claimed" ]; then
-            # No artifact: the measurement never got that far. Fall back to the
-            # PRs GitHub itself associates with the commit, so the failure note
-            # still reaches the right thread.
             claimed=$(gh api "/repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/pulls" \
               --jq 'map(select(.state == "open")) | first | .number // empty' || true)
           fi

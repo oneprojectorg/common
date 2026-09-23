@@ -128,14 +128,15 @@ minutes, most of it the `services/api` suite. That is too slow for a required
 check, so it is not one. The run it needs is one CI already pays for:
 `.github/workflows/tests.yml` runs `pnpm test:coverage` — the gating suite,
 instrumented — and then `pnpm health --json --base origin/<base>` against the
-report it leaves behind. `.github/workflows/pr-metrics.yml` picks the result up
-from that run's artifact and publishes it on three surfaces under trial: one line at the end of the PR body, a sticky comment
-(posted as "measuring…" first, then filled in), and a check run whose title is
-the line and whose summary is the full report. `scripts/pr-metrics.mjs` builds
-the line, the comment and the report; `scripts/pr-metrics-publish.mjs` posts
-them, splicing the body line between two marker comments so a new push
-replaces the old line rather than stacking another. The blast radius from
-`scripts/blast-radius.ts` (`pnpm blast-radius` locally) travels with it.
+report it leaves behind. `.github/workflows/pr-metrics.yml` picks the result
+up from that run's artifact and publishes it on three surfaces under trial: one
+line at the end of the PR body, a sticky comment (posted as "measuring…" first,
+then filled in), and a check run whose title is the line and whose summary is
+the full report. `scripts/pr-metrics.mjs` builds the line, the comment and the
+report; `scripts/pr-metrics-publish.mjs` posts them, splicing the body line
+between two marker comments so a new push replaces the old line rather than
+stacking another. The blast radius from `scripts/blast-radius.ts`
+(`pnpm blast-radius` locally) travels with it.
 
 Locally, run `pnpm health` after `pnpm test:coverage`; without a fresh report
 it says `CRAP: STALE` rather than reporting a green it cannot back up —

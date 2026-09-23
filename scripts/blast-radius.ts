@@ -12,8 +12,7 @@
  *
  * `.github/workflows/tests.yml` runs both forms on every push to a PR: the
  * section goes to the job summary and the JSON becomes part of the one metrics
- * line `.github/workflows/pr-metrics.yml` puts at the end of the PR body (see
- * `scripts/pr-metrics.mjs`).
+ * line at the end of the PR body (see `scripts/pr-metrics.mjs`).
  * Started life in common-agent-toolkit's `blast-radius` skill; this repo is
  * its home now, because everything it reads — the tsconfigs, `.fallowrc.json`,
  * the git history — is here.

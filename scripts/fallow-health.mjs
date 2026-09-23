@@ -29,11 +29,10 @@
  *
  * The prose output is for a terminal. `--json` skips fallow's rendered sections
  * and prints the CRAP verdict as one object, always exiting 0: it is a report
- * for another program to render — `.github/workflows/tests.yml` runs it after
- * the instrumented suite, and `.github/workflows/pr-metrics.yml` turns the
- * result into one line in the PR body via `scripts/pr-metrics.mjs` — not a
- * gate. A missing coverage report comes back as `status: "UNAVAILABLE"` there
- * rather than a crash, so the PR line can say so.
+ * for another program to render — `.github/workflows/tests.yml` turns it into
+ * one line in the PR body via `scripts/pr-metrics.mjs` — not a gate. A missing
+ * coverage report comes back as `status: "UNAVAILABLE"` there rather than a
+ * crash, so the PR line can say so.
  *
  * Not part of the required checks. It needs an instrumented run, which the
  * Tests job already makes; `pr-checks.yml` keeps the fast gates.

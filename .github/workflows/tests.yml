@@ -1,15 +1,7 @@
 name: Tests
 
-# Gates the PR on the vitest suites, and — because it is already paying for the
-# install, the test Supabase and the run itself — measures the PR metrics on the
-# same pass. Instrumenting the suite costs about twenty seconds; `blast-radius`
-# and `health` are a second or two each against the report it leaves behind.
-# `pr-metrics.yml` then only has to publish what this job measured, which is why
-# it now runs on `workflow_run` rather than repeating all of the above.
-#
-# The measurement steps never decide this job's conclusion: a `continue-on-error`
-# failure leaves the slot reading "unavailable" in the PR, and the tests alone
-# still say pass or fail.
+# Gates the PR on the vitest suites, and measures the PR metrics off the same
+# instrumented run. `pr-metrics.yml` publishes the artifact this job uploads.
 
 on:
   pull_request_target:
@@ -31,8 +23,6 @@ jobs:
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
-      # Both metric scripts diff against the merge base with the PR's base
-      # branch, which `fetch-depth: 0` below puts in the clone.
       BASE_REF: origin/${{ github.event.pull_request.base.ref }}
       # Supabase test instance environment variables (using local dev keys)
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
@@ -107,14 +97,9 @@ jobs:
       - name: Wait for Supabase to be ready and run migrations
         run: pnpm w:db migrate:test
 
-      # `test:coverage` is the same suite as `pnpm test`, instrumented with
-      # Istanbul, and it keeps the suite's exit status — so this is still the
-      # gate. Measured at ~+18 s on a 1 m 52 s local run.
       - name: Run tests with coverage
         run: pnpm test:coverage
 
-      # Two passes: the markdown section for the report and the JSON the body
-      # line is built from. Around a second each.
       - name: Measure the blast radius
         if: always()
         continue-on-error: true
@@ -122,16 +107,11 @@ jobs:
           pnpm --silent blast-radius --base "$BASE_REF" --quiet > "$RUNNER_TEMP/blast.md"
           pnpm --silent blast-radius --base "$BASE_REF" --quiet --json > "$RUNNER_TEMP/blast.json"
 
-      # Reads the merged coverage report the step above wrote. A failing test
-      # only means the report is partial; `health` scores whatever is there.
       - name: Score CRAP on the changed files
         if: always()
         continue-on-error: true
         run: pnpm --silent health --json --base "$BASE_REF" > "$RUNNER_TEMP/crap.json"
 
-      # The line, the sticky comment and the full report. All three travel to
-      # `pr-metrics.yml` as artifact files: a `workflow_run` job cannot read
-      # another run's job outputs, and it must not run this PR's code.
       - name: Compose the line, the comment and the report
         if: always()
         continue-on-error: true
@@ -140,11 +120,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           mkdir -p "$RUNNER_TEMP/out"
-          # Which PR this measures, written first so that even a failed
-          # composition is addressed to the right thread. The publishing job
-          # checks the number against the head SHA of the run it is publishing
-          # for before it writes anything, because this file leaves a job that
-          # ran the PR's own code.
+          # First, so a failed composition is still addressed to the right PR.
           printf '%s\n' "$PR_NUMBER" > "$RUNNER_TEMP/out/pr.txt"
           node scripts/pr-metrics.mjs \
             --blast "$RUNNER_TEMP/blast.json" \
