@@ -284,3 +284,17 @@ export const parseTwilioStatusCallback = (
   status: params.MessageStatus ?? 'unknown',
   errorCode: params.ErrorCode,
 });
+
+export interface TwilioInboundMessage {
+  from: string;
+  body: string;
+  messageSid: string;
+}
+
+export const parseTwilioInboundMessage = (
+  params: Record<string, string>,
+): TwilioInboundMessage => ({
+  from: params.From ?? '',
+  body: params.Body ?? '',
+  messageSid: params.MessageSid ?? '',
+});
