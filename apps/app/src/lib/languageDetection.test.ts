@@ -38,4 +38,20 @@ describe('detectLanguages', () => {
       ),
     ).toEqual(['hu']);
   });
+
+  // franc guesses wrong on short Latin-script text: these English strings
+  // detect as Portuguese and French, which showed "Translate to English" on
+  // English decisions whose only copy was a phase headline or a title.
+  it.each([
+    'Review Progress',
+    'Our Voice, Our Choice Budget',
+    'Submit your ideas',
+  ])('does not judge short Latin-script text (%s)', (text) => {
+    expect(detectLanguages(text)).toEqual([]);
+  });
+
+  it('still detects short text in a non-Latin script', () => {
+    expect(detectLanguages('برنامج الفنون للشباب')).toEqual(['ar']);
+    expect(detectLanguages('যুব শিল্প কর্মসূচি')).toEqual(['bn']);
+  });
 });

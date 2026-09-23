@@ -18,6 +18,14 @@ const SUPPORTED_LANGUAGE_CODES: Record<string, SupportedLocale> = {
 
 const FRANC_ONLY = Object.keys(SUPPORTED_LANGUAGE_CODES);
 
+// Trigram detection is unreliable on short Latin-script text: title-case
+// phrases like "Review Progress" or "Submit your ideas" come back as Portuguese
+// or French, and a single misread sample shows the Translate control on an
+// English decision. Below this length we don't judge. Arabic and Bengali are
+// told apart by script, not trigrams, so short text in them stays detectable.
+const MIN_LATIN_SAMPLE_LENGTH = 60;
+const NON_LATIN_SCRIPT = /[\p{Script=Arabic}\p{Script=Bengali}]/u;
+
 /** The base language subtag, lowercased — e.g. `en` from `en-US`. */
 export const baseLanguage = (code: string): string =>
   code.toLowerCase().split('-')[0] ?? code;
@@ -31,6 +39,13 @@ export const baseLanguage = (code: string): string =>
 export const detectLanguages = (text: string): string[] => {
   const trimmed = text.trim();
   if (!trimmed) {
+    return [];
+  }
+
+  if (
+    trimmed.length < MIN_LATIN_SAMPLE_LENGTH &&
+    !NON_LATIN_SCRIPT.test(trimmed)
+  ) {
     return [];
   }
 
