@@ -94,6 +94,10 @@ jobs:
             exit 0
           fi
           actual=$(gh api "/repos/$GITHUB_REPOSITORY/pulls/$claimed" --jq .head.sha || true)
+          if [ -z "$actual" ]; then
+            echo "Could not read the head SHA of PR #$claimed." >&2
+            exit 1
+          fi
           if [ "$actual" != "$HEAD_SHA" ]; then
             echo "PR #$claimed is at '$actual', not $HEAD_SHA — superseded, skipping."
             exit 0

@@ -131,9 +131,7 @@ const findCheckRun = async () => {
       `/repos/${repo}/commits/${sha}/check-runs?check_name=${encodeURIComponent(CHECK_NAME)}&per_page=100`,
     );
     const runs = result.check_runs ?? [];
-    return (
-      (runs.find((run) => run.status !== 'completed') ?? runs[0])?.id ?? null
-    );
+    return runs.find((run) => run.status !== 'completed') ?? runs[0] ?? null;
   } catch {
     return null;
   }
@@ -173,6 +171,10 @@ const quietly = async (label, work) => {
 };
 
 const announce = async () => {
+  // Nothing orders this run against the publishing one, so a slow announce
+  // must not overwrite a result that has already landed.
+  if ((await findCheckRun())?.status === 'completed') return;
+
   await upsertComment(
     `**PR metrics** · measuring blast radius and CRAP for \`${short}\`… ([run](${runUrl}))\n\n` +
       'The result lands here and as one line at the end of the description.',
@@ -190,7 +192,7 @@ const announce = async () => {
 
 const publish = async () => {
   const line = (readOptional(process.env.LINE_FILE) ?? '').trim();
-  const checkId = await findCheckRun();
+  const checkId = (await findCheckRun())?.id ?? null;
 
   if (!line) {
     const failed = `**PR metrics** · measurement failed for \`${short}\` — see the [run](${runUrl}).`;
