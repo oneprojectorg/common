@@ -1,8 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { individualsTerms, taxonomies, taxonomyTerms } from '@op/db/schema';
 
-import { NotFoundError } from '../../utils';
-
 export const getIndividualTerms = async ({
   individualId,
 }: {
@@ -24,10 +22,6 @@ export const getIndividualTerms = async ({
     .leftJoin(taxonomies, eq(taxonomies.id, taxonomyTerms.taxonomyId))
     .where(eq(individualsTerms.individualId, individualId))
     .execute();
-
-  if (!indTerms) {
-    throw new NotFoundError('Individual terms', individualId);
-  }
 
   const termUris = indTerms.reduce(
     (accum, term) => {
