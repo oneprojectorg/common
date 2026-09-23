@@ -250,6 +250,7 @@ export {
   ALLOWED_UPLOAD_MIME_TYPES,
   DEFAULT_UPLOAD_SIZE_LIMIT,
   IMAGE_UPLOAD_SIZE_LIMIT,
+  assetPublicUrl,
   isAllowedUploadMimeType,
   type AllowedUploadMimeType,
 } from './utils/storage';

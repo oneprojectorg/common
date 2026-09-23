@@ -1,4 +1,4 @@
-import { CommonError, getCurrentProfileId } from '@op/common';
+import { CommonError, assetPublicUrl, getCurrentProfileId } from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'buffer';
 import { z } from 'zod';
@@ -108,18 +108,11 @@ export const uploadPostAttachment = router({
         throw new CommonError('Upload failed - no data returned');
       }
 
-      // Get signed URL
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
-          .from(bucket)
-          .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
-
-      if (signedUrlError || !signedUrlData) {
-        throw new CommonError('Could not get signed url');
-      }
-
       return {
-        url: signedUrlData.signedUrl,
+        // Never a signed URL: the rich-text editor writes this straight into
+        // the stored document, so a token would take the image down with it
+        // when it expired. The bucket is public, so it bought nothing anyway.
+        url: assetPublicUrl(filePath),
         path: filePath,
         id: data.id,
         fileName: sanitizedFileName,
