@@ -41,7 +41,7 @@ import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import { ProposalViewToggle } from './ProposalViewToggle';
+import { ProposalsViewSwitch } from './ProposalsFilterBar';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
@@ -378,17 +378,17 @@ export function ReviewAssignmentsList({
               ]}
             />
             {availableViews.length > 1 && (
-              // Desktop control; the queue only ever offers a second view when
-              // it has a map, so the floating MobileViewSwitch below always
-              // covers the small breakpoints this hides at.
-              <div className="hidden items-center gap-4 sm:flex">
-                <span aria-hidden className="h-6 w-px bg-border" />
-                <ProposalViewToggle
-                  value={effectiveView}
-                  views={availableViews}
-                  onChange={handleViewChange}
-                />
-              </div>
+              <ProposalsViewSwitch
+                view={{
+                  value: effectiveView,
+                  views: availableViews,
+                  // The queue only ever offers a second view when it has a map,
+                  // so the floating MobileViewSwitch below always covers the
+                  // small breakpoints this hides at.
+                  className: 'max-sm:hidden',
+                  onChange: handleViewChange,
+                }}
+              />
             )}
           </div>
         </StickyFilterBar>

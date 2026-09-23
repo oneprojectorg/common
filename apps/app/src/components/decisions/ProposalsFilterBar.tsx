@@ -36,8 +36,10 @@ export interface ProposalViewControls {
   /** The views to offer, in display order — see `useProposalViewMode`. */
   views: readonly ProposalView[];
   /**
-   * Responsive visibility for the switch. The caller owns the breakpoints
-   * because it owns whether a floating `MobileViewSwitch` covers small widths.
+   * Breakpoints to hide the switch at — the caller owns them because it owns
+   * whether a floating `MobileViewSwitch` covers the small ones. Visible at
+   * every width by default, which is the safe end: the switch is sometimes the
+   * only way out of a view.
    */
   className?: string;
   onChange: (next: ProposalView) => void;
@@ -54,7 +56,7 @@ export const ProposalsViewSwitch = ({
 }: {
   view: ProposalViewControls;
 }) => (
-  <div className={cn('items-center gap-4', view.className)}>
+  <div className={cn('flex items-center gap-4', view.className)}>
     <span aria-hidden className="h-6 w-px bg-border" />
     <ProposalViewToggle
       value={view.value}

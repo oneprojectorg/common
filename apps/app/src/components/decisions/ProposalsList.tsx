@@ -800,7 +800,7 @@ const ProposalsListContent = ({
                   // Where a map exists the floating MobileViewSwitch covers
                   // small widths; without one this toggle is the only way out
                   // of a view and has to stay reachable at every width.
-                  className: hasMapView ? 'hidden sm:flex' : 'flex',
+                  className: hasMapView ? 'max-sm:hidden' : undefined,
                   onChange: handleViewChange,
                 }
               : undefined
