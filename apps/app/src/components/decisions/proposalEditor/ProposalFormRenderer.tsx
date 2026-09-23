@@ -1,7 +1,6 @@
 'use client';
 
 import { linkifyOptionalText } from '@/utils/linkDetection';
-import type { BudgetData } from '@op/common/client';
 import {
   formatProposalCategories,
   isDistrictCategoryLabel,
@@ -139,8 +138,7 @@ function renderField(
   const { key, format, schema } = field;
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
-  // Template authors write help text as plain text, so a pasted URL only
-  // becomes clickable if we linkify it here, once, for every field variant.
+  // Template help text is plain text, never rich text.
   const description = linkifyOptionalText(schema.description);
 
   // -- Title ------------------------------------------------------------------
@@ -237,35 +235,34 @@ function renderField(
     );
   }
 
-  // -- Budget (system) --------------------------------------------------------
+  // -- Budget (system) and money fields ---------------------------------------
 
-  // The system `budget` field and a template's own `money` field render the
-  // same control; only the draft value the editor starts from differs.
-  const renderMoneyField = (initialValue: BudgetData | null) =>
-    isReadonlyMode ? (
-      <ReadonlyBudgetField
-        value={formatPreviewBudget(previewContent)}
-        title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-        description={description}
-        required={field.required}
-        placeholder={t('decisions.proposals.addBudgetAction')}
-      />
-    ) : (
+  // A legacy template's budget carries no `x-format`, so it is matched by key
+  // as well as by format. Only the draft value the two start from differs.
+  if (key === 'budget' || format === 'money') {
+    if (isReadonlyMode) {
+      return (
+        <ReadonlyBudgetField
+          value={formatPreviewBudget(previewContent)}
+          title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
+          description={description}
+          required={field.required}
+          placeholder={t('decisions.proposals.addBudgetAction')}
+        />
+      );
+    }
+
+    return (
       <CollaborativeBudgetField
         title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
         description={description}
         required={field.required}
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
-        initialValue={initialValue}
+        initialValue={key === 'budget' ? draft.budget : null}
         onChange={(value) => onFieldChange(key, value)}
       />
     );
-
-  // A legacy template's budget carries no `x-format`, so it is matched by key
-  // rather than falling through to the `money` case below.
-  if (key === 'budget') {
-    return renderMoneyField(draft.budget);
   }
 
   // -- Dynamic fields resolved by x-format ------------------------------------
@@ -302,10 +299,6 @@ function renderField(
           onEditorBlur={onEditorBlur}
         />
       );
-    }
-
-    case 'money': {
-      return renderMoneyField(null);
     }
 
     case 'location': {

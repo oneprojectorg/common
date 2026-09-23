@@ -215,6 +215,9 @@ function CustomFormField({
   const fieldId = useId();
   const label = field.title ?? name;
   const description = linkifyOptionalText(field.description);
+  const descriptionNode = description ? (
+    <FieldDescription>{description}</FieldDescription>
+  ) : null;
   // Same breakpoint the NPS survey uses to swap its scale control between
   // a horizontal radio row (desktop) and a dropdown (mobile).
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
@@ -257,9 +260,7 @@ function CustomFormField({
           {label}
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
-        {description ? (
-          <FieldDescription>{description}</FieldDescription>
-        ) : null}
+        {descriptionNode}
         {multiOptions.map((option) => (
           <Field key={option} className="items-start" orientation="horizontal">
             <Checkbox
@@ -311,9 +312,7 @@ function CustomFormField({
           {label}
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
-        {description ? (
-          <FieldDescription>{description}</FieldDescription>
-        ) : null}
+        {descriptionNode}
         <RadioGroup
           value={selected}
           onValueChange={(next) =>
@@ -387,9 +386,7 @@ function CustomFormField({
           }}
         />
         {error ? <FieldError>{error}</FieldError> : null}
-        {description ? (
-          <FieldDescription>{description}</FieldDescription>
-        ) : null}
+        {descriptionNode}
       </Field>
     );
   }
@@ -421,7 +418,7 @@ function CustomFormField({
         />
       )}
       {error ? <FieldError>{error}</FieldError> : null}
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
+      {descriptionNode}
     </Field>
   );
 }

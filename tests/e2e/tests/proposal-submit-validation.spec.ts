@@ -62,7 +62,7 @@ const ALL_FIELDS_TEMPLATE = {
     summary: {
       type: 'string' as const,
       title: 'Summary',
-      description: 'A brief overview of the proposal',
+      description: 'A brief overview — see https://example.com/guide',
       'x-format': 'short-text' as const,
       minLength: 1,
     },
@@ -138,6 +138,15 @@ test.describe('Proposal Submit Validation', () => {
       exact: true,
     });
     await expect(submitButton).toBeVisible({ timeout: 36_000 });
+
+    // The editor linkifies a URL in a field's help text, same as the read-only
+    // proposal view does.
+    await expect(
+      authenticatedPage.getByRole('link', {
+        name: 'https://example.com/guide',
+        exact: true,
+      }),
+    ).toHaveAttribute('href', 'https://example.com/guide');
 
     // Helper: dismiss any visible toasts before the next submit
     const dismissToasts = async () => {
