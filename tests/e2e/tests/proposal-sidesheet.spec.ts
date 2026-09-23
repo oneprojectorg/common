@@ -9,20 +9,11 @@ import type { Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/index.js';
 
-/**
- * The collab mock (@op/collab/testing) serves fixture content for any doc ID
- * that doesn't contain "nonexistent", so the seeded proposal renders a body.
- */
+/** The collab mock serves fixture content for any ID without "nonexistent". */
 const MOCK_DOC_ID = 'test-sidesheet-doc';
 
 const PROPOSAL_TITLE = 'Enhance pedestrian crosswalk visibility';
 
-/**
- * Reading a proposal used to cost a navigation, which threw away the list's
- * filters, scroll position and map viewport. The title now opens a side sheet
- * over the list (ONE-1670) — and stays a link, so the proposal's own page is
- * still one modified click or one "Open full proposal" away.
- */
 test.describe('Proposal side sheet', () => {
   test('a proposal title opens the sheet without leaving the list', async ({
     authenticatedPage,
@@ -36,8 +27,7 @@ test.describe('Proposal side sheet', () => {
     const titleLink = authenticatedPage.getByRole('link', {
       name: PROPOSAL_TITLE,
     });
-    // The link keeps pointing at the proposal's page, which is what a
-    // middle-click and "Copy link address" hand the reader.
+    // Still a real link, so a middle-click still reaches the page.
     await expect(titleLink).toHaveAttribute(
       'href',
       new RegExp(`/proposal/${profileId}$`),
@@ -51,15 +41,12 @@ test.describe('Proposal side sheet', () => {
       sheet.getByRole('heading', { name: PROPOSAL_TITLE }),
     ).toBeVisible();
 
-    // Still the list route, with the open proposal recorded in the URL so the
-    // panel is linkable and Back closes it.
     await expect(authenticatedPage).toHaveURL(
       new RegExp(
         `/decisions/${instanceSlug}/current\\?.*proposalPanel=${profileId}`,
       ),
     );
 
-    // Browser Back is the other way out, and it leaves the list standing.
     await authenticatedPage.goBack();
     await expect(sheet).toBeHidden();
     await expect(titleLink).toBeVisible();
@@ -106,8 +93,7 @@ test.describe('Proposal side sheet', () => {
     await expect(authenticatedPage).toHaveURL(
       new RegExp(`/decisions/${instanceSlug}/proposal/${profileId}`),
     );
-    // The same generous budget `openProposalList` uses: this is a fresh route
-    // render, which under a parallel run can take well past the 5s default.
+    // A fresh route render, which under a parallel run outruns the 5s default.
     await expect(
       authenticatedPage.getByRole('heading', { name: PROPOSAL_TITLE }),
     ).toBeVisible({ timeout: 30_000 });

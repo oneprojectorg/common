@@ -102,9 +102,6 @@ function ContributingIdeasSuspense({
             <ProposalCardView
               proposal={contributingProposal}
               href={`${decisionRoot}/proposal/${contributingProposal.profileId}`}
-              // Inside the side sheet this swaps the panel to the merged-in
-              // idea; on the proposal page there is no sheet above it and the
-              // hook returns undefined, so the card navigates as before.
               onTitleClick={openInSheet(contributingProposal.profileId)}
               headerBadge={
                 <ProposalRestrictionBadge proposal={contributingProposal} />

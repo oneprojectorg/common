@@ -72,12 +72,7 @@ export interface ProposalCardProps extends Omit<
    * a plain `<a>`. Must accept `href`, `className`, and children.
    */
   linkComponent?: ElementType<ProposalCardLinkProps>;
-  /**
-   * Click handler on the title link. Calling `preventDefault()` cancels the
-   * navigation, which is how a caller opens the proposal in a panel instead —
-   * `href` stays a real link, so a middle/modified click, "Open in new tab" and
-   * "Copy link address" all still reach the proposal's own page.
-   */
+  /** Click handler on the title link; `preventDefault()` cancels the navigation. */
   onTitleClick?: MouseEventHandler<HTMLAnchorElement>;
   /** Visibility/status badge above the title (e.g. Draft, Hidden, Flagged). */
   headerBadge?: ReactNode;

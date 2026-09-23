@@ -238,9 +238,6 @@ export const Awarded: Story = {
   ),
 };
 
-// `onTitleClick` cancels the navigation so the caller can open the proposal in
-// a panel instead. The card keeps its `href`, so a modified click still opens
-// the proposal's own page — which is why the handler checks for one.
 export const TitleOpensAPanel: Story = {
   render: function TitleOpensAPanelStory() {
     const [opened, setOpened] = useState<string | null>(null);

@@ -37,23 +37,15 @@ import { useLiveProposalDocument } from './useLiveProposalDocument';
 export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
 
 /**
- * A proposal read in a panel beside the list it was opened from, rather than on
- * its own page (Figma 19755-7774). Keeping the list mounted is the whole point:
- * the filters, the scroll position and the map's viewport all survive a read,
- * which a navigation to `/proposal/:id` throws away.
- *
- * Body composition matches {@link ReviewProposalPane} — the same
- * `ProposalPreview` the proposal page renders, then the merged-in ideas and the
- * comments. What the page keeps to itself is what a panel can't host: the read
- * bar, the review-notes split pane, and the translate flow. The header's expand
- * control hands the reader over to that page.
+ * A proposal read in a panel over the page it was opened from, so the list's
+ * filters, scroll position and map viewport survive the read.
  */
 export function ProposalSheet({
   profileId,
   route,
   onClose,
 }: {
-  /** Profile id of the proposal to show; `null` keeps the sheet closed. */
+  /** `null` keeps the sheet closed. */
   profileId: string | null;
   route: ProposalSheetRoute;
   onClose: () => void;
@@ -75,15 +67,12 @@ export function ProposalSheet({
     >
       <SheetContent
         side={isRtl ? 'left' : 'right'}
-        // Our own close button instead of the built-in one: sense is
-        // i18n-agnostic and labels its close "Close" in English.
+        // sense labels its built-in close "Close" in English.
         showCloseButton={false}
-        // Wider than the default side panel: this carries a whole proposal,
-        // and the page's own reading column is 544px.
         className="w-full gap-0 p-0 sm:max-w-2xl"
       >
-        {/* The proposal's own H1 is inside the scroll area and arrives with the
-            query, so the dialog's accessible name is this static one. */}
+        {/* The proposal's own H1 arrives with the query, so the dialog's
+            accessible name is this static one. */}
         <SheetTitle className="sr-only">
           {t('decisions.proposals.proposalLabel')}
         </SheetTitle>
@@ -110,10 +99,7 @@ export function ProposalSheet({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {/* Keyed on the proposal, so opening a second one after the first
-              failed gets a fresh boundary — an error boundary latches, and
-              without this the panel would stay on the failure for the rest of
-              the session. */}
+          {/* Keyed so a failure doesn't latch onto the next proposal opened. */}
           {shownProfileId ? (
             <APIErrorBoundary
               key={shownProfileId}
@@ -133,13 +119,7 @@ export function ProposalSheet({
   );
 }
 
-/**
- * The last proposal the sheet was opened on, kept once it closes so the panel
- * animates out with its content still in it instead of emptying first — the
- * same reason `useHostedProposalDialog` holds on to its proposal. Adjusted
- * during render rather than in an effect, so switching proposals never paints
- * the previous one.
- */
+/** Held past the close so the panel animates out with its content still in it. */
 function useLastOpenProposal(profileId: string | null): string | null {
   const [shown, setShown] = useState(profileId);
 
@@ -162,13 +142,8 @@ function ProposalSheetBody({
     profileId,
   });
 
-  // Same hook the proposal page uses, so a proposal submitted moments ago
-  // reads as pending here too rather than as an empty body while its
-  // collaboration document is still propagating.
   const { proposal, documentState } = useLiveProposalDocument(initialProposal);
 
-  // Same hook the page and the card's metric toggles use, so the three
-  // surfaces can't disagree about who may like or follow.
   const engagement = useProposalEngagement({
     proposal,
     canEngage: canEngageWithProposals(proposal.access),
@@ -176,13 +151,8 @@ function ProposalSheetBody({
   const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
 
   return (
-    // Same section rhythm as the proposal page: each section's own `pt` mirrors
-    // this gap, so a rule sits centred between the two sections it separates.
+    // Each section's own `pt` mirrors this gap, centring the rules between.
     <div className="flex flex-col gap-6 px-4 py-6 sm:gap-10 sm:px-8 sm:py-8">
-      {/* No `selection`: the allocated amount and the "Selected" badge it adds
-          need the instance's phase list, and the results card behind the sheet
-          already carries that badge. The expand control is the way to the
-          full record. */}
       <ProposalPreview
         proposal={proposal}
         documentState={documentState}
@@ -198,7 +168,6 @@ function ProposalSheetBody({
   );
 }
 
-/** Header, tag row, author and a few body lines — the shape of what loads. */
 function ProposalSheetSkeleton() {
   return (
     <div className="flex flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
@@ -219,11 +188,6 @@ function ProposalSheetSkeleton() {
   );
 }
 
-/**
- * Anything the proposal query refuses — deleted, hidden from this viewer, or a
- * stale `?proposal=` in a shared link. Kept inside the sheet: the list behind
- * it is still good, so this must not take the page down with it.
- */
 function ProposalUnavailable() {
   const t = useTranslations();
 

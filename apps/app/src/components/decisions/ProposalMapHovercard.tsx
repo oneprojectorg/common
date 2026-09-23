@@ -41,8 +41,6 @@ export function ProposalMapHovercard({
   return (
     <Link
       href={href}
-      // The link wraps the whole card here rather than the title, so the sheet
-      // opens from it — same interaction as the list card beside the map.
       onClick={openInSheet(proposal.profileId)}
       // `w-fit` + min/max-w clamps the card between 13rem and 20rem so
       // short titles don't stretch and long titles wrap. The card chrome

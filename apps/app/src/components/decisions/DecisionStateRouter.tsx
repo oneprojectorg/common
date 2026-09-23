@@ -154,9 +154,6 @@ export function DecisionStateRouter({
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
-  // One sheet for the whole phase page, so every proposal-card surface on it —
-  // the browse grid, the map, the results tabs — opens the same panel. Mounted
-  // here because this is the one place every phase view passes through.
   return (
     <ProposalSheetProvider
       slug={slug}

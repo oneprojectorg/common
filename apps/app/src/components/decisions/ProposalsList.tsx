@@ -400,8 +400,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
 
   // The provider sits above the loaders, so a refreshed list re-parenting its
   // cards can't close a merge, rejection or delete the admin is halfway
-  // through. The proposal sheet is hosted higher still, on
-  // `DecisionStateRouter`, so it survives the same way for every surface.
+  // through.
   return (
     <ProposalCardDialogProvider>
       {phase === 'results' ? (

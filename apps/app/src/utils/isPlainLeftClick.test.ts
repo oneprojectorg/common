@@ -17,8 +17,6 @@ describe('isPlainLeftClick', () => {
     expect(isPlainLeftClick(click())).toBe(true);
   });
 
-  // Each of these asks the browser for a new tab, window or download. An
-  // in-page panel that swallowed them would leave the reader with nothing.
   it('declines every modified click', () => {
     expect(isPlainLeftClick(click({ metaKey: true }))).toBe(false);
     expect(isPlainLeftClick(click({ ctrlKey: true }))).toBe(false);

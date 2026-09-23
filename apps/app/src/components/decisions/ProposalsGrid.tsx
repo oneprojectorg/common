@@ -181,12 +181,7 @@ export const NoProposalsFound = ({
   );
 };
 
-/**
- * "Show me this proposal" for the voting-phase cards, whose titles are not
- * links: the whole card is the vote toggle, or it carries no link at all. So
- * this is where the side sheet opens from on those cards — the action stays a
- * link, so a modified click still reaches the proposal's own page.
- */
+/** Opens the sheet on the voting-phase cards, whose titles are not links. */
 const ReadProposalAction = ({
   href,
   onClick,
@@ -200,10 +195,7 @@ const ReadProposalAction = ({
     <ButtonLink
       href={href}
       onClick={(event) => {
-        // In the voting phase the card behind this button is the ballot
-        // toggle, and opening the sheet keeps the reader on it — so without
-        // this the press would also select or deselect the proposal they only
-        // meant to read. Same guard the card's menu and checkbox use.
+        // The card behind is the ballot toggle; reading must not vote.
         event.stopPropagation();
         onClick?.(event);
       }}

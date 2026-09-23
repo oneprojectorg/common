@@ -490,10 +490,8 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
     await expect(authenticatedPage.getByText('$8,000').first()).toBeVisible();
 
-    // A funded card's title opens the side sheet rather than navigating, same
-    // as every other proposal card (ONE-1670). This is the surface furthest
-    // from the browse list, so it proves the sheet is mounted per decision
-    // page and not per list.
+    // The surface furthest from the browse list, so it proves the sheet is
+    // mounted per decision page rather than per list (ONE-1670).
     await authenticatedPage
       .getByRole('link', { name: 'Proposal Alpha' })
       .click();
@@ -503,9 +501,8 @@ test.describe('Decision Manual Selection — full flow', () => {
     ).toBeVisible({ timeout: 15_000 });
     await sheet.getByRole('button', { name: 'Close' }).click();
     await expect(sheet).toBeHidden();
-    // Still the results screen: the click opened a panel over it rather than
-    // navigating away. Asserted after the close, not during — the sheet is
-    // modal, so while it is open the page behind it is out of the a11y tree.
+    // After the close, not during: a modal sheet takes the page behind it out
+    // of the a11y tree.
     await expect(fundedHeading).toBeVisible();
 
     // Selected proposal — last phase, in selection: view page shows both
