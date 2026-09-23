@@ -47,6 +47,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
 
     expect(result).toEqual({ status: 200 });
     expect(inngest.send).toHaveBeenCalledWith({
+      id: 'sms-inbound-SM456',
       name: Events.smsInboundReceived.name,
       data: { from: '+15005550006', body: 'YES', messageSid: 'SM456' },
     });
