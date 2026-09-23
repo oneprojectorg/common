@@ -1,6 +1,5 @@
-import { eq } from '@op/db/client';
 import { ProposalStatus, users } from '@op/db/schema';
-import { db } from '@op/db/test';
+import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
   createDecisionProcess,

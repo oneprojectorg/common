@@ -7,7 +7,7 @@ import { useTranslations } from '@/lib/i18n';
 export interface ProposalFilterItem {
   id: ProposalFilter;
   label: string;
-  /** "My proposals" without a profile: offered but inert, never silently wrong. */
+  /** A profile-bound filter with no profile: offered but inert, never silently wrong. */
   isDisabled?: boolean;
 }
 
@@ -44,6 +44,7 @@ export const useProposalFilterItems = ({
           {
             id: ProposalFilter.MY_BALLOT,
             label: t('myBallotOption'),
+            isDisabled: !currentProfileId,
           },
         ]
       : []),
