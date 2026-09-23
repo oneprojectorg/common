@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
 /**
  * Characters that end the sentence rather than the URL. Covers the shipped
@@ -15,9 +15,7 @@ const SENTENCE_PUNCTUATION = new Set([
   '।',
   '॥',
   '…',
-  '‘',
   '’',
-  '“',
   '”',
   '»',
 ]);

@@ -12,6 +12,8 @@ describe('linkifyText', () => {
     expect(markup).toContain('href="https://example.com/help"');
     expect(markup).toContain('target="_blank"');
     expect(markup).toContain('rel="noopener noreferrer"');
+    // Isolated, so a URL keeps reading left-to-right inside RTL prose.
+    expect(markup).toContain('dir="ltr"');
     expect(markup).toContain('>https://example.com/help</a>');
   });
 
