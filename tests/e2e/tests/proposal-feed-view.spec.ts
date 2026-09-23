@@ -1,6 +1,5 @@
 import { ProposalStatus } from '@op/db/schema';
 import {
-  type CreateOrganizationResult,
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
@@ -18,63 +17,53 @@ const MOCK_PROPOSAL_TITLE = 'Community Garden Project';
 
 // Keep in sync with PROPOSALS_PAGE_LIMIT in ProposalsList.tsx.
 const PAGE_LIMIT = 24;
+const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
 
-const seedDecision = async ({
-  org,
-  name,
-  proposalCount,
-}: {
-  org: CreateOrganizationResult;
-  name: string;
-  proposalCount: number;
-}) => {
-  const process = await createDecisionProcess({
-    createdByProfileId: org.organizationProfile.id,
-    name: `${name} ${Date.now()}`,
-  });
-
-  const instance = await createDecisionInstance({
-    processId: process.id,
-    ownerProfileId: org.organizationProfile.id,
-    authUserId: org.adminUser.authUserId,
-    email: org.adminUser.email,
-    schema: process.processSchema,
-  });
-
-  for (let i = 1; i <= proposalCount; i++) {
-    await createProposal({
-      processInstanceId: instance.instance.id,
-      submittedByProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-      status: ProposalStatus.SUBMITTED,
-      proposalData: {
-        title: `Proposal ${i}`,
-        collaborationDocId: MOCK_DOC_ID,
-      },
-    });
-  }
-
-  return instance;
-};
-
+/**
+ * One journey rather than a test per assertion: seeding a decision is the
+ * expensive part, and the second page only exists if the feed mounted in the
+ * first place. Kept to a single seeded decision on purpose — this file runs
+ * beside the other proposal specs, and a second one competes with them for
+ * the local Supabase realtime connections they wait on.
+ */
 test.describe('Proposal Feed view', () => {
   /**
-   * The feed is the third view in the selector. This process collects no
-   * location, so the map option drops out and the toggle offers grid + feed —
-   * which is also the case that used to hide the toggle entirely.
+   * The feed is the third option in the view selector. This process collects
+   * no location, so the map drops out and the selector offers grid + feed —
+   * the case that used to render no selector at all.
    */
-  test('offers the feed in the view selector and mounts it when picked', async ({
+  test('is selectable in the view toggle and paginates like the other views', async ({
     authenticatedPage,
     org,
   }) => {
     test.setTimeout(120_000);
 
-    const { slug, name } = await seedDecision({
-      org,
-      name: 'Feed View Selector',
-      proposalCount: 2,
+    const process = await createDecisionProcess({
+      createdByProfileId: org.organizationProfile.id,
+      name: `Feed View ${Date.now()}`,
     });
+
+    const { instance, slug, name } = await createDecisionInstance({
+      processId: process.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: process.processSchema,
+    });
+
+    for (let i = 1; i <= TOTAL_PROPOSALS; i++) {
+      await createProposal({
+        processInstanceId: instance.id,
+        submittedByProfileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+        status: ProposalStatus.SUBMITTED,
+        proposalData: {
+          title: `Proposal ${i}`,
+          collaborationDocId: MOCK_DOC_ID,
+        },
+      });
+    }
 
     await authenticatedPage.goto(`/en/decisions/${slug}/current?filter=all`, {
       waitUntil: 'domcontentloaded',
@@ -95,46 +84,10 @@ test.describe('Proposal Feed view', () => {
     await expect(authenticatedPage).toHaveURL(/view=feed/);
 
     // The same browse card the grid and the map's list column render.
-    await expect(
-      feed.getByRole('link', { name: MOCK_PROPOSAL_TITLE }),
-    ).toHaveCount(2);
-  });
+    const proposalLink = feed.getByRole('link', { name: MOCK_PROPOSAL_TITLE });
 
-  /**
-   * The feed's infinite-scroll sentinel sits inside the feed's own `<ul>`,
-   * above its bottom centering padding — a sentinel placed after the list
-   * would only trip once the reader had scrolled a third of a viewport past
-   * the last card.
-   */
-  test('loads remaining proposals when scrolling the feed', async ({
-    authenticatedPage,
-    org,
-  }) => {
-    test.setTimeout(120_000);
-
-    const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
-
-    const { slug, name } = await seedDecision({
-      org,
-      name: 'Feed View Infinite Scroll',
-      proposalCount: TOTAL_PROPOSALS,
-    });
-
-    await authenticatedPage.goto(
-      `/en/decisions/${slug}/current?filter=all&view=feed`,
-      { waitUntil: 'domcontentloaded' },
-    );
-
-    await expect(
-      authenticatedPage.getByRole('heading', { name, level: 2 }),
-    ).toBeVisible({ timeout: 30_000 });
-
-    const proposalLink = authenticatedPage
-      .locator('[data-slot="proposal-feed"]')
-      .getByRole('link', { name: MOCK_PROPOSAL_TITLE });
-
-    // First page lands at PAGE_LIMIT — not the full set — otherwise this would
-    // pass without the feed being paginated at all.
+    // First page lands at PAGE_LIMIT — not the full set — otherwise the scroll
+    // below would pass without the feed being paginated at all.
     await expect(proposalLink.first()).toBeVisible({ timeout: 30_000 });
     await expect
       .poll(() => proposalLink.count(), {
@@ -144,7 +97,8 @@ test.describe('Proposal Feed view', () => {
       .toBe(PAGE_LIMIT);
 
     // Pull the last loaded card into view on each tick, which brings the
-    // in-list sentinel into the viewport and cascades through the rest.
+    // sentinel (the feed's last list item, above its bottom centering padding)
+    // into the viewport and cascades through the remaining pages.
     await expect
       .poll(
         async () => {
