@@ -1,42 +1,31 @@
 name: PR metrics
 
-# Measures the review metrics the `pr-description` skill asks for — blast
-# radius and CRAP — on every push to a PR, and publishes the result to three
-# surfaces under trial: one line at the end of the PR body, a sticky comment
-# carrying the CRAP table and the blast-radius section, and a check run. The
-# full report also goes to the job summary.
-# Nothing here is a required check: the numbers are for the reviewer, and a
-# failure to measure reads "unavailable" rather than blocking the merge.
-#
-# Three jobs, on purpose. `measure` checks out and runs the PR's code, so it
-# gets a read-only token. `announce` and `publish` hold the token that can
-# write to the PR, so they run no PR code: they check out the publishing script
-# from the base branch and treat the measured text strictly as data.
+# Publishes what `tests.yml` measured, to the PR body, a sticky comment and a
+# check run. Not a required check.
 
 on:
   pull_request_target:
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
 
 permissions:
   contents: read
 
-# One run per PR at a time; a new push supersedes the one in flight.
 concurrency:
-  group: pr-metrics-${{ github.event.pull_request.number }}
+  group: pr-metrics-${{ github.event.pull_request.number || github.event.workflow_run.head_sha }}
   cancel-in-progress: true
 
 jobs:
-  # Posts the "measuring…" comment and opens an in-progress check run before
-  # the measurement starts, so the reader knows a result is coming.
   announce:
     name: Announce
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       pull-requests: write
       checks: write
-    outputs:
-      check_run_id: ${{ steps.announce.outputs.check_run_id }}
     env:
       GH_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -50,169 +39,33 @@ jobs:
           sparse-checkout: scripts
 
       - name: Post the placeholder comment and open the check run
-        id: announce
         run: node scripts/pr-metrics-publish.mjs announce
-
-  measure:
-    name: Measure
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    # Fork PRs route through the `fork-ci` environment so a maintainer must
-    # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
-    environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
-
-    outputs:
-      line: ${{ steps.compose.outputs.line }}
-
-    env:
-      BASE_REF: origin/${{ github.event.pull_request.base.ref }}
-      # Supabase test instance environment variables (using local dev keys)
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-      SUPABASE_URL: http://127.0.0.1:55321
-      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
-      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
-      NEXT_PUBLIC_POSTHOG_KEY: test_posthog_key
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          # Both scripts diff against the merge base with the PR's base branch,
-          # so the base branch history has to be here too.
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install pnpm
-        run: corepack prepare pnpm@latest --activate
-
-      # Runner config, not the checked-out .npmrc: this job checks out the PR's
-      # head, so that file is PR-authored and must not be handed the token.
-      - name: Authenticate to the Tiptap Pro registry
-        env:
-          TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
-        run: |
-          pnpm config set "@tiptap-pro:registry" "https://registry.tiptap.dev/"
-          pnpm config set "//registry.tiptap.dev/:_authToken" "$TIPTAP_PRO_TOKEN"
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Two passes: the markdown section for the report and the JSON the body
-      # line is built from. Around ten seconds each on a normal PR. Run
-      # through pnpm so `fallow`, a root devDependency, is on PATH.
-      - name: Measure the blast radius
-        continue-on-error: true
-        run: |
-          pnpm --silent blast-radius --base "$BASE_REF" --quiet > "$RUNNER_TEMP/blast.md"
-          pnpm --silent blast-radius --base "$BASE_REF" --quiet --json > "$RUNNER_TEMP/blast.json"
-
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: 2.95.4
-
-      - name: Use CI config
-        run: cp supabase/supabase-ci.toml supabase/config.toml
-
-      - name: Start Supabase
-        run: supabase start
-
-      - name: Run migrations
-        run: pnpm w:db migrate:test
-
-      # The same suite `tests.yml` gates on, instrumented. A failing test is
-      # that workflow's finding, not this one's; here it only means the
-      # coverage report is partial, and `pnpm health` reads whatever it wrote.
-      - name: Run the tests with coverage
-        continue-on-error: true
-        run: pnpm test:coverage
-
-      - name: Score CRAP on the changed files
-        continue-on-error: true
-        run: pnpm --silent health --json --base "$BASE_REF" > "$RUNNER_TEMP/crap.json"
-
-      # Runs even when Supabase or the install broke above: the line then reads
-      # "unavailable" for what could not be measured, which is still an answer.
-      - name: Compose the line, the comment and the report
-        id: compose
-        if: always()
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/out"
-          line=$(node scripts/pr-metrics.mjs \
-            --blast "$RUNNER_TEMP/blast.json" \
-            --blast-md "$RUNNER_TEMP/blast.md" \
-            --crap "$RUNNER_TEMP/crap.json" \
-            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            --sha "$HEAD_SHA" \
-            --summary "$RUNNER_TEMP/out/report.md" \
-            --comment "$RUNNER_TEMP/out/comment.md")
-          echo "$line"
-          echo "line=$line" >> "$GITHUB_OUTPUT"
-          cat "$RUNNER_TEMP/out/report.md" >> "$GITHUB_STEP_SUMMARY"
-
-      # The report is too long for a job output, so it travels as an artifact.
-      - name: Upload the report and the comment
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-metrics
-          path: ${{ runner.temp }}/out
-          retention-days: 7
 
   publish:
     name: Publish
-    needs: [announce, measure]
-    # Always, so a failed measurement still replaces "measuring…" with a
-    # failure note and closes the check run.
-    if: always()
+    # Cancelled and skipped runs included: the head-SHA check below tells a
+    # superseded run (skip, the newer one publishes) from one that will never
+    # publish, which must still close out its placeholder.
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
+      actions: read
       contents: read
       pull-requests: write
       checks: write
 
     env:
       GH_TOKEN: ${{ github.token }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      CHECK_RUN_ID: ${{ needs.announce.outputs.check_run_id }}
-      # Produced by the `measure` job while running PR code. Passed through
-      # the environment and files, never interpolated into a script.
-      METRICS_LINE: ${{ needs.measure.outputs.line }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
 
     steps:
-      - name: Checkout the publishing script from the base branch
+      - name: Checkout the publishing script from the default branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
           sparse-checkout: scripts
 
       - name: Download the report and the comment
@@ -221,11 +74,44 @@ jobs:
         with:
           name: pr-metrics
           path: ${{ runner.temp }}/in
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      # `pr.txt` left a job that ran the PR's own code, so the number in it is
+      # a claim: reduced to digits, then checked against the API.
+      - name: Resolve and verify the pull request
+        id: pr
+        env:
+          PR_FILE: ${{ runner.temp }}/in/pr.txt
+        run: |
+          set -uo pipefail
+          claimed=$( (tr -cd '0-9' < "$PR_FILE" | head -c 9) 2>/dev/null || true)
+          if [ -z "$claimed" ]; then
+            claimed=$(gh api "/repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/pulls" \
+              --jq 'map(select(.state == "open")) | first | .number // empty' || true)
+          fi
+          if [ -z "$claimed" ]; then
+            echo "No pull request for $HEAD_SHA; nothing to publish."
+            exit 0
+          fi
+          actual=$(gh api "/repos/$GITHUB_REPOSITORY/pulls/$claimed" --jq .head.sha || true)
+          if [ -z "$actual" ]; then
+            echo "Could not read the head SHA of PR #$claimed." >&2
+            exit 1
+          fi
+          if [ "$actual" != "$HEAD_SHA" ]; then
+            echo "PR #$claimed is at '$actual', not $HEAD_SHA — superseded, skipping."
+            exit 0
+          fi
+          echo "number=$claimed" >> "$GITHUB_OUTPUT"
 
       # `runner` is a step-level context; naming it in the job's `env` makes
       # GitHub reject the whole workflow file before any job starts.
       - name: Rewrite the body line, the comment and the check run
+        if: steps.pr.outputs.number != ''
         env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          LINE_FILE: ${{ runner.temp }}/in/line.txt
           COMMENT_FILE: ${{ runner.temp }}/in/comment.md
           REPORT_FILE: ${{ runner.temp }}/in/report.md
         run: node scripts/pr-metrics-publish.mjs publish
