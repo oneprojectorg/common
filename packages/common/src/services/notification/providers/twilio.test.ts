@@ -1,9 +1,16 @@
+import { createHmac } from 'node:crypto';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { CommonError } from '../../../utils/error';
 import { parsePhoneNumber } from '../schemas';
 import type { SmsProvider } from '../types';
-import { type TwilioRestClient, createTwilioProvider } from './twilio';
+import {
+  type TwilioRestClient,
+  createTwilioProvider,
+  parseTwilioStatusCallback,
+  verifyTwilioWebhookSignature,
+} from './twilio';
 
 /** Twilio's own magic test number, so no real line appears in a fixture. */
 const TO = parsePhoneNumber('+15005550006');
@@ -184,6 +191,89 @@ describe('createTwilioProvider', () => {
         reason: 'unknown',
         retryable: false,
       });
+    });
+  });
+});
+
+/** Reproduces the signature Twilio itself would send, so a test can assert
+ *  against the real SDK's `validateRequest` rather than a stub of it. */
+const signTwilioRequest = (
+  authToken: string,
+  url: string,
+  params: Record<string, string>,
+): string => {
+  const data = Object.keys(params)
+    .sort()
+    .reduce((acc, key) => acc + key + params[key], url);
+  return createHmac('sha1', authToken)
+    .update(Buffer.from(data, 'utf-8'))
+    .digest('base64');
+};
+
+describe('verifyTwilioWebhookSignature', () => {
+  const authToken = 'test-auth-token';
+  const url = 'https://example.org/api/v1/notifications/twilio/status';
+  const params = { MessageSid: 'SM123', MessageStatus: 'delivered' };
+
+  it('accepts a request signed with the account auth token', () => {
+    const signature = signTwilioRequest(authToken, url, params);
+
+    expect(
+      verifyTwilioWebhookSignature({ authToken, signature, url, params }),
+    ).toBe(true);
+  });
+
+  it('rejects a request whose params were tampered with after signing', () => {
+    const signature = signTwilioRequest(authToken, url, params);
+
+    expect(
+      verifyTwilioWebhookSignature({
+        authToken,
+        signature,
+        url,
+        params: { ...params, MessageStatus: 'failed' },
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects a signature produced with the wrong auth token', () => {
+    const signature = signTwilioRequest('a-different-token', url, params);
+
+    expect(
+      verifyTwilioWebhookSignature({ authToken, signature, url, params }),
+    ).toBe(false);
+  });
+});
+
+describe('parseTwilioStatusCallback', () => {
+  it('extracts the message sid, status, and error code', () => {
+    expect(
+      parseTwilioStatusCallback({
+        MessageSid: 'SM123',
+        MessageStatus: 'undelivered',
+        ErrorCode: '30003',
+      }),
+    ).toEqual({
+      messageSid: 'SM123',
+      status: 'undelivered',
+      errorCode: '30003',
+    });
+  });
+
+  it('omits the error code when Twilio sends none', () => {
+    const result = parseTwilioStatusCallback({
+      MessageSid: 'SM123',
+      MessageStatus: 'delivered',
+    });
+
+    expect(result.errorCode).toBeUndefined();
+  });
+
+  it('falls back rather than throwing on a malformed callback', () => {
+    expect(parseTwilioStatusCallback({})).toEqual({
+      messageSid: '',
+      status: 'unknown',
+      errorCode: undefined,
     });
   });
 });
