@@ -179,7 +179,17 @@ export const ProposalsFilterBar = ({
           ]}
         />
         {view && (
-          <div className="hidden items-center gap-4 sm:flex">
+          // Below `sm` the floating MobileViewSwitch normally takes over — but
+          // it only exists on a process with a map. Without one this toggle is
+          // the only way out of a view, so it has to stay reachable at every
+          // width or a shared `?view=` link strands a phone in it.
+          <div
+            className={
+              view.views.includes('map')
+                ? 'hidden items-center gap-4 sm:flex'
+                : 'flex items-center gap-4'
+            }
+          >
             <span aria-hidden className="h-6 w-px bg-border" />
             <ProposalViewToggle
               value={view.value}

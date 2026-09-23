@@ -16,17 +16,12 @@ interface ProposalViewToggleProps {
   className?: string;
 }
 
-const VIEW_ICONS: Record<ProposalView, IconType> = {
-  grid: LuLayoutGrid,
-  feed: LuGalleryVertical,
-  map: LuMap,
-};
-
-const VIEW_LABEL_KEYS = {
-  grid: 'gridViewOption',
-  feed: 'feedViewOption',
-  map: 'mapViewOption',
-} as const satisfies Record<ProposalView, string>;
+// Read as a pair for every option, so one table rather than two keyed alike.
+const VIEW_OPTIONS = {
+  grid: { Icon: LuLayoutGrid, labelKey: 'gridViewOption' },
+  feed: { Icon: LuGalleryVertical, labelKey: 'feedViewOption' },
+  map: { Icon: LuMap, labelKey: 'mapViewOption' },
+} as const satisfies Record<ProposalView, { Icon: IconType; labelKey: string }>;
 
 /**
  * Desktop-only segmented control switching a proposals list between its browse
@@ -64,8 +59,8 @@ export function ProposalViewToggle({
       className={className}
     >
       {views.map((view) => {
-        const Icon = VIEW_ICONS[view];
-        const label = t(VIEW_LABEL_KEYS[view]);
+        const { Icon, labelKey } = VIEW_OPTIONS[view];
+        const label = t(labelKey);
 
         return (
           <ToggleGroupItem key={view} value={view} aria-label={label}>

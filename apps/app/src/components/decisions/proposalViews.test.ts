@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { PROPOSAL_VIEWS, resolveProposalViews } from './proposalViews';
-
-// What the review queue offers: it has no feed renderer.
-const REVIEW_VIEWS = ['grid', 'map'] as const;
+import {
+  PROPOSAL_VIEWS,
+  REVIEW_ASSIGNMENT_VIEWS,
+  resolveProposalViews,
+} from './proposalViews';
 
 describe('PROPOSAL_VIEWS', () => {
   it('orders the feed between the grid and the map', () => {
@@ -60,7 +61,7 @@ describe('resolveProposalViews', () => {
 
   it('falls back to the default when the surface has no renderer for the requested view', () => {
     const { availableViews, effectiveView } = resolveProposalViews({
-      views: REVIEW_VIEWS,
+      views: REVIEW_ASSIGNMENT_VIEWS,
       hasLocationField: true,
       preferredView: 'grid',
       requestedView: 'feed',

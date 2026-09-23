@@ -52,6 +52,7 @@ import {
   useRegisterTranslationSamples,
 } from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
+import { REVIEW_ASSIGNMENT_VIEWS } from './proposalViews';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useReviewersByProposalId } from './useReviewersByProposalId';
@@ -61,11 +62,6 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
   string,
   ...string[],
 ];
-
-// The queue renders assignment cards in a masonry or on the map. It has no
-// feed renderer, so it doesn't offer that view — and a `?view=feed` link from
-// browse falls back to the grid rather than showing a dead toggle option.
-const REVIEW_ASSIGNMENT_VIEWS = ['grid', 'map'] as const;
 
 export function ReviewAssignmentsList({
   processInstanceId,

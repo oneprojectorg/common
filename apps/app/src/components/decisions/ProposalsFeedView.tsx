@@ -4,7 +4,7 @@ import type { Proposal } from '@op/common/client';
 import { ProposalFeed, ProposalFeedItem } from '@op/sense/ProposalFeed';
 import type { ReactNode } from 'react';
 
-import type { RenderProposalCard } from './ProposalsMapView';
+import type { RenderProposalCard } from './proposalViews';
 
 export interface ProposalsFeedViewProps {
   /** Loaded list pages — the feed paginates like the grid and the map do. */
@@ -16,11 +16,16 @@ export interface ProposalsFeedViewProps {
    * hosts the infinite-scroll sentinel, which is why it goes inside rather than
    * below: the padding is a third of the viewport, so a sentinel underneath it
    * would only trip once the reader had scrolled past the end of the feed.
+   * Null once there is no next page to fetch.
    */
-  listFooter?: ReactNode;
+  listFooter: ReactNode;
   /** Takes the feed's place when a filter matched nothing. */
-  emptyState?: ReactNode;
+  emptyState: ReactNode;
 }
+
+// `min-w-0` so a long title can't widen the feed column. Hoisted so the cards
+// aren't handed a fresh object each render.
+const CARD_OPTIONS = { className: 'min-w-0' };
 
 /**
  * Single-column reading view for a set of proposals: one card at a time, the
@@ -34,7 +39,7 @@ export function ProposalsFeedView({
   listFooter,
   emptyState,
 }: ProposalsFeedViewProps) {
-  if (emptyState && proposals.length === 0) {
+  if (proposals.length === 0) {
     return emptyState;
   }
 
@@ -42,8 +47,7 @@ export function ProposalsFeedView({
     <ProposalFeed>
       {proposals.map((proposal) => (
         <ProposalFeedItem key={proposal.id}>
-          {/* `min-w-0` so a long title can't widen the feed column. */}
-          {renderCard(proposal, { className: 'min-w-0' })}
+          {renderCard(proposal, CARD_OPTIONS)}
         </ProposalFeedItem>
       ))}
       {listFooter && <li>{listFooter}</li>}

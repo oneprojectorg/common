@@ -26,7 +26,6 @@ interface ProposalViewMode {
   /** What to render now — always one of `availableViews`. */
   effectiveView: ProposalView;
   isMapMode: boolean;
-  isFeedMode: boolean;
   handleViewChange: (next: ProposalView) => void;
 }
 
@@ -79,7 +78,6 @@ export function useProposalViewMode(
     availableViews,
     effectiveView,
     isMapMode: effectiveView === 'map',
-    isFeedMode: effectiveView === 'feed',
     handleViewChange,
   };
 }
