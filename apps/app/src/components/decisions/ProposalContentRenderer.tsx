@@ -113,7 +113,12 @@ function FieldChrome({
         <div className="flex flex-col gap-2">
           {title && <Header3 dir="auto">{title}</Header3>}
           {description && (
-            <p dir="auto" className="text-sm">
+            // The anchor treatment `FieldDescription` gives its links, for a
+            // paragraph that isn't one: a colour-only link fails axe.
+            <p
+              dir="auto"
+              className="text-sm [&>a]:underline [&>a]:underline-offset-4"
+            >
               {linkifyText(description)}
             </p>
           )}

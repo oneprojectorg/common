@@ -2,9 +2,32 @@ import React from 'react';
 
 export const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
+/**
+ * Characters that end the sentence rather than the URL. Includes the Arabic
+ * comma, semicolon and question mark, and the curly quotes: the app ships
+ * locales that write them.
+ */
+const SENTENCE_PUNCTUATION = new Set([
+  ...'.,;:!?\'"',
+  '،',
+  '؛',
+  '؟',
+  '‘',
+  '’',
+  '“',
+  '”',
+  '»',
+]);
+
+const BRACKET_OPENERS = new Map([
+  [')', '('],
+  [']', '['],
+]);
+
 export function extractUrls(text: string): string[] {
-  const matches = text.match(URL_REGEX);
-  return matches || [];
+  const matches = text.match(URL_REGEX) ?? [];
+
+  return matches.map((match) => splitTrailingPunctuation(match)[0]);
 }
 
 export function detectLinks(text: string): { text: string; urls: string[] } {
@@ -46,10 +69,7 @@ export function linkifyText(text: string): React.ReactElement[] {
             href,
             target: '_blank',
             rel: 'noopener noreferrer',
-            // A URL reads left-to-right inside Arabic help text too, and
-            // without this its trailing `/` migrates to the visual start.
-            dir: 'ltr',
-            className: 'text-primary underline underline-offset-4',
+            className: 'text-primary hover:underline',
           },
           href,
         ),
@@ -69,13 +89,33 @@ export function linkifyText(text: string): React.ReactElement[] {
 }
 
 /**
- * Splits a matched run into the href and the sentence punctuation that follows
- * it — `[^\s]+` cannot tell `…/guide.` from a path that really ends in a dot.
+ * Splits a matched run into the URL and the punctuation that follows it —
+ * `[^\s]+` cannot tell `…/guide.` from a path that really ends in a dot.
  */
 function splitTrailingPunctuation(match: string): [string, string] {
-  // A closing bracket belongs to the URL only when the URL opened one.
-  const trailing = /[([]/.test(match) ? /[.,;:!?'"]+$/ : /[.,;:!?'")\]]+$/;
-  const href = match.replace(trailing, '');
+  let end = match.length;
 
-  return [href, match.slice(href.length)];
+  while (end > 0) {
+    const char = match.charAt(end - 1);
+    const opener = BRACKET_OPENERS.get(char);
+
+    if (opener) {
+      // A closing bracket is the URL's own only while it has one still open.
+      const candidate = match.slice(0, end);
+
+      if (countChar(candidate, opener) >= countChar(candidate, char)) {
+        break;
+      }
+    } else if (!SENTENCE_PUNCTUATION.has(char)) {
+      break;
+    }
+
+    end -= 1;
+  }
+
+  return [match.slice(0, end), match.slice(end)];
+}
+
+function countChar(text: string, char: string): number {
+  return text.split(char).length - 1;
 }

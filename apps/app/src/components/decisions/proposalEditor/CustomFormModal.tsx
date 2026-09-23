@@ -162,7 +162,7 @@ export function CustomFormModal({
         >
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
             {definition.description ? (
-              <p className="text-base text-muted-foreground">
+              <p className="text-base text-muted-foreground [&>a]:underline [&>a]:underline-offset-4">
                 {linkifyText(definition.description)}
               </p>
             ) : null}
