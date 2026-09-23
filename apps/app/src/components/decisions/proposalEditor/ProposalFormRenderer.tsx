@@ -1,5 +1,6 @@
 'use client';
 
+import { linkifyOptionalText } from '@/utils/linkDetection';
 import {
   formatProposalCategories,
   isDistrictCategoryLabel,
@@ -137,6 +138,9 @@ function renderField(
   const { key, format, schema } = field;
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
+  // Template authors write help text as plain text, so a pasted URL only
+  // becomes clickable if we linkify it here, once, for every field variant.
+  const description = linkifyOptionalText(schema.description);
 
   // -- Title ------------------------------------------------------------------
 
@@ -211,8 +215,7 @@ function renderField(
           fragmentName="category"
           title={categoryLabel}
           description={
-            schema.description ??
-            t('decisions.proposals.selectAllThatApplyHint')
+            description ?? t('decisions.proposals.selectAllThatApplyHint')
           }
           required={field.required}
         />
@@ -226,7 +229,7 @@ function renderField(
         onChange={(value) => onFieldChange('category', value)}
         fragmentName="category"
         title={categoryLabel}
-        description={schema.description}
+        description={description}
         allowEmpty={!field.required}
         required={field.required}
       />
@@ -241,7 +244,7 @@ function renderField(
         <ReadonlyBudgetField
           value={formatPreviewBudget(previewContent)}
           title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-          description={schema.description}
+          description={description}
           required={field.required}
           placeholder={t('decisions.proposals.addBudgetAction')}
         />
@@ -251,7 +254,7 @@ function renderField(
     return (
       <CollaborativeBudgetField
         title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-        description={schema.description}
+        description={description}
         required={field.required}
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
@@ -272,7 +275,7 @@ function renderField(
         return (
           <ReadonlyTextField
             title={schema.title}
-            description={schema.description}
+            description={description}
             required={field.required}
             content={previewContent ?? null}
             placeholder={placeholder}
@@ -286,7 +289,7 @@ function renderField(
           fragmentName={key}
           title={schema.title}
           required={field.required}
-          description={schema.description}
+          description={description}
           placeholder={placeholder}
           multiline={format === 'long-text'}
           maxLength={schema.maxLength}
@@ -303,7 +306,7 @@ function renderField(
           <ReadonlyBudgetField
             value={formatPreviewBudget(previewContent)}
             title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-            description={schema.description}
+            description={description}
             required={field.required}
             placeholder={t('decisions.proposals.addBudgetAction')}
           />
@@ -313,7 +316,7 @@ function renderField(
       return (
         <CollaborativeBudgetField
           title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-          description={schema.description}
+          description={description}
           required={field.required}
           minAmount={schema.minimum}
           maxAmount={schema.maximum}
@@ -330,7 +333,7 @@ function renderField(
         return (
           <LabeledFieldSet
             legend={schema.title ?? t('decisions.proposals.locationLabel')}
-            description={schema.description}
+            description={description}
             required={field.required}
             data-testid={`field-${key}`}
           >
@@ -345,7 +348,7 @@ function renderField(
         // accessible name.
         <LabeledFieldSet
           legend={schema.title ?? t('decisions.proposals.locationLabel')}
-          description={schema.description}
+          description={description}
           required={field.required}
           data-testid={`field-${key}`}
         >
@@ -374,7 +377,7 @@ function renderField(
           <ReadonlyDropdownField
             value={selectedOption?.label ?? null}
             title={schema.title ?? t('decisions.proposals.selectOptionLabel')}
-            description={schema.description}
+            description={description}
             required={field.required}
             placeholder={t('decisions.proposals.selectOptionLabel')}
           />
@@ -390,7 +393,7 @@ function renderField(
           onChange={(value) => onFieldChange(key, value)}
           fragmentName={key}
           title={schema.title ?? t('decisions.proposals.selectOptionLabel')}
-          description={schema.description}
+          description={description}
           allowEmpty={!field.required}
           required={field.required}
         />

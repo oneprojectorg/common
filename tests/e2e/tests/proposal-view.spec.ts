@@ -429,6 +429,73 @@ test.describe('Proposal View', () => {
     ).toBeVisible();
   });
 
+  test('renders a URL in a field description as a link', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const templateWithLinkedHint = {
+      type: 'object' as const,
+      required: ['title'],
+      'x-field-order': ['title', 'summary'],
+      properties: {
+        title: {
+          type: 'string' as const,
+          title: 'Title',
+          'x-format': 'short-text',
+        },
+        summary: {
+          type: 'string' as const,
+          title: 'Summary',
+          description: 'Follow the guide at https://example.com/guide first',
+          'x-format': 'long-text',
+        },
+      },
+    };
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+      proposalTemplate: templateWithLinkedHint as ProposalTemplateSchema,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      proposalData: {
+        title: 'Linked Hint Proposal',
+        collaborationDocId: MOCK_DOC_ID,
+      },
+    });
+
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+    );
+
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Linked Hint Proposal' }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    const hintLink = authenticatedPage.getByRole('link', {
+      name: 'https://example.com/guide',
+    });
+    await expect(hintLink).toBeVisible();
+    await expect(hintLink).toHaveAttribute('href', 'https://example.com/guide');
+    await expect(hintLink).toHaveAttribute('target', '_blank');
+    await expect(hintLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    // The text around the URL stays put, and stays text.
+    await expect(
+      authenticatedPage.getByText('Follow the guide at').first(),
+    ).toBeVisible();
+  });
+
   /**
    * Real COWOP production instance: state-based legacy schema, plain-number
    * budget on both processSchema.proposalTemplate and proposalData. Verifies

@@ -4,6 +4,7 @@ import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import type { Editor } from '@tiptap/react';
+import type { ReactNode } from 'react';
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -34,7 +35,7 @@ interface CollaborativeTextFieldProps {
   fragmentName: string;
   title?: string;
   required?: boolean;
-  description?: string;
+  description?: ReactNode;
   placeholder?: string;
   multiline?: boolean;
   maxLength?: number;

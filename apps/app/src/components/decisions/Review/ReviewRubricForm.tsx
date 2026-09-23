@@ -1,5 +1,6 @@
 'use client';
 
+import { linkifyOptionalText } from '@/utils/linkDetection';
 import {
   DEFAULT_MONEY_CURRENCY,
   ProposalReviewState,
@@ -282,6 +283,7 @@ function RubricCriterionSection({
   const isTextInput =
     field.format === 'short-text' || field.format === 'long-text';
   const describedBy = field.schema.description ? descriptionId : undefined;
+  const description = linkifyOptionalText(field.schema.description);
 
   // `labelId` goes on the title text, not the whole row: the badge is inside
   // the heading, and a control named by the row would announce "Innovation
@@ -332,9 +334,9 @@ function RubricCriterionSection({
             {label}
           </FieldTitle>
           <div className="flex w-full items-start justify-end gap-3">
-            {field.schema.description ? (
+            {description ? (
               <FieldDescription id={descriptionId} className="flex-1">
-                {field.schema.description}
+                {description}
               </FieldDescription>
             ) : null}
             {control}
@@ -354,9 +356,9 @@ function RubricCriterionSection({
               {label}
             </FieldTitle>
           )}
-          {field.schema.description ? (
+          {description ? (
             <FieldDescription id={descriptionId}>
-              {field.schema.description}
+              {description}
             </FieldDescription>
           ) : null}
           {control}
@@ -476,7 +478,7 @@ function MoneyFieldInput({
   return (
     <NumberField
       label={field.schema.title || t('Amount')}
-      description={field.schema.description}
+      description={linkifyOptionalText(field.schema.description)}
       required={required}
       prefixText={currencySymbol}
       value={getMoneyAmount(value)}

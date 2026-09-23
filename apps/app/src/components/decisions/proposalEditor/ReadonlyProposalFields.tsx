@@ -43,7 +43,7 @@ export function ReadonlyTextField({
   multiline,
 }: {
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   content: JSONContent | null;
   placeholder: string;
@@ -86,7 +86,7 @@ export function ReadonlyDropdownField({
 }: {
   value: string | null;
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   placeholder: string;
 }) {
@@ -109,7 +109,7 @@ export function ReadonlyBudgetField({
 }: {
   value: string | null;
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   placeholder: string;
 }) {
@@ -140,7 +140,7 @@ function ReadonlyField({
   children,
 }: {
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   className?: string;
   children: ReactNode;

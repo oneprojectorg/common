@@ -1,5 +1,6 @@
 'use client';
 
+import { linkifyText } from '@/utils/linkDetection';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 // viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
@@ -113,7 +114,7 @@ function FieldChrome({
           {title && <Header3 dir="auto">{title}</Header3>}
           {description && (
             <p dir="auto" className="text-sm">
-              {description}
+              {linkifyText(description)}
             </p>
           )}
         </div>
