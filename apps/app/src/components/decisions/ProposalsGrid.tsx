@@ -199,7 +199,14 @@ const ReadProposalAction = ({
   return (
     <ButtonLink
       href={href}
-      onClick={onClick}
+      onClick={(event) => {
+        // In the voting phase the card behind this button is the ballot
+        // toggle, and opening the sheet keeps the reader on it — so without
+        // this the press would also select or deselect the proposal they only
+        // meant to read. Same guard the card's menu and checkbox use.
+        event.stopPropagation();
+        onClick?.(event);
+      }}
       variant="outline"
       className="w-full"
     >

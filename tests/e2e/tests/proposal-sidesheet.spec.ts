@@ -55,7 +55,7 @@ test.describe('Proposal side sheet', () => {
     // panel is linkable and Back closes it.
     await expect(authenticatedPage).toHaveURL(
       new RegExp(
-        `/decisions/${instanceSlug}/current\\?.*proposal=${profileId}`,
+        `/decisions/${instanceSlug}/current\\?.*proposalPanel=${profileId}`,
       ),
     );
 
@@ -84,7 +84,7 @@ test.describe('Proposal side sheet', () => {
 
     await expect(sheet).toBeHidden();
     await expect(authenticatedPage).not.toHaveURL(
-      new RegExp(`proposal=${profileId}`),
+      new RegExp(`proposalPanel=${profileId}`),
     );
   });
 

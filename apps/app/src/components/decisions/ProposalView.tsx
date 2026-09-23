@@ -6,10 +6,9 @@ import {
 } from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
 import type { Proposal, ProposalSelection } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
-import { type ReactNode, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -23,19 +22,9 @@ import { ReviewNotesPanel } from './ReviewNotesPanel';
 import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
 import { useCommentsAllowed } from './useCommentsAllowed';
+import { useLiveProposalDocument } from './useLiveProposalDocument';
 import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
-
-/** How often to re-fetch while the document is still propagating from TipTap. */
-const DOCUMENT_POLL_INTERVAL_MS = 2500;
-/**
- * How long to keep polling for a missing document before treating it as
- * truly not found. Bounds the "still loading" window so a genuinely absent
- * document eventually surfaces an error instead of spinning forever.
- */
-const DOCUMENT_POLL_TIMEOUT_MS = 20000;
-
-export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 
 export function ProposalView({
   proposal: initialProposal,
@@ -57,49 +46,8 @@ export function ProposalView({
   const t = useTranslations();
   const commentsEnabled = useCommentsAllowed(initialProposal.processInstanceId);
 
-  // When the document fetch failed server-side it comes back as
-  // `{ type: 'unavailable' }`. That can be transient (still syncing from the
-  // collaboration server), so poll until it resolves, and only after a bounded
-  // wait treat it as truly missing.
-  const [documentLoadTimedOut, setDocumentLoadTimedOut] = useState(false);
-
-  const { data: proposal } = trpc.decision.getProposal.useQuery(
-    {
-      profileId: initialProposal.profileId,
-    },
-    {
-      refetchInterval: (query) =>
-        query.state.data?.documentContent?.type === 'unavailable' &&
-        !documentLoadTimedOut
-          ? DOCUMENT_POLL_INTERVAL_MS
-          : false,
-    },
-  );
-
-  // Safety check - fallback to initial data if query returns undefined
-  const currentProposal = proposal || initialProposal;
-
-  const isDocumentUnavailable =
-    currentProposal.documentContent?.type === 'unavailable';
-
-  useEffect(() => {
-    if (!isDocumentUnavailable) {
-      setDocumentLoadTimedOut(false);
-      return;
-    }
-
-    const timer = setTimeout(
-      () => setDocumentLoadTimedOut(true),
-      DOCUMENT_POLL_TIMEOUT_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [isDocumentUnavailable]);
-
-  const documentState: ProposalDocumentState = isDocumentUnavailable
-    ? documentLoadTimedOut
-      ? 'error'
-      : 'pending'
-    : 'ready';
+  const { proposal: currentProposal, documentState } =
+    useLiveProposalDocument(initialProposal);
 
   const { processInstanceId, id: proposalId } = currentProposal;
   useTrackPageView(

@@ -3,8 +3,15 @@
 import { isPlainLeftClick } from '@/utils/isPlainLeftClick';
 import { type MouseEvent, createContext, useCallback, useContext } from 'react';
 
-/** Names the proposal the side sheet is open on — its profile id. */
-export const PROPOSAL_SHEET_PARAM = 'proposal';
+/**
+ * Names the proposal the side sheet is open on — its profile id.
+ *
+ * Not `proposal`: an anonymous submission redirects to
+ * `?promote=1&proposal=<profileId>`, which `PromoteAccountModal` reads to know
+ * which proposal to claim. Sharing the key would pop the sheet open over that
+ * modal, and closing it would clear the id the promotion flow still needs.
+ */
+export const PROPOSAL_SHEET_PARAM = 'proposalPanel';
 
 export interface ProposalSheetApi {
   /** Opens the sheet on a proposal, named by its profile id. */

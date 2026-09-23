@@ -32,6 +32,7 @@ import {
   proposalHref,
 } from './proposalHrefs';
 import { useCommentsAllowed } from './useCommentsAllowed';
+import { useLiveProposalDocument } from './useLiveProposalDocument';
 
 export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
 
@@ -157,7 +158,14 @@ function ProposalSheetBody({
   /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
   decisionRoot: string;
 }) {
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
+  const [initialProposal] = trpc.decision.getProposal.useSuspenseQuery({
+    profileId,
+  });
+
+  // Same hook the proposal page uses, so a proposal submitted moments ago
+  // reads as pending here too rather than as an empty body while its
+  // collaboration document is still propagating.
+  const { proposal, documentState } = useLiveProposalDocument(initialProposal);
 
   // Same hook the page and the card's metric toggles use, so the three
   // surfaces can't disagree about who may like or follow.
@@ -177,6 +185,7 @@ function ProposalSheetBody({
           full record. */}
       <ProposalPreview
         proposal={proposal}
+        documentState={documentState}
         engagement={toPreviewEngagement(engagement)}
       />
 
