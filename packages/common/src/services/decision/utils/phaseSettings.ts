@@ -41,11 +41,6 @@ export function isVotingPhase(phase: {
   return phase.rules?.voting?.submit ?? false;
 }
 
-/**
- * A voting phase capped at one selection — the only shape an SMS reply of a
- * single keyword can express unambiguously. A ballot allowing more than one
- * pick needs a numbered-list reply scheme this doesn't build.
- */
 export function isSingleChoiceVotingPhase(phase: {
   rules?: { voting?: { submit?: boolean; maxVotesPerMember?: number } };
 }): boolean {

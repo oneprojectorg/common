@@ -170,9 +170,6 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       emailsSent = emailResult.sent;
     }
 
-    // Multi-select voting via SMS needs a numbered-list reply scheme this
-    // doesn't build yet — bounded to the single up/down case: exactly one
-    // eligible proposal, and a ballot capped at one choice.
     if (toPhase && isSingleChoiceVotingPhase(toPhase)) {
       const eligibleProposals = await step.run(
         'get-eligible-proposals',
