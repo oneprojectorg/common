@@ -27,8 +27,6 @@ const BRACKETS = new Map([
   [']', '['],
 ]);
 
-const BRACKET_CHARS = new Set([...BRACKETS.keys(), ...BRACKETS.values()]);
-
 export function extractUrls(text: string): string[] {
   const matches = text.match(URL_REGEX) ?? [];
 
@@ -101,29 +99,27 @@ export function linkifyText(text: string): React.ReactElement[] {
  * `[^\s]+` cannot tell `…/guide.` from a path that really ends in a dot.
  */
 function splitTrailingPunctuation(match: string): [string, string] {
-  // Counted once and kept current as characters come off the end. Recounting
-  // per character would make a long run of brackets quadratic.
-  const counts = new Map<string, number>();
-
-  for (const char of match) {
-    if (BRACKET_CHARS.has(char)) {
-      counts.set(char, (counts.get(char) ?? 0) + 1);
-    }
-  }
+  // Closing brackets the URL never opened, counted once and decremented as
+  // they come off: recounting per character makes a long run quadratic.
+  const surplus = new Map(
+    [...BRACKETS].map(([close, open]) => [
+      close,
+      countChar(match, close) - countChar(match, open),
+    ]),
+  );
 
   let end = match.length;
 
   while (end > 0) {
     const char = match.charAt(end - 1);
-    const opener = BRACKETS.get(char);
+    const unopened = surplus.get(char);
 
-    if (opener) {
-      // A closing bracket is the URL's own only while it has one still open.
-      if ((counts.get(opener) ?? 0) >= (counts.get(char) ?? 0)) {
+    if (unopened !== undefined) {
+      if (unopened <= 0) {
         break;
       }
 
-      counts.set(char, (counts.get(char) ?? 0) - 1);
+      surplus.set(char, unopened - 1);
     } else if (!SENTENCE_PUNCTUATION.has(char)) {
       break;
     }
@@ -132,4 +128,8 @@ function splitTrailingPunctuation(match: string): [string, string] {
   }
 
   return [match.slice(0, end), match.slice(end)];
+}
+
+function countChar(text: string, char: string): number {
+  return text.split(char).length - 1;
 }
