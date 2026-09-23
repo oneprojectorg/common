@@ -14,6 +14,8 @@ import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
+export * from './createAccountFromPhone';
+
 export interface User {
   id: number;
   email: string;
