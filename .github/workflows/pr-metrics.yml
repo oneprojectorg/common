@@ -43,11 +43,12 @@ jobs:
 
   publish:
     name: Publish
+    # Cancelled and skipped runs included: the head-SHA check below tells a
+    # superseded run (skip, the newer one publishes) from one that will never
+    # publish, which must still close out its placeholder.
     if: >-
       github.event_name == 'workflow_run' &&
-      github.event.workflow_run.event == 'pull_request_target' &&
-      github.event.workflow_run.conclusion != 'cancelled' &&
-      github.event.workflow_run.conclusion != 'skipped'
+      github.event.workflow_run.event == 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
