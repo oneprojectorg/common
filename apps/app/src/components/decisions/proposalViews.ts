@@ -17,6 +17,15 @@ export type ProposalView = (typeof PROPOSAL_VIEWS)[number];
 export const REVIEW_ASSIGNMENT_VIEWS = ['grid', 'map'] as const;
 
 /**
+ * What browse offers while voting is enabled. The ballot is state inside the
+ * grid's voting list, so swapping the grid out mid-ballot drops the reader's
+ * selections — and neither the feed nor the map renders a voting card. The map
+ * predates the toggle and keeps its place; the feed doesn't get to add a second
+ * way to lose a ballot.
+ */
+export const VOTING_PROPOSAL_VIEWS = ['grid', 'map'] as const;
+
+/**
  * Renders one proposal in a view's card column. The view owns its own layout
  * policy (the map's active highlight, the feed's width), so it hands the card
  * the `className` carrying it. Shared so every view renders the same card.

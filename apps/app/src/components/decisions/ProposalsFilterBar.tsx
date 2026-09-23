@@ -35,10 +35,34 @@ export interface ProposalViewControls {
   value: ProposalView;
   /** The views to offer, in display order — see `useProposalViewMode`. */
   views: readonly ProposalView[];
-  /** The surface has a floating `MobileViewSwitch` covering small widths. */
-  hasMapView: boolean;
+  /**
+   * Responsive visibility for the switch. The caller owns the breakpoints
+   * because it owns whether a floating `MobileViewSwitch` covers small widths.
+   */
+  className?: string;
   onChange: (next: ProposalView) => void;
 }
+
+/**
+ * The view toggle and the rule that sets it off from whatever precedes it.
+ * Shared so the switch survives the filter-less bar — a phase that hides
+ * proposals drops the filters, and dropping the way out of a view with them
+ * strands whoever arrived on a `?view=` link.
+ */
+export const ProposalsViewSwitch = ({
+  view,
+}: {
+  view: ProposalViewControls;
+}) => (
+  <div className={cn('items-center gap-4', view.className)}>
+    <span aria-hidden className="h-6 w-px bg-border" />
+    <ProposalViewToggle
+      value={view.value}
+      views={view.views}
+      onChange={view.onChange}
+    />
+  </div>
+);
 
 export const ProposalsListHeader = ({
   count,
@@ -181,25 +205,7 @@ export const ProposalsFilterBar = ({
             { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
-        {view && (
-          // Below `sm` the floating MobileViewSwitch normally takes over — but
-          // it only exists on a process with a map. Without one this toggle is
-          // the only way out of a view, so it has to stay reachable at every
-          // width or a shared `?view=` link strands a phone in it.
-          <div
-            className={cn(
-              'items-center gap-4',
-              view.hasMapView ? 'hidden sm:flex' : 'flex',
-            )}
-          >
-            <span aria-hidden className="h-6 w-px bg-border" />
-            <ProposalViewToggle
-              value={view.value}
-              views={view.views}
-              onChange={view.onChange}
-            />
-          </div>
-        )}
+        {view && <ProposalsViewSwitch view={view} />}
         {exportControl && (
           <div className="flex items-center gap-4">
             <span aria-hidden className="h-6 w-px bg-border" />

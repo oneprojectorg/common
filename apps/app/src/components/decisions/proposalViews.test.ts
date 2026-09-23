@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PROPOSAL_VIEWS,
   REVIEW_ASSIGNMENT_VIEWS,
+  VOTING_PROPOSAL_VIEWS,
   resolveProposalViews,
 } from './proposalViews';
 
@@ -76,6 +77,20 @@ describe('resolveProposalViews', () => {
     // Both surfaces hide the toggle on a single available view — this is the
     // only configuration that produces one.
     expect(availableViews).toEqual(['grid']);
+  });
+
+  it('sends a ?view=feed link carried into a voting phase back to the grid', () => {
+    const { availableViews, effectiveView } = resolveProposalViews({
+      views: VOTING_PROPOSAL_VIEWS,
+      hasLocationField: false,
+      preferredView: 'grid',
+      requestedView: 'feed',
+    });
+
+    // The ballot lives in the grid, so the feed must not be reachable while
+    // one is in play — a link saved before the phase turned over included.
+    expect(availableViews).toEqual(['grid']);
+    expect(effectiveView).toBe('grid');
   });
 
   it('falls back to the default for a stale ?view=map from another process', () => {

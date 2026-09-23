@@ -61,7 +61,11 @@ import {
 import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
-import { PROPOSAL_VIEWS, type ProposalView } from './proposalViews';
+import {
+  PROPOSAL_VIEWS,
+  type ProposalView,
+  VOTING_PROPOSAL_VIEWS,
+} from './proposalViews';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
@@ -512,9 +516,14 @@ const ProposalsListContent = ({
       t.decision.getInstance({ instanceId }),
     ]);
 
+  // Same derivation ProposalsGrid uses to swap in the ballot: the phase
+  // capability, falling back to the voting-status endpoint.
+  const isVotingEnabled =
+    isInVotingPhase || !!voteStatus?.votingConfiguration?.allowDecisions;
+
   // Browse offers every view; the map drops out when the process collects no
-  // location. It leads with the map when the process has one — users came here
-  // to see places, not titles.
+  // location, and the feed while a ballot is in play. It leads with the map
+  // when the process has one — users came here to see places, not titles.
   const {
     mapView,
     availableViews,
@@ -523,7 +532,7 @@ const ProposalsListContent = ({
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
     defaultView: 'map',
-    views: PROPOSAL_VIEWS,
+    views: isVotingEnabled ? VOTING_PROPOSAL_VIEWS : PROPOSAL_VIEWS,
   });
 
   const hasVoted = voteStatus?.hasVoted || false;
@@ -788,7 +797,10 @@ const ProposalsListContent = ({
               ? {
                   value: effectiveView,
                   views: availableViews,
-                  hasMapView,
+                  // Where a map exists the floating MobileViewSwitch covers
+                  // small widths; without one this toggle is the only way out
+                  // of a view and has to stay reachable at every width.
+                  className: hasMapView ? 'hidden sm:flex' : 'flex',
                   onChange: handleViewChange,
                 }
               : undefined

@@ -5,6 +5,7 @@ import {
   type ProposalControls,
   ProposalsFilterBar,
   type ProposalViewControls,
+  ProposalsViewSwitch,
 } from './ProposalsFilterBar';
 import { StickyFilterBar } from './StickyFilterBar';
 
@@ -57,7 +58,12 @@ export const ProposalsStickyFilterBar = ({
         exportControl={exportControl}
       />
     ) : (
-      (header ?? <MyProposalsHeader />)
+      <>
+        {header ?? <MyProposalsHeader />}
+        {/* No filters here, but still a view to be in — and on a process with
+            no map this is the only control that leaves it. */}
+        {view && <ProposalsViewSwitch view={view} />}
+      </>
     )}
   </StickyFilterBar>
 );
