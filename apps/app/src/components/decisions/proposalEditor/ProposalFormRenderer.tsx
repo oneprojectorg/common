@@ -1,6 +1,7 @@
 'use client';
 
 import { linkifyOptionalText } from '@/utils/linkDetection';
+import type { BudgetData } from '@op/common/client';
 import {
   formatProposalCategories,
   isDistrictCategoryLabel,
@@ -238,30 +239,33 @@ function renderField(
 
   // -- Budget (system) --------------------------------------------------------
 
-  if (key === 'budget') {
-    if (isReadonlyMode) {
-      return (
-        <ReadonlyBudgetField
-          value={formatPreviewBudget(previewContent)}
-          title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-          description={description}
-          required={field.required}
-          placeholder={t('decisions.proposals.addBudgetAction')}
-        />
-      );
-    }
-
-    return (
+  // The system `budget` field and a template's own `money` field render the
+  // same control; only the draft value the editor starts from differs.
+  const renderMoneyField = (initialValue: BudgetData | null) =>
+    isReadonlyMode ? (
+      <ReadonlyBudgetField
+        value={formatPreviewBudget(previewContent)}
+        title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
+        description={description}
+        required={field.required}
+        placeholder={t('decisions.proposals.addBudgetAction')}
+      />
+    ) : (
       <CollaborativeBudgetField
         title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
         description={description}
         required={field.required}
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
-        initialValue={draft.budget}
-        onChange={(value) => onFieldChange('budget', value)}
+        initialValue={initialValue}
+        onChange={(value) => onFieldChange(key, value)}
       />
     );
+
+  // A legacy template's budget carries no `x-format`, so it is matched by key
+  // rather than falling through to the `money` case below.
+  if (key === 'budget') {
+    return renderMoneyField(draft.budget);
   }
 
   // -- Dynamic fields resolved by x-format ------------------------------------
@@ -301,29 +305,7 @@ function renderField(
     }
 
     case 'money': {
-      if (isReadonlyMode) {
-        return (
-          <ReadonlyBudgetField
-            value={formatPreviewBudget(previewContent)}
-            title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-            description={description}
-            required={field.required}
-            placeholder={t('decisions.proposals.addBudgetAction')}
-          />
-        );
-      }
-
-      return (
-        <CollaborativeBudgetField
-          title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
-          description={description}
-          required={field.required}
-          minAmount={schema.minimum}
-          maxAmount={schema.maximum}
-          initialValue={null}
-          onChange={(value) => onFieldChange(key, value)}
-        />
-      );
+      return renderMoneyField(null);
     }
 
     case 'location': {
