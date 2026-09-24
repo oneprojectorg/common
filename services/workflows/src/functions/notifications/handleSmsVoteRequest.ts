@@ -68,9 +68,7 @@ export const handleSmsVoteRequest = inngest.createFunction(
         body: `Reply ${CONFIRMATION_KEYWORD} to vote for "${proposalTitle}".`,
       });
       if (result.status === 'rejected' && result.retryable) {
-        throw new RateLimitError(
-          `Vote prompt send rejected: ${result.reason}`,
-        );
+        throw new RateLimitError(`Vote prompt send rejected: ${result.reason}`);
       }
       return result;
     });
@@ -82,7 +80,10 @@ export const handleSmsVoteRequest = inngest.createFunction(
         authUserId,
         reason: promptResult.reason,
       });
-      return { message: 'vote prompt send rejected', reason: promptResult.reason };
+      return {
+        message: 'vote prompt send rejected',
+        reason: promptResult.reason,
+      };
     }
 
     let confirmed = false;
