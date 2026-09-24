@@ -59,9 +59,7 @@ export const handleSmsVoteRequest = inngest.createFunction(
     const promptResult = await step.run('send-vote-prompt', async () => {
       const result = await provider.sendSms!({ to, body: promptBody });
       if (result.status === 'rejected' && result.retryable) {
-        throw new RateLimitError(
-          `Vote prompt send rejected: ${result.reason}`,
-        );
+        throw new RateLimitError(`Vote prompt send rejected: ${result.reason}`);
       }
       return result;
     });
