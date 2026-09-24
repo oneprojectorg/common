@@ -1,4 +1,4 @@
-import { and, db, notInArray } from '@op/db/client';
+import { and, db, inArray } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -9,8 +9,9 @@ import {
   getCursorCondition,
 } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
+import { getProposalIdsForPhase } from '../getProposalsForPhase';
 import { parseProposalData } from '../proposalDataSchema';
-import { resolveProposalListScope } from '../resolveProposalListScope';
+import { buildProposalTitleSearchCondition } from '../proposalTitleSearch';
 import type { InstancePhaseRef } from '../schemas/instance';
 import { getInstancePhases } from '../schemas/instanceData';
 import {
@@ -18,7 +19,6 @@ import {
   assignableProposalListSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
-import { PIPELINE_INELIGIBLE_STATUSES } from '../votingEligibility';
 
 export interface ListAssignableProposalsInput extends InstancePhaseRef {
   user: User;
@@ -28,7 +28,10 @@ export interface ListAssignableProposalsInput extends InstancePhaseRef {
   limit: number;
 }
 
-/** Rows must match the pool `assignReviewsToReviewer` accepts: one out-of-pool id rejects the whole save. */
+/**
+ * Reads the same pool `assignReviewsToReviewer` validates against, so the list
+ * and the save cannot diverge: one out-of-pool id rejects the whole save.
+ */
 export async function listAssignableProposals({
   user,
   processInstanceId,
@@ -38,13 +41,17 @@ export async function listAssignableProposals({
   cursor,
   limit,
 }: ListAssignableProposalsInput): Promise<AssignableProposalList> {
-  const scope = await resolveProposalListScope({
-    input: { processInstanceId, phaseId, search },
-    user,
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: {
+      id: true,
+      profileId: true,
+      instanceData: true,
+      currentStateId: true,
+    },
   });
-  const instance = scope.instance;
 
-  if (!instance.profileId) {
+  if (!instance?.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
   await assertProfileAccess({
@@ -60,7 +67,8 @@ export async function listAssignableProposals({
     phaseId,
   });
 
-  if (scope.isEmpty) {
+  const poolIds = await getProposalIdsForPhase({ instance, phaseId });
+  if (poolIds.length === 0) {
     return assignableProposalListSchema.parse({ items: [], next: null });
   }
 
@@ -72,8 +80,8 @@ export async function listAssignableProposals({
     where: {
       RAW: (table) =>
         and(
-          scope.buildWhereClause(table),
-          notInArray(table.status, PIPELINE_INELIGIBLE_STATUSES),
+          inArray(table.id, poolIds),
+          buildProposalTitleSearchCondition(table, search),
           getCursorCondition({
             column: table.createdAt,
             tieBreakerColumn: table.id,

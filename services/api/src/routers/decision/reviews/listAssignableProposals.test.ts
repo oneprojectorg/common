@@ -1,9 +1,12 @@
-import { db } from '@op/db/client';
+import { createDecisionRole } from '@op/common';
+import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
   ProposalStatus,
+  Visibility,
   proposalReviews,
+  proposals,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -213,6 +216,59 @@ describe.concurrent('decision.listAssignableProposals', () => {
 
     expect(result.items.map((row) => row.id)).not.toContain(rejected.id);
     expect(result.items.map((row) => row.id)).toContain(created.proposal.id);
+  });
+
+  it('lists a hidden proposal to a decisions admin who is not a profile admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const hidden = await testData.createReviewAssignment({
+      title: `Hidden proposal ${task.id}`,
+    });
+    const context = hidden.context;
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, hidden.proposal.id));
+
+    const decisionsAdminRole = await createDecisionRole({
+      name: `Decisions admin ${task.id}`,
+      profileId: context.instance.profileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: true,
+            inviteMembers: false,
+            review: false,
+            submitProposals: false,
+            vote: false,
+          },
+        },
+      },
+    });
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const decisionsAdmin = await decisions.createMemberUser({
+      organization: context.organization,
+      instanceProfileIds: [context.instance.profileId],
+      roleIds: { [context.instance.profileId]: decisionsAdminRole.id },
+    });
+
+    const caller = await createAuthenticatedCaller(decisionsAdmin.email);
+
+    const result = await caller.decision.listAssignableProposals({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+    });
+
+    expect(result.items.map((row) => row.id)).toContain(hidden.proposal.id);
   });
 
   it('filters by title search', async ({ task, onTestFinished }) => {
