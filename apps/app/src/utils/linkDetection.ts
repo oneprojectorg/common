@@ -3,22 +3,15 @@ import React from 'react';
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
 /**
- * Characters that end the sentence rather than the URL. Covers the shipped
- * locales, not just ASCII: Arabic writes `،` and `؟`, Bengali ends a sentence
- * with `।`.
+ * Punctuation that ends a sentence rather than a URL, in any script. Taken
+ * from the Unicode category instead of a per-locale list: `Po` covers `.`,
+ * Arabic `،`, Bengali `।`, Japanese `。` and `…`, and `Pf` covers the closing
+ * quotes. Adding a language needs no change here.
  */
-const SENTENCE_PUNCTUATION = new Set([
-  ...'.,;:!?\'"',
-  '،',
-  '؛',
-  '؟',
-  '।',
-  '॥',
-  '…',
-  '’',
-  '”',
-  '»',
-]);
+const SENTENCE_PUNCTUATION = /[\p{Po}\p{Pf}]/u;
+
+/** The `Po` characters that do legitimately end a URL, so are never trimmed. */
+const URL_PUNCTUATION = new Set(['/', '#']);
 
 /** Closing delimiter to the opener that would make it part of the URL. */
 const BRACKETS = new Map([
@@ -42,17 +35,18 @@ export function detectLinks(text: string): { text: string; urls: string[] } {
   return { text, urls };
 }
 
-/** Returns `undefined` for empty text: an empty array is truthy, so a caller
- *  that wraps its content in an element would render an empty one. */
-export function linkifyOptionalText(
+/**
+ * Each URL in `text` as an anchor, everything around them as spans.
+ *
+ * Returns `undefined` for empty text rather than an empty array, because an
+ * empty array is truthy: a caller that wraps the result in its own element
+ * would render that element empty.
+ */
+export function linkifyText(
   text: string | null | undefined,
 ): React.ReactElement[] | undefined {
-  return text ? linkifyText(text) : undefined;
-}
-
-export function linkifyText(text: string): React.ReactElement[] {
   if (!text) {
-    return [];
+    return undefined;
   }
 
   const parts = text.split(URL_REGEX);
@@ -120,7 +114,7 @@ function splitTrailingPunctuation(match: string): [string, string] {
       }
 
       surplus.set(char, unopened - 1);
-    } else if (!SENTENCE_PUNCTUATION.has(char)) {
+    } else if (!isSentencePunctuation(char)) {
       break;
     }
 
@@ -128,6 +122,10 @@ function splitTrailingPunctuation(match: string): [string, string] {
   }
 
   return [match.slice(0, end), match.slice(end)];
+}
+
+function isSentencePunctuation(char: string): boolean {
+  return !URL_PUNCTUATION.has(char) && SENTENCE_PUNCTUATION.test(char);
 }
 
 function countChar(text: string, char: string): number {

@@ -1,6 +1,6 @@
 'use client';
 
-import { linkifyOptionalText, linkifyText } from '@/utils/linkDetection';
+import { linkifyText } from '@/utils/linkDetection';
 import type {
   CustomFormDefinitionSchema,
   XFormatPropertySchema,
@@ -214,7 +214,7 @@ function CustomFormField({
 }: CustomFormFieldProps) {
   const fieldId = useId();
   const label = field.title ?? name;
-  const description = linkifyOptionalText(field.description);
+  const description = linkifyText(field.description);
   const descriptionNode = description ? (
     <FieldDescription>{description}</FieldDescription>
   ) : null;

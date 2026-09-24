@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { extractUrls, linkifyOptionalText, linkifyText } from './linkDetection';
+import { extractUrls, linkifyText } from './linkDetection';
 
 const render = (text: string) => renderToStaticMarkup(linkifyText(text));
 
@@ -38,8 +38,12 @@ describe('linkifyText', () => {
     );
   });
 
-  it('returns nothing for empty text', () => {
-    expect(linkifyText('')).toEqual([]);
+  // `undefined`, not `[]`: an empty array is truthy, so a caller that wraps
+  // the result in its own element would render that element empty.
+  it('returns undefined when there is nothing to render', () => {
+    expect(linkifyText('')).toBeUndefined();
+    expect(linkifyText(null)).toBeUndefined();
+    expect(linkifyText(undefined)).toBeUndefined();
   });
 
   // Help text is prose, so a URL that ends a sentence is the common case, not
@@ -56,6 +60,14 @@ describe('linkifyText', () => {
 
     expect(markup).toContain('href="https://example.com/guide"');
     expect(markup).toContain('</a><span>،</span>');
+  });
+
+  // The trailing run is matched by Unicode category, so a script we do not
+  // ship yet is already handled.
+  it('handles a script the app does not ship', () => {
+    expect(render('詳しくは https://example.com/guide。')).toContain(
+      'href="https://example.com/guide"',
+    );
   });
 
   it('closes a bracket the prose opened, keeps one the URL opened', () => {
@@ -83,22 +95,37 @@ describe('extractUrls', () => {
     ]);
   });
 
-  // Spelt out rather than read off the implementation's own set, so removing a
-  // character from that set fails here.
-  it.each([...'.,;:!?\'"', '،', '؛', '؟', '।', '॥', '…', '’', '”', '»'])(
-    'drops a trailing %s',
-    (punctuation) => {
-      expect(extractUrls(`See https://example.com/a${punctuation}`)).toEqual([
-        'https://example.com/a',
+  // One per shipped locale's terminator, plus scripts we don't ship, so the
+  // category rule stays honest if someone narrows it back to a list.
+  it.each([
+    ...'.,;:!?\'"',
+    '،',
+    '؛',
+    '؟',
+    '।',
+    '॥',
+    '…',
+    '’',
+    '”',
+    '»',
+    '。',
+    '、',
+    '？',
+    '։',
+    '።',
+  ])('drops a trailing %s', (punctuation) => {
+    expect(extractUrls(`See https://example.com/a${punctuation}`)).toEqual([
+      'https://example.com/a',
+    ]);
+  });
+
+  // The characters a URL is allowed to end on, which the trim must never take.
+  it.each(['/', '#', '-', '_', '~', '+', '='])(
+    'keeps a trailing %s',
+    (char) => {
+      expect(extractUrls(`See https://example.com/a${char}`)).toEqual([
+        `https://example.com/a${char}`,
       ]);
     },
   );
-});
-
-describe('linkifyOptionalText', () => {
-  it('returns undefined when there is nothing to render', () => {
-    expect(linkifyOptionalText(undefined)).toBeUndefined();
-    expect(linkifyOptionalText(null)).toBeUndefined();
-    expect(linkifyOptionalText('')).toBeUndefined();
-  });
 });

@@ -1,4 +1,4 @@
-import { linkifyOptionalText } from '@/utils/linkDetection';
+import { linkifyText } from '@/utils/linkDetection';
 import {
   type ProposalReview,
   type RubricTemplateSchema,
@@ -58,7 +58,7 @@ export function SubmittedReviewView({
         <ResultSection
           key={field.key}
           title={field.schema.title}
-          description={linkifyOptionalText(field.schema.description)}
+          description={linkifyText(field.schema.description)}
           required={field.required}
         >
           <RubricFieldResult

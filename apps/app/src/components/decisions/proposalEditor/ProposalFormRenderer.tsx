@@ -1,6 +1,6 @@
 'use client';
 
-import { linkifyOptionalText } from '@/utils/linkDetection';
+import { linkifyText } from '@/utils/linkDetection';
 import {
   formatProposalCategories,
   isDistrictCategoryLabel,
@@ -139,7 +139,7 @@ function renderField(
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
   // Template help text is plain text, never rich text.
-  const description = linkifyOptionalText(schema.description);
+  const description = linkifyText(schema.description);
 
   // -- Title ------------------------------------------------------------------
 

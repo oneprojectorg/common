@@ -1,6 +1,6 @@
 'use client';
 
-import { linkifyOptionalText } from '@/utils/linkDetection';
+import { linkifyText } from '@/utils/linkDetection';
 import {
   DEFAULT_MONEY_CURRENCY,
   ProposalReviewState,
@@ -283,7 +283,7 @@ function RubricCriterionSection({
     criterionType === 'yes_no' ? t('decisions.review.noYesLabel') : scoreLabel;
   const isTextInput =
     field.format === 'short-text' || field.format === 'long-text';
-  const description = linkifyOptionalText(field.schema.description);
+  const description = linkifyText(field.schema.description);
   const describedBy = description ? descriptionId : undefined;
 
   // `labelId` goes on the title text, not the whole row: the badge is inside
