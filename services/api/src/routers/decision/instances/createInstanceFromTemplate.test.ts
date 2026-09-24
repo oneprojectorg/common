@@ -340,7 +340,9 @@ describe.concurrent('createInstanceFromTemplate', () => {
         name: `Foreign Steward ${task.id}`,
         stewardProfileId: otherUser!.profileId!,
       }),
-    ).rejects.toThrow(/steward/i);
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
   });
 
   it('should accept an org profile the caller administers as steward', async ({
