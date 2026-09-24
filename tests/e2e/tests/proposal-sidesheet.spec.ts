@@ -75,6 +75,30 @@ test.describe('Proposal side sheet', () => {
     );
   });
 
+  test('the header offers Report between expand and close', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { instanceSlug } = await seedOneProposalDecision(org);
+
+    await openProposalList(
+      authenticatedPage,
+      `/en/decisions/${instanceSlug}/current?filter=all`,
+    );
+    await authenticatedPage.getByRole('link', { name: PROPOSAL_TITLE }).click();
+
+    const sheet = authenticatedPage.getByRole('dialog', { name: 'Proposal' });
+    // Report only appears once the proposal resolves — it needs its id.
+    await expect(sheet.getByRole('button', { name: 'Report' })).toBeVisible();
+
+    const headerControls = await sheet.evaluate((element) =>
+      [...element.querySelectorAll('a[aria-label], button[aria-label]')]
+        .slice(0, 3)
+        .map((control) => control.getAttribute('aria-label')),
+    );
+    expect(headerControls).toEqual(['Open full proposal', 'Report', 'Close']);
+  });
+
   test('the expand control hands the reader to the proposal page', async ({
     authenticatedPage,
     org,

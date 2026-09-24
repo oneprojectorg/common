@@ -26,6 +26,7 @@ import { ButtonLink } from '../ButtonLink';
 import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
 import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
+import { ReportProposalDialog } from './ReportProposalDialog';
 import {
   type ProposalRoute,
   decisionRootHref,
@@ -80,14 +81,23 @@ export function ProposalSheet({
 
         <div className="flex shrink-0 items-center justify-end gap-1 border-b px-4 py-3">
           {shownProfileId ? (
-            <ButtonLink
-              href={proposalHref({ ...route, profileId: shownProfileId })}
-              variant="ghost"
-              size="icon-sm"
-              aria-label={t('decisions.proposals.openFullProposalAction')}
-            >
-              <LuExpand className="size-4" />
-            </ButtonLink>
+            <>
+              <ButtonLink
+                href={proposalHref({ ...route, profileId: shownProfileId })}
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('decisions.proposals.openFullProposalAction')}
+              >
+                <LuExpand className="size-4" />
+              </ButtonLink>
+              {/* Reporting needs the proposal's own id, so it waits on the
+                  query. Close stays up throughout. */}
+              <APIErrorBoundary fallbacks={{ default: () => null }}>
+                <Suspense fallback={null}>
+                  <ReportAction profileId={shownProfileId} />
+                </Suspense>
+              </APIErrorBoundary>
+            </>
           ) : null}
           <Button
             variant="ghost"
@@ -118,6 +128,13 @@ export function ProposalSheet({
       </SheetContent>
     </Sheet>
   );
+}
+
+/** Shares the body's query, so it costs no extra request. */
+function ReportAction({ profileId }: { profileId: string }) {
+  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
+
+  return <ReportProposalDialog proposalId={proposal.id} iconOnly />;
 }
 
 /** Held past the close so the panel animates out with its content still in it. */
