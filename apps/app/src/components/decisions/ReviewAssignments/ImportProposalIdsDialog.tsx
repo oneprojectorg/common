@@ -20,7 +20,7 @@ import { useTranslations } from '@/lib/i18n';
 import { summarizeProposalIdImport } from './proposalIdImport';
 
 /**
- * Paste-a-spreadsheet shortcut for `ManageAssignmentsBody`, stacked on top
+ * Paste-a-spreadsheet shortcut for `ManageAssignmentsForm`, stacked on top
  * of it: admins triage in Sheets and arrive with 100+ proposal IDs, which is
  * not a checkbox job. Import only adds to the parent's selection — the admin
  * still reviews the rows and presses save, so nothing here mutates.
@@ -37,10 +37,7 @@ export function ImportProposalIdsDialog({
   assignableIds: ReadonlySet<string>;
   /** Merged into the parent's selection, additively. */
   onImport: (proposalIds: Array<string>) => void;
-  /**
-   * Held closed while the pool is still loading: an incomplete `poolIds` would
-   * report a live proposal as "not found".
-   */
+  /** Hold closed while the pool loads, or a live id reads as "not found". */
   disabled?: boolean;
 }) {
   const t = useTranslations();

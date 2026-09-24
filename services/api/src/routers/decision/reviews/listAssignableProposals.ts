@@ -24,7 +24,6 @@ export const listAssignableProposalsRouter = router({
     )
     .output(assignableProposalListSchema)
     .query(async ({ ctx, input }) => {
-      // Assignment writes publish here, so a save refreshes each row's state.
       ctx.registerQueryChannels([
         Channels.reviewAssignments(input.processInstanceId),
       ]);

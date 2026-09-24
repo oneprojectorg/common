@@ -112,8 +112,6 @@ describe.concurrent('decision.assignReviews', () => {
     const { context, processInstanceId, proposal, reviewer } =
       await createAssignSetup(task.id, onTestFinished);
 
-    // Org Admin with no role on the instance profile. The assignment reads
-    // already refuse this caller, so the write does too.
     const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
     const orgAdmin = await decisions.createMemberUser({
       organization: context.organization,
@@ -243,8 +241,6 @@ describe.concurrent('decision.assignReviews', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    // The manage dialog picks from `listProposals`, so the row it would offer
-    // has to be gone from there too — not just rejected by the mutation.
     const listing = await adminCaller.decision.listProposals({
       processInstanceId,
       phaseId: 'review',

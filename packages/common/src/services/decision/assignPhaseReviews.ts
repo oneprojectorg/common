@@ -16,10 +16,6 @@ export interface AssignPhaseReviewsInput extends InstancePhaseRef {
 /**
  * The decision-scoped counterpart of `platform.admin.assignReviews`.
  * Returns the number of assignments created.
- *
- * Decision profile only, no org fallback: this is what the assignment reads
- * and `removeReviewAssignments` already assert, and a write must not be
- * reachable by a caller who cannot see what they are writing to.
  */
 export async function assignPhaseReviews({
   processInstanceId,

@@ -28,15 +28,7 @@ export interface ListAssignableProposalsInput extends InstancePhaseRef {
   limit: number;
 }
 
-/**
- * One page of the proposals an admin could assign to a reviewer in a phase,
- * with that reviewer's assignment for the phase joined onto each row.
- *
- * Rows must match the pool `assignReviewsToReviewer` accepts, because one
- * out-of-pool id rejects a whole save: list visibility comes from
- * `resolveProposalListScope`, and `PIPELINE_INELIGIBLE_STATUSES` is what the
- * pool adds on top of it.
- */
+/** Rows must match the pool `assignReviewsToReviewer` accepts: one out-of-pool id rejects the whole save. */
 export async function listAssignableProposals({
   user,
   processInstanceId,
@@ -46,15 +38,12 @@ export async function listAssignableProposals({
   cursor,
   limit,
 }: ListAssignableProposalsInput): Promise<AssignableProposalList> {
-  // The resolver loads the instance and the pool predicates together, so this
-  // read never asks for the cached instance payload (every proposal in it).
   const scope = await resolveProposalListScope({
     input: { processInstanceId, phaseId, search },
     user,
   });
   const instance = scope.instance;
 
-  // No org fallback: legacy instances without their own profile fail closed.
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -109,8 +98,7 @@ export async function listAssignableProposals({
         with: { reviews: { columns: { state: true }, limit: 1 } },
       },
     },
-    // `id` tie-break: rows sharing a `createdAt` page in an undefined order
-    // without it, which skips and repeats rows.
+    // The `id` tie-break is required, or rows sharing a `createdAt` are skipped or repeated.
     orderBy: (table, { desc }) => [desc(table.createdAt), desc(table.id)],
     limit: limit + 1,
   });
@@ -134,8 +122,6 @@ export async function listAssignableProposals({
             reviewState: assignment.reviews[0]?.state ?? null,
           }
         : null,
-      // `submittedByProfileId`, matching the self-filter in
-      // `insertReviewAssignments` — the write would refuse to create this row.
       isOwn: row.submittedByProfileId === reviewerProfileId,
     };
   });

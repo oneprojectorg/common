@@ -39,7 +39,6 @@ describe.concurrent('decision.listAssignableProposals', () => {
       status: ProposalReviewAssignmentStatus.PENDING,
     });
     const context = assigned.context;
-    // Same context, so the same reviewer is the subject of both rows.
     const free = await testData.createReviewAssignment({
       context,
       title: `Free proposal ${task.id}`,
@@ -66,7 +65,6 @@ describe.concurrent('decision.listAssignableProposals', () => {
       status: ProposalReviewAssignmentStatus.PENDING,
       reviewState: null,
     });
-    // Assigned to someone else, so free for this reviewer.
     expect(freeRow?.assignment).toBeNull();
     expect(assignedRow?.profileName).toBe(`Assigned proposal ${task.id}`);
   });
@@ -101,7 +99,6 @@ describe.concurrent('decision.listAssignableProposals', () => {
       (row) => row.id === started.proposal.id,
     );
 
-    // The dialog locks a non-pending row and badges it with the review state.
     expect(startedRow?.assignment).toEqual({
       id: started.assignment.id,
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
@@ -119,8 +116,6 @@ describe.concurrent('decision.listAssignableProposals', () => {
     });
     const context = created.context;
 
-    // Authored by the reviewer the pick list is being built for, and assigned
-    // to somebody else — so for our subject it is unassigned but still theirs.
     const otherReviewer =
       await testData.createInstanceReviewerWithRole(context);
     const own = await testData.createReviewAssignment({
@@ -143,7 +138,6 @@ describe.concurrent('decision.listAssignableProposals', () => {
     const ownRow = result.items.find((row) => row.id === own.proposal.id);
     const otherRow = result.items.find((row) => row.id === created.proposal.id);
 
-    // Marked, not hidden: a missing row would read as "not found" on import.
     expect(ownRow?.isOwn).toBe(true);
     expect(ownRow?.assignment).toBeNull();
     expect(otherRow?.isOwn).toBe(false);
@@ -157,8 +151,7 @@ describe.concurrent('decision.listAssignableProposals', () => {
     const context = await testData.createContext();
     const instanceId = context.instance.instance.id;
 
-    // The proposal list shows a caller their own drafts, and one picked draft
-    // rejects the whole save. Authored before the fixture advances to review.
+    // Authored before the fixture advances to review.
     const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
     const draft = await decisions.createProposal({
       userEmail: context.defaultReviewer.email,
@@ -194,8 +187,6 @@ describe.concurrent('decision.listAssignableProposals', () => {
     const context = await testData.createContext();
     const instanceId = context.instance.instance.id;
 
-    // `PIPELINE_INELIGIBLE_STATUSES` keeps rejected proposals out of the pool,
-    // and one out-of-pool id rejects the whole save.
     const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
     const rejected = await decisions.createProposal({
       userEmail: context.defaultReviewer.email,
@@ -286,7 +277,6 @@ describe.concurrent('decision.listAssignableProposals', () => {
 
     expect(page2.next).toBeNull();
 
-    // Newest first, and the cursor is exclusive: no repeats, nothing skipped.
     const ids = [...page1.items, ...page2.items].map((row) => row.id);
     expect(ids).toEqual([second.proposal.id, first.proposal.id]);
   });
@@ -378,7 +368,6 @@ describeDecisionAccessTierGating('decision.listAssignableProposals', {
 
       const caller = await callers.networkJwt(context.defaultReviewer.email);
 
-      // Assert it lands: "not Unauthorized" would pass if it never ran.
       const result = await caller.decision.listAssignableProposals({
         processInstanceId: context.instance.instance.id,
         phaseId: 'review',

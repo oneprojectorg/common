@@ -59,15 +59,12 @@ interface ManageAssignmentsFormProps {
   reviewerName: string;
   isEligible: boolean;
   canModifyAssignments: boolean;
-  /** The reviewer's whole queue for the phase, not one page of it. */
   assignedTotal: number;
   onSaved: () => void;
 }
 
-/** Sized for a scroll rather than a whole phase; every per-page cost scales with it. */
 const PICK_PAGE_LIMIT = 24;
 
-/** The import's pool read is exhaustive, so it pays for the fewest round trips. */
 const IMPORT_POOL_PAGE_LIMIT = 100;
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -79,15 +76,12 @@ export function ManageAssignmentsDialogContent(
 ) {
   return (
     <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
-      {/* A child, not this component: the portal renders nothing until the
-          dialog opens, so only hooks BELOW it are deferred to open — and
-          unmounting on close is what resets the selection. */}
+      {/* Hooks stay in this child: the portal defers it to open, and unmount resets the selection. */}
       <ManageAssignmentsBody {...props} />
     </DialogContent>
   );
 }
 
-/** Reads the queue for its metadata only; the list itself is the pick read. */
 function ManageAssignmentsBody({
   processInstanceId,
   phaseId,
@@ -96,8 +90,6 @@ function ManageAssignmentsBody({
 }: ManageAssignmentsDialogContentProps) {
   const t = useTranslations();
 
-  // The page body already observes this cache entry and owns its refetch, so
-  // a mount refetch here would refire it.
   const queueQuery = trpc.decision.listReviewerAssignments.useInfiniteQuery(
     { processInstanceId, phaseId, reviewerProfileId },
     {
@@ -105,7 +97,6 @@ function ManageAssignmentsBody({
       refetchOnMount: false,
     },
   );
-  // Queue metadata rides on every page.
   const queue = queueQuery.data?.pages[0];
 
   if (queueQuery.isPending) {
@@ -180,24 +171,19 @@ function ManageAssignmentsForm({
   const filterId = useId();
   const importEnabled = useFeatureFlag('bulk_assign_import');
 
-  // State rather than a ref: the sentinel below reads this as its observer
-  // root, so it has to re-render once the element is attached.
+  // State, not a ref: the sentinel's observer root must re-render once attached.
   const [scrollRoot, setScrollRoot] = useState<HTMLUListElement | null>(null);
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query.trim(), SEARCH_DEBOUNCE_MS);
-  // Proposal ids to assign.
   const [toAssign, setToAssign] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
   );
-  // Assignment ids, not proposal ids: a removal must survive the row leaving
-  // the loaded pages when the search changes.
+  // Assignment ids, so a removal survives its row leaving the loaded pages.
   const [toUnassign, setToUnassign] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
   );
 
   // A reviewer without the role gets a frozen queue: unassign pending only.
-  // An ended phase freezes both halves — `assignReviews` rejects a completed
-  // phase and `removeReviewAssignments` requires the current one.
   const canAssign = isEligible && canModifyAssignments;
 
   const pickQuery = trpc.decision.listAssignableProposals.useInfiniteQuery(
@@ -211,7 +197,6 @@ function ManageAssignmentsForm({
     {
       getNextPageParam: (lastPage) => lastPage.next ?? undefined,
       staleTime: 30 * 1000,
-      // Hold the previous term's rows so the list doesn't empty between keystrokes.
       placeholderData: (previous) => previous,
     },
   );
@@ -232,9 +217,7 @@ function ManageAssignmentsForm({
     useInfiniteScroll<HTMLLIElement>(loadNextPage, {
       hasNextPage: pickQuery.hasNextPage,
       isFetchingNextPage: pickQuery.isFetchingNextPage,
-      // Measured against the list's own scroller, not the viewport: a
-      // viewport root is clipped by the dialog, which leaves `rootMargin` no
-      // room to work and only fetches once the user is already at the bottom.
+      // The list's scroller, not the viewport: the dialog clips a viewport root.
       root: scrollRoot,
     });
 
@@ -242,11 +225,9 @@ function ManageAssignmentsForm({
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation();
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
 
-  // A re-tick of a row assigned since it was picked is dropped, not re-sent.
   const assignedProposalIds = new Set(
     rows.flatMap((row) => (row.proposal.assignment ? [row.proposal.id] : [])),
   );
-  // A removal whose review has started since is dropped the same way.
   const lockedAssignmentIds = new Set(
     rows.flatMap((row) =>
       row.kind === 'locked' && row.proposal.assignment
@@ -266,7 +247,7 @@ function ManageAssignmentsForm({
     assignedTotal - unassignAssignmentIds.length + assignIds.length;
   const hasChanges = assignIds.length > 0 || unassignAssignmentIds.length > 0;
 
-  // Additive, and only over what is loaded: never bulk-unassigns.
+  // Additive only: never bulk-unassigns.
   const visibleFreeIds = canAssign
     ? rows.flatMap((row) => (row.kind === 'free' ? [row.proposal.id] : []))
     : [];
@@ -307,7 +288,8 @@ function ManageAssignmentsForm({
     });
   };
 
-  // The two mutations can partially succeed, so each reports its own failure.
+  // The two halves are separate mutations, so each reports its own failure —
+  // one "could not save" toast after the assign half committed would lie.
   const save = async () => {
     let createdCount = 0;
 
@@ -350,7 +332,7 @@ function ManageAssignmentsForm({
           reviewerProfileId,
         });
         if (createdCount > 0) {
-          // Committed — drop it so a retry only re-sends the removals.
+          // The assign half committed — drop it so a retry only re-sends the removals.
           setToAssign(new Set());
           toast.error(t('decisions.review.unassignPartialFailure'));
         } else {
@@ -438,8 +420,7 @@ function ManageAssignmentsForm({
           />
         </Field>
 
-        {/* Mounted before it has anything to announce: a live region that
-            arrives with its text already in place is never read. */}
+        {/* Mounted empty first: a live region that arrives with its text is never read. */}
         <p aria-live="polite" className="sr-only">
           {pickQuery.isFetchingNextPage
             ? t('decisions.review.loadingMoreProposals')
@@ -540,8 +521,7 @@ function ProposalCheckRow({
   const t = useTranslations();
   const { proposal, kind } = row;
   const { titleText, displayCategories } = useAssignableRowData(proposal);
-  // `assigned` stays checkable without the role, so the queue can be cleaned;
-  // only an ended phase freezes it.
+  // `assigned` stays checkable even when frozen, so the queue can be cleaned.
   const isDisabled =
     kind === 'own' ||
     kind === 'locked' ||
@@ -596,10 +576,7 @@ function ProposalCheckRow({
   );
 }
 
-/**
- * Classifying a pasted id as "not found" is a claim about the whole phase, so
- * this pages the pool to exhaustion. Mounted only for the flagged cohort.
- */
+/** Pages the whole pool: "not found" is a claim about the whole phase. */
 function ImportPoolAction({
   processInstanceId,
   phaseId,

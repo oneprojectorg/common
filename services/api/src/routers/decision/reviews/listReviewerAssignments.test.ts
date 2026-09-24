@@ -113,8 +113,6 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     await testData.setCurrentPhase(instanceId, 'voting');
 
     const past = await adminCaller.decision.listReviewerAssignments(input);
-    // The row is still PENDING, so status alone would read as removable —
-    // removal asserts the phase is current, and this is what says so.
     expect(past.items[0]?.assignment.status).toBe(
       ProposalReviewAssignmentStatus.PENDING,
     );
