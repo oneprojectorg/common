@@ -22,6 +22,10 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       key: 'event.data.from',
       period: '1m',
     },
+    singleton: {
+      key: 'event.data.from',
+      mode: 'skip',
+    },
   },
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
