@@ -3,6 +3,7 @@ import {
   createAccountFromPhone,
   getSmsProvider,
   parsePhoneNumber,
+  RateLimitError,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { authUsers, users } from '@op/db/schema';
@@ -69,17 +70,25 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const to = parsePhoneNumber(from);
 
-    await step.run('send-consent-request', async () => {
+    const consentResult = await step.run('send-consent-request', async () => {
       const result = await provider.sendSms!({
         to,
         body: `Reply ${CONFIRMATION_KEYWORD} to create your Common account.`,
       });
-      if (result.status === 'rejected') {
-        logger.warn('Consent request send rejected', {
-          reason: result.reason,
-        });
+      if (result.status === 'rejected' && result.retryable) {
+        throw new RateLimitError(
+          `Consent request send rejected: ${result.reason}`,
+        );
       }
+      return result;
     });
+
+    if (consentResult.status === 'rejected') {
+      logger.warn('Consent request permanently rejected, aborting signup', {
+        reason: consentResult.reason,
+      });
+      return { message: 'consent send rejected', reason: consentResult.reason };
+    }
 
     const reply = await step.waitForEvent('wait-for-confirmation', {
       event: smsInboundReceived.name,
@@ -103,12 +112,25 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       createAccountFromPhone({ phone: to }),
     );
 
-    await step.run('send-welcome-reply', async () => {
-      await provider.sendSms!({
+    const welcomeResult = await step.run('send-welcome-reply', async () => {
+      const result = await provider.sendSms!({
         to,
         body: "You're in! Welcome to Common.",
       });
+      if (result.status === 'rejected' && result.retryable) {
+        throw new RateLimitError(
+          `Welcome message send rejected: ${result.reason}`,
+        );
+      }
+      return result;
     });
+
+    if (welcomeResult.status === 'rejected') {
+      logger.warn('Welcome message permanently rejected', {
+        authUserId,
+        reason: welcomeResult.reason,
+      });
+    }
 
     const profileId = await step.run('lookup-profile-id', async () => {
       const [row] = await db
