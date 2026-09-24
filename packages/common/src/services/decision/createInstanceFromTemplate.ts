@@ -159,19 +159,18 @@ export const createInstanceFromTemplate = async ({
     // TODO: profileId should not be nullable in the schema
     throw new UnauthorizedError('User must have a profile');
   }
-  // Checked even when it came from the session rather than the request:
-  // `currentProfileId` is a last-viewed pointer, so a revoked org admin would
-  // otherwise keep stewarding to it.
-  //
-  // The same rule `duplicateInstance` runs, inlined until the extraction in
-  // the steward-rule PR lands and both can share `assertCanStewardToProfile`.
   const stewardProfileId =
     requestedStewardProfileId ?? dbUser.currentProfileId ?? ownerProfileId;
 
-  if (stewardProfileId !== ownerProfileId) {
+  // The same rule `duplicateInstance` runs, inlined until the extraction in
+  // the steward-rule PR lands and both can share `assertCanStewardToProfile`.
+  if (
+    requestedStewardProfileId &&
+    requestedStewardProfileId !== ownerProfileId
+  ) {
     const stewardRoles = await getProfileAccessRolesWithOrgFallback({
       user,
-      profileId: stewardProfileId,
+      profileId: requestedStewardProfileId,
     });
 
     if (!checkPermission({ profile: permission.ADMIN }, stewardRoles)) {
