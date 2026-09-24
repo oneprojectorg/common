@@ -281,6 +281,7 @@ packages/common/testing/
 ├── mocks/               # Shared module mocks, see mocks/README.md
 ├── supabase.ts          # Test user / session / insert helpers
 ├── vitest.ts            # TEST_ENV and defineIntegrationProject({ root })
+├── unitSetup.ts         # Unit-project guard against a real database connection
 ├── check-supabase.ts    # Supabase health check script
 └── supabase-test.ts     # Test Supabase instance management script
 ```
