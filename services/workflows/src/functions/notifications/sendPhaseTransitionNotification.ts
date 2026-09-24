@@ -117,57 +117,73 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     } else {
       const processUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processData.profileSlug}`;
 
-      const emailResult = await step.run('send-emails', async () => {
-        try {
-          const emails = recipientEmails.map((email) => ({
-            to: email,
-            subject: PhaseTransitionEmail.subject(
-              processData.name,
-              toPhaseName,
-            ),
-            component: () =>
-              PhaseTransitionEmail({
-                processTitle: processData.name,
+      // Caught here, not just inside the step: email and SMS are independent
+      // delivery channels for this same transition, so a persistently
+      // failing email recipient must not stop phone-only participants from
+      // ever getting their vote prompt below. The step itself already
+      // retries a transient failure through Inngest's own backoff; this only
+      // catches what survives that.
+      try {
+        const emailResult = await step.run('send-emails', async () => {
+          try {
+            const emails = recipientEmails.map((email) => ({
+              to: email,
+              subject: PhaseTransitionEmail.subject(
+                processData.name,
                 toPhaseName,
-                phaseNumber,
-                totalPhases,
-                processUrl,
-              }),
-          }));
+              ),
+              component: () =>
+                PhaseTransitionEmail({
+                  processTitle: processData.name,
+                  toPhaseName,
+                  phaseNumber,
+                  totalPhases,
+                  processUrl,
+                }),
+            }));
 
-          const { errors } = await OPBatchSend(emails, {
-            // Stable across retries, unique per run: a retry replays
-            // delivered chunks and only the failed ones go out again.
-            idempotencyKeyPrefix: `phase-transition/${runId}`,
-          });
-
-          if (errors.length > 0) {
-            logger.error('Some phase transition notifications failed to send', {
-              processInstanceId,
-              failedCount: errors.length,
+            const { errors } = await OPBatchSend(emails, {
+              // Stable across retries, unique per run: a retry replays
+              // delivered chunks and only the failed ones go out again.
+              idempotencyKeyPrefix: `phase-transition/${runId}`,
             });
-            throw new Error(
-              `Phase transition email batch failed for ${errors.length} recipient(s)`,
-            );
+
+            if (errors.length > 0) {
+              logger.error(
+                'Some phase transition notifications failed to send',
+                {
+                  processInstanceId,
+                  failedCount: errors.length,
+                },
+              );
+              throw new Error(
+                `Phase transition email batch failed for ${errors.length} recipient(s)`,
+              );
+            }
+
+            logger.info('Phase transition notifications sent', {
+              processInstanceId,
+              toPhaseId,
+              sent: emails.length,
+              idempotencyKeyPrefix: `phase-transition/${runId}`,
+            });
+            return { sent: emails.length };
+          } catch (error) {
+            logger.error('Failed to send phase transition notifications', {
+              error,
+              processInstanceId,
+            });
+            throw error;
           }
+        });
 
-          logger.info('Phase transition notifications sent', {
-            processInstanceId,
-            toPhaseId,
-            sent: emails.length,
-            idempotencyKeyPrefix: `phase-transition/${runId}`,
-          });
-          return { sent: emails.length };
-        } catch (error) {
-          logger.error('Failed to send phase transition notifications', {
-            error,
-            processInstanceId,
-          });
-          throw error;
-        }
-      });
-
-      emailsSent = emailResult.sent;
+        emailsSent = emailResult.sent;
+      } catch {
+        logger.error(
+          'Phase transition emails failed after retries; continuing to SMS vote prompts',
+          { processInstanceId },
+        );
+      }
     }
 
     if (toPhase && isSingleChoiceVotingPhase(toPhase)) {
