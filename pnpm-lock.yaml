@@ -868,6 +868,9 @@ importers:
       '@op/vitest-config':
         specifier: workspace:*
         version: link:../../configs/vitest-config
+      '@supabase/supabase-js':
+        specifier: 2.49.3
+        version: 2.49.3
       '@types/json-schema':
         specifier: ^7.0.15
         version: 7.0.15
