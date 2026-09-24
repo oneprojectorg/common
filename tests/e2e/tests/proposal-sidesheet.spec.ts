@@ -75,7 +75,7 @@ test.describe('Proposal side sheet', () => {
     );
   });
 
-  test('the header offers Report between expand and close', async ({
+  test('the header reads report, expand, close', async ({
     authenticatedPage,
     org,
   }) => {
@@ -96,7 +96,7 @@ test.describe('Proposal side sheet', () => {
         .slice(0, 3)
         .map((control) => control.getAttribute('aria-label')),
     );
-    expect(headerControls).toEqual(['Open full proposal', 'Report', 'Close']);
+    expect(headerControls).toEqual(['Report', 'Open full proposal', 'Close']);
   });
 
   test('the expand control hands the reader to the proposal page', async ({

@@ -81,6 +81,13 @@ export function ProposalSheet({
         <div className="flex shrink-0 items-center justify-end gap-1 border-b px-4 py-3">
           {shownProfileId ? (
             <>
+              {/* Reporting needs the proposal's own id, so it waits on the
+                  query. Close stays up throughout. */}
+              <APIErrorBoundary fallbacks={{ default: () => null }}>
+                <Suspense fallback={null}>
+                  <ReportAction profileId={shownProfileId} />
+                </Suspense>
+              </APIErrorBoundary>
               <ButtonLink
                 href={proposalHref({ ...route, profileId: shownProfileId })}
                 variant="ghost"
@@ -89,13 +96,6 @@ export function ProposalSheet({
               >
                 <LuExpand className="size-4" />
               </ButtonLink>
-              {/* Reporting needs the proposal's own id, so it waits on the
-                  query. Close stays up throughout. */}
-              <APIErrorBoundary fallbacks={{ default: () => null }}>
-                <Suspense fallback={null}>
-                  <ReportAction profileId={shownProfileId} />
-                </Suspense>
-              </APIErrorBoundary>
             </>
           ) : null}
           <Button
