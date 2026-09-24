@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
@@ -339,6 +341,40 @@ describe.concurrent('createInstanceFromTemplate', () => {
         templateId: template!.id,
         name: `Foreign Steward ${task.id}`,
         stewardProfileId: otherUser!.profileId!,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should reject a steward profile that does not exist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, setup.userEmail));
+
+    const [template] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Missing Steward Template ${task.id}`,
+        processSchema: simpleVoting,
+        createdByProfileId: userRecord!.profileId!,
+      })
+      .returning();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createInstanceFromTemplate({
+        templateId: template!.id,
+        name: `Missing Steward ${task.id}`,
+        stewardProfileId: randomUUID(),
       }),
     ).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError' },
