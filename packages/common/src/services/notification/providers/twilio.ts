@@ -1,4 +1,5 @@
 import { logger } from '@op/logging';
+import twilio from 'twilio';
 
 import { CommonError } from '../../../utils/error';
 import type {
@@ -257,3 +258,29 @@ export const createTwilioProvider = ({
     ? { sendSms: buildSendSms(messagingServiceSid) }
     : {};
 };
+
+export interface TwilioStatusCallback {
+  messageSid: string;
+  status: string;
+  errorCode?: string;
+}
+
+export const verifyTwilioWebhookSignature = ({
+  authToken,
+  signature,
+  url,
+  params,
+}: {
+  authToken: string;
+  signature: string;
+  url: string;
+  params: Record<string, string>;
+}): boolean => twilio.validateRequest(authToken, signature, url, params);
+
+export const parseTwilioStatusCallback = (
+  params: Record<string, string>,
+): TwilioStatusCallback => ({
+  messageSid: params.MessageSid ?? '',
+  status: params.MessageStatus ?? 'unknown',
+  errorCode: params.ErrorCode,
+});

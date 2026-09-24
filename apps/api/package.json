@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@op/api": "workspace:*",
+    "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/logging": "workspace:*",
     "@op/supabase": "workspace:*",
