@@ -7,6 +7,7 @@ import {
   type ProposalViewControls,
 } from './ProposalsFilterBar';
 import { StickyFilterBar } from './StickyFilterBar';
+import type { ProposalFilterItem } from './useProposalFilterItems';
 
 export interface ProposalsStickyFilterBarProps {
   /** Server count for the active filter. */
@@ -26,6 +27,8 @@ export interface ProposalsStickyFilterBarProps {
   exportControl?: React.ReactNode;
   /** Off where a tab bar above the list already owns the proposal filter. */
   showFilterSelect?: boolean;
+  /** The filters this surface offers, resolved by `ProposalsList`. */
+  filterItems: ProposalFilterItem[];
   /**
    * Px offset where the bar pins inside its scroll container — clears whatever
    * sticky chrome sits above it (e.g. the floating Overview/Current toggle).
@@ -47,6 +50,7 @@ export const ProposalsStickyFilterBar = ({
   view,
   exportControl,
   showFilterSelect,
+  filterItems,
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => (
   <StickyFilterBar pinOffset={pinOffset}>
@@ -59,6 +63,7 @@ export const ProposalsStickyFilterBar = ({
         header={header}
         exportControl={exportControl}
         showFilterSelect={showFilterSelect}
+        filterItems={filterItems}
       />
     ) : (
       (header ?? <MyProposalsHeader />)

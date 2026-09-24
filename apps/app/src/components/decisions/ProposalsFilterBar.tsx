@@ -9,7 +9,7 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
-import { useProposalFilterItems } from './useProposalFilterItems';
+import type { ProposalFilterItem } from './useProposalFilterItems';
 
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
@@ -85,6 +85,7 @@ export const ProposalsFilterBar = ({
   header,
   exportControl,
   showFilterSelect = true,
+  filterItems,
 }: {
   controls: ProposalControls;
   view?: ProposalViewControls;
@@ -98,12 +99,10 @@ export const ProposalsFilterBar = ({
   exportControl?: React.ReactNode;
   /** Off where a tab bar above the list already owns the proposal filter. */
   showFilterSelect?: boolean;
+  /** The filters this surface offers, resolved by `ProposalsList`. */
+  filterItems: ProposalFilterItem[];
 }) => {
   const t = useTranslations();
-  const filterItems = useProposalFilterItems({
-    hasVoted: controls.hasVoted,
-    currentProfileId: controls.currentProfileId,
-  });
 
   return (
     <>

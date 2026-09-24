@@ -62,6 +62,7 @@ import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import { getProposalDetectionText } from './translationDetectionText';
+import type { ProposalFilterItem } from './useProposalFilterItems';
 import { useProposalFilterItems } from './useProposalFilterItems';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
@@ -277,7 +278,13 @@ const ResultsPhaseProposalsLoader = ({
 
 // fallow-ignore-next-line complexity
 export const ProposalsList = (props: ProposalsListProps) => {
-  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
+  const {
+    instanceId,
+    phase,
+    initialFilter,
+    excludeAssignedForReview,
+    showFilterTabs,
+  } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
@@ -315,16 +322,17 @@ export const ProposalsList = (props: ProposalsListProps) => {
     filterParam ??
     initialFilter ??
     (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-  // Resolved against the list both controls render, so the applied filter is
-  // always one the reader can see and leave. A stale link is the case that
-  // matters: `?filter=my-ballot` opened by someone who hasn't voted, or
-  // `?filter=my-proposals` with no profile, would otherwise filter the list by
-  // a criterion no control offers — leaving the tab bar with nothing active
-  // over results the reader can't explain. Deriving it here rather than
-  // restating the rule keeps a filter added to the hook coerced for free.
+  // The one list this surface offers, resolved here and handed to whichever
+  // control renders it, so the applied filter is always one the reader can see
+  // and leave. A stale link is the case that matters: `?filter=my-ballot`
+  // opened by someone who hasn't voted, `?filter=my-proposals` with no
+  // profile, or `?filter=rejected` on a tabbed surface would otherwise filter
+  // the list by a criterion no control offers — leaving the bar with nothing
+  // active over results the reader can't explain.
   const availableFilters = useProposalFilterItems({
     hasVoted,
     currentProfileId,
+    includeRejected: !showFilterTabs,
   });
   const proposalFilter =
     availableFilters.find(
@@ -400,6 +408,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
       {...props}
       {...data}
       queryParams={queryParams}
+      availableFilters={availableFilters}
       proposalFilter={proposalFilter}
       setProposalFilter={setProposalFilter}
       selectedCategory={selectedCategory}
@@ -436,6 +445,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
 type ProposalsListContentProps = ProposalsListProps &
   ProposalsLoaderRenderProps & {
     queryParams: ProposalQueryParams;
+    /** The filters this surface offers — one list, so no control can disagree. */
+    availableFilters: ProposalFilterItem[];
     proposalFilter: ProposalFilter;
     setProposalFilter: (filter: ProposalFilter) => void;
     selectedCategory: string;
@@ -465,6 +476,7 @@ const ProposalsListContent = ({
   phase,
   showFilterTabs = false,
   queryParams,
+  availableFilters,
   allProposals,
   total,
   totalProposalCount,
@@ -710,6 +722,7 @@ const ProposalsListContent = ({
           controls={hideFilters ? undefined : controls}
           // The tab bar above the list already owns this filter.
           showFilterSelect={!showTabs}
+          filterItems={availableFilters}
           // Omitted when the process collects no location.
           view={
             hasLocationField
@@ -852,8 +865,7 @@ const ProposalsListContent = ({
     >
       {showTabs ? (
         <ProposalFilterTabs
-          hasVoted={hasVoted}
-          currentProfileId={currentProfileId}
+          items={availableFilters}
           value={proposalFilter}
           onValueChange={setProposalFilter}
         >

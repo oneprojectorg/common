@@ -116,6 +116,19 @@ test.describe('Proposal filter tabs', () => {
       authenticatedPage.getByRole('combobox', { name: /Filter proposals$/ }),
     ).toBeHidden();
 
+    // The rail carries the reader-scoped filters only. "Not advanced" is a
+    // status filter that stays in the select on the review surfaces, so the
+    // rail is two tabs on a decision where nobody has voted — not three.
+    // Scoped to the rail: the decision view's Overview/Current toggle is a
+    // tablist too, so an unscoped tab count would read four.
+    const filterTabs = authenticatedPage.getByRole('tablist', {
+      name: /Filter proposals$/,
+    });
+    await expect(
+      filterTabs.getByRole('tab', { name: 'Not advanced' }),
+    ).toBeHidden();
+    await expect(filterTabs.getByRole('tab')).toHaveCount(2);
+
     await myTab.click();
 
     await expect(theirs).toBeHidden({ timeout: 15_000 });

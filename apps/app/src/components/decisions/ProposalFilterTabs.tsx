@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useProposalFilterItems } from './useProposalFilterItems';
+import type { ProposalFilterItem } from './useProposalFilterItems';
 
 /**
  * The proposal-filter dimension as a tab bar above the list, mirroring
@@ -24,22 +24,22 @@ import { useProposalFilterItems } from './useProposalFilterItems';
  * and would remount the list on every switch.
  */
 export const ProposalFilterTabs = ({
-  hasVoted,
-  currentProfileId,
+  items,
   value,
   onValueChange,
   children,
 }: {
-  hasVoted: boolean;
-  currentProfileId: string | undefined;
+  /**
+   * Resolved by `ProposalsList`, which also keeps the applied filter inside
+   * this list — a tab bar that renders a different set from the one the
+   * fallback reads is how a filter with no tab gets applied anyway.
+   */
+  items: ProposalFilterItem[];
   value: ProposalFilter;
   onValueChange: (filter: ProposalFilter) => void;
   children: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
-  // Read here rather than handed down: both controls call the same hook at the
-  // point they render, so neither can be given a list the other doesn't have.
-  const items = useProposalFilterItems({ hasVoted, currentProfileId });
 
   return (
     <Tabs
