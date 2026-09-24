@@ -15,6 +15,7 @@ vi.mock('@op/common', () => ({
   // A real E.164 fixture below, so identity is a faithful stand-in.
   parsePhoneNumber: (value: string) => value,
   submitVote: vi.fn(),
+  RateLimitError: class RateLimitError extends Error {},
 }));
 vi.mock('@op/logging', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -86,7 +87,26 @@ describe('handleSmsVoteRequest', () => {
     expect(submitVote).not.toHaveBeenCalled();
   });
 
-  it('logs a rejected prompt send but still waits for a reply', async () => {
+  it('fails the step on a rate-limited prompt send, so Inngest retries it', async () => {
+    vi.mocked(db.select).mockReturnValue(dbRows([{ title: 'Fund the park' }]));
+    const sendSms = vi.fn().mockResolvedValue({
+      status: 'rejected',
+      reason: 'rate_limited',
+      retryable: true,
+    });
+    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+    const t = new InngestTestEngine({ function: handleSmsVoteRequest });
+
+    const { error } = await t.execute({ events: [triggerEvent()] });
+
+    // Inngest serializes a real step failure into a plain {name, message,
+    // stack} object rather than handing back a live Error instance.
+    expect((error as Error).message).toContain(
+      'Vote prompt send rejected: rate_limited',
+    );
+  });
+
+  it('aborts the vote request when the prompt send is permanently rejected', async () => {
     vi.mocked(db.select).mockReturnValue(dbRows([{ title: 'Fund the park' }]));
     const sendSms = vi.fn().mockResolvedValue({
       status: 'rejected',
@@ -96,20 +116,25 @@ describe('handleSmsVoteRequest', () => {
     vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
     const t = new InngestTestEngine({ function: handleSmsVoteRequest });
 
-    const { result } = await t.execute({
-      events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => null }],
-    });
+    const { result } = await t.execute({ events: [triggerEvent()] });
 
     expect(sendSms).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith('Vote prompt send rejected', {
-      phone: PHONE,
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Vote prompt permanently rejected, aborting vote request',
+      {
+        processInstanceId: PROCESS_INSTANCE_ID,
+        proposalId: PROPOSAL_ID,
+        authUserId: AUTH_USER_ID,
+        reason: 'invalid_number',
+      },
+    );
+    expect(result).toEqual({
+      message: 'vote prompt send rejected',
       reason: 'invalid_number',
     });
-    expect(result).toEqual({ message: 'timed out waiting for vote reply' });
   });
 
-  it('reports a timeout when no reply arrives before the wait expires', async () => {
+  it('reports a timeout when no reply arrives before the first wait expires', async () => {
     vi.mocked(db.select).mockReturnValue(dbRows([{ title: 'Fund the park' }]));
     const sendSms = vi
       .fn()
@@ -119,14 +144,14 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => null }],
+      steps: [{ id: 'wait-for-vote-reply-1', handler: () => null }],
     });
 
     expect(result).toEqual({ message: 'timed out waiting for vote reply' });
     expect(submitVote).not.toHaveBeenCalled();
   });
 
-  it('does not record a vote when the reply is not the confirmation keyword', async () => {
+  it('gives up after exhausting every attempt on unrelated replies', async () => {
     vi.mocked(db.select).mockReturnValue(dbRows([{ title: 'Fund the park' }]));
     const sendSms = vi
       .fn()
@@ -136,14 +161,18 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => voteReply('nope') }],
+      steps: [
+        { id: 'wait-for-vote-reply-1', handler: () => voteReply('nope') },
+        { id: 'wait-for-vote-reply-2', handler: () => voteReply('huh?') },
+        { id: 'wait-for-vote-reply-3', handler: () => voteReply('still no') },
+      ],
     });
 
     expect(result).toEqual({ message: 'reply did not confirm' });
     expect(submitVote).not.toHaveBeenCalled();
   });
 
-  it('records a vote once the sender confirms, matching the keyword case-insensitively', async () => {
+  it('records a vote after an unrelated reply, once a later reply confirms', async () => {
     vi.mocked(db.select).mockReturnValue(dbRows([{ title: 'Fund the park' }]));
     const sendSms = vi
       .fn()
@@ -156,7 +185,10 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => voteReply('yes') }],
+      steps: [
+        { id: 'wait-for-vote-reply-1', handler: () => voteReply('nope') },
+        { id: 'wait-for-vote-reply-2', handler: () => voteReply('yes') },
+      ],
     });
 
     expect(result).toEqual({

@@ -1,4 +1,9 @@
-import { getSmsProvider, parsePhoneNumber, submitVote } from '@op/common';
+import {
+  RateLimitError,
+  getSmsProvider,
+  parsePhoneNumber,
+  submitVote,
+} from '@op/common';
 import { db } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
@@ -6,6 +11,8 @@ import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
 const CONFIRMATION_KEYWORD = 'YES';
+const MAX_REPLY_ATTEMPTS = 3;
+const REPLY_ATTEMPT_TIMEOUT = '24h';
 const { voteSmsPromptRequested, smsInboundReceived } = Events;
 
 export const handleSmsVoteRequest = inngest.createFunction(
@@ -14,6 +21,10 @@ export const handleSmsVoteRequest = inngest.createFunction(
     debounce: {
       key: 'event.data.phone + "-" + event.data.processInstanceId',
       period: '1m',
+    },
+    singleton: {
+      key: 'event.data.phone',
+      mode: 'skip',
     },
   },
   { event: voteSmsPromptRequested.name },
@@ -51,42 +62,62 @@ export const handleSmsVoteRequest = inngest.createFunction(
 
     const to = parsePhoneNumber(phone);
 
-    await step.run('send-vote-prompt', async () => {
+    const promptResult = await step.run('send-vote-prompt', async () => {
       const result = await provider.sendSms!({
         to,
         body: `Reply ${CONFIRMATION_KEYWORD} to vote for "${proposalTitle}".`,
       });
-      if (result.status === 'rejected') {
-        logger.warn('Vote prompt send rejected', {
-          phone,
-          reason: result.reason,
-        });
+      if (result.status === 'rejected' && result.retryable) {
+        throw new RateLimitError(
+          `Vote prompt send rejected: ${result.reason}`,
+        );
       }
+      return result;
     });
 
-    const reply = await step.waitForEvent('wait-for-vote-reply', {
-      event: smsInboundReceived.name,
-      match: 'data.from',
-      timeout: '72h',
-    });
-
-    if (!reply) {
-      logger.info('No vote reply received in time', {
+    if (promptResult.status === 'rejected') {
+      logger.warn('Vote prompt permanently rejected, aborting vote request', {
         processInstanceId,
         proposalId,
-        phone,
+        authUserId,
+        reason: promptResult.reason,
       });
-      return { message: 'timed out waiting for vote reply' };
+      return { message: 'vote prompt send rejected', reason: promptResult.reason };
     }
 
-    const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
+    let confirmed = false;
 
-    if (replyBody.trim().toUpperCase() !== CONFIRMATION_KEYWORD) {
-      logger.info('Reply did not match the vote confirmation keyword', {
-        processInstanceId,
-        proposalId,
-        phone,
+    for (let attempt = 1; attempt <= MAX_REPLY_ATTEMPTS; attempt++) {
+      const reply = await step.waitForEvent(`wait-for-vote-reply-${attempt}`, {
+        event: smsInboundReceived.name,
+        if: 'event.data.phone == async.data.from',
+        timeout: REPLY_ATTEMPT_TIMEOUT,
       });
+
+      if (!reply) {
+        logger.info('No vote reply received in time', {
+          processInstanceId,
+          proposalId,
+          authUserId,
+          attempt,
+        });
+        return { message: 'timed out waiting for vote reply' };
+      }
+
+      const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
+
+      if (replyBody.trim().toUpperCase() === CONFIRMATION_KEYWORD) {
+        confirmed = true;
+        break;
+      }
+
+      logger.info(
+        'Reply did not match the vote confirmation keyword, waiting for another reply',
+        { processInstanceId, proposalId, authUserId, attempt },
+      );
+    }
+
+    if (!confirmed) {
       return { message: 'reply did not confirm' };
     }
 
