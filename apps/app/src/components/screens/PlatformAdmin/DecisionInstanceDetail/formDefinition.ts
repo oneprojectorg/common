@@ -2,7 +2,23 @@ import type {
   CustomFormDefinitionInput,
   CustomFormField,
 } from '@op/common/client';
-import { customFormDefinitionInputSchema } from '@op/common/client';
+import {
+  CUSTOM_FORM_MAX_FIELDS,
+  customFormDefinitionInputSchema,
+} from '@op/common/client';
+
+/**
+ * What an author may type into each box, in characters. Taken from the
+ * proposal template builder, the editor this one sits beside; the service
+ * schema's far larger caps stay the outer bound.
+ */
+export const FORM_CHARACTER_LIMITS = {
+  name: 50,
+  title: 50,
+  description: 250,
+  fieldTitle: 50,
+  fieldDescription: 250,
+} as const;
 
 /** One branch each of `CustomFormModal`'s renderer. `money` and `location` are
  *  deliberately absent — the builder has no editor for them. */
@@ -257,21 +273,34 @@ export const resolvePhaseBadge = ({
   };
 };
 
-/** Codes, not sentences: the copy lives in the dictionaries. `position` is the
- *  1-based field number. */
+/** Codes, not sentences: the copy lives in the dictionaries. Each code names
+ *  exactly one control, so the dialog can render its message there. */
 export type DraftProblem = {
   code: DraftProblemCode;
-  position?: number;
+  /**
+   * `localId` of the field it belongs to; absent on form-level problems. The
+   * editor's own id rather than a position, so moving or removing a field
+   * after a failed save cannot leave the message on a different field.
+   */
+  fieldLocalId?: string;
+  /** The cap a `*-too-long` or `too-many-fields` problem names. */
+  max?: number;
   /** Set only on `schema`. */
   detail?: string;
 };
 
 export type DraftProblemCode =
   | 'missing-name'
+  | 'name-too-long'
   | 'missing-phase'
   | 'missing-title'
+  | 'title-too-long'
+  | 'description-too-long'
   | 'no-fields'
+  | 'too-many-fields'
   | 'field-missing-question'
+  | 'field-question-too-long'
+  | 'field-description-too-long'
   | 'field-missing-options'
   | 'schema';
 
@@ -304,28 +333,77 @@ export const validateDraft = (
   return { ok: true, definition: parsed.data };
 };
 
-const describeDraftProblems = (draft: BuilderForm): DraftProblem[] => {
-  const problems: DraftProblem[] = [
-    ...(draft.name.trim() ? [] : [{ code: 'missing-name' as const }]),
-    ...(draft.phaseId ? [] : [{ code: 'missing-phase' as const }]),
-    ...(draft.title.trim() ? [] : [{ code: 'missing-title' as const }]),
-    ...(draft.fields.length > 0 ? [] : [{ code: 'no-fields' as const }]),
-  ];
+const describeDraftProblems = (draft: BuilderForm): DraftProblem[] => [
+  ...describeFormProblems(draft),
+  ...draft.fields.flatMap(describeFieldProblems),
+];
 
-  draft.fields.forEach((field, index) => {
-    const position = index + 1;
+const describeFormProblems = (draft: BuilderForm): DraftProblem[] => [
+  ...(draft.name.trim() ? [] : [{ code: 'missing-name' as const }]),
+  ...getTooLongProblems({
+    value: draft.name,
+    max: FORM_CHARACTER_LIMITS.name,
+    code: 'name-too-long',
+  }),
+  ...(draft.phaseId ? [] : [{ code: 'missing-phase' as const }]),
+  ...(draft.title.trim() ? [] : [{ code: 'missing-title' as const }]),
+  ...getTooLongProblems({
+    value: draft.title,
+    max: FORM_CHARACTER_LIMITS.title,
+    code: 'title-too-long',
+  }),
+  ...getTooLongProblems({
+    value: draft.description,
+    max: FORM_CHARACTER_LIMITS.description,
+    code: 'description-too-long',
+  }),
+  ...(draft.fields.length > 0 ? [] : [{ code: 'no-fields' as const }]),
+  ...(draft.fields.length > CUSTOM_FORM_MAX_FIELDS
+    ? [{ code: 'too-many-fields' as const, max: CUSTOM_FORM_MAX_FIELDS }]
+    : []),
+];
 
-    if (!field.title.trim()) {
-      problems.push({ code: 'field-missing-question', position });
-    }
+const describeFieldProblems = ({
+  localId: fieldLocalId,
+  title,
+  description,
+  kind,
+  options,
+}: BuilderField): DraftProblem[] => [
+  ...(title.trim()
+    ? []
+    : [{ code: 'field-missing-question' as const, fieldLocalId }]),
+  ...getTooLongProblems({
+    value: title,
+    max: FORM_CHARACTER_LIMITS.fieldTitle,
+    code: 'field-question-too-long',
+    fieldLocalId,
+  }),
+  ...getTooLongProblems({
+    value: description,
+    max: FORM_CHARACTER_LIMITS.fieldDescription,
+    code: 'field-description-too-long',
+    fieldLocalId,
+  }),
+  ...(CHOICE_FIELD_KINDS.includes(kind) && options.length === 0
+    ? [{ code: 'field-missing-options' as const, fieldLocalId }]
+    : []),
+];
 
-    if (CHOICE_FIELD_KINDS.includes(field.kind) && field.options.length === 0) {
-      problems.push({ code: 'field-missing-options', position });
-    }
-  });
-
-  return problems;
-};
+/** Measured as `buildDefinition` would store the value, not as it was typed:
+ *  padding a trim removes is not overflow. */
+const getTooLongProblems = ({
+  value,
+  max,
+  code,
+  fieldLocalId,
+}: {
+  value: string;
+  max: number;
+  code: DraftProblemCode;
+  fieldLocalId?: string;
+}): DraftProblem[] =>
+  value.trim().length > max ? [{ code, max, fieldLocalId }] : [];
 
 /** Falls back to a positional name: a label in a non-Latin script slugs to
  *  nothing, and a form still needs a key for it. */
