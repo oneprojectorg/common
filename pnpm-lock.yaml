@@ -1617,6 +1617,9 @@ importers:
 
   services/workflows:
     dependencies:
+      '@op/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
       '@op/cache':
         specifier: workspace:*
         version: link:../cache
