@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@op/analytics": "workspace:*",
     "@op/cache": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
