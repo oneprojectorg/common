@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
   type AssignableProposal,
@@ -27,7 +28,14 @@ import { Label } from '@op/sense/Label';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useCallback, useId, useMemo, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 
 import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
@@ -65,15 +73,47 @@ const PICK_PAGE_LIMIT = 24;
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-const EMPTY_PICK_ROWS: AssignableProposal[] = [];
-
 export function ManageAssignmentsDialogContent(
   props: ManageAssignmentsDialogContentProps,
 ) {
+  const t = useTranslations();
+
   return (
     <DialogContent className="sm:max-h-152 sm:max-w-136 sm:overflow-hidden">
-      {/* Hooks stay in this child: the portal defers it to open, and unmount resets the selection. */}
-      <ManageAssignmentsBody {...props} />
+      <APIErrorBoundary
+        fallbacks={{
+          default: () => (
+            <DialogHeader>
+              <DialogTitle>
+                {t('decisions.review.loadAssignmentsError')}
+              </DialogTitle>
+              <DialogDescription>
+                {t('decisions.proposals.refreshPageHint')}
+              </DialogDescription>
+            </DialogHeader>
+          ),
+        }}
+      >
+        <Suspense
+          fallback={
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {t('decisions.review.manageAssignmentsAction')}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-3 px-6 py-4">
+                <Skeleton className="h-6 w-64" aria-hidden />
+                <Skeleton className="h-9 w-full" aria-hidden />
+                <Skeleton className="h-64 w-full" aria-hidden />
+              </div>
+            </>
+          }
+        >
+          {/* Hooks stay in this child: the portal defers it to open, and unmount resets the selection. */}
+          <ManageAssignmentsBody {...props} />
+        </Suspense>
+      </APIErrorBoundary>
     </DialogContent>
   );
 }
@@ -86,46 +126,18 @@ function ManageAssignmentsBody({
 }: ManageAssignmentsDialogContentProps) {
   const t = useTranslations();
 
-  const queueQuery = trpc.decision.listReviewerAssignments.useInfiniteQuery(
-    { processInstanceId, phaseId, reviewerProfileId },
-    {
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-      refetchOnMount: false,
-    },
-  );
-  const queue = queueQuery.data?.pages[0];
-
-  if (queueQuery.isPending) {
-    return (
-      <>
-        <DialogHeader>
-          <DialogTitle>
-            {t('decisions.review.manageAssignmentsAction')}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-3 px-6 py-4">
-          <Skeleton className="h-6 w-64" aria-hidden />
-          <Skeleton className="h-9 w-full" aria-hidden />
-          <Skeleton className="h-64 w-full" aria-hidden />
-        </div>
-      </>
+  const [queueData] =
+    trpc.decision.listReviewerAssignments.useSuspenseInfiniteQuery(
+      { processInstanceId, phaseId, reviewerProfileId },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+        // The section on this page already refetches and registers the channel.
+        refetchOnMount: false,
+      },
     );
-  }
+  const queue = queueData.pages[0];
 
-  if (!queue) {
-    return (
-      <DialogHeader>
-        <DialogTitle>{t('decisions.review.loadAssignmentsError')}</DialogTitle>
-        <DialogDescription>
-          {t('decisions.proposals.refreshPageHint')}
-        </DialogDescription>
-      </DialogHeader>
-    );
-  }
-
-  const { reviewer } = queue;
-
-  if (!reviewer) {
+  if (!queue?.reviewer) {
     return (
       <DialogHeader>
         <DialogTitle>
@@ -137,6 +149,8 @@ function ManageAssignmentsBody({
       </DialogHeader>
     );
   }
+
+  const { reviewer } = queue;
 
   return (
     <ManageAssignmentsForm
@@ -171,6 +185,9 @@ function ManageAssignmentsForm({
   const [scrollRoot, setScrollRoot] = useState<HTMLUListElement | null>(null);
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query.trim(), SEARCH_DEBOUNCE_MS);
+  const deferredQuery = useDeferredValue(debouncedQuery);
+  // The list still shows the previous search, so Select all must not act on it.
+  const isStale = debouncedQuery !== deferredQuery;
   const [toAssign, setToAssign] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
   );
@@ -182,27 +199,24 @@ function ManageAssignmentsForm({
   // A reviewer without the role gets a frozen queue: unassign pending only.
   const canAssign = isEligible && canModifyAssignments;
 
-  const pickQuery = trpc.decision.listAssignableProposals.useInfiniteQuery(
-    {
-      processInstanceId,
-      phaseId,
-      reviewerProfileId,
-      limit: PICK_PAGE_LIMIT,
-      ...(debouncedQuery ? { search: debouncedQuery } : {}),
-    },
-    {
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-      staleTime: 30 * 1000,
-      placeholderData: (previous) => previous,
-    },
-  );
+  const [pickData, pickQuery] =
+    trpc.decision.listAssignableProposals.useSuspenseInfiniteQuery(
+      {
+        processInstanceId,
+        phaseId,
+        reviewerProfileId,
+        limit: PICK_PAGE_LIMIT,
+        ...(deferredQuery ? { search: deferredQuery } : {}),
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+        staleTime: 30 * 1000,
+      },
+    );
 
   const rows = useMemo(
-    () =>
-      (
-        pickQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_PICK_ROWS
-      ).map(toProposalRow),
-    [pickQuery.data?.pages],
+    () => pickData.pages.flatMap((page) => page.items).map(toProposalRow),
+    [pickData.pages],
   );
 
   const { fetchNextPage } = pickQuery;
@@ -385,7 +399,7 @@ function ManageAssignmentsForm({
             <Button
               variant="link"
               onClick={toggleVisibleFree}
-              disabled={visibleFreeIds.length === 0}
+              disabled={isStale || visibleFreeIds.length === 0}
             >
               {allVisibleFreeSelected ? t('Clear') : t('Select all')}
             </Button>
@@ -420,54 +434,59 @@ function ManageAssignmentsForm({
         <p aria-live="polite" className="sr-only">
           {pickQuery.isFetchingNextPage
             ? t('decisions.review.loadingMoreProposals')
-            : pickQuery.isSuccess
-              ? t('decisions.review.proposalsShownCount', {
-                  count: rows.length,
-                })
-              : ''}
+            : pickQuery.isFetchNextPageError
+              ? t('decisions.proposals.mergeCandidatesLoadError')
+              : isStale
+                ? ''
+                : t('decisions.review.proposalsShownCount', {
+                    count: rows.length,
+                  })}
         </p>
 
-        {pickQuery.isPending ? (
-          <Skeleton className="h-64 w-full" aria-hidden />
-        ) : pickQuery.isError ? (
+        {/* The sentinel's observer root, so it must be the element that scrolls. */}
+        <ul
+          ref={setScrollRoot}
+          aria-busy={isStale}
+          className={cn(
+            'flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border',
+            isStale && 'opacity-60',
+          )}
+        >
+          {rows.map((row) => (
+            <ProposalCheckRow
+              key={row.proposal.id}
+              row={row}
+              canAssign={canAssign}
+              canModifyAssignments={canModifyAssignments}
+              isChecked={isRowChecked(row, toAssign, toUnassign)}
+              onToggle={() => toggleRow(row)}
+            />
+          ))}
+          {rows.length === 0 ? (
+            <li className="px-3 py-2 text-sm text-muted-foreground">
+              {deferredQuery
+                ? t('decisions.review.noProposalsMatchQuery', {
+                    query: deferredQuery,
+                  })
+                : t('decisions.review.noProposalsInPhase')}
+            </li>
+          ) : null}
+          {/* Padded: a zero-height target never meets the intersection threshold. */}
+          {shouldShowTrigger ? (
+            <li ref={sentinelRef} aria-hidden className="px-3 py-2">
+              {pickQuery.isFetchingNextPage ? (
+                <Skeleton className="h-10 w-full" />
+              ) : null}
+            </li>
+          ) : null}
+        </ul>
+
+        {/* With pages loaded, a failed next page stays here instead of throwing. */}
+        {pickQuery.isFetchNextPageError ? (
           <p role="alert" className="text-sm text-muted-foreground">
             {t('decisions.proposals.mergeCandidatesLoadError')}
           </p>
-        ) : (
-          // The sentinel's observer root, so it must be the element that scrolls.
-          <ul
-            ref={setScrollRoot}
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border"
-          >
-            {rows.map((row) => (
-              <ProposalCheckRow
-                key={row.proposal.id}
-                row={row}
-                canAssign={canAssign}
-                canModifyAssignments={canModifyAssignments}
-                isChecked={isRowChecked(row, toAssign, toUnassign)}
-                onToggle={() => toggleRow(row)}
-              />
-            ))}
-            {rows.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-muted-foreground">
-                {debouncedQuery
-                  ? t('decisions.review.noProposalsMatchQuery', {
-                      query: debouncedQuery,
-                    })
-                  : t('decisions.review.noProposalsInPhase')}
-              </li>
-            ) : null}
-            {/* Padded: a zero-height target never meets the intersection threshold. */}
-            {shouldShowTrigger ? (
-              <li ref={sentinelRef} aria-hidden className="px-3 py-2">
-                {pickQuery.isFetchingNextPage ? (
-                  <Skeleton className="h-10 w-full" />
-                ) : null}
-              </li>
-            ) : null}
-          </ul>
-        )}
+        ) : null}
       </div>
 
       <DialogFooter className="sm:justify-between">
