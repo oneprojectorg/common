@@ -1,4 +1,5 @@
 import { handleTwilioStatusWebhookRequest } from '@op/api';
+import { CommonError } from '@op/common';
 import { logger } from '@op/logging';
 import type { NextRequest } from 'next/server';
 
@@ -14,7 +15,10 @@ export const POST = async (req: NextRequest): Promise<Response> => {
     });
     return new Response(null, { status });
   } catch (error) {
-    logger.error('Twilio status webhook unhandled error', { error });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Twilio status webhook unhandled error', {
+      error: new CommonError(message),
+    });
     return new Response(null, { status: 500 });
   }
 };
