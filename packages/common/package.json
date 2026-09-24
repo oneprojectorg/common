@@ -16,6 +16,7 @@
     "./locales": "./src/services/translation/locales.ts",
     "./locales.mjs": "./locales.mjs",
     "./testing": "./testing/index.ts",
+    "./testing/data": "./testing/data/index.ts",
     "./testing/*": "./testing/*.ts",
     "./src/*": "./src/*"
   },

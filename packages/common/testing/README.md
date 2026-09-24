@@ -278,15 +278,13 @@ packages/common/testing/
 ├── setup.ts             # Per-file setup: module mocks, Supabase clients
 ├── mocks/               # Shared module mocks, see mocks/README.md
 ├── supabase.ts          # Test user / session / insert helpers
+├── data/                # Row-level fixtures: organizations, decisions, reviews
+├── helpers/             # Test*DataManager classes with per-test cleanup, see helpers/README.md
 ├── vitest.ts            # TEST_ENV and defineIntegrationProject({ root })
 ├── unitSetup.ts         # Unit-project guard against a real database connection
 ├── check-supabase.ts    # Supabase health check script
 └── supabase-test.ts     # Test Supabase instance management script
 ```
-
-The `Test*DataManager` helpers still live in `services/api/src/test/helpers/`
-and import the harness from `@op/common/testing` through
-`services/api/src/test/supabase-utils.ts`.
 
 ## Configuration Files
 

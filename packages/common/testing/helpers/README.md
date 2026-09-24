@@ -19,7 +19,7 @@ It's very early days so it's not an abstract class yet. If you find yourself wri
 ### Basic Usage
 
 ```typescript
-import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
+import { TestOrganizationDataManager } from '@op/common/testing/helpers/TestOrganizationDataManager';
 
 describe('my feature', () => {
   it('should do something', async ({ task }) => {
