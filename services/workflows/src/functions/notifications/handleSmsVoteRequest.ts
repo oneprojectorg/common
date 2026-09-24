@@ -1,5 +1,6 @@
 import {
   type EligibleProposal,
+  RateLimitError,
   getSmsProvider,
   listEligibleProposals,
   parsePhoneNumber,
@@ -9,6 +10,8 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
 const CONFIRMATION_KEYWORD = 'YES';
+const MAX_REPLY_ATTEMPTS = 3;
+const REPLY_ATTEMPT_TIMEOUT = '24h';
 const { voteSmsPromptRequested, smsInboundReceived } = Events;
 
 export const handleSmsVoteRequest = inngest.createFunction(
@@ -53,41 +56,60 @@ export const handleSmsVoteRequest = inngest.createFunction(
     const to = parsePhoneNumber(phone);
     const promptBody = buildVotePromptBody(eligibleProposals);
 
-    await step.run('send-vote-prompt', async () => {
+    const promptResult = await step.run('send-vote-prompt', async () => {
       const result = await provider.sendSms!({ to, body: promptBody });
-      if (result.status === 'rejected') {
-        logger.warn('Vote prompt send rejected', {
-          authUserId,
-          reason: result.reason,
-        });
+      if (result.status === 'rejected' && result.retryable) {
+        throw new RateLimitError(
+          `Vote prompt send rejected: ${result.reason}`,
+        );
       }
+      return result;
     });
 
-    const reply = await step.waitForEvent('wait-for-vote-reply', {
-      event: smsInboundReceived.name,
-      if: 'event.data.phone == async.data.from',
-      timeout: '72h',
-    });
-
-    if (!reply) {
-      logger.info('No vote reply received in time', {
+    if (promptResult.status === 'rejected') {
+      logger.warn('Vote prompt permanently rejected, aborting vote request', {
         processInstanceId,
         authUserId,
+        reason: promptResult.reason,
       });
-      return { message: 'timed out waiting for vote reply' };
+      return {
+        message: 'vote prompt send rejected',
+        reason: promptResult.reason,
+      };
     }
 
-    const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
-    const selectedProposal = resolveSelectedProposal(
-      replyBody,
-      eligibleProposals,
-    );
+    let selectedProposal: EligibleProposal | undefined;
+
+    for (let attempt = 1; attempt <= MAX_REPLY_ATTEMPTS; attempt++) {
+      const reply = await step.waitForEvent(`wait-for-vote-reply-${attempt}`, {
+        event: smsInboundReceived.name,
+        if: 'event.data.phone == async.data.from',
+        timeout: REPLY_ATTEMPT_TIMEOUT,
+      });
+
+      if (!reply) {
+        logger.info('No vote reply received in time', {
+          processInstanceId,
+          authUserId,
+          attempt,
+        });
+        return { message: 'timed out waiting for vote reply' };
+      }
+
+      const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
+      selectedProposal = resolveSelectedProposal(replyBody, eligibleProposals);
+
+      if (selectedProposal) {
+        break;
+      }
+
+      logger.info(
+        'Reply did not select an eligible proposal, waiting for another reply',
+        { processInstanceId, authUserId, attempt },
+      );
+    }
 
     if (!selectedProposal) {
-      logger.info('Reply did not select an eligible proposal', {
-        processInstanceId,
-        authUserId,
-      });
       return { message: 'reply did not confirm' };
     }
 

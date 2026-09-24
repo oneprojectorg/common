@@ -14,6 +14,7 @@ vi.mock('@op/common', () => ({
   // A real E.164 fixture below, so identity is a faithful stand-in.
   parsePhoneNumber: (value: string) => value,
   submitVote: vi.fn(),
+  RateLimitError: class RateLimitError extends Error {},
 }));
 vi.mock('@op/logging', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -73,7 +74,28 @@ describe('handleSmsVoteRequest', () => {
     expect(submitVote).not.toHaveBeenCalled();
   });
 
-  it('logs a rejected prompt send but still waits for a reply', async () => {
+  it('fails the step on a rate-limited prompt send, so Inngest retries it', async () => {
+    vi.mocked(listEligibleProposals).mockResolvedValue([
+      { id: PROPOSAL_ID, title: 'Fund the park' },
+    ]);
+    const sendSms = vi.fn().mockResolvedValue({
+      status: 'rejected',
+      reason: 'rate_limited',
+      retryable: true,
+    });
+    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+    const t = new InngestTestEngine({ function: handleSmsVoteRequest });
+
+    const { error } = await t.execute({ events: [triggerEvent()] });
+
+    // Inngest serializes a real step failure into a plain {name, message,
+    // stack} object rather than handing back a live Error instance.
+    expect((error as Error).message).toContain(
+      'Vote prompt send rejected: rate_limited',
+    );
+  });
+
+  it('aborts the vote request when the prompt send is permanently rejected', async () => {
     vi.mocked(listEligibleProposals).mockResolvedValue([
       { id: PROPOSAL_ID, title: 'Fund the park' },
     ]);
@@ -85,20 +107,24 @@ describe('handleSmsVoteRequest', () => {
     vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
     const t = new InngestTestEngine({ function: handleSmsVoteRequest });
 
-    const { result } = await t.execute({
-      events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => null }],
-    });
+    const { result } = await t.execute({ events: [triggerEvent()] });
 
     expect(sendSms).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith('Vote prompt send rejected', {
-      authUserId: AUTH_USER_ID,
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Vote prompt permanently rejected, aborting vote request',
+      {
+        processInstanceId: PROCESS_INSTANCE_ID,
+        authUserId: AUTH_USER_ID,
+        reason: 'invalid_number',
+      },
+    );
+    expect(result).toEqual({
+      message: 'vote prompt send rejected',
       reason: 'invalid_number',
     });
-    expect(result).toEqual({ message: 'timed out waiting for vote reply' });
   });
 
-  it('reports a timeout when no reply arrives before the wait expires', async () => {
+  it('reports a timeout when no reply arrives before the first wait expires', async () => {
     vi.mocked(listEligibleProposals).mockResolvedValue([
       { id: PROPOSAL_ID, title: 'Fund the park' },
     ]);
@@ -110,14 +136,14 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => null }],
+      steps: [{ id: 'wait-for-vote-reply-1', handler: () => null }],
     });
 
     expect(result).toEqual({ message: 'timed out waiting for vote reply' });
     expect(submitVote).not.toHaveBeenCalled();
   });
 
-  it('does not record a vote when a single-proposal reply is not the confirmation keyword', async () => {
+  it('gives up after exhausting every attempt on unrelated replies', async () => {
     vi.mocked(listEligibleProposals).mockResolvedValue([
       { id: PROPOSAL_ID, title: 'Fund the park' },
     ]);
@@ -129,14 +155,18 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => voteReply('nope') }],
+      steps: [
+        { id: 'wait-for-vote-reply-1', handler: () => voteReply('nope') },
+        { id: 'wait-for-vote-reply-2', handler: () => voteReply('huh?') },
+        { id: 'wait-for-vote-reply-3', handler: () => voteReply('still no') },
+      ],
     });
 
     expect(result).toEqual({ message: 'reply did not confirm' });
     expect(submitVote).not.toHaveBeenCalled();
   });
 
-  it('records a vote for a single proposal once the sender confirms, matching the keyword case-insensitively', async () => {
+  it('records a vote for a single proposal after an unrelated reply, once a later reply confirms', async () => {
     vi.mocked(listEligibleProposals).mockResolvedValue([
       { id: PROPOSAL_ID, title: 'Fund the park' },
     ]);
@@ -151,7 +181,10 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => voteReply('yes') }],
+      steps: [
+        { id: 'wait-for-vote-reply-1', handler: () => voteReply('nope') },
+        { id: 'wait-for-vote-reply-2', handler: () => voteReply('yes') },
+      ],
     });
 
     expect(result).toEqual({
@@ -170,6 +203,14 @@ describe('handleSmsVoteRequest', () => {
       },
       authUserId: AUTH_USER_ID,
     });
+    expect(logger.info).toHaveBeenCalledWith(
+      'Recorded a vote from an SMS reply',
+      {
+        processInstanceId: PROCESS_INSTANCE_ID,
+        proposalId: PROPOSAL_ID,
+        authUserId: AUTH_USER_ID,
+      },
+    );
   });
 
   it('sends a numbered list and records a vote for the proposal picked by number', async () => {
@@ -189,7 +230,7 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => voteReply('2') }],
+      steps: [{ id: 'wait-for-vote-reply-1', handler: () => voteReply('2') }],
     });
 
     expect(sendSms).toHaveBeenCalledWith({
@@ -228,7 +269,11 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => voteReply('5') }],
+      steps: [
+        { id: 'wait-for-vote-reply-1', handler: () => voteReply('5') },
+        { id: 'wait-for-vote-reply-2', handler: () => voteReply('5') },
+        { id: 'wait-for-vote-reply-3', handler: () => voteReply('5') },
+      ],
     });
 
     expect(result).toEqual({ message: 'reply did not confirm' });
@@ -248,7 +293,11 @@ describe('handleSmsVoteRequest', () => {
 
     const { result } = await t.execute({
       events: [triggerEvent()],
-      steps: [{ id: 'wait-for-vote-reply', handler: () => voteReply('YES') }],
+      steps: [
+        { id: 'wait-for-vote-reply-1', handler: () => voteReply('YES') },
+        { id: 'wait-for-vote-reply-2', handler: () => voteReply('YES') },
+        { id: 'wait-for-vote-reply-3', handler: () => voteReply('YES') },
+      ],
     });
 
     expect(result).toEqual({ message: 'reply did not confirm' });
