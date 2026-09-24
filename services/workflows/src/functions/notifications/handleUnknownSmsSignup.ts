@@ -1,3 +1,4 @@
+import { isFeatureEnabled } from '@op/analytics';
 import {
   createAccountFromPhone,
   getSmsProvider,
@@ -10,6 +11,7 @@ import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
 const CONFIRMATION_KEYWORD = 'YES';
+const SMS_SIGNUP_FEATURE_FLAG = 'sms-signup';
 const { smsInboundReceived } = Events;
 
 export const handleUnknownSmsSignup = inngest.createFunction(
@@ -23,6 +25,15 @@ export const handleUnknownSmsSignup = inngest.createFunction(
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
     const { from } = smsInboundReceived.schema.parse(event.data);
+
+    const flagEnabled = await step.run('check-feature-flag', () =>
+      isFeatureEnabled(SMS_SIGNUP_FEATURE_FLAG, 'server'),
+    );
+
+    if (!flagEnabled) {
+      logger.info('SMS signup feature flag is disabled, skipping', { from });
+      return { message: 'sms signup disabled' };
+    }
 
     const existing = await step.run('check-known-number', async () => {
       const [row] = await db
