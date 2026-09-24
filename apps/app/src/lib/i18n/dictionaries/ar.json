@@ -1106,6 +1106,8 @@
       "noChangesYet": "لا تغييرات بعد",
       "noOtherReviews": "لا توجد مراجعات أخرى بعد",
       "importNoIdsFound": "لم يُعثر على أي معرّف مقترح في ما ألصقته.",
+      "importPoolLoading": "جارٍ تحميل المقترحات في هذه المرحلة…",
+      "importPoolLoadError": "تعذّر تحميل المقترحات في هذه المرحلة.",
       "noProposalsToSelect": "لا توجد مقترحات متاحة للاختيار",
       "noProposalsMatchQuery": "لا توجد مقترحات تطابق \"{query}\".",
       "noProposalsMatchFilter": "لا توجد مقترحات تطابق المرشح الحالي",

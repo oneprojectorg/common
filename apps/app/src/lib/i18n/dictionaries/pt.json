@@ -1106,6 +1106,8 @@
       "noChangesYet": "Ainda sem alterações",
       "noOtherReviews": "Ainda não há outras avaliações",
       "importNoIdsFound": "Não foi encontrado nenhum ID de proposta no que colou.",
+      "importPoolLoading": "Carregando as propostas desta fase…",
+      "importPoolLoadError": "Não foi possível carregar as propostas desta fase.",
       "noProposalsToSelect": "Nenhuma proposta disponível para selecionar",
       "noProposalsMatchQuery": "Nenhuma proposta corresponde a «{query}».",
       "noProposalsMatchFilter": "Nenhuma proposta corresponde ao filtro atual",

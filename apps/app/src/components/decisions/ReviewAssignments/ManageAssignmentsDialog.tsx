@@ -27,7 +27,7 @@ import { Label } from '@op/sense/Label';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 
 import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
@@ -36,9 +36,7 @@ import { useCardTranslation } from '../ProposalTranslationContext';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
-
-/** How a proposal row behaves for this reviewer. */
-type RowKind = 'own' | 'locked' | 'assigned' | 'free';
+import { type RowKind, rowKindOf } from './assignableRowKind';
 
 interface ProposalRow {
   proposal: AssignableProposal;
@@ -64,8 +62,6 @@ interface ManageAssignmentsFormProps {
 }
 
 const PICK_PAGE_LIMIT = 24;
-
-const IMPORT_POOL_PAGE_LIMIT = 100;
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -379,7 +375,7 @@ function ManageAssignmentsForm({
           <div className="flex items-center gap-2">
             {/* Import builds the selection like Select all does, so it sits beside it. */}
             {importEnabled && canAssign ? (
-              <ImportPoolAction
+              <ImportProposalIdsDialog
                 processInstanceId={processInstanceId}
                 phaseId={phaseId}
                 reviewerProfileId={reviewerProfileId}
@@ -576,64 +572,6 @@ function ProposalCheckRow({
   );
 }
 
-/** Pages the whole pool: "not found" is a claim about the whole phase. */
-function ImportPoolAction({
-  processInstanceId,
-  phaseId,
-  reviewerProfileId,
-  onImport,
-}: {
-  processInstanceId: string;
-  phaseId: string;
-  reviewerProfileId: string;
-  onImport: (proposalIds: Array<string>) => void;
-}) {
-  const poolQuery = trpc.decision.listAssignableProposals.useInfiniteQuery(
-    {
-      processInstanceId,
-      phaseId,
-      reviewerProfileId,
-      limit: IMPORT_POOL_PAGE_LIMIT,
-    },
-    {
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
-      staleTime: 30 * 1000,
-    },
-  );
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = poolQuery;
-  useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const rows = useMemo(
-    () =>
-      poolQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_PICK_ROWS,
-    [poolQuery.data?.pages],
-  );
-
-  // Sets, not lists: the spreadsheet import looks IDs up by membership.
-  const poolIds = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
-  const assignableIds = useMemo(
-    () =>
-      new Set(
-        rows.flatMap((row) => (rowKindOf(row) === 'free' ? [row.id] : [])),
-      ),
-    [rows],
-  );
-
-  return (
-    <ImportProposalIdsDialog
-      poolIds={poolIds}
-      assignableIds={assignableIds}
-      onImport={onImport}
-      disabled={poolQuery.isPending || hasNextPage}
-    />
-  );
-}
-
 /** Titles prefer `profileName`: `proposalData.title` is a creation-time snapshot. */
 function useAssignableRowData(row: AssignableProposal) {
   const t = useTranslations();
@@ -653,15 +591,6 @@ function useAssignableRowData(row: AssignableProposal) {
 
 function toProposalRow(proposal: AssignableProposal): ProposalRow {
   return { proposal, kind: rowKindOf(proposal) };
-}
-
-// An existing assignment outranks "own proposal" — a stray self-assignment
-// must stay visible and, while pending, removable.
-function rowKindOf(proposal: AssignableProposal): RowKind {
-  if (proposal.assignment) {
-    return proposal.assignment.status === 'pending' ? 'assigned' : 'locked';
-  }
-  return proposal.isOwn ? 'own' : 'free';
 }
 
 function isRowChecked(

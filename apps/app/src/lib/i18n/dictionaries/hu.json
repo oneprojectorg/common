@@ -1106,6 +1106,8 @@
       "noChangesYet": "Még nincs módosítás",
       "noOtherReviews": "Még nincsenek más értékelések",
       "importNoIdsFound": "A beillesztett tartalomban nem található javaslatazonosító.",
+      "importPoolLoading": "A szakasz javaslatainak betöltése…",
+      "importPoolLoadError": "Nem sikerült betölteni a szakasz javaslatait.",
       "noProposalsToSelect": "Nincs kiválasztható javaslat",
       "noProposalsMatchQuery": "Egy javaslat sem felel meg a következőnek: „{query}”.",
       "noProposalsMatchFilter": "Nincs a jelenlegi szűrőnek megfelelő javaslat",

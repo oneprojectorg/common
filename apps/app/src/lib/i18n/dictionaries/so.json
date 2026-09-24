@@ -1106,6 +1106,8 @@
       "noChangesYet": "Weli isbeddel ma jiro",
       "noOtherReviews": "Wali ma jiraan dib-u-eegisyo kale",
       "importNoIdsFound": "Lagama helin wax aqoonsi soo jeedin ah wixii aad dhejisay.",
+      "importPoolLoading": "Waxaa la soo rarayaa soo jeedimaha marxaladdan…",
+      "importPoolLoadError": "Lama soo rari karin soo jeedimaha marxaladdan.",
       "noProposalsToSelect": "Ma jiraan soo jeedimo la dooran karo",
       "noProposalsMatchQuery": "Ma jiro soo jeedin u dhiganta \"{query}\".",
       "noProposalsMatchFilter": "Soo jeedimo la mid ah shaandhaynta hadda ma jiraan",

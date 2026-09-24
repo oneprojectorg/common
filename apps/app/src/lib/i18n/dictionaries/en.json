@@ -1106,6 +1106,8 @@
       "noChangesYet": "No changes yet",
       "noOtherReviews": "No other reviews yet",
       "importNoIdsFound": "No proposal IDs found in what you pasted.",
+      "importPoolLoading": "Loading the proposals in this phase…",
+      "importPoolLoadError": "Could not load the proposals in this phase.",
       "noProposalsToSelect": "No proposals available to select",
       "noProposalsMatchQuery": "No proposals match \"{query}\".",
       "noProposalsMatchFilter": "No proposals match the current filter",
