@@ -23,6 +23,10 @@ export interface ProposalsFeedViewProps {
 // `min-w-0` so a long title can't widen the feed column.
 const CARD_OPTIONS = { className: 'min-w-0' };
 
+// Above the component's own 0.6 default: the point of the feed is to read one
+// proposal at a time, and a shallow fade doesn't say which one that is.
+const FEED_DIM_STRENGTH = 0.85;
+
 /**
  * Single-column reading view for a set of proposals: one card at a time, the
  * one nearest the centre of the scroll container at full opacity and the rest
@@ -44,7 +48,7 @@ export function ProposalsFeedView({
     // the end cards can reach the focal centre. In the browse page that reads
     // as the whole feed being pushed down away from the filter bar, so the
     // cards start where the grid's would.
-    <ProposalFeed centerFirstAndLast={false}>
+    <ProposalFeed centerFirstAndLast={false} dimStrength={FEED_DIM_STRENGTH}>
       {proposals.map((proposal) => (
         <ProposalFeedItem key={proposal.id}>
           {renderCard(proposal, CARD_OPTIONS)}

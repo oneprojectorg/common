@@ -36,7 +36,6 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
-import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import {
@@ -524,16 +523,11 @@ const ProposalsListContent = ({
   // Browse offers every view; the map drops out when the process collects no
   // location, and the feed while a ballot is in play. It leads with the map
   // when the process has one — users came here to see places, not titles.
-  const {
-    mapView,
-    availableViews,
-    effectiveView,
-    hasMapView,
-    handleViewChange,
-  } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
-    defaultView: 'map',
-    views: isVotingEnabled ? VOTING_PROPOSAL_VIEWS : PROPOSAL_VIEWS,
-  });
+  const { mapView, availableViews, effectiveView, handleViewChange } =
+    useProposalViewMode(instance.instanceData?.proposalTemplate, {
+      defaultView: 'map',
+      views: isVotingEnabled ? VOTING_PROPOSAL_VIEWS : PROPOSAL_VIEWS,
+    });
 
   const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
@@ -797,10 +791,6 @@ const ProposalsListContent = ({
               ? {
                   value: effectiveView,
                   views: availableViews,
-                  // Where a map exists the floating MobileViewSwitch covers
-                  // small widths; without one this toggle is the only way out
-                  // of a view and has to stay reachable at every width.
-                  className: hasMapView ? 'max-sm:hidden' : undefined,
                   onChange: handleViewChange,
                 }
               : undefined
@@ -854,12 +844,6 @@ const ProposalsListContent = ({
           isTranslating={translation.isTranslating}
           languageName={translation.targetLanguageName}
         />
-      )}
-
-      {/* Mobile swaps between the map and the cards; where a map exists the
-          desktop toggle (and with it the feed) stays hidden below `sm`. */}
-      {hasMapView && (
-        <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>
   );

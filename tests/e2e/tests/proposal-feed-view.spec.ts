@@ -122,8 +122,7 @@ test.describe('Proposal Feed view', () => {
       )
       .toBe(TOTAL_PROPOSALS);
 
-    // This process has no map, so the floating MobileViewSwitch never renders
-    // and the toggle is the only way out of the feed — it has to survive down
+    // The toggle is the only view control there is, so it has to survive down
     // to a phone width or a shared `?view=feed` link strands the reader.
     await authenticatedPage.setViewportSize({ width: 375, height: 800 });
     await expect(feedOption).toBeVisible();

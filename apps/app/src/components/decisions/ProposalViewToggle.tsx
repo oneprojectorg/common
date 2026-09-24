@@ -28,9 +28,8 @@ const VIEW_OPTIONS = {
  * styling). `spacing={0}` joins the items into a single segmented control.
  *
  * The caller passes the views it can actually render, so an option can never
- * appear on a surface that would fall back to something else when it's picked,
- * and owns the breakpoints it shows at — a surface whose `MobileViewSwitch`
- * covers small widths renders this desktop-only.
+ * appear on a surface that would fall back to something else when it's picked.
+ * It is the only view control at every width, so it is never hidden.
  */
 export function ProposalViewToggle({
   value,

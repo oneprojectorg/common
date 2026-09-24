@@ -1409,7 +1409,6 @@
       "feedViewOption": "Vue flux",
       "mapViewOption": "Vue carte",
       "proposalViewLabel": "Vue des propositions",
-      "listViewOption": "Liste",
       "mapViewShortOption": "Carte",
       "proposalsMapLabel": "Carte des propositions",
       "backToProposalsAction": "Retour aux propositions",

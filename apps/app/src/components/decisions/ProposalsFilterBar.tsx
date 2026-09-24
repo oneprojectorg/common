@@ -35,12 +35,7 @@ export interface ProposalViewControls {
   value: ProposalView;
   /** The views to offer, in display order — see `useProposalViewMode`. */
   views: readonly ProposalView[];
-  /**
-   * Breakpoints to hide the switch at — the caller owns them because it owns
-   * whether a floating `MobileViewSwitch` covers the small ones. Visible at
-   * every width by default, which is the safe end: the switch is sometimes the
-   * only way out of a view.
-   */
+  /** Layout classes for the switch's slot in whichever bar renders it. */
   className?: string;
   onChange: (next: ProposalView) => void;
 }
@@ -96,17 +91,16 @@ export const MyProposalsHeader = () => {
 };
 
 /**
- * The count and search on one side, the three filter selects and the view
- * toggle on the other.
+ * The count, search and view switch on one side, the three filter selects on
+ * the other.
  *
  * Two boxes rather than one wrapping row, so the split is an element boundary
- * and not a measurement: below `2xl` the count/search box takes a full row and
- * the selects drop beneath it, right-aligned by `ms-auto`; from `2xl` it grows
- * instead, putting everything on one line with search against the selects.
- * Inside the box, `ms-auto` holds search to the end, and below `md` the field's
- * `w-full` wraps it under the count while the selects break out edge-to-edge
- * and scroll. One search instance at every width, so focus survives a
- * breakpoint change.
+ * and not a measurement: below `2xl` the count box takes a full row and the
+ * selects drop beneath it, right-aligned; from `2xl` it grows instead, putting
+ * everything on one line. Inside the box, `ms-auto` holds search to the end,
+ * and below `md` the field's `w-full` wraps it under the count. One search
+ * instance and one switch at every width, so focus survives a breakpoint
+ * change.
  */
 export const ProposalsFilterBar = ({
   controls,
@@ -161,6 +155,14 @@ export const ProposalsFilterBar = ({
           end and putting both boxes on one line. */}
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
         {header ?? <ProposalsListHeader count={count} total={total} />}
+        {/* Before the search field in the DOM so it shares the count's row
+            below `md`, where the field goes full width and claims its own.
+            From `md` it orders last, back to the end of the row. */}
+        {view && (
+          <ProposalsViewSwitch
+            view={{ ...view, className: 'max-md:ms-auto md:order-last' }}
+          />
+        )}
         <ProposalSearchField
           className="ms-auto"
           value={controls.search}
@@ -168,12 +170,10 @@ export const ProposalsFilterBar = ({
           isPending={controls.isSearchPending}
         />
       </div>
-      {/* Grows to claim its row below 2xl, so the selects' own `ms-auto` has
-          slack to push against; at 2xl it's content-width beside the count.
-          `grow`, not `w-full`: the negative margins bleed this box past the
-          container, and only an auto width grows to absorb them — a fixed 100%
-          would leave the padding stranding the last select short of the edge. */}
-      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8">
+      {/* Grows to claim its row below 2xl; at 2xl it's content-width beside
+          the count. Wraps rather than scrolls: a select reachable only by
+          dragging the row sideways is a select nobody finds. */}
+      <div className="flex flex-wrap items-center justify-end gap-4 max-2xl:grow">
         <ResponsiveSelect
           selectedKey={controls.proposalFilter}
           onSelectionChange={(key) => {
@@ -188,7 +188,7 @@ export const ProposalsFilterBar = ({
           }}
           aria-label={t('decisions.proposals.filterProposalsLabel')}
           items={filterItems}
-          className="ms-auto min-w-40 shrink-0"
+          className="min-w-40 shrink-0"
         />
         <CategoryFilterSelect
           decisionSlug={controls.decisionSlug}
@@ -207,7 +207,6 @@ export const ProposalsFilterBar = ({
             { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
-        {view && <ProposalsViewSwitch view={view} />}
         {exportControl && (
           <div className="flex items-center gap-4">
             <span aria-hidden className="h-6 w-px bg-border" />

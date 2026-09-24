@@ -37,7 +37,6 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
-import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
@@ -204,7 +203,6 @@ export function ReviewAssignmentsList({
     mapView,
     availableViews,
     effectiveView,
-    hasMapView,
     isMapMode,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
@@ -345,7 +343,19 @@ export function ReviewAssignmentsList({
               </Suspense>
             </APIErrorBoundary>
           </div>
-          <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
+          {/* Beside the count rather than after the selects: on a phone the
+              selects claim their own rows, and a switch trailing them would
+              sit below the fold of the bar. */}
+          {availableViews.length > 1 && (
+            <ProposalsViewSwitch
+              view={{
+                value: effectiveView,
+                views: availableViews,
+                onChange: handleViewChange,
+              }}
+            />
+          )}
+          <div className="flex flex-wrap items-center justify-end gap-4">
             <ResponsiveSelect
               selectedKey={statusFilter ?? 'all'}
               onSelectionChange={(key) =>
@@ -377,19 +387,6 @@ export function ReviewAssignmentsList({
                 },
               ]}
             />
-            {availableViews.length > 1 && (
-              <ProposalsViewSwitch
-                view={{
-                  value: effectiveView,
-                  views: availableViews,
-                  // The queue only ever offers a second view when it has a map,
-                  // so the floating MobileViewSwitch below always covers the
-                  // small breakpoints this hides at.
-                  className: 'max-sm:hidden',
-                  onChange: handleViewChange,
-                }}
-              />
-            )}
           </div>
         </StickyFilterBar>
       )}
@@ -490,10 +487,6 @@ export function ReviewAssignmentsList({
           isTranslating={translation.isTranslating}
           languageName={translation.targetLanguageName}
         />
-      )}
-
-      {hasMapView && (
-        <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>
   );
