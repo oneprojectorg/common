@@ -9,7 +9,10 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
-import type { ProposalFilterItem } from './useProposalFilterItems';
+import {
+  getDisplayedFilter,
+  type ProposalFilterItem,
+} from './useProposalFilterItems';
 
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
@@ -84,7 +87,6 @@ export const ProposalsFilterBar = ({
   total,
   header,
   exportControl,
-  showFilterSelect = true,
   filterItems,
 }: {
   controls: ProposalControls;
@@ -97,9 +99,10 @@ export const ProposalsFilterBar = ({
   header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
-  /** Off where a tab bar above the list already owns the proposal filter. */
-  showFilterSelect?: boolean;
-  /** The filters this surface offers, resolved by `ProposalsList`. */
+  /**
+   * The filters this select owns, resolved by `ProposalsList` — the tab bar
+   * above the list takes the rest where it renders.
+   */
   filterItems: ProposalFilterItem[];
 }) => {
   const t = useTranslations();
@@ -129,23 +132,23 @@ export const ProposalsFilterBar = ({
           collapses to zero once the row overflows, keeping the leading control
           scrollable into view instead of stranded past the start edge. */}
       <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
-        {showFilterSelect && (
-          <ResponsiveSelect
-            selectedKey={controls.proposalFilter}
-            // Resolved against the same list the tab bar reads, so a filter
-            // marked inert there — "My proposals" without a profile — can't be
-            // picked here either.
-            onSelectionChange={(key) => {
-              const selected = filterItems.find((item) => item.id === key);
-              if (selected && !selected.isDisabled) {
-                controls.setProposalFilter(selected.id);
-              }
-            }}
-            aria-label={t('decisions.proposals.filterProposalsLabel')}
-            items={filterItems}
-            className="min-w-40 shrink-0"
-          />
-        )}
+        <ResponsiveSelect
+          // The tab bar may be holding the active filter; this select then
+          // shows its own neutral option rather than a blank trigger.
+          selectedKey={getDisplayedFilter(filterItems, controls.proposalFilter)}
+          // Resolved against the list rather than re-deriving the rule, so a
+          // filter marked inert — "My proposals" without a profile — can't be
+          // picked here.
+          onSelectionChange={(key) => {
+            const selected = filterItems.find((item) => item.id === key);
+            if (selected && !selected.isDisabled) {
+              controls.setProposalFilter(selected.id);
+            }
+          }}
+          aria-label={t('decisions.proposals.filterProposalsLabel')}
+          items={filterItems}
+          className="min-w-40 shrink-0"
+        />
         <CategoryFilterSelect
           decisionSlug={controls.decisionSlug}
           categories={controls.categories}

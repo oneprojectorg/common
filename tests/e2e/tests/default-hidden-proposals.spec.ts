@@ -236,12 +236,15 @@ test.describe('Default Hidden Proposals', () => {
     });
     await expect(adminProposalLink).toBeVisible({ timeout: 15_000 });
 
-    // Admins keep the filters visible. On this surface the proposal filter is
-    // the tab bar above the list — a base-ui `tablist` labelled "Filter
-    // proposals"; anchor the regex at the end so the category select's "Filter
-    // proposals by category" can't stand in for it.
+    // Admins keep the filters visible — both controls: the tab bar above the
+    // list (a base-ui `tablist`) and the select that keeps the rest. Anchor the
+    // regex at the end so the category select's "Filter proposals by category"
+    // can't stand in for either.
     await expect(
       authenticatedPage.getByRole('tablist', { name: /Filter proposals$/ }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole('combobox', { name: /Filter proposals$/ }),
     ).toBeVisible();
 
     // The "Hidden" badge is scoped to the proposal card containing the link.

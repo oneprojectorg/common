@@ -6,12 +6,16 @@ import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalFilterItem } from './useProposalFilterItems';
+import {
+  getDisplayedFilter,
+  type ProposalFilterItem,
+} from './useProposalFilterItems';
 
 /**
- * The proposal-filter dimension as a tab bar above the list, mirroring
- * `DecisionResultsTabs`. It replaces the filter select rather than sitting
- * beside it: two controls writing one piece of state is how they drift.
+ * "All proposals" / "My proposals" as a tab bar above the list, mirroring
+ * `DecisionResultsTabs`. It takes those two filters off the bar's select,
+ * which keeps the rest — a reader looking for their own submissions should not
+ * have to open a dropdown to find them.
  *
  * The list renders inside the panel, so this is a real tablist with somewhere
  * to point, not a row of buttons wearing tab roles. One panel, always the
@@ -29,22 +33,27 @@ export const ProposalFilterTabs = ({
   onValueChange,
   children,
 }: {
-  /**
-   * Resolved by `ProposalsList`, which also keeps the applied filter inside
-   * this list — a tab bar that renders a different set from the one the
-   * fallback reads is how a filter with no tab gets applied anyway.
-   */
+  /** The filters this rail owns, resolved by `ProposalsList`. */
   items: ProposalFilterItem[];
+  /**
+   * The filter the list is actually applying — which may be one the select
+   * holds rather than one of `items`; see `getDisplayedFilter`.
+   */
   value: ProposalFilter;
   onValueChange: (filter: ProposalFilter) => void;
   children: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
+  // The select beside the list holds the filters this rail doesn't, so the
+  // active one is often not a tab here. Fall back to "All proposals" rather
+  // than handing Base UI a value with no trigger, which leaves the whole rail
+  // with nothing selected.
+  const displayedValue = getDisplayedFilter(items, value);
 
   return (
     <Tabs
       className="gap-6"
-      value={value}
+      value={displayedValue}
       // Base UI hands back an untyped tab value; resolving it against the item
       // list is the type guard, and it re-asserts the disabled rule on the way
       // through rather than trusting the trigger to be the only gate.
@@ -78,7 +87,10 @@ export const ProposalFilterTabs = ({
           than at the top of the list container: the rail sits above the panel,
           and from the container the sentinel crossed the pin line a rail-height
           early, fading the bar's hairline in mid-scroll. */}
-      <TabsContent value={value} className="relative flex grow flex-col gap-6">
+      <TabsContent
+        value={displayedValue}
+        className="relative flex grow flex-col gap-6"
+      >
         {children}
       </TabsContent>
     </Tabs>

@@ -77,9 +77,9 @@ async function createListingWithOneOwnProposal(org: {
 
 test.describe('Proposal filter tabs', () => {
   /**
-   * The tab bar is the only proposal-filter control on this surface — the bar's
-   * filter select moved into it, so a member can reach their own submissions
-   * without opening a dropdown.
+   * The rail takes "All proposals" and "My proposals" off the bar's select so a
+   * member can reach their own submissions without opening a dropdown. The
+   * select keeps the rest, and neither control offers a filter the other holds.
    */
   test('narrows the list to proposals the reader submitted', async ({
     authenticatedPage,
@@ -110,24 +110,35 @@ test.describe('Proposal filter tabs', () => {
     const myTab = authenticatedPage.getByRole('tab', { name: 'My proposals' });
     await expect(allTab).toHaveAttribute('aria-selected', 'true');
 
-    // The select the tabs replaced. Anchored at the end so the category
-    // select's "Filter proposals by category" doesn't match.
-    await expect(
-      authenticatedPage.getByRole('combobox', { name: /Filter proposals$/ }),
-    ).toBeHidden();
-
-    // The rail carries the reader-scoped filters only. "Not advanced" is a
-    // status filter that stays in the select on the review surfaces, so the
-    // rail is two tabs on a decision where nobody has voted — not three.
-    // Scoped to the rail: the decision view's Overview/Current toggle is a
-    // tablist too, so an unscoped tab count would read four.
+    // The rail owns "All proposals" and "My proposals" and nothing else, so it
+    // is two tabs. Scoped to the rail: the decision view's Overview/Current
+    // toggle is a tablist too, so an unscoped tab count would read four.
     const filterTabs = authenticatedPage.getByRole('tablist', {
       name: /Filter proposals$/,
     });
-    await expect(
-      filterTabs.getByRole('tab', { name: 'Not advanced' }),
-    ).toBeHidden();
     await expect(filterTabs.getByRole('tab')).toHaveCount(2);
+
+    // The select keeps every filter the rail didn't take. Anchored at the end
+    // so the category select's "Filter proposals by category" doesn't match.
+    const filterSelect = authenticatedPage.getByRole('combobox', {
+      name: /Filter proposals$/,
+    });
+    await expect(filterSelect).toBeVisible();
+
+    await filterSelect.click();
+    // "Not advanced" stays reachable here; "My proposals" moved to the rail and
+    // must not be offered twice — two controls writing one filter is how they
+    // come to disagree.
+    await expect(
+      authenticatedPage.getByRole('option', { name: 'Not advanced' }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole('option', { name: 'My proposals' }),
+    ).toHaveCount(0);
+    await authenticatedPage.keyboard.press('Escape');
+    await expect(
+      authenticatedPage.getByRole('option', { name: 'Not advanced' }),
+    ).toBeHidden();
 
     await myTab.click();
 

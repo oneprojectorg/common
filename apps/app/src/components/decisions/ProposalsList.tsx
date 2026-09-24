@@ -62,8 +62,11 @@ import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import { getProposalDetectionText } from './translationDetectionText';
-import type { ProposalFilterItem } from './useProposalFilterItems';
-import { useProposalFilterItems } from './useProposalFilterItems';
+import {
+  TAB_BAR_FILTERS,
+  type ProposalFilterItem,
+  useProposalFilterItems,
+} from './useProposalFilterItems';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -278,13 +281,7 @@ const ResultsPhaseProposalsLoader = ({
 
 // fallow-ignore-next-line complexity
 export const ProposalsList = (props: ProposalsListProps) => {
-  const {
-    instanceId,
-    phase,
-    initialFilter,
-    excludeAssignedForReview,
-    showFilterTabs,
-  } = props;
+  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
@@ -332,7 +329,6 @@ export const ProposalsList = (props: ProposalsListProps) => {
   const availableFilters = useProposalFilterItems({
     hasVoted,
     currentProfileId,
-    includeRejected: !showFilterTabs,
   });
   const proposalFilter =
     availableFilters.find(
@@ -710,6 +706,16 @@ const ProposalsListContent = ({
   // non-admins, and never above an unfiltered-empty list with nothing to filter.
   const showTabs = showFilterTabs && showFilterBar && !hideFilters;
 
+  // One filter, two controls, no overlap: the rail takes "All proposals" and
+  // "My proposals", the select keeps the rest beside category and sort. Split
+  // from one list so a filter can never be dropped by both or offered by both.
+  const tabFilterItems = availableFilters.filter((item) =>
+    TAB_BAR_FILTERS.includes(item.id),
+  );
+  const selectFilterItems = showTabs
+    ? availableFilters.filter((item) => item.id !== ProposalFilter.MY_PROPOSALS)
+    : availableFilters;
+
   const listBody = (
     <>
       {showFilterBar && (
@@ -720,9 +726,7 @@ const ProposalsListContent = ({
           header={header?.(total)}
           // Omitted when the phase hides proposals from non-admins.
           controls={hideFilters ? undefined : controls}
-          // The tab bar above the list already owns this filter.
-          showFilterSelect={!showTabs}
-          filterItems={availableFilters}
+          filterItems={selectFilterItems}
           // Omitted when the process collects no location.
           view={
             hasLocationField
@@ -865,7 +869,7 @@ const ProposalsListContent = ({
     >
       {showTabs ? (
         <ProposalFilterTabs
-          items={availableFilters}
+          items={tabFilterItems}
           value={proposalFilter}
           onValueChange={setProposalFilter}
         >

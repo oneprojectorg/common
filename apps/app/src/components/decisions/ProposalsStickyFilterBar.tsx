@@ -25,9 +25,7 @@ export interface ProposalsStickyFilterBarProps {
   view?: ProposalViewControls;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
-  /** Off where a tab bar above the list already owns the proposal filter. */
-  showFilterSelect?: boolean;
-  /** The filters this surface offers, resolved by `ProposalsList`. */
+  /** The filters the select owns, resolved by `ProposalsList`. */
   filterItems: ProposalFilterItem[];
   /**
    * Px offset where the bar pins inside its scroll container — clears whatever
@@ -49,7 +47,6 @@ export const ProposalsStickyFilterBar = ({
   controls,
   view,
   exportControl,
-  showFilterSelect,
   filterItems,
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => (
@@ -62,7 +59,6 @@ export const ProposalsStickyFilterBar = ({
         total={total}
         header={header}
         exportControl={exportControl}
-        showFilterSelect={showFilterSelect}
         filterItems={filterItems}
       />
     ) : (

@@ -12,10 +12,10 @@ export interface ProposalFilterItem {
 }
 
 /**
- * The proposal filters a surface offers, shared by the two controls that
- * render them — the filter select and the tab bar above the list — and by the
- * fallback in `ProposalsList` that keeps the applied filter to one of them.
- * One list so a filter can't be applied by a surface that can't show it.
+ * Every proposal filter a surface offers. The select renders them all; where
+ * the tab bar is shown it takes `TAB_BAR_FILTERS` and the select drops those
+ * from its own options, so each filter has exactly one control. `ProposalsList`
+ * reads the whole list to keep the applied filter to one of them.
  *
  * Every option maps to a server-side query param in `ProposalsList`'s
  * `queryParams`, so pagination and counts stay accurate per filter.
@@ -23,19 +23,10 @@ export interface ProposalFilterItem {
 export const useProposalFilterItems = ({
   hasVoted,
   currentProfileId,
-  includeRejected = true,
 }: {
   /** The ballot filter only exists once the caller has voted. */
   hasVoted: boolean;
   currentProfileId: string | undefined;
-  /**
-   * "Not advanced" filters by status where the rest filter by who the reader
-   * is, and nothing is rejected until a phase has advanced. As one option
-   * among several in a select it costs nothing; as a permanent tab it reads as
-   * a section of the decision. The tab bar leaves it out — the review surfaces
-   * where proposals actually get rejected keep the select, and it with them.
-   */
-  includeRejected?: boolean;
 }): ProposalFilterItem[] => {
   const t = useTranslations('decisions.proposals');
 
@@ -58,13 +49,37 @@ export const useProposalFilterItems = ({
           },
         ]
       : []),
-    ...(includeRejected
-      ? [
-          {
-            id: ProposalFilter.REJECTED,
-            label: t('notAdvancedStatus'),
-          },
-        ]
-      : []),
+    {
+      id: ProposalFilter.REJECTED,
+      label: t('notAdvancedStatus'),
+    },
   ];
 };
+
+/**
+ * The filters the tab bar owns. Everything else stays in the select beside the
+ * category and sort dropdowns, where "Not advanced" reads as one more way to
+ * narrow the list rather than as a section of the decision.
+ */
+export const TAB_BAR_FILTERS: readonly ProposalFilter[] = [
+  ProposalFilter.ALL,
+  ProposalFilter.MY_PROPOSALS,
+];
+
+/**
+ * What a control shows when the active filter belongs to the other one.
+ *
+ * The two controls share a single filter, so only one of them can hold it at a
+ * time. The other falls back to "All proposals" — true in the sense that
+ * matters to it (the list is not narrowed to the reader's own proposals), and
+ * the control actually holding the filter is on screen saying so, the same way
+ * an active category or search term narrows a list that still reads "All
+ * proposals".
+ */
+export const getDisplayedFilter = (
+  items: ProposalFilterItem[],
+  activeFilter: ProposalFilter,
+): ProposalFilter =>
+  items.some((item) => item.id === activeFilter)
+    ? activeFilter
+    : ProposalFilter.ALL;

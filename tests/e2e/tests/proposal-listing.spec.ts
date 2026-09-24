@@ -620,12 +620,11 @@ test.describe('Proposal Listing', () => {
     const searchField = authenticatedPage.getByRole('searchbox', {
       name: 'Search proposals',
     });
-    // The category select, now the first control in the filter strip — the
-    // proposal filter moved to the tab bar above the list. At this viewport
-    // ResponsiveSelect renders a plain button named by its current value; the
-    // desktop trigger is a combobox named by its aria-label instead.
+    // At this viewport ResponsiveSelect renders a plain button named by its
+    // current value; the desktop trigger is a combobox named by its aria-label
+    // instead. `button` also keeps this off the rail's same-named tab.
     const filterSelect = authenticatedPage.getByRole('button', {
-      name: 'All categories',
+      name: 'All proposals',
     });
     await expect(searchField).toBeVisible({ timeout: 15_000 });
 
