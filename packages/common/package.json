@@ -4,6 +4,7 @@
   "description": "",
   "keywords": [],
   "license": "Apache-2.0",
+  "type": "module",
   "author": "",
   "exports": {
     ".": "./src/index.ts",
