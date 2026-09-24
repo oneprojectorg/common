@@ -62,7 +62,7 @@ const ALL_FIELDS_TEMPLATE = {
     summary: {
       type: 'string' as const,
       title: 'Summary',
-      description: 'A brief overview of the proposal',
+      description: 'A brief overview — see https://example.com/guide',
       'x-format': 'short-text' as const,
       minLength: 1,
     },
@@ -76,6 +76,7 @@ const ALL_FIELDS_TEMPLATE = {
     priority: {
       type: ['string', 'null'] as const,
       title: 'Priority Level',
+      description: 'How we rank these: https://example.com/ranking',
       'x-format': 'dropdown' as const,
       oneOf: [
         { const: 'high', title: 'High' },
@@ -138,6 +139,21 @@ test.describe('Proposal Submit Validation', () => {
       exact: true,
     });
     await expect(submitButton).toBeVisible({ timeout: 36_000 });
+
+    // The editor linkifies a URL in a field's help text, same as the read-only
+    // proposal view does — for a text field and for a fieldset-based one.
+    await expect(
+      authenticatedPage.getByRole('link', {
+        name: 'https://example.com/guide',
+        exact: true,
+      }),
+    ).toHaveAttribute('href', 'https://example.com/guide');
+    await expect(
+      authenticatedPage.getByRole('link', {
+        name: 'https://example.com/ranking',
+        exact: true,
+      }),
+    ).toHaveAttribute('href', 'https://example.com/ranking');
 
     // Helper: dismiss any visible toasts before the next submit
     const dismissToasts = async () => {

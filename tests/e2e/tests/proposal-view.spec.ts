@@ -99,6 +99,7 @@ test.describe('Proposal View', () => {
         summary: {
           type: 'string' as const,
           title: 'Summary',
+          description: 'Follow the guide at https://example.com/guide.',
           'x-format': 'long-text',
         },
       },
@@ -186,6 +187,19 @@ test.describe('Proposal View', () => {
     // "{amount} requested" secondary label, since there is no allocated value
     // to compare against.
     await expect(authenticatedPage.getByText(/requested/i)).toHaveCount(0);
+
+    // A URL an admin typed into a field description is a real link, and the
+    // sentence's full stop stays out of the href.
+    const hintLink = authenticatedPage.getByRole('link', {
+      name: 'https://example.com/guide',
+      exact: true,
+    });
+    await expect(hintLink).toHaveAttribute('href', 'https://example.com/guide');
+    await expect(hintLink).toHaveAttribute('target', '_blank');
+    await expect(hintLink).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(
+      authenticatedPage.getByText('Follow the guide at').first(),
+    ).toBeVisible();
 
     // Dynamic dropdown fields render with their label via ProposalContentRenderer.
     // The field labels should be visible as section headings.
