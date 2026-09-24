@@ -3,7 +3,6 @@
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
-import { Input } from '@op/sense/Input';
 import {
   Select,
   SelectContent,
@@ -13,18 +12,31 @@ import {
   SelectValue,
 } from '@op/sense/Select';
 import { Textarea } from '@op/sense/Textarea';
+import { cn } from '@op/sense/lib/utils';
 import { useId, useState } from 'react';
 import { LuArrowDown, LuArrowUp, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { BuilderField, FormFieldKind } from './formDefinition';
-import { CHOICE_FIELD_KINDS, FORM_FIELD_KINDS } from './formDefinition';
+import { CountedInputField, CountedTextareaField } from './CountedField';
+import type {
+  BuilderField,
+  DraftProblem,
+  FormFieldKind,
+} from './formDefinition';
+import {
+  CHOICE_FIELD_KINDS,
+  FORM_CHARACTER_LIMITS,
+  FORM_FIELD_KINDS,
+} from './formDefinition';
+import { ProblemMessages, getProblemsWithCode } from './formProblems';
 
 interface CustomFormFieldEditorProps {
   field: BuilderField;
   index: number;
   total: number;
+  /** This field's problems only — the dialog has already selected them. */
+  problems: DraftProblem[];
   onChange: (field: BuilderField) => void;
   onMove: (offset: -1 | 1) => void;
   onRemove: () => void;
@@ -34,6 +46,7 @@ export const CustomFormFieldEditor = ({
   field,
   index,
   total,
+  problems,
   onChange,
   onMove,
   onRemove,
@@ -41,6 +54,17 @@ export const CustomFormFieldEditor = ({
   const t = useTranslations();
   const fieldId = useId();
   const hasOptions = CHOICE_FIELD_KINDS.includes(field.kind);
+
+  const titleProblems = getProblemsWithCode(
+    problems,
+    'field-missing-question',
+    'field-question-too-long',
+  );
+  const optionProblems = getProblemsWithCode(problems, 'field-missing-options');
+  const descriptionProblems = getProblemsWithCode(
+    problems,
+    'field-description-too-long',
+  );
 
   const kindLabels: Record<FormFieldKind, string> = {
     'short-text': t('Short text'),
@@ -53,7 +77,14 @@ export const CustomFormFieldEditor = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border p-4">
+    <div
+      className={cn(
+        'flex flex-col gap-4 rounded-lg border p-4',
+        // The dialog scrolls, so the card has to be findable from a glance
+        // down the list, not only from the message inside it.
+        problems.length > 0 && 'border-destructive',
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-sm font-medium">
           {t('admin.formFieldTitle', { number: index + 1 })}
@@ -91,23 +122,19 @@ export const CustomFormFieldEditor = ({
         </div>
       </div>
 
-      <Field>
-        <FieldLabel htmlFor={`${fieldId}-title`}>
-          {t('admin.fieldQuestionLabel')}
-        </FieldLabel>
-        <Input
-          id={`${fieldId}-title`}
-          value={field.title}
-          onChange={(event) =>
-            onChange({ ...field, title: event.target.value })
-          }
-        />
-        {field.key ? (
-          <FieldDescription>
-            {t('admin.fieldStorageKeyHint', { key: field.key })}
-          </FieldDescription>
-        ) : null}
-      </Field>
+      <CountedInputField
+        id={`${fieldId}-title`}
+        label={t('admin.fieldQuestionLabel')}
+        description={
+          field.key
+            ? t('admin.fieldStorageKeyHint', { key: field.key })
+            : undefined
+        }
+        value={field.title}
+        max={FORM_CHARACTER_LIMITS.fieldTitle}
+        problems={titleProblems}
+        onChange={(title) => onChange({ ...field, title })}
+      />
 
       <Field>
         <FieldLabel htmlFor={`${fieldId}-kind`}>
@@ -155,22 +182,19 @@ export const CustomFormFieldEditor = ({
         <OptionsField
           fieldId={`${fieldId}-options`}
           options={field.options}
+          problems={optionProblems}
           onChange={(options) => onChange({ ...field, options })}
         />
       ) : null}
 
-      <Field>
-        <FieldLabel htmlFor={`${fieldId}-description`}>
-          {t('admin.fieldHelperTextLabel')}
-        </FieldLabel>
-        <Input
-          id={`${fieldId}-description`}
-          value={field.description}
-          onChange={(event) =>
-            onChange({ ...field, description: event.target.value })
-          }
-        />
-      </Field>
+      <CountedTextareaField
+        id={`${fieldId}-description`}
+        label={t('admin.fieldHelperTextLabel')}
+        value={field.description}
+        max={FORM_CHARACTER_LIMITS.fieldDescription}
+        problems={descriptionProblems}
+        onChange={(description) => onChange({ ...field, description })}
+      />
 
       <Field className="items-center" orientation="horizontal">
         <Checkbox
@@ -195,10 +219,12 @@ export const CustomFormFieldEditor = ({
 const OptionsField = ({
   fieldId,
   options,
+  problems,
   onChange,
 }: {
   fieldId: string;
   options: string[];
+  problems: DraftProblem[];
   onChange: (options: string[]) => void;
 }) => {
   const t = useTranslations();
@@ -213,12 +239,14 @@ const OptionsField = ({
         id={fieldId}
         rows={4}
         value={text}
+        aria-invalid={problems.length > 0}
         onChange={(event) => {
           setText(event.target.value);
           onChange(parseOptions(event.target.value));
         }}
       />
       <FieldDescription>{t('admin.fieldOptionsHint')}</FieldDescription>
+      <ProblemMessages problems={problems} />
     </Field>
   );
 };

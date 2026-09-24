@@ -4,6 +4,7 @@ import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
 import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
 import { NumberField } from '@op/sense/NumberField';
+import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,7 +14,7 @@ import { useCollaborativeDoc } from './CollaborativeDocContext';
 interface CollaborativeBudgetFieldProps {
   /** Visible field label. Falls back to "Funding amount". */
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   minAmount?: number;
   maxAmount?: number;

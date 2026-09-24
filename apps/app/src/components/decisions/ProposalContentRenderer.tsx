@@ -1,5 +1,6 @@
 'use client';
 
+import { linkifyText } from '@/utils/linkDetection';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 // viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
@@ -112,8 +113,13 @@ function FieldChrome({
         <div className="flex flex-col gap-2">
           {title && <Header3 dir="auto">{title}</Header3>}
           {description && (
-            <p dir="auto" className="text-sm">
-              {description}
+            // The anchor treatment `FieldDescription` gives its links, for a
+            // paragraph that isn't one: a colour-only link fails axe.
+            <p
+              dir="auto"
+              className="text-sm [&>a]:underline [&>a]:underline-offset-4"
+            >
+              {linkifyText(description)}
             </p>
           )}
         </div>
