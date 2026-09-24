@@ -205,7 +205,6 @@ export const Events = {
     name: 'vote/sms-prompt-requested' as const,
     schema: z.object({
       processInstanceId: z.string().uuid(),
-      proposalId: z.string().uuid(),
       authUserId: z.string().uuid(),
       phone: z.string(),
     }),

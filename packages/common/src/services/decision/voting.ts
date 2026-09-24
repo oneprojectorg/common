@@ -1,11 +1,10 @@
 import { trackUserVoted } from '@op/analytics';
-import { and, db, eq, isNull } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
-  proposals,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
@@ -20,12 +19,12 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import { listEligibleProposals } from './listEligibleProposals';
 import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isVotingPhase } from './utils/phaseSettings';
-import { isVotingEligible } from './votingEligibility';
 
 interface PhaseConfig {
   allowProposals: boolean;
@@ -225,22 +224,9 @@ export const submitVote = async ({
       );
     }
 
-    // Get available proposals for this process instance. Moderation-detached
-    // (CSAM) rows must never be votable, so we require both
-    // `deletedAt IS NULL` and `moderationDetachedAt IS NULL` at query time —
-    // filtering post-fetch would still leak the row to the eligibility check.
-    const availableProposals = await db._query.proposals.findMany({
-      where: and(
-        eq(proposals.processInstanceId, data.processInstanceId),
-        isNull(proposals.deletedAt),
-        isNull(proposals.moderationDetachedAt),
-      ),
+    const eligibleProposals = await listEligibleProposals({
+      processInstanceId: data.processInstanceId,
     });
-
-    // Filter to eligible proposals for voting
-    const eligibleProposals = availableProposals.filter((p) =>
-      isVotingEligible(p.status),
-    );
     const eligibleProposalIds = eligibleProposals.map((p) => p.id);
 
     // Check if all selected proposals are eligible

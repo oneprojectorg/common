@@ -1,7 +1,7 @@
 import {
   type DecisionInstanceData,
   isSingleChoiceVotingPhase,
-  isVotingEligible,
+  listEligibleProposals,
   listProcessParticipants,
   listSmsOnlyProcessParticipants,
   resolveManualSelectionStatus,
@@ -9,11 +9,11 @@ import {
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { processInstances, profiles, proposals } from '@op/db/schema';
+import { processInstances, profiles } from '@op/db/schema';
 import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { and, eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const { phaseTransitioned, manualSelectionsConfirmed, voteSmsPromptRequested } =
   Events;
@@ -173,31 +173,10 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     if (toPhase && isSingleChoiceVotingPhase(toPhase)) {
       const eligibleProposals = await step.run(
         'get-eligible-proposals',
-        async () => {
-          const rows = await db
-            .select({
-              id: proposals.id,
-              status: proposals.status,
-              title: profiles.name,
-            })
-            .from(proposals)
-            .innerJoin(profiles, eq(profiles.id, proposals.profileId))
-            .where(
-              and(
-                eq(proposals.processInstanceId, processInstanceId),
-                isNull(proposals.deletedAt),
-                isNull(proposals.moderationDetachedAt),
-              ),
-            );
-
-          return rows.filter((row) => isVotingEligible(row.status));
-        },
+        async () => listEligibleProposals({ processInstanceId }),
       );
 
-      const singleEligibleProposal =
-        eligibleProposals.length === 1 ? eligibleProposals[0] : undefined;
-
-      if (singleEligibleProposal) {
+      if (eligibleProposals.length > 0) {
         const smsParticipants = await step.run(
           'get-sms-only-participants',
           async () => listSmsOnlyProcessParticipants({ processInstanceId }),
@@ -211,7 +190,6 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
                 name: voteSmsPromptRequested.name,
                 data: {
                   processInstanceId,
-                  proposalId: singleEligibleProposal.id,
                   authUserId: participant.authUserId,
                   phone: participant.phone,
                 },
