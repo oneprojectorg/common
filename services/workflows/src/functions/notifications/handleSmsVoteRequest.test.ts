@@ -92,7 +92,7 @@ describe('handleSmsVoteRequest', () => {
 
     expect(sendSms).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith('Vote prompt send rejected', {
-      phone: PHONE,
+      authUserId: AUTH_USER_ID,
       reason: 'invalid_number',
     });
     expect(result).toEqual({ message: 'timed out waiting for vote reply' });

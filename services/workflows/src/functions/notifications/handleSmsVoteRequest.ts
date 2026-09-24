@@ -18,6 +18,10 @@ export const handleSmsVoteRequest = inngest.createFunction(
       key: 'event.data.phone + "-" + event.data.processInstanceId',
       period: '1m',
     },
+    singleton: {
+      key: 'event.data.phone',
+      mode: 'skip',
+    },
   },
   { event: voteSmsPromptRequested.name },
   async ({ event, step }) => {
@@ -53,7 +57,7 @@ export const handleSmsVoteRequest = inngest.createFunction(
       const result = await provider.sendSms!({ to, body: promptBody });
       if (result.status === 'rejected') {
         logger.warn('Vote prompt send rejected', {
-          phone,
+          authUserId,
           reason: result.reason,
         });
       }
@@ -61,14 +65,14 @@ export const handleSmsVoteRequest = inngest.createFunction(
 
     const reply = await step.waitForEvent('wait-for-vote-reply', {
       event: smsInboundReceived.name,
-      match: 'data.from',
+      if: 'event.data.phone == async.data.from',
       timeout: '72h',
     });
 
     if (!reply) {
       logger.info('No vote reply received in time', {
         processInstanceId,
-        phone,
+        authUserId,
       });
       return { message: 'timed out waiting for vote reply' };
     }
@@ -82,7 +86,7 @@ export const handleSmsVoteRequest = inngest.createFunction(
     if (!selectedProposal) {
       logger.info('Reply did not select an eligible proposal', {
         processInstanceId,
-        phone,
+        authUserId,
       });
       return { message: 'reply did not confirm' };
     }
