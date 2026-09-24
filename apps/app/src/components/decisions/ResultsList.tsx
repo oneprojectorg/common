@@ -8,7 +8,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { Header3 } from '@op/sense/Header';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
 
@@ -16,6 +15,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
+import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
 import { proposalHref } from './proposalHrefs';
 
@@ -49,11 +49,7 @@ export const ResultsList = ({
   const showVotes = slug !== 'cowop' && Boolean(resultStats?.membersVoted);
 
   return (
-    <div className="flex flex-col gap-4 pb-12">
-      <div className="flex items-center gap-4">
-        <Header3>{t('decisions.selectedProposalsHeading')}</Header3>
-      </div>
-
+    <ProposalListSection heading={t('decisions.selectedProposalsHeading')}>
       <ProposalMasonry>
         {proposals.map((proposal) => {
           const viewHref = proposalHref({
@@ -86,7 +82,7 @@ export const ResultsList = ({
           );
         })}
       </ProposalMasonry>
-    </div>
+    </ProposalListSection>
   );
 };
 

@@ -10,6 +10,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -108,15 +109,11 @@ export function ReviewSelectionList({
   return (
     <div className="flex flex-col gap-6 pb-20">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span className="font-serif text-title font-light">
-            {t('decisions.proposals.allProposalsOption')}
-          </span>
+        <Header3 className="flex items-center gap-2">
+          {t('decisions.proposals.allProposalsOption')}
           <Bullet />
-          <span className="font-serif text-title font-light">
-            {items.length}
-          </span>
-        </div>
+          {items.length}
+        </Header3>
       </div>
 
       {items.length === 0 ? (

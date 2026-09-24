@@ -1,6 +1,7 @@
 'use client';
 
 import type { ProposalFilter } from '@op/api/encoders';
+import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -60,11 +61,7 @@ export const ProposalsListHeader = ({
 export const MyProposalsHeader = () => {
   const t = useTranslations();
 
-  return (
-    <span className="font-serif text-title">
-      {t('decisions.proposals.myProposalsOption')}
-    </span>
-  );
+  return <Header3>{t('decisions.proposals.myProposalsOption')}</Header3>;
 };
 
 /**
