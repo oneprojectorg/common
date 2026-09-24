@@ -221,7 +221,7 @@ it('should handle real-time subscriptions', async () => {
 
 ### Performance
 
-- Integration tests run sequentially to avoid database conflicts
+- Test files run concurrently; `turbo.json` runs the `@op/api` tests after the `@op/common` tests because both use this database
 - Use appropriate timeouts for database operations
 - Clean up only necessary tables to improve speed
 
@@ -247,26 +247,24 @@ To start Supabase locally:
 ### Connection Issues
 
 - Verify Docker is running: `docker ps`
-- Check Supabase status: `supabase status`
-- Restart Supabase: `supabase stop && supabase start`
+- Check Supabase status: `pnpm test:supabase:status`
+- Restart Supabase: `pnpm test:supabase:stop && pnpm test:supabase:start`
 
 ### Schema Issues
 
-If tests fail due to missing tables:
-
-1. Check your migrations: `supabase db diff`
-2. Apply migrations: `supabase db reset`
-3. Adjust test table names to match your schema
+If tests fail due to missing tables, reset and migrate the test database:
+`pnpm test:db:reset`. A bare `supabase db reset` targets
+`supabase/supabase-dev.toml`, the development database.
 
 ### Port Conflicts
 
-Default ports from `supabase/supabase-dev.toml`:
+Ports from `supabase/supabase-test.toml`:
 
-- API: 54321
-- DB: 54322
-- Studio: 54323
+- API: 55321
+- DB: 55322
 
-Change ports in config if they conflict with other services.
+Studio and Inbucket are disabled for the test instance. Change ports in that
+file if they conflict with other services.
 
 ## File Structure
 
