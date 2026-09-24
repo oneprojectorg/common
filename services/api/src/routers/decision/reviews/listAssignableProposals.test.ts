@@ -1,4 +1,10 @@
-import { ProposalReviewAssignmentStatus, ProposalStatus } from '@op/db/schema';
+import { db } from '@op/db/client';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewState,
+  ProposalStatus,
+  proposalReviews,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -55,10 +61,52 @@ describe.concurrent('decision.listAssignableProposals', () => {
     );
     const freeRow = result.items.find((row) => row.id === free.proposal.id);
 
-    expect(assignedRow?.isAssigned).toBe(true);
+    expect(assignedRow?.assignment).toEqual({
+      id: assigned.assignment.id,
+      status: ProposalReviewAssignmentStatus.PENDING,
+      reviewState: null,
+    });
     // Assigned to someone else, so free for this reviewer.
-    expect(freeRow?.isAssigned).toBe(false);
+    expect(freeRow?.assignment).toBeNull();
     expect(assignedRow?.profileName).toBe(`Assigned proposal ${task.id}`);
+  });
+
+  it('reports a started review with its non-pending status and review state', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const started = await testData.createReviewAssignment({
+      title: `Started proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+    const context = started.context;
+
+    await db.insert(proposalReviews).values({
+      assignmentId: started.assignment.id,
+      reviewData: {},
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listAssignableProposals({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+    });
+
+    const startedRow = result.items.find(
+      (row) => row.id === started.proposal.id,
+    );
+
+    // The dialog locks a non-pending row and badges it with the review state.
+    expect(startedRow?.assignment).toEqual({
+      id: started.assignment.id,
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+      reviewState: ProposalReviewState.DRAFT,
+    });
   });
 
   it("flags the reviewer's own proposal rather than hiding it", async ({
@@ -97,7 +145,7 @@ describe.concurrent('decision.listAssignableProposals', () => {
 
     // Marked, not hidden: a missing row would read as "not found" on import.
     expect(ownRow?.isOwn).toBe(true);
-    expect(ownRow?.isAssigned).toBe(false);
+    expect(ownRow?.assignment).toBeNull();
     expect(otherRow?.isOwn).toBe(false);
   });
 

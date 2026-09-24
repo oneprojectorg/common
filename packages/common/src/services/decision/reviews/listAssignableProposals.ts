@@ -105,7 +105,8 @@ export async function listAssignableProposals({
       submittedBy: { columns: { name: true } },
       reviewAssignments: {
         where: { processInstanceId, phaseId, reviewerProfileId },
-        columns: { id: true },
+        columns: { id: true, status: true },
+        with: { reviews: { columns: { state: true }, limit: 1 } },
       },
     },
     // `id` tie-break: rows sharing a `createdAt` page in an undefined order
@@ -117,17 +118,27 @@ export async function listAssignableProposals({
   const hasMore = rows.length > limit;
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
-  const items = pageRows.map((row) => ({
-    id: row.id,
-    profileId: row.profileId,
-    proposalData: parseProposalData(row.proposalData),
-    profileName: row.profile?.name ?? null,
-    authorName: row.submittedBy?.name ?? null,
-    isAssigned: row.reviewAssignments.length > 0,
-    // `submittedByProfileId`, matching the self-filter in
-    // `insertReviewAssignments` — the write would refuse to create this row.
-    isOwn: row.submittedByProfileId === reviewerProfileId,
-  }));
+  const items = pageRows.map((row) => {
+    const assignment = row.reviewAssignments[0] ?? null;
+
+    return {
+      id: row.id,
+      profileId: row.profileId,
+      proposalData: parseProposalData(row.proposalData),
+      profileName: row.profile?.name ?? null,
+      authorName: row.submittedBy?.name ?? null,
+      assignment: assignment
+        ? {
+            id: assignment.id,
+            status: assignment.status,
+            reviewState: assignment.reviews[0]?.state ?? null,
+          }
+        : null,
+      // `submittedByProfileId`, matching the self-filter in
+      // `insertReviewAssignments` — the write would refuse to create this row.
+      isOwn: row.submittedByProfileId === reviewerProfileId,
+    };
+  });
 
   const lastRow = pageRows[pageRows.length - 1];
 

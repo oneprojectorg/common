@@ -5,7 +5,6 @@ import { trpc } from '@op/api/client';
 import {
   type AssignableProposal,
   PROPOSAL_SEARCH_MAX_LENGTH,
-  type ReviewerAssignments,
   normalizeProposalCategories,
 } from '@op/common/client';
 import { useDebounce, useInfiniteScroll } from '@op/hooks';
@@ -33,20 +32,35 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
-import { useProposalCardData } from '../ProposalCard';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
 
-type QueueAssignment = ReviewerAssignments['items'][number];
+/** How a proposal row behaves for this reviewer. */
+type RowKind = 'own' | 'locked' | 'assigned' | 'free';
 
-type PickState = 'assigned' | 'own' | 'free';
+interface ProposalRow {
+  proposal: AssignableProposal;
+  kind: RowKind;
+}
 
 interface ManageAssignmentsDialogContentProps {
   processInstanceId: string;
   phaseId: string;
   reviewerProfileId: string;
+  onSaved: () => void;
+}
+
+interface ManageAssignmentsFormProps {
+  processInstanceId: string;
+  phaseId: string;
+  reviewerProfileId: string;
+  reviewerName: string;
+  isEligible: boolean;
+  canModifyAssignments: boolean;
+  /** The reviewer's whole queue for the phase, not one page of it. */
+  assignedTotal: number;
   onSaved: () => void;
 }
 
@@ -57,8 +71,6 @@ const PICK_PAGE_LIMIT = 24;
 const IMPORT_POOL_PAGE_LIMIT = 100;
 
 const SEARCH_DEBOUNCE_MS = 300;
-
-const EMPTY_ASSIGNMENTS: QueueAssignment[] = [];
 
 const EMPTY_PICK_ROWS: AssignableProposal[] = [];
 
@@ -75,6 +87,7 @@ export function ManageAssignmentsDialogContent(
   );
 }
 
+/** Reads the queue for its metadata only; the list itself is the pick read. */
 function ManageAssignmentsBody({
   processInstanceId,
   phaseId,
@@ -82,20 +95,6 @@ function ManageAssignmentsBody({
   onSaved,
 }: ManageAssignmentsDialogContentProps) {
   const t = useTranslations();
-  const searchId = useId();
-  const importEnabled = useFeatureFlag('bulk_assign_import');
-
-  // State rather than a ref: the sentinel below reads this as its observer
-  // root, so it has to re-render once the element is attached.
-  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch] = useDebounce(search.trim(), SEARCH_DEBOUNCE_MS);
-  const [toAssign, setToAssign] = useState<ReadonlySet<string>>(
-    () => new Set<string>(),
-  );
-  const [toUnassign, setToUnassign] = useState<ReadonlySet<string>>(
-    () => new Set<string>(),
-  );
 
   // The page body already observes this cache entry and owns its refetch, so
   // a mount refetch here would refire it.
@@ -108,20 +107,98 @@ function ManageAssignmentsBody({
   );
   // Queue metadata rides on every page.
   const queue = queueQuery.data?.pages[0];
-  const reviewer = queue?.reviewer ?? null;
-  // Removal asserts the phase is current, so a past phase freezes the queue.
-  const canModifyAssignments = queue?.canModifyAssignments === true;
 
-  const assignments = useMemo(
-    () =>
-      queueQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_ASSIGNMENTS,
-    [queueQuery.data?.pages],
+  if (queueQuery.isPending) {
+    return (
+      <>
+        <DialogHeader>
+          <DialogTitle>
+            {t('decisions.review.manageAssignmentsAction')}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3 px-6 py-4">
+          <Skeleton className="h-6 w-64" aria-hidden />
+          <Skeleton className="h-9 w-full" aria-hidden />
+          <Skeleton className="h-64 w-full" aria-hidden />
+        </div>
+      </>
+    );
+  }
+
+  if (!queue) {
+    return (
+      <DialogHeader>
+        <DialogTitle>{t('decisions.review.loadAssignmentsError')}</DialogTitle>
+        <DialogDescription>
+          {t('decisions.proposals.refreshPageHint')}
+        </DialogDescription>
+      </DialogHeader>
+    );
+  }
+
+  const { reviewer } = queue;
+
+  if (!reviewer) {
+    return (
+      <DialogHeader>
+        <DialogTitle>
+          {t('decisions.review.manageAssignmentsAction')}
+        </DialogTitle>
+        <DialogDescription>
+          {t('decisions.review.reviewerNotInPhase')}
+        </DialogDescription>
+      </DialogHeader>
+    );
+  }
+
+  return (
+    <ManageAssignmentsForm
+      processInstanceId={processInstanceId}
+      phaseId={phaseId}
+      reviewerProfileId={reviewerProfileId}
+      reviewerName={reviewer.name ?? reviewer.slug ?? reviewer.id}
+      isEligible={queue.isEligible}
+      canModifyAssignments={queue.canModifyAssignments}
+      assignedTotal={queue.total}
+      onSaved={onSaved}
+    />
   );
+}
+
+/** A diff (assign / unassign) Save applies in one go; the visible diff IS the confirmation. */
+function ManageAssignmentsForm({
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+  reviewerName,
+  isEligible,
+  canModifyAssignments,
+  assignedTotal,
+  onSaved,
+}: ManageAssignmentsFormProps) {
+  const t = useTranslations();
+  const filterId = useId();
+  const importEnabled = useFeatureFlag('bulk_assign_import');
+
+  // State rather than a ref: the sentinel below reads this as its observer
+  // root, so it has to re-render once the element is attached.
+  const [scrollRoot, setScrollRoot] = useState<HTMLUListElement | null>(null);
+  const [query, setQuery] = useState('');
+  const [debouncedQuery] = useDebounce(query.trim(), SEARCH_DEBOUNCE_MS);
+  // Proposal ids to assign.
+  const [toAssign, setToAssign] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
+  // Assignment ids, not proposal ids: a removal must survive the row leaving
+  // the loaded pages when the search changes.
+  const [toUnassign, setToUnassign] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
+
   // A reviewer without the role gets a frozen queue: unassign pending only.
   // An ended phase freezes both halves — `assignReviews` rejects a completed
   // phase and `removeReviewAssignments` requires the current one.
-  const canAssign = queue?.isEligible === true && canModifyAssignments;
-  const isUnknownReviewer = Boolean(queue && !queue.reviewer);
+  const canAssign = isEligible && canModifyAssignments;
 
   const pickQuery = trpc.decision.listAssignableProposals.useInfiniteQuery(
     {
@@ -129,28 +206,22 @@ function ManageAssignmentsBody({
       phaseId,
       reviewerProfileId,
       limit: PICK_PAGE_LIMIT,
-      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      ...(debouncedQuery ? { search: debouncedQuery } : {}),
     },
     {
       getNextPageParam: (lastPage) => lastPage.next ?? undefined,
       staleTime: 30 * 1000,
       // Hold the previous term's rows so the list doesn't empty between keystrokes.
       placeholderData: (previous) => previous,
-      enabled: !isUnknownReviewer,
     },
   );
 
-  const pickProposals = useMemo(
+  const rows = useMemo(
     () =>
-      pickQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_PICK_ROWS,
+      (
+        pickQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_PICK_ROWS
+      ).map(toProposalRow),
     [pickQuery.data?.pages],
-  );
-
-  // A re-tick of a row assigned since the page loaded is dropped, not re-sent.
-  const assignedPickIds = useMemo(
-    () =>
-      new Set(pickProposals.flatMap((row) => (row.isAssigned ? [row.id] : []))),
-    [pickProposals],
   );
 
   const { fetchNextPage } = pickQuery;
@@ -158,24 +229,12 @@ function ManageAssignmentsBody({
     fetchNextPage();
   }, [fetchNextPage]);
   const { ref: sentinelRef, shouldShowTrigger } =
-    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+    useInfiniteScroll<HTMLLIElement>(loadNextPage, {
       hasNextPage: pickQuery.hasNextPage,
       isFetchingNextPage: pickQuery.isFetchingNextPage,
-      // Measured against the dialog's own scroller, not the viewport: a
-      // viewport root is clipped by this container, which leaves `rootMargin`
-      // no room to work and only fetches once the user is already at the
-      // very bottom.
-      root: scrollRoot,
-    });
-
-  const { fetchNextPage: fetchNextQueuePage } = queueQuery;
-  const loadNextQueuePage = useCallback(() => {
-    fetchNextQueuePage();
-  }, [fetchNextQueuePage]);
-  const { ref: queueSentinelRef, shouldShowTrigger: showQueueTrigger } =
-    useInfiniteScroll<HTMLDivElement>(loadNextQueuePage, {
-      hasNextPage: queueQuery.hasNextPage,
-      isFetchingNextPage: queueQuery.isFetchingNextPage,
+      // Measured against the list's own scroller, not the viewport: a
+      // viewport root is clipped by the dialog, which leaves `rootMargin` no
+      // room to work and only fetches once the user is already at the bottom.
       root: scrollRoot,
     });
 
@@ -183,39 +242,62 @@ function ManageAssignmentsBody({
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation();
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
 
-  const assignIds = canAssign
-    ? [...toAssign].filter((id) => !assignedPickIds.has(id))
-    : [];
-  const unassignIds = assignments.flatMap((item) =>
-    isRemovable(item, canModifyAssignments) &&
-    toUnassign.has(item.assignment.id)
-      ? [item.assignment.id]
-      : [],
+  // A re-tick of a row assigned since it was picked is dropped, not re-sent.
+  const assignedProposalIds = new Set(
+    rows.flatMap((row) => (row.proposal.assignment ? [row.proposal.id] : [])),
+  );
+  // A removal whose review has started since is dropped the same way.
+  const lockedAssignmentIds = new Set(
+    rows.flatMap((row) =>
+      row.kind === 'locked' && row.proposal.assignment
+        ? [row.proposal.assignment.id]
+        : [],
+    ),
   );
 
+  const assignIds = canAssign
+    ? [...toAssign].filter((id) => !assignedProposalIds.has(id))
+    : [];
+  const unassignAssignmentIds = canModifyAssignments
+    ? [...toUnassign].filter((id) => !lockedAssignmentIds.has(id))
+    : [];
+
   const assignedCount =
-    (queue?.total ?? 0) - unassignIds.length + assignIds.length;
-  const hasChanges = assignIds.length > 0 || unassignIds.length > 0;
+    assignedTotal - unassignAssignmentIds.length + assignIds.length;
+  const hasChanges = assignIds.length > 0 || unassignAssignmentIds.length > 0;
 
   // Additive, and only over what is loaded: never bulk-unassigns.
-  const loadedFreeIds = canAssign
-    ? pickProposals.flatMap((row) =>
-        pickStateOf(row) === 'free' ? [row.id] : [],
-      )
+  const visibleFreeIds = canAssign
+    ? rows.flatMap((row) => (row.kind === 'free' ? [row.proposal.id] : []))
     : [];
-  const allLoadedFreeSelected =
-    loadedFreeIds.length > 0 && loadedFreeIds.every((id) => toAssign.has(id));
+  const allVisibleFreeSelected =
+    visibleFreeIds.length > 0 && visibleFreeIds.every((id) => toAssign.has(id));
 
-  // Additive: an import never drops rows the admin ticked by hand.
+  // Additive, like every other selection gesture here: an import never drops
+  // rows the admin ticked by hand.
   const importProposals = (proposalIds: Array<string>) => {
     setToAssign((current) => new Set([...current, ...proposalIds]));
   };
 
-  const toggleLoadedFree = () => {
+  const toggleRow = (row: ProposalRow) => {
+    const { assignment } = row.proposal;
+
+    if (row.kind === 'free') {
+      if (canAssign) {
+        setToAssign((current) => toggled(current, row.proposal.id));
+      }
+      return;
+    }
+    if (row.kind === 'assigned' && assignment && canModifyAssignments) {
+      setToUnassign((current) => toggled(current, assignment.id));
+    }
+  };
+
+  const toggleVisibleFree = () => {
     setToAssign((current) => {
       const next = new Set(current);
-      for (const id of loadedFreeIds) {
-        if (allLoadedFreeSelected) {
+      for (const id of visibleFreeIds) {
+        if (allVisibleFreeSelected) {
           next.delete(id);
         } else {
           next.add(id);
@@ -252,15 +334,15 @@ function ManageAssignmentsBody({
     let removedCount = 0;
     let skippedIds: string[] = [];
 
-    if (unassignIds.length > 0) {
+    if (unassignAssignmentIds.length > 0) {
       try {
         const result = await removeAssignments.mutateAsync({
           processInstanceId,
           phaseId,
-          assignmentIds: unassignIds,
+          assignmentIds: unassignAssignmentIds,
         });
         skippedIds = result.skippedIds;
-        removedCount = unassignIds.length - skippedIds.length;
+        removedCount = unassignAssignmentIds.length - skippedIds.length;
       } catch (error) {
         logger.error('Failed to save review assignment changes', {
           error,
@@ -291,189 +373,123 @@ function ManageAssignmentsBody({
     onSaved();
   };
 
-  const name = reviewer
-    ? (reviewer.name ?? reviewer.slug ?? reviewer.id)
-    : null;
-
   return (
     <>
       <DialogHeader>
         <DialogTitle>
-          {name
-            ? t('decisions.review.manageReviewerAssignmentsTitle', { name })
-            : t('decisions.review.manageAssignmentsAction')}
+          {t('decisions.review.manageReviewerAssignmentsTitle', {
+            name: reviewerName,
+          })}
         </DialogTitle>
         <DialogDescription>
           {t('decisions.review.manageAssignmentsHint')}
         </DialogDescription>
       </DialogHeader>
 
-      {/* One scroller for both sections, and the sentinels' observer root. */}
-      <div
-        ref={setScrollRoot}
-        className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-4"
-      >
-        {isUnknownReviewer ? (
+      <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
+        <div className="flex items-center justify-between gap-3">
+          {/* Not the filter's label — a moving count would rename the control. */}
+          <Header3 aria-live="polite" className="font-light">
+            {t('decisions.review.proposalsAssignedHeading', {
+              count: assignedCount,
+            })}
+          </Header3>
+          <div className="flex items-center gap-2">
+            {/* Import builds the selection like Select all does, so it sits beside it. */}
+            {importEnabled && canAssign ? (
+              <ImportPoolAction
+                processInstanceId={processInstanceId}
+                phaseId={phaseId}
+                reviewerProfileId={reviewerProfileId}
+                onImport={importProposals}
+              />
+            ) : null}
+            <Button
+              variant="link"
+              onClick={toggleVisibleFree}
+              disabled={visibleFreeIds.length === 0}
+            >
+              {allVisibleFreeSelected ? t('Clear') : t('Select all')}
+            </Button>
+          </div>
+        </div>
+
+        {!canModifyAssignments ? (
           <p className="text-sm text-muted-foreground">
-            {t('decisions.review.reviewerNotInPhase')}
+            {t('decisions.review.phaseEndedAssignmentsLockedHint')}
+          </p>
+        ) : !canAssign ? (
+          <p className="text-sm text-muted-foreground">
+            {t('decisions.review.reviewerRoleRemovedHint')}
+          </p>
+        ) : null}
+
+        <Field>
+          <FieldLabel htmlFor={filterId} className="sr-only">
+            {t('decisions.proposals.filterProposalsLabel')}
+          </FieldLabel>
+          <Input
+            id={filterId}
+            type="search"
+            value={query}
+            maxLength={PROPOSAL_SEARCH_MAX_LENGTH}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('decisions.review.searchByTitlePlaceholder')}
+          />
+        </Field>
+
+        {/* Mounted before it has anything to announce: a live region that
+            arrives with its text already in place is never read. */}
+        <p aria-live="polite" className="sr-only">
+          {pickQuery.isFetchingNextPage
+            ? t('decisions.review.loadingMoreProposals')
+            : pickQuery.isSuccess
+              ? t('decisions.review.proposalsShownCount', {
+                  count: rows.length,
+                })
+              : ''}
+        </p>
+
+        {pickQuery.isPending ? (
+          <Skeleton className="h-64 w-full" aria-hidden />
+        ) : pickQuery.isError ? (
+          <p role="alert" className="text-sm text-muted-foreground">
+            {t('decisions.proposals.mergeCandidatesLoadError')}
           </p>
         ) : (
-          <>
-            <section className="flex flex-col gap-3">
-              <Header3 aria-live="polite" className="font-light">
-                {t('decisions.review.assignedCountHeading', {
-                  count: assignedCount,
-                })}
-              </Header3>
-
-              {queue && !canModifyAssignments ? (
-                <p className="text-sm text-muted-foreground">
-                  {t('decisions.review.phaseEndedAssignmentsLockedHint')}
-                </p>
-              ) : queue && !canAssign ? (
-                <p className="text-sm text-muted-foreground">
-                  {t('decisions.review.reviewerRoleRemovedHint')}
-                </p>
-              ) : null}
-
-              <p aria-live="polite" className="sr-only">
-                {queueQuery.isFetchingNextPage
-                  ? t('decisions.review.loadingMoreProposals')
-                  : ''}
-              </p>
-
-              {queueQuery.isPending ? (
-                <RowSkeletons count={3} />
-              ) : queueQuery.isError ? (
-                <p role="alert" className="text-sm text-muted-foreground">
-                  {t('decisions.proposals.refreshPageHint')}
-                </p>
-              ) : assignments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {t('decisions.review.noReviewerAssignments')}
-                </p>
-              ) : (
-                <ul className="flex flex-col rounded-lg border">
-                  {assignments.map((item) => (
-                    <AssignedRow
-                      key={item.assignment.id}
-                      item={item}
-                      canModifyAssignments={canModifyAssignments}
-                      isRemoved={toUnassign.has(item.assignment.id)}
-                      onToggle={() =>
-                        setToUnassign((current) =>
-                          toggled(current, item.assignment.id),
-                        )
-                      }
-                    />
-                  ))}
-                </ul>
-              )}
-
-              {showQueueTrigger ? (
-                <div ref={queueSentinelRef} aria-hidden className="py-2">
-                  {queueQuery.isFetchingNextPage ? (
-                    <Skeleton className="h-10 w-full" />
-                  ) : null}
-                </div>
-              ) : null}
-            </section>
-
-            <section className="flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <Header3 className="font-light">
-                  {t('decisions.review.addProposalsHeading')}
-                </Header3>
-                <div className="flex items-center gap-2">
-                  {importEnabled && canAssign ? (
-                    <ImportPoolAction
-                      processInstanceId={processInstanceId}
-                      phaseId={phaseId}
-                      reviewerProfileId={reviewerProfileId}
-                      onImport={importProposals}
-                    />
-                  ) : null}
-                  <Button
-                    variant="link"
-                    onClick={toggleLoadedFree}
-                    disabled={loadedFreeIds.length === 0}
-                  >
-                    {allLoadedFreeSelected ? t('Clear') : t('Select all')}
-                  </Button>
-                </div>
-              </div>
-
-              <Field>
-                <FieldLabel htmlFor={searchId} className="sr-only">
-                  {t('decisions.proposals.searchProposalsLabel')}
-                </FieldLabel>
-                <Input
-                  id={searchId}
-                  type="search"
-                  value={search}
-                  maxLength={PROPOSAL_SEARCH_MAX_LENGTH}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={t('decisions.review.searchByTitlePlaceholder')}
-                />
-              </Field>
-
-              {/* Mounted before it has anything to announce: a live region
-                  that arrives with its text already in place is never read. */}
-              <p aria-live="polite" className="sr-only">
-                {pickQuery.isFetchingNextPage
-                  ? t('decisions.review.loadingMoreProposals')
-                  : pickQuery.isSuccess
-                    ? t('decisions.review.proposalsShownCount', {
-                        count: pickProposals.length,
-                      })
-                    : ''}
-              </p>
-
-              {pickQuery.isPending ? (
-                <RowSkeletons count={5} />
-              ) : pickQuery.isError ? (
-                <p role="alert" className="text-sm text-muted-foreground">
-                  {t('decisions.proposals.mergeCandidatesLoadError')}
-                </p>
-              ) : pickProposals.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {debouncedSearch
-                    ? t('decisions.review.noProposalsMatchQuery', {
-                        query: debouncedSearch,
-                      })
-                    : t('decisions.review.noProposalsInPhase')}
-                </p>
-              ) : (
-                <ul className="flex flex-col rounded-lg border">
-                  {pickProposals.map((row) => {
-                    const state = pickStateOf(row);
-
-                    return (
-                      <PickRow
-                        key={row.id}
-                        row={row}
-                        state={state}
-                        canAssign={canAssign}
-                        isChecked={state === 'assigned' || toAssign.has(row.id)}
-                        onToggle={() =>
-                          setToAssign((current) => toggled(current, row.id))
-                        }
-                      />
-                    );
-                  })}
-                </ul>
-              )}
-
-              {/* Padded: a zero-height target never meets the intersection threshold. */}
-              {shouldShowTrigger ? (
-                <div ref={sentinelRef} aria-hidden className="py-2">
-                  {pickQuery.isFetchingNextPage ? (
-                    <Skeleton className="h-10 w-full" />
-                  ) : null}
-                </div>
-              ) : null}
-            </section>
-          </>
+          // The sentinel's observer root, so it must be the element that scrolls.
+          <ul
+            ref={setScrollRoot}
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border"
+          >
+            {rows.map((row) => (
+              <ProposalCheckRow
+                key={row.proposal.id}
+                row={row}
+                canAssign={canAssign}
+                canModifyAssignments={canModifyAssignments}
+                isChecked={isRowChecked(row, toAssign, toUnassign)}
+                onToggle={() => toggleRow(row)}
+              />
+            ))}
+            {rows.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-muted-foreground">
+                {debouncedQuery
+                  ? t('decisions.review.noProposalsMatchQuery', {
+                      query: debouncedQuery,
+                    })
+                  : t('decisions.review.noProposalsInPhase')}
+              </li>
+            ) : null}
+            {/* Padded: a zero-height target never meets the intersection threshold. */}
+            {shouldShowTrigger ? (
+              <li ref={sentinelRef} aria-hidden className="px-3 py-2">
+                {pickQuery.isFetchingNextPage ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : null}
+              </li>
+            ) : null}
+          </ul>
         )}
       </div>
 
@@ -485,7 +501,7 @@ function ManageAssignmentsBody({
           {hasChanges
             ? t('decisions.review.assignHotkeyHint', {
                 assign: assignIds.length,
-                unassign: unassignIds.length,
+                unassign: unassignAssignmentIds.length,
               })
             : t('decisions.review.noChangesYet')}
         </p>
@@ -508,99 +524,38 @@ function ManageAssignmentsBody({
   );
 }
 
-function AssignedRow({
-  item,
-  canModifyAssignments,
-  isRemoved,
-  onToggle,
-}: {
-  item: QueueAssignment;
-  canModifyAssignments: boolean;
-  isRemoved: boolean;
-  onToggle: () => void;
-}) {
-  const t = useTranslations();
-  const { titleText, displayCategories, authors } = useProposalCardData(
-    item.assignment.proposal,
-  );
-  // A translated title is typed `string | string[]`, and the label interpolates
-  // one string.
-  const titleLabel = Array.isArray(titleText)
-    ? titleText.join(', ')
-    : titleText;
-  const status = item.review?.state ?? item.assignment.status;
-  const canRemove = isRemovable(item, canModifyAssignments);
-
-  return (
-    <li className="flex items-center gap-2 border-b px-3 py-2 last:border-b-0">
-      <span
-        className={cn(
-          'flex min-w-0 flex-col',
-          isRemoved && 'text-muted-foreground line-through',
-        )}
-      >
-        <span className="truncate" dir="auto">
-          {titleText}
-        </span>
-        {authors?.[0]?.name ? (
-          <span className="truncate text-sm text-muted-foreground" dir="auto">
-            {authors[0].name}
-          </span>
-        ) : null}
-      </span>
-      <span className="ms-auto flex shrink-0 items-center gap-2">
-        {displayCategories.length > 0 ? (
-          <SelectionCategoryChips labels={displayCategories} />
-        ) : null}
-        <ReviewStatusBadge status={status} />
-        {canRemove ? (
-          <Button
-            variant="link"
-            // Replaces the visible word, so it names which row it acts on.
-            aria-label={
-              isRemoved
-                ? t('decisions.review.keepProposalAssignedLabel', {
-                    title: titleLabel,
-                  })
-                : t('decisions.review.removeProposalLabel', {
-                    title: titleLabel,
-                  })
-            }
-            onClick={onToggle}
-          >
-            {isRemoved ? t('editor.undoAction') : t('Remove')}
-          </Button>
-        ) : null}
-      </span>
-    </li>
-  );
-}
-
-function PickRow({
+function ProposalCheckRow({
   row,
-  state,
   canAssign,
+  canModifyAssignments,
   isChecked,
   onToggle,
 }: {
-  row: AssignableProposal;
-  state: PickState;
+  row: ProposalRow;
   canAssign: boolean;
+  canModifyAssignments: boolean;
   isChecked: boolean;
   onToggle: () => void;
 }) {
   const t = useTranslations();
-  const { titleText, displayCategories } = useAssignableRowData(row);
-  const authorName = row.authorName;
-  // A pending removal stays inert here: the top section owns it until Save.
-  const isDisabled = state !== 'free' || !canAssign;
+  const { proposal, kind } = row;
+  const { titleText, displayCategories } = useAssignableRowData(proposal);
+  // `assigned` stays checkable without the role, so the queue can be cleaned;
+  // only an ended phase freezes it.
+  const isDisabled =
+    kind === 'own' ||
+    kind === 'locked' ||
+    (kind === 'free' && !canAssign) ||
+    (kind === 'assigned' && !canModifyAssignments);
 
   return (
     <li className="border-b last:border-b-0">
       <Label
         className={cn(
           'flex items-center gap-2 px-3 py-2 font-normal',
-          isDisabled ? 'text-muted-foreground' : 'hover:bg-muted/50',
+          isDisabled && kind !== 'locked'
+            ? 'text-muted-foreground'
+            : 'hover:bg-muted/50',
         )}
       >
         <Checkbox
@@ -612,24 +567,27 @@ function PickRow({
           <span className="truncate" dir="auto">
             {titleText}
           </span>
-          {authorName ? (
+          {proposal.authorName ? (
             <span className="truncate text-sm text-muted-foreground" dir="auto">
-              {authorName}
+              {proposal.authorName}
             </span>
           ) : null}
         </span>
         <span className="ms-auto flex shrink-0 items-center gap-2">
-          {state === 'own' ? (
+          {proposal.isOwn ? (
             <Badge variant="outline">
               {t('decisions.review.reviewerOwnProposal')}
             </Badge>
           ) : null}
-          {state === 'assigned' ? (
-            <Badge variant="outline">
-              {t('decisions.review.alreadyAssignedBadge')}
-            </Badge>
+          {kind === 'locked' && proposal.assignment ? (
+            <ReviewStatusBadge
+              status={
+                proposal.assignment.reviewState ?? proposal.assignment.status
+              }
+            />
           ) : null}
-          {displayCategories.length > 0 ? (
+          {(kind === 'free' || kind === 'assigned') &&
+          displayCategories.length > 0 ? (
             <SelectionCategoryChips labels={displayCategories} />
           ) : null}
         </span>
@@ -679,11 +637,12 @@ function ImportPoolAction({
     [poolQuery.data?.pages],
   );
 
+  // Sets, not lists: the spreadsheet import looks IDs up by membership.
   const poolIds = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const assignableIds = useMemo(
     () =>
       new Set(
-        rows.flatMap((row) => (pickStateOf(row) === 'free' ? [row.id] : [])),
+        rows.flatMap((row) => (rowKindOf(row) === 'free' ? [row.id] : [])),
       ),
     [rows],
   );
@@ -695,16 +654,6 @@ function ImportPoolAction({
       onImport={onImport}
       disabled={poolQuery.isPending || hasNextPage}
     />
-  );
-}
-
-function RowSkeletons({ count }: { count: number }) {
-  return (
-    <div className="flex flex-col gap-2" aria-hidden>
-      {Array.from({ length: count }).map((_, index) => (
-        <Skeleton key={index} className="h-10 w-full" />
-      ))}
-    </div>
   );
 }
 
@@ -725,23 +674,36 @@ function useAssignableRowData(row: AssignableProposal) {
   };
 }
 
-/**
- * An existing assignment outranks "own proposal": a stray self-assignment has
- * to stay visible in the top section and, while pending, removable.
- */
-function pickStateOf(row: AssignableProposal): PickState {
-  if (row.isAssigned) {
-    return 'assigned';
-  }
-  return row.isOwn ? 'own' : 'free';
+function toProposalRow(proposal: AssignableProposal): ProposalRow {
+  return { proposal, kind: rowKindOf(proposal) };
 }
 
-/** A started review is a record, and removal refuses a phase the instance has left. */
-function isRemovable(
-  item: QueueAssignment,
-  canModifyAssignments: boolean,
+// An existing assignment outranks "own proposal" — a stray self-assignment
+// must stay visible and, while pending, removable.
+function rowKindOf(proposal: AssignableProposal): RowKind {
+  if (proposal.assignment) {
+    return proposal.assignment.status === 'pending' ? 'assigned' : 'locked';
+  }
+  return proposal.isOwn ? 'own' : 'free';
+}
+
+function isRowChecked(
+  row: ProposalRow,
+  toAssign: ReadonlySet<string>,
+  toUnassign: ReadonlySet<string>,
 ): boolean {
-  return canModifyAssignments && item.assignment.status === 'pending';
+  switch (row.kind) {
+    case 'own':
+      return false;
+    case 'locked':
+      return true;
+    case 'assigned':
+      return row.proposal.assignment
+        ? !toUnassign.has(row.proposal.assignment.id)
+        : true;
+    case 'free':
+      return toAssign.has(row.proposal.id);
+  }
 }
 
 function toggled(

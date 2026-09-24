@@ -72,7 +72,15 @@ export const assignableProposalSchema = z.object({
   /** The proposal profile's name: the editor's autosave keeps it current. */
   profileName: z.string().nullable(),
   authorName: z.string().nullable(),
-  isAssigned: z.boolean(),
+  /** The reviewer's assignment for this phase, or null when unassigned. */
+  assignment: z
+    .object({
+      id: z.uuid(),
+      status: z.enum(ProposalReviewAssignmentStatus),
+      /** The review row's state, once the reviewer has started one. */
+      reviewState: z.enum(ProposalReviewState).nullable(),
+    })
+    .nullable(),
   /** The reviewer submitted it, so the write would refuse to assign it. */
   isOwn: z.boolean(),
 });
