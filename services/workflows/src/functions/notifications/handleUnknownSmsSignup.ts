@@ -5,7 +5,7 @@ import {
   parsePhoneNumber,
 } from '@op/common';
 import { db } from '@op/db/client';
-import { authUsers } from '@op/db/schema';
+import { authUsers, users } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
@@ -31,22 +31,29 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     );
 
     if (!flagEnabled) {
-      logger.info('SMS signup feature flag is disabled, skipping', { from });
+      logger.info('SMS signup feature flag is disabled, skipping');
       return { message: 'sms signup disabled' };
     }
 
-    const existing = await step.run('check-known-number', async () => {
-      const [row] = await db
-        .select({ id: authUsers.id })
-        .from(authUsers)
-        .where(eq(authUsers.phone, from))
-        .limit(1);
-      return row ?? null;
-    });
+    const existing = await step.run(
+      'check-known-number',
+      async (): Promise<{
+        authUserId: string;
+        profileId: string | null;
+      } | null> => {
+        const [row] = await db
+          .select({ authUserId: authUsers.id, profileId: users.profileId })
+          .from(authUsers)
+          .leftJoin(users, eq(users.authUserId, authUsers.id))
+          .where(eq(authUsers.phone, from))
+          .limit(1);
+        return row ?? null;
+      },
+    );
 
     if (existing) {
       logger.info('Inbound SMS from a known number, skipping signup flow', {
-        from,
+        profileId: existing.profileId,
       });
       return { message: 'known number, skipped' };
     }
@@ -56,7 +63,6 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     if (!provider?.sendSms) {
       logger.error(
         'Cannot start SMS signup: no Twilio Messaging Service configured',
-        { from },
       );
       return { message: 'sms sending unavailable' };
     }
@@ -70,7 +76,6 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       });
       if (result.status === 'rejected') {
         logger.warn('Consent request send rejected', {
-          from,
           reason: result.reason,
         });
       }
@@ -83,14 +88,14 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     });
 
     if (!reply) {
-      logger.info('No confirmation reply received in time', { from });
+      logger.info('No confirmation reply received in time');
       return { message: 'timed out waiting for confirmation' };
     }
 
     const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
 
     if (replyBody.trim().toUpperCase() !== CONFIRMATION_KEYWORD) {
-      logger.info('Reply did not match the confirmation keyword', { from });
+      logger.info('Reply did not match the confirmation keyword');
       return { message: 'reply did not confirm' };
     }
 
@@ -105,9 +110,18 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       });
     });
 
+    const profileId = await step.run('lookup-profile-id', async () => {
+      const [row] = await db
+        .select({ profileId: users.profileId })
+        .from(users)
+        .where(eq(users.authUserId, authUserId))
+        .limit(1);
+      return row?.profileId ?? null;
+    });
+
     logger.info('Created account from inbound SMS signup', {
-      from,
       authUserId,
+      profileId,
     });
 
     return { message: 'account created', authUserId };
