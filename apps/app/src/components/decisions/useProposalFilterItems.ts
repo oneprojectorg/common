@@ -57,29 +57,39 @@ export const useProposalFilterItems = ({
 };
 
 /**
- * The filters the tab bar owns. Everything else stays in the select beside the
- * category and sort dropdowns, where "Not advanced" reads as one more way to
- * narrow the list rather than as a section of the decision.
+ * The filters the tab bar owns: the ones that answer *whose* proposals these
+ * are. "Not advanced" is the odd one out — it answers what happened to them —
+ * so it moves to its own select and the two compose.
  */
 export const TAB_BAR_FILTERS: readonly ProposalFilter[] = [
   ProposalFilter.ALL,
   ProposalFilter.MY_PROPOSALS,
+  ProposalFilter.MY_BALLOT,
 ];
 
+export const PROPOSAL_STATUS_VALUES = ['all', 'not-advanced'] as const;
+
+export type ProposalStatusFilter = (typeof PROPOSAL_STATUS_VALUES)[number];
+
 /**
- * What a control shows when the active filter belongs to the other one.
+ * The status axis, offered as its own select wherever the tab bar owns the
+ * audience axis. Two independent filters rather than one four-way choice, so
+ * "my proposals" and "not advanced" can both be on at once — the reader on the
+ * My proposals tab who picks Not advanced wants their own rejected proposals,
+ * not everyone's.
  *
- * The two controls share a single filter, so only one of them can hold it at a
- * time. The other falls back to "All proposals" — true in the sense that
- * matters to it (the list is not narrowed to the reader's own proposals), and
- * the control actually holding the filter is on screen saying so, the same way
- * an active category or search term narrows a list that still reads "All
- * proposals".
+ * Copy comes from the review namespace, which already owns "Filter by status"
+ * and "All statuses" for the review queue's own status select — the same
+ * concept, already translated in every locale.
  */
-export const getDisplayedFilter = (
-  items: ProposalFilterItem[],
-  activeFilter: ProposalFilter,
-): ProposalFilter =>
-  items.some((item) => item.id === activeFilter)
-    ? activeFilter
-    : ProposalFilter.ALL;
+export const useProposalStatusItems = (): {
+  id: ProposalStatusFilter;
+  label: string;
+}[] => {
+  const t = useTranslations('decisions');
+
+  return [
+    { id: 'all', label: t('review.allStatusesOption') },
+    { id: 'not-advanced', label: t('proposals.notAdvancedStatus') },
+  ];
+};

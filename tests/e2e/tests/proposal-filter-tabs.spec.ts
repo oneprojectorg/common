@@ -10,6 +10,8 @@ import { expect, test } from '../fixtures/index.js';
 
 const MY_PROPOSAL_TITLE = 'My Riverside Bike Path';
 const OTHER_PROPOSAL_TITLE = 'Their Downtown Mural';
+const MY_REJECTED_TITLE = 'My Rejected Skate Park';
+const OTHER_REJECTED_TITLE = 'Their Rejected Fountain';
 
 /**
  * One proposal submitted by the signed-in user's own profile and one submitted
@@ -21,10 +23,14 @@ const OTHER_PROPOSAL_TITLE = 'Their Downtown Mural';
  * because the signup trigger writes both, but a spec that switches profiles
  * would otherwise invert this test silently instead of failing.
  */
-async function createListingWithOneOwnProposal(org: {
-  organizationProfile: { id: string };
-  adminUser: { authUserId: string; email: string; profileId: string };
-}) {
+async function createListingWithOneOwnProposal(
+  org: {
+    organizationProfile: { id: string };
+    adminUser: { authUserId: string; email: string; profileId: string };
+  },
+  /** Adds a rejected proposal on each side, so the two axes can be told apart. */
+  { withRejected = false }: { withRejected?: boolean } = {},
+) {
   const [userRecord] = await db
     .select({ currentProfileId: users.currentProfileId })
     .from(users)
@@ -72,14 +78,38 @@ async function createListingWithOneOwnProposal(org: {
     },
   });
 
+  if (withRejected) {
+    await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId: myProfileId,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.REJECTED,
+      proposalData: {
+        title: MY_REJECTED_TITLE,
+        description: `<p>${MY_REJECTED_TITLE} details.</p>`,
+      },
+    });
+
+    await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      status: ProposalStatus.REJECTED,
+      proposalData: {
+        title: OTHER_REJECTED_TITLE,
+        description: `<p>${OTHER_REJECTED_TITLE} details.</p>`,
+      },
+    });
+  }
+
   return { slug, name };
 }
 
 test.describe('Proposal filter tabs', () => {
   /**
-   * The rail takes "All proposals" and "My proposals" off the bar's select so a
-   * member can reach their own submissions without opening a dropdown. The
-   * select keeps the rest, and neither control offers a filter the other holds.
+   * The rail owns who the proposals belong to so a member can reach their own
+   * submissions without opening a dropdown; the select beside it owns what
+   * became of them. Two questions, two controls, neither answering the other's.
    */
   test('narrows the list to proposals the reader submitted', async ({
     authenticatedPage,
@@ -118,17 +148,15 @@ test.describe('Proposal filter tabs', () => {
     });
     await expect(filterTabs.getByRole('tab')).toHaveCount(2);
 
-    // The select keeps every filter the rail didn't take. Anchored at the end
-    // so the category select's "Filter proposals by category" doesn't match.
-    const filterSelect = authenticatedPage.getByRole('combobox', {
-      name: /Filter proposals$/,
+    // Beside the rail, the status axis as its own select.
+    const statusSelect = authenticatedPage.getByRole('combobox', {
+      name: 'Filter by status',
     });
-    await expect(filterSelect).toBeVisible();
+    await expect(statusSelect).toBeVisible();
 
-    await filterSelect.click();
-    // "Not advanced" stays reachable here; "My proposals" moved to the rail and
-    // must not be offered twice — two controls writing one filter is how they
-    // come to disagree.
+    await statusSelect.click();
+    // Status only: the rail owns who the proposals belong to, so that question
+    // must not also be answerable here.
     await expect(
       authenticatedPage.getByRole('option', { name: 'Not advanced' }),
     ).toBeVisible();
@@ -189,5 +217,61 @@ test.describe('Proposal filter tabs', () => {
     await expect(
       authenticatedPage.getByRole('link', { name: OTHER_PROPOSAL_TITLE }),
     ).toBeHidden();
+  });
+
+  /**
+   * The two axes narrow together. Both sides have a rejected proposal, so
+   * either axis alone would still show one that the pair must exclude — which
+   * is what makes this an AND and not one filter overwriting the other.
+   */
+  test('narrows by tab and status together', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { slug, name } = await createListingWithOneOwnProposal(org, {
+      withRejected: true,
+    });
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    const mineOpen = authenticatedPage.getByRole('link', {
+      name: MY_PROPOSAL_TITLE,
+    });
+    const mineRejected = authenticatedPage.getByRole('link', {
+      name: MY_REJECTED_TITLE,
+    });
+    const theirsRejected = authenticatedPage.getByRole('link', {
+      name: OTHER_REJECTED_TITLE,
+    });
+
+    await expect(mineOpen).toBeVisible({ timeout: 30_000 });
+    await expect(theirsRejected).toBeVisible();
+
+    await authenticatedPage.getByRole('tab', { name: 'My proposals' }).click();
+    await expect(theirsRejected).toBeHidden({ timeout: 15_000 });
+    await expect(mineRejected).toBeVisible();
+
+    await authenticatedPage
+      .getByRole('combobox', { name: 'Filter by status' })
+      .click();
+    await authenticatedPage
+      .getByRole('option', { name: 'Not advanced' })
+      .click();
+
+    // Mine and not advanced: the open one of mine goes, and so does the other
+    // side's rejected one. Either filter alone would have kept one of them.
+    await expect(mineOpen).toBeHidden({ timeout: 15_000 });
+    await expect(theirsRejected).toBeHidden();
+    await expect(mineRejected).toBeVisible();
+
+    // Both axes in the URL, so the pair is shareable.
+    const params = new URL(authenticatedPage.url()).searchParams;
+    expect(params.get('filter')).toBe('my-proposals');
+    expect(params.get('proposalStatus')).toBe('not-advanced');
   });
 });

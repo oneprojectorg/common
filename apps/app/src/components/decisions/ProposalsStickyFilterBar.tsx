@@ -3,11 +3,11 @@
 import {
   MyProposalsHeader,
   type ProposalControls,
+  type ProposalSelectControl,
   ProposalsFilterBar,
   type ProposalViewControls,
 } from './ProposalsFilterBar';
 import { StickyFilterBar } from './StickyFilterBar';
-import type { ProposalFilterItem } from './useProposalFilterItems';
 
 export interface ProposalsStickyFilterBarProps {
   /** Server count for the active filter. */
@@ -25,8 +25,8 @@ export interface ProposalsStickyFilterBarProps {
   view?: ProposalViewControls;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
-  /** The filters the select owns, resolved by `ProposalsList`. */
-  filterItems: ProposalFilterItem[];
+  /** The bar's leading select, resolved by `ProposalsList`. */
+  leadingSelect: ProposalSelectControl;
   /**
    * Px offset where the bar pins inside its scroll container — clears whatever
    * sticky chrome sits above it (e.g. the floating Overview/Current toggle).
@@ -47,7 +47,7 @@ export const ProposalsStickyFilterBar = ({
   controls,
   view,
   exportControl,
-  filterItems,
+  leadingSelect,
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => (
   <StickyFilterBar pinOffset={pinOffset}>
@@ -59,7 +59,7 @@ export const ProposalsStickyFilterBar = ({
         total={total}
         header={header}
         exportControl={exportControl}
-        filterItems={filterItems}
+        leadingSelect={leadingSelect}
       />
     ) : (
       (header ?? <MyProposalsHeader />)

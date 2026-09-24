@@ -6,10 +6,7 @@ import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  getDisplayedFilter,
-  type ProposalFilterItem,
-} from './useProposalFilterItems';
+import type { ProposalFilterItem } from './useProposalFilterItems';
 
 /**
  * "All proposals" / "My proposals" as a tab bar above the list, mirroring
@@ -35,25 +32,17 @@ export const ProposalFilterTabs = ({
 }: {
   /** The filters this rail owns, resolved by `ProposalsList`. */
   items: ProposalFilterItem[];
-  /**
-   * The filter the list is actually applying — which may be one the select
-   * holds rather than one of `items`; see `getDisplayedFilter`.
-   */
+  /** Always one of `items` — `ProposalsList` resolves it against them. */
   value: ProposalFilter;
   onValueChange: (filter: ProposalFilter) => void;
   children: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
-  // The select beside the list holds the filters this rail doesn't, so the
-  // active one is often not a tab here. Fall back to "All proposals" rather
-  // than handing Base UI a value with no trigger, which leaves the whole rail
-  // with nothing selected.
-  const displayedValue = getDisplayedFilter(items, value);
 
   return (
     <Tabs
       className="gap-6"
-      value={displayedValue}
+      value={value}
       // Base UI hands back an untyped tab value; resolving it against the item
       // list is the type guard, and it re-asserts the disabled rule on the way
       // through rather than trusting the trigger to be the only gate.
@@ -87,10 +76,7 @@ export const ProposalFilterTabs = ({
           than at the top of the list container: the rail sits above the panel,
           and from the container the sentinel crossed the pin line a rail-height
           early, fading the bar's hairline in mid-scroll. */}
-      <TabsContent
-        value={displayedValue}
-        className="relative flex grow flex-col gap-6"
-      >
+      <TabsContent value={value} className="relative flex grow flex-col gap-6">
         {children}
       </TabsContent>
     </Tabs>

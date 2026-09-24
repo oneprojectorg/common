@@ -236,15 +236,15 @@ test.describe('Default Hidden Proposals', () => {
     });
     await expect(adminProposalLink).toBeVisible({ timeout: 15_000 });
 
-    // Admins keep the filters visible — both controls: the tab bar above the
-    // list (a base-ui `tablist`) and the select that keeps the rest. Anchor the
-    // regex at the end so the category select's "Filter proposals by category"
-    // can't stand in for either.
+    // Admins keep the filters visible — both axes: the tab bar above the list
+    // (a base-ui `tablist`) and the status select beside category and sort.
+    // Anchor the tablist regex at the end so the category select's "Filter
+    // proposals by category" can't stand in for it.
     await expect(
       authenticatedPage.getByRole('tablist', { name: /Filter proposals$/ }),
     ).toBeVisible();
     await expect(
-      authenticatedPage.getByRole('combobox', { name: /Filter proposals$/ }),
+      authenticatedPage.getByRole('combobox', { name: 'Filter by status' }),
     ).toBeVisible();
 
     // The "Hidden" badge is scoped to the proposal card containing the link.
@@ -303,7 +303,7 @@ test.describe('Default Hidden Proposals', () => {
       otherMemberPage.getByRole('tablist', { name: /Filter proposals$/ }),
     ).toBeHidden();
     await expect(
-      otherMemberPage.getByRole('combobox', { name: /Filter proposals$/ }),
+      otherMemberPage.getByRole('combobox', { name: 'Filter by status' }),
     ).toBeHidden();
 
     // Wait for the empty-state copy (positive readiness signal) so we're not
@@ -395,7 +395,7 @@ test.describe('Default Hidden Proposals', () => {
       submitterPage.getByRole('tablist', { name: /Filter proposals$/ }),
     ).toBeHidden();
     await expect(
-      submitterPage.getByRole('combobox', { name: /Filter proposals$/ }),
+      submitterPage.getByRole('combobox', { name: 'Filter by status' }),
     ).toBeHidden();
 
     const submitterProposalLink = submitterPage.getByRole('link', {

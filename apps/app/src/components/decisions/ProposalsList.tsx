@@ -45,7 +45,10 @@ import {
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import type { ProposalControls } from './ProposalsFilterBar';
+import type {
+  ProposalControls,
+  ProposalSelectControl,
+} from './ProposalsFilterBar';
 import { NoProposalsFound, ProposalsGrid } from './ProposalsGrid';
 import {
   ProposalsMapView,
@@ -63,9 +66,12 @@ import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import { getProposalDetectionText } from './translationDetectionText';
 import {
+  PROPOSAL_STATUS_VALUES,
   TAB_BAR_FILTERS,
   type ProposalFilterItem,
+  type ProposalStatusFilter,
   useProposalFilterItems,
+  useProposalStatusItems,
 } from './useProposalFilterItems';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
@@ -281,7 +287,13 @@ const ResultsPhaseProposalsLoader = ({
 
 // fallow-ignore-next-line complexity
 export const ProposalsList = (props: ProposalsListProps) => {
-  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
+  const {
+    instanceId,
+    phase,
+    initialFilter,
+    excludeAssignedForReview,
+    showFilterTabs,
+  } = props;
 
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
@@ -315,25 +327,42 @@ export const ProposalsList = (props: ProposalsListProps) => {
     'filter',
     parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
   );
+  // Status is its own axis wherever the tab bar owns the filter, so the two
+  // compose: the My proposals tab plus Not advanced is the reader's own
+  // rejected proposals, not everyone's. Without a tab bar there is one control
+  // and one axis, and `filter` still carries REJECTED as it always did.
+  const [statusParam, setStatusFilter] = useQueryState(
+    'proposalStatus',
+    parseAsStringLiteral(PROPOSAL_STATUS_VALUES).withDefault('all'),
+  );
+
+  const everyFilter = useProposalFilterItems({ hasVoted, currentProfileId });
+  // The audience axis is the whole list without a tab bar, and only the tabs'
+  // own filters with one — REJECTED moved to the status select there.
+  const availableFilters = showFilterTabs
+    ? everyFilter.filter((filter) => TAB_BAR_FILTERS.includes(filter.id))
+    : everyFilter;
+
   const requestedFilter =
     filterParam ??
     initialFilter ??
     (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-  // The one list this surface offers, resolved here and handed to whichever
-  // control renders it, so the applied filter is always one the reader can see
-  // and leave. A stale link is the case that matters: `?filter=my-ballot`
-  // opened by someone who hasn't voted, `?filter=my-proposals` with no
-  // profile, or `?filter=rejected` on a tabbed surface would otherwise filter
-  // the list by a criterion no control offers — leaving the bar with nothing
-  // active over results the reader can't explain.
-  const availableFilters = useProposalFilterItems({
-    hasVoted,
-    currentProfileId,
-  });
+  // Resolved against the list the surface actually offers, so a stale link
+  // can't filter by a criterion with no control: `?filter=my-ballot` opened by
+  // someone who hasn't voted, or `?filter=my-proposals` with no profile, falls
+  // back to All rather than leaving the bar with nothing active over results
+  // the reader can't explain.
   const proposalFilter =
     availableFilters.find(
       (filter) => filter.id === requestedFilter && !filter.isDisabled,
     )?.id ?? ProposalFilter.ALL;
+
+  // `?filter=rejected` predates the split and still points at the tab bar's
+  // param. Read it as the status axis it became rather than dropping it.
+  const proposalStatus =
+    showFilterTabs && requestedFilter === ProposalFilter.REJECTED
+      ? 'not-advanced'
+      : statusParam;
 
   // Deferred so a filter change is non-urgent: the suspense boundary wraps all
   // of ProposalsList, so an urgent update would swap the bar (and whatever has
@@ -343,6 +372,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
   const appliedCategory = useDeferredValue(selectedCategory);
   const appliedSortOrder = useDeferredValue(sortOrder);
   const appliedFilter = useDeferredValue(proposalFilter);
+  const appliedStatus = useDeferredValue(proposalStatus);
 
   // Against the debounced term, not the raw field: otherwise the spinner lights
   // on the first keystroke and holds through the debounce.
@@ -351,7 +381,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
     isSearchFetching ||
     appliedCategory !== selectedCategory ||
     appliedSortOrder !== sortOrder ||
-    appliedFilter !== proposalFilter;
+    appliedFilter !== proposalFilter ||
+    appliedStatus !== proposalStatus;
 
   const queryParams = useMemo<ProposalQueryParams>(() => {
     const params: ProposalQueryParams = {
@@ -372,11 +403,18 @@ export const ProposalsList = (props: ProposalsListProps) => {
     }
 
     // Filter in SQL so pagination and the total count stay accurate per filter.
+    // The two axes are separate query params and the endpoint ANDs them, so
+    // "my proposals" and "not advanced" narrow the list together.
     if (appliedFilter === ProposalFilter.MY_PROPOSALS && currentProfileId) {
       params.submittedByProfileId = currentProfileId;
     } else if (appliedFilter === ProposalFilter.MY_BALLOT && currentProfileId) {
       params.votedByProfileId = currentProfileId;
-    } else if (appliedFilter === ProposalFilter.REJECTED) {
+    }
+
+    if (
+      appliedStatus === 'not-advanced' ||
+      appliedFilter === ProposalFilter.REJECTED
+    ) {
       params.status = ProposalStatus.REJECTED;
     }
 
@@ -388,6 +426,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
     appliedSortOrder,
     phase,
     appliedFilter,
+    appliedStatus,
     currentProfileId,
     excludeAssignedForReview,
   ]);
@@ -397,7 +436,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
   const hasActiveFilter =
     !!queryParams.search ||
     appliedCategory !== 'all-categories' ||
-    appliedFilter !== ProposalFilter.ALL;
+    appliedFilter !== ProposalFilter.ALL ||
+    appliedStatus !== 'all';
 
   const renderContent = (data: ProposalsLoaderRenderProps) => (
     <ProposalsListContent
@@ -407,6 +447,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
       availableFilters={availableFilters}
       proposalFilter={proposalFilter}
       setProposalFilter={setProposalFilter}
+      proposalStatus={proposalStatus}
+      setStatusFilter={setStatusFilter}
       selectedCategory={selectedCategory}
       setSelectedCategory={setSelectedCategory}
       sortOrder={sortOrder}
@@ -445,6 +487,8 @@ type ProposalsListContentProps = ProposalsListProps &
     availableFilters: ProposalFilterItem[];
     proposalFilter: ProposalFilter;
     setProposalFilter: (filter: ProposalFilter) => void;
+    proposalStatus: ProposalStatusFilter;
+    setStatusFilter: (status: ProposalStatusFilter) => void;
     selectedCategory: string;
     setSelectedCategory: (value: string) => void;
     sortOrder: string;
@@ -481,6 +525,8 @@ const ProposalsListContent = ({
   infiniteScrollRef,
   proposalFilter,
   setProposalFilter,
+  proposalStatus,
+  setStatusFilter,
   selectedCategory,
   setSelectedCategory,
   sortOrder,
@@ -494,7 +540,8 @@ const ProposalsListContent = ({
   const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
   const isInVotingPhase = !!currentPhase && isVotingPhase(currentPhase);
   const t = useTranslations();
-  const { user } = useUser();
+
+  const statusItems = useProposalStatusItems();
 
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -523,7 +570,6 @@ const ProposalsListContent = ({
     list.scrollIntoView({ block: 'start' });
   }, [queryParams, pinOffset]);
 
-  const currentProfileId = user?.currentProfile?.id;
   const [[{ items: categories }, voteStatus, instance]] =
     trpc.useSuspenseQueries((t) => [
       t.decision.getCategories({
@@ -548,7 +594,6 @@ const ProposalsListContent = ({
     defaultView: 'map',
   });
 
-  const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
 
@@ -646,7 +691,8 @@ const ProposalsListContent = ({
     setSearch('');
     setSelectedCategory('all-categories');
     setProposalFilter(ProposalFilter.ALL);
-  }, [setSearch, setSelectedCategory, setProposalFilter]);
+    setStatusFilter('all');
+  }, [setSearch, setSelectedCategory, setProposalFilter, setStatusFilter]);
 
   // The applied term, not the live field: it names the search the empty result
   // actually came from, which is the one the reader is owed an answer about.
@@ -665,15 +711,11 @@ const ProposalsListContent = ({
     search,
     setSearch,
     isSearchPending: isSearchFetching,
-    proposalFilter,
-    setProposalFilter,
     selectedCategory,
     setSelectedCategory,
     sortOrder,
     setSortOrder,
     categories,
-    hasVoted,
-    currentProfileId,
     decisionSlug,
   };
 
@@ -706,15 +748,33 @@ const ProposalsListContent = ({
   // non-admins, and never above an unfiltered-empty list with nothing to filter.
   const showTabs = showFilterTabs && showFilterBar && !hideFilters;
 
-  // One filter, two controls, no overlap: the rail takes "All proposals" and
-  // "My proposals", the select keeps the rest beside category and sort. Split
-  // from one list so a filter can never be dropped by both or offered by both.
-  const tabFilterItems = availableFilters.filter((item) =>
-    TAB_BAR_FILTERS.includes(item.id),
-  );
-  const selectFilterItems = showTabs
-    ? availableFilters.filter((item) => item.id !== ProposalFilter.MY_PROPOSALS)
-    : availableFilters;
+  // Two axes where the rail renders, one where it doesn't. The rail asks whose
+  // proposals these are; the select beside category and sort asks what became
+  // of them, and the query ANDs the two. Without a rail the select is the only
+  // control, so it keeps the single combined filter it always had.
+  const leadingSelect: ProposalSelectControl = showTabs
+    ? {
+        items: statusItems,
+        value: proposalStatus,
+        onChange: (id) => {
+          const selected = statusItems.find((item) => item.id === id);
+          if (selected) {
+            setStatusFilter(selected.id);
+          }
+        },
+        label: t('decisions.review.filterByStatusLabel'),
+      }
+    : {
+        items: availableFilters,
+        value: proposalFilter,
+        onChange: (id) => {
+          const selected = availableFilters.find((item) => item.id === id);
+          if (selected) {
+            setProposalFilter(selected.id);
+          }
+        },
+        label: t('decisions.proposals.filterProposalsLabel'),
+      };
 
   const listBody = (
     <>
@@ -726,7 +786,7 @@ const ProposalsListContent = ({
           header={header?.(total)}
           // Omitted when the phase hides proposals from non-admins.
           controls={hideFilters ? undefined : controls}
-          filterItems={selectFilterItems}
+          leadingSelect={leadingSelect}
           // Omitted when the process collects no location.
           view={
             hasLocationField
@@ -869,7 +929,7 @@ const ProposalsListContent = ({
     >
       {showTabs ? (
         <ProposalFilterTabs
-          items={tabFilterItems}
+          items={availableFilters}
           value={proposalFilter}
           onValueChange={setProposalFilter}
         >

@@ -1,6 +1,5 @@
 'use client';
 
-import type { ProposalFilter } from '@op/api/encoders';
 import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
@@ -10,10 +9,16 @@ import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
-import {
-  getDisplayedFilter,
-  type ProposalFilterItem,
-} from './useProposalFilterItems';
+
+/** The bar's leading select — the proposal filter, or the status axis where a
+ *  tab bar already owns the filter. One shape so the bar doesn't care which. */
+export interface ProposalSelectControl {
+  items: { id: string; label: string; isDisabled?: boolean }[];
+  value: string;
+  onChange: (id: string) => void;
+  /** Accessible name; the two axes are different questions. */
+  label: string;
+}
 
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
@@ -21,15 +26,11 @@ export interface ProposalControls {
   setSearch: (value: string) => void;
   /** A query is in flight — results on screen are for an earlier term. */
   isSearchPending: boolean;
-  proposalFilter: ProposalFilter;
-  setProposalFilter: (filter: ProposalFilter) => void;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   sortOrder: string;
   setSortOrder: (sort: string) => void;
   categories: { id: string; name: string }[];
-  hasVoted: boolean;
-  currentProfileId: string | undefined;
   decisionSlug: string | undefined;
 }
 
@@ -84,7 +85,7 @@ export const ProposalsFilterBar = ({
   total,
   header,
   exportControl,
-  filterItems,
+  leadingSelect,
 }: {
   controls: ProposalControls;
   view?: ProposalViewControls;
@@ -96,11 +97,8 @@ export const ProposalsFilterBar = ({
   header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
-  /**
-   * The filters this select owns, resolved by `ProposalsList` — the tab bar
-   * above the list takes the rest where it renders.
-   */
-  filterItems: ProposalFilterItem[];
+  /** Resolved by `ProposalsList`, which owns both filter axes. */
+  leadingSelect: ProposalSelectControl;
 }) => {
   const t = useTranslations();
 
@@ -130,20 +128,20 @@ export const ProposalsFilterBar = ({
           scrollable into view instead of stranded past the start edge. */}
       <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
         <ResponsiveSelect
-          // The tab bar may be holding the active filter; this select then
-          // shows its own neutral option rather than a blank trigger.
-          selectedKey={getDisplayedFilter(filterItems, controls.proposalFilter)}
-          // Resolved against the list rather than re-deriving the rule, so a
-          // filter marked inert — "My proposals" without a profile — can't be
+          selectedKey={leadingSelect.value}
+          // Resolved against the list rather than re-deriving the rule, so an
+          // option marked inert — "My proposals" without a profile — can't be
           // picked here.
           onSelectionChange={(key) => {
-            const selected = filterItems.find((item) => item.id === key);
+            const selected = leadingSelect.items.find(
+              (item) => item.id === key,
+            );
             if (selected && !selected.isDisabled) {
-              controls.setProposalFilter(selected.id);
+              leadingSelect.onChange(selected.id);
             }
           }}
-          aria-label={t('decisions.proposals.filterProposalsLabel')}
-          items={filterItems}
+          aria-label={leadingSelect.label}
+          items={leadingSelect.items}
           className="min-w-40 shrink-0"
         />
         <CategoryFilterSelect
