@@ -42,6 +42,16 @@
       "dependsOn": ["topo", "@op/styles#build"],
       "outputs": ["coverage/**"]
     },
+    // `@op/common` and `@op/api` both run integration tests against the one
+    // test Supabase, so `@op/api` waits for `@op/common`. CI runs
+    // `pnpm test:coverage`, so the chain is on both `test` and `test:coverage`.
+    "@op/api#test": {
+      "dependsOn": ["topo", "@op/common#test"]
+    },
+    "@op/api#test:coverage": {
+      "dependsOn": ["topo", "@op/styles#build", "@op/common#test:coverage"],
+      "outputs": ["coverage/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
