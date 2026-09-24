@@ -9,11 +9,8 @@ import {
   getCursorCondition,
 } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
-import { getProposalDocumentsContent } from '../getProposalDocumentsContent';
 import { parseProposalData } from '../proposalDataSchema';
-import { buildProposalListPreview } from '../proposalListPreview';
 import { resolveProposalListScope } from '../resolveProposalListScope';
-import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import type { InstancePhaseRef } from '../schemas/instance';
 import { getInstancePhases } from '../schemas/instanceData';
 import {
@@ -82,85 +79,55 @@ export async function listAssignableProposals({
     ? decodeCursor<{ value: string; id: string }>(cursor)
     : undefined;
 
-  const [rows, proposalTemplate] = await Promise.all([
-    db.query.proposals.findMany({
-      where: {
-        RAW: (table) =>
-          and(
-            scope.buildWhereClause(table),
-            notInArray(table.status, PIPELINE_INELIGIBLE_STATUSES),
-            getCursorCondition({
-              column: table.createdAt,
-              tieBreakerColumn: table.id,
-              cursor: decodedCursor,
-              direction: 'desc',
-            }),
-          )!,
+  const rows = await db.query.proposals.findMany({
+    where: {
+      RAW: (table) =>
+        and(
+          scope.buildWhereClause(table),
+          notInArray(table.status, PIPELINE_INELIGIBLE_STATUSES),
+          getCursorCondition({
+            column: table.createdAt,
+            tieBreakerColumn: table.id,
+            cursor: decodedCursor,
+            direction: 'desc',
+          }),
+        )!,
+    },
+    columns: {
+      id: true,
+      profileId: true,
+      proposalData: true,
+      submittedByProfileId: true,
+      createdAt: true,
+    },
+    with: {
+      profile: { columns: { name: true } },
+      submittedBy: { columns: { name: true } },
+      reviewAssignments: {
+        where: { processInstanceId, phaseId, reviewerProfileId },
+        columns: { id: true },
       },
-      columns: {
-        id: true,
-        profileId: true,
-        proposalData: true,
-        submittedByProfileId: true,
-        createdAt: true,
-      },
-      with: {
-        profile: { columns: { name: true } },
-        submittedBy: { columns: { name: true } },
-        reviewAssignments: {
-          where: { processInstanceId, phaseId, reviewerProfileId },
-          columns: { id: true },
-        },
-      },
-      // `id` tie-break: rows sharing a `createdAt` page in an undefined order
-      // without it, which skips and repeats rows.
-      orderBy: (table, { desc }) => [desc(table.createdAt), desc(table.id)],
-      limit: limit + 1,
-    }),
-    resolveProposalTemplate(
-      instance.instanceData as Record<string, unknown> | null,
-      instance.processId,
-    ),
-  ]);
+    },
+    // `id` tie-break: rows sharing a `createdAt` page in an undefined order
+    // without it, which skips and repeats rows.
+    orderBy: (table, { desc }) => [desc(table.createdAt), desc(table.id)],
+    limit: limit + 1,
+  });
 
   const hasMore = rows.length > limit;
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
-  // Resolved as the proposal list resolves them, so a title or category chip
-  // reads the same here as everywhere else.
-  const documentContentMap = await getProposalDocumentsContent(
-    pageRows.map((row) => {
-      const parsed = parseProposalData(row.proposalData);
-      return {
-        id: row.id,
-        proposalData: row.proposalData,
-        proposalTemplate,
-        collaborationDocVersionId: parsed.collaborationDocVersionId,
-      };
-    }),
-    { onFetchError: 'omit' },
-  );
-
-  const items = pageRows.map((row) => {
-    const parsedProposalData = parseProposalData(row.proposalData);
-    const { systemFieldOverrides } = buildProposalListPreview({
-      documentContent: documentContentMap.get(row.id),
-      proposalTemplate,
-      existingBudget: parsedProposalData.budget,
-    });
-
-    return {
-      id: row.id,
-      profileId: row.profileId,
-      proposalData: { ...parsedProposalData, ...systemFieldOverrides },
-      profileName: row.profile?.name ?? null,
-      authorName: row.submittedBy?.name ?? null,
-      isAssigned: row.reviewAssignments.length > 0,
-      // `submittedByProfileId`, matching the self-filter in
-      // `insertReviewAssignments` — the write would refuse to create this row.
-      isOwn: row.submittedByProfileId === reviewerProfileId,
-    };
-  });
+  const items = pageRows.map((row) => ({
+    id: row.id,
+    profileId: row.profileId,
+    proposalData: parseProposalData(row.proposalData),
+    profileName: row.profile?.name ?? null,
+    authorName: row.submittedBy?.name ?? null,
+    isAssigned: row.reviewAssignments.length > 0,
+    // `submittedByProfileId`, matching the self-filter in
+    // `insertReviewAssignments` — the write would refuse to create this row.
+    isOwn: row.submittedByProfileId === reviewerProfileId,
+  }));
 
   const lastRow = pageRows[pageRows.length - 1];
 

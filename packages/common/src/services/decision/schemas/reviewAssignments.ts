@@ -61,16 +61,15 @@ export type ReviewerAssignments = z.infer<typeof reviewerAssignmentsSchema>;
 // ── Assignable proposals (the manage-assignments pick list) ───────────
 
 /**
- * One proposal a reviewer could be assigned. `proposalData` carries the same
- * fragment-resolved system fields the proposal list ships, so a title or
- * category chip here cannot disagree with the rest of the app.
+ * One proposal a reviewer could be assigned. `proposalData` is the stored
+ * snapshot (the categories come from it); the title comes from `profileName`.
  */
 export const assignableProposalSchema = z.object({
   id: z.uuid(),
   /** Card translations are keyed on the proposal's own profile. */
   profileId: z.uuid(),
   proposalData: proposalDataSchema,
-  /** The proposal profile's name: the live title, and the title fallback. */
+  /** The proposal profile's name: the editor's autosave keeps it current. */
   profileName: z.string().nullable(),
   authorName: z.string().nullable(),
   isAssigned: z.boolean(),

@@ -708,7 +708,7 @@ function RowSkeletons({ count }: { count: number }) {
   );
 }
 
-/** The precedence `useProposalCardData` applies, over a row the service already resolved. */
+/** Titles prefer `profileName`: `proposalData.title` is a creation-time snapshot. */
 function useAssignableRowData(row: AssignableProposal) {
   const t = useTranslations();
   const cardTranslation = useCardTranslation(row.profileId);
@@ -716,8 +716,8 @@ function useAssignableRowData(row: AssignableProposal) {
   return {
     titleText:
       cardTranslation?.title ??
-      (row.proposalData.title ||
-        row.profileName ||
+      (row.profileName ||
+        row.proposalData.title ||
         t('decisions.proposals.untitledProposal')),
     displayCategories: cardTranslation?.category
       ? cardTranslation.category
