@@ -124,18 +124,15 @@ test.describe('Proposal side sheet', () => {
   });
 });
 
-/**
- * Below `sm` the panel is a full-screen modal, not a side sheet. Geometry is
- * the contract, as in `mobile-fullscreen-modal.spec.ts`, so it is measured.
- */
-test.describe('Proposal side sheet on mobile', () => {
+/** Below `sm` there is no panel — the title link just goes to the page. */
+test.describe('Proposal list on mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('fills the viewport with no edge border', async ({
+  test('a proposal title goes straight to the proposal page', async ({
     authenticatedPage,
     org,
   }) => {
-    const { instanceSlug } = await seedOneProposalDecision(org);
+    const { instanceSlug, profileId } = await seedOneProposalDecision(org);
 
     await openProposalList(
       authenticatedPage,
@@ -143,28 +140,15 @@ test.describe('Proposal side sheet on mobile', () => {
     );
     await authenticatedPage.getByRole('link', { name: PROPOSAL_TITLE }).click();
 
-    const sheet = authenticatedPage.getByRole('dialog', { name: 'Proposal' });
-    await expect(sheet).toBeVisible();
-
-    const geometry = await sheet.evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      return {
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-        borderInlineStart: getComputedStyle(element).borderLeftWidth,
-      };
-    });
-
-    expect(geometry.x).toBe(0);
-    expect(geometry.y).toBe(0);
-    expect(geometry.width).toBe(geometry.viewportWidth);
-    expect(geometry.height).toBe(geometry.viewportHeight);
-    // The hairline that would give it away as a panel rather than a modal.
-    expect(geometry.borderInlineStart).toBe('0px');
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(`/decisions/${instanceSlug}/proposal/${profileId}`),
+    );
+    await expect(
+      authenticatedPage.getByRole('heading', { name: PROPOSAL_TITLE }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(
+      authenticatedPage.getByRole('dialog', { name: 'Proposal' }),
+    ).toBeHidden();
   });
 });
 

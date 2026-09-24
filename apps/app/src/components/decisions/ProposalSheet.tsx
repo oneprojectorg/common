@@ -70,7 +70,6 @@ export function ProposalSheet({
         side={isRtl ? 'left' : 'right'}
         // sense labels its built-in close "Close" in English.
         showCloseButton={false}
-        fullScreenOnMobile
         className="w-full gap-0 p-0 sm:max-w-2xl"
       >
         {/* The proposal's own H1 arrives with the query, so the dialog's

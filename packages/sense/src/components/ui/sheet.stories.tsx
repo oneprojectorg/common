@@ -110,22 +110,3 @@ export const CustomWidth: Story = {
     </div>
   ),
 };
-
-export const FullScreenOnMobile: Story = {
-  render: () => (
-    <Sheet>
-      <SheetTrigger render={<Button variant="outline" />}>
-        Open panel
-      </SheetTrigger>
-      <SheetContent fullScreenOnMobile className="w-full sm:max-w-2xl">
-        <SheetHeader>
-          <SheetTitle>Full screen below `sm`</SheetTitle>
-          <SheetDescription>
-            Narrow the viewport past the `sm` breakpoint: the edge border and
-            the slide drop away, so it reads as a modal rather than a panel.
-          </SheetDescription>
-        </SheetHeader>
-      </SheetContent>
-    </Sheet>
-  ),
-};
