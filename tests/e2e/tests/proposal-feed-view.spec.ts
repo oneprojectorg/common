@@ -106,8 +106,8 @@ test.describe('Proposal Feed view', () => {
       .toBe(PAGE_LIMIT);
 
     // Pull the last loaded card into view on each tick, which brings the
-    // sentinel (the feed's last list item, above its bottom centering padding)
-    // into the viewport and cascades through the remaining pages.
+    // sentinel (the feed's last list item) into the viewport and cascades
+    // through the remaining pages.
     await expect
       .poll(
         async () => {

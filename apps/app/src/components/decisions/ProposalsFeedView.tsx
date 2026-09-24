@@ -12,10 +12,7 @@ export interface ProposalsFeedViewProps {
   /** The same card the map's list column renders, so the two can't disagree. */
   renderCard: RenderProposalCard;
   /**
-   * Rendered after the last card and inside the feed's own bottom padding —
-   * hosts the infinite-scroll sentinel, which is why it goes inside rather than
-   * below: the padding is a third of the viewport, so a sentinel underneath it
-   * would only trip once the reader had scrolled past the end of the feed.
+   * Rendered as the feed's last list item — hosts the infinite-scroll sentinel.
    * Null once there is no next page to fetch.
    */
   listFooter: ReactNode;
@@ -43,7 +40,11 @@ export function ProposalsFeedView({
   }
 
   return (
-    <ProposalFeed>
+    // `centerFirstAndLast` pads the list by a third of the scroll container so
+    // the end cards can reach the focal centre. In the browse page that reads
+    // as the whole feed being pushed down away from the filter bar, so the
+    // cards start where the grid's would.
+    <ProposalFeed centerFirstAndLast={false}>
       {proposals.map((proposal) => (
         <ProposalFeedItem key={proposal.id}>
           {renderCard(proposal, CARD_OPTIONS)}
