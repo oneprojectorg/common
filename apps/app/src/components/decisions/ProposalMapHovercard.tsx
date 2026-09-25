@@ -11,6 +11,8 @@ import { ProposalCard, type ProposalCardAuthor } from '@op/sense/ProposalCard';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { useOpenProposalInSheet } from './proposalSheetState';
+
 interface ProposalMapHovercardProps {
   proposal: Proposal;
   /** Proposal detail href — the whole card navigates here on click. */
@@ -34,10 +36,12 @@ export function ProposalMapHovercard({
   // district) it falls inside as a category — see `decision_boundaries`.
   const districts = normalizeProposalCategories(category);
   const authors = getHovercardAuthors(proposal.submittedBy);
+  const openInSheet = useOpenProposalInSheet();
 
   return (
     <Link
       href={href}
+      onClick={openInSheet(proposal.profileId)}
       // `w-fit` + min/max-w clamps the card between 13rem and 20rem so
       // short titles don't stretch and long titles wrap. The card chrome
       // (border/bg/padding) comes from the pin-variant ProposalCard; the

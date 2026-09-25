@@ -6,7 +6,6 @@ import type { DecisionAccess } from '@op/api/encoders';
 import { PAGE_LIMIT, areCommentsAllowed, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
-import { useDirection } from '@op/sense/Direction';
 import {
   Empty,
   EmptyDescription,
@@ -52,7 +51,6 @@ export const DecisionSidePanel = ({
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
   // Sheet's side is physical, so it has to be mirrored to stay at inline-end.
-  const isRtl = useDirection() === 'rtl';
 
   const isOpen = panel !== null;
   const close = useCallback(() => setPanel(null), [setPanel]);
@@ -79,7 +77,7 @@ export const DecisionSidePanel = ({
       }}
     >
       <SheetContent
-        side={isRtl ? 'left' : 'right'}
+        side="inline-end"
         showCloseButton={false}
         // Desktop: sit below the fixed decision header (h-12/h-14) instead of
         // running full-height under it. Mobile stays full-screen.

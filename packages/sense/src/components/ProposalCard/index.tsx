@@ -1,6 +1,11 @@
 'use client';
 
-import type { ComponentProps, ElementType, ReactNode } from 'react';
+import type {
+  ComponentProps,
+  ElementType,
+  MouseEventHandler,
+  ReactNode,
+} from 'react';
 import { useId } from 'react';
 
 /** Props the title/author link element must accept (a plain `<a>`, an i18n
@@ -10,6 +15,7 @@ import { useId } from 'react';
 type ProposalCardLinkProps = {
   href: string;
   className?: string;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
   children?: ReactNode;
 };
 import type { IconType } from 'react-icons';
@@ -66,6 +72,8 @@ export interface ProposalCardProps extends Omit<
    * a plain `<a>`. Must accept `href`, `className`, and children.
    */
   linkComponent?: ElementType<ProposalCardLinkProps>;
+  /** Click handler on the title link; `preventDefault()` cancels the navigation. */
+  onTitleClick?: MouseEventHandler<HTMLAnchorElement>;
   /** Visibility/status badge above the title (e.g. Draft, Hidden, Flagged). */
   headerBadge?: ReactNode;
   /** Alert below the title — typically a `StatusBadge` (e.g. "Revision requested"). */
@@ -108,6 +116,7 @@ export function ProposalCard({
   title,
   href,
   linkComponent,
+  onTitleClick,
   headerBadge,
   alert,
   aside,
@@ -148,7 +157,11 @@ export function ProposalCard({
           dir="auto"
           className="line-clamp-2 font-serif text-label text-foreground ltr:text-left rtl:text-right"
         >
-          <TitleLink href={href} linkComponent={linkComponent}>
+          <TitleLink
+            href={href}
+            linkComponent={linkComponent}
+            onClick={onTitleClick}
+          >
             {title}
           </TitleLink>
         </h3>
@@ -189,7 +202,11 @@ export function ProposalCard({
             selected ? 'text-teal-600' : 'text-foreground',
           )}
         >
-          <TitleLink href={href} linkComponent={linkComponent}>
+          <TitleLink
+            href={href}
+            linkComponent={linkComponent}
+            onClick={onTitleClick}
+          >
             <bdi>{title}</bdi>
           </TitleLink>
         </h3>
@@ -275,10 +292,12 @@ export function ProposalCard({
 function TitleLink({
   href,
   linkComponent: Link = 'a',
+  onClick,
   children,
 }: {
   href?: string;
   linkComponent?: ElementType<ProposalCardLinkProps>;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
   children: ReactNode;
 }) {
   if (!href) {
@@ -287,6 +306,7 @@ function TitleLink({
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring/50"
     >
       {children}

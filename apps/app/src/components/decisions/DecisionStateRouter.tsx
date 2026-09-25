@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
+import { ProposalSheetProvider } from './ProposalSheetProvider';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -153,15 +154,22 @@ export function DecisionStateRouter({
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
-  if (useLegacy) {
-    return <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />;
-  }
   return (
-    <DecisionStateRouterNew
-      instanceId={instanceId}
+    <ProposalSheetProvider
       slug={slug}
+      instanceId={instanceId}
       decisionSlug={decisionSlug}
-      decisionProfileId={decisionProfileId}
-    />
+    >
+      {useLegacy ? (
+        <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />
+      ) : (
+        <DecisionStateRouterNew
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+          decisionProfileId={decisionProfileId}
+        />
+      )}
+    </ProposalSheetProvider>
   );
 }

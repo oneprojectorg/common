@@ -20,6 +20,7 @@ import { LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView, ProposalRestrictionBadge } from './ProposalCard';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 /**
  * The proposals merged into this one, listed above the comments. A merge
@@ -66,6 +67,7 @@ function ContributingIdeasSuspense({
 }) {
   const t = useTranslations();
   const headingId = useId();
+  const openInSheet = useOpenProposalInSheet();
 
   const [{ items: contributingProposals }] =
     trpc.decision.listContributingProposals.useSuspenseQuery({
@@ -100,6 +102,7 @@ function ContributingIdeasSuspense({
             <ProposalCardView
               proposal={contributingProposal}
               href={`${decisionRoot}/proposal/${contributingProposal.profileId}`}
+              onTitleClick={openInSheet(contributingProposal.profileId)}
               headerBadge={
                 <ProposalRestrictionBadge proposal={contributingProposal} />
               }

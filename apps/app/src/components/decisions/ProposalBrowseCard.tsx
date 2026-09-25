@@ -12,6 +12,7 @@ import {
   ProposalCardView,
 } from './ProposalCard';
 import { proposalEditHref, proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 interface ProposalBrowseCardProps {
   proposal: Proposal;
@@ -44,6 +45,7 @@ export function ProposalBrowseCard({
 }: ProposalBrowseCardProps) {
   const canManageProposals = permissions?.admin ?? false;
   const canEngage = canEngageWithProposals(permissions);
+  const openInSheet = useOpenProposalInSheet();
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
   const isEditable = Boolean(proposal.isEditable);
@@ -75,6 +77,7 @@ export function ProposalBrowseCard({
     <ProposalCardView
       proposal={proposal}
       href={viewHref}
+      onTitleClick={openInSheet(proposal.profileId)}
       aside={
         showMenu ? (
           <ProposalCardMenu

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
+import type { ProposalEngagement as EngagementState } from '@/hooks/useProposalEngagement';
 import { formatDate } from '@/utils/formatting';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
@@ -65,6 +66,17 @@ export type ProposalEngagement = {
   /** Disables both toggles while a like/follow write is in flight. */
   isPending?: boolean;
 };
+
+/** `undefined` in, `undefined` out: a viewer who can't act gets plain counts. */
+export const toPreviewEngagement = (
+  engagement: EngagementState | undefined,
+): ProposalEngagement | undefined =>
+  engagement && {
+    isLiked: engagement.isLiked,
+    isFollowing: engagement.isFollowed,
+    onLike: engagement.onLike,
+    onFollow: engagement.onFollow,
+  };
 
 export type ProposalPreviewProps = {
   proposal: Proposal;

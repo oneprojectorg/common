@@ -1444,7 +1444,10 @@
       "unlikeError": "Não foi possível remover sua curtida. Tente novamente.",
       "unfollowError": "Não foi possível deixar de seguir esta proposta. Tente novamente.",
       "notSelectedNotificationTemplate": "Olá {name},\n\nObrigado por enviar \"{proposal}\". Após a votação comunitária, ela não foi selecionada nesta rodada.\n\nOs resultados estão publicados na página da decisão e esperamos que participe novamente.",
-      "selectedNotificationTemplate": "Olá {name},\n\nBoas notícias: sua proposta \"{proposal}\" foi selecionada com base nos resultados da votação!\n\nEm breve enviaremos os próximos passos e o valor final."
+      "selectedNotificationTemplate": "Olá {name},\n\nBoas notícias: sua proposta \"{proposal}\" foi selecionada com base nos resultados da votação!\n\nEm breve enviaremos os próximos passos e o valor final.",
+      "openFullProposalAction": "Abrir a proposta completa",
+      "sheetLoadErrorTitle": "Não foi possível carregar esta proposta",
+      "sheetLoadErrorHint": "Pode ter sido removida ou talvez você não tenha acesso a ela."
     },
     "decisionsLabel": "Decisões",
     "decisionLabel": "Decisão",

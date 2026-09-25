@@ -1444,7 +1444,10 @@
       "unlikeError": "Impossible de retirer votre mention « J'aime ». Veuillez réessayer.",
       "unfollowError": "Impossible de ne plus suivre cette proposition. Veuillez réessayer.",
       "notSelectedNotificationTemplate": "Bonjour {name},\n\nMerci d’avoir soumis « {proposal} ». À l’issue du vote communautaire, cette proposition n’a pas été retenue ce tour-ci.\n\nLes résultats sont publiés sur la page de la décision, et nous espérons vous revoir participer.",
-      "selectedNotificationTemplate": "Bonjour {name},\n\nBonne nouvelle : votre proposition « {proposal} » a été retenue d’après les résultats du vote.\n\nNous reviendrons vers vous très vite avec les prochaines étapes et le montant final."
+      "selectedNotificationTemplate": "Bonjour {name},\n\nBonne nouvelle : votre proposition « {proposal} » a été retenue d’après les résultats du vote.\n\nNous reviendrons vers vous très vite avec les prochaines étapes et le montant final.",
+      "openFullProposalAction": "Ouvrir la proposition complète",
+      "sheetLoadErrorTitle": "Impossible de charger cette proposition",
+      "sheetLoadErrorHint": "Elle a peut-être été supprimée, ou vous n'y avez peut-être pas accès."
     },
     "decisionsLabel": "Décisions",
     "decisionLabel": "Décision",

@@ -490,6 +490,21 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
     await expect(authenticatedPage.getByText('$8,000').first()).toBeVisible();
 
+    // The surface furthest from the browse list, so it proves the sheet is
+    // mounted per decision page rather than per list (ONE-1670).
+    await authenticatedPage
+      .getByRole('link', { name: 'Proposal Alpha' })
+      .click();
+    const sheet = authenticatedPage.getByRole('dialog', { name: 'Proposal' });
+    await expect(
+      sheet.getByRole('heading', { name: 'Proposal Alpha' }),
+    ).toBeVisible({ timeout: 15_000 });
+    await sheet.getByRole('button', { name: 'Close' }).click();
+    await expect(sheet).toBeHidden();
+    // After the close, not during: a modal sheet takes the page behind it out
+    // of the a11y tree.
+    await expect(fundedHeading).toBeVisible();
+
     // Selected proposal — last phase, in selection: view page shows both
     // the allocated amount and the "$X requested" secondary label.
     await authenticatedPage.goto(

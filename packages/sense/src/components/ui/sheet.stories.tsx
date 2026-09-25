@@ -1,4 +1,5 @@
 import { Button } from '@op/sense/Button';
+import { DirectionProvider } from '@op/sense/Direction';
 import { Input } from '@op/sense/Input';
 import { Label } from '@op/sense/Label';
 import {
@@ -77,6 +78,36 @@ export const Sides: Story = {
             </SheetFooter>
           </SheetContent>
         </Sheet>
+      ))}
+    </div>
+  ),
+};
+
+export const InlineSides: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      {(['ltr', 'rtl'] as const).map((direction) => (
+        <DirectionProvider key={direction} direction={direction}>
+          <Sheet>
+            <SheetTrigger render={<Button variant="outline" />}>
+              inline-end in {direction}
+            </SheetTrigger>
+            <SheetContent side="inline-end">
+              <SheetHeader>
+                <SheetTitle>Panel at the end of the reading order</SheetTitle>
+                <SheetDescription>
+                  `inline-end` is the right edge in LTR and the left edge in
+                  RTL, so a caller does not mirror the side itself.
+                </SheetDescription>
+              </SheetHeader>
+              <SheetFooter>
+                <SheetClose render={<Button variant="outline" />}>
+                  Close
+                </SheetClose>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        </DirectionProvider>
       ))}
     </div>
   ),
