@@ -8,15 +8,57 @@ import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
-import {
-  buildNonceContentSecurityPolicy,
-  createCspNonce,
-  getCspHeaderName,
-  parseCspMode,
-} from './lib/csp.mjs';
+import { createCspHeaderApplier } from './lib/csp.mjs';
 import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
+
+// Skip the domain on preview URLs, which use host-only cookies.
+const shouldSetCookieDomain =
+  (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
+  !isOnPreviewAppDomain;
+
+/**
+ * Refreshes the NEXT_LOCALE preference cookie when the URL's locale differs
+ * from what the browser last sent, returning null when there is nothing to
+ * set — in which case the caller starts from a plain forwarded response.
+ */
+const buildLocaleCookieResponse = (
+  request: NextRequest,
+  forwardedHeaders: Headers,
+): NextResponse | null => {
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.startsWith('/api')) {
+    return null;
+  }
+
+  const currentLocale = i18nConfig.locales.find(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+  );
+
+  if (!currentLocale) {
+    return null;
+  }
+
+  if (request.cookies.get('NEXT_LOCALE')?.value === currentLocale) {
+    return null;
+  }
+
+  const response = NextResponse.next({
+    request: { headers: forwardedHeaders },
+  });
+
+  response.cookies.set('NEXT_LOCALE', currentLocale, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+    secure: useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
+    sameSite: 'lax',
+    ...(shouldSetCookieDomain ? { domain: cookieOptionsDomain } : {}),
+  });
+
+  return response;
+};
 
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Log request
@@ -26,13 +68,12 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
 
-  // A fresh nonce per request, put on the forwarded request headers so Next's
-  // renderer reads it back out and stamps it on every script it emits. Routes
-  // this proxy does not match are prerendered or non-HTML; `next.config.mjs`
-  // covers those with a static policy, so no response carries two policies.
-  const cspHeaderName = getCspHeaderName(parseCspMode(process.env.CSP_MODE));
-  const contentSecurityPolicy = buildNonceContentSecurityPolicy({
-    nonce: createCspNonce(),
+  // A fresh nonce per request, stamped on the forwarded request headers so
+  // Next's renderer reads it back out and puts it on every script it emits.
+  // Routes this proxy does not match are prerendered or non-HTML;
+  // `next.config.mjs` covers those with a static policy, so no response ever
+  // carries two policies.
+  const applyCsp = createCspHeaderApplier({
     // True for the dev server and the e2e stack, false for every deployment
     // including previews. Local backends are reached over http/ws.
     isLocalEnvironment: useUrl.IS_DEVELOPMENT,
@@ -54,21 +95,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     headers.set('x-pathname', pathname);
     headers.set('x-search', request.nextUrl.search);
 
-    if (cspHeaderName) {
-      headers.set(cspHeaderName, contentSecurityPolicy);
-    }
-
-    return headers;
-  };
-
-  const withContentSecurityPolicy = <T extends NextResponse>(
-    response: T,
-  ): T => {
-    if (cspHeaderName) {
-      response.headers.set(cspHeaderName, contentSecurityPolicy);
-    }
-
-    return response;
+    return applyCsp(headers);
   };
 
   const pathnameIsMissingLocale = i18nConfig.locales.every(
@@ -77,48 +104,10 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   );
 
   // Set locale cookie if URL contains a locale (for preference learning)
-  let localeResponse: NextResponse | null = null;
-  if (!pathnameIsMissingLocale && !pathname.startsWith('/api')) {
-    const currentLocale = i18nConfig.locales.find(
-      (locale) =>
-        pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
-    );
-
-    if (currentLocale) {
-      const existingLocaleCookie = request.cookies.get('NEXT_LOCALE')?.value;
-
-      // Only set cookie if it's different from current cookie value
-      if (existingLocaleCookie !== currentLocale) {
-        localeResponse = NextResponse.next({
-          request: { headers: buildForwardedHeaders() },
-        });
-
-        // Set the locale cookie with proper domain options
-        // Skip domain on preview URLs (use host-only cookies)
-        const shouldSetCookieDomain =
-          (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
-          !isOnPreviewAppDomain;
-        localeResponse.cookies.set('NEXT_LOCALE', currentLocale, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 365, // 1 year
-          secure:
-            useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
-          sameSite: 'lax',
-          ...(shouldSetCookieDomain ? { domain: cookieOptionsDomain } : {}),
-        });
-      }
-    }
-  }
-
+  const forwardedHeaders = buildForwardedHeaders();
   let supabaseResponse =
-    localeResponse ||
-    NextResponse.next({
-      request: { headers: buildForwardedHeaders() },
-    });
-  // Skip domain on preview URLs (use host-only cookies)
-  const shouldSetCookieDomain =
-    (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
-    !isOnPreviewAppDomain;
+    buildLocaleCookieResponse(request, forwardedHeaders) ||
+    NextResponse.next({ request: { headers: forwardedHeaders } });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -181,7 +170,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       response.cookies.set(cookie);
     });
 
-    return withContentSecurityPolicy(response);
+    applyCsp(response.headers);
+
+    return response;
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
@@ -196,7 +187,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   //    return myNewResponse
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
-  return withContentSecurityPolicy(supabaseResponse);
+  applyCsp(supabaseResponse.headers);
+
+  return supabaseResponse;
 }
 
 // Next.js statically analyzes `config.matcher` at build time and cannot

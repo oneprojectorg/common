@@ -174,3 +174,32 @@ export const createCspNonce = () => {
 
   return btoa(String.fromCharCode(...bytes));
 };
+
+/**
+ * One request's policy, as a function that stamps it onto a `Headers`.
+ *
+ * The proxy applies the same policy twice — to the headers it forwards to the
+ * renderer and to the response it returns — and both must carry the identical
+ * nonce, so the nonce is minted once here and closed over.
+ *
+ * @param {{ isLocalEnvironment: boolean }} params
+ * @returns {(headers: Headers) => Headers}
+ */
+export const createCspHeaderApplier = ({ isLocalEnvironment }) => {
+  const headerName = getCspHeaderName(parseCspMode(process.env.CSP_MODE));
+
+  if (!headerName) {
+    return (headers) => headers;
+  }
+
+  const policy = buildNonceContentSecurityPolicy({
+    nonce: createCspNonce(),
+    isLocalEnvironment,
+  });
+
+  return (headers) => {
+    headers.set(headerName, policy);
+
+    return headers;
+  };
+};
