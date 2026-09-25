@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
@@ -7,6 +5,7 @@ import {
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { decisionProcesses, users } from '@op/db/schema';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
