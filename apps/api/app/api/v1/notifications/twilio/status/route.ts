@@ -8,12 +8,15 @@ export const POST = async (req: NextRequest): Promise<Response> => {
   const signature = req.headers.get('x-twilio-signature') ?? undefined;
 
   try {
-    const { status } = handleTwilioStatusWebhookRequest({
+    const { status, body } = handleTwilioStatusWebhookRequest({
       rawBody,
       signature,
       url: req.url,
     });
-    return new Response(null, { status });
+    return new Response(body ?? null, {
+      status,
+      headers: body ? { 'Content-Type': 'text/xml' } : undefined,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Twilio status webhook unhandled error', {
