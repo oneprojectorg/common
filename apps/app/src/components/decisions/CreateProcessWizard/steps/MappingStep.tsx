@@ -160,7 +160,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
           {/* Placeholder in the real slot at the real size; no asset ships yet. */}
           <div
             aria-hidden
-            className="min-h-32 bg-gradient-to-b sm:col-span-2 from-accent via-primary/15 to-primary/30"
+            className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30 sm:col-span-2"
           />
         </AccordionContent>
       </div>
