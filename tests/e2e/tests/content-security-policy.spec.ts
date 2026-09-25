@@ -87,11 +87,25 @@ test.describe('Content-Security-Policy', () => {
     // header looks right and the page is blank. Assert against the served
     // HTML, not the live DOM — scripts the runtime injects after hydration
     // inherit trust through 'strict-dynamic' and carry no nonce by design.
-    const tags = (await response!.text()).match(/<script\b[^>]*>/g) ?? [];
-    const unNonced = tags.filter((tag) => !tag.includes(`nonce="${nonce}"`));
+    //
+    // Parsed, not pattern-matched. A regex over `<script ...>` has to get tag
+    // case, attribute quoting and `>` inside attribute values all right to be
+    // trusted, and every way of getting it wrong silently skips the tags this
+    // assertion exists to check (CodeQL js/bad-tag-filter). DOMParser builds
+    // an inert document, so nothing executes and nonce attributes survive.
+    const html = await response!.text();
+    const nonces = await authenticatedPage.evaluate(
+      (raw) =>
+        [
+          ...new DOMParser()
+            .parseFromString(raw, 'text/html')
+            .querySelectorAll('script'),
+        ].map((script) => script.getAttribute('nonce')),
+      html,
+    );
 
-    expect(tags.length).toBeGreaterThan(0);
-    expect(unNonced).toEqual([]);
+    expect(nonces.length).toBeGreaterThan(0);
+    expect(nonces.filter((value) => value !== nonce)).toEqual([]);
   });
 
   test('the policy denies the directives this change exists to deny', async ({
