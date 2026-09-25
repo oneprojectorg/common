@@ -1591,6 +1591,5 @@
   "validUrlError": "Introduza um URL válido",
   "maxLength200Error": "Deve ter no máximo 200 caracteres",
   "6-digit code": "Código de 6 dígitos",
-  "name@example.com": "name@example.com",
   "Browse proposals for now": "Explorar propostas por enquanto"
 }

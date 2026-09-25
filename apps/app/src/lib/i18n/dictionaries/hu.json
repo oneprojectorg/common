@@ -157,7 +157,7 @@
     "emailCodeSentTitle": "Az e-mailt elküldtük!",
     "createProfileCodeHint": "Kódot küldtünk a(z) {email} címre. Írja be alább a kódot a profilja létrehozásához.",
     "createProfileAction": "Profil létrehozása",
-    "resendCodeAction": "Kód újraküldése",
+    "resendCodeAction": "Küldje újra a kódot",
     "changePhoneAction": "Másik telefonszám használata",
     "useEmailAction": "Másik e-mail cím használata",
     "phoneNumberLabel": "Telefonszám",
@@ -1591,6 +1591,5 @@
   "validUrlError": "Adjon meg egy érvényes URL-címet",
   "maxLength200Error": "Legfeljebb 200 karakter lehet",
   "6-digit code": "6 jegyű kód",
-  "name@example.com": "name@example.com",
   "Browse proposals for now": "Javaslatok böngészése egyelőre"
 }

@@ -157,7 +157,7 @@
     "emailCodeSentTitle": "Courriel envoyé !",
     "createProfileCodeHint": "Un code a été envoyé à {email}. Saisissez le code ci-dessous pour créer votre profil.",
     "createProfileAction": "Créer le profil",
-    "resendCodeAction": "Renvoyer le code",
+    "resendCodeAction": "Renvoyer un code",
     "changePhoneAction": "Utiliser un autre numéro de téléphone",
     "useEmailAction": "Utiliser une autre adresse e-mail",
     "phoneNumberLabel": "Numéro de téléphone",
@@ -1591,6 +1591,5 @@
   "validUrlError": "Saisissez une URL valide",
   "maxLength200Error": "Doit contenir au maximum 200 caractères",
   "6-digit code": "Code à 6 chiffres",
-  "name@example.com": "name@example.com",
   "Browse proposals for now": "Parcourir les propositions pour l'instant"
 }
