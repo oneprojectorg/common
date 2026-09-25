@@ -23,7 +23,6 @@ export const attachResourceToCollection = async ({
 }): Promise<ResourceInCollectionDTO> => {
   const policies = {
     [EntityType.DECISION]: { decisions: permission.ADMIN },
-    [EntityType.PHASE]: { decisions: permission.ADMIN },
   };
   // Require admin on both endpoints: an admin of collection X can't drag
   // someone else's resource Y into X without also having admin where Y lives.
