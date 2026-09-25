@@ -1,7 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { isSafeRedirectPath, normalizePhoneNumber } from '@op/common/client';
+import {
+  isSafeRedirectPath,
+  normalizePhoneNumber,
+  toGoTruePhoneFormat,
+} from '@op/common/client';
 import { SUPPORTED_LOCALES } from '@op/common/locales';
 import { logger } from '@op/logging/client';
 import { createSBBrowserClient } from '@op/supabase/client';
@@ -204,7 +208,7 @@ export function useClaimAccount() {
       // rather than the E.164 string we sent, or an applied change would read
       // as pending and dead-end on a code screen with no code sent.
       const stored = data.user?.phone ?? '';
-      if (stored === normalized.replace(/^\+/, '') && !data.user?.new_phone) {
+      if (stored === toGoTruePhoneFormat(normalized) && !data.user?.new_phone) {
         await supabase.auth.refreshSession();
         return { ok: true, needsOtp: false };
       }

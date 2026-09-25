@@ -14,7 +14,7 @@ export const handleTwilioStatusWebhookRequest = ({
   rawBody,
   signature,
   url,
-}: TwilioStatusWebhookRequest): { status: number } => {
+}: TwilioStatusWebhookRequest): { status: number; body?: string } => {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
 
   if (!authToken) {
@@ -44,5 +44,5 @@ export const handleTwilioStatusWebhookRequest = ({
     errorCode: callback.errorCode,
   });
 
-  return { status: 200 };
+  return { status: 200, body: '<Response></Response>' };
 };

@@ -289,8 +289,7 @@ export async function addUserToOrganization(opts: {
  * `phone_change` flow creates no `auth.identities` row to collide on either.
  */
 export async function releaseTestPhoneNumber(phone: string): Promise<void> {
-  // GoTrue stores E.164 without the leading `+`.
-  const digits = phone.replace(/^\+/, '');
+  const digits = toGoTruePhoneFormat(phone);
 
   await db.execute(sql`
     UPDATE auth.users
@@ -306,6 +305,14 @@ export interface TestAuthAccount {
   isAnonymous: boolean;
 }
 
+// TODO: Replace with `toGoTruePhoneFormat` from `@op/common` once that package
+// declares `"type": "module"`. Until then a runtime import of `@op/common` fails
+// to link under Playwright's Node runtime (CJS/ESM interop — see the note on
+// `createProposal` in decision-data.ts), so this package duplicates the value.
+function toGoTruePhoneFormat(phone: string): string {
+  return phone.replace(/^\+/, '');
+}
+
 /**
  * The auth record holding `phone`, or null when the number is free.
  *
@@ -318,7 +325,7 @@ export interface TestAuthAccount {
 export async function findAuthUserByPhone(
   phone: string,
 ): Promise<TestAuthAccount | null> {
-  const digits = phone.replace(/^\+/, '');
+  const digits = toGoTruePhoneFormat(phone);
 
   const rows = await db.execute<{
     id: string;

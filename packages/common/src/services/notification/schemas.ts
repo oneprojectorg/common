@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { ValidationError } from '../../utils/error';
-import type { PhoneNumber } from './types';
+import type { GoTruePhoneFormat, PhoneNumber } from './types';
 
 /**
  * Validates E.164: a leading `+`, a non-zero country digit, then up to 14 more
@@ -28,12 +28,54 @@ export const phoneNumberSchema = z
     message: 'Phone number must not contain CR or LF characters',
   });
 
+/** A {@link safeParsePhoneNumber} outcome: a branded number, or the reason it was rejected. */
+export type PhoneNumberParseResult =
+  | { success: true; data: PhoneNumber }
+  | { success: false; error: ValidationError };
+
 /**
- * Validates a caller-supplied string and brands it as a {@link PhoneNumber}.
+ * Validates a caller-supplied string and brands it as a {@link PhoneNumber},
+ * reporting failure as a return value rather than an exception.
  *
- * Call this at the boundary, once, on any number that arrives from a user or a
- * database row. This is the only way to produce a {@link PhoneNumber}, so no
- * unchecked string reaches a vendor.
+ * Prefer this over {@link parsePhoneNumber} at a boundary that already reports
+ * its own outcome by returning, such as an Inngest step or a queue handler —
+ * a malformed number then reads as one more case to branch on, not a
+ * try/catch wrapped around validation.
+ *
+ * This is the only way to produce a {@link PhoneNumber} on the success path,
+ * so no unchecked string reaches a vendor.
+ *
+ * @param value - The number to validate, in E.164 format.
+ * @returns `{ success: true, data }` with the branded number, or
+ *   `{ success: false, error }` naming the `phone` field.
+ *
+ * @example
+ * ```ts
+ * const parsed = safeParsePhoneNumber(from);
+ * if (!parsed.success) {
+ *   return { message: 'invalid phone number' };
+ * }
+ * await provider.sendSms({ to: parsed.data, body });
+ * ```
+ */
+export const safeParsePhoneNumber = (value: string): PhoneNumberParseResult => {
+  const parsed = phoneNumberSchema.safeParse(value);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? 'Invalid phone number';
+    return {
+      success: false,
+      error: new ValidationError(message, { phone: message }),
+    };
+  }
+  return { success: true, data: parsed.data as PhoneNumber };
+};
+
+/**
+ * The throwing counterpart of {@link safeParsePhoneNumber}.
+ *
+ * Call this at a boundary that already uses exceptions for validation
+ * failure, such as a tRPC procedure. This is the only way to produce a
+ * {@link PhoneNumber} on that path, so no unchecked string reaches a vendor.
  *
  * @param value - The number to validate, in E.164 format.
  * @returns The same string, branded so a provider will accept it.
@@ -48,12 +90,11 @@ export const phoneNumberSchema = z
  * ```
  */
 export const parsePhoneNumber = (value: string): PhoneNumber => {
-  const parsed = phoneNumberSchema.safeParse(value);
+  const parsed = safeParsePhoneNumber(value);
   if (!parsed.success) {
-    const message = parsed.error.issues[0]?.message ?? 'Invalid phone number';
-    throw new ValidationError(message, { phone: message });
+    throw parsed.error;
   }
-  return parsed.data as PhoneNumber;
+  return parsed.data;
 };
 
 /**
@@ -95,3 +136,45 @@ export const normalizePhoneNumber = (value: string): string => {
   }
   return trimmed;
 };
+
+/**
+ * Whether what a person typed is, once normalized, a valid E.164 number.
+ *
+ * `usePhoneLoginFlow` and `JoinAccountModal` each hand-rolled
+ * `phoneNumberSchema.safeParse(normalizePhoneNumber(raw)).success` before this
+ * existed. Use this instead of a third copy, in a phone field that only needs
+ * a submit-enabled boolean; use {@link normalizePhoneNumber} together with
+ * {@link safeParsePhoneNumber} when the normalized value is also needed.
+ *
+ * @param raw - A number as typed.
+ * @returns Whether the normalized value passes {@link phoneNumberSchema}.
+ */
+export const isValidTypedPhoneNumber = (raw: string): boolean =>
+  phoneNumberSchema.safeParse(normalizePhoneNumber(raw)).success;
+
+/**
+ * Turns an E.164 number into the format GoTrue stores on `auth.users.phone`:
+ * the same digits, with the leading `+` dropped.
+ *
+ * Three call sites re-derived this independently before this existed —
+ * `releaseTestPhoneNumber` and `findAuthUserByPhone` in
+ * `tests/core/src/test-data.ts`, and `requestPhoneCode` in
+ * `apps/app/src/hooks/useClaimAccount.ts` — each stripping the `+` inline
+ * with its own copy of the same comment. Use this instead of a fourth copy,
+ * and instead of comparing a raw `+`-prefixed value against `authUsers.phone`
+ * directly, which never matches.
+ *
+ * @param phone - A number in E.164 form, branded or not.
+ * @returns The digits GoTrue stores: the same number, without the `+`.
+ *
+ * @example
+ * ```ts
+ * const known = await db
+ *   .select()
+ *   .from(authUsers)
+ *   .where(eq(authUsers.phone, toGoTruePhoneFormat(to)));
+ * ```
+ */
+export const toGoTruePhoneFormat = (
+  phone: PhoneNumber | string,
+): GoTruePhoneFormat => phone.replace(/^\+/, '') as GoTruePhoneFormat;

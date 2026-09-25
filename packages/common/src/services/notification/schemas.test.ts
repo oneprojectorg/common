@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
-import { normalizePhoneNumber, parsePhoneNumber } from './schemas';
+import {
+  isValidTypedPhoneNumber,
+  normalizePhoneNumber,
+  parsePhoneNumber,
+  safeParsePhoneNumber,
+  toGoTruePhoneFormat,
+} from './schemas';
 
 describe('parsePhoneNumber', () => {
   it.each(['+15005550006', '+442079460958', '+8613800138000'])(
@@ -39,6 +45,29 @@ describe('parsePhoneNumber', () => {
       expect(error).toBeInstanceOf(ValidationError);
       expect((error as ValidationError).fieldErrors).toHaveProperty('phone');
     }
+  });
+});
+
+/**
+ * The non-throwing counterpart of `parsePhoneNumber` — a caller branches on
+ * the result directly instead of wrapping the call in a try/catch.
+ */
+describe('safeParsePhoneNumber', () => {
+  it('reports success with the branded number for a valid E.164 value', () => {
+    const result = safeParsePhoneNumber('+15005550006');
+
+    expect(result).toEqual({ success: true, data: '+15005550006' });
+  });
+
+  it('reports failure with a ValidationError naming the phone field', () => {
+    const result = safeParsePhoneNumber('not-e164');
+
+    expect(result.success).toBe(false);
+    if (result.success) {
+      expect.unreachable('should have failed');
+    }
+    expect(result.error).toBeInstanceOf(ValidationError);
+    expect(result.error.fieldErrors).toHaveProperty('phone');
   });
 });
 
@@ -84,5 +113,56 @@ describe('normalizePhoneNumber', () => {
     // Ask for the country code in the field before serving somewhere this
     // matters, rather than widening the guess here.
     expect(normalizePhoneNumber('0199001234')).toBe('+10199001234');
+  });
+});
+
+/**
+ * Replaces the normalize-then-validate pair that `usePhoneLoginFlow` and
+ * `JoinAccountModal` used to hand-roll independently, each against a phone
+ * field's raw typed value.
+ */
+describe('isValidTypedPhoneNumber', () => {
+  it.each([
+    ['(415) 555-0132', 'a ten-digit number as people type it'],
+    ['+44 20 7946 0958', 'a foreign number with spaces'],
+  ])(
+    'given %s (%s), when checked, then it normalizes and accepts it',
+    (raw) => {
+      expect(isValidTypedPhoneNumber(raw)).toBe(true);
+    },
+  );
+
+  it('given a value with no digits, when checked, then it rejects it', () => {
+    expect(isValidTypedPhoneNumber('not a phone number')).toBe(false);
+  });
+
+  it('given an eleven-digit national number, when checked, then it rejects it', () => {
+    // Same case normalizePhoneNumber pins: it isn't rewritten into a guess,
+    // so it still fails E.164 validation.
+    expect(isValidTypedPhoneNumber('020 7946 0958')).toBe(false);
+  });
+});
+
+/**
+ * GoTrue stores `auth.users.phone` without the leading `+` — confirmed
+ * against the local dev database, where every stored row is digits only,
+ * country code included. A comparison against that column that still carries
+ * the `+` never matches, so this is what an inbound-SMS handler must use
+ * before it compares a caller's number to a stored one.
+ */
+describe('toGoTruePhoneFormat', () => {
+  it.each([
+    ['+15005550006', '15005550006', 'a US number'],
+    ['+442079460958', '442079460958', 'a UK number'],
+  ])('turns %s into %s (%s)', (input, expected) => {
+    expect(toGoTruePhoneFormat(input)).toBe(expected);
+  });
+
+  it('keeps the country code, dropping only the leading +', () => {
+    expect(toGoTruePhoneFormat('+15005550006')).toContain('1');
+  });
+
+  it('leaves a number with no leading + unchanged', () => {
+    expect(toGoTruePhoneFormat('15005550006')).toBe('15005550006');
   });
 });
