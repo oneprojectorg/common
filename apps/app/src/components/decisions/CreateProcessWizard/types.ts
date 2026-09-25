@@ -1,15 +1,16 @@
-import type { TranslationKey } from '@/lib/i18n';
+import type { MessageKeys, Messages, NestedKeyOf } from 'next-intl';
+
+type WizardMessages = Messages['decisions']['createWizard'];
 
 /**
  * A key inside `decisions.createWizard`, relative to the namespace the wizard's
  * components scope `useTranslations` to. Derived from the dictionary, so a copy
  * table naming a key that does not exist fails `typecheck`.
  */
-type StripNamespace<T> = T extends `decisions.createWizard.${infer K}`
-  ? K
-  : never;
-
-export type WizardCopyKey = StripNamespace<TranslationKey>;
+export type WizardCopyKey = MessageKeys<
+  WizardMessages,
+  NestedKeyOf<WizardMessages>
+>;
 
 /**
  * The create-process wizard's content model.
