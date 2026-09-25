@@ -91,6 +91,22 @@ describe('handleTwilioInboundWebhookRequest', () => {
     expect(inngest.send).not.toHaveBeenCalled();
   });
 
+  it('given a validly signed message with no MessageSid, when handled, then it rejects the request without forwarding it', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const params = { From: '+15005550006', Body: 'YES', MessageSid: '' };
+    const rawBody = rawBodyOf(params);
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const result = await handleTwilioInboundWebhookRequest({
+      rawBody,
+      signature,
+      url: URL,
+    });
+
+    expect(result).toEqual({ status: 400 });
+    expect(inngest.send).not.toHaveBeenCalled();
+  });
+
   it('reports misconfiguration rather than forwarding when TWILIO_AUTH_TOKEN is unset', async () => {
     delete process.env.TWILIO_AUTH_TOKEN;
     const rawBody = rawBodyOf(MESSAGE_PARAMS);

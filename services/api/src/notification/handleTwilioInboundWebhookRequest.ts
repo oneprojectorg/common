@@ -39,6 +39,11 @@ export const handleTwilioInboundWebhookRequest = async ({
 
   const message = parseTwilioInboundMessage(params);
 
+  if (!message.messageSid) {
+    logger.warn('Twilio inbound webhook missing MessageSid');
+    return { status: 400 };
+  }
+
   await inngest.send({
     id: `sms-inbound-${message.messageSid}`,
     name: Events.smsInboundReceived.name,
