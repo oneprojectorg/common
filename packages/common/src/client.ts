@@ -369,6 +369,8 @@ export function isSafeRedirectPath(path: string | null): path is string {
 // GoTrue answers the browser directly, so this is the only check the number
 // passes before Twilio Verify sees it.
 export {
+  isValidTypedPhoneNumber,
   normalizePhoneNumber,
   phoneNumberSchema,
+  toGoTruePhoneFormat,
 } from './services/notification/schemas';
