@@ -126,7 +126,7 @@ export function CreateProcessWizard({
   };
 
   const advance = () => {
-    if (!canContinue) {
+    if (!canContinue || isSubmitting) {
       return;
     }
 
@@ -267,6 +267,7 @@ export function CreateProcessWizard({
             }
             onNameChange={setName}
             onStewardChange={setStewardProfileId}
+            onSubmit={advance}
           />
 
           {/* A screen of options shows this with the first pick; a screen you
@@ -308,6 +309,7 @@ interface StepBodyProps {
   onOtherChange: (patch: Partial<OtherAnswers>) => void;
   onNameChange: (name: string) => void;
   onStewardChange: (profileId: string) => void;
+  onSubmit: () => void;
 }
 
 function StepBody(props: StepBodyProps) {
@@ -337,6 +339,7 @@ function StepBody(props: StepBodyProps) {
       onNameChange={props.onNameChange}
       stewardProfileId={props.stewardProfileId}
       onStewardChange={props.onStewardChange}
+      onSubmit={props.onSubmit}
     />
   );
 }
