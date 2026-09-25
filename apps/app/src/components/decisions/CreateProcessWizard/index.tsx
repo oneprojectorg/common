@@ -38,6 +38,27 @@ import type {
   ShapeKey,
 } from './types';
 
+interface StepBodyProps {
+  step: number;
+  screen: StepThreeScreen;
+  type: ProcessType | null;
+  shape: ShapeKey | null;
+  grantDecision: GrantDecision | null;
+  other: OtherAnswers;
+  pieces: ProcessPiece[];
+  recap?: string;
+  name: string;
+  stewardProfileId: string;
+  onStart: () => void;
+  onTypeChange: (type: ProcessType) => void;
+  onShapeChange: (shape: ShapeKey) => void;
+  onGrantDecisionChange: (decision: GrantDecision) => void;
+  onOtherChange: (patch: Partial<OtherAnswers>) => void;
+  onNameChange: (name: string) => void;
+  onStewardChange: (profileId: string) => void;
+  onSubmit: () => void;
+}
+
 /**
  * The create-process wizard: 1 intro · 2 type · 3 shape or the "other"
  * questions · 4 mapping · 5 name.
@@ -289,27 +310,6 @@ export function CreateProcessWizard({
       </div>
     </div>
   );
-}
-
-interface StepBodyProps {
-  step: number;
-  screen: StepThreeScreen;
-  type: ProcessType | null;
-  shape: ShapeKey | null;
-  grantDecision: GrantDecision | null;
-  other: OtherAnswers;
-  pieces: ProcessPiece[];
-  recap?: string;
-  name: string;
-  stewardProfileId: string;
-  onStart: () => void;
-  onTypeChange: (type: ProcessType) => void;
-  onShapeChange: (shape: ShapeKey) => void;
-  onGrantDecisionChange: (decision: GrantDecision) => void;
-  onOtherChange: (patch: Partial<OtherAnswers>) => void;
-  onNameChange: (name: string) => void;
-  onStewardChange: (profileId: string) => void;
-  onSubmit: () => void;
 }
 
 function StepBody(props: StepBodyProps) {
