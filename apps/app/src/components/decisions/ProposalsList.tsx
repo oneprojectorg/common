@@ -102,6 +102,13 @@ export interface ProposalsListProps {
    */
   showFilterTabs?: boolean;
   /**
+   * The caller's own tab row already owns the audience axis, so this list
+   * renders no rail and takes the filter from here rather than the URL — the
+   * results page, where "All proposals" and "My proposals" are two of its four
+   * tabs. The status select still renders, so the two axes still compose.
+   */
+  pinnedFilter?: ProposalFilter;
+  /**
    * Replaces the "N proposals" count in the filter bar; receives the count for
    * the active filter. The admin review surface titles itself
    * "Proposals in review · N".
@@ -293,6 +300,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
     initialFilter,
     excludeAssignedForReview,
     showFilterTabs,
+    pinnedFilter,
   } = props;
 
   const { user } = useUser();
@@ -336,14 +344,20 @@ export const ProposalsList = (props: ProposalsListProps) => {
     parseAsStringLiteral(PROPOSAL_STATUS_VALUES).withDefault('all'),
   );
 
+  // Tabs own the audience axis either way — this list's own rail, or the
+  // caller's tab row above it. Both leave the select to the status axis.
+  const tabsOwnAudience = showFilterTabs || pinnedFilter !== undefined;
+
   const everyFilter = useProposalFilterItems({ hasVoted, currentProfileId });
-  // The audience axis is the whole list without a tab bar, and only the tabs'
-  // own filters with one — REJECTED moved to the status select there.
-  const availableFilters = showFilterTabs
+  // The audience axis is the whole list where the select is the only control,
+  // and only the tabs' own filters where a tab row owns it — REJECTED moved to
+  // the status select there.
+  const availableFilters = tabsOwnAudience
     ? everyFilter.filter((filter) => TAB_BAR_FILTERS.includes(filter.id))
     : everyFilter;
 
   const requestedFilter =
+    pinnedFilter ??
     filterParam ??
     initialFilter ??
     (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
@@ -360,7 +374,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
   // `?filter=rejected` predates the split and still points at the tab bar's
   // param. Read it as the status axis it became rather than dropping it.
   const proposalStatus =
-    showFilterTabs && requestedFilter === ProposalFilter.REJECTED
+    tabsOwnAudience && filterParam === ProposalFilter.REJECTED
       ? 'not-advanced'
       : statusParam;
 
@@ -449,6 +463,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
       setProposalFilter={setProposalFilter}
       proposalStatus={proposalStatus}
       setStatusFilter={setStatusFilter}
+      tabsOwnAudience={tabsOwnAudience}
       selectedCategory={selectedCategory}
       setSelectedCategory={setSelectedCategory}
       sortOrder={sortOrder}
@@ -489,6 +504,8 @@ type ProposalsListContentProps = ProposalsListProps &
     setProposalFilter: (filter: ProposalFilter) => void;
     proposalStatus: ProposalStatusFilter;
     setStatusFilter: (status: ProposalStatusFilter) => void;
+    /** A tab row owns the audience axis, so the select is status only. */
+    tabsOwnAudience: boolean;
     selectedCategory: string;
     setSelectedCategory: (value: string) => void;
     sortOrder: string;
@@ -527,6 +544,8 @@ const ProposalsListContent = ({
   setProposalFilter,
   proposalStatus,
   setStatusFilter,
+  tabsOwnAudience,
+  pinnedFilter,
   selectedCategory,
   setSelectedCategory,
   sortOrder,
@@ -690,9 +709,19 @@ const ProposalsListContent = ({
   const handleClearFilters = useCallback(() => {
     setSearch('');
     setSelectedCategory('all-categories');
-    setProposalFilter(ProposalFilter.ALL);
     setStatusFilter('all');
-  }, [setSearch, setSelectedCategory, setProposalFilter, setStatusFilter]);
+    // Only where this list owns the audience axis. Pinned by a caller's tab
+    // row, resetting it would write a `filter` param nothing here reads.
+    if (pinnedFilter === undefined) {
+      setProposalFilter(ProposalFilter.ALL);
+    }
+  }, [
+    setSearch,
+    setSelectedCategory,
+    setProposalFilter,
+    setStatusFilter,
+    pinnedFilter,
+  ]);
 
   // The applied term, not the live field: it names the search the empty result
   // actually came from, which is the one the reader is owed an answer about.
@@ -752,7 +781,7 @@ const ProposalsListContent = ({
   // proposals these are; the select beside category and sort asks what became
   // of them, and the query ANDs the two. Without a rail the select is the only
   // control, so it keeps the single combined filter it always had.
-  const leadingSelect: ProposalSelectControl = showTabs
+  const leadingSelect: ProposalSelectControl = tabsOwnAudience
     ? {
         items: statusItems,
         value: proposalStatus,

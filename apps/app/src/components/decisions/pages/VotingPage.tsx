@@ -115,6 +115,7 @@ export function VotingPage({
               permissions={instance.access}
               currentPhase={currentPhase}
               pinOffset={pinOffset}
+              showFilterTabs
             />
           </Suspense>
         </div>

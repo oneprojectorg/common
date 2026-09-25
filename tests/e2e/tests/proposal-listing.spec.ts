@@ -620,11 +620,12 @@ test.describe('Proposal Listing', () => {
     const searchField = authenticatedPage.getByRole('searchbox', {
       name: 'Search proposals',
     });
-    // At this viewport ResponsiveSelect renders a plain button named by its
-    // current value; the desktop trigger is a combobox named by its aria-label
-    // instead. `button` also keeps this off the rail's same-named tab.
+    // The status select — the rail above the list owns the audience axis on
+    // this screen. At this viewport ResponsiveSelect renders a plain button
+    // named by its current value; the desktop trigger is a combobox named by
+    // its aria-label instead.
     const filterSelect = authenticatedPage.getByRole('button', {
-      name: 'All proposals',
+      name: 'All statuses',
     });
     await expect(searchField).toBeVisible({ timeout: 15_000 });
 
