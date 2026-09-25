@@ -219,6 +219,7 @@ export const LoginPanel = () => {
       void phoneFlow.resend();
     } else {
       setToken(undefined);
+      setTokenError(undefined);
       requestEmailCode();
     }
   };
@@ -234,6 +235,9 @@ export const LoginPanel = () => {
   };
 
   const switchChannel = (next: AuthChannel) => {
+    if (isPhone) {
+      phoneFlow.changeNumber();
+    }
     setChannel(next);
     setEmail('');
     setPhone('');
