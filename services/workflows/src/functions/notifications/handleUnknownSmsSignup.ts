@@ -20,6 +20,10 @@ const { smsInboundReceived } = Events;
 export const handleUnknownSmsSignup = inngest.createFunction(
   {
     id: 'handleUnknownSmsSignup',
+    rateLimit: {
+      limit: 20,
+      period: '1h',
+    },
     debounce: {
       key: 'event.data.from',
       period: '1m',
