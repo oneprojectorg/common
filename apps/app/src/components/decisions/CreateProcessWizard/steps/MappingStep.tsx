@@ -11,6 +11,7 @@ import { LuCircleCheckBig } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Callout } from '../Callout';
 import { StepHeading } from '../StepHeading';
 import { PHASE_TYPE_LABEL } from '../content';
 import type { ProcessPiece } from '../types';
@@ -40,18 +41,9 @@ export function MappingStep({
       />
 
       {recap ? (
-        <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-accent p-4">
-          <LuCircleCheckBig
-            className="mt-0.5 size-5 shrink-0 text-primary"
-            aria-hidden
-          />
-          <div className="min-w-0">
-            <p className="text-base font-strong">{t('recapHeading')}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {recap} {t('recapHint')}
-            </p>
-          </div>
-        </div>
+        <Callout icon={LuCircleCheckBig} title={t('recapHeading')}>
+          {recap} {t('recapHint')}
+        </Callout>
       ) : null}
 
       <div className="relative">
