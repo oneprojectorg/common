@@ -6,12 +6,12 @@ import { type MouseEvent, createContext, useCallback, useContext } from 'react';
 /** Not `proposal` — `PromoteAccountModal` owns that key. */
 export const PROPOSAL_SHEET_PARAM = 'proposalPanel';
 
-export interface ProposalSheetApi {
+export interface ProposalSheetControls {
   open: (profileId: string) => void;
 }
 
 /** Kept out of the provider file: the sheet renders cards that read this. */
-export const ProposalSheetContext = createContext<ProposalSheetApi | null>(
+export const ProposalSheetContext = createContext<ProposalSheetControls | null>(
   null,
 );
 

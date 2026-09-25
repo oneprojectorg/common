@@ -7,7 +7,6 @@ import {
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
-import { useDirection } from '@op/sense/Direction';
 import {
   Empty,
   EmptyDescription,
@@ -52,9 +51,6 @@ export function ProposalSheet({
   onClose: () => void;
 }) {
   const t = useTranslations();
-  // `side` is physical, so it has to be mirrored to stay at the inline end.
-  const isRtl = useDirection() === 'rtl';
-
   const shownProfileId = useLastOpenProposal(profileId);
 
   return (
@@ -67,7 +63,7 @@ export function ProposalSheet({
       }}
     >
       <SheetContent
-        side={isRtl ? 'left' : 'right'}
+        side="inline-end"
         // sense labels its built-in close "Close" in English.
         showCloseButton={false}
         className="w-full gap-0 p-0 sm:max-w-2xl"

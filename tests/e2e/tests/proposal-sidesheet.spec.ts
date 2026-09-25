@@ -99,6 +99,46 @@ test.describe('Proposal side sheet', () => {
     expect(headerControls).toEqual(['Report', 'Open full proposal', 'Close']);
   });
 
+  test('the panel sits at the end of the reading order in both directions', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { instanceSlug } = await seedOneProposalDecision(org);
+
+    /** Polled, so the opening slide has settled before the edges are read. */
+    const expectPanelEdges = async (
+      locale: string,
+      edges: { atStart: boolean; atEnd: boolean },
+    ) => {
+      await openProposalList(
+        authenticatedPage,
+        `/${locale}/decisions/${instanceSlug}/current?filter=all`,
+      );
+      await authenticatedPage
+        .getByRole('link', { name: PROPOSAL_TITLE })
+        .click();
+
+      const sheet = authenticatedPage.getByRole('dialog');
+      await expect(sheet).toBeVisible();
+
+      await expect
+        .poll(() =>
+          sheet.evaluate((element) => {
+            const box = element.getBoundingClientRect();
+            return {
+              atStart: Math.round(box.left) === 0,
+              atEnd: Math.round(box.right) === window.innerWidth,
+            };
+          }),
+        )
+        .toEqual(edges);
+    };
+
+    await expectPanelEdges('en', { atStart: false, atEnd: true });
+    // Arabic mirrors the page, so `inline-end` has to land on the other edge.
+    await expectPanelEdges('ar', { atStart: true, atEnd: false });
+  });
+
   test('the expand control hands the reader to the proposal page', async ({
     authenticatedPage,
     org,

@@ -7,7 +7,7 @@ import { type ReactNode, useCallback, useMemo } from 'react';
 import { ProposalSheet, type ProposalSheetRoute } from './ProposalSheet';
 import {
   PROPOSAL_SHEET_PARAM,
-  type ProposalSheetApi,
+  type ProposalSheetControls,
   ProposalSheetContext,
 } from './proposalSheetState';
 
@@ -45,7 +45,7 @@ export function ProposalSheetProvider({
     void setOpenProfileId(null);
   }, [setOpenProfileId]);
 
-  const api = useMemo<ProposalSheetApi | null>(
+  const api = useMemo<ProposalSheetControls | null>(
     () => (isMobile ? null : { open }),
     [isMobile, open],
   );

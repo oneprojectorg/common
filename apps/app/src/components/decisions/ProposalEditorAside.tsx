@@ -2,7 +2,6 @@
 
 import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
-import { useDirection } from '@op/sense/Direction';
 import { Drawer, DrawerContent, DrawerTitle } from '@op/sense/Drawer';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
 import { cn } from '@op/sense/lib/utils';
@@ -44,7 +43,6 @@ export function ProposalEditorAside({
   // Sheet takes a physical side, but callers reserve the gap beside it with
   // logical padding (`sm:pe-96`) — hardcoding "right" put the panel and its
   // reserved space on opposite edges in Arabic.
-  const isRtl = useDirection() === 'rtl';
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -85,7 +83,7 @@ export function ProposalEditorAside({
       disablePointerDismissal
       onOpenChange={handleOpenChange}
     >
-      <SheetContent side={isRtl ? 'left' : 'right'} showOverlay={false}>
+      <SheetContent side="inline-end" showOverlay={false}>
         <SheetHeader>
           <SheetTitle>
             <bdi>{title}</bdi>
