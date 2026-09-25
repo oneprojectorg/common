@@ -121,7 +121,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
               {phase}
             </span>
           </span>
-          <span className="shrink-0 text-sm font-normal text-muted-foreground group-aria-expanded/accordion-trigger:hidden">
+          <span className="shrink-0 text-sm font-normal text-muted-foreground transition-[opacity,visibility] duration-200 ease-out group-aria-expanded/accordion-trigger:invisible group-aria-expanded/accordion-trigger:opacity-0 motion-reduce:transition-none">
             {phase}
           </span>
         </AccordionTrigger>
@@ -161,7 +161,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
               Against the card, not the panel, so it runs up beside the title. */}
           <div
             aria-hidden
-            className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30 sm:absolute sm:inset-y-0 sm:end-0 sm:min-h-0 sm:w-2/5"
+            className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30 transition-opacity duration-200 ease-out in-data-ending-style:opacity-0 in-data-starting-style:opacity-0 motion-reduce:transition-none sm:absolute sm:inset-y-0 sm:end-0 sm:min-h-0 sm:w-2/5"
           />
         </AccordionContent>
       </div>
