@@ -111,7 +111,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
         {/* The ordinal is real content, not an aria-label: a label would
             override the visible text and drop the phase from the name. The
             focus ring is inset because the card clips an outward one. */}
-        <AccordionTrigger className="w-full items-center gap-4 rounded-none border-0 px-5 py-3.5 hover:bg-muted/40 hover:no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring **:data-[slot=accordion-trigger-icon]:hidden sm:group-data-open/item:w-3/5">
+        <AccordionTrigger className="w-full items-baseline gap-4 rounded-none border-0 px-5 py-3.5 hover:bg-muted/40 hover:no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring **:data-[slot=accordion-trigger-icon]:hidden sm:group-data-open/item:w-3/5">
           <span className="sr-only">
             {t('stepOrdinal', { step: step + 1 })}
           </span>
