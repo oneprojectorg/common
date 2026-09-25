@@ -22,11 +22,14 @@ export function NameAccessStep({
   onNameChange,
   stewardProfileId,
   onStewardChange,
+  onSubmit,
 }: {
   name: string;
   onNameChange: (name: string) => void;
   stewardProfileId: string;
   onStewardChange: (profileId: string) => void;
+  /** Enter in the name field, the same as the step's Create button. */
+  onSubmit: () => void;
 }) {
   const t = useTranslations('decisions.createWizard');
   // The process page's own "Stewarded by", which this field previews.
@@ -38,23 +41,31 @@ export function NameAccessStep({
     <div className="flex flex-col gap-6">
       <StepHeading title={t('nameHeading')} />
 
-      <Field>
-        <FieldLabel htmlFor={NAME_ID}>{t('nameLabel')}</FieldLabel>
-        <Input
-          id={NAME_ID}
-          value={name}
-          onChange={(event) => onNameChange(event.target.value)}
-          placeholder={t('namePlaceholder')}
-          maxLength={MAX_PROCESS_NAME_LENGTH}
-          aria-invalid={trimmed.length > 0 && isNameTooShort}
-          aria-describedby={NAME_HINT_ID}
-        />
-        <FieldDescription id={NAME_HINT_ID} aria-live="polite">
-          {isNameTooShort
-            ? t('nameTooShort', { count: MIN_PROCESS_NAME_LENGTH })
-            : null}
-        </FieldDescription>
-      </Field>
+      {/* Enter in a form's only text field submits it. */}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <Field>
+          <FieldLabel htmlFor={NAME_ID}>{t('nameLabel')}</FieldLabel>
+          <Input
+            id={NAME_ID}
+            value={name}
+            onChange={(event) => onNameChange(event.target.value)}
+            placeholder={t('namePlaceholder')}
+            maxLength={MAX_PROCESS_NAME_LENGTH}
+            aria-invalid={trimmed.length > 0 && isNameTooShort}
+            aria-describedby={NAME_HINT_ID}
+          />
+          <FieldDescription id={NAME_HINT_ID} aria-live="polite">
+            {isNameTooShort
+              ? t('nameTooShort', { count: MIN_PROCESS_NAME_LENGTH })
+              : null}
+          </FieldDescription>
+        </Field>
+      </form>
 
       {/* Its own boundary: a failed identities fetch drops the field rather
           than the name input, and the steward stays the acting profile. */}
