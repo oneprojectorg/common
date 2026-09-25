@@ -19,10 +19,10 @@
  *   page. `/info/*` is `force-static` today; see `apps/app/next.config.mjs`.
  */
 
-export const CSP_REPORT_PATH = '/api/csp-report';
+const CSP_REPORT_PATH = '/api/csp-report';
 
 /** Group name shared by the `report-to` directive and `Reporting-Endpoints`. */
-export const CSP_REPORT_GROUP = 'csp-endpoint';
+const CSP_REPORT_GROUP = 'csp-endpoint';
 
 export const REPORTING_ENDPOINTS_HEADER = `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`;
 
