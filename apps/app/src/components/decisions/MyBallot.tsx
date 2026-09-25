@@ -4,12 +4,12 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
-import { Header3 } from '@op/sense/Header';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView } from './ProposalCard';
+import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
 import { proposalHref } from './proposalHrefs';
 import { useOpenProposalInSheet } from './proposalSheetState';
@@ -82,9 +82,7 @@ const MyBallotProposals = ({
   });
 
   return (
-    <div className="flex flex-col gap-4 pb-12">
-      <Header3>{t('decisions.review.myBallotHeading')}</Header3>
-
+    <ProposalListSection heading={t('decisions.review.myBallotHeading')}>
       <ProposalMasonry>
         {proposals.map((proposal) => {
           const viewHref = proposalHref({
@@ -120,6 +118,6 @@ const MyBallotProposals = ({
           );
         })}
       </ProposalMasonry>
-    </div>
+    </ProposalListSection>
   );
 };

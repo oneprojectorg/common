@@ -1,8 +1,9 @@
+import { Header3 } from '@op/sense/Header';
+
 import { useTranslations } from '@/lib/i18n';
 
-// Canonical proposal count label. With no `total` (or nothing filtered out) it
-// reads a single-size "328 proposals"; a narrowing search sets `total` to the
-// full pool and it reads "6 of 328 proposals" with a muted remainder.
+// "328 proposals", or "6 of 328 proposals" once `total` says something was
+// filtered out.
 export const ProposalCount = ({
   count,
   total,
@@ -15,17 +16,17 @@ export const ProposalCount = ({
 
   if (!narrowed) {
     return (
-      <span className="font-serif text-title font-light">
+      <Header3>
         {t('proposalCount', {
           count: total ?? count,
         })}
-      </span>
+      </Header3>
     );
   }
 
   return (
     <span className="flex items-baseline gap-1">
-      <span className="font-serif text-title font-light">{count}</span>
+      <Header3>{count}</Header3>
       <span className="text-base text-muted-foreground">
         {t('ofTotalProposals', {
           total,

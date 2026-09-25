@@ -148,9 +148,11 @@ test.describe('Admin review progress', () => {
     // the reviewer tab pair is gone: an admin who is not a reviewer has no
     // queue to tab against. (The layout's own Overview/Current toggle is a tab
     // strip too, hence naming the two rather than counting every tab.)
+    // Level 3, like every other proposal-list heading: it stands in for the
+    // count, which is a `Header3` so it matches the sibling tabs.
     await expect(
       page
-        .getByRole('heading', { name: 'Proposals in review · 2', level: 2 })
+        .getByRole('heading', { name: 'Proposals in review · 2', level: 3 })
         .first(),
     ).toBeVisible({ timeout: 36_000 });
     await expect(

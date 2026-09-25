@@ -2,16 +2,13 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import {
-  type DecisionAccess,
-  type InstancePhaseData,
+import type {
+  DecisionAccess,
+  InstancePhaseData,
   ProposalFilter,
-  ProposalStatus,
 } from '@op/api/encoders';
 import {
-  PROPOSAL_SEARCH_MAX_LENGTH,
   type Proposal,
   ProposalReviewRequestState,
   type ProposalTranslation,
@@ -19,15 +16,13 @@ import {
   isVotingPhase,
   nextCursor,
 } from '@op/common/client';
-import { useDebounce, useInfiniteScroll } from '@op/hooks';
+import { useInfiniteScroll } from '@op/hooks';
 import { cn } from '@op/sense/lib/utils';
-import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import {
   type ReactNode,
   type RefCallback,
   Suspense,
   useCallback,
-  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -39,12 +34,16 @@ import { ExportProposalsButton } from './ExportProposalsButton';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
+import { ProposalFilterTabs } from './ProposalFilterTabs';
 import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import type { ProposalControls } from './ProposalsFilterBar';
+import type {
+  ProposalControls,
+  ProposalSelectControl,
+} from './ProposalsFilterBar';
 import { NoProposalsFound, ProposalsGrid } from './ProposalsGrid';
 import {
   ProposalsMapView,
@@ -61,6 +60,12 @@ import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import { getProposalDetectionText } from './translationDetectionText';
+import { useProposalStatusItems } from './useProposalFilterItems';
+import {
+  type ProposalFilterState,
+  type ProposalQueryParams,
+  useProposalFilters,
+} from './useProposalFilters';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useTranslateDecision } from './useTranslateDecision';
 
@@ -83,6 +88,13 @@ export interface ProposalsListProps {
   proposalsHidden?: boolean;
   /** Exclude proposals the current user is assigned to review (Other proposals tab). */
   excludeAssignedForReview?: boolean;
+  /** Opt-in: a surface with its own tab row would stack two. */
+  showFilterTabs?: boolean;
+  /**
+   * The caller's tab row owns the audience axis: no tab bar here, and the
+   * filter comes from this rather than the URL.
+   */
+  pinnedFilter?: ProposalFilter;
   /**
    * Replaces the "N proposals" count in the filter bar; receives the count for
    * the active filter. The admin review surface titles itself
@@ -96,31 +108,9 @@ export interface ProposalsListProps {
   pinOffset?: number;
 }
 
-// A multiple of three so a full page fills the three-per-row grid evenly.
-// Kept small — every server-side cost of listProposals scales with this
-// number, and infinite scroll pulls further pages as needed.
-const PROPOSALS_PAGE_LIMIT = 24;
-
-const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
-
-const SEARCH_DEBOUNCE_MS = 300;
-
 // Stable identity: the provider's value is read by every card, so a fresh `{}`
 // per render would re-run all of them for nothing.
 const NO_TRANSLATIONS: Record<string, ProposalTranslation> = {};
-
-type ProposalQueryParams = {
-  processInstanceId: string;
-  categoryId?: string;
-  search?: string;
-  submittedByProfileId?: string;
-  votedByProfileId?: string;
-  status?: ProposalStatus;
-  dir: 'asc' | 'desc';
-  limit: number;
-  phase?: 'results';
-  excludeAssignedForReview?: boolean;
-};
 
 type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
@@ -267,135 +257,13 @@ const ResultsPhaseProposalsLoader = ({
   );
 };
 
-// fallow-ignore-next-line complexity
 export const ProposalsList = (props: ProposalsListProps) => {
-  const { instanceId, phase, initialFilter, excludeAssignedForReview } = props;
-
-  const { user } = useUser();
-  const currentProfileId = user?.currentProfile?.id;
-
-  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
-    processInstanceId: instanceId,
-  });
-  const hasVoted = voteStatus?.hasVoted || false;
-
-  // nuqs holds the filters in the URL. `filter` has no default so an absent
-  // value can fall back to the ballot-aware default derived below.
-  const [selectedCategory, setSelectedCategory] = useQueryState(
-    'category',
-    parseAsString.withDefault('all-categories'),
-  );
-  const [sortOrder, setSortOrder] = useQueryState(
-    'sort',
-    parseAsString.withDefault('newest'),
-  );
-  // Every keystroke, but nuqs replaces rather than pushes — no history spam.
-  const [urlSearch, setSearch] = useQueryState(
-    'q',
-    parseAsString.withDefault(''),
-  );
-  // Clamped here, not at the field: `maxLength` bounds typing, but a shared
-  // link can carry any `?q=`, and past the cap the endpoint rejects the query
-  // and the error boundary takes the list down with it.
-  const search = urlSearch.slice(0, PROPOSAL_SEARCH_MAX_LENGTH);
-  const [debouncedSearch] = useDebounce(search.trim(), SEARCH_DEBOUNCE_MS);
-  const [filterParam, setProposalFilter] = useQueryState(
-    'filter',
-    parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
-  );
-  const requestedFilter =
-    filterParam ??
-    initialFilter ??
-    (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-  // "My proposals"/"My ballot" need a profile; for anonymous/stale-link visitors
-  // fall back to ALL so the label can't claim a filter the query didn't apply.
-  const requiresProfile =
-    requestedFilter === ProposalFilter.MY_PROPOSALS ||
-    requestedFilter === ProposalFilter.MY_BALLOT;
-  const proposalFilter =
-    requiresProfile && !currentProfileId ? ProposalFilter.ALL : requestedFilter;
-
-  // Deferred so a filter change is non-urgent: the suspense boundary wraps all
-  // of ProposalsList, so an urgent update would swap the bar (and whatever has
-  // focus) for a skeleton. One primitive per call — `useDeferredValue` compares
-  // with `Object.is`, so a `{ ... }` snapshot would never settle.
-  const appliedSearch = useDeferredValue(debouncedSearch);
-  const appliedCategory = useDeferredValue(selectedCategory);
-  const appliedSortOrder = useDeferredValue(sortOrder);
-  const appliedFilter = useDeferredValue(proposalFilter);
-
-  // Against the debounced term, not the raw field: otherwise the spinner lights
-  // on the first keystroke and holds through the debounce.
-  const isSearchFetching = appliedSearch !== debouncedSearch;
-  const isFilterFetching =
-    isSearchFetching ||
-    appliedCategory !== selectedCategory ||
-    appliedSortOrder !== sortOrder ||
-    appliedFilter !== proposalFilter;
-
-  const queryParams = useMemo<ProposalQueryParams>(() => {
-    const params: ProposalQueryParams = {
-      processInstanceId: instanceId,
-      dir: appliedSortOrder === 'newest' ? 'desc' : 'asc',
-      limit: PROPOSALS_PAGE_LIMIT,
-      phase,
-      excludeAssignedForReview,
-    };
-
-    if (appliedCategory !== 'all-categories') {
-      params.categoryId = appliedCategory;
-    }
-
-    // Blank is omitted to keep the untouched query key.
-    if (appliedSearch) {
-      params.search = appliedSearch;
-    }
-
-    // Filter in SQL so pagination and the total count stay accurate per filter.
-    if (appliedFilter === ProposalFilter.MY_PROPOSALS && currentProfileId) {
-      params.submittedByProfileId = currentProfileId;
-    } else if (appliedFilter === ProposalFilter.MY_BALLOT && currentProfileId) {
-      params.votedByProfileId = currentProfileId;
-    } else if (appliedFilter === ProposalFilter.REJECTED) {
-      params.status = ProposalStatus.REJECTED;
-    }
-
-    return params;
-  }, [
-    instanceId,
-    appliedCategory,
-    appliedSearch,
-    appliedSortOrder,
-    phase,
-    appliedFilter,
-    currentProfileId,
-    excludeAssignedForReview,
-  ]);
-
-  // Applied, not live: reading the controls would flash "no proposals yet" for a
-  // frame when clearing a filter that had returned nothing.
-  const hasActiveFilter =
-    !!queryParams.search ||
-    appliedCategory !== 'all-categories' ||
-    appliedFilter !== ProposalFilter.ALL;
+  const { phase } = props;
+  const filters = useProposalFilters(props);
+  const { queryParams } = filters;
 
   const renderContent = (data: ProposalsLoaderRenderProps) => (
-    <ProposalsListContent
-      {...props}
-      {...data}
-      queryParams={queryParams}
-      proposalFilter={proposalFilter}
-      setProposalFilter={setProposalFilter}
-      selectedCategory={selectedCategory}
-      setSelectedCategory={setSelectedCategory}
-      sortOrder={sortOrder}
-      setSortOrder={setSortOrder}
-      search={search}
-      setSearch={setSearch}
-      isSearchFetching={isSearchFetching}
-      isFilterFetching={isFilterFetching}
-      hasActiveFilter={hasActiveFilter}
-    />
+    <ProposalsListContent {...props} {...data} filters={filters} />
   );
 
   // The provider sits above the loaders, so a refreshed list re-parenting its
@@ -416,23 +284,9 @@ export const ProposalsList = (props: ProposalsListProps) => {
   );
 };
 
-// TODO: trim props — move filter state to a shared nuqs hook + extract an export button (follow-up).
+// TODO: extract an export button (follow-up).
 type ProposalsListContentProps = ProposalsListProps &
-  ProposalsLoaderRenderProps & {
-    queryParams: ProposalQueryParams;
-    proposalFilter: ProposalFilter;
-    setProposalFilter: (filter: ProposalFilter) => void;
-    selectedCategory: string;
-    setSelectedCategory: (value: string) => void;
-    sortOrder: string;
-    setSortOrder: (value: string) => void;
-    search: string;
-    setSearch: (value: string) => void;
-    isSearchFetching: boolean;
-    isFilterFetching: boolean;
-    /** Derived from the applied filters, so it matches the visible results. */
-    hasActiveFilter: boolean;
-  };
+  ProposalsLoaderRenderProps & { filters: ProposalFilterState };
 
 // fallow-ignore-next-line complexity
 const ProposalsListContent = ({
@@ -447,29 +301,41 @@ const ProposalsListContent = ({
   header,
   pinOffset,
   phase,
-  queryParams,
+  showFilterTabs = false,
+  filters,
   allProposals,
   total,
   totalProposalCount,
   isFetchingNextPage,
   shouldShowTrigger,
   infiniteScrollRef,
-  proposalFilter,
-  setProposalFilter,
-  selectedCategory,
-  setSelectedCategory,
-  sortOrder,
-  setSortOrder,
-  search,
-  setSearch,
-  isSearchFetching,
-  isFilterFetching,
-  hasActiveFilter,
 }: ProposalsListContentProps) => {
+  const {
+    queryParams,
+    voteStatus,
+    availableFilters,
+    tabsOwnAudience,
+    proposalFilter,
+    setProposalFilter,
+    proposalStatus,
+    setStatusFilter,
+    selectedCategory,
+    setSelectedCategory,
+    sortOrder,
+    setSortOrder,
+    search,
+    setSearch,
+    isSearchFetching,
+    isFilterFetching,
+    hasActiveFilter,
+    canClearFilters,
+    clearFilters,
+  } = filters;
   const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
   const isInVotingPhase = !!currentPhase && isVotingPhase(currentPhase);
   const t = useTranslations();
-  const { user } = useUser();
+
+  const statusItems = useProposalStatusItems();
 
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -498,17 +364,10 @@ const ProposalsListContent = ({
     list.scrollIntoView({ block: 'start' });
   }, [queryParams, pinOffset]);
 
-  const currentProfileId = user?.currentProfile?.id;
-  const [[{ items: categories }, voteStatus, instance]] =
-    trpc.useSuspenseQueries((t) => [
-      t.decision.getCategories({
-        processInstanceId: instanceId,
-      }),
-      t.decision.getVotingStatus({
-        processInstanceId: instanceId,
-      }),
-      t.decision.getInstance({ instanceId }),
-    ]);
+  const [[{ items: categories }, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getCategories({ processInstanceId: instanceId }),
+    t.decision.getInstance({ instanceId }),
+  ]);
 
   // Map browse mode is offered only when the process collects a location and
   // the GIS flag is on. Browse leads with the map when the process has one —
@@ -523,7 +382,6 @@ const ProposalsListContent = ({
     defaultView: 'map',
   });
 
-  const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
 
@@ -615,21 +473,13 @@ const ProposalsListContent = ({
 
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
-  // Everything `hasActiveFilter` counts, and nothing else — sort reorders the
-  // same set rather than narrowing it, so resetting it would only surprise.
-  const handleClearFilters = useCallback(() => {
-    setSearch('');
-    setSelectedCategory('all-categories');
-    setProposalFilter(ProposalFilter.ALL);
-  }, [setSearch, setSelectedCategory, setProposalFilter]);
-
   // The applied term, not the live field: it names the search the empty result
   // actually came from, which is the one the reader is owed an answer about.
   const emptyStateProps = {
     hasFilter: hasActiveFilter,
     searchQuery: queryParams.search,
     isTranslated: !!translation.translationState,
-    onClearFilters: handleClearFilters,
+    onClearFilters: canClearFilters ? clearFilters : undefined,
     excludeAssignedForReview,
   };
 
@@ -640,15 +490,11 @@ const ProposalsListContent = ({
     search,
     setSearch,
     isSearchPending: isSearchFetching,
-    proposalFilter,
-    setProposalFilter,
     selectedCategory,
     setSelectedCategory,
     sortOrder,
     setSortOrder,
     categories,
-    hasVoted,
-    currentProfileId,
     decisionSlug,
   };
 
@@ -676,20 +522,37 @@ const ProposalsListContent = ({
   // toggle between two empty states.
   const showFilterBar = !isEmptyUnfiltered;
 
-  return (
-    <div
-      ref={listRef}
-      // Nothing visibly unmounts any more, so announce the stale window.
-      aria-busy={isFilterFetching || undefined}
-      // Clears the floating toggle the filter bar pins below, so a filter reset
-      // doesn't park the bar underneath it.
-      style={{ scrollMarginTop: pinOffset }}
-      className={cn(
-        'relative flex flex-col gap-6 pb-12',
-        // On mobile the map view is edge-to-edge and flush to the bottom.
-        isMapMode && 'max-sm:pb-0',
-      )}
-    >
+  // Same terms as the select they replace.
+  const showTabs = showFilterTabs && showFilterBar && !hideFilters;
+
+  // With a tab bar the select is the status axis; without one it is the only
+  // control and keeps the combined filter.
+  const leadingSelect: ProposalSelectControl = tabsOwnAudience
+    ? {
+        items: statusItems,
+        value: proposalStatus,
+        onChange: (id) => {
+          const selected = statusItems.find((item) => item.id === id);
+          if (selected) {
+            setStatusFilter(selected.id);
+          }
+        },
+        label: t('decisions.review.filterByStatusLabel'),
+      }
+    : {
+        items: availableFilters,
+        value: proposalFilter,
+        onChange: (id) => {
+          const selected = availableFilters.find((item) => item.id === id);
+          if (selected) {
+            setProposalFilter(selected.id);
+          }
+        },
+        label: t('decisions.proposals.filterProposalsLabel'),
+      };
+
+  const listBody = (
+    <>
       {showFilterBar && (
         <ProposalsStickyFilterBar
           pinOffset={pinOffset}
@@ -698,6 +561,7 @@ const ProposalsListContent = ({
           header={header?.(total)}
           // Omitted when the phase hides proposals from non-admins.
           controls={hideFilters ? undefined : controls}
+          leadingSelect={leadingSelect}
           // Omitted when the process collects no location.
           view={
             hasLocationField
@@ -820,6 +684,34 @@ const ProposalsListContent = ({
 
       {hasLocationField && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
+      )}
+    </>
+  );
+
+  return (
+    <div
+      ref={listRef}
+      // Nothing visibly unmounts any more, so announce the stale window.
+      aria-busy={isFilterFetching || undefined}
+      // Clears the floating toggle the filter bar pins below, so a filter reset
+      // doesn't park the bar underneath it.
+      style={{ scrollMarginTop: pinOffset }}
+      className={cn(
+        'relative flex flex-col gap-6 pb-12',
+        // On mobile the map view is edge-to-edge and flush to the bottom.
+        isMapMode && 'max-sm:pb-0',
+      )}
+    >
+      {showTabs ? (
+        <ProposalFilterTabs
+          items={availableFilters}
+          value={proposalFilter}
+          onValueChange={setProposalFilter}
+        >
+          {listBody}
+        </ProposalFilterTabs>
+      ) : (
+        listBody
       )}
     </div>
   );

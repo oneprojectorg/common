@@ -1,6 +1,6 @@
 'use client';
 
-import { ProposalFilter } from '@op/api/encoders';
+import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -10,21 +10,24 @@ import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
 
+export interface ProposalSelectControl {
+  items: { id: string; label: string; isDisabled?: boolean }[];
+  value: string;
+  onChange: (id: string) => void;
+  label: string;
+}
+
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
   search: string;
   setSearch: (value: string) => void;
   /** A query is in flight — results on screen are for an earlier term. */
   isSearchPending: boolean;
-  proposalFilter: ProposalFilter;
-  setProposalFilter: (filter: ProposalFilter) => void;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   sortOrder: string;
   setSortOrder: (sort: string) => void;
   categories: { id: string; name: string }[];
-  hasVoted: boolean;
-  currentProfileId: string | undefined;
   decisionSlug: string | undefined;
 }
 
@@ -56,11 +59,7 @@ export const ProposalsListHeader = ({
 export const MyProposalsHeader = () => {
   const t = useTranslations();
 
-  return (
-    <span className="font-serif text-title">
-      {t('decisions.proposals.myProposalsOption')}
-    </span>
-  );
+  return <Header3>{t('decisions.proposals.myProposalsOption')}</Header3>;
 };
 
 /**
@@ -83,6 +82,7 @@ export const ProposalsFilterBar = ({
   total,
   header,
   exportControl,
+  leadingSelect,
 }: {
   controls: ProposalControls;
   view?: ProposalViewControls;
@@ -94,33 +94,9 @@ export const ProposalsFilterBar = ({
   header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
+  leadingSelect: ProposalSelectControl;
 }) => {
   const t = useTranslations();
-  // Every option maps to a server-side query param in ProposalsList's
-  // queryParams, so pagination and counts stay accurate.
-  const filterItems = [
-    {
-      id: ProposalFilter.ALL,
-      label: t('decisions.proposals.allProposalsOption'),
-    },
-    {
-      id: ProposalFilter.MY_PROPOSALS,
-      label: t('decisions.proposals.myProposalsOption'),
-      isDisabled: !controls.currentProfileId,
-    },
-    ...(controls.hasVoted
-      ? [
-          {
-            id: ProposalFilter.MY_BALLOT,
-            label: t('decisions.proposals.myBallotOption'),
-          },
-        ]
-      : []),
-    {
-      id: ProposalFilter.REJECTED,
-      label: t('decisions.proposals.notAdvancedStatus'),
-    },
-  ];
 
   return (
     <>
@@ -136,27 +112,19 @@ export const ProposalsFilterBar = ({
           isPending={controls.isSearchPending}
         />
       </div>
-      {/* Grows to claim its row below 2xl, so the selects' own `ms-auto` has
-          slack to push against; at 2xl it's content-width beside the count.
-          `grow`, not `w-full`: the negative margins bleed this box past the
-          container, and only an auto width grows to absorb them — a fixed 100%
-          would leave the padding stranding the last select short of the edge. */}
-      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8">
+      {/* Grows to claim its row below 2xl so `ms-auto` has slack to push
+          against; `grow` not `w-full`, since only an auto width absorbs the
+          negative margins that bleed this box past the container.
+          The auto margin sits on the row's first child rather than a named
+          control, and beats `justify-end` because it collapses to zero once the
+          row overflows instead of stranding the leading control. */}
+      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
         <ResponsiveSelect
-          selectedKey={controls.proposalFilter}
-          onSelectionChange={(key) => {
-            // "My proposals" needs a profile; ignore the pick without one.
-            if (
-              key === ProposalFilter.MY_PROPOSALS &&
-              !controls.currentProfileId
-            ) {
-              return;
-            }
-            controls.setProposalFilter(key);
-          }}
-          aria-label={t('decisions.proposals.filterProposalsLabel')}
-          items={filterItems}
-          className="ms-auto min-w-40 shrink-0"
+          selectedKey={leadingSelect.value}
+          onSelectionChange={leadingSelect.onChange}
+          aria-label={leadingSelect.label}
+          items={leadingSelect.items}
+          className="min-w-40 shrink-0"
         />
         <CategoryFilterSelect
           decisionSlug={controls.decisionSlug}

@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type DecisionAccess, type InstancePhaseData } from '@op/api/encoders';
+import { Header3 } from '@op/sense/Header';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -85,8 +86,8 @@ const AdminReviewHeader = ({ count }: { count: number }) => {
 
   return (
     // The count follows the active filter, which changes without a navigation.
-    <h2 aria-live="polite" className="font-serif text-title font-light">
+    <Header3 aria-live="polite">
       {t('proposalsInReviewHeading', { count })}
-    </h2>
+    </Header3>
   );
 };

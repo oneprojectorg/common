@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { hasVotingPhase } from '@op/common/client';
@@ -133,6 +134,10 @@ function ResultsPageContent({
   const showBallotTab =
     isLegacy || hasVotingPhase(instance.instanceData?.phases ?? []);
 
+  // The tab filters on the reader's profile, so it needs one.
+  const { user } = useUser();
+  const showMyProposalsTab = Boolean(user?.currentProfile?.id);
+
   // Organization-specific content
   const heroContent = match<{
     title: string;
@@ -193,7 +198,10 @@ function ResultsPageContent({
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4">
-          <DecisionResultsTabs showBallotTab={showBallotTab}>
+          <DecisionResultsTabs
+            showBallotTab={showBallotTab}
+            showMyProposalsTab={showMyProposalsTab}
+          >
             <DecisionResultsTabPanel value="funded">
               <APIErrorBoundary
                 fallbacks={{
@@ -228,12 +236,27 @@ function ResultsPageContent({
                   slug={profileSlug}
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
-                  initialFilter={ProposalFilter.ALL}
+                  pinnedFilter={ProposalFilter.ALL}
                   phase="results"
                   pinOffset={pinOffset}
                 />
               </Suspense>
             </DecisionResultsTabPanel>
+
+            {showMyProposalsTab ? (
+              <DecisionResultsTabPanel value="my-proposals">
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ProposalsList
+                    slug={profileSlug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                    pinnedFilter={ProposalFilter.MY_PROPOSALS}
+                    phase="results"
+                    pinOffset={pinOffset}
+                  />
+                </Suspense>
+              </DecisionResultsTabPanel>
+            ) : null}
 
             {showBallotTab ? (
               <DecisionResultsTabPanel value="ballot">

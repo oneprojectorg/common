@@ -10,11 +10,14 @@ export const DecisionResultsTabs = ({
   children,
   className,
   showBallotTab = true,
+  showMyProposalsTab = true,
 }: {
   children: ReactNode;
   className?: string;
   /** Whether to surface the "My ballot" tab — only when a voting phase took place. */
   showBallotTab?: boolean;
+  /** Needs a profile to filter on. */
+  showMyProposalsTab?: boolean;
 }) => {
   const t = useTranslations('decisions');
 
@@ -34,6 +37,11 @@ export const DecisionResultsTabs = ({
           <TabsTrigger value="all-proposals">
             {t('proposals.allProposalsOption')}
           </TabsTrigger>
+          {showMyProposalsTab ? (
+            <TabsTrigger value="my-proposals">
+              {t('proposals.myProposalsOption')}
+            </TabsTrigger>
+          ) : null}
           {showBallotTab ? (
             <TabsTrigger value="ballot">
               {t('proposals.myBallotOption')}
