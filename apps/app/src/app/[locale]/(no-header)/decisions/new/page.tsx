@@ -1,5 +1,5 @@
 import { getRequiredUser } from '@/utils/getUser';
-import { NEW_PROCESS_ADMIN_FLAG, isServerFeatureEnabled } from '@op/common';
+import { isServerFeatureEnabled } from '@op/common';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -29,7 +29,7 @@ const NewDecisionProcessPage = async () => {
   // route would be reachable by URL with the flag off, gating the menu item
   // rather than the feature.
   const isEnabled = await isServerFeatureEnabled(
-    NEW_PROCESS_ADMIN_FLAG,
+    'new_process_admin_enabled',
     user.authUserId,
   );
 
