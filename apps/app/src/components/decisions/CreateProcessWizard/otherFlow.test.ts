@@ -146,9 +146,9 @@ describe('composeOtherPieces', () => {
 describe('otherCanContinue', () => {
   it('needs at least one subject', () => {
     expect(otherCanContinue('subjects', EMPTY_OTHER)).toBe(false);
-    expect(otherCanContinue('subjects', answers({ subjects: ['funding'] }))).toBe(
-      true,
-    );
+    expect(
+      otherCanContinue('subjects', answers({ subjects: ['funding'] })),
+    ).toBe(true);
   });
 
   // "Something else" is named in the user's own words, so it needs some.
@@ -156,9 +156,9 @@ describe('otherCanContinue', () => {
     const picked = answers({ subjects: ['funding', 'else'] });
 
     expect(otherCanContinue('subjects', picked)).toBe(false);
-    expect(
-      otherCanContinue('subjects', { ...picked, elseText: '   ' }),
-    ).toBe(false);
+    expect(otherCanContinue('subjects', { ...picked, elseText: '   ' })).toBe(
+      false,
+    );
     expect(
       otherCanContinue('subjects', { ...picked, elseText: 'A new logo' }),
     ).toBe(true);
