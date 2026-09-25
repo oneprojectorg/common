@@ -7,8 +7,9 @@ import { useTranslations } from '@/lib/i18n';
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
-import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
+import { ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import type { ProposalView } from './proposalViews';
 
 /** The filter state the bar reads and writes, owned by `ProposalsList`. */
 export interface ProposalControls {
@@ -28,11 +29,34 @@ export interface ProposalControls {
   decisionSlug: string | undefined;
 }
 
-/** Grid/map switch, present only when the process collects a location. */
+/** Browse-view switch, present only when there is more than one view to be in. */
 export interface ProposalViewControls {
   value: ProposalView;
+  /** The views to offer, in display order — see `useProposalViewMode`. */
+  views: readonly ProposalView[];
   onChange: (next: ProposalView) => void;
 }
+
+/**
+ * The view toggle and the rule that sets it off from whatever precedes it.
+ * Shared so the switch survives the filter-less bar — a phase that hides
+ * proposals drops the filters, and dropping the way out of a view with them
+ * strands whoever arrived on a `?view=` link.
+ */
+export const ProposalsViewSwitch = ({
+  view,
+}: {
+  view: ProposalViewControls;
+}) => (
+  <div className="flex items-center gap-4">
+    <span aria-hidden className="h-6 w-px bg-border" />
+    <ProposalViewToggle
+      value={view.value}
+      views={view.views}
+      onChange={view.onChange}
+    />
+  </div>
+);
 
 export const ProposalsListHeader = ({
   count,
@@ -64,17 +88,17 @@ export const MyProposalsHeader = () => {
 };
 
 /**
- * The count and search on one side, the three filter selects and the view
- * toggle on the other.
+ * The count and search on one side, the filter selects and the view switch on
+ * the other — the switch sits at the end of the selects at every width, which
+ * is the arrangement the design asks for.
  *
  * Two boxes rather than one wrapping row, so the split is an element boundary
- * and not a measurement: below `2xl` the count/search box takes a full row and
- * the selects drop beneath it, right-aligned by `ms-auto`; from `2xl` it grows
- * instead, putting everything on one line with search against the selects.
- * Inside the box, `ms-auto` holds search to the end, and below `md` the field's
- * `w-full` wraps it under the count while the selects break out edge-to-edge
- * and scroll. One search instance at every width, so focus survives a
- * breakpoint change.
+ * and not a measurement: below `2xl` the count box takes a full row and the
+ * selects drop beneath it, right-aligned; from `2xl` it grows instead, putting
+ * everything on one line. Inside the box, `ms-auto` holds search to the end,
+ * and below `md` the field's `w-full` wraps it under the count. One search
+ * instance and one switch at every width, so focus survives a breakpoint
+ * change.
  */
 export const ProposalsFilterBar = ({
   controls,
@@ -136,12 +160,10 @@ export const ProposalsFilterBar = ({
           isPending={controls.isSearchPending}
         />
       </div>
-      {/* Grows to claim its row below 2xl, so the selects' own `ms-auto` has
-          slack to push against; at 2xl it's content-width beside the count.
-          `grow`, not `w-full`: the negative margins bleed this box past the
-          container, and only an auto width grows to absorb them — a fixed 100%
-          would leave the padding stranding the last select short of the edge. */}
-      <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8">
+      {/* Grows to claim its row below 2xl; at 2xl it's content-width beside
+          the count. Wraps rather than scrolls: a select reachable only by
+          dragging the row sideways is a select nobody finds. */}
+      <div className="flex flex-wrap items-center justify-end gap-4 max-2xl:grow">
         <ResponsiveSelect
           selectedKey={controls.proposalFilter}
           onSelectionChange={(key) => {
@@ -156,7 +178,7 @@ export const ProposalsFilterBar = ({
           }}
           aria-label={t('decisions.proposals.filterProposalsLabel')}
           items={filterItems}
-          className="ms-auto min-w-40 shrink-0"
+          className="min-w-40 shrink-0"
         />
         <CategoryFilterSelect
           decisionSlug={controls.decisionSlug}
@@ -175,12 +197,7 @@ export const ProposalsFilterBar = ({
             { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
-        {view && (
-          <div className="hidden items-center gap-4 sm:flex">
-            <span aria-hidden className="h-6 w-px bg-border" />
-            <ProposalViewToggle value={view.value} onChange={view.onChange} />
-          </div>
-        )}
+        {view && <ProposalsViewSwitch view={view} />}
         {exportControl && (
           <div className="flex items-center gap-4">
             <span aria-hidden className="h-6 w-px bg-border" />

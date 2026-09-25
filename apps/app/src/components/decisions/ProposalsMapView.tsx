@@ -6,13 +6,14 @@ import type { ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
-import { type ReactNode, memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { ProposalMapHovercard } from './ProposalMapHovercard';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
+import type { RenderProposalCard } from './proposalViews';
 
 /** Filter for the all-locations pin query — shared with the list, minus the
  * list-only pagination fields (the map returns every located proposal). */
@@ -26,13 +27,6 @@ interface ProposalLocationFilter {
   excludeAssignedForReview?: boolean;
   phase?: 'results';
 }
-
-/** Renders one proposal in the desktop list column. The view owns the active
- * highlight, so it hands the card the `className` carrying that policy. */
-type RenderProposalCard = (
-  proposal: Proposal,
-  opts: { className: string },
-) => ReactNode;
 
 export interface ProposalsMapViewProps {
   /** Loaded list pages — drives the desktop list column (stays paginated). */
