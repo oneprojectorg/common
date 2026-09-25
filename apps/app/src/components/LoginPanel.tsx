@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
+import { WaitlistSignup } from '@/components/WaitlistSignup';
 
 import {
   AuthCodeField,
@@ -457,15 +458,24 @@ export const LoginPanel = () => {
         )}
 
         {!isConnectionError && !isErrorState && (
-          <div className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground sm:text-sm">
-            {isSignup ? (
-              <span>{t('auth.codeDeliveryHint')}</span>
-            ) : (
-              <>
-                <span>{t('auth.noAccountPrompt')}</span>
-                <span>{t('auth.noAccountHint')}</span>
-              </>
-            )}
+          <div className="text-center text-xs text-muted-foreground sm:text-sm">
+            {isSignup
+              ? t('auth.codeDeliveryHint')
+              : t.rich('auth.noAccountPrompt', {
+                  waitlist: (chunks: React.ReactNode) => (
+                    <WaitlistSignup
+                      trigger={
+                        <Button
+                          variant="link"
+                          size="inline"
+                          className="whitespace-normal underline [font:inherit] hover:no-underline"
+                        >
+                          {chunks}
+                        </Button>
+                      }
+                    />
+                  ),
+                })}
           </div>
         )}
       </section>

@@ -13,12 +13,12 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 import { CommonLogo } from '@/components/CommonLogo';
+import { WaitlistSignup } from '@/components/WaitlistSignup';
 
 import {
   AnimatedGradientBackground,
   AnimatedGradientText,
 } from './AnimatedGradientBackground';
-import { WaitlistSignup } from './WaitlistSignup';
 
 export const ComingSoonScreen = () => {
   const t = useTranslations('shell');
