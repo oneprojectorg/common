@@ -460,12 +460,12 @@ export const AuthContactFields = ({
 /** The contact step's primary CTA: "Email me a code" / "Text me a code". */
 export const AuthSendCodeButton = ({
   isPhone,
-  isBusy,
+  isLoading,
   isDisabled,
   onSubmit,
 }: {
   isPhone: boolean;
-  isBusy: boolean;
+  isLoading: boolean;
   isDisabled: boolean;
   onSubmit: () => void;
 }) => {
@@ -474,7 +474,7 @@ export const AuthSendCodeButton = ({
   return (
     <Button
       className="w-full"
-      loading={isBusy}
+      loading={isLoading}
       disabled={isDisabled}
       onClick={onSubmit}
     >
@@ -489,7 +489,7 @@ export const AuthSendCodeButton = ({
  */
 export const AuthCodeStepActions = ({
   isVerifyDisabled,
-  isBusy,
+  isLoading,
   isPhone,
   onVerify,
   onResend,
@@ -497,7 +497,7 @@ export const AuthCodeStepActions = ({
 }: {
   /** Left to the caller — not every flow disables verify the same way. */
   isVerifyDisabled: boolean;
-  isBusy: boolean;
+  isLoading: boolean;
   isPhone: boolean;
   onVerify: () => void;
   onResend: () => void;
@@ -509,8 +509,8 @@ export const AuthCodeStepActions = ({
     <>
       <Button
         className="w-full"
-        loading={isBusy}
-        disabled={isBusy || isVerifyDisabled}
+        loading={isLoading}
+        disabled={isLoading || isVerifyDisabled}
         onClick={onVerify}
       >
         {t('auth.verifyAction')}
@@ -518,12 +518,12 @@ export const AuthCodeStepActions = ({
       <Button
         variant="outline"
         className="w-full"
-        disabled={isBusy}
+        disabled={isLoading}
         onClick={onResend}
       >
         {t('auth.resendCodeAction')}
       </Button>
-      <Button variant="link" disabled={isBusy} onClick={onBack}>
+      <Button variant="link" disabled={isLoading} onClick={onBack}>
         {isPhone ? t('auth.changePhoneAction') : t('auth.useEmailAction')}
       </Button>
     </>

@@ -372,7 +372,7 @@ const JoinAccountModalContent = () => {
         {otpSent ? (
           <AuthCodeStepActions
             isVerifyDisabled={!isValidOtpLength(token)}
-            isBusy={isSubmitting}
+            isLoading={isSubmitting}
             isPhone={isPhone}
             onVerify={() => {
               void submitToken();
@@ -384,7 +384,7 @@ const JoinAccountModalContent = () => {
           <>
             <AuthSendCodeButton
               isPhone={isPhone}
-              isBusy={isSubmitting}
+              isLoading={isSubmitting}
               isDisabled={isSubmitting || !contactIsValid}
               onSubmit={() => {
                 void submitContact();
