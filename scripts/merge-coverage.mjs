@@ -21,10 +21,13 @@ import {
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { UNMEASURABLE } from './lib/fallow-crap.mjs';
+
 const { createCoverageMap } = libCoverage;
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'coverage', 'coverage-final.json');
+const MANIFEST = join(ROOT, 'coverage', 'workspaces.json');
 
 /** Workspace roots, matching the `packages:` globs in pnpm-workspace.yaml. */
 const WORKSPACE_ROOTS = [
@@ -44,6 +47,37 @@ const workspaces = WORKSPACE_ROOTS.flatMap((root) => {
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => `${root}/${entry.name}`);
+});
+
+/**
+ * Workspaces that run an instrumented suite, and so owe a report.
+ *
+ * A workspace that writes none is the one failure this merge cannot see in its
+ * own output. `configs/vitest-config/coverage.ts` zero-fills every source a
+ * workspace owns, so the absent report does not leave those files out of the
+ * merge — it leaves them in it at zero, which reads exactly like "instrumented,
+ * never hit". `packages/common` zero-fills its own service layer; only
+ * `services/api`, whose integration tests reach it through `allowExternal`,
+ * ever puts hits on those lines. Lose that one report and the layer holding the
+ * business logic scores as untested.
+ *
+ * `UNMEASURABLE` workspaces are left out. Their files carry no CRAP score at
+ * all, so their reports cannot change one, and counting them here would let a
+ * failure in the very workspaces CRAP ignores — `apps/app` fails on seeding
+ * today — mute every honestly measured zero in the repo and hand back a false
+ * green.
+ */
+const expected = workspaces.filter((workspace) => {
+  if (UNMEASURABLE.includes(workspace)) return false;
+  const manifest = join(ROOT, workspace, 'package.json');
+  if (!existsSync(manifest)) return false;
+  try {
+    return Boolean(
+      JSON.parse(readFileSync(manifest, 'utf8')).scripts?.['test:coverage'],
+    );
+  } catch {
+    return false;
+  }
 });
 
 /**
@@ -135,9 +169,34 @@ if (merged.length === 0) {
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(map.toJSON()));
 
+// Who reported, beside the merge, so a reader of the report can tell a measured
+// zero from an unmeasured one. Not a failure: a partial merge still scores every
+// file the reports it did get can speak for, and `scripts/lib/fallow-crap.mjs`
+// declines to read a zero as coverage while anything here is missing.
+const missing = expected.filter(
+  (workspace) => !merged.some((report) => report.workspace === workspace),
+);
+writeFileSync(
+  MANIFEST,
+  JSON.stringify(
+    { expected, reported: merged.map(({ workspace }) => workspace), missing },
+    null,
+    2,
+  ),
+);
+
 for (const { workspace, files } of merged) {
   console.log(`  ${workspace.padEnd(24)} ${String(files).padStart(5)} files`);
 }
 console.log(
   `\nMerged ${merged.length} reports covering ${map.files().length} files -> ${relative(ROOT, OUT)}`,
 );
+
+if (missing.length > 0) {
+  console.error(
+    `\n! Partial: ${missing.length} workspace(s) declare test:coverage but wrote no report:\n` +
+      missing.map((workspace) => `    ${workspace}`).join('\n') +
+      '\n  Their suites did not finish. Files they would have covered are merged at\n' +
+      '  zero, so CRAP scores them as unmeasured rather than untested.',
+  );
+}

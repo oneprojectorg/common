@@ -61,6 +61,31 @@ export const ROOT = resolve(
   '..',
 );
 export const COVERAGE = join(ROOT, 'coverage', 'coverage-final.json');
+export const MANIFEST = join(ROOT, 'coverage', 'workspaces.json');
+
+/**
+ * Workspaces that owed an instrumented report and wrote none, per
+ * `scripts/merge-coverage.mjs`.
+ *
+ * While this is non-empty a zero is not a measurement. The per-workspace
+ * `include` zero-fills sources a workspace owns but its own tests never load,
+ * counting on another workspace's run to put the hits back, so the report
+ * cannot tell a line no test reached from one whose test never reported.
+ *
+ * No manifest at all is the pre-manifest world, not a failure: an older report
+ * gets the benefit of the doubt. A manifest that exists but will not parse is a
+ * different thing — answering "nothing is missing" there is the most flattering
+ * answer available and the exact false green this file exists to remove.
+ */
+const unreportedWorkspaces = () => {
+  if (!existsSync(MANIFEST)) return [];
+  try {
+    const { missing } = JSON.parse(readFileSync(MANIFEST, 'utf8'));
+    return Array.isArray(missing) ? missing : [];
+  } catch {
+    return ['<unreadable coverage/workspaces.json>'];
+  }
+};
 
 /**
  * Scope-wide CRAP aggregates, committed so `pnpm health` can show a delta.
@@ -265,6 +290,7 @@ const functionCoverage = (file, fn) => {
  */
 export const crapScores = () => {
   const coverage = readCoverage();
+  const partial = unreportedWorkspaces();
   const files = {};
   const worst = {};
   let measured = 0;
@@ -275,7 +301,9 @@ export const crapScores = () => {
     if (!inCrapScope(fn.path)) continue;
 
     const covered = functionCoverage(coverage.get(fn.path), fn);
-    if (covered === null) {
+    // A missing report can only ever understate, so a hit stays a hit while the
+    // merge is partial. A zero is the reading it cannot back.
+    if (covered === null || (covered === 0 && partial.length > 0)) {
       unmeasured += 1;
       absent.add(fn.path);
       continue;
@@ -298,6 +326,10 @@ export const crapScores = () => {
   return {
     files,
     worst,
+    // Beside `stats`, never inside it: `writeCrapTrend` spreads `stats` into
+    // the committed `crap-trend.json`, and a machine-local list of workspaces
+    // that happened to fail does not belong in a checked-in baseline.
+    partial,
     stats: {
       metric: 'cognitive',
       functions_measured: measured,

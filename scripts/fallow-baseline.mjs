@@ -133,7 +133,22 @@ fallow([
   SNAPSHOT,
 ]);
 
-const { files, stats } = crapScores();
+const { files, stats, partial } = crapScores();
+
+// A baseline is committed and every later run is diffed against it, so it may
+// only be recorded from a run that measured everything. Under a partial merge
+// the zero-suppression rule drops whole files from the scored set, which would
+// bake a flattered summary into the repo.
+if (partial.length > 0) {
+  console.error(
+    `\nRefusing to write a baseline from a partial coverage report.\n` +
+      `These workspaces owed a report and did not write a usable one:\n` +
+      partial.map((workspace) => `  ${workspace}`).join('\n') +
+      `\nRe-run \`pnpm test:coverage\` until every workspace reports, then retry.`,
+  );
+  process.exit(1);
+}
+
 writeCrapTrend(files, stats);
 
 console.log(`\nBaseline written to configs/fallow/. Commit it so \`pnpm health:trend\` compares
