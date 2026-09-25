@@ -120,9 +120,7 @@ test.describe('Join by phone (public decision)', () => {
     await expect(
       page.getByRole('heading', { name: 'Check your texts' }),
     ).toBeVisible({ timeout: 20000 });
-    await expect(
-      dialog.getByRole('textbox', { name: '6-digit code' }),
-    ).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: 'Code' })).toBeVisible();
     await expect(page).not.toHaveURL(/\/start/);
 
     // The step swaps in place, and focus lands on the code field, which
@@ -170,7 +168,7 @@ test.describe('Join by phone (public decision)', () => {
     await expect(
       page.getByRole('heading', { name: 'Check your texts' }),
     ).toBeVisible({ timeout: 20000 });
-    await dialog.getByRole('textbox', { name: '6-digit code' }).fill(code);
+    await dialog.getByRole('textbox', { name: 'Code' }).fill(code);
     // The code field submits itself the moment all six digits are in — there
     // is no button press to make. Same destination as the email claim: the
     // promote onboarding, not the walled-garden 403 a non-member used to get
