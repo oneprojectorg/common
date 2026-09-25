@@ -1,5 +1,6 @@
 import { InngestTestEngine } from '@inngest/test';
 import {
+  listEligibleProposals,
   listProcessParticipants,
   listSmsOnlyProcessParticipants,
   resolveManualSelectionStatus,
@@ -16,6 +17,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // hand-rolled re-implementation of it.
 vi.mock('@op/db/client', () => ({ db: { select: vi.fn() } }));
 vi.mock('@op/common', () => ({
+  listEligibleProposals: vi.fn(),
   listProcessParticipants: vi.fn(),
   listSmsOnlyProcessParticipants: vi.fn(),
   resolveManualSelectionStatus: vi.fn(),
@@ -246,23 +248,11 @@ describe('sendPhaseTransitionNotification', () => {
     expect(inngest.send).not.toHaveBeenCalled();
   });
 
-  it('skips the SMS branch when there is not exactly one eligible proposal', async () => {
-    vi.mocked(db.select)
-      .mockReturnValueOnce(dbRows([processDataRow(SINGLE_CHOICE_VOTING_PHASE)]))
-      .mockReturnValueOnce(
-        dbRows([
-          {
-            id: ELIGIBLE_PROPOSAL_ID,
-            status: 'submitted',
-            title: 'Fund the park',
-          },
-          {
-            id: 'other-proposal',
-            status: 'submitted',
-            title: 'Repave the lot',
-          },
-        ]),
-      );
+  it('skips the SMS branch when there are no eligible proposals', async () => {
+    vi.mocked(db.select).mockReturnValueOnce(
+      dbRows([processDataRow(SINGLE_CHOICE_VOTING_PHASE)]),
+    );
+    vi.mocked(listEligibleProposals).mockResolvedValue([]);
     vi.mocked(resolveManualSelectionStatus).mockResolvedValue({
       selectionsAreConfirmed: true,
     });
@@ -280,20 +270,14 @@ describe('sendPhaseTransitionNotification', () => {
     expect(inngest.send).not.toHaveBeenCalled();
   });
 
-  it('sends a vote prompt to every phone-only participant for the one eligible proposal', async () => {
-    vi.mocked(db.select)
-      .mockReturnValueOnce(dbRows([processDataRow(SINGLE_CHOICE_VOTING_PHASE)]))
-      .mockReturnValueOnce(
-        dbRows([
-          // A draft is excluded by isVotingEligible, leaving exactly one.
-          { id: 'draft-proposal', status: 'draft', title: 'Not ready yet' },
-          {
-            id: ELIGIBLE_PROPOSAL_ID,
-            status: 'submitted',
-            title: 'Fund the park',
-          },
-        ]),
-      );
+  it('sends a vote prompt to every phone-only participant, for one or many eligible proposals', async () => {
+    vi.mocked(db.select).mockReturnValueOnce(
+      dbRows([processDataRow(SINGLE_CHOICE_VOTING_PHASE)]),
+    );
+    vi.mocked(listEligibleProposals).mockResolvedValue([
+      { id: ELIGIBLE_PROPOSAL_ID, title: 'Fund the park' },
+      { id: 'other-proposal', title: 'Repave the lot' },
+    ]);
     vi.mocked(resolveManualSelectionStatus).mockResolvedValue({
       selectionsAreConfirmed: true,
     });
@@ -315,12 +299,14 @@ describe('sendPhaseTransitionNotification', () => {
 
     await t.execute({ events: [triggerEvent()] });
 
+    // handleSmsVoteRequest resolves eligible proposals itself (single keyword
+    // vs. numbered list); this only has to prove the fan-out reaches every
+    // phone-only participant once the phase and gate allow it.
     expect(inngest.send).toHaveBeenCalledTimes(2);
     expect(inngest.send).toHaveBeenCalledWith({
       name: Events.voteSmsPromptRequested.name,
       data: {
         processInstanceId: PROCESS_INSTANCE_ID,
-        proposalId: ELIGIBLE_PROPOSAL_ID,
         authUserId: SMS_AUTH_USER_ID,
         phone: SMS_PHONE,
       },
@@ -329,7 +315,6 @@ describe('sendPhaseTransitionNotification', () => {
       name: Events.voteSmsPromptRequested.name,
       data: {
         processInstanceId: PROCESS_INSTANCE_ID,
-        proposalId: ELIGIBLE_PROPOSAL_ID,
         authUserId: 'sms-user-2',
         phone: '+15005550001',
       },

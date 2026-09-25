@@ -1,14 +1,13 @@
 import {
+  type EligibleProposal,
   RateLimitError,
   getSmsProvider,
+  listEligibleProposals,
   parsePhoneNumber,
   submitVote,
 } from '@op/common';
-import { db } from '@op/db/client';
-import { profiles, proposals } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { eq } from 'drizzle-orm';
 
 const CONFIRMATION_KEYWORD = 'YES';
 const MAX_REPLY_ATTEMPTS = 3;
@@ -29,25 +28,19 @@ export const handleSmsVoteRequest = inngest.createFunction(
   },
   { event: voteSmsPromptRequested.name },
   async ({ event, step }) => {
-    const { processInstanceId, proposalId, authUserId, phone } =
+    const { processInstanceId, authUserId, phone } =
       voteSmsPromptRequested.schema.parse(event.data);
 
-    const proposalTitle = await step.run('get-proposal-title', async () => {
-      const [row] = await db
-        .select({ title: profiles.name })
-        .from(proposals)
-        .innerJoin(profiles, eq(profiles.id, proposals.profileId))
-        .where(eq(proposals.id, proposalId))
-        .limit(1);
-      return row?.title ?? null;
-    });
+    const eligibleProposals = await step.run(
+      'get-eligible-proposals',
+      async () => listEligibleProposals({ processInstanceId }),
+    );
 
-    if (!proposalTitle) {
-      logger.error('No proposal found for SMS vote request', {
+    if (eligibleProposals.length === 0) {
+      logger.error('No eligible proposals found for SMS vote request', {
         processInstanceId,
-        proposalId,
       });
-      return { message: 'proposal not found' };
+      return { message: 'no eligible proposals' };
     }
 
     const provider = getSmsProvider();
@@ -55,18 +48,16 @@ export const handleSmsVoteRequest = inngest.createFunction(
     if (!provider?.sendSms) {
       logger.error(
         'Cannot request an SMS vote: no Twilio Messaging Service configured',
-        { processInstanceId, proposalId },
+        { processInstanceId },
       );
       return { message: 'sms sending unavailable' };
     }
 
     const to = parsePhoneNumber(phone);
+    const promptBody = buildVotePromptBody(eligibleProposals);
 
     const promptResult = await step.run('send-vote-prompt', async () => {
-      const result = await provider.sendSms!({
-        to,
-        body: `Reply ${CONFIRMATION_KEYWORD} to vote for "${proposalTitle}".`,
-      });
+      const result = await provider.sendSms!({ to, body: promptBody });
       if (result.status === 'rejected' && result.retryable) {
         throw new RateLimitError(`Vote prompt send rejected: ${result.reason}`);
       }
@@ -76,7 +67,6 @@ export const handleSmsVoteRequest = inngest.createFunction(
     if (promptResult.status === 'rejected') {
       logger.warn('Vote prompt permanently rejected, aborting vote request', {
         processInstanceId,
-        proposalId,
         authUserId,
         reason: promptResult.reason,
       });
@@ -86,7 +76,7 @@ export const handleSmsVoteRequest = inngest.createFunction(
       };
     }
 
-    let confirmed = false;
+    let selectedProposal: EligibleProposal | undefined;
 
     for (let attempt = 1; attempt <= MAX_REPLY_ATTEMPTS; attempt++) {
       const reply = await step.waitForEvent(`wait-for-vote-reply-${attempt}`, {
@@ -98,7 +88,6 @@ export const handleSmsVoteRequest = inngest.createFunction(
       if (!reply) {
         logger.info('No vote reply received in time', {
           processInstanceId,
-          proposalId,
           authUserId,
           attempt,
         });
@@ -106,19 +95,19 @@ export const handleSmsVoteRequest = inngest.createFunction(
       }
 
       const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
+      selectedProposal = resolveSelectedProposal(replyBody, eligibleProposals);
 
-      if (replyBody.trim().toUpperCase() === CONFIRMATION_KEYWORD) {
-        confirmed = true;
+      if (selectedProposal) {
         break;
       }
 
       logger.info(
-        'Reply did not match the vote confirmation keyword, waiting for another reply',
-        { processInstanceId, proposalId, authUserId, attempt },
+        'Reply did not select an eligible proposal, waiting for another reply',
+        { processInstanceId, authUserId, attempt },
       );
     }
 
-    if (!confirmed) {
+    if (!selectedProposal) {
       return { message: 'reply did not confirm' };
     }
 
@@ -126,7 +115,7 @@ export const handleSmsVoteRequest = inngest.createFunction(
       submitVote({
         data: {
           processInstanceId,
-          selectedProposalIds: [proposalId],
+          selectedProposalIds: [selectedProposal.id],
           authUserId,
         },
         authUserId,
@@ -135,10 +124,52 @@ export const handleSmsVoteRequest = inngest.createFunction(
 
     logger.info('Recorded a vote from an SMS reply', {
       processInstanceId,
-      proposalId,
+      proposalId: selectedProposal.id,
       authUserId,
     });
 
     return { message: 'vote recorded', voteSubmissionId: result.id };
   },
 );
+
+/**
+ * A lone proposal keeps the plain "Reply YES" prompt; more than one gets a
+ * 1-based numbered list, since a keyword can't distinguish between choices.
+ */
+function buildVotePromptBody(eligibleProposals: EligibleProposal[]): string {
+  if (eligibleProposals.length === 1) {
+    return `Reply ${CONFIRMATION_KEYWORD} to vote for "${eligibleProposals[0]!.title}".`;
+  }
+
+  return [
+    'Reply with a number to vote:',
+    ...eligibleProposals.map(
+      (proposal, index) => `${index + 1}. ${proposal.title}`,
+    ),
+  ].join('\n');
+}
+
+/**
+ * Mirrors {@link buildVotePromptBody}: a lone proposal is confirmed by the
+ * fixed keyword, and more than one is chosen by the 1-based number it was
+ * listed under. Anything else -- a stray keyword, a decimal, an out-of-range
+ * or non-numeric reply -- doesn't select a proposal.
+ */
+function resolveSelectedProposal(
+  replyBody: string,
+  eligibleProposals: EligibleProposal[],
+): EligibleProposal | undefined {
+  const trimmed = replyBody.trim();
+
+  if (eligibleProposals.length === 1) {
+    return trimmed.toUpperCase() === CONFIRMATION_KEYWORD
+      ? eligibleProposals[0]
+      : undefined;
+  }
+
+  if (!/^\d+$/.test(trimmed)) {
+    return undefined;
+  }
+
+  return eligibleProposals[Number(trimmed) - 1];
+}
