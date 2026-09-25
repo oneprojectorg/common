@@ -7,6 +7,11 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  REPORTING_ENDPOINTS_HEADER,
+  buildStaticContentSecurityPolicy,
+} from './src/lib/csp.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
@@ -124,31 +129,26 @@ const config = {
     return config;
   },
   async headers() {
-    // Content-Security-Policy is left in Report-Only mode for now while we
-    // enumerate the inline-script needs (next/script, PostHog, TipTap collab,
-    // Supabase). Move to `Content-Security-Policy` (enforcing) once reports
-    // are clean.
-    const reportOnlyCsp = [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "frame-ancestors 'none'",
-      "form-action 'self'",
-      "object-src 'none'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://eu-assets.i.posthog.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
-      "connect-src 'self' https: wss:",
-      "media-src 'self' blob: https:",
-      "worker-src 'self' blob:",
-      "frame-src 'self' https:",
-      // Ship violations to /api/csp-report, which forwards them to PostHog.
-      // report-uri is deprecated but still the only reporting channel Firefox
-      // honors; report-to (paired with the Reporting-Endpoints header below)
-      // is the modern channel used by Chromium.
-      'report-uri /api/csp-report',
-      'report-to csp-endpoint',
-    ].join('; ');
+    // Content-Security-Policy is emitted in two places, and never both on the
+    // same response:
+    //
+    //  - `src/proxy.ts` mints a per-request nonce and emits the strict
+    //    `'nonce-…' 'strict-dynamic'` policy. That covers every dynamically
+    //    rendered route, which is everything its `config.matcher` catches.
+    //  - the rule below covers the HTML routes the matcher deliberately skips.
+    //    `/info/*` is `force-static`, so its HTML is built once with no request
+    //    to mint a nonce from; `/login` sits outside `app/[locale]`, so routing
+    //    it through the proxy would send it through the locale redirect. Both
+    //    keep the script allowance they already run under.
+    //
+    // Keep the two `source` patterns disjoint. Two Content-Security-Policy
+    // headers on one response are intersected, and a nonce-free policy
+    // intersected with a nonce policy blocks every script on the page.
+    const staticRouteCsp = buildStaticContentSecurityPolicy({
+      // No VERCEL_ENV means the dev server or the e2e stack, where Supabase
+      // and the tRPC API answer over http/ws rather than https/wss.
+      isLocalEnvironment: !DEPLOY_ENV,
+    });
 
     return [
       {
@@ -193,16 +193,23 @@ const config = {
               'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
           },
           {
-            // Names the report-to group referenced by the CSP above.
+            // Names the report-to group both policies reference.
             key: 'Reporting-Endpoints',
-            value: 'csp-endpoint="/api/csp-report"',
-          },
-          {
-            key: 'Content-Security-Policy-Report-Only',
-            value: reportOnlyCsp,
+            value: REPORTING_ENDPOINTS_HEADER,
           },
         ],
       },
+      // The HTML routes `src/proxy.ts` does not match. Disjoint from the
+      // proxy's matcher, so nothing gets two policies.
+      ...['/login/:path*', '/info/:path*'].map((source) => ({
+        source,
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: staticRouteCsp,
+          },
+        ],
+      })),
     ];
   },
   async rewrites() {

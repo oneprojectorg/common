@@ -8,6 +8,12 @@ import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
+import {
+  buildNonceContentSecurityPolicy,
+  createCspNonce,
+  getCspHeaderName,
+  parseCspMode,
+} from './lib/csp.mjs';
 import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
@@ -20,12 +26,50 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
 
-  // Expose the current path (and query string) to Server Components (Next
-  // doesn't surface them to layouts otherwise) so the walled-garden gate can
-  // build /login?redirect=... and detect the promote onboarding (?promote=1).
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-pathname', pathname);
-  requestHeaders.set('x-search', request.nextUrl.search);
+  // A fresh nonce per request, put on the forwarded request headers so Next's
+  // renderer reads it back out and stamps it on every script it emits. Routes
+  // this proxy does not match are prerendered or non-HTML; `next.config.mjs`
+  // covers those with a static policy, so no response carries two policies.
+  const cspHeaderName = getCspHeaderName(parseCspMode(process.env.CSP_MODE));
+  const contentSecurityPolicy = buildNonceContentSecurityPolicy({
+    nonce: createCspNonce(),
+    // True for the dev server and the e2e stack, false for every deployment
+    // including previews. Local backends are reached over http/ws.
+    isLocalEnvironment: useUrl.IS_DEVELOPMENT,
+  });
+
+  // Rebuilt rather than captured: the Supabase cookie adapter below mutates
+  // `request.cookies` (which writes through to the `cookie` request header) and
+  // then forwards the request again. A snapshot taken up front would send the
+  // pre-refresh cookie, and dropping it would send no nonce at all — which,
+  // under an enforcing policy, is a blank page on exactly the requests that
+  // refresh a token.
+  //
+  // x-pathname / x-search expose the current path and query string to Server
+  // Components (Next doesn't surface them to layouts otherwise) so the
+  // walled-garden gate can build /login?redirect=... and detect the promote
+  // onboarding (?promote=1).
+  const buildForwardedHeaders = () => {
+    const headers = new Headers(request.headers);
+    headers.set('x-pathname', pathname);
+    headers.set('x-search', request.nextUrl.search);
+
+    if (cspHeaderName) {
+      headers.set(cspHeaderName, contentSecurityPolicy);
+    }
+
+    return headers;
+  };
+
+  const withContentSecurityPolicy = <T extends NextResponse>(
+    response: T,
+  ): T => {
+    if (cspHeaderName) {
+      response.headers.set(cspHeaderName, contentSecurityPolicy);
+    }
+
+    return response;
+  };
 
   const pathnameIsMissingLocale = i18nConfig.locales.every(
     (locale) =>
@@ -46,7 +90,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       // Only set cookie if it's different from current cookie value
       if (existingLocaleCookie !== currentLocale) {
         localeResponse = NextResponse.next({
-          request: { headers: requestHeaders },
+          request: { headers: buildForwardedHeaders() },
         });
 
         // Set the locale cookie with proper domain options
@@ -69,7 +113,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   let supabaseResponse =
     localeResponse ||
     NextResponse.next({
-      request: { headers: requestHeaders },
+      request: { headers: buildForwardedHeaders() },
     });
   // Skip domain on preview URLs (use host-only cookies)
   const shouldSetCookieDomain =
@@ -95,8 +139,11 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
+          // Built after the cookie writes above so the forwarded request
+          // carries the refreshed token, and still carries x-pathname /
+          // x-search / the CSP nonce.
           supabaseResponse = NextResponse.next({
-            request,
+            request: { headers: buildForwardedHeaders() },
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
@@ -134,7 +181,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       response.cookies.set(cookie);
     });
 
-    return response;
+    return withContentSecurityPolicy(response);
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
@@ -149,7 +196,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   //    return myNewResponse
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
-  return supabaseResponse;
+  return withContentSecurityPolicy(supabaseResponse);
 }
 
 // Next.js statically analyzes `config.matcher` at build time and cannot

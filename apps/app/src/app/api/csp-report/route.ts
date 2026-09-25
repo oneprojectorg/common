@@ -39,6 +39,12 @@ const payloadSchema = z.union([
   z.object({ 'csp-report': cspReportSchema }),
 ]);
 
+// The endpoint is unauthenticated by necessity — the browser posts these with
+// no credentials. Under an enforcing policy a single bad deploy turns one
+// report per blocked script per page load into PostHog events, and the
+// `report-to` batch is an attacker-suppliable array, so cap the fan-out.
+const MAX_REPORTS_PER_REQUEST = 10;
+
 const normalize = (report: CspReport) => ({
   document_uri: report['document-uri'] ?? report.documentURL,
   effective_directive:
@@ -65,11 +71,13 @@ export async function POST(request: NextRequest): Promise<Response> {
     return new Response(null, { status: 204 });
   }
 
-  const reports = Array.isArray(parsed.data)
-    ? parsed.data.flatMap((entry) =>
-        entry.type === 'csp-violation' && entry.body ? [entry.body] : [],
-      )
-    : [parsed.data['csp-report']];
+  const reports = (
+    Array.isArray(parsed.data)
+      ? parsed.data.flatMap((entry) =>
+          entry.type === 'csp-violation' && entry.body ? [entry.body] : [],
+        )
+      : [parsed.data['csp-report']]
+  ).slice(0, MAX_REPORTS_PER_REQUEST);
 
   const userAgent = request.headers.get('user-agent') ?? undefined;
 
