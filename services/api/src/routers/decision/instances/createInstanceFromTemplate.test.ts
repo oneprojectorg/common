@@ -5,6 +5,7 @@ import {
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { decisionProcesses, users } from '@op/db/schema';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -294,6 +295,128 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const result = await caller.decision.createInstanceFromTemplate({
       templateId: template!.id,
       name: `Owner Steward Test ${task.id}`,
+    });
+
+    testData.trackProfileForCleanup(result.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: result.processInstance.id },
+    });
+
+    expect(instance!.ownerProfileId).toBe(userRecord!.profileId);
+    expect(instance!.stewardProfileId).toBe(setup.organization.profileId);
+  });
+
+  it('should reject a steward profile the caller does not administer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const otherSetup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, setup.userEmail));
+    const [otherUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, otherSetup.userEmail));
+
+    const [template] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Foreign Steward Template ${task.id}`,
+        processSchema: simpleVoting,
+        createdByProfileId: userRecord!.profileId!,
+      })
+      .returning();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createInstanceFromTemplate({
+        templateId: template!.id,
+        name: `Foreign Steward ${task.id}`,
+        stewardProfileId: otherUser!.profileId!,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should reject a steward profile that does not exist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, setup.userEmail));
+
+    const [template] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Missing Steward Template ${task.id}`,
+        processSchema: simpleVoting,
+        createdByProfileId: userRecord!.profileId!,
+      })
+      .returning();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createInstanceFromTemplate({
+        templateId: template!.id,
+        name: `Missing Steward ${task.id}`,
+        stewardProfileId: randomUUID(),
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should accept an org profile the caller administers as steward', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, setup.userEmail));
+
+    // Acting as the individual profile, so the org steward is a real override
+    // rather than the currentProfileId default. `lastOrgId` clears with it,
+    // matching updateUserCurrentProfile — leaving it set is a state the app
+    // never produces, and it outlives the org through cleanup's cascade.
+    await db
+      .update(users)
+      .set({ currentProfileId: userRecord!.profileId, lastOrgId: null })
+      .where(eq(users.id, userRecord!.id));
+
+    const [template] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Org Steward Template ${task.id}`,
+        processSchema: simpleVoting,
+        createdByProfileId: userRecord!.profileId!,
+      })
+      .returning();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    // Org grants live on organizationUsers, so a profileUsers-only admin check
+    // would reject this.
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId: template!.id,
+      name: `Org Steward Test ${task.id}`,
+      stewardProfileId: setup.organization.profileId,
     });
 
     testData.trackProfileForCleanup(result.id);
