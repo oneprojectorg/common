@@ -5,8 +5,8 @@ import {
   RateLimitError,
   requestPhoneSignupCode,
   safeParsePhoneNumber,
-  toGoTruePhoneFormat,
 } from '@op/common';
+import { toGoTruePhoneFormat } from '@op/common/client';
 import { db } from '@op/db/client';
 import { authUsers, users } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
