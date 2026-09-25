@@ -7,7 +7,7 @@ import {
   stepThreeScreens,
   type WizardAnswers,
 } from './flow';
-import { EMPTY_OTHER } from './otherFlow';
+import { EMPTY_OTHER, type OtherAnswers } from './otherFlow';
 
 const answers = (patch: Partial<WizardAnswers>): WizardAnswers => ({
   step: 1,
@@ -79,12 +79,28 @@ describe('canAdvance', () => {
 describe('progressPercent', () => {
   // Step 3's sub-steps have to advance the bar, or it sticks for up to five
   // questions on the "other" pathway.
-  it('moves through step 3 rather than sticking', () => {
-    expect(progressPercent(3, 0, 4)).toBeLessThan(progressPercent(3, 1, 4));
-    expect(progressPercent(3, 3, 4)).toBe(progressPercent(3, 0, 1));
+  // With and without the focus screen, which an answer can add mid-step.
+  const withFocus: OtherAnswers = {
+    ...EMPTY_OTHER,
+    subjects: ['funding', 'ideas'],
+    cadence: 'timeline',
+  };
+
+  it.each([
+    ['with', withFocus],
+    ['without', EMPTY_OTHER],
+  ])('only moves forward through step 3, %s the focus screen', (_, other) => {
+    const bar = stepThreeScreens('other', other).map((screen) =>
+      progressPercent(3, screen, 'other'),
+    );
+
+    expect(bar).toEqual([...bar].sort((a, b) => a - b));
+    expect(new Set(bar).size).toBe(bar.length);
+    expect(bar[0]).toBeGreaterThan(progressPercent(2, 'shape', 'other'));
+    expect(bar.at(-1)).toBe((3 / TOTAL_STEPS) * 100);
   });
 
   it('fills the bar on the last step', () => {
-    expect(progressPercent(TOTAL_STEPS, 0, 1)).toBe(100);
+    expect(progressPercent(TOTAL_STEPS, 'shape', null)).toBe(100);
   });
 });
