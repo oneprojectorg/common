@@ -2,10 +2,9 @@ import { isFeatureEnabled } from '@op/analytics';
 import {
   createAccountFromPhone,
   getSmsProvider,
-  parsePhoneNumber,
   RateLimitError,
-  type PhoneNumber,
-  ValidationError,
+  safeParsePhoneNumber,
+  toGoTruePhoneFormat,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { authUsers, users } from '@op/db/schema';
@@ -42,17 +41,31 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'sms signup disabled' };
     }
 
+    const parsedFrom = safeParsePhoneNumber(from);
+
+    if (!parsedFrom.success) {
+      logger.info('Inbound SMS from a non-E.164 number, skipping signup', {
+        reason: parsedFrom.error.message,
+      });
+      return { message: 'invalid phone number' };
+    }
+
+    const to = parsedFrom.data;
+
     const existing = await step.run(
       'check-known-number',
       async (): Promise<{
         authUserId: string;
         profileId: string | null;
       } | null> => {
+        // GoTrue stores auth.users.phone without the leading '+' Twilio always
+        // sends in From, so comparing the raw value here would never match an
+        // existing account, misrouting every known sender into the signup flow.
         const [row] = await db
           .select({ authUserId: authUsers.id, profileId: users.profileId })
           .from(authUsers)
           .leftJoin(users, eq(users.authUserId, authUsers.id))
-          .where(eq(authUsers.phone, from))
+          .where(eq(authUsers.phone, toGoTruePhoneFormat(to)))
           .limit(1);
         return row ?? null;
       },
@@ -75,19 +88,6 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     }
 
     const sendSms = provider.sendSms;
-
-    let to: PhoneNumber;
-    try {
-      to = parsePhoneNumber(from);
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        logger.info('Inbound SMS from a non-E.164 number, skipping signup', {
-          reason: error.message,
-        });
-        return { message: 'invalid phone number' };
-      }
-      throw error;
-    }
 
     const consentResult = await step.run('send-consent-request', async () => {
       const result = await sendSms({

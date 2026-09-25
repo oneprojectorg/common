@@ -10,7 +10,10 @@ import {
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import type { CommonUser } from '@op/api/encoders';
-import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
+import {
+  isValidTypedPhoneNumber,
+  normalizePhoneNumber,
+} from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -175,9 +178,7 @@ const JoinAccountModalContent = () => {
 
   const emailIsValid = isValidEmail(email);
   // People type `(415) 555-0132`. Validate what they meant, and send that.
-  const phoneIsValid = phoneNumberSchema.safeParse(
-    normalizePhoneNumber(phone),
-  ).success;
+  const phoneIsValid = isValidTypedPhoneNumber(phone);
   const contactIsValid = isPhone ? phoneIsValid : emailIsValid;
 
   // Return to this decision page after onboarding. Query params are dropped

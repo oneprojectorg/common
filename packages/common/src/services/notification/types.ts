@@ -17,6 +17,21 @@
 export type PhoneNumber = string & { readonly __brand: 'PhoneNumber' };
 
 /**
+ * A phone number in the shape GoTrue stores it: the same E.164 digits, with
+ * the leading `+` dropped. `auth.users.phone` (and our `authUsers.phone`
+ * mirror) holds this, not {@link PhoneNumber} — confirmed against the local
+ * dev database, where every stored row is digits only, country code
+ * included, `+` never present.
+ *
+ * Compare against `authUsers.phone` with this type, never with
+ * {@link PhoneNumber} directly; the `+` never matches. Obtain one with
+ * `toGoTruePhoneFormat` in `schemas.ts`.
+ */
+export type GoTruePhoneFormat = string & {
+  readonly __brand: 'GoTruePhoneFormat';
+};
+
+/**
  * Why a send or a verification failed, in our vocabulary rather than a
  * vendor's.
  *
@@ -78,7 +93,7 @@ export type SmsSendResult =
  *
  * This interface does not confirm a phone number. GoTrue owns that lifecycle
  * through `[auth.sms.twilio_verify]`, and the browser calls GoTrue directly, so
- * no code of ours generates or checks a code. ADR 0003 records that decision.
+ * no code of ours generates or checks a code.
  *
  * Nothing calls `sendSms` yet. GoTrue sends every sign-in code, so the one SMS
  * the product sends today does not pass through here. This interface stays for
