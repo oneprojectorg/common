@@ -77,14 +77,31 @@ export function canAdvance({
   return true;
 }
 
+/**
+ * Every screen step 3 could show for a type, whatever the answers. Progress
+ * divides by these rather than by the screens currently shown, so an answer
+ * that adds a screen cannot move the bar backwards; a skipped screen jumps it
+ * forward instead.
+ */
+function stepThreeSlots(type: ProcessType | null): StepThreeScreen[] {
+  if (type === 'other') {
+    return ['subjects', 'cadence', 'focus', 'submits', 'decision'];
+  }
+
+  return type === 'grant' ? ['shape', 'grantDecision'] : ['shape'];
+}
+
 /** Runs smoothly through step 3's sub-steps instead of sticking. */
 export function progressPercent(
   step: number,
-  subIndex: number,
-  screenCount: number,
+  screen: StepThreeScreen,
+  type: ProcessType | null,
 ): number {
   if (step === 3) {
-    return ((2 + (subIndex + 1) / screenCount) / TOTAL_STEPS) * 100;
+    const slots = stepThreeSlots(type);
+    const slot = Math.max(slots.indexOf(screen), 0);
+
+    return ((2 + (slot + 1) / slots.length) / TOTAL_STEPS) * 100;
   }
 
   return (step / TOTAL_STEPS) * 100;
