@@ -12,13 +12,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // hand-rolled re-implementation of it.
 vi.mock('@op/analytics', () => ({ isFeatureEnabled: vi.fn() }));
 vi.mock('@op/db/client', () => ({ db: { select: vi.fn() } }));
-vi.mock('@op/common', () => ({
-  createAccountFromPhone: vi.fn(),
-  getSmsProvider: vi.fn(),
-  // A real E.164 fixture below, so identity is a faithful stand-in.
-  parsePhoneNumber: (value: string) => value,
-  RateLimitError: class RateLimitError extends Error {},
-}));
+vi.mock('@op/common', () => {
+  class ValidationError extends Error {}
+  return {
+    createAccountFromPhone: vi.fn(),
+    getSmsProvider: vi.fn(),
+    // A real E.164 fixture below, so identity is a faithful stand-in, except
+    // for 'not-e164', used to exercise the invalid-number branch.
+    parsePhoneNumber: (value: string) => {
+      if (value === 'not-e164') {
+        throw new ValidationError('Phone number must be in E.164 format');
+      }
+      return value;
+    },
+    RateLimitError: class RateLimitError extends Error {},
+    ValidationError,
+  };
+});
 vi.mock('@op/logging', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
@@ -93,6 +103,26 @@ describe('handleUnknownSmsSignup', () => {
     const { result } = await t.execute({ events: [triggerEvent()] });
 
     expect(result).toEqual({ message: 'sms sending unavailable' });
+  });
+
+  it('skips signup when the inbound number is not valid E.164', async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
+    vi.mocked(db.select).mockReturnValue(dbRows([]));
+    const sendSms = vi.fn();
+    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [
+        {
+          name: Events.smsInboundReceived.name,
+          data: { from: 'not-e164', body: 'hello', messageSid: 'SM1' },
+        },
+      ],
+    });
+
+    expect(result).toEqual({ message: 'invalid phone number' });
+    expect(sendSms).not.toHaveBeenCalled();
   });
 
   it('aborts the signup when the consent text is permanently rejected', async () => {

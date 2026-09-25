@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@op/supabase/server', () => ({
   createSBServiceClient: vi.fn(),
 }));
+vi.mock('@op/logging', () => ({
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
 
+import { logger } from '@op/logging';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from '../../utils/error';
@@ -39,17 +43,29 @@ describe('createAccountFromPhone', () => {
     expect(result).toEqual({ authUserId: 'auth-user-1' });
   });
 
-  it('throws when Supabase reports an error', async () => {
+  it('throws when Supabase reports an error, without echoing its message', async () => {
     const createUser = vi.fn().mockResolvedValue({
       data: { user: null },
-      error: { message: 'phone number already registered' },
+      error: {
+        code: 'phone_exists',
+        message: `phone ${PHONE} already registered`,
+      },
     });
     vi.mocked(createSBServiceClient).mockReturnValue(
       fakeSupabase(createUser) as never,
     );
 
     await expect(createAccountFromPhone({ phone: PHONE })).rejects.toThrow(
-      CommonError,
+      'Failed to create account for phone signup: phone_exists',
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to create account for phone signup',
+      {
+        error: {
+          code: 'phone_exists',
+          message: `phone ${PHONE} already registered`,
+        },
+      },
     );
   });
 
