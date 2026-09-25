@@ -343,18 +343,6 @@ export function ReviewAssignmentsList({
               </Suspense>
             </APIErrorBoundary>
           </div>
-          {/* Beside the count rather than after the selects: on a phone the
-              selects claim their own rows, and a switch trailing them would
-              sit below the fold of the bar. */}
-          {availableViews.length > 1 && (
-            <ProposalsViewSwitch
-              view={{
-                value: effectiveView,
-                views: availableViews,
-                onChange: handleViewChange,
-              }}
-            />
-          )}
           <div className="flex flex-wrap items-center justify-end gap-4">
             <ResponsiveSelect
               selectedKey={statusFilter ?? 'all'}
@@ -387,6 +375,15 @@ export function ReviewAssignmentsList({
                 },
               ]}
             />
+            {availableViews.length > 1 && (
+              <ProposalsViewSwitch
+                view={{
+                  value: effectiveView,
+                  views: availableViews,
+                  onChange: handleViewChange,
+                }}
+              />
+            )}
           </div>
         </StickyFilterBar>
       )}

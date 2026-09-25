@@ -1,7 +1,6 @@
 'use client';
 
 import { ProposalFilter } from '@op/api/encoders';
-import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -35,8 +34,6 @@ export interface ProposalViewControls {
   value: ProposalView;
   /** The views to offer, in display order — see `useProposalViewMode`. */
   views: readonly ProposalView[];
-  /** Layout classes for the switch's slot in whichever bar renders it. */
-  className?: string;
   onChange: (next: ProposalView) => void;
 }
 
@@ -51,7 +48,7 @@ export const ProposalsViewSwitch = ({
 }: {
   view: ProposalViewControls;
 }) => (
-  <div className={cn('flex items-center gap-4', view.className)}>
+  <div className="flex items-center gap-4">
     <span aria-hidden className="h-6 w-px bg-border" />
     <ProposalViewToggle
       value={view.value}
@@ -91,8 +88,9 @@ export const MyProposalsHeader = () => {
 };
 
 /**
- * The count, search and view switch on one side, the three filter selects on
- * the other.
+ * The count and search on one side, the filter selects and the view switch on
+ * the other — the switch sits at the end of the selects at every width, which
+ * is the arrangement the design asks for.
  *
  * Two boxes rather than one wrapping row, so the split is an element boundary
  * and not a measurement: below `2xl` the count box takes a full row and the
@@ -155,14 +153,6 @@ export const ProposalsFilterBar = ({
           end and putting both boxes on one line. */}
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
         {header ?? <ProposalsListHeader count={count} total={total} />}
-        {/* Before the search field in the DOM so it shares the count's row
-            below `md`, where the field goes full width and claims its own.
-            From `md` it orders last, back to the end of the row. */}
-        {view && (
-          <ProposalsViewSwitch
-            view={{ ...view, className: 'max-md:ms-auto md:order-last' }}
-          />
-        )}
         <ProposalSearchField
           className="ms-auto"
           value={controls.search}
@@ -207,6 +197,7 @@ export const ProposalsFilterBar = ({
             { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
+        {view && <ProposalsViewSwitch view={view} />}
         {exportControl && (
           <div className="flex items-center gap-4">
             <span aria-hidden className="h-6 w-px bg-border" />
