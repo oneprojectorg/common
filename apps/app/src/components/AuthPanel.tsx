@@ -1,5 +1,6 @@
 'use client';
 
+import { AUTH_OTP_LENGTH } from '@op/core';
 import { Button } from '@op/sense/Button';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';
@@ -114,15 +115,7 @@ export const useAuthPanelStore = create<AuthPanelState>()(
   ),
 );
 
-// Supabase OTP length is configurable between 6-10 digits
-// https://supabase.com/docs/guides/local-development/cli/config#auth.email.otp_length
-export function isValidOtpLength(token: string | undefined): boolean {
-  if (!token) {
-    return false;
-  }
-
-  return token.length >= 6 && token.length <= 10;
-}
+export { isValidOtpLength } from '@/utils/isValidOtpLength';
 
 /** Outer card + centered title/subtitle section. The body is `children`. */
 export const AuthPanelShell = ({
@@ -294,12 +287,11 @@ export const AuthPhoneField = ({
   );
 };
 
-// Matches the `otp_length` set to 6 in every supabase/*.toml.
-const OTP_LENGTH = 6;
 // input-otp's REGEXP_ONLY_DIGITS, inlined to avoid a direct dependency on the package.
 const DIGITS_ONLY_PATTERN = '^\\d+$';
 
-/** 6-digit OTP entry field; submits automatically once all slots are filled. */
+/** OTP entry field, sized to this deployment's configured length (see
+ * `AUTH_OTP_LENGTH`); submits automatically once all slots are filled. */
 export const AuthCodeField = ({
   value,
   isDisabled,
@@ -315,13 +307,13 @@ export const AuthCodeField = ({
 
   return (
     <Field>
-      <FieldLabel htmlFor="auth-code">{t('6-digit code')}</FieldLabel>
+      <FieldLabel htmlFor="auth-code">{t('auth.codeLabel')}</FieldLabel>
       <InputOTP
         id="auth-code"
         containerClassName="justify-center"
-        maxLength={OTP_LENGTH}
+        maxLength={AUTH_OTP_LENGTH}
         pattern={DIGITS_ONLY_PATTERN}
-        aria-label={t('6-digit code')}
+        aria-label={t('auth.codeLabel')}
         autoFocus
         disabled={isDisabled}
         value={value ?? ''}
@@ -331,7 +323,7 @@ export const AuthCodeField = ({
         }}
       >
         <InputOTPGroup>
-          {Array.from({ length: OTP_LENGTH }, (_, index) => (
+          {Array.from({ length: AUTH_OTP_LENGTH }, (_, index) => (
             <InputOTPSlot key={index} index={index} />
           ))}
         </InputOTPGroup>

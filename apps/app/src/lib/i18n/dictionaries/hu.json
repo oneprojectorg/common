@@ -1590,6 +1590,5 @@
   "validWebsiteError": "Adjon meg egy érvényes webcímet",
   "validUrlError": "Adjon meg egy érvényes URL-címet",
   "maxLength200Error": "Legfeljebb 200 karakter lehet",
-  "6-digit code": "6 jegyű kód",
   "Browse proposals for now": "Javaslatok böngészése egyelőre"
 }

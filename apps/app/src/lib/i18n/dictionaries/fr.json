@@ -1590,6 +1590,5 @@
   "validWebsiteError": "Entrez une adresse web valide",
   "validUrlError": "Saisissez une URL valide",
   "maxLength200Error": "Doit contenir au maximum 200 caractères",
-  "6-digit code": "Code à 6 chiffres",
   "Browse proposals for now": "Parcourir les propositions pour l'instant"
 }
