@@ -8,7 +8,7 @@ import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
-import { createCspHeaderApplier } from './lib/csp.mjs';
+import { createCspHeaderApplier, isStaticPolicyPath } from './lib/csp.mjs';
 import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
@@ -70,7 +70,13 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Routes this proxy does not match are prerendered or non-HTML;
   // `next.config.mjs` covers those with a static policy, so no response ever
   // carries two policies.
-  const applyCsp = createCspHeaderApplier();
+  // `next.config.mjs` serves a static, nonce-free policy over /login and
+  // /info. Case-folding differs between the matcher and header sources, so a
+  // request like /Login reaches both — decline here rather than let the two
+  // policies intersect and block every script on the page.
+  const applyCsp = isStaticPolicyPath(pathname)
+    ? (headers: Headers) => headers
+    : createCspHeaderApplier();
 
   // Rebuilt rather than captured: the Supabase cookie adapter below mutates
   // `request.cookies` (which writes through to the `cookie` request header) and

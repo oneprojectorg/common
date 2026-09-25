@@ -58,7 +58,19 @@ const normalize = (report: CspReport) => ({
   column_number: report['column-number'] ?? report.columnNumber,
 });
 
+/**
+ * A real report is well under a kilobyte. The endpoint is unauthenticated by
+ * necessity — the browser posts these with no credentials — so refuse an
+ * oversized body before `json()` buffers it rather than after.
+ */
+const MAX_BODY_BYTES = 64_000;
+
 export async function POST(request: NextRequest): Promise<Response> {
+  const declaredLength = Number(request.headers.get('content-length'));
+  if (declaredLength > MAX_BODY_BYTES) {
+    return new Response(null, { status: 413 });
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();

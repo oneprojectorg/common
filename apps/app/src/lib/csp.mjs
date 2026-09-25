@@ -32,12 +32,34 @@ const CSP_REPORT_GROUP = 'csp-endpoint';
 export const REPORTING_ENDPOINTS_HEADER = `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`;
 
 /**
- * The HTML routes served the static policy, as `next.config.mjs` header
- * sources. `/info/*` is `force-static`; `/login` sits outside `app/[locale]`,
- * so routing it through the proxy would send it through the locale redirect
- * to an `/en/login` that does not exist.
+ * The HTML route trees served the static policy. `/info/*` is `force-static`;
+ * `/login` sits outside `app/[locale]`, so routing it through the proxy would
+ * send it through the locale redirect to an `/en/login` that does not exist.
  */
-export const STATIC_POLICY_SOURCES = ['/login/:path*', '/info/:path*'];
+const STATIC_POLICY_PREFIXES = ['/login', '/info'];
+
+/** The same trees as `next.config.mjs` header sources. */
+export const STATIC_POLICY_SOURCES = STATIC_POLICY_PREFIXES.map(
+  (prefix) => `${prefix}/:path*`,
+);
+
+/**
+ * Whether `next.config.mjs` already serves this path the static policy.
+ *
+ * The proxy checks this and declines to add its own, because two
+ * Content-Security-Policy headers on one response are intersected and a
+ * nonce-free policy intersected with a nonce policy blocks every script on
+ * the page. The two matchers cannot be trusted to stay disjoint on their own:
+ * Next compiles `config.matcher` case-sensitively but matches `headers()`
+ * sources case-insensitively, so `/Login` is caught by both.
+ */
+export const isStaticPolicyPath = (pathname) => {
+  const lower = pathname.toLowerCase();
+
+  return STATIC_POLICY_PREFIXES.some(
+    (prefix) => lower === prefix || lower.startsWith(`${prefix}/`),
+  );
+};
 
 /**
  * True for the dev server and the e2e stack, false for every deployment
@@ -48,8 +70,15 @@ export const STATIC_POLICY_SOURCES = ['/login/:path*', '/info/:path*'];
  * Supabase realtime on ws://127.0.0.1 — so `connect-src` has to admit
  * cleartext there, and must never admit it anywhere else. Derived once, here,
  * because both emitters need the same answer.
+ *
+ * Fails closed on purpose. Keying this off a hosting provider's variable
+ * (`!VERCEL_ENV`) would read any build that happens to run without it — a
+ * container, CI without system env vars, a move off Vercel — as "local" and
+ * silently ship `http:`/`ws:` to production. An unknown environment has to be
+ * the strict one. The e2e stack runs a production build, hence the E2E flag.
  */
-const isLocalEnvironment = () => !process.env.VERCEL_ENV;
+const isLocalEnvironment = () =>
+  process.env.NODE_ENV !== 'production' || process.env.E2E === 'true';
 
 /**
  * `CSP_MODE=report-only` switches disposition at deploy time, so a policy that
