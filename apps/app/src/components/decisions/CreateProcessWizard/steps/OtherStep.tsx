@@ -6,6 +6,7 @@ import { LuInfo } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Callout } from '../Callout';
 import { CheckList, ChoiceList } from '../ChoiceList';
 import { StepHeading } from '../StepHeading';
 import {
@@ -108,15 +109,7 @@ export function OtherStep({
         />
         <div aria-live="polite">
           {answers.cadence === 'ongoing' ? (
-            <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-accent p-4">
-              <LuInfo
-                className="mt-0.5 size-5 shrink-0 text-primary"
-                aria-hidden
-              />
-              <p className="text-sm text-foreground">
-                {t('cadenceOngoingCallout')}
-              </p>
-            </div>
+            <Callout icon={LuInfo}>{t('cadenceOngoingCallout')}</Callout>
           ) : null}
         </div>
       </div>
