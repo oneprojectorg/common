@@ -17,7 +17,9 @@ export {
   areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
+  getVoterBudget,
   hasVotingPhase,
+  isRankedVoting,
   isReviewPhase,
   isVotingPhase,
   resolveReviewSettings,
@@ -182,6 +184,26 @@ export {
   isMoneyFieldSchema,
   resolveMoneyDisplayCurrency,
 } from './services/decision/rubric/money';
+export {
+  DEFAULT_AMOUNT_UNIT,
+  type AmountUnit,
+  type UnitAmount,
+  amountUnitSchema,
+  getFieldUnit,
+  getTemplateBudgetUnit,
+  getUnitLabel,
+  isSameUnit,
+  normalizeBudgetForTemplate,
+  resolveUnitAmount,
+  toFixedPointUnits,
+} from './services/decision/budgetUnit';
+// The client reuses these so its affordability check matches the server's.
+export {
+  type ProposalCosts,
+  canAffordProposal,
+  getProposalCost,
+  sumSelectedCost,
+} from './services/decision/voteBudget';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

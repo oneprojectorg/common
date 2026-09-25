@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
-import type { BudgetData } from './proposalDataSchema';
+import { type AmountUnit, getUnitLabel } from './budgetUnit';
 
 // `amount` is omitted until something writes
 // `decision_process_result_selections.allocated`; until then it could only
@@ -71,16 +71,18 @@ export function selectResultNotificationTemplate({
 }
 
 /**
+ * The allocated figure, rendered in the process's budget unit.
+ *
  * Never falls back to the requested budget: that would tell a selected author
  * they were awarded exactly what they asked for, in an email we can't take
  * back.
  */
 export function formatResultAmount({
   allocated,
-  budget,
+  unit,
 }: {
   allocated: string | null;
-  budget: BudgetData | undefined;
+  unit: AmountUnit;
 }): string {
   const amount = allocated === null ? null : Number(allocated);
 
@@ -88,11 +90,18 @@ export function formatResultAmount({
     return '';
   }
 
-  const currency = budget?.currency;
+  if (unit.kind === 'custom') {
+    return `${new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 2,
+    }).format(amount)} ${getUnitLabel(unit)}`;
+  }
 
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: isValidCurrencyCode(currency) ? currency : DEFAULT_MONEY_CURRENCY,
+    // A persisted code Intl doesn't know must not throw mid-send.
+    currency: isValidCurrencyCode(unit.code)
+      ? unit.code
+      : DEFAULT_MONEY_CURRENCY,
     minimumFractionDigits: 0,
   }).format(amount);
 }

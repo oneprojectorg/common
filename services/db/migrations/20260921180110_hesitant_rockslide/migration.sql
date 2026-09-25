@@ -1,0 +1,2 @@
+ALTER TABLE "decisions_vote_proposals" ADD COLUMN "rank" integer;--> statement-breakpoint
+CREATE UNIQUE INDEX "decisions_vote_proposals_vote_submission_id_rank_index" ON "decisions_vote_proposals" ("vote_submission_id","rank") WHERE rank IS NOT NULL;

@@ -1,3 +1,4 @@
+import { type AmountUnit, getUnitLabel, toFixedPointUnits } from './budgetUnit';
 import {
   DecisionProcessSchema,
   DecisionProcessSchemaBase,
@@ -5,6 +6,7 @@ import {
   SchemaValidationResult,
   VotingConfig,
 } from './schemaTypes';
+import { type ProposalCosts, sumSelectedCost } from './voteBudget';
 
 export function isValidDecisionProcessSchema(
   data: unknown,
@@ -149,6 +151,46 @@ export function extractSupportedProperties(
   );
 
   return [...baseProperties, ...additionalProperties];
+}
+
+/**
+ * Checks a ballot against the phase's per-voter budget (ADR 0006).
+ *
+ * Independent of `validateVoteSelection`'s count cap — either may apply, both
+ * may apply, and the caller reports whatever both produced. `totalCost` comes
+ * back either way so the submission can snapshot what was enforced.
+ */
+export function validateVoteBudget(
+  selectedProposalIds: string[],
+  voterBudget: number | undefined,
+  costs: ProposalCosts,
+  unit: AmountUnit,
+): {
+  isValid: boolean;
+  errors: string[];
+  totalCost: number;
+} {
+  const totalCost = sumSelectedCost(selectedProposalIds, costs, unit);
+
+  if (voterBudget === undefined) {
+    return { isValid: true, errors: [], totalCost };
+  }
+
+  // Fixed point on both sides: a ballot that exactly meets its budget must
+  // pass, and float addition alone does not guarantee that.
+  if (toFixedPointUnits(totalCost) <= toFixedPointUnits(voterBudget)) {
+    return { isValid: true, errors: [], totalCost };
+  }
+
+  const unitLabel = getUnitLabel(unit);
+
+  return {
+    isValid: false,
+    errors: [
+      `Selected proposals total ${totalCost} ${unitLabel}, exceeding the voter budget of ${voterBudget} ${unitLabel}.`,
+    ],
+    totalCost,
+  };
 }
 
 export function validateVoteSelection(

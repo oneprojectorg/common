@@ -76,35 +76,29 @@ export function resolveDocumentFieldValues({
 
 /**
  * `assembleProposalData`'s legacy `type: 'number'` budget branch
- * (`extractBudgetValue`) resolves to a bare number, which never carries a
- * currency — normalizing it through the canonical shape would default to
- * `'USD'` and silently overwrite a real non-USD value a legacy schema was
- * never able to express, so a bare-number override keeps `existing`'s
- * currency instead. That same branch also returns `0` both for a
- * genuinely-zero budget and for a fragment that failed to parse into a real
- * amount — indistinguishable here, so `0` is treated as unresolved rather
- * than risk zeroing out a real budget.
+ * (`extractBudgetValue`) resolves to a bare number, which carries no unit of
+ * its own — it keeps `existing`'s currency so a re-pinned template can't
+ * silently reinterpret a real non-USD value a legacy schema was never able to
+ * express. That same branch also returns `0` both for a genuinely-zero budget
+ * and for a fragment that failed to parse into a real amount —
+ * indistinguishable here, so `0` is treated as unresolved rather than risk
+ * zeroing out a real budget.
  *
- * Known residual gap, accepted rather than chased further: a *canonical*
- * money field (`schema.type !== 'number'`) whose fragment text happens to be
- * a bare JSON number hits `assembleProposalData`'s `normalizeBudget(parsed)`
- * branch before this function ever sees it, which applies the identical
- * legacy-number-to-USD coercion and hands us an already-built object — so
- * `typeof raw === 'number'` never fires and the currency/zero guards don't
- * apply. No known write path produces this (a canonical field's fragment is
- * always the `{ amount, currency }` shape), and the coercion itself lives in
- * the widely-shared `normalizeBudget`/`budgetValueSchema` — also used to
- * parse the snapshot itself — so fixing it here without fixing it there
- * would just relocate the inconsistency.
+ * Nothing here stamps a unit in: a value with no `currency` adopts the
+ * template's unit at resolution time (`resolveUnitAmount`), which is the
+ * whole point of declaring the unit on the template.
  */
 export function resolveBudgetOverride(
   raw: unknown,
   existing: BudgetData | null | undefined,
 ): BudgetData | undefined {
   if (typeof raw === 'number') {
-    return raw === 0
-      ? (existing ?? undefined)
-      : { amount: raw, currency: existing?.currency ?? 'USD' };
+    if (raw === 0) {
+      return existing ?? undefined;
+    }
+    return existing?.currency === undefined
+      ? { amount: raw }
+      : { amount: raw, currency: existing.currency };
   }
   return normalizeBudget(raw) ?? existing ?? undefined;
 }
