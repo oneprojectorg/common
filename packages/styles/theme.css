@@ -92,11 +92,15 @@
   --animate-count-in: count-in var(--duration-count) var(--ease-count);
   --animate-count-out: count-out var(--duration-count) var(--ease-count)
     forwards;
-  /* A short rise into place, for a screen that settles in on arrival. Callers
-   * stagger it with `[animation-delay:…]` and pair it with
-   * `motion-reduce:animate-none`. `backwards` so a delayed element starts
+  /* A short rise into place, for a screen that settles in on arrival. Pair it
+   * with `motion-reduce:animate-none`. `backwards` so a delayed element starts
    * hidden rather than flashing at full opacity before its turn. */
   --animate-rise-in: rise-in 0.5s ease-out backwards;
+  --animate-rise-in-delayed: rise-in 0.5s ease-out 150ms backwards;
+  /* The create-process intro's backdrop. */
+  --animate-intro-wash: rise-in 1.2s ease-out backwards;
+  --animate-intro-blob-a: intro-blob-a 14s ease-in-out infinite;
+  --animate-intro-blob-b: intro-blob-b 20s ease-in-out infinite;
 }
 
 /* The sense radius and text scales are now the global defaults (declared in
