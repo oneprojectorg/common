@@ -107,11 +107,11 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
         {step + 1}
       </span>
 
-      <div className="min-w-0 flex-1 overflow-hidden rounded-lg border bg-background">
+      <div className="relative min-w-0 flex-1 overflow-hidden rounded-lg border bg-background">
         {/* The ordinal is real content, not an aria-label: a label would
             override the visible text and drop the phase from the name. The
             focus ring is inset because the card clips an outward one. */}
-        <AccordionTrigger className="w-full items-center gap-4 rounded-none border-0 px-5 py-3.5 hover:bg-muted/40 hover:no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring **:data-[slot=accordion-trigger-icon]:hidden">
+        <AccordionTrigger className="w-full items-center gap-4 rounded-none border-0 px-5 py-3.5 hover:bg-muted/40 hover:no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring **:data-[slot=accordion-trigger-icon]:hidden sm:group-data-open/item:w-3/5">
           <span className="sr-only">
             {t('stepOrdinal', { step: step + 1 })}
           </span>
@@ -126,8 +126,8 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
           </span>
         </AccordionTrigger>
 
-        <AccordionContent className="grid pt-0 pb-0 sm:grid-cols-5">
-          <div className="flex min-w-0 flex-col px-5 pb-5 sm:col-span-3">
+        <AccordionContent className="pt-0 pb-0">
+          <div className="flex min-w-0 flex-col px-5 pb-5 sm:w-3/5">
             {piece.description ? (
               <p className="mb-4 text-sm text-muted-foreground">
                 {t(piece.description)}
@@ -157,10 +157,11 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
             ) : null}
           </div>
 
-          {/* Placeholder in the real slot at the real size; no asset ships yet. */}
+          {/* Placeholder in the real slot at the real size; no asset ships yet.
+              Against the card, not the panel, so it runs up beside the title. */}
           <div
             aria-hidden
-            className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30 sm:col-span-2"
+            className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30 sm:absolute sm:inset-y-0 sm:end-0 sm:min-h-0 sm:w-2/5"
           />
         </AccordionContent>
       </div>
