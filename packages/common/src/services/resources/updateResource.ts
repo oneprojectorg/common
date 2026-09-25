@@ -29,7 +29,6 @@ export const updateResource = async (
       resourceId: input.id,
       policies: {
         [EntityType.DECISION]: { decisions: permission.ADMIN },
-        [EntityType.PHASE]: { decisions: permission.ADMIN },
       },
     }),
   ]);

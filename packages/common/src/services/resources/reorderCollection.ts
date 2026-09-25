@@ -24,7 +24,6 @@ export const reorderCollection = async ({
     collectionId: id,
     policies: {
       [EntityType.DECISION]: { decisions: permission.ADMIN },
-      [EntityType.PHASE]: { decisions: permission.ADMIN },
     },
   });
 

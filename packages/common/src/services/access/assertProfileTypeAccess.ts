@@ -4,7 +4,7 @@ import type { AccessZonePermission, NormalizedRole } from 'access-zones';
 import { assertAccess, permission } from 'access-zones';
 import { inArray } from 'drizzle-orm';
 
-import { ValidationError } from '../../utils/error';
+import { UnauthorizedError, ValidationError } from '../../utils/error';
 import { type AccessUser, resolveAccessUserIds } from './index';
 import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 
@@ -12,15 +12,11 @@ import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 // that type is NOT gated — the caller is opting into lenient pass-through
 // for, e.g., regular org or individual profiles.
 //
-// PHASE is therefore spelled out at every call site that gates DECISION, even
-// where no phase profile can reach it yet: omitting it is a read that succeeds
-// and should not, with no compile error to catch it. The bit chosen is the one
-// the site already requires of DECISION. That is deliberately conservative —
-// a phase profile's grants are per-capability, so almost nobody holds
-// `decisions: ADMIN` on one — and not yet the resolution rule, which puts
-// manage on the process and participation on the phase.
+// PHASE cannot be given a policy: a phase profile is always refused. Nothing
+// is attached to one yet, and a per-type bit checked on the phase itself is
+// the wrong rule — view and manage resolve against the process (ADR 0006).
 export type ProfileTypePolicies = Partial<
-  Record<EntityType, AccessZonePermission>
+  Record<Exclude<EntityType, EntityType.PHASE>, AccessZonePermission>
 >;
 
 export type AssertProfileTypeAccessOptions = {
@@ -33,7 +29,7 @@ export type AssertProfileTypeAccessOptions = {
 // Two batched queries: one for profile types, one for the user's profileUser
 // rows (with role graph) across every gated profile. Profile ADMIN always
 // satisfies the check. Types not present in `policies` are treated as no-op
-// (lenient).
+// (lenient), except PHASE, which always throws.
 export const assertProfileTypeAccess = async ({
   user,
   profileIds,
@@ -56,7 +52,11 @@ export const assertProfileTypeAccess = async ({
   const gatedRows = profileRows.flatMap((row) => {
     // `enumToPgEnum` widens enum columns to `string`; narrowing here until
     // the helper preserves literal types.
-    const requiredPermission = policies[row.type as EntityType];
+    const type = row.type as EntityType;
+    if (type === EntityType.PHASE) {
+      throw new UnauthorizedError('You do not have access to this profile');
+    }
+    const requiredPermission = policies[type];
     return requiredPermission ? [{ id: row.id, requiredPermission }] : [];
   });
   if (gatedRows.length === 0) {

@@ -70,7 +70,6 @@ export const assertModerationItemAccess = async ({
       profileIds,
       policies: {
         [EntityType.DECISION]: { decisions: permission.READ },
-        [EntityType.PHASE]: { decisions: permission.READ },
       },
     });
 
