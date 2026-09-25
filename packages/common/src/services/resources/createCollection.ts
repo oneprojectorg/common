@@ -22,7 +22,6 @@ export const createCollection = async ({
     profileIds: [profileId],
     policies: {
       [EntityType.DECISION]: { decisions: permission.ADMIN },
-      [EntityType.PHASE]: { decisions: permission.ADMIN },
     },
   });
 

@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import {
+  EntityType,
   allowList,
   profileInvites,
   profileUserToAccessRoles,
@@ -20,6 +21,7 @@ interface GenerateTestProfileOptions {
   };
   profileName?: string;
   emailDomain?: string;
+  type?: EntityType;
 }
 
 interface GeneratedProfileUser {
@@ -97,6 +99,7 @@ export class TestProfileUserDataManager {
       users: userCounts = { admin: 1, member: 0 },
       profileName = 'Test Profile',
       emailDomain = 'oneproject.org',
+      type,
     } = opts || {};
 
     const profileNameWithTestId = `${profileName}-${this.testId}`;
@@ -107,6 +110,7 @@ export class TestProfileUserDataManager {
       .values({
         name: profileNameWithTestId,
         slug: `${profileNameWithTestId.toLowerCase().replace(/\s+/g, '-')}-${randomUUID()}`,
+        type,
       })
       .returning();
 
