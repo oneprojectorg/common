@@ -6,22 +6,6 @@ import { logger } from '@op/logging';
 /** The flag that gates the new process admin, the wizard included. */
 export const NEW_PROCESS_ADMIN_FLAG = 'new_process_admin_enabled';
 
-/**
- * Restored from the reader deleted in fbbc240ae, which went because its last
- * caller went. Two things differ.
- *
- * It takes the identity rather than asking for a fixed `op-server` one. That
- * choice made the old reader a kill switch and said so: one identity gets one
- * answer, so a percentage rollout reads as whatever that identity draws. Its
- * caller was a sign-in endpoint whose only credential was a phone number,
- * which must not become a PostHog identity. This caller has an authenticated
- * user, and `UserProvider` already identifies that same user to PostHog on
- * `authUserId`, so passing it through resolves a staged rollout the same way
- * the browser does and a gated page agrees with the menu item that links to it.
- *
- * And the forced-on rule is imported rather than restated — that consolidation
- * is what fbbc240ae was for.
- */
 /** How long an answer is reused. A kill switch tolerates this much delay. */
 const TTL = 60 * 1000;
 
@@ -53,8 +37,14 @@ type FlagState = 'on' | 'off' | 'unreadable';
  * that guard access rather than a feature should prefer a credential they hold
  * themselves, so an analytics outage cannot evict anyone.
  *
+ * The browser identifies a user on `authUserId` only after tracking consent,
+ * and until then resolves flags as an anonymous visitor. So a flag read here
+ * and in `useFeatureFlag` agrees only when it is targeted by person or cohort:
+ * a percentage rollout draws the two independently, and even a targeted user
+ * who declined tracking sees the browser's answer as off.
+ *
  * @param key - The flag key, as written in PostHog.
- * @param distinctId - The identity to resolve against, matching the browser's.
+ * @param distinctId - The identity to resolve against: the user's `authUserId`.
  * @returns Whether the server should serve the feature.
  */
 export const isServerFeatureEnabled = async (
