@@ -4,6 +4,8 @@ import {
   getSmsProvider,
   parsePhoneNumber,
   RateLimitError,
+  type PhoneNumber,
+  ValidationError,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { authUsers, users } from '@op/db/schema';
@@ -72,10 +74,23 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'sms sending unavailable' };
     }
 
-    const to = parsePhoneNumber(from);
+    const sendSms = provider.sendSms;
+
+    let to: PhoneNumber;
+    try {
+      to = parsePhoneNumber(from);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        logger.info('Inbound SMS from a non-E.164 number, skipping signup', {
+          reason: error.message,
+        });
+        return { message: 'invalid phone number' };
+      }
+      throw error;
+    }
 
     const consentResult = await step.run('send-consent-request', async () => {
-      const result = await provider.sendSms!({
+      const result = await sendSms({
         to,
         body: `Reply ${CONFIRMATION_KEYWORD} to create your Common account.`,
       });
@@ -117,7 +132,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     );
 
     const welcomeResult = await step.run('send-welcome-reply', async () => {
-      const result = await provider.sendSms!({
+      const result = await sendSms({
         to,
         body: "You're in! Welcome to Common.",
       });
