@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
+import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { z } from 'zod';
 
@@ -17,12 +18,16 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useAppForm } from '@/components/form/utils';
 
-export const WaitlistSignup = () => {
+export const WaitlistSignup = ({ trigger }: { trigger?: ReactElement }) => {
   const t = useTranslations();
   const [isSubmitted, setIsSubmitted] = useState(false);
   return (
-    <Dialog>
-      <DialogTrigger render={<Button>{t('shell.waitlistHeading')}</Button>} />
+    // Reset on close so reopening shows the form again. `Complete` so the
+    // swap lands after the exit animation, not during it.
+    <Dialog onOpenChangeComplete={(open) => !open && setIsSubmitted(false)}>
+      <DialogTrigger
+        render={trigger ?? <Button>{t('shell.waitlistHeading')}</Button>}
+      />
       <DialogContent className="font-sans sm:max-w-md">
         {isSubmitted ? (
           <WaitlistSignupSuccess />
