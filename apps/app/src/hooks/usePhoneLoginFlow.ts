@@ -42,7 +42,7 @@ export const usePhoneLoginFlow = ({
   // People type `(415) 555-0132`. Validate and send what they meant.
   const normalized = normalizePhoneNumber(phone);
   const isValid = phoneNumberSchema.safeParse(normalized).success;
-  const isBusy = phoneLogin.isSending || phoneLogin.isVerifying;
+  const isLoading = phoneLogin.isSending || phoneLogin.isVerifying;
 
   const requestCode = useCallback(async () => {
     // The submit button is disabled for a number that does not parse, but a
@@ -99,7 +99,7 @@ export const usePhoneLoginFlow = ({
   return {
     error,
     isValid,
-    isBusy,
+    isLoading,
     isSending: phoneLogin.isSending,
     isVerifying: phoneLogin.isVerifying,
     codeSent: phoneCodeSent,

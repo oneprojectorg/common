@@ -203,8 +203,8 @@ export const LoginPanel = () => {
       : undefined;
 
   // Email code verification runs straight against Supabase, so only the
-  // phone channel has a busy flag for it.
-  const isBusy = isPhone ? phoneFlow.isBusy : login.isFetching;
+  // phone channel has a loading flag for it.
+  const isLoading = isPhone ? phoneFlow.isLoading : login.isFetching;
 
   const verifyCode = () => {
     if (isPhone) {
@@ -315,7 +315,7 @@ export const LoginPanel = () => {
           {isCodeStep ? (
             <AuthCodeField
               value={token}
-              isDisabled={isBusy}
+              isDisabled={isLoading}
               onChange={setToken}
               onSubmit={verifyCode}
             />
@@ -324,10 +324,10 @@ export const LoginPanel = () => {
               smsEnabled={smsLoginEnabled}
               value={activeChannel}
               onValueChange={switchChannel}
-              isTriggersDisabled={isBusy}
+              isTriggersDisabled={isLoading}
               email={{
                 value: email,
-                isDisabled: isBusy,
+                isDisabled: isLoading,
                 onChange: (val) => {
                   setEmailIsValid(emailParser.safeParse(val).success);
                   setEmail(val);
@@ -374,7 +374,7 @@ export const LoginPanel = () => {
                     ? !isValidOtpLength(token)
                     : !!token && !isValidOtpLength(token)
                 }
-                isBusy={isBusy}
+                isLoading={isLoading}
                 isPhone={isPhone}
                 onVerify={verifyCode}
                 onResend={resendCode}
@@ -384,9 +384,9 @@ export const LoginPanel = () => {
           ) : (
             <AuthSendCodeButton
               isPhone={isPhone}
-              isBusy={isBusy}
+              isLoading={isLoading}
               isDisabled={
-                isBusy || (isPhone ? !phoneFlow.isValid : !emailIsValid)
+                isLoading || (isPhone ? !phoneFlow.isValid : !emailIsValid)
               }
               onSubmit={() => {
                 if (isPhone) {
