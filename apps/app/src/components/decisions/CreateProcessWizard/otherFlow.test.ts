@@ -156,6 +156,7 @@ describe('applyGrantDecision', () => {
       'results',
     ]);
     expect(reshaped[1]?.name).toBe('pickShortlist');
+    expect(reshaped[3]?.phaseName).toBe('votePhase');
   });
 
   it('adds a vote after the narrowing review in the hybrid shape', () => {
@@ -168,5 +169,7 @@ describe('applyGrantDecision', () => {
       'results',
     ]);
     expect(reshaped[1]?.name).toBe('narrowField');
+    expect(reshaped[1]?.phaseName).toBe('shortlisting');
+    expect(reshaped[2]?.phaseName).toBe('votePhase');
   });
 });

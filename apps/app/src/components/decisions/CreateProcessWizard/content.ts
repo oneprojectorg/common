@@ -358,6 +358,7 @@ export const GRANT_DECISION_QUESTION: {
 
 const GRANT_VOTE_PIECE: ProcessPiece = {
   name: 'putVote',
+  phaseName: 'votePhase',
   phaseType: 'voting',
   description: 'peopleInvitedVoteDecideWhere',
   capabilities: [
@@ -401,6 +402,7 @@ export function applyGrantDecision(
   const narrowed: ProcessPiece = {
     ...deciding,
     name: 'narrowField',
+    phaseName: 'shortlisting',
     description: 'reviewersScoreWhatCamePick',
   };
 
