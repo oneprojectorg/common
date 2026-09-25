@@ -307,7 +307,9 @@ export const AuthCodeField = ({
 
   return (
     <Field>
-      <FieldLabel htmlFor="auth-code">{t('auth.codeLabel')}</FieldLabel>
+      <FieldLabel htmlFor="auth-code" className="justify-center">
+        {t('auth.codeLabel')}
+      </FieldLabel>
       <InputOTP
         id="auth-code"
         containerClassName="justify-center"
