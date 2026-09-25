@@ -1,10 +1,13 @@
 import { InngestTestEngine } from '@inngest/test';
 import { isFeatureEnabled } from '@op/analytics';
-import { createAccountFromPhone, getSmsProvider } from '@op/common';
+import {
+  confirmPhoneSignupCode,
+  getSmsProvider,
+  requestPhoneSignupCode,
+} from '@op/common';
 import { db } from '@op/db/client';
 import { authUsers } from '@op/db/schema';
 import { Events } from '@op/events';
-import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,8 +20,9 @@ vi.mock('@op/db/client', () => ({ db: { select: vi.fn() } }));
 vi.mock('@op/common', () => {
   class ValidationError extends Error {}
   return {
-    createAccountFromPhone: vi.fn(),
+    confirmPhoneSignupCode: vi.fn(),
     getSmsProvider: vi.fn(),
+    requestPhoneSignupCode: vi.fn(),
     // A real E.164 fixture below, so identity is a faithful stand-in, except
     // for 'not-e164', used to exercise the invalid-number branch.
     safeParsePhoneNumber: (value: string) =>
@@ -35,9 +39,6 @@ vi.mock('@op/common', () => {
     ValidationError,
   };
 });
-vi.mock('@op/logging', () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-}));
 // `db` is mocked wholesale above, but the query condition is built by a real
 // call to drizzle's `eq`, independent of that mock. Spying on it (rather than
 // replacing it) lets a test assert on the exact value compared against
@@ -61,6 +62,8 @@ const confirmationReply = (body: string) => ({
   data: { from: FROM, body, messageSid: 'SM2' },
 });
 
+const accepted = { status: 'accepted', providerMessageId: 'SM-c' } as const;
+
 /** A Drizzle `db.select()...` chain stub: any method returns itself, and
  * awaiting it anywhere in the chain resolves to `rows`. */
 const dbRows = (rows: unknown[]): never =>
@@ -75,6 +78,14 @@ const dbRows = (rows: unknown[]): never =>
       },
     },
   ) as never;
+
+const unknownNumberWithProvider = (sendSms = vi.fn()) => {
+  vi.mocked(isFeatureEnabled).mockResolvedValue(true);
+  vi.mocked(db.select).mockReturnValue(dbRows([]));
+  vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+  vi.mocked(requestPhoneSignupCode).mockResolvedValue({ status: 'sent' });
+  return sendSms;
+};
 
 afterEach(() => {
   vi.resetAllMocks();
@@ -92,7 +103,7 @@ describe('handleUnknownSmsSignup', () => {
     expect(getSmsProvider).not.toHaveBeenCalled();
   });
 
-  it('skips a number that already has an account, logging only the profile id', async () => {
+  it('skips a number that already has an account', async () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true);
     vi.mocked(db.select).mockReturnValue(
       dbRows([{ authUserId: 'auth-user-1', profileId: 'profile-1' }]),
@@ -102,11 +113,8 @@ describe('handleUnknownSmsSignup', () => {
     const { result } = await t.execute({ events: [triggerEvent()] });
 
     expect(result).toEqual({ message: 'known number, skipped' });
-    expect(logger.info).toHaveBeenCalledWith(
-      'Inbound SMS from a known number, skipping signup flow',
-      { profileId: 'profile-1' },
-    );
     expect(getSmsProvider).not.toHaveBeenCalled();
+    expect(requestPhoneSignupCode).not.toHaveBeenCalled();
   });
 
   it('compares the stored number rather than the leading + Twilio always sends', async () => {
@@ -137,13 +145,11 @@ describe('handleUnknownSmsSignup', () => {
     const { result } = await t.execute({ events: [triggerEvent()] });
 
     expect(result).toEqual({ message: 'sms sending unavailable' });
+    expect(requestPhoneSignupCode).not.toHaveBeenCalled();
   });
 
   it('skips signup when the inbound number is not valid E.164', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(db.select).mockReturnValue(dbRows([]));
-    const sendSms = vi.fn();
-    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+    const sendSms = unknownNumberWithProvider();
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -156,18 +162,36 @@ describe('handleUnknownSmsSignup', () => {
     });
 
     expect(result).toEqual({ message: 'invalid phone number' });
+    expect(requestPhoneSignupCode).not.toHaveBeenCalled();
+    expect(sendSms).not.toHaveBeenCalled();
+  });
+
+  it('asks GoTrue for the code before sending the consent text, and aborts without texting when GoTrue refuses', async () => {
+    const sendSms = unknownNumberWithProvider();
+    vi.mocked(requestPhoneSignupCode).mockResolvedValue({
+      status: 'rejected',
+      reason: 'rate_limited',
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({ events: [triggerEvent()] });
+
+    expect(result).toEqual({
+      message: 'code send rejected',
+      reason: 'rate_limited',
+    });
+    expect(requestPhoneSignupCode).toHaveBeenCalledWith({ phone: FROM });
     expect(sendSms).not.toHaveBeenCalled();
   });
 
   it('aborts the signup when the consent text is permanently rejected', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(db.select).mockReturnValue(dbRows([]));
-    const sendSms = vi.fn().mockResolvedValue({
-      status: 'rejected',
-      reason: 'invalid_number',
-      retryable: false,
-    });
-    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+    const sendSms = unknownNumberWithProvider(
+      vi.fn().mockResolvedValue({
+        status: 'rejected',
+        reason: 'invalid_number',
+        retryable: false,
+      }),
+    );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({ events: [triggerEvent()] });
@@ -180,14 +204,13 @@ describe('handleUnknownSmsSignup', () => {
   });
 
   it('fails the step on a rate-limited consent send, so Inngest retries it', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(db.select).mockReturnValue(dbRows([]));
-    const sendSms = vi.fn().mockResolvedValue({
-      status: 'rejected',
-      reason: 'rate_limited',
-      retryable: true,
-    });
-    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+    unknownNumberWithProvider(
+      vi.fn().mockResolvedValue({
+        status: 'rejected',
+        reason: 'rate_limited',
+        retryable: true,
+      }),
+    );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { error } = await t.execute({ events: [triggerEvent()] });
@@ -200,12 +223,9 @@ describe('handleUnknownSmsSignup', () => {
   });
 
   it('reports a timeout when no reply arrives before the wait expires', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(db.select).mockReturnValue(dbRows([]));
-    const sendSms = vi
-      .fn()
-      .mockResolvedValue({ status: 'accepted', providerMessageId: 'SM-c' });
-    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+    const sendSms = unknownNumberWithProvider(
+      vi.fn().mockResolvedValue(accepted),
+    );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -215,16 +235,11 @@ describe('handleUnknownSmsSignup', () => {
 
     expect(result).toEqual({ message: 'timed out waiting for confirmation' });
     expect(sendSms).toHaveBeenCalledTimes(1);
-    expect(createAccountFromPhone).not.toHaveBeenCalled();
+    expect(confirmPhoneSignupCode).not.toHaveBeenCalled();
   });
 
-  it('does not create an account when the reply is not the confirmation keyword', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(db.select).mockReturnValue(dbRows([]));
-    const sendSms = vi
-      .fn()
-      .mockResolvedValue({ status: 'accepted', providerMessageId: 'SM-c' });
-    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
+  it('does not ask GoTrue when the reply does not look like a code', async () => {
+    unknownNumberWithProvider(vi.fn().mockResolvedValue(accepted));
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -232,25 +247,48 @@ describe('handleUnknownSmsSignup', () => {
       steps: [
         {
           id: 'wait-for-confirmation',
-          handler: () => confirmationReply('nope'),
+          handler: () => confirmationReply('YES'),
         },
       ],
     });
 
     expect(result).toEqual({ message: 'reply did not confirm' });
-    expect(createAccountFromPhone).not.toHaveBeenCalled();
+    expect(confirmPhoneSignupCode).not.toHaveBeenCalled();
   });
 
-  it('creates an account and sends a welcome message once the sender confirms', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
+  it('does not welcome a sender whose code GoTrue rejects', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn().mockResolvedValue(accepted),
+    );
+    vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
+      status: 'rejected',
+      reason: 'wrong_code',
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [triggerEvent()],
+      steps: [
+        {
+          id: 'wait-for-confirmation',
+          handler: () => confirmationReply('000000'),
+        },
+      ],
+    });
+
+    expect(result).toEqual({ message: 'code rejected', reason: 'wrong_code' });
+    expect(sendSms).toHaveBeenCalledTimes(1);
+  });
+
+  it('confirms the texted code with GoTrue and sends a welcome message', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn().mockResolvedValue(accepted),
+    );
     vi.mocked(db.select)
       .mockReturnValueOnce(dbRows([])) // check-known-number
       .mockReturnValueOnce(dbRows([{ profileId: 'profile-2' }])); // lookup-profile-id
-    const sendSms = vi
-      .fn()
-      .mockResolvedValue({ status: 'accepted', providerMessageId: 'SM-c' });
-    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
-    vi.mocked(createAccountFromPhone).mockResolvedValue({
+    vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
+      status: 'confirmed',
       authUserId: 'auth-user-2',
     });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
@@ -260,7 +298,7 @@ describe('handleUnknownSmsSignup', () => {
       steps: [
         {
           id: 'wait-for-confirmation',
-          handler: () => confirmationReply('YES'),
+          handler: () => confirmationReply(' 123 456 '),
         },
       ],
     });
@@ -269,29 +307,26 @@ describe('handleUnknownSmsSignup', () => {
       message: 'account created',
       authUserId: 'auth-user-2',
     });
-    expect(createAccountFromPhone).toHaveBeenCalledWith({ phone: FROM });
+    expect(confirmPhoneSignupCode).toHaveBeenCalledWith({
+      phone: FROM,
+      token: '123456',
+    });
     expect(sendSms).toHaveBeenCalledTimes(2);
-    expect(logger.info).toHaveBeenCalledWith(
-      'Created account from inbound SMS signup',
-      { authUserId: 'auth-user-2', profileId: 'profile-2' },
-    );
   });
 
-  it('still reports success when only the welcome reply is rejected, without logging the phone number', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(db.select)
-      .mockReturnValueOnce(dbRows([]))
-      .mockReturnValueOnce(dbRows([{ profileId: 'profile-3' }]));
-    const sendSms = vi
-      .fn()
-      .mockResolvedValueOnce({ status: 'accepted', providerMessageId: 'SM-c' })
-      .mockResolvedValueOnce({
+  it('still reports success when only the welcome reply is rejected', async () => {
+    unknownNumberWithProvider(
+      vi.fn().mockResolvedValueOnce(accepted).mockResolvedValueOnce({
         status: 'rejected',
         reason: 'opted_out',
         retryable: false,
-      });
-    vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
-    vi.mocked(createAccountFromPhone).mockResolvedValue({
+      }),
+    );
+    vi.mocked(db.select)
+      .mockReturnValueOnce(dbRows([]))
+      .mockReturnValueOnce(dbRows([{ profileId: 'profile-3' }]));
+    vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
+      status: 'confirmed',
       authUserId: 'auth-user-3',
     });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
@@ -301,7 +336,7 @@ describe('handleUnknownSmsSignup', () => {
       steps: [
         {
           id: 'wait-for-confirmation',
-          handler: () => confirmationReply('YES'),
+          handler: () => confirmationReply('123456'),
         },
       ],
     });
@@ -310,9 +345,5 @@ describe('handleUnknownSmsSignup', () => {
       message: 'account created',
       authUserId: 'auth-user-3',
     });
-    expect(logger.warn).toHaveBeenCalledWith(
-      'Welcome message permanently rejected',
-      { authUserId: 'auth-user-3', reason: 'opted_out' },
-    );
   });
 });

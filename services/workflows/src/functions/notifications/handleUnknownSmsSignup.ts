@@ -1,8 +1,9 @@
 import { isFeatureEnabled } from '@op/analytics';
 import {
-  createAccountFromPhone,
+  confirmPhoneSignupCode,
   getSmsProvider,
   RateLimitError,
+  requestPhoneSignupCode,
   safeParsePhoneNumber,
   toGoTruePhoneFormat,
 } from '@op/common';
@@ -12,7 +13,7 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
-const CONFIRMATION_KEYWORD = 'YES';
+const CODE_PATTERN = /^\d{4,10}$/;
 const SMS_SIGNUP_FEATURE_FLAG = 'sms-signup';
 const { smsInboundReceived } = Events;
 
@@ -89,10 +90,21 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const sendSms = provider.sendSms;
 
+    const codeRequest = await step.run('request-signup-code', () =>
+      requestPhoneSignupCode({ phone: to }),
+    );
+
+    if (codeRequest.status === 'rejected') {
+      logger.warn('GoTrue refused to send a signup code, aborting signup', {
+        reason: codeRequest.reason,
+      });
+      return { message: 'code send rejected', reason: codeRequest.reason };
+    }
+
     const consentResult = await step.run('send-consent-request', async () => {
       const result = await sendSms({
         to,
-        body: `Reply ${CONFIRMATION_KEYWORD} to create your Common account.`,
+        body: 'Reply with the code we just texted you to create your Common account.',
       });
       if (result.status === 'rejected' && result.retryable) {
         throw new RateLimitError(
@@ -121,15 +133,25 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     }
 
     const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
+    const code = replyBody.replace(/\s+/g, '');
 
-    if (replyBody.trim().toUpperCase() !== CONFIRMATION_KEYWORD) {
-      logger.info('Reply did not match the confirmation keyword');
+    if (!CODE_PATTERN.test(code)) {
+      logger.info('Reply did not look like a signup code');
       return { message: 'reply did not confirm' };
     }
 
-    const { authUserId } = await step.run('create-account', () =>
-      createAccountFromPhone({ phone: to }),
+    const confirmation = await step.run('confirm-signup-code', () =>
+      confirmPhoneSignupCode({ phone: to, token: code }),
     );
+
+    if (confirmation.status === 'rejected') {
+      logger.info('GoTrue rejected the signup code', {
+        reason: confirmation.reason,
+      });
+      return { message: 'code rejected', reason: confirmation.reason };
+    }
+
+    const { authUserId } = confirmation;
 
     const welcomeResult = await step.run('send-welcome-reply', async () => {
       const result = await sendSms({
