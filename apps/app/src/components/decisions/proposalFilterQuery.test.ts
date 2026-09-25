@@ -39,7 +39,7 @@ const resolve = (
     filterParam: null,
     initialFilter: undefined,
     hasVoted: false,
-    statusParam: 'all',
+    statusParam: null,
     ...overrides,
   });
 
@@ -66,6 +66,15 @@ describe('resolveFilters', () => {
 
     expect(proposalFilter).toBe(ProposalFilter.ALL);
     expect(proposalStatus).toBe('not-advanced');
+  });
+
+  it('lets an explicit status choice override the legacy link', () => {
+    const { proposalStatus } = resolve({
+      filterParam: ProposalFilter.REJECTED,
+      statusParam: 'all',
+    });
+
+    expect(proposalStatus).toBe('all');
   });
 
   it('leaves ?filter=rejected alone where the select still offers it', () => {
@@ -196,5 +205,23 @@ describe('isFilterActive', () => {
 
   it('ignores the sort order, which reorders rather than narrows', () => {
     expect(isFilterActive(build({ sortOrder: 'oldest' }))).toBe(false);
+  });
+});
+
+describe('isFilterActive with a pinned audience', () => {
+  it('reports no clearable filter when only the pinned tab narrows the list', () => {
+    const params = build({ filter: ProposalFilter.MY_PROPOSALS });
+
+    expect(isFilterActive(params)).toBe(true);
+    expect(isFilterActive(params, { ignoreAudience: true })).toBe(false);
+  });
+
+  it('still reports the axes the reader can clear', () => {
+    const params = build({
+      filter: ProposalFilter.MY_PROPOSALS,
+      status: 'not-advanced',
+    });
+
+    expect(isFilterActive(params, { ignoreAudience: true })).toBe(true);
   });
 });

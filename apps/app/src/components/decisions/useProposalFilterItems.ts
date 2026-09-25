@@ -9,11 +9,6 @@ import type {
   ProposalStatusFilter,
 } from './proposalFilterQuery';
 
-/**
- * Every proposal filter, each mapping to a server-side query param so counts
- * and pagination stay accurate. Where a tab bar renders it takes
- * `TAB_BAR_FILTERS` and the select keeps the rest, so each has one control.
- */
 export const useProposalFilterItems = ({
   hasVoted,
   currentProfileId,
@@ -49,10 +44,7 @@ export const useProposalFilterItems = ({
   ];
 };
 
-/**
- * The status axis, so "my proposals" and "not advanced" can both be on at once.
- * Copy is the review queue's, which already names the same concept.
- */
+// Copy is the review queue's, which already names the same concept.
 export const useProposalStatusItems = (): {
   id: ProposalStatusFilter;
   label: string;

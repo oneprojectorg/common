@@ -31,12 +31,8 @@ interface ProposalFilterOptions {
   pinnedFilter?: ProposalFilter;
 }
 
-/**
- * Every filter the proposal list reads, held in the URL.
- *
- * Cognitive is over the line on the hook calls alone — cyclomatic is 8, and
- * the branching lives in `proposalFilterQuery`, which is unit tested.
- */
+// Complexity here is the hook calls; the branching lives in
+// `proposalFilterQuery`, which is unit tested.
 // fallow-ignore-next-line complexity
 export const useProposalFilters = ({
   instanceId,
@@ -72,16 +68,13 @@ export const useProposalFilters = ({
   );
   const [statusParam, setStatusFilter] = useQueryState(
     'proposalStatus',
-    parseAsStringLiteral(PROPOSAL_STATUS_VALUES).withDefault('all'),
+    parseAsStringLiteral(PROPOSAL_STATUS_VALUES),
   );
 
-  // Past the cap the endpoint rejects the query and the error boundary takes
-  // the list down with it.
+  // Past the cap the endpoint rejects the query and takes the list down.
   const search = urlSearch.slice(0, PROPOSAL_SEARCH_MAX_LENGTH);
   const [debouncedSearch] = useDebounce(search.trim(), SEARCH_DEBOUNCE_MS);
 
-  // This list's own rail, or a caller's above it. Either leaves the select to
-  // the status axis.
   const tabsOwnAudience = showFilterTabs || pinnedFilter !== undefined;
 
   const { availableFilters, proposalFilter, proposalStatus } = resolveFilters({
@@ -94,9 +87,8 @@ export const useProposalFilters = ({
     statusParam,
   });
 
-  // Non-urgent, or the suspense boundary swaps the bar (and whatever has focus)
-  // for a skeleton. One primitive per call: `useDeferredValue` compares with
-  // `Object.is`, so an object snapshot would never settle.
+  // Non-urgent, or the suspense boundary swaps the bar (and focus) for a
+  // skeleton. One primitive per call: `useDeferredValue` uses `Object.is`.
   const appliedSearch = useDeferredValue(debouncedSearch);
   const appliedCategory = useDeferredValue(selectedCategory);
   const appliedSortOrder = useDeferredValue(sortOrder);
@@ -139,16 +131,18 @@ export const useProposalFilters = ({
     ],
   );
 
-  // Read off the applied query, not the live controls, which would flash "no
-  // proposals yet" for a frame when clearing a filter that returned nothing.
+  // Applied, not live: the controls flash "no proposals yet" for a frame when
+  // clearing a filter that returned nothing.
   const hasActiveFilter = isFilterActive(queryParams);
+  const canClearFilters = isFilterActive(queryParams, {
+    ignoreAudience: pinnedFilter !== undefined,
+  });
 
-  // Everything `hasActiveFilter` counts; sort reorders rather than narrows.
   const clearFilters = useCallback(() => {
     setSearch('');
     setSelectedCategory(ALL_CATEGORIES);
     setStatusFilter('all');
-    // Pinned, resetting it would write a `filter` param nothing here reads.
+    // Pinned, this would write a `filter` param nothing here reads.
     if (pinnedFilter === undefined) {
       setProposalFilter(ProposalFilter.ALL);
     }
@@ -178,6 +172,7 @@ export const useProposalFilters = ({
     isSearchFetching,
     isFilterFetching,
     hasActiveFilter,
+    canClearFilters,
     clearFilters,
   };
 };

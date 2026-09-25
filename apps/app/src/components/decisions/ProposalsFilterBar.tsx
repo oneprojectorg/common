@@ -10,12 +10,10 @@ import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
 
-/** The proposal filter, or the status axis where a tab bar owns the filter. */
 export interface ProposalSelectControl {
   items: { id: string; label: string; isDisabled?: boolean }[];
   value: string;
   onChange: (id: string) => void;
-  /** Accessible name. */
   label: string;
 }
 

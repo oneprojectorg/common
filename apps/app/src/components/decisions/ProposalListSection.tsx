@@ -2,10 +2,7 @@ import { Header3 } from '@op/sense/Header';
 import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 
-/**
- * The column a proposal tab renders into. The gap matches the tab rail's, so
- * every tab's heading sits the same distance below it.
- */
+// Gap matches the tab bar's, so every tab's heading sits level with the rest.
 export const ProposalListSection = ({
   heading,
   className,

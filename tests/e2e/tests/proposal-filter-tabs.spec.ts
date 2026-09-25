@@ -107,7 +107,7 @@ async function createListingWithOneOwnProposal(
 
 test.describe('Proposal filter tabs', () => {
   /**
-   * The rail owns who the proposals belong to so a member can reach their own
+   * The tabs own who the proposals belong to so a member can reach their own
    * submissions without opening a dropdown; the select beside it owns what
    * became of them. Two questions, two controls, neither answering the other's.
    */
@@ -140,22 +140,22 @@ test.describe('Proposal filter tabs', () => {
     const myTab = authenticatedPage.getByRole('tab', { name: 'My proposals' });
     await expect(allTab).toHaveAttribute('aria-selected', 'true');
 
-    // The rail owns "All proposals" and "My proposals" and nothing else, so it
-    // is two tabs. Scoped to the rail: the decision view's Overview/Current
+    // The tabs are "All proposals" and "My proposals" and nothing else, so there
+    // are two. Scoped to the tab bar: the decision view's Overview/Current
     // toggle is a tablist too, so an unscoped tab count would read four.
     const filterTabs = authenticatedPage.getByRole('tablist', {
       name: /Filter proposals$/,
     });
     await expect(filterTabs.getByRole('tab')).toHaveCount(2);
 
-    // Beside the rail, the status axis as its own select.
+    // Beside them, the status axis as its own select.
     const statusSelect = authenticatedPage.getByRole('combobox', {
       name: 'Filter by status',
     });
     await expect(statusSelect).toBeVisible();
 
     await statusSelect.click();
-    // Status only: the rail owns who the proposals belong to, so that question
+    // Status only: the tabs own who the proposals belong to, so that question
     // must not also be answerable here.
     await expect(
       authenticatedPage.getByRole('option', { name: 'Not advanced' }),

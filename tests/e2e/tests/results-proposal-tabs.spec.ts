@@ -18,7 +18,7 @@ const THEIR_REJECTED_TITLE = 'Their Results Fountain';
  * One phase, nothing enabled on it. The current phase is index 0, so
  * `resolveManualSelectionStatus` reports selections as confirmed and `/current`
  * lands straight on ResultsPage. Voting never happened, so the ballot tab stays
- * off and the rail is exactly Selected proposals / All proposals / My proposals.
+ * off and the tabs are exactly Selected proposals / All proposals / My proposals.
  */
 const resultsOnlySchema: DecisionSchemaDefinition = {
   id: 'test-results-proposal-tabs',
@@ -40,7 +40,7 @@ const resultsOnlySchema: DecisionSchemaDefinition = {
 
 test.describe('Results screen proposal tabs', () => {
   /**
-   * The results rail owns the audience axis the same way the current-phase rail
+   * The results tabs own the audience axis the same way the current-phase tabs
    * does, and the status select beside the list still composes with it — a
    * rejected proposal on each side means neither filter alone gives this answer.
    */
@@ -140,7 +140,7 @@ test.describe('Results screen proposal tabs', () => {
     await expect(myRejected).toBeVisible();
     await expect(theirRejected).toBeHidden();
 
-    // The rail pins the audience axis here, so the select is the status axis
+    // The tabs pin the audience axis here, so the select is the status axis
     // only — the same two controls as the current-phase screen.
     await authenticatedPage
       .getByRole('combobox', { name: 'Filter by status' })

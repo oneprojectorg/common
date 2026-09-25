@@ -88,15 +88,11 @@ export interface ProposalsListProps {
   proposalsHidden?: boolean;
   /** Exclude proposals the current user is assigned to review (Other proposals tab). */
   excludeAssignedForReview?: boolean;
-  /**
-   * Render the audience filter as a tab bar. Opt-in: a surface that already
-   * nests this list in its own tab row would stack two rails.
-   */
+  /** Opt-in: a surface with its own tab row would stack two. */
   showFilterTabs?: boolean;
   /**
-   * The caller's tab row owns the audience axis, so this list renders no rail
-   * and reads the filter from here rather than the URL. The status select
-   * still renders, so the axes still compose.
+   * The caller's tab row owns the audience axis: no tab bar here, and the
+   * filter comes from this rather than the URL.
    */
   pinnedFilter?: ProposalFilter;
   /**
@@ -332,6 +328,7 @@ const ProposalsListContent = ({
     isSearchFetching,
     isFilterFetching,
     hasActiveFilter,
+    canClearFilters,
     clearFilters,
   } = filters;
   const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
@@ -482,7 +479,7 @@ const ProposalsListContent = ({
     hasFilter: hasActiveFilter,
     searchQuery: queryParams.search,
     isTranslated: !!translation.translationState,
-    onClearFilters: clearFilters,
+    onClearFilters: canClearFilters ? clearFilters : undefined,
     excludeAssignedForReview,
   };
 
@@ -525,11 +522,10 @@ const ProposalsListContent = ({
   // toggle between two empty states.
   const showFilterBar = !isEmptyUnfiltered;
 
-  // Same terms as the select they replace: not where the phase hides proposals
-  // from non-admins, not above an unfiltered-empty list.
+  // Same terms as the select they replace.
   const showTabs = showFilterTabs && showFilterBar && !hideFilters;
 
-  // With a rail, the select is the status axis; without one it is the only
+  // With a tab bar the select is the status axis; without one it is the only
   // control and keeps the combined filter.
   const leadingSelect: ProposalSelectControl = tabsOwnAudience
     ? {

@@ -5,11 +5,9 @@ export const ALL_CATEGORIES = 'all-categories';
 export interface ProposalFilterItem {
   id: ProposalFilter;
   label: string;
-  /** Offered but inert — a profile-bound filter with no profile. */
   isDisabled?: boolean;
 }
 
-/** Whose proposals these are. Status is the other axis, in its own select. */
 const TAB_BAR_FILTERS: readonly ProposalFilter[] = [
   ProposalFilter.ALL,
   ProposalFilter.MY_PROPOSALS,
@@ -20,8 +18,7 @@ export const PROPOSAL_STATUS_VALUES = ['all', 'not-advanced'] as const;
 
 export type ProposalStatusFilter = (typeof PROPOSAL_STATUS_VALUES)[number];
 
-// A multiple of three to fill the grid rows evenly; small because every
-// server-side cost of listProposals scales with it.
+// A multiple of three, to fill the grid rows evenly.
 const PROPOSALS_PAGE_LIMIT = 24;
 
 export type ProposalQueryParams = {
@@ -43,11 +40,6 @@ interface ResolvedFilters {
   proposalStatus: ProposalStatusFilter;
 }
 
-/**
- * Which filters this surface offers and which one is on. A stale link must not
- * filter by a criterion with no control to clear it, so the requested value is
- * resolved against the offered list rather than trusted.
- */
 export const resolveFilters = ({
   everyFilter,
   tabsOwnAudience,
@@ -63,7 +55,7 @@ export const resolveFilters = ({
   filterParam: ProposalFilter | null;
   initialFilter: ProposalFilter | undefined;
   hasVoted: boolean;
-  statusParam: ProposalStatusFilter;
+  statusParam: ProposalStatusFilter | null;
 }): ResolvedFilters => {
   const availableFilters = tabsOwnAudience
     ? everyFilter.filter((filter) => TAB_BAR_FILTERS.includes(filter.id))
@@ -80,28 +72,30 @@ export const resolveFilters = ({
       (filter) => filter.id === requested && !filter.isDisabled,
     )?.id ?? ProposalFilter.ALL;
 
-  // `?filter=rejected` predates the status axis.
+  // `?filter=rejected` predates the status axis; it yields to an explicit pick.
   const legacyRejected =
     tabsOwnAudience && filterParam === ProposalFilter.REJECTED;
 
   return {
     availableFilters,
     proposalFilter,
-    proposalStatus: legacyRejected ? 'not-advanced' : statusParam,
+    proposalStatus: statusParam ?? (legacyRejected ? 'not-advanced' : 'all'),
   };
 };
 
-/** Whether the query narrows the phase's full set. Sort reorders, so it isn't one. */
-export const isFilterActive = (params: ProposalQueryParams): boolean =>
+// `ignoreAudience` excludes a pinned filter, which cannot be cleared.
+export const isFilterActive = (
+  params: ProposalQueryParams,
+  { ignoreAudience = false }: { ignoreAudience?: boolean } = {},
+): boolean =>
   Boolean(
     params.search ||
     params.categoryId ||
-    params.submittedByProfileId ||
-    params.votedByProfileId ||
-    params.status,
+    params.status ||
+    (!ignoreAudience &&
+      (params.submittedByProfileId || params.votedByProfileId)),
   );
 
-/** An applied value still trailing its live control. */
 export const hasPendingChange = (pairs: [string, string][]): boolean =>
   pairs.some(([applied, live]) => applied !== live);
 
@@ -117,7 +111,6 @@ interface QueryParamsInput {
   status: ProposalStatusFilter;
 }
 
-/** Filtered in SQL so pagination and counts stay accurate per filter. */
 export const buildQueryParams = ({
   instanceId,
   phase,
