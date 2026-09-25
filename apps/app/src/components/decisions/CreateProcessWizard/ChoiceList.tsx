@@ -5,7 +5,7 @@ import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import type { ReactNode } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
 import { STEP_HEADING_ID } from './StepHeading';
 import type { Choice } from './types';
@@ -49,7 +49,7 @@ export function ChoiceList<K extends string>({
             htmlFor={id}
             control={<RadioGroupItem id={id} value={option.key} />}
             label={t(option.label)}
-            description={option.description ? t(option.description) : undefined}
+            description={describe(option, t)}
             className="bg-background"
           />
         );
@@ -97,9 +97,7 @@ export function CheckList<K extends string>({
                 />
               }
               label={t(option.label)}
-              description={
-                option.description ? t(option.description) : undefined
-              }
+              description={describe(option, t)}
               className="bg-background"
             />
             {detail}
@@ -108,4 +106,15 @@ export function CheckList<K extends string>({
       })}
     </div>
   );
+}
+
+function describe<K extends string>(
+  option: Choice<K>,
+  t: TranslateFn<'decisions.createWizard'>,
+): ReactNode {
+  if (option.userText) {
+    return <bdi>{option.userText}</bdi>;
+  }
+
+  return option.description ? t(option.description) : undefined;
 }

@@ -121,7 +121,7 @@ export function OtherStep({
       answers.subjects.includes(option.key),
     ).map((option) =>
       option.key === 'else' && answers.elseText.trim()
-        ? { key: option.key, label: option.label }
+        ? { ...option, userText: answers.elseText.trim() }
         : option,
     );
 
