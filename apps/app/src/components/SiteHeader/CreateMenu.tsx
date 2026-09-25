@@ -115,6 +115,7 @@ export const CreateMenu = () => {
             // one-click item above.
             <DropdownMenuItem
               data-testid="create-decision-process-wizard"
+              disabled={isCreatingDecision}
               onClick={() => router.push('/decisions/new')}
             >
               <LuWandSparkles className="size-4" />{' '}
