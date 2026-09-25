@@ -71,6 +71,13 @@ export async function identifyUser({
   });
 }
 
+export async function isFeatureEnabled(
+  key: string,
+  distinctId: string,
+): Promise<boolean> {
+  return (await posthog.isFeatureEnabled(key, distinctId)) ?? false;
+}
+
 /**
  * Track multiple events in sequence
  */

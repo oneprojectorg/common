@@ -14,6 +14,10 @@ export {
   type TwilioStatusWebhookRequest,
 } from './src/notification/handleTwilioStatusWebhookRequest';
 export {
+  handleTwilioInboundWebhookRequest,
+  type TwilioInboundWebhookRequest,
+} from './src/notification/handleTwilioInboundWebhookRequest';
+export {
   unwrapResponseWithChannels,
   wrapResponseWithChannels,
   type WrappedResponse,
