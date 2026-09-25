@@ -1088,7 +1088,6 @@
       "feedbackToAuthorLabel": "Feedback to author",
       "feedbackToAuthorHeading": "Feedback to Author",
       "filterByStatusLabel": "Filter by status",
-      "filterProposalsPlaceholder": "Filter by title or category…",
       "noReviewersHint": "Give people the reviewer role and they will appear here, ready to take proposals.",
       "importAction": "Import",
       "importProposalIdsTitle": "Import proposal IDs",
@@ -1109,6 +1108,8 @@
       "noChangesYet": "No changes yet",
       "noOtherReviews": "No other reviews yet",
       "importNoIdsFound": "No proposal IDs found in what you pasted.",
+      "importPoolLoading": "Loading the proposals in this phase…",
+      "importPoolLoadError": "Could not load the proposals in this phase.",
       "noProposalsToSelect": "No proposals available to select",
       "noProposalsMatchQuery": "No proposals match \"{query}\".",
       "noProposalsMatchFilter": "No proposals match the current filter",
@@ -1203,7 +1204,9 @@
       "revisionRequestedLabel": "Revision requested",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Sent {timeAgo}",
-      "selectedProposalsHeading": "Selected proposals"
+      "selectedProposalsHeading": "Selected proposals",
+      "searchByTitlePlaceholder": "Search by title",
+      "phaseEndedAssignmentsLockedHint": "This phase has ended, so assignments can no longer be changed."
     },
     "proposals": {
       "amountRequested": "{amount} requested",

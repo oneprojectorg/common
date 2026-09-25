@@ -1088,7 +1088,6 @@
       "feedbackToAuthorLabel": "Commentaires à l'auteur",
       "feedbackToAuthorHeading": "Commentaires à l'auteur",
       "filterByStatusLabel": "Filtrer par statut",
-      "filterProposalsPlaceholder": "Filtrer par titre ou catégorie…",
       "noReviewersHint": "Donnez aux personnes le rôle d’évaluateur et elles apparaîtront ici, prêtes à recevoir des propositions.",
       "importAction": "Importer",
       "importProposalIdsTitle": "Importer des identifiants de propositions",
@@ -1109,6 +1108,8 @@
       "noChangesYet": "Aucune modification pour l’instant",
       "noOtherReviews": "Aucune autre évaluation pour le moment",
       "importNoIdsFound": "Aucun identifiant de proposition trouvé dans ce que vous avez collé.",
+      "importPoolLoading": "Chargement des propositions de cette phase…",
+      "importPoolLoadError": "Impossible de charger les propositions de cette phase.",
       "noProposalsToSelect": "Aucune proposition disponible à sélectionner",
       "noProposalsMatchQuery": "Aucune proposition ne correspond à « {query} ».",
       "noProposalsMatchFilter": "Aucune proposition ne correspond au filtre actuel",
@@ -1203,7 +1204,9 @@
       "revisionRequestedLabel": "Révision demandée",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Envoyé {timeAgo}",
-      "selectedProposalsHeading": "Propositions sélectionnées"
+      "selectedProposalsHeading": "Propositions sélectionnées",
+      "searchByTitlePlaceholder": "Rechercher par titre",
+      "phaseEndedAssignmentsLockedHint": "Cette phase est terminée, les affectations ne peuvent donc plus être modifiées."
     },
     "proposals": {
       "amountRequested": "{amount} demandé",

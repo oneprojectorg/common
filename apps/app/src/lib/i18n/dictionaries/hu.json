@@ -1088,7 +1088,6 @@
       "feedbackToAuthorLabel": "Visszajelzés a szerzőnek",
       "feedbackToAuthorHeading": "Visszajelzés a szerzőnek",
       "filterByStatusLabel": "Szűrés állapot szerint",
-      "filterProposalsPlaceholder": "Szűrés cím vagy kategória szerint…",
       "noReviewersHint": "Adjon értékelő szerepkört a felhasználóknak, és itt jelennek meg, készen a javaslatok fogadására.",
       "importAction": "Importálás",
       "importProposalIdsTitle": "Javaslatazonosítók importálása",
@@ -1109,6 +1108,8 @@
       "noChangesYet": "Még nincs módosítás",
       "noOtherReviews": "Még nincsenek más értékelések",
       "importNoIdsFound": "A beillesztett tartalomban nem található javaslatazonosító.",
+      "importPoolLoading": "A szakasz javaslatainak betöltése…",
+      "importPoolLoadError": "Nem sikerült betölteni a szakasz javaslatait.",
       "noProposalsToSelect": "Nincs kiválasztható javaslat",
       "noProposalsMatchQuery": "Egy javaslat sem felel meg a következőnek: „{query}”.",
       "noProposalsMatchFilter": "Nincs a jelenlegi szűrőnek megfelelő javaslat",
@@ -1203,7 +1204,9 @@
       "revisionRequestedLabel": "Átdolgozás kérve",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Elküldve {timeAgo}",
-      "selectedProposalsHeading": "Kiválasztott javaslatok"
+      "selectedProposalsHeading": "Kiválasztott javaslatok",
+      "searchByTitlePlaceholder": "Keresés cím szerint",
+      "phaseEndedAssignmentsLockedHint": "Ez a szakasz lezárult, ezért a kiosztások már nem módosíthatók."
     },
     "proposals": {
       "amountRequested": "{amount} igényelve",

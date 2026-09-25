@@ -3,10 +3,12 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type {
-  AdminAssignableProposal,
-  AdminReviewAssignment,
+import {
+  type AssignableProposal,
+  PROPOSAL_SEARCH_MAX_LENGTH,
+  normalizeProposalCategories,
 } from '@op/common/client';
+import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
@@ -26,26 +28,29 @@ import { Label } from '@op/sense/Label';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { Suspense, useId, useMemo, useState } from 'react';
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
+import {
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 
 import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
+import { useCardTranslation } from '../ProposalTranslationContext';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 import { ImportProposalIdsDialog } from './ImportProposalIdsDialog';
-import type { ReviewerRow } from './buildReviewerRows';
-import { buildReviewerRows } from './buildReviewerRows';
-
-/** How a proposal row behaves for this reviewer. */
-type RowKind = 'own' | 'locked' | 'assigned' | 'free';
+import { type RowKind, rowKindOf } from './assignableRowKind';
 
 interface ProposalRow {
-  proposal: AdminAssignableProposal;
+  proposal: AssignableProposal;
   kind: RowKind;
-  assignment: AdminReviewAssignment | null;
-  /** The reviewer submitted this proposal — labelled whatever the kind is. */
-  isOwn: boolean;
 }
 
 interface ManageAssignmentsDialogContentProps {
@@ -58,18 +63,41 @@ interface ManageAssignmentsDialogContentProps {
 interface ManageAssignmentsFormProps {
   processInstanceId: string;
   phaseId: string;
-  reviewer: ReviewerRow;
-  proposals: AdminAssignableProposal[];
+  reviewerProfileId: string;
+  reviewerName: string;
+  isEligible: boolean;
+  canModifyAssignments: boolean;
+  assignedTotal: number;
   onSaved: () => void;
 }
 
-/** Rendered only while open, so the read runs on open and unmounting resets the selection. */
-export function ManageAssignmentsDialogContent({
-  processInstanceId,
-  phaseId,
-  reviewerProfileId,
-  onSaved,
-}: ManageAssignmentsDialogContentProps) {
+interface PickListInput {
+  processInstanceId: string;
+  phaseId: string;
+  reviewerProfileId: string;
+  limit: number;
+  search?: string;
+}
+
+interface AssignableProposalListProps {
+  pickInput: PickListInput;
+  isStale: boolean;
+  canAssign: boolean;
+  canModifyAssignments: boolean;
+  toAssign: ReadonlySet<string>;
+  toUnassign: ReadonlySet<string>;
+  onToggleRow: (row: ProposalRow) => void;
+}
+
+const PICK_PAGE_LIMIT = 24;
+
+const PICK_STALE_TIME_MS = 30 * 1000;
+
+const SEARCH_DEBOUNCE_MS = 300;
+
+export function ManageAssignmentsDialogContent(
+  props: ManageAssignmentsDialogContentProps,
+) {
   const t = useTranslations();
 
   return (
@@ -104,12 +132,8 @@ export function ManageAssignmentsDialogContent({
             </>
           }
         >
-          <ManageAssignmentsBody
-            processInstanceId={processInstanceId}
-            phaseId={phaseId}
-            reviewerProfileId={reviewerProfileId}
-            onSaved={onSaved}
-          />
+          {/* Hooks stay in this child: the portal defers it to open, and unmount resets the selection. */}
+          <ManageAssignmentsBody {...props} />
         </Suspense>
       </APIErrorBoundary>
     </DialogContent>
@@ -122,30 +146,43 @@ function ManageAssignmentsBody({
   reviewerProfileId,
   onSaved,
 }: ManageAssignmentsDialogContentProps) {
-  const [data] = trpc.decision.listPhaseReviewAssignments.useSuspenseQuery(
-    { processInstanceId, phaseId },
-    // An SSR-seeded entry never registers the realtime channel; refetch.
-    { refetchOnMount: 'always' },
-  );
+  const t = useTranslations();
 
-  const { rows } = useMemo(
-    () =>
-      buildReviewerRows(data.reviewers, data.eligibleReviewers, data.proposals),
-    [data.reviewers, data.eligibleReviewers, data.proposals],
-  );
+  const [queueData] =
+    trpc.decision.listReviewerAssignments.useSuspenseInfiniteQuery(
+      { processInstanceId, phaseId, reviewerProfileId },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+        // The section on this page already refetches and registers the channel.
+        refetchOnMount: false,
+      },
+    );
+  const queue = queueData.pages[0];
 
-  const reviewer = rows.find((row) => row.profile.id === reviewerProfileId);
-
-  if (!reviewer) {
-    return null;
+  if (!queue?.reviewer) {
+    return (
+      <DialogHeader>
+        <DialogTitle>
+          {t('decisions.review.manageAssignmentsAction')}
+        </DialogTitle>
+        <DialogDescription>
+          {t('decisions.review.reviewerNotInPhase')}
+        </DialogDescription>
+      </DialogHeader>
+    );
   }
+
+  const { reviewer } = queue;
 
   return (
     <ManageAssignmentsForm
       processInstanceId={processInstanceId}
       phaseId={phaseId}
-      reviewer={reviewer}
-      proposals={data.proposals}
+      reviewerProfileId={reviewerProfileId}
+      reviewerName={reviewer.name ?? reviewer.slug ?? reviewer.id}
+      isEligible={queue.isEligible}
+      canModifyAssignments={queue.canModifyAssignments}
+      assignedTotal={queue.total}
       onSaved={onSaved}
     />
   );
@@ -155,8 +192,11 @@ function ManageAssignmentsBody({
 function ManageAssignmentsForm({
   processInstanceId,
   phaseId,
-  reviewer,
-  proposals,
+  reviewerProfileId,
+  reviewerName,
+  isEligible,
+  canModifyAssignments,
+  assignedTotal,
   onSaved,
 }: ManageAssignmentsFormProps) {
   const t = useTranslations();
@@ -164,69 +204,79 @@ function ManageAssignmentsForm({
   const importEnabled = useFeatureFlag('bulk_assign_import');
 
   const [query, setQuery] = useState('');
+  const [debouncedQuery] = useDebounce(query.trim(), SEARCH_DEBOUNCE_MS);
+  const deferredQuery = useDeferredValue(debouncedQuery);
+  // The list still shows the previous search, so Select all must not act on it.
+  const isStale = debouncedQuery !== deferredQuery;
   const [toAssign, setToAssign] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
   );
+  // Assignment ids, so a removal survives its row leaving the loaded pages.
   const [toUnassign, setToUnassign] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
   );
 
-  const name = reviewer.label;
   // A reviewer without the role gets a frozen queue: unassign pending only.
-  const canAssign = reviewer.isEligible;
+  const canAssign = isEligible && canModifyAssignments;
+
+  const pickInput: PickListInput = {
+    processInstanceId,
+    phaseId,
+    reviewerProfileId,
+    limit: PICK_PAGE_LIMIT,
+    ...(deferredQuery ? { search: deferredQuery } : {}),
+  };
+
+  // The same cache entry the list suspends on, read without suspending: a
+  // failed search must leave the selection and Save mounted.
+  const pickQuery = trpc.decision.listAssignableProposals.useInfiniteQuery(
+    pickInput,
+    {
+      getNextPageParam: (lastPage) => lastPage.next,
+      staleTime: PICK_STALE_TIME_MS,
+    },
+  );
+
+  const rows = useMemo(
+    () =>
+      (pickQuery.data?.pages ?? [])
+        .flatMap((page) => page.items)
+        .map(toProposalRow),
+    [pickQuery.data?.pages],
+  );
 
   const assignReviews = trpc.decision.assignReviews.useMutation();
   const removeAssignments = trpc.decision.removeReviewAssignments.useMutation();
   const isSaving = assignReviews.isPending || removeAssignments.isPending;
 
-  const rows = useMemo(
-    () => buildProposalRows(proposals, reviewer),
-    [proposals, reviewer],
+  const assignedProposalIds = new Set(
+    rows.flatMap((row) => (row.proposal.assignment ? [row.proposal.id] : [])),
+  );
+  const lockedAssignmentIds = new Set(
+    rows.flatMap((row) =>
+      row.kind === 'locked' && row.proposal.assignment
+        ? [row.proposal.assignment.id]
+        : [],
+    ),
   );
 
-  const visibleRows = useMemo(() => filterRows(rows, query), [rows, query]);
-
-  // Whole pool, not visibleRows — selections survive filter changes.
   const assignIds = canAssign
-    ? rows.flatMap((row) =>
-        row.kind === 'free' && toAssign.has(row.proposal.id)
-          ? [row.proposal.id]
-          : [],
-      )
+    ? [...toAssign].filter((id) => !assignedProposalIds.has(id))
     : [];
-  const unassignAssignmentIds = rows.flatMap((row) =>
-    row.kind === 'assigned' && row.assignment && toUnassign.has(row.proposal.id)
-      ? [row.assignment.id]
-      : [],
-  );
+  const unassignAssignmentIds = canModifyAssignments
+    ? [...toUnassign].filter((id) => !lockedAssignmentIds.has(id))
+    : [];
 
   const assignedCount =
-    reviewer.assignments.length -
-    unassignAssignmentIds.length +
-    assignIds.length;
+    assignedTotal - unassignAssignmentIds.length + assignIds.length;
   const hasChanges = assignIds.length > 0 || unassignAssignmentIds.length > 0;
 
   // Additive only: never bulk-unassigns.
   const visibleFreeIds = canAssign
-    ? visibleRows.flatMap((row) =>
-        row.kind === 'free' ? [row.proposal.id] : [],
-      )
+    ? rows.flatMap((row) => (row.kind === 'free' ? [row.proposal.id] : []))
     : [];
   const allVisibleFreeSelected =
     visibleFreeIds.length > 0 && visibleFreeIds.every((id) => toAssign.has(id));
-
-  // Sets, not lists: the spreadsheet import looks IDs up by membership.
-  const poolIds = useMemo(
-    () => new Set(proposals.map((proposal) => proposal.id)),
-    [proposals],
-  );
-  const importableIds = useMemo(
-    () =>
-      new Set(
-        rows.flatMap((row) => (row.kind === 'free' ? [row.proposal.id] : [])),
-      ),
-    [rows],
-  );
 
   // Additive, like every other selection gesture here: an import never drops
   // rows the admin ticked by hand.
@@ -235,16 +285,16 @@ function ManageAssignmentsForm({
   };
 
   const toggleRow = (row: ProposalRow) => {
-    const proposalId = row.proposal.id;
+    const { assignment } = row.proposal;
 
     if (row.kind === 'free') {
       if (canAssign) {
-        setToAssign((current) => toggled(current, proposalId));
+        setToAssign((current) => toggled(current, row.proposal.id));
       }
       return;
     }
-    if (row.kind === 'assigned') {
-      setToUnassign((current) => toggled(current, proposalId));
+    if (row.kind === 'assigned' && assignment && canModifyAssignments) {
+      setToUnassign((current) => toggled(current, assignment.id));
     }
   };
 
@@ -262,7 +312,6 @@ function ManageAssignmentsForm({
     });
   };
 
-  // The `reviewAssignments` channel refetches the list; nothing invalidates.
   // The two halves are separate mutations, so each reports its own failure —
   // one "could not save" toast after the assign half committed would lie.
   const save = async () => {
@@ -273,7 +322,7 @@ function ManageAssignmentsForm({
         const result = await assignReviews.mutateAsync({
           processInstanceId,
           phaseId,
-          reviewerProfileId: reviewer.profile.id,
+          reviewerProfileId,
           proposalIds: assignIds,
         });
         createdCount = result.createdCount;
@@ -281,9 +330,8 @@ function ManageAssignmentsForm({
         logger.error('Failed to save review assignment changes', {
           error,
           context: 'ManageAssignmentsDialog',
-          reviewerProfileId: reviewer.profile.id,
+          reviewerProfileId,
         });
-        // Nothing committed yet — every selection is still worth retrying.
         toast.error(t('decisions.review.saveChangesError'));
         return;
       }
@@ -305,7 +353,7 @@ function ManageAssignmentsForm({
         logger.error('Failed to save review assignment changes', {
           error,
           context: 'ManageAssignmentsDialog',
-          reviewerProfileId: reviewer.profile.id,
+          reviewerProfileId,
         });
         if (createdCount > 0) {
           // The assign half committed — drop it so a retry only re-sends the removals.
@@ -321,11 +369,9 @@ function ManageAssignmentsForm({
     if (createdCount > 0 || removedCount > 0) {
       toast.success(summaryMessage(t, createdCount, removedCount));
     } else if (skippedIds.length === 0) {
-      // Server deduped every pick; "0 unassigned" would read as a failure.
       toast.info(t('decisions.review.noChangesNeeded'));
     }
 
-    // Skipped = no longer pending, for a reason the API doesn't report.
     if (skippedIds.length > 0) {
       toast.error(t('decisions.review.unassignConflictError'));
     }
@@ -337,7 +383,9 @@ function ManageAssignmentsForm({
     <>
       <DialogHeader>
         <DialogTitle>
-          {t('decisions.review.manageReviewerAssignmentsTitle', { name })}
+          {t('decisions.review.manageReviewerAssignmentsTitle', {
+            name: reviewerName,
+          })}
         </DialogTitle>
         <DialogDescription>
           {t('decisions.review.manageAssignmentsHint')}
@@ -356,26 +404,31 @@ function ManageAssignmentsForm({
             {/* Import builds the selection like Select all does, so it sits beside it. */}
             {importEnabled && canAssign ? (
               <ImportProposalIdsDialog
-                poolIds={poolIds}
-                assignableIds={importableIds}
+                processInstanceId={processInstanceId}
+                phaseId={phaseId}
+                reviewerProfileId={reviewerProfileId}
                 onImport={importProposals}
               />
             ) : null}
             <Button
               variant="link"
               onClick={toggleVisibleFree}
-              disabled={visibleFreeIds.length === 0}
+              disabled={isStale || visibleFreeIds.length === 0}
             >
               {allVisibleFreeSelected ? t('Clear') : t('Select all')}
             </Button>
           </div>
         </div>
 
-        {canAssign ? null : (
+        {!canModifyAssignments ? (
+          <p className="text-sm text-muted-foreground">
+            {t('decisions.review.phaseEndedAssignmentsLockedHint')}
+          </p>
+        ) : !canAssign ? (
           <p className="text-sm text-muted-foreground">
             {t('decisions.review.reviewerRoleRemovedHint')}
           </p>
-        )}
+        ) : null}
 
         <Field>
           <FieldLabel htmlFor={filterId} className="sr-only">
@@ -385,37 +438,55 @@ function ManageAssignmentsForm({
             id={filterId}
             type="search"
             value={query}
+            maxLength={PROPOSAL_SEARCH_MAX_LENGTH}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={t('decisions.review.filterProposalsPlaceholder')}
+            placeholder={t('decisions.review.searchByTitlePlaceholder')}
           />
         </Field>
 
+        {/* Mounted empty first: a live region that arrives with its text is never read. */}
         <p aria-live="polite" className="sr-only">
-          {t('decisions.review.proposalsShownCount', {
-            count: visibleRows.length,
-          })}
+          {pickQuery.isFetchingNextPage
+            ? t('decisions.review.loadingMoreProposals')
+            : pickQuery.isFetchNextPageError
+              ? t('decisions.proposals.mergeCandidatesLoadError')
+              : isStale || !pickQuery.data
+                ? ''
+                : t('decisions.review.proposalsShownCount', {
+                    count: rows.length,
+                  })}
         </p>
 
-        <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border">
-          {visibleRows.map((row) => (
-            <ProposalCheckRow
-              key={row.proposal.id}
-              row={row}
-              canAssign={canAssign}
-              isChecked={isRowChecked(row, toAssign, toUnassign)}
-              onToggle={() => toggleRow(row)}
-            />
-          ))}
-          {visibleRows.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-muted-foreground">
-              {proposals.length === 0
-                ? t('decisions.review.noProposalsInPhase')
-                : t('decisions.review.noProposalsMatchQuery', {
-                    query: query.trim(),
-                  })}
-            </li>
-          ) : null}
-        </ul>
+        <QueryErrorResetBoundary>
+          {({ reset }) => (
+            <APIErrorBoundary
+              onReset={reset}
+              resetKeys={[deferredQuery]}
+              fallbacks={{
+                default: ({ error, resetErrorBoundary }) => (
+                  <PickListUnavailable
+                    error={error}
+                    onRetry={resetErrorBoundary}
+                  />
+                ),
+              }}
+            >
+              <Suspense
+                fallback={<Skeleton className="h-64 w-full" aria-hidden />}
+              >
+                <AssignableProposalListSuspense
+                  pickInput={pickInput}
+                  isStale={isStale}
+                  canAssign={canAssign}
+                  canModifyAssignments={canModifyAssignments}
+                  toAssign={toAssign}
+                  toUnassign={toUnassign}
+                  onToggleRow={toggleRow}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          )}
+        </QueryErrorResetBoundary>
       </div>
 
       <DialogFooter className="sm:justify-between">
@@ -449,25 +520,143 @@ function ManageAssignmentsForm({
   );
 }
 
+function AssignableProposalListSuspense({
+  pickInput,
+  isStale,
+  canAssign,
+  canModifyAssignments,
+  toAssign,
+  toUnassign,
+  onToggleRow,
+}: AssignableProposalListProps) {
+  const t = useTranslations();
+  // State, not a ref: the sentinel's observer root must re-render once attached.
+  const [scrollRoot, setScrollRoot] = useState<HTMLUListElement | null>(null);
+
+  const [pickData, pickQuery] =
+    trpc.decision.listAssignableProposals.useSuspenseInfiniteQuery(pickInput, {
+      getNextPageParam: (lastPage) => lastPage.next,
+      staleTime: PICK_STALE_TIME_MS,
+    });
+
+  const rows = useMemo(
+    () => pickData.pages.flatMap((page) => page.items).map(toProposalRow),
+    [pickData.pages],
+  );
+
+  const { fetchNextPage } = pickQuery;
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+  const { ref: sentinelRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLLIElement>(loadNextPage, {
+      hasNextPage: pickQuery.hasNextPage,
+      isFetchingNextPage: pickQuery.isFetchingNextPage,
+      // The list's scroller, not the viewport: the dialog clips a viewport root.
+      root: scrollRoot,
+    });
+
+  return (
+    <>
+      {/* The sentinel's observer root, so it must be the element that scrolls. */}
+      <ul
+        ref={setScrollRoot}
+        aria-busy={isStale}
+        className={cn(
+          'flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border',
+          isStale && 'opacity-60',
+        )}
+      >
+        {rows.map((row) => (
+          <ProposalCheckRow
+            key={row.proposal.id}
+            row={row}
+            canAssign={canAssign}
+            canModifyAssignments={canModifyAssignments}
+            isChecked={isRowChecked(row, toAssign, toUnassign)}
+            onToggle={() => onToggleRow(row)}
+          />
+        ))}
+        {rows.length === 0 ? (
+          <li className="px-3 py-2 text-sm text-muted-foreground">
+            {pickInput.search
+              ? t('decisions.review.noProposalsMatchQuery', {
+                  query: pickInput.search,
+                })
+              : t('decisions.review.noProposalsInPhase')}
+          </li>
+        ) : null}
+        {/* Padded: a zero-height target never meets the intersection threshold. */}
+        {shouldShowTrigger ? (
+          <li ref={sentinelRef} aria-hidden className="px-3 py-2">
+            {pickQuery.isFetchingNextPage ? (
+              <Skeleton className="h-10 w-full" />
+            ) : null}
+          </li>
+        ) : null}
+      </ul>
+
+      {/* With pages loaded, a failed next page stays here instead of throwing. */}
+      {pickQuery.isFetchNextPageError ? (
+        <p role="alert" className="text-sm text-muted-foreground">
+          {t('decisions.proposals.mergeCandidatesLoadError')}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+/** Retrying resets the query's error state, so the failed search refetches. */
+function PickListUnavailable({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const t = useTranslations();
+
+  useEffect(() => {
+    logger.error('Could not load the assignable proposals', {
+      error,
+      context: 'ManageAssignmentsDialog',
+    });
+  }, [error]);
+
+  return (
+    <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-lg border px-3 text-center">
+      <p role="alert" className="text-sm text-muted-foreground">
+        {t('decisions.proposals.mergeCandidatesLoadError')}
+      </p>
+      <Button variant="outline" onClick={onRetry}>
+        {t('Try again')}
+      </Button>
+    </div>
+  );
+}
+
 function ProposalCheckRow({
   row,
   canAssign,
+  canModifyAssignments,
   isChecked,
   onToggle,
 }: {
   row: ProposalRow;
   canAssign: boolean;
+  canModifyAssignments: boolean;
   isChecked: boolean;
   onToggle: () => void;
 }) {
   const t = useTranslations();
-  const { proposal, kind, assignment, isOwn } = row;
-  const authorName = proposal.author
-    ? (proposal.author.name ?? proposal.author.slug)
-    : null;
+  const { proposal, kind } = row;
+  const { titleText, displayCategories } = useAssignableRowData(proposal);
   // `assigned` stays checkable even when frozen, so the queue can be cleaned.
   const isDisabled =
-    kind === 'own' || kind === 'locked' || (kind === 'free' && !canAssign);
+    kind === 'own' ||
+    kind === 'locked' ||
+    (kind === 'free' && !canAssign) ||
+    (kind === 'assigned' && !canModifyAssignments);
 
   return (
     <li className="border-b last:border-b-0">
@@ -486,30 +675,30 @@ function ProposalCheckRow({
         />
         <span className="flex min-w-0 flex-col">
           <span className="truncate" dir="auto">
-            {proposal.title ?? t('decisions.proposals.untitledProposal')}
+            {titleText}
           </span>
-          {authorName ? (
+          {proposal.authorName ? (
             <span className="truncate text-sm text-muted-foreground" dir="auto">
-              {authorName}
+              {proposal.authorName}
             </span>
           ) : null}
         </span>
         <span className="ms-auto flex shrink-0 items-center gap-2">
-          {isOwn ? (
+          {proposal.isOwn ? (
             <Badge variant="outline">
               {t('decisions.review.reviewerOwnProposal')}
             </Badge>
           ) : null}
-          {kind === 'locked' && assignment ? (
+          {kind === 'locked' && proposal.assignment ? (
             <ReviewStatusBadge
-              status={assignment.reviewState ?? assignment.status}
+              status={
+                proposal.assignment.reviewState ?? proposal.assignment.status
+              }
             />
           ) : null}
           {(kind === 'free' || kind === 'assigned') &&
-          proposal.categories.length > 0 ? (
-            <SelectionCategoryChips
-              labels={proposal.categories.map((category) => category.label)}
-            />
+          displayCategories.length > 0 ? (
+            <SelectionCategoryChips labels={displayCategories} />
           ) : null}
         </span>
       </Label>
@@ -517,55 +706,25 @@ function ProposalCheckRow({
   );
 }
 
-function buildProposalRows(
-  proposals: AdminAssignableProposal[],
-  reviewer: ReviewerRow,
-): ProposalRow[] {
-  const assignmentByProposalId = new Map(
-    reviewer.assignments.map((assignment) => [
-      assignment.proposalId,
-      assignment,
-    ]),
-  );
+/** Titles prefer `profileName`: `proposalData.title` is a creation-time snapshot. */
+function useAssignableRowData(row: AssignableProposal) {
+  const t = useTranslations();
+  const cardTranslation = useCardTranslation(row.profileId);
 
-  return proposals.map((proposal) => {
-    const assignment = assignmentByProposalId.get(proposal.id) ?? null;
-    const isOwn = proposal.submittedByProfileId === reviewer.profile.id;
-
-    return {
-      proposal,
-      assignment,
-      isOwn,
-      kind: resolveRowKind(assignment, isOwn),
-    };
-  });
+  return {
+    titleText:
+      cardTranslation?.title ??
+      (row.profileName ||
+        row.proposalData.title ||
+        t('decisions.proposals.untitledProposal')),
+    displayCategories: cardTranslation?.category
+      ? cardTranslation.category
+      : normalizeProposalCategories(row.proposalData.category),
+  };
 }
 
-// An existing assignment outranks "own proposal" — a stray self-assignment
-// must stay visible and, while pending, removable.
-function resolveRowKind(
-  assignment: AdminReviewAssignment | null,
-  isOwn: boolean,
-): RowKind {
-  if (assignment) {
-    return assignment.status === 'pending' ? 'assigned' : 'locked';
-  }
-  return isOwn ? 'own' : 'free';
-}
-
-function filterRows(rows: ProposalRow[], query: string): ProposalRow[] {
-  const needle = query.trim().toLowerCase();
-  if (!needle) {
-    return rows;
-  }
-
-  return rows.filter(
-    (row) =>
-      (row.proposal.title ?? '').toLowerCase().includes(needle) ||
-      row.proposal.categories.some((category) =>
-        category.label.toLowerCase().includes(needle),
-      ),
-  );
+function toProposalRow(proposal: AssignableProposal): ProposalRow {
+  return { proposal, kind: rowKindOf(proposal) };
 }
 
 function isRowChecked(
@@ -579,7 +738,9 @@ function isRowChecked(
     case 'locked':
       return true;
     case 'assigned':
-      return !toUnassign.has(row.proposal.id);
+      return row.proposal.assignment
+        ? !toUnassign.has(row.proposal.assignment.id)
+        : true;
     case 'free':
       return toAssign.has(row.proposal.id);
   }

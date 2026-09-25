@@ -1088,7 +1088,6 @@
       "feedbackToAuthorLabel": "লেখকের কাছে মতামত",
       "feedbackToAuthorHeading": "লেখকের কাছে মতামত",
       "filterByStatusLabel": "স্ট্যাটাস অনুযায়ী ফিল্টার",
-      "filterProposalsPlaceholder": "শিরোনাম বা বিভাগ দিয়ে ফিল্টার করুন…",
       "noReviewersHint": "লোকেদের পর্যালোচকের ভূমিকা দিন, তারা এখানে দেখা যাবে এবং প্রস্তাবনা নিতে প্রস্তুত থাকবে।",
       "importAction": "ইমপোর্ট করুন",
       "importProposalIdsTitle": "প্রস্তাবনার আইডি ইমপোর্ট করুন",
@@ -1109,6 +1108,8 @@
       "noChangesYet": "এখনও কোনও পরিবর্তন নেই",
       "noOtherReviews": "এখনও অন্য কোনো পর্যালোচনা নেই",
       "importNoIdsFound": "আপনি যা পেস্ট করেছেন তাতে কোনো প্রস্তাবনার আইডি পাওয়া যায়নি।",
+      "importPoolLoading": "এই পর্যায়ের প্রস্তাবগুলো লোড হচ্ছে…",
+      "importPoolLoadError": "এই পর্যায়ের প্রস্তাবগুলো লোড করা যায়নি।",
       "noProposalsToSelect": "নির্বাচনের জন্য কোনো প্রস্তাব উপলব্ধ নেই",
       "noProposalsMatchQuery": "\"{query}\"-এর সাথে মেলে এমন কোনো প্রস্তাবনা নেই।",
       "noProposalsMatchFilter": "বর্তমান ফিল্টারের সাথে কোনো প্রস্তাব মেলে না",
@@ -1203,7 +1204,9 @@
       "revisionRequestedLabel": "সংশোধনের অনুরোধ করা হয়েছে",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "{timeAgo} পাঠানো হয়েছে",
-      "selectedProposalsHeading": "নির্বাচিত প্রস্তাব"
+      "selectedProposalsHeading": "নির্বাচিত প্রস্তাব",
+      "searchByTitlePlaceholder": "শিরোনাম দিয়ে খুঁজুন",
+      "phaseEndedAssignmentsLockedHint": "এই ধাপটি শেষ হয়ে গেছে, তাই অ্যাসাইনমেন্ট আর পরিবর্তন করা যাবে না।"
     },
     "proposals": {
       "amountRequested": "{amount} অনুরোধ করা হয়েছে",

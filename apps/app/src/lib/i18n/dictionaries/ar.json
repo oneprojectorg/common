@@ -1088,7 +1088,6 @@
       "feedbackToAuthorLabel": "ملاحظات إلى المؤلف",
       "feedbackToAuthorHeading": "ملاحظات إلى المؤلف",
       "filterByStatusLabel": "تصفية حسب الحالة",
-      "filterProposalsPlaceholder": "التصفية بحسب العنوان أو الفئة…",
       "noReviewersHint": "امنح الأشخاص دور المراجع وسيظهرون هنا جاهزين لاستلام المقترحات.",
       "importAction": "استيراد",
       "importProposalIdsTitle": "استيراد معرّفات المقترحات",
@@ -1109,6 +1108,8 @@
       "noChangesYet": "لا تغييرات بعد",
       "noOtherReviews": "لا توجد مراجعات أخرى بعد",
       "importNoIdsFound": "لم يُعثر على أي معرّف مقترح في ما ألصقته.",
+      "importPoolLoading": "جارٍ تحميل المقترحات في هذه المرحلة…",
+      "importPoolLoadError": "تعذّر تحميل المقترحات في هذه المرحلة.",
       "noProposalsToSelect": "لا توجد مقترحات متاحة للاختيار",
       "noProposalsMatchQuery": "لا توجد مقترحات تطابق \"{query}\".",
       "noProposalsMatchFilter": "لا توجد مقترحات تطابق المرشح الحالي",
@@ -1203,7 +1204,9 @@
       "revisionRequestedLabel": "تم طلب التعديل",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "أُرسل {timeAgo}",
-      "selectedProposalsHeading": "المقترحات المُختارة"
+      "selectedProposalsHeading": "المقترحات المُختارة",
+      "searchByTitlePlaceholder": "البحث بالعنوان",
+      "phaseEndedAssignmentsLockedHint": "انتهت هذه المرحلة، لذلك لم يعد بالإمكان تغيير التعيينات."
     },
     "proposals": {
       "amountRequested": "تم طلب {amount}",

@@ -1088,7 +1088,6 @@
       "feedbackToAuthorLabel": "Jawaab-celin qoraaga",
       "feedbackToAuthorHeading": "Jawaab-celin Qoraaga",
       "filterByStatusLabel": "Ku shaandhee xaaladda",
-      "filterProposalsPlaceholder": "Ku shaandhee cinwaanka ama qaybta…",
       "noReviewersHint": "Dadka sii doorka dib-u-eegaha, halkan ayay ka soo muuqan doonaan, diyaar u ah inay qaataan soo jeedimo.",
       "importAction": "Soo geli",
       "importProposalIdsTitle": "Soo geli aqoonsiyada soo jeedimaha",
@@ -1109,6 +1108,8 @@
       "noChangesYet": "Weli isbeddel ma jiro",
       "noOtherReviews": "Wali ma jiraan dib-u-eegisyo kale",
       "importNoIdsFound": "Lagama helin wax aqoonsi soo jeedin ah wixii aad dhejisay.",
+      "importPoolLoading": "Waxaa la soo rarayaa soo jeedimaha marxaladdan…",
+      "importPoolLoadError": "Lama soo rari karin soo jeedimaha marxaladdan.",
       "noProposalsToSelect": "Ma jiraan soo jeedimo la dooran karo",
       "noProposalsMatchQuery": "Ma jiro soo jeedin u dhiganta \"{query}\".",
       "noProposalsMatchFilter": "Soo jeedimo la mid ah shaandhaynta hadda ma jiraan",
@@ -1203,7 +1204,9 @@
       "revisionRequestedLabel": "Dib-u-habeyn la codsaday",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "La diray {timeAgo}",
-      "selectedProposalsHeading": "Soo jeedimaha la xushay"
+      "selectedProposalsHeading": "Soo jeedimaha la xushay",
+      "searchByTitlePlaceholder": "Raadi cinwaanka",
+      "phaseEndedAssignmentsLockedHint": "Wejigan wuu dhammaaday, sidaas darteed qoondooyinka lama beddeli karo."
     },
     "proposals": {
       "amountRequested": "{amount} la codsaday",

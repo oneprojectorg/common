@@ -86,6 +86,39 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     );
   });
 
+  it('reports the phase as unmodifiable once the instance has left it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: `Frozen phase proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = created.context;
+    const instanceId = context.instance.instance.id;
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: instanceId,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+    };
+
+    const current = await adminCaller.decision.listReviewerAssignments(input);
+    expect(current.canModifyAssignments).toBe(true);
+
+    await testData.setCurrentPhase(instanceId, 'voting');
+
+    const past = await adminCaller.decision.listReviewerAssignments(input);
+    expect(past.items[0]?.assignment.status).toBe(
+      ProposalReviewAssignmentStatus.PENDING,
+    );
+    expect(past.canModifyAssignments).toBe(false);
+  });
+
   it('excludes other reviewers assignments from the scoped queue', async ({
     task,
     onTestFinished,
