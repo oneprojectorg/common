@@ -2,8 +2,10 @@ import { InngestTestEngine } from '@inngest/test';
 import { isFeatureEnabled } from '@op/analytics';
 import { createAccountFromPhone, getSmsProvider } from '@op/common';
 import { db } from '@op/db/client';
+import { authUsers } from '@op/db/schema';
 import { Events } from '@op/events';
 import { logger } from '@op/logging';
+import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Everything the function's real steps talk to. Steps NOT mocked below run
@@ -19,12 +21,16 @@ vi.mock('@op/common', () => {
     getSmsProvider: vi.fn(),
     // A real E.164 fixture below, so identity is a faithful stand-in, except
     // for 'not-e164', used to exercise the invalid-number branch.
-    parsePhoneNumber: (value: string) => {
-      if (value === 'not-e164') {
-        throw new ValidationError('Phone number must be in E.164 format');
-      }
-      return value;
-    },
+    safeParsePhoneNumber: (value: string) =>
+      value === 'not-e164'
+        ? {
+            success: false,
+            error: new ValidationError('Phone number must be in E.164 format'),
+          }
+        : { success: true, data: value },
+    // The real transform, not a stand-in: the bug this suite guards against
+    // is specifically in what value gets compared against `authUsers.phone`.
+    toGoTruePhoneFormat: (value: string) => value.replace(/^\+/, ''),
     RateLimitError: class RateLimitError extends Error {},
     ValidationError,
   };
@@ -32,6 +38,15 @@ vi.mock('@op/common', () => {
 vi.mock('@op/logging', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
+// `db` is mocked wholesale above, but the query condition is built by a real
+// call to drizzle's `eq`, independent of that mock. Spying on it (rather than
+// replacing it) lets a test assert on the exact value compared against
+// `authUsers.phone`, which is exactly what the GoTrue `+`-stripping bug got
+// wrong.
+vi.mock('drizzle-orm', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('drizzle-orm')>();
+  return { ...actual, eq: vi.fn(actual.eq) };
+});
 
 import { handleUnknownSmsSignup } from './handleUnknownSmsSignup';
 
@@ -92,6 +107,25 @@ describe('handleUnknownSmsSignup', () => {
       { profileId: 'profile-1' },
     );
     expect(getSmsProvider).not.toHaveBeenCalled();
+  });
+
+  it('compares the stored number rather than the leading + Twilio always sends', async () => {
+    // GoTrue stores auth.users.phone as '15005550006', never '+15005550006'
+    // (confirmed against the local dev database). Comparing FROM's raw '+'
+    // form against that column would never match, silently misrouting every
+    // known sender into the signup flow.
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
+    vi.mocked(db.select).mockReturnValue(dbRows([]));
+    vi.mocked(getSmsProvider).mockReturnValue({} as never);
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    await t.execute({ events: [triggerEvent()] });
+
+    const phoneComparison = vi
+      .mocked(eq)
+      .mock.calls.find(([column]) => column === authUsers.phone);
+
+    expect(phoneComparison?.[1]).toBe('15005550006');
   });
 
   it('reports sending as unavailable when no Messaging Service is configured', async () => {
