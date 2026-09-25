@@ -5,6 +5,7 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   DropdownMenu,
@@ -18,7 +19,13 @@ import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
+import {
+  LuMessageCircle,
+  LuPlus,
+  LuUserPlus,
+  LuUsers,
+  LuWandSparkles,
+} from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -38,6 +45,9 @@ export const CreateMenu = () => {
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
+  // The wizard ships alongside the one-click path rather than replacing it, so
+  // the old route stays available while the new one is in alpha.
+  const newProcessAdminEnabled = useFeatureFlag('new_process_admin_enabled');
   const utils = trpc.useUtils();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -84,8 +94,9 @@ export const CreateMenu = () => {
           >
             <LuUsers className="size-4" /> {t('Organization')}
           </DropdownMenuItem>
-          {createDecisionEnabled && (
+          {(createDecisionEnabled || newProcessAdminEnabled) && (
             <DropdownMenuItem
+              data-testid="create-decision-process"
               disabled={isCreatingDecision}
               onClick={() => createDecisionMutation.mutate()}
             >
@@ -95,6 +106,23 @@ export const CreateMenu = () => {
                 <LuMessageCircle className="size-4" />
               )}{' '}
               {t('shell.createDecisionAction')}
+            </DropdownMenuItem>
+          )}
+          {newProcessAdminEnabled && (
+            // The wizard collects the shape of the process before anything is
+            // created — see CreateProcessWizard. The badge is part of the
+            // item's accessible name, which is what tells it apart from the
+            // one-click item above.
+            <DropdownMenuItem
+              data-testid="create-decision-process-wizard"
+              disabled={isCreatingDecision}
+              onClick={() => router.push('/decisions/new')}
+            >
+              <LuWandSparkles className="size-4" />{' '}
+              {t('shell.createDecisionAction')}
+              <Badge variant="accent" className="ms-auto">
+                {t('Alpha')}
+              </Badge>
             </DropdownMenuItem>
           )}
           {isOrg && (
