@@ -1,16 +1,27 @@
+import { createTranslator } from 'next-intl';
 import { describe, expect, it } from 'vitest';
 
-import { applyGrantDecision, piecesFor } from './content';
+import english from '@/lib/i18n/dictionaries/en.json';
+
 import {
   EMPTY_OTHER,
   composeOtherPieces,
+  describeOther,
+  otherCanContinue,
   otherStepList,
+  subjectPhrase,
   type OtherAnswers,
 } from './otherFlow';
 
 const answers = (patch: Partial<OtherAnswers>): OtherAnswers => ({
   ...EMPTY_OTHER,
   ...patch,
+});
+
+const t = createTranslator({
+  locale: 'en',
+  messages: english,
+  namespace: 'decisions.createWizard',
 });
 
 const phases = (input: OtherAnswers) =>
@@ -132,44 +143,96 @@ describe('composeOtherPieces', () => {
   });
 });
 
-describe('applyGrantDecision', () => {
-  it('leaves a rubric process alone', () => {
-    const pieces = piecesFor('grant', 'loi');
-
-    expect(applyGrantDecision(pieces, 'rubric')).toBe(pieces);
-    expect(applyGrantDecision(pieces, null)).toBe(pieces);
+describe('otherCanContinue', () => {
+  it('needs at least one subject', () => {
+    expect(otherCanContinue('subjects', EMPTY_OTHER)).toBe(false);
+    expect(otherCanContinue('subjects', answers({ subjects: ['funding'] }))).toBe(
+      true,
+    );
   });
 
-  // In a letter-of-intent process the first review picks who advances, which
-  // happens whoever decides the funding — so only the last review is reshaped.
-  it('replaces only the last review when the applicants vote', () => {
-    const reshaped = applyGrantDecision(
-      piecesFor('grant', 'loi'),
-      'applicants',
+  // "Something else" is named in the user's own words, so it needs some.
+  it('needs words for something else', () => {
+    const picked = answers({ subjects: ['funding', 'else'] });
+
+    expect(otherCanContinue('subjects', picked)).toBe(false);
+    expect(
+      otherCanContinue('subjects', { ...picked, elseText: '   ' }),
+    ).toBe(false);
+    expect(
+      otherCanContinue('subjects', { ...picked, elseText: 'A new logo' }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ['focus', { focus: 'funding' }],
+    ['cadence', { cadence: 'timeline' }],
+    ['submits', { submits: 'none' }],
+    ['decision', { decision: 'agree' }],
+  ] as const)('needs an answer to %s', (step, answer) => {
+    expect(otherCanContinue(step, EMPTY_OTHER)).toBe(false);
+    expect(otherCanContinue(step, answers(answer))).toBe(true);
+  });
+});
+
+describe('subjectPhrase', () => {
+  it('names a single subject', () => {
+    expect(subjectPhrase(answers({ subjects: ['funding'] }), t, 'en')).toBe(
+      english.decisions.createWizard.subjectFundingNoun,
+    );
+  });
+
+  it('joins several subjects as a list', () => {
+    expect(
+      subjectPhrase(answers({ subjects: ['funding', 'ideas'] }), t, 'en'),
+    ).toBe('funding and ideas and priorities');
+  });
+
+  it('names only the focus when one is picked', () => {
+    expect(
+      subjectPhrase(
+        answers({ subjects: ['funding', 'ideas'], focus: 'ideas' }),
+        t,
+        'en',
+      ),
+    ).toBe(english.decisions.createWizard.subjectIdeasNoun);
+  });
+
+  it('speaks something else in the user’s own words', () => {
+    expect(
+      subjectPhrase(
+        answers({ subjects: ['else'], elseText: '  A new logo ' }),
+        t,
+        'en',
+      ),
+    ).toBe('A new logo');
+  });
+});
+
+describe('describeOther', () => {
+  it('recaps an always-open process', () => {
+    expect(
+      describeOther(
+        answers({ subjects: ['funding'], cadence: 'ongoing' }),
+        t,
+        'en',
+      ),
+    ).toMatch(/^Deciding on funding, always open/);
+  });
+
+  it('recaps a process with a timeline, filling every slot', () => {
+    const recap = describeOther(
+      answers({
+        subjects: ['funding'],
+        cadence: 'timeline',
+        submits: 'proposals',
+        decision: 'vote',
+      }),
+      t,
+      'en',
     );
 
-    expect(reshaped.map((piece) => piece.phaseType)).toEqual([
-      'submissions',
-      'review',
-      'develop',
-      'voting',
-      'results',
-    ]);
-    expect(reshaped[1]?.name).toBe('pickShortlist');
-    expect(reshaped[3]?.phaseName).toBe('votePhase');
-  });
-
-  it('adds a vote after the narrowing review in the hybrid shape', () => {
-    const reshaped = applyGrantDecision(piecesFor('grant', 'single'), 'hybrid');
-
-    expect(reshaped.map((piece) => piece.phaseType)).toEqual([
-      'submissions',
-      'review',
-      'voting',
-      'results',
-    ]);
-    expect(reshaped[1]?.name).toBe('narrowField');
-    expect(reshaped[1]?.phaseName).toBe('shortlisting');
-    expect(reshaped[2]?.phaseName).toBe('votePhase');
+    expect(recap).toMatch(/^Deciding on funding, start to finish: /);
+    expect(recap).not.toMatch(/[{}]/);
   });
 });
