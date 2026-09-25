@@ -29,6 +29,8 @@ export function NameAccessStep({
   onStewardChange: (profileId: string) => void;
 }) {
   const t = useTranslations('decisions.createWizard');
+  // The process page's own "Stewarded by", which this field previews.
+  const tDecisions = useTranslations('decisions');
   const trimmed = name.trim();
   const isNameTooShort = trimmed.length < MIN_PROCESS_NAME_LENGTH;
 
@@ -61,6 +63,8 @@ export function NameAccessStep({
           <StewardSelect
             stewardProfileId={stewardProfileId}
             onSelectionChange={onStewardChange}
+            label={tDecisions('stewardedByLabel')}
+            description={t('shownProcessPageWhoRunning')}
           />
         </Suspense>
       </APIErrorBoundary>
