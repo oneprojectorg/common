@@ -110,7 +110,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
           label carries it. `relative` puts it over the positioned rail. */}
       <span
         aria-hidden
-        className="relative mt-2.75 grid size-8.5 shrink-0 place-items-center rounded-full border-[1.5px] border-border bg-background text-sm text-muted-foreground transition-colors group-data-open/item:border-primary group-data-open/item:bg-primary group-data-open/item:font-strong group-data-open/item:text-primary-foreground motion-reduce:transition-none"
+        className="relative mt-2.75 grid size-8.5 shrink-0 place-items-center rounded-full border-2 border-border bg-background text-sm text-muted-foreground transition-colors group-data-open/item:border-primary group-data-open/item:bg-primary group-data-open/item:font-strong group-data-open/item:text-primary-foreground motion-reduce:transition-none"
       >
         {step + 1}
       </span>
@@ -134,8 +134,8 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
           </span>
         </AccordionTrigger>
 
-        <AccordionContent className="grid pt-0 pb-0 sm:grid-cols-[1fr_42%]">
-          <div className="flex min-w-0 flex-col px-5 pb-5">
+        <AccordionContent className="grid pt-0 pb-0 sm:grid-cols-5">
+          <div className="flex min-w-0 flex-col px-5 pb-5 sm:col-span-3">
             {piece.description ? (
               <p className="mb-4 text-sm text-muted-foreground">
                 {t(piece.description)}
@@ -168,7 +168,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
           {/* Placeholder in the real slot at the real size; no asset ships yet. */}
           <div
             aria-hidden
-            className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30"
+            className="min-h-32 bg-gradient-to-b sm:col-span-2 from-accent via-primary/15 to-primary/30"
           />
         </AccordionContent>
       </div>
