@@ -17,11 +17,14 @@
  *   no request to mint a nonce from, so a per-request nonce would never match
  *   and `'strict-dynamic'` would block every script on the page.
  *
- * `STATIC_POLICY_SOURCES` names the routes on that second path. It must stay
- * disjoint from the proxy's `config.matcher`: two Content-Security-Policy
- * headers on one response are intersected, and a nonce-free policy intersected
- * with a nonce policy blocks every script on the page. `proxy.test.ts` asserts
- * the two do not overlap.
+ * `STATIC_POLICY_SOURCES` names the routes on that second path. No response
+ * may carry both policies: two Content-Security-Policy headers are
+ * intersected, and a nonce-free policy intersected with a nonce policy blocks
+ * every script on the page. `proxy.test.ts` asserts the declared patterns do
+ * not overlap, but that is not enough on its own — Next compiles
+ * `config.matcher` case-sensitively and matches `headers()` sources
+ * case-insensitively, so `/Login` reaches both. `isStaticPolicyPath` is the
+ * authority: the proxy asks it and declines rather than trusting the patterns.
  */
 
 const CSP_REPORT_PATH = '/api/csp-report';
@@ -46,12 +49,16 @@ export const STATIC_POLICY_SOURCES = STATIC_POLICY_PREFIXES.map(
 /**
  * Whether `next.config.mjs` already serves this path the static policy.
  *
- * The proxy checks this and declines to add its own, because two
- * Content-Security-Policy headers on one response are intersected and a
- * nonce-free policy intersected with a nonce policy blocks every script on
- * the page. The two matchers cannot be trusted to stay disjoint on their own:
- * Next compiles `config.matcher` case-sensitively but matches `headers()`
- * sources case-insensitively, so `/Login` is caught by both.
+ * The proxy checks this and declines to add its own. Matching here rather
+ * than trusting the two pattern languages to stay disjoint: `next start`
+ * matches `headers()` sources case-insensitively while `config.matcher` is
+ * case-sensitive, so `/Login` reaches both emitters. (On Vercel the header
+ * regex is applied from `routes-manifest.json` without the `i` flag, so
+ * `/Login` instead reaches neither — harmless, because a path with no locale
+ * prefix is redirected before anything renders.)
+ *
+ * @param {string} pathname
+ * @returns {boolean}
  */
 export const isStaticPolicyPath = (pathname) => {
   const lower = pathname.toLowerCase();
@@ -62,23 +69,26 @@ export const isStaticPolicyPath = (pathname) => {
 };
 
 /**
- * True for the dev server and the e2e stack, false for every deployment
- * including previews.
+ * Whether this build talks to its backends over cleartext.
  *
  * Deployed, the tRPC API, Supabase and *.collab.tiptap.cloud are all
  * https/wss. Locally they are not — the API answers on http://localhost and
  * Supabase realtime on ws://127.0.0.1 — so `connect-src` has to admit
- * cleartext there, and must never admit it anywhere else. Derived once, here,
- * because both emitters need the same answer.
+ * cleartext there, and must never admit it anywhere else.
  *
- * Fails closed on purpose. Keying this off a hosting provider's variable
- * (`!VERCEL_ENV`) would read any build that happens to run without it — a
- * container, CI without system env vars, a move off Vercel — as "local" and
- * silently ship `http:`/`ws:` to production. An unknown environment has to be
- * the strict one. The e2e stack runs a production build, hence the E2E flag.
+ * Asking whether the backends are cleartext, rather than trying to recognise
+ * the environment, is what makes this both fail-closed and hard to get wrong.
+ * `NODE_ENV` disagrees across the two emitters (Next inlines it into the
+ * proxy bundle at build, `next.config.mjs` reads the ambient value) and would
+ * have blocked tRPC on a production build run against the local stack;
+ * `!VERCEL_ENV` read any build without that variable — a container, CI
+ * without system env vars, a move off Vercel — as local and shipped `http:`
+ * to production. `NEXT_PUBLIC_SUPABASE_URL` is required, is inlined
+ * identically for both emitters, and is cleartext exactly when the rest of
+ * the local stack is.
  */
 const isLocalEnvironment = () =>
-  process.env.NODE_ENV !== 'production' || process.env.E2E === 'true';
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http://') ?? false;
 
 /**
  * `CSP_MODE=report-only` switches disposition at deploy time, so a policy that

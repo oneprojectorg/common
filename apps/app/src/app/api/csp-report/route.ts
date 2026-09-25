@@ -66,8 +66,12 @@ const normalize = (report: CspReport) => ({
 const MAX_BODY_BYTES = 64_000;
 
 export async function POST(request: NextRequest): Promise<Response> {
+  // Absent or unparseable is a refusal, not a pass: `Number(null)` is 0 and
+  // `Number('abc')` is NaN, so comparing only against the cap would let a
+  // chunked or header-less body through unbounded. Browsers always declare a
+  // length on these posts.
   const declaredLength = Number(request.headers.get('content-length'));
-  if (declaredLength > MAX_BODY_BYTES) {
+  if (!Number.isFinite(declaredLength) || declaredLength > MAX_BODY_BYTES) {
     return new Response(null, { status: 413 });
   }
 

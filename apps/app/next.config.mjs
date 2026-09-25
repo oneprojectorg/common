@@ -195,8 +195,8 @@ const config = {
           },
         ],
       },
-      // The HTML routes `src/proxy.ts` does not match. `proxy.test.ts` asserts
-      // these stay disjoint from its matcher, so nothing gets two policies.
+      // The HTML routes `src/proxy.ts` does not match. It declines to add its
+      // own policy on these paths (`isStaticPolicyPath`), so nothing gets two.
       ...STATIC_POLICY_SOURCES.map((source) => ({
         source,
         headers: [staticCspHeader],

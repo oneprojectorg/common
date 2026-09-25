@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
+  STATIC_POLICY_SOURCES,
   buildNonceContentSecurityPolicy,
   buildStaticContentSecurityPolicy,
   createCspNonce,
+  isStaticPolicyPath,
 } from './csp.mjs';
 
 const parseDirectives = (policy: string) =>
@@ -159,5 +161,46 @@ describe('createCspNonce', () => {
 
   it('returns a fresh value per call', () => {
     expect(createCspNonce()).not.toBe(createCspNonce());
+  });
+});
+
+describe('isStaticPolicyPath', () => {
+  // The proxy asks this before adding its own policy. A false negative gives a
+  // response two intersected policies and blocks every script on the page; a
+  // false positive leaves it with none.
+  it.each([
+    '/login',
+    '/login/',
+    '/login/callback',
+    '/info',
+    '/info/privacy',
+    '/info/tos',
+  ])('claims %s', (pathname) => {
+    expect(isStaticPolicyPath(pathname)).toBe(true);
+  });
+
+  it.each(['/Login', '/LOGIN/callback', '/Info/Privacy'])(
+    'claims %s, which next start matches case-insensitively',
+    (pathname) => {
+      expect(isStaticPolicyPath(pathname)).toBe(true);
+    },
+  );
+
+  it.each([
+    '/',
+    '/en',
+    '/en/decisions',
+    '/logins',
+    '/login.html',
+    '/information',
+    '/en/login',
+  ])('declines %s', (pathname) => {
+    expect(isStaticPolicyPath(pathname)).toBe(false);
+  });
+
+  it('covers exactly the trees next.config.mjs declares', () => {
+    for (const source of STATIC_POLICY_SOURCES) {
+      expect(isStaticPolicyPath(source.replace('/:path*', ''))).toBe(true);
+    }
   });
 });

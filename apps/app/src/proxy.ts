@@ -67,13 +67,11 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
   // A fresh nonce per request, stamped on the forwarded request headers so
   // Next's renderer reads it back out and puts it on every script it emits.
-  // Routes this proxy does not match are prerendered or non-HTML;
-  // `next.config.mjs` covers those with a static policy, so no response ever
-  // carries two policies.
-  // `next.config.mjs` serves a static, nonce-free policy over /login and
-  // /info. Case-folding differs between the matcher and header sources, so a
-  // request like /Login reaches both — decline here rather than let the two
-  // policies intersect and block every script on the page.
+  //
+  // `next.config.mjs` serves /login and /info a static, nonce-free policy.
+  // Case-folding differs between the matcher and header sources, so a request
+  // like /Login reaches both — decline here rather than let the two policies
+  // intersect and block every script on the page.
   const applyCsp = isStaticPolicyPath(pathname)
     ? (headers: Headers) => headers
     : createCspHeaderApplier();

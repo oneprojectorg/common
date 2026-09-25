@@ -133,6 +133,22 @@ describe('proxy Content-Security-Policy', () => {
     );
   });
 
+  it.each(['/login', '/Login', '/info/privacy'])(
+    'adds no policy on %s, which next.config.mjs already covers',
+    async (path) => {
+      // Two Content-Security-Policy headers on one response are intersected,
+      // and a nonce-free policy intersected with a nonce policy blocks every
+      // script on the page. /Login is the case the declared patterns miss:
+      // the matcher is case-sensitive, the header source is not.
+      const response = await run(path);
+
+      expect(response.headers.get('content-security-policy')).toBeNull();
+      expect(
+        getForwardedHeader(response, 'content-security-policy'),
+      ).toBeNull();
+    },
+  );
+
   it('keeps the nonce on the response that a token refresh rebuilds', async () => {
     // GoTrue refreshes an expired token through the cookie adapter, which
     // replaces the response mid-flight. That rebuild previously restored the
