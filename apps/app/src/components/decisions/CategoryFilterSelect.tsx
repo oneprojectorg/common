@@ -1,8 +1,7 @@
 import { useTranslations } from '@/lib/i18n';
 
 import { ResponsiveSelect } from './ResponsiveSelect';
-
-export const ALL_CATEGORIES = 'all-categories';
+import { ALL_CATEGORIES } from './proposalFilterQuery';
 
 /**
  * Category filter dropdown shared by the proposals list and the review

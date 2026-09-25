@@ -10,13 +10,12 @@ import { ProposalSearchField } from './ProposalSearchField';
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
 
-/** The bar's leading select — the proposal filter, or the status axis where a
- *  tab bar already owns the filter. One shape so the bar doesn't care which. */
+/** The proposal filter, or the status axis where a tab bar owns the filter. */
 export interface ProposalSelectControl {
   items: { id: string; label: string; isDisabled?: boolean }[];
   value: string;
   onChange: (id: string) => void;
-  /** Accessible name; the two axes are different questions. */
+  /** Accessible name. */
   label: string;
 }
 
@@ -97,7 +96,6 @@ export const ProposalsFilterBar = ({
   header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
-  /** Resolved by `ProposalsList`, which owns both filter axes. */
   leadingSelect: ProposalSelectControl;
 }) => {
   const t = useTranslations();
@@ -116,30 +114,16 @@ export const ProposalsFilterBar = ({
           isPending={controls.isSearchPending}
         />
       </div>
-      {/* Grows to claim its row below 2xl, so the selects' own `ms-auto` has
-          slack to push against; at 2xl it's content-width beside the count.
-          `grow`, not `w-full`: the negative margins bleed this box past the
-          container, and only an auto width grows to absorb them — a fixed 100%
-          would leave the padding stranding the last select short of the edge. */}
-      {/* The end-alignment belongs to the row, not to whichever control happens
-          to lead it — the proposal filter is optional, and so is anything added
-          ahead of the rest later. An auto margin rather than `justify-end`: it
-          collapses to zero once the row overflows, keeping the leading control
-          scrollable into view instead of stranded past the start edge. */}
+      {/* Grows to claim its row below 2xl so `ms-auto` has slack to push
+          against; `grow` not `w-full`, since only an auto width absorbs the
+          negative margins that bleed this box past the container.
+          The auto margin sits on the row's first child rather than a named
+          control, and beats `justify-end` because it collapses to zero once the
+          row overflows instead of stranding the leading control. */}
       <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
         <ResponsiveSelect
           selectedKey={leadingSelect.value}
-          // Resolved against the list rather than re-deriving the rule, so an
-          // option marked inert — "My proposals" without a profile — can't be
-          // picked here.
-          onSelectionChange={(key) => {
-            const selected = leadingSelect.items.find(
-              (item) => item.id === key,
-            );
-            if (selected && !selected.isDisabled) {
-              leadingSelect.onChange(selected.id);
-            }
-          }}
+          onSelectionChange={leadingSelect.onChange}
           aria-label={leadingSelect.label}
           items={leadingSelect.items}
           className="min-w-40 shrink-0"

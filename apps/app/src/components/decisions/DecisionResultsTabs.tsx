@@ -16,7 +16,7 @@ export const DecisionResultsTabs = ({
   className?: string;
   /** Whether to surface the "My ballot" tab — only when a voting phase took place. */
   showBallotTab?: boolean;
-  /** Whether to surface the "My proposals" tab — needs a profile to filter on. */
+  /** Needs a profile to filter on. */
   showMyProposalsTab?: boolean;
 }) => {
   const t = useTranslations('decisions');

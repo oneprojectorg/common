@@ -134,8 +134,7 @@ function ResultsPageContent({
   const showBallotTab =
     isLegacy || hasVotingPhase(instance.instanceData?.phases ?? []);
 
-  // "My proposals" filters on the reader's profile, so it needs one. An
-  // anonymous or stale-session visitor gets the other tabs only.
+  // The tab filters on the reader's profile, so it needs one.
   const { user } = useUser();
   const showMyProposalsTab = Boolean(user?.currentProfile?.id);
 
@@ -237,9 +236,6 @@ function ResultsPageContent({
                   slug={profileSlug}
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
-                  // Pinned, not an initial value: this tab row owns the
-                  // audience axis, so the list renders no rail of its own and
-                  // its select is left to the status axis.
                   pinnedFilter={ProposalFilter.ALL}
                   phase="results"
                   pinOffset={pinOffset}

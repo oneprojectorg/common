@@ -3,13 +3,8 @@ import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 
 /**
- * The column a proposal tab renders into: its heading, then the cards, on one
- * gap and one bottom inset.
- *
- * Each tab used to carry its own copy and they had drifted — two different
- * gaps, and a wrapper around the heading on one but not the other. The gap
- * matches the one the tab rail itself sets, so the heading sits the same
- * distance below the rail on every tab.
+ * The column a proposal tab renders into. The gap matches the tab rail's, so
+ * every tab's heading sits the same distance below it.
  */
 export const ProposalListSection = ({
   heading,
