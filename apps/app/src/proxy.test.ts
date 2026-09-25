@@ -17,6 +17,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+import { STATIC_POLICY_SOURCES } from './lib/csp.mjs';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const proxySource = readFileSync(resolve(__dirname, 'proxy.ts'), 'utf8');
@@ -77,6 +79,28 @@ describe('proxy matcher', () => {
     it.each(SKIPPED)('skips %s', (path) => {
       expect(matches(path)).toBe(false);
     });
+  });
+
+  // `next.config.mjs` serves these a static, nonce-free Content-Security-Policy.
+  // If the matcher also caught them the proxy would add its nonce policy, and
+  // two CSP headers on one response are intersected — a nonce-free policy
+  // intersected with a nonce policy blocks every script on the page. This is
+  // the invariant `csp.mjs` documents; assert it rather than trusting it.
+  describe('routes served the static CSP (must NOT match)', () => {
+    const STATIC_CSP_PATHS = STATIC_POLICY_SOURCES.map((source) =>
+      source.replace('/:path*', ''),
+    );
+
+    it('covers every source next.config.mjs declares', () => {
+      expect(STATIC_CSP_PATHS).toEqual(['/login', '/info']);
+    });
+
+    it.each(STATIC_CSP_PATHS.flatMap((path) => [path, `${path}/nested`]))(
+      'skips %s',
+      (path) => {
+        expect(matches(path)).toBe(false);
+      },
+    );
   });
 
   describe('skipped static asset extensions (must NOT match)', () => {

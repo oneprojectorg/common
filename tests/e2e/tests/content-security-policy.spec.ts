@@ -41,10 +41,35 @@ const getNonce = (policy: string) =>
 
 declare global {
   interface Window {
-    /** Bound by `page.exposeFunction` in the violation test below. */
+    /** Bound by `captureViolations` below. */
     recordCspViolation?: (violation: string) => void;
   }
 }
+
+/**
+ * Collects what the browser actually refused, which is the only check that
+ * catches a directive that is present but too narrow. Must be called before
+ * the first navigation.
+ */
+const captureViolations = async (page: Page) => {
+  const violations: Array<string> = [];
+
+  await page.exposeFunction('recordCspViolation', (violation: string) => {
+    violations.push(violation);
+  });
+
+  await page.addInitScript(() => {
+    window.addEventListener('securitypolicyviolation', (event) => {
+      // The source location is what makes a failure here actionable — a bare
+      // directive name does not say which dependency tripped it.
+      window.recordCspViolation?.(
+        `${event.effectiveDirective} blocked ${event.blockedURI} from ${event.sourceFile}:${event.lineNumber}`,
+      );
+    });
+  });
+
+  return violations;
+};
 
 test.describe('Content-Security-Policy', () => {
   test('dynamic routes carry a nonce that every served script tag matches', async ({
@@ -98,7 +123,39 @@ test.describe('Content-Security-Policy', () => {
     const response = await page.goto('/login');
 
     expect(response?.status()).toBe(200);
-    expect(getNonce(await readCsp(page, '/login'))).toBeNull();
+    expect(getNonce(await getSolePolicy(response, '/login'))).toBeNull();
+  });
+
+  test.describe('routes served the static, nonce-free policy', () => {
+    // These deny 'unsafe-eval', which the nonce policy has to allow. The one
+    // violation they do raise is zod's feature probe — it degrades to an
+    // interpreted parser, so the page is unaffected. Anything else is a real
+    // break on the login screen or the legal pages.
+    const STATIC_ROUTES = [
+      '/login',
+      '/info/privacy',
+      '/info/tos',
+      '/info/community-commitments',
+      '/info/columbus-addendum',
+    ];
+
+    for (const path of STATIC_ROUTES) {
+      test(`${path} renders without blocking anything it needs`, async ({
+        page,
+      }) => {
+        const violations = await captureViolations(page);
+        const response = await page.goto(path);
+
+        expect(response?.status()).toBe(200);
+        await page.waitForLoadState('networkidle');
+
+        expect(
+          violations.filter(
+            (violation) => !violation.startsWith('script-src blocked eval'),
+          ),
+        ).toEqual([]);
+      });
+    }
   });
 
   test('a rendered page raises no violations through hydration', async ({
@@ -107,24 +164,7 @@ test.describe('Content-Security-Policy', () => {
     // The assertions above read the header. This one reads what the browser
     // actually did with it, which is the only check that catches a directive
     // that is present but too narrow.
-    const violations: Array<string> = [];
-
-    await authenticatedPage.exposeFunction(
-      'recordCspViolation',
-      (violation: string) => {
-        violations.push(violation);
-      },
-    );
-
-    await authenticatedPage.addInitScript(() => {
-      window.addEventListener('securitypolicyviolation', (event) => {
-        // The source location is what makes a failure here actionable — a bare
-        // directive name does not say which dependency tripped it.
-        window.recordCspViolation?.(
-          `${event.effectiveDirective} blocked ${event.blockedURI} from ${event.sourceFile}:${event.lineNumber}`,
-        );
-      });
-    });
+    const violations = await captureViolations(authenticatedPage);
 
     await authenticatedPage.goto('/en/');
     await expect(

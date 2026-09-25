@@ -2,21 +2,26 @@
  * Content-Security-Policy construction.
  *
  * Plain `.mjs` (not `.ts`) because `next.config.mjs` is loaded by Node as ESM
- * before any TypeScript transform runs, and it needs the same directive list
- * the proxy uses. Duplicating the list across the two emitters is how a
- * directive silently goes missing, so both import from here.
+ * before any TypeScript transform runs, and it needs the same policy the proxy
+ * uses. This module owns the whole header contract — name and value — so a
+ * disposition or a directive cannot apply to only half the app's responses.
  *
- * Two shapes, because two kinds of route:
+ * Two policy shapes, because two kinds of route:
  *
- * - Dynamically rendered routes get `buildNonceContentSecurityPolicy`. The
- *   proxy mints a nonce per request and puts the policy on the *request*
- *   headers; Next reads it back out (`getScriptNonceFromHeader`) and stamps
- *   that nonce on every script it emits, so `'strict-dynamic'` can carry trust
- *   to the chunks and third-party scripts those bootstrap scripts inject.
- * - Prerendered routes get `buildStaticContentSecurityPolicy`. Their HTML is
- *   built once, with no request to mint a nonce from, so a per-request nonce
- *   would never match and `'strict-dynamic'` would block every script on the
- *   page. `/info/*` is `force-static` today; see `apps/app/next.config.mjs`.
+ * - Dynamically rendered routes get a nonce. The proxy mints one per request
+ *   and puts the policy on the *request* headers; Next reads it back out
+ *   (`getScriptNonceFromHeader`) and stamps that nonce on every script it
+ *   emits, so `'strict-dynamic'` can carry trust to the chunks and
+ *   third-party scripts those bootstrap scripts inject.
+ * - Prerendered routes get the static policy. Their HTML is built once, with
+ *   no request to mint a nonce from, so a per-request nonce would never match
+ *   and `'strict-dynamic'` would block every script on the page.
+ *
+ * `STATIC_POLICY_SOURCES` names the routes on that second path. It must stay
+ * disjoint from the proxy's `config.matcher`: two Content-Security-Policy
+ * headers on one response are intersected, and a nonce-free policy intersected
+ * with a nonce policy blocks every script on the page. `proxy.test.ts` asserts
+ * the two do not overlap.
  */
 
 const CSP_REPORT_PATH = '/api/csp-report';
@@ -26,37 +31,42 @@ const CSP_REPORT_GROUP = 'csp-endpoint';
 
 export const REPORTING_ENDPOINTS_HEADER = `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`;
 
-export const CSP_ENFORCE_HEADER = 'content-security-policy';
-export const CSP_REPORT_ONLY_HEADER = 'content-security-policy-report-only';
+/**
+ * The HTML routes served the static policy, as `next.config.mjs` header
+ * sources. `/info/*` is `force-static`; `/login` sits outside `app/[locale]`,
+ * so routing it through the proxy would send it through the locale redirect
+ * to an `/en/login` that does not exist.
+ */
+export const STATIC_POLICY_SOURCES = ['/login/:path*', '/info/:path*'];
 
 /**
- * `CSP_MODE` picks the disposition at deploy time so that a policy that breaks
- * production is an environment change plus a redeploy, not a revert.
+ * True for the dev server and the e2e stack, false for every deployment
+ * including previews.
  *
- * @typedef {'enforce' | 'report-only' | 'off'} CspMode
+ * Deployed, the tRPC API, Supabase and *.collab.tiptap.cloud are all
+ * https/wss. Locally they are not — the API answers on http://localhost and
+ * Supabase realtime on ws://127.0.0.1 — so `connect-src` has to admit
+ * cleartext there, and must never admit it anywhere else. Derived once, here,
+ * because both emitters need the same answer.
  */
+const isLocalEnvironment = () => !process.env.VERCEL_ENV;
 
 /**
- * @param {string | undefined} value
- * @returns {CspMode}
+ * `CSP_MODE=report-only` switches disposition at deploy time, so a policy that
+ * breaks production is an environment change plus a redeploy rather than a
+ * revert. `next.config.mjs` reads it at build time, so the static half of the
+ * app picks up a change only on rebuild.
+ *
+ * There is deliberately no "off": report-only already stops the policy
+ * blocking anything, and keeps the violation reports that say why.
  */
-export const parseCspMode = (value) =>
-  value === 'report-only' || value === 'off' ? value : 'enforce';
+const getCspHeaderName = () =>
+  process.env.CSP_MODE === 'report-only'
+    ? 'content-security-policy-report-only'
+    : 'content-security-policy';
 
 /**
- * @param {CspMode} mode
- * @returns {string | null} Header name, or null when CSP is switched off.
- */
-export const getCspHeaderName = (mode) => {
-  if (mode === 'off') {
-    return null;
-  }
-
-  return mode === 'report-only' ? CSP_REPORT_ONLY_HEADER : CSP_ENFORCE_HEADER;
-};
-
-/**
- * The one script escape hatch this policy cannot close.
+ * The one script escape hatch the nonce policy keeps open.
  *
  * `packages/common/src/services/decision/schemaValidator.ts` runs ajv in the
  * browser to validate proposals against the JSON schema stored on their
@@ -65,10 +75,11 @@ export const getCspHeaderName = (mode) => {
  * and read from the database, so ajv's precompiled standalone mode does not
  * apply. Dropping this blanks every proposal, review and process-builder form.
  *
- * It costs less than it looks: `'unsafe-eval'` is dangerous when attacker
- * input reaches an eval sink, and the nonce plus `'strict-dynamic'` above is
- * what stops an injected `<script>` running in the first place. Removing it
- * means replacing the ajv-backed validator.
+ * It costs less than it looks: `'unsafe-eval'` matters when attacker input
+ * reaches an eval sink, and the nonce plus `'strict-dynamic'` is what stops an
+ * injected `<script>` running at all. The way to close it is to replace the
+ * ajv-backed validator with one that interprets schemas rather than compiling
+ * them, not to tighten the directive.
  */
 const UNSAFE_EVAL = "'unsafe-eval'";
 
@@ -90,15 +101,6 @@ const buildSharedDirectives = ({ isLocalEnvironment }) => [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  // The tRPC API is a separate origin in every environment (api-common…,
-  // api-dev…, api-git-… on previews), as are Supabase and
-  // *.collab.tiptap.cloud. Every deployed one is https/wss.
-  //
-  // Locally they are not: the API is http://localhost:4300 and Supabase
-  // realtime is ws://127.0.0.1. Without the local allowance every tRPC call
-  // is blocked, so this is the difference between a working dev server and a
-  // dead one — but it must never reach a deployed environment, where `http:`
-  // would re-open the cleartext exfiltration channel https:/wss: closes.
   `connect-src 'self' https: wss:${isLocalEnvironment ? ' http: ws:' : ''}`,
   "media-src 'self' blob: https:",
   "worker-src 'self' blob:",
@@ -111,58 +113,67 @@ const buildSharedDirectives = ({ isLocalEnvironment }) => [
 ];
 
 /**
+ * @param {Array<string>} scriptSources
+ * @param {{ isLocalEnvironment: boolean }} params
+ */
+const assemble = (scriptSources, { isLocalEnvironment }) =>
+  [
+    `script-src ${scriptSources.join(' ')}`,
+    ...buildSharedDirectives({ isLocalEnvironment }),
+  ].join('; ');
+
+/**
  * Strict CSP for dynamically rendered routes.
  *
  * `https:` and `'unsafe-inline'` are deliberate fallbacks, not weakening: a
  * browser that understands `'strict-dynamic'` ignores both, and one that does
  * not ignores the nonce and falls back to the host allowlist.
  *
- * @param {{ nonce: string, isLocalEnvironment?: boolean }} params
+ * @param {{ nonce: string, isLocalEnvironment: boolean }} params
  */
 export const buildNonceContentSecurityPolicy = ({
   nonce,
-  isLocalEnvironment = false,
-}) => {
-  const scriptSrc = [
-    `'nonce-${nonce}'`,
-    "'strict-dynamic'",
-    'https:',
-    "'unsafe-inline'",
-    UNSAFE_EVAL,
-  ].join(' ');
-
-  return [
-    `script-src ${scriptSrc}`,
-    ...buildSharedDirectives({ isLocalEnvironment }),
-  ].join('; ');
-};
+  isLocalEnvironment,
+}) =>
+  assemble(
+    [
+      `'nonce-${nonce}'`,
+      "'strict-dynamic'",
+      'https:',
+      "'unsafe-inline'",
+      UNSAFE_EVAL,
+    ],
+    { isLocalEnvironment },
+  );
 
 /**
  * CSP for prerendered routes, whose scripts carry no nonce.
  *
  * `'unsafe-inline'` is required here: the HTML was built without a nonce, so
- * Next's bootstrap scripts are plain inline scripts. This is the same script
- * allowance these routes already run under, minus `'unsafe-eval'`.
+ * Next's bootstrap scripts are plain inline scripts. No `'unsafe-eval'` —
+ * these routes are the login screen and static legal text, and none of them
+ * reaches the decision-schema validator that forces it elsewhere.
  *
- * @param {{ isLocalEnvironment?: boolean }} [params]
+ * Denying it does cost one violation report per page load: zod probes
+ * `new Function('')` once to decide whether to JIT its object parsers and
+ * falls back to an interpreted path when that throws. The page is unaffected.
+ * Granting eval on the login screen to quiet a report the browser is right to
+ * send is the wrong trade; if the volume needs cutting, sample at
+ * `app/api/csp-report`.
+ *
+ * @param {{ isLocalEnvironment: boolean }} params
  */
-export const buildStaticContentSecurityPolicy = ({
-  isLocalEnvironment = false,
-} = {}) => {
-  const scriptSrc = [
-    "'self'",
-    "'unsafe-inline'",
-    // posthog-js loads its recorder through the /stats rewrite, but falls back
-    // to the asset host directly if the proxy path is unavailable.
-    'https://eu-assets.i.posthog.com',
-    UNSAFE_EVAL,
-  ].join(' ');
-
-  return [
-    `script-src ${scriptSrc}`,
-    ...buildSharedDirectives({ isLocalEnvironment }),
-  ].join('; ');
-};
+export const buildStaticContentSecurityPolicy = ({ isLocalEnvironment }) =>
+  assemble(
+    [
+      "'self'",
+      "'unsafe-inline'",
+      // posthog-js loads its recorder through the /stats rewrite, but falls
+      // back to the asset host directly if the proxy path is unavailable.
+      'https://eu-assets.i.posthog.com',
+    ],
+    { isLocalEnvironment },
+  );
 
 /**
  * 16 random bytes, base64. Matches Next's nonce grammar
@@ -176,29 +187,36 @@ export const createCspNonce = () => {
 };
 
 /**
+ * The header for a prerendered route, for `next.config.mjs` to serve over
+ * `STATIC_POLICY_SOURCES`.
+ *
+ * @returns {{ key: string, value: string }}
+ */
+export const getStaticCspHeader = () => ({
+  key: getCspHeaderName(),
+  value: buildStaticContentSecurityPolicy({
+    isLocalEnvironment: isLocalEnvironment(),
+  }),
+});
+
+/**
  * One request's policy, as a function that stamps it onto a `Headers`.
  *
  * The proxy applies the same policy twice — to the headers it forwards to the
  * renderer and to the response it returns — and both must carry the identical
  * nonce, so the nonce is minted once here and closed over.
  *
- * @param {{ isLocalEnvironment: boolean }} params
  * @returns {(headers: Headers) => Headers}
  */
-export const createCspHeaderApplier = ({ isLocalEnvironment }) => {
-  const headerName = getCspHeaderName(parseCspMode(process.env.CSP_MODE));
-
-  if (!headerName) {
-    return (headers) => headers;
-  }
-
+export const createCspHeaderApplier = () => {
+  const name = getCspHeaderName();
   const policy = buildNonceContentSecurityPolicy({
     nonce: createCspNonce(),
-    isLocalEnvironment,
+    isLocalEnvironment: isLocalEnvironment(),
   });
 
   return (headers) => {
-    headers.set(headerName, policy);
+    headers.set(name, policy);
 
     return headers;
   };

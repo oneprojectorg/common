@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CSP_ENFORCE_HEADER,
-  CSP_REPORT_ONLY_HEADER,
   REPORTING_ENDPOINTS_HEADER,
   buildNonceContentSecurityPolicy,
   buildStaticContentSecurityPolicy,
   createCspNonce,
-  getCspHeaderName,
-  parseCspMode,
 } from './csp.mjs';
 
 const parseDirectives = (policy: string) =>
@@ -19,6 +15,8 @@ const parseDirectives = (policy: string) =>
       return [name, values] as const;
     }),
   );
+
+const deployed = { isLocalEnvironment: false };
 
 /**
  * The directives the app ran under before this policy became enforcing. A
@@ -45,7 +43,10 @@ const REQUIRED_DIRECTIVES = [
 ];
 
 describe('buildNonceContentSecurityPolicy', () => {
-  const policy = buildNonceContentSecurityPolicy({ nonce: 'test-nonce' });
+  const policy = buildNonceContentSecurityPolicy({
+    nonce: 'test-nonce',
+    ...deployed,
+  });
   const directives = parseDirectives(policy);
 
   it.each(REQUIRED_DIRECTIVES)('declares %s', (directive) => {
@@ -75,25 +76,6 @@ describe('buildNonceContentSecurityPolicy', () => {
     expect(directives.get('script-src')).toContain("'unsafe-eval'");
   });
 
-  it('reaches local backends over cleartext only in a local environment', () => {
-    // The dev server and the e2e stack reach the tRPC API over
-    // http://localhost and Supabase realtime over ws://127.0.0.1. Deployed
-    // environments must not, or the policy leaves a cleartext channel open.
-    expect(directives.get('connect-src')).not.toContain('http:');
-    expect(directives.get('connect-src')).not.toContain('ws:');
-
-    const local = parseDirectives(
-      buildNonceContentSecurityPolicy({
-        nonce: 'test-nonce',
-        isLocalEnvironment: true,
-      }),
-    );
-
-    expect(local.get('connect-src')).toEqual(
-      expect.arrayContaining(['http:', 'ws:']),
-    );
-  });
-
   it('refuses framing and plugin content outright', () => {
     expect(directives.get('frame-ancestors')).toEqual(["'none'"]);
     expect(directives.get('object-src')).toEqual(["'none'"]);
@@ -108,12 +90,8 @@ describe('buildNonceContentSecurityPolicy', () => {
 });
 
 describe('buildStaticContentSecurityPolicy', () => {
-  const policy = buildStaticContentSecurityPolicy();
+  const policy = buildStaticContentSecurityPolicy(deployed);
   const directives = parseDirectives(policy);
-
-  it.each(REQUIRED_DIRECTIVES)('declares %s', (directive) => {
-    expect(directives.has(directive)).toBe(true);
-  });
 
   it('omits the nonce and strict-dynamic, which prerendered HTML cannot carry', () => {
     // These routes are built once, with no request to mint a nonce from.
@@ -128,9 +106,15 @@ describe('buildStaticContentSecurityPolicy', () => {
     );
   });
 
+  it("does not carry 'unsafe-eval'", () => {
+    // The login screen and the static legal pages never reach the
+    // decision-schema validator that forces it on the nonce policy.
+    expect(policy).not.toContain("'unsafe-eval'");
+  });
+
   it('shares every non-script directive with the nonce policy', () => {
     const nonceDirectives = parseDirectives(
-      buildNonceContentSecurityPolicy({ nonce: 'test-nonce' }),
+      buildNonceContentSecurityPolicy({ nonce: 'test-nonce', ...deployed }),
     );
 
     for (const [name, values] of directives) {
@@ -143,26 +127,27 @@ describe('buildStaticContentSecurityPolicy', () => {
   });
 });
 
-describe('parseCspMode', () => {
-  it('defaults to enforcing when unset or unrecognised', () => {
-    expect(parseCspMode(undefined)).toBe('enforce');
-    expect(parseCspMode('')).toBe('enforce');
-    expect(parseCspMode('Report-Only')).toBe('enforce');
-  });
+describe('cleartext backends', () => {
+  // The dev server and the e2e stack reach the tRPC API over http://localhost
+  // and Supabase realtime over ws://127.0.0.1. A deployed environment must
+  // not, or the policy leaves a cleartext exfiltration channel open.
+  const connectSrc = (
+    build: (params: { nonce: string; isLocalEnvironment: boolean }) => string,
+    isLocalEnvironment: boolean,
+  ) =>
+    parseDirectives(build({ nonce: 'test-nonce', isLocalEnvironment })).get(
+      'connect-src',
+    ) ?? [];
 
-  it.each(['report-only', 'off'] as const)('honours %s', (mode) => {
-    expect(parseCspMode(mode)).toBe(mode);
-  });
-});
-
-describe('getCspHeaderName', () => {
-  it('maps each mode to its header', () => {
-    expect(getCspHeaderName('enforce')).toBe(CSP_ENFORCE_HEADER);
-    expect(getCspHeaderName('report-only')).toBe(CSP_REPORT_ONLY_HEADER);
-  });
-
-  it('emits no header when switched off', () => {
-    expect(getCspHeaderName('off')).toBeNull();
+  it.each([
+    ['nonce', buildNonceContentSecurityPolicy],
+    ['static', buildStaticContentSecurityPolicy],
+  ])('the %s policy admits http/ws only locally', (_label, build) => {
+    expect(connectSrc(build, false)).not.toContain('http:');
+    expect(connectSrc(build, false)).not.toContain('ws:');
+    expect(connectSrc(build, true)).toEqual(
+      expect.arrayContaining(['http:', 'ws:']),
+    );
   });
 });
 

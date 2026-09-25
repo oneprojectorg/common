@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
-  buildStaticContentSecurityPolicy,
+  STATIC_POLICY_SOURCES,
+  getStaticCspHeader,
 } from './src/lib/csp.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -141,14 +142,9 @@ const config = {
     //    it through the proxy would send it through the locale redirect. Both
     //    keep the script allowance they already run under.
     //
-    // Keep the two `source` patterns disjoint. Two Content-Security-Policy
-    // headers on one response are intersected, and a nonce-free policy
-    // intersected with a nonce policy blocks every script on the page.
-    const staticRouteCsp = buildStaticContentSecurityPolicy({
-      // No VERCEL_ENV means the dev server or the e2e stack, where Supabase
-      // and the tRPC API answer over http/ws rather than https/wss.
-      isLocalEnvironment: !DEPLOY_ENV,
-    });
+    // `src/lib/csp.mjs` owns both, including which header name CSP_MODE
+    // selects, so a disposition cannot apply to only half the responses.
+    const staticCspHeader = getStaticCspHeader();
 
     return [
       {
@@ -199,16 +195,11 @@ const config = {
           },
         ],
       },
-      // The HTML routes `src/proxy.ts` does not match. Disjoint from the
-      // proxy's matcher, so nothing gets two policies.
-      ...['/login/:path*', '/info/:path*'].map((source) => ({
+      // The HTML routes `src/proxy.ts` does not match. `proxy.test.ts` asserts
+      // these stay disjoint from its matcher, so nothing gets two policies.
+      ...STATIC_POLICY_SOURCES.map((source) => ({
         source,
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: staticRouteCsp,
-          },
-        ],
+        headers: [staticCspHeader],
       })),
     ];
   },

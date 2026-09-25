@@ -18,6 +18,12 @@ const shouldSetCookieDomain =
   (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
   !isOnPreviewAppDomain;
 
+/** The locale the path is prefixed with, or undefined when it carries none. */
+const findPathLocale = (pathname: string) =>
+  i18nConfig.locales.find(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+  );
+
 /**
  * Refreshes the NEXT_LOCALE preference cookie when the URL's locale differs
  * from what the browser last sent, returning null when there is nothing to
@@ -25,18 +31,9 @@ const shouldSetCookieDomain =
  */
 const buildLocaleCookieResponse = (
   request: NextRequest,
+  currentLocale: string | undefined,
   forwardedHeaders: Headers,
 ): NextResponse | null => {
-  const pathname = request.nextUrl.pathname;
-
-  if (pathname.startsWith('/api')) {
-    return null;
-  }
-
-  const currentLocale = i18nConfig.locales.find(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
-  );
-
   if (!currentLocale) {
     return null;
   }
@@ -73,11 +70,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Routes this proxy does not match are prerendered or non-HTML;
   // `next.config.mjs` covers those with a static policy, so no response ever
   // carries two policies.
-  const applyCsp = createCspHeaderApplier({
-    // True for the dev server and the e2e stack, false for every deployment
-    // including previews. Local backends are reached over http/ws.
-    isLocalEnvironment: useUrl.IS_DEVELOPMENT,
-  });
+  const applyCsp = createCspHeaderApplier();
 
   // Rebuilt rather than captured: the Supabase cookie adapter below mutates
   // `request.cookies` (which writes through to the `cookie` request header) and
@@ -98,15 +91,12 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     return applyCsp(headers);
   };
 
-  const pathnameIsMissingLocale = i18nConfig.locales.every(
-    (locale) =>
-      !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
-  );
+  const currentLocale = findPathLocale(pathname);
 
   // Set locale cookie if URL contains a locale (for preference learning)
   const forwardedHeaders = buildForwardedHeaders();
   let supabaseResponse =
-    buildLocaleCookieResponse(request, forwardedHeaders) ||
+    buildLocaleCookieResponse(request, currentLocale, forwardedHeaders) ||
     NextResponse.next({ request: { headers: forwardedHeaders } });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -154,7 +144,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // preserved for anonymous visitors so `app/page.tsx` (ComingSoonScreen) keeps
   // rendering instead of bouncing through the walled-garden gate.
   const shouldRouteI18n =
-    pathnameIsMissingLocale &&
+    !currentLocale &&
     !pathname.startsWith('/api') &&
     (isAuthenticated || pathname !== '/');
   if (shouldRouteI18n) {

@@ -115,25 +115,22 @@ describe('proxy Content-Security-Policy', () => {
   });
 
   it('switches disposition on CSP_MODE without changing the policy', async () => {
+    const enforced = (await run('/en/decisions')).headers.get(
+      'content-security-policy',
+    );
+
     process.env.CSP_MODE = 'report-only';
-
     const response = await run('/en/decisions');
+    const reported = response.headers.get(
+      'content-security-policy-report-only',
+    );
 
     expect(response.headers.get('content-security-policy')).toBeNull();
-    expect(
-      response.headers.get('content-security-policy-report-only'),
-    ).toContain("'strict-dynamic'");
-  });
-
-  it('emits no policy at all when switched off', async () => {
-    process.env.CSP_MODE = 'off';
-
-    const response = await run('/en/decisions');
-
-    expect(response.headers.get('content-security-policy')).toBeNull();
-    expect(
-      response.headers.get('content-security-policy-report-only'),
-    ).toBeNull();
+    // Same directives, different disposition — the rollback lever must not
+    // quietly relax the policy it reports on.
+    expect(reported?.replace(/'nonce-[^']+'/, '')).toBe(
+      enforced?.replace(/'nonce-[^']+'/, ''),
+    );
   });
 
   it('keeps the nonce on the response that a token refresh rebuilds', async () => {
