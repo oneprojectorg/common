@@ -1,7 +1,6 @@
 import type {
   Choice,
   GrantShape,
-  OtherShape,
   PbShape,
   PhaseType,
   ProcessPiece,
@@ -96,24 +95,14 @@ export const SHAPE_QUESTION: Partial<Record<ProcessType, ShapeQuestion>> = {
 };
 
 /**
- * Every (type, shape) pair the wizard can reach. Spelled out as a total
- * `Record` rather than a string lookup: a new shape has to be given a mapping
- * here or `typecheck` fails, instead of resolving to nothing at runtime and
- * producing a process with no phases.
- *
- * The two `other` pairs map to nothing on purpose — `custom` composes its
- * mapping in `otherFlow.ts`, and `blank` is the escape hatch that asks for a
- * name and builds no phases at all.
+ * Every grantmaking and budgeting (type, shape) pair. A total `Record`, so a
+ * new shape has to be given a mapping here or `typecheck` fails. "Other" has
+ * no entry: `custom` composes its mapping in `otherFlow.ts`, and `blank`
+ * builds no phases at all.
  */
-type PieceSetKey =
-  | `grant:${GrantShape}`
-  | `pb:${PbShape}`
-  | `other:${OtherShape}`;
+type PieceSetKey = `grant:${GrantShape}` | `pb:${PbShape}`;
 
 const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
-  'other:custom': [],
-  'other:blank': [],
-
   // Participatory budgeting — rough ideas first.
   'pb:ideas': [
     {
