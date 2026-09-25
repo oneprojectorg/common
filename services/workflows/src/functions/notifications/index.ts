@@ -15,3 +15,4 @@ export * from './sendProposalMergedNotification';
 export * from './sendProposalRejectedNotification';
 export * from './sendDecisionResultNotifications';
 export * from './handleUnknownSmsSignup';
+export * from './handleSmsVoteRequest';
