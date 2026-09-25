@@ -1,4 +1,4 @@
-import { toGoTruePhoneFormat } from '@op/common';
+import { toGoTruePhoneFormat } from '@op/common/client';
 import {
   type Organization,
   organizationUserToAccessRoles,
