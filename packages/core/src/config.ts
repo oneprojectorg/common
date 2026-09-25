@@ -8,6 +8,25 @@ export const APP_PORT = appPortEnv ? Number.parseInt(appPortEnv, 10) : 3100;
 
 const apiPortEnv = process.env.API_PORT || process.env.NEXT_PUBLIC_API_PORT;
 export const API_PORT = apiPortEnv ? Number.parseInt(apiPortEnv, 10) : 3300;
+
+// Supabase's OTP length is a per-project setting (6-10 digits), not a fixed
+// constant — a newly provisioned hosted project can default to 8 digits
+// instead of 6. Every supabase/*.toml this repo controls sets 6, but none of
+// them are pushed to a deployed project, so a deployment whose Supabase
+// project uses a different length sets this to match rather than editing
+// client code.
+// https://supabase.com/docs/guides/local-development/cli/config#auth.email.otp_length
+const authOtpLengthEnv =
+  process.env.AUTH_OTP_LENGTH || process.env.NEXT_PUBLIC_AUTH_OTP_LENGTH;
+const parsedAuthOtpLength = authOtpLengthEnv
+  ? Number.parseInt(authOtpLengthEnv, 10)
+  : NaN;
+export const AUTH_OTP_LENGTH =
+  Number.isInteger(parsedAuthOtpLength) &&
+  parsedAuthOtpLength >= 6 &&
+  parsedAuthOtpLength <= 10
+    ? parsedAuthOtpLength
+    : 6;
 export const UI_WORKSHOP_PORT = 3600;
 export const EMAILS_PORT = 3883;
 export const ORM_VIZ_PORT = 3700;

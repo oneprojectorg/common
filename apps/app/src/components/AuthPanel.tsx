@@ -1,25 +1,24 @@
 'use client';
 
+import { AUTH_OTP_LENGTH } from '@op/core';
 import { Button } from '@op/sense/Button';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@op/sense/InputOTP';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
-import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import React, { useId } from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { useTranslations } from '@/lib/i18n';
+import { useTranslations, type TranslateFn } from '@/lib/i18n';
 
 /**
- * Shared building blocks for the auth panels.
- *
- * `LoginPanel` (login + signup) and `LinkAccountPanel` (anonymous-account
- * upgrade) render the same card chrome, Google button, email field and OTP
- * field, but drive completely different Supabase calls. These presentational
- * pieces are the common shell; each panel owns its own auth logic and composes
- * the body from these parts.
+ * Shared building blocks for the auth panels. `LoginPanel` (login + signup),
+ * `JoinAccountModal` (claim), and `LinkAccountPanel` (anonymous upgrade) each
+ * own their auth logic and compose the body from these parts.
  */
 
 /** Which credential the visitor is signing in with. */
@@ -116,15 +115,7 @@ export const useAuthPanelStore = create<AuthPanelState>()(
   ),
 );
 
-// Supabase OTP length is configurable between 6-10 digits
-// https://supabase.com/docs/guides/local-development/cli/config#auth.email.otp_length
-export function isValidOtpLength(token: string | undefined): boolean {
-  if (!token) {
-    return false;
-  }
-
-  return token.length >= 6 && token.length <= 10;
-}
+export { isValidOtpLength } from '@/utils/isValidOtpLength';
 
 /** Outer card + centered title/subtitle section. The body is `children`. */
 export const AuthPanelShell = ({
@@ -298,7 +289,11 @@ export const AuthPhoneField = ({
   );
 };
 
-/** OTP entry field wrapped in a submit-on-enter form. */
+// input-otp's REGEXP_ONLY_DIGITS, inlined to avoid a direct dependency on the package.
+const DIGITS_ONLY_PATTERN = '^\\d+$';
+
+/** OTP entry field, sized to this deployment's configured length (see
+ * `AUTH_OTP_LENGTH`); submits automatically once all slots are filled. */
 export const AuthCodeField = ({
   value,
   isDisabled,
@@ -313,28 +308,226 @@ export const AuthCodeField = ({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col">
-      <form
-        onSubmit={async (e) => {
-          if (isValidOtpLength(value)) {
-            e.preventDefault();
-            e.stopPropagation();
-            await onSubmit();
-          }
+    <Field>
+      <FieldLabel htmlFor="auth-code" className="justify-center">
+        {t('auth.codeLabel')}
+      </FieldLabel>
+      <InputOTP
+        id="auth-code"
+        containerClassName="justify-center"
+        maxLength={AUTH_OTP_LENGTH}
+        pattern={DIGITS_ONLY_PATTERN}
+        aria-label={t('auth.codeLabel')}
+        autoFocus
+        disabled={isDisabled}
+        value={value ?? ''}
+        onChange={onChange}
+        onComplete={() => {
+          void onSubmit();
         }}
       >
-        <Field>
-          <Input
-            aria-label={t('auth.codeLabel')}
-            placeholder="1234567890"
-            spellCheck={false}
-            autoFocus
-            disabled={isDisabled}
-            value={value ?? ''}
-            onChange={(e) => onChange(e.target.value.trim())}
-          />
-        </Field>
-      </form>
-    </div>
+        <InputOTPGroup>
+          {Array.from({ length: AUTH_OTP_LENGTH }, (_, index) => (
+            <InputOTPSlot key={index} index={index} />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+    </Field>
+  );
+};
+
+// ── Shared steps ───────────────────────────────────────────────────────────
+// The contact and code steps, shared by the login panel and the claim dialog.
+
+/**
+ * "We sent a code to {contact}" for the active channel. One string read by
+ * both the visible copy and the live region, so they cannot drift.
+ */
+export const codeSentToLabel = (
+  t: TranslateFn,
+  { isPhone, phone, email }: { isPhone: boolean; phone: string; email: string },
+): string =>
+  isPhone
+    ? t('auth.codeSentToPhone', { phone })
+    : t('auth.codeSentToEmail', { email });
+
+/**
+ * Announces where the code went. Must stay mounted, empty until the code
+ * step — a live region only announces a change it was present for.
+ */
+export const CodeSentAnnouncement = ({ sentTo }: { sentTo?: string }) => (
+  <span role="status" className="sr-only">
+    {sentTo ?? ''}
+  </span>
+);
+
+/** One contact field's state and handlers, as handed to AuthContactFields. */
+interface ContactField {
+  value: string;
+  isDisabled: boolean;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+}
+
+/**
+ * The contact step: channel tabs (SMS on) or the email field alone.
+ * `onValueChange` receives the new channel; the caller must clear both
+ * fields, since a half-entered address must not hit the wrong endpoint.
+ */
+export const AuthContactFields = ({
+  smsEnabled,
+  value,
+  onValueChange,
+  email,
+  phone,
+  isTriggersDisabled = false,
+}: {
+  smsEnabled: boolean;
+  value: AuthChannel;
+  onValueChange: (channel: AuthChannel) => void;
+  email: ContactField;
+  phone: ContactField;
+  /** Disables both triggers (the claim dialog does this while submitting). */
+  isTriggersDisabled?: boolean;
+}) => {
+  const t = useTranslations();
+  const labelId = useId();
+
+  // The design mock says "We'll email a link"; we send a six-digit code, so
+  // the copy says code.
+  const emailField = (
+    <AuthEmailField
+      label={t('Email')}
+      description={t('auth.emailOwnershipHint')}
+      // Example-email placeholders are deliberately untranslated.
+      placeholder="name@example.com"
+      value={email.value}
+      isDisabled={email.isDisabled}
+      onChange={email.onChange}
+      onSubmit={email.onSubmit}
+    />
+  );
+
+  if (!smsEnabled) {
+    return emailField;
+  }
+
+  return (
+    <Tabs
+      value={value}
+      onValueChange={(next) => {
+        // Tabs reports a plain string; only the two channels are real.
+        const nextChannel: AuthChannel | undefined =
+          next === 'email' || next === 'phone' ? next : undefined;
+        if (nextChannel && nextChannel !== value) {
+          onValueChange(nextChannel);
+        }
+      }}
+    >
+      <span id={labelId} className="text-label">
+        {t('auth.continueWithLabel')}
+      </span>
+      {/* TabsList is `w-fit` by default; both surfaces split the full width. */}
+      <TabsList className="w-full" aria-labelledby={labelId}>
+        <TabsTrigger
+          value="email"
+          className="flex-1"
+          disabled={isTriggersDisabled}
+        >
+          {t('Email')}
+        </TabsTrigger>
+        <TabsTrigger
+          value="phone"
+          className="flex-1"
+          disabled={isTriggersDisabled}
+        >
+          {t('auth.phoneNumberLabel')}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="email">{emailField}</TabsContent>
+      <TabsContent value="phone">
+        <AuthPhoneField
+          label={t('auth.phoneNumberLabel')}
+          description={t('auth.smsRatesHint')}
+          value={phone.value}
+          isDisabled={phone.isDisabled}
+          onChange={phone.onChange}
+          onSubmit={phone.onSubmit}
+        />
+      </TabsContent>
+    </Tabs>
+  );
+};
+
+/** The contact step's primary CTA: "Email me a code" / "Text me a code". */
+export const AuthSendCodeButton = ({
+  isPhone,
+  isLoading,
+  isDisabled,
+  onSubmit,
+}: {
+  isPhone: boolean;
+  isLoading: boolean;
+  isDisabled: boolean;
+  onSubmit: () => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Button
+      className="w-full"
+      loading={isLoading}
+      disabled={isDisabled}
+      onClick={onSubmit}
+    >
+      {isPhone ? t('auth.textCodeAction') : t('auth.emailCodeAction')}
+    </Button>
+  );
+};
+
+/**
+ * The code step's actions: verify, resend, change contact. A fragment, so
+ * each surface keeps its own container.
+ */
+export const AuthCodeStepActions = ({
+  isVerifyDisabled,
+  isLoading,
+  isPhone,
+  onVerify,
+  onResend,
+  onBack,
+}: {
+  /** Left to the caller — not every flow disables verify the same way. */
+  isVerifyDisabled: boolean;
+  isLoading: boolean;
+  isPhone: boolean;
+  onVerify: () => void;
+  onResend: () => void;
+  onBack: () => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <>
+      <Button
+        className="w-full"
+        loading={isLoading}
+        disabled={isLoading || isVerifyDisabled}
+        onClick={onVerify}
+      >
+        {t('auth.verifyAction')}
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full"
+        disabled={isLoading}
+        onClick={onResend}
+      >
+        {t('auth.resendCodeAction')}
+      </Button>
+      <Button variant="link" disabled={isLoading} onClick={onBack}>
+        {isPhone ? t('auth.changePhoneAction') : t('auth.useEmailAction')}
+      </Button>
+    </>
   );
 };
