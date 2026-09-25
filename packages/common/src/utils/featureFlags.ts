@@ -3,9 +3,6 @@ import { areFeatureFlagsForcedOn } from '@op/analytics/client-utils';
 import { cache } from '@op/cache';
 import { logger } from '@op/logging';
 
-/** The flag that gates the new process admin, the wizard included. */
-export const NEW_PROCESS_ADMIN_FLAG = 'new_process_admin_enabled';
-
 /** How long an answer is reused. A kill switch tolerates this much delay. */
 const TTL = 60 * 1000;
 
