@@ -180,7 +180,7 @@ export function CreateProcessWizard({
     <div className="flex h-dvh flex-col bg-muted">
       {step > 1 ? (
         <Progress
-          value={progressPercent(step, subIndex, screens.length)}
+          value={progressPercent(step, screen, type)}
           aria-label={t('stepProgress', {
             current: step,
             total: TOTAL_STEPS,
