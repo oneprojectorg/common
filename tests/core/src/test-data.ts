@@ -1,4 +1,3 @@
-import { toGoTruePhoneFormat } from '@op/common/client';
 import {
   type Organization,
   organizationUserToAccessRoles,
@@ -304,6 +303,14 @@ export interface TestAuthAccount {
   /** Null for an account whose only credential is its phone number. */
   email: string | null;
   isAnonymous: boolean;
+}
+
+// TODO: Replace with `toGoTruePhoneFormat` from `@op/common` once that package
+// declares `"type": "module"`. Until then a runtime import of `@op/common` fails
+// to link under Playwright's Node runtime (CJS/ESM interop — see the note on
+// `createProposal` in decision-data.ts), so this package duplicates the value.
+function toGoTruePhoneFormat(phone: string): string {
+  return phone.replace(/^\+/, '');
 }
 
 /**
