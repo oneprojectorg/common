@@ -67,7 +67,7 @@ export const JoinAccountModal = () => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (open ? null : close())}>
       <DialogContent className="sm:max-w-128">
-        <JoinAccountModalContent />
+        <JoinAccountModalContent close={close} />
       </DialogContent>
     </Dialog>
   );
@@ -139,7 +139,7 @@ export const JoinOrUserMenu = ({
   return <HeaderUserMenu className={userMenuClassName} />;
 };
 
-const JoinAccountModalContent = () => {
+const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   const t = useTranslations();
   const supabase = createSBBrowserClient();
   const {
@@ -154,12 +154,6 @@ const JoinAccountModalContent = () => {
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
-  // Shares the `join` key with the parent JoinAccountModal's own instance, so
-  // clearing it here closes the dialog the same way the dismiss X does.
-  const [, setJoin] = useQueryState('join');
-  const close = () => {
-    void setJoin(null);
-  };
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');

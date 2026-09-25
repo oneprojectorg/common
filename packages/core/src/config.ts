@@ -18,9 +18,15 @@ export const API_PORT = apiPortEnv ? Number.parseInt(apiPortEnv, 10) : 3300;
 // https://supabase.com/docs/guides/local-development/cli/config#auth.email.otp_length
 const authOtpLengthEnv =
   process.env.AUTH_OTP_LENGTH || process.env.NEXT_PUBLIC_AUTH_OTP_LENGTH;
-export const AUTH_OTP_LENGTH = authOtpLengthEnv
+const parsedAuthOtpLength = authOtpLengthEnv
   ? Number.parseInt(authOtpLengthEnv, 10)
-  : 6;
+  : NaN;
+export const AUTH_OTP_LENGTH =
+  Number.isInteger(parsedAuthOtpLength) &&
+  parsedAuthOtpLength >= 6 &&
+  parsedAuthOtpLength <= 10
+    ? parsedAuthOtpLength
+    : 6;
 export const UI_WORKSHOP_PORT = 3600;
 export const EMAILS_PORT = 3883;
 export const ORM_VIZ_PORT = 3700;

@@ -20,7 +20,6 @@ import {
   AuthEmailField,
   AuthPanelShell,
   CodeSentAnnouncement,
-  codeSentToLabel,
   isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
@@ -159,7 +158,7 @@ export const LinkAccountPanel = () => {
   // Rendered by CodeSentAnnouncement on every shell below, so the live region
   // is mounted (empty) before the code step arrives and its arrival is heard.
   const sentTo = loginSuccess
-    ? codeSentToLabel(t, { isPhone: false, phone: '', email })
+    ? t('auth.createProfileCodeHint', { email })
     : undefined;
 
   const title = (() => {
@@ -194,13 +193,7 @@ export const LinkAccountPanel = () => {
         ),
       });
     }
-    return (
-      <span>
-        {t('auth.createProfileCodeHint', {
-          email,
-        })}
-      </span>
-    );
+    return <span>{sentTo}</span>;
   })();
 
   if (errorMessage) {

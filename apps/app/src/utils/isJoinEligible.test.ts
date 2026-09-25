@@ -3,13 +3,21 @@ import { describe, expect, it } from 'vitest';
 
 import { isJoinEligible } from './isJoinEligible';
 
-const makeUser = (overrides: Partial<CommonUser>): CommonUser =>
-  ({
-    id: 'u1',
-    authUserId: 'auth1',
-    isAnonymous: false,
-    ...overrides,
-  }) as CommonUser;
+const makeUser = (overrides: Partial<CommonUser>): CommonUser => ({
+  id: 'u1',
+  authUserId: 'auth1',
+  name: null,
+  email: null,
+  lastOrgId: null,
+  profileId: null,
+  currentProfileId: null,
+  tos: null,
+  privacy: null,
+  createdAt: new Date().toISOString(),
+  isAnonymous: false,
+  isNetworkMember: false,
+  ...overrides,
+});
 
 describe('isJoinEligible', () => {
   it('admits a logged-out visitor with no user object', () => {
