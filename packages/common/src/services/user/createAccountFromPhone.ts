@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from '../../utils/error';
@@ -16,8 +17,10 @@ export const createAccountFromPhone = async ({
   });
 
   if (error || !data.user) {
+    logger.error('Failed to create account for phone signup', { error });
+    const reason = error ? (error.code ?? 'unknown error') : 'no user returned';
     throw new CommonError(
-      `Failed to create account for phone signup: ${error?.message ?? 'no user returned'}`,
+      `Failed to create account for phone signup: ${reason}`,
     );
   }
 
