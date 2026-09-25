@@ -9,8 +9,9 @@ import { expect, test } from '../fixtures/index.js';
  *  - `apps/app/src/proxy.ts` mints a per-request nonce for the dynamically
  *    rendered routes its matcher catches.
  *  - `apps/app/next.config.mjs` serves a static, nonce-free policy to the HTML
- *    routes the matcher skips (`/info/*` is prerendered, `/login` sits outside
- *    `app/[locale]`).
+ *    routes the matcher skips: `/info/*` is prerendered, so no request exists
+ *    to mint a nonce from, and `/login` sits outside `app/[locale]`, so the
+ *    proxy would redirect it to an `/en/login` that does not exist.
  *
  * Two policies on one response are intersected, so a nonce-free policy landing
  * on a nonced page would block every script on it.
@@ -147,7 +148,10 @@ test.describe('Content-Security-Policy', () => {
         const response = await page.goto(path);
 
         expect(response?.status()).toBe(200);
-        await page.waitForLoadState('networkidle');
+        // A blocked bundle still returns 200 with an empty body, so assert the
+        // page rendered before trusting the violation list. Auto-retrying,
+        // which also removes the need to wait on networkidle.
+        await expect(page.locator('body')).not.toBeEmpty();
 
         expect(
           violations.filter(

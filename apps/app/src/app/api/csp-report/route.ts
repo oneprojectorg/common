@@ -66,18 +66,26 @@ const normalize = (report: CspReport) => ({
 const MAX_BODY_BYTES = 64_000;
 
 export async function POST(request: NextRequest): Promise<Response> {
-  // Absent or unparseable is a refusal, not a pass: `Number(null)` is 0 and
-  // `Number('abc')` is NaN, so comparing only against the cap would let a
-  // chunked or header-less body through unbounded. Browsers always declare a
-  // length on these posts.
-  const declaredLength = Number(request.headers.get('content-length'));
-  if (!Number.isFinite(declaredLength) || declaredLength > MAX_BODY_BYTES) {
+  // Two checks, because neither is sufficient alone. An honest client declares
+  // its length and is refused before anything is buffered; a chunked or
+  // header-less body has nothing to check up front, so it is measured after
+  // the read and refused before it is parsed. Rejecting a *missing*
+  // content-length outright would be worse than the overrun it prevents —
+  // it would silently drop every report from any client or intermediary that
+  // omits the header, which is the whole channel this endpoint exists for.
+  const declaredLength = request.headers.get('content-length');
+  if (declaredLength !== null && Number(declaredLength) > MAX_BODY_BYTES) {
     return new Response(null, { status: 413 });
   }
 
   let payload: unknown;
   try {
-    payload = await request.json();
+    const body = await request.text();
+    if (body.length > MAX_BODY_BYTES) {
+      return new Response(null, { status: 413 });
+    }
+
+    payload = JSON.parse(body);
   } catch {
     return new Response(null, { status: 204 });
   }

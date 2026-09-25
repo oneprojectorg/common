@@ -13,9 +13,10 @@
  *   (`getScriptNonceFromHeader`) and stamps that nonce on every script it
  *   emits, so `'strict-dynamic'` can carry trust to the chunks and
  *   third-party scripts those bootstrap scripts inject.
- * - Prerendered routes get the static policy. Their HTML is built once, with
- *   no request to mint a nonce from, so a per-request nonce would never match
- *   and `'strict-dynamic'` would block every script on the page.
+ * - Routes that cannot carry a nonce get the static policy — `/info/*`
+ *   because it is prerendered, so its HTML is built once with no request to
+ *   mint a nonce from and a per-request nonce would never match it; `/login`
+ *   for a routing reason rather than a rendering one (see below).
  *
  * `STATIC_POLICY_SOURCES` names the routes on that second path. No response
  * may carry both policies: two Content-Security-Policy headers are
@@ -86,6 +87,11 @@ export const isStaticPolicyPath = (pathname) => {
  * to production. `NEXT_PUBLIC_SUPABASE_URL` is required, is inlined
  * identically for both emitters, and is cleartext exactly when the rest of
  * the local stack is.
+ *
+ * The one configuration this does not describe is a dev server pointed at a
+ * hosted Supabase while the API still answers on http://localhost — the tRPC
+ * origin comes from `OPURLConfig`, not from this variable, so the policy
+ * would block it. Nothing in the repo sets that up today.
  */
 const isLocalEnvironment = () =>
   process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http://') ?? false;

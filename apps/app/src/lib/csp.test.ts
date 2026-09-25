@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
-  STATIC_POLICY_SOURCES,
   buildNonceContentSecurityPolicy,
   buildStaticContentSecurityPolicy,
   createCspNonce,
+  getStaticCspHeader,
   isStaticPolicyPath,
 } from './csp.mjs';
 
@@ -197,10 +197,54 @@ describe('isStaticPolicyPath', () => {
   ])('declines %s', (pathname) => {
     expect(isStaticPolicyPath(pathname)).toBe(false);
   });
+});
 
-  it('covers exactly the trees next.config.mjs declares', () => {
-    for (const source of STATIC_POLICY_SOURCES) {
-      expect(isStaticPolicyPath(source.replace('/:path*', ''))).toBe(true);
-    }
+describe('the cleartext decision the emitters actually make', () => {
+  // The builders above take `isLocalEnvironment` as a parameter, so none of
+  // them executes the predicate that decides it in production. That predicate
+  // has been wrong twice: `!VERCEL_ENV` read any non-Vercel build as local and
+  // shipped `http:` to production, and `NODE_ENV` disagreed between the two
+  // emitters. Drive it through the real entry point.
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const admitsCleartext = () =>
+    getStaticCspHeader().value.includes('connect-src') &&
+    /connect-src[^;]*\bhttp:/.test(getStaticCspHeader().value);
+
+  it.each([
+    ['http://127.0.0.1:56321', true],
+    ['http://localhost:54321', true],
+    ['https://yrpfxbnidfyrzmmsrfic.supabase.co', false],
+    ['', false],
+    [undefined, false],
+  ])('NEXT_PUBLIC_SUPABASE_URL=%s admits http: %s', (url, expected) => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', url);
+
+    expect(admitsCleartext()).toBe(expected);
+  });
+});
+
+describe('getStaticCspHeader', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('names the enforcing header by default', () => {
+    vi.stubEnv('CSP_MODE', undefined);
+
+    expect(getStaticCspHeader().key).toBe('content-security-policy');
+  });
+
+  it('names the report-only header under CSP_MODE=report-only', () => {
+    // The rollback lever has to reach the static routes too: when this was
+    // hardcoded, report-only silenced the proxy policy while /login and
+    // /info kept enforcing.
+    vi.stubEnv('CSP_MODE', 'report-only');
+
+    expect(getStaticCspHeader().key).toBe(
+      'content-security-policy-report-only',
+    );
   });
 });

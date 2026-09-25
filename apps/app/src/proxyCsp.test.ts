@@ -39,8 +39,12 @@ vi.mock('@op/supabase/lib', () => ({
   },
 }));
 
+// Forwards the request headers the way the real next-intl middleware does, so
+// assertions on `x-middleware-request-*` mean something on the redirect path
+// too. A bare `NextResponse.next()` here makes them vacuously null.
 vi.mock('next-intl/middleware', () => ({
-  default: () => () => NextResponse.next(),
+  default: () => (request: NextRequest) =>
+    NextResponse.next({ request: { headers: request.headers } }),
 }));
 
 // `./lib/i18n` re-exports next-intl's client navigation, which resolves
