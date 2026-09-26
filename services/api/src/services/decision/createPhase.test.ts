@@ -1,13 +1,11 @@
 import {
   NotFoundError,
   createPhase,
-  decisionPermission,
   deletePhase,
   renamePhase,
 } from '@op/common';
 import { db } from '@op/db/client';
-import { EntityType } from '@op/db/schema';
-import { permission } from 'access-zones';
+import { EntityType, PhaseAudience } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -83,93 +81,49 @@ describe.concurrent('createPhase', () => {
     ).rejects.toThrow();
   });
 
-  it('mints one profile-scoped role per requested capability', async ({
+  it('writes no roles and no members on the phase profile', async ({
     task,
     onTestFinished,
   }) => {
     const { instanceId, testData } = await setup(task, onTestFinished);
 
-    const { profile, roles } = await createPhase({
+    const { profile } = await createPhase({
       processInstanceId: instanceId,
       name: 'Review',
       sortOrder: 0,
       data: { phaseId: 'review' },
-      capabilities: ['review', 'vote'],
     });
     testData.trackProfileForCleanup(profile.id);
 
-    expect(roles.map((role) => role.capability).sort()).toEqual([
-      'review',
-      'vote',
+    const [roles, members] = await Promise.all([
+      db.query.accessRoles.findMany({
+        where: { profileId: profile.id },
+        columns: { id: true },
+      }),
+      db.query.profileUsers.findMany({
+        where: { profileId: profile.id },
+        columns: { id: true },
+      }),
     ]);
-
-    const stored = await db.query.accessRoles.findMany({
-      where: { profileId: profile.id },
-      columns: { id: true, name: true },
-    });
-    expect(stored.map((role) => role.name).sort()).toEqual([
-      'Reviewer',
-      'Voter',
-    ]);
+    expect(roles).toHaveLength(0);
+    expect(members).toHaveLength(0);
   });
 
-  it('gives a capability role its own bit plus READ, and no admin', async ({
+  it('defaults the audience to invite-only', async ({
     task,
     onTestFinished,
   }) => {
     const { instanceId, testData } = await setup(task, onTestFinished);
 
-    const { profile, roles } = await createPhase({
+    const { phase, profile } = await createPhase({
       processInstanceId: instanceId,
-      name: 'Submissions',
+      name: 'Review',
       sortOrder: 0,
-      data: { phaseId: 'submissions' },
-      capabilities: ['submit'],
+      data: { phaseId: 'review' },
     });
     testData.trackProfileForCleanup(profile.id);
 
-    const roleId = roles[0]?.roleId;
-    expect(roleId).toBeDefined();
-
-    const zones = await db.query.accessRolePermissionsOnAccessZones.findMany({
-      where: { accessRoleId: roleId },
-      with: { accessZone: { columns: { name: true } } },
-    });
-
-    const decisions = zones.find((row) => row.accessZone.name === 'decisions');
-    const profileZone = zones.find((row) => row.accessZone.name === 'profile');
-
-    const decisionBits = decisions?.permission ?? 0;
-    expect(decisionBits & decisionPermission.SUBMIT_PROPOSALS).not.toBe(0);
-    expect(decisionBits & permission.READ).not.toBe(0);
-    // The other capabilities, and manage, stay off.
-    expect(decisionBits & decisionPermission.REVIEW).toBe(0);
-    expect(decisionBits & decisionPermission.VOTE).toBe(0);
-    expect(decisionBits & permission.ADMIN).toBe(0);
-    // createDecisionRole force-adds profile READ.
-    expect((profileZone?.permission ?? 0) & permission.READ).not.toBe(0);
-  });
-
-  it('creates no roles when no capability is offered', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await setup(task, onTestFinished);
-
-    const { profile, roles } = await createPhase({
-      processInstanceId: instanceId,
-      name: 'Closed',
-      sortOrder: 0,
-      data: { phaseId: 'closed' },
-    });
-    testData.trackProfileForCleanup(profile.id);
-
-    expect(roles).toEqual([]);
-    const stored = await db.query.accessRoles.findMany({
-      where: { profileId: profile.id },
-      columns: { id: true },
-    });
-    expect(stored).toHaveLength(0);
+    expect(phase.audience).toBe(PhaseAudience.INVITE_ONLY);
   });
 
   it('rolls the profile back when the phase insert fails', async ({
@@ -237,7 +191,6 @@ describe.concurrent('deletePhase', () => {
       name: `Doomed ${randomUUID()}`,
       sortOrder: 0,
       data: { phaseId: 'submissions' },
-      capabilities: ['submit'],
     });
 
     await deletePhase({ phaseId: phase.id });
