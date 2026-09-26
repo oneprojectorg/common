@@ -1,47 +1,27 @@
 import { EMBED_PROXY_PATH } from '@op/core';
 import DOMPurify from 'dompurify';
 
-// Iframely's other embed shape — a wrapper whose anchor embed.js expands in
-// place — cannot render here: `getLinkPreview` rewrites the anchor's
-// `data-iframely-url` onto our proxy, and embed.js only expands one that names
-// a host, falling back to an api key it is never given. Those previews have no
-// embed to keep, and fall back to their thumbnail.
-const EMBED_SELECTOR = 'iframe';
-
 // The one path under the proxy that serves an embed view, sandboxed by the CSP
 // it sets (apps/app/src/app/api/embeds/api/iframe). Matched exactly: a prefix
 // also admits the loader script, and reads as an allowance for whatever route
 // is added under the proxy next.
 const EMBED_VIEW_PATH = `${EMBED_PROXY_PATH}/api/iframe`;
 
-// The positions that stay inside the card, which is a containing block with
-// `overflow-hidden`. Allowed rather than denied: a value can be spelled
-// `-webkit-sticky`, or read out of a custom property the same style sets, and
-// an embed that positions itself any other way can cover the page.
-const CONTAINED_POSITIONS = ['absolute', 'relative', 'static'];
-
-// Iframely's own wrapper classes (`iframely-embed`, `iframely-responsive`),
-// which embed.js styles. Every other class is dropped: the app's utilities
-// ship in the same stylesheet, so `fixed inset-0 z-50` on an embed would lift
-// it out of the card just as inline positioning would.
-const IFRAMELY_CLASS_PREFIX = 'iframely';
-
-// Enough to render an iframely embed and the wrapper it may arrive in, and
-// nothing that executes: no <script>, no event handlers, no <object>/<embed>.
+// `div` earns its place only so an iframe wrapped in one survives the parse —
+// the wrapper itself is dropped below. Nothing here executes: no <script>, no
+// event handlers, no <object>/<embed>.
 const ALLOWED_TAGS = ['div', 'iframe'];
+
+// No `class` and no `style`: the card sizes the embed, and both are how an
+// embed would size or position itself over the page instead — the app's own
+// utilities ship in the stylesheet the embed renders against.
 const ALLOWED_ATTR = [
   'allow',
   'allowfullscreen',
-  'class',
-  'frameborder',
-  'height',
   'loading',
   'referrerpolicy',
-  'scrolling',
   'src',
-  'style',
   'title',
-  'width',
 ];
 
 /**
@@ -49,14 +29,16 @@ const ALLOWED_ATTR = [
  *
  * Returns `null` — never a blank-but-truthy string — when no embed survives,
  * so the caller falls back to the thumbnail instead of rendering an empty
- * video-sized box.
+ * video-sized box. Iframely's lazy wrapper shape is one such case: its anchor
+ * only expands under embed.js, which needs an absolute URL that
+ * `getLinkPreview`'s rewrite onto our proxy takes away.
  */
 export const sanitizeEmbedHtml = (
   html: string | null | undefined,
 ): string | null => {
-  // Without a DOM to parse with, DOMPurify returns its input UNSANITIZED.
-  // Server renders therefore get the thumbnail; the embed appears once the
-  // client takes over.
+  // Without a DOM to parse with, DOMPurify returns its input UNSANITIZED, so
+  // this has to answer before it is asked. Nothing renders an embed server
+  // side today: the preview query resolves on the client.
   if (!html || !DOMPurify.isSupported) {
     return null;
   }
@@ -78,51 +60,28 @@ export const sanitizeEmbedHtml = (
     RETURN_DOM_FRAGMENT: true,
   });
 
-  for (const element of fragment.querySelectorAll(EMBED_SELECTOR)) {
-    if (!isRenderableEmbed(element)) {
-      element.remove();
-      continue;
-    }
+  const embeds = [...fragment.querySelectorAll('iframe')].filter(
+    isRenderableEmbed,
+  );
 
-    // A feed renders one preview per link, and a plain iframe loads as soon as
-    // it is in the document — the deferral iframely's lazy wrapper used to
-    // give us has to come from the attribute instead.
-    element.setAttribute('loading', 'lazy');
-  }
-
-  // Inline style is how iframely sizes a responsive embed, so it stays — bar
-  // the positions that would let the embed cover the page from inside the
-  // card.
-  for (const element of fragment.querySelectorAll<HTMLElement>(
-    '[class], [style]',
-  )) {
-    if (!CONTAINED_POSITIONS.includes(element.style.position)) {
-      element.style.removeProperty('position');
-    }
-
-    keepIframelyClasses(element);
-  }
-
-  if (!fragment.querySelector(EMBED_SELECTOR)) {
+  if (embeds.length === 0) {
     return null;
   }
 
+  for (const embed of embeds) {
+    // A feed renders one preview per link, and a plain iframe loads as soon as
+    // it is in the document — the deferral iframely's lazy wrapper used to
+    // give us has to come from the attribute instead.
+    embed.setAttribute('loading', 'lazy');
+  }
+
+  // The embeds alone, out of whatever iframely wrapped them in: a wrapper
+  // sized by a padding hack needs embed.js's stylesheet to hold its iframe,
+  // and the card supplies the box either way.
   const container = document.createElement('div');
-  container.append(fragment);
+  container.replaceChildren(...embeds);
 
   return container.innerHTML;
-};
-
-const keepIframelyClasses = (element: Element) => {
-  const kept = [...element.classList].filter((name) =>
-    name.startsWith(IFRAMELY_CLASS_PREFIX),
-  );
-
-  if (kept.length > 0) {
-    element.setAttribute('class', kept.join(' '));
-  } else {
-    element.removeAttribute('class');
-  }
 };
 
 /**

@@ -6,7 +6,7 @@ import { sanitizeEmbedHtml } from './sanitizeEmbedHtml';
 // The embed shape the app can render: an iframe on our own proxy, which
 // `getLinkPreview` has already rewritten the iframely CDN host into.
 const proxiedIframe =
-  '<iframe src="/api/embeds/api/iframe?url=video" style="border: 0;" allowfullscreen allow="encrypted-media"></iframe>';
+  '<iframe src="/api/embeds/api/iframe?url=video" allowfullscreen allow="encrypted-media" title="A video"></iframe>';
 
 // Iframely's other shape: a wrapper whose anchor embed.js would expand in
 // place, which it cannot do once the URL is proxy-relative.
@@ -22,47 +22,29 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
     expect(sanitized).toContain('allowfullscreen');
     expect(sanitized).toContain('allow="encrypted-media"');
+    expect(sanitized).toContain('title="A video"');
     expect(sanitized).toContain('loading="lazy"');
   });
 
-  it('keeps the responsive wrapper an iframe arrives in, sizing and all', () => {
+  it('unwraps an iframe from the markup iframely sized around it', () => {
     const sanitized = sanitizeEmbedHtml(
       '<div class="iframely-responsive" style="height: 0; padding-bottom: 56.25%;">' +
-        '<iframe src="/api/embeds/api/iframe?url=video" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>' +
-        '</div>',
-    );
-
-    expect(sanitized).toContain('class="iframely-responsive"');
-    expect(sanitized).toContain('padding-bottom: 56.25%');
-    expect(sanitized).toContain('position: absolute');
-  });
-
-  it('strips scripts and event handlers wrapped around an embed', () => {
-    const sanitized = sanitizeEmbedHtml(
-      `<script>steal()</script><div onclick="hijack()"><img src=x onerror="exfiltrate()">${proxiedIframe}</div>`,
+        `${proxiedIframe}</div>`,
     );
 
     expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
-    expect(sanitized).not.toContain('steal');
-    expect(sanitized).not.toContain('onclick');
-    expect(sanitized).not.toContain('exfiltrate');
+    expect(sanitized).not.toContain('<div');
+    expect(sanitized).not.toContain('padding-bottom');
   });
 
-  it('strips positioning that would lift the embed out of its card', () => {
+  it('strips the style and class an embed brought with it', () => {
     const sanitized = sanitizeEmbedHtml(
-      '<iframe src="/api/embeds/api/iframe?url=video" style="position: fixed; inset: 0; width: 100vw"></iframe>',
+      '<iframe src="/api/embeds/api/iframe?url=video" class="fixed inset-0 z-50" style="position: fixed; inset: 0; width: 100vw"></iframe>',
     );
 
-    expect(sanitized).not.toContain('position');
-    expect(sanitized).toContain('width: 100vw');
-  });
-
-  it('strips a position the style spells indirectly', () => {
-    const sanitized = sanitizeEmbedHtml(
-      '<iframe src="/api/embeds/api/iframe?url=video" style="--escape: fixed; position: var(--escape); inset: 0"></iframe>',
-    );
-
-    expect(sanitized).not.toContain('position');
+    expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
+    expect(sanitized).not.toContain('style');
+    expect(sanitized).not.toContain('class');
   });
 
   it('strips the data and aria attributes an embed brought with it', () => {
@@ -74,14 +56,15 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).not.toContain('data-track');
   });
 
-  it('strips app utility classes an embed brought with it', () => {
+  it('strips scripts and event handlers wrapped around an embed', () => {
     const sanitized = sanitizeEmbedHtml(
-      `<div class="iframely-embed fixed inset-0 z-50">${proxiedIframe}</div>`,
+      `<script>steal()</script><div onclick="hijack()"><img src=x onerror="exfiltrate()">${proxiedIframe}</div>`,
     );
 
-    expect(sanitized).toContain('class="iframely-embed"');
-    expect(sanitized).not.toContain('fixed');
-    expect(sanitized).not.toContain('z-50');
+    expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
+    expect(sanitized).not.toContain('steal');
+    expect(sanitized).not.toContain('onclick');
+    expect(sanitized).not.toContain('exfiltrate');
   });
 
   it('drops text left behind by a stripped tag', () => {
