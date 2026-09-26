@@ -4,11 +4,12 @@ import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Spinner } from '@op/sense/Spinner';
 import { cn } from '@op/sense/lib/utils';
-import DOMPurify from 'dompurify';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { sanitizeEmbedHtml } from './sanitizeEmbedHtml';
 
 declare global {
   interface Window {
@@ -37,15 +38,6 @@ function getDomain(url: string): string {
   }
 }
 
-function sanitizeHtml(html: string | null | undefined): string {
-  return html
-    ? DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['span', 'p'],
-        ALLOWED_ATTR: ['class'],
-      })
-    : '';
-}
-
 export const LinkPreview = memo(
   ({ url, className, onRemove }: LinkPreviewProps) => {
     const t = useTranslations('editor');
@@ -63,10 +55,18 @@ export const LinkPreview = memo(
 
     const domain = getDomain(url);
     const safeUrl = useMemo(() => sanitizeUrl(url), [url]);
+    const embedHtml = useMemo(
+      () => sanitizeEmbedHtml(previewData?.html),
+      [previewData?.html],
+    );
 
     useEffect(() => {
-      window.iframely?.load();
-    }, [previewData?.html]);
+      // Only an embed needs expanding: load() scans the whole document, and a
+      // preview that fell back to its thumbnail has nothing for it to find.
+      if (embedHtml) {
+        window.iframely?.load();
+      }
+    }, [embedHtml]);
 
     // Loading state: show card with spinner and domain
     if (loading) {
@@ -143,10 +143,10 @@ export const LinkPreview = memo(
           rel="noopener noreferrer"
           className="block outline-none"
         >
-          {previewData.html ? (
+          {embedHtml ? (
             <div
               className="aspect-video w-full"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(previewData.html) }}
+              dangerouslySetInnerHTML={{ __html: embedHtml }}
             />
           ) : previewData.thumbnail_url ? (
             <div className="aspect-video w-full">

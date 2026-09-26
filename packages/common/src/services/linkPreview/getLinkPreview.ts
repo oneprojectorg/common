@@ -1,4 +1,5 @@
 import { cache } from '@op/cache';
+import { EMBED_PROXY_PATH } from '@op/core';
 
 export type LinkPreviewResult = {
   url: string;
@@ -28,11 +29,6 @@ const LINK_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 // inside the returned embed HTML (iframe srcs, lazy `data-iframely-url`
 // attributes, inline embed.js script tags).
 const IFRAMELY_CDN_RE = /(?:https?:)?\/\/cdn\.iframe\.ly/g;
-
-// The app's in-service, edge-cached, CSP-sandboxed proxy for embed views
-// (apps/app/src/app/api/embeds). Path-relative so the browser resolves it
-// against the app origin in every environment.
-const EMBED_PROXY_PATH = '/api/embeds';
 
 // Embed views served from cdn.iframe.ly are billed too, so caching only the
 // API responses is not enough — the iframe/script URLs baked into the embed

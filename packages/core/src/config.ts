@@ -19,6 +19,13 @@ export const OP_EMAIL_HELP = 'support@oneproject.org';
 export const API_TRPC_PTH = `api/v1/trpc`;
 export const SUPABASE_PROJECT_ID = 'yrpfxbnidfyrzmmsrfic';
 
+// The app's in-service, edge-cached, CSP-sandboxed proxy for iframely embed
+// views (apps/app/src/app/api/embeds). Path-relative so the browser resolves
+// it against the app origin in every environment. Shared because the service
+// that rewrites embed URLs onto it and the client that only renders embeds
+// served from it must agree on one string.
+export const EMBED_PROXY_PATH = '/api/embeds';
+
 type ImplQueueConstructorParams = ConstructorParameters<typeof ImplPQueue>[0];
 
 export const PQueue = (params?: ImplQueueConstructorParams) => {
