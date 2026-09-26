@@ -10,7 +10,6 @@ import { z } from 'zod';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import { createDecisionRole } from './decisionRoles';
 
 /**
  * The phase's `data` blob.
@@ -29,29 +28,18 @@ export const phaseDataSchema = z.object({
 
 export type PhaseData = z.infer<typeof phaseDataSchema>;
 
-/**
- * A capability a phase can offer. Each one it offers gets its own
- * profile-scoped role, because a phase holds reviewers and submitters at the
- * same time and `profileUser_to_access_roles` is a join table.
- */
-export const PHASE_CAPABILITIES = ['submit', 'review', 'vote'] as const;
-
-export type PhaseCapability = (typeof PHASE_CAPABILITIES)[number];
-
 export type CreatePhaseInput = {
   processInstanceId: string;
   /** Stored on the profile, not on the phase row. */
   name: string;
   sortOrder: number;
   data: PhaseData;
-  capabilities?: ReadonlyArray<PhaseCapability>;
   db?: DbClient;
 };
 
 export type CreatePhaseResult = {
   phase: ProcessPhase;
   profile: Profile;
-  roles: Array<{ capability: PhaseCapability; roleId: string }>;
 };
 
 /**
@@ -61,18 +49,17 @@ export type CreatePhaseResult = {
  * Authorization is the caller's: manage resolves against the *process*
  * profile, not the phase, so the caller asserts there before reaching here —
  * the same contract `createDecisionRole` and `createDefaultDecisionRoles` work
- * under.
+ * under. It writes no grants: an open phase needs none, and invite-only grants
+ * are direct permissions written when an invite is accepted (ADR 0006).
  */
 export const createPhase = async ({
   processInstanceId,
   name,
   sortOrder,
   data,
-  capabilities = [],
   db = defaultDb,
 }: CreatePhaseInput): Promise<CreatePhaseResult> => {
   const phaseData = phaseDataSchema.parse(data);
-  const wantedCapabilities = [...new Set(capabilities)];
 
   return db.transaction(async (tx) => {
     const slug = await generateUniqueProfileSlug({ name, db: tx });
@@ -100,24 +87,7 @@ export const createPhase = async ({
       throw new CommonError('Failed to create phase');
     }
 
-    const roles: CreatePhaseResult['roles'] = [];
-    // Sequential: these share one transaction's connection.
-    for (const capability of wantedCapabilities) {
-      const role = await createDecisionRole({
-        name: CAPABILITY_ROLE_NAMES[capability],
-        profileId: profile.id,
-        permissions: {
-          decisions: {
-            type: 'decision',
-            value: capabilityPermissions(capability),
-          },
-        },
-        db: tx,
-      });
-      roles.push({ capability, roleId: role.id });
-    }
-
-    return { phase, profile, roles };
+    return { phase, profile };
   });
 };
 
@@ -187,25 +157,3 @@ export const deletePhase = async ({
     throw new CommonError('Failed to delete phase');
   }
 };
-
-const CAPABILITY_ROLE_NAMES: Record<PhaseCapability, string> = {
-  submit: 'Submitter',
-  review: 'Reviewer',
-  vote: 'Voter',
-};
-
-/**
- * One bit per role. `createDecisionRole` adds the READ bit and a profile READ
- * grant itself, so a capability role carries its capability and nothing else.
- */
-const capabilityPermissions = (capability: PhaseCapability) => ({
-  create: false,
-  read: true,
-  update: false,
-  delete: false,
-  admin: false,
-  inviteMembers: false,
-  review: capability === 'review',
-  submitProposals: capability === 'submit',
-  vote: capability === 'vote',
-});
