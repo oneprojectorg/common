@@ -56,6 +56,14 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).toContain('width: 100vw');
   });
 
+  it('strips a position the style spells indirectly', () => {
+    const sanitized = sanitizeEmbedHtml(
+      '<iframe src="/api/embeds/api/iframe?url=video" style="--escape: fixed; position: var(--escape); inset: 0"></iframe>',
+    );
+
+    expect(sanitized).not.toContain('position');
+  });
+
   it('strips app utility classes an embed brought with it', () => {
     const sanitized = sanitizeEmbedHtml(
       `<div class="iframely-embed fixed inset-0 z-50">${proxiedIframe}</div>`,

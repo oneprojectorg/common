@@ -14,10 +14,11 @@ const EMBED_SELECTOR = 'iframe';
 // is added under the proxy next.
 const EMBED_VIEW_PATH = `${EMBED_PROXY_PATH}/api/iframe`;
 
-// A position that leaves the card behind. `absolute` does not: the embed box
-// it renders in is a containing block, so an absolutely positioned embed —
-// which is how iframely fills a responsive wrapper — stays inside and clipped.
-const ESCAPING_POSITIONS = ['fixed', 'sticky'];
+// The positions that stay inside the card, which is a containing block with
+// `overflow-hidden`. Allowed rather than denied: a value can be spelled
+// `-webkit-sticky`, or read out of a custom property the same style sets, and
+// an embed that positions itself any other way can cover the page.
+const CONTAINED_POSITIONS = ['absolute', 'relative', 'static'];
 
 // Iframely's own wrapper classes (`iframely-embed`, `iframely-responsive`),
 // which embed.js styles. Every other class is dropped: the app's utilities
@@ -64,7 +65,9 @@ export const sanitizeEmbedHtml = (
     ALLOWED_TAGS,
     ALLOWED_ATTR,
     // A stripped tag's text would otherwise render as bare copy in the middle
-    // of the embed box.
+    // of the embed box, which is a line a third-party site gets to write into
+    // our card. An embed nested in a tag we don't allow goes with its wrapper
+    // and the preview falls back to its thumbnail — the safer of the two.
     KEEP_CONTENT: false,
     RETURN_DOM_FRAGMENT: true,
   });
@@ -81,7 +84,7 @@ export const sanitizeEmbedHtml = (
   for (const element of fragment.querySelectorAll<HTMLElement>(
     '[class], [style]',
   )) {
-    if (ESCAPING_POSITIONS.includes(element.style.position)) {
+    if (!CONTAINED_POSITIONS.includes(element.style.position)) {
       element.style.removeProperty('position');
     }
 

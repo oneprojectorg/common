@@ -110,6 +110,10 @@ describe('getLinkPreview', () => {
     expect(calledUrl).toContain('https://iframe.ly/api/iframely');
     expect(calledUrl).toContain(`url=${encodeURIComponent(url)}`);
     expect(calledUrl).toContain('key=test-secret-key-do-not-leak');
+    // The iframe shape is the only one the app renders — see
+    // apps/app/src/components/LinkPreview/sanitizeEmbedHtml.ts.
+    expect(calledUrl).toContain('iframe=1');
+    expect(calledUrl).toContain('omit_script=1');
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 

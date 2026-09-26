@@ -83,11 +83,17 @@ const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
       return { url, error: 'Iframely key not configured' };
     }
 
+    // `iframe=1&omit_script=1` asks for the embed as a plain iframe rather
+    // than iframely's lazy wrapper, whose anchor only expands when embed.js
+    // can read an absolute URL off it — which `rewriteEmbedCdn` takes away.
+    // The iframe shape is also the one <LinkPreview> will render: anything
+    // else falls back to the thumbnail.
+    //
     // Cap upstream latency: an authenticated user can DoS the API by
     // submitting URLs that iframely is slow to resolve. 5s is a reasonable
     // ceiling; the user gets {error: 'timeout'} on cache miss.
     const response = await fetch(
-      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}`,
+      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}&iframe=1&omit_script=1`,
       { signal: AbortSignal.timeout(5000) },
     );
 
