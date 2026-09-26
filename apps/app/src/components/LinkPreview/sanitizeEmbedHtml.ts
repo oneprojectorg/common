@@ -13,12 +13,13 @@ const EMBED_VIEW_PATH = `${EMBED_PROXY_PATH}/api/iframe`;
 // executes — no <script>, no event handlers, no <object>/<embed>.
 const ALLOWED_TAGS = ['a', 'div', 'figure', 'iframe', 'p', 'section', 'span'];
 
-// No `class` and no `style`: both are how an embed would size or position
-// itself over the page rather than inside its card, and the app's own
-// utilities ship in the stylesheet it renders against. `width` and `height`
-// are read for the embed's ratio and then dropped. `title` stays where
-// `aria-label` does not: a frame needs an accessible name, and this is the
-// provider's own page title — the string the card already prints beneath it.
+// No `class`: it is how an embed would position itself over the page rather
+// than inside its card, and the app's own utilities ship in the stylesheet it
+// renders against. `style`, `width` and `height` are read for the embed's
+// ratio and never survive: the emitted style is one we write. `title` stays
+// where `aria-label` does not — a frame needs an accessible name, and this is
+// the provider's own page title, the string the card already prints beneath
+// it.
 const ALLOWED_ATTR = [
   'allow',
   'allowfullscreen',
@@ -26,12 +27,22 @@ const ALLOWED_ATTR = [
   'loading',
   'referrerpolicy',
   'src',
+  'style',
   'title',
   'width',
 ];
 
 // What the card falls back to when an embed declares no usable size.
 const DEFAULT_ASPECT_RATIO = '16 / 9';
+
+// Iframely sizes a responsive embed with the padding of a zero-height wrapper,
+// as a percentage of height over width: 56.25% is 16:9.
+const WRAPPER_PADDING_RATIO = /padding-bottom:\s*([\d.]+)%/;
+
+// Wider and taller than any embed a card should hand its column over to. A
+// provider picks these numbers, so they are a sizing channel of their own.
+const MIN_ASPECT_RATIO = 0.25;
+const MAX_ASPECT_RATIO = 4;
 
 /**
  * Sanitizes Iframely embed HTML for rendering via `dangerouslySetInnerHTML`.
@@ -95,21 +106,40 @@ export const sanitizeEmbedHtml = (
 };
 
 /**
- * The provider's own dimensions are the ratio it wants to be seen at — a
- * player is nothing like a video — and they are all that is left of the
- * sizing once the wrapper is gone. They become a ratio the card can scale to
- * its width, written as our own style rather than kept as the embed's.
+ * The ratio a provider wants to be seen at — a player is nothing like a video
+ * — reaches us as the embed's own dimensions, or as the padding iframely sizes
+ * its wrapper with. Either way it ends up as one style of ours on the embed,
+ * for the card to scale to its width.
  */
 const setAspectRatio = (embed: Element) => {
-  const width = Number(embed.getAttribute('width'));
-  const height = Number(embed.getAttribute('height'));
+  const ratio =
+    aspectRatioOf(
+      Number(embed.getAttribute('width')),
+      Number(embed.getAttribute('height')),
+    ) ??
+    aspectRatioOf(
+      100,
+      Number(
+        embed.parentElement
+          ?.getAttribute('style')
+          ?.match(WRAPPER_PADDING_RATIO)?.[1],
+      ),
+    ) ??
+    DEFAULT_ASPECT_RATIO;
 
   embed.removeAttribute('width');
   embed.removeAttribute('height');
-  embed.setAttribute(
-    'style',
-    `aspect-ratio: ${width > 0 && height > 0 ? `${width} / ${height}` : DEFAULT_ASPECT_RATIO}`,
-  );
+  embed.setAttribute('style', `aspect-ratio: ${ratio}`);
+};
+
+const aspectRatioOf = (width: number, height: number): string | null => {
+  const ratio = width / height;
+
+  // Rejects a missing, zero, infinite or unparseable side along with the
+  // merely absurd: every comparison below is false for NaN.
+  return ratio >= MIN_ASPECT_RATIO && ratio <= MAX_ASPECT_RATIO
+    ? `${width} / ${height}`
+    : null;
 };
 
 /**

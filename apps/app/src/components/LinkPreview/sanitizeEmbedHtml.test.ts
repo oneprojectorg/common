@@ -56,10 +56,34 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).not.toContain('height=');
   });
 
+  it('reads the ratio off the wrapper when the embed carries no dimensions', () => {
+    const sanitized = sanitizeEmbedHtml(
+      '<div style="height: 0; padding-bottom: 125%; position: relative;">' +
+        '<iframe src="/api/embeds/api/iframe?url=video" style="position: absolute; width: 100%; height: 100%;"></iframe>' +
+        '</div>',
+    );
+
+    expect(sanitized).toContain('aspect-ratio: 100 / 125');
+    expect(sanitized).not.toContain('position');
+  });
+
   it('falls back to 16:9 when the embed declares no usable size', () => {
     expect(
       sanitizeEmbedHtml(
         '<iframe src="/api/embeds/api/iframe?url=video" width="100%"></iframe>',
+      ),
+    ).toContain('aspect-ratio: 16 / 9');
+  });
+
+  it('falls back to 16:9 rather than hand the column to an absurd ratio', () => {
+    expect(
+      sanitizeEmbedHtml(
+        '<iframe src="/api/embeds/api/iframe?url=video" width="1" height="100000"></iframe>',
+      ),
+    ).toContain('aspect-ratio: 16 / 9');
+    expect(
+      sanitizeEmbedHtml(
+        '<iframe src="/api/embeds/api/iframe?url=video" width="Infinity" height="1"></iframe>',
       ),
     ).toContain('aspect-ratio: 16 / 9');
   });

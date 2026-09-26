@@ -27,7 +27,8 @@ const LINK_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Matches absolute and protocol-relative references to iframely's embed CDN
 // inside the returned embed HTML (iframe srcs, lazy `data-iframely-url`
-// attributes, inline embed.js script tags).
+// attributes, inline embed.js script tags — the last two reach no further
+// than <LinkPreview>'s sanitizer, which renders the iframe alone).
 const IFRAMELY_CDN_RE = /(?:https?:)?\/\/cdn\.iframe\.ly/g;
 
 // Embed views served from cdn.iframe.ly are billed too, so caching only the
