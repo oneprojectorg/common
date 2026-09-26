@@ -1,13 +1,12 @@
 import { EMBED_PROXY_PATH } from '@op/core';
 import DOMPurify from 'dompurify';
 
-// Iframely embeds arrive as either a bare <iframe>, or a responsive wrapper
-// whose anchor carries `data-iframely-url` for embed.js to expand in place.
-const EMBED_SELECTOR = 'iframe, [data-iframely-url]';
-
-// Every attribute an embed loads from. An element is kept only when all of
-// them resolve to somewhere we are willing to frame.
-const EMBED_URL_ATTRIBUTES = ['data-iframely-url', 'src'];
+// Iframely's other embed shape — a wrapper whose anchor embed.js expands in
+// place — cannot render here: `getLinkPreview` rewrites the anchor's
+// `data-iframely-url` onto our proxy, and embed.js only expands one that names
+// a host, falling back to an api key it is never given. Those previews have no
+// embed to keep, and fall back to their thumbnail.
+const EMBED_SELECTOR = 'iframe';
 
 // Iframely's own wrapper classes (`iframely-embed`, `iframely-responsive`),
 // which embed.js styles. Every other class is dropped: the app's utilities
@@ -15,12 +14,9 @@ const EMBED_URL_ATTRIBUTES = ['data-iframely-url', 'src'];
 // it out of the card just as inline positioning would.
 const IFRAMELY_CLASS_PREFIX = 'iframely';
 
-// Enough to render an iframely embed and its responsive wrapper, and nothing
-// that executes: no <script>, no event handlers, no <object>/<embed>. `href`
-// is deliberately absent — embed.js replaces the wrapper anchor with the
-// iframe, and an anchor that survived could cover the card and send the click
-// somewhere the preview does not name.
-const ALLOWED_TAGS = ['a', 'div', 'iframe'];
+// Enough to render an iframely embed and the wrapper it may arrive in, and
+// nothing that executes: no <script>, no event handlers, no <object>/<embed>.
+const ALLOWED_TAGS = ['div', 'iframe'];
 const ALLOWED_ATTR = [
   'allow',
   'allowfullscreen',
@@ -110,14 +106,12 @@ const keepIframelyClasses = (element: Element) => {
  * `/api/embeds/../elsewhere` does not.
  */
 const isRenderableEmbed = (element: Element): boolean => {
-  const sources = EMBED_URL_ATTRIBUTES.map((attribute) =>
-    element.getAttribute(attribute),
-  ).filter((source) => source !== null);
+  const source = element.getAttribute('src');
 
-  return sources.length > 0 && sources.every(isRenderableEmbedUrl);
-};
+  if (!source) {
+    return false;
+  }
 
-const isRenderableEmbedUrl = (source: string): boolean => {
   try {
     const resolved = new URL(source, window.location.href);
 
