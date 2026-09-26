@@ -126,6 +126,12 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
             </I18nProvider>
             <ReactQueryDevtools initialIsOpen={false} />
             <Toaster />
+            {/* Expands the iframely embeds a LinkPreview renders, on every
+                route that can show one — decision and proposal pages render
+                previews outside the (main) group. Served by our own
+                edge-cached proxy (app/api/embeds) instead of cdn.iframe.ly,
+                so embed loads don't hit iframely's billed CDN. */}
+            <Script async src="/api/embeds/embed.js" />
           </DirectionProvider>
         </body>
       </TRPCProvider>
