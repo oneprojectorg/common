@@ -129,9 +129,10 @@ export const LinkPreview = memo(
         >
           {embedHtml ? (
             // Positioned so an embed that fills a responsive wrapper resolves
-            // against this box rather than the page.
+            // against this box rather than the page, and sized here because an
+            // embed arrives at whatever size its provider picked.
             <div
-              className="relative aspect-video w-full"
+              className="relative aspect-video w-full [&_iframe]:size-full"
               dangerouslySetInnerHTML={{ __html: embedHtml }}
             />
           ) : previewData.thumbnail_url ? (

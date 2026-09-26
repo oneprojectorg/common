@@ -64,6 +64,12 @@ export const sanitizeEmbedHtml = (
   const fragment = DOMPurify.sanitize(html, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
+    // Both default to true, which would put `ALLOWED_ATTR` alongside every
+    // `data-*` and `aria-*` an embed cares to bring — and this markup renders
+    // inside the card's link, where an `aria-label` rewrites what a screen
+    // reader announces the link as.
+    ALLOW_ARIA_ATTR: false,
+    ALLOW_DATA_ATTR: false,
     // A stripped tag's text would otherwise render as bare copy in the middle
     // of the embed box, which is a line a third-party site gets to write into
     // our card. An embed nested in a tag we don't allow goes with its wrapper

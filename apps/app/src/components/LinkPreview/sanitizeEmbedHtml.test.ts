@@ -65,6 +65,15 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).not.toContain('position');
   });
 
+  it('strips the data and aria attributes an embed brought with it', () => {
+    const sanitized = sanitizeEmbedHtml(
+      '<iframe src="/api/embeds/api/iframe?url=video" aria-label="Sign in to continue" data-track="1"></iframe>',
+    );
+
+    expect(sanitized).not.toContain('aria-label');
+    expect(sanitized).not.toContain('data-track');
+  });
+
   it('strips app utility classes an embed brought with it', () => {
     const sanitized = sanitizeEmbedHtml(
       `<div class="iframely-embed fixed inset-0 z-50">${proxiedIframe}</div>`,
