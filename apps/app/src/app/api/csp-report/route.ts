@@ -59,23 +59,57 @@ const normalize = (report: CspReport) => ({
 /** A real report is well under a kilobyte. */
 const MAX_BODY_BYTES = 64_000;
 
+/**
+ * Stops reading once the cap is passed, rather than buffering the whole body
+ * and measuring after. `Content-Length` cannot be trusted to be there — a
+ * chunked request declares none — so the limit has to hold while reading.
+ */
+const readBoundedBody = async (
+  request: NextRequest,
+): Promise<{ ok: true; text: string } | { ok: false }> => {
+  const reader = request.body?.getReader();
+  if (!reader) {
+    return { ok: true, text: '' };
+  }
+
+  const chunks: Array<Uint8Array> = [];
+  let size = 0;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    size += value.byteLength;
+    if (size > MAX_BODY_BYTES) {
+      await reader.cancel();
+
+      return { ok: false };
+    }
+
+    chunks.push(value);
+  }
+
+  const body = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return { ok: true, text: new TextDecoder().decode(body) };
+};
+
 export async function POST(request: NextRequest): Promise<Response> {
-  // A declared oversize is refused before buffering; a chunked or header-less
-  // body is measured after the read. Rejecting a missing content-length
-  // outright would silently drop reports from any client that omits it.
-  const declaredLength = request.headers.get('content-length');
-  if (declaredLength !== null && Number(declaredLength) > MAX_BODY_BYTES) {
+  const body = await readBoundedBody(request);
+  if (!body.ok) {
     return new Response(null, { status: 413 });
   }
 
   let payload: unknown;
   try {
-    const body = await request.text();
-    if (body.length > MAX_BODY_BYTES) {
-      return new Response(null, { status: 413 });
-    }
-
-    payload = JSON.parse(body);
+    payload = JSON.parse(body.text);
   } catch {
     return new Response(null, { status: 204 });
   }

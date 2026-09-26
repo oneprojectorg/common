@@ -4,7 +4,6 @@
  * page renders with scripts the policy refuses, which no header-only
  * assertion would catch. Matcher tests live in `proxy.test.ts`.
  */
-import type { NextFetchEvent, NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getClaims = vi.fn();
@@ -37,7 +36,8 @@ vi.mock('@op/supabase/lib', () => ({
 // Forwards request headers like the real middleware; a bare
 // `NextResponse.next()` makes the forwarded-header assertions vacuously null.
 vi.mock('next-intl/middleware', () => ({
-  default: () => (request: NextRequest) =>
+  // Typed as Request, not NextRequest: headers is all the mock reads.
+  default: () => (request: Request) =>
     NextResponse.next({ request: { headers: request.headers } }),
 }));
 
@@ -48,22 +48,25 @@ vi.mock('./lib/i18n', () => ({
   routing: {},
 }));
 
-const { NextResponse } = await import('next/server');
+const { NextRequest, NextResponse } = await import('next/server');
+// NextFetchEvent has no public constructor, and a hand-rolled stand-in would
+// have to be asserted into the type — which is what would hide it drifting.
+const { NextFetchEvent } =
+  await import('next/dist/server/web/spec-extension/fetch-event');
 const { proxy } = await import('./proxy');
 
-const buildRequest = (url: string): NextRequest => {
-  const request = new Request(url) as unknown as NextRequest;
+const run = (path: string, cookies: Record<string, string> = {}) => {
+  const request = new NextRequest(`https://common.oneproject.org${path}`);
 
-  return Object.assign(request, {
-    nextUrl: new URL(url),
-    cookies: new Map() as unknown as NextRequest['cookies'],
-  });
+  for (const [name, value] of Object.entries(cookies)) {
+    request.cookies.set(name, value);
+  }
+
+  return proxy(
+    request,
+    new NextFetchEvent({ request, page: path, context: undefined }),
+  );
 };
-
-const event = { waitUntil: vi.fn() } as unknown as NextFetchEvent;
-
-const run = (path: string) =>
-  proxy(buildRequest(`https://common.oneproject.org${path}`), event);
 
 const getNonce = (policy: string | null) =>
   policy?.match(/'nonce-([^']+)'/)?.[1] ?? null;
@@ -139,7 +142,7 @@ describe('proxy Content-Security-Policy', () => {
     },
   );
 
-  it('keeps the nonce on the response that a token refresh rebuilds', async () => {
+  it('forwards the refreshed session, nonce and path when a token refreshes', async () => {
     // The refresh replaces the response mid-flight; that rebuild used to
     // restore the original headers, dropping x-pathname / x-search / the nonce.
     getClaims.mockImplementation(async () => {
@@ -150,9 +153,13 @@ describe('proxy Content-Security-Policy', () => {
       return { data: { claims: { sub: 'user' } } };
     });
 
-    const response = await run('/en/decisions');
+    const response = await run('/en/decisions', { 'sb-access-token': 'stale' });
 
     expect(setAllCookies).toHaveBeenCalled();
+    // The renderer has to see the new token, not the one the browser sent.
+    expect(getForwardedHeader(response, 'cookie')).toContain(
+      'sb-access-token=refreshed',
+    );
     expect(getForwardedHeader(response, 'content-security-policy')).toBe(
       response.headers.get('content-security-policy'),
     );
