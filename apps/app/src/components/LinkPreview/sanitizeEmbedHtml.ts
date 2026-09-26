@@ -135,9 +135,14 @@ const setAspectRatio = (embed: Element) => {
 const aspectRatioOf = (width: number, height: number): string | null => {
   const ratio = width / height;
 
-  // Rejects a missing, zero, infinite or unparseable side along with the
-  // merely absurd: every comparison below is false for NaN.
-  return ratio >= MIN_ASPECT_RATIO && ratio <= MAX_ASPECT_RATIO
+  // Each side has to be a positive number of its own: two negative ones divide
+  // into a perfectly reasonable ratio and then serialize into a `aspect-ratio`
+  // the browser drops. Every comparison here is false for NaN, which covers a
+  // missing, infinite or unparseable side.
+  return width > 0 &&
+    height > 0 &&
+    ratio >= MIN_ASPECT_RATIO &&
+    ratio <= MAX_ASPECT_RATIO
     ? `${width} / ${height}`
     : null;
 };

@@ -86,6 +86,11 @@ describe('sanitizeEmbedHtml', () => {
         '<iframe src="/api/embeds/api/iframe?url=video" width="Infinity" height="1"></iframe>',
       ),
     ).toContain('aspect-ratio: 16 / 9');
+    expect(
+      sanitizeEmbedHtml(
+        '<iframe src="/api/embeds/api/iframe?url=video" width="-640" height="-360"></iframe>',
+      ),
+    ).toContain('aspect-ratio: 16 / 9');
   });
 
   it('keeps one embed out of markup carrying several', () => {
