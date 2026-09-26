@@ -14,8 +14,7 @@ on:
   # Numbers whatever drafts sit on the chosen branch.
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: adr-numbering
@@ -26,6 +25,8 @@ jobs:
     name: Number draft ADRs
     if: github.event_name != 'pull_request_target' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout the target branch
         uses: actions/checkout@v4
