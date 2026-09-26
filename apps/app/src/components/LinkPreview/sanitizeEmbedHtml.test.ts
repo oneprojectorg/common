@@ -46,6 +46,15 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).not.toContain('<figure');
   });
 
+  it('keeps one embed out of markup carrying several', () => {
+    const sanitized = sanitizeEmbedHtml(
+      `${proxiedIframe}<iframe src="/api/embeds/api/iframe?url=other"></iframe>`,
+    );
+
+    expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
+    expect(sanitized).not.toContain('url=other');
+  });
+
   it('strips the style and class an embed brought with it', () => {
     const sanitized = sanitizeEmbedHtml(
       '<iframe src="/api/embeds/api/iframe?url=video" class="fixed inset-0 z-50" style="position: fixed; inset: 0; width: 100vw"></iframe>',

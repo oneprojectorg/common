@@ -61,26 +61,26 @@ export const sanitizeEmbedHtml = (
     RETURN_DOM_FRAGMENT: true,
   });
 
-  const embeds = [...fragment.querySelectorAll('iframe')].filter(
+  // One embed: the card is a single box, so a second iframe would stack
+  // inside it, overflow, and load for nothing.
+  const embed = [...fragment.querySelectorAll('iframe')].find(
     isRenderableEmbed,
   );
 
-  if (embeds.length === 0) {
+  if (!embed) {
     return null;
   }
 
-  for (const embed of embeds) {
-    // A feed renders one preview per link, and a plain iframe loads as soon as
-    // it is in the document — the deferral iframely's lazy wrapper used to
-    // give us has to come from the attribute instead.
-    embed.setAttribute('loading', 'lazy');
-  }
+  // A feed renders one preview per link, and a plain iframe loads as soon as
+  // it is in the document — the deferral iframely's lazy wrapper used to give
+  // us has to come from the attribute instead.
+  embed.setAttribute('loading', 'lazy');
 
-  // The embeds alone, out of whatever iframely wrapped them in: a wrapper
-  // sized by a padding hack needs embed.js's stylesheet to hold its iframe,
-  // and the card supplies the box either way.
+  // The embed alone, out of whatever iframely wrapped it in: a wrapper sized
+  // by a padding hack needs embed.js's stylesheet to hold its iframe, and the
+  // card supplies the box either way.
   const container = document.createElement('div');
-  container.replaceChildren(...embeds);
+  container.replaceChildren(embed);
 
   return container.innerHTML;
 };
