@@ -11,12 +11,9 @@ const responsiveEmbed =
   '<a href="https://example.com/video" data-iframely-url="/api/embeds/api/iframe?url=video"></a>' +
   '</div></div><script async src="/api/embeds/embed.js"></script>';
 
-// Iframely's other shape: the embed is the iframe itself, either proxied or
-// served straight from the previewed provider.
+// Iframely's other shape: the embed is the iframe itself.
 const proxiedIframe =
   '<iframe src="/api/embeds/api/iframe?url=video" style="border: 0;" allowfullscreen allow="encrypted-media"></iframe>';
-const providerIframe =
-  '<iframe src="https://provider.example/embed/video"></iframe>';
 
 describe('sanitizeEmbedHtml', () => {
   it('keeps a responsive embed and drops the inline embed.js script', () => {
@@ -38,12 +35,6 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).toContain('allow="encrypted-media"');
   });
 
-  it('keeps an https embed served by the previewed provider', () => {
-    expect(sanitizeEmbedHtml(providerIframe)).toContain(
-      'src="https://provider.example/embed/video"',
-    );
-  });
-
   it('strips scripts and event handlers wrapped around an embed', () => {
     const sanitized = sanitizeEmbedHtml(
       `<script>steal()</script><div onclick="hijack()"><img src=x onerror="exfiltrate()">${proxiedIframe}</div>`,
@@ -59,6 +50,14 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitizeEmbedHtml(responsiveEmbed)).not.toContain('href');
   });
 
+  it('returns null for an iframe the provider serves itself', () => {
+    expect(
+      sanitizeEmbedHtml(
+        '<iframe src="https://provider.example/embed"></iframe>',
+      ),
+    ).toBeNull();
+  });
+
   it('strips positioning that would lift the embed out of its card', () => {
     const sanitized = sanitizeEmbedHtml(
       '<iframe src="/api/embeds/api/iframe?url=video" style="position: fixed; inset: 0; z-index: 9999; width: 100vw"></iframe>',
@@ -69,10 +68,21 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).toContain('width: 100vw');
   });
 
+  it('strips app utility classes an embed brought with it', () => {
+    const sanitized = sanitizeEmbedHtml(
+      '<div class="iframely-embed fixed inset-0 z-50">' +
+        '<a data-iframely-url="/api/embeds/api/iframe?url=video"></a></div>',
+    );
+
+    expect(sanitized).toContain('class="iframely-embed"');
+    expect(sanitized).not.toContain('fixed');
+    expect(sanitized).not.toContain('z-50');
+  });
+
   it('drops an embed whose second URL attribute leaves the proxy', () => {
     expect(
       sanitizeEmbedHtml(
-        '<iframe src="http://attacker.example/phish" data-iframely-url="/api/embeds/api/iframe?url=video"></iframe>',
+        '<iframe src="https://attacker.example/phish" data-iframely-url="/api/embeds/api/iframe?url=video"></iframe>',
       ),
     ).toBeNull();
   });

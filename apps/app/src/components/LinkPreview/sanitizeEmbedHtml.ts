@@ -9,6 +9,12 @@ const EMBED_SELECTOR = 'iframe, [data-iframely-url]';
 // them resolve to somewhere we are willing to frame.
 const EMBED_URL_ATTRIBUTES = ['data-iframely-url', 'src'];
 
+// Iframely's own wrapper classes (`iframely-embed`, `iframely-responsive`),
+// which embed.js styles. Every other class is dropped: the app's utilities
+// ship in the same stylesheet, so `fixed inset-0 z-50` on an embed would lift
+// it out of the card just as inline positioning would.
+const IFRAMELY_CLASS_PREFIX = 'iframely';
+
 // Enough to render an iframely embed and its responsive wrapper, and nothing
 // that executes: no <script>, no event handlers, no <object>/<embed>. `href`
 // is deliberately absent — embed.js replaces the wrapper anchor with the
@@ -65,9 +71,12 @@ export const sanitizeEmbedHtml = (
   // Inline style is how iframely sizes a responsive embed, so it stays — but
   // a positioned element leaves the card's `overflow-hidden` behind and can
   // cover the page with content of its own choosing.
-  for (const element of fragment.querySelectorAll<HTMLElement>('[style]')) {
+  for (const element of fragment.querySelectorAll<HTMLElement>(
+    '[class], [style]',
+  )) {
     element.style.removeProperty('position');
     element.style.removeProperty('z-index');
+    keepIframelyClasses(element);
   }
 
   if (!fragment.querySelector(EMBED_SELECTOR)) {
@@ -80,12 +89,25 @@ export const sanitizeEmbedHtml = (
   return container.innerHTML;
 };
 
+const keepIframelyClasses = (element: Element) => {
+  const kept = [...element.classList].filter((name) =>
+    name.startsWith(IFRAMELY_CLASS_PREFIX),
+  );
+
+  if (kept.length > 0) {
+    element.setAttribute('class', kept.join(' '));
+  } else {
+    element.removeAttribute('class');
+  }
+};
+
 /**
- * An embed may frame the app's own sandboxed `/api/embeds` proxy — which
- * `getLinkPreview` rewrites every iframely CDN URL onto — or the previewed
- * site itself over https. Anything else is neither: a same-origin path is the
- * app wearing an embed's clothes (`/api/embeds/../elsewhere` resolves right
- * out of the proxy), and any other scheme is not something we frame at all.
+ * An embed is only rendered when it frames the app's own `/api/embeds` proxy,
+ * which `getLinkPreview` rewrites every iframely CDN URL onto and which serves
+ * embed views under a sandboxing CSP. A provider's own iframe would be framed
+ * with none of that, so a preview that carries one falls back to its
+ * thumbnail. A same-origin URL still has to resolve inside the proxy:
+ * `/api/embeds/../elsewhere` does not.
  */
 const isRenderableEmbed = (element: Element): boolean => {
   const sources = EMBED_URL_ATTRIBUTES.map((attribute) =>
@@ -99,9 +121,10 @@ const isRenderableEmbedUrl = (source: string): boolean => {
   try {
     const resolved = new URL(source, window.location.href);
 
-    return resolved.origin === window.location.origin
-      ? resolved.pathname.startsWith(`${EMBED_PROXY_PATH}/`)
-      : resolved.protocol === 'https:';
+    return (
+      resolved.origin === window.location.origin &&
+      resolved.pathname.startsWith(`${EMBED_PROXY_PATH}/`)
+    );
   } catch {
     return false;
   }
