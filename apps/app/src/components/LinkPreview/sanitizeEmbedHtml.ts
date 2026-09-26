@@ -7,10 +7,11 @@ import DOMPurify from 'dompurify';
 // is added under the proxy next.
 const EMBED_VIEW_PATH = `${EMBED_PROXY_PATH}/api/iframe`;
 
-// `div` earns its place only so an iframe wrapped in one survives the parse —
-// the wrapper itself is dropped below. Nothing here executes: no <script>, no
-// event handlers, no <object>/<embed>.
-const ALLOWED_TAGS = ['div', 'iframe'];
+// Only the iframes reach the page, so everything else here is about what an
+// embed may arrive *inside*: a disallowed tag takes its subtree with it, which
+// would lose an iframe a provider wrapped in a <figure>. Nothing in the list
+// executes — no <script>, no event handlers, no <object>/<embed>.
+const ALLOWED_TAGS = ['a', 'div', 'figure', 'iframe', 'p', 'section', 'span'];
 
 // No `class` and no `style`: the card sizes the embed, and both are how an
 // embed would size or position itself over the page instead — the app's own

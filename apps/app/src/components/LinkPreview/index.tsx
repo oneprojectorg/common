@@ -128,11 +128,11 @@ export const LinkPreview = memo(
           className="block outline-none"
         >
           {embedHtml ? (
-            // Positioned so an embed that fills a responsive wrapper resolves
-            // against this box rather than the page, and sized here because an
-            // embed arrives at whatever size its provider picked.
+            // Sized here: an embed arrives at whatever size its provider
+            // picked, and the markup that would have scaled it is not markup
+            // we render.
             <div
-              className="relative aspect-video w-full [&_iframe]:size-full"
+              className="aspect-video w-full [&_iframe]:size-full"
               dangerouslySetInnerHTML={{ __html: embedHtml }}
             />
           ) : previewData.thumbnail_url ? (

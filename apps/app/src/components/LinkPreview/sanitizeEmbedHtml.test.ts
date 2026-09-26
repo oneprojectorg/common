@@ -37,6 +37,15 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).not.toContain('padding-bottom');
   });
 
+  it('unwraps an iframe from a wrapper that is not a div', () => {
+    const sanitized = sanitizeEmbedHtml(
+      `<figure><p>${proxiedIframe}</p></figure>`,
+    );
+
+    expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
+    expect(sanitized).not.toContain('<figure');
+  });
+
   it('strips the style and class an embed brought with it', () => {
     const sanitized = sanitizeEmbedHtml(
       '<iframe src="/api/embeds/api/iframe?url=video" class="fixed inset-0 z-50" style="position: fixed; inset: 0; width: 100vw"></iframe>',
