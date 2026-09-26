@@ -67,7 +67,11 @@ export const getLinkPreview = async (
 ): Promise<LinkPreviewResult> => {
   return cache({
     type: 'linkPreview',
-    params: [url],
+    // The shape we ask iframely for is part of what a cached entry holds, so
+    // it belongs in the key: without it, entries written before the switch to
+    // `iframe=1` keep serving markup <LinkPreview> cannot render, for as long
+    // as the TTL below.
+    params: [url, 'iframe'],
     fetch: () => fetchLinkPreview(url),
     options: {
       ttl: LINK_PREVIEW_TTL_MS,

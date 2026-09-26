@@ -22,6 +22,7 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
     expect(sanitized).toContain('allowfullscreen');
     expect(sanitized).toContain('allow="encrypted-media"');
+    expect(sanitized).toContain('loading="lazy"');
   });
 
   it('keeps the responsive wrapper an iframe arrives in, sizing and all', () => {

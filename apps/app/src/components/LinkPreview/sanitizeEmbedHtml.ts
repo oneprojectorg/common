@@ -75,7 +75,13 @@ export const sanitizeEmbedHtml = (
   for (const element of fragment.querySelectorAll(EMBED_SELECTOR)) {
     if (!isRenderableEmbed(element)) {
       element.remove();
+      continue;
     }
+
+    // A feed renders one preview per link, and a plain iframe loads as soon as
+    // it is in the document — the deferral iframely's lazy wrapper used to
+    // give us has to come from the attribute instead.
+    element.setAttribute('loading', 'lazy');
   }
 
   // Inline style is how iframely sizes a responsive embed, so it stays — bar
