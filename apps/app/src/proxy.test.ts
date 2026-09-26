@@ -81,11 +81,9 @@ describe('proxy matcher', () => {
     });
   });
 
-  // `next.config.mjs` serves these a static, nonce-free Content-Security-Policy.
-  // If the matcher also caught them the proxy would add its nonce policy, and
-  // two CSP headers on one response are intersected — a nonce-free policy
-  // intersected with a nonce policy blocks every script on the page. This is
-  // the invariant `csp.mjs` documents; assert it rather than trusting it.
+  // `next.config.mjs` serves these a static, nonce-free policy. If the matcher
+  // caught them too the response would carry two intersected policies, which
+  // blocks every script on the page.
   describe('routes served the static CSP (must NOT match)', () => {
     const STATIC_CSP_PATHS = STATIC_POLICY_SOURCES.map((source) =>
       source.replace('/:path*', ''),

@@ -74,15 +74,9 @@ export const viewport: Viewport = {
 };
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
-  // These reads are load-bearing beyond their own features: awaiting cookies()
-  // and headers() is what keeps every route under this layout rendering per
-  // request. `src/proxy.ts` stamps a per-request Content-Security-Policy nonce
-  // onto those routes, and a prerendered page would carry a build-time nonce
-  // that no later request's header matches — `'strict-dynamic'` then blocks
-  // every script on it, which is a blank page rather than a degraded one.
-  // Moving cookie consent to the client is exactly the change that would do
-  // it. `app/[locale]/layout.tsx` pins that tree with force-dynamic; bare `/`
-  // still depends on this.
+  // Awaiting cookies()/headers() here is what keeps routes under this layout
+  // rendering per request, which the proxy's per-request CSP nonce depends on:
+  // a prerendered page would carry a build-time nonce nothing matches.
   //
   // getMessages() with no locale argument shares getLocale()'s memoized
   // request config, so these can all resolve in parallel.

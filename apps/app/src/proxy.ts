@@ -66,27 +66,19 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const pathname = request.nextUrl.pathname;
 
   // A fresh nonce per request, stamped on the forwarded request headers so
-  // Next's renderer reads it back out and puts it on every script it emits.
-  //
-  // `next.config.mjs` serves /login and /info a static, nonce-free policy.
-  // Case-folding differs between the matcher and header sources, so a request
-  // like /Login reaches both — decline here rather than let the two policies
-  // intersect and block every script on the page.
+  // Next's renderer reads it back out onto every script it emits. Paths
+  // next.config.mjs already covers get nothing here — two policies on one
+  // response are intersected and block every script.
   const applyCsp = isStaticPolicyPath(pathname)
     ? (headers: Headers) => headers
     : createCspHeaderApplier();
 
-  // Rebuilt rather than captured: the Supabase cookie adapter below mutates
-  // `request.cookies` (which writes through to the `cookie` request header) and
-  // then forwards the request again. A snapshot taken up front would send the
-  // pre-refresh cookie, and dropping it would send no nonce at all — which,
-  // under an enforcing policy, is a blank page on exactly the requests that
-  // refresh a token.
+  // Rebuilt per call, not captured: the Supabase cookie adapter below mutates
+  // `request.cookies` and forwards the request again, so a snapshot would send
+  // the pre-refresh cookie and no nonce.
   //
-  // x-pathname / x-search expose the current path and query string to Server
-  // Components (Next doesn't surface them to layouts otherwise) so the
-  // walled-garden gate can build /login?redirect=... and detect the promote
-  // onboarding (?promote=1).
+  // x-pathname / x-search expose the path and query to Server Components, which
+  // Next doesn't surface to layouts otherwise.
   const buildForwardedHeaders = () => {
     const headers = new Headers(request.headers);
     headers.set('x-pathname', pathname);
@@ -122,9 +114,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          // Built after the cookie writes above so the forwarded request
-          // carries the refreshed token, and still carries x-pathname /
-          // x-search / the CSP nonce.
+          // Built after the cookie writes so the forwarded request carries the
+          // refreshed token as well as x-pathname / x-search / the nonce.
           supabaseResponse = NextResponse.next({
             request: { headers: buildForwardedHeaders() },
           });

@@ -7,19 +7,6 @@ import { getLocaleDirection } from '@/lib/i18n/config';
 
 import { LocaleDirSync } from '@/components/LocaleDirSync';
 
-/**
- * Every route the proxy stamps a per-request CSP nonce onto has to render per
- * request. A prerendered page carries a build-time nonce that no later
- * request's header will match, and `'strict-dynamic'` then blocks every
- * script on it — a blank page, not a degraded one. These routes are dynamic
- * today only because the root layout happens to await `cookies()`; pin it so
- * moving that read cannot quietly turn the app off.
- *
- * `app/info` is deliberately `force-static` and sits outside this tree, which
- * is why `next.config.mjs` serves it a nonce-free policy instead.
- */
-export const dynamic = 'force-dynamic';
-
 const AppLayout = async ({
   children,
   params,

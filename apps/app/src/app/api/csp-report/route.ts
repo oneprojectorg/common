@@ -39,10 +39,8 @@ const payloadSchema = z.union([
   z.object({ 'csp-report': cspReportSchema }),
 ]);
 
-// The endpoint is unauthenticated by necessity — the browser posts these with
-// no credentials. Under an enforcing policy a single bad deploy turns one
-// report per blocked script per page load into PostHog events, and the
-// `report-to` batch is an attacker-suppliable array, so cap the fan-out.
+// The `report-to` batch is an attacker-suppliable array and this endpoint is
+// unauthenticated by necessity, so cap the fan-out into PostHog.
 const MAX_REPORTS_PER_REQUEST = 10;
 
 const normalize = (report: CspReport) => ({
@@ -58,21 +56,13 @@ const normalize = (report: CspReport) => ({
   column_number: report['column-number'] ?? report.columnNumber,
 });
 
-/**
- * A real report is well under a kilobyte. The endpoint is unauthenticated by
- * necessity — the browser posts these with no credentials — so refuse an
- * oversized body before `json()` buffers it rather than after.
- */
+/** A real report is well under a kilobyte. */
 const MAX_BODY_BYTES = 64_000;
 
 export async function POST(request: NextRequest): Promise<Response> {
-  // Two checks, because neither is sufficient alone. An honest client declares
-  // its length and is refused before anything is buffered; a chunked or
-  // header-less body has nothing to check up front, so it is measured after
-  // the read and refused before it is parsed. Rejecting a *missing*
-  // content-length outright would be worse than the overrun it prevents —
-  // it would silently drop every report from any client or intermediary that
-  // omits the header, which is the whole channel this endpoint exists for.
+  // A declared oversize is refused before buffering; a chunked or header-less
+  // body is measured after the read. Rejecting a missing content-length
+  // outright would silently drop reports from any client that omits it.
   const declaredLength = request.headers.get('content-length');
   if (declaredLength !== null && Number(declaredLength) > MAX_BODY_BYTES) {
     return new Response(null, { status: 413 });

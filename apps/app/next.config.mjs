@@ -130,20 +130,9 @@ const config = {
     return config;
   },
   async headers() {
-    // Content-Security-Policy is emitted in two places, and never both on the
-    // same response:
-    //
-    //  - `src/proxy.ts` mints a per-request nonce and emits the strict
-    //    `'nonce-…' 'strict-dynamic'` policy. That covers every dynamically
-    //    rendered route, which is everything its `config.matcher` catches.
-    //  - the rule below covers the HTML routes the matcher deliberately skips.
-    //    `/info/*` is `force-static`, so its HTML is built once with no request
-    //    to mint a nonce from; `/login` sits outside `app/[locale]`, so routing
-    //    it through the proxy would send it through the locale redirect. Both
-    //    keep the script allowance they already run under.
-    //
-    // `src/lib/csp.mjs` owns both, including which header name CSP_MODE
-    // selects, so a disposition cannot apply to only half the responses.
+    // The nonce policy is emitted per request by `src/proxy.ts`; this covers
+    // the HTML routes its matcher skips. `src/lib/csp.mjs` owns both, header
+    // name included, so CSP_MODE can't apply to only half the responses.
     const staticCspHeader = getStaticCspHeader();
 
     return [
@@ -195,8 +184,7 @@ const config = {
           },
         ],
       },
-      // The HTML routes `src/proxy.ts` does not match. It declines to add its
-      // own policy on these paths (`isStaticPolicyPath`), so nothing gets two.
+      // The proxy declines these (`isStaticPolicyPath`), so nothing gets two.
       ...STATIC_POLICY_SOURCES.map((source) => ({
         source,
         headers: [staticCspHeader],

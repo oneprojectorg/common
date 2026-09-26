@@ -21,10 +21,8 @@ const parseDirectives = (policy: string) =>
 const deployed = { isLocalEnvironment: false };
 
 /**
- * The directives the app ran under before this policy became enforcing. A
- * directive dropped from this list stops being a policy change and starts
- * being an outage: `default-src 'self'` takes over and blanks link-preview
- * iframes, blob: image previews, and every remote avatar.
+ * Dropping any of these is an outage, not a policy change: `default-src 'self'`
+ * takes over and blanks embeds, blob: previews and every remote avatar.
  */
 const REQUIRED_DIRECTIVES = [
   'default-src',
@@ -62,19 +60,13 @@ describe('buildNonceContentSecurityPolicy', () => {
   });
 
   it("keeps https: and 'unsafe-inline' as pre-CSP3 fallbacks only", () => {
-    // A browser that understands 'strict-dynamic' ignores both; one that does
-    // not ignores the nonce and needs them. Dropping them locks out the
-    // latter, keeping them does not weaken the former.
     expect(directives.get('script-src')).toEqual(
       expect.arrayContaining(['https:', "'unsafe-inline'"]),
     );
   });
 
   it("carries 'unsafe-eval', which ajv forces", () => {
-    // packages/common/src/services/decision/schemaValidator.ts compiles
-    // database-authored JSON schemas in the browser with Function(...), and
-    // ajv throws rather than degrading. Dropping this blanks every proposal,
-    // review and process-builder form. Pinned so the cost stays visible.
+    // Pinned so the cost stays visible; see csp.mjs for why it cannot go.
     expect(directives.get('script-src')).toContain("'unsafe-eval'");
   });
 
@@ -96,8 +88,6 @@ describe('buildStaticContentSecurityPolicy', () => {
   const directives = parseDirectives(policy);
 
   it('omits the nonce and strict-dynamic, which prerendered HTML cannot carry', () => {
-    // These routes are built once, with no request to mint a nonce from.
-    // 'strict-dynamic' here would block every script on the page.
     expect(policy).not.toContain('nonce-');
     expect(policy).not.toContain("'strict-dynamic'");
   });
@@ -109,8 +99,6 @@ describe('buildStaticContentSecurityPolicy', () => {
   });
 
   it("does not carry 'unsafe-eval'", () => {
-    // The login screen and the static legal pages never reach the
-    // decision-schema validator that forces it on the nonce policy.
     expect(policy).not.toContain("'unsafe-eval'");
   });
 
@@ -130,9 +118,6 @@ describe('buildStaticContentSecurityPolicy', () => {
 });
 
 describe('cleartext backends', () => {
-  // The dev server and the e2e stack reach the tRPC API over http://localhost
-  // and Supabase realtime over ws://127.0.0.1. A deployed environment must
-  // not, or the policy leaves a cleartext exfiltration channel open.
   const connectSrc = (
     build: (params: { nonce: string; isLocalEnvironment: boolean }) => string,
     isLocalEnvironment: boolean,
@@ -155,7 +140,6 @@ describe('cleartext backends', () => {
 
 describe('createCspNonce', () => {
   it("matches Next's nonce grammar so the renderer reads it back", () => {
-    // Mirrors the regex in next/dist/server/app-render/get-script-nonce-from-header.
     expect(createCspNonce()).toMatch(/^[A-Za-z0-9+/_-]+={0,2}$/);
   });
 
@@ -165,9 +149,8 @@ describe('createCspNonce', () => {
 });
 
 describe('isStaticPolicyPath', () => {
-  // The proxy asks this before adding its own policy. A false negative gives a
-  // response two intersected policies and blocks every script on the page; a
-  // false positive leaves it with none.
+  // A false negative gives a response two intersected policies and blocks every
+  // script; a false positive leaves it with none.
   it.each([
     '/login',
     '/login/',
@@ -200,11 +183,8 @@ describe('isStaticPolicyPath', () => {
 });
 
 describe('the cleartext decision the emitters actually make', () => {
-  // The builders above take `isLocalEnvironment` as a parameter, so none of
-  // them executes the predicate that decides it in production. That predicate
-  // has been wrong twice: `!VERCEL_ENV` read any non-Vercel build as local and
-  // shipped `http:` to production, and `NODE_ENV` disagreed between the two
-  // emitters. Drive it through the real entry point.
+  // The builders take `isLocalEnvironment` as a parameter, so nothing above
+  // executes the predicate that decides it in production. Drive it for real.
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -238,9 +218,7 @@ describe('getStaticCspHeader', () => {
   });
 
   it('names the report-only header under CSP_MODE=report-only', () => {
-    // The rollback lever has to reach the static routes too: when this was
-    // hardcoded, report-only silenced the proxy policy while /login and
-    // /info kept enforcing.
+    // The rollback lever has to reach the static routes too.
     vi.stubEnv('CSP_MODE', 'report-only');
 
     expect(getStaticCspHeader().key).toBe(

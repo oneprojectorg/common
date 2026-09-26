@@ -1,62 +1,34 @@
 /**
- * Content-Security-Policy construction.
+ * Content-Security-Policy construction, shared by the two places that emit it:
+ * `src/proxy.ts` for dynamically rendered routes, `next.config.mjs` for the
+ * routes it skips. Plain `.mjs` so `next.config.mjs` can import it before any
+ * TypeScript transform runs.
  *
- * Plain `.mjs` (not `.ts`) because `next.config.mjs` is loaded by Node as ESM
- * before any TypeScript transform runs, and it needs the same policy the proxy
- * uses. This module owns the whole header contract — name and value — so a
- * disposition or a directive cannot apply to only half the app's responses.
- *
- * Two policy shapes, because two kinds of route:
- *
- * - Dynamically rendered routes get a nonce. The proxy mints one per request
- *   and puts the policy on the *request* headers; Next reads it back out
- *   (`getScriptNonceFromHeader`) and stamps that nonce on every script it
- *   emits, so `'strict-dynamic'` can carry trust to the chunks and
- *   third-party scripts those bootstrap scripts inject.
- * - Routes that cannot carry a nonce get the static policy — `/info/*`
- *   because it is prerendered, so its HTML is built once with no request to
- *   mint a nonce from and a per-request nonce would never match it; `/login`
- *   for a routing reason rather than a rendering one (see below).
- *
- * `STATIC_POLICY_SOURCES` names the routes on that second path. No response
- * may carry both policies: two Content-Security-Policy headers are
- * intersected, and a nonce-free policy intersected with a nonce policy blocks
- * every script on the page. `proxy.test.ts` asserts the declared patterns do
- * not overlap, but that is not enough on its own — Next compiles
- * `config.matcher` case-sensitively and matches `headers()` sources
- * case-insensitively, so `/Login` reaches both. `isStaticPolicyPath` is the
- * authority: the proxy asks it and declines rather than trusting the patterns.
+ * No response may carry both policies — two CSP headers are intersected, and a
+ * nonce-free policy intersected with a nonce policy blocks every script.
  */
 
 const CSP_REPORT_PATH = '/api/csp-report';
-
-/** Group name shared by the `report-to` directive and `Reporting-Endpoints`. */
 const CSP_REPORT_GROUP = 'csp-endpoint';
 
 export const REPORTING_ENDPOINTS_HEADER = `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`;
 
 /**
- * The HTML route trees served the static policy. `/info/*` is `force-static`;
- * `/login` sits outside `app/[locale]`, so routing it through the proxy would
- * send it through the locale redirect to an `/en/login` that does not exist.
+ * Routes served the static policy. `/info/*` is `force-static`, so its HTML is
+ * built once with no request to mint a nonce from; `/login` sits outside
+ * `app/[locale]`, so the proxy would redirect it to a nonexistent `/en/login`.
  */
 const STATIC_POLICY_PREFIXES = ['/login', '/info'];
 
-/** The same trees as `next.config.mjs` header sources. */
 export const STATIC_POLICY_SOURCES = STATIC_POLICY_PREFIXES.map(
   (prefix) => `${prefix}/:path*`,
 );
 
 /**
- * Whether `next.config.mjs` already serves this path the static policy.
- *
- * The proxy checks this and declines to add its own. Matching here rather
- * than trusting the two pattern languages to stay disjoint: `next start`
- * matches `headers()` sources case-insensitively while `config.matcher` is
- * case-sensitive, so `/Login` reaches both emitters. (On Vercel the header
- * regex is applied from `routes-manifest.json` without the `i` flag, so
- * `/Login` instead reaches neither — harmless, because a path with no locale
- * prefix is redirected before anything renders.)
+ * Whether `next.config.mjs` already covers this path, so the proxy can decline.
+ * Matched here rather than trusting the two patterns to stay disjoint: Next
+ * compiles `config.matcher` case-sensitively but matches `headers()` sources
+ * case-insensitively, so `/Login` reaches both.
  *
  * @param {string} pathname
  * @returns {boolean}
@@ -70,79 +42,38 @@ export const isStaticPolicyPath = (pathname) => {
 };
 
 /**
- * Whether this build talks to its backends over cleartext.
- *
- * Deployed, the tRPC API, Supabase and *.collab.tiptap.cloud are all
- * https/wss. Locally they are not — the API answers on http://localhost and
- * Supabase realtime on ws://127.0.0.1 — so `connect-src` has to admit
- * cleartext there, and must never admit it anywhere else.
- *
- * Asking whether the backends are cleartext, rather than trying to recognise
- * the environment, is what makes this both fail-closed and hard to get wrong.
- * `NODE_ENV` disagrees across the two emitters (Next inlines it into the
- * proxy bundle at build, `next.config.mjs` reads the ambient value) and would
- * have blocked tRPC on a production build run against the local stack;
- * `!VERCEL_ENV` read any build without that variable — a container, CI
- * without system env vars, a move off Vercel — as local and shipped `http:`
- * to production. `NEXT_PUBLIC_SUPABASE_URL` is required, is inlined
- * identically for both emitters, and is cleartext exactly when the rest of
- * the local stack is.
- *
- * The one configuration this does not describe is a dev server pointed at a
- * hosted Supabase while the API still answers on http://localhost — the tRPC
- * origin comes from `OPURLConfig`, not from this variable, so the policy
- * would block it. Nothing in the repo sets that up today.
+ * Locally the API answers on http://localhost and Supabase realtime on
+ * ws://127.0.0.1, so `connect-src` has to admit cleartext — and must never
+ * admit it anywhere else. Keyed on whether the backend is cleartext rather
+ * than on the environment, which fails closed and is inlined identically for
+ * both emitters.
  */
 const isLocalEnvironment = () =>
   process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http://') ?? false;
 
-/**
- * `CSP_MODE=report-only` switches disposition at deploy time, so a policy that
- * breaks production is an environment change plus a redeploy rather than a
- * revert. `next.config.mjs` reads it at build time, so the static half of the
- * app picks up a change only on rebuild.
- *
- * There is deliberately no "off": report-only already stops the policy
- * blocking anything, and keeps the violation reports that say why.
- */
+/** `CSP_MODE=report-only` is the rollback lever: same policy, nothing blocked. */
 const getCspHeaderName = () =>
   process.env.CSP_MODE === 'report-only'
     ? 'content-security-policy-report-only'
     : 'content-security-policy';
 
 /**
- * The one script escape hatch the nonce policy keeps open.
- *
- * `packages/common/src/services/decision/schemaValidator.ts` runs ajv in the
- * browser to validate proposals against the JSON schema stored on their
- * decision process. ajv compiles every schema with `Function(...)` and has no
- * interpreted fallback — it throws — and the schemas are authored per process
- * and read from the database, so ajv's precompiled standalone mode does not
- * apply. Dropping this blanks every proposal, review and process-builder form.
- *
- * It costs less than it looks: `'unsafe-eval'` matters when attacker input
- * reaches an eval sink, and the nonce plus `'strict-dynamic'` is what stops an
- * injected `<script>` running at all. The way to close it is to replace the
- * ajv-backed validator with one that interprets schemas rather than compiling
- * them, not to tighten the directive.
+ * `schemaValidator.ts` runs ajv in the browser against JSON schemas stored per
+ * decision process. ajv compiles with `Function(...)` and throws rather than
+ * degrading, and database-authored schemas rule out its precompiled mode, so
+ * dropping this blanks every proposal, review and process-builder form.
  */
 const UNSAFE_EVAL = "'unsafe-eval'";
 
-/**
- * Directives that do not depend on how scripts are trusted. Kept in one place
- * so the nonce policy and the static policy cannot drift apart.
- *
- * @param {{ isLocalEnvironment: boolean }} params
- */
+/** @param {{ isLocalEnvironment: boolean }} params */
 const buildSharedDirectives = ({ isLocalEnvironment }) => [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
   "form-action 'self'",
   "object-src 'none'",
-  // React inline `style` attributes are used throughout the app, and Next
-  // injects inline <style> in development. Style injection is not the attack
-  // this policy is defending against.
+  // React `style={{}}` attributes are everywhere; style injection is not the
+  // attack this policy defends against.
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
@@ -151,8 +82,8 @@ const buildSharedDirectives = ({ isLocalEnvironment }) => [
   "worker-src 'self' blob:",
   // Iframely link previews render cross-origin <iframe>s.
   "frame-src 'self' https:",
-  // `report-uri` is deprecated but remains the only channel Firefox honors;
-  // Chromium uses `report-to`, paired with the `Reporting-Endpoints` header.
+  // report-uri is the only channel Firefox honors; Chromium uses report-to,
+  // paired with the Reporting-Endpoints header.
   `report-uri ${CSP_REPORT_PATH}`,
   `report-to ${CSP_REPORT_GROUP}`,
 ];
@@ -168,11 +99,8 @@ const assemble = (scriptSources, { isLocalEnvironment }) =>
   ].join('; ');
 
 /**
- * Strict CSP for dynamically rendered routes.
- *
- * `https:` and `'unsafe-inline'` are deliberate fallbacks, not weakening: a
- * browser that understands `'strict-dynamic'` ignores both, and one that does
- * not ignores the nonce and falls back to the host allowlist.
+ * `https:` and `'unsafe-inline'` are pre-CSP3 fallbacks, not weakening: a
+ * browser honouring `'strict-dynamic'` ignores both.
  *
  * @param {{ nonce: string, isLocalEnvironment: boolean }} params
  */
@@ -192,19 +120,9 @@ export const buildNonceContentSecurityPolicy = ({
   );
 
 /**
- * CSP for prerendered routes, whose scripts carry no nonce.
- *
- * `'unsafe-inline'` is required here: the HTML was built without a nonce, so
- * Next's bootstrap scripts are plain inline scripts. No `'unsafe-eval'` —
- * these routes are the login screen and static legal text, and none of them
- * reaches the decision-schema validator that forces it elsewhere.
- *
- * Denying it does cost one violation report per page load: zod probes
- * `new Function('')` once to decide whether to JIT its object parsers and
- * falls back to an interpreted path when that throws. The page is unaffected.
- * Granting eval on the login screen to quiet a report the browser is right to
- * send is the wrong trade; if the volume needs cutting, sample at
- * `app/api/csp-report`.
+ * Prerendered HTML has no nonce, so its bootstrap scripts need
+ * `'unsafe-inline'`. No `'unsafe-eval'` — these routes never reach the
+ * decision-schema validator.
  *
  * @param {{ isLocalEnvironment: boolean }} params
  */
@@ -213,17 +131,14 @@ export const buildStaticContentSecurityPolicy = ({ isLocalEnvironment }) =>
     [
       "'self'",
       "'unsafe-inline'",
-      // posthog-js loads its recorder through the /stats rewrite, but falls
-      // back to the asset host directly if the proxy path is unavailable.
+      // posthog-js falls back to the asset host when the /stats rewrite is
+      // unavailable.
       'https://eu-assets.i.posthog.com',
     ],
     { isLocalEnvironment },
   );
 
-/**
- * 16 random bytes, base64. Matches Next's nonce grammar
- * (`/^'nonce-([A-Za-z0-9+/_-]+={0,2})'$/`).
- */
+/** Matches Next's nonce grammar in `get-script-nonce-from-header`. */
 export const createCspNonce = () => {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -231,12 +146,7 @@ export const createCspNonce = () => {
   return btoa(String.fromCharCode(...bytes));
 };
 
-/**
- * The header for a prerendered route, for `next.config.mjs` to serve over
- * `STATIC_POLICY_SOURCES`.
- *
- * @returns {{ key: string, value: string }}
- */
+/** @returns {{ key: string, value: string }} */
 export const getStaticCspHeader = () => ({
   key: getCspHeaderName(),
   value: buildStaticContentSecurityPolicy({
@@ -245,11 +155,8 @@ export const getStaticCspHeader = () => ({
 });
 
 /**
- * One request's policy, as a function that stamps it onto a `Headers`.
- *
- * The proxy applies the same policy twice — to the headers it forwards to the
- * renderer and to the response it returns — and both must carry the identical
- * nonce, so the nonce is minted once here and closed over.
+ * The proxy stamps the same policy on the forwarded request headers and on the
+ * response, so the nonce is minted once here and closed over.
  *
  * @returns {(headers: Headers) => Headers}
  */
