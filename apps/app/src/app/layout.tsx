@@ -74,6 +74,10 @@ export const viewport: Viewport = {
 };
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
+  // Awaiting cookies()/headers() here is what keeps routes under this layout
+  // rendering per request, which the proxy's per-request CSP nonce depends on:
+  // a prerendered page would carry a build-time nonce nothing matches.
+  //
   // getMessages() with no locale argument shares getLocale()'s memoized
   // request config, so these can all resolve in parallel.
   const [ssrCookies, locale, messages, consentRequired] = await Promise.all([

@@ -8,9 +8,54 @@ import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
+import { createCspHeaderApplier, isStaticPolicyPath } from './lib/csp.mjs';
 import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
+
+// Skip the domain on preview URLs, which use host-only cookies.
+const shouldSetCookieDomain =
+  (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
+  !isOnPreviewAppDomain;
+
+/** The locale the path is prefixed with, or undefined when it carries none. */
+const findPathLocale = (pathname: string) =>
+  i18nConfig.locales.find(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+  );
+
+/**
+ * Refreshes the NEXT_LOCALE preference cookie when the URL's locale differs
+ * from what the browser last sent, returning null when there is nothing to
+ * set — in which case the caller starts from a plain forwarded response.
+ */
+const buildLocaleCookieResponse = (
+  request: NextRequest,
+  currentLocale: string | undefined,
+  forwardedHeaders: Headers,
+): NextResponse | null => {
+  if (!currentLocale) {
+    return null;
+  }
+
+  if (request.cookies.get('NEXT_LOCALE')?.value === currentLocale) {
+    return null;
+  }
+
+  const response = NextResponse.next({
+    request: { headers: forwardedHeaders },
+  });
+
+  response.cookies.set('NEXT_LOCALE', currentLocale, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+    secure: useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
+    sameSite: 'lax',
+    ...(shouldSetCookieDomain ? { domain: cookieOptionsDomain } : {}),
+  });
+
+  return response;
+};
 
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Log request
@@ -20,61 +65,35 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
 
-  // Expose the current path (and query string) to Server Components (Next
-  // doesn't surface them to layouts otherwise) so the walled-garden gate can
-  // build /login?redirect=... and detect the promote onboarding (?promote=1).
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-pathname', pathname);
-  requestHeaders.set('x-search', request.nextUrl.search);
+  // A fresh nonce per request, stamped on the forwarded request headers so
+  // Next's renderer reads it back out onto every script it emits. Paths
+  // next.config.mjs already covers get nothing here — two policies on one
+  // response are intersected and block every script.
+  const applyCsp = isStaticPolicyPath(pathname)
+    ? (headers: Headers) => headers
+    : createCspHeaderApplier();
 
-  const pathnameIsMissingLocale = i18nConfig.locales.every(
-    (locale) =>
-      !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
-  );
+  // Rebuilt per call, not captured: the Supabase cookie adapter below mutates
+  // `request.cookies` and forwards the request again, so a snapshot would send
+  // the pre-refresh cookie and no nonce.
+  //
+  // x-pathname / x-search expose the path and query to Server Components, which
+  // Next doesn't surface to layouts otherwise.
+  const buildForwardedHeaders = () => {
+    const headers = new Headers(request.headers);
+    headers.set('x-pathname', pathname);
+    headers.set('x-search', request.nextUrl.search);
+
+    return applyCsp(headers);
+  };
+
+  const currentLocale = findPathLocale(pathname);
 
   // Set locale cookie if URL contains a locale (for preference learning)
-  let localeResponse: NextResponse | null = null;
-  if (!pathnameIsMissingLocale && !pathname.startsWith('/api')) {
-    const currentLocale = i18nConfig.locales.find(
-      (locale) =>
-        pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
-    );
-
-    if (currentLocale) {
-      const existingLocaleCookie = request.cookies.get('NEXT_LOCALE')?.value;
-
-      // Only set cookie if it's different from current cookie value
-      if (existingLocaleCookie !== currentLocale) {
-        localeResponse = NextResponse.next({
-          request: { headers: requestHeaders },
-        });
-
-        // Set the locale cookie with proper domain options
-        // Skip domain on preview URLs (use host-only cookies)
-        const shouldSetCookieDomain =
-          (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
-          !isOnPreviewAppDomain;
-        localeResponse.cookies.set('NEXT_LOCALE', currentLocale, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 365, // 1 year
-          secure:
-            useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
-          sameSite: 'lax',
-          ...(shouldSetCookieDomain ? { domain: cookieOptionsDomain } : {}),
-        });
-      }
-    }
-  }
-
+  const forwardedHeaders = buildForwardedHeaders();
   let supabaseResponse =
-    localeResponse ||
-    NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-  // Skip domain on preview URLs (use host-only cookies)
-  const shouldSetCookieDomain =
-    (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
-    !isOnPreviewAppDomain;
+    buildLocaleCookieResponse(request, currentLocale, forwardedHeaders) ||
+    NextResponse.next({ request: { headers: forwardedHeaders } });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -95,8 +114,10 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
+          // Built after the cookie writes so the forwarded request carries the
+          // refreshed token as well as x-pathname / x-search / the nonce.
           supabaseResponse = NextResponse.next({
-            request,
+            request: { headers: buildForwardedHeaders() },
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
@@ -118,7 +139,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // preserved for anonymous visitors so `app/page.tsx` (ComingSoonScreen) keeps
   // rendering instead of bouncing through the walled-garden gate.
   const shouldRouteI18n =
-    pathnameIsMissingLocale &&
+    !currentLocale &&
     !pathname.startsWith('/api') &&
     (isAuthenticated || pathname !== '/');
   if (shouldRouteI18n) {
@@ -133,6 +154,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       response.cookies.set(cookie);
     });
+
+    applyCsp(response.headers);
 
     return response;
   }
@@ -149,6 +172,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   //    return myNewResponse
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
+  applyCsp(supabaseResponse.headers);
+
   return supabaseResponse;
 }
 
