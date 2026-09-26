@@ -140,7 +140,11 @@ export {
   processStatusEnum,
 } from './tables/processInstances.sql';
 export type { ProcessInstance } from './tables/processInstances.sql';
-export { processPhases } from './tables/processPhases.sql';
+export {
+  PhaseAudience,
+  phaseAudienceEnum,
+  processPhases,
+} from './tables/processPhases.sql';
 export type { ProcessPhase } from './tables/processPhases.sql';
 
 export {

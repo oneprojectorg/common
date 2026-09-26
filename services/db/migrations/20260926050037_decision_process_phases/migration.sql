@@ -1,8 +1,10 @@
+CREATE TYPE "phase_audience" AS ENUM('open', 'invite_only');--> statement-breakpoint
 CREATE TABLE "decision_process_phases" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"process_instance_id" uuid NOT NULL,
 	"sort_order" integer NOT NULL,
 	"profile_id" uuid NOT NULL,
+	"audience" "phase_audience" DEFAULT 'invite_only'::"phase_audience" NOT NULL,
 	"data" jsonb DEFAULT '{}' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
 	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
