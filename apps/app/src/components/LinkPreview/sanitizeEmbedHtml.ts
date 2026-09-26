@@ -13,17 +13,25 @@ const EMBED_VIEW_PATH = `${EMBED_PROXY_PATH}/api/iframe`;
 // executes — no <script>, no event handlers, no <object>/<embed>.
 const ALLOWED_TAGS = ['a', 'div', 'figure', 'iframe', 'p', 'section', 'span'];
 
-// No `class` and no `style`: the card sizes the embed, and both are how an
-// embed would size or position itself over the page instead — the app's own
-// utilities ship in the stylesheet the embed renders against.
+// No `class` and no `style`: both are how an embed would size or position
+// itself over the page rather than inside its card, and the app's own
+// utilities ship in the stylesheet it renders against. `width` and `height`
+// are read for the embed's ratio and then dropped. `title` stays where
+// `aria-label` does not: a frame needs an accessible name, and this is the
+// provider's own page title — the string the card already prints beneath it.
 const ALLOWED_ATTR = [
   'allow',
   'allowfullscreen',
+  'height',
   'loading',
   'referrerpolicy',
   'src',
   'title',
+  'width',
 ];
+
+// What the card falls back to when an embed declares no usable size.
+const DEFAULT_ASPECT_RATIO = '16 / 9';
 
 /**
  * Sanitizes Iframely embed HTML for rendering via `dangerouslySetInnerHTML`.
@@ -75,6 +83,7 @@ export const sanitizeEmbedHtml = (
   // it is in the document — the deferral iframely's lazy wrapper used to give
   // us has to come from the attribute instead.
   embed.setAttribute('loading', 'lazy');
+  setAspectRatio(embed);
 
   // The embed alone, out of whatever iframely wrapped it in: a wrapper sized
   // by a padding hack needs embed.js's stylesheet to hold its iframe, and the
@@ -83,6 +92,24 @@ export const sanitizeEmbedHtml = (
   container.replaceChildren(embed);
 
   return container.innerHTML;
+};
+
+/**
+ * The provider's own dimensions are the ratio it wants to be seen at — a
+ * player is nothing like a video — and they are all that is left of the
+ * sizing once the wrapper is gone. They become a ratio the card can scale to
+ * its width, written as our own style rather than kept as the embed's.
+ */
+const setAspectRatio = (embed: Element) => {
+  const width = Number(embed.getAttribute('width'));
+  const height = Number(embed.getAttribute('height'));
+
+  embed.removeAttribute('width');
+  embed.removeAttribute('height');
+  embed.setAttribute(
+    'style',
+    `aspect-ratio: ${width > 0 && height > 0 ? `${width} / ${height}` : DEFAULT_ASPECT_RATIO}`,
+  );
 };
 
 /**

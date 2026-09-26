@@ -128,11 +128,11 @@ export const LinkPreview = memo(
           className="block outline-none"
         >
           {embedHtml ? (
-            // Sized here: an embed arrives at whatever size its provider
-            // picked, and the markup that would have scaled it is not markup
-            // we render.
+            // The embed scales to the card's width at the ratio the
+            // sanitizer read off it, rather than to the 16:9 box the loading
+            // and thumbnail states use — a player is nothing like a video.
             <div
-              className="aspect-video w-full [&_iframe]:size-full"
+              className="w-full [&_iframe]:h-auto [&_iframe]:w-full"
               dangerouslySetInnerHTML={{ __html: embedHtml }}
             />
           ) : previewData.thumbnail_url ? (

@@ -6,7 +6,7 @@ import { sanitizeEmbedHtml } from './sanitizeEmbedHtml';
 // The embed shape the app can render: an iframe on our own proxy, which
 // `getLinkPreview` has already rewritten the iframely CDN host into.
 const proxiedIframe =
-  '<iframe src="/api/embeds/api/iframe?url=video" allowfullscreen allow="encrypted-media" title="A video"></iframe>';
+  '<iframe src="/api/embeds/api/iframe?url=video" width="640" height="360" allowfullscreen allow="encrypted-media" title="A video"></iframe>';
 
 // Iframely's other shape: a wrapper whose anchor embed.js would expand in
 // place, which it cannot do once the URL is proxy-relative.
@@ -46,6 +46,24 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).not.toContain('<figure');
   });
 
+  it('carries the provider dimensions over as a ratio', () => {
+    const sanitized = sanitizeEmbedHtml(
+      '<iframe src="/api/embeds/api/iframe?url=video" width="300" height="152"></iframe>',
+    );
+
+    expect(sanitized).toContain('aspect-ratio: 300 / 152');
+    expect(sanitized).not.toContain('width=');
+    expect(sanitized).not.toContain('height=');
+  });
+
+  it('falls back to 16:9 when the embed declares no usable size', () => {
+    expect(
+      sanitizeEmbedHtml(
+        '<iframe src="/api/embeds/api/iframe?url=video" width="100%"></iframe>',
+      ),
+    ).toContain('aspect-ratio: 16 / 9');
+  });
+
   it('keeps one embed out of markup carrying several', () => {
     const sanitized = sanitizeEmbedHtml(
       `${proxiedIframe}<iframe src="/api/embeds/api/iframe?url=other"></iframe>`,
@@ -61,7 +79,7 @@ describe('sanitizeEmbedHtml', () => {
     );
 
     expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
-    expect(sanitized).not.toContain('style');
+    expect(sanitized).not.toContain('position');
     expect(sanitized).not.toContain('class');
   });
 
