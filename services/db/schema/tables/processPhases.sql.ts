@@ -1,9 +1,31 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, jsonb, pgTable, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import {
+  autoId,
+  enumToPgEnum,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
+
+export enum PhaseAudience {
+  OPEN = 'open',
+  INVITE_ONLY = 'invite_only',
+}
+
+export const phaseAudienceEnum = pgEnum(
+  'phase_audience',
+  enumToPgEnum(PhaseAudience),
+);
 
 export const processPhases = pgTable(
   'decision_process_phases',
@@ -25,6 +47,12 @@ export const processPhases = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
+
+    // Read on every participation check (ADR 0006), so it fails closed by
+    // construction: never absent, and invite-only unless set.
+    audience: phaseAudienceEnum('audience')
+      .notNull()
+      .default(PhaseAudience.INVITE_ONLY),
 
     data: jsonb()
       .notNull()

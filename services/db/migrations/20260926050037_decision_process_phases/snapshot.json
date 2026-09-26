@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "39984800-9a35-40c5-b14c-885e0cc3e3a9",
+  "id": "2cab3421-8dd9-43da-ab31-37b48653095e",
   "prevIds": [
     "9d550a88-abe5-49fe-9a2c-52c4e6489f6d"
   ],
@@ -88,6 +88,15 @@
         "other"
       ],
       "name": "org_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "open",
+        "invite_only"
+      ],
+      "name": "phase_audience",
       "entityType": "enums",
       "schema": "public"
     },
@@ -4485,6 +4494,19 @@
       "generated": null,
       "identity": null,
       "name": "profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_phases"
+    },
+    {
+      "type": "phase_audience",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'invite_only'",
+      "generated": null,
+      "identity": null,
+      "name": "audience",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_process_phases"
