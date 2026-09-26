@@ -1,5 +1,6 @@
 'use client';
 
+import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
@@ -70,6 +71,7 @@ const ProfileMenuRow = ({
   }) => void;
 }) => {
   const { user } = useRequiredUser();
+  const canLinkToProfile = useCanLinkToProfile();
   const router = useRouter();
   const utils = trpc.useUtils();
   const switchProfile = trpc.account.switchProfile.useMutation({
@@ -82,6 +84,11 @@ const ProfileMenuRow = ({
     },
   });
   const isCurrent = user.currentProfile?.id === profile.id;
+  // Selecting the current profile does one thing: navigate to its `/profile` or
+  // `/org` page. Both live in the walled garden, so a viewer who isn't a network
+  // member only lands on the forbidden screen. Don't offer the row as a control
+  // at all — switching to a *different* profile stays available either way.
+  const isInteractive = !isCurrent || canLinkToProfile;
 
   const handleSelect = () => {
     if (isCurrent) {
@@ -106,7 +113,8 @@ const ProfileMenuRow = ({
   };
 
   const className = cn(
-    'group/row grid h-auto w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-4 rounded-lg border p-4 text-start outline-none hover:border-input hover:bg-muted',
+    'group/row grid h-auto w-full grid-cols-[1fr_auto] items-center gap-4 rounded-lg border p-4 text-start outline-none',
+    isInteractive && 'cursor-pointer hover:border-input hover:bg-muted',
     isCurrent ? 'border-accent-foreground bg-accent' : 'border-border',
   );
 
@@ -129,9 +137,16 @@ const ProfileMenuRow = ({
         titleClassName="font-normal"
         description={description}
       />
-      <LuChevronRight className="size-4 rtl:-scale-x-100" />
+      {/* The chevron reads as "this navigates" — drop it when nothing happens. */}
+      {isInteractive ? (
+        <LuChevronRight className="size-4 rtl:-scale-x-100" />
+      ) : null}
     </>
   );
+
+  if (!isInteractive) {
+    return <div className={className}>{content}</div>;
+  }
 
   if (asMenuItem) {
     return (

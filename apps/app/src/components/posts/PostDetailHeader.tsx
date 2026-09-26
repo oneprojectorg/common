@@ -1,6 +1,8 @@
 'use client';
 
 import { ClientOnly } from '@/utils/ClientOnly';
+import { useUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -16,6 +18,13 @@ import { CreateMenu } from '../SiteHeader/CreateMenu';
 
 export const PostDetailHeader = () => {
   const t = useTranslations();
+  const { user } = useUser();
+  // Both controls are account-only: CreateMenu and UserAvatarMenu call
+  // `useRequiredUser`, and the avatar menu's profile rows navigate to
+  // `/profile/[slug]` — a walled-garden route that bounces logged-out and
+  // anonymous visitors to /login. Same gate the other public-capable headers
+  // apply (ProposalEditorHeader, ReviewNavbar).
+  const canInteract = userCanInteract(user);
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
       <div className="flex items-center gap-3">
@@ -38,21 +47,23 @@ export const PostDetailHeader = () => {
 
       <div className="flex items-center justify-end gap-2">
         <ClientOnly>
-          <CreateMenu />
+          {canInteract && <CreateMenu />}
           <LocaleChooser />
-          <ErrorBoundary
-            fallback={
-              <div className="size-8 rounded-full border bg-white shadow" />
-            }
-          >
-            <Suspense
+          {canInteract && (
+            <ErrorBoundary
               fallback={
-                <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                <div className="size-8 rounded-full border bg-white shadow" />
               }
             >
-              <UserAvatarMenu />
-            </Suspense>
-          </ErrorBoundary>
+              <Suspense
+                fallback={
+                  <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                }
+              >
+                <UserAvatarMenu />
+              </Suspense>
+            </ErrorBoundary>
+          )}
         </ClientOnly>
       </div>
     </header>
