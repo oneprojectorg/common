@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Spinner } from '@op/sense/Spinner';
 import { cn } from '@op/sense/lib/utils';
+import DOMPurify from 'dompurify';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
@@ -34,6 +35,15 @@ function getDomain(url: string): string {
   } catch {
     return url;
   }
+}
+
+function sanitizeHtml(html: string | null | undefined): string {
+  return html
+    ? DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['span', 'p'],
+        ALLOWED_ATTR: ['class'],
+      })
+    : '';
 }
 
 export const LinkPreview = memo(
@@ -136,7 +146,7 @@ export const LinkPreview = memo(
           {previewData.html ? (
             <div
               className="aspect-video w-full"
-              dangerouslySetInnerHTML={{ __html: previewData.html }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(previewData.html) }}
             />
           ) : previewData.thumbnail_url ? (
             <div className="aspect-video w-full">
