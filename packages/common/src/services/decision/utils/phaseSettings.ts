@@ -42,6 +42,35 @@ export function isVotingPhase(phase: {
 }
 
 /**
+ * The per-voter budget cap for this phase, in the template's budget unit, or
+ * `undefined` for no cap. The only reader of `rules.voting.voterBudget`.
+ *
+ * A stored value that is not a positive finite number degrades to "no cap"
+ * rather than throwing: a misconfigured rule must not take voting down.
+ */
+export function getVoterBudget(phase: {
+  rules?: { voting?: { voterBudget?: number } };
+}): number | undefined {
+  const voterBudget = phase.rules?.voting?.voterBudget;
+
+  return typeof voterBudget === 'number' &&
+    Number.isFinite(voterBudget) &&
+    voterBudget > 0
+    ? voterBudget
+    : undefined;
+}
+
+/**
+ * Ballots cast in this phase are ranked — the order of `selectedProposalIds`
+ * is persisted as a rank. The only reader of `rules.voting.ranked`.
+ */
+export function isRankedVoting(phase: {
+  rules?: { voting?: { ranked?: boolean } };
+}): boolean {
+  return phase.rules?.voting?.ranked === true;
+}
+
+/**
  * Participants may comment during this phase — the Process Builder's
  * "Comments" toggle.
  *

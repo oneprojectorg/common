@@ -38,6 +38,7 @@ vi.mock('@op/db/client', () => {
     db: {
       query: {
         decisionProcessResults: { findFirst: vi.fn() },
+        decisionProcesses: { findFirst: vi.fn() },
         processInstances: { findFirst: vi.fn() },
         proposals: { findMany: vi.fn() },
       },
@@ -100,6 +101,7 @@ import {
   type EmailRecipient,
   listMemberProfileRecipientsByProfile,
 } from '../email/recipients';
+import type { AmountUnit } from './budgetUnit';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { listResultNotificationRecipients } from './listResultNotificationRecipients';
 
@@ -137,14 +139,12 @@ const proposal = ({
   id,
   title,
   profileId,
-  budget = { amount: 12000, currency: 'USD' },
   deletedAt = null as string | null,
   moderationDetachedAt = null as string | null,
 }: {
   id: string;
   title: string;
   profileId: string;
-  budget?: unknown;
   deletedAt?: string | null;
   moderationDetachedAt?: string | null;
 }) => ({
@@ -152,8 +152,21 @@ const proposal = ({
   profileId,
   deletedAt,
   moderationDetachedAt,
-  proposalData: { budget },
   profile: { name: title },
+});
+
+/** A template whose budget field is counted in `unit`. */
+const templateWithBudgetUnit = (unit: AmountUnit) => ({
+  type: 'object',
+  properties: {
+    budget: {
+      type: 'object',
+      title: 'Budget',
+      'x-format': 'money',
+      'x-unit': unit,
+      properties: { amount: { type: 'number' } },
+    },
+  },
 });
 
 const audienceByProfile = (map: Record<string, Array<EmailRecipient>>) =>
@@ -194,7 +207,14 @@ describe('listResultNotificationRecipients', () => {
     findInstance.mockResolvedValue({
       id: INSTANCE_ID,
       name: 'Participatory Budgeting 2026',
-      instanceData: { phases: [] },
+      processId: 'process-1',
+      instanceData: {
+        phases: [],
+        proposalTemplate: templateWithBudgetUnit({
+          kind: 'currency',
+          code: 'USD',
+        }),
+      },
       currentStateId: 'voting',
       profile: { slug: 'pb-2026' },
     } as never);
@@ -209,7 +229,6 @@ describe('listResultNotificationRecipients', () => {
         id: 'not-selected-1',
         title: 'Bike Lane Study',
         profileId: 'profile-b-not-selected',
-        budget: { amount: 3000, currency: 'USD' },
       }),
     ] as never);
     audienceByProfile({
@@ -294,6 +313,41 @@ describe('listResultNotificationRecipients', () => {
     });
   });
 
+  // The unit is the template's, not the proposal's: a process counting in
+  // points must not mail its authors a dollar figure.
+  it('renders the allocated figure in the template’s custom unit', async () => {
+    findInstance.mockResolvedValue({
+      id: INSTANCE_ID,
+      name: 'Participatory Budgeting 2026',
+      processId: 'process-1',
+      instanceData: {
+        phases: [],
+        proposalTemplate: templateWithBudgetUnit({
+          kind: 'custom',
+          label: 'points',
+        }),
+      },
+      currentStateId: 'voting',
+      profile: { slug: 'pb-2026' },
+    } as never);
+
+    const result = await run();
+
+    expect(result).toMatchObject({
+      ok: true,
+      notification: {
+        recipients: [
+          expect.objectContaining({
+            values: expect.objectContaining({ amount: '8,000 points' }),
+          }),
+          expect.objectContaining({
+            values: expect.objectContaining({ amount: '' }),
+          }),
+        ],
+      },
+    });
+  });
+
   // The final phase's own window can produce a proposal the previous phase
   // never held, so the result row has to be what decides.
   it('funds a selected proposal that was never in the candidate pool', async () => {
@@ -316,7 +370,6 @@ describe('listResultNotificationRecipients', () => {
         id: 'late-1',
         title: 'Late Entry',
         profileId: 'profile-late',
-        budget: { amount: 500, currency: 'USD' },
       }),
     ] as never);
     audienceByProfile({

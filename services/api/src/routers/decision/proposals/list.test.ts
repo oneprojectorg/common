@@ -1210,13 +1210,15 @@ describe.concurrent('listProposals', () => {
     const foundA = result.items.find((p) => p.id === proposalA.id);
     const foundB = result.items.find((p) => p.id === proposalB.id);
 
-    // Plain number → { amount, currency: 'USD' }
+    // Plain number → { amount }, with no unit of its own: the template's
+    // applies at resolution time (ADR 0005).
     expect(foundA?.proposalData).toMatchObject({
       title: 'Legacy A',
       description: '<p>body from content field</p>',
-      budget: { amount: 7500, currency: 'USD' },
+      budget: { amount: 7500 },
       category: ['Infrastructure'],
     });
+    expect(foundA?.proposalData.budget).not.toHaveProperty('currency');
     // content→description backward compat
     expect(foundA?.previewText).toBe('body from content field');
 
@@ -1304,7 +1306,7 @@ describe.concurrent('listProposals', () => {
     expect(foundLegacy?.proposalData).toMatchObject({
       title: 'Legacy',
       description: '<p>old content field</p>',
-      budget: { amount: 9999, currency: 'USD' },
+      budget: { amount: 9999 },
       customField: 'should survive',
     });
     expect(foundLegacy?.previewText).toBe('old content field');

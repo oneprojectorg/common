@@ -1,24 +1,48 @@
 /**
  * Money fields on JSON Schema templates: a normal template property whose
- * answer is `{ amount, currency }` (the proposal budget shape):
+ * answer is an amount in the unit the field declares (ADR 0005). Two shapes
+ * are valid.
+ *
+ * Currency-kind — the amount is money, and `properties.currency` pins the
+ * code:
  *
  * ```json
  * {
  *   "type": "object",
  *   "title": "Estimated Cost",
  *   "x-format": "money",
+ *   "x-unit": { "kind": "currency", "code": "EUR" },
  *   "properties": {
  *     "amount": { "type": "number", "minimum": 0 },
- *     "currency": { "type": "string", "const": "USD", "default": "USD" }
+ *     "currency": { "type": "string", "const": "EUR", "default": "EUR" }
  *   },
  *   "required": ["amount", "currency"],
  *   "additionalProperties": false
  * }
  * ```
  *
+ * Custom-kind — the amount is counted in anything else, so there is no
+ * `currency` property and `required` lists only `amount`:
+ *
+ * ```json
+ * {
+ *   "type": "object",
+ *   "title": "Cost",
+ *   "x-format": "money",
+ *   "x-unit": { "kind": "custom", "label": "points" },
+ *   "properties": { "amount": { "type": "number", "minimum": 0 } },
+ *   "required": ["amount"],
+ *   "additionalProperties": false
+ * }
+ * ```
+ *
  * `x-format: 'money'` selects the renderer; AJV validates answers against
- * whatever the template declares, so authors must declare exactly this shape.
- * Totals are derived at render time, never stored.
+ * whatever the template declares, so authors must declare exactly one of
+ * these shapes. Totals are derived at render time, never stored.
+ *
+ * The helpers below are currency-only and serve rubric money criteria, which
+ * do not take custom units. `getFieldUnit` in `../budgetUnit` is what reads a
+ * field's unit.
  */
 import type { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 

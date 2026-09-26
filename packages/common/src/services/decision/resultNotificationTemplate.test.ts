@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { AmountUnit } from './budgetUnit';
 import {
   formatResultAmount,
   renderResultNotificationMessage,
@@ -53,37 +54,38 @@ describe('renderResultNotificationMessage', () => {
 });
 
 describe('formatResultAmount', () => {
-  it('formats the allocated figure in the proposal budget’s currency', () => {
-    expect(
-      formatResultAmount({
-        allocated: '8000',
-        budget: { amount: 12000, currency: 'EUR' },
-      }),
-    ).toBe('€8,000');
+  const EUR: AmountUnit = { kind: 'currency', code: 'EUR' };
+
+  it('formats the allocated figure in the process’s currency', () => {
+    expect(formatResultAmount({ allocated: '8000', unit: EUR })).toBe('€8,000');
   });
 
   // The regression that matters: falling back to the budget would tell every
   // selected author they were awarded exactly what they asked for.
   it('never falls back to the requested budget when nothing was allocated', () => {
-    expect(
-      formatResultAmount({
-        allocated: null,
-        budget: { amount: 4500, currency: 'EUR' },
-      }),
-    ).toBe('');
+    expect(formatResultAmount({ allocated: null, unit: EUR })).toBe('');
   });
 
   it('returns empty when the allocation is unparseable', () => {
-    expect(formatResultAmount({ allocated: 'not-a-number', budget: {} })).toBe(
+    expect(formatResultAmount({ allocated: 'not-a-number', unit: EUR })).toBe(
       '',
     );
   });
 
-  it('falls back to USD when the stored currency is not a real code', () => {
+  it('suffixes a custom unit with its label', () => {
+    expect(
+      formatResultAmount({
+        allocated: '120',
+        unit: { kind: 'custom', label: 'points' },
+      }),
+    ).toBe('120 points');
+  });
+
+  it('falls back to USD when the unit names a currency Intl does not know', () => {
     expect(
       formatResultAmount({
         allocated: '100',
-        budget: { amount: 100, currency: 'NOTACODE' },
+        unit: { kind: 'currency', code: 'NOTACODE' },
       }),
     ).toBe('$100');
   });

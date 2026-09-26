@@ -5,7 +5,7 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
-import { moneyAmountSchema } from '../../../money';
+import { budgetDataSchema } from '../proposalDataSchema';
 import { proposalCategorySchema } from './proposalCategory';
 
 const adminDecisionCurrentPhaseSchema = z.object({
@@ -59,6 +59,10 @@ export const adminDecisionPhaseSchema = z.object({
   allowsComments: z.boolean(),
   /** Null = no limit. */
   maxVotesPerMember: z.number().nullable(),
+  /** Knapsack cap in the template's budget unit; null = no budget cap. */
+  voterBudget: z.number().nullable(),
+  /** Ballots in this phase persist their selection order as a rank. */
+  ranked: z.boolean().nullable(),
   proposalsHiddenByDefault: z.boolean(),
   /** 'date' | 'manual' | null when unset. */
   advancementMethod: z.string().nullable(),
@@ -123,8 +127,12 @@ export const adminReviewAssignmentSchema = z.object({
   author: adminProfileRefSchema.nullable(),
   /** Plain-text body preview, resolved like the proposal list rows'; null when there is nothing to preview. */
   previewText: z.string().nullable(),
-  /** Budget from the document fragments, falling back to the proposalData snapshot. */
-  budget: moneyAmountSchema.nullable(),
+  /**
+   * Budget from the document fragments, falling back to the proposalData
+   * snapshot. `currency` rides along only for currency-kind budgets — the
+   * unit lives on the template (ADR 0005).
+   */
+  budget: budgetDataSchema.nullable(),
 });
 
 export type AdminReviewAssignment = z.infer<typeof adminReviewAssignmentSchema>;

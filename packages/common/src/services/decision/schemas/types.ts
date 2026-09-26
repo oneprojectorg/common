@@ -27,6 +27,23 @@ export interface PhaseRules {
     edit?: boolean;
     /** Undefined = no limit (distinct from 0, which would block all voting). */
     maxVotesPerMember?: number;
+    /**
+     * Knapsack cap: the sum of the selected proposals' budgets may not exceed
+     * this. Expressed in the unit of the template's budget field
+     * (`getTemplateBudgetUnit`); the rule stores only the number so the unit
+     * keeps one source of truth. Undefined = no budget cap, independent of
+     * `maxVotesPerMember`. Read through `getVoterBudget`.
+     *
+     * Named `voterBudget` rather than `budget` to stay clear of the
+     * display-only `settings.budget` / `InstanceData.budget` numbers, which
+     * are never enforced.
+     */
+    voterBudget?: number;
+    /**
+     * Ranked-choice: the order of `selectedProposalIds` on submission is
+     * persisted as a rank per selection. Read through `isRankedVoting`.
+     */
+    ranked?: boolean;
   };
   comments?: {
     /** Unlike its siblings this defaults to TRUE — see `allowsComments`. */

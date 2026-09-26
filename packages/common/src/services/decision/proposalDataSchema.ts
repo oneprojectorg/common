@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import { type MoneyAmount, moneyAmountSchema } from '../../money';
 import type { XFormatPropertySchema } from './types';
 
 /**
@@ -23,21 +22,26 @@ const categoryValueSchema = z
   .transform((value) => normalizeProposalCategories(value));
 
 /**
- * Budget stored as `MoneyAmount` (`{ amount, currency }`) in proposalData.
+ * Budget stored in proposalData as an amount in the unit the template
+ * declares (ADR 0005), so it is not restricted to currency.
  *
- * Accepts two input shapes and normalizes to `MoneyAmount`:
- * - `{ amount, currency }` — canonical
- * - plain number or numeric string — legacy, defaults to USD
+ * Accepts two input shapes and normalizes to `BudgetData`:
+ * - `{ amount, currency? }` — canonical; `currency` is present only for
+ *   currency-kind units
+ * - plain number or numeric string — legacy; carries no unit, so the
+ *   template's applies
  */
 export const budgetValueSchema = z
   .union([
     // Canonical shape
-    moneyAmountSchema,
-    // Legacy: plain number → { amount, currency: 'USD' }
+    z.object({ amount: z.number().finite(), currency: z.string().optional() }),
+    // Legacy: plain number → { amount }
     z
       .union([z.string(), z.number()])
       .pipe(z.coerce.number())
-      .transform((n) => ({ amount: n, currency: 'USD' })),
+      // Annotated so both branches infer one shape; without it the legacy
+      // branch widens every reader to a union with no `currency` key.
+      .transform((n): BudgetData => ({ amount: n })),
   ])
   .nullish();
 
@@ -67,10 +71,17 @@ export const locationValueSchema = z
 export type LocationData = NonNullable<z.infer<typeof locationValueSchema>>;
 
 /**
- * Canonical budget shape — an alias for `MoneyAmount`.
- * @deprecated Prefer `MoneyAmount` for new code.
+ * Canonical budget shape. `currency` is present only when the template's
+ * budget unit is a currency — resolve the unit through `getTemplateBudgetUnit`
+ * rather than reading it off the value.
  */
-export type BudgetData = MoneyAmount;
+export type BudgetData = { amount: number; currency?: string };
+
+/** `BudgetData` as a schema, for encoders that ship a parsed budget. */
+export const budgetDataSchema = z.object({
+  amount: z.number(),
+  currency: z.string().optional(),
+});
 
 /** Raw budget input accepted by `budgetValueSchema` (canonical or legacy). */
 export type BudgetInput = z.input<typeof budgetValueSchema>;
@@ -159,9 +170,8 @@ export function formatProposalCategories(
 }
 
 /**
- * Normalize a raw budget value into a `MoneyAmount` using `budgetValueSchema`.
- * Accepts `{ amount, currency }`, `{ value, currency }` (legacy), a plain
- * number, or a numeric string.
+ * Normalize a raw budget value into `BudgetData` using `budgetValueSchema`.
+ * Accepts `{ amount, currency? }`, a plain number, or a numeric string.
  */
 export function normalizeBudget(raw: unknown): BudgetData | undefined {
   const result = budgetValueSchema.safeParse(raw);

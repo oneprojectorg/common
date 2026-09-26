@@ -2,6 +2,7 @@
 
 import { linkifyText } from '@/utils/linkDetection';
 import {
+  DEFAULT_MONEY_CURRENCY,
   formatProposalCategories,
   isDistrictCategoryLabel,
   parseCategoryFragmentValue,
@@ -110,7 +111,10 @@ function formatPreviewBudget(
 
   return budget.amount.toLocaleString(undefined, {
     style: 'currency',
-    currency: budget.currency,
+    // A stored value carries no currency unless its unit is one (ADR 0005),
+    // and `Intl` throws outright on an undefined code. Unit-aware display is
+    // still to come; until then this preview reads as money.
+    currency: budget.currency ?? DEFAULT_MONEY_CURRENCY,
     currencyDisplay: 'narrowSymbol',
     maximumFractionDigits: 0,
   });

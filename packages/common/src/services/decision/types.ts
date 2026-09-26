@@ -1,6 +1,7 @@
 import type { DecisionProcessTransition } from '@op/db/schema';
 import type { JSONSchema7 } from 'json-schema';
 
+import type { AmountUnit } from './budgetUnit';
 import type { PhaseDefinition } from './schemas/types';
 import type { SelectionPipeline } from './selectionPipeline/types';
 
@@ -42,6 +43,12 @@ export interface XFormatPropertySchema extends JSONSchema7 {
   'x-format'?: XFormat;
   /** Default map camera for `location` fields (see {@link MapDefaultView}). */
   'x-map-default'?: MapDefaultView;
+  /**
+   * Unit a `money` field's amounts are counted in — a currency or an
+   * arbitrary label. Read only through `getFieldUnit`; see
+   * {@link AmountUnit} and ADR 0005.
+   */
+  'x-unit'?: AmountUnit;
 }
 
 /** JSON Schema 7 extended with proposal template vendor extensions. */

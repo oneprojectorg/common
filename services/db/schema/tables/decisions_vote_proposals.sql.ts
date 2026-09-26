@@ -1,6 +1,13 @@
-import type { InferModel } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
-import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { serviceRolePolicies, timestamps } from '../../helpers';
 import { decisionsVoteSubmissions } from './decisions_vote_submissions.sql';
@@ -23,6 +30,12 @@ export const decisionsVoteProposals = pgTable(
         onDelete: 'cascade',
       }),
 
+    /**
+     * Position of this selection on a ranked ballot, 1-based. Null on an
+     * unranked ballot — see `isRankedVoting`.
+     */
+    rank: integer('rank'),
+
     ...timestamps,
   },
   (table) => [
@@ -30,6 +43,12 @@ export const decisionsVoteProposals = pgTable(
     primaryKey({ columns: [table.voteSubmissionId, table.proposalId] }),
     index().on(table.voteSubmissionId).concurrently(),
     index().on(table.proposalId).concurrently(),
+    // Two selections on one ballot can never share a rank. The service layer
+    // assigns `index + 1`; the index is what makes that hold under
+    // concurrency rather than only in JavaScript.
+    uniqueIndex()
+      .on(table.voteSubmissionId, table.rank)
+      .where(sql`rank IS NOT NULL`),
   ],
 );
 
@@ -47,4 +66,4 @@ export const decisionsVoteProposalsRelations = relations(
   }),
 );
 
-export type DecisionVoteProposal = InferModel<typeof decisionsVoteProposals>;
+export type DecisionVoteProposal = typeof decisionsVoteProposals.$inferSelect;

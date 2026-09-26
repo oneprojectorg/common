@@ -1,9 +1,87 @@
 import { describe, expect, it } from 'vitest';
 
+import type { AmountUnit } from './budgetUnit';
+import type { BudgetData } from './proposalDataSchema';
 import {
   isValidDecisionProcessSchema,
+  validateVoteBudget,
   validateVoteSelection,
 } from './schemaValidators';
+
+describe('validateVoteBudget', () => {
+  const USD: AmountUnit = { kind: 'currency', code: 'USD' };
+  const POINTS: AmountUnit = { kind: 'custom', label: 'points' };
+
+  const costs = (entries: Record<string, BudgetData | null>) =>
+    new Map(Object.entries(entries));
+
+  const pool = costs({
+    a: { amount: 300 },
+    b: { amount: 450 },
+    unpriced: null,
+    foreign: { amount: 900, currency: 'EUR' },
+  });
+
+  it('accepts any ballot when no cap is set', () => {
+    const result = validateVoteBudget(['a', 'b'], undefined, pool, USD);
+
+    expect(result).toEqual({ isValid: true, errors: [], totalCost: 750 });
+  });
+
+  it('accepts a ballot under the cap', () => {
+    expect(validateVoteBudget(['a'], 500, pool, USD).isValid).toBe(true);
+  });
+
+  it('accepts a ballot exactly at the cap', () => {
+    expect(validateVoteBudget(['a', 'b'], 750, pool, USD).isValid).toBe(true);
+  });
+
+  // Floats alone would make this 0.30000000000000004 > 0.3 and reject a
+  // ballot that exactly meets its budget.
+  it('accepts fractional costs that exactly meet the cap', () => {
+    const fractional = costs({ a: { amount: 0.1 }, b: { amount: 0.2 } });
+
+    expect(validateVoteBudget(['a', 'b'], 0.3, fractional, USD).isValid).toBe(
+      true,
+    );
+  });
+
+  it('rejects a ballot over the cap and names both figures', () => {
+    const result = validateVoteBudget(['a', 'b'], 700, pool, USD);
+
+    expect(result.isValid).toBe(false);
+    expect(result.totalCost).toBe(750);
+    expect(result.errors).toEqual([
+      'Selected proposals total 750 $, exceeding the voter budget of 700 $.',
+    ]);
+  });
+
+  it('charges nothing for a proposal with no budget', () => {
+    expect(validateVoteBudget(['a', 'unpriced'], 300, pool, USD)).toMatchObject(
+      { isValid: true, totalCost: 300 },
+    );
+  });
+
+  // A value left over from a different unit is unresolvable, not free money
+  // the voter is charged for.
+  it('charges nothing for a budget stored in another unit', () => {
+    expect(validateVoteBudget(['a', 'foreign'], 300, pool, USD)).toMatchObject({
+      isValid: true,
+      totalCost: 300,
+    });
+  });
+
+  it('enforces a custom unit the same way, and labels it', () => {
+    const points = costs({ a: { amount: 7 }, b: { amount: 5 } });
+
+    expect(validateVoteBudget(['a', 'b'], 12, points, POINTS).isValid).toBe(
+      true,
+    );
+    expect(validateVoteBudget(['a', 'b'], 11, points, POINTS).errors).toEqual([
+      'Selected proposals total 12 points, exceeding the voter budget of 11 points.',
+    ]);
+  });
+});
 
 describe('validateVoteSelection', () => {
   const available = ['a', 'b', 'c', 'd', 'e'];

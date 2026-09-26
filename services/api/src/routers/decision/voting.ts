@@ -14,6 +14,10 @@ const customDataSchema = z.record(z.string(), z.unknown()).optional();
 
 const submitVoteInput = z.object({
   processInstanceId: z.uuid(),
+  /**
+   * The ballot. Order is significant when the phase is ranked
+   * (`rules.voting.ranked`): it is persisted as each selection's rank.
+   */
   selectedProposalIds: z.array(z.uuid()).min(1),
   schemaVersion: z.string().optional(),
   customData: customDataSchema,

@@ -17,6 +17,7 @@ import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -25,6 +26,7 @@ import type {
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
+import { templateCollectsBudget } from './templateBudget';
 import type { RubricTemplateSchema } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -271,6 +273,11 @@ export const updateDecisionInstance = async ({
       } as DecisionInstanceData;
     }
 
+    updatedInstanceData = await stripUnbackedVoterBudgets(
+      updatedInstanceData,
+      existingInstance.processId,
+    );
+
     updateData.instanceData = updatedInstanceData;
   }
 
@@ -431,3 +438,53 @@ export const updateDecisionInstance = async ({
  */
 const isBlankHeadline = (headline: string | undefined) =>
   headline?.trim() === '';
+
+/**
+ * Drops `rules.voting.voterBudget` from every phase when the process's
+ * template collects no budget, because a cap counted against costs that can
+ * only be zero would silently accept every ballot.
+ *
+ * Stripping rather than throwing: the Process Builder's Template step turns
+ * the budget field off without any knowledge of phase rules, so rejecting the
+ * write would block an edit the admin has every right to make. `submitVote`
+ * is defensive regardless — with no budget field every cost is 0.
+ *
+ * Exported for its own tests; the write path is the only caller.
+ */
+export async function stripUnbackedVoterBudgets(
+  instanceData: DecisionInstanceData,
+  processId: string,
+): Promise<DecisionInstanceData> {
+  const capped = instanceData.phases.some(
+    (phase) => phase.rules?.voting?.voterBudget !== undefined,
+  );
+
+  if (!capped) {
+    return instanceData;
+  }
+
+  // Resolved, not read off `instanceData`: an instance that never overrode
+  // the template still collects whatever the process schema declares, and
+  // stripping there would delete a cap the admin legitimately set.
+  const resultingTemplate = await resolveProposalTemplate(
+    instanceData,
+    processId,
+  );
+
+  if (templateCollectsBudget(resultingTemplate)) {
+    return instanceData;
+  }
+
+  return {
+    ...instanceData,
+    phases: instanceData.phases.map((phase) => {
+      if (phase.rules?.voting?.voterBudget === undefined) {
+        return phase;
+      }
+
+      const { voterBudget: _dropped, ...voting } = phase.rules.voting;
+
+      return { ...phase, rules: { ...phase.rules, voting } };
+    }),
+  };
+}

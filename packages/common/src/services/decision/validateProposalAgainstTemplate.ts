@@ -3,9 +3,10 @@ import type { JSONContent } from '@tiptap/core';
 
 import { assembleProposalData } from './assembleProposalData';
 import { fillCategoryFromBoundary } from './boundaryCategory';
+import { normalizeBudgetForTemplate } from './budgetUnit';
 import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
-import { parseProposalData } from './proposalDataSchema';
+import { normalizeBudget, parseProposalData } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
 import type { ProposalTemplateSchema } from './types';
 
@@ -80,13 +81,48 @@ export async function validateProposalAgainstTemplate(
       { profileId },
     );
 
-    schemaValidator.assertProposalData(proposalTemplate, finalData);
+    schemaValidator.assertProposalData(
+      proposalTemplate,
+      withTemplateShapedBudget(finalData, proposalTemplate),
+    );
     return finalData;
   }
 
-  schemaValidator.assertProposalData(proposalTemplate, {
-    ...storedProposalData,
-    ...(shouldInjectTitle ? { title } : {}),
-  });
+  schemaValidator.assertProposalData(
+    proposalTemplate,
+    withTemplateShapedBudget(
+      {
+        ...storedProposalData,
+        ...(shouldInjectTitle ? { title } : {}),
+      },
+      proposalTemplate,
+    ),
+  );
   return null;
+}
+
+/**
+ * Reshapes the `budget` key to what the template declares, because storage and
+ * the template disagree by design: storage leaves `currency` optional (ADR
+ * 0005) while a currency-kind template may still require it, and a
+ * custom-kind template declares no `currency` property for a legacy value to
+ * sit in.
+ *
+ * A value that doesn't parse as a budget at all is left untouched — AJV
+ * rejecting it is the point, and coercing it here would hide the error.
+ */
+function withTemplateShapedBudget(
+  data: Record<string, unknown>,
+  template: ProposalTemplateSchema,
+): Record<string, unknown> {
+  const parsedBudget = normalizeBudget(data.budget);
+
+  if (!parsedBudget) {
+    return data;
+  }
+
+  return {
+    ...data,
+    budget: normalizeBudgetForTemplate(parsedBudget, template),
+  };
 }

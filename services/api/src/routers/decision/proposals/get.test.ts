@@ -76,7 +76,7 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Community Garden Project',
       description: 'A proposal to create a community garden in the park',
-      budget: { amount: 5000, currency: 'USD' },
+      budget: { amount: 5000 },
       timeline: '3 months',
     });
   });
@@ -1014,7 +1014,7 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Cowop Legacy Proposal',
       description: 'A community garden project',
-      budget: { amount: 7500, currency: 'USD' },
+      budget: { amount: 7500 },
       category: ['Infrastructure'],
     });
 
@@ -1105,7 +1105,7 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Horizon Legacy Proposal',
       description: 'A horizon scanning project',
-      budget: { amount: 25000, currency: 'USD' },
+      budget: { amount: 25000 },
     });
 
     // Verify the proposalTemplate was resolved from process_schema
@@ -1191,7 +1191,7 @@ describe.concurrent('getProposal', () => {
     expect(result.proposalData).toMatchObject({
       title: 'Simple Legacy Proposal',
       description: 'A simple voting proposal',
-      budget: { amount: 12000, currency: 'USD' },
+      budget: { amount: 12000 },
       category: ['Community'],
     });
 
@@ -1250,10 +1250,11 @@ describe.concurrent('getProposal', () => {
     });
 
     expect(result.id).toBe(proposal.id);
-    // Plain number should be normalized to { amount, currency: 'USD' }
+    // A plain number normalizes to a bare amount: it carries no unit of
+    // its own, so the template's applies at resolution time (ADR 0005).
     expect(result.proposalData).toMatchObject({
       title: 'Plain Number Budget',
-      budget: { amount: 3000, currency: 'USD' },
+      budget: { amount: 3000 },
     });
   });
 

@@ -7,6 +7,15 @@ import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
+/**
+ * The unit a ballot's costs were counted in. Structurally identical to
+ * `AmountUnit` in `@op/common`, redeclared here because `services/db` must not
+ * import from it.
+ */
+type BallotAmountUnit =
+  | { kind: 'currency'; code: string }
+  | { kind: 'custom'; label: string };
+
 export interface VoteData extends Record<string, unknown> {
   schemaVersion: string;
   schemaType: string;
@@ -16,6 +25,31 @@ export interface VoteData extends Record<string, unknown> {
     [key: string]: unknown;
   };
   validationSignature: string;
+
+  // ── Ballot-constraint snapshot (ADR 0006) ───────────────────────────────
+  // Optional so no migration is needed and no existing reader breaks. The
+  // three budget keys are written together, and only when a budget cap
+  // actually applied.
+
+  /** The cap enforced on this ballot, in `budgetUnit`. */
+  voterBudget?: number;
+  /** The unit the cap and the costs below were counted in. */
+  budgetUnit?: BallotAmountUnit;
+  /**
+   * What the ballot was made of, in submission order.
+   *
+   * `cost` is `null` when the proposal's budget could not be priced in
+   * `budgetUnit` — and on every selection of a ballot that had no budget cap,
+   * since costs are only resolved when one applies.
+   */
+  selections?: Array<{
+    proposalId: string;
+    cost: number | null;
+    /** 1-based position on a ranked ballot; absent on an unranked one. */
+    rank?: number;
+  }>;
+  /** The sum of the costs above, as enforced. */
+  totalCost?: number;
 }
 
 export const decisionsVoteSubmissions = pgTable(
