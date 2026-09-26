@@ -24,13 +24,16 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).toContain('allow="encrypted-media"');
   });
 
-  it('keeps the wrapper an iframe arrives in, sizing and all', () => {
+  it('keeps the responsive wrapper an iframe arrives in, sizing and all', () => {
     const sanitized = sanitizeEmbedHtml(
-      `<div class="iframely-embed" style="padding-bottom: 56.25%;">${proxiedIframe}</div>`,
+      '<div class="iframely-responsive" style="height: 0; padding-bottom: 56.25%;">' +
+        '<iframe src="/api/embeds/api/iframe?url=video" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>' +
+        '</div>',
     );
 
-    expect(sanitized).toContain('class="iframely-embed"');
+    expect(sanitized).toContain('class="iframely-responsive"');
     expect(sanitized).toContain('padding-bottom: 56.25%');
+    expect(sanitized).toContain('position: absolute');
   });
 
   it('strips scripts and event handlers wrapped around an embed', () => {
@@ -46,11 +49,10 @@ describe('sanitizeEmbedHtml', () => {
 
   it('strips positioning that would lift the embed out of its card', () => {
     const sanitized = sanitizeEmbedHtml(
-      '<iframe src="/api/embeds/api/iframe?url=video" style="position: fixed; inset: 0; z-index: 9999; width: 100vw"></iframe>',
+      '<iframe src="/api/embeds/api/iframe?url=video" style="position: fixed; inset: 0; width: 100vw"></iframe>',
     );
 
     expect(sanitized).not.toContain('position');
-    expect(sanitized).not.toContain('z-index');
     expect(sanitized).toContain('width: 100vw');
   });
 
@@ -87,6 +89,17 @@ describe('sanitizeEmbedHtml', () => {
   it('returns null for an embed path that escapes the proxy', () => {
     expect(
       sanitizeEmbedHtml('<iframe src="/api/embeds/../elsewhere"></iframe>'),
+    ).toBeNull();
+    expect(
+      sanitizeEmbedHtml(
+        '<iframe src="/api/embeds/api/iframe/..%2felsewhere"></iframe>',
+      ),
+    ).toBeNull();
+  });
+
+  it('returns null for the proxy route that is not an embed view', () => {
+    expect(
+      sanitizeEmbedHtml('<iframe src="/api/embeds/embed.js"></iframe>'),
     ).toBeNull();
   });
 

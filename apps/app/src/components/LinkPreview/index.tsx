@@ -4,20 +4,12 @@ import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Spinner } from '@op/sense/Spinner';
 import { cn } from '@op/sense/lib/utils';
-import { memo, useEffect, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { sanitizeEmbedHtml } from './sanitizeEmbedHtml';
-
-declare global {
-  interface Window {
-    iframely?: {
-      load: () => void;
-    };
-  }
-}
 
 interface LinkPreviewProps {
   url: string;
@@ -59,14 +51,6 @@ export const LinkPreview = memo(
       () => sanitizeEmbedHtml(previewData?.html),
       [previewData?.html],
     );
-
-    useEffect(() => {
-      // Only an embed needs expanding: load() scans the whole document, and a
-      // preview that fell back to its thumbnail has nothing for it to find.
-      if (embedHtml) {
-        window.iframely?.load();
-      }
-    }, [embedHtml]);
 
     // Loading state: show card with spinner and domain
     if (loading) {
@@ -144,8 +128,10 @@ export const LinkPreview = memo(
           className="block outline-none"
         >
           {embedHtml ? (
+            // Positioned so an embed that fills a responsive wrapper resolves
+            // against this box rather than the page.
             <div
-              className="aspect-video w-full"
+              className="relative aspect-video w-full"
               dangerouslySetInnerHTML={{ __html: embedHtml }}
             />
           ) : previewData.thumbnail_url ? (

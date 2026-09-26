@@ -8,6 +8,17 @@ import DOMPurify from 'dompurify';
 // embed to keep, and fall back to their thumbnail.
 const EMBED_SELECTOR = 'iframe';
 
+// The one path under the proxy that serves an embed view, sandboxed by the CSP
+// it sets (apps/app/src/app/api/embeds/api/iframe). Matched exactly: a prefix
+// also admits the loader script, and reads as an allowance for whatever route
+// is added under the proxy next.
+const EMBED_VIEW_PATH = `${EMBED_PROXY_PATH}/api/iframe`;
+
+// A position that leaves the card behind. `absolute` does not: the embed box
+// it renders in is a containing block, so an absolutely positioned embed —
+// which is how iframely fills a responsive wrapper — stays inside and clipped.
+const ESCAPING_POSITIONS = ['fixed', 'sticky'];
+
 // Iframely's own wrapper classes (`iframely-embed`, `iframely-responsive`),
 // which embed.js styles. Every other class is dropped: the app's utilities
 // ship in the same stylesheet, so `fixed inset-0 z-50` on an embed would lift
@@ -64,14 +75,16 @@ export const sanitizeEmbedHtml = (
     }
   }
 
-  // Inline style is how iframely sizes a responsive embed, so it stays — but
-  // a positioned element leaves the card's `overflow-hidden` behind and can
-  // cover the page with content of its own choosing.
+  // Inline style is how iframely sizes a responsive embed, so it stays — bar
+  // the positions that would let the embed cover the page from inside the
+  // card.
   for (const element of fragment.querySelectorAll<HTMLElement>(
     '[class], [style]',
   )) {
-    element.style.removeProperty('position');
-    element.style.removeProperty('z-index');
+    if (ESCAPING_POSITIONS.includes(element.style.position)) {
+      element.style.removeProperty('position');
+    }
+
     keepIframelyClasses(element);
   }
 
@@ -98,12 +111,12 @@ const keepIframelyClasses = (element: Element) => {
 };
 
 /**
- * An embed is only rendered when it frames the app's own `/api/embeds` proxy,
- * which `getLinkPreview` rewrites every iframely CDN URL onto and which serves
- * embed views under a sandboxing CSP. A provider's own iframe would be framed
- * with none of that, so a preview that carries one falls back to its
- * thumbnail. A same-origin URL still has to resolve inside the proxy:
- * `/api/embeds/../elsewhere` does not.
+ * An embed is only rendered when it frames the app's own embed proxy, which
+ * `getLinkPreview` rewrites every iframely CDN URL onto and which serves the
+ * view under a sandboxing CSP. A provider's own iframe would be framed with
+ * none of that, so a preview that carries one falls back to its thumbnail.
+ * The URL is resolved before it is read, so neither `/api/embeds/../elsewhere`
+ * nor an encoded spelling of it passes as the proxy.
  */
 const isRenderableEmbed = (element: Element): boolean => {
   const source = element.getAttribute('src');
@@ -117,7 +130,7 @@ const isRenderableEmbed = (element: Element): boolean => {
 
     return (
       resolved.origin === window.location.origin &&
-      resolved.pathname.startsWith(`${EMBED_PROXY_PATH}/`)
+      resolved.pathname === EMBED_VIEW_PATH
     );
   } catch {
     return false;
