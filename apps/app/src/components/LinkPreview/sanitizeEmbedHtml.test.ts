@@ -11,9 +11,12 @@ const responsiveEmbed =
   '<a href="https://example.com/video" data-iframely-url="/api/embeds/api/iframe?url=video"></a>' +
   '</div></div><script async src="/api/embeds/embed.js"></script>';
 
-// Iframely's other shape: the embed is the iframe itself.
-const iframeEmbed =
+// Iframely's other shape: the embed is the iframe itself, either proxied or
+// served straight from the previewed provider.
+const proxiedIframe =
   '<iframe src="/api/embeds/api/iframe?url=video" style="border: 0;" allowfullscreen allow="encrypted-media"></iframe>';
+const providerIframe =
+  '<iframe src="https://provider.example/embed/video"></iframe>';
 
 describe('sanitizeEmbedHtml', () => {
   it('keeps a responsive embed and drops the inline embed.js script', () => {
@@ -23,20 +26,27 @@ describe('sanitizeEmbedHtml', () => {
       'data-iframely-url="/api/embeds/api/iframe?url=video"',
     );
     expect(sanitized).toContain('class="iframely-responsive"');
+    expect(sanitized).toContain('padding-bottom: 56.25%');
     expect(sanitized).not.toContain('<script');
   });
 
-  it('keeps an iframe embed with the attributes it needs to render', () => {
-    const sanitized = sanitizeEmbedHtml(iframeEmbed);
+  it('keeps a proxied iframe with the attributes it needs to render', () => {
+    const sanitized = sanitizeEmbedHtml(proxiedIframe);
 
     expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
     expect(sanitized).toContain('allowfullscreen');
     expect(sanitized).toContain('allow="encrypted-media"');
   });
 
+  it('keeps an https embed served by the previewed provider', () => {
+    expect(sanitizeEmbedHtml(providerIframe)).toContain(
+      'src="https://provider.example/embed/video"',
+    );
+  });
+
   it('strips scripts and event handlers wrapped around an embed', () => {
     const sanitized = sanitizeEmbedHtml(
-      `<script>steal()</script><div onclick="hijack()"><img src=x onerror="exfiltrate()">${iframeEmbed}</div>`,
+      `<script>steal()</script><div onclick="hijack()"><img src=x onerror="exfiltrate()">${proxiedIframe}</div>`,
     );
 
     expect(sanitized).toContain('src="/api/embeds/api/iframe?url=video"');
@@ -45,12 +55,34 @@ describe('sanitizeEmbedHtml', () => {
     expect(sanitized).not.toContain('exfiltrate');
   });
 
-  it('returns null for an iframe pointing outside the embed proxy', () => {
+  it('strips the link out of the wrapper anchor', () => {
+    expect(sanitizeEmbedHtml(responsiveEmbed)).not.toContain('href');
+  });
+
+  it('strips positioning that would lift the embed out of its card', () => {
+    const sanitized = sanitizeEmbedHtml(
+      '<iframe src="/api/embeds/api/iframe?url=video" style="position: fixed; inset: 0; z-index: 9999; width: 100vw"></iframe>',
+    );
+
+    expect(sanitized).not.toContain('position');
+    expect(sanitized).not.toContain('z-index');
+    expect(sanitized).toContain('width: 100vw');
+  });
+
+  it('drops an embed whose second URL attribute leaves the proxy', () => {
     expect(
       sanitizeEmbedHtml(
-        '<iframe src="https://attacker.example/frame"></iframe>',
+        '<iframe src="http://attacker.example/phish" data-iframely-url="/api/embeds/api/iframe?url=video"></iframe>',
       ),
     ).toBeNull();
+  });
+
+  it('drops text left behind by a stripped tag', () => {
+    const sanitized = sanitizeEmbedHtml(
+      `<noscript>Enable JavaScript</noscript>${proxiedIframe}`,
+    );
+
+    expect(sanitized).not.toContain('Enable JavaScript');
   });
 
   it('returns null for an embed path that escapes the proxy', () => {
@@ -59,7 +91,7 @@ describe('sanitizeEmbedHtml', () => {
     ).toBeNull();
   });
 
-  it('returns null for an embed anchor pointing outside the embed proxy', () => {
+  it('returns null for an embed anchor pointing at a script URL', () => {
     expect(
       sanitizeEmbedHtml(
         '<div class="iframely-embed"><a data-iframely-url="javascript:steal()"></a></div>',
