@@ -1,4 +1,8 @@
-import { ValidationError, assertProfileTypeAccess } from '@op/common';
+import {
+  UnauthorizedError,
+  ValidationError,
+  assertProfileTypeAccess,
+} from '@op/common';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { permission } from 'access-zones';
@@ -6,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../test/helpers/TestDecisionsDataManager';
+import { TestProfileUserDataManager } from '../test/helpers/TestProfileUserDataManager';
 
 describe.concurrent('assertProfileTypeAccess', () => {
   describe('input handling', () => {
@@ -230,6 +235,57 @@ describe.concurrent('assertProfileTypeAccess', () => {
           policies: { [EntityType.PROPOSAL]: { decisions: permission.ADMIN } },
         }),
       ).rejects.toThrow();
+    });
+  });
+
+  describe('PHASE profiles', () => {
+    it('refuses an admin of the phase profile even when the policies gate nothing', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        type: EntityType.PHASE,
+      });
+
+      await expect(
+        assertProfileTypeAccess({
+          user: { id: adminUser.authUserId },
+          profileIds: [profile.id],
+          policies: {},
+        }),
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('refuses when a phase profile is mixed in with profiles the caller can access', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const decisionsData = new TestDecisionsDataManager(
+        task.id,
+        onTestFinished,
+      );
+      const setup = await decisionsData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const profileData = new TestProfileUserDataManager(
+        task.id,
+        onTestFinished,
+      );
+      const { profile: phaseProfile } = await profileData.createProfile({
+        type: EntityType.PHASE,
+      });
+
+      await expect(
+        assertProfileTypeAccess({
+          user: { id: setup.user.id },
+          profileIds: [setup.instance.profileId, phaseProfile.id],
+          policies: {
+            [EntityType.DECISION]: { decisions: permission.READ },
+          },
+        }),
+      ).rejects.toThrow(UnauthorizedError);
     });
   });
 
