@@ -1,6 +1,19 @@
 # Vitest + Supabase Integration Testing
 
-This directory contains the setup for running integration tests with Vitest against an **isolated test Supabase instance**.
+This directory holds the harness for running integration tests with Vitest against an **isolated test Supabase instance**. It is published as `@op/common/testing` so `packages/common` and `services/api` can both use it.
+
+## Naming rule
+
+|                | Unit                  | Integration                  |
+| -------------- | --------------------- | ---------------------------- |
+| File           | `<name>.unit.test.ts` | `<name>.test.ts`             |
+| Infrastructure | none                  | test Supabase on 55321/55322 |
+| Vitest project | `unit`                | `integration`                |
+
+The unmarked file is the integration test, so a forgotten `.unit` marker sends a
+file to the integration project — slow, but correct. The rule applies to
+`packages/common`. `services/api` has one integration project, so every test
+there is an integration test.
 
 ## Isolated Test Environment
 
@@ -32,13 +45,13 @@ This allows you to:
 
 ```bash
 # Start the isolated test instance
-pnpm w:api test:supabase:start
+pnpm test:supabase:start
 
 # Check status
-pnpm w:api test:supabase:status
+pnpm test:supabase:status
 
 # Stop when done (optional)
-pnpm w:api test:supabase:stop
+pnpm test:supabase:stop
 ```
 
 This starts a completely separate Supabase instance for testing.
@@ -46,18 +59,17 @@ This starts a completely separate Supabase instance for testing.
 ### 2. Verify Test Supabase is Running
 
 ```bash
-pnpm w:api test:check-supabase
+pnpm test:check-supabase
 ```
 
 This script checks if the **test instance** (port 55321) is accessible.
 
 ### 3. Run Database Migrations (Optional)
 
-```bash
-# Check test Supabase and run migrations + seed
-pnpm w:api test:migrate
+`globalSetup.ts` migrates and seeds on every run, so this is only needed to
+inspect the database outside a test run.
 
-# Or run test migrations and seed manually
+```bash
 pnpm w:db migrate:test
 pnpm w:db seed:test
 ```
@@ -65,14 +77,13 @@ pnpm w:db seed:test
 ### 4. Run Integration Tests
 
 ```bash
-# Run all integration tests (with auto-migrations)
-pnpm w:api test:integration
+# Every package through turbo; the packages that use the test database run one after another
+pnpm test
 
-# Run integration tests in watch mode
-pnpm w:api test:integration:watch
-
-# Run all tests (unit + integration)
+# A single package
 pnpm w:api test
+pnpm w:common test:unit
+pnpm w:common test:integration
 
 # Run with coverage
 pnpm w:api test:coverage
@@ -82,19 +93,16 @@ pnpm w:api test:coverage
 
 ```bash
 # Start test instance
-pnpm w:api test:supabase:start
+pnpm test:supabase:start
 
 # Check status
-pnpm w:api test:supabase:status
+pnpm test:supabase:status
 
-# Reset test database (clean slate)
-pnpm w:api test:supabase:reset
-
-# Complete database reset with fresh migrations and seed
-pnpm w:api test:db:reset
+# Reset the test database, then run `migrate:test` (no seed)
+pnpm test:db:reset
 
 # Stop test instance
-pnpm w:api test:supabase:stop
+pnpm test:supabase:stop
 ```
 
 ## Test Configuration
@@ -113,18 +121,23 @@ The test setup automatically configures these environment variables for the **te
 The setup file:
 
 - Initializes a Supabase test client
-- **Automatically runs Drizzle migrations and seeds** before tests
+- Leaves migrations and seeding to `globalSetup.ts`, which runs once per run
 - Mocks environment variables
 - Provides global setup/teardown hooks
 - Configures test isolation
 
-### Test Utilities (`supabase-utils.ts`)
+### Test Utilities (`supabase.ts`)
 
-Utility functions for common test operations:
+Utility functions for common test operations, re-exported from
+`@op/common/testing`:
 
 - `createTestUser()` - Create test users
 - `signInTestUser()` - Authenticate test users
 - `insertTestData()` - Insert test data
+
+The tRPC callers (`createAuthenticatedCaller`, `createTestContextWithSession`)
+stay in `services/api/src/test/supabase-utils.ts`, because they need `appRouter`.
+That file also re-exports the helpers above.
 
 ## Writing Integration Tests
 
@@ -133,7 +146,7 @@ Utility functions for common test operations:
 ```typescript
 import { describe, expect, it } from 'vitest';
 
-import { createTestUser } from '../supabase-utils';
+import { createTestUser } from '@op/common/testing';
 
 describe('My Integration Tests', () => {
   it('should test database operations', async () => {
@@ -208,7 +221,7 @@ it('should handle real-time subscriptions', async () => {
 
 ### Performance
 
-- Integration tests run sequentially to avoid database conflicts
+- Test files run concurrently; `turbo.json` runs the `@op/api` tests after the `@op/common` tests because both use this database
 - Use appropriate timeouts for database operations
 - Clean up only necessary tables to improve speed
 
@@ -234,41 +247,49 @@ To start Supabase locally:
 ### Connection Issues
 
 - Verify Docker is running: `docker ps`
-- Check Supabase status: `supabase status`
-- Restart Supabase: `supabase stop && supabase start`
+- Check Supabase status: `pnpm test:supabase:status`
+- Restart Supabase: `pnpm test:supabase:stop && pnpm test:supabase:start`
 
 ### Schema Issues
 
-If tests fail due to missing tables:
-
-1. Check your migrations: `supabase db diff`
-2. Apply migrations: `supabase db reset`
-3. Adjust test table names to match your schema
+If tests fail due to missing tables, reset and migrate the test database:
+`pnpm test:db:reset`. A bare `supabase db reset` targets
+`supabase/supabase-dev.toml`, the development database.
 
 ### Port Conflicts
 
-Default ports from `supabase/supabase-dev.toml`:
+Ports from `supabase/supabase-test.toml`:
 
-- API: 54321
-- DB: 54322
-- Studio: 54323
+- API: 55321
+- DB: 55322
 
-Change ports in config if they conflict with other services.
+Studio and Inbucket are disabled for the test instance. Change ports in that
+file if they conflict with other services.
 
 ## File Structure
 
 ```
-src/test/
-├── README.md                      # This file
-├── setup.ts                       # Global test setup
-├── supabase-utils.ts              # Test utility functions
-├── check-supabase.ts              # Supabase health check script
-└── integration/
-    └── supabase.integration.test.ts   # Integration test examples
+packages/common/testing/
+├── README.md            # This file
+├── index.ts             # `@op/common/testing` entry point
+├── constants.ts         # TEST_USER_DEFAULT_PASSWORD
+├── authPool.ts          # Widens the auth server's connection pool
+├── globalSetup.ts       # Migrate + seed once per run, verify empty tables after
+├── setup.ts             # Per-file setup: module mocks, Supabase clients
+├── mocks/               # Shared module mocks, see mocks/README.md
+├── supabase.ts          # Test user / session / insert helpers
+├── vitest.ts            # TEST_ENV and defineIntegrationProject({ root })
+├── unitSetup.ts         # Unit-project guard against a real database connection
+├── check-supabase.ts    # Supabase health check script
+└── supabase-test.ts     # Test Supabase instance management script
 ```
+
+The `Test*DataManager` helpers still live in `services/api/src/test/helpers/`
+and import the harness from `@op/common/testing` through
+`services/api/src/test/supabase-utils.ts`.
 
 ## Configuration Files
 
-- `vitest.config.ts` - Vitest configuration with Supabase environment
-- `../../supabase/supabase-dev.toml` - Supabase local configuration
-- `package.json` - Test scripts and dependencies
+- `vitest.ts` - shared vitest options, consumed by each package's `vitest.config.ts`
+- `../../../supabase/supabase-test.toml` - test Supabase configuration
+- `../package.json` - the harness scripts (`test:supabase:*`, `test:check-supabase`)
