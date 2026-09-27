@@ -8,7 +8,7 @@ import {
 } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
 
-import { supabaseTestAdminClient } from '../../test/supabase-utils';
+import { supabaseTestAdminClient } from '../supabase';
 
 /**
  * Test Join Profile Request Data Manager

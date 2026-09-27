@@ -1,12 +1,12 @@
 import type { DecisionSchemaDefinition } from '@op/common';
-import { ProposalReviewRequestState } from '@op/db/schema';
 import {
   type CreateOrganizationResult,
   createDecisionInstance,
   createInstanceMember,
   createReviewScenario,
   getSeededTemplate,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { ProposalReviewRequestState } from '@op/db/schema';
 import type { Browser, Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 

@@ -1,3 +1,7 @@
+import {
+  TestDecisionsDataManager,
+  TestProfileUserDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
@@ -10,8 +14,6 @@ import {
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

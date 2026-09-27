@@ -1,5 +1,11 @@
 import type { ProposalTemplateSchema } from '@op/common';
 import {
+  createDecisionInstance,
+  createProposal,
+  getSeededTemplate,
+  makeDecisionPublic,
+} from '@op/common/testing/data';
+import {
   EntityType,
   ProcessStatus,
   ProposalStatus,
@@ -14,12 +20,6 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
-import {
-  createDecisionInstance,
-  createProposal,
-  getSeededTemplate,
-  makeDecisionPublic,
-} from '@op/test';
 import type { Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 

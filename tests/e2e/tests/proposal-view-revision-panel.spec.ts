@@ -1,13 +1,6 @@
-import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
-  processInstances,
-  proposalReviewRequests,
-} from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
+import type { DecisionSchemaDefinition } from '@op/common';
 import {
   type CreateOrganizationResult,
-  type DecisionSchemaDefinition,
   createDecisionInstance,
   createInstanceMember,
   createOrganization,
@@ -16,7 +9,14 @@ import {
   createRevisionRequest,
   getSeededTemplate,
   grantInstanceReviewerRole,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  processInstances,
+  proposalReviewRequests,
+} from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/test';
 import type { Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 

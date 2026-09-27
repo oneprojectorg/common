@@ -1,3 +1,4 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   locations,
@@ -10,7 +11,6 @@ import { eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

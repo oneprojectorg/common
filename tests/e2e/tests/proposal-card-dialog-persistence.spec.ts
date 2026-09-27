@@ -1,10 +1,10 @@
-import { ProposalStatus } from '@op/db/schema';
 import {
   type CreateOrganizationResult,
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { ProposalStatus } from '@op/db/schema';
 import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/index.js';

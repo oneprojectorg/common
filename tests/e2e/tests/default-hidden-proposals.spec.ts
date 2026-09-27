@@ -1,4 +1,9 @@
 import {
+  createOrganization,
+  createProposal,
+  grantDecisionProfileAccess,
+} from '@op/common/testing/data';
+import {
   EntityType,
   ProcessStatus,
   ProposalStatus,
@@ -12,11 +17,6 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
-import {
-  createOrganization,
-  createProposal,
-  grantDecisionProfileAccess,
-} from '@op/test';
 import { randomUUID } from 'node:crypto';
 
 import {

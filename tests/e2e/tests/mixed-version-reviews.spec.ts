@@ -3,13 +3,6 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
-  ProposalReviewState,
-  decisionTransitionProposals,
-  processInstances,
-  stateTransitionHistory,
-} from '@op/db/schema';
-import { db, eq } from '@op/db/test';
-import {
   createDecisionInstance,
   createInstanceMember,
   createProposalReview,
@@ -17,7 +10,14 @@ import {
   createReviewScenario,
   getSeededTemplate,
   reviseProposal,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProposalReviewState,
+  decisionTransitionProposals,
+  processInstances,
+  stateTransitionHistory,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 
 import { expect, test } from '../fixtures/index.js';
 

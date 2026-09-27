@@ -1,4 +1,3 @@
-import { TEST_USER_DEFAULT_PASSWORD } from '@op/common/testing/constants';
 import {
   type Organization,
   organizationUserToAccessRoles,
@@ -12,8 +11,8 @@ import { db, eq, sql } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
-// The constant alone: the `@op/common/testing` barrel loads the Vitest setup,
-// which Playwright cannot run.
+import { TEST_USER_DEFAULT_PASSWORD } from '../constants';
+
 export { TEST_USER_DEFAULT_PASSWORD };
 
 export interface GeneratedUser {

@@ -1,9 +1,9 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { contentTranslations, moderationFlags } from '@op/db/schema';
 import {
@@ -9,7 +10,6 @@ import { eq, like } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

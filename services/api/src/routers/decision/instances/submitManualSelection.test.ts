@@ -1,4 +1,8 @@
 import { getProposalsForPhase } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { db, desc, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
@@ -15,14 +19,12 @@ import type { z } from 'zod';
 
 import { appRouter } from '../..';
 import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,

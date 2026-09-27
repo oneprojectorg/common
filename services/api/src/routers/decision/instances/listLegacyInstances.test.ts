@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -7,7 +8,6 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

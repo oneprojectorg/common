@@ -1,10 +1,10 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { postReactions, posts, postsToProfiles } from '@op/db/schema';
 import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

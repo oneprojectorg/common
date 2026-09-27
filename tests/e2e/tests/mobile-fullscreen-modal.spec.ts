@@ -1,10 +1,10 @@
-import { users } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
   getSeededTemplate,
   makeDecisionPublic,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { users } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import type { Locator, Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 

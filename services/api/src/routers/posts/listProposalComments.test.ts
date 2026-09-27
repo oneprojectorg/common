@@ -1,4 +1,5 @@
 import { createPostOnProfile } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ModerationFlagStatus,
@@ -14,7 +15,6 @@ import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

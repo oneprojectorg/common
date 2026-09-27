@@ -1,3 +1,4 @@
+import { TestReviewsDataManager } from '@op/common/testing';
 import {
   ProposalReviewAssignmentStatus,
   ProposalStatus,
@@ -8,7 +9,6 @@ import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

@@ -3,14 +3,6 @@ import type {
   DecisionSchemaDefinition,
 } from '@op/common';
 import {
-  ProcessStatus,
-  ProposalStatus,
-  processInstances,
-  profiles,
-  proposals as proposalsTable,
-} from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
-import {
   addProposalToCategory,
   createCategoryReviewer,
   createDecisionInstance,
@@ -19,7 +11,15 @@ import {
   ensureProposalCategoryTerms,
   getSeededTemplate,
   grantInstanceReviewerRole,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  processInstances,
+  profiles,
+  proposals as proposalsTable,
+} from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/test';
 import type { Browser, Page } from '@playwright/test';
 
 import {

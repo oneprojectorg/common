@@ -1,5 +1,10 @@
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
+  createDecisionInstance,
+  createProposal,
+  getSeededTemplate,
+} from '@op/common/testing/data';
+import {
   ProposalStatus,
   decisionTransitionProposals,
   processInstances,
@@ -8,11 +13,6 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { db, eq, inArray } from '@op/db/test';
-import {
-  createDecisionInstance,
-  createProposal,
-  getSeededTemplate,
-} from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
 

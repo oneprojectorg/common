@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
@@ -9,7 +10,6 @@ import {
 import { TRPCError } from '@trpc/server';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 /**

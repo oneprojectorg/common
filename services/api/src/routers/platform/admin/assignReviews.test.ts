@@ -1,4 +1,5 @@
 import { createDecisionRole } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -10,7 +11,6 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

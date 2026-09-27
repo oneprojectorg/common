@@ -3,6 +3,15 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
+  type CreateOrganizationResult,
+  createDecisionInstance,
+  createInstanceMember,
+  createProposal,
+  createReviewScenario,
+  getSeededTemplate,
+  grantInstanceReviewerRole,
+} from '@op/common/testing/data';
+import {
   ProposalStatus,
   posts,
   postsToProfiles,
@@ -13,15 +22,6 @@ import {
   resources,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
-import {
-  type CreateOrganizationResult,
-  createDecisionInstance,
-  createInstanceMember,
-  createProposal,
-  createReviewScenario,
-  getSeededTemplate,
-  grantInstanceReviewerRole,
-} from '@op/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 

@@ -91,10 +91,6 @@
         "patterns": ["services/workflows/**"]
       },
       {
-        "name": "tests/core",
-        "patterns": ["tests/core/**"]
-      },
-      {
         "name": "tests/e2e",
         "patterns": ["tests/e2e/**"]
       }
@@ -195,8 +191,7 @@
           "services/events",
           "services/realtime",
           "services/supabase",
-          "services/translation",
-          "tests/core"
+          "services/translation"
         ]
       },
       {
@@ -246,16 +241,11 @@
         ]
       },
       {
-        "from": "tests/core",
-        "allow": ["packages/common", "packages/core", "services/db"]
-      },
-      {
         "from": "tests/e2e",
         "allow": [
           "packages/common",
           "services/db",
-          "services/supabase",
-          "tests/core"
+          "services/supabase"
         ]
       }
     ]

@@ -1,6 +1,4 @@
 import type { DecisionSchemaDefinition } from '@op/common';
-import { processInstances } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import {
   type CreateOrganizationResult,
   createDecisionInstance,
@@ -8,7 +6,9 @@ import {
   createReviewScenario,
   getSeededTemplate,
   grantInstanceReviewerRole,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { processInstances } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import type { Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';

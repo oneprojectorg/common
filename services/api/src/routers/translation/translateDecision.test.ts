@@ -1,11 +1,13 @@
+import {
+  TestDecisionsDataManager,
+  TestTranslationDataManager,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import { contentTranslations, processInstances } from '@op/db/schema';
 import { eq, like } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

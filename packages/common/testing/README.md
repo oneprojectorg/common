@@ -1,6 +1,12 @@
 # Vitest + Supabase Integration Testing
 
-This directory holds the harness for running integration tests with Vitest against an **isolated test Supabase instance**. It is published as `@op/common/testing` so `packages/common` and `services/api` can both use it.
+This directory holds the harness for running integration tests with Vitest against an **isolated test Supabase instance**. It is published as `@op/common/testing` so `packages/common`, `services/api` and `tests/e2e` can all use it. Vitest tests import every helper (the Supabase helpers, the `Test*DataManager` classes and the `data/` fixtures) from that one entry point:
+
+```typescript
+import { TestReviewsDataManager, createProposal } from '@op/common/testing';
+```
+
+There are three other entries. `@op/common/testing/data` holds only the `data/` fixtures, for Playwright specs in `tests/e2e`: the main entry loads `setup.ts`, which needs a Vitest runtime. `@op/common/testing/vitest` holds the config-time options that `vitest.config.ts` files load, so it does not import the Supabase clients. `@op/common/testing/mocks/deepl` gives tests the `mockTranslateText` spy that `setup.ts` installs for `deepl-node`.
 
 ## Naming rule
 
@@ -278,15 +284,13 @@ packages/common/testing/
 ├── setup.ts             # Per-file setup: module mocks, Supabase clients
 ├── mocks/               # Shared module mocks, see mocks/README.md
 ├── supabase.ts          # Test user / session / insert helpers
+├── data/                # Row-level fixtures: organizations, decisions, reviews
+├── helpers/             # Test*DataManager classes with per-test cleanup, see helpers/README.md
 ├── vitest.ts            # TEST_ENV and defineIntegrationProject({ root })
 ├── unitSetup.ts         # Unit-project guard against a real database connection
 ├── check-supabase.ts    # Supabase health check script
 └── supabase-test.ts     # Test Supabase instance management script
 ```
-
-The `Test*DataManager` helpers still live in `services/api/src/test/helpers/`
-and import the harness from `@op/common/testing` through
-`services/api/src/test/supabase-utils.ts`.
 
 ## Configuration Files
 

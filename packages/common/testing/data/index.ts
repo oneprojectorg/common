@@ -67,6 +67,3 @@ export {
   type EnsuredCategoryTerm,
   type ReviewSettings,
 } from './review-data';
-
-// Re-export schema types from @op/common for convenience
-export type { DecisionSchemaDefinition, PhaseDefinition } from '@op/common';

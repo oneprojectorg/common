@@ -88,7 +88,7 @@
     "packages/common/src/services/moderation/applyModerationVerdict.ts:applyModerationVerdict:122",
     "packages/common/src/services/translation/translateDecision.ts:parseResults:198",
     "services/api/src/routers/account/login.ts:<arrow>:35",
-    "services/api/src/test/helpers/TestDecisionsDataManager.ts:createProposal:614",
+    "packages/common/testing/helpers/TestDecisionsDataManager.ts:createProposal:638",
     "tests/e2e/tests/a11y-baseline.spec.ts:<arrow>:168",
     "apps/app/src/components/Resources/AddResourceDocumentForm.tsx:AddResourceDocumentForm:33",
     "apps/app/src/components/decisions/rubricTemplate.ts:inferCriterionType:235",

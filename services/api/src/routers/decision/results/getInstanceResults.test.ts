@@ -1,14 +1,16 @@
+import {
+  TestDecisionsDataManager,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { ProcessStatus, ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,

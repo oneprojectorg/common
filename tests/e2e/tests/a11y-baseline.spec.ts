@@ -1,12 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
-import { profiles } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import {
   type CreateOrganizationResult,
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { profiles } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import type { ConsoleMessage, Page } from '@playwright/test';
 import type { AxeResults, ImpactValue, Result } from 'axe-core';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

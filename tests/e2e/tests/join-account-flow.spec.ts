@@ -1,10 +1,10 @@
-import { ProposalStatus } from '@op/db/schema';
 import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
   makeDecisionPublic,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { ProposalStatus } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 
 import {

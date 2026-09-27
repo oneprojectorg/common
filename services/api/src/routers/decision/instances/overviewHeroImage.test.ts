@@ -1,9 +1,9 @@
 import { IMAGE_UPLOAD_SIZE_LIMIT } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

@@ -4,6 +4,14 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
+  closeOpenProposalHistory,
+  createProposalReview,
+  createReviewAssignment as createReviewAssignmentRow,
+  createRevisionRequest,
+  reviseProposal,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -14,18 +22,10 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import {
-  closeOpenProposalHistory,
-  createProposalReview,
-  createReviewAssignment as createReviewAssignmentRow,
-  createRevisionRequest,
-  reviseProposal,
-} from '@op/test';
 import { eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

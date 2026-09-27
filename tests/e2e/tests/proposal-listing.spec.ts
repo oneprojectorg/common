@@ -1,3 +1,4 @@
+import { createProposal } from '@op/common/testing/data';
 import {
   EntityType,
   ProcessStatus,
@@ -9,7 +10,6 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
-import { createProposal } from '@op/test';
 import { randomUUID } from 'node:crypto';
 
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';

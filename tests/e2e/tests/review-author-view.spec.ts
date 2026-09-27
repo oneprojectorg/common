@@ -3,14 +3,6 @@ import type {
   DecisionSchemaDefinition,
 } from '@op/common';
 import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
-  ProposalStatus,
-  processInstances,
-  proposals,
-} from '@op/db/schema';
-import { db, eq } from '@op/db/test';
-import {
   createDecisionInstance,
   createInstanceMember,
   createOrganization,
@@ -19,7 +11,15 @@ import {
   getSeededTemplate,
   grantDecisionProfileAccess,
   grantInstanceReviewerRole,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  ProposalStatus,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,

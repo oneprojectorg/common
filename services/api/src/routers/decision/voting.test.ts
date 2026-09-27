@@ -1,9 +1,9 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { ProposalStatus, processInstances } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

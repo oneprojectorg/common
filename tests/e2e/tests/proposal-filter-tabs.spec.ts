@@ -1,10 +1,10 @@
-import { ProposalStatus, users } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { ProposalStatus, users } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 
 import { expect, test } from '../fixtures/index.js';
 

@@ -63,7 +63,6 @@ COPY services/realtime/package.json ./services/realtime/
 COPY services/supabase/package.json ./services/supabase/
 COPY services/translation/package.json ./services/translation/
 COPY services/workflows/package.json ./services/workflows/
-COPY tests/core/package.json ./tests/core/
 COPY tests/e2e/package.json ./tests/e2e/
 
 # pnpm >= 10.34.2 drops the ${...} credential from a repo .npmrc unless trusted.

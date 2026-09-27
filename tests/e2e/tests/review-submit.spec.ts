@@ -2,14 +2,14 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { processInstances } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
   createReviewScenario,
   getSeededTemplate,
   reviseProposal,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { processInstances } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 
 import { expect, test } from '../fixtures/index.js';
 

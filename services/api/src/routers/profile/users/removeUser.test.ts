@@ -1,9 +1,9 @@
+import { TestProfileUserDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

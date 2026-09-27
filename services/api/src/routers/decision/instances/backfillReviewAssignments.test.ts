@@ -8,6 +8,10 @@ import {
   generateReviewAssignments,
   updateProfileUserRoles,
 } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  TestProfileUserDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -19,8 +23,6 @@ import { event } from '@op/events';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import { createIsolatedSession } from '../../../test/supabase-utils';
 
 /**

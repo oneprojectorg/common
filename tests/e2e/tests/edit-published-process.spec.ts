@@ -2,7 +2,7 @@ import {
   createDecisionInstance,
   getDecisionInstance,
   getSeededTemplate,
-} from '@op/test';
+} from '@op/common/testing/data';
 
 import { expect, test } from '../fixtures/index.js';
 

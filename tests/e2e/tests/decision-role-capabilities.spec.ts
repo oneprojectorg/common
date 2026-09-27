@@ -1,10 +1,10 @@
+import type { DecisionSchemaDefinition } from '@op/common';
 import {
-  type DecisionSchemaDefinition,
   createDecisionInstance,
   createOrganization,
   getSeededTemplate,
   grantDecisionProfileAccess,
-} from '@op/test';
+} from '@op/common/testing/data';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,
