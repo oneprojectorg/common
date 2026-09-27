@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
 import slugify from 'slugify';
 
@@ -61,7 +61,13 @@ export async function ensureProposalTaxonomyTerms(
 
     // taxonomyTerms V2 types are broken due to self-referential parentId
     let existingTerm = await db._query.taxonomyTerms.findFirst({
-      where: eq(taxonomyTerms.termUri, termUri),
+      // `termUri` is only unique within a taxonomy, so scope the lookup or
+      // another taxonomy's term with the same slug is returned and no
+      // `proposal` term is ever created.
+      where: and(
+        eq(taxonomyTerms.termUri, termUri),
+        eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
+      ),
     });
 
     if (!existingTerm) {
