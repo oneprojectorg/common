@@ -5,6 +5,7 @@ import {
 import { z } from 'zod';
 
 import { paginated, total } from '../../../utils/pagination';
+import { proposalDataSchema } from '../proposalDataSchema';
 import { eligibleReviewerSchema, reviewAssignmentListSchema } from './reviews';
 
 export const phaseReviewerSummarySchema = z.object({
@@ -41,6 +42,7 @@ export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
   reviewer: eligibleReviewerSchema.nullable(),
   /** False once the reviewer lost the REVIEW capability; their history stays visible. */
   isEligible: z.boolean(),
+  canModifyAssignments: z.boolean(),
   assignedCount: z.number(),
   submittedCount: z.number(),
   draftCount: z.number(),
@@ -51,3 +53,27 @@ export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
 });
 
 export type ReviewerAssignments = z.infer<typeof reviewerAssignmentsSchema>;
+
+export const assignableProposalSchema = z.object({
+  id: z.uuid(),
+  profileId: z.uuid(),
+  proposalData: proposalDataSchema,
+  profileName: z.string().nullable(),
+  authorName: z.string().nullable(),
+  assignment: z
+    .object({
+      id: z.uuid(),
+      status: z.enum(ProposalReviewAssignmentStatus),
+      reviewState: z.enum(ProposalReviewState).nullable(),
+    })
+    .nullable(),
+  isOwn: z.boolean(),
+});
+
+export type AssignableProposal = z.infer<typeof assignableProposalSchema>;
+
+export const assignableProposalListSchema = paginated(assignableProposalSchema);
+
+export type AssignableProposalList = z.infer<
+  typeof assignableProposalListSchema
+>;

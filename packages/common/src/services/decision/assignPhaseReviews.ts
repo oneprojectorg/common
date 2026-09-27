@@ -1,7 +1,8 @@
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { assertInstanceProfileAccess } from '../access';
+import { UnauthorizedError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 import { assignReviewsToReviewer } from './assignReviewsToReviewer';
 import { getInstance } from './getInstance';
 import type { InstancePhaseRef } from './schemas/instance';
@@ -25,11 +26,13 @@ export async function assignPhaseReviews({
 }: AssignPhaseReviewsInput): Promise<number> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  await assertInstanceProfileAccess({
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+  await assertProfileAccess({
     user,
-    instance,
-    profilePermissions: { decisions: permission.ADMIN },
-    orgFallbackPermissions: { decisions: permission.ADMIN },
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
   });
 
   return assignReviewsToReviewer({

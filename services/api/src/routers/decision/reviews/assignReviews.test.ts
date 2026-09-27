@@ -3,11 +3,13 @@ import {
   ProposalStatus,
   proposals,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
@@ -93,16 +95,39 @@ describe.concurrent('decision.assignReviews', () => {
     });
     expect(second.createdCount).toBe(0);
 
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const queue = await adminCaller.decision.listReviewerAssignments({
       processInstanceId,
       phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
     });
 
-    const rollup = listing.reviewers.find(
-      (candidate) => candidate.profile.id === reviewer.profileId,
-    );
-    expect(rollup?.assignedCount).toBe(1);
-    expect(rollup?.assignments[0]?.proposalId).toBe(proposal.id);
+    expect(queue.assignedCount).toBe(1);
+    expect(queue.items[0]?.assignment.proposal.id).toBe(proposal.id);
+  });
+
+  it('rejects an org admin with no grant on the instance profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { context, processInstanceId, proposal, reviewer } =
+      await createAssignSetup(task.id, onTestFinished);
+
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const orgAdmin = await decisions.createMemberUser({
+      organization: context.organization,
+      orgRoleId: ROLES.ADMIN.id,
+    });
+
+    const caller = await createAuthenticatedCaller(orgAdmin.email);
+
+    await expect(
+      caller.decision.assignReviews({
+        processInstanceId,
+        phaseId: 'review',
+        reviewerProfileId: reviewer.profileId,
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects a reviewer who is not an instance admin', async ({
@@ -216,11 +241,11 @@ describe.concurrent('decision.assignReviews', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const listing = await adminCaller.decision.listProposals({
       processInstanceId,
       phaseId: 'review',
     });
-    expect(listing.proposals.map((candidate) => candidate.id)).not.toContain(
+    expect(listing.items.map((candidate) => candidate.id)).not.toContain(
       proposal.id,
     );
   });
@@ -269,14 +294,12 @@ describe.concurrent('decision.assignReviews', () => {
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
     // Atomic: the valid id must not have been assigned either.
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const queue = await adminCaller.decision.listReviewerAssignments({
       processInstanceId,
       phaseId: 'review',
+      reviewerProfileId: reviewer.profileId,
     });
-    const rollup = listing.reviewers.find(
-      (candidate) => candidate.profile.id === reviewer.profileId,
-    );
-    expect(rollup).toBeUndefined();
+    expect(queue.items).toEqual([]);
   });
 
   it('rejects a phaseId that does not exist on the instance', async ({

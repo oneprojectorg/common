@@ -99,11 +99,11 @@ describe.concurrent('decision.removeReviewAssignments', () => {
     });
     expect(assignment).toBeUndefined();
 
-    const listing = await adminCaller.decision.listPhaseReviewAssignments({
+    const summaries = await adminCaller.decision.listPhaseReviewerSummaries({
       processInstanceId,
       phaseId: 'review',
     });
-    expect(listing.totalAssignments).toBe(0);
+    expect(summaries.totalAssignments).toBe(0);
   });
 
   it('skips an assignment the reviewer has started, keeping their draft', async ({
