@@ -1,10 +1,10 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { GLOBAL_USER_IDS } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
-import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

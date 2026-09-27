@@ -1,9 +1,11 @@
+import {
+  TestDecisionsDataManager,
+  TestOrganizationDataManager,
+} from '@op/common/testing';
 import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

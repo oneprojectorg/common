@@ -1,8 +1,8 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
-import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

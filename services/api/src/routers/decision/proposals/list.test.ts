@@ -1,5 +1,12 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
 import { PROPOSAL_SEARCH_MAX_LENGTH, RejectionReason } from '@op/common/client';
+import {
+  createReviewAssignment,
+  TestDecisionsDataManager,
+  schemaWithPipeline,
+  schemaWithThreePhases,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -13,23 +20,16 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { createReviewAssignment } from '@op/test';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import {
-  schemaWithPipeline,
-  schemaWithThreePhases,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,

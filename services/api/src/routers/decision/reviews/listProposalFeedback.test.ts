@@ -1,16 +1,16 @@
 import type { DecisionSchemaDefinition } from '@op/common';
-import { ProposalReviewState, proposals } from '@op/db/schema';
-import { db } from '@op/db/test';
 import {
   createProposalReview,
   createReviewAssignment,
   grantDecisionProfileAccess,
-} from '@op/test';
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import { ProposalReviewState, proposals } from '@op/db/schema';
+import { db } from '@op/db/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

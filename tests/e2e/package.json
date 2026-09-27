@@ -23,7 +23,6 @@
     "@op/common": "workspace:^",
     "@op/db": "workspace:*",
     "@op/supabase": "workspace:*",
-    "@op/test": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@playwright/test": "^1.58.0",
     "@rjsf/utils": "^6.3.1",

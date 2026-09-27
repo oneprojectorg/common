@@ -1,9 +1,9 @@
-import { ProcessStatus } from '@op/db/schema';
 import {
   createDecisionInstance,
   getDecisionInstance,
   getSeededTemplate,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { ProcessStatus } from '@op/db/schema';
 
 import { expect, test } from '../fixtures/index.js';
 

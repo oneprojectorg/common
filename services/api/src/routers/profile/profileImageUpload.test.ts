@@ -1,8 +1,8 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

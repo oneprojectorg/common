@@ -1,5 +1,12 @@
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
+  createDecisionInstance,
+  createOrganization,
+  createProposal,
+  getSeededTemplate,
+  grantDecisionProfileAccess,
+} from '@op/common/testing/data';
+import {
   ProposalStatus,
   decisionProcessResultSelections,
   decisionProcessResults,
@@ -9,13 +16,6 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { db, desc, eq, inArray } from '@op/db/test';
-import {
-  createDecisionInstance,
-  createOrganization,
-  createProposal,
-  getSeededTemplate,
-  grantDecisionProfileAccess,
-} from '@op/test';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,

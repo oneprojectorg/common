@@ -1,3 +1,9 @@
+import {
+  addProposalToCategory,
+  ensureProposalCategoryTerms,
+  TestDecisionsDataManager,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
@@ -10,17 +16,14 @@ import {
   stateTransitionHistory,
   taxonomyTerms,
 } from '@op/db/schema';
-import { addProposalToCategory, ensureProposalCategoryTerms } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,

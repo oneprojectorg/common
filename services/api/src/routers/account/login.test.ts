@@ -1,3 +1,9 @@
+import {
+  inviteEmail,
+  signUpAllowlistedUser,
+  signUpConfirmedUser,
+  signUpNonAllowlistedUser,
+} from '@op/common/testing';
 import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -6,12 +12,6 @@ import {
   accessTierGatingCell,
   describeAccessTierGating,
 } from '../../test/helpers/gating';
-import {
-  inviteEmail,
-  signUpAllowlistedUser,
-  signUpConfirmedUser,
-  signUpNonAllowlistedUser,
-} from '../../test/helpers/loginTestUtils';
 import { createTestContextWithSession } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 

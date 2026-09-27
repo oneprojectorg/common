@@ -1,7 +1,3 @@
-import type {
-  DecisionSchemaDefinition,
-  ProposalTemplateSchema,
-} from '@op/common';
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import {
   EntityType,
@@ -27,6 +23,10 @@ import { db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 
+import type {
+  DecisionSchemaDefinition,
+  ProposalTemplateSchema,
+} from '../../src';
 import {
   addUserToOrganization,
   createOrganization,

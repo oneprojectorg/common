@@ -1,14 +1,17 @@
 import type { RubricTemplateSchema } from '@op/common';
 import {
+  closeOpenProposalHistory,
+  reviseProposal,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { closeOpenProposalHistory, reviseProposal } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

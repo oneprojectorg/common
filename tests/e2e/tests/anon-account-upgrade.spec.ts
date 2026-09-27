@@ -2,7 +2,7 @@ import {
   createDecisionInstance,
   getSeededTemplate,
   makeDecisionPublic,
-} from '@op/test';
+} from '@op/common/testing/data';
 import { randomUUID } from 'node:crypto';
 
 import {

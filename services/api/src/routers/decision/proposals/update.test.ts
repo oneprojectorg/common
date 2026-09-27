@@ -1,5 +1,10 @@
 import { mockCollab } from '@op/collab/testing';
 import { getInstancePhases, parseProposalData } from '@op/common';
+import {
+  createRevisionRequest,
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -8,12 +13,9 @@ import {
   Visibility,
   processInstances,
 } from '@op/db/schema';
-import { createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

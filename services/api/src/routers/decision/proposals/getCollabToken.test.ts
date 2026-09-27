@@ -1,11 +1,13 @@
 import { parseProposalData } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  TestProfileUserDataManager,
+} from '@op/common/testing';
 import jwt from 'jsonwebtoken';
 import { createPublicKey } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

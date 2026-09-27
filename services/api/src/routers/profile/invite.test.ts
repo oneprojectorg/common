@@ -1,4 +1,8 @@
 import { decisionPermission } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  TestProfileUserDataManager,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -12,8 +16,6 @@ import { event } from '@op/events';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

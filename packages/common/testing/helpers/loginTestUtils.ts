@@ -7,7 +7,7 @@ import {
   TEST_USER_DEFAULT_PASSWORD,
   createIsolatedTestClient,
   supabaseTestAdminClient,
-} from '../supabase-utils';
+} from '../supabase';
 
 // Teardown is registered through the running test's own context rather than the
 // global `onTestFinished` import: under `describe.concurrent` the global helper

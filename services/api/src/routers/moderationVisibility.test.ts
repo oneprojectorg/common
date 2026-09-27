@@ -1,3 +1,7 @@
+import {
+  TestDecisionsDataManager,
+  TestOrganizationDataManager,
+} from '@op/common/testing';
 import { db, eq, inArray } from '@op/db/client';
 import {
   ModerationFlagStatus,
@@ -13,8 +17,6 @@ import {
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../test/helpers/TestDecisionsDataManager';
-import { TestOrganizationDataManager } from '../test/helpers/TestOrganizationDataManager';
 import { createAuthenticatedCaller } from '../test/supabase-utils';
 
 /**

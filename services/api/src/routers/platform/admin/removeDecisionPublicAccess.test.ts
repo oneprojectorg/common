@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
@@ -5,7 +6,6 @@ import { ROLES, ZONES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

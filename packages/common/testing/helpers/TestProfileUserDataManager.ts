@@ -11,7 +11,7 @@ import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 
-import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
+import { createTestUser, supabaseTestAdminClient } from '../supabase';
 
 interface GenerateTestProfileOptions {
   users?: {

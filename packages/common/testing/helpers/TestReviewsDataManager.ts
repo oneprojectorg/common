@@ -1,8 +1,3 @@
-import { type RubricTemplateSchema, createDecisionRole } from '@op/common';
-import {
-  assertInstancePhase,
-  invalidateDecisionInstance,
-} from '@op/common/src/services/decision';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -11,16 +6,23 @@ import {
   processInstances,
   proposalAttachments,
 } from '@op/db/schema';
-import {
-  configureProcessReviews,
-  createInstanceMember as coreCreateInstanceMember,
-  createReviewScenario,
-  defaultReviewSettings,
-  testSimpleVotingSchema,
-} from '@op/test';
 import { eq } from 'drizzle-orm';
 
-import { supabaseTestAdminClient } from '../supabase-utils';
+import { type RubricTemplateSchema, createDecisionRole } from '../../src';
+import {
+  assertInstancePhase,
+  invalidateDecisionInstance,
+} from '../../src/services/decision';
+import {
+  createInstanceMember as coreCreateInstanceMember,
+  testSimpleVotingSchema,
+} from '../data/decision-data';
+import {
+  configureProcessReviews,
+  createReviewScenario,
+  defaultReviewSettings,
+} from '../data/review-data';
+import { supabaseTestAdminClient } from '../supabase';
 import { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
 type DecisionProcessSchema = NonNullable<

@@ -2,7 +2,7 @@ import {
   type CreateOrganizationResult,
   TEST_USER_DEFAULT_PASSWORD,
   createOrganization,
-} from '@op/test';
+} from '@op/common/testing/data';
 import type { Page } from '@playwright/test';
 import { test as base } from '@playwright/test';
 import {

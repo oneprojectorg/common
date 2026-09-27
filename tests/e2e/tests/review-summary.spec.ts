@@ -3,12 +3,6 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
-  ProposalReviewRequestState,
-  ProposalReviewState,
-  processInstances,
-} from '@op/db/schema';
-import { db, eq } from '@op/db/test';
-import {
   createDecisionInstance,
   createInstanceMember,
   createProposalReview,
@@ -17,7 +11,13 @@ import {
   createRevisionRequest,
   getSeededTemplate,
   reviseProposal,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProposalReviewRequestState,
+  ProposalReviewState,
+  processInstances,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import type { Locator, Page } from '@playwright/test';
 
 import {

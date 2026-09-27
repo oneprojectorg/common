@@ -1,3 +1,7 @@
+import {
+  TestJoinProfileRequestDataManager,
+  TestOrganizationDataManager,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   JoinProfileRequestStatus,
@@ -11,8 +15,6 @@ import {
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

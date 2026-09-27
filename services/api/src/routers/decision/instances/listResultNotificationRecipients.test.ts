@@ -1,4 +1,8 @@
 import { listResultNotificationRecipients, processResults } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { db, desc, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -10,9 +14,6 @@ import {
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 
 // The unit tests mock the resolver, schema and db client; these run against a
 // real database.

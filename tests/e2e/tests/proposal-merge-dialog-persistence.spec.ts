@@ -1,9 +1,9 @@
-import { ProposalStatus } from '@op/db/schema';
 import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { ProposalStatus } from '@op/db/schema';
 
 import { expect, test } from '../fixtures/index.js';
 

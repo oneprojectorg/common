@@ -1,4 +1,10 @@
 import {
+  addProposalToCategory,
+  createProposalReview,
+  ensureProposalCategoryTerms,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
@@ -6,16 +12,10 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import {
-  addProposalToCategory,
-  createProposalReview,
-  ensureProposalCategoryTerms,
-} from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

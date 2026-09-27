@@ -16,7 +16,9 @@
     "./locales": "./src/services/translation/locales.ts",
     "./locales.mjs": "./locales.mjs",
     "./testing": "./testing/index.ts",
-    "./testing/*": "./testing/*.ts",
+    "./testing/data": "./testing/data/index.ts",
+    "./testing/vitest": "./testing/vitest.ts",
+    "./testing/mocks/deepl": "./testing/mocks/deepl.ts",
     "./src/*": "./src/*"
   },
   "main": "src/index.ts",

@@ -1,8 +1,8 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { EntityType } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import profileRouter from '.';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

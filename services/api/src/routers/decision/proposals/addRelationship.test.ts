@@ -1,4 +1,5 @@
 import { createDecisionRole } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProfileRelationshipType,
@@ -10,7 +11,6 @@ import {
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

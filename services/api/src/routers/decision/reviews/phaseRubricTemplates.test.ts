@@ -4,13 +4,16 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
+import {
+  createProposalReview,
+  createReviewAssignment,
+  TestReviewsDataManager,
+} from '@op/common/testing';
 import { ProposalReviewState } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createProposalReview, createReviewAssignment } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

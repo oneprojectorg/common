@@ -7,5 +7,5 @@ export {
   authenticateAnonymously,
   createSupabaseAdminClient,
 } from './auth';
-export { createOrganization, createUser } from '@op/test';
+export { createOrganization, createUser } from '@op/common/testing/data';
 export { waitForAutoSave } from './autosave';

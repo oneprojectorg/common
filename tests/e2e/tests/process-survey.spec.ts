@@ -1,7 +1,10 @@
 import type { DecisionSchemaDefinition } from '@op/common';
+import {
+  createDecisionInstance,
+  getSeededTemplate,
+} from '@op/common/testing/data';
 import { decisionProcessSurveyResponses } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
-import { createDecisionInstance, getSeededTemplate } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
 

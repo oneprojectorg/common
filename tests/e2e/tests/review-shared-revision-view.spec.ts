@@ -3,20 +3,20 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
-  processInstances,
-} from '@op/db/schema';
-import { db, eq } from '@op/db/test';
-import type { CreateOrganizationResult } from '@op/test';
-import {
+  type CreateOrganizationResult,
   createDecisionInstance,
   createInstanceMember,
   createReviewAssignment,
   createReviewScenario,
   getSeededTemplate,
   grantInstanceReviewerRole,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  processInstances,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import type { Browser, Locator, Page, TestInfo } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 

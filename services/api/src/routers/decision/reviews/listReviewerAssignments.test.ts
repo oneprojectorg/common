@@ -1,4 +1,9 @@
 import {
+  createProposalReview,
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
@@ -8,13 +13,10 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
-import { createProposalReview } from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

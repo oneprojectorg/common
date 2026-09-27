@@ -1,12 +1,15 @@
 import {
+  createRevisionRequest,
+  grantDecisionProfileAccess,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
-import { createRevisionRequest, grantDecisionProfileAccess } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

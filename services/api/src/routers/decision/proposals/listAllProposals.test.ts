@@ -1,3 +1,7 @@
+import {
+  TestDecisionsDataManager,
+  schemaWithPipeline,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -15,13 +19,11 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,

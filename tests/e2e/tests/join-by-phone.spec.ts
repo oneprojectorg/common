@@ -4,7 +4,7 @@ import {
   getSeededTemplate,
   makeDecisionPublic,
   releaseTestPhoneNumber,
-} from '@op/test';
+} from '@op/common/testing/data';
 import { randomUUID } from 'node:crypto';
 
 import {

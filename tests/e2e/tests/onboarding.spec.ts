@@ -1,7 +1,10 @@
+import {
+  createDecisionInstance,
+  getSeededTemplate,
+} from '@op/common/testing/data';
 import { EntityType, profileInvites, users } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
-import { createDecisionInstance, getSeededTemplate } from '@op/test';
 import { randomUUID } from 'node:crypto';
 
 import {

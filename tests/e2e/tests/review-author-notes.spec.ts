@@ -3,12 +3,6 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
-  processInstances,
-} from '@op/db/schema';
-import { db, eq } from '@op/db/test';
-import {
   createDecisionInstance,
   createInstanceMember,
   createReviewScenario,
@@ -16,7 +10,13 @@ import {
   getSeededTemplate,
   grantInstanceReviewerRole,
   reviseProposal,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  processInstances,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,
