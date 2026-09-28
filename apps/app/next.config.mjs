@@ -147,10 +147,10 @@ const config = {
       },
       {
         // Everything except /api/embeds/*: that route proxies iframely's embed
-        // document and is framed same-origin (embed.js derives its iframe API
-        // base from its own /api/embeds origin), so a global X-Frame-Options:
-        // DENY / frame-ancestors 'none' would blank out every link-preview
-        // embed. The proxy sets its own sandbox CSP instead.
+        // document, which <LinkPreview> frames same-origin, so a global
+        // X-Frame-Options: DENY / frame-ancestors 'none' — both of which deny
+        // same-origin framing too — would blank out every link-preview embed.
+        // The proxy sets its own sandbox CSP instead.
         source: '/((?!api/embeds).*)',
         headers: [
           {

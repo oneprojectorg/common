@@ -1,4 +1,5 @@
 import { cache } from '@op/cache';
+import { EMBED_PROXY_PATH } from '@op/core';
 
 export type LinkPreviewResult = {
   url: string;
@@ -26,13 +27,9 @@ const LINK_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Matches absolute and protocol-relative references to iframely's embed CDN
 // inside the returned embed HTML (iframe srcs, lazy `data-iframely-url`
-// attributes, inline embed.js script tags).
+// attributes, inline embed.js script tags — the last two reach no further
+// than <LinkPreview>'s sanitizer, which renders the iframe alone).
 const IFRAMELY_CDN_RE = /(?:https?:)?\/\/cdn\.iframe\.ly/g;
-
-// The app's in-service, edge-cached, CSP-sandboxed proxy for embed views
-// (apps/app/src/app/api/embeds). Path-relative so the browser resolves it
-// against the app origin in every environment.
-const EMBED_PROXY_PATH = '/api/embeds';
 
 // Embed views served from cdn.iframe.ly are billed too, so caching only the
 // API responses is not enough — the iframe/script URLs baked into the embed
@@ -71,7 +68,11 @@ export const getLinkPreview = async (
 ): Promise<LinkPreviewResult> => {
   return cache({
     type: 'linkPreview',
-    params: [url],
+    // The shape we ask iframely for is part of what a cached entry holds, so
+    // it belongs in the key: without it, entries written before the switch to
+    // `iframe=1` keep serving markup <LinkPreview> cannot render, for as long
+    // as the TTL below.
+    params: [url, 'iframe'],
     fetch: () => fetchLinkPreview(url),
     options: {
       ttl: LINK_PREVIEW_TTL_MS,
@@ -87,11 +88,17 @@ const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
       return { url, error: 'Iframely key not configured' };
     }
 
+    // `iframe=1&omit_script=1` asks for the embed as a plain iframe rather
+    // than iframely's lazy wrapper, whose anchor only expands when embed.js
+    // can read an absolute URL off it — which `rewriteEmbedCdn` takes away.
+    // The iframe shape is also the one <LinkPreview> will render: anything
+    // else falls back to the thumbnail.
+    //
     // Cap upstream latency: an authenticated user can DoS the API by
     // submitting URLs that iframely is slow to resolve. 5s is a reasonable
     // ceiling; the user gets {error: 'timeout'} on cache miss.
     const response = await fetch(
-      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}`,
+      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}&iframe=1&omit_script=1`,
       { signal: AbortSignal.timeout(5000) },
     );
 

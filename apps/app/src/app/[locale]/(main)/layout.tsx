@@ -8,7 +8,6 @@ import { assertWalledGardenAccess } from '@/utils/walledGarden';
 import { SidebarInset, SidebarProvider } from '@op/sense/Sidebar';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import Script from 'next/script';
 
 import { PolicyReacceptanceModal } from '@/components/PolicyReacceptanceModal';
 import { SidebarNav } from '@/components/SidebarNav';
@@ -60,9 +59,6 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
           </div>
         </SidebarProvider>
       </UserProvider>
-      {/* Served by our own edge-cached proxy (app/api/embeds) instead of
-          cdn.iframe.ly, so embed loads don't hit iframely's billed CDN. */}
-      <Script async src="/api/embeds/embed.js"></Script>
     </div>
   );
 };
