@@ -61,7 +61,7 @@ test.describe('Sign-out', () => {
     );
   });
 
-  test('a second tab stops persisting once the first tab signs out', async ({
+  test('a second tab leaves the app and stops persisting once the first tab signs out', async ({
     page,
     context,
     workerAuthUser,
@@ -89,10 +89,12 @@ test.describe('Sign-out', () => {
       page.getByRole('banner').getByRole('link', { name: 'Log in' }),
     ).toBeVisible({ timeout: 20_000 });
 
-    // Focusing the second tab refetches its session query; every cache
-    // update there would write the account back without the sign-out signal.
+    // The second tab hears the sign-out and navigates home on its own.
+    await expect(
+      secondTab.getByRole('banner').getByRole('link', { name: 'Log in' }),
+    ).toBeVisible({ timeout: 20_000 });
     await secondTab.bringToFront();
-    await secondTab.waitForTimeout(2_000);
+    await secondTab.waitForTimeout(1_500);
     expect((await readOfflineCache(secondTab)) ?? '').not.toContain(
       workerAuthUser.email,
     );
