@@ -1,7 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { type PhaseReviewerSummary, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import {
@@ -24,6 +24,7 @@ import {
   TableRow,
   TableRowHeader,
 } from '@op/sense/Table';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useFormatter } from 'next-intl';
 import { Suspense, useCallback } from 'react';
 import { LuChevronRight, LuUsers } from 'react-icons/lu';
@@ -76,18 +77,20 @@ function ReviewersTableContent({
   phaseId,
 }: ReviewersTableSectionProps) {
   const t = useTranslations();
+  const trpc = useTRPC();
 
-  const [data, query] =
-    trpc.decision.listPhaseReviewerSummaries.useSuspenseInfiniteQuery(
-      { processInstanceId, phaseId },
-      {
-        getNextPageParam: nextCursor,
-        // An SSR-seeded entry never registers the realtime channel; refetch.
-        refetchOnMount: 'always',
-      },
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useSuspenseInfiniteQuery(
+      trpc.decision.listPhaseReviewerSummaries.infiniteQueryOptions(
+        { processInstanceId, phaseId },
+        {
+          getNextPageParam: nextCursor,
+          // An SSR-seeded entry never registers the realtime channel; refetch.
+          refetchOnMount: 'always',
+        },
+      ),
     );
 
-  const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
   const stableFetchNextPage = useCallback(() => {
     fetchNextPage();
   }, [fetchNextPage]);
