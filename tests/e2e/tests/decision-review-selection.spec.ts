@@ -6,15 +6,13 @@ import {
 } from '@op/common/testing/data';
 import {
   ProposalStatus,
-  decisionProcessResultSelections,
-  decisionProcessResults,
   decisionTransitionProposals,
   processInstances,
   proposalHistory,
   proposals as proposalsTable,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { and, db, eq, inArray } from '@op/db/test';
+import { db, eq, inArray } from '@op/db/test';
 
 import { expect, test } from '../fixtures/index.js';
 
@@ -439,26 +437,21 @@ test.describe('Decision Review Selection — review → voting flow', () => {
 test.describe('Decision Review Selection — review → results flow', () => {
   // The composer used to be unreachable from here: the router sends a review
   // predecessor to ReviewSelectionPage, and only the sibling final-phase page
-  // carried the notification footer. Entering a results phase now gets the
-  // composer whatever phase came before it.
-  test('admin composes author notifications when the review phase advances into results', async ({
+  // carried the notification footer. What this test pins is that the fix is
+  // additive — the review aggregates an admin picks winners from survive
+  // alongside the publish footer. The composer itself, and the publish it
+  // drives, are covered for every predecessor kind in
+  // `decision-results-notifications.spec.ts`.
+  test('keeps the review aggregates table when the results footer takes over', async ({
     authenticatedPage: page,
     org,
   }) => {
-    const { instance, proposals } = await seedOnReviewPhase(
+    const { instance } = await seedOnReviewPhase(
       org,
-      ['Proposal Alpha', 'Proposal Beta', 'Proposal Gamma'],
+      ['Proposal Alpha', 'Proposal Beta'],
       reviewToResultsSchema,
     );
-    // Gamma is never picked — it is what makes the not-funded audience 1.
-    const [alpha, beta] = proposals;
-    if (!alpha || !beta) {
-      throw new Error('Expected the first two seeded proposals');
-    }
 
-    // Advance review → results from the overview's PhaseTimeline. `limit: 0`
-    // strands every proposal, so the inbound transition lands empty and
-    // ReviewSelectionPage mounts on /current.
     await page.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'networkidle',
     });
@@ -472,99 +465,18 @@ test.describe('Decision Review Selection — review → results flow', () => {
       waitUntil: 'networkidle',
     });
 
-    // Review aggregates still drive the table — the composer is additive, it
-    // does not swap this page out for the generic selection view.
+    // Still ReviewSelectionPage: the aggregates column is unique to its table.
     await expect(
       page.getByRole('columnheader', { name: 'Overall recommendation' }),
     ).toBeVisible({ timeout: 15_000 });
 
-    // The final-phase footer, not the standard one: "winning", not "advancing".
-    const confirmButton = page.getByRole('button', {
-      name: 'Confirm winning proposals',
-    });
-    await expect(confirmButton).toBeVisible();
-    await expect(confirmButton).toBeDisabled();
-
-    await page.getByRole('button', { name: 'Advance Proposal Alpha' }).click();
-    await page.getByRole('button', { name: 'Advance Proposal Beta' }).click();
-    await expect(page.getByText('2 winning proposals selected')).toBeVisible();
-    await expect(confirmButton).toBeEnabled();
-
-    await confirmButton.click();
-    const dialog = page.getByRole('dialog', { name: 'Compose Notifications' });
-    await expect(dialog).toBeVisible();
-
-    // Badge counts are the audience each message actually reaches: the
-    // not-funded tab counts the review pool minus the picks (3 - 2), which is
-    // how listResultNotificationRecipients resolves the not-selected set.
+    // ...but the footer publishes rather than advances, and the hero agrees.
     await expect(
-      dialog.getByRole('tab', { name: 'Funded 2 proposals' }),
+      page.getByRole('button', { name: 'Confirm winning proposals' }),
     ).toBeVisible();
+    await expect(page.getByText('Confirm the winning proposals')).toBeVisible();
     await expect(
-      dialog.getByRole('tab', { name: 'Not funded 1 proposal' }),
-    ).toBeVisible();
-
-    // `keepMounted` leaves the inactive panel in the DOM under `inert`, which
-    // Playwright's role engine ignores — scope to the live panel explicitly.
-    const activeMessageBox = dialog
-      .locator('[role="tabpanel"]:not([inert])')
-      .getByRole('textbox', { name: 'Notification Message' });
-    const selectedMessage = `Selected copy ${instance.slug}`;
-    const notSelectedMessage = `Not selected copy ${instance.slug}`;
-    await activeMessageBox.fill(selectedMessage);
-    await dialog.getByRole('tab', { name: /Not funded/ }).click();
-    await activeMessageBox.fill(notSelectedMessage);
-
-    await dialog
-      .getByRole('button', { name: 'Send & publish results' })
-      .click();
-    await expect(dialog).not.toBeVisible({ timeout: 15_000 });
-
-    // The composed copy is stamped on the review→results transition row, which
-    // is what the notification workflow re-reads at send time. Addressed by
-    // phase rather than by recency so the seeded submission→review row can
-    // never win a timestamp tie.
-    const [transitionRow] = await db
-      .select({ transitionData: stateTransitionHistory.transitionData })
-      .from(stateTransitionHistory)
-      .where(
-        and(
-          eq(stateTransitionHistory.processInstanceId, instance.instance.id),
-          eq(stateTransitionHistory.toStateId, 'results'),
-        ),
-      );
-    expect(transitionRow?.transitionData).toMatchObject({
-      manualSelection: {
-        resultNotifications: {
-          selected: selectedMessage,
-          notSelected: notSelectedMessage,
-        },
-      },
-    });
-
-    // Two result rows: advancing into a last phase writes an empty one, then
-    // this publish writes ours. Matched on content rather than `executedAt`
-    // order — both rows can share a timestamp and `id` is not monotonic.
-    const resultRows = await db
-      .select()
-      .from(decisionProcessResults)
-      .where(
-        eq(decisionProcessResults.processInstanceId, instance.instance.id),
-      );
-    expect(resultRows.every((row) => row.success)).toBe(true);
-    expect(resultRows.map((row) => row.selectedCount).sort()).toEqual([0, 2]);
-
-    const published = resultRows.find((row) => row.selectedCount === 2);
-    if (!published) {
-      throw new Error('Expected a published decision_process_results row');
-    }
-
-    const selections = await db
-      .select({ proposalId: decisionProcessResultSelections.proposalId })
-      .from(decisionProcessResultSelections)
-      .where(eq(decisionProcessResultSelections.processResultId, published.id));
-    expect(new Set(selections.map((s) => s.proposalId))).toEqual(
-      new Set([alpha.id, beta.id]),
-    );
+      page.getByRole('button', { name: 'Confirm selections' }),
+    ).not.toBeVisible();
   });
 });
