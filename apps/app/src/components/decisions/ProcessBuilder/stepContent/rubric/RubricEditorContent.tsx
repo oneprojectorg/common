@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   RubricTemplateSchema,
   XFormatPropertySchema,
@@ -9,6 +8,7 @@ import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';
 import { Sortable } from '@op/sense/Sortable';
 import { Switch } from '@op/sense/Switch';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
@@ -59,6 +59,7 @@ export function RubricEditorContent({
   instanceId,
   decisionProfileId,
 }: SectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
   const storeRubricTemplate = useProcessBuilderStore(
@@ -66,7 +67,9 @@ export function RubricEditorContent({
   );
 
   // Load instance data from the backend
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   const instanceData = instance.instanceData;
 
   const initialTemplate = useMemo(() => {

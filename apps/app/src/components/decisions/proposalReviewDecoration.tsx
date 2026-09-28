@@ -1,8 +1,8 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { type DecisionAccess } from '@op/api/encoders';
 import { type Proposal } from '@op/common/client';
+import { useQuery } from '@tanstack/react-query';
 import {
   type ReactNode,
   createContext,
@@ -66,6 +66,7 @@ export function ProposalReviewDecorationProvider({
   access,
   children,
 }: ProposalReviewDecorationProviderProps) {
+  const trpc = useTRPC();
   const [proposalIds, setProposalIds] = useState<string[]>([]);
 
   const reportProposals = useCallback((proposals: Proposal[]) => {
@@ -81,15 +82,17 @@ export function ProposalReviewDecorationProvider({
     );
   }, []);
 
-  const { data } = trpc.decision.listWithReviewAggregates.useQuery(
-    {
-      processInstanceId,
-      phaseId,
-      proposalIds,
-    },
-    {
-      enabled: enabled && proposalIds.length > 0,
-    },
+  const { data } = useQuery(
+    trpc.decision.listWithReviewAggregates.queryOptions(
+      {
+        processInstanceId,
+        phaseId,
+        proposalIds,
+      },
+      {
+        enabled: enabled && proposalIds.length > 0,
+      },
+    ),
   );
 
   const aggregates = data?.items;

@@ -1,9 +1,9 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Header3 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,10 +26,15 @@ export const OverviewPinnedResourcesSuspense = ({
 }: {
   profileId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [{ items }] = trpc.resources.list.useSuspenseQuery({
-    profileId,
-  });
+  const {
+    data: { items },
+  } = useSuspenseQuery(
+    trpc.resources.list.queryOptions({
+      profileId,
+    }),
+  );
 
   // The overview reads resources itself rather than through the side panel's
   // list, so it has to register its own samples — a reader who never opens the

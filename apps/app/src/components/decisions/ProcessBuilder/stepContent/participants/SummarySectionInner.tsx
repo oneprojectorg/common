@@ -1,8 +1,9 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { useQueryState } from 'nuqs';
 import React from 'react';
 
@@ -17,17 +18,32 @@ export function SummarySectionInner({
   instanceId,
   decisionName,
 }: SectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   // Fetch up to the API maximum (100) to count active participants.
   // The API does not expose a dedicated count endpoint, so we use the
   // max page size. For profiles with >100 members the displayed count
   // will be a minimum (the users query's `next` is non-null in that case).
-  const [[instance, { items: activeUsers }, { items: invites }]] =
-    trpc.useSuspenseQueries((t) => [
-      t.decision.getInstance({ instanceId }),
-      t.profile.listUsers({ profileId: decisionProfileId, limit: 100 }),
-      t.profile.listProfileInvites({ profileId: decisionProfileId }),
-    ]);
+  const [
+    { data: instance },
+    {
+      data: { items: activeUsers },
+    },
+    {
+      data: { items: invites },
+    },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+      trpc.profile.listUsers.queryOptions({
+        profileId: decisionProfileId,
+        limit: 100,
+      }),
+      trpc.profile.listProfileInvites.queryOptions({
+        profileId: decisionProfileId,
+      }),
+    ],
+  });
 
   const storePhases = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId]?.phases,
