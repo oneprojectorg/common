@@ -14,8 +14,6 @@ const useAuthLogout: () => UseMutationResult<
 > = () => {
   const logout = useMutation<{ error: AuthError | null }, Error, void>({
     mutationFn: async () => {
-      await clearPersistedQueryCache();
-
       const createSBBrowserClient = (await import('@op/supabase/client'))
         .createSBBrowserClient;
       const supabase = createSBBrowserClient();
@@ -23,6 +21,10 @@ const useAuthLogout: () => UseMutationResult<
       const locData = await supabase.auth.signOut({ scope: 'local' });
 
       nukeCookies();
+
+      // After the Supabase call: a browser that denies storage access must
+      // not be able to cancel the sign-out itself.
+      clearPersistedQueryCache();
 
       // No in-place cache update (neither getMyAccount invalidation nor an
       // auth-user refetch): both would re-render the still-mounted authed

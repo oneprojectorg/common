@@ -1,4 +1,3 @@
-import { logger } from '@op/logging/client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
 // One-way switch. The persister writes on a 1 s trailing timer that holds a
@@ -8,28 +7,26 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 // full-page navigation that follows sign-out resets this module.
 let persistenceEnded = false;
 
-const storage =
-  typeof window === 'undefined'
-    ? undefined
-    : {
-        getItem: (key: string) => window.localStorage.getItem(key),
-        setItem: (key: string, value: string) => {
-          if (!persistenceEnded) {
-            window.localStorage.setItem(key, value);
-          }
-        },
-        removeItem: (key: string) => window.localStorage.removeItem(key),
-      };
+// Android WebViews can hand out a null localStorage; the persister treats a
+// missing storage as "do not persist", so keep that path instead of wrapping.
+const localStorage =
+  typeof window === 'undefined' ? undefined : window.localStorage;
+
+const storage = localStorage
+  ? {
+      getItem: (key: string) => localStorage.getItem(key),
+      setItem: (key: string, value: string) => {
+        if (!persistenceEnded) {
+          localStorage.setItem(key, value);
+        }
+      },
+      removeItem: (key: string) => localStorage.removeItem(key),
+    }
+  : undefined;
 
 export const queryPersister = createSyncStoragePersister({ storage });
 
-export async function clearPersistedQueryCache(): Promise<void> {
+export function clearPersistedQueryCache(): void {
   persistenceEnded = true;
-  try {
-    await queryPersister.removeClient();
-  } catch (error) {
-    logger.error('Failed to clear the persisted query cache on sign-out', {
-      error,
-    });
-  }
+  queryPersister.removeClient();
 }
