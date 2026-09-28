@@ -1,11 +1,13 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -25,33 +27,40 @@ export const DecisionInvitesForm = ({
   onComplete,
   className,
 }: DecisionInvitesFormProps): ReactNode => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
-  const [invites, { refetch }] = trpc.account.listUserInvites.useSuspenseQuery(
-    {
-      entityType: EntityType.DECISION,
-      pending: true,
-    },
-    {
-      // Always fetch fresh data to ensure we don't skip due to stale cache
-      staleTime: 0,
-      refetchOnMount: 'always',
-    },
+  const { data: invites, refetch } = useSuspenseQuery(
+    trpc.account.listUserInvites.queryOptions(
+      {
+        entityType: EntityType.DECISION,
+        pending: true,
+      },
+      {
+        // Always fetch fresh data to ensure we don't skip due to stale cache
+        staleTime: 0,
+        refetchOnMount: 'always',
+      },
+    ),
   );
 
-  const acceptInvite = trpc.profile.acceptInvite.useMutation({
-    onSuccess: () => {
-      utils.account.getMyAccount.invalidate();
-    },
-  });
+  const acceptInvite = useMutation(
+    trpc.profile.acceptInvite.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.account.getMyAccount.pathFilter());
+      },
+    }),
+  );
 
-  const declineInvite = trpc.profile.declineInvite.useMutation({
-    onSuccess: () => {
-      refetch();
-    },
-  });
+  const declineInvite = useMutation(
+    trpc.profile.declineInvite.mutationOptions({
+      onSuccess: () => {
+        refetch();
+      },
+    }),
+  );
 
   // If no invites, automatically skip to the multi-step form
   useEffect(() => {
@@ -83,7 +92,9 @@ export const DecisionInvitesForm = ({
         ),
       );
       // Invalidate account data to refresh org memberships
-      await utils.account.getMyAccount.invalidate();
+      await queryClient.invalidateQueries(
+        trpc.account.getMyAccount.pathFilter(),
+      );
       onComplete();
     } catch (error) {
       setIsLoading(false);

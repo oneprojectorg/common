@@ -1,11 +1,11 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProposalReviewState, type ReviewSettings } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { SplitPane } from '@op/sense/SplitPane';
 import { cn } from '@op/sense/lib/utils';
+import { useQueryClient, useSuspenseQueries } from '@tanstack/react-query';
 import { useQueryState } from 'nuqs';
 import { useCallback, useState } from 'react';
 import { LuCheck, LuPencil } from 'react-icons/lu';
@@ -43,13 +43,20 @@ export function ReviewSummaryView({
   isPhaseInProgress = false,
   reviewSettings,
 }: ReviewSummaryViewProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const { user } = useRequiredUser();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const [[proposalWithReviews, proposal, { items: ownAssignments }]] =
-    trpc.useSuspenseQueries((t) => [
-      t.decision.getProposalWithReviewAggregates(
+  const [
+    { data: proposalWithReviews },
+    { data: proposal },
+    {
+      data: { items: ownAssignments },
+    },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getProposalWithReviewAggregates.queryOptions(
         {
           processInstanceId: instanceId,
           proposalId,
@@ -57,10 +64,10 @@ export function ReviewSummaryView({
         },
         { refetchOnMount: 'always' },
       ),
-      t.decision.getProposal({ profileId: proposalProfileId }),
+      trpc.decision.getProposal.queryOptions({ profileId: proposalProfileId }),
       // Self-scoped, and scoped to the phase this screen describes — the same
       // one the aggregates above use.
-      t.decision.listReviewAssignments(
+      trpc.decision.listReviewAssignments.queryOptions(
         {
           processInstanceId: instanceId,
           proposalProfileId,
@@ -69,7 +76,8 @@ export function ReviewSummaryView({
         },
         { refetchOnMount: 'always' },
       ),
-    ]);
+    ],
+  });
 
   const rubricTemplate = proposalWithReviews.rubricTemplate;
 
@@ -125,12 +133,14 @@ export function ReviewSummaryView({
   const handleOwnReviewCompleted = useCallback(() => {
     setOwnFormStatus(null);
     setIsOwnFormOpen(false);
-    void utils.decision.getProposalWithReviewAggregates.invalidate({
-      processInstanceId: instanceId,
-      proposalId,
-      phaseId,
-    });
-  }, [utils, instanceId, proposalId, phaseId]);
+    void queryClient.invalidateQueries(
+      trpc.decision.getProposalWithReviewAggregates.queryFilter({
+        processInstanceId: instanceId,
+        proposalId,
+        phaseId,
+      }),
+    );
+  }, [queryClient, trpc, instanceId, proposalId, phaseId]);
 
   const currentProfileId = user.currentProfile?.id;
 

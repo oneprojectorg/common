@@ -1,9 +1,9 @@
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -65,7 +65,8 @@ export function useRelationshipMutations({
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
   const t = useTranslations('decisions.proposals');
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const { user } = useUser();
 
@@ -75,11 +76,10 @@ export function useRelationshipMutations({
   };
 
   // Get user's likes and follows
-  const { data: userRelationships } = trpc.profile.getRelationships.useQuery(
-    relationshipQueryKey,
-    {
+  const { data: userRelationships } = useQuery(
+    trpc.profile.getRelationships.queryOptions(relationshipQueryKey, {
       enabled: !!user && enabled,
-    },
+    }),
   );
 
   // Check if current user has liked/followed this profile
@@ -108,10 +108,6 @@ export function useRelationshipMutations({
    * page with nothing left to restore them.
    */
   const stateUnknown = userRelationships === undefined;
-
-  // The raw client rather than `utils`: the count caches are matched by a
-  // predicate on the tRPC path, which the typed helpers can't express.
-  const queryClient = useQueryClient();
 
   /** Move the proposal's like/follow count everywhere it is cached. */
   const patchCachedCounts = (
@@ -147,34 +143,37 @@ export function useRelationshipMutations({
       return;
     }
 
-    utils.profile.getRelationships.setData(relationshipQueryKey, (old) => {
-      const base = old ?? {};
-      const without = (base[relationshipType] ?? []).filter(
-        (rel) => rel.targetProfile?.id !== targetProfileId,
-      );
+    queryClient.setQueryData(
+      trpc.profile.getRelationships.queryKey(relationshipQueryKey),
+      (old) => {
+        const base = old ?? {};
+        const without = (base[relationshipType] ?? []).filter(
+          (rel) => rel.targetProfile?.id !== targetProfileId,
+        );
 
-      return {
-        ...base,
-        [relationshipType]: present
-          ? [
-              ...without,
-              {
-                relationshipType,
-                pending: false,
-                createdAt: new Date().toISOString(),
-                targetProfile: {
-                  id: targetProfileId,
-                  name: '',
-                  slug: '',
-                  bio: null,
-                  avatarImage: null,
-                  type: 'proposal',
+        return {
+          ...base,
+          [relationshipType]: present
+            ? [
+                ...without,
+                {
+                  relationshipType,
+                  pending: false,
+                  createdAt: new Date().toISOString(),
+                  targetProfile: {
+                    id: targetProfileId,
+                    name: '',
+                    slug: '',
+                    bio: null,
+                    avatarImage: null,
+                    type: 'proposal',
+                  },
                 },
-              },
-            ]
-          : without,
-      };
-    });
+              ]
+            : without,
+        };
+      },
+    );
   };
 
   /**
@@ -185,7 +184,9 @@ export function useRelationshipMutations({
    */
   const reconcile = async () => {
     await Promise.all([
-      utils.profile.getRelationships.invalidate(relationshipQueryKey),
+      queryClient.invalidateQueries(
+        trpc.profile.getRelationships.queryFilter(relationshipQueryKey),
+      ),
       // Default `refetchType`, deliberately. `setQueriesData` wrote every
       // matching entry including inactive ones, but invalidation marks all of
       // them stale whatever gets refetched now, and there's no app-wide
@@ -196,9 +197,20 @@ export function useRelationshipMutations({
       ...invalidateQueries.flatMap((query) =>
         query.processInstanceId
           ? [
-              utils.decision.listProposals.invalidate({
-                processInstanceId: query.processInstanceId,
-              }),
+              // `invalidate()` on the classic client was type-agnostic; the
+              // options proxy splits plain and infinite entries, and
+              // `listProposals` is rendered both ways — so both filters are
+              // needed to match it.
+              queryClient.invalidateQueries(
+                trpc.decision.listProposals.queryFilter({
+                  processInstanceId: query.processInstanceId,
+                }),
+              ),
+              queryClient.invalidateQueries(
+                trpc.decision.listProposals.infiniteQueryFilter({
+                  processInstanceId: query.processInstanceId,
+                }),
+              ),
             ]
           : [],
       ),
@@ -208,8 +220,8 @@ export function useRelationshipMutations({
   // The cache writes live in `toggleRelationship`, not in `onMutate`: a burst
   // of clicks has to move the UI on every press, while sending far fewer
   // requests than there were presses.
-  const addRelationshipMutation =
-    trpc.decision.addProposalRelationship.useMutation({
+  const addRelationshipMutation = useMutation(
+    trpc.decision.addProposalRelationship.mutationOptions({
       // Failures are logged once, in the drain's catch — it has the burst
       // context, and logging here too splits the PostHog issue group.
       onError: (_error, variables) => {
@@ -221,10 +233,11 @@ export function useRelationshipMutations({
             : t('followError'),
         );
       },
-    });
+    }),
+  );
 
-  const removeRelationshipMutation =
-    trpc.decision.removeProposalRelationship.useMutation({
+  const removeRelationshipMutation = useMutation(
+    trpc.decision.removeProposalRelationship.mutationOptions({
       onError: (_error, variables) => {
         toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
@@ -232,12 +245,15 @@ export function useRelationshipMutations({
             : t('unfollowError'),
         );
       },
-    });
+    }),
+  );
 
   const isLikedInCache = (relationshipType: ProfileRelationshipType) =>
     Boolean(
-      utils.profile.getRelationships
-        .getData(relationshipQueryKey)
+      queryClient
+        .getQueryData(
+          trpc.profile.getRelationships.queryKey(relationshipQueryKey),
+        )
         ?.[relationshipType]?.some(
           (rel) => rel.targetProfile?.id === targetProfileId,
         ),
@@ -263,7 +279,9 @@ export function useRelationshipMutations({
     // just the relationship one: a stale list result resets the count while
     // the button stays pressed, and the next click then counts the same like
     // twice.
-    void utils.profile.getRelationships.cancel(relationshipQueryKey);
+    void queryClient.cancelQueries(
+      trpc.profile.getRelationships.queryFilter(relationshipQueryKey),
+    );
     void queryClient.cancelQueries(countQueryFilter);
 
     // Flip the cache first, every time: the press has to register even while

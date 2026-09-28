@@ -1,7 +1,8 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuLock } from 'react-icons/lu';
 
@@ -15,20 +16,24 @@ export const RemovePublicAccessButton = ({
   instanceId: string;
 }) => {
   const t = useTranslations('admin');
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
-  const removeAccess =
-    trpc.platform.admin.removeDecisionPublicAccess.useMutation({
+  const removeAccess = useMutation(
+    trpc.platform.admin.removeDecisionPublicAccess.mutationOptions({
       onSuccess: () => {
         toast.success(t('removePublicAccessSuccess'));
-        utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
+        queryClient.invalidateQueries(
+          trpc.platform.admin.getDecisionInstance.queryFilter({ instanceId }),
+        );
         setIsOpen(false);
       },
       onError: (error) => {
         toast.error(error.message);
       },
-    });
+    }),
+  );
 
   return (
     <AdminActionConfirmation

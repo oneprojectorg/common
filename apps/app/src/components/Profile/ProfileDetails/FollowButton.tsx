@@ -1,11 +1,13 @@
 'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Suspense, useTransition } from 'react';
 import { LuCheck, LuPlus } from 'react-icons/lu';
 
@@ -14,24 +16,31 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { relationshipActiveButtonClass } from './relationshipButton';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
+  const trpc = useTRPC();
   const { user } = useRequiredUser();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
 
   const currentProfileId = user.currentProfile?.id;
 
   // Check if we're currently following this profile
-  const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
-    sourceProfileId: currentProfileId,
-    targetProfileId: profile.profile.id,
-    types: [ProfileRelationshipType.FOLLOWING],
-  });
+  const { data: relationships } = useSuspenseQuery(
+    trpc.profile.getRelationships.queryOptions({
+      sourceProfileId: currentProfileId,
+      targetProfileId: profile.profile.id,
+      types: [ProfileRelationshipType.FOLLOWING],
+    }),
+  );
 
   const followingRelationships = relationships.following || [];
   const isFollowing = followingRelationships.length > 0;
 
-  const addRelationship = trpc.profile.addRelationship.useMutation();
-  const removeRelationship = trpc.profile.removeRelationship.useMutation();
+  const addRelationship = useMutation(
+    trpc.profile.addRelationship.mutationOptions(),
+  );
+  const removeRelationship = useMutation(
+    trpc.profile.removeRelationship.mutationOptions(),
+  );
 
   const handleFollowToggle = () => {
     startTransition(async () => {
@@ -55,19 +64,25 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
 
         // Invalidate all relationship-related queries
         await Promise.all([
-          // Invalidate the query that checks if we're following this profile
-          utils.profile.getRelationships.invalidate({
-            sourceProfileId: currentProfileId,
-            targetProfileId: profile.profile.id,
-            types: [ProfileRelationshipType.FOLLOWING],
-          }),
-          // Invalidate the current user's following list
-          utils.profile.getRelationships.invalidate({
-            types: [ProfileRelationshipType.FOLLOWING],
-            profileType: 'org',
-          }),
-          // Invalidate all relationship queries for this target profile
-          utils.profile.getRelationships.invalidate(),
+          queryClient.invalidateQueries(
+            // Invalidate the query that checks if we're following this profile
+            trpc.profile.getRelationships.queryFilter({
+              sourceProfileId: currentProfileId,
+              targetProfileId: profile.profile.id,
+              types: [ProfileRelationshipType.FOLLOWING],
+            }),
+          ),
+          queryClient.invalidateQueries(
+            // Invalidate the current user's following list
+            trpc.profile.getRelationships.queryFilter({
+              types: [ProfileRelationshipType.FOLLOWING],
+              profileType: 'org',
+            }),
+          ),
+          queryClient.invalidateQueries(
+            // Invalidate all relationship queries for this target profile
+            trpc.profile.getRelationships.pathFilter(),
+          ),
         ]);
       } catch (error) {
         toast.error(isFollowing ? 'Failed to unfollow' : 'Failed to follow');

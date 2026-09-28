@@ -1,14 +1,15 @@
 'use client';
-
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
 import { BannerUploader } from '@op/sense/BannerUploader';
 import { DialogFooter } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
@@ -36,30 +37,39 @@ export const CreateOrganizationForm = forwardRef<
   HTMLFormElement,
   CreateOrganizationFormProps
 >(({ onSubmit, onError, className }, ref) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
-  const trpcUtil = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Initialize form data
   const initialData = {};
 
-  const createOrganization = trpc.organization.create.useMutation({
-    onMutate: (data) => {
-      // Show "Setting up your org" modal
-      onSubmit(data?.name);
-    },
-    onSuccess: async () => {
-      await trpcUtil.account.getMyAccount.refetch();
-      router.push(`/?new=1`);
-    },
-    onError: () => {
-      // Close success modal and re-open create modal
-      onError();
-    },
-  });
+  const createOrganization = useMutation(
+    trpc.organization.create.mutationOptions({
+      onMutate: (data) => {
+        // Show "Setting up your org" modal
+        onSubmit(data?.name);
+      },
+      onSuccess: async () => {
+        await queryClient.refetchQueries(
+          trpc.account.getMyAccount.pathFilter(),
+        );
+        router.push(`/?new=1`);
+      },
+      onError: () => {
+        // Close success modal and re-open create modal
+        onError();
+      },
+    }),
+  );
 
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadBannerImage = trpc.organization.uploadAvatarImage.useMutation();
+  const uploadAvatarImage = useMutation(
+    trpc.organization.uploadAvatarImage.mutationOptions(),
+  );
+  const uploadBannerImage = useMutation(
+    trpc.organization.uploadAvatarImage.mutationOptions(),
+  );
 
   const [profileImage, setProfileImage] = useState<ImageData | undefined>();
   const [bannerImage, setBannerImage] = useState<ImageData | undefined>();

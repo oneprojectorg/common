@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import { getRubricScoringInfo } from '@op/common/client';
 import {
@@ -12,6 +11,9 @@ import {
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -38,6 +40,7 @@ export function ReviewSelectionList({
   /** Show the budget column. Derived by the page so the skeleton agrees. */
   showBudget: boolean;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const processInstanceId = instance.id;
   const decisionSlug = instance.slug;
@@ -55,12 +58,15 @@ export function ReviewSelectionList({
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const [{ items, rubricTemplate }] =
-    trpc.decision.listWithReviewAggregates.useSuspenseQuery({
+  const {
+    data: { items, rubricTemplate },
+  } = useSuspenseQuery(
+    trpc.decision.listWithReviewAggregates.queryOptions({
       processInstanceId,
       phaseId: previousPhaseId,
-    });
-  const utils = trpc.useUtils();
+    }),
+  );
+  const queryClient = useQueryClient();
 
   const { totalPoints, hasScoring } = useMemo(() => {
     if (!rubricTemplate) {
@@ -86,17 +92,23 @@ export function ReviewSelectionList({
       (p) => p.phaseId === instance.currentStateId,
     )?.name ?? '';
 
-  const submitMutation = trpc.decision.submitManualSelection.useMutation({
-    onSuccess: () => {
-      utils.decision.getInstance.invalidate({ instanceId: processInstanceId });
-      setAdvancingIds([]);
-      setIsConfirmOpen(false);
-    },
-    onError: (error) => {
-      setIsConfirmOpen(false);
-      toast.error(error.message);
-    },
-  });
+  const submitMutation = useMutation(
+    trpc.decision.submitManualSelection.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          trpc.decision.getInstance.queryFilter({
+            instanceId: processInstanceId,
+          }),
+        );
+        setAdvancingIds([]);
+        setIsConfirmOpen(false);
+      },
+      onError: (error) => {
+        setIsConfirmOpen(false);
+        toast.error(error.message);
+      },
+    }),
+  );
 
   const handleAdvanceToggle = (proposalId: string) => {
     setAdvancingIds(

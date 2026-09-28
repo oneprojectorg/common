@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   AdminDecisionPhase,
   CustomFormDefinitionInput,
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@op/sense/Select';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
@@ -174,8 +175,9 @@ const useSaveCustomForm = ({
   onFailed: (message: string) => void;
 }) => {
   const t = useTranslations();
-  const createForm = trpc.customForm.create.useMutation();
-  const updateForm = trpc.customForm.update.useMutation();
+  const trpc = useTRPC();
+  const createForm = useMutation(trpc.customForm.create.mutationOptions());
+  const updateForm = useMutation(trpc.customForm.update.mutationOptions());
 
   const handlers = {
     onSuccess: () => {

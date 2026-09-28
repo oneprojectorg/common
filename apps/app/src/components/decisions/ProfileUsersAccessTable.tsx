@@ -1,7 +1,6 @@
 'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProfileInvite } from '@op/api/encoders';
 import type { ProfileUser } from '@op/common/client';
 import {
@@ -42,6 +41,8 @@ import {
   TableRow,
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
   LuArrowDown,
@@ -328,30 +329,39 @@ const ProfileUserRoleSelect = ({
   isOwner?: boolean;
   className?: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
 
-  const updateRoles = trpc.profile.updateUserRoles.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.updateRoleSuccess'));
-      void utils.profile.listUsers.invalidate({ profileId });
-    },
-    onError: (error) => {
-      toast.error(error.message || t('decisions.updateRoleError'));
-    },
-  });
+  const updateRoles = useMutation(
+    trpc.profile.updateUserRoles.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.updateRoleSuccess'));
+        void queryClient.invalidateQueries(
+          trpc.profile.listUsers.queryFilter({ profileId }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || t('decisions.updateRoleError'));
+      },
+    }),
+  );
 
-  const removeUser = trpc.profile.removeUser.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.removeUserSuccess'));
-      void utils.profile.listUsers.invalidate({ profileId });
-      setIsRemoveModalOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message || t('decisions.removeUserError'));
-    },
-  });
+  const removeUser = useMutation(
+    trpc.profile.removeUser.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.removeUserSuccess'));
+        void queryClient.invalidateQueries(
+          trpc.profile.listUsers.queryFilter({ profileId }),
+        );
+        setIsRemoveModalOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || t('decisions.removeUserError'));
+      },
+    }),
+  );
 
   const handleRoleChange = (roleId: string) => {
     if (roleId && roleId !== currentRoleId) {
@@ -399,30 +409,39 @@ const InviteRoleSelect = ({
   processName?: string;
   className?: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
 
-  const updateInvite = trpc.profile.updateProfileInvite.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.updateRoleSuccess'));
-      void utils.profile.listProfileInvites.invalidate({ profileId });
-    },
-    onError: (error) => {
-      toast.error(error.message || t('decisions.updateRoleError'));
-    },
-  });
+  const updateInvite = useMutation(
+    trpc.profile.updateProfileInvite.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.updateRoleSuccess'));
+        void queryClient.invalidateQueries(
+          trpc.profile.listProfileInvites.queryFilter({ profileId }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || t('decisions.updateRoleError'));
+      },
+    }),
+  );
 
-  const deleteInvite = trpc.profile.deleteProfileInvite.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.removeInviteSuccess'));
-      void utils.profile.listProfileInvites.invalidate({ profileId });
-      setIsRemoveModalOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message || t('decisions.removeInviteError'));
-    },
-  });
+  const deleteInvite = useMutation(
+    trpc.profile.deleteProfileInvite.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.removeInviteSuccess'));
+        void queryClient.invalidateQueries(
+          trpc.profile.listProfileInvites.queryFilter({ profileId }),
+        );
+        setIsRemoveModalOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || t('decisions.removeInviteError'));
+      },
+    }),
+  );
 
   const handleRoleChange = (roleId: string) => {
     if (roleId && roleId !== currentRoleId) {

@@ -1,9 +1,10 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Label } from '@op/sense/Label';
 import { toast } from '@op/sense/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuGlobe } from 'react-icons/lu';
 
@@ -13,21 +14,26 @@ import { AdminActionConfirmation } from './AdminActionConfirmation';
 
 export const MakePublicButton = ({ instanceId }: { instanceId: string }) => {
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [canSubmitProposals, setCanSubmitProposals] = useState(true);
   const [canVote, setCanVote] = useState(true);
 
-  const makePublic = trpc.platform.admin.makeDecisionPublic.useMutation({
-    onSuccess: () => {
-      toast.success(t('admin.makePublicSuccess'));
-      utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
-      setIsOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  const makePublic = useMutation(
+    trpc.platform.admin.makeDecisionPublic.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('admin.makePublicSuccess'));
+        queryClient.invalidateQueries(
+          trpc.platform.admin.getDecisionInstance.queryFilter({ instanceId }),
+        );
+        setIsOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);

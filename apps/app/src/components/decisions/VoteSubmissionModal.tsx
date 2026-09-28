@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -12,6 +11,8 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,22 +39,27 @@ export const VoteSubmissionModal = ({
   instanceId,
   onSuccess,
 }: VoteSubmissionModalProps) => {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const utils = trpc.useUtils();
-  const submitVoteMutation = trpc.decision.submitVote.useMutation({
-    onSuccess: () => {
-      utils.decision.getVotingStatus.invalidate();
-      onSuccess();
-    },
-    onError: (error) => {
-      logger.error('Failed to submit vote', {
-        error,
-        context: 'VoteSubmissionModal.submitVote',
-      });
-      toast.error(error.message || 'Failed to submit vote');
-    },
-  });
+  const queryClient = useQueryClient();
+  const submitVoteMutation = useMutation(
+    trpc.decision.submitVote.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          trpc.decision.getVotingStatus.pathFilter(),
+        );
+        onSuccess();
+      },
+      onError: (error) => {
+        logger.error('Failed to submit vote', {
+          error,
+          context: 'VoteSubmissionModal.submitVote',
+        });
+        toast.error(error.message || 'Failed to submit vote');
+      },
+    }),
+  );
 
   const handleSubmit = () => {
     submitVoteMutation.mutate({

@@ -1,11 +1,7 @@
 import { getRequiredUser } from '@/utils/getUser';
 import { Organization } from '@op/api/encoders';
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
-import { PAGE_LIMIT } from '@op/common/client';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { logger } from '@op/logging';
 import { Card } from '@op/sense/Card';
 import { Header1, Header3 } from '@op/sense/Header';
@@ -141,14 +137,17 @@ const PostFeedSection = async ({
 }) => {
   // Prefetch posts data on server to prevent hydration mismatch
   // If this fails, the client will fetch instead
-  const [t, { utils, queryClient }] = await Promise.all([
+  const [t, { trpc, queryClient }] = await Promise.all([
     getTranslations(),
-    createServerUtils(),
+    createServerTRPC(),
   ]);
   try {
-    await utils.organization.listAllPosts.fetchInfinite({
-      limit: PAGE_LIMIT.sm,
-    });
+    await queryClient.fetchInfiniteQuery(
+      trpc.organization.listAllPosts.infiniteQueryOptions(
+        { limit: PAGE_LIMIT.sm },
+        { getNextPageParam: nextCursor },
+      ),
+    );
   } catch (e) {
     logger.error('Homepage post prefetch failed', { error: e });
   }

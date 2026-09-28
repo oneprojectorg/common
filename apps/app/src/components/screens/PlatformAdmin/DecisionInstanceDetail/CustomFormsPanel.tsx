@@ -1,7 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type {
   AdminDecisionPhase,
   CustomFormWithPhaseDTO,
@@ -29,6 +29,7 @@ import {
 } from '@op/sense/Card';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useState } from 'react';
 import { LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -95,8 +96,11 @@ const CustomFormsPanelSuspense = ({
   profileId: string;
   phases: AdminDecisionPhase[];
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const [forms] = trpc.customForm.list.useSuspenseQuery({ profileId });
+  const { data: forms } = useSuspenseQuery(
+    trpc.customForm.list.queryOptions({ profileId }),
+  );
   const [editing, setEditing] = useState<CustomFormWithPhaseDTO | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -248,18 +252,21 @@ const FormPhaseBadge = ({
 };
 
 const DeleteFormButton = ({ form }: { form: CustomFormWithPhaseDTO }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
-  const deleteForm = trpc.customForm.delete.useMutation({
-    onSuccess: () => {
-      toast.success(t('admin.formDeletedToast'));
-      setIsOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  const deleteForm = useMutation(
+    trpc.customForm.delete.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('admin.formDeletedToast'));
+        setIsOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
