@@ -256,12 +256,11 @@ function DecisionOverviewContent({
             </APIErrorBoundary>
           ) : null}
         </div>
-        <div className="min-w-0 md:col-span-7 md:col-start-6">
+        <div className="flex min-w-0 flex-col gap-4 md:col-span-7 md:col-start-6">
           {decisionTranslation.translationState ? (
             <TranslationNotice
               sourceLanguageName={decisionTranslation.sourceLanguageName}
               onViewOriginal={decisionTranslation.handleViewOriginal}
-              className="mb-4"
             />
           ) : null}
           <OverviewAbout
