@@ -41,7 +41,8 @@ export interface SubmitManualSelectionInput {
   /**
    * Only meaningful on the final phase, where this call publishes results;
    * passing them off it is rejected. Omitting them there publishes without
-   * notifying anyone, which is what the review-selection flow does.
+   * notifying anyone — every admin surface that can reach the final phase now
+   * composes them, so that path is for callers outside the selection UI.
    */
   resultNotifications?: ResultNotificationMessages;
   user: User;

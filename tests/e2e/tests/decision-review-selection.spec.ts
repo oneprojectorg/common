@@ -6,70 +6,107 @@ import {
 } from '@op/common/testing/data';
 import {
   ProposalStatus,
+  decisionProcessResultSelections,
+  decisionProcessResults,
   decisionTransitionProposals,
   processInstances,
   proposalHistory,
   proposals as proposalsTable,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
+import { and, db, eq, inArray } from '@op/db/test';
 
 import { expect, test } from '../fixtures/index.js';
 
+type PhaseDefinition = DecisionSchemaDefinition['phases'][number];
+
 /**
- * Three-phase schema with a real review phase. Mirrors what the simple
- * voting template produces post-`d89a46a31`: every transition is `manual`,
- * `review` exposes `proposals.review === true` so DecisionStateRouter can
- * detect the ReviewSelection branch, and neither review nor voting carry a
- * selectionPipeline (so advances default to pass-none, leaving the new
- * inbound transition empty).
+ * The phases both schemas below share. Named separately so the review branch's
+ * rules — the part these specs actually depend on — exist in exactly one place.
+ *
+ * Mirrors what the simple voting template produces post-`d89a46a31`: every
+ * transition is `manual`, and `review` exposes `proposals.review === true` so
+ * DecisionStateRouter can detect the ReviewSelection branch.
+ */
+const submissionPhase: PhaseDefinition = {
+  id: 'submission',
+  name: 'Submission',
+  rules: {
+    proposals: { submit: true },
+    voting: { submit: false },
+    advancement: { method: 'manual' },
+  },
+  // Pass-all so submission→review carries every submitted proposal forward.
+  selectionPipeline: { version: '1.0.0', blocks: [] },
+};
+
+const reviewPhase: PhaseDefinition = {
+  id: 'review',
+  name: 'Review & Shortlist',
+  rules: {
+    proposals: { submit: false, review: true },
+    voting: { submit: false },
+    advancement: { method: 'manual' },
+  },
+  // `limit: 0` forces a pass-none result on review's outbound transition so the
+  // new inbound transition is empty, which is exactly the state
+  // ReviewSelectionPage exists to recover from. Mirrors the
+  // `decision-manual-selection.spec.ts` shortcut. Once the recently-merged
+  // pass-none default lands in this branch, this can simply be omitted.
+  selectionPipeline: {
+    version: '1.0.0',
+    blocks: [{ id: 'zero', type: 'limit', count: 0 }],
+  },
+};
+
+const votingPhase: PhaseDefinition = {
+  id: 'voting',
+  name: 'Voting',
+  rules: {
+    proposals: { submit: false },
+    voting: { submit: true },
+    advancement: { method: 'manual' },
+  },
+};
+
+const resultsPhase: PhaseDefinition = {
+  id: 'results',
+  name: 'Results',
+  rules: {
+    proposals: { submit: false },
+    voting: { submit: false },
+    advancement: { method: 'manual' },
+  },
+};
+
+/**
+ * `results` trails `voting` only to keep `voting` intermediate. Publishing is
+ * gated on `isLastPhase`, so without a phase after it the review→voting
+ * selection below would publish results and raise the notification composer —
+ * see `reviewToResultsSchema` for that case.
  */
 const reviewToVotingSchema: DecisionSchemaDefinition = {
   id: 'test-review-selection',
   version: '1.0.0',
   name: 'Review Selection Test Schema',
   description:
-    'Submission → Review (review enabled) → Voting; manual transitions; pass-none defaults.',
-  phases: [
-    {
-      id: 'submission',
-      name: 'Submission',
-      rules: {
-        proposals: { submit: true },
-        voting: { submit: false },
-        advancement: { method: 'manual' },
-      },
-      // Pass-all so submission→review carries every submitted proposal forward.
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-    },
-    {
-      id: 'review',
-      name: 'Review & Shortlist',
-      rules: {
-        proposals: { submit: false, review: true },
-        voting: { submit: false },
-        advancement: { method: 'manual' },
-      },
-      // `limit: 0` forces a pass-none result on review→voting so the new
-      // inbound transition is empty, which is exactly the state
-      // ReviewSelectionPage exists to recover from. Mirrors the
-      // `decision-manual-selection.spec.ts` shortcut. Once the recently-merged
-      // pass-none default lands in this branch, this can simply be omitted.
-      selectionPipeline: {
-        version: '1.0.0',
-        blocks: [{ id: 'zero', type: 'limit', count: 0 }],
-      },
-    },
-    {
-      id: 'voting',
-      name: 'Voting',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: true },
-        advancement: { method: 'manual' },
-      },
-    },
-  ],
+    'Submission → Review (review enabled) → Voting → Results; manual transitions; pass-none defaults.',
+  phases: [submissionPhase, reviewPhase, votingPhase, resultsPhase],
+};
+
+/**
+ * The same review branch without `voting`, so `results` follows `review`
+ * directly and confirming the selection publishes. This is the shape the
+ * notification composer has to reach: the previous phase is a review phase,
+ * which used to route past the composer entirely.
+ */
+const reviewToResultsSchema: DecisionSchemaDefinition = {
+  id: 'test-review-selection-results',
+  version: '1.0.0',
+  name: 'Review-to-Results Selection Test Schema',
+  description:
+    'Submission → Review (review enabled) → Results; results is last, so selection publishes.',
+  phases: [submissionPhase, reviewPhase, resultsPhase],
 };
 
 type SeedOrg = {
@@ -83,14 +120,18 @@ type SeedOrg = {
  * The review→voting transition is intentionally absent — the test drives the
  * stepper to create it via `transitionFromPhase`.
  */
-async function seedOnReviewPhase(org: SeedOrg, titles: string[]) {
+async function seedOnReviewPhase(
+  org: SeedOrg,
+  titles: string[],
+  schema: DecisionSchemaDefinition = reviewToVotingSchema,
+) {
   const template = await getSeededTemplate();
   const instance = await createDecisionInstance({
     processId: template.id,
     ownerProfileId: org.organizationProfile.id,
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
-    schema: reviewToVotingSchema,
+    schema,
   });
 
   // Insert as DRAFT then update to SUBMITTED so the proposalHistory trigger
@@ -291,6 +332,9 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     )?.manualSelection;
     expect(manualSelection?.byProfileId).toBeTruthy();
     expect(manualSelection?.at).toBeTruthy();
+    // Voting is intermediate here, so no results publish and the standard
+    // footer composes no author copy.
+    expect(manualSelection).not.toHaveProperty('resultNotifications');
 
     // ── 7. After confirming, selectionsAreConfirmed flips back to true and
     // ReviewSelectionPage no longer renders.
@@ -389,5 +433,138 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     await expect(
       page.getByRole('button', { name: 'Confirm selections' }),
     ).toBeEnabled();
+  });
+});
+
+test.describe('Decision Review Selection — review → results flow', () => {
+  // The composer used to be unreachable from here: the router sends a review
+  // predecessor to ReviewSelectionPage, and only the sibling final-phase page
+  // carried the notification footer. Entering a results phase now gets the
+  // composer whatever phase came before it.
+  test('admin composes author notifications when the review phase advances into results', async ({
+    authenticatedPage: page,
+    org,
+  }) => {
+    const { instance, proposals } = await seedOnReviewPhase(
+      org,
+      ['Proposal Alpha', 'Proposal Beta', 'Proposal Gamma'],
+      reviewToResultsSchema,
+    );
+    // Gamma is never picked — it is what makes the not-funded audience 1.
+    const [alpha, beta] = proposals;
+    if (!alpha || !beta) {
+      throw new Error('Expected the first two seeded proposals');
+    }
+
+    // Advance review → results from the overview's PhaseTimeline. `limit: 0`
+    // strands every proposal, so the inbound transition lands empty and
+    // ReviewSelectionPage mounts on /current.
+    await page.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
+    await page.getByRole('button', { name: 'Advance' }).first().click();
+    const advanceDialog = page
+      .getByRole('alertdialog')
+      .and(page.locator(':not([data-slot="toast"])'));
+    await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+    await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
+      waitUntil: 'networkidle',
+    });
+
+    // Review aggregates still drive the table — the composer is additive, it
+    // does not swap this page out for the generic selection view.
+    await expect(
+      page.getByRole('columnheader', { name: 'Overall recommendation' }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // The final-phase footer, not the standard one: "winning", not "advancing".
+    const confirmButton = page.getByRole('button', {
+      name: 'Confirm winning proposals',
+    });
+    await expect(confirmButton).toBeVisible();
+    await expect(confirmButton).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Advance Proposal Alpha' }).click();
+    await page.getByRole('button', { name: 'Advance Proposal Beta' }).click();
+    await expect(page.getByText('2 winning proposals selected')).toBeVisible();
+    await expect(confirmButton).toBeEnabled();
+
+    await confirmButton.click();
+    const dialog = page.getByRole('dialog', { name: 'Compose Notifications' });
+    await expect(dialog).toBeVisible();
+
+    // Badge counts are the audience each message actually reaches: the
+    // not-funded tab counts the review pool minus the picks (3 - 2), which is
+    // how listResultNotificationRecipients resolves the not-selected set.
+    await expect(
+      dialog.getByRole('tab', { name: 'Funded 2 proposals' }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole('tab', { name: 'Not funded 1 proposal' }),
+    ).toBeVisible();
+
+    // `keepMounted` leaves the inactive panel in the DOM under `inert`, which
+    // Playwright's role engine ignores — scope to the live panel explicitly.
+    const activeMessageBox = dialog
+      .locator('[role="tabpanel"]:not([inert])')
+      .getByRole('textbox', { name: 'Notification Message' });
+    const selectedMessage = `Selected copy ${instance.slug}`;
+    const notSelectedMessage = `Not selected copy ${instance.slug}`;
+    await activeMessageBox.fill(selectedMessage);
+    await dialog.getByRole('tab', { name: /Not funded/ }).click();
+    await activeMessageBox.fill(notSelectedMessage);
+
+    await dialog
+      .getByRole('button', { name: 'Send & publish results' })
+      .click();
+    await expect(dialog).not.toBeVisible({ timeout: 15_000 });
+
+    // The composed copy is stamped on the review→results transition row, which
+    // is what the notification workflow re-reads at send time. Addressed by
+    // phase rather than by recency so the seeded submission→review row can
+    // never win a timestamp tie.
+    const [transitionRow] = await db
+      .select({ transitionData: stateTransitionHistory.transitionData })
+      .from(stateTransitionHistory)
+      .where(
+        and(
+          eq(stateTransitionHistory.processInstanceId, instance.instance.id),
+          eq(stateTransitionHistory.toStateId, 'results'),
+        ),
+      );
+    expect(transitionRow?.transitionData).toMatchObject({
+      manualSelection: {
+        resultNotifications: {
+          selected: selectedMessage,
+          notSelected: notSelectedMessage,
+        },
+      },
+    });
+
+    // Two result rows: advancing into a last phase writes an empty one, then
+    // this publish writes ours. Matched on content rather than `executedAt`
+    // order — both rows can share a timestamp and `id` is not monotonic.
+    const resultRows = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(
+        eq(decisionProcessResults.processInstanceId, instance.instance.id),
+      );
+    expect(resultRows.every((row) => row.success)).toBe(true);
+    expect(resultRows.map((row) => row.selectedCount).sort()).toEqual([0, 2]);
+
+    const published = resultRows.find((row) => row.selectedCount === 2);
+    if (!published) {
+      throw new Error('Expected a published decision_process_results row');
+    }
+
+    const selections = await db
+      .select({ proposalId: decisionProcessResultSelections.proposalId })
+      .from(decisionProcessResultSelections)
+      .where(eq(decisionProcessResultSelections.processResultId, published.id));
+    expect(new Set(selections.map((s) => s.proposalId))).toEqual(
+      new Set([alpha.id, beta.id]),
+    );
   });
 });

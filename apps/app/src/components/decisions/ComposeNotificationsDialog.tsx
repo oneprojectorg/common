@@ -186,9 +186,12 @@ export const ComposeNotificationsDialog = ({
           >
             {t('Cancel')}
           </Button>
+          {/* `selectedCount` is live, not the frozen badge count: if the pool
+              refetches the selection away while the admin composes, the
+              mutation would be rejected for an empty `proposalIds`. */}
           <Button
             onClick={() => onConfirm(messages)}
-            disabled={hasError}
+            disabled={hasError || selectedCount === 0}
             loading={isSubmitting}
           >
             {t('decisions.proposals.publishResultsAction')}
