@@ -1,5 +1,6 @@
 'use client';
 
+import { clearPersistedQueryCache } from '@op/api/client';
 import type { ChannelName, RegistryEvents } from '@op/common/realtime';
 import { queryChannelRegistry } from '@op/common/realtime';
 import { RealtimeManager } from '@op/realtime/client';
@@ -43,8 +44,13 @@ function useHasSession(): boolean {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setHasSession(Boolean(session));
+      // Supabase broadcasts this to every tab, so a sign-out anywhere stops
+      // this tab from writing its still-populated cache back to localStorage.
+      if (event === 'SIGNED_OUT') {
+        clearPersistedQueryCache();
+      }
     });
 
     return () => {

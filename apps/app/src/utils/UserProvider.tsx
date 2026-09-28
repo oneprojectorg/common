@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { CommonUser } from '@op/api/encoders';
+import { createSBBrowserClient } from '@op/supabase/client';
 import type { Permission } from 'access-zones';
 import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext, useEffect } from 'react';
@@ -62,6 +63,21 @@ export const UserProviderSuspense = ({
   // full-page navigation (fresh tree, null initialUser), so inside a mounted
   // tree a null refetch is a transient cookie/token race, not a sign-out.
   const user = account ?? initialUser ?? undefined;
+
+  // The rule above holds only if a session that ends elsewhere, in another
+  // tab or in a check that found it invalid, leaves the same way the menu
+  // does. Supabase broadcasts the event to every tab.
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = createSBBrowserClient().auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        window.location.assign('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Identifying attaches a persistent id to the person, which is exactly what
   // a visitor being tracked cookielessly has not agreed to — they stay on
