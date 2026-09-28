@@ -1,6 +1,7 @@
 import { toastStatus } from '@/utils/toastStatus';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { logger } from '@op/logging/client';
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -34,6 +35,7 @@ const DEFAULT_MAX_FILES = 10;
 export const DEFAULT_MAX_SIZE = 25 * 1024 * 1024; // 25MB
 
 export const useFileUpload = (options: UseFileUploadOptions) => {
+  const trpc = useTRPC();
   const {
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
     maxFiles = DEFAULT_MAX_FILES,
@@ -44,7 +46,9 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const uploadAttachment = trpc.posts.uploadPostAttachment.useMutation();
+  const uploadAttachment = useMutation(
+    trpc.posts.uploadPostAttachment.mutationOptions(),
+  );
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {

@@ -1,5 +1,5 @@
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
@@ -17,6 +17,7 @@ import {
 } from '@op/sense/Field';
 import { toast } from '@op/sense/Toast';
 import { RELATIONSHIP_OPTIONS } from '@op/types/relationships';
+import { useMutation } from '@tanstack/react-query';
 import { FormEvent, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,8 +31,11 @@ export const AddRelationshipForm = ({
   profile: Organization;
   onClose: () => void;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
-  const addRelationship = trpc.organization.addRelationship.useMutation();
+  const addRelationship = useMutation(
+    trpc.organization.addRelationship.mutationOptions(),
+  );
 
   const [selectedRelations, setSelectedRelations] = useState<Array<string>>([]);
   const [isSubmitting, startTransition] = useTransition();

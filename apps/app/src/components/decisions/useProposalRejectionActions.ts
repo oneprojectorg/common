@@ -1,8 +1,8 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { Proposal, RejectionReason } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -32,30 +32,37 @@ export interface ProposalRejectionActions {
 export function useProposalRejectionActions(
   proposal: Proposal,
 ): ProposalRejectionActions {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const unrejectMutation = trpc.decision.unrejectProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('decisions.proposals.undoRejectionError'));
-    },
-    onSuccess: () => {
-      toast.success(t('decisions.proposals.undoRejectionSuccess'));
-    },
-  });
+  const unrejectMutation = useMutation(
+    trpc.decision.unrejectProposal.mutationOptions({
+      onError: (error) => {
+        toast.error(
+          error.message || t('decisions.proposals.undoRejectionError'),
+        );
+      },
+      onSuccess: () => {
+        toast.success(t('decisions.proposals.undoRejectionSuccess'));
+      },
+    }),
+  );
 
   const unreject = () => unrejectMutation.mutate({ proposalId: proposal.id });
 
-  const rejectMutation = trpc.decision.rejectProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('decisions.proposals.rejectError'));
-    },
-    onSuccess: () => {
-      // Inline Undo so a mis-click is one tap to reverse, per the design.
-      toast.success(t('decisions.proposals.rejectSuccess'), {
-        action: { label: t('editor.undoAction'), onClick: unreject },
-      });
-    },
-  });
+  const rejectMutation = useMutation(
+    trpc.decision.rejectProposal.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message || t('decisions.proposals.rejectError'));
+      },
+      onSuccess: () => {
+        // Inline Undo so a mis-click is one tap to reverse, per the design.
+        toast.success(t('decisions.proposals.rejectSuccess'), {
+          action: { label: t('editor.undoAction'), onClick: unreject },
+        });
+      },
+    }),
+  );
 
   return {
     reject: ({ reason, note }, options) =>
