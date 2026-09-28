@@ -23,16 +23,28 @@ test.describe('Sign-out', () => {
       })
       .toContain(workerAuthUser.email);
 
+    // Hold the landing page so the signed-out document stays alive past the
+    // persister's 1 s trailing write, then read storage before releasing it.
+    let releaseLandingPage = () => {};
+    const landingPageHeld = new Promise<void>((resolve) => {
+      releaseLandingPage = resolve;
+    });
     await page.route(
       (url) => url.pathname === '/',
       async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, 1_500));
+        await landingPageHeld;
         await route.continue();
       },
     );
 
     await userMenu.click();
     await page.getByRole('menuitem', { name: 'Log out' }).click();
+
+    await page.waitForTimeout(1_500);
+    expect((await readOfflineCache(page)) ?? '').not.toContain(
+      workerAuthUser.email,
+    );
+    releaseLandingPage();
 
     await expect(
       page.getByRole('banner').getByRole('link', { name: 'Log in' }),
