@@ -60,4 +60,41 @@ test.describe('Sign-out', () => {
       workerAuthUser.email,
     );
   });
+
+  test('a second tab stops persisting once the first tab signs out', async ({
+    page,
+    context,
+    workerAuthUser,
+  }) => {
+    await page.goto('/en/decisions');
+    await expect(page.getByTestId('user-menu-trigger')).toBeVisible({
+      timeout: 20_000,
+    });
+
+    const secondTab = await context.newPage();
+    await secondTab.goto('/en/decisions');
+    await expect(secondTab.getByTestId('user-menu-trigger')).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect
+      .poll(async () => (await readOfflineCache(secondTab)) ?? '', {
+        timeout: 20_000,
+      })
+      .toContain(workerAuthUser.email);
+
+    await page.bringToFront();
+    await page.getByTestId('user-menu-trigger').click();
+    await page.getByRole('menuitem', { name: 'Log out' }).click();
+    await expect(
+      page.getByRole('banner').getByRole('link', { name: 'Log in' }),
+    ).toBeVisible({ timeout: 20_000 });
+
+    // Focusing the second tab refetches its session query; every cache
+    // update there would write the account back without the sign-out signal.
+    await secondTab.bringToFront();
+    await secondTab.waitForTimeout(2_000);
+    expect((await readOfflineCache(secondTab)) ?? '').not.toContain(
+      workerAuthUser.email,
+    );
+  });
 });
