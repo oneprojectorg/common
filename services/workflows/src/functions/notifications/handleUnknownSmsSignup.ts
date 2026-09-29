@@ -1,17 +1,14 @@
 import { isFeatureEnabled } from '@op/analytics';
 import {
   confirmPhoneSignupCode,
+  findConfirmedPhoneAccount,
   getSmsProvider,
   RateLimitError,
   requestPhoneSignupCode,
   safeParsePhoneNumber,
-  toGoTruePhoneFormat,
 } from '@op/common';
-import { db } from '@op/db/client';
-import { authUsers, users } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { eq } from 'drizzle-orm';
 
 const CODE_PATTERN = /^\d{4,10}$/;
 const SMS_SIGNUP_FEATURE_FLAG = 'sms-signup';
@@ -57,23 +54,8 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const to = parsedFrom.data;
 
-    const existing = await step.run(
-      'check-known-number',
-      async (): Promise<{
-        authUserId: string;
-        profileId: string | null;
-      } | null> => {
-        // GoTrue stores auth.users.phone without the leading '+' Twilio always
-        // sends in From, so comparing the raw value here would never match an
-        // existing account, misrouting every known sender into the signup flow.
-        const [row] = await db
-          .select({ authUserId: authUsers.id, profileId: users.profileId })
-          .from(authUsers)
-          .leftJoin(users, eq(users.authUserId, authUsers.id))
-          .where(eq(authUsers.phone, toGoTruePhoneFormat(to)))
-          .limit(1);
-        return row ?? null;
-      },
+    const existing = await step.run('check-known-number', () =>
+      findConfirmedPhoneAccount({ phone: to }),
     );
 
     if (existing) {
@@ -178,12 +160,8 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     }
 
     const profileId = await step.run('lookup-profile-id', async () => {
-      const [row] = await db
-        .select({ profileId: users.profileId })
-        .from(users)
-        .where(eq(users.authUserId, authUserId))
-        .limit(1);
-      return row?.profileId ?? null;
+      const account = await findConfirmedPhoneAccount({ phone: to });
+      return account?.profileId ?? null;
     });
 
     logger.info('Created account from inbound SMS signup', {
