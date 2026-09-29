@@ -72,6 +72,40 @@ export async function identifyUser({
 }
 
 /**
+ * Flags forced on or off through `FEATURE_FLAG_OVERRIDES`, so a local run or
+ * an integration test can take a flagged path without a PostHog project.
+ *
+ * Format: `flag-a:true,flag-b:false`. A flag not listed is read from PostHog.
+ */
+const parseFeatureFlagOverrides = (value: string | undefined) =>
+  new Map(
+    (value ?? '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => {
+        const [key, state] = entry.split(':');
+        return [key?.trim() ?? '', state?.trim() === 'true'] as const;
+      })
+      .filter(([key]) => key !== ''),
+  );
+
+export async function isFeatureEnabled(
+  key: string,
+  distinctId: string,
+): Promise<boolean> {
+  const override = parseFeatureFlagOverrides(
+    process.env.FEATURE_FLAG_OVERRIDES,
+  ).get(key);
+
+  if (override !== undefined) {
+    return override;
+  }
+
+  return (await posthog.isFeatureEnabled(key, distinctId)) ?? false;
+}
+
+/**
  * Track multiple events in sequence
  */
 export async function trackEvents(events: AnalyticsEvent[]): Promise<void> {
