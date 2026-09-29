@@ -1,7 +1,6 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   MERGE_NOTE_MAX_LENGTH,
   PAGE_LIMIT,
@@ -43,6 +42,9 @@ import { Spinner } from '@op/sense/Spinner';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
+import { useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import {
   type ReactNode,
   Suspense,
@@ -87,16 +89,19 @@ export function MergeProposalDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [step, setStep] = useState<MergeStep>('select');
   const [target, setTarget] = useState<MergeCandidate | null>(null);
   const [note, setNote] = useState('');
   // No invalidation needed: the endpoint registers the affected proposal channels.
-  const mergeMutation = trpc.decision.mergeProposals.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('decisions.proposals.mergeError'));
-    },
-  });
+  const mergeMutation = useMutation(
+    trpc.decision.mergeProposals.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message || t('decisions.proposals.mergeError'));
+      },
+    }),
+  );
 
   const sourceTitle = getProposalDisplayTitle(
     proposal,
@@ -502,27 +507,30 @@ function useMergeCandidateSearch({
   searchQuery: string;
   isOpen: boolean;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [debouncedSearchQuery] = useDebounce(searchQuery, 200);
   const hasQuery = searchQuery.length > 0;
 
-  const query = trpc.decision.listProposals.useQuery(
-    {
-      processInstanceId: proposal.processInstanceId,
-      dir: 'desc',
-      // Same tier as the list picker below, so a search can reach whatever
-      // the list can.
-      limit: PAGE_LIMIT.lg,
-      // Server-side, so a match outside the suggestions below is still found.
-      search: debouncedSearchQuery,
-    },
-    {
-      enabled: isOpen && debouncedSearchQuery.length > 0,
-      // Hold the previous results while the next query runs, so the popover
-      // doesn't empty and re-fill between keystrokes.
-      placeholderData: (previous) => previous,
-      staleTime: 30 * 1000,
-    },
+  const query = useQuery(
+    trpc.decision.listProposals.queryOptions(
+      {
+        processInstanceId: proposal.processInstanceId,
+        dir: 'desc',
+        // Same tier as the list picker below, so a search can reach whatever
+        // the list can.
+        limit: PAGE_LIMIT.lg,
+        // Server-side, so a match outside the suggestions below is still found.
+        search: debouncedSearchQuery,
+      },
+      {
+        enabled: isOpen && debouncedSearchQuery.length > 0,
+        // Hold the previous results while the next query runs, so the popover
+        // doesn't empty and re-fill between keystrokes.
+        placeholderData: (previous) => previous,
+        staleTime: 30 * 1000,
+      },
+    ),
   );
 
   const untitledLabel = t('decisions.proposals.untitledProposal');
@@ -611,10 +619,11 @@ function MergeCandidateListSuspense({
   scrollRoot: Element | null;
   onSelect: (candidate: MergeCandidate) => void;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
-  const [paginatedData, query] =
-    trpc.decision.listProposals.useSuspenseInfiniteQuery(
+  const query = useSuspenseInfiniteQuery(
+    trpc.decision.listProposals.infiniteQueryOptions(
       {
         processInstanceId: proposal.processInstanceId,
         dir: 'desc',
@@ -624,7 +633,10 @@ function MergeCandidateListSuspense({
         getNextPageParam: nextCursor,
         staleTime: 30 * 1000,
       },
-    );
+    ),
+  );
+
+  const paginatedData = query.data;
 
   const untitledLabel = t('decisions.proposals.untitledProposal');
   const candidates = useMemo(

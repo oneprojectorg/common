@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -10,6 +9,7 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuFlag } from 'react-icons/lu';
 
@@ -31,6 +31,7 @@ const LABELLED_TRIGGER = {
  * The trigger is icon-only below `sm` (the mobile read-view action row is a row
  * of icon buttons) and gains its label from `sm` up.
  */
+const trpc = useTRPC();
 export function ReportProposalDialog({
   proposalId,
   iconOnly = false,
@@ -42,15 +43,17 @@ export function ReportProposalDialog({
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
-  const reportMutation = trpc.moderation.flagItem.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.proposals.reportSuccess'));
-      setIsOpen(false);
-    },
-    onError: () => {
-      toast.error(t('decisions.proposals.reportError'));
-    },
-  });
+  const reportMutation = useMutation(
+    trpc.moderation.flagItem.mutationOptions({
+      onSuccess: () => {
+        toast.success(t('decisions.proposals.reportSuccess'));
+        setIsOpen(false);
+      },
+      onError: () => {
+        toast.error(t('decisions.proposals.reportError'));
+      },
+    }),
+  );
 
   // Reflects a successful report this session — the trigger reads "Reported"
   // and disables so the reporter doesn't re-open the dialog.

@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +12,7 @@ import {
 } from '@op/sense/AlertDialog';
 import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useRef } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -45,24 +45,27 @@ export function AdvancePhaseConfirm({
   onClose,
   onDismissWithoutAdvance,
 }: AdvancePhaseConfirmProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const router = useRouter();
 
   const advanceInitiatedRef = useRef(false);
 
-  const transitionMutation = trpc.decision.transitionFromPhase.useMutation({
-    onSuccess: () => {
-      advanceInitiatedRef.current = false;
-      onClose();
-      toast.success(t('decisions.processBuilder.advancePhaseSuccess'));
-      router.refresh();
-    },
-    onError: (error) => {
-      toast.error(
-        error.message || t('decisions.processBuilder.advancePhaseError'),
-      );
-    },
-  });
+  const transitionMutation = useMutation(
+    trpc.decision.transitionFromPhase.mutationOptions({
+      onSuccess: () => {
+        advanceInitiatedRef.current = false;
+        onClose();
+        toast.success(t('decisions.processBuilder.advancePhaseSuccess'));
+        router.refresh();
+      },
+      onError: (error) => {
+        toast.error(
+          error.message || t('decisions.processBuilder.advancePhaseError'),
+        );
+      },
+    }),
+  );
 
   const handleAdvancePhase = () => {
     if (!instanceId || transitionMutation.isPending) {
