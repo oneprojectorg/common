@@ -9,8 +9,11 @@ vi.mock('twilio', () => ({
 }));
 
 import { getSmsProvider } from './provider';
+import { memorySmsProvider } from './providers/memory';
+import { parsePhoneNumber } from './schemas';
 
 const ENV_KEYS = [
+  'SMS_PROVIDER',
   'TWILIO_ACCOUNT_SID',
   'TWILIO_AUTH_TOKEN',
   'TWILIO_API_KEY_SID',
@@ -38,9 +41,28 @@ const setEnv = (values: Partial<Record<(typeof ENV_KEYS)[number], string>>) => {
   }
 };
 
-afterEach(() => setEnv({}));
+afterEach(() => {
+  setEnv({});
+  memorySmsProvider.reset();
+});
 
 describe('getSmsProvider', () => {
+  it('given SMS_PROVIDER=memory beside a full Twilio account, when a message is sent, then the in-memory provider records it and Twilio is never built', async () => {
+    setEnv({
+      SMS_PROVIDER: 'memory',
+      ...ACCOUNT,
+      TWILIO_MESSAGING_SERVICE_SID: 'MG1',
+    });
+    const to = parsePhoneNumber('+15005550006');
+
+    const result = await getSmsProvider()?.sendSms?.({ to, body: 'hi' });
+
+    expect(result?.status).toBe('accepted');
+    expect(memorySmsProvider.sent).toEqual([
+      expect.objectContaining({ to, body: 'hi' }),
+    ]);
+  });
+
   it('returns null when no account is configured', () => {
     setEnv({});
 
