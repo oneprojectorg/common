@@ -3,6 +3,7 @@ import { type InstancePhaseData, type ProcessInstance } from '@op/api/encoders';
 import {
   getPhaseRubricTemplate,
   getRubricScoringInfo,
+  isLastPhase,
   templateCollectsBudget,
 } from '@op/common/client';
 import { Suspense } from 'react';
@@ -45,12 +46,22 @@ export function ReviewSelectionPage({
     instance.instanceData?.proposalTemplate,
   );
 
+  // Confirming the last phase publishes results rather than advancing anyone,
+  // which changes both the hero's promise and the footer the list renders.
+  const isFinalPhase = isLastPhase(instance.currentStateId, phases);
+
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
         <DecisionHero
           title={previousPhase?.headline ?? t('reviewsCompleteBadge')}
-          description={<p>{t('selectAdvancingHeading')}</p>}
+          description={
+            <p>
+              {isFinalPhase
+                ? t('confirmWinnersHeading')
+                : t('selectAdvancingHeading')}
+            </p>
+          }
           variant="standard"
         />
       </div>
@@ -72,6 +83,7 @@ export function ReviewSelectionPage({
                 instance={instance}
                 previousPhaseId={previousPhaseId}
                 showBudget={showBudget}
+                isFinalPhase={isFinalPhase}
               />
             </Suspense>
           </APIErrorBoundary>

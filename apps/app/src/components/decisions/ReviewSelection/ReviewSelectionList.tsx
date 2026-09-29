@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
+import type { ResultNotificationMessages } from '@op/common/client';
 import { getRubricScoringInfo } from '@op/common/client';
 import {
   Empty,
@@ -20,6 +21,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '@/components/Bullet';
 
+import { FinalPhaseSelectionFooter } from '../FinalPhaseSelectionFooter';
 import { StandardSelectionFooter } from '../StandardSelectionFooter';
 import { useManualSelection } from '../useManualSelection';
 import {
@@ -31,12 +33,22 @@ export function ReviewSelectionList({
   instance,
   previousPhaseId,
   showBudget,
+  isFinalPhase,
 }: {
   instance: ProcessInstance;
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
   /** Show the budget column. Derived by the page so the skeleton agrees. */
   showBudget: boolean;
+  /**
+   * Confirming publishes results instead of advancing anyone, so the admin
+   * composes the copy mailed to every author first. Derived by the page,
+   * which words its hero off the same answer.
+   *
+   * Named to match `ManualSelectionList`'s `confirmVariant === 'finalPhase'`;
+   * the service calls the same predicate `publishesResults`.
+   */
+  isFinalPhase: boolean;
 }) {
   const t = useTranslations();
   const processInstanceId = instance.id;
@@ -93,10 +105,34 @@ export function ReviewSelectionList({
       setIsConfirmOpen(false);
     },
     onError: (error) => {
-      setIsConfirmOpen(false);
+      // Re-read rather than sorting the failure by error code. If this lost to
+      // a concurrent advance or an already-submitted selection, the instance
+      // refetch flips `selectionsAreConfirmed` and routes this screen away; if
+      // a proposal left the pool, the aggregates refetch drops it from
+      // `selectedProposals`. Either way the retry isn't doomed to repeat.
+      utils.decision.getInstance.invalidate({ instanceId: processInstanceId });
+      utils.decision.listWithReviewAggregates.invalidate({
+        processInstanceId,
+        phaseId: previousPhaseId,
+      });
+      // The composer holds hand-written copy, so a retryable failure keeps it
+      // open; the standard footer has nothing to preserve.
+      if (!isFinalPhase) {
+        setIsConfirmOpen(false);
+      }
       toast.error(error.message);
     },
   });
+
+  const handleConfirm = (resultNotifications?: ResultNotificationMessages) =>
+    submitMutation.mutate({
+      processInstanceId,
+      // The resolved proposals, not the raw draft: the draft is persisted in
+      // localStorage and can name rows that have since left the pool, which the
+      // service rejects for the whole call.
+      proposalIds: selectedProposals.map((proposal) => proposal.id),
+      resultNotifications,
+    });
 
   const handleAdvanceToggle = (proposalId: string) => {
     setAdvancingIds(
@@ -142,20 +178,26 @@ export function ReviewSelectionList({
         />
       )}
 
-      <StandardSelectionFooter
-        selectedProposals={selectedProposals}
-        numSelected={advancingIds.length}
-        phaseName={currentPhaseName}
-        isConfirmOpen={isConfirmOpen}
-        onConfirmOpenChange={setIsConfirmOpen}
-        onConfirm={() =>
-          submitMutation.mutate({
-            processInstanceId,
-            proposalIds: advancingIds,
-          })
-        }
-        isSubmitting={submitMutation.isPending}
-      />
+      {isFinalPhase ? (
+        <FinalPhaseSelectionFooter
+          numSelected={selectedProposals.length}
+          totalCandidates={items.length}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={setIsConfirmOpen}
+          onConfirm={handleConfirm}
+          isSubmitting={submitMutation.isPending}
+        />
+      ) : (
+        <StandardSelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={selectedProposals.length}
+          phaseName={currentPhaseName}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={setIsConfirmOpen}
+          onConfirm={() => handleConfirm()}
+          isSubmitting={submitMutation.isPending}
+        />
+      )}
     </div>
   );
 }
