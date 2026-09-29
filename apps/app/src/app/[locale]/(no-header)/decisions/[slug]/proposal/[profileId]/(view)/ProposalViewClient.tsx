@@ -1,9 +1,9 @@
 'use client';
-
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
+import { useQuery, useSuspenseQueries } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -18,10 +18,13 @@ function ProposalViewPageContent({
   profileId: string;
   slug: string;
 }) {
-  const [[proposal, decisionProfile]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getDecisionBySlug({ slug }),
-  ]);
+  const trpc = useTRPC();
+  const [{ data: proposal }, { data: decisionProfile }] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getProposal.queryOptions({ profileId }),
+      trpc.decision.getDecisionBySlug.queryOptions({ slug }),
+    ],
+  });
 
   if (!proposal) {
     notFound();
@@ -39,11 +42,12 @@ function ProposalViewPageContent({
 
   // Selections only make sense once we've reached the final/results phase.
   const inLastPhase = isLastPhase(instance.currentStateId, phases);
-  const { data: selection } =
-    trpc.decision.getLatestSelectionForProposal.useQuery(
+  const { data: selection } = useQuery(
+    trpc.decision.getLatestSelectionForProposal.queryOptions(
       { proposalId: proposal.id },
       { enabled: inLastPhase },
-    );
+    ),
+  );
 
   return (
     <ProposalView

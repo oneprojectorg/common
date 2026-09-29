@@ -1,7 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
 import {
   Empty,
@@ -10,6 +10,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { LuClock, LuTriangleAlert } from 'react-icons/lu';
 
@@ -41,15 +42,23 @@ export function StandardDecisionPage({
   /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
   pinOffset?: number;
 }) {
+  const trpc = useTRPC();
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[instance, { items: submitters, total }]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.getInstance({ instanceId }),
-      t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
+  const [
+    { data: instance },
+    {
+      data: { items: submitters, total },
+    },
+  ] = useSuspenseQueries({
+    queries: [
+      trpc.decision.getInstance.queryOptions({ instanceId }),
+      trpc.decision.listProposalSubmitters.queryOptions({
+        processInstanceId: instanceId,
+      }),
     ],
-  );
+  });
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;

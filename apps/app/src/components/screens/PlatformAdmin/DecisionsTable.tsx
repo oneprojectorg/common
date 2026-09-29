@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/sense/Header';
 import { PaginationBar } from '@op/sense/PaginationBar';
@@ -13,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@op/sense/Table';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -47,6 +47,7 @@ export const DecisionsTable = () => {
 
 /** Renders decisions table with live data */
 const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const {
     cursor,
@@ -68,8 +69,9 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
     query: searchQuery || undefined,
   };
 
-  const [data] =
-    trpc.platform.admin.listAllDecisionInstances.useSuspenseQuery(queryInput);
+  const { data: data } = useSuspenseQuery(
+    trpc.platform.admin.listAllDecisionInstances.queryOptions(queryInput),
+  );
 
   const { items: decisions, next, total } = data;
 
