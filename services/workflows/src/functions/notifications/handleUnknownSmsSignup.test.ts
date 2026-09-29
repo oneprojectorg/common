@@ -3,6 +3,7 @@ import {
   type PhoneNumber,
   memorySmsProvider,
   parsePhoneNumber,
+  PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
   toGoTruePhoneFormat,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
@@ -85,12 +86,17 @@ const claimNumber = (
   return { phone, code: TEST_NUMBERS[number] };
 };
 
+const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
+
+/** Seeds the row GoTrue leaves behind; `codeSentAt` is when it last texted a code. */
 const seedPhoneUser = async ({
   phone,
   confirmed,
+  codeSentAt,
 }: {
   phone: PhoneNumber;
   confirmed: boolean;
+  codeSentAt?: Date;
 }) => {
   const { error } = await supabase.auth.admin.createUser({
     phone,
@@ -98,6 +104,12 @@ const seedPhoneUser = async ({
   });
   if (error) {
     throw new Error(`Failed to seed phone user: ${error.message}`);
+  }
+  if (codeSentAt) {
+    await db
+      .update(authUsers)
+      .set({ confirmationSentAt: codeSentAt })
+      .where(eq(authUsers.phone, toGoTruePhoneFormat(phone)));
   }
 };
 
@@ -130,11 +142,15 @@ describe('handleUnknownSmsSignup against the database', () => {
     ]);
   });
 
-  it('given an earlier attempt left an unconfirmed row, when the number texts again, then a new code is requested and the consent text is sent', async ({
+  it('given an abandoned attempt whose code is older than the reply window, when the number texts again, then a new code is requested and the consent text is sent', async ({
     onTestFinished,
   }) => {
     const { phone } = claimNumber('+15005550008', onTestFinished);
-    await seedPhoneUser({ phone, confirmed: false });
+    await seedPhoneUser({
+      phone,
+      confirmed: false,
+      codeSentAt: minutesAgo(PHONE_SIGNUP_REPLY_WINDOW_MINUTES + 1),
+    });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -146,6 +162,28 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
       phone,
     ]);
+    expect((await readAuthUser(phone))?.phoneConfirmedAt).toBeNull();
+  });
+
+  it('given a code was texted moments ago and not yet confirmed, when the number texts again, then nothing is sent and no new code is requested', async ({
+    onTestFinished,
+  }) => {
+    // Every inbound text is also a trigger. Without this branch the reply to
+    // one attempt would start the next, one code per reply.
+    const { phone } = claimNumber('+15005550008', onTestFinished);
+    await seedPhoneUser({
+      phone,
+      confirmed: false,
+      codeSentAt: minutesAgo(1),
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [inboundText(phone, 'who is this?')],
+    });
+
+    expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
+    expect(memorySmsProvider.sent).toEqual([]);
     expect((await readAuthUser(phone))?.phoneConfirmedAt).toBeNull();
   });
 

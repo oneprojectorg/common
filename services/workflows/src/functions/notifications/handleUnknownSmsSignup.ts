@@ -1,8 +1,9 @@
 import { isFeatureEnabled } from '@op/analytics';
 import {
   confirmPhoneSignupCode,
-  findConfirmedPhoneAccount,
+  getPhoneSignupState,
   getSmsProvider,
+  PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
   RateLimitError,
   requestPhoneSignupCode,
   safeParsePhoneNumber,
@@ -54,15 +55,23 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const to = parsedFrom.data;
 
-    const existing = await step.run('check-known-number', () =>
-      findConfirmedPhoneAccount({ phone: to }),
+    const state = await step.run('check-known-number', () =>
+      getPhoneSignupState({ phone: to }),
     );
 
-    if (existing) {
+    if (state.status === 'confirmed') {
       logger.info('Inbound SMS from a known number, skipping signup flow', {
-        profileId: existing.profileId,
+        profileId: state.profileId,
       });
       return { message: 'known number, skipped' };
+    }
+
+    if (state.status === 'attempt_in_progress') {
+      logger.info(
+        'Inbound SMS is a reply to a signup attempt still in its window, skipping',
+        { codeSentAt: state.codeSentAt },
+      );
+      return { message: 'signup attempt in progress, skipped' };
     }
 
     const provider = getSmsProvider();
@@ -110,7 +119,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     const reply = await step.waitForEvent('wait-for-confirmation', {
       event: smsInboundReceived.name,
       match: 'data.from',
-      timeout: '10m',
+      timeout: `${PHONE_SIGNUP_REPLY_WINDOW_MINUTES}m`,
     });
 
     if (!reply) {
@@ -160,8 +169,10 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     }
 
     const profileId = await step.run('lookup-profile-id', async () => {
-      const account = await findConfirmedPhoneAccount({ phone: to });
-      return account?.profileId ?? null;
+      const confirmedState = await getPhoneSignupState({ phone: to });
+      return confirmedState.status === 'confirmed'
+        ? confirmedState.profileId
+        : null;
     });
 
     logger.info('Created account from inbound SMS signup', {

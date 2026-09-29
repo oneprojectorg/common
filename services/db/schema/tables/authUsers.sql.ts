@@ -16,6 +16,7 @@ export const authUsers = auth.table('users', {
   phone: text().unique(),
   emailConfirmedAt: timestamp('email_confirmed_at', { withTimezone: true }),
   phoneConfirmedAt: timestamp('phone_confirmed_at', { withTimezone: true }),
+  confirmationSentAt: timestamp('confirmation_sent_at', { withTimezone: true }),
   lastSignInAt: timestamp('last_sign_in_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }),
   updatedAt: timestamp('updated_at', { withTimezone: true }),

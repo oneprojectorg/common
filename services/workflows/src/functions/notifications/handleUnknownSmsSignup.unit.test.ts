@@ -2,7 +2,7 @@ import { InngestTestEngine } from '@inngest/test';
 import { isFeatureEnabled } from '@op/analytics';
 import {
   confirmPhoneSignupCode,
-  findConfirmedPhoneAccount,
+  getPhoneSignupState,
   getSmsProvider,
   requestPhoneSignupCode,
 } from '@op/common';
@@ -18,9 +18,10 @@ vi.mock('@op/common', () => {
   class ValidationError extends Error {}
   return {
     confirmPhoneSignupCode: vi.fn(),
-    findConfirmedPhoneAccount: vi.fn(),
+    getPhoneSignupState: vi.fn(),
     getSmsProvider: vi.fn(),
     requestPhoneSignupCode: vi.fn(),
+    PHONE_SIGNUP_REPLY_WINDOW_MINUTES: 10,
     // A real E.164 fixture below, so identity is a faithful stand-in, except
     // for 'not-e164', used to exercise the invalid-number branch.
     safeParsePhoneNumber: (value: string) =>
@@ -50,9 +51,18 @@ const confirmationReply = (body: string) => ({
 
 const accepted = { status: 'accepted', providerMessageId: 'SM-c' } as const;
 
+const free = { status: 'free' } as const;
+
+const confirmed = (n: number) =>
+  ({
+    status: 'confirmed',
+    authUserId: `auth-user-${n}`,
+    profileId: `profile-${n}`,
+  }) as const;
+
 const unknownNumberWithProvider = (sendSms = vi.fn()) => {
   vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-  vi.mocked(findConfirmedPhoneAccount).mockResolvedValue(null);
+  vi.mocked(getPhoneSignupState).mockResolvedValue(free);
   vi.mocked(getSmsProvider).mockReturnValue({ sendSms } as never);
   vi.mocked(requestPhoneSignupCode).mockResolvedValue({ status: 'sent' });
   return sendSms;
@@ -70,30 +80,41 @@ describe('handleUnknownSmsSignup', () => {
     const { result } = await t.execute({ events: [triggerEvent()] });
 
     expect(result).toEqual({ message: 'sms signup disabled' });
-    expect(findConfirmedPhoneAccount).not.toHaveBeenCalled();
+    expect(getPhoneSignupState).not.toHaveBeenCalled();
     expect(getSmsProvider).not.toHaveBeenCalled();
   });
 
   it('skips a number that already has a confirmed account', async () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(findConfirmedPhoneAccount).mockResolvedValue({
-      authUserId: 'auth-user-1',
-      profileId: 'profile-1',
-    });
+    vi.mocked(getPhoneSignupState).mockResolvedValue(confirmed(1));
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({ events: [triggerEvent()] });
 
-    expect(findConfirmedPhoneAccount).toHaveBeenCalledWith({ phone: FROM });
+    expect(getPhoneSignupState).toHaveBeenCalledWith({ phone: FROM });
     expect(result).toEqual({ message: 'known number, skipped' });
     expect(getSmsProvider).not.toHaveBeenCalled();
     expect(requestPhoneSignupCode).not.toHaveBeenCalled();
   });
 
-  it('starts the signup flow again for a number whose earlier attempt never confirmed', async () => {
-    // GoTrue leaves an unconfirmed auth row behind after every abandoned
-    // attempt. The lookup reports that as "no account", so the number is not
-    // locked out of signup for good.
+  it('skips a number whose attempt is in progress, so a reply cannot start another code send', async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
+    vi.mocked(getPhoneSignupState).mockResolvedValue({
+      status: 'attempt_in_progress',
+      codeSentAt: new Date(),
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [triggerEvent('who is this?')],
+    });
+
+    expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
+    expect(getSmsProvider).not.toHaveBeenCalled();
+    expect(requestPhoneSignupCode).not.toHaveBeenCalled();
+  });
+
+  it('starts the signup flow for a number whose earlier attempt lapsed', async () => {
     const sendSms = unknownNumberWithProvider(
       vi.fn().mockResolvedValue(accepted),
     );
@@ -110,7 +131,7 @@ describe('handleUnknownSmsSignup', () => {
 
   it('reports sending as unavailable when no Messaging Service is configured', async () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true);
-    vi.mocked(findConfirmedPhoneAccount).mockResolvedValue(null);
+    vi.mocked(getPhoneSignupState).mockResolvedValue(free);
     vi.mocked(getSmsProvider).mockReturnValue({} as never);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
@@ -256,12 +277,9 @@ describe('handleUnknownSmsSignup', () => {
     const sendSms = unknownNumberWithProvider(
       vi.fn().mockResolvedValue(accepted),
     );
-    vi.mocked(findConfirmedPhoneAccount)
-      .mockResolvedValueOnce(null) // check-known-number
-      .mockResolvedValueOnce({
-        authUserId: 'auth-user-2',
-        profileId: 'profile-2',
-      }); // lookup-profile-id
+    vi.mocked(getPhoneSignupState)
+      .mockResolvedValueOnce(free) // check-known-number
+      .mockResolvedValueOnce(confirmed(2)); // lookup-profile-id
     vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
       status: 'confirmed',
       authUserId: 'auth-user-2',
@@ -297,12 +315,9 @@ describe('handleUnknownSmsSignup', () => {
         retryable: false,
       }),
     );
-    vi.mocked(findConfirmedPhoneAccount)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        authUserId: 'auth-user-3',
-        profileId: 'profile-3',
-      });
+    vi.mocked(getPhoneSignupState)
+      .mockResolvedValueOnce(free)
+      .mockResolvedValueOnce(confirmed(3));
     vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
       status: 'confirmed',
       authUserId: 'auth-user-3',
