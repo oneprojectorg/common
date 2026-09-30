@@ -82,15 +82,40 @@ export const createSBAdminClient = (ctx: TContext) => {
             options: CookieOptions;
           }[],
         ) => {
+          // A server-side caller context (RSC render, server action) has no
+          // response to attach cookies to, so its `ctx.setCookie` throws by
+          // design — see `serverClient.ts`. Supabase only calls this after
+          // GoTrue has already rotated the session, so the new tokens are
+          // lost and the browser keeps a refresh token GoTrue has consumed.
+          //
+          // No client option prevents that: `@supabase/ssr` already forces
+          // `autoRefreshToken: false`, and what lands here is the on-demand
+          // refresh `getSession()` runs once the access token is inside its
+          // expiry margin. `apps/app/src/proxy.ts` normally absorbs it
+          // against a writable response, but its matcher skips `/api/*` — so
+          // this is a real gap, and it warns to stay countable. Don't log the
+          // URL: routes that reach here include OAuth callbacks carrying
+          // `?code=`.
+          if (ctx.isServerSideCall) {
+            logger.warn(
+              'Dropped refreshed Supabase session: server-side caller context cannot write cookies',
+              {
+                cookieNames: cookiesToSet.map(({ name }) => name),
+                requestId: ctx.requestId,
+              },
+            );
+
+            return;
+          }
+
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               ctx.setCookie({ name, value, options });
             });
           } catch (error) {
+            // Writable path: a failure here is unexpected, so it stays an
+            // error.
             logger.error('Failed to set Supabase cookies', { error });
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
           }
         },
       },
