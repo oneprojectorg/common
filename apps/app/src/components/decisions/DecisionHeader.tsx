@@ -3,11 +3,7 @@
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import {
-  type InstanceData,
-  type ProcessInstance,
-  type ProcessPhase,
-} from '@op/api/encoders';
+import { type InstanceData, type ProcessPhase } from '@op/api/encoders';
 import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -35,12 +31,14 @@ interface StandardDecisionHeaderProps extends DecisionHeaderBaseProps {
   /** Whether to render the phase stepper below the header bar (default true) */
   showStepper?: boolean;
   /**
-   * When provided, the header renders from this prop instead of a client
-   * `getInstance` query — used by the (decision-view) layout, which already has
-   * the instance from loadDecision. Omitted by the canonical /decisions/[slug]
-   * page, which falls back to the query.
+   * When provided, the header reads the instance from a
+   * `decision.getDecisionBySlug` suspense query on that decision-profile slug
+   * instead of from `getInstance` — used by the (decision-view) layout, which
+   * hydrates that exact query from its server fetch. A query (not a server
+   * prop) is what registers the `decisionInstance` realtime channel, so the
+   * stepper follows a phase advance made in another client.
    */
-  processInstance?: ProcessInstance;
+  fromDecisionSlug?: string;
 }
 
 /** Legacy getInstance endpoint (for the /profile/[slug]/decisions/[id] route). */
@@ -72,11 +70,11 @@ export function DecisionHeader(props: DecisionHeaderProps) {
   if (props.useLegacy) {
     return <LegacyDecisionHeaderContent {...props} />;
   }
-  if (props.processInstance) {
+  if (props.fromDecisionSlug) {
     return (
-      <DecisionHeaderFromProps
+      <DecisionHeaderFromSlug
         {...props}
-        processInstance={props.processInstance}
+        fromDecisionSlug={props.fromDecisionSlug}
       />
     );
   }
@@ -193,12 +191,27 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
   );
 }
 
-/** Prop variant: (decision-view) layout passes the instance from loadDecision. */
-function DecisionHeaderFromProps(
-  props: StandardDecisionHeaderProps & { processInstance: ProcessInstance },
+/**
+ * Slug variant: the (decision-view) route. Reads the same
+ * `getDecisionBySlug` query the layout hydrates, so the first render has the
+ * server snapshot and the refetch on mount registers the decisionInstance
+ * channel that keeps the stepper current.
+ */
+function DecisionHeaderFromSlug(
+  props: StandardDecisionHeaderProps & { fromDecisionSlug: string },
 ) {
   const t = useTranslations();
-  const { processInstance: instance } = props;
+  // `always`, not the default: the app wraps every query in
+  // PersistQueryClientProvider, which holds observers back while it restores
+  // the persisted cache and so swallows a hydrated query's ordinary mount
+  // refetch. That refetch is the only thing carrying the channel meta, so
+  // without it this query never registers `decisionInstance` and the stepper
+  // cannot follow an advance made in another client.
+  const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery(
+    { slug: props.fromDecisionSlug },
+    { refetchOnMount: 'always' },
+  );
+  const instance = decisionProfile.processInstance;
 
   return (
     <DecisionHeaderView
