@@ -551,6 +551,8 @@ export const createInstanceInputSchema = z.object({
 export const createInstanceFromTemplateInputSchema = z.object({
   templateId: z.uuid(),
   name: z.string().min(3).max(256),
+  /** Must be a profile the caller can act as; defaults to the acting profile. */
+  stewardProfileId: z.uuid().optional(),
 });
 
 /** Input schema for phase overrides with datetime validation */
