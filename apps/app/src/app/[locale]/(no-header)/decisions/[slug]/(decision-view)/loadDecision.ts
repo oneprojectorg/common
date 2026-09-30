@@ -1,3 +1,5 @@
+import { getUser } from '@/utils/getUser';
+import { requireRealAccount } from '@/utils/walledGarden';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import { forbidden, notFound } from 'next/navigation';
@@ -12,6 +14,16 @@ export const loadDecision = cache(async (slug: string) => {
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
     if (cause instanceof CommonError && cause.statusCode === 403) {
+      // The 403 conflates "missing" and "no access" (an existence-leak guard),
+      // so all we know is that this viewer can't read it — leaving the viewer
+      // to decide the response. Signing in can still let a signed-out or
+      // anonymous visitor in, so send them to login with a way back; a refused
+      // real account gains nothing there and falls through to the no-access
+      // screen, which offers any pending invite for this decision.
+      // linkAnonymous: anonymous participation is a feature here, so an
+      // anonymous viewer may already own a submitted proposal — claim the
+      // account they have rather than signing them into a new one.
+      await requireRealAccount(await getUser(), { linkAnonymous: true });
       forbidden();
     }
     if (cause instanceof CommonError && cause.statusCode === 404) {
