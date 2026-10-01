@@ -45,8 +45,6 @@ export const CreateMenu = () => {
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
-  // The wizard ships alongside the one-click path rather than replacing it, so
-  // the old route stays available while the new one is in alpha.
   const newProcessAdminEnabled = useFeatureFlag('new_process_admin_enabled');
   const utils = trpc.useUtils();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -109,10 +107,7 @@ export const CreateMenu = () => {
             </DropdownMenuItem>
           )}
           {newProcessAdminEnabled && (
-            // The wizard collects the shape of the process before anything is
-            // created — see CreateProcessWizard. The badge is part of the
-            // item's accessible name, which is what tells it apart from the
-            // one-click item above.
+            // The badge is in the accessible name; it tells the two items apart.
             <DropdownMenuItem
               data-testid="create-decision-process-wizard"
               disabled={isCreatingDecision}

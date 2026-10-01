@@ -41,7 +41,6 @@ export const StewardSelect = ({
   onSelectionChange: (key: string) => void;
   /** Kept selectable even when it is no longer one of the caller's own. */
   currentSteward?: { id: string; name: string | null } | null;
-  /** Defaults to the process builder's steward question. */
   label?: string;
   description?: string;
 }) => {
@@ -118,7 +117,6 @@ export const StewardSelect = ({
 function StewardIdentity({ profile }: { profile: StewardOption }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
-      {/* Decorative: the name beside it already names the option. */}
       <ProfileAvatar
         name={profile.name}
         src={
