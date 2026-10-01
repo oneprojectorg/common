@@ -59,29 +59,20 @@ interface StepBodyProps {
   onSubmit: () => void;
 }
 
-/**
- * The create-process wizard: 1 intro · 2 type · 3 shape or the "other"
- * questions · 4 mapping · 5 name.
- *
- * Collects a {@link ProcessDraft} and hands it over; creating anything is the
- * caller's job, so the flow stays testable and has one exit point. The
- * sequencing rules live in `flow.ts`.
- */
+/** Collects a {@link ProcessDraft}; creating it is the caller's job. */
 export function CreateProcessWizard({
   defaultStewardProfileId,
   onExit,
   onComplete,
   isSubmitting = false,
 }: {
-  /** The profile the admin is already acting as. */
   defaultStewardProfileId: string;
   onExit: () => void;
   onComplete: (draft: ProcessDraft) => void;
   isSubmitting?: boolean;
 }) {
   const t = useTranslations('decisions.createWizard');
-  // The shell's actions are shared top-level labels, which a scoped `t`
-  // cannot reach.
+  // A scoped `t` can't reach the top-level shared labels.
   const tShared = useTranslations();
   const locale = useLocale();
 
@@ -100,16 +91,13 @@ export function CreateProcessWizard({
 
   const isOther = type === 'other';
   const screens = stepThreeScreens(type, other);
-  // Only read on step 4 and at submit. Computed earlier, `composeOtherPieces`
-  // and the recap's `Intl.ListFormat` rebuilt on every keystroke of step 3's
-  // free-text subject.
+  // Deferred to step 4, so typing on step 3 doesn't recompose the phases.
   const isResolved = step >= 4;
   const pieces = useMemo(
     () =>
       isResolved ? resolvePieces({ type, shape, grantDecision, other }) : [],
     [isResolved, type, shape, grantDecision, other],
   );
-  // The list is never empty; the fallback keeps the value a `StepThreeScreen`.
   const screen: StepThreeScreen =
     screens[Math.min(subIndex, screens.length - 1)] ?? 'shape';
 
@@ -123,9 +111,7 @@ export function CreateProcessWizard({
     name,
   });
 
-  // A step change is not a navigation, so nothing announces it. Moving focus to
-  // the heading reads the new question out. Not on mount: the route change
-  // already announces the first step.
+  // Focus the heading on a step change so the new question is announced.
   const hasStepped = useRef(false);
 
   useEffect(() => {
@@ -257,9 +243,6 @@ export function CreateProcessWizard({
           className={cn(
             'mx-auto flex w-full px-4 sm:px-6',
             step === 1 ? 'flex-1' : 'flex-col pt-8',
-            // The mapping step is read rather than answered, so it gets room
-            // under its button to scroll past the fold, and a quarter more
-            // width for the card's text column beside its image.
             step === 1 ? '' : step === 4 ? 'pb-40' : 'pb-12',
             step === 4 ? 'max-w-177' : 'max-w-lg',
           )}
@@ -291,8 +274,6 @@ export function CreateProcessWizard({
             onSubmit={advance}
           />
 
-          {/* A screen of options shows this with the first pick; a screen you
-              type into shows it disabled from the start. */}
           {step > 1 && (canContinue || isTypedStep) ? (
             <div className="mt-8 flex justify-center">
               <Button
@@ -370,10 +351,6 @@ function StepThree({
   return <ShapeStep type={type} value={shape} onChange={onShapeChange} />;
 }
 
-/**
- * "Other" composes its phases from its four answers; a grant set is reshaped by
- * who decides; everything else comes straight from the shape.
- */
 function resolvePieces({
   type,
   shape,

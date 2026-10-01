@@ -17,14 +17,9 @@ import { PHASE_TYPE_LABEL } from '../content';
 import type { ProcessPiece } from '../types';
 import { calloutIcon } from './calloutIcons';
 
-/**
- * Step 4 — the mapping walkthrough, as a numbered rail. Controlled so that
- * exactly one step is open: clicking the open one yields an empty value, which
- * is ignored, and the page never reads as a list of closed rows.
- */
+// Controlled so exactly one step stays open; an empty value is ignored.
 export function MappingStep({
   pieces,
-  /** Set for the "other" pathway: what we understood, in their words. */
   recap,
 }: {
   pieces: ProcessPiece[];
@@ -47,10 +42,7 @@ export function MappingStep({
       ) : null}
 
       <div className="relative">
-        {/* The rail, inset to the centre of a node — 11px down, per the margin
-            in PieceRow — so it runs between the first and last rather than
-            past them. A sibling of the list, because an `ol` may only contain
-            `li`. */}
+        {/* Outside the `ol`, which may only contain `li`. */}
         {pieces.length > 1 ? (
           <span
             aria-hidden
@@ -69,8 +61,7 @@ export function MappingStep({
               setOpen(added);
             }
           }}
-          // `role` restated: the flex display these carry drops the list role
-          // in WebKit, and with it VoiceOver's "item M of N".
+          // Restated: WebKit drops the list role from flex lists.
           render={<ol role="list" />}
           className="gap-3"
         >
@@ -98,8 +89,6 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
       render={<li role="listitem" />}
       className="group/item flex items-start gap-4 border-none"
     >
-      {/* The row is the target, so the number is decoration; the trigger's
-          label carries it. `relative` puts it over the positioned rail. */}
       <span
         aria-hidden
         className="relative mt-2.75 grid size-8.5 shrink-0 place-items-center rounded-full border-2 border-border bg-background text-sm text-muted-foreground transition-colors group-data-open/item:border-primary group-data-open/item:bg-primary group-data-open/item:font-strong group-data-open/item:text-primary-foreground motion-reduce:transition-none"
@@ -108,9 +97,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
       </span>
 
       <div className="relative min-w-0 flex-1 overflow-hidden rounded-lg border bg-background">
-        {/* The ordinal is real content, not an aria-label: a label would
-            override the visible text and drop the phase from the name. The
-            focus ring is inset because the card clips an outward one. */}
+        {/* Ordinal as text: an aria-label would replace the visible name. */}
         <AccordionTrigger className="w-full items-baseline gap-4 rounded-none border-0 px-5 py-3.5 hover:bg-muted/40 hover:no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring **:data-[slot=accordion-trigger-icon]:hidden sm:group-data-open/item:w-3/5">
           <span className="sr-only">
             {t('stepOrdinal', { step: step + 1 })}
@@ -157,8 +144,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
             ) : null}
           </div>
 
-          {/* Placeholder in the real slot at the real size; no asset ships yet.
-              Against the card, not the panel, so it runs up beside the title. */}
+          {/* Placeholder until an asset ships. */}
           <div
             aria-hidden
             className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30 transition-opacity duration-200 ease-out in-data-ending-style:opacity-0 in-data-starting-style:opacity-0 motion-reduce:transition-none sm:absolute sm:inset-y-0 sm:end-0 sm:min-h-0 sm:w-2/5"
