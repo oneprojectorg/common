@@ -59,8 +59,7 @@ export function getDecisionCommonProperties({
  * Development and end-to-end runs answer `true`, so a contributor and CI meet
  * a new feature without a PostHog project behind them.
  *
- * `useFeatureFlag` in the browser is the only reader. Nothing on the server
- * gates on a flag today.
+ * Shared by `useFeatureFlag` and `isServerFeatureEnabled` so the two can't drift.
  */
 export const areFeatureFlagsForcedOn = (): boolean =>
   process.env.NODE_ENV === 'development' ||

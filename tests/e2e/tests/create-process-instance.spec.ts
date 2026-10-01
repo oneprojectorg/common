@@ -16,7 +16,8 @@ test.describe('Create Process Instance', () => {
 
     await authenticatedPage.getByRole('button', { name: 'Create' }).click();
     await authenticatedPage
-      .getByRole('menuitem', { name: 'Decision-making process' })
+      // By testid: the wizard item shares this label.
+      .getByTestId('create-decision-process')
       .click();
 
     await authenticatedPage.waitForURL(/\/decisions\/[^/]+\/edit/, {

@@ -19,7 +19,8 @@ test.describe('Proposal template — multi-select category', () => {
     await page.goto('/en/');
     await page.getByRole('button', { name: 'Create' }).click();
     await page
-      .getByRole('menuitem', { name: 'Decision-making process' })
+      // By testid: the wizard item shares this label.
+      .getByTestId('create-decision-process')
       .click();
     await page.waitForURL(/\/decisions\/[^/]+\/edit/, { timeout: 12_000 });
     await expect(
