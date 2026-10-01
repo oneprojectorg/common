@@ -25,6 +25,7 @@ const inputSchema = z.object({
 const outputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  processId: z.string().uuid().nullable(),
   details: z.object({
     successful: z.array(z.string()),
     failed: z.array(
