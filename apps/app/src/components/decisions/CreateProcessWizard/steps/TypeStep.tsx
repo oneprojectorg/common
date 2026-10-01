@@ -13,7 +13,6 @@ const TYPE_OPTIONS: Choice<ProcessType>[] = TYPE_ORDER.map((type) => ({
   description: TYPE_META[type].description,
 }));
 
-/** Step 2 — which kind of process, which decides what the mapping can be. */
 export function TypeStep({
   value,
   onChange,

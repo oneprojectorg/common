@@ -22,12 +22,9 @@ export async function generateMetadata({
 }
 
 const NewDecisionProcessPage = async () => {
-  // Creating a process is admin work; a visitor with no session gets login.
   const user = await getRequiredUser();
 
-  // The Create menu hides its entry behind the same flag. Without this the
-  // route would be reachable by URL with the flag off, gating the menu item
-  // rather than the feature.
+  // Gates the route, not just the menu item.
   const isEnabled = await isServerFeatureEnabled(
     'new_process_admin_enabled',
     user.authUserId,
