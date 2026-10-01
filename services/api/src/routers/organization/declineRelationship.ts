@@ -7,7 +7,11 @@ const inputSchema = z.object({
   targetOrganizationId: z.uuid({
     error: 'Invalid target organization ID',
   }),
-  ids: z.array(z.string()),
+  ids: z.array(
+    z.uuid({
+      error: 'Invalid relationship ID',
+    }),
+  ),
 });
 
 export const declineRelationshipRouter = router({

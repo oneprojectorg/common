@@ -430,15 +430,34 @@ export const getPendingRelationships = async ({
   return { records: organizations, count: organizations.length };
 };
 
-export const removeRelationship = async ({ id }: { id: string }) => {
-  // const orgUser = await getOrgAccessUser({ user, organizationId: user });
+export const removeRelationship = async ({
+  id,
+  user,
+}: {
+  id: string;
+  user: User;
+}) => {
+  const existing = await db.query.organizationRelationships.findFirst({
+    where: { id },
+  });
 
+  if (!existing) {
+    throw new NotFoundError('Relationship not found');
+  }
+
+  // The caller must be a member of one of the two orgs party to the
+  // relationship — otherwise any in-network user could sever arbitrary
+  // org-to-org relationships by id.
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
   // assertAccess();
+  const [sourceOrgUser, targetOrgUser] = await Promise.all([
+    getOrgAccessUser({ user, organizationId: existing.sourceOrganizationId }),
+    getOrgAccessUser({ user, organizationId: existing.targetOrganizationId }),
+  ]);
 
-  // if (!orgUser) {
-  // throw new UnauthorizedError('You are not a member of this organization');
-  // }
+  if (!sourceOrgUser && !targetOrgUser) {
+    throw new UnauthorizedError('You are not a member of this organization');
+  }
 
   try {
     const relationship = await db
@@ -529,9 +548,19 @@ export const declineRelationship = async ({
   }
 
   try {
+    // Scope the delete to the org the caller was authorized on — ids alone
+    // are caller-supplied and may belong to other organizations.
     await db
       .delete(organizationRelationships)
-      .where(inArray(organizationRelationships.id, ids));
+      .where(
+        and(
+          inArray(organizationRelationships.id, ids),
+          eq(
+            organizationRelationships.targetOrganizationId,
+            targetOrganizationId,
+          ),
+        ),
+      );
 
     return true;
   } catch (e) {
