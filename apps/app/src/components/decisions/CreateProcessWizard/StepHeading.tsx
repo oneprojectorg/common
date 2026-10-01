@@ -3,7 +3,6 @@
 import { Header1 } from '@op/sense/Header';
 import { cn } from '@op/sense/lib/utils';
 
-/** Focus target on a step change, so the new question gets announced. */
 export const STEP_HEADING_ID = 'create-process-step-heading';
 
 export function StepHeading({
@@ -14,7 +13,6 @@ export function StepHeading({
 }: {
   title: string;
   description?: string;
-  /** `display` for the opening screen, `headline` for the questions. */
   size?: 'display' | 'headline';
   className?: string;
 }) {

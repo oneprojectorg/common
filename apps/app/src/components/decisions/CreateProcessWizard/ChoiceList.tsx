@@ -10,7 +10,6 @@ import { type TranslateFn, useTranslations } from '@/lib/i18n';
 import { STEP_HEADING_ID } from './StepHeading';
 import type { Choice } from './types';
 
-/** `bg-background` because the wizard canvas is `bg-muted`. */
 export function ChoiceList<K extends string>({
   options,
   value,
@@ -22,7 +21,6 @@ export function ChoiceList<K extends string>({
   value: K | null;
   onChange: (key: K) => void;
   idPrefix: string;
-  /** Defaults to the step heading, i.e. the question being asked. */
   labelledBy?: string;
 }) {
   const t = useTranslations('decisions.createWizard');

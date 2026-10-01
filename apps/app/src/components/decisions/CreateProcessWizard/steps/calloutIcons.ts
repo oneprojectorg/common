@@ -30,17 +30,6 @@ import type { WizardCopyKey } from '../types';
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-/**
- * A glyph per capability line, keyed on the copy id.
- *
- * Literal rather than decorative: the icon says what the line is about, so
- * the rows of a card can be told apart at a glance. Distinct within a card
- * is what matters; the same glyph can serve two cards that never appear
- * together.
- *
- * Keyed on the id rather than the English copy, so a copy edit cannot
- * silently change an icon and a renamed key fails `typecheck`.
- */
 const BY_ID: Partial<Record<WizardCopyKey, IconComponent>> = {
   addCostBudgetDetails: LuBanknote,
   addDeadline: LuClock,

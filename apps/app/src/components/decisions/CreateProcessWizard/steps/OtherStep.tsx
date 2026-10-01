@@ -24,10 +24,6 @@ import type { Choice } from '../types';
 
 const ELSE_TEXT_ID = 'other-subject-else-text';
 
-/**
- * Step 3 for the "other process" pathway — four plain-language questions, plus
- * an interstitial for more than one subject. The shell drives which screen.
- */
 export function OtherStep({
   step,
   answers,
@@ -57,7 +53,7 @@ export function OtherStep({
 
             onChange({
               subjects: next,
-              // Keep the follow-ups honest when the set changes underneath them.
+              // Clear follow-ups the new set no longer supports.
               focus:
                 answers.focus && next.includes(answers.focus)
                   ? answers.focus
@@ -69,8 +65,6 @@ export function OtherStep({
           renderDetail={(key) =>
             key === 'else' ? (
               <Field className="ps-6">
-                {/* The box's copy is the visible prompt; this is the
-                    programmatic one. */}
                 <FieldLabel htmlFor={ELSE_TEXT_ID} className="sr-only">
                   {t('elseTextLabel')}
                 </FieldLabel>
@@ -101,8 +95,7 @@ export function OtherStep({
           onChange={(key) =>
             onChange({
               cadence: key,
-              // An always-open space covers everything they picked, so there is
-              // nothing to choose between — drop any focus already set.
+              // Always open covers every subject, so there's no focus to keep.
               ...(key === 'ongoing' ? { focus: null, submits: null } : {}),
             })
           }

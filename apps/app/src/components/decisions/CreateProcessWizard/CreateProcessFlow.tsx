@@ -11,14 +11,8 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 import { CreateProcessWizard } from '.';
 import type { ProcessDraft } from './types';
 
-/**
- * Wires the wizard to the product.
- *
- * Only the name and the steward survive today: `type` and `shape` are inputs to
- * the mapping and persist nothing, and the resolved pieces need phases to be
- * rows before they have anywhere to go. Until then a process is still created
- * from the first template, as the Create menu did before this flow existed.
- */
+// Only the name and steward persist until phases are rows; the process still
+// comes from the first template.
 export function CreateProcessFlow() {
   const t = useTranslations();
   const router = useRouter();
@@ -42,8 +36,7 @@ export function CreateProcessFlow() {
       });
     },
     onSuccess: (decisionProfile) => {
-      // `replace`, not `push`: Back would otherwise return to a fresh wizard
-      // sitting behind a process that already exists, and create a second one.
+      // `replace`, so Back can't reopen the wizard and create a second process.
       router.replace(`/decisions/${decisionProfile.slug}/edit`);
     },
     onError: (error) => {
@@ -53,7 +46,6 @@ export function CreateProcessFlow() {
   });
 
   const exit = () => {
-    // A direct visit has no history to go back to.
     if (window.history.length > 1) {
       router.back();
     } else {
@@ -69,7 +61,6 @@ export function CreateProcessFlow() {
       defaultStewardProfileId={defaultStewardProfileId}
       onExit={exit}
       onComplete={(draft) => createProcess.mutate(draft)}
-      // Stays busy after success too: the redirect is still in flight.
       isSubmitting={createProcess.isPending || createProcess.isSuccess}
     />
   );
