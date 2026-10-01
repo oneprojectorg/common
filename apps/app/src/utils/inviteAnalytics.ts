@@ -1,9 +1,11 @@
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import type { RouterInput, RouterOutput } from '@op/api/client';
 import posthog from 'posthog-js';
 
 /**
  * Only an invite into an existing organization carries `organization_id`, which
- * is how the server distinguishes its two branches too.
+ * is how the server distinguishes its two branches too. Organization membership
+ * sits outside any decision, so there is no process to tag.
  */
 export const trackUserInvited = ({
   organizationId,
@@ -35,8 +37,18 @@ export const trackProfileInvited = (
     return;
   }
 
-  posthog.capture('admin_invited_participants', {
+  const properties = {
     profile_id: variables.profileId,
     invitation_count: result.details.successful.length,
-  });
+  };
+
+  posthog.capture(
+    'admin_invited_participants',
+    result.processId
+      ? getDecisionCommonProperties({
+          decisionInstanceId: result.processId,
+          additionalProps: properties,
+        })
+      : properties,
+  );
 };
