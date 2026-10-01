@@ -16,7 +16,6 @@ import { MAX_PROCESS_NAME_LENGTH, MIN_PROCESS_NAME_LENGTH } from '../content';
 const NAME_ID = 'process-name';
 const NAME_HINT_ID = 'process-name-hint';
 
-/** Step 5 — what the process is called, and which identity fronts it. */
 export function NameAccessStep({
   name,
   onNameChange,
@@ -28,11 +27,9 @@ export function NameAccessStep({
   onNameChange: (name: string) => void;
   stewardProfileId: string;
   onStewardChange: (profileId: string) => void;
-  /** Enter in the name field, the same as the step's Create button. */
   onSubmit: () => void;
 }) {
   const t = useTranslations('decisions.createWizard');
-  // The process page's own "Stewarded by", which this field previews.
   const tDecisions = useTranslations('decisions');
   const trimmed = name.trim();
   const isNameTooShort = trimmed.length < MIN_PROCESS_NAME_LENGTH;
@@ -67,8 +64,7 @@ export function NameAccessStep({
         </Field>
       </form>
 
-      {/* Its own boundary: a failed identities fetch drops the field rather
-          than the name input, and the steward stays the acting profile. */}
+      {/* A failed fetch drops only this field; the steward stays the default. */}
       <APIErrorBoundary fallbacks={{ default: () => null }}>
         <Suspense fallback={<StewardSelectSkeleton />}>
           <StewardSelect

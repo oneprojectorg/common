@@ -11,7 +11,6 @@ import {
 } from '../content';
 import type { ProcessType, ShapeKey } from '../types';
 
-/** Step 3 — the one shape question for a grantmaking or budgeting process. */
 export function ShapeStep({
   type,
   value,
@@ -41,7 +40,6 @@ export function ShapeStep({
   );
 }
 
-/** Grantmaking only — who makes the funding call; it changes the phases. */
 export function GrantDecisionStep({
   value,
   onChange,
