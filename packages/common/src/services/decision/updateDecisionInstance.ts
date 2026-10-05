@@ -288,7 +288,7 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to fetch decision profile');
     }
 
-    return { profile, phaseEndDateChanges };
+    return { profile, phaseEndDateChanges, didPublish: false };
   }
 
   const isBeingPublished =
@@ -421,7 +421,7 @@ export const updateDecisionInstance = async ({
     waitUntil(trackAdminSetRubric(user.id, instanceId));
   }
 
-  return { profile, phaseEndDateChanges };
+  return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
 };
 
 /**

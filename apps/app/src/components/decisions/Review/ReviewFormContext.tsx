@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
   type ProposalReview,
@@ -16,6 +17,7 @@ import {
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
 import {
   type ReactNode,
   createContext,
@@ -128,6 +130,7 @@ function ReviewFormProviderInner({
 }) {
   const t = useTranslations('decisions.review');
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
@@ -194,6 +197,17 @@ function ReviewFormProviderInner({
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
+      posthog.capture(
+        'review_submission_confirmed',
+        getDecisionCommonProperties({
+          decisionInstanceId: assignment.processInstanceId,
+          proposalId: assignment.proposal.id,
+          additionalProps: {
+            assignment_id: assignmentId,
+            phase_id: assignment.phaseId,
+          },
+        }),
+      );
       toast.success(t('submitReviewSuccess'));
       if (onCompleted) {
         onCompleted();

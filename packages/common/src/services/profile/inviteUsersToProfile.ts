@@ -207,10 +207,9 @@ export const inviteUsersToProfile = async ({
   // UNLESS the role being assigned includes decisions: ADMIN.
   // Check both proposal-level (via proposal -> processInstance) and
   // decision-level (direct processInstance profile) relationships.
-  const processInstanceStatus =
-    proposalWithDecision?.processInstance?.status ??
-    processInstanceForProfile?.status;
-  const isDraft = processInstanceStatus === ProcessStatus.DRAFT;
+  const processInstance =
+    proposalWithDecision?.processInstance ?? processInstanceForProfile;
+  const isDraft = processInstance?.status === ProcessStatus.DRAFT;
 
   // Only needed when the process is in draft to determine which invites to queue
   const adminRoleIds = isDraft
@@ -394,6 +393,7 @@ export const inviteUsersToProfile = async ({
         user.id,
         profileId,
         results.successful.length,
+        processInstance ? { process_id: processInstance.id } : undefined,
       ),
     );
   }
@@ -401,6 +401,7 @@ export const inviteUsersToProfile = async ({
   return {
     success: results.successful.length > 0,
     message,
+    processId: processInstance?.id ?? null,
     details: {
       successful: results.successful,
       failed: results.failed,
