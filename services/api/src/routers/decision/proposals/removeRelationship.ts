@@ -19,7 +19,7 @@ export const removeProposalRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
-      const { proposalId, processInstanceId } =
+      const { proposalId, processInstanceId, mergedIntoProposalId } =
         await assertProposalEngagementAccess({
           user: ctx.user,
           profileId: targetProfileId,
@@ -31,8 +31,13 @@ export const removeProposalRelationshipRouter = router({
         authUserId: ctx.user.id,
       });
 
+      // Mirrors `addProposalRelationship`: an unlike on a merged-away proposal
+      // drops a like out of the total the proposal it merged into reports.
       ctx.registerMutationChannels([
         Channels.decisionProposal(processInstanceId, proposalId),
+        ...(mergedIntoProposalId
+          ? [Channels.decisionProposal(processInstanceId, mergedIntoProposalId)]
+          : []),
       ]);
     }),
 });

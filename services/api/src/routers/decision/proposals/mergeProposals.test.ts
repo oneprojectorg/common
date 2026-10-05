@@ -1,4 +1,7 @@
-import { aggregateProposalMetrics } from '@op/common';
+import {
+  aggregateProposalMetrics,
+  assertProposalEngagementAccess,
+} from '@op/common';
 import { MERGE_NOTE_MAX_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
@@ -1178,6 +1181,40 @@ describe.concurrent('likes across merged proposals', () => {
     const metrics = await aggregateProposalMetrics([targetRow!]);
 
     expect(metrics[target.id]?.likesCount).toBe(2);
+  });
+
+  it("reports where a merged-away proposal's likes land, so both pages refresh", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { sources, target, setup, caller } =
+      await createLikedProposals(testData);
+    const [source] = sources;
+    const { session } = await createIsolatedSession(setup.userEmail);
+
+    const engagementTarget = () =>
+      assertProposalEngagementAccess({
+        user: session.user,
+        profileId: source!.profileId,
+      });
+
+    expect(await engagementTarget()).toMatchObject({
+      proposalId: source!.id,
+      mergedIntoProposalId: null,
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source!.id,
+      targetProposalId: target.id,
+    });
+
+    // Liking the source now moves the target's total, so the engagement
+    // endpoints need the target's id to invalidate its page too.
+    expect(await engagementTarget()).toMatchObject({
+      proposalId: source!.id,
+      mergedIntoProposalId: target.id,
+    });
   });
 
   it('drops the likes of a deleted proposal rather than carrying them over', async ({

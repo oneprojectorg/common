@@ -30,7 +30,7 @@ export const addProposalRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
-      const { proposalId, processInstanceId } =
+      const { proposalId, processInstanceId, mergedIntoProposalId } =
         await assertProposalEngagementAccess({
           user: ctx.user,
           profileId: targetProfileId,
@@ -46,9 +46,14 @@ export const addProposalRelationshipRouter = router({
       // refreshes engagement counts (likesCount, followersCount) immediately.
       // Deliberately scoped to the single proposal — invalidating the whole
       // `decisionProposals` list channel for every like/follow would force
-      // every viewer to re-fetch every card.
+      // every viewer to re-fetch every card. A merged-away proposal is still
+      // likeable and its likes roll up, so the proposal it merged into is the
+      // one other page whose count just moved.
       ctx.registerMutationChannels([
         Channels.decisionProposal(processInstanceId, proposalId),
+        ...(mergedIntoProposalId
+          ? [Channels.decisionProposal(processInstanceId, mergedIntoProposalId)]
+          : []),
       ]);
 
       waitUntil(

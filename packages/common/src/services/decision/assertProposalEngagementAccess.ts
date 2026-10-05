@@ -5,10 +5,17 @@ import { permission } from 'access-zones';
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { decisionPermission } from './permissions';
+import { findLiveMergedEdge } from './proposalSupersession';
 
 type ProposalEngagementTarget = {
   proposalId: string;
   processInstanceId: string;
+  /**
+   * The proposal this one was merged into, or `null` when it still stands on
+   * its own. A merged-away proposal stays likeable, and its likes roll up into
+   * this one, so the caller has a second page to invalidate.
+   */
+  mergedIntoProposalId: string | null;
 };
 
 /**
@@ -54,8 +61,17 @@ export async function assertProposalEngagementAccess({
     ],
   });
 
+  // Costs one indexed lookup on every like and follow. The alternative is a
+  // count that silently drifts: `getMergedLikeCounts` folds this proposal's
+  // likes into whatever it was merged into, so that page has to hear about it.
+  const mergedEdge = await findLiveMergedEdge({
+    processInstanceId: proposal.processInstanceId,
+    sourceProposalId: proposal.id,
+  });
+
   return {
     proposalId: proposal.id,
     processInstanceId: proposal.processInstanceId,
+    mergedIntoProposalId: mergedEdge?.targetProposalId ?? null,
   };
 }
