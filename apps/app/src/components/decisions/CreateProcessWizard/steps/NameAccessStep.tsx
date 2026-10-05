@@ -1,14 +1,9 @@
 'use client';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
-import { Skeleton } from '@op/sense/Skeleton';
-import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
-
-import { StewardSelect } from '@/components/decisions/StewardSelect';
 
 import { StepHeading } from '../StepHeading';
 import { MAX_PROCESS_NAME_LENGTH, MIN_PROCESS_NAME_LENGTH } from '../content';
@@ -19,18 +14,13 @@ const NAME_HINT_ID = 'process-name-hint';
 export function NameAccessStep({
   name,
   onNameChange,
-  stewardProfileId,
-  onStewardChange,
   onSubmit,
 }: {
   name: string;
   onNameChange: (name: string) => void;
-  stewardProfileId: string;
-  onStewardChange: (profileId: string) => void;
   onSubmit: () => void;
 }) {
   const t = useTranslations('decisions.createWizard');
-  const tDecisions = useTranslations('decisions');
   const trimmed = name.trim();
   const isNameTooShort = trimmed.length < MIN_PROCESS_NAME_LENGTH;
 
@@ -63,27 +53,6 @@ export function NameAccessStep({
           </FieldDescription>
         </Field>
       </form>
-
-      {/* A failed fetch drops only this field; the steward stays the default. */}
-      <APIErrorBoundary fallbacks={{ default: () => null }}>
-        <Suspense fallback={<StewardSelectSkeleton />}>
-          <StewardSelect
-            stewardProfileId={stewardProfileId}
-            onSelectionChange={onStewardChange}
-            label={tDecisions('stewardedByLabel')}
-            description={t('shownProcessPageWhoRunning')}
-          />
-        </Suspense>
-      </APIErrorBoundary>
     </div>
-  );
-}
-
-function StewardSelectSkeleton() {
-  return (
-    <Field>
-      <Skeleton className="h-5 w-28" />
-      <Skeleton className="h-11 w-full" />
-    </Field>
   );
 }

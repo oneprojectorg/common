@@ -48,25 +48,21 @@ interface StepBodyProps {
   pieces: ProcessPiece[];
   recap?: string;
   name: string;
-  stewardProfileId: string;
   onStart: () => void;
   onTypeChange: (type: ProcessType) => void;
   onShapeChange: (shape: ShapeKey) => void;
   onGrantDecisionChange: (decision: GrantDecision) => void;
   onOtherChange: (patch: Partial<OtherAnswers>) => void;
   onNameChange: (name: string) => void;
-  onStewardChange: (profileId: string) => void;
   onSubmit: () => void;
 }
 
 /** Collects a {@link ProcessDraft}; creating it is the caller's job. */
 export function CreateProcessWizard({
-  defaultStewardProfileId,
   onExit,
   onComplete,
   isSubmitting = false,
 }: {
-  defaultStewardProfileId: string;
   onExit: () => void;
   onComplete: (draft: ProcessDraft) => void;
   isSubmitting?: boolean;
@@ -85,9 +81,6 @@ export function CreateProcessWizard({
   const [other, setOther] = useState<OtherAnswers>(EMPTY_OTHER);
   const [subIndex, setSubIndex] = useState(0);
   const [name, setName] = useState('');
-  const [stewardProfileId, setStewardProfileId] = useState(
-    defaultStewardProfileId,
-  );
 
   const isOther = type === 'other';
   const screens = stepThreeScreens(type, other);
@@ -143,7 +136,6 @@ export function CreateProcessWizard({
           type,
           shape,
           name: name.trim(),
-          stewardProfileId,
           pieces,
         });
       }
@@ -223,7 +215,6 @@ export function CreateProcessWizard({
                 type: 'other',
                 shape: 'blank',
                 name: t('untitledProcessName'),
-                stewardProfileId,
                 pieces: [],
               })
             }
@@ -261,7 +252,6 @@ export function CreateProcessWizard({
                 : undefined
             }
             name={name}
-            stewardProfileId={stewardProfileId}
             onStart={advance}
             onTypeChange={pickType}
             onShapeChange={setShape}
@@ -270,7 +260,6 @@ export function CreateProcessWizard({
               setOther((previous) => ({ ...previous, ...patch }))
             }
             onNameChange={setName}
-            onStewardChange={setStewardProfileId}
             onSubmit={advance}
           />
 
@@ -318,8 +307,6 @@ function StepBody(props: StepBodyProps) {
     <NameAccessStep
       name={props.name}
       onNameChange={props.onNameChange}
-      stewardProfileId={props.stewardProfileId}
-      onStewardChange={props.onStewardChange}
       onSubmit={props.onSubmit}
     />
   );

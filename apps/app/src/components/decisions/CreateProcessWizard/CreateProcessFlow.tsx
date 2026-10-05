@@ -1,6 +1,5 @@
 'use client';
 
-import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
@@ -11,13 +10,12 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 import { CreateProcessWizard } from '.';
 import type { ProcessDraft } from './types';
 
-// Only the name and steward persist until phases are rows; the process still
+// Only the name persists until phases are rows; the process still
 // comes from the first template.
 export function CreateProcessFlow() {
   const t = useTranslations();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { user } = useRequiredUser();
 
   const createProcess = useMutation({
     mutationFn: async (draft: ProcessDraft) => {
@@ -32,7 +30,6 @@ export function CreateProcessFlow() {
       return utils.client.decision.createInstanceFromTemplate.mutate({
         templateId: firstTemplate.id,
         name: draft.name,
-        stewardProfileId: draft.stewardProfileId || undefined,
       });
     },
     onSuccess: (decisionProfile) => {
@@ -53,12 +50,8 @@ export function CreateProcessFlow() {
     }
   };
 
-  const defaultStewardProfileId =
-    user.currentProfile?.id ?? user.profileId ?? '';
-
   return (
     <CreateProcessWizard
-      defaultStewardProfileId={defaultStewardProfileId}
       onExit={exit}
       onComplete={(draft) => createProcess.mutate(draft)}
       isSubmitting={createProcess.isPending || createProcess.isSuccess}

@@ -34,7 +34,6 @@ export interface ProcessDraft {
   type: ProcessType;
   shape: ShapeKey;
   name: string;
-  stewardProfileId: string;
   pieces: ProcessPiece[];
 }
 
