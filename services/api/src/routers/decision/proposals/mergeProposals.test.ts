@@ -1096,6 +1096,58 @@ describe.concurrent('likes across merged proposals', () => {
     expect(list.items[0]?.likesCount).toBe(3);
   });
 
+  it('carries likes through a chain of merges', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, sources, target, caller } = await createLikedProposals(
+      testData,
+      { sourceCount: 2 },
+    );
+    const [first, second] = sources;
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: first!.id,
+      targetProposalId: second!.id,
+    });
+    await caller.decision.mergeProposals({
+      sourceProposalId: second!.id,
+      targetProposalId: target.id,
+    });
+
+    const [merged, list] = await Promise.all([
+      caller.decision.getProposal({ profileId: target.profileId }),
+      caller.decision.listProposals({ processInstanceId: instanceId }),
+    ]);
+    expect(merged.likesCount).toBe(3);
+    expect(list.items.map((item) => item.id)).toEqual([target.id]);
+    expect(list.items[0]?.likesCount).toBe(3);
+  });
+
+  it('leaves out the likes of a hidden proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { sources, target, caller } = await createLikedProposals(testData);
+    const [source] = sources;
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, source!.id));
+    await caller.decision.mergeProposals({
+      sourceProposalId: source!.id,
+      targetProposalId: target.id,
+    });
+
+    const merged = await caller.decision.getProposal({
+      profileId: target.profileId,
+    });
+    expect(merged.likesCount).toBe(1);
+  });
+
   it('leaves following alone, which subscribes to one proposal', async ({
     task,
     onTestFinished,
