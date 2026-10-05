@@ -1,3 +1,4 @@
+ALTER TYPE "entity_type" ADD VALUE 'phase';--> statement-breakpoint
 CREATE TABLE "decision_process_phases" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"process_instance_id" uuid NOT NULL,
