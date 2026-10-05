@@ -13,7 +13,6 @@ import {
 } from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
-/** The profile, plus whether this write was the DRAFT -> PUBLISHED transition. */
 const updateDecisionInstanceOutputSchema =
   decisionProfileWithSchemaEncoder.extend({ didPublish: z.boolean() });
 

@@ -421,8 +421,6 @@ export const updateDecisionInstance = async ({
     waitUntil(trackAdminSetRubric(user.id, instanceId));
   }
 
-  // Reported so the browser can mirror the launch milestone without re-deriving
-  // a transition only this function can see.
   return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
 };
 

@@ -401,10 +401,6 @@ export const inviteUsersToProfile = async ({
   return {
     success: results.successful.length > 0,
     message,
-    // The process this profile belongs to, so the browser copy of
-    // `admin_invited_participants` can tag the same id without resolving a
-    // proposal-or-decision profile itself. Null for a profile outside any
-    // process, e.g. an organization.
     processId: processInstance?.id ?? null,
     details: {
       successful: results.successful,

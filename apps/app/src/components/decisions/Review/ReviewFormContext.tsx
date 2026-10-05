@@ -197,8 +197,6 @@ function ReviewFormProviderInner({
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
-      // The server copy adds scoring and timing; recomputing them here would
-      // mean redoing the rubric math.
       posthog.capture(
         'review_submitted',
         getDecisionCommonProperties({
