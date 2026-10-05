@@ -1,18 +1,10 @@
-import { and, db, eq } from '@op/db/client';
-import {
-  ProfileRelationshipType,
-  posts,
-  postsToProfiles,
-  profileRelationships,
-} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { count as countFn } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { getMergedLikeCounts } from './proposalSupersession';
+import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   assertReviewAssignmentContext,
@@ -53,7 +45,7 @@ export async function getReviewAssignment({
 
   const [relationshipInfo, documentContentMap, proposalAttachments] =
     await Promise.all([
-      getProposalRelationshipInfo({
+      getProposalEngagement({
         profileId: assignment.proposal.profileId,
         viewerProfileId: assignment.reviewerProfileId,
       }),
@@ -108,66 +100,22 @@ export async function getReviewAssignment({
   });
 }
 
-async function getProposalRelationshipInfo({
+/**
+ * The one proposal's engagement counts, through the same reader the cards use
+ * so a reviewer never sees a different number than the list does.
+ */
+async function getProposalEngagement({
   profileId,
   viewerProfileId,
 }: {
   profileId: string;
   viewerProfileId: string;
 }) {
-  const [relationshipCounts, userRelationships, commentCounts, mergedLikes] =
-    await Promise.all([
-      db
-        .select({
-          relationshipType: profileRelationships.relationshipType,
-          count: countFn(),
-        })
-        .from(profileRelationships)
-        .where(eq(profileRelationships.targetProfileId, profileId))
-        .groupBy(profileRelationships.relationshipType),
-      db
-        .select({
-          relationshipType: profileRelationships.relationshipType,
-        })
-        .from(profileRelationships)
-        .where(
-          and(
-            eq(profileRelationships.sourceProfileId, viewerProfileId),
-            eq(profileRelationships.targetProfileId, profileId),
-          ),
-        ),
-      db
-        .select({
-          count: countFn(),
-        })
-        .from(posts)
-        .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-        .where(eq(postsToProfiles.profileId, profileId)),
+  const relationshipData = await getProposalRelationshipData({
+    profileIds: [profileId],
+    currentProfileId: viewerProfileId,
+  });
 
-      getMergedLikeCounts({ targetProfileIds: [profileId] }),
-    ]);
-
-  return {
-    // Carries over the likes of every proposal merged into this one, so a
-    // reviewer reads the same number its card shows. Follows stay as they are:
-    // they subscribe to one proposal rather than signalling interest.
-    likesCount:
-      Number(
-        relationshipCounts.find(
-          (row) => row.relationshipType === ProfileRelationshipType.LIKES,
-        )?.count ?? 0,
-      ) + (mergedLikes.get(profileId) ?? 0),
-    followersCount: Number(
-      relationshipCounts.find(
-        (row) => row.relationshipType === ProfileRelationshipType.FOLLOWING,
-      )?.count ?? 0,
-    ),
-    isLikedByUser: userRelationships.some(
-      (row) => row.relationshipType === ProfileRelationshipType.LIKES,
-    ),
-    isFollowedByUser: userRelationships.some(
-      (row) => row.relationshipType === ProfileRelationshipType.FOLLOWING,
-    ),
-    commentsCount: Number(commentCounts[0]?.count ?? 0),
-  };
+  // The map carries an entry per requested id, so this never falls through.
+  return relationshipData.get(profileId);
 }

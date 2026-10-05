@@ -26,8 +26,9 @@ import {
 } from './proposalVisibility';
 
 /**
- * What makes a `proposal_relationships` row a live `merged` edge at all. A
- * function rather than a constant so no SQL is built at import time.
+ * A `merged` edge that has not been unmerged. A function, not a constant, so
+ * the file builds no SQL at import time — a module-scope `and(...)` runs
+ * before a test's `@op/db/client` mock is in place.
  */
 const isLiveMergeEdge = (): SQL =>
   and(
@@ -161,31 +162,26 @@ export async function findLiveMergedEdge({
 
 /**
  * How many likes each of `targetProfileIds` carries over from the proposals
- * merged into it, keyed by the target proposal's own profile id.
+ * merged into it. Every read that reports a proposal's like count adds this on
+ * top of the proposal's own, so the number covers the whole merged idea rather
+ * than only the proposal that survived.
  *
- * A merge records an edge and moves no content, so the likes on a merged-away
- * proposal stay on its profile — which `notSuperseded` then hides from every
- * list, dropping them out of the count entirely. Every read that reports a
- * proposal's like count adds this on top of the proposal's own, so the number
- * covers the whole merged idea rather than only the proposal that survived.
- *
- * Direct sources only, the same set `listContributingProposals` shows: the
- * total a proposal reports is the sum over exactly the contributing ideas its
- * page lists.
+ * Direct sources only, the same set `listContributingProposals` shows, so the
+ * total is the sum over exactly the contributing ideas the proposal's page
+ * lists. `commentsCount` has the same structural gap and is not fixed here:
+ * `listProposalComments` carries merged comments into the feed while the count
+ * beside it still reads only the proposal's own.
  *
  * Likes are summed rather than deduplicated by liker. One person who liked two
- * of the merged proposals counts twice, which is the price of the client's
- * optimistic bump staying honest: it moves the count by one per like and
- * unlike, and collapsing duplicate likers would make the next read disagree
- * with it.
- *
- * Keyed on the target's *profile* rather than its proposal id because that is
- * the id every caller already holds to count the proposal's own likes.
+ * of the merged proposals counts twice, which is what keeps the client's
+ * optimistic bump honest: it moves the count by one per like and unlike, and
+ * collapsing duplicate likers would make the next read disagree with it.
  */
 export async function getMergedLikeCounts({
   targetProfileIds,
   db: dbClient = db,
 }: {
+  /** The profile of each proposal to roll likes up into. */
   targetProfileIds: string[];
   /** A transaction, so the carried-over likes share the caller's snapshot. */
   db?: DbClient;
@@ -195,19 +191,18 @@ export async function getMergedLikeCounts({
   }
 
   const sourceProposals = alias(proposals, 'merge_source_proposals');
-  const targetProposals = alias(proposals, 'merge_target_proposals');
 
   const rows = await dbClient
     .select({
-      targetProfileId: targetProposals.profileId,
+      targetProfileId: proposals.profileId,
       likes: countFn(),
     })
     .from(proposalRelationships)
     // Inner joins throughout: the composite foreign keys guarantee both ends
     // are proposals of this decision, and every proposal owns a profile.
     .innerJoin(
-      targetProposals,
-      eq(targetProposals.id, proposalRelationships.targetProposalId),
+      proposals,
+      eq(proposals.id, proposalRelationships.targetProposalId),
     )
     .innerJoin(
       sourceProposals,
@@ -225,7 +220,7 @@ export async function getMergedLikeCounts({
     )
     .where(
       and(
-        inArray(targetProposals.profileId, targetProfileIds),
+        inArray(proposals.profileId, targetProfileIds),
         isLiveMergeEdge(),
         // A deleted or detached source is gone for everyone, its likes with it.
         // Visibility is deliberately not applied: one proposal must not report
@@ -234,7 +229,7 @@ export async function getMergedLikeCounts({
         isNull(sourceProposals.moderationDetachedAt),
       ),
     )
-    .groupBy(targetProposals.profileId);
+    .groupBy(proposals.profileId);
 
   return new Map(rows.map((row) => [row.targetProfileId, Number(row.likes)]));
 }

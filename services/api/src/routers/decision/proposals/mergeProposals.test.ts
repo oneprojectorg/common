@@ -1017,41 +1017,41 @@ describeDecisionAccessTierGating('decision.listProposalRelationships', {
  * listings along with the proposal itself.
  */
 describe.concurrent('likes across merged proposals', () => {
-  /** Three proposals on the same idea, each liked by one distinct person. */
-  async function createLikedProposals(testData: TestDecisionsDataManager) {
+  /**
+   * `sourceCount` proposals plus the one they merge into, each liked by its own
+   * distinct person — so any total above one can only come from summing across
+   * them.
+   */
+  async function createLikedProposals(
+    testData: TestDecisionsDataManager,
+    { sourceCount = 1 }: { sourceCount?: number } = {},
+  ) {
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
 
-    const [firstSource, secondSource, target, caller] = await Promise.all([
+    const createLikeableProposal = (title: string) =>
       testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instanceId,
-        proposalData: { title: 'Asana integration' },
+        proposalData: { title },
         status: ProposalStatus.SUBMITTED,
-      }),
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'Cowork integration' },
-        status: ProposalStatus.SUBMITTED,
-      }),
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'Asana + cowork integration' },
-        status: ProposalStatus.SUBMITTED,
-      }),
+      });
+
+    const [sources, target, caller] = await Promise.all([
+      Promise.all(
+        Array.from({ length: sourceCount }, (_, index) =>
+          createLikeableProposal(`Contributing idea ${index + 1}`),
+        ),
+      ),
+      createLikeableProposal('Asana + cowork integration'),
       createAuthenticatedCaller(setup.userEmail),
     ]);
 
-    const proposalsInMergeOrder = [firstSource, secondSource, target];
-
-    // One liker each, so the total can only come from summing across the three.
     await Promise.all(
-      proposalsInMergeOrder.map(async (proposal) => {
+      [...sources, target].map(async (proposal) => {
         const liker = await testData.createMemberUser({
           organization: setup.organization,
           instanceProfileIds: [setup.instance.profileId],
@@ -1064,7 +1064,7 @@ describe.concurrent('likes across merged proposals', () => {
       }),
     );
 
-    return { setup, instanceId, firstSource, secondSource, target, caller };
+    return { setup, instanceId, sources, target, caller };
   }
 
   it('sums the likes of every merged proposal into the one they merged into', async ({
@@ -1072,22 +1072,22 @@ describe.concurrent('likes across merged proposals', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, firstSource, secondSource, target, caller } =
-      await createLikedProposals(testData);
+    const { instanceId, sources, target, caller } = await createLikedProposals(
+      testData,
+      { sourceCount: 2 },
+    );
 
     const beforeMerge = await caller.decision.getProposal({
       profileId: target.profileId,
     });
     expect(beforeMerge.likesCount).toBe(1);
 
-    await caller.decision.mergeProposals({
-      sourceProposalId: firstSource.id,
-      targetProposalId: target.id,
-    });
-    await caller.decision.mergeProposals({
-      sourceProposalId: secondSource.id,
-      targetProposalId: target.id,
-    });
+    for (const source of sources) {
+      await caller.decision.mergeProposals({
+        sourceProposalId: source.id,
+        targetProposalId: target.id,
+      });
+    }
 
     const afterMerge = await caller.decision.getProposal({
       profileId: target.profileId,
@@ -1108,8 +1108,9 @@ describe.concurrent('likes across merged proposals', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { firstSource, target, caller, setup } =
+    const { sources, target, caller, setup } =
       await createLikedProposals(testData);
+    const [source] = sources;
 
     const follower = await testData.createMemberUser({
       organization: setup.organization,
@@ -1117,12 +1118,12 @@ describe.concurrent('likes across merged proposals', () => {
     });
     const followerCaller = await createAuthenticatedCaller(follower.email);
     await followerCaller.decision.addProposalRelationship({
-      targetProfileId: firstSource.profileId,
+      targetProfileId: source!.profileId,
       relationshipType: 'following',
     });
 
     await caller.decision.mergeProposals({
-      sourceProposalId: firstSource.id,
+      sourceProposalId: source!.id,
       targetProposalId: target.id,
     });
 
@@ -1138,20 +1139,18 @@ describe.concurrent('likes across merged proposals', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { firstSource, target, caller } =
-      await createLikedProposals(testData);
+    const { sources, target, caller } = await createLikedProposals(testData);
+    const [source] = sources;
 
     await caller.decision.mergeProposals({
-      sourceProposalId: firstSource.id,
+      sourceProposalId: source!.id,
       targetProposalId: target.id,
     });
-    await caller.decision.unmergeProposal({
-      sourceProposalId: firstSource.id,
-    });
+    await caller.decision.unmergeProposal({ sourceProposalId: source!.id });
 
     const [unmergedTarget, unmergedSource] = await Promise.all([
       caller.decision.getProposal({ profileId: target.profileId }),
-      caller.decision.getProposal({ profileId: firstSource.profileId }),
+      caller.decision.getProposal({ profileId: source!.profileId }),
     ]);
     expect(unmergedTarget.likesCount).toBe(1);
     expect(unmergedSource.likesCount).toBe(1);
@@ -1162,15 +1161,11 @@ describe.concurrent('likes across merged proposals', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { firstSource, secondSource, target, caller } =
-      await createLikedProposals(testData);
+    const { sources, target, caller } = await createLikedProposals(testData);
+    const [source] = sources;
 
     await caller.decision.mergeProposals({
-      sourceProposalId: firstSource.id,
-      targetProposalId: target.id,
-    });
-    await caller.decision.mergeProposals({
-      sourceProposalId: secondSource.id,
+      sourceProposalId: source!.id,
       targetProposalId: target.id,
     });
 
@@ -1182,7 +1177,7 @@ describe.concurrent('likes across merged proposals', () => {
       .where(eq(proposals.id, target.id));
     const metrics = await aggregateProposalMetrics([targetRow!]);
 
-    expect(metrics[target.id]?.likesCount).toBe(3);
+    expect(metrics[target.id]?.likesCount).toBe(2);
   });
 
   it('drops the likes of a deleted proposal rather than carrying them over', async ({
@@ -1190,17 +1185,17 @@ describe.concurrent('likes across merged proposals', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { firstSource, target, caller } =
-      await createLikedProposals(testData);
+    const { sources, target, caller } = await createLikedProposals(testData);
+    const [source] = sources;
 
     await caller.decision.mergeProposals({
-      sourceProposalId: firstSource.id,
+      sourceProposalId: source!.id,
       targetProposalId: target.id,
     });
     await db
       .update(proposals)
       .set({ deletedAt: new Date().toISOString() })
-      .where(eq(proposals.id, firstSource.id));
+      .where(eq(proposals.id, source!.id));
 
     const afterDelete = await caller.decision.getProposal({
       profileId: target.profileId,

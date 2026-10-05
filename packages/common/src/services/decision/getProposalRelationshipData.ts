@@ -86,9 +86,8 @@ export const getProposalRelationshipData = async ({
     ]);
 
   for (const profileId of profileIds) {
-    // A merge moves no content, so the proposals merged into this one still
-    // hold their own likes. Carried over here, never for follows: following is
-    // a subscription to one proposal's updates, not a signal about the idea.
+    // Likes carry over from merged proposals; follows do not — following is a
+    // subscription to one proposal's updates, not a signal about the idea.
     const likesCount =
       (relationshipCounts.find(
         (rc) =>

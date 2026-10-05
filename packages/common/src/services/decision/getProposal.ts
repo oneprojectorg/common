@@ -1,18 +1,11 @@
-import { and, count, db, eq, isNull } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import type {
   ObjectsInStorage,
   ProcessInstance,
   Profile,
   Proposal,
 } from '@op/db/schema';
-import {
-  ProfileRelationshipType,
-  ProposalStatus,
-  Visibility,
-  posts,
-  postsToProfiles,
-  profileRelationships,
-} from '@op/db/schema';
+import { ProposalStatus, Visibility } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
@@ -25,6 +18,7 @@ import {
   type ProposalDocumentContent,
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
+import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
   type DecisionRolePermissions,
   decisionPermission,
@@ -32,7 +26,6 @@ import {
 } from './permissions';
 import { isAnonymousAuthor } from './proposalAuthor';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
-import { getMergedLikeCounts } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
 import { ProposalTemplateSchema } from './types';
@@ -181,60 +174,10 @@ export const getProposal = async ({
 
   // Run engagement counts and document fetch in parallel
   const [engagementCounts, documentContentMap] = await Promise.all([
-    // Get engagement counts if proposal has a profile
-    proposal.profileId
-      ? Promise.all([
-          // Get comment count
-          db
-            .select({ count: count() })
-            .from(posts)
-            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-            .where(eq(postsToProfiles.profileId, proposal.profileId)),
-
-          // Get likes count
-          db
-            .select({ count: count() })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.targetProfileId, proposal.profileId),
-                eq(
-                  profileRelationships.relationshipType,
-                  ProfileRelationshipType.LIKES,
-                ),
-              ),
-            ),
-
-          // Get followers count
-          db
-            .select({ count: count() })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.targetProfileId, proposal.profileId),
-                eq(
-                  profileRelationships.relationshipType,
-                  ProfileRelationshipType.FOLLOWING,
-                ),
-              ),
-            ),
-          // A merge moves no content, so the proposals merged into this one
-          // still hold their own likes. Carried over here, never for follows:
-          // following subscribes to one proposal's updates rather than
-          // signalling interest in the idea.
-          getMergedLikeCounts({ targetProfileIds: [proposal.profileId] }),
-        ]).then(([comments, likes, followers, mergedLikes]) => ({
-          commentsCount: Number(comments[0]?.count || 0),
-          likesCount:
-            Number(likes[0]?.count || 0) +
-            (mergedLikes.get(proposal.profileId) ?? 0),
-          followersCount: Number(followers[0]?.count || 0),
-        }))
-      : Promise.resolve({
-          commentsCount: 0,
-          likesCount: 0,
-          followersCount: 0,
-        }),
+    // The same reader the proposal cards use, so the detail page and the list
+    // never disagree. Only the counts are read here; the viewer's own like and
+    // follow state comes from `profile.getRelationships` on the client.
+    getProposalEngagementCounts(proposal.profileId),
 
     // Fetch document content. Mark a failed fetch as 'unavailable' rather
     // than throwing: the proposal (title, budget, attachments) still renders
@@ -310,6 +253,30 @@ export const getProposal = async ({
     isFlagged,
   };
 };
+
+/**
+ * A proposal's comment, like and follower counts — the three the detail page
+ * renders. Deliberately drops the viewer's own like/follow state the shared
+ * reader also computes: this read has no viewer, and reporting `false` would
+ * claim "not liked" where the honest answer is "not asked".
+ */
+async function getProposalEngagementCounts(profileId: string | null) {
+  if (!profileId) {
+    return { commentsCount: 0, likesCount: 0, followersCount: 0 };
+  }
+
+  const relationshipData = await getProposalRelationshipData({
+    profileIds: [profileId],
+  });
+  // The map carries an entry per requested id, so this never falls through.
+  const counts = relationshipData.get(profileId);
+
+  return {
+    commentsCount: counts?.commentsCount ?? 0,
+    likesCount: counts?.likesCount ?? 0,
+    followersCount: counts?.followersCount ?? 0,
+  };
+}
 
 export const getPermissionsOnProposal = async ({
   user,
