@@ -8,11 +8,9 @@ import {
   profiles,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
 import { CommonError, UnauthorizedError } from '../../utils';
-import { getProfileAccessRolesWithOrgFallback } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
@@ -132,8 +130,6 @@ export const createDecisionInstance = async ({
 export type CreateInstanceFromTemplateOptions = {
   templateId: string;
   name: string;
-  /** Defaults to the profile the caller is acting as. */
-  stewardProfileId?: string;
   user: User;
 };
 
@@ -144,7 +140,6 @@ export type CreateInstanceFromTemplateOptions = {
 export const createInstanceFromTemplate = async ({
   templateId,
   name,
-  stewardProfileId: requestedStewardProfileId,
   user,
 }: CreateInstanceFromTemplateOptions) => {
   const dbUser = await assertUserByAuthId(
@@ -159,26 +154,7 @@ export const createInstanceFromTemplate = async ({
     // TODO: profileId should not be nullable in the schema
     throw new UnauthorizedError('User must have a profile');
   }
-  const stewardProfileId =
-    requestedStewardProfileId ?? dbUser.currentProfileId ?? ownerProfileId;
-
-  // The same rule `duplicateInstance` runs, inlined until the extraction in
-  // the steward-rule PR lands and both can share `assertCanStewardToProfile`.
-  if (
-    requestedStewardProfileId &&
-    requestedStewardProfileId !== ownerProfileId
-  ) {
-    const stewardRoles = await getProfileAccessRolesWithOrgFallback({
-      user,
-      profileId: requestedStewardProfileId,
-    });
-
-    if (!checkPermission({ profile: permission.ADMIN }, stewardRoles)) {
-      throw new UnauthorizedError(
-        'Not authorized to steward a process to this profile',
-      );
-    }
-  }
+  const stewardProfileId = dbUser.currentProfileId ?? ownerProfileId;
 
   // TODO: This shouldn't be a requirement in the future and we need to resolve that (SMS accounts for instance)
   if (!user.email) {
