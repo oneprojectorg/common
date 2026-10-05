@@ -63,7 +63,7 @@ export const LaunchProcessModal = ({
     onSuccess: async (data) => {
       if (data.didPublish) {
         posthog.capture(
-          'admin_set_process',
+          'admin_set_process_client',
           getDecisionCommonProperties({ decisionInstanceId: instanceId }),
         );
       }
