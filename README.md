@@ -12,6 +12,7 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 3.  **Environment Variables**:
     - Copy the example environment file: `cp .env.example .env.local`
     - Fill in the necessary values in `.env.local`, especially for Supabase (URL, anon key, service role key) and Resend (API key for emails). You can get these from your Supabase project settings and Resend account.
+    - **Or keep it in 1Password instead of on disk**: paste the whole `.env.local` into one Secure Note, install the [1Password CLI](https://developer.1password.com/docs/cli/get-started/), and export a reference to the note's body in your shell profile, e.g. `export OP_ENV_LOCAL_REF="op://Employee/common .env.local/notesPlain"`. `pnpm dev` then injects those variables without writing a file; run any other command that needs them through `pnpm with-env <command>` (e.g. `pnpm with-env pnpm w:app dev`). Each run reads the item, so 1Password may ask you to unlock. Variables already set in your shell take precedence over the item. With `OP_ENV_LOCAL_REF` unset, everything reads `.env.local` as before.
 4.  **Local Development Database**:
     - Start the local Supabase stack (PostgreSQL database, etc.): `pnpm w:db start`. This uses the Supabase CLI, make sure Docker is running.
     - Apply database migrations: `pnpm w:db migrate`.
