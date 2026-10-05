@@ -67,18 +67,12 @@ export function PostHogProvider({
       tracing_headers: [],
       // In `on_reject` mode a visitor posthog considers rejected is still
       // captured — just with no cookies, no local storage and no persistent
-      // identity, with PostHog hashing them server-side instead. That covers
-      // anyone who presses Reject, in every country.
+      // identity, with PostHog hashing them server-side instead.
       //
-      // `opt_out_capturing_by_default` decides what an *unanswered* visitor
-      // counts as, and so is the whole of the regional difference: where
-      // consent is required they count as rejected (cookieless, and the banner
-      // asks them), and where it isn't they count as opted in (cookies, no
-      // banner). posthog-js stores an explicit answer itself
-      // (`opt_out_capturing_persistence_type`, local storage by default), so a
-      // Reject keeps holding even if the same person later loads the page from
-      // a country that wouldn't have asked.
-      cookieless_mode: 'on_reject',
+      // Where consent is required an unanswered visitor counts as rejected
+      // until the banner asks them. Elsewhere `on_reject` stays off, since it
+      // treats a pending answer as an opt-out and that blocks surveys.
+      cookieless_mode: consentRequired ? 'on_reject' : undefined,
       opt_out_capturing_by_default: consentRequired,
     });
 
@@ -86,15 +80,6 @@ export function PostHogProvider({
     // nothing to ask the visitor to consent to. Leaving the status unknown
     // keeps the toast off a local checkout that has no `.env.local`.
     if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-      // Surveys won't load while consent is pending, so record the opt-in we
-      // already assume for visitors we never prompt.
-      if (
-        !consentRequired &&
-        posthog.get_explicit_consent_status() === 'pending'
-      ) {
-        posthog.opt_in_capturing({ captureEventName: false });
-      }
-
       setStatus(posthog.get_explicit_consent_status());
     }
     // Init runs once. `consentRequired` is decided by the server render of the
