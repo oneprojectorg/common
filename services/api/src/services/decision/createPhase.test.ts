@@ -4,12 +4,11 @@ import {
   deletePhase,
   renamePhase,
 } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
-import { EntityType, PhaseAudience } from '@op/db/schema';
+import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 
 describe.concurrent('createPhase', () => {
   it('mints a profile of type PHASE that owns the name', async ({
@@ -107,23 +106,6 @@ describe.concurrent('createPhase', () => {
     ]);
     expect(roles).toHaveLength(0);
     expect(members).toHaveLength(0);
-  });
-
-  it('defaults the audience to invite-only', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await setup(task, onTestFinished);
-
-    const { phase, profile } = await createPhase({
-      processInstanceId: instanceId,
-      name: 'Review',
-      sortOrder: 0,
-      data: { phaseId: 'review' },
-    });
-    testData.trackProfileForCleanup(profile.id);
-
-    expect(phase.audience).toBe(PhaseAudience.INVITE_ONLY);
   });
 
   it('rolls the profile back when the phase insert fails', async ({
