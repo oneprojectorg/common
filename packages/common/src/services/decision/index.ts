@@ -80,6 +80,9 @@ export * from './listProposalRejectionRecipients';
 export * from './getProposal';
 export * from './getCollabToken';
 export * from './assertProposalEngagementAccess';
+// By name, not `export *`: the rest of the module builds SQL predicates that
+// only the decision reads compose.
+export { findLiveMergedEdge } from './proposalSupersession';
 
 // Proposal relationships (merge / unmerge / list)
 export * from './mergeProposals';

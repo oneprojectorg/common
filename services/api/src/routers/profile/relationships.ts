@@ -1,6 +1,7 @@
 import {
   Channels,
   addProfileRelationship,
+  findLiveMergedEdge,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
@@ -19,7 +20,12 @@ import {
   trackProposalLiked,
 } from '../../utils/analytics';
 
-type ProposalInfo = { proposalId: string; processInstanceId: string };
+type ProposalInfo = {
+  proposalId: string;
+  processInstanceId: string;
+  /** The proposal this one was merged into, or `null` when it still stands. */
+  mergedIntoProposalId: string | null;
+};
 
 // Helper function to check if a profile belongs to a proposal and get process info
 async function getProposalInfo(
@@ -34,24 +40,43 @@ async function getProposalInfo(
     .where(eq(proposals.profileId, profileId))
     .limit(1);
 
-  return proposal.length > 0
-    ? {
-        proposalId: proposal[0]!.id,
-        processInstanceId: proposal[0]!.processInstanceId,
-      }
-    : null;
+  if (proposal.length === 0) {
+    return null;
+  }
+
+  const { id: proposalId, processInstanceId } = proposal[0]!;
+
+  // `getMergedLikeCounts` folds a merged-away proposal's likes into whatever it
+  // was merged into, so that proposal's count moves on every like placed here.
+  const mergedEdge = await findLiveMergedEdge({
+    processInstanceId,
+    sourceProposalId: proposalId,
+  });
+
+  return {
+    proposalId,
+    processInstanceId,
+    mergedIntoProposalId: mergedEdge?.targetProposalId ?? null,
+  };
 }
 
-// Channel the proposal detail query subscribes to. Like/follow mutations
-// register it so engagement counts (likesCount, followersCount) refresh
-// immediately on the proposal view. Deliberately scoped to the single
-// proposal — invalidating the whole `decisionProposals` list channel for
-// every like/follow would force every viewer to re-fetch every card.
+// Channels the proposal detail query subscribes to. Like/follow mutations
+// register them so engagement counts (likesCount, followersCount) refresh
+// immediately on the proposal view — the liked proposal, plus the one it was
+// merged into, whose rolled-up total just moved with it. Deliberately not the
+// whole `decisionProposals` list channel, which would force every viewer to
+// re-fetch every card on every like.
 function proposalRelationshipChannels({
   processInstanceId,
   proposalId,
+  mergedIntoProposalId,
 }: ProposalInfo) {
-  return [Channels.decisionProposal(processInstanceId, proposalId)];
+  return [
+    Channels.decisionProposal(processInstanceId, proposalId),
+    ...(mergedIntoProposalId
+      ? [Channels.decisionProposal(processInstanceId, mergedIntoProposalId)]
+      : []),
+  ];
 }
 
 const relationshipInputSchema = z.object({
