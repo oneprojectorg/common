@@ -12,6 +12,7 @@ import { ValidationError } from '../../utils';
 import { generateProposalHtml } from './generateProposalHtml';
 import { getProposalAttachmentsWithSignedUrls } from './getProposalAttachmentsWithSignedUrls';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { getMergedLikeCounts } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   assertReviewAssignmentContext,
@@ -114,7 +115,7 @@ async function getProposalRelationshipInfo({
   profileId: string;
   viewerProfileId: string;
 }) {
-  const [relationshipCounts, userRelationships, commentCounts] =
+  const [relationshipCounts, userRelationships, commentCounts, mergedLikes] =
     await Promise.all([
       db
         .select({
@@ -142,14 +143,20 @@ async function getProposalRelationshipInfo({
         .from(posts)
         .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
         .where(eq(postsToProfiles.profileId, profileId)),
+
+      getMergedLikeCounts({ targetProfileIds: [profileId] }),
     ]);
 
   return {
-    likesCount: Number(
-      relationshipCounts.find(
-        (row) => row.relationshipType === ProfileRelationshipType.LIKES,
-      )?.count ?? 0,
-    ),
+    // Carries over the likes of every proposal merged into this one, so a
+    // reviewer reads the same number its card shows. Follows stay as they are:
+    // they subscribe to one proposal rather than signalling interest.
+    likesCount:
+      Number(
+        relationshipCounts.find(
+          (row) => row.relationshipType === ProfileRelationshipType.LIKES,
+        )?.count ?? 0,
+      ) + (mergedLikes.get(profileId) ?? 0),
     followersCount: Number(
       relationshipCounts.find(
         (row) => row.relationshipType === ProfileRelationshipType.FOLLOWING,

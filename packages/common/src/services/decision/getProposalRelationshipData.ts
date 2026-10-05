@@ -8,6 +8,7 @@ import {
 import { count as countFn } from 'drizzle-orm';
 import { z } from 'zod';
 
+import { getMergedLikeCounts } from './proposalSupersession';
 import { proposalSchema } from './schemas/proposal';
 
 const proposalRelationshipDataSchema = proposalSchema
@@ -24,7 +25,7 @@ type ProposalRelationshipData = z.infer<typeof proposalRelationshipDataSchema>;
 
 /**
  * Fetches like/follow counts, the caller's own like/follow state, and comment
- * counts for a set of proposal profile IDs in three parallel queries, then
+ * counts for a set of proposal profile IDs in four parallel queries, then
  * folds them into a single per-profile map. Used by both `listProposals` and
  * `listAllProposals` to build proposal cards' engagement metrics.
  */
@@ -41,7 +42,7 @@ export const getProposalRelationshipData = async ({
     return relationshipData;
   }
 
-  const [relationshipCounts, userRelationships, commentCounts] =
+  const [relationshipCounts, userRelationships, commentCounts, mergedLikes] =
     await Promise.all([
       db
         .select({
@@ -80,15 +81,20 @@ export const getProposalRelationshipData = async ({
         .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
         .where(inArray(postsToProfiles.profileId, profileIds))
         .groupBy(postsToProfiles.profileId),
+
+      getMergedLikeCounts({ targetProfileIds: profileIds }),
     ]);
 
   for (const profileId of profileIds) {
+    // A merge moves no content, so the proposals merged into this one still
+    // hold their own likes. Carried over here, never for follows: following is
+    // a subscription to one proposal's updates, not a signal about the idea.
     const likesCount =
-      relationshipCounts.find(
+      (relationshipCounts.find(
         (rc) =>
           rc.targetProfileId === profileId &&
           rc.relationshipType === ProfileRelationshipType.LIKES,
-      )?.count || 0;
+      )?.count || 0) + (mergedLikes.get(profileId) ?? 0);
 
     const followersCount =
       relationshipCounts.find(

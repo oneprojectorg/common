@@ -7,6 +7,7 @@ import {
   profileRelationships,
 } from '@op/db/schema';
 
+import { getMergedLikeCounts } from '../proposalSupersession';
 import type { VoteAggregation } from './types';
 
 /**
@@ -25,8 +26,8 @@ export async function aggregateProposalMetrics(
   const proposalIds = phaseProposals.map((p) => p.id);
   const profileIds = [...new Set(phaseProposals.map((p) => p.profileId))];
 
-  // Fetch votes and profile relationships in parallel
-  const [voteRows, relationships] = await Promise.all([
+  // Fetch votes, profile relationships, and carried-over likes in parallel
+  const [voteRows, relationships, mergedLikes] = await Promise.all([
     db
       .select({
         submissionId: decisionsVoteSubmissions.id,
@@ -47,6 +48,10 @@ export async function aggregateProposalMetrics(
       .select()
       .from(profileRelationships)
       .where(inArray(profileRelationships.targetProfileId, profileIds)),
+
+    // A merged-away proposal is out of the phase, so without this its likes
+    // leave the pipeline with it and never reach the results.
+    getMergedLikeCounts({ targetProfileIds: profileIds, db }),
   ]);
 
   // Count likes and follows by profile ID
@@ -103,7 +108,9 @@ export async function aggregateProposalMetrics(
 
     voteDataMap[proposal.id] = {
       proposalId: proposal.id,
-      likesCount: likesMap.get(proposal.profileId) ?? 0,
+      likesCount:
+        (likesMap.get(proposal.profileId) ?? 0) +
+        (mergedLikes.get(proposal.profileId) ?? 0),
       followsCount: followsMap.get(proposal.profileId) ?? 0,
       voteCount,
       approvalCount,

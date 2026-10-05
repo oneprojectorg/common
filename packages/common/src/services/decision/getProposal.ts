@@ -32,6 +32,7 @@ import {
 } from './permissions';
 import { isAnonymousAuthor } from './proposalAuthor';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
+import { getMergedLikeCounts } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
 import { ProposalTemplateSchema } from './types';
@@ -217,9 +218,16 @@ export const getProposal = async ({
                 ),
               ),
             ),
-        ]).then(([comments, likes, followers]) => ({
+          // A merge moves no content, so the proposals merged into this one
+          // still hold their own likes. Carried over here, never for follows:
+          // following subscribes to one proposal's updates rather than
+          // signalling interest in the idea.
+          getMergedLikeCounts({ targetProfileIds: [proposal.profileId] }),
+        ]).then(([comments, likes, followers, mergedLikes]) => ({
           commentsCount: Number(comments[0]?.count || 0),
-          likesCount: Number(likes[0]?.count || 0),
+          likesCount:
+            Number(likes[0]?.count || 0) +
+            (mergedLikes.get(proposal.profileId) ?? 0),
           followersCount: Number(followers[0]?.count || 0),
         }))
       : Promise.resolve({
