@@ -230,7 +230,7 @@ function ProposalEditorInner({
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
     onSuccess: () =>
       posthog.capture(
-        'proposal_submitted_client',
+        'proposal_submission_confirmed',
         getDecisionCommonProperties({
           decisionInstanceId: proposal.processInstanceId,
           proposalId: proposal.id,

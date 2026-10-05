@@ -3,6 +3,6 @@ import posthog from 'posthog-js';
 
 export const trackRubricSaved = (instanceId: string) =>
   posthog.capture(
-    'admin_set_rubric_client',
+    'rubric_save_confirmed',
     getDecisionCommonProperties({ decisionInstanceId: instanceId }),
   );

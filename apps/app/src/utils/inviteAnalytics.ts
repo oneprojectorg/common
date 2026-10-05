@@ -13,7 +13,7 @@ export const trackUserInvited = ({
     return;
   }
 
-  posthog.capture('user_invited_client', {
+  posthog.capture('user_invite_confirmed', {
     invite_count: inviteCount,
     ...(organizationId && { organization_id: organizationId }),
   });
@@ -33,7 +33,7 @@ export const trackProfileInvited = (
   };
 
   posthog.capture(
-    'admin_invited_participants_client',
+    'participant_invite_confirmed',
     result.processId
       ? getDecisionCommonProperties({
           decisionInstanceId: result.processId,

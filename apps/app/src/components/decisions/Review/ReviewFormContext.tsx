@@ -198,7 +198,7 @@ function ReviewFormProviderInner({
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
       posthog.capture(
-        'review_submitted_client',
+        'review_submission_confirmed',
         getDecisionCommonProperties({
           decisionInstanceId: assignment.processInstanceId,
           proposalId: assignment.proposal.id,
