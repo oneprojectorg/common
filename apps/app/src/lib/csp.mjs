@@ -51,6 +51,14 @@ export const isStaticPolicyPath = (pathname) => {
 const isLocalEnvironment = () =>
   process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http://') ?? false;
 
+/**
+ * Vercel injects its toolbar into preview deployments, so only they relax the
+ * policy for it; production keeps the strict one.
+ */
+const isPreviewDeployment = () => process.env.VERCEL_ENV === 'preview';
+
+export const VERCEL_TOOLBAR_ORIGIN = 'https://vercel.live';
+
 /** `CSP_MODE=report-only` is the rollback lever: same policy, nothing blocked. */
 const getCspHeaderName = () =>
   process.env.CSP_MODE === 'report-only'
@@ -65,8 +73,12 @@ const getCspHeaderName = () =>
  */
 const UNSAFE_EVAL = "'unsafe-eval'";
 
-/** @param {{ isLocalEnvironment: boolean }} params */
-const buildSharedDirectives = ({ isLocalEnvironment }) => [
+/**
+ * @typedef {{ isLocalEnvironment: boolean, isPreviewDeployment: boolean }} PolicyEnvironment
+ */
+
+/** @param {PolicyEnvironment} params */
+const buildSharedDirectives = ({ isLocalEnvironment, isPreviewDeployment }) => [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
@@ -74,9 +86,9 @@ const buildSharedDirectives = ({ isLocalEnvironment }) => [
   "object-src 'none'",
   // React `style={{}}` attributes are everywhere; style injection is not the
   // attack this policy defends against.
-  "style-src 'self' 'unsafe-inline'",
+  `style-src 'self' 'unsafe-inline'${isPreviewDeployment ? ` ${VERCEL_TOOLBAR_ORIGIN}` : ''}`,
   "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
+  `font-src 'self' data:${isPreviewDeployment ? ` ${VERCEL_TOOLBAR_ORIGIN} https://assets.vercel.com` : ''}`,
   `connect-src 'self' https: wss:${isLocalEnvironment ? ' http: ws:' : ''}`,
   "media-src 'self' blob: https:",
   "worker-src 'self' blob:",
@@ -90,33 +102,36 @@ const buildSharedDirectives = ({ isLocalEnvironment }) => [
 
 /**
  * @param {Array<string>} scriptSources
- * @param {{ isLocalEnvironment: boolean }} params
+ * @param {PolicyEnvironment} environment
  */
-const assemble = (scriptSources, { isLocalEnvironment }) =>
+const assemble = (scriptSources, environment) =>
   [
     `script-src ${scriptSources.join(' ')}`,
-    ...buildSharedDirectives({ isLocalEnvironment }),
+    ...buildSharedDirectives(environment),
   ].join('; ');
 
 /**
  * `https:` and `'unsafe-inline'` are pre-CSP3 fallbacks, not weakening: a
  * browser honouring `'strict-dynamic'` ignores both.
  *
- * @param {{ nonce: string, isLocalEnvironment: boolean }} params
+ * Previews drop `'strict-dynamic'`, leaving the policy a pre-CSP3 browser
+ * already enforces: the Vercel toolbar loads its instrument script from a
+ * `srcdoc` iframe, parser-inserted and carrying the empty nonce of the
+ * `feedback.js` Vercel injects, so `'strict-dynamic'` blocks it and disables
+ * the host allowlist that could admit it.
+ *
+ * @param {{ nonce: string } & PolicyEnvironment} params
  */
-export const buildNonceContentSecurityPolicy = ({
-  nonce,
-  isLocalEnvironment,
-}) =>
+export const buildNonceContentSecurityPolicy = ({ nonce, ...environment }) =>
   assemble(
     [
       `'nonce-${nonce}'`,
-      "'strict-dynamic'",
+      ...(environment.isPreviewDeployment ? [] : ["'strict-dynamic'"]),
       'https:',
       "'unsafe-inline'",
       UNSAFE_EVAL,
     ],
-    { isLocalEnvironment },
+    environment,
   );
 
 /**
@@ -124,9 +139,9 @@ export const buildNonceContentSecurityPolicy = ({
  * `'unsafe-inline'`. No `'unsafe-eval'` — these routes never reach the
  * decision-schema validator.
  *
- * @param {{ isLocalEnvironment: boolean }} params
+ * @param {PolicyEnvironment} environment
  */
-export const buildStaticContentSecurityPolicy = ({ isLocalEnvironment }) =>
+export const buildStaticContentSecurityPolicy = (environment) =>
   assemble(
     [
       "'self'",
@@ -134,8 +149,9 @@ export const buildStaticContentSecurityPolicy = ({ isLocalEnvironment }) =>
       // posthog-js falls back to the asset host when the /stats rewrite is
       // unavailable.
       'https://eu-assets.i.posthog.com',
+      ...(environment.isPreviewDeployment ? [VERCEL_TOOLBAR_ORIGIN] : []),
     ],
-    { isLocalEnvironment },
+    environment,
   );
 
 /** Matches Next's nonce grammar in `get-script-nonce-from-header`. */
@@ -151,6 +167,7 @@ export const getStaticCspHeader = () => ({
   key: getCspHeaderName(),
   value: buildStaticContentSecurityPolicy({
     isLocalEnvironment: isLocalEnvironment(),
+    isPreviewDeployment: isPreviewDeployment(),
   }),
 });
 
@@ -165,6 +182,7 @@ export const createCspHeaderApplier = () => {
   const policy = buildNonceContentSecurityPolicy({
     nonce: createCspNonce(),
     isLocalEnvironment: isLocalEnvironment(),
+    isPreviewDeployment: isPreviewDeployment(),
   });
 
   return (headers) => {

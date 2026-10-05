@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
+  VERCEL_TOOLBAR_ORIGIN,
   buildNonceContentSecurityPolicy,
   buildStaticContentSecurityPolicy,
+  createCspHeaderApplier,
   createCspNonce,
   getStaticCspHeader,
   isStaticPolicyPath,
@@ -18,7 +20,8 @@ const parseDirectives = (policy: string) =>
     }),
   );
 
-const deployed = { isLocalEnvironment: false };
+const deployed = { isLocalEnvironment: false, isPreviewDeployment: false };
+const preview = { isLocalEnvironment: false, isPreviewDeployment: true };
 
 /**
  * Dropping any of these is an outage, not a policy change: `default-src 'self'`
@@ -83,6 +86,49 @@ describe('buildNonceContentSecurityPolicy', () => {
   });
 });
 
+describe('preview deployments', () => {
+  // Vercel's toolbar loads instrument.js from a srcdoc iframe — a
+  // parser-inserted script with an empty nonce, which 'strict-dynamic' never
+  // trusts.
+  const nonceScriptSources =
+    parseDirectives(
+      buildNonceContentSecurityPolicy({ nonce: 'test-nonce', ...preview }),
+    ).get('script-src') ?? [];
+
+  it("drop 'strict-dynamic' so the toolbar's https: script loads", () => {
+    expect(nonceScriptSources).not.toContain("'strict-dynamic'");
+    expect(nonceScriptSources).toEqual(
+      expect.arrayContaining(["'nonce-test-nonce'", 'https:']),
+    );
+  });
+
+  it('let the static routes load the toolbar too', () => {
+    expect(
+      parseDirectives(buildStaticContentSecurityPolicy(preview)).get(
+        'script-src',
+      ),
+    ).toContain(VERCEL_TOOLBAR_ORIGIN);
+  });
+
+  it.each([
+    ['style-src', [VERCEL_TOOLBAR_ORIGIN]],
+    ['font-src', [VERCEL_TOOLBAR_ORIGIN, 'https://assets.vercel.com']],
+  ])('admit the toolbar in %s', (name, sources) => {
+    expect(
+      parseDirectives(
+        buildNonceContentSecurityPolicy({ nonce: 'test-nonce', ...preview }),
+      ).get(name),
+    ).toEqual(expect.arrayContaining(sources));
+  });
+
+  it('leave production untouched', () => {
+    expect(
+      buildNonceContentSecurityPolicy({ nonce: 'test-nonce', ...deployed }),
+    ).not.toContain('vercel');
+    expect(buildStaticContentSecurityPolicy(deployed)).not.toContain('vercel');
+  });
+});
+
 describe('buildStaticContentSecurityPolicy', () => {
   const policy = buildStaticContentSecurityPolicy(deployed);
   const directives = parseDirectives(policy);
@@ -119,12 +165,20 @@ describe('buildStaticContentSecurityPolicy', () => {
 
 describe('cleartext backends', () => {
   const connectSrc = (
-    build: (params: { nonce: string; isLocalEnvironment: boolean }) => string,
+    build: (params: {
+      nonce: string;
+      isLocalEnvironment: boolean;
+      isPreviewDeployment: boolean;
+    }) => string,
     isLocalEnvironment: boolean,
   ) =>
-    parseDirectives(build({ nonce: 'test-nonce', isLocalEnvironment })).get(
-      'connect-src',
-    ) ?? [];
+    parseDirectives(
+      build({
+        nonce: 'test-nonce',
+        isLocalEnvironment,
+        isPreviewDeployment: false,
+      }),
+    ).get('connect-src') ?? [];
 
   it.each([
     ['nonce', buildNonceContentSecurityPolicy],
@@ -203,6 +257,41 @@ describe('the cleartext decision the emitters actually make', () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', url);
 
     expect(admitsCleartext()).toBe(expected);
+  });
+});
+
+describe('the preview decision the emitters actually make', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each([
+    ['preview', true],
+    ['production', false],
+    ['development', false],
+    [undefined, false],
+  ])('VERCEL_ENV=%s admits the toolbar: %s', (vercelEnv, expected) => {
+    vi.stubEnv('VERCEL_ENV', vercelEnv);
+
+    expect(getStaticCspHeader().value.includes(VERCEL_TOOLBAR_ORIGIN)).toBe(
+      expected,
+    );
+  });
+
+  it.each([
+    ['preview', false],
+    ['production', true],
+    ['development', true],
+    [undefined, true],
+  ])('VERCEL_ENV=%s keeps strict-dynamic: %s', (vercelEnv, expected) => {
+    vi.stubEnv('VERCEL_ENV', vercelEnv);
+    vi.stubEnv('CSP_MODE', undefined);
+
+    const policy = createCspHeaderApplier()(new Headers()).get(
+      'content-security-policy',
+    );
+
+    expect(policy?.includes("'strict-dynamic'")).toBe(expected);
   });
 });
 
