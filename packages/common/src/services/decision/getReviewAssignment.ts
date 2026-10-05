@@ -45,10 +45,11 @@ export async function getReviewAssignment({
 
   const [relationshipInfo, documentContentMap, proposalAttachments] =
     await Promise.all([
-      getProposalEngagement({
-        profileId: assignment.proposal.profileId,
-        viewerProfileId: assignment.reviewerProfileId,
-      }),
+      // The same reader the cards use, so a reviewer reads the same numbers.
+      getProposalRelationshipData({
+        profileIds: [assignment.proposal.profileId],
+        currentProfileId: assignment.reviewerProfileId,
+      }).then((data) => data.get(assignment.proposal.profileId)),
       getProposalDocumentsContent(
         [
           {
@@ -98,24 +99,4 @@ export async function getReviewAssignment({
     canEditReview: canEditSubmittedReview({ assignment, instance, review }),
     isReviewOutOfDate,
   });
-}
-
-/**
- * The one proposal's engagement counts, through the same reader the cards use
- * so a reviewer never sees a different number than the list does.
- */
-async function getProposalEngagement({
-  profileId,
-  viewerProfileId,
-}: {
-  profileId: string;
-  viewerProfileId: string;
-}) {
-  const relationshipData = await getProposalRelationshipData({
-    profileIds: [profileId],
-    currentProfileId: viewerProfileId,
-  });
-
-  // The map carries an entry per requested id, so this never falls through.
-  return relationshipData.get(profileId);
 }

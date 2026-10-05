@@ -1014,17 +1014,8 @@ describeDecisionAccessTierGating('decision.listProposalRelationships', {
   ),
 });
 
-/**
- * Likes live on each proposal's own profile and a merge moves no content, so
- * without the roll-up the likes of every merged-away proposal drop out of the
- * listings along with the proposal itself.
- */
 describe.concurrent('likes across merged proposals', () => {
-  /**
-   * `sourceCount` proposals plus the one they merge into, each liked by its own
-   * distinct person — so any total above one can only come from summing across
-   * them.
-   */
+  /** `sourceCount` proposals plus the one they merge into, one liker each. */
   async function createLikedProposals(
     testData: TestDecisionsDataManager,
     { sourceCount = 1 }: { sourceCount?: number } = {},
@@ -1097,8 +1088,7 @@ describe.concurrent('likes across merged proposals', () => {
     });
     expect(afterMerge.likesCount).toBe(3);
 
-    // The card reads the same total, and the merged-away proposals are gone
-    // from the list rather than still carrying their own likes.
+    // The card reads the same total, and only the target is still listed.
     const list = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
@@ -1172,8 +1162,7 @@ describe.concurrent('likes across merged proposals', () => {
       targetProposalId: target.id,
     });
 
-    // A merged-away proposal is out of the phase, so the pipeline only ever
-    // sees the target: the carried-over likes have to arrive with it.
+    // The pipeline only ever sees the target, so the likes must arrive with it.
     const [targetRow] = await db
       .select()
       .from(proposals)
@@ -1209,8 +1198,6 @@ describe.concurrent('likes across merged proposals', () => {
       targetProposalId: target.id,
     });
 
-    // Liking the source now moves the target's total, so the engagement
-    // endpoints need the target's id to invalidate its page too.
     expect(await engagementTarget()).toMatchObject({
       proposalId: source!.id,
       mergedIntoProposalId: target.id,

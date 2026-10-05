@@ -6,6 +6,7 @@ import {
   decisionsVoteSubmissions,
   profileRelationships,
 } from '@op/db/schema';
+import { count as countFn } from 'drizzle-orm';
 
 import { getMergedLikeCounts } from '../proposalSupersession';
 import type { VoteAggregation } from './types';
@@ -26,8 +27,7 @@ export async function aggregateProposalMetrics(
   const proposalIds = phaseProposals.map((p) => p.id);
   const profileIds = [...new Set(phaseProposals.map((p) => p.profileId))];
 
-  // Fetch votes, profile relationships, and carried-over likes in parallel
-  const [voteRows, relationships, mergedLikes] = await Promise.all([
+  const [voteRows, relationshipCounts, mergedLikes] = await Promise.all([
     db
       .select({
         submissionId: decisionsVoteSubmissions.id,
@@ -45,27 +45,29 @@ export async function aggregateProposalMetrics(
       .where(inArray(decisionsVoteProposals.proposalId, proposalIds)),
 
     db
-      .select()
+      .select({
+        targetProfileId: profileRelationships.targetProfileId,
+        relationshipType: profileRelationships.relationshipType,
+        count: countFn(),
+      })
       .from(profileRelationships)
-      .where(inArray(profileRelationships.targetProfileId, profileIds)),
+      .where(inArray(profileRelationships.targetProfileId, profileIds))
+      .groupBy(
+        profileRelationships.targetProfileId,
+        profileRelationships.relationshipType,
+      ),
 
-    // A merged-away proposal is out of the phase, so without this its likes
-    // leave the pipeline with it and never reach the results.
     getMergedLikeCounts({ targetProfileIds: profileIds, db }),
   ]);
 
-  // Count likes and follows by profile ID
   const likesMap = new Map<string, number>();
   const followsMap = new Map<string, number>();
 
-  for (const relationship of relationships) {
-    const profileId = relationship.targetProfileId;
-    if (relationship.relationshipType === ProfileRelationshipType.LIKES) {
-      likesMap.set(profileId, (likesMap.get(profileId) ?? 0) + 1);
-    } else if (
-      relationship.relationshipType === ProfileRelationshipType.FOLLOWING
-    ) {
-      followsMap.set(profileId, (followsMap.get(profileId) ?? 0) + 1);
+  for (const row of relationshipCounts) {
+    if (row.relationshipType === ProfileRelationshipType.LIKES) {
+      likesMap.set(row.targetProfileId, Number(row.count));
+    } else if (row.relationshipType === ProfileRelationshipType.FOLLOWING) {
+      followsMap.set(row.targetProfileId, Number(row.count));
     }
   }
 

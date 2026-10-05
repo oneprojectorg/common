@@ -42,13 +42,9 @@ export const addProposalRelationshipRouter = router({
         authUserId: ctx.user.id,
       });
 
-      // The proposal detail query subscribes to this channel; registering it
-      // refreshes engagement counts (likesCount, followersCount) immediately.
-      // Deliberately scoped to the single proposal — invalidating the whole
-      // `decisionProposals` list channel for every like/follow would force
-      // every viewer to re-fetch every card. A merged-away proposal is still
-      // likeable and its likes roll up, so the proposal it merged into is the
-      // one other page whose count just moved.
+      // Refreshes engagement counts on the proposal detail query, for this
+      // proposal and the one its likes roll up into. Deliberately not the
+      // `decisionProposals` list channel: every viewer would refetch every card.
       ctx.registerMutationChannels([
         Channels.decisionProposal(processInstanceId, proposalId),
         ...(mergedIntoProposalId

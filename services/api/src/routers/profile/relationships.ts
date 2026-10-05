@@ -1,12 +1,16 @@
 import {
   Channels,
   addProfileRelationship,
-  findLiveMergedEdge,
   getProfileRelationships,
+  liveMergeEdgeFrom,
   removeProfileRelationship,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProfileRelationshipType, proposals } from '@op/db/schema';
+import {
+  ProfileRelationshipType,
+  proposalRelationships,
+  proposals,
+} from '@op/db/schema';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -23,7 +27,6 @@ import {
 type ProposalInfo = {
   proposalId: string;
   processInstanceId: string;
-  /** The proposal this one was merged into, or `null` when it still stands. */
   mergedIntoProposalId: string | null;
 };
 
@@ -31,41 +34,23 @@ type ProposalInfo = {
 async function getProposalInfo(
   profileId: string,
 ): Promise<ProposalInfo | null> {
-  const proposal = await db
+  const [proposal] = await db
     .select({
-      id: proposals.id,
+      proposalId: proposals.id,
       processInstanceId: proposals.processInstanceId,
+      mergedIntoProposalId: proposalRelationships.targetProposalId,
     })
     .from(proposals)
+    .leftJoin(proposalRelationships, liveMergeEdgeFrom(proposals.id))
     .where(eq(proposals.profileId, profileId))
     .limit(1);
 
-  if (proposal.length === 0) {
-    return null;
-  }
-
-  const { id: proposalId, processInstanceId } = proposal[0]!;
-
-  // `getMergedLikeCounts` folds a merged-away proposal's likes into whatever it
-  // was merged into, so that proposal's count moves on every like placed here.
-  const mergedEdge = await findLiveMergedEdge({
-    processInstanceId,
-    sourceProposalId: proposalId,
-  });
-
-  return {
-    proposalId,
-    processInstanceId,
-    mergedIntoProposalId: mergedEdge?.targetProposalId ?? null,
-  };
+  return proposal ?? null;
 }
 
-// Channels the proposal detail query subscribes to. Like/follow mutations
-// register them so engagement counts (likesCount, followersCount) refresh
-// immediately on the proposal view — the liked proposal, plus the one it was
-// merged into, whose rolled-up total just moved with it. Deliberately not the
-// whole `decisionProposals` list channel, which would force every viewer to
-// re-fetch every card on every like.
+// Channels the proposal detail query subscribes to: the liked proposal, plus
+// the one its likes roll up into. Deliberately not the `decisionProposals`
+// list channel, which would make every viewer refetch every card on every like.
 function proposalRelationshipChannels({
   processInstanceId,
   proposalId,

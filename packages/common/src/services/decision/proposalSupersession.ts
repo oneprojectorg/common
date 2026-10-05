@@ -26,14 +26,23 @@ import {
 } from './proposalVisibility';
 
 /**
- * A `merged` edge that has not been unmerged. A function, not a constant, so
- * the file builds no SQL at import time — a module-scope `and(...)` runs
- * before a test's `@op/db/client` mock is in place.
+ * A `merged` edge that has not been unmerged. Built lazily, not as a constant:
+ * module-scope SQL runs before a test's `@op/db/client` mock is in place.
  */
 const isLiveMergeEdge = (): SQL =>
   and(
     eq(proposalRelationships.relationshipType, ProposalRelationshipType.MERGED),
     isNull(proposalRelationships.deletedAt),
+  )!;
+
+/**
+ * Join condition for the live `merged` edge leading away from a proposal. The
+ * partial unique index allows at most one, so a `leftJoin` cannot fan out.
+ */
+export const liveMergeEdgeFrom = (sourceProposalId: Column | SQL): SQL =>
+  and(
+    eq(proposalRelationships.sourceProposalId, sourceProposalId),
+    isLiveMergeEdge(),
   )!;
 
 /** A live `merged` edge pointing *at* `targetProposalId`. */
@@ -161,39 +170,16 @@ export async function findLiveMergedEdge({
 }
 
 /**
- * How many likes each of `targetProfileIds` carries over from the proposals
- * merged into it. Every read that reports a proposal's like count adds this on
- * top of the proposal's own, so the number covers the whole merged idea rather
- * than only the proposal that survived.
- *
- * Two deliberate limits, both of which also reach `aggregateProposalMetrics`
- * and therefore the pipeline's `voteData.likesCount` sort:
- *
- * 1. Direct sources only, matching the set `listContributingProposals` shows,
- *    so a proposal's total is the sum over exactly the contributing ideas its
- *    page lists. `mergeProposals` does allow chains, and in A→B→C the likes on
- *    A reach no listing — the same shape as A's comments and A's card, which
- *    stop at B. Making likes transitive on their own would report a number the
- *    page cannot account for; making all three transitive is a product call
- *    about what a merge means, not one this roll-up should settle.
- * 2. Likes are summed, not deduplicated by liker, so someone who liked two of
- *    the merged proposals counts twice. That is what keeps the client's
- *    optimistic bump honest — it moves the count by one per like and unlike,
- *    and collapsing duplicate likers would make the next read disagree with
- *    it — at the cost of over-weighting overlapping support when the pipeline
- *    ranks on this number.
- *
- * `commentsCount` has the same structural gap and is deliberately left alone:
- * `listProposalComments` carries merged comments into the feed while the count
- * beside it still reads only the proposal's own.
+ * Likes carried over from the proposals merged directly into each of
+ * `targetProfileIds`, for callers to add to the proposal's own count. Both
+ * direct-only (chains stop at one level) and summed rather than counted per
+ * liker are deliberate.
  */
 export async function getMergedLikeCounts({
   targetProfileIds,
   db: dbClient = db,
 }: {
-  /** The profile of each proposal to roll likes up into. */
   targetProfileIds: string[];
-  /** A transaction, so the carried-over likes share the caller's snapshot. */
   db?: DbClient;
 }): Promise<Map<string, number>> {
   if (targetProfileIds.length === 0) {
@@ -208,8 +194,6 @@ export async function getMergedLikeCounts({
       likes: countFn(),
     })
     .from(proposalRelationships)
-    // Inner joins throughout: the composite foreign keys guarantee both ends
-    // are proposals of this decision, and every proposal owns a profile.
     .innerJoin(
       proposals,
       eq(proposals.id, proposalRelationships.targetProposalId),
@@ -232,9 +216,7 @@ export async function getMergedLikeCounts({
       and(
         inArray(proposals.profileId, targetProfileIds),
         isLiveMergeEdge(),
-        // A deleted or detached source is gone for everyone, its likes with it.
-        // Visibility is deliberately not applied: one proposal must not report
-        // a different total to an admin than it does on the results page.
+        // Presence only, not visibility: the total must not differ per viewer.
         isNull(sourceProposals.deletedAt),
         isNull(sourceProposals.moderationDetachedAt),
       ),

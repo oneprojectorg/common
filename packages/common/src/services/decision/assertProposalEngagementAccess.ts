@@ -1,20 +1,20 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
+import {
+  processInstances,
+  proposalRelationships,
+  proposals,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { decisionPermission } from './permissions';
-import { findLiveMergedEdge } from './proposalSupersession';
+import { liveMergeEdgeFrom } from './proposalSupersession';
 
 type ProposalEngagementTarget = {
   proposalId: string;
   processInstanceId: string;
-  /**
-   * The proposal this one was merged into, or `null` when it still stands on
-   * its own. A merged-away proposal stays likeable, and its likes roll up into
-   * this one, so the caller has a second page to invalidate.
-   */
   mergedIntoProposalId: string | null;
 };
 
@@ -37,15 +37,22 @@ export async function assertProposalEngagementAccess({
   user: User | undefined;
   profileId: string;
 }): Promise<ProposalEngagementTarget> {
-  const proposal = await db.query.proposals.findFirst({
-    where: { profileId },
-    columns: { id: true, processInstanceId: true },
-    with: {
-      processInstance: {
-        columns: { profileId: true, ownerProfileId: true },
-      },
-    },
-  });
+  const [proposal] = await db
+    .select({
+      id: proposals.id,
+      processInstanceId: proposals.processInstanceId,
+      instanceProfileId: processInstances.profileId,
+      instanceOwnerProfileId: processInstances.ownerProfileId,
+      mergedIntoProposalId: proposalRelationships.targetProposalId,
+    })
+    .from(proposals)
+    .innerJoin(
+      processInstances,
+      eq(processInstances.id, proposals.processInstanceId),
+    )
+    .leftJoin(proposalRelationships, liveMergeEdgeFrom(proposals.id))
+    .where(eq(proposals.profileId, profileId))
+    .limit(1);
 
   if (!proposal) {
     throw new NotFoundError('Proposal', profileId);
@@ -53,7 +60,10 @@ export async function assertProposalEngagementAccess({
 
   await assertInstanceProfileAccess({
     user,
-    instance: proposal.processInstance,
+    instance: {
+      profileId: proposal.instanceProfileId,
+      ownerProfileId: proposal.instanceOwnerProfileId,
+    },
     profilePermissions: { decisions: decisionPermission.SUBMIT_PROPOSALS },
     orgFallbackPermissions: [
       { decisions: decisionPermission.SUBMIT_PROPOSALS },
@@ -61,17 +71,9 @@ export async function assertProposalEngagementAccess({
     ],
   });
 
-  // Costs one indexed lookup on every like and follow. The alternative is a
-  // count that silently drifts: `getMergedLikeCounts` folds this proposal's
-  // likes into whatever it was merged into, so that page has to hear about it.
-  const mergedEdge = await findLiveMergedEdge({
-    processInstanceId: proposal.processInstanceId,
-    sourceProposalId: proposal.id,
-  });
-
   return {
     proposalId: proposal.id,
     processInstanceId: proposal.processInstanceId,
-    mergedIntoProposalId: mergedEdge?.targetProposalId ?? null,
+    mergedIntoProposalId: proposal.mergedIntoProposalId,
   };
 }

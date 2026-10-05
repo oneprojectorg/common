@@ -31,8 +31,6 @@ export const removeProposalRelationshipRouter = router({
         authUserId: ctx.user.id,
       });
 
-      // Mirrors `addProposalRelationship`: an unlike on a merged-away proposal
-      // drops a like out of the total the proposal it merged into reports.
       ctx.registerMutationChannels([
         Channels.decisionProposal(processInstanceId, proposalId),
         ...(mergedIntoProposalId

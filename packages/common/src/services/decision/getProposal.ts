@@ -174,9 +174,6 @@ export const getProposal = async ({
 
   // Run engagement counts and document fetch in parallel
   const [engagementCounts, documentContentMap] = await Promise.all([
-    // The same reader the proposal cards use, so the detail page and the list
-    // never disagree. Only the counts are read here; the viewer's own like and
-    // follow state comes from `profile.getRelationships` on the client.
     getProposalEngagementCounts(proposal.profileId),
 
     // Fetch document content. Mark a failed fetch as 'unavailable' rather
@@ -255,10 +252,9 @@ export const getProposal = async ({
 };
 
 /**
- * A proposal's comment, like and follower counts — the three the detail page
- * renders. Deliberately drops the viewer's own like/follow state the shared
- * reader also computes: this read has no viewer, and reporting `false` would
- * claim "not liked" where the honest answer is "not asked".
+ * The detail page's counts, through the same reader the cards use. Drops that
+ * reader's viewer state: this read has no viewer, and `false` would claim
+ * "not liked" where the honest answer is "not asked".
  */
 async function getProposalEngagementCounts(profileId: string | null) {
   if (!profileId) {
@@ -268,7 +264,6 @@ async function getProposalEngagementCounts(profileId: string | null) {
   const relationshipData = await getProposalRelationshipData({
     profileIds: [profileId],
   });
-  // The map carries an entry per requested id, so this never falls through.
   const counts = relationshipData.get(profileId);
 
   return {
