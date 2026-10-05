@@ -166,16 +166,26 @@ export async function findLiveMergedEdge({
  * top of the proposal's own, so the number covers the whole merged idea rather
  * than only the proposal that survived.
  *
- * Direct sources only, the same set `listContributingProposals` shows, so the
- * total is the sum over exactly the contributing ideas the proposal's page
- * lists. `commentsCount` has the same structural gap and is not fixed here:
+ * Two deliberate limits, both of which also reach `aggregateProposalMetrics`
+ * and therefore the pipeline's `voteData.likesCount` sort:
+ *
+ * 1. Direct sources only, matching the set `listContributingProposals` shows,
+ *    so a proposal's total is the sum over exactly the contributing ideas its
+ *    page lists. `mergeProposals` does allow chains, and in A→B→C the likes on
+ *    A reach no listing — the same shape as A's comments and A's card, which
+ *    stop at B. Making likes transitive on their own would report a number the
+ *    page cannot account for; making all three transitive is a product call
+ *    about what a merge means, not one this roll-up should settle.
+ * 2. Likes are summed, not deduplicated by liker, so someone who liked two of
+ *    the merged proposals counts twice. That is what keeps the client's
+ *    optimistic bump honest — it moves the count by one per like and unlike,
+ *    and collapsing duplicate likers would make the next read disagree with
+ *    it — at the cost of over-weighting overlapping support when the pipeline
+ *    ranks on this number.
+ *
+ * `commentsCount` has the same structural gap and is deliberately left alone:
  * `listProposalComments` carries merged comments into the feed while the count
  * beside it still reads only the proposal's own.
- *
- * Likes are summed rather than deduplicated by liker. One person who liked two
- * of the merged proposals counts twice, which is what keeps the client's
- * optimistic bump honest: it moves the count by one per like and unlike, and
- * collapsing duplicate likers would make the next read disagree with it.
  */
 export async function getMergedLikeCounts({
   targetProfileIds,
