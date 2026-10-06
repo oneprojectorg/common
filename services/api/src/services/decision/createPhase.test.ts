@@ -4,7 +4,6 @@ import {
   createPhase,
   deletePhase,
   renamePhase,
-  updatePhaseData,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
@@ -257,106 +256,6 @@ describe.concurrent('renamePhase', () => {
 
     await expect(
       renamePhase({ user, phaseId: randomUUID(), name: 'After' }),
-    ).rejects.toThrow(NotFoundError);
-  });
-});
-
-describe.concurrent('updatePhaseData', () => {
-  it('replaces the data blob', async ({ task, onTestFinished }) => {
-    const { instanceId, user, testData } = await setup(task, onTestFinished);
-
-    const { phase, profile } = await createPhase({
-      user,
-      processInstanceId: instanceId,
-      name: 'Review',
-      sortOrder: 0,
-      data: { phaseId: 'review' },
-    });
-    testData.trackProfileForCleanup(profile.id);
-
-    const updated = await updatePhaseData({
-      user,
-      phaseId: phase.id,
-      data: { phaseId: 'final-review' },
-    });
-
-    expect(updated.data).toEqual({ phaseId: 'final-review' });
-  });
-
-  it('rejects data with an empty phaseId and keeps the old data', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, user, testData } = await setup(task, onTestFinished);
-
-    const { phase, profile } = await createPhase({
-      user,
-      processInstanceId: instanceId,
-      name: 'Review',
-      sortOrder: 0,
-      data: { phaseId: 'review' },
-    });
-    testData.trackProfileForCleanup(profile.id);
-
-    await expect(
-      updatePhaseData({ user, phaseId: phase.id, data: { phaseId: '' } }),
-    ).rejects.toThrow();
-
-    const unchanged = await db.query.processPhases.findFirst({
-      where: { id: phase.id },
-      columns: { data: true },
-    });
-    expect(unchanged?.data).toEqual({ phaseId: 'review' });
-  });
-
-  it('rejects a member without decisions ADMIN and keeps the old data', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, instanceProfileId, organization, user, testData } =
-      await setup(task, onTestFinished);
-
-    const { phase, profile } = await createPhase({
-      user,
-      processInstanceId: instanceId,
-      name: 'Review',
-      sortOrder: 0,
-      data: { phaseId: 'review' },
-    });
-    testData.trackProfileForCleanup(profile.id);
-
-    const member = await testData.createMemberUser({
-      organization,
-      instanceProfileIds: [instanceProfileId],
-    });
-
-    await expect(
-      updatePhaseData({
-        user: member.user,
-        phaseId: phase.id,
-        data: { phaseId: 'hijacked' },
-      }),
-    ).rejects.toThrow(UnauthorizedError);
-
-    const unchanged = await db.query.processPhases.findFirst({
-      where: { id: phase.id },
-      columns: { data: true },
-    });
-    expect(unchanged?.data).toEqual({ phaseId: 'review' });
-  });
-
-  it('throws NotFoundError for an unknown phase', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { user } = await setup(task, onTestFinished);
-
-    await expect(
-      updatePhaseData({
-        user,
-        phaseId: randomUUID(),
-        data: { phaseId: 'review' },
-      }),
     ).rejects.toThrow(NotFoundError);
   });
 });

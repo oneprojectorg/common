@@ -140,39 +140,6 @@ export const renamePhase = async ({
 };
 
 /**
- * Replaces a phase's `data` blob. The whole blob is validated against
- * `phaseDataSchema`, so a write can never drop `phaseId`. Needs decisions
- * ADMIN on the instance's profile, like `createPhase`.
- */
-export const updatePhaseData = async ({
-  user,
-  phaseId,
-  data,
-  db = defaultDb,
-}: {
-  user: User;
-  phaseId: string;
-  data: PhaseData;
-  db?: DbClient;
-}): Promise<ProcessPhase> => {
-  const phaseData = phaseDataSchema.parse(data);
-
-  await getPhaseAsDecisionAdmin({ user, phaseId, db });
-
-  const [phase] = await db
-    .update(processPhases)
-    .set({ data: phaseData })
-    .where(eq(processPhases.id, phaseId))
-    .returning();
-
-  if (!phase) {
-    throw new CommonError('Failed to update phase data');
-  }
-
-  return phase;
-};
-
-/**
  * Deletes a phase by deleting its *profile* and letting the `ON DELETE
  * CASCADE` on `profile_id` take the phase row with it, the way
  * `deleteDecision` does. Deleting the phase row directly would leave the
