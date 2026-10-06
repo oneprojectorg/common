@@ -1,15 +1,18 @@
-import { type DbClient, db as defaultDb, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from "@op/db/client";
 import {
   EntityType,
   type ProcessPhase,
   type Profile,
   processPhases,
   profiles,
-} from '@op/db/schema';
-import { z } from 'zod';
+} from "@op/db/schema";
+import type { User } from "@op/supabase/lib";
+import { permission } from "access-zones";
+import { z } from "zod";
 
-import { CommonError, NotFoundError } from '../../utils';
-import { generateUniqueProfileSlug } from '../profile/utils';
+import { CommonError, NotFoundError } from "../../utils";
+import { assertProfileAccess } from "../assert";
+import { generateUniqueProfileSlug } from "../profile/utils";
 
 /**
  * The phase's `data` blob.
@@ -29,6 +32,7 @@ export const phaseDataSchema = z.object({
 export type PhaseData = z.infer<typeof phaseDataSchema>;
 
 export type CreatePhaseInput = {
+  user: User;
   processInstanceId: string;
   /** Stored on the profile, not on the phase row. */
   name: string;
@@ -43,16 +47,18 @@ export type CreatePhaseResult = {
 };
 
 /**
- * Creates a phase and the profile that carries its identity, in one
- * transaction, following `createProposal`.
+ * Creates a phase and the profile that carries its identity.
  *
- * Authorization is the caller's: manage resolves against the *process*
- * profile, not the phase, so the caller asserts there before reaching here —
- * the same contract `createDecisionRole` and `createDefaultDecisionRoles` work
- * under. It writes no grants: an open phase needs none, and invite-only grants
- * are direct permissions written when an invite is accepted (ADR 0006).
+ * Manage resolves against the *process* profile, not the phase, so the caller
+ * needs decisions ADMIN on the instance's profile. It writes no grants: an
+ * open phase needs none, and invite-only grants are direct permissions written
+ * when an invite is accepted (ADR 0006).
+ *
+ * It opens no transaction of its own. The profile and the phase row are two
+ * writes, so a caller that needs them atomic passes a transaction as `db`.
  */
 export const createPhase = async ({
+  user,
   processInstanceId,
   name,
   sortOrder,
@@ -61,34 +67,51 @@ export const createPhase = async ({
 }: CreatePhaseInput): Promise<CreatePhaseResult> => {
   const phaseData = phaseDataSchema.parse(data);
 
-  return db.transaction(async (tx) => {
-    const slug = await generateUniqueProfileSlug({ name, db: tx });
-
-    const [profile] = await tx
-      .insert(profiles)
-      .values({ type: EntityType.PHASE, name, slug })
-      .returning();
-
-    if (!profile) {
-      throw new CommonError('Failed to create phase profile');
-    }
-
-    const [phase] = await tx
-      .insert(processPhases)
-      .values({
-        processInstanceId,
-        sortOrder,
-        profileId: profile.id,
-        data: phaseData,
-      })
-      .returning();
-
-    if (!phase) {
-      throw new CommonError('Failed to create phase');
-    }
-
-    return { phase, profile };
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: { profileId: true },
   });
+
+  if (!instance) {
+    throw new NotFoundError("Decision", processInstanceId);
+  }
+
+  if (!instance.profileId) {
+    throw new CommonError("Decision profile not found");
+  }
+
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
+
+  const slug = await generateUniqueProfileSlug({ name, db });
+
+  const [profile] = await db
+    .insert(profiles)
+    .values({ type: EntityType.PHASE, name, slug })
+    .returning();
+
+  if (!profile) {
+    throw new CommonError("Failed to create phase profile");
+  }
+
+  const [phase] = await db
+    .insert(processPhases)
+    .values({
+      processInstanceId,
+      sortOrder,
+      profileId: profile.id,
+      data: phaseData,
+    })
+    .returning();
+
+  if (!phase) {
+    throw new CommonError("Failed to create phase");
+  }
+
+  return { phase, profile };
 };
 
 /**
@@ -110,7 +133,7 @@ export const renamePhase = async ({
   });
 
   if (!phase) {
-    throw new NotFoundError('Phase', phaseId);
+    throw new NotFoundError("Phase", phaseId);
   }
 
   const [profile] = await db
@@ -120,7 +143,7 @@ export const renamePhase = async ({
     .returning();
 
   if (!profile) {
-    throw new CommonError('Failed to rename phase');
+    throw new CommonError("Failed to rename phase");
   }
 
   return profile;
@@ -145,7 +168,7 @@ export const deletePhase = async ({
   });
 
   if (!phase) {
-    throw new NotFoundError('Phase', phaseId);
+    throw new NotFoundError("Phase", phaseId);
   }
 
   const [deleted] = await db
@@ -154,6 +177,6 @@ export const deletePhase = async ({
     .returning();
 
   if (!deleted) {
-    throw new CommonError('Failed to delete phase');
+    throw new CommonError("Failed to delete phase");
   }
 };
