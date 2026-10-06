@@ -139,12 +139,14 @@ stacking another. The blast radius from `scripts/blast-radius.ts`
 (`pnpm blast-radius` locally) travels with it.
 
 The PR report also shows how each changed file's worst CRAP moved, and calls
-out any file the change pushed over 30. That needs the merge base's own
-coverage, so `tests.yml` also runs on every push to dev and caches every file's
-score under the commit (`--write-scores`); a PR restores the entry for its merge
-base and diffs against it (`--base-scores`). If there is no entry (that push run
-failed or is still going, or the PR does not target dev), the report says so
-and leaves the change columns out.
+out any file the change pushed over 30. That needs dev's own coverage, so
+`tests.yml` also runs on pushes to dev — one at a time, each cancelling the
+last, so a burst of merges is scored once — and caches every file's score under
+the commit (`--write-scores`). A PR restores its merge base's set, else the
+newest one (`--base-scores`); files whose code differs between that commit and
+the merge base get no base score, and a set whose commit is not on dev is
+refused. No change is shown when there is no usable set or the PR's own tests
+failed. `pnpm test:scripts` covers the comparison and the rendering.
 
 Locally, run `pnpm health` after `pnpm test:coverage`; without a fresh report
 it says `CRAP: STALE` rather than reporting a green it cannot back up —

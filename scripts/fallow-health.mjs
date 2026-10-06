@@ -57,8 +57,10 @@ import {
   crapScores,
   crossings,
   inCrapScope,
+  movedSince,
   readCrapTrend,
   summarize,
+  withBaseScores,
 } from './lib/fallow-crap.mjs';
 
 const BASELINE = join(ROOT, 'configs', 'fallow', 'health-baseline.json');
@@ -203,13 +205,11 @@ const printRisky = (risky, changed) => {
 };
 
 /**
- * Every scored file's CRAP at the merge base, from `--base-scores`, or null
- * when there is none to read.
+ * The saved score set from `--base-scores`, or null when there is none to read.
  *
- * CRAP needs coverage, and coverage needs the merge base's own instrumented
- * run, so CI records these on each push to dev rather than re-running the suite
- * on the base inside every PR. A file absent from the set was either new or not
- * loaded by any test at the base; neither has a "before" worth printing.
+ * CRAP needs coverage, and coverage needs the base's own instrumented run, so
+ * CI records these on pushes to dev rather than re-running the suite on the
+ * base inside every PR.
  */
 const readBaseScores = () => {
   if (!baseScoresFrom || !existsSync(baseScoresFrom)) return null;
@@ -219,17 +219,6 @@ const readBaseScores = () => {
     return null;
   }
 };
-
-/**
- * A changed file's worst score at the merge base, and whether this change
- * pushed it over the line: under it at the base, at or above it now. A file
- * with no base score is never a crossing — it is already in `risky`, and
- * calling it one would claim a before we do not have.
- */
-const withBefore = (before = null, now) => ({
-  before,
-  crossed: before !== null && before < AT_RISK && now >= AT_RISK,
-});
 
 /**
  * The CRAP roll-up as data: the aggregates, the changed files in scope, the
@@ -260,23 +249,26 @@ const crapReport = () => {
     writeFileSync(writeScoresTo, `${JSON.stringify({ commit, files })}\n`);
   }
 
-  const { base, paths } = changedFiles(baseOverride);
+  const { base, baseCommit, paths } = changedFiles(baseOverride);
   const changed = paths.filter(inCrapScope);
   const risky = crossings(files, worst, changed);
   const stale = staleAmong(changed);
-  const baseScores = readBaseScores();
 
   // Every changed file the report could score, worst first. `risky` is the
   // slice of this at or above the line; the JSON consumer wants the rest too,
   // so it can name the worst function even when nothing is at risk.
-  const scored = changed
+  const ranked = changed
     .filter((path) => files[path] !== undefined)
-    .map((path) => ({
-      path,
-      ...worst[path],
-      ...(baseScores && withBefore(baseScores.files[path], files[path])),
-    }))
+    .map((path) => ({ path, ...worst[path] }))
     .sort((a, b) => b.crap - a.crap);
+
+  const baseScores = readBaseScores();
+  const moved =
+    baseScores &&
+    movedSince({ scoredCommit: baseScores.commit, baseRef: base, baseCommit });
+  const scored = moved
+    ? withBaseScores({ scored: ranked, baseFiles: baseScores.files, moved })
+    : ranked;
 
   const status =
     risky.length > 0 ? 'AT_RISK' : stale.length > 0 ? 'STALE' : 'OK';
@@ -290,7 +282,7 @@ const crapReport = () => {
     scored,
     risky,
     stale,
-    base_commit: baseScores?.commit ?? null,
+    base_commit: moved ? baseScores.commit : null,
     summary: summarize(files),
     trend: comparableTrend(),
     stats,

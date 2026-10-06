@@ -395,8 +395,50 @@ export const changedFiles = (explicitBase) => {
       .filter(Boolean),
   );
 
-  return { base: base?.ref ?? null, paths: [...paths] };
+  return {
+    base: base?.ref ?? null,
+    baseCommit: base?.commit ?? null,
+    paths: [...paths],
+  };
 };
+
+/**
+ * Files whose content differs between the commit a saved score set was taken
+ * on and the merge base, or null when the set cannot be used at all.
+ *
+ * Dev only records scores for the newest commit of a burst of merges, so a PR
+ * usually compares against a nearby dev commit rather than its exact merge
+ * base. That is sound per file as long as the file's code is the same at both:
+ * the files this returns are the ones where it is not. A commit that is not on
+ * the base branch is refused outright — the cache is writable from any run in
+ * the base branch's scope, so the set has to prove where it came from.
+ */
+export const movedSince = ({ scoredCommit, baseRef, baseCommit }) => {
+  if (!baseRef || !/^[0-9a-f]{40}$/.test(scoredCommit ?? '')) return null;
+  if (git(['merge-base', '--is-ancestor', scoredCommit, baseRef]) === null) {
+    return null;
+  }
+  const diff = git(['diff', '--name-only', scoredCommit, baseCommit]);
+  return diff === null ? null : new Set(diff.split('\n').filter(Boolean));
+};
+
+/**
+ * Each scored row with its file's worst CRAP at the base (`before`), and
+ * whether this change pushed it over the line: under it at the base, at or
+ * above it now. A file with no usable base score — new, untested there, or
+ * {@link movedSince} the scored commit — gets `before: null` and is never a
+ * crossing; it is already in `risky`, and calling it one would claim a before
+ * we do not have.
+ */
+export const withBaseScores = ({ scored, baseFiles, moved }) =>
+  scored.map((row) => {
+    const before = moved.has(row.path) ? null : (baseFiles[row.path] ?? null);
+    return {
+      ...row,
+      before,
+      crossed: before !== null && before < AT_RISK && row.crap >= AT_RISK,
+    };
+  });
 
 /**
  * The gate. Scoped files this change touched that sit at or above

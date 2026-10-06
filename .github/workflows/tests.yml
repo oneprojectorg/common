@@ -4,8 +4,8 @@ name: Tests
 # instrumented run. `pr-metrics.yml` publishes the artifact this job uploads.
 #
 # Pushes to dev run it too, only to save every file's CRAP score under the
-# commit's SHA: a PR's CRAP change is measured against its merge base, and the
-# base's coverage needs the base's own instrumented run.
+# commit's SHA: a PR's CRAP change is measured against dev, and dev's coverage
+# needs its own instrumented run.
 
 on:
   pull_request_target:
@@ -14,6 +14,13 @@ on:
 
 permissions:
   contents: read
+
+# Dev runs exist only to refresh the scores PRs compare against, so a burst of
+# merges needs just the newest: each push cancels the one still running. PR
+# runs keep a group of their own and are never cancelled from here.
+concurrency:
+  group: ${{ github.event_name == 'push' && 'tests-dev-crap-scores' || format('tests-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 jobs:
   test:
@@ -104,6 +111,7 @@ jobs:
         run: pnpm w:db migrate:test
 
       - name: Run tests with coverage
+        id: tests
         run: pnpm test:coverage
 
       - name: Record every file's CRAP score for PRs to diff against
@@ -133,16 +141,19 @@ jobs:
         continue-on-error: true
         run: echo "sha=$(git merge-base HEAD "$BASE_REF")" >> "$GITHUB_OUTPUT"
 
-      # Saved by this workflow's push run on the base commit. A miss (that push
-      # run failed, is still going, or the base is not dev) leaves the report
-      # without a change column rather than diffing against the wrong commit.
-      - name: Restore the merge base's CRAP scores
-        if: always() && steps.merge-base.outputs.sha != ''
+      # Prefers the scores saved on the merge base itself, else the newest dev
+      # set; `pnpm health` then drops any file whose code differs between the
+      # two, and refuses a set whose commit is not on dev. Skipped when this
+      # run's tests failed: their coverage is incomplete, and a Change column
+      # read off it would blame the PR for scores the failure moved.
+      - name: Restore dev's CRAP scores
+        if: always() && steps.tests.outcome == 'success' && steps.merge-base.outputs.sha != ''
         continue-on-error: true
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/crap-scores.json
           key: crap-scores-${{ steps.merge-base.outputs.sha }}
+          restore-keys: crap-scores-
 
       - name: Score CRAP on the changed files
         if: always() && github.event_name == 'pull_request_target'

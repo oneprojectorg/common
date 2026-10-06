@@ -44,6 +44,7 @@
     "health:full": "node ./scripts/fallow-health.mjs --full",
     "health:baseline": "node ./scripts/fallow-baseline.mjs",
     "health:trend": "node ./scripts/fallow-baseline.mjs --trend",
+    "test:scripts": "node --test 'scripts/**/*.test.mjs'",
     "i18n:check": "pnpm w:app i18n:check",
     "tmux": "bash scripts/tmux.sh",
     "typecheck": "turbo typecheck",

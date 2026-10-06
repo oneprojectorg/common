@@ -58,9 +58,14 @@ const readJson = (path) => {
 const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 const percent = (fraction) => `${Math.round(fraction * 100)}%`;
 const whole = (score) => String(Math.round(score));
+/**
+ * A score change, whole like the scores beside it — except under one point,
+ * where rounding would print `±0` next to a file that crossed the line.
+ */
 const signed = (delta) => {
-  const rounded = Math.round(delta);
-  return rounded > 0 ? `+${rounded}` : rounded < 0 ? `−${-rounded}` : '±0';
+  if (delta === 0) return '±0';
+  const size = Math.abs(delta);
+  return `${delta > 0 ? '+' : '−'}${size < 1 ? size.toFixed(1) : Math.round(size)}`;
 };
 
 /** One clause on the reach and the review-impact band. */
@@ -146,8 +151,8 @@ const crapSection = (crap, rowLimit = Infinity) => {
     }
     lines.push(
       baseCommit
-        ? `Base and Change compare each file's worst CRAP with the merge base \`${baseCommit.slice(0, 7)}\`; — means the file had no score there (new, or no test loaded it).`
-        : 'No saved CRAP scores for the merge base, so no change is shown; dev records them on every push.',
+        ? `Base and Change compare each file's worst CRAP at dev \`${baseCommit.slice(0, 7)}\`; — means no comparable score there (new, untested, or edited on dev since).`
+        : "No change shown: no usable saved scores for the base, or this run's tests failed and its coverage is incomplete.",
       '',
     );
   }
