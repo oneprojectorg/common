@@ -93,6 +93,21 @@ export function redactTwilioSids(value: string): string {
   return value.replace(TWILIO_SID, REDACTED_TWILIO_SID);
 }
 
+/** Every Twilio SID in `value`, in the order it appears. */
+export function findTwilioSids(value: string): string[] {
+  return value.match(TWILIO_SID) ?? [];
+}
+
+/**
+ * A SID reduced to its type and last four characters, as a log attribute.
+ * After a credential rotation an operator needs to see which account or
+ * service Twilio was called with, and four hex characters identify one
+ * against the Console without reconstructing it.
+ */
+export function fingerprintTwilioSid(sid: string): string {
+  return `${sid.slice(0, 2)}…${sid.slice(-4)}`;
+}
+
 function redactCandidate(candidate: string): string {
   let end = candidate.length;
   while (end > 0 && TRAILING_PUNCTUATION.has(candidate.charAt(end - 1))) {

@@ -1,4 +1,6 @@
 import {
+  findTwilioSids,
+  fingerprintTwilioSid,
   logger,
   redactPhoneNumbers,
   redactTwilioSids,
@@ -39,6 +41,26 @@ export const getTwilioErrorCode = (
 ): number | undefined => {
   const code = message?.match(TWILIO_ERROR_URL)?.[1];
   return code ? Number(code) : undefined;
+};
+
+/**
+ * Log attributes naming the account and the service Twilio was called with,
+ * when its message names them. Each is a fingerprint, never the SID: enough
+ * to confirm a rotation against the Console, nothing that reconstructs it.
+ */
+export const getTwilioSidFingerprints = (
+  message: string | undefined,
+): { twilioAccountSid?: string; twilioServiceSid?: string } => {
+  const sids = message ? findTwilioSids(message) : [];
+  const accountSid = sids.find((sid) => sid.startsWith('AC'));
+  const serviceSid = sids.find(
+    (sid) => sid.startsWith('VA') || sid.startsWith('MG'),
+  );
+
+  return {
+    ...(accountSid && { twilioAccountSid: fingerprintTwilioSid(accountSid) }),
+    ...(serviceSid && { twilioServiceSid: fingerprintTwilioSid(serviceSid) }),
+  };
 };
 
 /**
@@ -86,6 +108,7 @@ export const createSupabaseOtpStrategy = ({
       code: error.code,
       status: error.status,
       twilioCode,
+      ...getTwilioSidFingerprints(error.message),
       diagnostic,
     });
 

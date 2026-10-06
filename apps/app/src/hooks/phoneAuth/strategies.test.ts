@@ -1,7 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 
-import { createSupabaseOtpStrategy, getTwilioErrorCode } from './supabaseOtp';
+import {
+  createSupabaseOtpStrategy,
+  getTwilioErrorCode,
+  getTwilioSidFingerprints,
+} from './supabaseOtp';
 
 const PHONE = '+15005550006';
 
@@ -31,6 +35,34 @@ describe('getTwilioErrorCode', () => {
   it('reads nothing from a message without a Twilio error URL', () => {
     expect(getTwilioErrorCode('slow down')).toBeUndefined();
     expect(getTwilioErrorCode(undefined)).toBeUndefined();
+  });
+});
+
+describe('getTwilioSidFingerprints', () => {
+  /**
+   * Given Twilio's message naming the Verify service and the account
+   * When the fingerprints are read for the log
+   * Then the account and the service each land under their own attribute
+   */
+  it('reads the account and service fingerprints as separate attributes', () => {
+    const accountSid = `AC${'01234567'.repeat(4)}`;
+    const verifySid = `VA${'89abcdef'.repeat(4)}`;
+
+    expect(
+      getTwilioSidFingerprints(
+        `Resource /v2/Services/${verifySid}/Verifications not found for account ${accountSid}`,
+      ),
+    ).toEqual({ twilioAccountSid: 'AC…4567', twilioServiceSid: 'VA…cdef' });
+  });
+
+  /**
+   * Given a message naming no SID
+   * When the fingerprints are read
+   * Then no attribute is produced
+   */
+  it('reads nothing from a message without a SID', () => {
+    expect(getTwilioSidFingerprints('slow down')).toEqual({});
+    expect(getTwilioSidFingerprints(undefined)).toEqual({});
   });
 });
 

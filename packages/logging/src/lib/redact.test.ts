@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { redactEmails, redactPhoneNumbers, redactTwilioSids } from './redact';
+import {
+  findTwilioSids,
+  fingerprintTwilioSid,
+  redactEmails,
+  redactPhoneNumbers,
+  redactTwilioSids,
+} from './redact';
 
 describe('redactEmails', () => {
   it('keeps the domain and drops the local part', () => {
@@ -157,6 +163,31 @@ describe('redactTwilioSids', () => {
     ).toBe(
       'The requested resource /v2/Services/[twilio-sid]/Verifications was not found for account [twilio-sid]',
     );
+  });
+
+  /**
+   * Given the same message
+   * When the SIDs are listed
+   * Then every SID comes back in the order it appears
+   */
+  it('finds every Twilio SID in a message', () => {
+    expect(
+      findTwilioSids(
+        `Resource /v2/Services/${VERIFY_SID}/Verifications not found for account ${ACCOUNT_SID}`,
+      ),
+    ).toEqual([VERIFY_SID, ACCOUNT_SID]);
+    expect(findTwilioSids('no sid here')).toEqual([]);
+  });
+
+  /**
+   * Given a SID
+   * When it is fingerprinted for a log attribute
+   * Then only its type and last four characters remain, enough to match it
+   * against the Console without reconstructing it
+   */
+  it('fingerprints a SID as its type and last four characters', () => {
+    expect(fingerprintTwilioSid(ACCOUNT_SID)).toBe('AC…4567');
+    expect(fingerprintTwilioSid(VERIFY_SID)).toBe('VA…cdef');
   });
 
   /**

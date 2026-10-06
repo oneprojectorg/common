@@ -122,12 +122,14 @@ The browser logs one record, `GoTrue refused to send a code`, from
 `apps/app/src/hooks/phoneAuth/supabaseOtp.ts`. It reaches PostHog as an
 exception with these attributes:
 
-| Attribute    | Value                                                                                                                                                                                                             |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `code`       | GoTrue's code, `sms_send_failed` for a provider refusal.                                                                                                                                                          |
-| `status`     | GoTrue's HTTP status, `422` for a provider refusal.                                                                                                                                                               |
-| `twilioCode` | The number at the end of Twilio's error URL. Absent when Twilio was not the cause.                                                                                                                                |
-| `diagnostic` | GoTrue's message with every phone number replaced by `[phone]` and every Twilio SID by `[twilio-sid]`. Twilio echoes the number it refused and names the account and service, so the raw message is never logged. |
+| Attribute          | Value                                                                                                                                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `code`             | GoTrue's code, `sms_send_failed` for a provider refusal.                                                                                                                                                          |
+| `status`           | GoTrue's HTTP status, `422` for a provider refusal.                                                                                                                                                               |
+| `twilioCode`       | The number at the end of Twilio's error URL. Absent when Twilio was not the cause.                                                                                                                                |
+| `twilioAccountSid` | The account Twilio was called with, as `AC…1234` (type and last four characters). Present when Twilio's message names it. Compare with the Console to confirm a rotation.                                         |
+| `twilioServiceSid` | The Verify or Messaging service, as `VA…1234` or `MG…1234`. Present when Twilio's message names it.                                                                                                               |
+| `diagnostic`       | GoTrue's message with every phone number replaced by `[phone]` and every Twilio SID by `[twilio-sid]`. Twilio echoes the number it refused and names the account and service, so the raw message is never logged. |
 
 Look up `twilioCode` at `https://www.twilio.com/docs/errors/<code>`. The
 ones Verify returns most:
