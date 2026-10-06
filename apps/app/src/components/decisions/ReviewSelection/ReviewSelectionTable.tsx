@@ -1,5 +1,3 @@
-'use client';
-
 import { formatCurrency } from '@/utils/formatting';
 import {
   type ProposalWithAggregates,

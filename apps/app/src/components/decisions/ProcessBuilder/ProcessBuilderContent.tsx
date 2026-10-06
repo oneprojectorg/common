@@ -1,5 +1,3 @@
-'use client';
-
 import { useUser } from '@/utils/UserProvider';
 
 import { useTranslations } from '@/lib/i18n';

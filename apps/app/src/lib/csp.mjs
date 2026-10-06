@@ -1,8 +1,7 @@
 /**
- * Content-Security-Policy construction, shared by the two places that emit it:
- * `src/proxy.ts` for dynamically rendered routes, `next.config.mjs` for the
- * routes it skips. Plain `.mjs` so `next.config.mjs` can import it before any
- * TypeScript transform runs.
+ * Content-Security-Policy construction for the request middleware in
+ * `src/start.ts`, which picks one policy per page response: the nonce policy,
+ * or the static one for the routes below.
  *
  * No response may carry both policies — two CSP headers are intersected, and a
  * nonce-free policy intersected with a nonce policy blocks every script.
@@ -14,21 +13,15 @@ const CSP_REPORT_GROUP = 'csp-endpoint';
 export const REPORTING_ENDPOINTS_HEADER = `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`;
 
 /**
- * Routes served the static policy. `/info/*` is `force-static`, so its HTML is
- * built once with no request to mint a nonce from; `/login` sits outside
- * `app/[locale]`, so the proxy would redirect it to a nonexistent `/en/login`.
+ * Routes served the static policy. They sit outside the proxy, which never
+ * mints them a nonce: `/info/*` is public legal copy, and `/login` sits outside
+ * `/$locale`, so the proxy would redirect it to a nonexistent `/en/login`.
  */
 const STATIC_POLICY_PREFIXES = ['/login', '/info'];
 
-export const STATIC_POLICY_SOURCES = STATIC_POLICY_PREFIXES.map(
-  (prefix) => `${prefix}/:path*`,
-);
-
 /**
- * Whether `next.config.mjs` already covers this path, so the proxy can decline.
- * Matched here rather than trusting the two patterns to stay disjoint: Next
- * compiles `config.matcher` case-sensitively but matches `headers()` sources
- * case-insensitively, so `/Login` reaches both.
+ * Whether this path is served the static policy rather than a nonce. Matched
+ * case-insensitively, so `/Login` gets the same policy as `/login`.
  *
  * @param {string} pathname
  * @returns {boolean}
@@ -159,7 +152,7 @@ export const buildStaticContentSecurityPolicy = (environment) =>
     environment,
   );
 
-/** Matches Next's nonce grammar in `get-script-nonce-from-header`. */
+/** 128 random bits, base64-encoded. */
 export const createCspNonce = () => {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -177,22 +170,22 @@ export const getStaticCspHeader = () => ({
 });
 
 /**
- * The proxy stamps the same policy on the forwarded request headers and on the
- * response, so the nonce is minted once here and closed over.
+ * A fresh nonce policy. The middleware sends `key`/`value` as the response
+ * header and hands `nonce` to the router, which stamps it on every script it
+ * renders — so the two always agree.
  *
- * @returns {(headers: Headers) => Headers}
+ * @returns {{ key: string, value: string, nonce: string }}
  */
-export const createCspHeaderApplier = () => {
-  const name = getCspHeaderName();
-  const policy = buildNonceContentSecurityPolicy({
-    nonce: createCspNonce(),
-    isLocalEnvironment: isLocalEnvironment(),
-    isPreviewDeployment: isPreviewDeployment(),
-  });
+export const createNonceCspHeader = () => {
+  const nonce = createCspNonce();
 
-  return (headers) => {
-    headers.set(name, policy);
-
-    return headers;
+  return {
+    key: getCspHeaderName(),
+    value: buildNonceContentSecurityPolicy({
+      nonce,
+      isLocalEnvironment: isLocalEnvironment(),
+      isPreviewDeployment: isPreviewDeployment(),
+    }),
+    nonce,
   };
 };

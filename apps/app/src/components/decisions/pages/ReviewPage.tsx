@@ -1,5 +1,3 @@
-'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';

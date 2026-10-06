@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
@@ -16,7 +14,6 @@ import {
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/sense/Toast';
-import { notFound } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import {
   type ReactNode,
@@ -30,6 +27,7 @@ import {
 } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
+import { notFound } from '@/lib/navigation';
 
 import { withYesNoDefaults } from '../rubricTemplate';
 

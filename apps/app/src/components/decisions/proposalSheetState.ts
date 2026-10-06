@@ -1,5 +1,3 @@
-'use client';
-
 import { isPlainLeftClick } from '@/utils/isPlainLeftClick';
 import { type MouseEvent, createContext, useCallback, useContext } from 'react';
 

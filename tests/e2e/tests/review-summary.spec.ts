@@ -772,9 +772,9 @@ test.describe('Review Summary page', () => {
       { waitUntil: 'domcontentloaded' },
     );
 
-    // The route lives under /decisions/[slug]/..., so Next.js resolves the
-    // nearest forbidden.tsx — the decision-scoped one, not the root locale
-    // one. Its copy is "You don't have access to this page".
+    // The route lives under /decisions/$slug/..., so the router renders the
+    // decision-scoped no-access screen, not the locale-wide one. Its copy is
+    // "You don't have access to this page".
     await expect(
       page.getByRole('heading', {
         name: "You don't have access to this page",

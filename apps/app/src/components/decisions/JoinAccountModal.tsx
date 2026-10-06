@@ -1,5 +1,3 @@
-'use client';
-
 import {
   getClaimEmailErrorMessage,
   getClaimPhoneErrorMessage,
@@ -22,11 +20,11 @@ import {
 } from '@op/sense/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { usePathname } from '@/lib/navigation';
 
 import {
   AuthCodeField,
@@ -156,7 +154,7 @@ const JoinAccountModalContent = () => {
   // Same flag the login screen gates its phone channel on, so the two agree
   // about whether SMS exists at all.
   const smsEnabled = useFeatureFlag('sms-login') ?? false;
-  // next/navigation (not the i18n router): the locale prefix must stay — the
+  // @/lib/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
 

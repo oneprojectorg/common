@@ -1,5 +1,3 @@
-'use client';
-
 import type { MapDefaultView, ProposalTemplateSchema } from '@op/common/client';
 import {
   getLocationFieldMapView,

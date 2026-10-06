@@ -1,5 +1,3 @@
-'use client';
-
 import { useUser } from '@/utils/UserProvider';
 import { LuCircleHelp } from 'react-icons/lu';
 

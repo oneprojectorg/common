@@ -1,5 +1,3 @@
-'use client';
-
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';

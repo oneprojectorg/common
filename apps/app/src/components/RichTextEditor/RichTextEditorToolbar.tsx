@@ -1,5 +1,3 @@
-'use client';
-
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';

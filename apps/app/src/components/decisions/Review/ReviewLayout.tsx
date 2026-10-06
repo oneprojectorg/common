@@ -1,19 +1,10 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
-import { CommonError } from '@op/common';
-import {
-  getPhaseReviewSettings,
-  getPreviousPhases,
-  type ReviewSettings,
-} from '@op/common/client';
+import { parseDehydratedState } from '@op/api/dehydratedState';
+import type { ReviewSettings } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
-import { forbidden, notFound } from 'next/navigation';
+import { HydrationBoundary } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
@@ -22,71 +13,31 @@ import { ReviewRubricForm } from './ReviewRubricForm';
 import type { PreviousReviewPhase } from './ReviewTabs';
 import { ReviewTranslationProvider } from './ReviewTranslationContext';
 
-interface ReviewLayoutProps {
+export interface ReviewLayoutProps {
   decisionSlug: string;
   assignmentId: string;
+  reviewSettings: ReviewSettings;
+  previousReviewPhases: PreviousReviewPhase[];
+  /** The assignment read on the server, which the review form hydrates from. */
+  dehydratedState: string;
 }
 
-export async function ReviewLayout({
+/** The reviewer's split-pane review screen. Its data comes from `loadReviewLayout`. */
+export function ReviewLayout({
   decisionSlug,
   assignmentId,
+  reviewSettings,
+  previousReviewPhases,
+  dehydratedState,
 }: ReviewLayoutProps) {
-  const [t, client, { utils, queryClient }] = await Promise.all([
-    getTranslations(),
-    createClient(),
-    createServerUtils(),
-  ]);
-
-  let reviewSettings: ReviewSettings;
-  let previousReviewPhases: PreviousReviewPhase[];
-  try {
-    const [decisionProfile, reviewAssignment] = await Promise.all([
-      client.decision.getDecisionBySlug({ slug: decisionSlug }),
-      utils.decision.getReviewAssignment.fetch({ assignmentId }),
-    ]);
-
-    const instanceData = decisionProfile.processInstance.instanceData;
-    const assignmentPhaseId = reviewAssignment.assignment.phaseId;
-
-    // Throws NotFoundError when the assignment's phase is no longer in the
-    // instance's phase list (stale assignment) — mapped to notFound() below.
-    reviewSettings = getPhaseReviewSettings(instanceData, assignmentPhaseId);
-
-    // Earlier review phases whose `openReviews` keeps their reviews readable
-    // from this screen. Strictly before the assignment's phase in the
-    // instance's phase ordering, so the phase this screen reviews in never
-    // doubles up with its own "Other reviews" tab.
-    previousReviewPhases = getPreviousPhases(instanceData, assignmentPhaseId)
-      .filter((phase) => {
-        const settings = getPhaseReviewSettings(instanceData, phase.phaseId);
-        return settings.submit && settings.openReviews;
-      })
-      .map((phase) => ({
-        id: phase.phaseId,
-        name: phase.name ?? phase.phaseId,
-      }));
-  } catch (error) {
-    // tRPC errors carry the CommonError in `cause`; local throws are the error itself.
-    const cause =
-      error instanceof CommonError
-        ? error
-        : error instanceof Error
-          ? error.cause
-          : null;
-    if (
-      cause instanceof CommonError &&
-      (cause.statusCode === 401 || cause.statusCode === 403)
-    ) {
-      forbidden();
-    }
-    if (cause instanceof CommonError && cause.statusCode === 404) {
-      notFound();
-    }
-    throw error;
-  }
+  const t = useTranslations();
+  const hydrationState = useMemo(
+    () => parseDehydratedState(dehydratedState),
+    [dehydratedState],
+  );
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <HydrationBoundary state={hydrationState}>
       <ReviewFormProvider
         assignmentId={assignmentId}
         decisionSlug={decisionSlug}

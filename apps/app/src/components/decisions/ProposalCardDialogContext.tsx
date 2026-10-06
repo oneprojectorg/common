@@ -1,5 +1,3 @@
-'use client';
-
 import type { Proposal } from '@op/common/client';
 import {
   type ReactNode,

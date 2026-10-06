@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormatter } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { useFormatter } from 'use-intl';
 
 import useMount from './useMount';
 

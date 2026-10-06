@@ -5,7 +5,8 @@ import {
   OPURLConfig,
   isOnPreviewAppDomain,
 } from '@op/core';
-import { logger } from '@op/logging';
+import { createIsomorphicFn } from '@tanstack/react-start';
+import { getRequestHeader } from '@tanstack/react-start/server';
 import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchStreamLink,
@@ -14,8 +15,8 @@ import {
   splitLink,
 } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
+import posthog from 'posthog-js';
 import type { PostHog } from 'posthog-js';
-import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
 import { unwrapResponseWithChannels } from './channelTransformer';
@@ -53,7 +54,15 @@ function buildChannelQueryKey(path: string, input: unknown): TRPCQueryKey {
   return [splitPath, { input: inputWithoutPagination }];
 }
 
-const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
+/**
+ * During a server render, the incoming request's cookies — with any session
+ * the proxy just refreshed — so tRPC calls made while rendering act as the
+ * visitor. The browser sends its own cookies.
+ */
+const getServerRenderCookies = createIsomorphicFn()
+  .server(() => getRequestHeader('cookie'))
+  .client(() => undefined);
+
 const isServer = typeof window === 'undefined';
 
 // Read a value off the loaded posthog-js client, guarding against SSR and the
@@ -64,9 +73,7 @@ function readPostHog<T>(read: (posthog: PostHog) => T): T | null {
   }
 
   try {
-    // Dynamic import to avoid server-side issues with posthog-js
-    const posthog: PostHog = require('posthog-js').default;
-    if (posthog?.__loaded) {
+    if (posthog.__loaded) {
       return read(posthog);
     }
   } catch {
@@ -97,10 +104,10 @@ const trpcUrl =
 /**
  * Create a fetch function that handles SSR cookies
  *
- * During SSR: Decrypts the encrypted cookies and adds them to the request headers
+ * During SSR: forwards the request's cookies
  * In browser: Uses credentials: 'include' to send cookies normally
  */
-function createFetchWithSSRCookies(encryptedCookies?: string) {
+function createFetchWithSSRCookies() {
   return async (
     url: URL | RequestInfo,
     options?: RequestInit,
@@ -123,20 +130,11 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
       headers.set('x-posthog-session-id', sessionId);
     }
 
-    // On server: decrypt SSR cookies and add to headers
+    // On server: forward the request's cookies
     // On browser: use credentials: 'include' (cookies sent automatically)
-    if (isServer && encryptedCookies) {
-      try {
-        const cookies = await readSSROnlySecret(
-          encryptedCookies,
-          SSR_SECRETS_KEY_VAR,
-        );
-        if (cookies) {
-          headers.set('cookie', cookies);
-        }
-      } catch (error) {
-        logger.error('Failed to decrypt SSR cookies', { error });
-      }
+    const serverRenderCookies = getServerRenderCookies();
+    if (serverRenderCookies) {
+      headers.set('cookie', serverRenderCookies);
     }
 
     return fetch(url, {
@@ -223,14 +221,9 @@ export function createChannelRegistrationLink(): TRPCLink<AppRouter> {
   };
 }
 
-/**
- * Create tRPC links with optional SSR cookie support
- *
- * @param encryptedCookies - Encrypted cookie string from Server Component
- *                           (created with cloakSSROnlySecret)
- */
-export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
-  const fetchFn = createFetchWithSSRCookies(encryptedCookies);
+/** Create tRPC links that act as the visitor during a server render too. */
+export function createLinks(): TRPCLink<AppRouter>[] {
+  const fetchFn = createFetchWithSSRCookies();
 
   return [
     ...(!envURL.IS_PRODUCTION

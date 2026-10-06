@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus } from '@op/api/encoders';
 import { PAGE_LIMIT } from '@op/common/client';

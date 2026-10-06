@@ -1,5 +1,3 @@
-'use client';
-
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';

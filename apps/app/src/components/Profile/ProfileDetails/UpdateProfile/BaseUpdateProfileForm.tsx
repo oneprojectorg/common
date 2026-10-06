@@ -7,12 +7,12 @@ import { BannerUploader } from '@op/sense/BannerUploader';
 import { DialogFooter } from '@op/sense/Dialog';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
-import { useRouter } from 'next/navigation';
 import { ReactNode, Suspense, forwardRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
+import { useRouter } from '@/lib/navigation';
 
 import { FormContainer } from '../../../form/FormContainer';
 import { useAppForm } from '../../../form/utils';

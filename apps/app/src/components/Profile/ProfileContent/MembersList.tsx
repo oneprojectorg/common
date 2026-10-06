@@ -1,5 +1,3 @@
-'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
@@ -13,7 +11,7 @@ import { Header2 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { toast } from '@op/sense/Toast';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';

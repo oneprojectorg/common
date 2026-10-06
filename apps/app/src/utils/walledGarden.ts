@@ -1,10 +1,11 @@
 import type { CommonUser } from '@op/api/encoders';
 import { isSafeRedirectPath } from '@op/common/client';
-import { headers } from 'next/headers';
-import { forbidden, redirect } from 'next/navigation';
+import '@tanstack/react-start/server-only';
+import { forbidden, redirect } from '@/lib/navigation';
 
 /**
- * The walled-garden gate. Use in the layout of any closed-network route group.
+ * The walled-garden gate. Call it from the server function behind the
+ * `beforeLoad` of any closed-network route.
  *
  * - No session (or an anonymous one) → redirect to login (preserving the
  *   attempted path so the user lands back there after signing in): logging in
@@ -15,13 +16,14 @@ import { forbidden, redirect } from 'next/navigation';
  * `allowNonMembers` admits a real (non-anonymous) account that isn't a network
  * member — used by the promote/anon-upgrade onboarding. Anonymous still redirects.
  */
-export async function assertWalledGardenAccess(
+export function assertWalledGardenAccess(
   user: CommonUser | null | undefined,
-  { allowNonMembers = false }: { allowNonMembers?: boolean } = {},
-) {
+  {
+    pathname,
+    allowNonMembers = false,
+  }: { pathname: string; allowNonMembers?: boolean },
+): asserts user is CommonUser {
   if (!user || user.isAnonymous) {
-    const pathname = (await headers()).get('x-pathname');
-
     redirect(
       isSafeRedirectPath(pathname)
         ? `/login?redirect=${encodeURIComponent(pathname)}`

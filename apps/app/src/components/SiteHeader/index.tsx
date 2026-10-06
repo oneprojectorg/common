@@ -1,5 +1,3 @@
-'use client';
-
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
 import { Button } from '@op/sense/Button';

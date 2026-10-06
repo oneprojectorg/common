@@ -1,5 +1,3 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { RouterOutput } from '@op/api';
@@ -19,11 +17,10 @@ import { OptionBox } from '@op/sense/OptionBox';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { toast } from '@op/sense/Toast';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { useRouter } from '@/lib/navigation';
 
 // TODO: typing here needs to be fixed
 type AccountProfile =
@@ -203,11 +200,12 @@ const SelectProfileStep = ({
                     alt={profile.name ?? t('org.accountAvatarAlt')}
                     imageRender={
                       avatarUrl ? (
-                        <Image
+                        <img
                           src={getPublicUrl(avatarUrl) ?? ''}
-                          fill
-                          className="object-cover"
+                          className="absolute inset-0 size-full object-cover"
                           alt={profile.name ?? t('org.accountAvatarAlt')}
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : undefined
                     }
@@ -272,11 +270,12 @@ const ConfirmProfileStep = ({
             alt={profileToDelete.name ?? t('org.accountAvatarAlt')}
             imageRender={
               avatarUrl ? (
-                <Image
+                <img
                   src={getPublicUrl(avatarUrl) ?? ''}
-                  fill
-                  className="object-cover"
+                  className="absolute inset-0 size-full object-cover"
                   alt={profileToDelete.name ?? t('org.accountAvatarAlt')}
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : undefined
             }

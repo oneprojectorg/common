@@ -1,5 +1,3 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { PAGE_LIMIT } from '@op/common/client';
@@ -7,8 +5,8 @@ import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Card } from '@op/sense/Card';
 import { GrowingFacePile } from '@op/sense/FacePile';
 import { cn } from '@op/sense/lib/utils';
-import { useTranslations } from 'next-intl';
 import { ReactNode, Suspense } from 'react';
+import { useTranslations } from 'use-intl';
 
 import { Link } from '@/lib/i18n';
 

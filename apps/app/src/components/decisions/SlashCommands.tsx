@@ -1,5 +1,3 @@
-'use client';
-
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { Suggestion, SuggestionOptions } from '@tiptap/suggestion';

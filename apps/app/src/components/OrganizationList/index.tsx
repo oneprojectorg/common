@@ -1,5 +1,3 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { Card } from '@op/sense/Card';
@@ -7,7 +5,6 @@ import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { getGradientForString } from '@op/styles/constants';
-import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
 
@@ -73,11 +70,12 @@ export const OrganizationList = ({
                     <ImageHeader
                       headerImage={
                         headerUrl ? (
-                          <Image
+                          <img
                             src={headerUrl}
                             alt=""
-                            fill
-                            className="object-cover"
+                            className="absolute inset-0 size-full object-cover"
+                            loading="lazy"
+                            decoding="async"
                           />
                         ) : (
                           <div
@@ -87,11 +85,12 @@ export const OrganizationList = ({
                       }
                       avatarImage={
                         avatarUrl ? (
-                          <Image
+                          <img
                             src={avatarUrl}
                             alt=""
-                            fill
-                            className="object-cover"
+                            className="absolute inset-0 size-full object-cover"
+                            loading="lazy"
+                            decoding="async"
                           />
                         ) : (
                           <div className={cn('h-full w-full', gradientBg)} />

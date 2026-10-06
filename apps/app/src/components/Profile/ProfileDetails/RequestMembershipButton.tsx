@@ -1,5 +1,3 @@
-'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';

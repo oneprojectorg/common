@@ -1,5 +1,3 @@
-'use client';
-
 import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
 import type { IconType } from 'react-icons';
 import {

@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
 import type { ReactNode } from 'react';

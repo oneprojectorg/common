@@ -1,5 +1,3 @@
-'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { usePhoneLoginFlow } from '@/hooks/usePhoneLoginFlow';
 import { trpc } from '@op/api/client';
@@ -12,11 +10,11 @@ import { Spinner } from '@op/sense/Spinner';
 import { CheckIcon } from '@op/sense/icons';
 import { cn } from '@op/sense/lib/utils';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import { useSearchParams } from '@/lib/navigation';
 
 import { ButtonLink } from '@/components/ButtonLink';
 import { WaitlistSignup } from '@/components/WaitlistSignup';

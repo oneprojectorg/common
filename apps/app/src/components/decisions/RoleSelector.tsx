@@ -1,5 +1,3 @@
-'use client';
-
 import { BadgeNumber } from '@op/sense/Badge';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@op/sense/Tabs';

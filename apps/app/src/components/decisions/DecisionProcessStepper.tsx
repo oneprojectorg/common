@@ -1,9 +1,7 @@
-'use client';
-
 import { type ProcessPhase } from '@op/api/encoders';
 import { type Phase, PhaseStepper } from '@op/sense/PhaseStepper';
-import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

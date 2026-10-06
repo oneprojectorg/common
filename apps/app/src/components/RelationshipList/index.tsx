@@ -1,12 +1,9 @@
-'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { Header2 } from '@op/sense/Header';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import { cn } from '@op/sense/lib/utils';
 import { getGradientForString } from '@op/styles/constants';
-import Image from 'next/image';
 import React from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -42,7 +39,13 @@ export const ProfileAvatar = ({
     className,
   );
   const avatarImage = avatarUrl ? (
-    <Image src={avatarUrl} alt="" fill className="object-cover" />
+    <img
+      src={avatarUrl}
+      alt=""
+      className="absolute inset-0 size-full object-cover"
+      loading="lazy"
+      decoding="async"
+    />
   ) : (
     <div className={cn('h-full w-full', gradientBg)} />
   );

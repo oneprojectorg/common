@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 
 import { useTranslations } from '@/lib/i18n';

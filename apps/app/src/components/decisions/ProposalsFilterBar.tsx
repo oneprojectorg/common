@@ -1,5 +1,3 @@
-'use client';
-
 import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';

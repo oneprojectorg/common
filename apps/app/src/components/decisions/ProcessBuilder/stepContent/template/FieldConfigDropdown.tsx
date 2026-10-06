@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { Input } from '@op/sense/Input';
 import { DragHandle, Sortable } from '@op/sense/Sortable';

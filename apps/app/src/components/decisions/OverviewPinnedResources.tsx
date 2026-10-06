@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Header3 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';

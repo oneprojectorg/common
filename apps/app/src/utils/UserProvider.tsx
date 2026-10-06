@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { CommonUser } from '@op/api/encoders';
 import { createSBBrowserClient } from '@op/supabase/client';

@@ -1,10 +1,8 @@
-'use client';
-
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
 import { Header2 } from '@op/sense/Header';
-import { useParams } from 'next/navigation';
+import { useParams } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -37,7 +35,7 @@ const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
 };
 
 const LegacyDecisionProcessList = ({ profileId }: { profileId: string }) => {
-  const { slug } = useParams();
+  const { slug } = useParams({ strict: false });
   const [{ items: instances }] =
     trpc.decision.listLegacyInstances.useSuspenseQuery({
       ownerProfileId: profileId,

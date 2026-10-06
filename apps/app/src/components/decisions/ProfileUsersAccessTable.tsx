@@ -1,5 +1,3 @@
-'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { trpc } from '@op/api/client';
 import type { ProfileInvite } from '@op/api/encoders';

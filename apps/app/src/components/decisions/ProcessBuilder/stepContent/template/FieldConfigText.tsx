@@ -1,5 +1,3 @@
-'use client';
-
 import { NumberField } from '@op/sense/NumberField';
 
 import { useTranslations } from '@/lib/i18n';

@@ -15,14 +15,24 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 
 Monorepo with `apps/`, `packages/`, and `services/` — directory names are self-describing; the non-obvious ones:
 
-- **`apps/app`**: main Next.js frontend (App Router, React 19, Tailwind, Zustand)
-- **`apps/api`**: Next.js server that hosts the tRPC API; the routers, procedures, and middleware live in `services/api` (`@op/api`)
+- **`apps/app`**: main frontend — TanStack Start (Vite + Nitro), React 19, Tailwind, Zustand. See "TanStack Start app" below
+- **`apps/api`**: TanStack Start server (server routes only) that hosts the tRPC API; the routers, procedures, and middleware live in `services/api` (`@op/api`)
 - **`@op/common`** (`packages/common`): shared business logic and service layer
 - **`@op/db`** (`services/db`): Drizzle ORM schema, migrations, and database client
 
 Architecture decisions are recorded as ADRs — the numbered files matching `docs/adr/[0-9]*.md`. Read them before you propose a structural change. Say so when one contradicts your task; do not work around it. An absent ADR does not mean the area is unconstrained: the set is still filling up, and the rules in this file stay binding. [`docs/adr/README.md`](docs/adr/README.md) defines when to write one and in what format. Follow it, not an ADR convention from a skill.
 
 ## Key Technical Details
+
+### TanStack Start app (`apps/app`)
+
+Deployed to Vercel through Nitro's `vercel` preset; `vite build` writes `.output/` locally (`node .output/server/index.mjs` runs it).
+
+- **Routes** are file-based in `apps/app/src/routes` (`$locale` is the locale segment; `_main` / `_noHeader` are the pathless walled-garden and public groups). `src/routeTree.gen.ts` is generated and committed — `vite dev`/`vite build` regenerate it, or run `pnpm w:app routes:generate` after adding, moving or renaming a route file
+- **Server data** comes from route `loader`s calling server functions (`createServerFn`) defined in `*.functions.ts` files. A route component is isomorphic, so never import a server-only module (`@op/api/serverClient`, `@op/api/server`, `@op/db`, anything marked `@tanstack/react-start/server-only`) into one — only call it from inside a server function's handler
+- **Request middleware** lives in `src/start.ts` (CSP, security headers, CSRF, the 403 status for forbidden pages); session refresh and the locale redirect are in `src/proxy.ts`
+- **Navigation helpers**: `@/lib/navigation` (`useRouter`, `usePathname`, `useSearchParams`, `notFound()`, `redirect()`, `forbidden()` — each throws when it must) for full hrefs; `@/lib/i18n` (`Link`, `useRouter`, `usePathname`, `redirect`) for app-absolute hrefs that pick up the current locale
+- **Page titles**: a route's `head` returns `meta: [pageTitle(title)]` from `@/lib/head`, which applies the site-wide `Page | Common` pattern
 
 ### UI Component System
 
@@ -80,16 +90,16 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 - **ALWAYS** wrap user-facing strings with `t('...')` — never hardcode user-facing text
 - **A feature string lives in that feature's namespace under a camelCase ID that names its role, not its wording** (ADR 0005): `const t = useTranslations('onboarding')` then `t('fullName')`, with the English copy as the value in `en.json`. A string belongs to the feature that owns the concept even when another screen reads it
 - **A shared label keeps its English text as the key at the top level** — `Cancel`, `Back`, `Email`, `No results` — but only if it is at most four words and holds no `{`, `<` or `.`. Anything longer is a sentence a feature owns
-- **No key contains a period**, at any depth — next-intl reads one as a path separator
-- **Client components**: `const t = useTranslations('ns')`. **Server components**: `const t = await getTranslations({ locale, namespace: 'ns' })`, or `getTranslations('ns')` in a request-scoped call. Import both from `@/lib/i18n`, which types them from `en.json`
-- **For dynamic values**, use interpolation: `t('greeting', { name: userName })` and `t.rich()` for strings that are broken up with styles/components. next-intl types the values each key needs, so a missing or misspelt one is a compile error
+- **No key contains a period**, at any depth — use-intl reads one as a path separator
+- **Components**: `const t = useTranslations('ns')`. **Outside React** (a loader, a route's `head`, a server route): `const t = await getTranslations({ locale, namespace: 'ns' })` — the locale is required, usually `params.locale`. Import both from `@/lib/i18n` (built on use-intl), which types them from `en.json`
+- **For dynamic values**, use interpolation: `t('greeting', { name: userName })` and `t.rich()` for strings that are broken up with styles/components. use-intl types the values each key needs, so a missing or misspelt one is a compile error
 - **Check the dictionaries**: key parity, the naming rules and message formatting are unit tests in `apps/app/src/lib/i18n/dictionaries.test.ts` (`pnpm w:app test`). `pnpm i18n:check [<ref>]` diffs against `origin/dev` (CI: the PR's base branch): a key whose English value changed must change in every other locale, so a copy edit can't leave the seven translations stale.
 
 ### Logging
 
 - **Never log through `console.*`.** All logging must go through our loggers so it always reports to PostHog:
   - **Server** (services, `@op/common`, tRPC procedures, workflows): `import { logger } from '@op/logging'` — emits OpenTelemetry logs that ship to PostHog. Inside a tRPC procedure prefer `ctx.logger` (adds request context).
-  - **Client / browser** (`apps/app`, `'use client'` code): `import { logger } from '@op/logging/client'` — reports to PostHog (`captureException` for `error`/`warn`) and also writes to the console.
+  - **Client / browser** (`apps/app` components and isomorphic code): `import { logger } from '@op/logging/client'` — reports to PostHog (`captureException` for `error`/`warn`) and also writes to the console.
 - Use `logger.error(message, { error })` for caught errors (pass the caught error under the `error` key), and `logger.warn` / `logger.info` for everything else.
 - **Never log a raw client IP**, or anything else that identifies a person directly (email, token, request body) — records land in PostHog and an IP is personal data. See "What not to log" in `packages/logging/README.md`.
 

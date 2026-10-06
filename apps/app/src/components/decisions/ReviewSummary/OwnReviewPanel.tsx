@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { ReviewSettings } from '@op/common/client';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';

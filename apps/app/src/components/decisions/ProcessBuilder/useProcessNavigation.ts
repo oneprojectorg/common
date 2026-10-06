@@ -1,5 +1,3 @@
-'use client';
-
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo } from 'react';
 

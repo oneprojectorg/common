@@ -58,7 +58,7 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 
 ### Applications (`apps/`)
 
-- **`apps/app`**: Main Next.js 15 frontend
+- **`apps/app`**: Main TanStack Start frontend
 - **`apps/api`**: tRPC API server
 
 ### Packages (`packages/`)

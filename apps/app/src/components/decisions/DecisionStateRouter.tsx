@@ -1,8 +1,7 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
-import { notFound } from 'next/navigation';
+
+import { notFound } from '@/lib/navigation';
 
 import { ProposalSheetProvider } from './ProposalSheetProvider';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';

@@ -1,5 +1,3 @@
-'use client';
-
 import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 

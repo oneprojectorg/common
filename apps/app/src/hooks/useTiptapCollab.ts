@@ -1,5 +1,3 @@
-'use client';
-
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { getAvatarColorForString } from '@op/styles/constants';

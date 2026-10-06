@@ -1,5 +1,3 @@
-'use client';
-
 import type { SurveyInternalData } from '@op/api';
 import { trpc } from '@op/api/client';
 import { useMediaQuery } from '@op/hooks';
@@ -33,8 +31,8 @@ import {
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
-import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

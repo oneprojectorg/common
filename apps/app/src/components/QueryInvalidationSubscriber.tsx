@@ -1,5 +1,3 @@
-'use client';
-
 import { clearPersistedQueryCache } from '@op/api/client';
 import type { ChannelName, RegistryEvents } from '@op/common/realtime';
 import { queryChannelRegistry } from '@op/common/realtime';

@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Spinner } from '@op/sense/Spinner';
 import { ReactNode, Suspense } from 'react';

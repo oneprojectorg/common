@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { Dialog, DialogTrigger } from '@op/sense/Dialog';
 import { useState } from 'react';

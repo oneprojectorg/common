@@ -1,13 +1,5 @@
 {
-  "extends": "@op/typescript-config/nextjs.json",
-  "include": [
-    "next-env.d.ts",
-    "next.config.mjs",
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.js",
-    "**/*.jsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": ["node_modules", ".next"]
+  "extends": "@op/typescript-config/bundler.json",
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mjs"],
+  "exclude": ["node_modules", ".output", ".nitro", ".tanstack"]
 }

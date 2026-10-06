@@ -1,5 +1,3 @@
-'use client';
-
 import type { PostFeedUser } from '@/utils/optimisticUpdates';
 import { togglePostLike } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';

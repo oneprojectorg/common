@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { Proposal, ResultNotificationMessages } from '@op/common/client';
 import { templateCollectsBudget } from '@op/common/client';

@@ -1,5 +1,3 @@
-'use client';
-
 import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { RichTextViewer } from '@op/sense/RichTextEditor';

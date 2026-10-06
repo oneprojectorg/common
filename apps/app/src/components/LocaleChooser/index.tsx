@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import {
   DropdownMenu,
@@ -8,7 +6,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
-import { useParams } from 'next/navigation';
+import { useParams } from '@tanstack/react-router';
 import { LuGlobe } from 'react-icons/lu';
 
 import { usePathname, useTranslations } from '@/lib/i18n';
@@ -39,19 +37,17 @@ const localeDisplayNames: Record<Locale, string> = {
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations('shell');
   const pathname = usePathname();
-  const params = useParams();
-  const localeParam = params.locale;
-  const currentLocale =
-    (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
+  const currentLocale = useParams({
+    strict: false,
+    select: (params) => params.locale ?? '',
+  });
 
   const handleValueChange = (value: string) => {
     if (value && value !== currentLocale) {
-      // Hard navigation (not the client router) so the server applies the
-      // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
-      // as a next.config rewrite, so a client-side transition to `/es/columbus`
-      // can't resolve them and bounces anonymous viewers to /login. A full load
-      // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
-      // so the reload is negligible.
+      // Hard navigation (not the client router): the whole document — its
+      // lang, dir and dictionary — follows the locale, and a full load also
+      // keeps a vanity decision URL like `/columbus` pretty. Locale changes
+      // are rare, so the reload is negligible.
       window.location.assign(`/${value}${pathname}`);
     }
     onClose?.();

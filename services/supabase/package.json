@@ -19,8 +19,8 @@
     "@op/core": "workspace:*",
     "@supabase/ssr": "catalog:",
     "@supabase/supabase-js": "catalog:",
-    "cookie": "^1.0.2",
-    "next": "catalog:"
+    "@tanstack/react-start": "1.168.60",
+    "cookie": "^1.0.2"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

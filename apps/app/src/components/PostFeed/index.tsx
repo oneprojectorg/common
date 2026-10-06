@@ -1,5 +1,3 @@
-'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
@@ -29,10 +27,9 @@ import { MediaDisplay } from '@op/sense/MediaDisplay';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useLocale } from 'next-intl';
-import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { LuEllipsis, LuFlag, LuLeaf } from 'react-icons/lu';
+import { useLocale } from 'use-intl';
 
 import type { TranslateFn } from '@/lib/i18n';
 import { Link, useTranslations } from '@/lib/i18n';
@@ -157,11 +154,12 @@ const AttachmentImage = ({
 
   return (
     <div className="relative flex h-fit w-full items-center justify-center rounded bg-secondary text-white">
-      <Image
+      <img
         src={getPublicUrl(storageObjectName) ?? ''}
         alt={fileName}
-        fill={true}
-        className="!relative size-full object-cover"
+        className="!relative absolute inset-0 size-full object-cover"
+        loading="lazy"
+        decoding="async"
       />
     </div>
   );

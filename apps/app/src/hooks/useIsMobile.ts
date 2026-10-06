@@ -1,5 +1,3 @@
-'use client';
-
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 

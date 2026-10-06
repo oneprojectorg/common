@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';

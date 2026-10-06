@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { SYSTEM_FIELD_KEYS } from '@op/common/client';
 import type {

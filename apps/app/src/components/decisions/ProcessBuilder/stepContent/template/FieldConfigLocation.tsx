@@ -1,5 +1,3 @@
-'use client';
-
 import { Header4 } from '@op/sense/Header';
 import { useRef } from 'react';
 

@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { cn } from '@op/sense/lib/utils';
 

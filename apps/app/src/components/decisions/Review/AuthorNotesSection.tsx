@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { Suspense, useMemo, useState } from 'react';

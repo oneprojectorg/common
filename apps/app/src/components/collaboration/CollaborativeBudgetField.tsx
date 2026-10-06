@@ -1,5 +1,3 @@
-'use client';
-
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
 import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';

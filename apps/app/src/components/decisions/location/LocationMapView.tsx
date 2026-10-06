@@ -1,5 +1,3 @@
-'use client';
-
 import type { LocationData } from '@op/common/client';
 
 import { useTranslations } from '@/lib/i18n';

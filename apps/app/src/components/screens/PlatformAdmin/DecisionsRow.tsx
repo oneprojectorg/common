@@ -1,5 +1,3 @@
-'use client';
-
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
 import { Button } from '@op/sense/Button';
@@ -10,8 +8,8 @@ import {
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
 import { TableCell } from '@op/sense/Table';
-import { useFormatter } from 'next-intl';
 import { LuEllipsis } from 'react-icons/lu';
+import { useFormatter } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';

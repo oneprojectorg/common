@@ -1,5 +1,3 @@
-'use client';
-
 import { formatCurrency } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { cn } from '@op/sense/lib/utils';

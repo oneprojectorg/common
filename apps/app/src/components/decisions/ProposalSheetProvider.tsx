@@ -1,5 +1,3 @@
-'use client';
-
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { parseAsString, useQueryState } from 'nuqs';
 import { type ReactNode, useCallback, useMemo } from 'react';

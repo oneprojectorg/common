@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';

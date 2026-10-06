@@ -1,5 +1,3 @@
-'use client';
-
 // viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
 // re-exports a hook (useEffect) and importing it from a server-rendered tree
 // breaks the RSC build. Keep this subpath import — it has regressed before.

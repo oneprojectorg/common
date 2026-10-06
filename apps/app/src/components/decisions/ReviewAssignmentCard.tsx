@@ -1,5 +1,3 @@
-'use client';
-
 import { type DecisionAccess } from '@op/api/encoders';
 import {
   type ProposalReviewAggregates,

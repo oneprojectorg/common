@@ -5,14 +5,15 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "build": "next build",
-    "build:e2e": "next build",
-    "build:prod": "cd ../../services/db &&  pnpm run migrate && cd ../../apps/api && next build",
-    "dev": "next dev -p 3300",
-    "dev:e2e": "next dev -p 4300",
+    "build": "vite build",
+    "build:e2e": "vite build",
+    "build:prod": "cd ../../services/db &&  pnpm run migrate && cd ../../apps/api && vite build",
+    "dev": "vite dev --port 3300",
+    "dev:e2e": "vite dev --port 4300",
     "format:check": "oxfmt --check",
-    "start": "next start",
-    "start:e2e": "next start -p 4300",
+    "routes:generate": "node scripts/generate-route-tree.mjs",
+    "start": "PORT=3300 node --env-file-if-exists=../../../.env.local --env-file-if-exists=../../.env.local --env-file-if-exists=.env .output/server/index.mjs",
+    "start:e2e": "PORT=4300 node --env-file-if-exists=../../../.env.local --env-file-if-exists=../../.env.local --env-file-if-exists=.env .output/server/index.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -22,19 +23,21 @@
     "@op/logging": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/workflows": "workspace:*",
+    "@tanstack/react-router": "1.170.41",
+    "@tanstack/react-start": "1.168.60",
     "@trpc/server": "11.6.0",
+    "@vercel/functions": "^2.1.0",
     "dotenv": "^16.4.7",
-    "next": "catalog:",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "@tailwindcss/postcss": "4.1.8",
-    "postcss": "^8.5.3",
-    "tailwindcss": "4.1.8",
-    "typescript": "7.0.2"
+    "@vitejs/plugin-react": "^6.1.2",
+    "nitro": "3.0.260903-beta",
+    "typescript": "7.0.2",
+    "vite": "^8.3.3"
   },
   "engines": {
     "node": "24.x"

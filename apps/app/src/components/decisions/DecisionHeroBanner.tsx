@@ -1,5 +1,4 @@
 import { getPublicUrl } from '@/utils';
-import Image from 'next/image';
 import { ReactNode } from 'react';
 
 /**
@@ -39,15 +38,14 @@ export function DecisionHeroBackgroundImage({
 }) {
   return (
     <>
-      <Image
+      <img
         src={imageUrl}
         alt=""
-        fill
         // 6px blur per design; scale-105 hides the translucent rim the blur
         // pulls in at the edges (the container clips the overflow).
-        className="scale-105 object-cover blur-[6px]"
-        // The banner is above the fold — opt out of lazy-loading.
-        priority
+        className="absolute inset-0 size-full scale-105 object-cover blur-[6px]"
+        fetchPriority="high"
+        decoding="async"
       />
       {/* Dark scrim so the white banner text stays legible over arbitrary
           photos. */}

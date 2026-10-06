@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { Proposal, RejectionReason } from '@op/common/client';
 import { toast } from '@op/sense/Toast';

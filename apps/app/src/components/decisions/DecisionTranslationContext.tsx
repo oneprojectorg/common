@@ -1,5 +1,3 @@
-'use client';
-
 import type { PostTranslation, ResourceTranslation } from '@op/common/client';
 import {
   type Dispatch,

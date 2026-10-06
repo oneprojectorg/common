@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type {
   AdminDecisionReviewer,
@@ -16,9 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from '@op/sense/Table';
-import { useFormatter } from 'next-intl';
 import { Fragment, useState } from 'react';
 import { LuChevronDown, LuChevronRight, LuDownload } from 'react-icons/lu';
+import { useFormatter } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

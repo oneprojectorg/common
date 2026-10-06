@@ -36,8 +36,8 @@ export function parsePosthogDistinctId(
 
 /**
  * Extract the PostHog distinct id from a raw `Cookie` request header. For
- * contexts without a cookie-parsing helper (e.g. the `onRequestError`
- * instrumentation hook, which only sees `request.headers`).
+ * contexts without a cookie-parsing helper (e.g. `reportRequestError`,
+ * which only sees `request.headers`).
  */
 export function getPosthogDistinctIdFromCookieHeader(
   cookieHeader: string | null | undefined,
@@ -56,7 +56,7 @@ export function getPosthogDistinctIdFromCookieHeader(
     }
     const rawValue = part.slice(separator + 1).trim();
     // decodeURIComponent throws URIError on malformed percent-encoding, and this
-    // runs in the onRequestError hook where an uncaught throw would drop the
+    // runs in `reportRequestError` where an uncaught throw would drop the
     // very error log we are trying to link. Fail soft to no distinct id.
     let decoded: string;
     try {

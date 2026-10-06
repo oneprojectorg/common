@@ -1,5 +1,3 @@
-'use client';
-
 import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { trpc } from '@op/api/client';
 import {
@@ -9,8 +7,8 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

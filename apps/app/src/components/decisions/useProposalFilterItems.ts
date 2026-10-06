@@ -1,5 +1,3 @@
-'use client';
-
 import { ProposalFilter } from '@op/api/encoders';
 
 import { useTranslations } from '@/lib/i18n';

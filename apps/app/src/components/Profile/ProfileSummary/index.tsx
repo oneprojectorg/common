@@ -1,5 +1,3 @@
-'use client';
-
 import { skipBatch, trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Header1 } from '@op/sense/Header';

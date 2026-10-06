@@ -1,5 +1,3 @@
-'use client';
-
 import { posthogUIHost } from '@op/core';
 import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';

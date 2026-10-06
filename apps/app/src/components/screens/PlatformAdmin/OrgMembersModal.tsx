@@ -1,5 +1,3 @@
-'use client';
-
 import type { AdminOrg } from '@op/api/encoders';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Badge } from '@op/sense/Badge';

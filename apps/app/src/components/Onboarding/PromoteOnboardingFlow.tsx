@@ -1,5 +1,3 @@
-'use client';
-
 import { useCompleteOnboarding } from '@/hooks/useCompleteOnboarding';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
@@ -8,11 +6,11 @@ import { logger } from '@op/logging/client';
 import { Spinner } from '@op/sense/Spinner';
 import { StepperProgressIndicator } from '@op/sense/Stepper';
 import { toast } from '@op/sense/Toast';
-import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import { useSearchParams } from '@/lib/navigation';
 
 import {
   MultiStepForm,

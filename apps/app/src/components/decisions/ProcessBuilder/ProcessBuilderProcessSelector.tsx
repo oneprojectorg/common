@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { DecisionProcess } from '@op/api/encoders';
 import { Avatar } from '@op/sense/Avatar';

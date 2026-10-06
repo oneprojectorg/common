@@ -1,5 +1,3 @@
-'use client';
-
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';

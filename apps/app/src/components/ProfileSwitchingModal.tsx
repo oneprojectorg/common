@@ -1,10 +1,7 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Spinner } from '@op/sense/Spinner';
-import Image from 'next/image';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -44,11 +41,12 @@ export const ProfileSwitchingModal = ({
               className="size-full"
               imageRender={
                 avatarUrl ? (
-                  <Image
+                  <img
                     src={avatarUrl}
                     alt={switchingTo}
-                    fill
-                    className="object-cover"
+                    className="absolute inset-0 size-full object-cover"
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : undefined
               }

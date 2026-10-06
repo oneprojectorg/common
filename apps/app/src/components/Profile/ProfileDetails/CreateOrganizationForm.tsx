@@ -1,5 +1,3 @@
-'use client';
-
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
@@ -9,11 +7,11 @@ import { BannerUploader } from '@op/sense/BannerUploader';
 import { DialogFooter } from '@op/sense/Dialog';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { useRouter } from '@/lib/navigation';
 
 import { createOrganizationFormValidator } from '@/components/Onboarding/shared/organizationValidation';
 import { sendOnboardingAnalytics } from '@/components/Onboarding/utils';

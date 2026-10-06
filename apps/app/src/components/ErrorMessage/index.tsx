@@ -1,5 +1,3 @@
-'use client';
-
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

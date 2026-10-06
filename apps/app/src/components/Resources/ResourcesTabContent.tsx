@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Accordion } from '@op/sense/Accordion';
 import { Button } from '@op/sense/Button';

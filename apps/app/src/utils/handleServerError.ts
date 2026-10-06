@@ -1,10 +1,11 @@
 import { CommonError } from '@op/common';
-import { forbidden, notFound } from 'next/navigation';
+
+import { forbidden, notFound } from '@/lib/navigation';
 
 /**
- * Translate a server-side fetch error into the correct Next.js navigation
- * interrupt so unresolved resources render an accurate status page instead of
- * a generic 500.
+ * Translate a server-side fetch error into the matching not-found / forbidden
+ * throw so unresolved resources render an accurate status page instead of a
+ * generic 500.
  *
  * tRPC's server caller re-throws procedure errors with the original
  * `CommonError` attached as `error.cause`, so we inspect that:
@@ -12,15 +13,15 @@ import { forbidden, notFound } from 'next/navigation';
  *   - 401/403 → forbidden()
  *   - anything else → rethrow (a genuine 500)
  *
- * Call it from a server component / loader catch block:
+ * Call it from a loader or server function catch block:
  *   try {
  *     return await fetchThing(id);
  *   } catch (error) {
  *     handleServerError(error);
  *   }
  *
- * The return type is `never`: it always either triggers a navigation interrupt
- * or rethrows.
+ * The return type is `never`: it always throws — not-found, forbidden, or the
+ * original error.
  */
 export function handleServerError(error: unknown): never {
   const cause = error instanceof Error ? error.cause : null;

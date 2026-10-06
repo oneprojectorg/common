@@ -1,5 +1,3 @@
-'use client';
-
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
@@ -23,9 +21,9 @@ import {
 } from '@op/sense/Select';
 import { TableCell } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
-import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
+import { useFormatter } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

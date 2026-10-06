@@ -6,7 +6,6 @@ import {
   BreadcrumbSeparator,
 } from '@op/sense/Breadcrumb';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
-import React from 'react';
 
 import { OrganizationCardListSkeleton } from '@/components/OrganizationList';
 

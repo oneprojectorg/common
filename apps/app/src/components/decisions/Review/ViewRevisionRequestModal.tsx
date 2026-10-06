@@ -1,5 +1,3 @@
-'use client';
-
 import { useReviewForm } from './ReviewFormContext';
 import {
   RevisionRequestDialog,

@@ -1,5 +1,3 @@
-'use client';
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';

@@ -1,10 +1,11 @@
-'use client';
-
 import { Tabs, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { useSelectedLayoutSegment } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
+import { usePathname } from '@/lib/navigation';
+
+/** The router's pathname — a vanity URL already rewritten to `/decisions/…`. */
+const CURRENT_VIEW_PATH = /\/decisions\/[^/]+\/current(\/|$)/;
 
 interface DecisionViewToggleProps {
   /** Decision profile slug, used to build the two destination hrefs. */
@@ -15,13 +16,13 @@ interface DecisionViewToggleProps {
  * Segmented Overview / Current Phase switch shown in the decision header.
  * Each segment is a route link, so the toggle anchors the user as they move
  * between /decisions/[slug] and /decisions/[slug]/current. The active
- * segment comes from the router (the child segment under the shared layout),
- * so the toggle needs no per-page prop telling it which tab is active.
+ * segment comes from the router (the segment after the decision slug), so the
+ * toggle needs no per-page prop telling it which tab is active.
  */
 export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
   const t = useTranslations('decisions');
-  const segment = useSelectedLayoutSegment();
-  const activeView = segment === 'current' ? 'current' : 'overview';
+  const pathname = usePathname();
+  const activeView = CURRENT_VIEW_PATH.test(pathname) ? 'current' : 'overview';
 
   return (
     <Tabs value={activeView}>

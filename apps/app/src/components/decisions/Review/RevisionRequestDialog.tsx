@@ -1,5 +1,3 @@
-'use client';
-
 import { useRelativeTime } from '@op/hooks';
 import {
   AlertDialog,

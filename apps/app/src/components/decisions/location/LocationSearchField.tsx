@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { LocationData } from '@op/common/client';
 import { useDebounce } from '@op/hooks';

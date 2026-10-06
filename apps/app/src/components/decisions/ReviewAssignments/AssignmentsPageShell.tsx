@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { getTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 import { LocaleChooser } from '@/components/LocaleChooser';
 
 /** Shared shell: the Back + action row inside the content column, then the body. */
-export async function AssignmentsPageShell({
+export function AssignmentsPageShell({
   backHref,
   action,
   children,
@@ -16,7 +16,7 @@ export async function AssignmentsPageShell({
   action?: ReactNode;
   children: ReactNode;
 }) {
-  const t = await getTranslations();
+  const t = useTranslations();
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">

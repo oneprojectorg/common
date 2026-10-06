@@ -1,5 +1,3 @@
-'use client';
-
 import { usePhoneLogin } from '@/hooks/usePhoneLogin';
 import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
 import { useCallback, useState } from 'react';

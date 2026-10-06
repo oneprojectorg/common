@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
 import { PAGE_LIMIT } from '@op/common/client';

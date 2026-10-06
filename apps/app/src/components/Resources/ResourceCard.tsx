@@ -1,5 +1,3 @@
-'use client';
-
 import { formatDate } from '@/utils/formatting';
 import type { ResourceInCollection } from '@op/api/encoders';
 import { match, sanitizeUrl } from '@op/core/utils';

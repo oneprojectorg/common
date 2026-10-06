@@ -1,5 +1,3 @@
-'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';

@@ -113,8 +113,9 @@ const FALLBACK_WORKERS = 4;
 
 /** Runtime entrypoints, i.e. the files something outside the repo can call. */
 const ENTRYPOINT_PATTERNS: [RegExp, string][] = [
-  [/\/app\/.*\/(route|page|layout|opengraph-image|default)\.[jt]sx?$/, 'route'],
-  [/\/pages\/.*\.[jt]sx?$/, 'route'],
+  [/\/src\/routes\/.*\.[jt]sx?$/, 'route'],
+  [/\.functions\.[jt]sx?$/, 'route'],
+  [/\/src\/(start|router|proxy)\.[jt]sx?$/, 'route'],
   [/\/routers?\//, 'api'],
   [/\/services\/workflows\//, 'workflow'],
   [/\/(functions|handlers|jobs|tasks)\//, 'job'],

@@ -37,7 +37,7 @@ Tests run against a **pre-built production build**, not the dev server. This mak
 pnpm build:e2e
 ```
 
-This sets `E2E=true` and the required env vars, then runs `next build` for both `apps/app` (port 4100) and `apps/api` (port 4300).
+This sets `E2E=true` and the required env vars, then runs `vite build` for both `apps/app` (port 4100) and `apps/api` (port 4300). Each writes a self-contained Nitro server to its `.output/` directory.
 
 ### Step 2: Start servers
 
@@ -57,7 +57,7 @@ pnpm e2e:ui     # Playwright UI mode
 
 ### All-in-one (CI does this)
 
-In CI, the build step runs once and uploads `.next` artifacts. Test shards download them, start servers, then run:
+In CI, the build step runs once and uploads each app's `.output` directory as an artifact. Test shards download them, start servers, then run:
 
 ```bash
 pnpm build:e2e
@@ -86,7 +86,7 @@ Specs that exercise a background job — currently `proposals-export.spec.ts` �
 Playwright starts it via the `webServer` entry in `playwright.config.ts`, so there is nothing to do by hand. Two things worth knowing:
 
 - An already-running dev server on `:8288` is reused. Locally that is the only option — a second cannot start beside the one the `:3300` stack uses, because the executor's gRPC ports (50052/50053) are fixed. Specs `PUT` the serve URL to register the e2e app's functions into whichever server answers, so reuse needs no extra setup.
-- `start:e2e` sets `INNGEST_DEV=1`. That is what points the production build's SDK at `127.0.0.1:8288` instead of Inngest Cloud — `next start` runs as `NODE_ENV=production`, where the SDK otherwise assumes the hosted service.
+- `start:e2e` sets `INNGEST_DEV=1`. That is what points the production build's SDK at `127.0.0.1:8288` instead of Inngest Cloud — the built server (`node .output/server/index.mjs`) is a production build, where the SDK otherwise assumes the hosted service.
 
 Do **not** add a CI step to start it. The e2e workflow triggers on `pull_request_target`, so GitHub runs the workflow file from the base branch: a step added on a feature branch does not execute until it merges, and the two would then race for `:8288` once it did.
 

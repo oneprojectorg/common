@@ -1,5 +1,3 @@
-'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import type { ProposalEngagement as EngagementState } from '@/hooks/useProposalEngagement';
 import { formatDate } from '@/utils/formatting';

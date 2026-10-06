@@ -1,5 +1,3 @@
-'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import type { Profile } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';

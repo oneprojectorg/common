@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import type { Doc } from 'yjs';

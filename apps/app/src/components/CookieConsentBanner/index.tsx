@@ -1,5 +1,3 @@
-'use client';
-
 import { CookieBanner } from '@op/sense/CookieBanner';
 import { CookieBannerLink } from '@op/sense/CookieBannerLink';
 import type { ReactNode } from 'react';

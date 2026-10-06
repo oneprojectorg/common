@@ -1,5 +1,3 @@
-'use client';
-
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
@@ -21,12 +19,12 @@ import { MediaDisplay } from '@op/sense/MediaDisplay';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { useRouter } from '@/lib/navigation';
 
 import { LinkPreview } from '@/components/LinkPreview';
 

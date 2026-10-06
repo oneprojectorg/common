@@ -1,5 +1,3 @@
-'use client';
-
 import { cn } from '@op/sense/lib/utils';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 

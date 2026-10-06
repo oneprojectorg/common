@@ -1,5 +1,3 @@
-'use client';
-
 import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import {

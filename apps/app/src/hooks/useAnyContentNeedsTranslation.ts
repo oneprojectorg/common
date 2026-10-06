@@ -1,7 +1,5 @@
-'use client';
-
-import { useLocale } from 'next-intl';
 import { useMemo, useRef } from 'react';
+import { useLocale } from 'use-intl';
 
 import { baseLanguage, detectLanguages } from '@/lib/languageDetection';
 

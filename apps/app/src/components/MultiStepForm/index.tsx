@@ -1,8 +1,7 @@
-'use client';
-
-import { useRouter, useSearchParams } from 'next/navigation';
 import React, { ComponentType } from 'react';
 import { ZodSchema } from 'zod';
+
+import { useRouter, useSearchParams } from '@/lib/navigation';
 
 import { findFirstInvalidStepBefore } from './stepValidation';
 

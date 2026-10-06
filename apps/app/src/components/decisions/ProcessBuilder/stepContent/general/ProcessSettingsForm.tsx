@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Switch } from '@op/sense/Switch';

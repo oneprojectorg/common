@@ -1,5 +1,3 @@
-'use client';
-
 import { ProposalReviewRequestState } from '@op/common/client';
 
 import { ProposalComments } from '../ProposalComments';

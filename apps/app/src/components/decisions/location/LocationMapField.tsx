@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { LocationData, MapDefaultView } from '@op/common/client';
 import { Button } from '@op/sense/Button';

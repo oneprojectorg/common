@@ -1,5 +1,3 @@
-'use client';
-
 import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
 import { Spinner } from '@op/sense/Spinner';
 

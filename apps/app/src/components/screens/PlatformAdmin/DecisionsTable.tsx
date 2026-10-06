@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/sense/Header';

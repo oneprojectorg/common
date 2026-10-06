@@ -1,5 +1,3 @@
-'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';

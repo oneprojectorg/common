@@ -1,5 +1,3 @@
-'use client';
-
 import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
 import { skipBatch, trpc } from '@op/api/client';
 import {
@@ -13,8 +11,8 @@ import {
 import { Header2 } from '@op/sense/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
-import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
-import React, { Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -160,7 +158,7 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
       {/* nav arrow */}
       <header className="absolute start-0 top-0 z-50 w-full bg-white px-4 py-3 sm:hidden">
         <ErrorBoundary
-          errorComponent={() => (
+          fallbackRender={() => (
             <Link href="/" className="flex items-center gap-2">
               <LuArrowLeft className="size-6 text-foreground rtl:-scale-x-100" />
             </Link>

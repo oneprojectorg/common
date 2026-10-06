@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
@@ -14,11 +12,11 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Skeleton } from '@op/sense/Skeleton';
-import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
+import { useSearchParams } from '@/lib/navigation';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';

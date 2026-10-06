@@ -4,7 +4,7 @@ OpenTelemetry-based logging utilities for Common.
 
 ## Overview
 
-This package provides a simple, service-agnostic logging interface built on OpenTelemetry. The backend (Axiom, Vercel, etc.) is determined by environment configuration and the `@vercel/otel` setup in `instrumentation.ts`.
+This package provides a simple, service-agnostic logging interface built on OpenTelemetry. The backend (Axiom, Vercel, etc.) is determined by environment configuration and the `@vercel/otel` setup in `registerObservability` (`@op/logging/instrumentation`), which each app calls once at server start from a Nitro plugin.
 
 ## Usage
 
@@ -23,7 +23,8 @@ logger.debug('Processing item', { itemId: 'abc' });
 ```typescript
 import { logger, transformMiddlewareRequest } from '@op/logging';
 
-export function middleware(request: NextRequest) {
+// Any standard `Request`, e.g. in a TanStack Start request middleware
+export function logRequest(request: Request) {
   logger.info(...transformMiddlewareRequest(request));
   // ...
 }
@@ -31,7 +32,7 @@ export function middleware(request: NextRequest) {
 
 ## Configuration
 
-Logging backend is configured via `@vercel/otel` in your `instrumentation.ts`. The package automatically uses the OpenTelemetry API which routes to whatever exporter is configured.
+Logging backend is configured via `@vercel/otel` in `registerObservability`. `reportRequestError({ error, request })` logs an unhandled server error with the visitor's PostHog id; the apps call it from Nitro's `error` hook. The package automatically uses the OpenTelemetry API which routes to whatever exporter is configured.
 
 See [Vercel OTEL documentation](https://github.com/vercel/otel) for backend configuration options.
 

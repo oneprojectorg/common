@@ -1,5 +1,3 @@
-'use client';
-
 import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';

@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -11,8 +9,8 @@ import {
 import { RichTextViewer } from '@op/sense/RichTextEditor';
 import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import { Spinner } from '@op/sense/Spinner';
+import { useParams } from '@tanstack/react-router';
 import he from 'he';
-import { useParams } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -33,7 +31,7 @@ export const DecisionActionBar = ({
   showSubmitButton?: boolean;
 }) => {
   const t = useTranslations('decisions');
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams({ strict: false });
 
   const {
     createProposal: handleCreateProposal,

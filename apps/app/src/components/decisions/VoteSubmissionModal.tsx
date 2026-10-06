@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';

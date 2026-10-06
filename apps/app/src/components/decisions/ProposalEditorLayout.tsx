@@ -1,5 +1,3 @@
-'use client';
-
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { type ReactNode, useState } from 'react';

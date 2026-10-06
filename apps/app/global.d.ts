@@ -1,16 +1,16 @@
 /**
- * Module augmentation for next-intl.
+ * Module augmentation for use-intl.
  * Wires the English dictionary as the canonical message type. It is what
  * types the keys and the values of useTranslations and getTranslations, so a
- * call site names its key inline and next-intl checks it. TranslateFn and
+ * call site names its key inline and use-intl checks it. TranslateFn and
  * TranslationKey in src/lib/i18n/translate.ts are aliases over it.
- * See: https://next-intl.dev/docs/workflows/typescript
+ * See: https://next-intl.dev/docs/workflows/typescript (use-intl shares it)
  */
 import type messages from './src/lib/i18n/dictionaries/en.json';
 
 type Messages = typeof messages;
 
-declare module 'next-intl' {
+declare module 'use-intl' {
   interface AppConfig {
     Messages: Messages;
   }

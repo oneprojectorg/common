@@ -1,5 +1,3 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -15,11 +13,10 @@ import {
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { toast } from '@op/sense/Toast';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { useRouter } from '@/lib/navigation';
 
 import ErrorBoundary from '../ErrorBoundary';
 
@@ -72,11 +69,12 @@ const PendingDecisionInvitesSuspense = () => {
                     className="size-12"
                     imageRender={
                       avatarUrl ? (
-                        <Image
+                        <img
                           src={avatarUrl}
                           alt={profile.name ?? ''}
-                          fill
-                          className="object-cover"
+                          className="absolute inset-0 size-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : undefined
                     }

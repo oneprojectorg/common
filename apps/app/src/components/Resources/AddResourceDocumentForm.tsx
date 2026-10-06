@@ -1,5 +1,3 @@
-'use client';
-
 import { formatFileSize } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {

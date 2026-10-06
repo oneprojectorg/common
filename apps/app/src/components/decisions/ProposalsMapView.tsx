@@ -1,5 +1,3 @@
-'use client';
-
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { trpc } from '@op/api/client';
 import type { ProposalStatus } from '@op/api/encoders';

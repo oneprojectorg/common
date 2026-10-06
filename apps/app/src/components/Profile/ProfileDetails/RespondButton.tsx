@@ -1,5 +1,3 @@
-'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';

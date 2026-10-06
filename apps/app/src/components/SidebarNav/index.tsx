@@ -1,5 +1,3 @@
-'use client';
-
 import { useDirection } from '@op/sense/Direction';
 import {
   Sidebar,

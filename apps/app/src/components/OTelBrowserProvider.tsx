@@ -1,5 +1,3 @@
-'use client';
-
 import { logger } from '@op/logging/client';
 import { useEffect, useRef } from 'react';
 

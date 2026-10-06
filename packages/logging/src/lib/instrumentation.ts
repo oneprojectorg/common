@@ -9,19 +9,17 @@ import {
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
-  SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { OTLPHttpProtoTraceExporter, registerOTel } from '@vercel/otel';
-import type { Instrumentation } from 'next';
 
 import { logger } from './logger';
 import { getPosthogDistinctIdFromCookieHeader } from './posthogIdentity';
 
 /**
- * Shared OpenTelemetry setup for the Next.js `register()` instrumentation
- * hook. Registers trace, log, and metric exporters against
+ * Shared OpenTelemetry setup, run once when a server process starts.
+ * Registers trace, log, and metric exporters against
  * OTEL_EXPORTER_OTLP_ENDPOINT. No-ops (except trace registration) when the
  * endpoint is unset.
  */
@@ -35,26 +33,20 @@ export function registerObservability({
 
   const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
   const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
-  const isEdgeRuntime = process.env.NEXT_RUNTIME === 'edge';
   const serviceName = process.env.OTEL_SERVICE_NAME || defaultServiceName;
 
-  // Configure log export with edge runtime workaround
-  // See: https://github.com/vercel/otel/issues/104
-  // The workaround is to create our own LoggerProvider with empty logRecordLimits
-  // to avoid "Cannot read properties of undefined (reading 'attributeCountLimit')" error
+  // registerOTel takes no log exporter, so the LoggerProvider is our own.
   if (otelEndpoint) {
     const logExporter = new OTLPLogExporter({
       url: `${otelEndpoint}/v1/logs`,
       headers,
     });
 
-    // Use SimpleLogRecordProcessor for edge (more compatible), BatchLogRecordProcessor for Node.js
-    const logProcessor = isEdgeRuntime
-      ? new SimpleLogRecordProcessor(logExporter)
-      : new BatchLogRecordProcessor(logExporter);
+    const logProcessor = new BatchLogRecordProcessor(logExporter);
 
     const loggerProvider = new LoggerProvider({
-      // Empty logRecordLimits is the workaround for edge runtime bug
+      // Empty logRecordLimits sidesteps an `attributeCountLimit` crash
+      // (https://github.com/vercel/otel/issues/104).
       logRecordLimits: {},
       processors: [logProcessor],
       // registerOTel only sets the resource on its own trace/metric
@@ -75,19 +67,17 @@ export function registerObservability({
       })
     : undefined;
 
-  // Configure metrics exporter (metrics not supported on edge runtime)
-  const metricReaders =
-    otelEndpoint && !isEdgeRuntime
-      ? [
-          new PeriodicExportingMetricReader({
-            exporter: new OTLPMetricExporter({
-              url: `${otelEndpoint}/v1/metrics`,
-              headers,
-            }),
-            exportIntervalMillis: 5000,
+  const metricReaders = otelEndpoint
+    ? [
+        new PeriodicExportingMetricReader({
+          exporter: new OTLPMetricExporter({
+            url: `${otelEndpoint}/v1/metrics`,
+            headers,
           }),
-        ]
-      : undefined;
+          exportIntervalMillis: 5000,
+        }),
+      ]
+    : undefined;
 
   registerOTel({
     serviceName,
@@ -98,29 +88,28 @@ export function registerObservability({
 }
 
 /**
- * Next.js `onRequestError` instrumentation hook. Captures server request
- * errors (RSC renders, route handlers, Server Actions) that never pass
- * through the tRPC middleware pipeline.
+ * Reports an unhandled server request error (a server render, server route
+ * or server function) that never passed through the tRPC middleware pipeline.
  */
-export const onRequestError: Instrumentation.onRequestError = async (
+export const reportRequestError = async ({
   error,
   request,
-  context,
-) => {
+}: {
+  error: unknown;
+  request: Request | undefined;
+}) => {
   // Runs outside `withLogContext`, so recover the distinct id from the request
   // cookie directly to keep these person-linked.
-  const cookieHeader = Array.isArray(request.headers.cookie)
-    ? request.headers.cookie.join('; ')
-    : request.headers.cookie;
-  const posthogDistinctId = getPosthogDistinctIdFromCookieHeader(cookieHeader);
+  const posthogDistinctId = getPosthogDistinctIdFromCookieHeader(
+    request?.headers.get('cookie'),
+  );
   logger.error('Unhandled server request error', {
     ...(posthogDistinctId && { posthogDistinctId }),
     error,
-    path: request.path,
-    method: request.method,
-    routerKind: context.routerKind,
-    routePath: context.routePath,
-    routeType: context.routeType,
+    ...(request && {
+      path: new URL(request.url).pathname,
+      method: request.method,
+    }),
   });
   // Flush so the record survives serverless freeze/teardown after the error response
   await logger.flush();

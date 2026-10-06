@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,

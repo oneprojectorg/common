@@ -1,5 +1,3 @@
-'use client';
-
 import { Spinner } from '@op/sense/Spinner';
 import { LuCheck, LuX } from 'react-icons/lu';
 

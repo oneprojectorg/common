@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCount } from './ProposalCount';

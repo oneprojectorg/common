@@ -1,10 +1,8 @@
-'use client';
-
 import { type ProcessPhase } from '@op/api/encoders';
 import { PhaseCard, type PhaseCardState } from '@op/sense/PhaseCard';
 import { cn } from '@op/sense/lib/utils';
-import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

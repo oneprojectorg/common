@@ -8,7 +8,7 @@ import {
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import React, { createContext, useState } from 'react';
+import React, { useState } from 'react';
 
 import { createLinks } from './links';
 import { queryPersister } from './queryPersister';
@@ -19,12 +19,6 @@ export { clearPersistedQueryCache } from './queryPersister';
 // A module-level QueryClient is shared across every SSR render on the same
 // Node worker — two concurrent requests would read each other's cached
 // account data (24h gcTime). Instantiate per-provider via useState below.
-
-/**
- * Context for SSR-only cookies (encrypted, only available during SSR)
- * This allows tRPC HTTP calls to include cookies during SSR
- */
-const SSRCookiesContext = createContext<string | undefined>(undefined);
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -40,19 +34,10 @@ export function isTRPCClientError(
 }
 
 /**
- * TRPCProvider with SSR cookie support
- *
- * ssrCookies: Encrypted cookies from Server Component (using cloakSSROnlySecret).
- * These are decrypted during SSR to include in tRPC HTTP requests.
- * On the browser, cookies are sent via credentials: 'include'.
+ * TRPCProvider. During a server render the links forward the request's
+ * cookies; in the browser, cookies are sent via credentials: 'include'.
  */
-export function TRPCProvider({
-  children,
-  ssrCookies,
-}: {
-  children: React.ReactNode;
-  ssrCookies?: string;
-}) {
+export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -68,45 +53,43 @@ export function TRPCProvider({
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      links: createLinks(ssrCookies),
+      links: createLinks(),
     }),
   );
 
   return (
-    <SSRCookiesContext.Provider value={ssrCookies}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{
-            persister: queryPersister,
-            // Bump whenever a persisted payload's shape changes. Entries are
-            // kept for 24h, so without this a returning user restores posts
-            // shaped for the previous release and renders undefined counts.
-            // Last bumped: every list/paginated payload moved to the
-            // { items } / { items, next } envelope (#2001–#2003).
-            buster: 'list-items-envelope-1',
-            dehydrateOptions: {
-              shouldDehydrateQuery: (query) => {
-                const queryIsReadyForPersistance =
-                  query.state.status === 'success';
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: queryPersister,
+          // Bump whenever a persisted payload's shape changes. Entries are
+          // kept for 24h, so without this a returning user restores posts
+          // shaped for the previous release and renders undefined counts.
+          // Last bumped: every list/paginated payload moved to the
+          // { items } / { items, next } envelope (#2001–#2003).
+          buster: 'list-items-envelope-1',
+          dehydrateOptions: {
+            shouldDehydrateQuery: (query) => {
+              const queryIsReadyForPersistance =
+                query.state.status === 'success';
 
-                if (queryIsReadyForPersistance) {
-                  const { queryKey } = query;
-                  const excludeFromPersisting =
-                    queryKey.includes('ogImageThumbnail');
+              if (queryIsReadyForPersistance) {
+                const { queryKey } = query;
+                const excludeFromPersisting =
+                  queryKey.includes('ogImageThumbnail');
 
-                  return !excludeFromPersisting;
-                }
+                return !excludeFromPersisting;
+              }
 
-                return queryIsReadyForPersistance;
-              },
+              return queryIsReadyForPersistance;
             },
-          }}
-        >
-          {children}
-        </PersistQueryClientProvider>
-      </trpc.Provider>
-    </SSRCookiesContext.Provider>
+          },
+        }}
+      >
+        {children}
+      </PersistQueryClientProvider>
+    </trpc.Provider>
   );
 }
 

@@ -1,4 +1,4 @@
-import { ImageResponse } from 'next/og.js';
+import { ImageResponse } from '@vercel/og';
 // Standalone render of the decision OG card, one PNG per avatar gradient.
 // Reads fonts/logo from disk (no server). Run from apps/app:
 //   node scripts/og-preview.mjs <outDir>

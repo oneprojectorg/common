@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -7,11 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { useSearchParams } from '@/lib/navigation';
 
 import { CreateOrganizationForm } from './CreateOrganizationForm';
 import { CreateOrganizationSuccessModal } from './CreateOrganizationSuccessModal';

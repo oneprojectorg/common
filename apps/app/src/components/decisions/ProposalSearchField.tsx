@@ -1,5 +1,3 @@
-'use client';
-
 import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import {
   InputGroup,

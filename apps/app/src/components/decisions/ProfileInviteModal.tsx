@@ -1,5 +1,3 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { trackProfileInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';

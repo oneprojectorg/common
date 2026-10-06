@@ -1,5 +1,3 @@
-'use client';
-
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';

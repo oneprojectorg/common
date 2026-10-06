@@ -1,5 +1,3 @@
-'use client';
-
 import type { ProposalFilter } from '@op/api/encoders';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import type { ReactNode } from 'react';

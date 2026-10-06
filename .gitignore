@@ -23,13 +23,15 @@ coverage
 .vercel
 
 # Build Outputs
-.next/
+.output/
+.nitro/
+.tanstack/
+bundle-analysis.html
 out/
 build
 dist
 storybook-static
 tsconfig.tsbuildinfo
-next-env.d.ts
 # Supabase
 /supabase-old/
 

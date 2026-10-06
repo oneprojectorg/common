@@ -1,5 +1,3 @@
-'use client';
-
 import type { ProposalTranslation } from '@op/common/client';
 import { type ReactNode, createContext, useContext } from 'react';
 

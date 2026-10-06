@@ -1,5 +1,3 @@
-'use client';
-
 import {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,

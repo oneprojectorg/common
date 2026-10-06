@@ -1,5 +1,3 @@
-'use client';
-
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
 import { Checkbox } from '@op/sense/Checkbox';

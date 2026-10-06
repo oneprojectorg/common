@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Build step: runs once, uploads .next artifacts for shards ──
+  # ── Build step: runs once, uploads .output artifacts for shards ──
   build:
     name: Build E2E
     runs-on: blacksmith-4vcpu-ubuntu-2204
@@ -30,7 +30,6 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:56322/postgres
       S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
       NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
-      SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
       RESEND_PASSWORD: re_test_key_for_ci
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
@@ -87,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-build
-          path: apps/app/.next/
+          path: apps/app/.output/
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 1
@@ -96,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: api-build
-          path: apps/api/.next/
+          path: apps/api/.output/
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 1
@@ -127,7 +126,6 @@ jobs:
       S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
       NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
       # SSR secrets for cookie encryption (CI-specific key)
-      SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
       # Resend (email - stub)
       RESEND_PASSWORD: re_test_key_for_ci
       # Google OAuth (stub values - not used in E2E tests)
@@ -184,13 +182,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-build
-          path: apps/app/.next/
+          path: apps/app/.output/
 
       - name: Download api build
         uses: actions/download-artifact@v4
         with:
           name: api-build
-          path: apps/api/.next/
+          path: apps/api/.output/
 
       - name: Get Playwright version
         id: playwright-version
@@ -346,7 +344,6 @@ jobs:
       S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
       NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
       # SSR secrets for cookie encryption (CI-specific key)
-      SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
       # Resend (email - stub)
       RESEND_PASSWORD: re_test_key_for_ci
       # Google OAuth (stub values - not used in E2E tests)
@@ -403,13 +400,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-build
-          path: apps/app/.next/
+          path: apps/app/.output/
 
       - name: Download api build
         uses: actions/download-artifact@v4
         with:
           name: api-build
-          path: apps/api/.next/
+          path: apps/api/.output/
 
       - name: Get Playwright version
         id: playwright-version

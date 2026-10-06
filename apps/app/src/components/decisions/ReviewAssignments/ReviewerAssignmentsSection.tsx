@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
@@ -16,9 +14,9 @@ import { Header3 } from '@op/sense/Header';
 import { Item, ItemContent, ItemTitle } from '@op/sense/Item';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusDot } from '@op/sense/StatusDot';
-import { useFormatter } from 'next-intl';
 import { Suspense, useCallback, useMemo } from 'react';
 import { LuUserX, LuUsers } from 'react-icons/lu';
+import { useFormatter } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

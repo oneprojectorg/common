@@ -1,5 +1,3 @@
-'use client';
-
 import type { MapDefaultView } from '@op/common/client';
 import type { LngLat } from '@op/sense/Map';
 import { useEffect, useState } from 'react';

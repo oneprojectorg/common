@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { ProposalReviewAggregates } from '@op/common/client';
 import { useMemo } from 'react';

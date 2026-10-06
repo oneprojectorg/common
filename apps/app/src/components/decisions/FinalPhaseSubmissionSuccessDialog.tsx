@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -8,10 +6,10 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { CheckIcon } from '@op/sense/icons';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { useRouter, useSearchParams } from '@/lib/navigation';
 
 export const QUERY_PARAM = 'resultsLive';
 

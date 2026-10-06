@@ -1,9 +1,7 @@
-'use client';
-
 import { formatDate } from '@/utils/formatting';
 import { Alert, AlertDescription } from '@op/sense/Alert';
-import { useLocale } from 'next-intl';
 import { LuLock } from 'react-icons/lu';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n/routing';
 

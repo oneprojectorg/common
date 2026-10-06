@@ -1,5 +1,4 @@
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
-import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
 
@@ -41,7 +40,7 @@ interface ProfileAvatarLinkProps {
 /**
  * A `ProfileAvatar` wrapped in the locale-aware `Link` — the linked avatar we
  * render all over the app. Owns the circular focus ring, hover tint, and the
- * `next/image` passthrough so callers just supply `href`/`name`/`src`. Without
+ * image passthrough so callers just supply `href`/`name`/`src`. Without
  * `href` it's a plain, non-interactive avatar.
  */
 export const ProfileAvatarLink = ({
@@ -61,7 +60,13 @@ export const ProfileAvatarLink = ({
       className={className}
       imageRender={
         src ? (
-          <Image src={src} alt={alt} fill className="object-cover" />
+          <img
+            src={src}
+            alt={alt}
+            className="absolute inset-0 size-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
         ) : undefined
       }
     />

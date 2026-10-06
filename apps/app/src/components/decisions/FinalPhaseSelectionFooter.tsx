@@ -1,5 +1,3 @@
-'use client';
-
 import type { ResultNotificationMessages } from '@op/common/client';
 import {
   FooterBar,

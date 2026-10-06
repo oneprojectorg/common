@@ -1,5 +1,3 @@
-'use client';
-
 import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { trpc } from '@op/api/client';
 import {
@@ -9,7 +7,6 @@ import {
   parseTranslatedMeta,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
 import {
   type ReactNode,
   createContext,
@@ -19,6 +16,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

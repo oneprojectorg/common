@@ -1,32 +1,52 @@
-'use client';
-
 import { useForesight } from '@/hooks/useForesight';
-import { type AnchorHTMLAttributes, type Ref, useCallback } from 'react';
+import { useRouter } from '@tanstack/react-router';
+import {
+  type AnchorHTMLAttributes,
+  type MouseEvent,
+  type Ref,
+  useCallback,
+} from 'react';
+import { useLocale } from 'use-intl';
 
-import { NavLink, useRouter } from './routing';
+import { localizeHref } from './routing';
 
-// ForesightJS-driven prefetch per
-// https://nextjs.org/docs/app/guides/prefetching#extending-or-ejecting-link.
+/**
+ * An anchor for in-app links: adds the locale to app-absolute hrefs, navigates
+ * client-side, and preloads the target when the pointer heads towards it
+ * (ForesightJS). Anything else — a modified click, another target, an external
+ * href — falls through to the browser.
+ */
 export const Link = ({
   children,
   className,
   ref,
+  href,
+  onClick,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement> & {
   ref?: Ref<HTMLAnchorElement>;
 }) => {
   const router = useRouter();
-  const { href } = props;
+  const locale = useLocale();
+  const localizedHref =
+    href === undefined ? undefined : localizeHref(href, locale);
+  // `//host/path` is protocol-relative: another site.
+  const isInAppHref =
+    localizedHref !== undefined &&
+    localizedHref.startsWith('/') &&
+    !localizedHref.startsWith('//');
 
   const { elementRef } = useForesight<HTMLAnchorElement>({
     callback: () => {
-      if (!href) {
+      if (!localizedHref || !isInAppHref) {
         return;
       }
-      // @ts-ignore — next-intl types prefetch against a route literal union.
-      router.prefetch(href);
+
+      void router
+        .preloadRoute({ to: '.', href: localizedHref })
+        .catch(() => {});
     },
-    name: href,
+    name: localizedHref,
   });
 
   // Two owners need this node: Foresight, to watch it for prefetch, and any
@@ -46,16 +66,45 @@ export const Link = ({
     [elementRef, ref],
   );
 
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(event);
+
+    const isPlainClick =
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.shiftKey;
+    const opensHere = !props.target || props.target === '_self';
+
+    if (
+      event.defaultPrevented ||
+      !localizedHref ||
+      !isInAppHref ||
+      !isPlainClick ||
+      !opensHere ||
+      props.download !== undefined
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    void router.navigate({ to: '.', href: localizedHref });
+  };
+
   return (
     // No `hover:underline` here: base-ui concatenates className without merging,
     // so a Link passed as a `render` target fights the primitive it renders as
     // (a DropdownMenuLinkItem would underline on hover). Callers that want an
     // underline declare it — many already do.
-    //
-    // @ts-ignore — next-intl's NavLink expects a route literal; we forward
-    // arbitrary string hrefs.
-    <NavLink {...props} ref={setRef} className={className} prefetch={false}>
+    <a
+      {...props}
+      href={localizedHref}
+      ref={setRef}
+      className={className}
+      onClick={handleClick}
+    >
       {children}
-    </NavLink>
+    </a>
   );
 };

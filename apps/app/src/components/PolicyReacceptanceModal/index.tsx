@@ -1,5 +1,3 @@
-'use client';
-
 import { useMaybeUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';

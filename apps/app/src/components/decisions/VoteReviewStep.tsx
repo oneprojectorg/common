@@ -1,5 +1,3 @@
-'use client';
-
 import type { Proposal } from '@op/common/client';
 import { Header4 } from '@op/sense/Header';
 import { useId } from 'react';

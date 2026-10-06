@@ -1,5 +1,3 @@
-'use client';
-
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';

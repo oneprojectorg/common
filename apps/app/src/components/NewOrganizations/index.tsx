@@ -1,48 +1,48 @@
-import { createClient } from '@op/api/serverClient';
-import { Suspense } from 'react';
+import type { Organization } from '@op/api/encoders';
+import { Suspense, use } from 'react';
 
-import { Link, getTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import {
   OrganizationList,
   OrganizationListSkeleton,
 } from '../OrganizationList';
 
-export const NewOrganizationsSuspense = async ({
-  limit = 5,
+/** `organizations` resolves to null when they couldn't be loaded. */
+type NewOrganizationsPromise = Promise<Array<Organization> | null>;
+
+export const NewOrganizationsSuspense = ({
+  organizations: organizationsPromise,
 }: {
-  limit?: number;
+  organizations: NewOrganizationsPromise;
 }) => {
-  const t = await getTranslations('org');
+  const t = useTranslations('org');
+  const organizations = use(organizationsPromise);
 
-  try {
-    const client = await createClient();
-
-    const { items: organizations } = await client.organization.list({
-      limit,
-      cursor: null,
-      orderBy: 'createdAt',
-    });
-
-    return (
-      <div className="flex flex-col gap-4">
-        <OrganizationList organizations={organizations} />
-        <div className="px-4 sm:px-0">
-          <Link href="/org" className="text-primary">
-            {t('seeMoreAction')}
-          </Link>
-        </div>
-      </div>
-    );
-  } catch (e) {
+  if (!organizations) {
     return <div>Could not load organizations</div>;
   }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <OrganizationList organizations={organizations} />
+      <div className="px-4 sm:px-0">
+        <Link href="/org" className="text-primary">
+          {t('seeMoreAction')}
+        </Link>
+      </div>
+    </div>
+  );
 };
 
-export const NewOrganizations = ({ limit }: { limit?: number }) => {
+export const NewOrganizations = ({
+  organizations,
+}: {
+  organizations: NewOrganizationsPromise;
+}) => {
   return (
     <Suspense fallback={<OrganizationListSkeleton />}>
-      <NewOrganizationsSuspense limit={limit} />
+      <NewOrganizationsSuspense organizations={organizations} />
     </Suspense>
   );
 };

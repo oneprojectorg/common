@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type {
@@ -19,9 +17,9 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
-import { useFormatter } from 'next-intl';
 import { Suspense, useState } from 'react';
 import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy } from 'react-icons/lu';
+import { useFormatter } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';

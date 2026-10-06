@@ -1,5 +1,3 @@
-'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';

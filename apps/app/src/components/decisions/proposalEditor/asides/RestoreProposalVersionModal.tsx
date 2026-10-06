@@ -1,5 +1,3 @@
-'use client';
-
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { Button } from '@op/sense/Button';
 import {
@@ -9,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { useLocale } from 'next-intl';
 import { LuHistory } from 'react-icons/lu';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

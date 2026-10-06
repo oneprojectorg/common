@@ -3,10 +3,10 @@ import {
   serverExtensions,
   tiptapDocToPlainText,
 } from '@op/common/client';
-import { logger } from '@op/logging';
+import { logger } from '@op/logging/client';
 // Import from the viewerStyles subpath (not editorConfig or the barrel) so
-// this server component pulls neither the client editor nor the TipTap
-// extension set into the RSC graph — viewerProseStyles is a plain style string.
+// this renderer pulls in neither the editor nor the TipTap extension set —
+// viewerProseStyles is a plain style string.
 import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import type { JSONContent } from '@tiptap/core';
 import { renderToReactElement } from '@tiptap/static-renderer/pm/react';
@@ -25,18 +25,15 @@ import {
  *
  * This is the principled replacement for {@link ProposalHtmlContent}'s
  * `dangerouslySetInnerHTML` + Iframely regex path. `renderToReactElement` is
- * pure JS (no DOM), so it runs in a React Server Component — the rendered prose
- * ships as server HTML with zero client JS, and custom nodes render as real
- * React components (e.g. embeds, and — once authored — Details/summary).
+ * pure JS (no DOM), so it renders the same on the server and in the browser,
+ * and custom nodes render as real React components (e.g. embeds, and — once
+ * authored — Details/summary).
  *
  * Input is dual-read:
  *  - a TipTap JSON doc (object) → static React render via the `nodeMapping`.
  *  - a legacy HTML string → delegates to {@link ProposalHtmlContent} so existing
  *    HTML-stored bodies (and their Iframely placeholders) still render until the
  *    content is migrated/backfilled to JSON.
- *
- * The module itself is server-capable (no `'use client'`); only the
- * {@link LinkPreview} embed leaf is a client island within the rendered tree.
  *
  * Extensions are shared with `generateProposalHtml`'s `serverExtensions` so the
  * recognized node set can't drift between the two render paths. An unregistered

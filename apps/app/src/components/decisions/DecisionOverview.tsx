@@ -1,5 +1,3 @@
-'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
@@ -76,7 +74,7 @@ interface DecisionOverviewProps {
 
 /**
  * Overview view for a decision process (/decisions/[slug]). The shared
- * header + view toggle come from the (decision-view) layout; this renders the
+ * header + view toggle come from the `_decisionView` route; this renders the
  * hero, the phases sidebar slot, and the About body.
  *
  * Overview content (headline, description, body HTML) comes from

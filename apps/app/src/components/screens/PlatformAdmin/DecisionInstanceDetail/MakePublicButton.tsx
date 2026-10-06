@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Label } from '@op/sense/Label';

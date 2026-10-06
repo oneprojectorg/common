@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';

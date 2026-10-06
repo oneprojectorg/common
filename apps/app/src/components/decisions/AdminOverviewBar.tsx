@@ -1,9 +1,7 @@
-'use client';
-
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/Sheet';
-import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuEye } from 'react-icons/lu';
+import { useLocale } from 'use-intl';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 

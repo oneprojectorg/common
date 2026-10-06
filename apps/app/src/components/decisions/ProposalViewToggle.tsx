@@ -1,5 +1,3 @@
-'use client';
-
 import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
 import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 

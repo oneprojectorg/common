@@ -5,8 +5,8 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [
-        ".next/**",
-        "!.next/cache/**",
+        ".output/**",
+        ".vercel/output/**",
         "storybook-static/**",
         "build/**",
         "dist/**"
@@ -14,7 +14,7 @@
     },
     "build:e2e": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".output/**"]
     },
     "start:e2e": {
       "cache": false,
@@ -72,7 +72,6 @@
     "S3_ASSET_ROOT",
     "POSTHOG_API_KEY",
     "POSTHOG_ENV_ID",
-    "SSR_SECRETS_KEY",
     "OTEL_EXPORTER_OTLP_ENDPOINT",
     "OTEL_EXPORTER_OTLP_HEADERS",
     "OTEL_RESOURCE_ATTRIBUTES",

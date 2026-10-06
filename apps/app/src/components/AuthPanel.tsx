@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';

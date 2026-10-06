@@ -1,5 +1,3 @@
-'use client';
-
 import { SidebarProvider } from '@op/sense/Sidebar';
 
 export function ProcessBuilderShell({

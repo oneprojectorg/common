@@ -1,5 +1,3 @@
-'use client';
-
 import { ClientOnly } from '@/utils/ClientOnly';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';

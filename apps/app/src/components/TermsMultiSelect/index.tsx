@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { TermWithChildren } from '@op/common';
 import {

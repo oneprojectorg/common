@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { Organization, OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';

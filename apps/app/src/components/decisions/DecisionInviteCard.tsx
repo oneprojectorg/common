@@ -1,12 +1,9 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { Button } from '@op/sense/Button';
 import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Spinner } from '@op/sense/Spinner';
-import Image from 'next/image';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -70,11 +67,12 @@ export const DecisionInviteCard = ({
                 className="size-4 shrink-0"
                 imageRender={
                   steward?.avatarImage?.name ? (
-                    <Image
+                    <img
                       src={getPublicUrl(steward.avatarImage.name) ?? ''}
                       alt={steward.name ?? 'Steward avatar'}
-                      fill
-                      className="object-cover"
+                      className="absolute inset-0 size-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : undefined
                 }

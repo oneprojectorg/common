@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { ProposalCategory } from '@op/common';
 import { Button } from '@op/sense/Button';

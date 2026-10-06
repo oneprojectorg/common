@@ -5,8 +5,8 @@ import {
   VERCEL_TOOLBAR_ORIGIN,
   buildNonceContentSecurityPolicy,
   buildStaticContentSecurityPolicy,
-  createCspHeaderApplier,
   createCspNonce,
+  createNonceCspHeader,
   getStaticCspHeader,
   isStaticPolicyPath,
 } from './csp.mjs';
@@ -227,7 +227,7 @@ describe('isStaticPolicyPath', () => {
   });
 
   it.each(['/Login', '/LOGIN/callback', '/Info/Privacy'])(
-    'claims %s, which next start matches case-insensitively',
+    'claims %s, matching case-insensitively',
     (pathname) => {
       expect(isStaticPolicyPath(pathname)).toBe(true);
     },
@@ -297,11 +297,21 @@ describe('the preview decision the emitters actually make', () => {
     vi.stubEnv('VERCEL_ENV', vercelEnv);
     vi.stubEnv('CSP_MODE', undefined);
 
-    const policy = createCspHeaderApplier()(new Headers()).get(
-      'content-security-policy',
-    );
+    const policy = createNonceCspHeader().value;
 
     expect(policy?.includes("'strict-dynamic'")).toBe(expected);
+  });
+});
+
+describe('createNonceCspHeader', () => {
+  it('hands out the nonce its policy allows', () => {
+    const { value, nonce } = createNonceCspHeader();
+
+    expect(value).toContain(`'nonce-${nonce}'`);
+  });
+
+  it('mints a different nonce per call', () => {
+    expect(createNonceCspHeader().nonce).not.toBe(createNonceCspHeader().nonce);
   });
 });
 

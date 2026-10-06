@@ -1,5 +1,3 @@
-'use client';
-
 import {
   RichTextEditorSkeleton,
   StyledRichTextContent,

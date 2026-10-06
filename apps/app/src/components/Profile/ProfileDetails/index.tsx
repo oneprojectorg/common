@@ -1,5 +1,3 @@
-'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { EntityType } from '@op/api/encoders';

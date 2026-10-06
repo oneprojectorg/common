@@ -1,5 +1,3 @@
-'use client';
-
 import { useMaybeUser } from '@/utils/UserProvider';
 
 /**

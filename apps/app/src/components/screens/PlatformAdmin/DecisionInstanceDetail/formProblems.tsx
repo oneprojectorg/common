@@ -1,5 +1,3 @@
-'use client';
-
 import { FieldError } from '@op/sense/Field';
 
 import {

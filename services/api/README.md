@@ -47,7 +47,7 @@ Key exports (`.`, `client` -> `TRPCProvider.tsx`, `vanilla`) are defined in `pac
 
 **Depended On By:**
 
-- **`apps/api`**: Hosts the tRPC router endpoint (`app/api/v1/trpc/[trpc]/route.ts`) and consumes the `appRouter` and `createContext` from this package.
+- **`apps/api`**: Hosts the tRPC router endpoint (a server route under `src/routes/api/v1/trpc`) and consumes the `appRouter` and `createContext` from this package.
 - **`apps/app`**: Consumes the tRPC client via `TRPCProvider.tsx`.
 
 ## Environment Variables

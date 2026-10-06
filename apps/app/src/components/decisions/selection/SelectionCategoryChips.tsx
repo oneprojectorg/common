@@ -1,5 +1,3 @@
-'use client';
-
 import { Badge } from '@op/sense/Badge';
 
 import { useTranslations } from '@/lib/i18n';

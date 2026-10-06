@@ -1,0 +1,58 @@
+import { logger } from '@op/logging';
+
+/**
+ * Proxy browser OTLP traces to the configured OTel backend.
+ * This avoids CORS issues and keeps API keys server-side.
+ */
+export async function forwardTraces(request: Request) {
+  const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+
+  if (!otelEndpoint) {
+    return Response.json(
+      { error: 'OTEL endpoint not configured' },
+      { status: 503 },
+    );
+  }
+
+  try {
+    const body = await request.arrayBuffer();
+    const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
+
+    const response = await fetch(`${otelEndpoint}/v1/traces`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body,
+    });
+
+    if (!response.ok) {
+      // Log error but don't expose details to client
+      logger.error('[OTel Proxy] Failed to forward traces', {
+        status: response.status,
+        body: await response.text(),
+      });
+      return new Response(null, { status: 502 });
+    }
+
+    return new Response(null, { status: response.status });
+  } catch (error) {
+    logger.error('[OTel Proxy] Error forwarding traces', { error });
+    return new Response(null, { status: 502 });
+  }
+}
+
+function parseHeaders(headersStr: string | undefined): Record<string, string> {
+  if (!headersStr) {
+    return {};
+  }
+  const headers: Record<string, string> = {};
+  for (const pair of headersStr.split(',')) {
+    const [key, value] = pair.split('=');
+    if (key && value) {
+      headers[key.trim()] = value.trim();
+    }
+  }
+  return headers;
+}

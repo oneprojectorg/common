@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import {
   PROPOSAL_TITLE_MAX_LENGTH,

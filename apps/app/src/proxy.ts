@@ -3,13 +3,15 @@ import {
   cookieOptionsDomain,
   isOnPreviewAppDomain,
 } from '@op/core';
-import { logger, transformMiddlewareRequest } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
-import createMiddleware from 'next-intl/middleware';
-import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
+import type { CookieOptions } from '@op/supabase/lib';
+import { parse as parseCookies, serialize as serializeCookie } from 'cookie';
 
-import { createCspHeaderApplier, isStaticPolicyPath } from './lib/csp.mjs';
-import { i18nConfig, routing } from './lib/i18n';
+import { findPathLocale } from './lib/i18n/config';
+import {
+  LOCALE_COOKIE_NAME,
+  getLocaleRedirect,
+} from './lib/i18n/localeNegotiation';
 
 const useUrl = OPURLConfig('APP');
 
@@ -18,82 +20,112 @@ const shouldSetCookieDomain =
   (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
   !isOnPreviewAppDomain;
 
-/** The locale the path is prefixed with, or undefined when it carries none. */
-const findPathLocale = (pathname: string) =>
-  i18nConfig.locales.find(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
-  );
+/**
+ * Paths the proxy runs on. Every one of them triggers an auth check, so keep
+ * the exclusion list broad enough to skip routes that don't need cookie
+ * refresh or the locale redirect.
+ *
+ * Skipped path prefixes (no-auth routes):
+ *   - Build output + server functions: _build, _serverFn
+ *   - In-tree API + rewrites:          api, assets, stats
+ *   - Public landing pages:            waitlist, info, login
+ *   - SEO/monitoring files:            sitemap.xml, robots.txt,
+ *                                      manifest.webmanifest, health, _health,
+ *                                      favicon.ico
+ * Skipped file extensions:
+ *   - images: svg, png, jpg, jpeg, gif, webp, avif, ico, bmp
+ *   - fonts:  woff, woff2, ttf, otf, eot
+ *   - docs:   pdf
+ *   - text:   json, xml, txt, html
+ *   - build:  css, js, map
+ *   - media:  mp4, webm, mp3, ogg, wav
+ *
+ * Server functions skip the proxy but still refresh the session — see
+ * `refreshSession`.
+ */
+const PROXIED_PATH =
+  /^\/(?!_build|_serverFn|api|assets|stats|waitlist|info|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|html|css|js|map|mp4|webm|mp3|ogg|wav)$).*$/;
+
+export const isProxiedPath = (pathname: string) => PROXIED_PATH.test(pathname);
+
+export interface CookieToSet {
+  name: string;
+  value: string;
+  options: CookieOptions;
+}
+
+export type ProxyOutcome =
+  /** Send this response instead of rendering. */
+  | { type: 'respond'; response: Response }
+  /** Render the request, setting these cookies on the response. */
+  | { type: 'continue'; cookies: Array<CookieToSet> };
 
 /**
- * Refreshes the NEXT_LOCALE preference cookie when the URL's locale differs
- * from what the browser last sent, returning null when there is nothing to
- * set — in which case the caller starts from a plain forwarded response.
+ * Refreshes the Supabase session, then sends a locale-less path to its
+ * localized URL. A refreshed token is written back onto `request`, so
+ * everything that reads the request's cookies after this sees the new one.
  */
-const buildLocaleCookieResponse = (
-  request: NextRequest,
-  currentLocale: string | undefined,
-  forwardedHeaders: Headers,
-): NextResponse | null => {
-  if (!currentLocale) {
-    return null;
-  }
-
-  if (request.cookies.get('NEXT_LOCALE')?.value === currentLocale) {
-    return null;
-  }
-
-  const response = NextResponse.next({
-    request: { headers: forwardedHeaders },
-  });
-
-  response.cookies.set('NEXT_LOCALE', currentLocale, {
-    path: '/',
-    maxAge: 60 * 60 * 24 * 365, // 1 year
-    secure: useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
-    sameSite: 'lax',
-    ...(shouldSetCookieDomain ? { domain: cookieOptionsDomain } : {}),
-  });
-
-  return response;
-};
-
-export async function proxy(request: NextRequest, event: NextFetchEvent) {
-  // Log request
-  logger.info(...transformMiddlewareRequest(request));
-
-  event.waitUntil(logger.flush());
-  // i18n ROUTING
-  const pathname = request.nextUrl.pathname;
-
-  // A fresh nonce per request, stamped on the forwarded request headers so
-  // Next's renderer reads it back out onto every script it emits. Paths
-  // next.config.mjs already covers get nothing here — two policies on one
-  // response are intersected and block every script.
-  const applyCsp = isStaticPolicyPath(pathname)
-    ? (headers: Headers) => headers
-    : createCspHeaderApplier();
-
-  // Rebuilt per call, not captured: the Supabase cookie adapter below mutates
-  // `request.cookies` and forwards the request again, so a snapshot would send
-  // the pre-refresh cookie and no nonce.
-  //
-  // x-pathname / x-search expose the path and query to Server Components, which
-  // Next doesn't surface to layouts otherwise.
-  const buildForwardedHeaders = () => {
-    const headers = new Headers(request.headers);
-    headers.set('x-pathname', pathname);
-    headers.set('x-search', request.nextUrl.search);
-
-    return applyCsp(headers);
-  };
-
+export async function proxy(request: Request): Promise<ProxyOutcome> {
+  const { pathname } = new URL(request.url);
+  const { cookies, isAuthenticated } = await refreshSession(request);
   const currentLocale = findPathLocale(pathname);
 
-  // Set locale cookie if URL contains a locale (for preference learning)
-  const forwardedHeaders = buildForwardedHeaders();
-  let supabaseResponse =
-    buildLocaleCookieResponse(request, currentLocale, forwardedHeaders) ||
-    NextResponse.next({ request: { headers: forwardedHeaders } });
+  // Reroute when the locale prefix is missing — for both logged-in users and
+  // anonymous visitors on non-root paths. Public links like `/columbus` need
+  // locale detection so they resolve to `/en/columbus` and then the router's
+  // vanity rewrite dispatches to the decision page. The bare root `/` is
+  // preserved for anonymous visitors so `routes/index.tsx` (ComingSoonScreen)
+  // keeps rendering instead of bouncing through the walled-garden gate.
+  const shouldRouteI18n =
+    !currentLocale && (isAuthenticated || pathname !== '/');
+
+  if (shouldRouteI18n) {
+    const redirect = getLocaleRedirect(request);
+
+    if (redirect) {
+      const headers = new Headers({ location: redirect.location });
+
+      // Forward Supabase auth cookies (e.g. refreshed tokens) to the redirect
+      // response. Without this, a token refresh during the redirect drops the
+      // new refresh token — the browser retries with the stale one, gets a
+      // 400, and loops indefinitely (most visible on Safari).
+      for (const cookie of [...cookies, ...redirect.cookies]) {
+        headers.append(
+          'set-cookie',
+          serializeCookie(cookie.name, cookie.value, cookie.options),
+        );
+      }
+
+      return {
+        type: 'respond',
+        response: new Response(null, { status: 307, headers }),
+      };
+    }
+  }
+
+  return {
+    type: 'continue',
+    cookies: [
+      ...cookies,
+      ...getLocalePreferenceCookies(request, currentLocale),
+    ],
+  };
+}
+
+/**
+ * Refreshes an expired Supabase session. The new tokens go out as response
+ * cookies and are also written onto the request, so the render — and every
+ * tRPC call it makes — sees the session the browser is about to hold rather
+ * than the one it sent.
+ */
+export async function refreshSession(request: Request) {
+  const requestCookies = new Map(
+    Object.entries(parseCookies(request.headers.get('cookie') ?? '')).flatMap(
+      ([name, value]) => (value === undefined ? [] : [[name, value] as const]),
+    ),
+  );
+  const cookies: Array<CookieToSet> = [];
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -107,101 +139,64 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
         : {},
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return [...requestCookies].map(([name, value]) => ({ name, value }));
         },
         setAll(cookiesToSet) {
-          //   cookiesToSet.forEach(({ name, value, _options }) => request.cookies.set(name, value));
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          // Built after the cookie writes so the forwarded request carries the
-          // refreshed token as well as x-pathname / x-search / the nonce.
-          supabaseResponse = NextResponse.next({
-            request: { headers: buildForwardedHeaders() },
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+          for (const cookie of cookiesToSet) {
+            requestCookies.set(cookie.name, cookie.value);
+            cookies.push(cookie);
+          }
+
+          request.headers.set(
+            'cookie',
+            [...requestCookies]
+              .map(([name, value]) => serializeCookie(name, value))
+              .join('; '),
           );
         },
       },
     },
   );
+
   // IMPORTANT: DO NOT REMOVE. getClaims() calls _useSession() internally,
   // which refreshes expired tokens and writes them back through the cookie
   // adapter; dropping it silently logs users out.
   const { data: authData } = await supabase.auth.getClaims();
-  const isAuthenticated = Boolean(authData?.claims);
 
-  // Reroute when the locale prefix is missing — for both logged-in users and
-  // anonymous visitors on non-root paths. Public links like `/columbus` need
-  // locale detection so they resolve to `/en/columbus` and then the
-  // next.config rewrite dispatches to the decision page. The bare root `/` is
-  // preserved for anonymous visitors so `app/page.tsx` (ComingSoonScreen) keeps
-  // rendering instead of bouncing through the walled-garden gate.
-  const shouldRouteI18n =
-    !currentLocale &&
-    !pathname.startsWith('/api') &&
-    (isAuthenticated || pathname !== '/');
-  if (shouldRouteI18n) {
-    const handleI18nRouting = createMiddleware(routing);
-
-    const response = handleI18nRouting(request);
-
-    // Forward Supabase auth cookies (e.g. refreshed tokens) to the redirect
-    // response. Without this, a token refresh during the redirect drops the new
-    // refresh token — the browser retries with the stale one, gets a 400, and
-    // loops indefinitely (most visible on Safari).
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      response.cookies.set(cookie);
-    });
-
-    applyCsp(response.headers);
-
-    return response;
-  }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-  applyCsp(supabaseResponse.headers);
-
-  return supabaseResponse;
+  return { cookies, isAuthenticated: Boolean(authData?.claims) };
 }
 
-// Next.js statically analyzes `config.matcher` at build time and cannot
-// follow cross-file imports (fails with `Unknown identifier ... at
-// config.matcher[0]`), so the matcher must be a plain string literal here.
-// Every path it catches triggers an auth check in the proxy above; keep the
-// exclusion list broad enough to skip routes that don't need cookie refresh
-// or i18n-locale redirect.
-//
-// Skipped path prefixes (no-auth routes):
-//   - Next internals:         _next/static, _next/image
-//   - In-tree API + rewrites: api, assets, stats
-//   - Public landing pages:   waitlist, info, login
-//   - SEO/monitoring files:   sitemap.xml, robots.txt,
-//                              manifest.webmanifest, health, _health,
-//                              favicon.ico
-// Skipped file extensions:
-//   - images: svg, png, jpg, jpeg, gif, webp, avif, ico, bmp
-//   - fonts:  woff, woff2, ttf, otf, eot
-//   - docs:   pdf
-//   - text:   json, xml, txt, html
-//   - build:  css, js, map
-//   - media:  mp4, webm, mp3, ogg, wav
-//
-// `proxy.test.ts` reads this literal directly to exercise the regex.
-export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|api|assets|stats|waitlist|info|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|html|css|js|map|mp4|webm|mp3|ogg|wav)$).*)',
-  ],
+/**
+ * Refreshes the locale preference cookie when the URL's locale differs from
+ * what the browser last sent, so the next locale-less visit lands on it.
+ */
+const getLocalePreferenceCookies = (
+  request: Request,
+  currentLocale: string | undefined,
+): Array<CookieToSet> => {
+  if (!currentLocale) {
+    return [];
+  }
+
+  const sentLocale = parseCookies(request.headers.get('cookie') ?? '')[
+    LOCALE_COOKIE_NAME
+  ];
+
+  if (sentLocale === currentLocale) {
+    return [];
+  }
+
+  return [
+    {
+      name: LOCALE_COOKIE_NAME,
+      value: currentLocale,
+      options: {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        secure: useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
+        sameSite: 'lax',
+        ...(shouldSetCookieDomain ? { domain: cookieOptionsDomain } : {}),
+      },
+    },
+  ];
 };

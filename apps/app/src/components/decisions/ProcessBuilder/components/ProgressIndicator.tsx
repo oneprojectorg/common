@@ -1,5 +1,3 @@
-'use client';
-
 import { Progress } from '@op/sense/Progress';
 
 import { useTranslations } from '@/lib/i18n';

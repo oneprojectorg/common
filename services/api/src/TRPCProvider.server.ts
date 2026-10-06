@@ -1,36 +1,34 @@
+import '@tanstack/react-start/server-only';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { cache } from 'react';
 import superjson from 'superjson';
 
 import { appRouter } from './routers';
 import { createServerContext } from './serverClient';
 
-export { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+export { dehydrate } from '@tanstack/react-query';
 
 /**
  * Create server-side tRPC utils for prefetching data
  *
- * Use this in Server Components to prefetch data that will be
- * hydrated into the client's React Query cache, preventing
- * hydration mismatches between server and client.
+ * Use this in a server function to prefetch data that a route hydrates into
+ * the client's React Query cache, preventing hydration mismatches between
+ * server and client.
  *
  * @example
  * ```tsx
- * import { createServerUtils, dehydrate, HydrationBoundary } from '@op/api/server';
- *
- * const MyServerComponent = async () => {
+ * // posts.functions.ts
+ * export const prefetchPosts = createServerFn().handler(async () => {
  *   const { utils, queryClient } = await createServerUtils();
  *   await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
+ *   return dehydrate(queryClient);
+ * });
  *
- *   return (
- *     <HydrationBoundary state={dehydrate(queryClient)}>
- *       <ClientComponent />
- *     </HydrationBoundary>
- *   );
- * };
+ * // the route: `loader: () => prefetchPosts()`, then render the component
+ * // inside <HydrationBoundary state={Route.useLoaderData()}> from
+ * // @tanstack/react-query.
  * ```
  */
-export const createServerUtils = cache(async () => {
+export const createServerUtils = async () => {
   const ctx = await createServerContext();
 
   const helpers = createServerSideHelpers({
@@ -40,4 +38,4 @@ export const createServerUtils = cache(async () => {
   });
 
   return { utils: helpers, queryClient: helpers.queryClient };
-});
+};

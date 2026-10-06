@@ -1,8 +1,6 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { EntityType, ProfileRelationshipType } from '@op/api/encoders';
-import React, { Suspense, useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 

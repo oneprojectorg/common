@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { useSidebar } from '@op/sense/Sidebar';

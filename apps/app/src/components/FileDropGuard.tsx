@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect } from 'react';
 
 // Browsers navigate to (open) a file when it's dropped anywhere outside a valid

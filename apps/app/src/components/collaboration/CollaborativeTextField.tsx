@@ -1,5 +1,3 @@
-'use client';
-
 import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';

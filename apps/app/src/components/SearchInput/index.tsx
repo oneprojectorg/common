@@ -17,9 +17,9 @@ import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { Spinner } from '@op/sense/Spinner';
 import { firstStrongDirection } from '@op/sense/lib/textDirection';
 import { cn } from '@op/sense/lib/utils';
-import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuClock, LuSearch } from 'react-icons/lu';
+import { useTranslations } from 'use-intl';
 
 import { useRouter } from '@/lib/i18n';
 

@@ -1,7 +1,5 @@
-'use client';
-
 import { POSTHOG_SESSION_ID_COOKIE, posthogUIHost } from '@op/core';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useLocation } from '@tanstack/react-router';
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
 import {
@@ -163,22 +161,24 @@ export function useTrackingConsent() {
 }
 
 function PostHogPageView() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  // The URL the browser shows — a vanity decision URL as typed, not the route
+  // it rewrites to — without the hash.
+  const publicPath = useLocation({
+    select: (location) => {
+      const url = new URL(location.publicHref, 'http://localhost');
+
+      return url.pathname + url.search;
+    },
+  });
   const posthogClient = usePostHog();
 
   useEffect(() => {
-    if (pathname && posthogClient) {
-      let url = window.origin + pathname;
-      const search = searchParams.toString();
-
-      if (search) {
-        url += `?${search}`;
-      }
-
-      posthogClient.capture('$pageview', { $current_url: url });
+    if (posthogClient) {
+      posthogClient.capture('$pageview', {
+        $current_url: window.origin + publicPath,
+      });
     }
-  }, [pathname, searchParams, posthogClient]);
+  }, [publicPath, posthogClient]);
 
   return null;
 }

@@ -2,14 +2,12 @@
  * Regression test: TRPCProvider must instantiate a fresh QueryClient on every
  * mount, never a module-level singleton.
  *
- * The bug it guards against: Next App Router server-renders client components,
- * so a `const queryClient = new QueryClient()` at module scope is shared by
+ * The bug it guards against: every component is server-rendered, so a `const queryClient = new QueryClient()` at module scope is shared by
  * every concurrent SSR request on the same Node worker. With a 24h gcTime,
  * one user's account row stayed cached and leaked into the next request's
  * useSuspenseQuery hit.
  */
 import { useQueryClient } from '@tanstack/react-query';
-import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
@@ -25,12 +23,12 @@ describe('TRPCProvider', () => {
     };
 
     renderToString(
-      <TRPCProvider ssrCookies="user-a">
+      <TRPCProvider>
         <Capture />
       </TRPCProvider>,
     );
     renderToString(
-      <TRPCProvider ssrCookies="user-b">
+      <TRPCProvider>
         <Capture />
       </TRPCProvider>,
     );

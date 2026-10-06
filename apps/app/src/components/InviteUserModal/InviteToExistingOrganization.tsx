@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import {

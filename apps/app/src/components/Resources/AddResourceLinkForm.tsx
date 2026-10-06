@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import {
   RESOURCE_DESCRIPTION_MAX_LEN,

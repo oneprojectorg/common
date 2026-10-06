@@ -1,5 +1,3 @@
-'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trackUserInvited } from '@/utils/inviteAnalytics';

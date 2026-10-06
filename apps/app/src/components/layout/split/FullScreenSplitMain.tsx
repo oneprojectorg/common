@@ -1,16 +1,16 @@
-import { getTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
 
-export const FullScreenSplitMain = async ({
+export const FullScreenSplitMain = ({
   logo = true,
   children,
 }: {
   logo?: boolean;
   children: React.ReactNode;
 }) => {
-  const t = await getTranslations();
+  const t = useTranslations();
 
   return (
     <main className="relative col-span-3 flex size-full flex-col overflow-y-scroll p-4 md:p-8">

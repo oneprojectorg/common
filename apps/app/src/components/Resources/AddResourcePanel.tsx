@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
 import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';

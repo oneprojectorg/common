@@ -1,5 +1,3 @@
-'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import { Field, FieldLabel } from '@op/sense/Field';
 import { Textarea } from '@op/sense/Textarea';

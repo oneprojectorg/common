@@ -1,5 +1,3 @@
-'use client';
-
 import { cn } from '@op/sense/lib/utils';
 
 // Borderless, document-style text inputs for the Overview page (headline +

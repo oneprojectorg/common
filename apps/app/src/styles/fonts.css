@@ -1,0 +1,16 @@
+/*
+ * Self-hosted web fonts. Roboto ships as a variable font (the full wght axis)
+ * so font-strong's 450 renders true instead of rounding to a static cut.
+ * Fontsource declares every face with font-display: swap.
+ */
+@import '@fontsource-variable/roboto/index.css';
+@import '@fontsource/roboto-serif/300.css';
+@import '@fontsource/roboto-serif/300-italic.css';
+@import '@fontsource/roboto-serif/400.css';
+@import '@fontsource/roboto-serif/400-italic.css';
+
+/* Read by the `--font-sans` / `--font-serif` theme tokens in @op/styles. */
+.font-variables {
+  --font-sans: 'Roboto Variable';
+  --font-serif: 'Roboto Serif';
+}

@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Card } from '@op/sense/Card';
 import { Skeleton } from '@op/sense/Skeleton';

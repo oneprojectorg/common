@@ -1,5 +1,3 @@
-'use client';
-
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/sense/Button';
@@ -11,7 +9,6 @@ import {
 import { ItemGroup } from '@op/sense/Item';
 import { cn } from '@op/sense/lib/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
-import { useLocale } from 'next-intl';
 import {
   useCallback,
   useEffect,
@@ -19,6 +16,7 @@ import {
   useState,
   useTransition,
 } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

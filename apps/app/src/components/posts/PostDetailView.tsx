@@ -1,12 +1,9 @@
-'use client';
-
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { notFound } from '@/lib/navigation';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { PostFeed, PostItemOnDetailPage } from '../PostFeed';

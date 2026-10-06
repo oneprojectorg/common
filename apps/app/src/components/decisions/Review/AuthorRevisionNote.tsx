@@ -1,5 +1,3 @@
-'use client';
-
 import { formatDate } from '@/utils/formatting';
 import { LuRefreshCw } from 'react-icons/lu';
 

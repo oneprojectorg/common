@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { LuArrowLeft } from 'react-icons/lu';
 

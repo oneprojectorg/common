@@ -1,5 +1,3 @@
-'use client';
-
 import type { BoundaryShape } from '@op/api/encoders';
 import {
   Layer,
@@ -65,7 +63,7 @@ const BOUNDARY_OUTLINE_LAYER: LayerProps = {
 
 /**
  * The only module that imports `maplibre-gl` (via `@op/sense/Map`). It is loaded
- * exclusively through `next/dynamic({ ssr: false })` so the heavy, browser-only
+ * exclusively through the client-only `lazy` wrapper in `dynamicMap` so the heavy, browser-only
  * map library never enters the server bundle — which both avoids SSR `window`
  * access and keeps it out of the route's server compile (a static import here
  * OOM-killed the dev server).

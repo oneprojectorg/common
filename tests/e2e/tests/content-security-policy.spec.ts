@@ -3,9 +3,9 @@ import type { Page, Response } from '@playwright/test';
 import { expect, test } from '../fixtures/index.js';
 
 /**
- * The policy comes from the proxy (per-request nonce) or from
- * `next.config.mjs` (static, for the routes the matcher skips), never both —
- * two policies on one response are intersected and block every script.
+ * The request middleware in `apps/app/src/start.ts` sends one policy per page:
+ * a per-request nonce, or the static policy for /login and /info — never both,
+ * since two policies on one response are intersected and block every script.
  */
 
 const getSolePolicy = async (response: Response | null, path: string) => {

@@ -1,17 +1,24 @@
-'use client';
-
+import { ClientOnly } from '@/utils/ClientOnly';
 import { Skeleton } from '@op/sense/Skeleton';
-import dynamic from 'next/dynamic';
+import { Suspense, lazy } from 'react';
+
+import type { ProposalsMapCanvasProps } from './ProposalsMapCanvas';
+
+const LazyProposalsMapCanvas = lazy(() => import('./ProposalsMapCanvas'));
 
 /**
- * Client-only handle to {@link ProposalsMapCanvas}. `ssr: false` keeps
- * `maplibre-gl` out of the server bundle entirely — it is fetched and compiled
- * on the client only when the proposals map view actually mounts.
+ * Client-only handle to {@link LazyProposalsMapCanvas}. Rendering only after
+ * mount keeps `maplibre-gl` out of the server render entirely — it is fetched
+ * and compiled on the client only when the proposals map view actually mounts.
  */
-export const ProposalsMapCanvas = dynamic(
-  () => import('./ProposalsMapCanvas'),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-full w-full" />,
-  },
-);
+export const ProposalsMapCanvas = (props: ProposalsMapCanvasProps) => {
+  const fallback = <Skeleton className="h-full w-full" />;
+
+  return (
+    <ClientOnly fallback={fallback}>
+      <Suspense fallback={fallback}>
+        <LazyProposalsMapCanvas {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+};

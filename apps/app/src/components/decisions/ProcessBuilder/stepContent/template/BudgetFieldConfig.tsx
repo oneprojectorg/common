@@ -1,5 +1,3 @@
-'use client';
-
 import { ProposalTemplateSchema } from '@op/common';
 import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
 import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
@@ -14,9 +12,9 @@ import {
   SelectValue,
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
-import { useLocale } from 'next-intl';
 import type { Key } from 'react';
 import { useCallback, useId, useMemo } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

@@ -1,39 +1,15 @@
 /**
- * Tests for the proxy middleware matcher.
+ * Tests for the paths the proxy runs on.
  *
- * Every path the matcher catches triggers `auth.getUser()` in the proxy,
- * doubling the GoTrue round-trip per page nav (middleware + tRPC). The
- * exclusion list must stay broad enough to skip routes that have no
- * Supabase-cookie or locale-redirect dependency.
- *
- * The matcher pattern lives inline in `proxy.ts` because Next's static
- * analyzer requires it to be a plain string literal (cross-file imports
- * fail with `Unknown identifier ... at config.matcher[0]`). To stay
- * single-source, this test reads the literal straight out of `proxy.ts`
- * rather than maintaining a separate copy.
+ * Every path it catches triggers `auth.getClaims()` in the proxy, adding a
+ * GoTrue round-trip per page nav. The exclusion list must stay broad enough
+ * to skip routes that have no Supabase-cookie or locale-redirect dependency.
  */
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { STATIC_POLICY_SOURCES } from './lib/csp.mjs';
+import { isProxiedPath } from './proxy';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const proxySource = readFileSync(resolve(__dirname, 'proxy.ts'), 'utf8');
-const [, sourceLiteral] = proxySource.match(/matcher:\s*\[\s*'([^']+)'/) ?? [];
-if (!sourceLiteral) {
-  throw new Error(
-    'Could not extract matcher literal from proxy.ts — has the `config.matcher` shape changed?',
-  );
-}
-// Source-form `\\.` represents a single `\.` in the runtime string.
-const PROXY_MATCHER_PATTERN = sourceLiteral.replace(/\\\\/g, '\\');
-
-const matcherRegex = new RegExp(`^${PROXY_MATCHER_PATTERN}$`);
-
-const matches = (path: string) => matcherRegex.test(path);
+const matches = (path: string) => isProxiedPath(path);
 
 describe('proxy matcher', () => {
   describe('walled-garden routes (must still match)', () => {
@@ -57,8 +33,8 @@ describe('proxy matcher', () => {
 
   describe('skipped path prefixes (must NOT match)', () => {
     const SKIPPED = [
-      '/_next/static/chunks/main.js',
-      '/_next/image?url=foo',
+      '/_build/assets/main.js',
+      '/_serverFn/abc123',
       '/api/v1/trpc/account.getMyAccount',
       '/api/auth/callback',
       '/api/waitlist-signup',
@@ -81,19 +57,10 @@ describe('proxy matcher', () => {
     });
   });
 
-  // `next.config.mjs` serves these a static, nonce-free policy. If the matcher
-  // caught them too the response would carry two intersected policies, which
-  // blocks every script on the page.
+  // These are served the static, nonce-free policy and sit outside `/$locale`,
+  // so the locale redirect would send them to pages that don't exist.
   describe('routes served the static CSP (must NOT match)', () => {
-    const STATIC_CSP_PATHS = STATIC_POLICY_SOURCES.map((source) =>
-      source.replace('/:path*', ''),
-    );
-
-    it('covers every source next.config.mjs declares', () => {
-      expect(STATIC_CSP_PATHS).toEqual(['/login', '/info']);
-    });
-
-    it.each(STATIC_CSP_PATHS.flatMap((path) => [path, `${path}/nested`]))(
+    it.each(['/login', '/login/nested', '/info', '/info/nested'])(
       'skips %s',
       (path) => {
         expect(matches(path)).toBe(false);
@@ -141,7 +108,7 @@ describe('proxy matcher', () => {
       '/sample.wav',
       // nested paths still pick up the extension
       '/some/deep/path/asset.svg',
-      '/_next/static/css/app.css',
+      '/_build/assets/app.css',
     ];
     it.each(STATIC_ASSETS)('skips %s', (path) => {
       expect(matches(path)).toBe(false);

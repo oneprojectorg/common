@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import type { ResultNotificationMessages } from '@op/common/client';
@@ -13,11 +11,11 @@ import {
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
-import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { notFound } from '@/lib/navigation';
 
 import { Bullet } from '@/components/Bullet';
 

@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Spinner } from '@op/sense/Spinner';

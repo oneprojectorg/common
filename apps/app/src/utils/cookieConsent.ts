@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { getRequestHeader } from '@tanstack/react-start/server';
 
 /**
  * Two-letter country code of the visitor, resolved by Vercel's edge network on
@@ -21,6 +21,6 @@ export const isCookieConsentRequired = (
   country: string | null | undefined,
 ): boolean => country?.trim().toUpperCase() !== 'US';
 
-export async function getCookieConsentRequired(): Promise<boolean> {
-  return isCookieConsentRequired((await headers()).get(COUNTRY_HEADER));
+export function getCookieConsentRequired(): boolean {
+  return isCookieConsentRequired(getRequestHeader(COUNTRY_HEADER));
 }

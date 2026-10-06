@@ -1,57 +1,31 @@
-'use client';
-
-import { logger } from '@op/logging/client';
-import { IntlErrorCode, NextIntlClientProvider } from 'next-intl';
 import { ReactNode, useEffect } from 'react';
+import { IntlProvider } from 'use-intl';
+import type { AbstractIntlMessages } from 'use-intl';
+
+import { getMessageFallback, onProviderError } from '../errorHandling';
 
 type Props = {
   children: ReactNode;
-  messages: Record<string, any>;
+  messages: AbstractIntlMessages;
   locale: string;
 };
 
-type MessageFallbackParams = {
-  namespace?: string;
-  key: string;
-  error: {
-    code: string;
-    message?: string;
-  };
-};
-
-// We wrap our i18n provider to not throw errors on missing keys. We want to build out translation ability using "natural keys" without
-// slowing down development so we can sweep back later and add the translations.
 export const I18nProvider = ({ children, messages, locale }: Props) => {
-  // Sync the lang attribute on client-side navigation since the root layout
+  // Sync the lang attribute on client-side navigation since the root document
   // doesn't re-render when the locale changes
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
 
   return (
-    <NextIntlClientProvider
+    <IntlProvider
       locale={locale}
       messages={messages}
-      onError={(error: { code: string; message?: string }): void => {
-        if (
-          error.code === IntlErrorCode.MISSING_MESSAGE ||
-          error.code === IntlErrorCode.ENVIRONMENT_FALLBACK
-        ) {
-          // MISSING_MESSAGE: natural keys strategy — sweep back later for translations
-          // ENVIRONMENT_FALLBACK: timeZone/now fallbacks are non-fatal client-side
-          return;
-        }
-        logger.error('NextIntlClientProvider error', {
-          error,
-          context: 'NextIntlClientProvider',
-        });
-      }}
-      getMessageFallback={({ key }: MessageFallbackParams): string => {
-        // Just return the key as fallback without errors
-        return key;
-      }}
+      timeZone="UTC"
+      onError={onProviderError}
+      getMessageFallback={getMessageFallback}
     >
       {children}
-    </NextIntlClientProvider>
+    </IntlProvider>
   );
 };

@@ -11,10 +11,10 @@ To ensure consistent TypeScript compiler options and settings across different t
 This package contains several `tsconfig.*.json` files, each tailored for a specific environment or project type:
 
 - **`base.json`**: A fundamental configuration with common settings inherited by others.
-- **`nextjs.json`**: Configuration specifically for Next.js applications (used by `apps/app` and `apps/api`) and also extended by several other service/package workspaces (e.g., `services/trpc`).
+- **`bundler.json`**: Configuration for code compiled by a bundler (Vite) — the TanStack Start apps `apps/app` and `apps/api`, and the service/package workspaces they import.
 - **`react-app.json`**: Configuration tailored for general React applications.
 - **`react-library.json`**: Configuration for React component libraries (used by `packages/sense`, `packages/styles`, and `packages/hooks`).
-- **`trpc.json`**: Configuration potentially designed for the tRPC service (`services/trpc`), but it is not currently used (it extends `nextjs.json` instead).
+- **`trpc.json`**: Configuration potentially designed for the tRPC service (`services/trpc`), but it is not currently used (it extends `bundler.json` instead).
 
 These files contain TypeScript compiler options (`compilerOptions`).
 
@@ -41,12 +41,12 @@ In another workspace's `tsconfig.json` file:
 
 ```json
 {
-  "extends": "@op/typescript-config/nextjs.json", // Or react-library.json, base.json, etc.
+  "extends": "@op/typescript-config/bundler.json", // Or react-library.json, base.json, etc.
   "compilerOptions": {
     // Project-specific overrides or additions
     "outDir": "dist"
   },
-  "include": ["src", "next-env.d.ts"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }
 ```

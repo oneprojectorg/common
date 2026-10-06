@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import {
   type PostTranslation,
@@ -10,8 +8,8 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

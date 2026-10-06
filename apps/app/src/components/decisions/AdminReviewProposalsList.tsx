@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type DecisionAccess, type InstancePhaseData } from '@op/api/encoders';
 import { Header3 } from '@op/sense/Header';

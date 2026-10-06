@@ -15,8 +15,8 @@ import {
   ReviewResultOption,
   ReviewResultText,
 } from '@op/sense/ReviewResultCard';
-import { useFormatter } from 'next-intl';
 import type { ReactNode } from 'react';
+import { useFormatter } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 

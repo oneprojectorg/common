@@ -1,5 +1,3 @@
-'use client';
-
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { zodUrlRefine } from '@op/common/validation';
 import { logger } from '@op/logging/client';

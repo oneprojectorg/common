@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath, normalizePhoneNumber } from '@op/common/client';
 import { SUPPORTED_LOCALES } from '@op/common/locales';

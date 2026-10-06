@@ -1,19 +1,13 @@
-import { getRequiredUser } from '@/utils/getUser';
-import { Organization } from '@op/api/encoders';
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
-import { PAGE_LIMIT } from '@op/common/client';
-import { logger } from '@op/logging';
+import { parseDehydratedState } from '@op/api/dehydratedState';
+import type { CommonUser, Organization } from '@op/api/encoders';
 import { Card } from '@op/sense/Card';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { Suspense } from 'react';
+import { HydrationBoundary } from '@tanstack/react-query';
+import { Suspense, use, useMemo } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { ActiveDecisionsNotifications } from '@/components/ActiveDecisionsNotifications';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -31,15 +25,29 @@ import { Feed } from './Feed';
 import { Welcome } from './Welcome';
 
 /**
- * Main landing screen component - renders page shell immediately and
- * streams in user-dependent content via Suspense boundaries.
+ * What the home route's loader hands the landing screen. The feed and the new
+ * organizations are deferred promises, so the page shell renders immediately
+ * and each streams in behind its own Suspense boundary.
  */
-export const LandingScreen = () => {
+interface LandingScreenProps {
+  user: CommonUser;
+  /** The prefetched query cache, superjson-encoded. */
+  feedState: Promise<string>;
+  newOrganizations: Promise<Array<Organization> | null>;
+}
+
+/**
+ * Main landing screen component - renders page shell immediately and
+ * streams in the feeds via Suspense boundaries.
+ */
+export const LandingScreen = ({
+  user,
+  feedState,
+  newOrganizations,
+}: LandingScreenProps) => {
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-[1400px] grow flex-col gap-4 px-4 pt-8 sm:gap-10 sm:px-8 sm:pt-14">
-      <Suspense fallback={<WelcomeSkeleton />}>
-        <WelcomeSection />
-      </Suspense>
+      <WelcomeSection user={user} />
       <ErrorBoundary fallback={null}>
         <Suspense
           fallback={
@@ -51,16 +59,18 @@ export const LandingScreen = () => {
           <PlatformHighlights />
         </Suspense>
       </ErrorBoundary>
-      <Suspense fallback={<UserContentSkeleton />}>
-        <UserContent />
-      </Suspense>
+      <UserContent
+        user={user}
+        feedState={feedState}
+        newOrganizations={newOrganizations}
+      />
       <NewlyJoinedModal />
     </div>
   );
 };
 
-export const LandingScreenSkeleton: React.FC = async () => {
-  const t = await getTranslations();
+export const LandingScreenSkeleton = () => {
+  const t = useTranslations();
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-[1400px] grow flex-col gap-4 px-4 pt-8 sm:gap-10 sm:px-8 sm:pt-14">
@@ -121,37 +131,28 @@ export const LandingScreenSkeleton: React.FC = async () => {
   );
 };
 
-const NewOrganizationsList = async () => {
-  const t = await getTranslations();
+const NewOrganizationsList = ({
+  newOrganizations,
+}: Pick<LandingScreenProps, 'newOrganizations'>) => {
+  const t = useTranslations();
 
   return (
     <div className="flex flex-col gap-6 border-0 py-0 sm:mx-0 sm:border sm:p-5">
       <Header3 className="px-4 text-label sm:px-0">
         {t('shell.newOrganizationsHeading')}
       </Header3>
-      <NewOrganizations />
+      <NewOrganizations organizations={newOrganizations} />
     </div>
   );
 };
 
-const PostFeedSection = async ({
+const PostFeedSection = ({
   showPostUpdate,
+  feedState,
 }: {
   showPostUpdate: boolean;
-}) => {
-  // Prefetch posts data on server to prevent hydration mismatch
-  // If this fails, the client will fetch instead
-  const [t, { utils, queryClient }] = await Promise.all([
-    getTranslations(),
-    createServerUtils(),
-  ]);
-  try {
-    await utils.organization.listAllPosts.fetchInfinite({
-      limit: PAGE_LIMIT.sm,
-    });
-  } catch (e) {
-    logger.error('Homepage post prefetch failed', { error: e });
-  }
+} & Pick<LandingScreenProps, 'feedState'>) => {
+  const t = useTranslations();
 
   return (
     <>
@@ -167,30 +168,49 @@ const PostFeedSection = async ({
           </div>
         }
       >
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          <Feed />
-        </HydrationBoundary>
+        <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
+          <PrefetchedFeed feedState={feedState} />
+        </Suspense>
       </ErrorBoundary>
     </>
   );
 };
 
-const LandingScreenFeeds = async ({
+/** The feed, hydrated with the posts the server prefetched to prevent a hydration mismatch. */
+const PrefetchedFeed = ({
+  feedState,
+}: Pick<LandingScreenProps, 'feedState'>) => {
+  const serialized = use(feedState);
+  const state = useMemo(() => parseDehydratedState(serialized), [serialized]);
+
+  return (
+    <HydrationBoundary state={state}>
+      <Feed />
+    </HydrationBoundary>
+  );
+};
+
+const LandingScreenFeeds = ({
   showPostUpdate,
+  feedState,
+  newOrganizations,
 }: {
   showPostUpdate: boolean;
-}) => {
-  const t = await getTranslations();
+} & Pick<LandingScreenProps, 'feedState' | 'newOrganizations'>) => {
+  const t = useTranslations();
 
   return (
     <>
       <div className="hidden grid-cols-15 sm:grid">
         <div className="col-span-9 flex flex-col gap-8">
-          <PostFeedSection showPostUpdate={showPostUpdate} />
+          <PostFeedSection
+            showPostUpdate={showPostUpdate}
+            feedState={feedState}
+          />
         </div>
         <span />
         <div className="col-span-5">
-          <NewOrganizationsList />
+          <NewOrganizationsList newOrganizations={newOrganizations} />
         </div>
       </div>
       <Tabs defaultValue="discover" className="gap-8 pb-8 sm:hidden">
@@ -199,11 +219,14 @@ const LandingScreenFeeds = async ({
           <TabsTrigger value="recent">{t('shell.recentTab')}</TabsTrigger>
         </TabsList>
         <TabsContent value="discover" className="-mx-4 p-0">
-          <NewOrganizationsList />
+          <NewOrganizationsList newOrganizations={newOrganizations} />
         </TabsContent>
         <TabsContent value="recent" className="p-0">
           <div className="flex flex-col gap-8">
-            <PostFeedSection showPostUpdate={showPostUpdate} />
+            <PostFeedSection
+              showPostUpdate={showPostUpdate}
+              feedState={feedState}
+            />
           </div>
         </TabsContent>
       </Tabs>
@@ -211,11 +234,8 @@ const LandingScreenFeeds = async ({
   );
 };
 
-/**
- * Async component that fetches user data and renders user-dependent content.
- */
-const WelcomeSection = async () => {
-  const [t, user] = await Promise.all([getTranslations(), getRequiredUser()]);
+const WelcomeSection = ({ user }: Pick<LandingScreenProps, 'user'>) => {
+  const t = useTranslations();
 
   return (
     <div className="flex flex-col gap-2">
@@ -225,26 +245,11 @@ const WelcomeSection = async () => {
   );
 };
 
-const WelcomeSkeleton = async () => {
-  const t = await getTranslations();
-
-  return (
-    <div className="flex flex-col gap-2">
-      <Skeleton>
-        <Header1 className="text-center text-transparent">
-          {t('shell.welcomeBackTitle')}
-        </Header1>
-      </Skeleton>
-      <Skeleton className="text-center text-transparent">
-        {t('shell.landingSubtitle')}
-      </Skeleton>
-    </div>
-  );
-};
-
-const UserContent = async () => {
-  const user = await getRequiredUser();
-
+const UserContent = ({
+  user,
+  feedState,
+  newOrganizations,
+}: LandingScreenProps) => {
   return (
     <>
       <PendingDecisionInvites />
@@ -255,6 +260,8 @@ const UserContent = async () => {
       <hr />
       <LandingScreenFeeds
         showPostUpdate={user.currentProfile?.type === 'org'}
+        feedState={feedState}
+        newOrganizations={newOrganizations}
       />
     </>
   );
@@ -264,7 +271,7 @@ const UserContent = async () => {
  * Organization-specific notifications component.
  * Renders join profile requests and pending relationships for org profiles.
  */
-export const OrgNotifications = async (props: {
+export const OrgNotifications = (props: {
   currentProfile: Organization['profile'];
 }) => {
   const { currentProfile } = props;
@@ -273,30 +280,6 @@ export const OrgNotifications = async (props: {
     <>
       <JoinProfileRequestsNotifications targetProfileId={currentProfile.id} />
       <PendingRelationships slug={currentProfile.slug} />
-    </>
-  );
-};
-
-const UserContentSkeleton = async () => {
-  const t = await getTranslations();
-
-  return (
-    <>
-      <hr />
-      <div className="hidden grid-cols-15 sm:grid">
-        <div className="col-span-9 flex flex-col gap-4">
-          <PostFeedSkeleton numPosts={3} />
-        </div>
-        <span />
-        <div className="col-span-5">
-          <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
-            <Skeleton className="text-label text-transparent">
-              {t('shell.newOrganizationsHeading')}
-            </Skeleton>
-            <OrganizationListSkeleton />
-          </Card>
-        </div>
-      </div>
     </>
   );
 };

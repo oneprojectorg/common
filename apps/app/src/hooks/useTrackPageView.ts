@@ -1,5 +1,3 @@
-'use client';
-
 import { usePostHog } from 'posthog-js/react';
 import { type DependencyList, useEffect } from 'react';
 

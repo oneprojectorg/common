@@ -1,7 +1,7 @@
-import { createTranslator } from 'next-intl';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReactNode } from 'react';
+import { createTranslator } from 'use-intl';
 import { describe, expect, it } from 'vitest';
 
 import { i18nConfig } from './config';
@@ -115,9 +115,9 @@ const parsedPathsOf = (tree: MessageTree, prefix = ''): Array<string> =>
       : [path, ...parsedPathsOf(value, path)];
   });
 
-// `request.ts` resolves a dictionary with a dynamic import keyed on the locale
-// and hands it to next-intl untouched, so a supported locale whose dictionary
-// is missing — or holds a message next-intl can't format — fails at request
+// `messages.ts` resolves a dictionary with a dynamic import keyed on the locale
+// and hands it to use-intl untouched, so a supported locale whose dictionary
+// is missing — or holds a message use-intl can't format — fails at request
 // time, for every page in that locale. A message that fails to format renders
 // as its raw key, which is easy to miss in review.
 //
@@ -125,7 +125,7 @@ const parsedPathsOf = (tree: MessageTree, prefix = ''): Array<string> =>
 // passes what the English key implies, so a translation that renamed a
 // placeholder formats here exactly as badly as it would in the browser.
 /**
- * A translator addressed by a path computed at runtime. next-intl types a
+ * A translator addressed by a path computed at runtime. use-intl types a
  * translator's keys as the literal union of the messages it was handed, which
  * a walk of the file cannot produce.
  */
@@ -138,7 +138,7 @@ describe('dictionaries', () => {
     const messages = dictionaryOf(locale);
     const failures: Array<string> = [];
     // Read through `MessageLookup`: the paths come from walking the file, so
-    // they are strings, and next-intl types its keys as the literal union of
+    // they are strings, and use-intl types its keys as the literal union of
     // the dictionary it was given.
     const t: MessageLookup = createTranslator({
       locale,
@@ -163,7 +163,7 @@ describe('dictionaries', () => {
   // `TranslationKey` is derived from `en.json` alone, so English is the only
   // dictionary the compiler checks. A key added there and forgotten elsewhere
   // type-checks, ships, and renders the raw key to everyone on that locale,
-  // while `request.ts` logs an error per miss. Compared as sets: the
+  // while `getTranslations` logs an error per miss. Compared as sets: the
   // dictionaries are not ordered alike, and needn't be.
   it.each(translatedLocales)('translates every English key in %s', (locale) => {
     const englishKeys = new Set(englishMessages.keys());
@@ -207,7 +207,7 @@ describe('dictionaries', () => {
     );
   });
 
-  // ADR 0005: no key holds a period, at any level, because next-intl reads one
+  // ADR 0005: no key holds a period, at any level, because use-intl reads one
   // as a path separator. Nothing rewrites keys any more, so a dotted key is
   // simply a message no call site can reach.
   it.each(i18nConfig.locales)('keys no %s message by a dotted ID', (locale) => {

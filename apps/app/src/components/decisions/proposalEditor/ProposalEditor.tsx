@@ -1,5 +1,3 @@
-'use client';
-
 import { useRequiredUser } from '@/utils/UserProvider';
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
@@ -14,7 +12,6 @@ import {
 import { logger } from '@op/logging/client';
 import { Header2 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
 import { usePostHog } from 'posthog-js/react';
 import {
   type ReactNode,
@@ -24,6 +21,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 

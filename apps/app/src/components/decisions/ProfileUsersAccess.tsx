@@ -1,5 +1,3 @@
-'use client';
-
 import { ClientOnly } from '@/utils/ClientOnly';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';

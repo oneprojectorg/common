@@ -1,5 +1,3 @@
-'use client';
-
 import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import {
   createContext,

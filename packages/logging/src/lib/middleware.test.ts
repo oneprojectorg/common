@@ -1,11 +1,10 @@
-import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 
 import { transformMiddlewareRequest } from './middleware';
 
 describe('transformMiddlewareRequest', () => {
   it('describes the request without the caller IP', () => {
-    const request = new NextRequest('https://common.org/en/columbus?tab=all', {
+    const request = new Request('https://common.org/en/columbus?tab=all', {
       headers: {
         'x-forwarded-for': '203.0.113.42',
         'x-real-ip': '203.0.113.42',

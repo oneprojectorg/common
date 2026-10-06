@@ -23,7 +23,7 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 
 ## Docker Dev Environment
 
-A fully containerised dev environment is available via `docker-compose.dev.yml`. It runs the Next.js app, the tRPC API, Supabase (via Docker-in-Docker), and Redis — all with hot-reload.
+A fully containerised dev environment is available via `docker-compose.dev.yml`. It runs the app, the tRPC API, Supabase (via Docker-in-Docker), and Redis — all with hot-reload.
 
 ### Prerequisites
 
@@ -36,8 +36,8 @@ scripts/bootstrap-linux.sh    # Docker engine + Node 24 + pnpm (Debian/Ubuntu)
 
 Otherwise, install these manually:
 
-- **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the Next.js app + API + Redis).
-- **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and Next.js build caches.
+- **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the app + API + Redis).
+- **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and the Vite/Nitro dev caches.
 - **Node.js 24** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
 - **Tiptap Pro registry credentials** — run both of these once (the registry line too, not just the token, or installs 404 against npmjs):
 
@@ -68,7 +68,7 @@ PORT_PREFIX=40 pnpm docker:dev   # app → 4000, api → 4001, supabase → 4021
 
 | Service           | Port  | URL                         |
 |-------------------|-------|-----------------------------|
-| Next.js app       | 3100  | http://localhost:3100       |
+| App               | 3100  | http://localhost:3100       |
 | tRPC API          | 3101  | http://localhost:3101       |
 | Supabase API      | 3121  | http://localhost:3121       |
 | Supabase DB       | 3122  | `postgres://postgres:postgres@localhost:3122/postgres` |
@@ -133,7 +133,7 @@ Key variables:
 
 ### Dev database + seeding
 
-The dev Postgres runs inside the DinD daemon (the Supabase CLI spawns it). The Next.js app and tRPC API connect to it over the internal docker network at `dind:54322`; from your host, it's exposed on `localhost:3122` (see port table above).
+The dev Postgres runs inside the DinD daemon (the Supabase CLI spawns it). The app and tRPC API connect to it over the internal docker network at `dind:54322`; from your host, it's exposed on `localhost:3122` (see port table above).
 
 **Migrations and seeds run automatically** on every `api` container start — the compose `command` chain is:
 
@@ -190,8 +190,8 @@ This monorepo is organized into several distinct workspaces:
 
 These are the deployable units of the project.
 
-- **[`apps/app`](./apps/app/README.md)**: The main user-facing frontend web application built with Next.js (App Router), React, Tailwind CSS, and Zustand. It communicates with the backend via tRPC.
-- **[`apps/api`](./apps/api/README.md)**: A Next.js application that hosts the tRPC API endpoint (`/api/v1/trpc/[trpc]`) and serves API documentation (OpenAPI spec at `/api/v1/openapi.json` and an interactive UI at `/`).
+- **[`apps/app`](./apps/app/README.md)**: The main user-facing frontend web application built with TanStack Start (Vite + Nitro), React, Tailwind CSS, and Zustand. It communicates with the backend via tRPC.
+- **[`apps/api`](./apps/api/README.md)**: A TanStack Start server that hosts the tRPC API endpoint (`/api/v1/trpc/*`) and serves API documentation (OpenAPI spec at `/api/v1/openapi.json` and an interactive UI at `/`).
 
 ### Packages (`packages/`)
 
@@ -236,7 +236,7 @@ Tailwind configuration is centralized in the `@op/styles` package. There is no p
 - **Raw values**: `packages/styles/tokens.css` holds the palette and scales as CSS custom properties.
 - **Semantic layer**: `packages/styles/theme.css` maps those to the semantic tokens components use (`bg-primary`, `text-muted-foreground`, `border-input`, the sense type scale) and is the package entry.
 - **Scanning**: `theme.css` declares its own `@source` globs covering `packages/sense` and `apps/app`, and the package builds to `dist/styles.css` via the Tailwind CLI.
-- **App consumption**: `apps/app` imports the built stylesheet once (`import '@op/styles'` in `src/app/layout.tsx`); it ships no CSS of its own.
+- **App consumption**: `apps/app` imports the built stylesheet once (linked from `src/routes/__root.tsx`); it ships no CSS of its own.
 
 Adding a new Tailwind-consuming package means adding an `@source` glob to `theme.css`, nothing more.
 

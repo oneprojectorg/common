@@ -1,5 +1,3 @@
-'use client';
-
 import type { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useState } from 'react';
 

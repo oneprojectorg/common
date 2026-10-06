@@ -1,5 +1,3 @@
-'use client';
-
 import { canEngageWithProposals } from '@/hooks/useProposalEngagement';
 import { type DecisionAccess, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';

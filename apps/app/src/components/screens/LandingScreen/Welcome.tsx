@@ -1,10 +1,9 @@
-'use client';
-
 import type { CommonUser } from '@op/api/encoders';
 import { Header1 } from '@op/sense/Header';
-import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
+import { useTranslations } from 'use-intl';
+
+import { useSearchParams } from '@/lib/navigation';
 
 export const Welcome = ({ user }: { user: CommonUser }) => {
   const searchParams = useSearchParams();

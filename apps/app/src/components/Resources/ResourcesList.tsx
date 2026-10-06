@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
 import { Sortable } from '@op/sense/Sortable';

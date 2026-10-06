@@ -1,5 +1,3 @@
-'use client';
-
 import {
   REJECTION_NOTE_MAX_LENGTH,
   RejectionReason,

@@ -1,5 +1,3 @@
-'use client';
-
 import { useAwarenessUsers } from '@/hooks/useAwarenessUsers';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { FacePile } from '@op/sense/FacePile';

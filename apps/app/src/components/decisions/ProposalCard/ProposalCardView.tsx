@@ -1,5 +1,3 @@
-'use client';
-
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { useProposalEngagement } from '@/hooks/useProposalEngagement';
 import { getPublicUrl } from '@/utils';

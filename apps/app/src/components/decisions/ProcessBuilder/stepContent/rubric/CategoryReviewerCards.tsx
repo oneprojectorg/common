@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { Alert, AlertTitle } from '@op/sense/Alert';
 import { useQueryState } from 'nuqs';

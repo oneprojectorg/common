@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import {
   Breadcrumb,
@@ -10,8 +8,8 @@ import {
   BreadcrumbSeparator,
 } from '@op/sense/Breadcrumb';
 import { Header2 } from '@op/sense/Header';
-import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -88,7 +86,7 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
 
 export const ProfileOrganizations = ({ children }: { children: ReactNode }) => (
   <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8">
-    <ErrorBoundary errorComponent={() => <ErrorMessage />}>
+    <ErrorBoundary fallbackRender={() => <ErrorMessage />}>
       <Suspense fallback={<RelationshipTabSkeleton />}>{children}</Suspense>
     </ErrorBoundary>
   </div>

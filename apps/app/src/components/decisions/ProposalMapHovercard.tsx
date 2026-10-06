@@ -1,5 +1,3 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import type { Proposal } from '@op/common/client';
 import {

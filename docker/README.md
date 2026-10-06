@@ -17,7 +17,7 @@ This starts four services:
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| app (Next.js) | http://localhost:3100 | Main frontend |
+| app (TanStack Start) | http://localhost:3100 | Main frontend |
 | api (tRPC) | http://localhost:3300 | API server |
 | Supabase Studio | http://localhost:54323 | Database admin UI |
 | Supabase API | http://localhost:54321 | PostgREST / Auth / Storage |
@@ -29,7 +29,7 @@ The first run builds the Docker image and downloads all dependencies — this ma
 
 ## Changing the App Port
 
-Pass `APP_PORT` to use a different host port for the Next.js app:
+Pass `APP_PORT` to use a different host port for the app:
 
 ```bash
 APP_PORT=4000 docker compose up
@@ -53,7 +53,7 @@ Then edit `.env.docker` as needed. The file is committed to git and safe to shar
 
 The repo root is bind-mounted into both the `app` and `api` containers. Editing any source file on your host triggers an immediate reload inside the container — no restart needed.
 
-`node_modules` and `.next` directories use named Docker volumes so the container's installed packages are not overwritten by the bind mount.
+`node_modules` and the Vite/Nitro dev caches (`.nitro`, `.tanstack`) use named Docker volumes so the container's installed packages are not overwritten by the bind mount.
 
 ## Teardown
 

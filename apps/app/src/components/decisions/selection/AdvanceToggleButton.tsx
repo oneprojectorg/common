@@ -1,5 +1,3 @@
-'use client';
-
 import { Toggle } from '@op/sense/Toggle';
 import { cn } from '@op/sense/lib/utils';
 import { LuCheck } from 'react-icons/lu';

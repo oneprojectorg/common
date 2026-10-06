@@ -1,5 +1,3 @@
-'use client';
-
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {

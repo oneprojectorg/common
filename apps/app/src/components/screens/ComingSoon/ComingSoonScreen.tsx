@@ -1,11 +1,8 @@
-'use client';
-
 import { Header2, Header3 } from '@op/sense/Header';
 import { LogoLoop } from '@op/sense/LogoLoop';
 import { cn } from '@op/sense/lib/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
-import Image from 'next/image';
 import { ReactNode } from 'react';
 import { LuArrowRight } from 'react-icons/lu';
 
@@ -93,13 +90,14 @@ export const ComingSoonScreen = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 2, delay: 1.125 }}
             >
-              <Image
+              <img
                 src="/coming-soon-mockup.png"
                 alt="Screenshot of the Common platform"
                 width={1296}
                 height={720}
                 className="relative mx-auto w-7xl max-w-[85vw] shadow sm:max-w-[70vw]"
-                priority
+                fetchPriority="high"
+                decoding="async"
               />
             </motion.div>
           </motion.div>

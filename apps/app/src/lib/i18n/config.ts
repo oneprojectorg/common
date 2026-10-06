@@ -13,3 +13,9 @@ const RTL_LOCALES = new Set<SupportedLocale>(['ar']);
 
 export const getLocaleDirection = (locale: string): 'ltr' | 'rtl' =>
   RTL_LOCALES.has(locale as SupportedLocale) ? 'rtl' : 'ltr';
+
+/** The locale the path is prefixed with, or undefined when it carries none. */
+export const findPathLocale = (pathname: string): SupportedLocale | undefined =>
+  i18nConfig.locales.find(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+  );

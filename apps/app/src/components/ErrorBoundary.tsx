@@ -1,7 +1,5 @@
-'use client';
-
 import posthog from 'posthog-js';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 
 import { ErrorMessage } from './ErrorMessage';

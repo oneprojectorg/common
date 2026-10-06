@@ -1,5 +1,3 @@
-'use client';
-
 import { TabsTrigger } from '@op/sense/Tabs';
 
 import { useTranslations } from '@/lib/i18n';

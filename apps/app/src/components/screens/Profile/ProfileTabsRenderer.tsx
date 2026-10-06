@@ -1,5 +1,3 @@
-'use client';
-
 import type { Organization, Profile } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { TabsContent } from '@op/sense/Tabs';

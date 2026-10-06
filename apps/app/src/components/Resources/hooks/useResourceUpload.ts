@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { toast } from '@op/sense/Toast';
 import { useRef, useState } from 'react';

@@ -9,8 +9,9 @@
     "./client": "./src/TRPCProvider.tsx",
     "./server": "./src/TRPCProvider.server.ts",
     "./serverClient": "./src/serverClient.ts",
-    "./ssrCookies": "./src/ssrCookies.ts",
-    "./encoders": "./src/encoders/index.ts"
+    "./encoders": "./src/encoders/index.ts",
+    "./cachePerRequest": "./src/cachePerRequest.ts",
+    "./dehydratedState": "./src/dehydratedState.ts"
   },
   "scripts": {
     "format:check": "oxfmt --check",
@@ -42,6 +43,7 @@
     "@tanstack/query-sync-storage-persister": "5.66.11",
     "@tanstack/react-query": "5.66.11",
     "@tanstack/react-query-persist-client": "5.66.11",
+    "@tanstack/react-start": "1.168.60",
     "@trpc/client": "11.6.0",
     "@trpc/react-query": "11.6.0",
     "@trpc/server": "11.6.0",
@@ -60,8 +62,6 @@
     "react": "^19.0.1",
     "redis": "^5.5.5",
     "sanitize-s3-objectkey": "^0.0.1",
-    "server-only": "^0.0.1",
-    "ssr-only-secrets": "^0.1.4",
     "superjson": "^2.2.2",
     "zod": "catalog:"
   },

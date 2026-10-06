@@ -1,5 +1,3 @@
-'use client';
-
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { LocationData, MapDefaultView } from '@op/common/client';
 import { normalizeLocation } from '@op/common/client';

@@ -1,5 +1,3 @@
-'use client';
-
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';

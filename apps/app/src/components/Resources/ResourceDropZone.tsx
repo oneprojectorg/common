@@ -1,5 +1,3 @@
-'use client';
-
 import type { ResourceInCollection } from '@op/api/encoders';
 import { httpUrlSchema } from '@op/common/client';
 import { type ReactNode, useRef, useState } from 'react';

@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@op/sense/Button';
 import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 

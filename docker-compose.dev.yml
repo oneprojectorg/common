@@ -44,7 +44,7 @@ services:
       dockerfile: Dockerfile
       secrets:
         - tiptap_token
-    command: sh -c "pnpm install --frozen-lockfile && pnpm -C packages/styles build && pnpm w:app dev"
+    command: sh -c "pnpm install --frozen-lockfile && pnpm -C packages/styles build && pnpm w:app dev --host 0.0.0.0"
     env_file: .env.docker
     environment:
       TIPTAP_PRO_TOKEN: ${TIPTAP_PRO_TOKEN}
@@ -54,7 +54,7 @@ services:
       NEXT_PUBLIC_MAPTILER_API_KEY: ${NEXT_PUBLIC_MAPTILER_API_KEY}
       NEXT_PUBLIC_API_PORT: "${PORT_PREFIX:-31}01"
       NEXT_PUBLIC_SUPABASE_URL: "http://localhost:${PORT_PREFIX:-31}21"
-      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "${PORT_PREFIX:-31}00:3100"
     volumes:
@@ -75,8 +75,9 @@ services:
         target: /app/apps/app/node_modules
         volume:
           nocopy: true
-      # Next.js build cache
-      - app_next:/app/apps/app/.next
+      # Vite/Nitro dev caches
+      - app_nitro:/app/apps/app/.nitro
+      - app_tanstack:/app/apps/app/.tanstack
     networks:
       - op-dev
     depends_on:
@@ -86,7 +87,7 @@ services:
   # ── tRPC API server ──────────────────────────────────────────────────────────
   api:
     image: op-dev-base:latest
-    command: sh -c "pnpm install --frozen-lockfile && pnpm w:db migrate && /app/node_modules/.bin/tsx services/db/seed-access-control.ts && pnpm -C ./apps/api dev"
+    command: sh -c "pnpm install --frozen-lockfile && pnpm w:db migrate && /app/node_modules/.bin/tsx services/db/seed-access-control.ts && pnpm -C ./apps/api dev --host 0.0.0.0"
     env_file: .env.docker
     environment:
       TIPTAP_PRO_TOKEN: ${TIPTAP_PRO_TOKEN}
@@ -96,7 +97,7 @@ services:
       NEXT_PUBLIC_TIPTAP_APP_ID: ${NEXT_PUBLIC_TIPTAP_APP_ID}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
       NEXT_PUBLIC_SUPABASE_URL: "http://localhost:${PORT_PREFIX:-31}21"
-      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "${PORT_PREFIX:-31}01:3300"
     volumes:
@@ -112,7 +113,8 @@ services:
         target: /app/apps/api/node_modules
         volume:
           nocopy: true
-      - api_next:/app/apps/api/.next
+      - api_nitro:/app/apps/api/.nitro
+      - api_tanstack:/app/apps/api/.tanstack
     networks:
       - op-dev
     depends_on:
@@ -186,8 +188,10 @@ volumes:
   shared_node_modules:
   app_app_node_modules:
   app_api_node_modules:
-  app_next:
-  api_next:
+  app_nitro:
+  app_tanstack:
+  api_nitro:
+  api_tanstack:
   dind_storage:
 
 secrets:

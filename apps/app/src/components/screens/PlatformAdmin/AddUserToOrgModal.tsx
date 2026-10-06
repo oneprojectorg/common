@@ -1,5 +1,3 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';

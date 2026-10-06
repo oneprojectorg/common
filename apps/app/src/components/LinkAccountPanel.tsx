@@ -1,5 +1,3 @@
-'use client';
-
 import {
   getClaimEmailErrorMessage,
   goToOnboarding,
@@ -10,10 +8,10 @@ import { useMount } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { Spinner } from '@op/sense/Spinner';
 import { CheckIcon } from '@op/sense/icons';
-import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { useSearchParams } from '@/lib/navigation';
 
 import {
   AuthCodeField,

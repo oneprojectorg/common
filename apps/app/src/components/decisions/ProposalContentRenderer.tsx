@@ -1,5 +1,3 @@
-'use client';
-
 import { linkifyText } from '@/utils/linkDetection';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';

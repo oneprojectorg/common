@@ -1,5 +1,3 @@
-'use client';
-
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { InputGroup, InputGroupTextarea } from '@op/sense/InputGroup';
 import { Tag, TagGroup } from '@op/sense/TagGroup';

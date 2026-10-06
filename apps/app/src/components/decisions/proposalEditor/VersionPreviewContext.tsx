@@ -1,5 +1,3 @@
-'use client';
-
 import { logger } from '@op/logging/client';
 import { getPreviewContentFromVersionPayload } from '@tiptap-pro/extension-snapshot';
 import type { THistoryVersion } from '@tiptap-pro/provider';

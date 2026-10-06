@@ -1,5 +1,3 @@
-'use client';
-
 import { isPermissionAction, useUser } from '@/utils/UserProvider';
 import type { ZonePermissions } from 'access-zones';
 import { ReactNode } from 'react';

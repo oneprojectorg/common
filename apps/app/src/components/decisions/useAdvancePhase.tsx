@@ -1,18 +1,13 @@
-'use client';
-
-import dynamic from 'next/dynamic';
 import { usePostHog } from 'posthog-js/react';
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, Suspense, lazy, useCallback, useState } from 'react';
 
 // Loaded on the first advance request, never at page load: the confirm dialog
 // (Modal/Sheet/Toast + the mutation) is admin-only, so the non-admin viewers
 // who make up nearly all decision-page traffic never fetch this chunk.
-const AdvancePhaseConfirm = dynamic(
-  () =>
-    import('./AdvancePhaseConfirm').then(
-      (module) => module.AdvancePhaseConfirm,
-    ),
-  { ssr: false },
+const AdvancePhaseConfirm = lazy(() =>
+  import('./AdvancePhaseConfirm').then((module) => ({
+    default: module.AdvancePhaseConfirm,
+  })),
 );
 
 interface UseAdvancePhaseArgs {
@@ -76,18 +71,21 @@ export function useAdvancePhase({
     setIsConfirmOpen(true);
   }, [posthog, getTrackingProps]);
 
+  // Rendered only after a client-side request, so it never reaches the server.
   const advanceConfirm = hasRequestedAdvance ? (
-    <AdvancePhaseConfirm
-      instanceId={instanceId}
-      currentPhaseId={currentPhaseId}
-      currentPhaseName={currentPhaseName}
-      nextPhaseName={nextPhaseName}
-      isOpen={isConfirmOpen}
-      onClose={() => setIsConfirmOpen(false)}
-      onDismissWithoutAdvance={() =>
-        posthog.capture('manual_transition_dismissed', getTrackingProps())
-      }
-    />
+    <Suspense fallback={null}>
+      <AdvancePhaseConfirm
+        instanceId={instanceId}
+        currentPhaseId={currentPhaseId}
+        currentPhaseName={currentPhaseName}
+        nextPhaseName={nextPhaseName}
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onDismissWithoutAdvance={() =>
+          posthog.capture('manual_transition_dismissed', getTrackingProps())
+        }
+      />
+    </Suspense>
   ) : null;
 
   return { requestAdvance, advanceConfirm };

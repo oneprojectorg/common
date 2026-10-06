@@ -33,7 +33,6 @@
     "@op/typescript-config": "workspace:*",
     "@op/vitest-config": "workspace:*",
     "@vitest/coverage-istanbul": "catalog:",
-    "next": "catalog:",
     "typescript": "7.0.2",
     "vitest": "catalog:"
   }

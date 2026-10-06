@@ -1,5 +1,3 @@
-'use client';
-
 import { skipBatch, trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
 import {

@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition } from '@op/api/encoders';
 import {
@@ -17,10 +15,10 @@ import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';
 import { DragHandle, Sortable } from '@op/sense/Sortable';
 import { cn } from '@op/sense/lib/utils';
-import { useLocale } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
 import { LuCheck, LuCircleAlert, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { useLocale } from 'use-intl';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 

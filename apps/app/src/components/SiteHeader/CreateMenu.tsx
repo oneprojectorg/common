@@ -1,5 +1,3 @@
-'use client';
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';

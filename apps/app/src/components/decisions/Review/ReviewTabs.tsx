@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';

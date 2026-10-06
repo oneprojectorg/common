@@ -1,5 +1,3 @@
-'use client';
-
 import {
   OVERALL_RECOMMENDATION_KEY,
   type ProposalWithSubmittedReviews,

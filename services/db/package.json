@@ -33,14 +33,14 @@
   "dependencies": {
     "@op/core": "workspace:*",
     "@op/supabase": "workspace:^",
+    "@tanstack/react-start": "1.168.60",
     "@types/pg": "^8.11.11",
     "access-zones": "catalog:",
     "dotenv": "^16.4.7",
     "drizzle-orm": "catalog:",
     "drizzle-seed": "1.0.0-beta.11-05230d9",
     "pg": "^8.16.0",
-    "postgres": "^3.4.5",
-    "server-only": "^0.0.1"
+    "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { type PhaseReviewerSummary, nextCursor } from '@op/common/client';
@@ -24,9 +22,9 @@ import {
   TableRow,
   TableRowHeader,
 } from '@op/sense/Table';
-import { useFormatter } from 'next-intl';
 import { Suspense, useCallback } from 'react';
 import { LuChevronRight, LuUsers } from 'react-icons/lu';
+import { useFormatter } from 'use-intl';
 
 import { Link, useTranslations } from '@/lib/i18n';
 

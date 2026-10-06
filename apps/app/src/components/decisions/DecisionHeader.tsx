@@ -1,5 +1,3 @@
-'use client';
-
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
@@ -36,8 +34,8 @@ interface StandardDecisionHeaderProps extends DecisionHeaderBaseProps {
   showStepper?: boolean;
   /**
    * When provided, the header renders from this prop instead of a client
-   * `getInstance` query — used by the (decision-view) layout, which already has
-   * the instance from loadDecision. Omitted by the canonical /decisions/[slug]
+   * `getInstance` query — used by the `_decisionView` route, which already has
+   * the instance from loadDecision. Omitted by the canonical /decisions/$slug
    * page, which falls back to the query.
    */
   processInstance?: ProcessInstance;
@@ -168,7 +166,7 @@ function DecisionHeaderView({
   );
 }
 
-/** Query variant: canonical /decisions/[slug] page (no instance passed in). */
+/** Query variant: canonical /decisions/$slug page (no instance passed in). */
 function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({
@@ -193,7 +191,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
   );
 }
 
-/** Prop variant: (decision-view) layout passes the instance from loadDecision. */
+/** Prop variant: `_decisionView` route passes the instance from loadDecision. */
 function DecisionHeaderFromProps(
   props: StandardDecisionHeaderProps & { processInstance: ProcessInstance },
 ) {

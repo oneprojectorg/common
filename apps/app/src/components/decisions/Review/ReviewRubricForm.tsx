@@ -1,5 +1,3 @@
-'use client';
-
 import { linkifyText } from '@/utils/linkDetection';
 import {
   DEFAULT_MONEY_CURRENCY,

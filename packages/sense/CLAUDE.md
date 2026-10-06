@@ -67,8 +67,8 @@ the same change. A component with no story is undocumented.
 5. **Use logical properties.** `ms-`/`me-`, `ps-`/`pe-`, `start-`/`end-`,
    `text-start`/`text-end`. Never `ml-`/`pl-`/`left-`/`text-left`. The app ships
    Arabic.
-6. **Wrap every user-facing string in `t()`** — `useTranslations` in client
-   components, `await getTranslations()` in server components. This includes `aria-label`,
+6. **Wrap every user-facing string in `t()`** — `useTranslations` in
+   components, `await getTranslations({ locale, namespace })` outside React. This includes `aria-label`,
    `alt`, and any string passed to a sense component as copy (sense itself is
    i18n-agnostic and takes copy as props).
 7. **Do the four a11y things** listed below.

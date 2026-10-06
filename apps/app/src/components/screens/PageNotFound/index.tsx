@@ -1,11 +1,11 @@
-import { getTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
 import { StatusScreen } from '../StatusScreen';
 
-export default async function PageNotFound() {
-  const t = await getTranslations('shell');
+export default function PageNotFound() {
+  const t = useTranslations('shell');
 
   return (
     <StatusScreen

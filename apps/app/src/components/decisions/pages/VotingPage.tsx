@@ -1,9 +1,7 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
-import { useLocale } from 'next-intl';
 import { Suspense } from 'react';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n/routing';
 

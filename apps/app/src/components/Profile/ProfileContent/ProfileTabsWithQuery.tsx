@@ -1,10 +1,8 @@
-'use client';
-
 import { Tabs } from '@op/sense/Tabs';
-import { useSearchParams } from 'next/navigation';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 import { usePathname } from '@/lib/i18n';
+import { useSearchParams } from '@/lib/navigation';
 
 export const ProfileTabsWithQuery = ({
   children,
@@ -73,9 +71,11 @@ export const ProfileTabsWithQuery = ({
         ? `${pathname}?${newSearchParams.toString()}`
         : pathname;
 
-      // Use browser history API directly to avoid triggering Next.js router race conditions
+      // Use browser history API directly to avoid triggering router race
+      // conditions. Keep the entry's state: the router keys history entries
+      // by it (back/forward, scroll restoration).
       if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', newUrl);
+        window.history.replaceState(window.history.state, '', newUrl);
       }
 
       // Reset flag immediately since we're using the browser API directly

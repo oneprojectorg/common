@@ -1,5 +1,3 @@
-'use client';
-
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
@@ -20,9 +18,9 @@ import {
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuCalendar, LuEllipsis } from 'react-icons/lu';
+import { useLocale } from 'use-intl';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
