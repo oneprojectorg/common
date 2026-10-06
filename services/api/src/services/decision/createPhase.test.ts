@@ -34,7 +34,7 @@ describe.concurrent('createPhase', () => {
     expect(phase.sortOrder).toBe(0);
   });
 
-  it('slugs the profile from the name rather than the id', async ({
+  it('slugs the profile with the first segment of a v4 UUID', async ({
     task,
     onTestFinished,
   }) => {
@@ -49,7 +49,7 @@ describe.concurrent('createPhase', () => {
     });
     testData.trackProfileForCleanup(profile.id);
 
-    expect(profile.slug.startsWith('review-round-')).toBe(true);
+    expect(profile.slug).toMatch(/^[0-9a-f]{8}$/);
   });
 
   it('keeps phaseId in data and the name out of it', async ({

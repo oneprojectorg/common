@@ -8,11 +8,11 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { generateUniqueProfileSlug } from '../profile/utils';
 
 /**
  * The phase's `data` blob.
@@ -79,7 +79,9 @@ export const createPhase = async ({
   await assertDecisionAdmin({ user, decisionProfileId: instance.profileId });
 
   return db.transaction(async (tx) => {
-    const slug = await generateUniqueProfileSlug({ name, db: tx });
+    // A phase slug is the first segment of a v4 UUID (8 hex chars), not the
+    // name.
+    const slug = randomUUID().slice(0, 8);
 
     const [profile] = await tx
       .insert(profiles)
