@@ -1,21 +1,20 @@
-import { AUTH_OTP_LENGTH } from '@op/core';
+import { type AuthOtpChannel, getAuthOtpLength } from '@op/core';
 
 /**
- * Whether a token is exactly as long as the deployment's configured OTP
- * length.
+ * Whether a token is exactly as long as the code the given channel delivers
+ * on this deployment.
  *
- * The length is a per-deployment setting, not a fixed constant.
- * `expectedLength` defaults to `AUTH_OTP_LENGTH` (see `@op/core`), this
- * deployment's own configured value, so a caller normally doesn't pass it
- * explicitly.
+ * Email codes come from Supabase and SMS codes from Twilio Verify, and each
+ * service sets its own length, so the channel decides which length applies
+ * (see `getAuthOtpLength` in `@op/core`).
  */
 export function isValidOtpLength(
   token: string | undefined,
-  expectedLength: number = AUTH_OTP_LENGTH,
+  channel: AuthOtpChannel,
 ): boolean {
   if (!token) {
     return false;
   }
 
-  return token.length === expectedLength;
+  return token.length === getAuthOtpLength(channel);
 }

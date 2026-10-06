@@ -9,20 +9,32 @@ export const APP_PORT = appPortEnv ? Number.parseInt(appPortEnv, 10) : 3100;
 const apiPortEnv = process.env.API_PORT || process.env.NEXT_PUBLIC_API_PORT;
 export const API_PORT = apiPortEnv ? Number.parseInt(apiPortEnv, 10) : 3300;
 
-// The OTP length is a per-deployment setting: Supabase generates the email
+// Each OTP length is a per-deployment setting. Supabase generates the email
 // code and Twilio Verify generates the SMS code, and each service configures
-// its own length. Every supabase/*.toml this repo controls sets 6, but none of
-// them are pushed to a deployed project, so a deployment whose services use a
-// different length sets this to match rather than editing client code.
-const authOtpLengthEnv =
-  process.env.AUTH_OTP_LENGTH || process.env.NEXT_PUBLIC_AUTH_OTP_LENGTH;
-const parsedAuthOtpLength = authOtpLengthEnv
-  ? Number.parseInt(authOtpLengthEnv, 10)
-  : NaN;
-export const AUTH_OTP_LENGTH =
-  Number.isInteger(parsedAuthOtpLength) && parsedAuthOtpLength > 0
-    ? parsedAuthOtpLength
-    : 6;
+// its own length, so the two can differ on one deployment. Every
+// supabase/*.toml this repo controls sets 6, but none of them are pushed to a
+// deployed project, so a deployment whose services use a different length
+// sets these to match rather than editing client code.
+const parseOtpLength = (value: string | undefined): number => {
+  const parsed = value ? Number.parseInt(value, 10) : NaN;
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 6;
+};
+
+export const AUTH_EMAIL_OTP_LENGTH = parseOtpLength(
+  process.env.AUTH_EMAIL_OTP_LENGTH ||
+    process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP_LENGTH,
+);
+
+export const AUTH_SMS_OTP_LENGTH = parseOtpLength(
+  process.env.AUTH_SMS_OTP_LENGTH ||
+    process.env.NEXT_PUBLIC_AUTH_SMS_OTP_LENGTH,
+);
+
+export type AuthOtpChannel = 'email' | 'phone';
+
+/** The length of the code the given channel delivers on this deployment. */
+export const getAuthOtpLength = (channel: AuthOtpChannel): number =>
+  channel === 'phone' ? AUTH_SMS_OTP_LENGTH : AUTH_EMAIL_OTP_LENGTH;
 export const UI_WORKSHOP_PORT = 3600;
 export const EMAILS_PORT = 3883;
 export const ORM_VIZ_PORT = 3700;

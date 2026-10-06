@@ -1,6 +1,6 @@
 'use client';
 
-import { AUTH_OTP_LENGTH } from '@op/core';
+import { getAuthOtpLength } from '@op/core';
 import { Button } from '@op/sense/Button';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';
@@ -292,20 +292,24 @@ export const AuthPhoneField = ({
 // input-otp's REGEXP_ONLY_DIGITS, inlined to avoid a direct dependency on the package.
 const DIGITS_ONLY_PATTERN = '^\\d+$';
 
-/** OTP entry field, sized to this deployment's configured length (see
- * `AUTH_OTP_LENGTH`); submits automatically once all slots are filled. */
+/** OTP entry field, sized to the length the channel delivers on this
+ * deployment (see `getAuthOtpLength`); submits automatically once all slots
+ * are filled. */
 export const AuthCodeField = ({
+  channel,
   value,
   isDisabled,
   onChange,
   onSubmit,
 }: {
+  channel: AuthChannel;
   value: string | undefined;
   isDisabled: boolean;
   onChange: (value: string) => void;
   onSubmit: () => void | Promise<void>;
 }) => {
   const t = useTranslations();
+  const length = getAuthOtpLength(channel);
 
   return (
     <Field>
@@ -315,7 +319,7 @@ export const AuthCodeField = ({
       <InputOTP
         id="auth-code"
         containerClassName="justify-center"
-        maxLength={AUTH_OTP_LENGTH}
+        maxLength={length}
         pattern={DIGITS_ONLY_PATTERN}
         aria-label={t('auth.codeLabel')}
         autoFocus
@@ -327,7 +331,7 @@ export const AuthCodeField = ({
         }}
       >
         <InputOTPGroup>
-          {Array.from({ length: AUTH_OTP_LENGTH }, (_, index) => (
+          {Array.from({ length }, (_, index) => (
             <InputOTPSlot key={index} index={index} />
           ))}
         </InputOTPGroup>

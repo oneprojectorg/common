@@ -221,6 +221,7 @@ export const LinkAccountPanel = () => {
         <CodeSentAnnouncement sentTo={sentTo} />
         <div className="flex flex-col gap-6">
           <AuthCodeField
+            channel="email"
             value={token}
             isDisabled={isSubmitting}
             onChange={setToken}
@@ -230,9 +231,9 @@ export const LinkAccountPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              disabled={isSubmitting || !isValidOtpLength(token)}
+              disabled={isSubmitting || !isValidOtpLength(token, 'email')}
               onClick={async () => {
-                if (isValidOtpLength(token)) {
+                if (isValidOtpLength(token, 'email')) {
                   await handleTokenSubmit();
                 }
               }}

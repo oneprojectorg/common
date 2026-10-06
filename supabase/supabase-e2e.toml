@@ -25,7 +25,9 @@ enabled = true
 enabled = false
 
 [inbucket]
-enabled = false
+enabled = true
+port = 56324
+smtp_port = 56325
 
 [storage]
 enabled = true

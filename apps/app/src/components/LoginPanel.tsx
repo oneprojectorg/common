@@ -315,6 +315,7 @@ export const LoginPanel = () => {
 
           {isCodeStep ? (
             <AuthCodeField
+              channel={activeChannel}
               value={token}
               isDisabled={isLoading}
               onChange={setToken}
@@ -372,8 +373,8 @@ export const LoginPanel = () => {
                 // Email leaves an empty field enabled; handleTokenSubmit no-ops instead.
                 isVerifyDisabled={
                   isPhone
-                    ? !isValidOtpLength(token)
-                    : !!token && !isValidOtpLength(token)
+                    ? !isValidOtpLength(token, activeChannel)
+                    : !!token && !isValidOtpLength(token, activeChannel)
                 }
                 isLoading={isLoading}
                 isPhone={isPhone}

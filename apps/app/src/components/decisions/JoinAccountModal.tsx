@@ -314,6 +314,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
 
         {otpSent ? (
           <AuthCodeField
+            channel={activeChannel}
             value={token}
             isDisabled={isSubmitting}
             onChange={setToken}
@@ -365,7 +366,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
       <DialogFooter className="flex-col sm:flex-col">
         {otpSent ? (
           <AuthCodeStepActions
-            isVerifyDisabled={!isValidOtpLength(token)}
+            isVerifyDisabled={!isValidOtpLength(token, activeChannel)}
             isLoading={isSubmitting}
             isPhone={isPhone}
             onVerify={() => {

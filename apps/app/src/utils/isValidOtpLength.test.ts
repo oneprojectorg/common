@@ -1,35 +1,60 @@
-import { AUTH_OTP_LENGTH } from '@op/core';
+import { AUTH_EMAIL_OTP_LENGTH, AUTH_SMS_OTP_LENGTH } from '@op/core';
 import { describe, expect, it } from 'vitest';
 
 import { isValidOtpLength } from './isValidOtpLength';
 
 describe('isValidOtpLength', () => {
+  /**
+   * Given no token
+   * When either channel checks it
+   * Then the check refuses it
+   */
   it('refuses an empty token', () => {
-    expect(isValidOtpLength(undefined)).toBe(false);
-    expect(isValidOtpLength('')).toBe(false);
-  });
-
-  it("accepts a token exactly as long as the deployment's configured OTP length", () => {
-    expect(isValidOtpLength('1'.repeat(AUTH_OTP_LENGTH))).toBe(true);
-  });
-
-  it('refuses a token shorter than the configured length', () => {
-    expect(isValidOtpLength('1'.repeat(AUTH_OTP_LENGTH - 1))).toBe(false);
-  });
-
-  it('refuses a token longer than the configured length', () => {
-    expect(isValidOtpLength('1'.repeat(AUTH_OTP_LENGTH + 1))).toBe(false);
+    expect(isValidOtpLength(undefined, 'email')).toBe(false);
+    expect(isValidOtpLength('', 'email')).toBe(false);
+    expect(isValidOtpLength(undefined, 'phone')).toBe(false);
+    expect(isValidOtpLength('', 'phone')).toBe(false);
   });
 
   /**
-   * Given a Supabase project provisioned with an OTP length other than this
-   * deployment's default (e.g. a newly created hosted project defaulting to
-   * 8 digits instead of 6 — a real, documented Supabase behavior)
-   * When a caller checks a token against that project's actual length
-   * Then the check honors the explicit length rather than the deployment default
+   * Given a token exactly as long as the email code
+   * When the email channel checks it
+   * Then the check accepts it
    */
-  it('honors an explicit expected length over the deployment default', () => {
-    expect(isValidOtpLength('12345678', 8)).toBe(true);
-    expect(isValidOtpLength('123456', 8)).toBe(false);
+  it('accepts an email token of the configured email length', () => {
+    expect(isValidOtpLength('1'.repeat(AUTH_EMAIL_OTP_LENGTH), 'email')).toBe(
+      true,
+    );
+  });
+
+  /**
+   * Given a token exactly as long as the SMS code
+   * When the phone channel checks it
+   * Then the check accepts it
+   */
+  it('accepts a phone token of the configured SMS length', () => {
+    expect(isValidOtpLength('1'.repeat(AUTH_SMS_OTP_LENGTH), 'phone')).toBe(
+      true,
+    );
+  });
+
+  /**
+   * Given a token one digit off the channel's length
+   * When that channel checks it
+   * Then the check refuses it
+   */
+  it('refuses a token shorter or longer than the channel length', () => {
+    expect(
+      isValidOtpLength('1'.repeat(AUTH_EMAIL_OTP_LENGTH - 1), 'email'),
+    ).toBe(false);
+    expect(
+      isValidOtpLength('1'.repeat(AUTH_EMAIL_OTP_LENGTH + 1), 'email'),
+    ).toBe(false);
+    expect(isValidOtpLength('1'.repeat(AUTH_SMS_OTP_LENGTH - 1), 'phone')).toBe(
+      false,
+    );
+    expect(isValidOtpLength('1'.repeat(AUTH_SMS_OTP_LENGTH + 1), 'phone')).toBe(
+      false,
+    );
   });
 });
