@@ -1,4 +1,4 @@
-import { type DbClient, db } from '@op/db/client';
+import { type TransactionType, db } from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -43,14 +43,17 @@ export const insertPhase = async ({
   name,
   sortOrder,
   data,
+  generateSlug = generatePhaseSlug,
 }: {
-  tx: DbClient;
+  tx: TransactionType;
   processInstanceId: string;
   name: string;
   sortOrder: number;
   data: PhaseData;
+  /** Only tests pass this, to force slug clashes. */
+  generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  const profile = await insertPhaseProfile({ tx, name });
+  const profile = await insertPhaseProfile({ tx, name, generateSlug });
 
   const [phase] = await tx
     .insert(processPhases)
@@ -66,7 +69,8 @@ export const insertPhase = async ({
 
 /**
  * Loads a phase and asserts the caller is a decisions ADMIN on the instance
- * it belongs to. Manage resolves against the process, not the phase profile.
+ * it belongs to. Phase management is authorized against the decision's
+ * profile, not the phase's.
  */
 export const getPhaseAsDecisionAdmin = async ({
   user,
@@ -114,15 +118,17 @@ export const assertDecisionAdmin = async ({
 
 /**
  * A phase slug is the first segment of a v4 UUID (8 hex chars), not the name,
- * so renames never move it. `profiles.slug` is unique across every profile, so
+ * so a rename never changes it. `profiles.slug` is unique across every profile, so
  * a clash skips the insert and the next attempt draws a new slug.
  */
 const insertPhaseProfile = async ({
   tx,
   name,
+  generateSlug,
 }: {
-  tx: DbClient;
+  tx: TransactionType;
   name: string;
+  generateSlug: () => string;
 }): Promise<Profile> => {
   for (let attempt = 0; attempt < SLUG_ATTEMPTS; attempt++) {
     const [profile] = await tx
@@ -130,7 +136,7 @@ const insertPhaseProfile = async ({
       .values({
         type: EntityType.PHASE,
         name,
-        slug: randomUUID().slice(0, 8),
+        slug: generateSlug(),
       })
       .onConflictDoNothing({ target: profiles.slug })
       .returning();
@@ -142,3 +148,5 @@ const insertPhaseProfile = async ({
 
   throw new CommonError('Failed to create phase profile');
 };
+
+const generatePhaseSlug = () => randomUUID().slice(0, 8);

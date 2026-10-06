@@ -6,9 +6,9 @@ import { NotFoundError } from '../../utils';
 import { getPhaseAsDecisionAdmin } from './phaseHelpers';
 
 /**
- * Renames a phase by writing its profile, leaving the slug alone so the URL
- * stays stable — the same trade `updateProposal` makes. Needs decisions ADMIN
- * on the instance's profile, like `createPhase`.
+ * Renames a phase by writing its profile, leaving the slug alone so links keep
+ * working once phases are routable — the same trade `updateProposal` makes.
+ * Needs decisions ADMIN on the instance's profile, like `createPhase`.
  */
 export const renamePhase = async ({
   user,

@@ -74,6 +74,8 @@ describe.concurrent('renamePhase', () => {
     await expect(
       caller.decision.renamePhase({ phaseId: phase.id, name: 'Nope' }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    await expectName(phase.profileId, PHASE_NAME);
   });
 
   it('returns not found for an unknown phase', async ({
@@ -84,7 +86,7 @@ describe.concurrent('renamePhase', () => {
 
     await expect(
       adminCaller.decision.renamePhase({ phaseId: randomUUID(), name: 'X' }),
-    ).rejects.toThrow(/not found/i);
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('rejects an empty name and a non-UUID phaseId', async ({

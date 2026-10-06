@@ -1,26 +1,27 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { createUnauthenticatedCaller } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
+type OnTestFinished = (fn: () => void | Promise<void>) => void;
+type Caller = Awaited<ReturnType<typeof createAuthenticatedCaller>>;
+
 describe.concurrent('createPhase', () => {
   it('creates a phase and its profile as a decision admin', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
+    const { testData, instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
 
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await caller.decision.createPhase({
+    const result = await adminCaller.decision.createPhase({
       instanceId,
       name: 'Submissions',
       sortOrder: 0,
@@ -43,101 +44,140 @@ describe.concurrent('createPhase', () => {
     expect(profile?.slug).toBe(result.slug);
   });
 
+  it('lets a second user granted decisions ADMIN create a phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instanceId } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    const admin = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    await testData.grantProfileAccess(
+      setup.instance.profileId,
+      admin.authUserId,
+      admin.email,
+      true,
+    );
+    const caller = await createAuthenticatedCaller(admin.email);
+
+    const result = await caller.decision.createPhase({
+      instanceId,
+      name: 'Submissions',
+      sortOrder: 0,
+      data: { phaseId: 'submissions' },
+    });
+    testData.trackProfileForCleanup(result.profileId);
+
+    expect(result.processInstanceId).toBe(instanceId);
+  });
+
   it('rejects a member without decisions ADMIN', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
+    const { testData, setup, instanceId } = await setupDecision(
+      task,
+      onTestFinished,
+    );
 
     const member = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [setup.instance.profileId],
     });
-    const caller = await createAuthenticatedCaller(member.email);
 
-    const name = `Forbidden ${randomUUID()}`;
-    await expect(
-      caller.decision.createPhase({
-        instanceId: setup.instance.instance.id,
-        name,
-        sortOrder: 0,
-        data: { phaseId: 'submissions' },
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    await expectRejectedAndNothingWritten(
+      await createAuthenticatedCaller(member.email),
+      instanceId,
+    );
+  });
 
-    const leftover = await db.query.profiles.findMany({
-      where: { name },
-      columns: { id: true },
+  it('rejects an org admin without a decision grant', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instanceId } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    // No org fallback: phases are managed on the decision, like
+    // updateDecisionInstance.
+    const orgAdmin = await testData.createMemberUser({
+      organization: setup.organization,
+      orgRoleId: ROLES.ADMIN.id,
     });
-    expect(leftover).toHaveLength(0);
+
+    await expectRejectedAndNothingWritten(
+      await createAuthenticatedCaller(orgAdmin.email),
+      instanceId,
+    );
+  });
+
+  it('rejects the admin of a different decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId } = await setupDecision(task, onTestFinished);
+    const other = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    await expectRejectedAndNothingWritten(
+      await createAuthenticatedCaller(other.userEmail),
+      instanceId,
+    );
   });
 
   it('rejects a user with no access to the decision', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const other = await testData.createDecisionSetup({
+    const { testData, instanceId } = await setupDecision(task, onTestFinished);
+    const outsider = await testData.createDecisionSetup({
       instanceCount: 0,
       grantAccess: false,
     });
 
-    const caller = await createAuthenticatedCaller(other.userEmail);
-
-    await expect(
-      caller.decision.createPhase({
-        instanceId: setup.instance.instance.id,
-        name: 'Submissions',
-        sortOrder: 0,
-        data: { phaseId: 'submissions' },
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    await expectRejectedAndNothingWritten(
+      await createAuthenticatedCaller(outsider.userEmail),
+      instanceId,
+    );
   });
 
   it('returns not found for an unknown instance', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 0,
-      grantAccess: true,
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const { adminCaller } = await setupDecision(task, onTestFinished);
 
     await expect(
-      caller.decision.createPhase({
+      adminCaller.decision.createPhase({
         instanceId: randomUUID(),
         name: 'Submissions',
         sortOrder: 0,
         data: { phaseId: 'submissions' },
       }),
-    ).rejects.toThrow(/not found/i);
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('rejects a sortOrder that does not fit the column', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const { instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
 
     await expect(
-      caller.decision.createPhase({
-        instanceId: setup.instance.instance.id,
+      adminCaller.decision.createPhase({
+        instanceId,
         name: 'Submissions',
         sortOrder: 2 ** 31,
         data: { phaseId: 'submissions' },
@@ -149,16 +189,13 @@ describe.concurrent('createPhase', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    const instanceId = setup.instance.instance.id;
+    const { instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
 
     await expect(
-      caller.decision.createPhase({
+      adminCaller.decision.createPhase({
         instanceId,
         name: '  ',
         sortOrder: 0,
@@ -167,7 +204,7 @@ describe.concurrent('createPhase', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
 
     await expect(
-      caller.decision.createPhase({
+      adminCaller.decision.createPhase({
         instanceId,
         name: 'Submissions',
         sortOrder: 0,
@@ -191,3 +228,43 @@ describe.concurrent('createPhase', () => {
     });
   });
 });
+
+const setupDecision = async (
+  task: { id: string },
+  onTestFinished: OnTestFinished,
+) => {
+  const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+  const setup = await testData.createDecisionSetup({
+    instanceCount: 1,
+    grantAccess: true,
+  });
+
+  return {
+    testData,
+    setup,
+    instanceId: setup.instance.instance.id,
+    adminCaller: await createAuthenticatedCaller(setup.userEmail),
+  };
+};
+
+const expectRejectedAndNothingWritten = async (
+  caller: Caller,
+  instanceId: string,
+) => {
+  const name = `Forbidden ${randomUUID()}`;
+
+  await expect(
+    caller.decision.createPhase({
+      instanceId,
+      name,
+      sortOrder: 0,
+      data: { phaseId: 'submissions' },
+    }),
+  ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+  const leftover = await db.query.profiles.findMany({
+    where: { name },
+    columns: { id: true },
+  });
+  expect(leftover).toHaveLength(0);
+};

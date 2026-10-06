@@ -86,7 +86,7 @@ describe.concurrent('deletePhase', () => {
 
     await expect(
       adminCaller.decision.deletePhase({ phaseId: randomUUID() }),
-    ).rejects.toThrow(/not found/i);
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('rejects a non-UUID phaseId', async ({ task, onTestFinished }) => {

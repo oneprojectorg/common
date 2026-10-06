@@ -24,7 +24,7 @@ export const deletePhase = async ({
   const [deleted] = await db
     .delete(profiles)
     .where(eq(profiles.id, phase.profileId))
-    .returning();
+    .returning({ id: profiles.id });
 
   // Deleted between the access check and the write.
   if (!deleted) {

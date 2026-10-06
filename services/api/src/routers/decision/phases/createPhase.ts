@@ -13,7 +13,9 @@ const createPhaseOutputSchema = z.object({
 });
 
 export const createPhaseRouter = router({
-  createPhase: authenticatedConfirmedProcedure()
+  createPhase: authenticatedConfirmedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 5 },
+  })
     .input(
       z.object({
         instanceId: z.uuid(),

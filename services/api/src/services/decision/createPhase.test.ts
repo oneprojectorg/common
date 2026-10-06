@@ -29,9 +29,10 @@ describe.concurrent('createPhase', () => {
     expect(phase.profileId).toBe(profile.id);
     expect(phase.processInstanceId).toBe(instanceId);
     expect(phase.sortOrder).toBe(0);
+    expect(phase.data).toEqual({ phaseId: 'submissions' });
   });
 
-  it('slugs the profile with the first segment of a v4 UUID', async ({
+  it('slugs the profile with 8 hex chars, not the name', async ({
     task,
     onTestFinished,
   }) => {
@@ -47,24 +48,6 @@ describe.concurrent('createPhase', () => {
     testData.trackProfileForCleanup(profile.id);
 
     expect(profile.slug).toMatch(/^[0-9a-f]{8}$/);
-  });
-
-  it('keeps phaseId in data and the name out of it', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, user, testData } = await setup(task, onTestFinished);
-
-    const { phase, profile } = await createPhase({
-      user,
-      processInstanceId: instanceId,
-      name: 'Voting',
-      sortOrder: 2,
-      data: { phaseId: 'voting' },
-    });
-    testData.trackProfileForCleanup(profile.id);
-
-    expect(phase.data).toEqual({ phaseId: 'voting' });
   });
 
   it('rejects data with an empty phaseId and writes nothing', async ({
@@ -135,7 +118,8 @@ describe.concurrent('createPhase', () => {
         sortOrder: 2 ** 31,
         data: { phaseId: 'submissions' },
       }),
-    ).rejects.toThrow();
+      // 22003: numeric_value_out_of_range, raised by the phase insert itself.
+    ).rejects.toMatchObject({ cause: { code: '22003' } });
 
     await expectNoProfileNamed(name);
   });

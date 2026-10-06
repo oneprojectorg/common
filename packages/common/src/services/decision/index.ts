@@ -19,6 +19,7 @@ export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 
 // Phase entities (profile-bearing)
+export { phaseDataSchema, type PhaseData } from './phaseHelpers';
 export * from './createPhase';
 export * from './renamePhase';
 export * from './deletePhase';
