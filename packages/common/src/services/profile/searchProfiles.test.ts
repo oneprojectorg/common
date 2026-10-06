@@ -12,8 +12,7 @@ describe.concurrent('searchProfiles', () => {
   }) => {
     const testData = new TestProfileUserDataManager(task.id, onTestFinished);
 
-    // One word unique to this test, shared by an org and a phase. The org
-    // proves the word is searchable; the phase must still not come back.
+    // The org proves the word is searchable.
     const word = `phasesearch${randomUUID().replace(/[^a-f]/g, '')}`;
     const [{ profile: org }, { profile: phase }] = await Promise.all([
       testData.createProfile({
