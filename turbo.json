@@ -105,7 +105,6 @@
     "💻 ------ DEVELOPMENT VARS ------ 💻",
     "DB_MIGRATING",
     "DB_SEEDING",
-    "OP_ENV_LOCAL_HASH",
     "E2E",
     "INNGEST_DEV",
     "REDIS_URL",
