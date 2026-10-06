@@ -90,6 +90,37 @@ describe('createSupabaseOtpStrategy', () => {
   });
 
   /**
+   * Given Twilio Verify refused the send with a message that names the
+   * account, the service, and the number
+   * When the code is requested
+   * Then the diagnostic the strategy hands back carries none of them
+   */
+  it('strips the account, service, and number from the diagnostic', async () => {
+    // Assembled at runtime: a literal SID-shaped string trips GitHub's push
+    // protection even when it is made up.
+    const accountSid = `AC${'01234567'.repeat(4)}`;
+    const verifySid = `VA${'89abcdef'.repeat(4)}`;
+    const strategy = createSupabaseOtpStrategy({
+      supabase: stubClient({
+        signInWithOtp: async () => ({
+          error: {
+            code: 'sms_send_failed',
+            status: 422,
+            message: `Error sending sms OTP to provider: Resource /v2/Services/${verifySid}/Verifications not found for account ${accountSid}, to ${PHONE} More information: ${twilioErrorUrl(20404)}`,
+          },
+        }),
+      }),
+    });
+
+    const result = await strategy.requestCode(PHONE);
+
+    expect(result).toMatchObject({ ok: false, reason: 'unavailable' });
+    expect(result.ok ? undefined : result.diagnostic).toBe(
+      'Error sending sms OTP to provider: Resource /v2/Services/[twilio-sid]/Verifications not found for account [twilio-sid], to [phone] More information: https://www.twilio.com/docs/errors/20404',
+    );
+  });
+
+  /**
    * Given Twilio Verify refused the send for any other reason
    * When the code is requested
    * Then the failure still reads as the service being unavailable

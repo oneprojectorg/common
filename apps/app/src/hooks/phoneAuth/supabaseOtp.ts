@@ -1,4 +1,8 @@
-import { logger, redactPhoneNumbers } from '@op/logging/client';
+import {
+  logger,
+  redactPhoneNumbers,
+  redactTwilioSids,
+} from '@op/logging/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
@@ -72,12 +76,17 @@ export const createSupabaseOtpStrategy = ({
     const twilioCode = getTwilioErrorCode(error.message);
 
     // Never `error` itself: GoTrue's message for this endpoint echoes the
-    // phone number back, so the message goes through redaction first.
+    // phone number back, and Twilio's text names the account and service by
+    // SID, so the message is redacted once and nothing else leaves here.
+    // SIDs go first: their hex can hold a digit run long enough to read as a
+    // number, and a half-redacted SID no longer matches.
+    const diagnostic = redactPhoneNumbers(redactTwilioSids(error.message));
+
     logger.error('GoTrue refused to send a code', {
       code: error.code,
       status: error.status,
       twilioCode,
-      diagnostic: redactPhoneNumbers(error.message),
+      diagnostic,
     });
 
     return {
@@ -89,7 +98,7 @@ export const createSupabaseOtpStrategy = ({
           : error.status === 422
             ? 'unavailable'
             : 'unknown',
-      diagnostic: error.message,
+      diagnostic,
     };
   },
 

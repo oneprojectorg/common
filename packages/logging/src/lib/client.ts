@@ -1,6 +1,6 @@
 import posthog from 'posthog-js';
 
-export { redactEmails, redactPhoneNumbers } from './redact';
+export { redactEmails, redactPhoneNumbers, redactTwilioSids } from './redact';
 
 export type LogData = Record<string, unknown> & { error?: unknown };
 

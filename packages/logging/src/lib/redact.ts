@@ -77,6 +77,22 @@ export function redactPhoneNumbers(value: string): string {
   return value.replace(PHONE_NUMBER, REDACTED_PHONE);
 }
 
+/**
+ * A Twilio resource SID: a two-letter type prefix and 32 hex characters.
+ * `AC` is the account, `VA` a Verify service, `MG` a Messaging Service, `SK`
+ * an API key, `SM`/`MM` a message, `VE` a verification. Twilio's error text
+ * names the account and the service it could not find, and the account SID
+ * is half of a credential pair, so none of them belong in a log.
+ */
+const TWILIO_SID = /\b(?:AC|VA|MG|SK|SM|MM|VE|IS)[0-9a-f]{32}\b/g;
+
+const REDACTED_TWILIO_SID = '[twilio-sid]';
+
+/** Replace every Twilio SID in `value` with `[twilio-sid]`. */
+export function redactTwilioSids(value: string): string {
+  return value.replace(TWILIO_SID, REDACTED_TWILIO_SID);
+}
+
 function redactCandidate(candidate: string): string {
   let end = candidate.length;
   while (end > 0 && TRAILING_PUNCTUATION.has(candidate.charAt(end - 1))) {

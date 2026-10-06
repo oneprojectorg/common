@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { redactEmails, redactPhoneNumbers } from './redact';
+import { redactEmails, redactPhoneNumbers, redactTwilioSids } from './redact';
 
 describe('redactEmails', () => {
   it('keeps the domain and drops the local part', () => {
@@ -134,5 +134,39 @@ describe('redactPhoneNumbers', () => {
   it('leaves a string with no digits alone', () => {
     expect(redactPhoneNumbers('Login attempt')).toBe('Login attempt');
     expect(redactPhoneNumbers('')).toBe('');
+  });
+});
+
+describe('redactTwilioSids', () => {
+  // Assembled at runtime: a literal SID-shaped string trips GitHub's push
+  // protection even when it is made up.
+  const ACCOUNT_SID = `AC${'01234567'.repeat(4)}`;
+  const VERIFY_SID = `VA${'89abcdef'.repeat(4)}`;
+
+  /**
+   * Given Twilio's message for a missing Verify service, which names the
+   * account and the service by SID
+   * When it is redacted
+   * Then both SIDs are gone and the rest of the message survives
+   */
+  it('redacts every Twilio SID in a message', () => {
+    expect(
+      redactTwilioSids(
+        `The requested resource /v2/Services/${VERIFY_SID}/Verifications was not found for account ${ACCOUNT_SID}`,
+      ),
+    ).toBe(
+      'The requested resource /v2/Services/[twilio-sid]/Verifications was not found for account [twilio-sid]',
+    );
+  });
+
+  /**
+   * Given text that looks like a SID prefix but is not a SID
+   * When it is redacted
+   * Then it is left alone
+   */
+  it('leaves words and short hex runs alone', () => {
+    expect(redactTwilioSids('ACCOUNT VALID MG')).toBe('ACCOUNT VALID MG');
+    expect(redactTwilioSids('AC0123')).toBe('AC0123');
+    expect(redactTwilioSids('')).toBe('');
   });
 });
