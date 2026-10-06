@@ -43,6 +43,7 @@ const setEnv = (values: Partial<Record<(typeof ENV_KEYS)[number], string>>) => {
 
 afterEach(() => {
   setEnv({});
+  vi.unstubAllEnvs();
   memorySmsProvider.reset();
 });
 
@@ -61,6 +62,14 @@ describe('getSmsProvider', () => {
     expect(memorySmsProvider.sent).toEqual([
       expect.objectContaining({ to, body: 'hi' }),
     ]);
+  });
+
+  it('given SMS_PROVIDER=memory in production, when resolved, then it refuses rather than swallowing real sends', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    setEnv({ SMS_PROVIDER: 'memory', ...ACCOUNT });
+
+    expect(() => getSmsProvider()).toThrow(CommonError);
+    expect(() => getSmsProvider()).toThrow(/production/);
   });
 
   it('returns null when no account is configured', () => {

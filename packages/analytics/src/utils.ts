@@ -4,6 +4,7 @@ import {
   type DecisionCommonProperties,
   getDecisionCommonProperties,
 } from './client-utils';
+import { parseFeatureFlagOverrides } from './featureFlagOverrides';
 
 const posthog = PostHogClient();
 
@@ -70,25 +71,6 @@ export async function identifyUser({
     properties,
   });
 }
-
-/**
- * Flags forced on or off through `FEATURE_FLAG_OVERRIDES`, so a local run or
- * an integration test can take a flagged path without a PostHog project.
- *
- * Format: `flag-a:true,flag-b:false`. A flag not listed is read from PostHog.
- */
-const parseFeatureFlagOverrides = (value: string | undefined) =>
-  new Map(
-    (value ?? '')
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter(Boolean)
-      .map((entry) => {
-        const [key, state] = entry.split(':');
-        return [key?.trim() ?? '', state?.trim() === 'true'] as const;
-      })
-      .filter(([key]) => key !== ''),
-  );
 
 export async function isFeatureEnabled(
   key: string,

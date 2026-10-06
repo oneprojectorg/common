@@ -65,6 +65,11 @@ import type { SmsProvider } from './types';
  */
 export const getSmsProvider = (): SmsProvider | null => {
   if (process.env.SMS_PROVIDER === 'memory') {
+    if (process.env.NODE_ENV === 'production') {
+      throw new CommonError(
+        'SMS_PROVIDER=memory is for tests and cannot be used in production. Unset it to send through Twilio.',
+      );
+    }
     return memorySmsProvider;
   }
 

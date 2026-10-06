@@ -737,6 +737,9 @@ importers:
       '@op/core':
         specifier: workspace:^
         version: link:../core
+      '@op/logging':
+        specifier: workspace:*
+        version: link:../logging
       posthog-node:
         specifier: ^4.3.0
         version: 4.18.0
@@ -744,12 +747,21 @@ importers:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
+      '@op/vitest-config':
+        specifier: workspace:*
+        version: link:../../configs/vitest-config
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.11(vitest@4.1.11)
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.11)(happy-dom@20.5.3)(jsdom@27.1.0)(vite@6.2.0(@types/node@24.13.3)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
 
   packages/common:
     dependencies:
