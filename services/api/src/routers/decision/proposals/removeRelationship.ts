@@ -1,6 +1,6 @@
 import {
-  Channels,
   assertProposalEngagementAccess,
+  getProposalEngagementChannels,
   removeProfileRelationship,
 } from '@op/common';
 
@@ -19,11 +19,10 @@ export const removeProposalRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
-      const { proposalId, processInstanceId, mergeTargetIds } =
-        await assertProposalEngagementAccess({
-          user: ctx.user,
-          profileId: targetProfileId,
-        });
+      const engagementTarget = await assertProposalEngagementAccess({
+        user: ctx.user,
+        profileId: targetProfileId,
+      });
 
       await removeProfileRelationship({
         targetProfileId,
@@ -32,9 +31,10 @@ export const removeProposalRelationshipRouter = router({
       });
 
       ctx.registerMutationChannels(
-        [proposalId, ...mergeTargetIds].map((id) =>
-          Channels.decisionProposal(processInstanceId, id),
-        ),
+        getProposalEngagementChannels({
+          ...engagementTarget,
+          relationshipType,
+        }),
       );
     }),
 });

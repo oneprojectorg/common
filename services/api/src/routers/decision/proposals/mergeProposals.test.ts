@@ -1,11 +1,14 @@
 import {
+  Channels,
   aggregateProposalMetrics,
   assertProposalEngagementAccess,
+  getProposalEngagementChannels,
 } from '@op/common';
 import { MERGE_NOTE_MAX_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
+  ProfileRelationshipType,
   ProposalRelationshipType,
   ProposalStatus,
   Visibility,
@@ -1259,6 +1262,23 @@ describe.concurrent('likes across merged proposals', () => {
     const { proposalId, mergeTargetIds } = await engagementTarget();
     expect(proposalId).toBe(first!.id);
     expect([...mergeTargetIds].sort()).toEqual([second!.id, target.id].sort());
+
+    // Only likes carry over a merge, so only a like refreshes the chain.
+    const channelsFor = async (relationshipType: ProfileRelationshipType) =>
+      getProposalEngagementChannels({
+        ...(await engagementTarget()),
+        relationshipType,
+      });
+    expect(
+      [...(await channelsFor(ProfileRelationshipType.LIKES))].sort(),
+    ).toEqual(
+      [first!.id, second!.id, target.id]
+        .map((id) => Channels.decisionProposal(setup.instance.instance.id, id))
+        .sort(),
+    );
+    expect(await channelsFor(ProfileRelationshipType.FOLLOWING)).toEqual([
+      Channels.decisionProposal(setup.instance.instance.id, first!.id),
+    ]);
   });
 
   it('drops the likes of a deleted proposal rather than carrying them over', async ({

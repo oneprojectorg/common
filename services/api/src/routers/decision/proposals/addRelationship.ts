@@ -1,7 +1,7 @@
 import {
-  Channels,
   addProfileRelationship,
   assertProposalEngagementAccess,
+  getProposalEngagementChannels,
 } from '@op/common';
 import { ProfileRelationshipType } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -30,11 +30,10 @@ export const addProposalRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
-      const { proposalId, processInstanceId, mergeTargetIds } =
-        await assertProposalEngagementAccess({
-          user: ctx.user,
-          profileId: targetProfileId,
-        });
+      const engagementTarget = await assertProposalEngagementAccess({
+        user: ctx.user,
+        profileId: targetProfileId,
+      });
 
       await addProfileRelationship({
         targetProfileId,
@@ -42,15 +41,14 @@ export const addProposalRelationshipRouter = router({
         authUserId: ctx.user.id,
       });
 
-      // Refreshes engagement counts on the proposal detail query, for this
-      // proposal and every one its likes roll up into. Deliberately not the
-      // `decisionProposals` list channel: every viewer would refetch every card.
       ctx.registerMutationChannels(
-        [proposalId, ...mergeTargetIds].map((id) =>
-          Channels.decisionProposal(processInstanceId, id),
-        ),
+        getProposalEngagementChannels({
+          ...engagementTarget,
+          relationshipType,
+        }),
       );
 
+      const { processInstanceId, proposalId } = engagementTarget;
       waitUntil(
         (async () => {
           if (relationshipType === ProfileRelationshipType.LIKES) {

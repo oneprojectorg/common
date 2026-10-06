@@ -1,7 +1,7 @@
 import {
-  Channels,
   addProfileRelationship,
   getProfileRelationships,
+  getProposalEngagementChannels,
   mergeTargetIds,
   removeProfileRelationship,
 } from '@op/common';
@@ -41,19 +41,6 @@ async function getProposalInfo(
     .limit(1);
 
   return proposal ?? null;
-}
-
-// Channels the proposal detail query subscribes to: the liked proposal, plus
-// every one its likes roll up into. Deliberately not the `decisionProposals`
-// list channel, which would make every viewer refetch every card on every like.
-function proposalRelationshipChannels({
-  processInstanceId,
-  proposalId,
-  mergeTargetIds,
-}: ProposalInfo) {
-  return [proposalId, ...mergeTargetIds].map((id) =>
-    Channels.decisionProposal(processInstanceId, id),
-  );
 }
 
 const relationshipInputSchema = z.object({
@@ -109,7 +96,7 @@ export const profileRelationshipRouter = router({
       const proposalInfo = await getProposalInfo(targetProfileId);
       if (proposalInfo) {
         ctx.registerMutationChannels(
-          proposalRelationshipChannels(proposalInfo),
+          getProposalEngagementChannels({ ...proposalInfo, relationshipType }),
         );
 
         waitUntil(
@@ -146,7 +133,7 @@ export const profileRelationshipRouter = router({
       const proposalInfo = await getProposalInfo(targetProfileId);
       if (proposalInfo) {
         ctx.registerMutationChannels(
-          proposalRelationshipChannels(proposalInfo),
+          getProposalEngagementChannels({ ...proposalInfo, relationshipType }),
         );
       }
     }),

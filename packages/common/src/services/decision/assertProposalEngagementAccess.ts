@@ -1,8 +1,13 @@
 import { db, eq } from '@op/db/client';
-import { processInstances, proposals } from '@op/db/schema';
+import {
+  ProfileRelationshipType,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
+import { Channels } from '../../realtime/channels/channels';
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { decisionPermission } from './permissions';
@@ -71,4 +76,26 @@ export async function assertProposalEngagementAccess({
     processInstanceId: proposal.processInstanceId,
     mergeTargetIds: proposal.mergeTargetIds,
   };
+}
+
+/**
+ * Channels the proposal detail query subscribes to that an engagement change
+ * touches: the proposal itself, plus — for a like, since only likes carry over
+ * a merge — every proposal down its merge chain. Deliberately not the
+ * `decisionProposals` list channel: every viewer would refetch every card.
+ */
+export function getProposalEngagementChannels({
+  processInstanceId,
+  proposalId,
+  mergeTargetIds,
+  relationshipType,
+}: ProposalEngagementTarget & { relationshipType: ProfileRelationshipType }) {
+  const proposalIds =
+    relationshipType === ProfileRelationshipType.LIKES
+      ? [proposalId, ...mergeTargetIds]
+      : [proposalId];
+
+  return proposalIds.map((id) =>
+    Channels.decisionProposal(processInstanceId, id),
+  );
 }
