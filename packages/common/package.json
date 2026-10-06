@@ -17,6 +17,7 @@
     "./locales.mjs": "./locales.mjs",
     "./testing": "./testing/index.ts",
     "./testing/data": "./testing/data/index.ts",
+    "./testing/helpers": "./testing/helpers/index.ts",
     "./testing/vitest": "./testing/vitest.ts",
     "./testing/mocks/deepl": "./testing/mocks/deepl.ts",
     "./src/*": "./src/*"

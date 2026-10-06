@@ -14,6 +14,7 @@ export {
 export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';
+export { TestPhoneAuthDataManager } from './helpers/TestPhoneAuthDataManager';
 export { TestProfileUserDataManager } from './helpers/TestProfileUserDataManager';
 export { TestReviewsDataManager } from './helpers/TestReviewsDataManager';
 export { TestTranslationDataManager } from './helpers/TestTranslationDataManager';

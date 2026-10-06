@@ -6,20 +6,21 @@ import {
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
   toGoTruePhoneFormat,
 } from '@op/common';
+import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { db, eq } from '@op/db/client';
-import { authUsers, profiles, users } from '@op/db/schema';
+import { authUsers, users } from '@op/db/schema';
 import { Events } from '@op/events';
-import { createSBServiceClient } from '@op/supabase/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { handleUnknownSmsSignup } from './handleUnknownSmsSignup';
 
 /**
- * Numbers from `[auth.sms.test_otp]` in `supabase/config.toml`. GoTrue skips
- * Twilio Verify for them and accepts only the listed code, so the whole
- * GoTrue round-trip runs for real with no text sent. `+15005550006` is left to
- * the demo scripts; the e2e suite claims the same four, so this file must not
- * run at the same time as `pnpm e2e`.
+ * Numbers from `[auth.sms.test_otp]` in `supabase/supabase-test.toml`, the
+ * instance this suite runs against (port 55321). GoTrue skips Twilio Verify
+ * for them and accepts only the listed code, so the whole GoTrue round-trip
+ * runs for real with no text sent. `+15005550006` is left to the demo
+ * scripts. The e2e suite lists the same numbers on its own instance
+ * (`supabase-e2e.toml`, port 56321), so the suites never race for a number.
  */
 const TEST_NUMBERS = {
   '+15005550007': '234567',
@@ -29,8 +30,6 @@ const TEST_NUMBERS = {
 } as const;
 
 type TestNumber = keyof typeof TEST_NUMBERS;
-
-const supabase = createSBServiceClient();
 
 const inboundText = (from: PhoneNumber, body: string) => ({
   name: Events.smsInboundReceived.name,
@@ -64,53 +63,19 @@ const readProfileId = async (authUserId: string) => {
   return row?.profileId ?? null;
 };
 
-/** Removes the GoTrue row and the profile the signup trigger created for it. */
-const removePhoneAccount = async (phone: PhoneNumber) => {
-  const authUser = await readAuthUser(phone);
-  if (!authUser) {
-    return;
-  }
-  const profileId = await readProfileId(authUser.id);
-  await supabase.auth.admin.deleteUser(authUser.id);
-  if (profileId) {
-    await db.delete(profiles).where(eq(profiles.id, profileId));
-  }
-};
-
-const claimNumber = (
-  number: TestNumber,
-  onTestFinished: (fn: () => Promise<void>) => void,
-) => {
-  const phone = parsePhoneNumber(number);
-  onTestFinished(() => removePhoneAccount(phone));
-  return { phone, code: TEST_NUMBERS[number] };
-};
-
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
 
-/** Seeds the row GoTrue leaves behind; `codeSentAt` is when it last texted a code. */
-const seedPhoneUser = async ({
-  phone,
-  confirmed,
-  codeSentAt,
-}: {
-  phone: PhoneNumber;
-  confirmed: boolean;
-  codeSentAt?: Date;
-}) => {
-  const { error } = await supabase.auth.admin.createUser({
-    phone,
-    phone_confirm: confirmed,
-  });
-  if (error) {
-    throw new Error(`Failed to seed phone user: ${error.message}`);
-  }
-  if (codeSentAt) {
-    await db
-      .update(authUsers)
-      .set({ confirmationSentAt: codeSentAt })
-      .where(eq(authUsers.phone, toGoTruePhoneFormat(phone)));
-  }
+/**
+ * Reserves one test number for a test. The auth row the flow itself creates
+ * is unknown up front, so cleanup looks it up by number when the test ends.
+ */
+const claimNumber = (
+  number: TestNumber,
+  testData: TestPhoneAuthDataManager,
+) => {
+  const phone = parsePhoneNumber(number);
+  testData.cleanupByPhoneOnFinish(phone);
+  return { phone, code: TEST_NUMBERS[number] };
 };
 
 beforeEach(() => {
@@ -119,9 +84,11 @@ beforeEach(() => {
 
 describe('handleUnknownSmsSignup against the database', () => {
   it('given a stranger texts, when they reply with the code GoTrue sent, then the number is confirmed, the account exists, and they were texted twice', async ({
+    task,
     onTestFinished,
   }) => {
-    const { phone, code } = claimNumber('+15005550007', onTestFinished);
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone, code } = claimNumber('+15005550007', testData);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -143,10 +110,12 @@ describe('handleUnknownSmsSignup against the database', () => {
   });
 
   it('given an abandoned attempt whose code is older than the reply window, when the number texts again, then a new code is requested and the consent text is sent', async ({
+    task,
     onTestFinished,
   }) => {
-    const { phone } = claimNumber('+15005550008', onTestFinished);
-    await seedPhoneUser({
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone } = claimNumber('+15005550008', testData);
+    await testData.createUser({
       phone,
       confirmed: false,
       codeSentAt: minutesAgo(PHONE_SIGNUP_REPLY_WINDOW_MINUTES + 1),
@@ -166,12 +135,14 @@ describe('handleUnknownSmsSignup against the database', () => {
   });
 
   it('given a code was texted moments ago and not yet confirmed, when the number texts again, then nothing is sent and no new code is requested', async ({
+    task,
     onTestFinished,
   }) => {
     // Every inbound text is also a trigger. Without this branch the reply to
     // one attempt would start the next, one code per reply.
-    const { phone } = claimNumber('+15005550008', onTestFinished);
-    await seedPhoneUser({
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone } = claimNumber('+15005550008', testData);
+    await testData.createUser({
       phone,
       confirmed: false,
       codeSentAt: minutesAgo(1),
@@ -188,10 +159,12 @@ describe('handleUnknownSmsSignup against the database', () => {
   });
 
   it('given a confirmed account, when its number texts, then the flow skips it and sends nothing', async ({
+    task,
     onTestFinished,
   }) => {
-    const { phone } = claimNumber('+15005550009', onTestFinished);
-    await seedPhoneUser({ phone, confirmed: true });
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone } = claimNumber('+15005550009', testData);
+    await testData.createUser({ phone, confirmed: true });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -202,10 +175,53 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(memorySmsProvider.sent).toEqual([]);
   });
 
-  it('given a stranger texts, when they reply with a wrong code, then the number stays unconfirmed and no welcome is sent', async ({
+  it('given the sms-signup flag is off, when a stranger texts, then nothing is sent and no account is created', async ({
+    task,
     onTestFinished,
   }) => {
-    const { phone } = claimNumber('+15005550010', onTestFinished);
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone } = claimNumber('+15005550007', testData);
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    // The project config pins the flag on; the override map is read per call,
+    // so the test can flip it and restore it.
+    const previous = process.env.FEATURE_FLAG_OVERRIDES;
+    process.env.FEATURE_FLAG_OVERRIDES = 'sms-signup:false';
+    try {
+      const { result } = await t.execute({
+        events: [inboundText(phone, 'hello')],
+      });
+
+      expect(result).toEqual({ message: 'sms signup disabled' });
+      expect(memorySmsProvider.sent).toEqual([]);
+      expect(await readAuthUser(phone)).toBeNull();
+    } finally {
+      process.env.FEATURE_FLAG_OVERRIDES = previous;
+    }
+  });
+
+  it('given a text from a number that is not E.164, when processed, then nothing is sent and no account is created', async () => {
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [
+        {
+          name: Events.smsInboundReceived.name,
+          data: { from: 'not-a-phone', body: 'hello', messageSid: 'SM-bad' },
+        },
+      ],
+    });
+
+    expect(result).toEqual({ message: 'invalid phone number' });
+    expect(memorySmsProvider.sent).toEqual([]);
+  });
+
+  it('given a stranger texts, when they reply with a wrong code, then the number stays unconfirmed and no welcome is sent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone } = claimNumber('+15005550010', testData);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({

@@ -107,6 +107,25 @@ describe('handleTwilioInboundWebhookRequest', () => {
     expect(inngest.send).not.toHaveBeenCalled();
   });
 
+  it('given Twilio retries the same message, when handled twice, then both forwards carry the same id so Inngest dedupes them', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const rawBody = rawBodyOf(MESSAGE_PARAMS);
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, MESSAGE_PARAMS);
+
+    await handleTwilioInboundWebhookRequest({ rawBody, signature, url: URL });
+    await handleTwilioInboundWebhookRequest({ rawBody, signature, url: URL });
+
+    expect(inngest.send).toHaveBeenCalledTimes(2);
+    expect(inngest.send).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ id: 'sms-inbound-SM456' }),
+    );
+    expect(inngest.send).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ id: 'sms-inbound-SM456' }),
+    );
+  });
+
   it('reports misconfiguration rather than forwarding when TWILIO_AUTH_TOKEN is unset', async () => {
     delete process.env.TWILIO_AUTH_TOKEN;
     const rawBody = rawBodyOf(MESSAGE_PARAMS);
