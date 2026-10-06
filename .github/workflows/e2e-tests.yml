@@ -5,6 +5,16 @@ permissions:
 
 on:
   pull_request_target:
+    # Docs-only changes (ADRs, READMEs) can't affect any of these jobs:
+    # nothing in the build imports markdown, and oxfmt ignores *.md. No status
+    # check here is required by the `main` ruleset, so a skipped run does not
+    # leave a PR waiting on a pending check. Drop this filter (or move it to a
+    # job-level `if:` gate) if these ever become required checks or feed a
+    # merge queue.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
   workflow_dispatch:
 
 concurrency:
