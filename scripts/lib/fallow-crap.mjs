@@ -407,7 +407,7 @@ export const changedFiles = (explicitBase) => {
  * else can — a test edit, a fixture, a config, or a source change that makes
  * some other file's tests run more or less of it.
  */
-const COVERAGE_NEUTRAL = /(^(docs|\.github|\.claude)\/|\.md$)/;
+const COVERAGE_NEUTRAL = /(^(docs|\.claude)\/|\.md$)/;
 
 /** Whether a changed path can move the coverage of any scored file. */
 export const affectsCoverage = (path) => !COVERAGE_NEUTRAL.test(path);
