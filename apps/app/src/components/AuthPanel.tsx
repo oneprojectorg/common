@@ -292,6 +292,14 @@ export const AuthPhoneField = ({
 // input-otp's REGEXP_ONLY_DIGITS, inlined to avoid a direct dependency on the package.
 const DIGITS_ONLY_PATTERN = '^\\d+$';
 
+/**
+ * A code copied out of an email brings whitespace and a line break with it,
+ * and input-otp rejects a paste whose characters fail the digits-only
+ * pattern or overflow the field. Keeping the digits alone lets the paste
+ * land; a code copied from a text message is bare digits already.
+ */
+const keepDigits = (pasted: string): string => pasted.replace(/\D/g, '');
+
 /** OTP entry field, sized to the length the channel delivers on this
  * deployment (see `getAuthOtpLength`); submits automatically once all slots
  * are filled. */
@@ -321,6 +329,7 @@ export const AuthCodeField = ({
         containerClassName="justify-center"
         maxLength={length}
         pattern={DIGITS_ONLY_PATTERN}
+        pasteTransformer={keepDigits}
         aria-label={t('auth.codeLabel')}
         autoFocus
         disabled={isDisabled}

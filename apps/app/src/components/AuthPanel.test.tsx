@@ -111,6 +111,31 @@ describe('AuthCodeField', () => {
   });
 
   /**
+   * Given a code copied out of the email, which brings the surrounding
+   * whitespace and a line break along with the digits
+   * When the person pastes it into the email field
+   * Then the field holds the ten digits and submits once, instead of
+   * rejecting the paste for the characters around them
+   */
+  it('accepts a pasted email code with whitespace around it', async () => {
+    const AuthCodeField = await loadAuthCodeField({
+      emailLength: 10,
+      smsLength: 6,
+    });
+    const onSubmit = vi.fn();
+    renderCodeField({ AuthCodeField, channel: 'email', onSubmit });
+
+    const input = screen.getByRole<HTMLInputElement>('textbox', {
+      name: 'Code',
+    });
+    await userEvent.click(input);
+    await userEvent.paste(' 5404043206\n');
+
+    expect(input.value).toBe('5404043206');
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  /**
    * Given the same deployment
    * When the field renders for the phone channel and the person types the
    * texted code
