@@ -111,14 +111,21 @@ const assemble = (scriptSources, environment) =>
   ].join('; ');
 
 /**
+ * posthog-js falls back to the asset host when the /stats rewrite is
+ * unavailable.
+ */
+const POSTHOG_ASSET_ORIGIN = 'https://eu-assets.i.posthog.com';
+
+/**
  * `https:` and `'unsafe-inline'` are pre-CSP3 fallbacks, not weakening: a
  * browser honouring `'strict-dynamic'` ignores both.
  *
- * Previews drop `'strict-dynamic'`, leaving the policy a pre-CSP3 browser
- * already enforces: the Vercel toolbar loads its instrument script from a
- * `srcdoc` iframe, parser-inserted and carrying the empty nonce of the
- * `feedback.js` Vercel injects, so `'strict-dynamic'` blocks it and disables
- * the host allowlist that could admit it.
+ * Previews swap `'strict-dynamic'` for a host allowlist: the Vercel toolbar
+ * loads its instrument script from a `srcdoc` iframe, parser-inserted and
+ * carrying the empty nonce of the `feedback.js` Vercel injects, so
+ * `'strict-dynamic'` blocks it and disables the host allowlist that could
+ * admit it. The allowlist names hosts rather than `https:`, which would admit
+ * any script a user-authored `srcdoc` iframe points at.
  *
  * @param {{ nonce: string } & PolicyEnvironment} params
  */
@@ -126,9 +133,9 @@ export const buildNonceContentSecurityPolicy = ({ nonce, ...environment }) =>
   assemble(
     [
       `'nonce-${nonce}'`,
-      ...(environment.isPreviewDeployment ? [] : ["'strict-dynamic'"]),
-      'https:',
-      "'unsafe-inline'",
+      ...(environment.isPreviewDeployment
+        ? ["'self'", POSTHOG_ASSET_ORIGIN, VERCEL_TOOLBAR_ORIGIN]
+        : ["'strict-dynamic'", 'https:', "'unsafe-inline'"]),
       UNSAFE_EVAL,
     ],
     environment,
@@ -146,9 +153,7 @@ export const buildStaticContentSecurityPolicy = (environment) =>
     [
       "'self'",
       "'unsafe-inline'",
-      // posthog-js falls back to the asset host when the /stats rewrite is
-      // unavailable.
-      'https://eu-assets.i.posthog.com',
+      POSTHOG_ASSET_ORIGIN,
       ...(environment.isPreviewDeployment ? [VERCEL_TOOLBAR_ORIGIN] : []),
     ],
     environment,

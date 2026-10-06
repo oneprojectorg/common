@@ -95,11 +95,21 @@ describe('preview deployments', () => {
       buildNonceContentSecurityPolicy({ nonce: 'test-nonce', ...preview }),
     ).get('script-src') ?? [];
 
-  it("drop 'strict-dynamic' so the toolbar's https: script loads", () => {
+  it("swap 'strict-dynamic' for a host allowlist that admits the toolbar", () => {
     expect(nonceScriptSources).not.toContain("'strict-dynamic'");
     expect(nonceScriptSources).toEqual(
-      expect.arrayContaining(["'nonce-test-nonce'", 'https:']),
+      expect.arrayContaining([
+        "'nonce-test-nonce'",
+        "'self'",
+        VERCEL_TOOLBAR_ORIGIN,
+      ]),
     );
+  });
+
+  it('do not admit every https: script once strict-dynamic is gone', () => {
+    // A user-authored srcdoc iframe inherits this policy.
+    expect(nonceScriptSources).not.toContain('https:');
+    expect(nonceScriptSources).not.toContain("'unsafe-inline'");
   });
 
   it('let the static routes load the toolbar too', () => {
