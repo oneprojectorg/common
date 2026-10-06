@@ -138,6 +138,18 @@ between two marker comments so a new push replaces the old line rather than
 stacking another. The blast radius from `scripts/blast-radius.ts`
 (`pnpm blast-radius` locally) travels with it.
 
+The PR report also shows how each changed file's worst CRAP moved, and calls
+out any file the change pushed over 30. That needs dev's own coverage, so
+`tests.yml` also runs on pushes to dev — one at a time, a burst queued behind
+a running one collapsing to the newest — and caches every file's score under
+the commit (`--write-scores`). A PR restores its merge base's set, else the
+newest one (`--base-scores`). The fallback is used only when nothing between
+its commit and the merge base could move coverage (prose and CI config only):
+a file's coverage depends on the whole suite, so a test edited on dev moves
+files nobody touched. A set whose commit is not on dev is refused. No change is
+shown when there is no usable set or the PR's own tests failed.
+`pnpm test:scripts` covers the comparison and the rendering.
+
 Locally, run `pnpm health` after `pnpm test:coverage`; without a fresh report
 it says `CRAP: STALE` rather than reporting a green it cannot back up —
 coverage matched by line span goes wrong in both directions once the file has

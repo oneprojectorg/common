@@ -58,6 +58,15 @@ const readJson = (path) => {
 const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 const percent = (fraction) => `${Math.round(fraction * 100)}%`;
 const whole = (score) => String(Math.round(score));
+/**
+ * A score change, whole like the scores beside it — except under one point,
+ * where rounding would print `±0` next to a file that crossed the line.
+ */
+const signed = (delta) => {
+  if (delta === 0) return '±0';
+  const size = Math.abs(delta);
+  return `${delta > 0 ? '+' : '−'}${size < 1 ? size.toFixed(1) : Math.round(size)}`;
+};
 
 /** One clause on the reach and the review-impact band. */
 const blastLine = (blast) => {
@@ -85,8 +94,25 @@ const crapLine = (crap) => {
     crap.risky.length > 0
       ? `${crap.risky.length} of ${plural(crap.changed.length, 'changed file')} at ${crap.at_risk_threshold} or worse`
       : `nothing at ${crap.at_risk_threshold} or worse`;
+  const crossed = crap.scored.filter((row) => row.crossed).length;
+  const pushed =
+    crossed > 0
+      ? `, **${plural(crossed, 'file')} pushed over ${crap.at_risk_threshold}**`
+      : '';
   const stale = crap.status === 'STALE' ? ', coverage stale' : '';
-  return `${head}, ${verdict}${stale}`;
+  return `${head}, ${verdict}${pushed}${stale}`;
+};
+
+/**
+ * The Base and Change cells: the file's worst CRAP at the merge base and how
+ * far it moved, with a crossing of the at-risk line called out so it cannot
+ * hide among small deltas. No base score means the file was new or untested
+ * there, and gets no number rather than a made-up zero.
+ */
+const changeCells = (row, threshold) => {
+  if (row.before === null) return '— | —';
+  const change = signed(row.crap - row.before);
+  return `${whole(row.before)} | ${row.crossed ? `**${change}, now over ${threshold}**` : change}`;
 };
 
 // Rows the sticky comment shows before deferring to the full report. The
@@ -105,14 +131,17 @@ const crapSection = (crap, rowLimit = Infinity) => {
     return lines;
   }
 
+  const baseCommit = crap.base_commit;
   if (crap.scored.length > 0) {
     const shown = crap.scored.slice(0, rowLimit);
     lines.push(
-      '| Function | File | Cognitive | Coverage | CRAP |',
-      '|---|---|---|---|---|',
+      baseCommit
+        ? '| Function | File | Cognitive | Coverage | CRAP | Base | Change |\n|---|---|---|---|---|---|---|'
+        : '| Function | File | Cognitive | Coverage | CRAP |\n|---|---|---|---|---|',
       ...shown.map(
         (row) =>
-          `| \`${row.name}\` | \`${row.path}:${row.line}\` | ${row.cognitive} | ${percent(row.coverage)} | ${whole(row.crap)} |`,
+          `| \`${row.name}\` | \`${row.path}:${row.line}\` | ${row.cognitive} | ${percent(row.coverage)} | ${whole(row.crap)} |` +
+          (baseCommit ? ` ${changeCells(row, crap.at_risk_threshold)} |` : ''),
       ),
       '',
     );
@@ -120,6 +149,12 @@ const crapSection = (crap, rowLimit = Infinity) => {
     if (hidden > 0) {
       lines.push(`${plural(hidden, 'more function')} in the full report.`, '');
     }
+    lines.push(
+      baseCommit
+        ? `Base and Change compare each file's worst CRAP at dev \`${baseCommit.slice(0, 7)}\`; — means no score there (new, or no test loaded it).`
+        : "No change shown: no usable saved scores for the base, or this run's tests failed and its coverage is incomplete.",
+      '',
+    );
   }
 
   const unscored = crap.changed.length - crap.scored.length;

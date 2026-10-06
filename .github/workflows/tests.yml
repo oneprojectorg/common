@@ -2,12 +2,26 @@ name: Tests
 
 # Gates the PR on the vitest suites, and measures the PR metrics off the same
 # instrumented run. `pr-metrics.yml` publishes the artifact this job uploads.
+#
+# Pushes to dev run it too, only to save every file's CRAP score under the
+# commit's SHA: a PR's CRAP change is measured against dev, and dev's coverage
+# needs its own instrumented run.
 
 on:
   pull_request_target:
+  push:
+    branches: [dev]
 
 permissions:
   contents: read
+
+# Dev runs exist only to save the scores PRs compare against, one at a time: a
+# run in progress finishes, since its commit is some PR's merge base, and a
+# burst queued behind it collapses to the newest push. PR runs keep a group of
+# their own and are never held up from here.
+concurrency:
+  group: ${{ github.event_name == 'push' && 'tests-dev-crap-scores' || format('tests-{0}', github.run_id) }}
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -98,22 +112,60 @@ jobs:
         run: pnpm w:db migrate:test
 
       - name: Run tests with coverage
+        id: tests
         run: pnpm test:coverage
 
+      - name: Record every file's CRAP score for PRs to diff against
+        if: github.event_name == 'push'
+        id: record
+        continue-on-error: true
+        run: pnpm --silent health --json --write-scores "$RUNNER_TEMP/crap-scores.json" > /dev/null
+
+      - name: Save the CRAP scores under this commit
+        if: steps.record.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/crap-scores.json
+          key: crap-scores-${{ github.sha }}
+
       - name: Measure the blast radius
-        if: always()
+        if: always() && github.event_name == 'pull_request_target'
         continue-on-error: true
         run: |
           pnpm --silent blast-radius --base "$BASE_REF" --quiet > "$RUNNER_TEMP/blast.md"
           pnpm --silent blast-radius --base "$BASE_REF" --quiet --json > "$RUNNER_TEMP/blast.json"
 
-      - name: Score CRAP on the changed files
-        if: always()
+      - name: Find the merge base
+        if: always() && github.event_name == 'pull_request_target'
+        id: merge-base
         continue-on-error: true
-        run: pnpm --silent health --json --base "$BASE_REF" > "$RUNNER_TEMP/crap.json"
+        run: echo "sha=$(git merge-base HEAD "$BASE_REF")" >> "$GITHUB_OUTPUT"
+
+      # Prefers the scores saved on the merge base itself, else the newest dev
+      # set; `pnpm health` uses that one only if nothing between the two
+      # commits could move coverage, and only if its commit is on dev. Skipped
+      # when this run's tests failed: their coverage is incomplete, and a
+      # Change column read off it would blame the PR for scores the failure
+      # moved.
+      - name: Restore dev's CRAP scores
+        if: always() && steps.tests.outcome == 'success' && steps.merge-base.outputs.sha != ''
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/crap-scores.json
+          key: crap-scores-${{ steps.merge-base.outputs.sha }}
+          restore-keys: crap-scores-
+
+      - name: Score CRAP on the changed files
+        if: always() && github.event_name == 'pull_request_target'
+        continue-on-error: true
+        run: |
+          pnpm --silent health --json --base "$BASE_REF" \
+            --base-scores "$RUNNER_TEMP/crap-scores.json" > "$RUNNER_TEMP/crap.json"
 
       - name: Compose the line, the comment and the report
-        if: always()
+        if: always() && github.event_name == 'pull_request_target'
         continue-on-error: true
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -136,7 +188,7 @@ jobs:
           cat "$RUNNER_TEMP/out/report.md" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the report and the comment
-        if: always()
+        if: always() && github.event_name == 'pull_request_target'
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:

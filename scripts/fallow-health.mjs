@@ -8,6 +8,12 @@
  *   node scripts/fallow-health.mjs --base <ref>  # compare changed files against <ref>
  *   node scripts/fallow-health.mjs --json        # the CRAP verdict alone, as one JSON object
  *
+ * Two more flags exist for CI, which scores the merge base so a PR can show how
+ * its CRAP moved:
+ *
+ *   --write-scores <file>  also save every scored file's CRAP, for a later run
+ *   --base-scores <file>   diff the changed files against a saved set
+ *
  * Fallow renders a fixed section order — score, complexity findings, file
  * scores, hotspots, targets — and opens every run with the one-line metrics
  * banner. That buries the file health scores between the banner and several
@@ -38,7 +44,7 @@
  * Tests job already makes; `pr-checks.yml` keeps the fast gates.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import {
@@ -51,8 +57,10 @@ import {
   crapScores,
   crossings,
   inCrapScope,
+  isComparableBase,
   readCrapTrend,
   summarize,
+  withBaseScores,
 } from './lib/fallow-crap.mjs';
 
 const BASELINE = join(ROOT, 'configs', 'fallow', 'health-baseline.json');
@@ -60,14 +68,19 @@ const BASELINE = join(ROOT, 'configs', 'fallow', 'health-baseline.json');
 const full = process.argv.includes('--full');
 const json = process.argv.includes('--json');
 
-/** `--base <ref>` or `--base=<ref>`; unset means the default branch chain. */
-const baseOverride = (() => {
-  const flag = process.argv.indexOf('--base');
+/** `--<name> <value>` or `--<name>=<value>`; undefined when absent. */
+const flagValue = (name) => {
+  const flag = process.argv.indexOf(`--${name}`);
   if (flag !== -1) return process.argv[flag + 1];
   return process.argv
-    .find((argument) => argument.startsWith('--base='))
-    ?.slice('--base='.length);
-})();
+    .find((argument) => argument.startsWith(`--${name}=`))
+    ?.slice(`--${name}=`.length);
+};
+
+/** Unset means the default branch chain. */
+const baseOverride = flagValue('base');
+const writeScoresTo = flagValue('write-scores');
+const baseScoresFrom = flagValue('base-scores');
 
 if (!existsSync(COVERAGE) && !json) {
   console.error(
@@ -192,6 +205,22 @@ const printRisky = (risky, changed) => {
 };
 
 /**
+ * The saved score set from `--base-scores`, or null when there is none to read.
+ *
+ * CRAP needs coverage, and coverage needs the base's own instrumented run, so
+ * CI records these on pushes to dev rather than re-running the suite on the
+ * base inside every PR.
+ */
+const readBaseScores = () => {
+  if (!baseScoresFrom || !existsSync(baseScoresFrom)) return null;
+  try {
+    return JSON.parse(readFileSync(baseScoresFrom, 'utf8'));
+  } catch {
+    return null;
+  }
+};
+
+/**
  * The CRAP roll-up as data: the aggregates, the changed files in scope, the
  * ones at risk, the ones edited after the coverage report, and the verdict
  * those add up to. Both renderers below read from this.
@@ -212,7 +241,15 @@ const crapReport = () => {
   }
 
   const { files, worst, stats } = scores;
-  const { base, paths } = changedFiles(baseOverride);
+  if (writeScoresTo) {
+    const commit = spawnSync('git', ['rev-parse', 'HEAD'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    }).stdout.trim();
+    writeFileSync(writeScoresTo, `${JSON.stringify({ commit, files })}\n`);
+  }
+
+  const { base, baseCommit, paths } = changedFiles(baseOverride);
   const changed = paths.filter(inCrapScope);
   const risky = crossings(files, worst, changed);
   const stale = staleAmong(changed);
@@ -220,10 +257,22 @@ const crapReport = () => {
   // Every changed file the report could score, worst first. `risky` is the
   // slice of this at or above the line; the JSON consumer wants the rest too,
   // so it can name the worst function even when nothing is at risk.
-  const scored = changed
+  const ranked = changed
     .filter((path) => files[path] !== undefined)
     .map((path) => ({ path, ...worst[path] }))
     .sort((a, b) => b.crap - a.crap);
+
+  const baseScores = readBaseScores();
+  const comparable =
+    baseScores !== null &&
+    isComparableBase({
+      scoredCommit: baseScores.commit,
+      baseRef: base,
+      baseCommit,
+    });
+  const scored = comparable
+    ? withBaseScores({ scored: ranked, baseFiles: baseScores.files })
+    : ranked;
 
   const status =
     risky.length > 0 ? 'AT_RISK' : stale.length > 0 ? 'STALE' : 'OK';
@@ -237,6 +286,7 @@ const crapReport = () => {
     scored,
     risky,
     stale,
+    base_commit: comparable ? baseScores.commit : null,
     summary: summarize(files),
     trend: comparableTrend(),
     stats,

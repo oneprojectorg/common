@@ -72,6 +72,9 @@ jobs:
       - name: Run TypeScript checks - App
         run: pnpm typecheck
 
+      - name: Test the CI scripts
+        run: pnpm test:scripts
+
   # Only adr-numbering.yml may create NNNN-*.md. The check runs the base
   # branch's copy of the script. No token here, so no fork gate.
   adr-numbers:

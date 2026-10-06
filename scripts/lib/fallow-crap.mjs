@@ -395,8 +395,68 @@ export const changedFiles = (explicitBase) => {
       .filter(Boolean),
   );
 
-  return { base: base?.ref ?? null, paths: [...paths] };
+  return {
+    base: base?.ref ?? null,
+    baseCommit: base?.commit ?? null,
+    paths: [...paths],
+  };
 };
+
+/**
+ * Paths that cannot move anyone's coverage: prose and CI config. Everything
+ * else can — a test edit, a fixture, a config, or a source change that makes
+ * some other file's tests run more or less of it.
+ *
+ * `.github/` stays neutral even though `tests.yml` runs the coverage command:
+ * an edit that changes what gets measured is rare and deliberate, and counting
+ * every CI tweak would refuse the fallback for no change in any score.
+ */
+const COVERAGE_NEUTRAL = /(^(docs|\.github|\.claude)\/|\.md$)/;
+
+/** Whether a changed path can move the coverage of any scored file. */
+export const affectsCoverage = (path) => !COVERAGE_NEUTRAL.test(path);
+
+/**
+ * Whether a saved score set stands in for the merge base.
+ *
+ * Dev scores a burst of merges once, so a PR's exact merge base may have no
+ * set, and the cache hands back the newest one instead. A file's coverage
+ * depends on the whole suite, not just its own source: a test edited on dev
+ * moves files nobody touched. So the set is only comparable when nothing
+ * between its commit and the merge base could move coverage at all — anything
+ * looser can claim this PR pushed a file over the line when dev did. It is
+ * also refused when its commit is not on the base branch: the cache is
+ * writable from any run in the base branch's scope, so the set has to prove
+ * where it came from.
+ */
+export const isComparableBase = ({ scoredCommit, baseRef, baseCommit }) => {
+  if (!baseRef || !/^[0-9a-f]{40}$/.test(scoredCommit ?? '')) return false;
+  if (scoredCommit === baseCommit) return true;
+  if (git(['merge-base', '--is-ancestor', scoredCommit, baseRef]) === null) {
+    return false;
+  }
+  const diff = git(['diff', '--name-only', scoredCommit, baseCommit]);
+  return (
+    diff !== null && !diff.split('\n').filter(Boolean).some(affectsCoverage)
+  );
+};
+
+/**
+ * Each scored row with its file's worst CRAP at the base (`before`), and
+ * whether this change pushed it over the line: under it at the base, at or
+ * above it now. A file with no base score — new, or untested there — gets
+ * `before: null` and is never a crossing; it is already in `risky`, and
+ * calling it one would claim a before we do not have.
+ */
+export const withBaseScores = ({ scored, baseFiles }) =>
+  scored.map((row) => {
+    const before = baseFiles[row.path] ?? null;
+    return {
+      ...row,
+      before,
+      crossed: before !== null && before < AT_RISK && row.crap >= AT_RISK,
+    };
+  });
 
 /**
  * The gate. Scoped files this change touched that sit at or above
@@ -407,7 +467,8 @@ export const changedFiles = (explicitBase) => {
  * merge base, which needs a coverage report for the merge base — so the
  * question the gate can actually answer honestly is whether the code you just
  * worked on is complex and untested. Touching it is when you are in a position
- * to fix that.
+ * to fix that. CI does have the merge base's scores, saved by a run on dev, and
+ * the PR report uses them to show the change and call out crossings.
  */
 export const crossings = (files, worst, changed) =>
   changed
