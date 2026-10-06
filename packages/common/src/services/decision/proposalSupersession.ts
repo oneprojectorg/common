@@ -1,14 +1,19 @@
 import {
   type Column,
+  type DbClient,
   type SQL,
   and,
   db,
   eq,
+  inArray,
   isNull,
   notExists,
+  sql,
 } from '@op/db/client';
 import {
+  ProfileRelationshipType,
   ProposalRelationshipType,
+  profileRelationships,
   profiles,
   proposalRelationships,
   proposals,
@@ -17,14 +22,46 @@ import {
 import {
   type ProposalReadContext,
   isProposalReadable,
+  isReadableByEveryone,
 } from './proposalVisibility';
+
+/**
+ * A `merged` edge that has not been unmerged. Built lazily, not as a constant:
+ * module-scope SQL runs before a test's `@op/db/client` mock is in place.
+ */
+const isLiveMergeEdge = (): SQL =>
+  and(
+    eq(proposalRelationships.relationshipType, ProposalRelationshipType.MERGED),
+    isNull(proposalRelationships.deletedAt),
+  )!;
+
+/**
+ * Every proposal `proposalId` was merged into, directly or through a chain —
+ * the proposals whose like counts include its likes. Correlated, so it runs
+ * inside the caller's query rather than as another round trip.
+ */
+export const mergeTargetIds = (proposalId: Column): SQL<string[]> =>
+  // `UNION`, not `UNION ALL`: it still terminates if a race leaves a cycle.
+  sql<string[]>`(
+    WITH RECURSIVE merge_targets (proposal_id) AS (
+      SELECT ${proposalId}
+      UNION
+      SELECT ${proposalRelationships.targetProposalId}
+      FROM ${proposalRelationships}
+      JOIN merge_targets
+        ON ${proposalRelationships.sourceProposalId} = merge_targets.proposal_id
+      WHERE ${isLiveMergeEdge()}
+    )
+    SELECT coalesce(array_agg(proposal_id), '{}')
+    FROM merge_targets
+    WHERE proposal_id <> ${proposalId}
+  )`;
 
 /** A live `merged` edge pointing *at* `targetProposalId`. */
 const liveMergeInto = (targetProposalId: string): SQL =>
   and(
     eq(proposalRelationships.targetProposalId, targetProposalId),
-    eq(proposalRelationships.relationshipType, ProposalRelationshipType.MERGED),
-    isNull(proposalRelationships.deletedAt),
+    isLiveMergeEdge(),
   )!;
 
 // Both ends take a literal id or a correlated column, so the read predicate and
@@ -36,8 +73,7 @@ const liveMergedEdge = (
   and(
     eq(proposalRelationships.processInstanceId, processInstanceId),
     eq(proposalRelationships.sourceProposalId, sourceProposalId),
-    eq(proposalRelationships.relationshipType, ProposalRelationshipType.MERGED),
-    isNull(proposalRelationships.deletedAt),
+    isLiveMergeEdge(),
   )!;
 
 /**
@@ -143,4 +179,51 @@ export async function findLiveMergedEdge({
     .limit(1);
 
   return edge;
+}
+
+/**
+ * Likes carried over from every proposal merged into each of `targetProfileIds`,
+ * directly or through a chain, for callers to add to the proposal's own count.
+ * Only sources readable by everyone count, so no viewer sees engagement from a
+ * proposal they cannot open; likes are summed, not counted per liker.
+ */
+export async function getMergedLikeCounts({
+  targetProfileIds,
+  db: dbClient = db,
+}: {
+  targetProfileIds: string[];
+  db?: DbClient;
+}): Promise<Map<string, number>> {
+  if (targetProfileIds.length === 0) {
+    return new Map();
+  }
+
+  // `UNION`, not `UNION ALL`: it still terminates if a race leaves a cycle.
+  const rows = await dbClient.execute<{
+    target_profile_id: string;
+    likes: number;
+  }>(sql`
+    WITH RECURSIVE merged_into (target_profile_id, proposal_id) AS (
+      SELECT ${proposals.profileId}, ${proposals.id}
+      FROM ${proposals}
+      WHERE ${inArray(proposals.profileId, targetProfileIds)}
+      UNION
+      SELECT merged_into.target_profile_id, ${proposalRelationships.sourceProposalId}
+      FROM ${proposalRelationships}
+      JOIN merged_into
+        ON ${proposalRelationships.targetProposalId} = merged_into.proposal_id
+      WHERE ${isLiveMergeEdge()}
+    )
+    SELECT merged_into.target_profile_id, count(*)::int AS likes
+    FROM merged_into
+    JOIN ${proposals} ON ${proposals.id} = merged_into.proposal_id
+    JOIN ${profileRelationships}
+      ON ${profileRelationships.targetProfileId} = ${proposals.profileId}
+      AND ${eq(profileRelationships.relationshipType, ProfileRelationshipType.LIKES)}
+    WHERE ${proposals.profileId} <> merged_into.target_profile_id
+      AND ${isReadableByEveryone(proposals)}
+    GROUP BY merged_into.target_profile_id
+  `);
+
+  return new Map(rows.map((row) => [row.target_profile_id, row.likes]));
 }

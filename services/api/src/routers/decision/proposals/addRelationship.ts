@@ -30,7 +30,7 @@ export const addProposalRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
-      const { proposalId, processInstanceId } =
+      const { proposalId, processInstanceId, mergeTargetIds } =
         await assertProposalEngagementAccess({
           user: ctx.user,
           profileId: targetProfileId,
@@ -42,14 +42,14 @@ export const addProposalRelationshipRouter = router({
         authUserId: ctx.user.id,
       });
 
-      // The proposal detail query subscribes to this channel; registering it
-      // refreshes engagement counts (likesCount, followersCount) immediately.
-      // Deliberately scoped to the single proposal — invalidating the whole
-      // `decisionProposals` list channel for every like/follow would force
-      // every viewer to re-fetch every card.
-      ctx.registerMutationChannels([
-        Channels.decisionProposal(processInstanceId, proposalId),
-      ]);
+      // Refreshes engagement counts on the proposal detail query, for this
+      // proposal and every one its likes roll up into. Deliberately not the
+      // `decisionProposals` list channel: every viewer would refetch every card.
+      ctx.registerMutationChannels(
+        [proposalId, ...mergeTargetIds].map((id) =>
+          Channels.decisionProposal(processInstanceId, id),
+        ),
+      );
 
       waitUntil(
         (async () => {

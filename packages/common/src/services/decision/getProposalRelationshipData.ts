@@ -8,6 +8,7 @@ import {
 import { count as countFn } from 'drizzle-orm';
 import { z } from 'zod';
 
+import { getMergedLikeCounts } from './proposalSupersession';
 import { proposalSchema } from './schemas/proposal';
 
 const proposalRelationshipDataSchema = proposalSchema
@@ -24,7 +25,7 @@ type ProposalRelationshipData = z.infer<typeof proposalRelationshipDataSchema>;
 
 /**
  * Fetches like/follow counts, the caller's own like/follow state, and comment
- * counts for a set of proposal profile IDs in three parallel queries, then
+ * counts for a set of proposal profile IDs in four parallel queries, then
  * folds them into a single per-profile map. Used by both `listProposals` and
  * `listAllProposals` to build proposal cards' engagement metrics.
  */
@@ -41,7 +42,7 @@ export const getProposalRelationshipData = async ({
     return relationshipData;
   }
 
-  const [relationshipCounts, userRelationships, commentCounts] =
+  const [relationshipCounts, userRelationships, commentCounts, mergedLikes] =
     await Promise.all([
       db
         .select({
@@ -80,44 +81,43 @@ export const getProposalRelationshipData = async ({
         .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
         .where(inArray(postsToProfiles.profileId, profileIds))
         .groupBy(postsToProfiles.profileId),
+
+      getMergedLikeCounts({ targetProfileIds: profileIds }),
     ]);
 
+  const likeCounts = new Map<string, number>();
+  const followerCounts = new Map<string, number>();
+  for (const row of relationshipCounts) {
+    if (row.relationshipType === ProfileRelationshipType.LIKES) {
+      likeCounts.set(row.targetProfileId, Number(row.count));
+    } else if (row.relationshipType === ProfileRelationshipType.FOLLOWING) {
+      followerCounts.set(row.targetProfileId, Number(row.count));
+    }
+  }
+
+  const likedByUser = new Set<string>();
+  const followedByUser = new Set<string>();
+  for (const row of userRelationships) {
+    if (row.relationshipType === ProfileRelationshipType.LIKES) {
+      likedByUser.add(row.targetProfileId);
+    } else if (row.relationshipType === ProfileRelationshipType.FOLLOWING) {
+      followedByUser.add(row.targetProfileId);
+    }
+  }
+
+  const commentsByProfile = new Map(
+    commentCounts.map((row) => [row.profileId, Number(row.count)]),
+  );
+
   for (const profileId of profileIds) {
-    const likesCount =
-      relationshipCounts.find(
-        (rc) =>
-          rc.targetProfileId === profileId &&
-          rc.relationshipType === ProfileRelationshipType.LIKES,
-      )?.count || 0;
-
-    const followersCount =
-      relationshipCounts.find(
-        (rc) =>
-          rc.targetProfileId === profileId &&
-          rc.relationshipType === ProfileRelationshipType.FOLLOWING,
-      )?.count || 0;
-
-    const isLikedByUser = userRelationships.some(
-      (ur) =>
-        ur.targetProfileId === profileId &&
-        ur.relationshipType === ProfileRelationshipType.LIKES,
-    );
-
-    const isFollowedByUser = userRelationships.some(
-      (ur) =>
-        ur.targetProfileId === profileId &&
-        ur.relationshipType === ProfileRelationshipType.FOLLOWING,
-    );
-
-    const commentsCount =
-      commentCounts.find((cc) => cc.profileId === profileId)?.count || 0;
-
     relationshipData.set(profileId, {
-      likesCount: Number(likesCount),
-      followersCount: Number(followersCount),
-      isLikedByUser,
-      isFollowedByUser,
-      commentsCount: Number(commentsCount),
+      // Likes carry over from merged proposals; follows do not.
+      likesCount:
+        (likeCounts.get(profileId) ?? 0) + (mergedLikes.get(profileId) ?? 0),
+      followersCount: followerCounts.get(profileId) ?? 0,
+      isLikedByUser: likedByUser.has(profileId),
+      isFollowedByUser: followedByUser.has(profileId),
+      commentsCount: commentsByProfile.get(profileId) ?? 0,
     });
   }
 

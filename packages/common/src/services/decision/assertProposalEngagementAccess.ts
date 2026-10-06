@@ -1,14 +1,17 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
+import { processInstances, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { decisionPermission } from './permissions';
+import { mergeTargetIds } from './proposalSupersession';
 
 type ProposalEngagementTarget = {
   proposalId: string;
   processInstanceId: string;
+  mergeTargetIds: string[];
 };
 
 /**
@@ -30,15 +33,21 @@ export async function assertProposalEngagementAccess({
   user: User | undefined;
   profileId: string;
 }): Promise<ProposalEngagementTarget> {
-  const proposal = await db.query.proposals.findFirst({
-    where: { profileId },
-    columns: { id: true, processInstanceId: true },
-    with: {
-      processInstance: {
-        columns: { profileId: true, ownerProfileId: true },
-      },
-    },
-  });
+  const [proposal] = await db
+    .select({
+      id: proposals.id,
+      processInstanceId: proposals.processInstanceId,
+      instanceProfileId: processInstances.profileId,
+      instanceOwnerProfileId: processInstances.ownerProfileId,
+      mergeTargetIds: mergeTargetIds(proposals.id),
+    })
+    .from(proposals)
+    .innerJoin(
+      processInstances,
+      eq(processInstances.id, proposals.processInstanceId),
+    )
+    .where(eq(proposals.profileId, profileId))
+    .limit(1);
 
   if (!proposal) {
     throw new NotFoundError('Proposal', profileId);
@@ -46,7 +55,10 @@ export async function assertProposalEngagementAccess({
 
   await assertInstanceProfileAccess({
     user,
-    instance: proposal.processInstance,
+    instance: {
+      profileId: proposal.instanceProfileId,
+      ownerProfileId: proposal.instanceOwnerProfileId,
+    },
     profilePermissions: { decisions: decisionPermission.SUBMIT_PROPOSALS },
     orgFallbackPermissions: [
       { decisions: decisionPermission.SUBMIT_PROPOSALS },
@@ -57,5 +69,6 @@ export async function assertProposalEngagementAccess({
   return {
     proposalId: proposal.id,
     processInstanceId: proposal.processInstanceId,
+    mergeTargetIds: proposal.mergeTargetIds,
   };
 }

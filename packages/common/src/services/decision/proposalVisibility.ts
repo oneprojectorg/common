@@ -46,6 +46,10 @@ const isUnrestricted = (proposalsTable: typeof proposals): SQL =>
     noActiveModerationFlag('proposal', proposalsTable.id),
   )!;
 
+/** Readable by any caller, so anything derived from it is safe to show anyone. */
+export const isReadableByEveryone = (proposalsTable: typeof proposals): SQL =>
+  and(isPresent(proposalsTable), isUnrestricted(proposalsTable))!;
+
 /**
  * Members of the proposal's *own* profile: its author plus invited
  * collaborators. Nothing for a caller with no account — public grants belong on

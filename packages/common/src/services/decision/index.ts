@@ -80,6 +80,7 @@ export * from './listProposalRejectionRecipients';
 export * from './getProposal';
 export * from './getCollabToken';
 export * from './assertProposalEngagementAccess';
+export { mergeTargetIds } from './proposalSupersession';
 
 // Proposal relationships (merge / unmerge / list)
 export * from './mergeProposals';
