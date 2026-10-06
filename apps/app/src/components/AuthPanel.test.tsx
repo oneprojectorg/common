@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { useState } from 'react';
@@ -61,8 +61,22 @@ const renderCodeField = ({
 const countSlots = (container: HTMLElement): number =>
   container.querySelectorAll('[data-slot="input-otp-slot"]').length;
 
+/**
+ * `input-otp` schedules three timers (0, 10 and 50 ms) on every focus or
+ * selection change and never clears them; each one calls `setState`. Vitest
+ * tears jsdom down as soon as the file ends, and a timer that fires after
+ * that crashes React with `window is not defined` as an unhandled error. A
+ * timer queued after theirs fires after theirs, so waiting on one is enough.
+ */
+const flushInputOtpTimers = () =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, 60);
+  });
+
 describe('AuthCodeField', () => {
-  afterEach(() => {
+  afterEach(async () => {
+    cleanup();
+    await flushInputOtpTimers();
     vi.unstubAllEnvs();
   });
 
