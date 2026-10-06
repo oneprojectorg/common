@@ -53,7 +53,7 @@ double_confirm_changes = true
 enable_confirmations = false
 secure_password_change = false
 max_frequency = "1s"
-otp_length = 6
+otp_length = 10
 otp_expiry = 3600
 
 [auth.email.template.confirmation]
