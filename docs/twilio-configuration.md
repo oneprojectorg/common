@@ -111,6 +111,45 @@ webhook that returned a non-2xx status, with the status code and the response
 body. Error `11200` means Twilio could not reach the URL at all; check the
 host before checking our logs.
 
+## Code send failures
+
+Phone sign-in asks GoTrue for a code, and GoTrue asks Twilio Verify. When
+Verify refuses, GoTrue answers `422` with the code `sms_send_failed` and a
+message that relays Twilio's own: `Error sending sms OTP to provider:
+<Twilio message> More information: https://www.twilio.com/docs/errors/<code>`.
+
+The browser logs one record, `GoTrue refused to send a code`, from
+`apps/app/src/hooks/phoneAuth/supabaseOtp.ts`. It reaches PostHog as an
+exception with these attributes:
+
+| Attribute    | Value                                                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `code`       | GoTrue's code, `sms_send_failed` for a provider refusal.                                                                                 |
+| `status`     | GoTrue's HTTP status, `422` for a provider refusal.                                                                                      |
+| `twilioCode` | The number at the end of Twilio's error URL. Absent when Twilio was not the cause.                                                       |
+| `diagnostic` | GoTrue's message with every phone number replaced by `[phone]`. Twilio echoes the number it refused, so the raw message is never logged. |
+
+Look up `twilioCode` at `https://www.twilio.com/docs/errors/<code>`. The
+ones Verify returns most:
+
+| `twilioCode` | Cause                                            | Fix                                                                                         |
+| ------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `20003`      | The Account SID and Auth Token do not match.     | Check `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` in the Supabase project's auth settings. |
+| `20404`      | No Verify service has that SID.                  | Check `TWILIO_VERIFY_SERVICE_SID` is the `VA...` SID, not the `MG...` one.                  |
+| `60200`      | Twilio rejected the number as invalid.           | The number failed E.164 validation on Twilio's side; check `normalizePhoneNumber`.          |
+| `60203`      | The number hit Verify's send-attempt cap.        | Expected. The app reads it as a throttle and tells the person to wait.                      |
+| `60205`      | The number is a landline and cannot receive SMS. | Nothing to fix; the person needs a mobile number.                                           |
+| `60605`      | Geographic permissions block that country.       | Twilio Console → Messaging → Settings → Geo permissions.                                    |
+| `60410`      | Twilio's fraud guard blocked the number.         | Twilio Console → Verify → Fraud Guard.                                                      |
+
+GoTrue's own throttle is separate: `over_sms_send_rate_limit` with no
+`twilioCode`, from `[auth.sms] max_frequency` and `[auth.rate_limit] sms_sent`.
+
+A local stack shows the same message in the auth container:
+`docker logs supabase_auth_common 2>&1 | grep -i twilio`. A number listed
+under `[auth.sms.test_otp]` never reaches Twilio, so it cannot produce this
+error; any other number needs real credentials in `.env.local`.
+
 ## Feature flags
 
 Two PostHog flags gate the phone features. `sms-login` needs only Verify.

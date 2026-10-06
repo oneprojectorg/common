@@ -1,5 +1,7 @@
 import posthog from 'posthog-js';
 
+export { redactEmails, redactPhoneNumbers } from './redact';
+
 export type LogData = Record<string, unknown> & { error?: unknown };
 
 // Client-side logger mirroring the server `@op/logging` API. Every level reports

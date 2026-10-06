@@ -56,6 +56,27 @@ export function redactEmails(value: string): string {
   return value.split(CANDIDATE_BOUNDARY).map(redactCandidate).join('');
 }
 
+/**
+ * A phone number as a person types it or as E.164 writes it: seven to fifteen
+ * digits in one run, or a North American number split by spaces, dots, or
+ * dashes. The lookarounds keep a longer digit run — a database id, a Snowflake
+ * id — in one piece rather than redacting its tail, and the digit minimum
+ * leaves a five-digit vendor error code and a four-digit year alone.
+ */
+const PHONE_NUMBER =
+  /(?<!\d)\+?\d{7,15}(?!\d)|(?<!\d)\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?!\d)/g;
+
+const REDACTED_PHONE = '[phone]';
+
+/**
+ * Replace every phone number in `value` with `[phone]`. A number is personal
+ * data for the same reason an address is, and a vendor's error message echoes
+ * the number it refused, so the message cannot be logged as it arrives.
+ */
+export function redactPhoneNumbers(value: string): string {
+  return value.replace(PHONE_NUMBER, REDACTED_PHONE);
+}
+
 function redactCandidate(candidate: string): string {
   let end = candidate.length;
   while (end > 0 && TRAILING_PUNCTUATION.has(candidate.charAt(end - 1))) {

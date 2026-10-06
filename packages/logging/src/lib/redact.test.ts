@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { redactEmails } from './redact';
+import { redactEmails, redactPhoneNumbers } from './redact';
 
 describe('redactEmails', () => {
   it('keeps the domain and drops the local part', () => {
@@ -77,5 +77,62 @@ describe('redactEmails', () => {
   it('leaves a string with no address alone', () => {
     expect(redactEmails('Login attempt')).toBe('Login attempt');
     expect(redactEmails('')).toBe('');
+  });
+});
+
+describe('redactPhoneNumbers', () => {
+  /**
+   * Given an E.164 number
+   * When it is redacted
+   * Then nothing of the number remains
+   */
+  it('redacts an E.164 number', () => {
+    expect(redactPhoneNumbers('+15551234567')).toBe('[phone]');
+  });
+
+  /**
+   * Given GoTrue's message for a Twilio refusal, which echoes the number and
+   * ends with the Twilio error URL
+   * When it is redacted
+   * Then the number is gone and the error code in the URL survives
+   */
+  it('redacts the number inside a Twilio error and keeps the error code', () => {
+    expect(
+      redactPhoneNumbers(
+        'Error sending sms OTP to provider: Invalid parameter `To`: +15551234567 More information: https://www.twilio.com/docs/errors/60200',
+      ),
+    ).toBe(
+      'Error sending sms OTP to provider: Invalid parameter `To`: [phone] More information: https://www.twilio.com/docs/errors/60200',
+    );
+  });
+
+  /**
+   * Given a number written the way a person types it
+   * When it is redacted
+   * Then the whole formatted number is replaced
+   */
+  it('redacts a formatted number', () => {
+    expect(redactPhoneNumbers('called (415) 555-0132 twice')).toBe(
+      'called [phone] twice',
+    );
+    expect(redactPhoneNumbers('415.555.0132')).toBe('[phone]');
+  });
+
+  /**
+   * Given digit runs that are not a phone number
+   * When they are redacted
+   * Then they are left alone
+   */
+  it('leaves short runs, dates, and long identifiers alone', () => {
+    expect(redactPhoneNumbers('code 60203 in 2026')).toBe('code 60203 in 2026');
+    expect(redactPhoneNumbers('2026-10-06')).toBe('2026-10-06');
+    expect(redactPhoneNumbers('id 1218450028299154')).toBe(
+      'id 1218450028299154',
+    );
+  });
+
+  it('leaves a string with no digits alone', () => {
+    expect(redactPhoneNumbers('Login attempt')).toBe('Login attempt');
+    expect(redactPhoneNumbers('')).toBe('');
   });
 });

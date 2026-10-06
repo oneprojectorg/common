@@ -1,4 +1,4 @@
-import { logger } from '@op/logging/client';
+import { logger, redactPhoneNumbers } from '@op/logging/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
@@ -12,6 +12,30 @@ const EXPIRED_CODE = 'otp_expired';
 
 /** GoTrue's code for its own per-number send throttle. */
 const RATE_LIMITED_CODE = 'over_sms_send_rate_limit';
+
+/**
+ * Twilio Verify's code for a number that asked for too many codes. GoTrue
+ * relays it as a generic `sms_send_failed`, so it has to be read off the
+ * message to be told apart from the service being down.
+ *
+ * @see https://www.twilio.com/docs/errors/60203
+ */
+const TWILIO_MAX_SEND_ATTEMPTS = 60203;
+
+/**
+ * GoTrue appends Twilio's `more_info` URL to the message when the provider
+ * refuses a send. The code at its end is the one Twilio documents, and the
+ * only part of the message that is safe to keep verbatim.
+ */
+const TWILIO_ERROR_URL = /twilio\.com\/docs\/errors\/(\d+)/;
+
+/** The Twilio error code GoTrue relayed in `message`, if the provider refused. */
+export const getTwilioErrorCode = (
+  message: string | undefined,
+): number | undefined => {
+  const code = message?.match(TWILIO_ERROR_URL)?.[1];
+  return code ? Number(code) : undefined;
+};
 
 /**
  * Signs in through Supabase's own phone flow.
@@ -45,17 +69,22 @@ export const createSupabaseOtpStrategy = ({
       return { ok: true };
     }
 
-    // Only the code and status, never `error` itself — GoTrue's message for
-    // this endpoint can echo the phone number back.
+    const twilioCode = getTwilioErrorCode(error.message);
+
+    // Never `error` itself: GoTrue's message for this endpoint echoes the
+    // phone number back, so the message goes through redaction first.
     logger.error('GoTrue refused to send a code', {
       code: error.code,
       status: error.status,
+      twilioCode,
+      diagnostic: redactPhoneNumbers(error.message),
     });
 
     return {
       ok: false,
       reason:
-        error.code === RATE_LIMITED_CODE
+        error.code === RATE_LIMITED_CODE ||
+        twilioCode === TWILIO_MAX_SEND_ATTEMPTS
           ? 'rate_limited'
           : error.status === 422
             ? 'unavailable'
