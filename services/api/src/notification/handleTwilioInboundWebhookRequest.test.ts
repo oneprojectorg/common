@@ -1,5 +1,4 @@
 import { Events, inngest } from '@op/events';
-import { logger } from '@op/logging';
 import { createHmac } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -49,14 +48,27 @@ describe('handleTwilioInboundWebhookRequest', () => {
     expect(inngest.send).toHaveBeenCalledWith({
       id: 'sms-inbound-SM456',
       name: Events.smsInboundReceived.name,
-      data: { from: '+15005550006', body: 'YES', messageSid: 'SM456' },
+      data: { from: '+15005550006', messageSid: 'SM456', code: null },
     });
-    expect(logger.info).toHaveBeenCalledWith(
-      'Twilio inbound message received',
-      {
-        messageSid: 'SM456',
-      },
-    );
+  });
+
+  it('given a reply that is a code typed with spaces, when forwarded, then the event carries the digits and not the text', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const params = { ...MESSAGE_PARAMS, Body: ' 234 567 ' };
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const result = await handleTwilioInboundWebhookRequest({
+      rawBody: rawBodyOf(params),
+      signature,
+      url: URL,
+    });
+
+    expect(result).toEqual({ status: 200 });
+    expect(inngest.send).toHaveBeenCalledWith({
+      id: 'sms-inbound-SM456',
+      name: Events.smsInboundReceived.name,
+      data: { from: '+15005550006', messageSid: 'SM456', code: '234567' },
+    });
   });
 
   it('rejects a request with no signature and does not forward it', async () => {

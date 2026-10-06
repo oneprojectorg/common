@@ -197,8 +197,8 @@ export const Events = {
     name: 'sms/inbound.received' as const,
     schema: z.object({
       from: z.string(),
-      body: z.string(),
       messageSid: z.string(),
+      code: z.string().nullable(),
     }),
   },
 } as const;

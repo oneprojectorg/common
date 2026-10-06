@@ -1,4 +1,5 @@
 import {
+  extractSmsCode,
   parseTwilioInboundMessage,
   verifyTwilioWebhookSignature,
 } from '@op/common';
@@ -47,7 +48,11 @@ export const handleTwilioInboundWebhookRequest = async ({
   await inngest.send({
     id: `sms-inbound-${message.messageSid}`,
     name: Events.smsInboundReceived.name,
-    data: message,
+    data: {
+      from: message.from,
+      messageSid: message.messageSid,
+      code: extractSmsCode(message.body),
+    },
   });
 
   logger.info('Twilio inbound message received', {

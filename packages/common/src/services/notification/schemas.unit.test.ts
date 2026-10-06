@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
 import {
+  extractSmsCode,
   isValidTypedPhoneNumber,
   normalizePhoneNumber,
   parsePhoneNumber,
@@ -164,5 +165,30 @@ describe('toGoTruePhoneFormat', () => {
 
   it('leaves a number with no leading + unchanged', () => {
     expect(toGoTruePhoneFormat('15005550006')).toBe('15005550006');
+  });
+});
+
+describe('extractSmsCode', () => {
+  it('given a bare code, when extracted, then it returns the digits', () => {
+    expect(extractSmsCode('234567')).toBe('234567');
+  });
+
+  it('given a code typed with spaces, when extracted, then it compacts the digits', () => {
+    expect(extractSmsCode(' 234 567 ')).toBe('234567');
+  });
+
+  it('given free text, when extracted, then it returns null', () => {
+    expect(extractSmsCode('who is this?')).toBeNull();
+    expect(extractSmsCode('YES')).toBeNull();
+    expect(extractSmsCode('')).toBeNull();
+  });
+
+  it('given digits inside a sentence, when extracted, then it returns null', () => {
+    expect(extractSmsCode('my code is 234567')).toBeNull();
+  });
+
+  it('given too few or too many digits, when extracted, then it returns null', () => {
+    expect(extractSmsCode('123')).toBeNull();
+    expect(extractSmsCode('12345678901')).toBeNull();
   });
 });

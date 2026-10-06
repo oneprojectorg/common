@@ -31,19 +31,28 @@ const TEST_NUMBERS = {
 
 type TestNumber = keyof typeof TEST_NUMBERS;
 
-const inboundText = (from: PhoneNumber, body: string) => ({
+const inboundText = (from: PhoneNumber, code: string | null = null) => ({
   name: Events.smsInboundReceived.name,
-  data: { from, body, messageSid: `SM-${from}-${body}` },
+  data: { from, messageSid: `SM-${from}-${code ?? 'text'}`, code },
 });
 
-const replyingWith = (from: PhoneNumber, body: string) => [
-  {
-    id: 'wait-for-confirmation',
-    handler: () => ({ data: { from, body, messageSid: `SM-reply-${from}` } }),
-  },
+const reply = (from: PhoneNumber, attempt: number, code: string | null) => ({
+  id: `wait-for-confirmation-${attempt}`,
+  handler: () => ({
+    data: { from, messageSid: `SM-reply-${from}-${attempt}`, code },
+  }),
+});
+
+const silence = (attempt: number) => ({
+  id: `wait-for-confirmation-${attempt}`,
+  handler: () => null,
+});
+
+const replyingWith = (from: PhoneNumber, code: string) => [
+  reply(from, 1, code),
 ];
 
-const noReply = [{ id: 'wait-for-confirmation', handler: () => null }];
+const noReply = [silence(1)];
 
 const readAuthUser = async (phone: PhoneNumber) => {
   const [row] = await db
@@ -92,7 +101,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone, 'hello')],
+      events: [inboundText(phone)],
       steps: replyingWith(phone, code),
     });
 
@@ -123,7 +132,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone, 'hello again')],
+      events: [inboundText(phone)],
       steps: noReply,
     });
 
@@ -150,7 +159,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone, 'who is this?')],
+      events: [inboundText(phone)],
     });
 
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
@@ -168,7 +177,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone, 'hello')],
+      events: [inboundText(phone)],
     });
 
     expect(result).toEqual({ message: 'known number, skipped' });
@@ -189,7 +198,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     process.env.FEATURE_FLAG_OVERRIDES = 'sms-signup:false';
     try {
       const { result } = await t.execute({
-        events: [inboundText(phone, 'hello')],
+        events: [inboundText(phone)],
       });
 
       expect(result).toEqual({ message: 'sms signup disabled' });
@@ -207,7 +216,7 @@ describe('handleUnknownSmsSignup against the database', () => {
       events: [
         {
           name: Events.smsInboundReceived.name,
-          data: { from: 'not-a-phone', body: 'hello', messageSid: 'SM-bad' },
+          data: { from: 'not-a-phone', messageSid: 'SM-bad', code: null },
         },
       ],
     });
@@ -216,7 +225,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(memorySmsProvider.sent).toEqual([]);
   });
 
-  it('given a stranger texts, when they reply with a wrong code, then the number stays unconfirmed and no welcome is sent', async ({
+  it('given a stranger texts, when they reply with a wrong code and then go quiet, then the number stays unconfirmed and no welcome is sent', async ({
     task,
     onTestFinished,
   }) => {
@@ -225,13 +234,38 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone, 'hello')],
-      steps: replyingWith(phone, '000000'),
+      events: [inboundText(phone)],
+      steps: [reply(phone, 1, '000000'), silence(2)],
     });
 
-    expect(result).toMatchObject({ message: 'code rejected' });
+    expect(result).toEqual({ message: 'timed out waiting for confirmation' });
     expect((await readAuthUser(phone))?.phoneConfirmedAt).toBeNull();
     expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
+      phone,
+    ]);
+  });
+
+  it('given a stranger texts, when they reply with words first and the code second, then the account is created', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone, code } = claimNumber('+15005550009', testData);
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [inboundText(phone)],
+      steps: [reply(phone, 1, null), reply(phone, 2, code)],
+    });
+
+    const authUser = await readAuthUser(phone);
+    expect(authUser?.phoneConfirmedAt).not.toBeNull();
+    expect(result).toEqual({
+      message: 'account created',
+      authUserId: authUser?.id,
+    });
+    expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
+      phone,
       phone,
     ]);
   });

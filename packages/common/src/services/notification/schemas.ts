@@ -178,3 +178,10 @@ export const isValidTypedPhoneNumber = (raw: string): boolean =>
 export const toGoTruePhoneFormat = (
   phone: PhoneNumber | string,
 ): GoTruePhoneFormat => phone.replace(/^\+/, '') as GoTruePhoneFormat;
+
+const SMS_CODE_PATTERN = /^\d{4,10}$/;
+
+export const extractSmsCode = (body: string): string | null => {
+  const compact = body.replace(/\s+/g, '');
+  return SMS_CODE_PATTERN.test(compact) ? compact : null;
+};

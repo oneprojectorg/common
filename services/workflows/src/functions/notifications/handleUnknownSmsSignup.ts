@@ -1,5 +1,6 @@
 import { isFeatureEnabled } from '@op/analytics';
 import {
+  type PhoneSignupConfirmation,
   confirmPhoneSignupCode,
   getPhoneSignupState,
   getSmsProvider,
@@ -11,15 +12,21 @@ import {
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
-const CODE_PATTERN = /^\d{4,10}$/;
 const SMS_SIGNUP_FEATURE_FLAG = 'sms-signup';
+const MAX_REPLY_ATTEMPTS = 3;
 const { smsInboundReceived } = Events;
+
+type ConfirmationOutcome =
+  | Extract<PhoneSignupConfirmation, { status: 'confirmed' }>
+  | { status: 'timed_out' }
+  | { status: 'exhausted' };
 
 export const handleUnknownSmsSignup = inngest.createFunction(
   {
     id: 'handleUnknownSmsSignup',
     rateLimit: {
-      limit: 20,
+      key: 'event.data.from',
+      limit: 10,
       period: '1h',
     },
     debounce: {
@@ -116,37 +123,69 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'consent send rejected', reason: consentResult.reason };
     }
 
-    const reply = await step.waitForEvent('wait-for-confirmation', {
-      event: smsInboundReceived.name,
-      match: 'data.from',
-      timeout: `${PHONE_SIGNUP_REPLY_WINDOW_MINUTES}m`,
-    });
+    const replyDeadline = await step.run(
+      'start-reply-window',
+      () => Date.now() + PHONE_SIGNUP_REPLY_WINDOW_MINUTES * 60_000,
+    );
 
-    if (!reply) {
+    const awaitConfirmation = async (
+      attempt: number,
+    ): Promise<ConfirmationOutcome> => {
+      if (attempt > MAX_REPLY_ATTEMPTS) {
+        return { status: 'exhausted' };
+      }
+
+      const reply = await step.waitForEvent(
+        `wait-for-confirmation-${attempt}`,
+        {
+          event: smsInboundReceived.name,
+          match: 'data.from',
+          timeout: new Date(replyDeadline),
+        },
+      );
+
+      if (!reply) {
+        return { status: 'timed_out' };
+      }
+
+      const { code } = smsInboundReceived.schema.parse(reply.data);
+
+      if (!code) {
+        logger.info('Reply did not look like a signup code', { attempt });
+        return awaitConfirmation(attempt + 1);
+      }
+
+      const confirmation = await step.run(
+        `confirm-signup-code-${attempt}`,
+        () => confirmPhoneSignupCode({ phone: to, token: code }),
+      );
+
+      if (confirmation.status === 'rejected') {
+        logger.info('GoTrue rejected the signup code', {
+          attempt,
+          reason: confirmation.reason,
+        });
+        return awaitConfirmation(attempt + 1);
+      }
+
+      return confirmation;
+    };
+
+    const outcome = await awaitConfirmation(1);
+
+    if (outcome.status === 'timed_out') {
       logger.info('No confirmation reply received in time');
       return { message: 'timed out waiting for confirmation' };
     }
 
-    const { body: replyBody } = smsInboundReceived.schema.parse(reply.data);
-    const code = replyBody.replace(/\s+/g, '');
-
-    if (!CODE_PATTERN.test(code)) {
-      logger.info('Reply did not look like a signup code');
-      return { message: 'reply did not confirm' };
-    }
-
-    const confirmation = await step.run('confirm-signup-code', () =>
-      confirmPhoneSignupCode({ phone: to, token: code }),
-    );
-
-    if (confirmation.status === 'rejected') {
-      logger.info('GoTrue rejected the signup code', {
-        reason: confirmation.reason,
+    if (outcome.status === 'exhausted') {
+      logger.info('No valid signup code in the allowed replies', {
+        attempts: MAX_REPLY_ATTEMPTS,
       });
-      return { message: 'code rejected', reason: confirmation.reason };
+      return { message: 'code not confirmed', attempts: MAX_REPLY_ATTEMPTS };
     }
 
-    const { authUserId } = confirmation;
+    const { authUserId } = outcome;
 
     const welcomeResult = await step.run('send-welcome-reply', async () => {
       const result = await sendSms({

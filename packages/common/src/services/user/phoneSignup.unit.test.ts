@@ -1,19 +1,33 @@
+import {
+  AuthError,
+  type SupabaseClient,
+  type User,
+} from '@supabase/supabase-js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@op/supabase/server', () => ({
-  createSBServiceClient: vi.fn(),
-}));
-
-import { createSBServiceClient } from '@op/supabase/server';
 
 import { parsePhoneNumber } from '../notification/schemas';
 import { confirmPhoneSignupCode, requestPhoneSignupCode } from './phoneSignup';
 
+const auth = vi.hoisted(() => ({
+  signInWithOtp: vi.fn<SupabaseClient['auth']['signInWithOtp']>(),
+  verifyOtp: vi.fn<SupabaseClient['auth']['verifyOtp']>(),
+}));
+
+vi.mock('@op/supabase/server', () => ({
+  createSBServiceClient: () => ({ auth }),
+}));
+
 const PHONE = parsePhoneNumber('+15005550006');
 
-const fakeSupabase = (auth: Record<string, ReturnType<typeof vi.fn>>) => ({
-  auth,
-});
+const authUser: User = {
+  id: 'auth-user-1',
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: '2026-09-25T00:00:00.000Z',
+};
+
+const noSession = { user: null, session: null } as const;
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -21,14 +35,11 @@ afterEach(() => {
 
 describe('requestPhoneSignupCode', () => {
   it('given an unknown number, when a code is requested, then GoTrue creates the user unconfirmed and sends the code', async () => {
-    const signInWithOtp = vi.fn().mockResolvedValue({ data: {}, error: null });
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      fakeSupabase({ signInWithOtp }) as never,
-    );
+    auth.signInWithOtp.mockResolvedValue({ data: noSession, error: null });
 
     const result = await requestPhoneSignupCode({ phone: PHONE });
 
-    expect(signInWithOtp).toHaveBeenCalledWith({
+    expect(auth.signInWithOtp).toHaveBeenCalledWith({
       phone: PHONE,
       options: { shouldCreateUser: true },
     });
@@ -36,17 +47,14 @@ describe('requestPhoneSignupCode', () => {
   });
 
   it('given GoTrue throttles the number, when a code is requested, then it reports rate_limited', async () => {
-    const signInWithOtp = vi.fn().mockResolvedValue({
-      data: {},
-      error: {
-        code: 'over_sms_send_rate_limit',
-        status: 429,
-        message: `too many requests for ${PHONE}`,
-      },
+    auth.signInWithOtp.mockResolvedValue({
+      data: noSession,
+      error: new AuthError(
+        `too many requests for ${PHONE}`,
+        429,
+        'over_sms_send_rate_limit',
+      ),
     });
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      fakeSupabase({ signInWithOtp }) as never,
-    );
 
     const result = await requestPhoneSignupCode({ phone: PHONE });
 
@@ -54,13 +62,10 @@ describe('requestPhoneSignupCode', () => {
   });
 
   it('given any other GoTrue error, when a code is requested, then it reports unknown', async () => {
-    const signInWithOtp = vi.fn().mockResolvedValue({
-      data: {},
-      error: { code: 'sms_send_failed', status: 500, message: 'boom' },
+    auth.signInWithOtp.mockResolvedValue({
+      data: noSession,
+      error: new AuthError('boom', 500, 'sms_send_failed'),
     });
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      fakeSupabase({ signInWithOtp }) as never,
-    );
 
     const result = await requestPhoneSignupCode({ phone: PHONE });
 
@@ -70,23 +75,17 @@ describe('requestPhoneSignupCode', () => {
 
 describe('confirmPhoneSignupCode', () => {
   it('given the code GoTrue sent, when confirmed, then GoTrue verifies it and only the auth user id comes back', async () => {
-    const verifyOtp = vi.fn().mockResolvedValue({
-      data: {
-        user: { id: 'auth-user-1' },
-        session: { access_token: 'secret' },
-      },
+    auth.verifyOtp.mockResolvedValue({
+      data: { user: authUser, session: null },
       error: null,
     });
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      fakeSupabase({ verifyOtp }) as never,
-    );
 
     const result = await confirmPhoneSignupCode({
       phone: PHONE,
       token: '123456',
     });
 
-    expect(verifyOtp).toHaveBeenCalledWith({
+    expect(auth.verifyOtp).toHaveBeenCalledWith({
       phone: PHONE,
       token: '123456',
       type: 'sms',
@@ -95,13 +94,10 @@ describe('confirmPhoneSignupCode', () => {
   });
 
   it('given an expired code, when confirmed, then it reports expired', async () => {
-    const verifyOtp = vi.fn().mockResolvedValue({
-      data: { user: null, session: null },
-      error: { code: 'otp_expired', status: 403, message: 'Token has expired' },
+    auth.verifyOtp.mockResolvedValue({
+      data: noSession,
+      error: new AuthError('Token has expired', 403, 'otp_expired'),
     });
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      fakeSupabase({ verifyOtp }) as never,
-    );
 
     const result = await confirmPhoneSignupCode({
       phone: PHONE,
@@ -112,17 +108,14 @@ describe('confirmPhoneSignupCode', () => {
   });
 
   it('given a wrong code, when confirmed, then it reports wrong_code', async () => {
-    const verifyOtp = vi.fn().mockResolvedValue({
-      data: { user: null, session: null },
-      error: {
-        code: 'invalid_credentials',
-        status: 400,
-        message: `invalid token for ${PHONE}`,
-      },
+    auth.verifyOtp.mockResolvedValue({
+      data: noSession,
+      error: new AuthError(
+        `invalid token for ${PHONE}`,
+        400,
+        'invalid_credentials',
+      ),
     });
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      fakeSupabase({ verifyOtp }) as never,
-    );
 
     const result = await confirmPhoneSignupCode({
       phone: PHONE,
@@ -133,13 +126,7 @@ describe('confirmPhoneSignupCode', () => {
   });
 
   it('given GoTrue returns neither an error nor a user, when confirmed, then it reports unknown', async () => {
-    const verifyOtp = vi.fn().mockResolvedValue({
-      data: { user: null, session: null },
-      error: null,
-    });
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      fakeSupabase({ verifyOtp }) as never,
-    );
+    auth.verifyOtp.mockResolvedValue({ data: noSession, error: null });
 
     const result = await confirmPhoneSignupCode({
       phone: PHONE,
