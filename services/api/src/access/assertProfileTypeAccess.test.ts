@@ -258,6 +258,27 @@ describe.concurrent('assertProfileTypeAccess', () => {
       ).rejects.toThrow(UnauthorizedError);
     });
 
+    it('rejects a PHASE policy at compile time and still refuses at runtime', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser } = await testData.createProfile({
+        type: EntityType.PHASE,
+      });
+
+      await expect(
+        assertProfileTypeAccess({
+          user: { id: adminUser.authUserId },
+          profileIds: [profile.id],
+          policies: {
+            // @ts-expect-error PHASE cannot carry a policy
+            [EntityType.PHASE]: { profile: permission.READ },
+          },
+        }),
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
     it('refuses when a phase profile is mixed in with profiles the caller can access', async ({
       task,
       onTestFinished,
