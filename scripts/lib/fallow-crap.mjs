@@ -406,8 +406,12 @@ export const changedFiles = (explicitBase) => {
  * Paths that cannot move anyone's coverage: prose and CI config. Everything
  * else can — a test edit, a fixture, a config, or a source change that makes
  * some other file's tests run more or less of it.
+ *
+ * `.github/` stays neutral even though `tests.yml` runs the coverage command:
+ * an edit that changes what gets measured is rare and deliberate, and counting
+ * every CI tweak would refuse the fallback for no change in any score.
  */
-const COVERAGE_NEUTRAL = /(^(docs|\.claude)\/|\.md$)/;
+const COVERAGE_NEUTRAL = /(^(docs|\.github|\.claude)\/|\.md$)/;
 
 /** Whether a changed path can move the coverage of any scored file. */
 export const affectsCoverage = (path) => !COVERAGE_NEUTRAL.test(path);
