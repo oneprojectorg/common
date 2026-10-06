@@ -11,10 +11,6 @@ import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 // Per-profile-type permission policy. Omitting a type from the record means
 // that type is NOT gated — the caller is opting into lenient pass-through
 // for, e.g., regular org or individual profiles.
-//
-// PHASE cannot be given a policy: a phase profile is always refused. Nothing
-// is attached to one yet, and a per-type bit checked on the phase itself is
-// the wrong rule — view and manage resolve against the process (ADR 0006).
 export type ProfileTypePolicies = Partial<
   Record<Exclude<EntityType, EntityType.PHASE>, AccessZonePermission>
 >;
@@ -53,6 +49,7 @@ export const assertProfileTypeAccess = async ({
     // `enumToPgEnum` widens enum columns to `string`; narrowing here until
     // the helper preserves literal types.
     const type = row.type as EntityType;
+    // Phase access resolves against its decision, never the phase profile.
     if (type === EntityType.PHASE) {
       throw new UnauthorizedError('You do not have access to this profile');
     }

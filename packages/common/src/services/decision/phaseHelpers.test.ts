@@ -6,8 +6,6 @@ import { describe, expect, it } from 'vitest';
 
 import { insertPhase } from './phaseHelpers';
 
-// createPhase draws slugs at random; insertPhase takes a generator so a clash
-// can be forced.
 describe.concurrent('insertPhase slug', () => {
   it('draws a new slug when the first one is taken', async ({
     task,
@@ -78,7 +76,6 @@ const setup = async (
     grantAccess: true,
   });
 
-  // Occupy a slug so the generator can be made to collide with it.
   const taken = randomUUID().slice(0, 8);
   const [occupier] = await db
     .insert(profiles)
