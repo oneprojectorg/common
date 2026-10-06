@@ -29,6 +29,10 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       limit: 10,
       period: '1h',
     },
+    throttle: {
+      limit: 20,
+      period: '1h',
+    },
     debounce: {
       key: 'event.data.from',
       period: '1m',
