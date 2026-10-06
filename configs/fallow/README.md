@@ -138,6 +138,14 @@ between two marker comments so a new push replaces the old line rather than
 stacking another. The blast radius from `scripts/blast-radius.ts`
 (`pnpm blast-radius` locally) travels with it.
 
+The PR report also shows how each changed file's worst CRAP moved, and calls
+out any file the change pushed over 30. That needs the merge base's own
+coverage, so `tests.yml` also runs on every push to dev and caches every file's
+score under the commit (`--write-scores`); a PR restores the entry for its merge
+base and diffs against it (`--base-scores`). If there is no entry (that push run
+failed or is still going, or the PR does not target dev), the report says so
+and leaves the change columns out.
+
 Locally, run `pnpm health` after `pnpm test:coverage`; without a fresh report
 it says `CRAP: STALE` rather than reporting a green it cannot back up —
 coverage matched by line span goes wrong in both directions once the file has

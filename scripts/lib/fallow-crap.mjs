@@ -407,7 +407,8 @@ export const changedFiles = (explicitBase) => {
  * merge base, which needs a coverage report for the merge base — so the
  * question the gate can actually answer honestly is whether the code you just
  * worked on is complex and untested. Touching it is when you are in a position
- * to fix that.
+ * to fix that. CI does have the merge base's scores, saved by a run on dev, and
+ * the PR report uses them to show the change and call out crossings.
  */
 export const crossings = (files, worst, changed) =>
   changed

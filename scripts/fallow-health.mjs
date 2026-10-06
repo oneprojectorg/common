@@ -8,6 +8,12 @@
  *   node scripts/fallow-health.mjs --base <ref>  # compare changed files against <ref>
  *   node scripts/fallow-health.mjs --json        # the CRAP verdict alone, as one JSON object
  *
+ * Two more flags exist for CI, which scores the merge base so a PR can show how
+ * its CRAP moved:
+ *
+ *   --write-scores <file>  also save every scored file's CRAP, for a later run
+ *   --base-scores <file>   diff the changed files against a saved set
+ *
  * Fallow renders a fixed section order — score, complexity findings, file
  * scores, hotspots, targets — and opens every run with the one-line metrics
  * banner. That buries the file health scores between the banner and several
@@ -38,7 +44,7 @@
  * Tests job already makes; `pr-checks.yml` keeps the fast gates.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import {
@@ -60,14 +66,19 @@ const BASELINE = join(ROOT, 'configs', 'fallow', 'health-baseline.json');
 const full = process.argv.includes('--full');
 const json = process.argv.includes('--json');
 
-/** `--base <ref>` or `--base=<ref>`; unset means the default branch chain. */
-const baseOverride = (() => {
-  const flag = process.argv.indexOf('--base');
+/** `--<name> <value>` or `--<name>=<value>`; undefined when absent. */
+const flagValue = (name) => {
+  const flag = process.argv.indexOf(`--${name}`);
   if (flag !== -1) return process.argv[flag + 1];
   return process.argv
-    .find((argument) => argument.startsWith('--base='))
-    ?.slice('--base='.length);
-})();
+    .find((argument) => argument.startsWith(`--${name}=`))
+    ?.slice(`--${name}=`.length);
+};
+
+/** Unset means the default branch chain. */
+const baseOverride = flagValue('base');
+const writeScoresTo = flagValue('write-scores');
+const baseScoresFrom = flagValue('base-scores');
 
 if (!existsSync(COVERAGE) && !json) {
   console.error(
@@ -192,6 +203,35 @@ const printRisky = (risky, changed) => {
 };
 
 /**
+ * Every scored file's CRAP at the merge base, from `--base-scores`, or null
+ * when there is none to read.
+ *
+ * CRAP needs coverage, and coverage needs the merge base's own instrumented
+ * run, so CI records these on each push to dev rather than re-running the suite
+ * on the base inside every PR. A file absent from the set was either new or not
+ * loaded by any test at the base; neither has a "before" worth printing.
+ */
+const readBaseScores = () => {
+  if (!baseScoresFrom || !existsSync(baseScoresFrom)) return null;
+  try {
+    return JSON.parse(readFileSync(baseScoresFrom, 'utf8'));
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * A changed file's worst score at the merge base, and whether this change
+ * pushed it over the line: under it at the base, at or above it now. A file
+ * with no base score is never a crossing — it is already in `risky`, and
+ * calling it one would claim a before we do not have.
+ */
+const withBefore = (before = null, now) => ({
+  before,
+  crossed: before !== null && before < AT_RISK && now >= AT_RISK,
+});
+
+/**
  * The CRAP roll-up as data: the aggregates, the changed files in scope, the
  * ones at risk, the ones edited after the coverage report, and the verdict
  * those add up to. Both renderers below read from this.
@@ -212,17 +252,30 @@ const crapReport = () => {
   }
 
   const { files, worst, stats } = scores;
+  if (writeScoresTo) {
+    const commit = spawnSync('git', ['rev-parse', 'HEAD'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    }).stdout.trim();
+    writeFileSync(writeScoresTo, `${JSON.stringify({ commit, files })}\n`);
+  }
+
   const { base, paths } = changedFiles(baseOverride);
   const changed = paths.filter(inCrapScope);
   const risky = crossings(files, worst, changed);
   const stale = staleAmong(changed);
+  const baseScores = readBaseScores();
 
   // Every changed file the report could score, worst first. `risky` is the
   // slice of this at or above the line; the JSON consumer wants the rest too,
   // so it can name the worst function even when nothing is at risk.
   const scored = changed
     .filter((path) => files[path] !== undefined)
-    .map((path) => ({ path, ...worst[path] }))
+    .map((path) => ({
+      path,
+      ...worst[path],
+      ...(baseScores && withBefore(baseScores.files[path], files[path])),
+    }))
     .sort((a, b) => b.crap - a.crap);
 
   const status =
@@ -237,6 +290,7 @@ const crapReport = () => {
     scored,
     risky,
     stale,
+    base_commit: baseScores?.commit ?? null,
     summary: summarize(files),
     trend: comparableTrend(),
     stats,
