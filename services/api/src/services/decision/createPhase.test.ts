@@ -206,15 +206,56 @@ describe.concurrent('renamePhase', () => {
     });
     testData.trackProfileForCleanup(profile.id);
 
-    const renamed = await renamePhase({ phaseId: phase.id, name: 'After' });
+    const renamed = await renamePhase({
+      user,
+      phaseId: phase.id,
+      name: 'After',
+    });
 
     expect(renamed.name).toBe('After');
     expect(renamed.slug).toBe(profile.slug);
   });
 
-  it('throws NotFoundError for an unknown phase', async () => {
+  it('rejects a member without decisions ADMIN and keeps the name', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, instanceProfileId, organization, user, testData } =
+      await setup(task, onTestFinished);
+
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: `Before ${randomUUID()}`,
+      sortOrder: 0,
+      data: { phaseId: 'submissions' },
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    const member = await testData.createMemberUser({
+      organization,
+      instanceProfileIds: [instanceProfileId],
+    });
+
     await expect(
-      renamePhase({ phaseId: randomUUID(), name: 'After' }),
+      renamePhase({ user: member.user, phaseId: phase.id, name: 'After' }),
+    ).rejects.toThrow(UnauthorizedError);
+
+    const unchanged = await db.query.profiles.findFirst({
+      where: { id: profile.id },
+      columns: { name: true },
+    });
+    expect(unchanged?.name).toBe(profile.name);
+  });
+
+  it('throws NotFoundError for an unknown phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { user } = await setup(task, onTestFinished);
+
+    await expect(
+      renamePhase({ user, phaseId: randomUUID(), name: 'After' }),
     ).rejects.toThrow(NotFoundError);
   });
 });
@@ -234,7 +275,7 @@ describe.concurrent('deletePhase', () => {
       data: { phaseId: 'submissions' },
     });
 
-    await deletePhase({ phaseId: phase.id });
+    await deletePhase({ user, phaseId: phase.id });
 
     const remainingProfile = await db.query.profiles.findFirst({
       where: { id: profile.id },
@@ -249,8 +290,45 @@ describe.concurrent('deletePhase', () => {
     expect(remainingPhase).toBeUndefined();
   });
 
-  it('throws NotFoundError for an unknown phase', async () => {
-    await expect(deletePhase({ phaseId: randomUUID() })).rejects.toThrow(
+  it('rejects a member without decisions ADMIN and keeps the phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, instanceProfileId, organization, user, testData } =
+      await setup(task, onTestFinished);
+
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: `Kept ${randomUUID()}`,
+      sortOrder: 0,
+      data: { phaseId: 'submissions' },
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    const member = await testData.createMemberUser({
+      organization,
+      instanceProfileIds: [instanceProfileId],
+    });
+
+    await expect(
+      deletePhase({ user: member.user, phaseId: phase.id }),
+    ).rejects.toThrow(UnauthorizedError);
+
+    const remainingPhase = await db.query.processPhases.findFirst({
+      where: { id: phase.id },
+      columns: { id: true },
+    });
+    expect(remainingPhase).toBeDefined();
+  });
+
+  it('throws NotFoundError for an unknown phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { user } = await setup(task, onTestFinished);
+
+    await expect(deletePhase({ user, phaseId: randomUUID() })).rejects.toThrow(
       NotFoundError,
     );
   });

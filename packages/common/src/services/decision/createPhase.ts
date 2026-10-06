@@ -76,15 +76,7 @@ export const createPhase = async ({
     throw new NotFoundError('Decision', processInstanceId);
   }
 
-  if (!instance.profileId) {
-    throw new CommonError('Decision profile not found');
-  }
-
-  await assertProfileAccess({
-    user,
-    profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
-  });
+  await assertDecisionAdmin({ user, decisionProfileId: instance.profileId });
 
   return db.transaction(async (tx) => {
     const slug = await generateUniqueProfileSlug({ name, db: tx });
@@ -118,25 +110,21 @@ export const createPhase = async ({
 
 /**
  * Renames a phase by writing its profile, leaving the slug alone so the URL
- * stays stable — the same trade `updateProposal` makes.
+ * stays stable — the same trade `updateProposal` makes. Needs decisions ADMIN
+ * on the instance's profile, like `createPhase`.
  */
 export const renamePhase = async ({
+  user,
   phaseId,
   name,
   db = defaultDb,
 }: {
+  user: User;
   phaseId: string;
   name: string;
   db?: DbClient;
 }): Promise<Profile> => {
-  const phase = await db.query.processPhases.findFirst({
-    where: { id: phaseId },
-    columns: { profileId: true },
-  });
-
-  if (!phase) {
-    throw new NotFoundError('Phase', phaseId);
-  }
+  const phase = await getPhaseAsDecisionAdmin({ user, phaseId, db });
 
   const [profile] = await db
     .update(profiles)
@@ -155,23 +143,19 @@ export const renamePhase = async ({
  * Deletes a phase by deleting its *profile* and letting the `ON DELETE
  * CASCADE` on `profile_id` take the phase row with it, the way
  * `deleteDecision` does. Deleting the phase row directly would leave the
- * profile — and anything hung off it — behind.
+ * profile — and anything hung off it — behind. Needs decisions ADMIN on the
+ * instance's profile, like `createPhase`.
  */
 export const deletePhase = async ({
+  user,
   phaseId,
   db = defaultDb,
 }: {
+  user: User;
   phaseId: string;
   db?: DbClient;
 }): Promise<void> => {
-  const phase = await db.query.processPhases.findFirst({
-    where: { id: phaseId },
-    columns: { profileId: true },
-  });
-
-  if (!phase) {
-    throw new NotFoundError('Phase', phaseId);
-  }
+  const phase = await getPhaseAsDecisionAdmin({ user, phaseId, db });
 
   const [deleted] = await db
     .delete(profiles)
@@ -181,4 +165,53 @@ export const deletePhase = async ({
   if (!deleted) {
     throw new CommonError('Failed to delete phase');
   }
+};
+
+/**
+ * Loads a phase and asserts the caller is a decisions ADMIN on the instance
+ * it belongs to. Manage resolves against the process, not the phase profile.
+ */
+const getPhaseAsDecisionAdmin = async ({
+  user,
+  phaseId,
+  db,
+}: {
+  user: User;
+  phaseId: string;
+  db: DbClient;
+}): Promise<{ profileId: string }> => {
+  const phase = await db.query.processPhases.findFirst({
+    where: { id: phaseId },
+    columns: { profileId: true },
+    with: { processInstance: { columns: { profileId: true } } },
+  });
+
+  if (!phase) {
+    throw new NotFoundError('Phase', phaseId);
+  }
+
+  await assertDecisionAdmin({
+    user,
+    decisionProfileId: phase.processInstance.profileId,
+  });
+
+  return { profileId: phase.profileId };
+};
+
+const assertDecisionAdmin = async ({
+  user,
+  decisionProfileId,
+}: {
+  user: User;
+  decisionProfileId: string | null;
+}): Promise<void> => {
+  if (!decisionProfileId) {
+    throw new CommonError('Decision profile not found');
+  }
+
+  await assertProfileAccess({
+    user,
+    profileId: decisionProfileId,
+    permissions: { decisions: permission.ADMIN },
+  });
 };
