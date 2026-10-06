@@ -16,7 +16,7 @@ export const handleTwilioInboundWebhookRequest = async ({
   rawBody,
   signature,
   url,
-}: TwilioInboundWebhookRequest): Promise<{ status: number }> => {
+}: TwilioInboundWebhookRequest): Promise<{ status: number; body?: string }> => {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
 
   if (!authToken) {
@@ -59,5 +59,5 @@ export const handleTwilioInboundWebhookRequest = async ({
     messageSid: message.messageSid,
   });
 
-  return { status: 200 };
+  return { status: 200, body: '<Response></Response>' };
 };

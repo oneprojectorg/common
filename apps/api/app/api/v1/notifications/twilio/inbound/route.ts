@@ -1,4 +1,5 @@
 import { handleTwilioInboundWebhookRequest } from '@op/api';
+import { CommonError } from '@op/common';
 import { logger } from '@op/logging';
 import type { NextRequest } from 'next/server';
 
@@ -7,14 +8,20 @@ export const POST = async (req: NextRequest): Promise<Response> => {
   const signature = req.headers.get('x-twilio-signature') ?? undefined;
 
   try {
-    const { status } = await handleTwilioInboundWebhookRequest({
+    const { status, body } = await handleTwilioInboundWebhookRequest({
       rawBody,
       signature,
       url: req.url,
     });
-    return new Response(null, { status });
+    return new Response(body ?? null, {
+      status,
+      headers: body ? { 'Content-Type': 'text/xml' } : undefined,
+    });
   } catch (error) {
-    logger.error('Twilio inbound webhook unhandled error', { error });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Twilio inbound webhook unhandled error', {
+      error: new CommonError(message),
+    });
     return new Response(null, { status: 500 });
   }
 };

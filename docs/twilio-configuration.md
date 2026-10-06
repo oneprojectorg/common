@@ -82,8 +82,9 @@ Messaging Service features.
 The inbound handler publishes an `smsInboundReceived` Inngest event keyed on
 `MessageSid`, so Twilio retries of one message do not start two runs. The
 event carries the sender, the `MessageSid`, and the message reduced to a code
-when it is one; the message text never leaves the API. The status handler
-replies with empty TwiML.
+when it is one; the message text never leaves the API. Both handlers reply
+with empty TwiML (`<Response></Response>`, `text/xml`), which Twilio expects
+from a message webhook.
 
 ## Webhook failure logs
 

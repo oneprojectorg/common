@@ -44,7 +44,10 @@ describe('handleTwilioInboundWebhookRequest', () => {
       url: URL,
     });
 
-    expect(result).toEqual({ status: 200 });
+    expect(result).toEqual({
+      status: 200,
+      body: '<Response></Response>',
+    });
     expect(inngest.send).toHaveBeenCalledWith({
       id: 'sms-inbound-SM456',
       name: Events.smsInboundReceived.name,
@@ -63,7 +66,10 @@ describe('handleTwilioInboundWebhookRequest', () => {
       url: URL,
     });
 
-    expect(result).toEqual({ status: 200 });
+    expect(result).toEqual({
+      status: 200,
+      body: '<Response></Response>',
+    });
     expect(inngest.send).toHaveBeenCalledWith({
       id: 'sms-inbound-SM456',
       name: Events.smsInboundReceived.name,
