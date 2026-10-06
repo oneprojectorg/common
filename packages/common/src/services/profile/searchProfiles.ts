@@ -23,6 +23,10 @@ export const searchProfiles = async ({
   }
   // TODO: assert authorization
 
+  // A phase profile belongs to its decision and is only reached through it,
+  // so it is never a search result.
+  const searchableTypes = types.filter((type) => type !== EntityType.PHASE);
+
   if (query.length < 2) {
     return [];
   }
@@ -81,7 +85,7 @@ export const searchProfiles = async ({
       .orderBy(sql`rank DESC`);
 
   return await Promise.all(
-    types.map(async (type) => ({
+    searchableTypes.map(async (type) => ({
       type,
       results: await searchByType(type),
     })),
