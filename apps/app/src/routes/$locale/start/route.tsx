@@ -23,7 +23,10 @@ function StartLayout() {
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
       <div id="top-slot" className="absolute top-0 w-full" />
-      <main className="relative flex size-full flex-col overflow-y-scroll p-4 md:p-8">
+      <main
+        data-route-scroll
+        className="relative flex size-full flex-col overflow-y-scroll p-4 md:p-8"
+      >
         <section className="sticky top-0 z-10 flex items-center justify-end bg-background">
           <Link
             href="/"

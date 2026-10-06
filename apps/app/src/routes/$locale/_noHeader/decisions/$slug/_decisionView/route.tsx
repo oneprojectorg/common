@@ -73,7 +73,7 @@ function DecisionViewLayout() {
           {/* overflow-x-clip: the bar's full-bleed `w-screen` chrome is 100vw,
             which exceeds the content width by the scrollbar on desktop and would
             otherwise add a few px of horizontal scroll. */}
-          <div className="overflow-x-clip overflow-y-auto">
+          <div data-route-scroll className="overflow-x-clip overflow-y-auto">
             <Outlet />
           </div>
         </div>

@@ -35,6 +35,10 @@ export function getRouter() {
   return createRouter({
     routeTree,
     scrollRestoration: true,
+    // Pages scroll inside their layout's container, not the window. Each
+    // layout marks its own; a navigation returns it to the top, as the window
+    // would be.
+    scrollToTopSelectors: ['[data-route-scroll]'],
     // Query values stay strings, as `URLSearchParams` reads them, rather than
     // being parsed as JSON — `?id=123` is "123", not 123.
     parseSearch: parseSearchWith((value) => value),

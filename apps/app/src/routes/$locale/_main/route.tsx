@@ -36,6 +36,7 @@ function MainLayout() {
         >
           <SiteHeader />
           <div
+            data-route-scroll
             style={{ '--header-height': '3.75rem' } as React.CSSProperties}
             className="relative flex size-full flex-1 flex-col overflow-y-auto bg-background sm:flex-row"
           >
