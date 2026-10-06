@@ -7,9 +7,10 @@ import { Spinner } from '@op/sense/Spinner';
 import { StepperProgressIndicator } from '@op/sense/Stepper';
 import { toast } from '@op/sense/Toast';
 import React, { useCallback, useMemo, useState } from 'react';
+import { useLocale } from 'use-intl';
 import { z } from 'zod';
 
-import { useTranslations } from '@/lib/i18n';
+import { localizeHref, useTranslations } from '@/lib/i18n';
 import { useRouter, useSearchParams } from '@/lib/navigation';
 
 import {
@@ -81,9 +82,12 @@ export const OnboardingFlow = ({
   // added by the (main)/(no-header) layouts is ignored for members.
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
+  const locale = useLocale();
+  // The preserved destination is a full path, locale included; the fallback
+  // home needs the current one.
   const completionDestination = isSafeRedirectPath(redirectParam)
     ? redirectParam
-    : '/?new=1';
+    : localizeHref('/?new=1', locale);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [invitesComplete, setInvitesComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

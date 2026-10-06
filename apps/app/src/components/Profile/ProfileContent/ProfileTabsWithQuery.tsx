@@ -1,7 +1,6 @@
 import { Tabs } from '@op/sense/Tabs';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
-import { usePathname } from '@/lib/i18n';
 import { useSearchParams } from '@/lib/navigation';
 
 export const ProfileTabsWithQuery = ({
@@ -17,7 +16,6 @@ export const ProfileTabsWithQuery = ({
   defaultTab: string;
   validTabs: string[];
 }) => {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // Determine the current selected tab from URL or fallback to initial/default
@@ -66,22 +64,25 @@ export const ProfileTabsWithQuery = ({
         newSearchParams.set('tab', keyString);
       }
 
-      // Build the new URL
-      const newUrl = newSearchParams.toString()
-        ? `${pathname}?${newSearchParams.toString()}`
-        : pathname;
-
       // Use browser history API directly to avoid triggering router race
-      // conditions. Keep the entry's state: the router keys history entries
-      // by it (back/forward, scroll restoration).
+      // conditions. Only the query changes: the path stays exactly what the
+      // browser shows, locale prefix included — the router re-matches the URL,
+      // and a path without its locale matches no route. Keep the entry's
+      // state: the router keys history entries by it (back/forward, scroll
+      // restoration).
       if (typeof window !== 'undefined') {
+        const { pathname } = window.location;
+        const newUrl = newSearchParams.toString()
+          ? `${pathname}?${newSearchParams.toString()}`
+          : pathname;
+
         window.history.replaceState(window.history.state, '', newUrl);
       }
 
       // Reset flag immediately since we're using the browser API directly
       isUpdatingUrlRef.current = false;
     },
-    [pathname, searchParams, defaultTab],
+    [searchParams, defaultTab],
   );
 
   return (

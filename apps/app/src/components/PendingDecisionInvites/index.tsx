@@ -15,8 +15,7 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { toast } from '@op/sense/Toast';
 import { Suspense } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
-import { useRouter } from '@/lib/navigation';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '../ErrorBoundary';
 

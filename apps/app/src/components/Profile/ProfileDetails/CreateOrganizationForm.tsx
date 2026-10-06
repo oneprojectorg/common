@@ -10,8 +10,7 @@ import { cn } from '@op/sense/lib/utils';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
-import { useRouter } from '@/lib/navigation';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { createOrganizationFormValidator } from '@/components/Onboarding/shared/organizationValidation';
 import { sendOnboardingAnalytics } from '@/components/Onboarding/utils';
