@@ -40,10 +40,6 @@ type LoginStep = 'phone-code' | 'phone-number' | 'email-address' | 'email-code';
 /**
  * Standard login / signup panel.
  *
- * Shares its contact and code steps with `JoinAccountModal` (AuthPanel);
- * the auth logic is not shared — this panel signs people in through the
- * invite-only gate.
- *
  * The anonymous-account upgrade flow ("link mode") lives in LinkAccountPanel;
  * login/page.tsx routes there when the visitor is anonymous. This component
  * only handles signing into / creating a normal account.
