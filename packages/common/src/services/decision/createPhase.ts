@@ -1,18 +1,18 @@
-import { type DbClient, db as defaultDb, eq } from "@op/db/client";
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
   type Profile,
   processPhases,
   profiles,
-} from "@op/db/schema";
-import type { User } from "@op/supabase/lib";
-import { permission } from "access-zones";
-import { z } from "zod";
+} from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
+import { z } from 'zod';
 
-import { CommonError, NotFoundError } from "../../utils";
-import { assertProfileAccess } from "../assert";
-import { generateUniqueProfileSlug } from "../profile/utils";
+import { CommonError, NotFoundError } from '../../utils';
+import { assertProfileAccess } from '../assert';
+import { generateUniqueProfileSlug } from '../profile/utils';
 
 /**
  * The phase's `data` blob.
@@ -54,8 +54,8 @@ export type CreatePhaseResult = {
  * open phase needs none, and invite-only grants are direct permissions written
  * when an invite is accepted (ADR 0006).
  *
- * It opens no transaction of its own. The profile and the phase row are two
- * writes, so a caller that needs them atomic passes a transaction as `db`.
+ * The profile and the phase row are written in one transaction. A caller that
+ * passes its own transaction as `db` gets a savepoint inside it.
  */
 export const createPhase = async ({
   user,
@@ -73,11 +73,11 @@ export const createPhase = async ({
   });
 
   if (!instance) {
-    throw new NotFoundError("Decision", processInstanceId);
+    throw new NotFoundError('Decision', processInstanceId);
   }
 
   if (!instance.profileId) {
-    throw new CommonError("Decision profile not found");
+    throw new CommonError('Decision profile not found');
   }
 
   await assertProfileAccess({
@@ -86,32 +86,34 @@ export const createPhase = async ({
     permissions: { decisions: permission.ADMIN },
   });
 
-  const slug = await generateUniqueProfileSlug({ name, db });
+  return db.transaction(async (tx) => {
+    const slug = await generateUniqueProfileSlug({ name, db: tx });
 
-  const [profile] = await db
-    .insert(profiles)
-    .values({ type: EntityType.PHASE, name, slug })
-    .returning();
+    const [profile] = await tx
+      .insert(profiles)
+      .values({ type: EntityType.PHASE, name, slug })
+      .returning();
 
-  if (!profile) {
-    throw new CommonError("Failed to create phase profile");
-  }
+    if (!profile) {
+      throw new CommonError('Failed to create phase profile');
+    }
 
-  const [phase] = await db
-    .insert(processPhases)
-    .values({
-      processInstanceId,
-      sortOrder,
-      profileId: profile.id,
-      data: phaseData,
-    })
-    .returning();
+    const [phase] = await tx
+      .insert(processPhases)
+      .values({
+        processInstanceId,
+        sortOrder,
+        profileId: profile.id,
+        data: phaseData,
+      })
+      .returning();
 
-  if (!phase) {
-    throw new CommonError("Failed to create phase");
-  }
+    if (!phase) {
+      throw new CommonError('Failed to create phase');
+    }
 
-  return { phase, profile };
+    return { phase, profile };
+  });
 };
 
 /**
@@ -133,7 +135,7 @@ export const renamePhase = async ({
   });
 
   if (!phase) {
-    throw new NotFoundError("Phase", phaseId);
+    throw new NotFoundError('Phase', phaseId);
   }
 
   const [profile] = await db
@@ -143,7 +145,7 @@ export const renamePhase = async ({
     .returning();
 
   if (!profile) {
-    throw new CommonError("Failed to rename phase");
+    throw new CommonError('Failed to rename phase');
   }
 
   return profile;
@@ -168,7 +170,7 @@ export const deletePhase = async ({
   });
 
   if (!phase) {
-    throw new NotFoundError("Phase", phaseId);
+    throw new NotFoundError('Phase', phaseId);
   }
 
   const [deleted] = await db
@@ -177,6 +179,6 @@ export const deletePhase = async ({
     .returning();
 
   if (!deleted) {
-    throw new CommonError("Failed to delete phase");
+    throw new CommonError('Failed to delete phase');
   }
 };

@@ -1,8 +1,7 @@
-import { createPhase, phaseDataSchema } from "@op/common";
-import { db } from "@op/db/client";
-import { z } from "zod";
+import { createPhase, phaseDataSchema } from '@op/common';
+import { z } from 'zod';
 
-import { authenticatedConfirmedProcedure, router } from "../../../trpcFactory";
+import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
 const createPhaseOutputSchema = z.object({
   id: z.string(),
@@ -25,17 +24,13 @@ export const createPhaseRouter = router({
     )
     .output(createPhaseOutputSchema)
     .mutation(async ({ ctx, input }) => {
-      // The profile and the phase row commit together or not at all.
-      const { phase, profile } = await db.transaction((tx) =>
-        createPhase({
-          user: ctx.user,
-          processInstanceId: input.instanceId,
-          name: input.name,
-          sortOrder: input.sortOrder,
-          data: input.data,
-          db: tx,
-        }),
-      );
+      const { phase, profile } = await createPhase({
+        user: ctx.user,
+        processInstanceId: input.instanceId,
+        name: input.name,
+        sortOrder: input.sortOrder,
+        data: input.data,
+      });
 
       return createPhaseOutputSchema.parse({
         id: phase.id,
