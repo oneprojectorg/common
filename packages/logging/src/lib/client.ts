@@ -1,4 +1,7 @@
+import type { CaptureLogOptions, LogAttributes } from 'posthog-js';
 import posthog from 'posthog-js';
+
+import { redactEmails } from './redact';
 
 export {
   findTwilioSids,
@@ -10,39 +13,132 @@ export {
 
 export type LogData = Record<string, unknown> & { error?: unknown };
 
-// Client-side logger mirroring the server `@op/logging` API. Every level reports
-// to PostHog and always writes to the console (dev and prod alike) — call this
-// instead of `console.error` + `posthog.captureException`. `error`/`warn` become
-// PostHog exceptions (the caught `error` is used as the captured value when it's
-// an `Error`, otherwise a synthetic one carries the message and the raw value
-// rides along); `info` is a plain PostHog event.
-function report(level: 'error' | 'warning', message: string, data?: LogData) {
-  const { error, ...context } = data ?? {};
-  const captured = error instanceof Error ? error : new Error(message);
-
-  posthog.captureException(captured, {
-    level,
-    message,
-    ...(error !== undefined && !(error instanceof Error)
-      ? { originalError: error }
-      : {}),
-    ...context,
-  });
+/**
+ * The two PostHog calls the client logger makes. `posthog-js` satisfies it;
+ * a test hands in a recorder instead, the way `logger.test.ts` hands the
+ * server logger a provider.
+ */
+export interface ClientLogSink {
+  captureLog(options: CaptureLogOptions): void;
+  captureException(
+    error: unknown,
+    additionalProperties?: Record<string, unknown>,
+  ): void;
 }
 
-export const logger = {
-  error(message: string, data?: LogData) {
-    console.error(`[ERROR] ${message}`, data ?? '');
-    report('error', message, data);
-  },
-  warn(message: string, data?: LogData) {
-    console.warn(`[WARN] ${message}`, data ?? '');
-    report('warning', message, data);
-  },
-  info(message: string, data?: Record<string, unknown>) {
-    console.info(`[INFO] ${message}`, data ?? '');
-    // Not sending info to PostHog yet — re-enable once we settle on the event
-    // naming (see ONE-576 discussion). Console output still runs.
-    // posthog.capture(message, data);
-  },
+type ClientLogLevel = 'error' | 'warn' | 'info';
+
+/**
+ * Builds the browser logger over a PostHog sink.
+ *
+ * Every level becomes a structured log record through `captureLog`, so the
+ * message is the body and each key of `data` is its own attribute the Logs
+ * UI can filter and group on. The previous design wrote `console.error`
+ * with the data as a second argument and relied on PostHog's console
+ * autocapture, which flattens that argument into the body text; the
+ * attributes never existed as attributes.
+ *
+ * `error` and `warn` also reach Error Tracking through `captureException`,
+ * with the same data as event properties: the caught `error` is the
+ * captured value when it is an `Error`, otherwise a synthetic one carries
+ * the message.
+ *
+ * The console gets a copy outside production only. In production the
+ * project's console autocapture would turn that copy into a second,
+ * unstructured record of the same event.
+ */
+export const createClientLogger = (sink: ClientLogSink) => {
+  const send = (level: ClientLogLevel, message: string, data?: LogData) => {
+    const body = redactEmails(message);
+    const attributes = toLogAttributes(data);
+
+    if (process.env.NODE_ENV !== 'production') {
+      const consoleMethod = level === 'info' ? 'info' : level;
+      console[consoleMethod](`[${level.toUpperCase()}] ${body}`, data ?? '');
+    }
+
+    sink.captureLog({
+      body,
+      level,
+      ...(attributes && { attributes }),
+    });
+
+    if (level === 'info') {
+      return;
+    }
+
+    const { error, ...context } = data ?? {};
+    const captured = error instanceof Error ? error : new Error(body);
+
+    sink.captureException(captured, {
+      level: level === 'warn' ? 'warning' : level,
+      message: body,
+      ...(error !== undefined && !(error instanceof Error)
+        ? { originalError: error }
+        : {}),
+      ...context,
+    });
+  };
+
+  return {
+    error(message: string, data?: LogData) {
+      send('error', message, data);
+    },
+    warn(message: string, data?: LogData) {
+      send('warn', message, data);
+    },
+    info(message: string, data?: Record<string, unknown>) {
+      send('info', message, data);
+    },
+  };
+};
+
+export const logger = createClientLogger(posthog);
+
+/**
+ * Flattens `data` into log attributes. A caught `Error` becomes three
+ * attributes named after its fields; every string is redacted, because an
+ * address can arrive under any key.
+ */
+const toLogAttributes = (data?: LogData): LogAttributes | undefined => {
+  if (!data) {
+    return undefined;
+  }
+
+  return Object.entries(data).reduce<LogAttributes>(
+    (attributes, [key, value]) => {
+      if (key === 'error' && value instanceof Error) {
+        attributes['error.name'] = value.name;
+        attributes['error.message'] = redactEmails(value.message);
+        attributes['error.stack'] = redactEmails(value.stack ?? '');
+        return attributes;
+      }
+
+      attributes[key] = toLogAttributeValue(value);
+      return attributes;
+    },
+    {},
+  );
+};
+
+const toLogAttributeValue = (value: unknown): LogAttributes[string] => {
+  if (typeof value === 'string') {
+    return redactEmails(value);
+  }
+
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    value === null ||
+    value === undefined ||
+    Array.isArray(value)
+  ) {
+    return value;
+  }
+
+  if (typeof value === 'object') {
+    return redactEmails(JSON.stringify(value));
+  }
+
+  return String(value);
 };

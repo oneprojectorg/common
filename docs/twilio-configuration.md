@@ -119,8 +119,9 @@ message that relays Twilio's own: `Error sending sms OTP to provider:
 <Twilio message> More information: https://www.twilio.com/docs/errors/<code>`.
 
 The browser logs one record, `GoTrue refused to send a code`, from
-`apps/app/src/hooks/phoneAuth/supabaseOtp.ts`. It reaches PostHog as an
-exception with these attributes:
+`apps/app/src/hooks/phoneAuth/supabaseOtp.ts`. It reaches PostHog **Logs**
+under the service `common-web` with these attributes, and Error Tracking as
+an exception with the same values as event properties:
 
 | Attribute          | Value                                                                                                                                                                                                             |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

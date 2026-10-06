@@ -65,6 +65,9 @@ export function PostHogProvider({
       // (`__add_tracing_headers: false` until posthog-js turned this into an
       // allowlist of hostnames; the empty list is the same "never" it meant.)
       tracing_headers: [],
+      // `@op/logging/client` ships structured records through captureLog;
+      // the service name keeps them apart from the server's `common-app`.
+      logs: { serviceName: 'common-web' },
       // In `on_reject` mode a visitor posthog considers rejected is still
       // captured — just with no cookies, no local storage and no persistent
       // identity, with PostHog hashing them server-side instead.
