@@ -57,7 +57,7 @@ import {
   crapScores,
   crossings,
   inCrapScope,
-  movedSince,
+  isComparableBase,
   readCrapTrend,
   summarize,
   withBaseScores,
@@ -263,11 +263,15 @@ const crapReport = () => {
     .sort((a, b) => b.crap - a.crap);
 
   const baseScores = readBaseScores();
-  const moved =
-    baseScores &&
-    movedSince({ scoredCommit: baseScores.commit, baseRef: base, baseCommit });
-  const scored = moved
-    ? withBaseScores({ scored: ranked, baseFiles: baseScores.files, moved })
+  const comparable =
+    baseScores !== null &&
+    isComparableBase({
+      scoredCommit: baseScores.commit,
+      baseRef: base,
+      baseCommit,
+    });
+  const scored = comparable
+    ? withBaseScores({ scored: ranked, baseFiles: baseScores.files })
     : ranked;
 
   const status =
@@ -282,7 +286,7 @@ const crapReport = () => {
     scored,
     risky,
     stale,
-    base_commit: moved ? baseScores.commit : null,
+    base_commit: comparable ? baseScores.commit : null,
     summary: summarize(files),
     trend: comparableTrend(),
     stats,

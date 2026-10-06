@@ -151,7 +151,7 @@ const crapSection = (crap, rowLimit = Infinity) => {
     }
     lines.push(
       baseCommit
-        ? `Base and Change compare each file's worst CRAP at dev \`${baseCommit.slice(0, 7)}\`; — means no comparable score there (new, untested, or edited on dev since).`
+        ? `Base and Change compare each file's worst CRAP at dev \`${baseCommit.slice(0, 7)}\`; — means no score there (new, or no test loaded it).`
         : "No change shown: no usable saved scores for the base, or this run's tests failed and its coverage is incomplete.",
       '',
     );

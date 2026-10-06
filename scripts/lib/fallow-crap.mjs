@@ -403,36 +403,50 @@ export const changedFiles = (explicitBase) => {
 };
 
 /**
- * Files whose content differs between the commit a saved score set was taken
- * on and the merge base, or null when the set cannot be used at all.
- *
- * Dev only records scores for the newest commit of a burst of merges, so a PR
- * usually compares against a nearby dev commit rather than its exact merge
- * base. That is sound per file as long as the file's code is the same at both:
- * the files this returns are the ones where it is not. A commit that is not on
- * the base branch is refused outright — the cache is writable from any run in
- * the base branch's scope, so the set has to prove where it came from.
+ * Paths that cannot move anyone's coverage: prose and CI config. Everything
+ * else can — a test edit, a fixture, a config, or a source change that makes
+ * some other file's tests run more or less of it.
  */
-export const movedSince = ({ scoredCommit, baseRef, baseCommit }) => {
-  if (!baseRef || !/^[0-9a-f]{40}$/.test(scoredCommit ?? '')) return null;
+const COVERAGE_NEUTRAL = /(^(docs|\.github|\.claude)\/|\.md$)/;
+
+/** Whether a changed path can move the coverage of any scored file. */
+export const affectsCoverage = (path) => !COVERAGE_NEUTRAL.test(path);
+
+/**
+ * Whether a saved score set stands in for the merge base.
+ *
+ * Dev scores a burst of merges once, so a PR's exact merge base may have no
+ * set, and the cache hands back the newest one instead. A file's coverage
+ * depends on the whole suite, not just its own source: a test edited on dev
+ * moves files nobody touched. So the set is only comparable when nothing
+ * between its commit and the merge base could move coverage at all — anything
+ * looser can claim this PR pushed a file over the line when dev did. It is
+ * also refused when its commit is not on the base branch: the cache is
+ * writable from any run in the base branch's scope, so the set has to prove
+ * where it came from.
+ */
+export const isComparableBase = ({ scoredCommit, baseRef, baseCommit }) => {
+  if (!baseRef || !/^[0-9a-f]{40}$/.test(scoredCommit ?? '')) return false;
+  if (scoredCommit === baseCommit) return true;
   if (git(['merge-base', '--is-ancestor', scoredCommit, baseRef]) === null) {
-    return null;
+    return false;
   }
   const diff = git(['diff', '--name-only', scoredCommit, baseCommit]);
-  return diff === null ? null : new Set(diff.split('\n').filter(Boolean));
+  return (
+    diff !== null && !diff.split('\n').filter(Boolean).some(affectsCoverage)
+  );
 };
 
 /**
  * Each scored row with its file's worst CRAP at the base (`before`), and
  * whether this change pushed it over the line: under it at the base, at or
- * above it now. A file with no usable base score — new, untested there, or
- * {@link movedSince} the scored commit — gets `before: null` and is never a
- * crossing; it is already in `risky`, and calling it one would claim a before
- * we do not have.
+ * above it now. A file with no base score — new, or untested there — gets
+ * `before: null` and is never a crossing; it is already in `risky`, and
+ * calling it one would claim a before we do not have.
  */
-export const withBaseScores = ({ scored, baseFiles, moved }) =>
+export const withBaseScores = ({ scored, baseFiles }) =>
   scored.map((row) => {
-    const before = moved.has(row.path) ? null : (baseFiles[row.path] ?? null);
+    const before = baseFiles[row.path] ?? null;
     return {
       ...row,
       before,
