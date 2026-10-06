@@ -23,8 +23,7 @@ export const searchProfiles = async ({
   }
   // TODO: assert authorization
 
-  // A phase profile belongs to its decision and is only reached through it,
-  // so it is never a search result.
+  // Phases are only reached through their decision.
   const searchableTypes = types.filter((type) => type !== EntityType.PHASE);
 
   if (query.length < 2) {
