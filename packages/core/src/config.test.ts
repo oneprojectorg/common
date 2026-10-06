@@ -23,11 +23,12 @@ describe('auth OTP lengths', () => {
   /**
    * Given no OTP length variable is set
    * When the config loads
-   * Then both channels default to 6, matching every supabase/*.toml
+   * Then email defaults to the 10 digits the hosted Supabase project sends
+   * and SMS to the 6 digits a Verify service sends
    */
-  it('defaults both channels to 6 when unset', async () => {
+  it('defaults email to 10 and SMS to 6 when unset', async () => {
     const { AUTH_EMAIL_OTP_LENGTH, AUTH_SMS_OTP_LENGTH } = await loadConfig({});
-    expect(AUTH_EMAIL_OTP_LENGTH).toBe(6);
+    expect(AUTH_EMAIL_OTP_LENGTH).toBe(10);
     expect(AUTH_SMS_OTP_LENGTH).toBe(6);
   });
 
@@ -54,7 +55,7 @@ describe('auth OTP lengths', () => {
     const { AUTH_EMAIL_OTP_LENGTH, AUTH_SMS_OTP_LENGTH } = await loadConfig({
       AUTH_SMS_OTP_LENGTH: '4',
     });
-    expect(AUTH_EMAIL_OTP_LENGTH).toBe(6);
+    expect(AUTH_EMAIL_OTP_LENGTH).toBe(10);
     expect(AUTH_SMS_OTP_LENGTH).toBe(4);
   });
 
@@ -75,17 +76,17 @@ describe('auth OTP lengths', () => {
   /**
    * Given a value that is not a positive integer
    * When the config loads
-   * Then that channel falls back to 6
+   * Then that channel falls back to its own default
    */
-  it('falls back to 6 for a value that is not a positive integer', async () => {
+  it('falls back to the channel default for a value that is not a positive integer', async () => {
     const zero = await loadConfig({ AUTH_EMAIL_OTP_LENGTH: '0' });
-    expect(zero.AUTH_EMAIL_OTP_LENGTH).toBe(6);
+    expect(zero.AUTH_EMAIL_OTP_LENGTH).toBe(10);
 
     const negative = await loadConfig({ AUTH_SMS_OTP_LENGTH: '-6' });
     expect(negative.AUTH_SMS_OTP_LENGTH).toBe(6);
 
-    const word = await loadConfig({ AUTH_EMAIL_OTP_LENGTH: 'six' });
-    expect(word.AUTH_EMAIL_OTP_LENGTH).toBe(6);
+    const word = await loadConfig({ AUTH_EMAIL_OTP_LENGTH: 'ten' });
+    expect(word.AUTH_EMAIL_OTP_LENGTH).toBe(10);
   });
 
   /**
