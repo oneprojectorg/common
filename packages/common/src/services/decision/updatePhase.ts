@@ -14,17 +14,6 @@ import {
   phaseDataSchema,
 } from './phaseHelpers';
 
-/**
- * Updates whichever of a phase's name and data are given, in one transaction.
- *
- * - `name` is written to the phase's profile. The slug is left alone, so links
- *   keep working once phases are routable — the same trade `updateProposal`
- *   makes.
- * - `data` replaces the whole blob and is validated against `phaseDataSchema`,
- *   so a write can never drop `phaseId`.
- *
- * Needs decisions ADMIN on the instance's profile, like `createPhase`.
- */
 export const updatePhase = async ({
   user,
   phaseId,
@@ -66,7 +55,6 @@ export const updatePhase = async ({
             .where(eq(processPhases.id, phaseId))
             .returning();
 
-    // Deleted between the access check and the write.
     if (!profile || !phase) {
       throw new NotFoundError('Phase', phaseId);
     }
