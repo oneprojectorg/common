@@ -13,11 +13,6 @@ const createCaller = createCallerFactory(appRouter);
 
 export const PHASE_NAME = 'Review';
 
-/**
- * A decision with one phase, created through the router by the decision's
- * admin. The other callers are made on demand so a test only pays for the
- * users it uses.
- */
 export async function setupPhase(
   task: { id: string },
   onTestFinished: OnTestFinished,
@@ -37,7 +32,6 @@ export async function setupPhase(
   });
   testData.trackProfileForCleanup(phase.profileId);
 
-  /** A member of this decision without decisions ADMIN. */
   const createMemberCaller = async () => {
     const member = await testData.createMemberUser({
       organization: setup.organization,
@@ -46,7 +40,6 @@ export async function setupPhase(
     return createAuthenticatedCaller(member.email);
   };
 
-  /** The admin of a different decision. */
   const createOtherDecisionAdminCaller = async () => {
     const other = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -55,7 +48,6 @@ export async function setupPhase(
     return createAuthenticatedCaller(other.userEmail);
   };
 
-  /** A user with no access to any decision. */
   const createOutsiderCaller = async () => {
     const outsider = await testData.createDecisionSetup({
       instanceCount: 0,

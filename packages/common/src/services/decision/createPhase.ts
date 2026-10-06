@@ -10,14 +10,6 @@ import {
   phaseDataSchema,
 } from './phaseHelpers';
 
-/**
- * Creates a phase and the profile that carries its identity, in one
- * transaction.
- *
- * Phase management is authorized against the decision's profile, not the
- * phase's, so the caller needs decisions ADMIN on the instance's profile.
- * Writes no grants.
- */
 export const createPhase = async ({
   user,
   processInstanceId,
@@ -27,7 +19,6 @@ export const createPhase = async ({
 }: {
   user: User;
   processInstanceId: string;
-  /** Stored on the profile, not on the phase row. */
   name: string;
   sortOrder: number;
   data: PhaseData;

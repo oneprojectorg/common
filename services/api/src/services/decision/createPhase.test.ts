@@ -6,8 +6,6 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 
-// Access control is covered through the routers in
-// routers/decision/phases/*.test.ts; these tests pin what the service writes.
 describe.concurrent('createPhase', () => {
   it('mints a profile of type PHASE that owns the name', async ({
     task,
@@ -56,7 +54,6 @@ describe.concurrent('createPhase', () => {
   }) => {
     const { instanceId, user } = await setup(task, onTestFinished);
 
-    // phaseId is what joins the row to its entry in instance_data.phases.
     const name = `Nameless ${randomUUID()}`;
     await expect(
       createPhase({
@@ -86,7 +83,6 @@ describe.concurrent('createPhase', () => {
     });
     testData.trackProfileForCleanup(profile.id);
 
-    // Invite-only grants are written when an invite is accepted, not here.
     const [roles, members] = await Promise.all([
       db.query.accessRoles.findMany({
         where: { profileId: profile.id },
@@ -107,8 +103,7 @@ describe.concurrent('createPhase', () => {
   }) => {
     const { instanceId, user } = await setup(task, onTestFinished);
 
-    // 2^31 overflows the integer sort_order column, so the phase insert fails
-    // after the profile insert has run.
+    // Overflows sort_order, so the phase insert fails after the profile insert.
     const name = `Orphan Check ${randomUUID()}`;
     await expect(
       createPhase({
@@ -118,7 +113,7 @@ describe.concurrent('createPhase', () => {
         sortOrder: 2 ** 31,
         data: { phaseId: 'submissions' },
       }),
-      // 22003: numeric_value_out_of_range, raised by the phase insert itself.
+      // 22003: numeric_value_out_of_range
     ).rejects.toMatchObject({ cause: { code: '22003' } });
 
     await expectNoProfileNamed(name);

@@ -105,8 +105,6 @@ describe.concurrent('createPhase', () => {
       onTestFinished,
     );
 
-    // No org fallback: phases are managed on the decision, like
-    // updateDecisionInstance.
     const orgAdmin = await testData.createMemberUser({
       organization: setup.organization,
       orgRoleId: ROLES.ADMIN.id,
