@@ -4,7 +4,7 @@ import { createSBServiceClient } from '@op/supabase/server';
 import type { PhoneNumber } from '../notification/types';
 
 const RATE_LIMITED_CODE = 'over_sms_send_rate_limit';
-const EXPIRED_CODE = 'otp_expired';
+const EXPIRED_OR_INVALID_CODE = 'otp_expired';
 
 /**
  * The outcome of asking GoTrue to text a signup code.
@@ -20,12 +20,14 @@ export type PhoneSignupCodeRequest =
 /**
  * The outcome of handing a texted code back to GoTrue.
  *
- * GoTrue reports an expired verification and a wrong code with one error
- * code, so `expired` is a best reading, as it is in the browser strategy.
+ * GoTrue answers a wrong code, a malformed token and an expired code with
+ * one error code, `otp_expired`, so they are one reason here. `unknown` is
+ * every other failure, such as GoTrue being unreachable, and is logged as
+ * a warning because it is ours, not the holder's.
  */
 export type PhoneSignupConfirmation =
   | { status: 'confirmed'; authUserId: string }
-  | { status: 'rejected'; reason: 'expired' | 'wrong_code' | 'unknown' };
+  | { status: 'rejected'; reason: 'expired_or_invalid' | 'unknown' };
 
 /**
  * Asks GoTrue to create an unconfirmed account for `phone` and text it a code.
@@ -91,15 +93,20 @@ export const confirmPhoneSignupCode = async ({
     type: 'sms',
   });
 
-  if (error) {
+  if (error?.code === EXPIRED_OR_INVALID_CODE) {
     logger.info('GoTrue rejected a signup code', {
       code: error.code,
       status: error.status,
     });
-    return {
-      status: 'rejected',
-      reason: error.code === EXPIRED_CODE ? 'expired' : 'wrong_code',
-    };
+    return { status: 'rejected', reason: 'expired_or_invalid' };
+  }
+
+  if (error) {
+    logger.warn('GoTrue could not check a signup code', {
+      code: error.code,
+      status: error.status,
+    });
+    return { status: 'rejected', reason: 'unknown' };
   }
 
   if (!data.user) {

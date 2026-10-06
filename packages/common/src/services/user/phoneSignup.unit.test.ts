@@ -93,27 +93,13 @@ describe('confirmPhoneSignupCode', () => {
     expect(result).toEqual({ status: 'confirmed', authUserId: 'auth-user-1' });
   });
 
-  it('given an expired code, when confirmed, then it reports expired', async () => {
-    auth.verifyOtp.mockResolvedValue({
-      data: noSession,
-      error: new AuthError('Token has expired', 403, 'otp_expired'),
-    });
-
-    const result = await confirmPhoneSignupCode({
-      phone: PHONE,
-      token: '000000',
-    });
-
-    expect(result).toEqual({ status: 'rejected', reason: 'expired' });
-  });
-
-  it('given a wrong code, when confirmed, then it reports wrong_code', async () => {
+  it('given a wrong or expired code, when confirmed, then it reports expired_or_invalid', async () => {
     auth.verifyOtp.mockResolvedValue({
       data: noSession,
       error: new AuthError(
-        `invalid token for ${PHONE}`,
-        400,
-        'invalid_credentials',
+        'Token has expired or is invalid',
+        403,
+        'otp_expired',
       ),
     });
 
@@ -122,7 +108,24 @@ describe('confirmPhoneSignupCode', () => {
       token: '000000',
     });
 
-    expect(result).toEqual({ status: 'rejected', reason: 'wrong_code' });
+    expect(result).toEqual({
+      status: 'rejected',
+      reason: 'expired_or_invalid',
+    });
+  });
+
+  it('given GoTrue fails for another reason, when confirmed, then it reports unknown', async () => {
+    auth.verifyOtp.mockResolvedValue({
+      data: noSession,
+      error: new AuthError('upstream unavailable', 502, 'unexpected_failure'),
+    });
+
+    const result = await confirmPhoneSignupCode({
+      phone: PHONE,
+      token: '000000',
+    });
+
+    expect(result).toEqual({ status: 'rejected', reason: 'unknown' });
   });
 
   it('given GoTrue returns neither an error nor a user, when confirmed, then it reports unknown', async () => {

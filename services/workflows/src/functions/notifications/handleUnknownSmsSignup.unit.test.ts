@@ -267,7 +267,7 @@ describe('handleUnknownSmsSignup', () => {
     );
     vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
       status: 'rejected',
-      reason: 'wrong_code',
+      reason: 'expired_or_invalid',
     });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
@@ -287,7 +287,7 @@ describe('handleUnknownSmsSignup', () => {
     );
     vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
       status: 'rejected',
-      reason: 'wrong_code',
+      reason: 'expired_or_invalid',
     });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 

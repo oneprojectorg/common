@@ -113,8 +113,9 @@ message_service_sid = "env(TWILIO_VERIFY_SERVICE_SID)"
 # race for it. This file is the integration-test instance (55321); the e2e
 # suite runs on its own instance (56321, supabase-e2e.toml) and the dev stack
 # on (54321, supabase-dev.toml), so the same numbers never collide across
-# suites. On this instance, the workflow integration tests claim 15005550007
-# through 15005550010; 15005550006 is left to the demo scripts.
+# suites. On this instance, the workflow integration tests and the
+# `phoneSignup` service test claim 15005550007 through 15005550010; turbo runs
+# the two packages one after another. 15005550006 is left to the demo scripts.
 15005550006 = "123456"
 15005550007 = "234567"
 15005550008 = "345678"
