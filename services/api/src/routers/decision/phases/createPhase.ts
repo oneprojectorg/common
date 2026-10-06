@@ -18,7 +18,7 @@ export const createPhaseRouter = router({
       z.object({
         instanceId: z.uuid(),
         name: z.string().trim().min(1).max(256),
-        sortOrder: z.number().int().min(0),
+        sortOrder: z.number().int().min(0).max(2_147_483_647),
         data: phaseDataSchema,
       }),
     )

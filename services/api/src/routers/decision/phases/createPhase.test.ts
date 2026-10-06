@@ -4,19 +4,8 @@ import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { appRouter } from '../..';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
-import { createCallerFactory } from '../../../trpcFactory';
-
-const createCaller = createCallerFactory(appRouter);
-
-async function createAuthenticatedCaller(email: string) {
-  const { session } = await createIsolatedSession(email);
-  return createCaller(await createTestContextWithSession(session));
-}
+import { createUnauthenticatedCaller } from '../../../test/helpers/phaseTestUtils';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('createPhase', () => {
   it('creates a phase and its profile as a decision admin', async ({
@@ -135,6 +124,27 @@ describe.concurrent('createPhase', () => {
     ).rejects.toThrow(/not found/i);
   });
 
+  it('rejects a sortOrder that does not fit the column', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createPhase({
+        instanceId: setup.instance.instance.id,
+        name: 'Submissions',
+        sortOrder: 2 ** 31,
+        data: { phaseId: 'submissions' },
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
   it('rejects an empty name and an empty phaseId', async ({
     task,
     onTestFinished,
@@ -167,7 +177,7 @@ describe.concurrent('createPhase', () => {
   });
 
   it('requires authentication', async () => {
-    const caller = createCaller({ session: null, user: null } as never);
+    const caller = await createUnauthenticatedCaller();
 
     await expect(
       caller.decision.createPhase({
@@ -176,6 +186,8 @@ describe.concurrent('createPhase', () => {
         sortOrder: 0,
         data: { phaseId: 'submissions' },
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: { name: 'AccessTierError', callerTier: 'none' },
+    });
   });
 });
