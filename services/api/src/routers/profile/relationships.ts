@@ -2,15 +2,11 @@ import {
   Channels,
   addProfileRelationship,
   getProfileRelationships,
-  liveMergeEdgeFrom,
+  mergeTargetIds,
   removeProfileRelationship,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
-import {
-  ProfileRelationshipType,
-  proposalRelationships,
-  proposals,
-} from '@op/db/schema';
+import { ProfileRelationshipType, proposals } from '@op/db/schema';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -27,7 +23,7 @@ import {
 type ProposalInfo = {
   proposalId: string;
   processInstanceId: string;
-  mergedIntoProposalId: string | null;
+  mergeTargetIds: string[];
 };
 
 // Helper function to check if a profile belongs to a proposal and get process info
@@ -38,10 +34,9 @@ async function getProposalInfo(
     .select({
       proposalId: proposals.id,
       processInstanceId: proposals.processInstanceId,
-      mergedIntoProposalId: proposalRelationships.targetProposalId,
+      mergeTargetIds: mergeTargetIds(proposals.id),
     })
     .from(proposals)
-    .leftJoin(proposalRelationships, liveMergeEdgeFrom(proposals.id))
     .where(eq(proposals.profileId, profileId))
     .limit(1);
 
@@ -49,19 +44,16 @@ async function getProposalInfo(
 }
 
 // Channels the proposal detail query subscribes to: the liked proposal, plus
-// the one its likes roll up into. Deliberately not the `decisionProposals`
+// every one its likes roll up into. Deliberately not the `decisionProposals`
 // list channel, which would make every viewer refetch every card on every like.
 function proposalRelationshipChannels({
   processInstanceId,
   proposalId,
-  mergedIntoProposalId,
+  mergeTargetIds,
 }: ProposalInfo) {
-  return [
-    Channels.decisionProposal(processInstanceId, proposalId),
-    ...(mergedIntoProposalId
-      ? [Channels.decisionProposal(processInstanceId, mergedIntoProposalId)]
-      : []),
-  ];
+  return [proposalId, ...mergeTargetIds].map((id) =>
+    Channels.decisionProposal(processInstanceId, id),
+  );
 }
 
 const relationshipInputSchema = z.object({

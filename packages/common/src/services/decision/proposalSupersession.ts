@@ -36,14 +36,26 @@ const isLiveMergeEdge = (): SQL =>
   )!;
 
 /**
- * Join condition for the live `merged` edge leading away from a proposal. The
- * partial unique index allows at most one, so a `leftJoin` cannot fan out.
+ * Every proposal `proposalId` was merged into, directly or through a chain —
+ * the proposals whose like counts include its likes. Correlated, so it runs
+ * inside the caller's query rather than as another round trip.
  */
-export const liveMergeEdgeFrom = (sourceProposalId: Column | SQL): SQL =>
-  and(
-    eq(proposalRelationships.sourceProposalId, sourceProposalId),
-    isLiveMergeEdge(),
-  )!;
+export const mergeTargetIds = (proposalId: Column): SQL<string[]> =>
+  // `UNION`, not `UNION ALL`: it still terminates if a race leaves a cycle.
+  sql<string[]>`(
+    WITH RECURSIVE merge_targets (proposal_id) AS (
+      SELECT ${proposalId}
+      UNION
+      SELECT ${proposalRelationships.targetProposalId}
+      FROM ${proposalRelationships}
+      JOIN merge_targets
+        ON ${proposalRelationships.sourceProposalId} = merge_targets.proposal_id
+      WHERE ${isLiveMergeEdge()}
+    )
+    SELECT coalesce(array_agg(proposal_id), '{}')
+    FROM merge_targets
+    WHERE proposal_id <> ${proposalId}
+  )`;
 
 /** A live `merged` edge pointing *at* `targetProposalId`. */
 const liveMergeInto = (targetProposalId: string): SQL =>

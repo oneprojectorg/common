@@ -19,7 +19,7 @@ export const removeProposalRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
-      const { proposalId, processInstanceId, mergedIntoProposalId } =
+      const { proposalId, processInstanceId, mergeTargetIds } =
         await assertProposalEngagementAccess({
           user: ctx.user,
           profileId: targetProfileId,
@@ -31,11 +31,10 @@ export const removeProposalRelationshipRouter = router({
         authUserId: ctx.user.id,
       });
 
-      ctx.registerMutationChannels([
-        Channels.decisionProposal(processInstanceId, proposalId),
-        ...(mergedIntoProposalId
-          ? [Channels.decisionProposal(processInstanceId, mergedIntoProposalId)]
-          : []),
-      ]);
+      ctx.registerMutationChannels(
+        [proposalId, ...mergeTargetIds].map((id) =>
+          Channels.decisionProposal(processInstanceId, id),
+        ),
+      );
     }),
 });

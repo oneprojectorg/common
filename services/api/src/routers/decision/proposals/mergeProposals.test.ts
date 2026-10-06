@@ -1224,36 +1224,41 @@ describe.concurrent('likes across merged proposals', () => {
     expect(metrics[target.id]?.likesCount).toBe(2);
   });
 
-  it("reports where a merged-away proposal's likes land, so both pages refresh", async ({
+  it("reports every proposal a merged-away proposal's likes land on, so each page refreshes", async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { sources, target, setup, caller } =
-      await createLikedProposals(testData);
-    const [source] = sources;
+    const { sources, target, setup, caller } = await createLikedProposals(
+      testData,
+      { sourceCount: 2 },
+    );
+    const [first, second] = sources;
     const { session } = await createIsolatedSession(setup.userEmail);
 
     const engagementTarget = () =>
       assertProposalEngagementAccess({
         user: session.user,
-        profileId: source!.profileId,
+        profileId: first!.profileId,
       });
 
     expect(await engagementTarget()).toMatchObject({
-      proposalId: source!.id,
-      mergedIntoProposalId: null,
+      proposalId: first!.id,
+      mergeTargetIds: [],
     });
 
     await caller.decision.mergeProposals({
-      sourceProposalId: source!.id,
+      sourceProposalId: first!.id,
+      targetProposalId: second!.id,
+    });
+    await caller.decision.mergeProposals({
+      sourceProposalId: second!.id,
       targetProposalId: target.id,
     });
 
-    expect(await engagementTarget()).toMatchObject({
-      proposalId: source!.id,
-      mergedIntoProposalId: target.id,
-    });
+    const { proposalId, mergeTargetIds } = await engagementTarget();
+    expect(proposalId).toBe(first!.id);
+    expect([...mergeTargetIds].sort()).toEqual([second!.id, target.id].sort());
   });
 
   it('drops the likes of a deleted proposal rather than carrying them over', async ({

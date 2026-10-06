@@ -1,21 +1,17 @@
 import { db, eq } from '@op/db/client';
-import {
-  processInstances,
-  proposalRelationships,
-  proposals,
-} from '@op/db/schema';
+import { processInstances, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { decisionPermission } from './permissions';
-import { liveMergeEdgeFrom } from './proposalSupersession';
+import { mergeTargetIds } from './proposalSupersession';
 
 type ProposalEngagementTarget = {
   proposalId: string;
   processInstanceId: string;
-  mergedIntoProposalId: string | null;
+  mergeTargetIds: string[];
 };
 
 /**
@@ -43,14 +39,13 @@ export async function assertProposalEngagementAccess({
       processInstanceId: proposals.processInstanceId,
       instanceProfileId: processInstances.profileId,
       instanceOwnerProfileId: processInstances.ownerProfileId,
-      mergedIntoProposalId: proposalRelationships.targetProposalId,
+      mergeTargetIds: mergeTargetIds(proposals.id),
     })
     .from(proposals)
     .innerJoin(
       processInstances,
       eq(processInstances.id, proposals.processInstanceId),
     )
-    .leftJoin(proposalRelationships, liveMergeEdgeFrom(proposals.id))
     .where(eq(proposals.profileId, profileId))
     .limit(1);
 
@@ -74,6 +69,6 @@ export async function assertProposalEngagementAccess({
   return {
     proposalId: proposal.id,
     processInstanceId: proposal.processInstanceId,
-    mergedIntoProposalId: proposal.mergedIntoProposalId,
+    mergeTargetIds: proposal.mergeTargetIds,
   };
 }
