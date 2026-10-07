@@ -374,5 +374,6 @@ export {
   isValidTypedPhoneNumber,
   normalizePhoneNumber,
   phoneNumberSchema,
+  safeParsePhoneNumber,
   toGoTruePhoneFormat,
 } from './services/notification/schemas';

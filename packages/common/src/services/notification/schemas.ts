@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import { ValidationError } from '../../utils/error';
-import type { GoTruePhoneFormat, PhoneNumber } from './types';
 
 /**
  * Validates E.164: a leading `+`, a non-zero country digit, then up to 14 more
@@ -26,7 +25,18 @@ export const phoneNumberSchema = z
   })
   .refine((value) => !/[\r\n]/.test(value), {
     message: 'Phone number must not contain CR or LF characters',
-  });
+  })
+  .brand<'PhoneNumber'>();
+
+/**
+ * An E.164 phone number, such as `+15005550006`, that has passed validation.
+ *
+ * Obtain one from {@link parsePhoneNumber} or {@link safeParsePhoneNumber}.
+ * The brand is attached by {@link phoneNumberSchema} itself, so those are the
+ * only ways to produce this type and an unchecked string cannot reach a
+ * vendor. At runtime the value is a plain string.
+ */
+export type PhoneNumber = z.infer<typeof phoneNumberSchema>;
 
 /** A {@link safeParsePhoneNumber} outcome: a branded number, or the reason it was rejected. */
 export type PhoneNumberParseResult =
@@ -67,7 +77,7 @@ export const safeParsePhoneNumber = (value: string): PhoneNumberParseResult => {
       error: new ValidationError(message, { phone: message }),
     };
   }
-  return { success: true, data: parsed.data as PhoneNumber };
+  return { success: true, data: parsed.data };
 };
 
 /**
@@ -152,6 +162,23 @@ export const normalizePhoneNumber = (value: string): string => {
 export const isValidTypedPhoneNumber = (raw: string): boolean =>
   phoneNumberSchema.safeParse(normalizePhoneNumber(raw)).success;
 
+const goTruePhoneSchema = phoneNumberSchema
+  .transform((phone) => phone.replace(/^\+/, ''))
+  .brand<'GoTruePhoneFormat'>();
+
+/**
+ * A phone number in the shape GoTrue stores it: the same E.164 digits, with
+ * the leading `+` dropped. `auth.users.phone` (and our `authUsers.phone`
+ * mirror) holds this, not {@link PhoneNumber} — confirmed against the local
+ * dev database, where every stored row is digits only, country code
+ * included, `+` never present.
+ *
+ * Compare against `authUsers.phone` with this type, never with
+ * {@link PhoneNumber} directly; the `+` never matches. Obtain one with
+ * {@link toGoTruePhoneFormat}.
+ */
+export type GoTruePhoneFormat = z.infer<typeof goTruePhoneSchema>;
+
 /**
  * Turns an E.164 number into the format GoTrue stores on `auth.users.phone`:
  * the same digits, with the leading `+` dropped.
@@ -164,7 +191,7 @@ export const isValidTypedPhoneNumber = (raw: string): boolean =>
  * and instead of comparing a raw `+`-prefixed value against `authUsers.phone`
  * directly, which never matches.
  *
- * @param phone - A number in E.164 form, branded or not.
+ * @param phone - A parsed number in E.164 form.
  * @returns The digits GoTrue stores: the same number, without the `+`.
  *
  * @example
@@ -175,9 +202,8 @@ export const isValidTypedPhoneNumber = (raw: string): boolean =>
  *   .where(eq(authUsers.phone, toGoTruePhoneFormat(to)));
  * ```
  */
-export const toGoTruePhoneFormat = (
-  phone: PhoneNumber | string,
-): GoTruePhoneFormat => phone.replace(/^\+/, '') as GoTruePhoneFormat;
+export const toGoTruePhoneFormat = (phone: PhoneNumber): GoTruePhoneFormat =>
+  goTruePhoneSchema.parse(phone);
 
 const SMS_CODE_PATTERN = /^\d{4,10}$/;
 

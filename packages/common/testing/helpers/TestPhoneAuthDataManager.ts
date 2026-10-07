@@ -2,11 +2,14 @@ import { db, eq } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
 import { createClient } from '@supabase/supabase-js';
 
-import { toGoTruePhoneFormat } from '../../src/services/notification/schemas';
+import {
+  type PhoneNumber,
+  toGoTruePhoneFormat,
+} from '../../src/services/notification/schemas';
 
 interface CreatePhoneUserOptions {
   /** The number, in E.164 form. */
-  phone: string;
+  phone: PhoneNumber;
   /** Whether GoTrue should mark the number confirmed at creation. */
   confirmed?: boolean;
   /**
@@ -117,7 +120,7 @@ export class TestPhoneAuthDataManager {
    * holds `phone` at that moment. Use it when the code under test creates the
    * row, so the test cannot know the id up front.
    */
-  cleanupByPhoneOnFinish(phone: string): void {
+  cleanupByPhoneOnFinish(phone: PhoneNumber): void {
     this.onTestFinishedCallback(() => this.removeByPhone(phone));
   }
 
@@ -125,7 +128,7 @@ export class TestPhoneAuthDataManager {
    * Removes the `auth.users` row holding `phone`, and the profile row that
    * mirrors it. Does nothing when no row holds the number.
    */
-  async removeByPhone(phone: string): Promise<void> {
+  async removeByPhone(phone: PhoneNumber): Promise<void> {
     const [authUser] = await db
       .select({ id: authUsers.id })
       .from(authUsers)

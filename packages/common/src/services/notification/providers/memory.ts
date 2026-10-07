@@ -1,4 +1,5 @@
-import type { PhoneNumber, SmsProvider, SmsSendResult } from '../types';
+import type { PhoneNumber } from '../schemas';
+import type { SmsProvider, SmsSendResult } from '../types';
 
 /** One message handed to the in-memory provider. */
 export interface RecordedSms {

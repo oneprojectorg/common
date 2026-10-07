@@ -2,12 +2,8 @@ import { logger } from '@op/logging';
 import twilio from 'twilio';
 
 import { CommonError } from '../../../utils/error';
-import type {
-  PhoneNumber,
-  SmsFailureReason,
-  SmsProvider,
-  SmsSendResult,
-} from '../types';
+import type { PhoneNumber } from '../schemas';
+import type { SmsFailureReason, SmsProvider, SmsSendResult } from '../types';
 
 /**
  * The Twilio SDK surface that {@link createTwilioProvider} calls.

@@ -2,7 +2,7 @@ import { TestPhoneAuthDataManager } from '@op/common/testing';
 import { randomInt } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { parsePhoneNumber } from '../notification/schemas';
+import { type PhoneNumber, parsePhoneNumber } from '../notification/schemas';
 import {
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
   getPhoneSignupState,
@@ -20,7 +20,7 @@ const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
 
 const createPhoneUser = (
   testData: TestPhoneAuthDataManager,
-  options: { phone: string; confirmed: boolean; codeSentAt?: Date },
+  options: { phone: PhoneNumber; confirmed: boolean; codeSentAt?: Date },
 ) => testData.createUser(options);
 
 describe.concurrent('getPhoneSignupState', () => {

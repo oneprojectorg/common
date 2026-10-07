@@ -1,8 +1,7 @@
 import { db, eq } from '@op/db/client';
 import { authUsers, users } from '@op/db/schema';
 
-import { toGoTruePhoneFormat } from '../notification/schemas';
-import type { PhoneNumber } from '../notification/types';
+import { type PhoneNumber, toGoTruePhoneFormat } from '../notification/schemas';
 
 /**
  * How long a texted code stays answerable. The inbound signup flow waits this

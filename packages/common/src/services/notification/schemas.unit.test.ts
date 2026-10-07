@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
 import {
   extractSmsCode,
+  type GoTruePhoneFormat,
   isValidTypedPhoneNumber,
   normalizePhoneNumber,
   parsePhoneNumber,
+  type PhoneNumber,
   safeParsePhoneNumber,
   toGoTruePhoneFormat,
 } from './schemas';
@@ -156,15 +158,25 @@ describe('toGoTruePhoneFormat', () => {
     ['+15005550006', '15005550006', 'a US number'],
     ['+442079460958', '442079460958', 'a UK number'],
   ])('turns %s into %s (%s)', (input, expected) => {
-    expect(toGoTruePhoneFormat(input)).toBe(expected);
+    expect(toGoTruePhoneFormat(parsePhoneNumber(input))).toBe(expected);
   });
 
   it('keeps the country code, dropping only the leading +', () => {
-    expect(toGoTruePhoneFormat('+15005550006')).toContain('1');
+    expect(toGoTruePhoneFormat(parsePhoneNumber('+15005550006'))).toContain(
+      '1',
+    );
   });
 
-  it('leaves a number with no leading + unchanged', () => {
-    expect(toGoTruePhoneFormat('15005550006')).toBe('15005550006');
+  it('accepts only a parsed number, so a raw string cannot reach the lookup', () => {
+    expectTypeOf(toGoTruePhoneFormat).parameter(0).toEqualTypeOf<PhoneNumber>();
+    expectTypeOf(toGoTruePhoneFormat).parameter(0).not.toEqualTypeOf<string>();
+  });
+
+  it('brands the result so it cannot be passed back as an E.164 number', () => {
+    expectTypeOf(
+      toGoTruePhoneFormat,
+    ).returns.toEqualTypeOf<GoTruePhoneFormat>();
+    expectTypeOf(toGoTruePhoneFormat).returns.not.toEqualTypeOf<PhoneNumber>();
   });
 });
 

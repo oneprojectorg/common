@@ -7,29 +7,7 @@
  * `getSmsProvider` picks one from the environment.
  */
 
-/**
- * An E.164 phone number, such as `+15005550006`, that has passed validation.
- *
- * Obtain one from `parsePhoneNumber` in `schemas.ts`. That function is the only
- * way to produce this type, so an unchecked string cannot reach a vendor. The
- * brand exists for that reason alone; at runtime the value is a plain string.
- */
-export type PhoneNumber = string & { readonly __brand: 'PhoneNumber' };
-
-/**
- * A phone number in the shape GoTrue stores it: the same E.164 digits, with
- * the leading `+` dropped. `auth.users.phone` (and our `authUsers.phone`
- * mirror) holds this, not {@link PhoneNumber} — confirmed against the local
- * dev database, where every stored row is digits only, country code
- * included, `+` never present.
- *
- * Compare against `authUsers.phone` with this type, never with
- * {@link PhoneNumber} directly; the `+` never matches. Obtain one with
- * `toGoTruePhoneFormat` in `schemas.ts`.
- */
-export type GoTruePhoneFormat = string & {
-  readonly __brand: 'GoTruePhoneFormat';
-};
+import type { PhoneNumber } from './schemas';
 
 /**
  * Why a send or a verification failed, in our vocabulary rather than a

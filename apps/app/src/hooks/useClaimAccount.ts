@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import {
   isSafeRedirectPath,
   normalizePhoneNumber,
+  safeParsePhoneNumber,
   toGoTruePhoneFormat,
 } from '@op/common/client';
 import { SUPPORTED_LOCALES } from '@op/common/locales';
@@ -191,6 +192,10 @@ export function useClaimAccount() {
       if (sessionData.session && !sessionData.session.user.is_anonymous) {
         return { ok: false, alreadySignedIn: true };
       }
+      const parsed = safeParsePhoneNumber(normalizePhoneNumber(phone));
+      if (!parsed.success) {
+        return { ok: false, message: parsed.error.message };
+      }
       if (!sessionData.session && mintAnonSession) {
         const { error } = await supabase.auth.signInAnonymously();
         if (error) {
@@ -199,9 +204,8 @@ export function useClaimAccount() {
         void utils.account.getMyAccount.invalidate();
       }
 
-      const normalized = normalizePhoneNumber(phone);
       const { data, error } = await supabase.auth.updateUser({
-        phone: normalized,
+        phone: parsed.data,
       });
       if (error) {
         return { ok: false, code: error.code, message: error.message };
@@ -211,7 +215,10 @@ export function useClaimAccount() {
       // rather than the E.164 string we sent, or an applied change would read
       // as pending and dead-end on a code screen with no code sent.
       const stored = data.user?.phone ?? '';
-      if (stored === toGoTruePhoneFormat(normalized) && !data.user?.new_phone) {
+      if (
+        stored === toGoTruePhoneFormat(parsed.data) &&
+        !data.user?.new_phone
+      ) {
         await supabase.auth.refreshSession();
         return { ok: true, needsOtp: false };
       }

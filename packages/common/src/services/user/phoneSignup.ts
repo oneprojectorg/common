@@ -1,7 +1,7 @@
 import { logger } from '@op/logging';
 import { createSBServiceClient } from '@op/supabase/server';
 
-import type { PhoneNumber } from '../notification/types';
+import type { PhoneNumber } from '../notification/schemas';
 
 const RATE_LIMITED_CODE = 'over_sms_send_rate_limit';
 const EXPIRED_OR_INVALID_CODE = 'otp_expired';
