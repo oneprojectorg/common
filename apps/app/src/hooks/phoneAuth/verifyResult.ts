@@ -4,7 +4,7 @@ const EXPIRED_CODE = 'otp_expired';
 
 export interface VerifyOtpAnswer {
   data: { session?: unknown } | null;
-  error: { code?: string } | null;
+  error: { code?: string; message?: string; status?: number } | null;
 }
 
 export const toVerifyResult = ({
