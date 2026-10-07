@@ -20,7 +20,7 @@ import {
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
 
-// The phase's profile slug is its id, and the profile holds its name.
+// phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
 export type PhaseDataInput = Omit<PhaseOverride, 'phaseId' | 'name'> &
@@ -30,8 +30,8 @@ type ClearablePhaseField = 'headline' | 'rubricTemplate';
 
 const SLUG_ATTEMPTS = 3;
 
-// No access check: callers authorize first. No settings check either: legacy
-// instance data can hold settings without a schema, and conversion copies it.
+// Callers authorize first. Settings are unchecked: legacy instance data can
+// hold settings without a schema, and conversion copies it.
 export const insertPhase = async ({
   tx,
   processInstanceId,
@@ -100,7 +100,6 @@ export const toPhaseDataPatch = (
 
 type PhaseSettingsFields = Pick<PhaseData, 'settings' | 'settingsSchema'>;
 
-// A phase's settings are only valid against the schema stored beside them.
 export const assertPhaseSettings = ({
   data,
   phaseLabel,
@@ -123,7 +122,6 @@ export const assertPhaseSettings = ({
   });
 };
 
-// Narrows a stored `data` column to the two fields the settings check reads.
 export const readPhaseSettings = (data: unknown): PhaseSettingsFields => {
   if (!isJsonObject(data)) {
     return {};
@@ -213,6 +211,6 @@ const generatePhaseSlug = () => randomUUID().slice(0, 8);
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-// Shape only; toPhaseDataPatch compiled it with Ajv before it was stored.
+// Shape only; Ajv compiles it when the settings are checked.
 const isSettingsSchema = (value: unknown): value is PhaseSettingsSchema =>
   isJsonObject(value);

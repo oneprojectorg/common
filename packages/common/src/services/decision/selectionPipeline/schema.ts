@@ -179,7 +179,7 @@ export const blockSchema: z.ZodType<Block, Block> = z.lazy(() =>
   ]),
 );
 
-/** A pipeline as a client may write it; the read-side encoders stay lenient. */
+// For writes; the read-side encoders stay lenient.
 export const selectionPipelineSchema: z.ZodType<
   SelectionPipeline,
   SelectionPipeline

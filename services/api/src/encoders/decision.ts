@@ -571,16 +571,14 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
 const isJsonObject = (value: unknown) =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-// Lenient so stored phases always load, but the pipeline passes through whole:
-// selectionPipelineEncoder keeps only the fields every block shares.
+// selectionPipelineEncoder strips block-specific fields; pass the pipeline whole.
 export const phaseDataEncoder = instancePhaseDataEncoder
   .omit({ phaseId: true, name: true })
   .extend({
     selectionPipeline: z.custom<SelectionPipeline>(isJsonObject).optional(),
   });
 
-// The name lives on the phase's profile. The service compiles the settings
-// schema and checks settings against it.
+// name lives on the phase's profile; the service validates settingsSchema.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder
   .omit({ phaseId: true, name: true })
   .extend({

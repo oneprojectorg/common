@@ -65,7 +65,6 @@ describe.concurrent('insertPhase slug', () => {
 });
 
 describe.concurrent('insertPhase data', () => {
-  // Legacy instance data can hold settings with no schema; conversion copies it.
   it('stores settings without a settings schema', async ({
     task,
     onTestFinished,
