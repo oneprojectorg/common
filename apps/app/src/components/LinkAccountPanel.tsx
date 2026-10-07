@@ -1,5 +1,6 @@
 'use client';
 
+import { codeFailureMessage } from '@/hooks/phoneAuth/failureMessage';
 import {
   getClaimEmailErrorMessage,
   goToOnboarding,
@@ -125,7 +126,7 @@ export const LinkAccountPanel = () => {
         goAfterLink();
         return;
       }
-      setTokenError(result.message ?? t('auth.verifyCodeError'));
+      setTokenError(codeFailureMessage(result.reason, t));
     } catch {
       setTokenError(t('auth.verifyCodeError'));
     }

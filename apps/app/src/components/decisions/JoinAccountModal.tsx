@@ -1,5 +1,6 @@
 'use client';
 
+import { codeFailureMessage } from '@/hooks/phoneAuth/failureMessage';
 import {
   getClaimEmailErrorMessage,
   getClaimPhoneErrorMessage,
@@ -252,7 +253,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
         goAfterClaim();
         return;
       }
-      setError(result.message ?? t('auth.verifyCodeError'));
+      setError(codeFailureMessage(result.reason, t));
     } catch {
       setError(t('auth.verifyCodeError'));
     }
