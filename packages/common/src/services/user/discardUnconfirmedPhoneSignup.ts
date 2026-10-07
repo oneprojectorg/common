@@ -1,9 +1,7 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq, isNull, lte, or } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
 import { logger } from '@op/logging';
-import { createSBServiceClient } from '@op/supabase/server';
 
-import { CommonError } from '../../utils/error';
 import { type PhoneNumber, toGoTruePhoneFormat } from '../notification/schemas';
 
 export type PhoneSignupDiscard =
@@ -18,11 +16,7 @@ export const discardUnconfirmedPhoneSignup = async ({
   codeSentNoLaterThan: Date;
 }): Promise<PhoneSignupDiscard> => {
   const [authUser] = await db
-    .select({
-      id: authUsers.id,
-      phoneConfirmedAt: authUsers.phoneConfirmedAt,
-      confirmationSentAt: authUsers.confirmationSentAt,
-    })
+    .select({ id: authUsers.id })
     .from(authUsers)
     .where(eq(authUsers.phone, toGoTruePhoneFormat(phone)))
     .limit(1);
@@ -31,31 +25,41 @@ export const discardUnconfirmedPhoneSignup = async ({
     return { status: 'kept', reason: 'no_row' };
   }
 
-  if (authUser.phoneConfirmedAt) {
-    return { status: 'kept', reason: 'confirmed' };
-  }
-
-  if (
-    authUser.confirmationSentAt &&
-    authUser.confirmationSentAt > codeSentNoLaterThan
-  ) {
-    return { status: 'kept', reason: 'newer_attempt' };
-  }
-
   const [user] = await db
     .select({ profileId: users.profileId })
     .from(users)
     .where(eq(users.authUserId, authUser.id))
     .limit(1);
 
-  const { error } = await createSBServiceClient().auth.admin.deleteUser(
-    authUser.id,
-  );
+  const [deleted] = await db
+    .delete(authUsers)
+    .where(
+      and(
+        eq(authUsers.id, authUser.id),
+        isNull(authUsers.phoneConfirmedAt),
+        or(
+          isNull(authUsers.confirmationSentAt),
+          lte(authUsers.confirmationSentAt, codeSentNoLaterThan),
+        ),
+      ),
+    )
+    .returning({ id: authUsers.id });
 
-  if (error) {
-    throw new CommonError(
-      `GoTrue refused to delete an abandoned phone signup: ${error.message}`,
-    );
+  if (!deleted) {
+    const [kept] = await db
+      .select({ phoneConfirmedAt: authUsers.phoneConfirmedAt })
+      .from(authUsers)
+      .where(eq(authUsers.id, authUser.id))
+      .limit(1);
+
+    if (!kept) {
+      return { status: 'kept', reason: 'no_row' };
+    }
+
+    return {
+      status: 'kept',
+      reason: kept.phoneConfirmedAt ? 'confirmed' : 'newer_attempt',
+    };
   }
 
   if (user?.profileId) {
@@ -63,8 +67,8 @@ export const discardUnconfirmedPhoneSignup = async ({
   }
 
   logger.info('Discarded an abandoned phone signup', {
-    authUserId: authUser.id,
+    authUserId: deleted.id,
   });
 
-  return { status: 'discarded', authUserId: authUser.id };
+  return { status: 'discarded', authUserId: deleted.id };
 };
