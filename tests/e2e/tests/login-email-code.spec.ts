@@ -56,4 +56,25 @@ test.describe('Login by email code', () => {
       page.getByRole('heading', { level: 1, name: /Welcome back/ }),
     ).toBeVisible({ timeout: 15_000 });
   });
+
+  test('switching channel and back leaves the send button disabled until an address is typed again', async ({
+    page,
+  }) => {
+    await page.goto('/login', { waitUntil: 'networkidle' });
+
+    const emailField = page.getByRole('textbox', { name: 'Email' });
+    const sendButton = page.getByRole('button', { name: 'Email me a code' });
+
+    await emailField.fill('person@example.com');
+    await expect(sendButton).toBeEnabled();
+
+    await page.getByRole('tab', { name: 'Phone number' }).click();
+    await page.getByRole('tab', { name: 'Email' }).click();
+
+    await expect(emailField).toHaveValue('');
+    await expect(sendButton).toBeDisabled();
+
+    await emailField.fill('person@example.com');
+    await expect(sendButton).toBeEnabled();
+  });
 });

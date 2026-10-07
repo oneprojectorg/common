@@ -11,7 +11,6 @@ import { SocialLinks } from '@op/sense/SocialLinks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -33,6 +32,7 @@ import {
   useAuthPanelStore,
 } from './AuthPanel';
 import { CommonLogo } from './CommonLogo';
+import { isValidEmail } from './decisions/emailUtils';
 
 /** Which of the four screens the panel is showing. */
 type LoginStep = 'phone-code' | 'phone-number' | 'email-address' | 'email-code';
@@ -57,8 +57,6 @@ export const LoginPanel = () => {
   const {
     email,
     setEmail,
-    emailIsValid,
-    setEmailIsValid,
     token,
     setToken,
     tokenError,
@@ -165,7 +163,7 @@ export const LoginPanel = () => {
 
   const combinedError = (login.error?.message || error) ?? undefined;
 
-  const emailParser = z.email();
+  const emailIsValid = isValidEmail(email);
 
   const requestEmailCode = () => {
     void login.refetch().then(({ data }) => {
@@ -330,10 +328,7 @@ export const LoginPanel = () => {
               email={{
                 value: email,
                 isDisabled: isLoading,
-                onChange: (val) => {
-                  setEmailIsValid(emailParser.safeParse(val).success);
-                  setEmail(val);
-                },
+                onChange: setEmail,
                 onSubmit: requestEmailCode,
               }}
               phone={{
