@@ -49,7 +49,7 @@ export const assertProfileTypeAccess = async ({
     // `enumToPgEnum` widens enum columns to `string`; narrowing here until
     // the helper preserves literal types.
     const type = row.type as EntityType;
-    // Phase access resolves against its decision, never the phase profile.
+    // No policy fits a phase: view and manage resolve against its decision.
     if (type === EntityType.PHASE) {
       throw new UnauthorizedError('You do not have access to this profile');
     }

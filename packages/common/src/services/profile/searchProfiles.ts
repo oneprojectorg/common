@@ -23,7 +23,7 @@ export const searchProfiles = async ({
   }
   // TODO: assert authorization
 
-  // Phases are only reached through their decision.
+  // Search has no access check, so phase names would leak across decisions.
   const searchableTypes = types.filter((type) => type !== EntityType.PHASE);
 
   if (query.length < 2) {
