@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { useDebounce } from '@op/hooks';
 import {
   Combobox,
@@ -14,6 +13,7 @@ import {
 } from '@op/sense/Combobox';
 import { Label } from '@op/sense/Label';
 import { Spinner } from '@op/sense/Spinner';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
@@ -34,17 +34,20 @@ export const GeoNamesMultiSelect = ({
   onChange: (value: Array<Option>) => void;
   isRequired?: boolean;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
   const [debouncedQuery] = useDebounce(whereWeWorkQuery, 300);
-  const { data: geoNamesData, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
-    {
-      q: debouncedQuery,
-    },
-    {
-      enabled: debouncedQuery.length >= 2,
-      placeholderData: (prev) => prev,
-    },
+  const { data: geoNamesData, isLoading } = useQuery(
+    trpc.taxonomy.getGeoNames.queryOptions(
+      {
+        q: debouncedQuery,
+      },
+      {
+        enabled: debouncedQuery.length >= 2,
+        placeholderData: (prev) => prev,
+      },
+    ),
   );
   const geoNames = geoNamesData?.items;
 

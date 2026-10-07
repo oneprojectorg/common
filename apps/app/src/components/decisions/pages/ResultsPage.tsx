@@ -1,8 +1,7 @@
 'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { hasVotingPhase } from '@op/common/client';
 import { match } from '@op/core';
@@ -14,6 +13,8 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Skeleton } from '@op/sense/Skeleton';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -65,9 +66,12 @@ function ResultsPageLegacy({
   instanceId: string;
   profileSlug: string;
 }) {
-  const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
-    instanceId,
-  });
+  const trpc = useTRPC();
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getLegacyInstance.queryOptions({
+      instanceId,
+    }),
+  );
   return (
     <ResultsPageContent
       instanceId={instanceId}
@@ -95,12 +99,15 @@ export function ResultsPage({
   /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
   pinOffset?: number;
 }) {
+  const trpc = useTRPC();
   if (useLegacy) {
     return (
       <ResultsPageLegacy instanceId={instanceId} profileSlug={profileSlug} />
     );
   }
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   return (
     <ResultsPageContent
       instanceId={instanceId}
@@ -302,10 +309,13 @@ function ProcessSurveyGate({
 }
 
 function ProcessSurveyGateInner({ instanceId }: { instanceId: string }) {
+  const trpc = useTRPC();
   const [skipped, setSkipped] = useState(() => hasSurveySkipCookie(instanceId));
-  const { data } = trpc.decision.getProcessSurveyResponse.useQuery(
-    { processInstanceId: instanceId },
-    { retry: false, staleTime: Infinity, enabled: !skipped },
+  const { data } = useQuery(
+    trpc.decision.getProcessSurveyResponse.queryOptions(
+      { processInstanceId: instanceId },
+      { retry: false, staleTime: Infinity, enabled: !skipped },
+    ),
   );
 
   if (skipped) {

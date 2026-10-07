@@ -1,6 +1,5 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProposalCategory } from '@op/common';
 import { Button } from '@op/sense/Button';
 import {
@@ -18,6 +17,7 @@ import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -43,10 +43,13 @@ export function ProposalCategoriesSectionContent({
   decisionProfileId,
   instanceId,
 }: SectionProps) {
+  const trpc = useTRPC();
   const t = useTranslations();
 
   // Fetch server data for seeding
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { data: instance } = useSuspenseQuery(
+    trpc.decision.getInstance.queryOptions({ instanceId }),
+  );
   const serverConfig = instance.instanceData?.config;
 
   const storeData = useProcessBuilderStore(

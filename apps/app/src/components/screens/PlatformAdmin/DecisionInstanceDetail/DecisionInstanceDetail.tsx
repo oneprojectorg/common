@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type {
   AdminDecisionConfig,
@@ -19,6 +19,7 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useFormatter } from 'next-intl';
 import { Suspense, useState } from 'react';
 import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy } from 'react-icons/lu';
@@ -61,11 +62,14 @@ const DecisionInstanceDetailContent = ({
 }: {
   instanceId: string;
 }) => {
+  const trpc = useTRPC();
   const t = useTranslations();
   const format = useFormatter();
-  const [detail] = trpc.platform.admin.getDecisionInstance.useSuspenseQuery({
-    instanceId,
-  });
+  const { data: detail } = useSuspenseQuery(
+    trpc.platform.admin.getDecisionInstance.queryOptions({
+      instanceId,
+    }),
+  );
 
   const createdAt = detail.createdAt ? new Date(detail.createdAt) : null;
 

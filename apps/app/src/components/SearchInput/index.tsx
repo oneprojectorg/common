@@ -1,7 +1,7 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { useLocalStorage } from '@/utils/useLocalStorage';
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import { EntityType, ProfileSearchResult } from '@op/api/encoders';
 import { match } from '@op/core';
 import { useDebounce } from '@op/hooks';
@@ -17,6 +17,7 @@ import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { Spinner } from '@op/sense/Spinner';
 import { firstStrongDirection } from '@op/sense/lib/textDirection';
 import { cn } from '@op/sense/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuClock, LuSearch } from 'react-icons/lu';
@@ -31,6 +32,7 @@ interface ProfileCommandItemProps {
 }
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
+  const trpc = useTRPC();
   const router = useRouter();
   const t = useTranslations();
   const [query, setQuery] = useState<string>('');
@@ -51,8 +53,8 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const { data: profileResults, isFetching: isSearching } =
-    trpc.profile.search.useQuery(
+  const { data: profileResults, isFetching: isSearching } = useQuery(
+    trpc.profile.search.queryOptions(
       {
         q: debouncedQuery,
         types: [EntityType.INDIVIDUAL, EntityType.ORG],
@@ -63,7 +65,8 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         placeholderData: (prev) => prev,
         enabled: debouncedQuery.length > 1,
       },
-    );
+    ),
+  );
 
   const mergedProfileResults = profileResults
     ? profileResults

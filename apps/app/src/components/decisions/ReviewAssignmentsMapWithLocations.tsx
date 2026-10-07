@@ -1,7 +1,7 @@
 'use client';
-
-import { trpc } from '@op/api/client';
+import { useTRPC } from '@op/api/client';
 import type { ProposalReviewAssignmentStatus } from '@op/common/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import {
   ProposalsMapView,
@@ -30,15 +30,16 @@ export function ReviewAssignmentsMapWithLocations({
   locationFilter,
   ...props
 }: ReviewAssignmentsMapWithLocationsProps) {
-  const [{ items: pinProposals }] =
-    trpc.decision.listReviewAssignmentLocations.useSuspenseQuery(
-      locationFilter,
-      {
-        // A client-side fetch is what registers the realtime invalidation
-        // channel, so a cached result must not skip the request on mount.
-        refetchOnMount: 'always',
-      },
-    );
+  const trpc = useTRPC();
+  const {
+    data: { items: pinProposals },
+  } = useSuspenseQuery(
+    trpc.decision.listReviewAssignmentLocations.queryOptions(locationFilter, {
+      // A client-side fetch is what registers the realtime invalidation
+      // channel, so a cached result must not skip the request on mount.
+      refetchOnMount: 'always',
+    }),
+  );
 
   return <ProposalsMapView {...props} pinProposals={pinProposals} />;
 }
