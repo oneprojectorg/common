@@ -9,8 +9,9 @@ import {
   phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
+  selectionPipelineSchema,
 } from '@op/common/client';
-import type { JSONContent } from '@op/common/client';
+import type { JSONContent, PhaseSettingsSchema } from '@op/common/client';
 import type { PhaseRules as CommonPhaseRules } from '@op/common/src/services/decision';
 import {
   ProcessStatus,
@@ -569,13 +570,19 @@ export const phaseDataEncoder = instancePhaseDataEncoder.omit({
   name: true,
 });
 
-// The name lives on the phase's profile; the template owns the pipeline and settings schema.
-export const phaseDataInputEncoder = instancePhaseDataInputEncoder.omit({
-  phaseId: true,
-  name: true,
-  selectionPipeline: true,
-  settingsSchema: true,
-});
+// The name lives on the phase's profile. The service compiles the settings
+// schema and checks settings against it.
+export const phaseDataInputEncoder = instancePhaseDataInputEncoder
+  .omit({ phaseId: true, name: true })
+  .extend({
+    settingsSchema: z
+      .custom<PhaseSettingsSchema>(
+        (value) =>
+          typeof value === 'object' && value !== null && !Array.isArray(value),
+      )
+      .optional(),
+    selectionPipeline: selectionPipelineSchema.optional(),
+  });
 
 export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),

@@ -64,6 +64,29 @@ describe.concurrent('insertPhase slug', () => {
   });
 });
 
+describe.concurrent('insertPhase data', () => {
+  // Legacy instance data can hold settings with no schema; conversion copies it.
+  it('stores settings without a settings schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, testData } = await setup(task, onTestFinished);
+
+    const { phase, profile } = await db.transaction((tx) =>
+      insertPhase({
+        tx,
+        processInstanceId: instanceId,
+        name: 'Voting',
+        sortOrder: 0,
+        data: { settings: { budget: 100 } },
+      }),
+    );
+    testData.trackProfileForCleanup(profile.id);
+
+    expect(phase.data).toEqual({ settings: { budget: 100 } });
+  });
+});
+
 const setup = async (
   task: { id: string },
   onTestFinished: (fn: () => void | Promise<void>) => void,

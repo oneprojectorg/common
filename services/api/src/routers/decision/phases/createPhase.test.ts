@@ -207,6 +207,84 @@ describe.concurrent('createPhase', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
+  it('accepts a settings schema, settings and a pipeline from the client', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    const data = {
+      settingsSchema: {
+        type: 'object' as const,
+        properties: { budget: { type: 'number' as const, minimum: 0 } },
+      },
+      settings: { budget: 50000 },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [
+          {
+            id: 'funded',
+            type: 'filter' as const,
+            condition: {
+              operator: 'greaterThan' as const,
+              left: { field: 'voteData.approvalRate' },
+              right: { value: 0.5 },
+            },
+          },
+        ],
+      },
+    };
+    const result = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'Voting',
+      sortOrder: 0,
+      data,
+    });
+    testData.trackProfileForCleanup(result.profileId);
+
+    const phase = await db.query.processPhases.findFirst({
+      where: { id: result.id },
+    });
+    expect(phase?.data).toEqual(data);
+  });
+
+  it('rejects settings without a schema and a pipeline block no executor handles', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    await expect(
+      adminCaller.decision.createPhase({
+        instanceId,
+        name: 'Voting',
+        sortOrder: 0,
+        data: { settings: { budget: 50000 } },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    await expect(
+      adminCaller.decision.createPhase({
+        instanceId,
+        name: 'Voting',
+        sortOrder: 0,
+        data: {
+          selectionPipeline: {
+            version: '1.0.0',
+            // @ts-expect-error not a block type
+            blocks: [{ id: 'top', type: 'limt', count: 3 }],
+          },
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
   it('requires authentication', async () => {
     const caller = await createUnauthenticatedCaller();
 
