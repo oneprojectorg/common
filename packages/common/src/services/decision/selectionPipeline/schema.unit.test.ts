@@ -20,9 +20,12 @@ describe('selectionPipelineSchema', () => {
     expect(knownPipelines.length).toBeGreaterThan(0);
   });
 
-  it.each(knownPipelines)('accepts the %s pipeline unchanged', (_, pipeline) => {
-    expect(selectionPipelineSchema.parse(pipeline)).toEqual(pipeline);
-  });
+  it.each(knownPipelines)(
+    'accepts the %s pipeline unchanged',
+    (_, pipeline) => {
+      expect(selectionPipelineSchema.parse(pipeline)).toEqual(pipeline);
+    },
+  );
 
   it('keeps block fields beyond the shared ones', () => {
     const pipeline = {
@@ -49,7 +52,10 @@ describe('selectionPipelineSchema', () => {
                   type: 'filter',
                   condition: {
                     function: 'coalesce',
-                    arguments: [{ field: 'voteData.approvalRate' }, { value: 0 }],
+                    arguments: [
+                      { field: 'voteData.approvalRate' },
+                      { value: 0 },
+                    ],
                   },
                 },
               ],
@@ -61,7 +67,9 @@ describe('selectionPipelineSchema', () => {
           id: 'rank',
           type: 'score',
           scoreField: 'metadata.score',
-          formula: [{ field: 'voteData.likesCount', weight: 2, normalize: true }],
+          formula: [
+            { field: 'voteData.likesCount', weight: 2, normalize: true },
+          ],
         },
       ],
       variables: { threshold: 5 },
@@ -100,11 +108,14 @@ describe('selectionPipelineSchema', () => {
   it.each([
     ['an empty logical expression', {}],
     ['a literal without a value', { value: undefined }],
-    ['an unknown comparison operator', {
-      operator: 'roughlyEquals',
-      left: { field: 'a' },
-      right: { value: 1 },
-    }],
+    [
+      'an unknown comparison operator',
+      {
+        operator: 'roughlyEquals',
+        left: { field: 'a' },
+        right: { value: 1 },
+      },
+    ],
     ['two expression kinds at once', { field: 'a', variable: 'b' }],
   ])('rejects %s', (_, condition) => {
     expect(

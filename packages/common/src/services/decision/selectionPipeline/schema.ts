@@ -73,13 +73,14 @@ export const expressionSchema: z.ZodType<Expression, Expression> = z.lazy(() =>
   ]),
 );
 
-const scoringCriteriaSchema: z.ZodType<ScoringCriteria, ScoringCriteria> = z.strictObject({
-  field: z.union([z.string(), expressionSchema]).optional(),
-  expression: expressionSchema.optional(),
-  weight: z.number(),
-  normalize: z.boolean().optional(),
-  invert: z.boolean().optional(),
-});
+const scoringCriteriaSchema: z.ZodType<ScoringCriteria, ScoringCriteria> =
+  z.strictObject({
+    field: z.union([z.string(), expressionSchema]).optional(),
+    expression: expressionSchema.optional(),
+    weight: z.number(),
+    normalize: z.boolean().optional(),
+    invert: z.boolean().optional(),
+  });
 
 const blockBase = {
   id: z.string().min(1),
@@ -179,10 +180,12 @@ export const blockSchema: z.ZodType<Block, Block> = z.lazy(() =>
 );
 
 /** A pipeline as a client may write it; the read-side encoders stay lenient. */
-export const selectionPipelineSchema: z.ZodType<SelectionPipeline, SelectionPipeline> =
-  z.strictObject({
-    version: z.string().min(1),
-    blocks: z.array(blockSchema),
-    output: z.string().optional(),
-    variables: z.record(z.string(), z.unknown()).optional(),
-  });
+export const selectionPipelineSchema: z.ZodType<
+  SelectionPipeline,
+  SelectionPipeline
+> = z.strictObject({
+  version: z.string().min(1),
+  blocks: z.array(blockSchema),
+  output: z.string().optional(),
+  variables: z.record(z.string(), z.unknown()).optional(),
+});

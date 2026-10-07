@@ -128,19 +128,25 @@ describe.concurrent('createPhase', () => {
       'a settings schema that does not compile',
       { settingsSchema: { type: 'object' as const, minProperties: -1 } },
     ],
-  ] as const)('rejects %s and writes nothing', async ([, data], {
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, user } = await setup(task, onTestFinished);
+  ] as const)(
+    'rejects %s and writes nothing',
+    async ([, data], { task, onTestFinished }) => {
+      const { instanceId, user } = await setup(task, onTestFinished);
 
-    const name = `Unsettled ${randomUUID()}`;
-    await expect(
-      createPhase({ user, processInstanceId: instanceId, name, sortOrder: 0, data }),
-    ).rejects.toThrow(ValidationError);
+      const name = `Unsettled ${randomUUID()}`;
+      await expect(
+        createPhase({
+          user,
+          processInstanceId: instanceId,
+          name,
+          sortOrder: 0,
+          data,
+        }),
+      ).rejects.toThrow(ValidationError);
 
-    await expectNoProfileNamed(name);
-  });
+      await expectNoProfileNamed(name);
+    },
+  );
 
   it('stores a selection pipeline with every block field intact', async ({
     task,
