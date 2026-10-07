@@ -83,6 +83,98 @@ describe.concurrent('createPhase', () => {
     await expectNoProfileNamed(name);
   });
 
+  it('stores settings that match the settings schema beside them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+
+    const data = {
+      settingsSchema: {
+        type: 'object' as const,
+        required: ['maxVotesPerMember'],
+        properties: {
+          maxVotesPerMember: { type: 'number' as const, minimum: 1 },
+        },
+        ui: { maxVotesPerMember: { 'ui:widget': 'number' } },
+      },
+      settings: { maxVotesPerMember: 5 },
+    };
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: 'Voting',
+      sortOrder: 0,
+      data,
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    expect(phase.data).toEqual(data);
+  });
+
+  it.for([
+    ['settings without a settings schema', { settings: { budget: 100 } }],
+    [
+      'settings that do not match the schema',
+      {
+        settingsSchema: {
+          type: 'object' as const,
+          properties: { budget: { type: 'number' as const, minimum: 0 } },
+        },
+        settings: { budget: 'lots' },
+      },
+    ],
+    [
+      'a settings schema that does not compile',
+      { settingsSchema: { type: 'object' as const, minProperties: -1 } },
+    ],
+  ] as const)('rejects %s and writes nothing', async ([, data], {
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user } = await setup(task, onTestFinished);
+
+    const name = `Unsettled ${randomUUID()}`;
+    await expect(
+      createPhase({ user, processInstanceId: instanceId, name, sortOrder: 0, data }),
+    ).rejects.toThrow(ValidationError);
+
+    await expectNoProfileNamed(name);
+  });
+
+  it('stores a selection pipeline with every block field intact', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+
+    const selectionPipeline = {
+      version: '1.0.0',
+      blocks: [
+        {
+          id: 'enough-votes',
+          type: 'filter' as const,
+          condition: {
+            operator: 'greaterThanOrEquals' as const,
+            left: { field: 'voteData.voteCount' },
+            right: { value: 3 },
+          },
+        },
+        { id: 'top', type: 'limit' as const, count: 2 },
+      ],
+    };
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: 'Voting',
+      sortOrder: 0,
+      data: { selectionPipeline },
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    expect(phase.data).toEqual({ selectionPipeline });
+  });
+
   it('writes no roles and no members on the phase profile', async ({
     task,
     onTestFinished,

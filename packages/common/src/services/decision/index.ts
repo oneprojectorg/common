@@ -202,6 +202,7 @@ export type {
   DecisionInstanceData,
   PhaseInstanceData,
   PhaseOverride,
+  PhaseSettingsSchema,
 } from './schemas/instanceData';
 export {
   createInstanceDataFromTemplate,

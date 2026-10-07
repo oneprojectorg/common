@@ -6,6 +6,7 @@ import { NotFoundError } from '../../utils';
 import {
   type PhaseDataInput,
   assertDecisionAdmin,
+  assertPhaseSettings,
   insertPhase,
   toPhaseDataPatch,
 } from './phaseHelpers';
@@ -24,6 +25,7 @@ export const createPhase = async ({
   data?: PhaseDataInput;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
   const phaseData = toPhaseDataPatch(data ?? {}).set;
+  assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },

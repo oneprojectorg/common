@@ -10,21 +10,27 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { randomUUID } from 'node:crypto';
 
-import { CommonError, NotFoundError } from '../../utils';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { schemaValidator } from './schemaValidator';
-import type { PhaseInstanceData, PhaseOverride } from './schemas/instanceData';
+import {
+  type PhaseInstanceData,
+  type PhaseOverride,
+  assertSettingsMatchSchema,
+} from './schemas/instanceData';
 
 // The phase's profile slug is its id, and the profile holds its name.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
-export type PhaseDataInput = Omit<PhaseOverride, 'phaseId' | 'name'>;
+export type PhaseDataInput = Omit<PhaseOverride, 'phaseId' | 'name'> &
+  Pick<PhaseInstanceData, 'settingsSchema' | 'selectionPipeline'>;
 
 type ClearablePhaseField = 'headline' | 'rubricTemplate';
 
 const SLUG_ATTEMPTS = 3;
 
-// No access check: callers authorize first.
+// No access check: callers authorize first. No settings check either: legacy
+// instance data can hold settings without a schema, and conversion copies it.
 export const insertPhase = async ({
   tx,
   processInstanceId,
@@ -68,6 +74,10 @@ export const toPhaseDataPatch = (
   if (rubricTemplate != null) {
     schemaValidator.validateJsonSchema(rubricTemplate);
   }
+  if (rest.settingsSchema) {
+    const { ui: _ui, ...settingsSchema } = rest.settingsSchema;
+    schemaValidator.validateJsonSchema(settingsSchema);
+  }
 
   const clear: ClearablePhaseField[] = [];
   if (headline === null) {
@@ -85,6 +95,29 @@ export const toPhaseDataPatch = (
     },
     clear,
   };
+};
+
+// A phase's settings are only valid against the schema stored beside them.
+export const assertPhaseSettings = ({
+  data,
+  phaseLabel,
+}: {
+  data: PhaseData;
+  phaseLabel: string;
+}): void => {
+  if (!data.settings) {
+    return;
+  }
+  if (!data.settingsSchema) {
+    throw new ValidationError('Phase settings need a settings schema', {
+      settingsSchema: 'Required when settings are given',
+    });
+  }
+  assertSettingsMatchSchema({
+    settings: data.settings,
+    settingsSchema: data.settingsSchema,
+    phaseLabel,
+  });
 };
 
 export const getPhaseAsDecisionAdmin = async ({
