@@ -28,7 +28,6 @@ export async function setupPhase(
     instanceId: setup.instance.instance.id,
     name: PHASE_NAME,
     sortOrder: 0,
-    data: { phaseId: 'review' },
   });
   testData.trackProfileForCleanup(phase.profileId);
 

@@ -72,7 +72,6 @@ describe.concurrent('deleteDecision', () => {
     const phaseInput = {
       name: 'Review',
       sortOrder: 0,
-      data: { phaseId: 'review' },
     };
     const [phase, otherPhase] = await Promise.all([
       caller.decision.createPhase({

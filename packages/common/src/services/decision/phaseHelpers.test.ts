@@ -21,7 +21,6 @@ describe.concurrent('insertPhase slug', () => {
         processInstanceId: instanceId,
         name: 'Review',
         sortOrder: 0,
-        data: { phaseId: 'review' },
         generateSlug: () => slugs.shift() ?? randomUUID().slice(0, 8),
       }),
     );
@@ -45,7 +44,6 @@ describe.concurrent('insertPhase slug', () => {
           processInstanceId: instanceId,
           name,
           sortOrder: 0,
-          data: { phaseId: 'review' },
           generateSlug: () => {
             attempts++;
             return taken;
