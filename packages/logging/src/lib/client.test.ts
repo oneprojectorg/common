@@ -157,6 +157,42 @@ describe('client logger', () => {
   });
 
   /**
+   * Given a non-Error value under `error` that carries an address
+   * When it is logged
+   * Then Error Tracking receives it as `originalError`, redacted like any
+   * other attribute
+   */
+  it('redacts a non-Error value under the error key before Error Tracking sees it', () => {
+    logger.error('Invite failed', {
+      error: { email: 'person@example.com', status: 422 },
+    });
+
+    expect(exceptions[0]?.properties).toMatchObject({
+      originalError: '{"email":"[redacted]@example.com","status":422}',
+    });
+  });
+
+  /**
+   * Given data that JSON cannot serialise
+   * When it is logged
+   * Then the logger still sends both records, with a placeholder for the
+   * value, rather than throwing inside the caller
+   */
+  it('does not throw on a value JSON cannot serialise', () => {
+    const circular: { items: Array<unknown> } = { items: [] };
+    circular.items.push(circular);
+
+    expect(() =>
+      logger.error('Sync failed', { circular, size: 1n }),
+    ).not.toThrow();
+    expect(lastLog().attributes).toEqual({
+      circular: '(Could not serialize value)',
+      size: '1',
+    });
+    expect(exceptions).toHaveLength(1);
+  });
+
+  /**
    * Given a warning
    * When it is logged
    * Then it reaches Error Tracking at warning level

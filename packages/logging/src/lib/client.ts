@@ -138,8 +138,18 @@ const toLogAttributeValue = (value: unknown): LogAttributes[string] => {
   }
 
   if (typeof value === 'object') {
-    return redactEmails(JSON.stringify(value));
+    return redactEmails(serialize(value));
   }
 
-  return String(value);
+  return serialize(value);
+};
+
+const UNSERIALIZABLE = '(Could not serialize value)';
+
+const serialize = (value: unknown): string => {
+  try {
+    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+  } catch {
+    return UNSERIALIZABLE;
+  }
 };
