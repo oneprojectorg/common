@@ -8,6 +8,39 @@ export const APP_PORT = appPortEnv ? Number.parseInt(appPortEnv, 10) : 3100;
 
 const apiPortEnv = process.env.API_PORT || process.env.NEXT_PUBLIC_API_PORT;
 export const API_PORT = apiPortEnv ? Number.parseInt(apiPortEnv, 10) : 3300;
+
+// Each OTP length is a per-deployment setting. Supabase generates the email
+// code and Twilio Verify generates the SMS code, and each service configures
+// its own length, so the two can differ on one deployment. The defaults match
+// what the hosted Supabase project emails (10) and what a Verify service
+// texts (6); every supabase/*.toml this repo controls sets the same email
+// length. A deployment whose services differ sets the variables to match
+// rather than editing client code.
+const parseOtpLength = (
+  value: string | undefined,
+  defaultLength: number,
+): number => {
+  const parsed = value ? Number.parseInt(value, 10) : NaN;
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : defaultLength;
+};
+
+export const AUTH_EMAIL_OTP_LENGTH = parseOtpLength(
+  process.env.AUTH_EMAIL_OTP_LENGTH ||
+    process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP_LENGTH,
+  10,
+);
+
+export const AUTH_SMS_OTP_LENGTH = parseOtpLength(
+  process.env.AUTH_SMS_OTP_LENGTH ||
+    process.env.NEXT_PUBLIC_AUTH_SMS_OTP_LENGTH,
+  6,
+);
+
+export type AuthOtpChannel = 'email' | 'phone';
+
+/** The length of the code the given channel delivers on this deployment. */
+export const getAuthOtpLength = (channel: AuthOtpChannel): number =>
+  channel === 'phone' ? AUTH_SMS_OTP_LENGTH : AUTH_EMAIL_OTP_LENGTH;
 export const UI_WORKSHOP_PORT = 3600;
 export const EMAILS_PORT = 3883;
 export const ORM_VIZ_PORT = 3700;

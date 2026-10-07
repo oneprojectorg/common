@@ -9,3 +9,4 @@ export {
 } from './auth';
 export { createOrganization, createUser } from '@op/common/testing/data';
 export { waitForAutoSave } from './autosave';
+export { readLoginCode } from './mail';

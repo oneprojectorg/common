@@ -1,5 +1,6 @@
 'use client';
 
+import { codeFailureMessage } from '@/hooks/phoneAuth/failureMessage';
 import {
   getClaimEmailErrorMessage,
   goToOnboarding,
@@ -19,6 +20,7 @@ import {
   AuthCodeField,
   AuthEmailField,
   AuthPanelShell,
+  CodeSentAnnouncement,
   isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
@@ -124,7 +126,7 @@ export const LinkAccountPanel = () => {
         goAfterLink();
         return;
       }
-      setTokenError(result.message ?? t('auth.verifyCodeError'));
+      setTokenError(codeFailureMessage(result.reason, t));
     } catch {
       setTokenError(t('auth.verifyCodeError'));
     }
@@ -153,6 +155,12 @@ export const LinkAccountPanel = () => {
   }
 
   const errorMessage = linkError || tokenError;
+
+  // Rendered by CodeSentAnnouncement on every shell below, so the live region
+  // is mounted (empty) before the code step arrives and its arrival is heard.
+  const sentTo = loginSuccess
+    ? t('auth.createProfileCodeHint', { email })
+    : undefined;
 
   const title = (() => {
     if (errorMessage) {
@@ -186,18 +194,13 @@ export const LinkAccountPanel = () => {
         ),
       });
     }
-    return (
-      <span>
-        {t('auth.createProfileCodeHint', {
-          email,
-        })}
-      </span>
-    );
+    return <span>{sentTo}</span>;
   })();
 
   if (errorMessage) {
     return (
       <AuthPanelShell title={title} subtitle={subtitle}>
+        <CodeSentAnnouncement sentTo={sentTo} />
         <Button
           className="flex w-full items-center justify-center"
           onClick={() => {
@@ -216,8 +219,10 @@ export const LinkAccountPanel = () => {
   if (loginSuccess) {
     return (
       <AuthPanelShell title={title} subtitle={subtitle}>
+        <CodeSentAnnouncement sentTo={sentTo} />
         <div className="flex flex-col gap-6">
           <AuthCodeField
+            channel="email"
             value={token}
             isDisabled={isSubmitting}
             onChange={setToken}
@@ -227,9 +232,9 @@ export const LinkAccountPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              disabled={isSubmitting || !isValidOtpLength(token)}
+              disabled={isSubmitting || !isValidOtpLength(token, 'email')}
               onClick={async () => {
-                if (isValidOtpLength(token)) {
+                if (isValidOtpLength(token, 'email')) {
                   await handleTokenSubmit();
                 }
               }}
@@ -256,6 +261,7 @@ export const LinkAccountPanel = () => {
   // Create account (email entry) — email + Continue grouped (figma: 16px).
   return (
     <AuthPanelShell title={title} subtitle={subtitle}>
+      <CodeSentAnnouncement sentTo={sentTo} />
       <div className="flex flex-col gap-4">
         <AuthEmailField
           label={t('Email')}
