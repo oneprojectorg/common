@@ -150,7 +150,13 @@ export class TestPhoneAuthDataManager {
       .where(eq(users.authUserId, authUserId))
       .limit(1);
 
-    await this.getAdminClient().auth.admin.deleteUser(authUserId);
+    const { error } =
+      await this.getAdminClient().auth.admin.deleteUser(authUserId);
+    if (error && error.code !== 'user_not_found') {
+      throw new Error(
+        `Failed to delete phone user ${authUserId}: ${error.message}`,
+      );
+    }
     if (user?.profileId) {
       await db.delete(profiles).where(eq(profiles.id, user.profileId));
     }
