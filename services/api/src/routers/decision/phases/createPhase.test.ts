@@ -25,7 +25,7 @@ describe.concurrent('createPhase', () => {
       instanceId,
       name: 'Submissions',
       sortOrder: 0,
-      data: { phaseId: 'submissions' },
+      data: { description: 'Pitch an idea' },
     });
     testData.trackProfileForCleanup(result.profileId);
 
@@ -39,7 +39,7 @@ describe.concurrent('createPhase', () => {
       db.query.processPhases.findFirst({ where: { id: result.id } }),
       db.query.profiles.findFirst({ where: { id: result.profileId } }),
     ]);
-    expect(phase?.data).toEqual({ phaseId: 'submissions' });
+    expect(phase?.data).toEqual({ description: 'Pitch an idea' });
     expect(profile?.type).toBe(EntityType.PHASE);
     expect(profile?.slug).toBe(result.slug);
   });
@@ -69,7 +69,6 @@ describe.concurrent('createPhase', () => {
       instanceId,
       name: 'Submissions',
       sortOrder: 0,
-      data: { phaseId: 'submissions' },
     });
     testData.trackProfileForCleanup(result.profileId);
 
@@ -159,7 +158,6 @@ describe.concurrent('createPhase', () => {
         instanceId: randomUUID(),
         name: 'Submissions',
         sortOrder: 0,
-        data: { phaseId: 'submissions' },
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
@@ -178,12 +176,11 @@ describe.concurrent('createPhase', () => {
         instanceId,
         name: 'Submissions',
         sortOrder: 2 ** 31,
-        data: { phaseId: 'submissions' },
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
-  it('rejects an empty name and an empty phaseId', async ({
+  it('rejects an empty name and an invalid startDate', async ({
     task,
     onTestFinished,
   }) => {
@@ -197,7 +194,6 @@ describe.concurrent('createPhase', () => {
         instanceId,
         name: '  ',
         sortOrder: 0,
-        data: { phaseId: 'submissions' },
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
 
@@ -206,7 +202,7 @@ describe.concurrent('createPhase', () => {
         instanceId,
         name: 'Submissions',
         sortOrder: 0,
-        data: { phaseId: '' },
+        data: { startDate: 'tomorrow' },
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
@@ -219,7 +215,6 @@ describe.concurrent('createPhase', () => {
         instanceId: randomUUID(),
         name: 'Submissions',
         sortOrder: 0,
-        data: { phaseId: 'submissions' },
       }),
     ).rejects.toMatchObject({
       cause: { name: 'AccessTierError', callerTier: 'none' },
@@ -256,7 +251,6 @@ const expectRejectedAndNothingWritten = async (
       instanceId,
       name,
       sortOrder: 0,
-      data: { phaseId: 'submissions' },
     }),
   ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 

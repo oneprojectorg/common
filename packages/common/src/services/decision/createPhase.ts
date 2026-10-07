@@ -4,10 +4,10 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
 import {
-  type PhaseData,
+  type PhaseDataInput,
   assertDecisionAdmin,
   insertPhase,
-  phaseDataSchema,
+  toPhaseDataPatch,
 } from './phaseHelpers';
 
 export const createPhase = async ({
@@ -21,9 +21,9 @@ export const createPhase = async ({
   processInstanceId: string;
   name: string;
   sortOrder: number;
-  data: PhaseData;
+  data?: PhaseDataInput;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  const phaseData = phaseDataSchema.parse(data);
+  const phaseData = toPhaseDataPatch(data ?? {}).set;
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },

@@ -564,6 +564,14 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });
 
+// The name lives on the phase's profile; the template owns the pipeline and settings schema.
+export const phaseDataInputEncoder = instancePhaseDataInputEncoder.omit({
+  phaseId: true,
+  name: true,
+  selectionPipeline: true,
+  settingsSchema: true,
+});
+
 export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),
   name: z.string().max(256).optional(),

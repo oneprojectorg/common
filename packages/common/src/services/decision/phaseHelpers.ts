@@ -9,17 +9,18 @@ import {
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { randomUUID } from 'node:crypto';
-import { z } from 'zod';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { schemaValidator } from './schemaValidator';
+import type { PhaseInstanceData, PhaseOverride } from './schemas/instanceData';
 
-export const phaseDataSchema = z.object({
-  // Links this row to its entry in instance_data.phases.
-  phaseId: z.string().min(1).max(64),
-});
+// The phase's profile slug is its id, and the profile holds its name.
+export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
-export type PhaseData = z.infer<typeof phaseDataSchema>;
+export type PhaseDataInput = Omit<PhaseOverride, 'phaseId' | 'name'>;
+
+type ClearablePhaseField = 'headline' | 'rubricTemplate';
 
 const SLUG_ATTEMPTS = 3;
 
@@ -36,7 +37,7 @@ export const insertPhase = async ({
   processInstanceId: string;
   name: string;
   sortOrder: number;
-  data: PhaseData;
+  data?: PhaseData;
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
@@ -44,7 +45,12 @@ export const insertPhase = async ({
 
   const [phase] = await tx
     .insert(processPhases)
-    .values({ processInstanceId, sortOrder, profileId: profile.id, data })
+    .values({
+      processInstanceId,
+      sortOrder,
+      profileId: profile.id,
+      data: data ?? {},
+    })
     .returning();
 
   if (!phase) {
@@ -52,6 +58,33 @@ export const insertPhase = async ({
   }
 
   return { phase, profile };
+};
+
+export const toPhaseDataPatch = (
+  input: PhaseDataInput,
+): { set: PhaseData; clear: ClearablePhaseField[] } => {
+  const { headline, rubricTemplate, ...rest } = input;
+
+  if (rubricTemplate != null) {
+    schemaValidator.validateJsonSchema(rubricTemplate);
+  }
+
+  const clear: ClearablePhaseField[] = [];
+  if (headline === null) {
+    clear.push('headline');
+  }
+  if (rubricTemplate === null) {
+    clear.push('rubricTemplate');
+  }
+
+  return {
+    set: {
+      ...rest,
+      ...(headline != null && { headline }),
+      ...(rubricTemplate != null && { rubricTemplate }),
+    },
+    clear,
+  };
 };
 
 export const getPhaseAsDecisionAdmin = async ({

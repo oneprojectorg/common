@@ -1,10 +1,9 @@
-import { createPhase } from '@op/common';
+import { ValidationError, createPhase } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { ZodError } from 'zod';
 
 describe.concurrent('createPhase', () => {
   it('mints a profile of type PHASE that owns the name', async ({
@@ -18,7 +17,6 @@ describe.concurrent('createPhase', () => {
       processInstanceId: instanceId,
       name: 'Submissions',
       sortOrder: 0,
-      data: { phaseId: 'submissions' },
     });
     testData.trackProfileForCleanup(profile.id);
 
@@ -27,7 +25,7 @@ describe.concurrent('createPhase', () => {
     expect(phase.profileId).toBe(profile.id);
     expect(phase.processInstanceId).toBe(instanceId);
     expect(phase.sortOrder).toBe(0);
-    expect(phase.data).toEqual({ phaseId: 'submissions' });
+    expect(phase.data).toEqual({});
   });
 
   it('slugs the profile with 8 hex chars, not the name', async ({
@@ -41,14 +39,31 @@ describe.concurrent('createPhase', () => {
       processInstanceId: instanceId,
       name: 'Review Round',
       sortOrder: 1,
-      data: { phaseId: 'review' },
     });
     testData.trackProfileForCleanup(profile.id);
 
     expect(profile.slug).toMatch(/^[0-9a-f]{8}$/);
   });
 
-  it('rejects data with an empty phaseId and writes nothing', async ({
+  it('stores the given data and drops a null headline', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: 'Submissions',
+      sortOrder: 0,
+      data: { description: 'Pitch an idea', headline: null },
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    expect(phase.data).toEqual({ description: 'Pitch an idea' });
+  });
+
+  it('rejects an invalid rubric template and writes nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -61,9 +76,9 @@ describe.concurrent('createPhase', () => {
         processInstanceId: instanceId,
         name,
         sortOrder: 0,
-        data: { phaseId: '' },
+        data: { rubricTemplate: { type: 'object', minProperties: -1 } },
       }),
-    ).rejects.toThrow(ZodError);
+    ).rejects.toThrow(ValidationError);
 
     await expectNoProfileNamed(name);
   });
@@ -79,7 +94,6 @@ describe.concurrent('createPhase', () => {
       processInstanceId: instanceId,
       name: 'Review',
       sortOrder: 0,
-      data: { phaseId: 'review' },
     });
     testData.trackProfileForCleanup(profile.id);
 
@@ -111,7 +125,6 @@ describe.concurrent('createPhase', () => {
         processInstanceId: instanceId,
         name,
         sortOrder: 2 ** 31,
-        data: { phaseId: 'submissions' },
       }),
       // 22003: numeric_value_out_of_range
     ).rejects.toMatchObject({ cause: { code: '22003' } });

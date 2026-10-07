@@ -1,6 +1,7 @@
-import { createPhase, phaseDataSchema } from '@op/common';
+import { createPhase } from '@op/common';
 import { z } from 'zod';
 
+import { phaseDataInputEncoder } from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
 const createPhaseOutputSchema = z.object({
@@ -21,7 +22,7 @@ export const createPhaseRouter = router({
         instanceId: z.uuid(),
         name: z.string().trim().min(1).max(256),
         sortOrder: z.number().int().min(0).max(2_147_483_647),
-        data: phaseDataSchema,
+        data: phaseDataInputEncoder.optional(),
       }),
     )
     .output(createPhaseOutputSchema)
