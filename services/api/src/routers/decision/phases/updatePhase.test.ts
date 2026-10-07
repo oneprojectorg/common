@@ -77,6 +77,83 @@ describe.concurrent('updatePhase', () => {
     });
   });
 
+  it('sets a rubric template and clears it with the headline', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: {
+        description: 'Pitch an idea',
+        headline: 'Submit',
+        rubricTemplate: RUBRIC_TEMPLATE,
+      },
+    });
+    expect(result.data.rubricTemplate).toEqual(RUBRIC_TEMPLATE);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { headline: null, rubricTemplate: null },
+    });
+
+    await expectPhase(phase, {
+      name: PHASE_NAME,
+      data: { description: 'Pitch an idea' },
+    });
+  });
+
+  it('rejects a rubric template that is not a valid JSON Schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { rubricTemplate: NOT_A_SCHEMA },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, UNCHANGED);
+  });
+
+  it('keeps every field when updates to different fields run at once', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await Promise.all([
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { description: 'Pitch an idea' },
+      }),
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { headline: 'Submit' },
+      }),
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { endDate: '2026-12-01T00:00:00.000Z' },
+      }),
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        name: 'Final Review',
+      }),
+    ]);
+
+    await expectPhase(phase, {
+      name: 'Final Review',
+      data: {
+        description: 'Pitch an idea',
+        headline: 'Submit',
+        endDate: '2026-12-01T00:00:00.000Z',
+      },
+    });
+  });
+
   it('updates the name and data together', async ({ task, onTestFinished }) => {
     const { phase, adminCaller } = await setupPhase(task, onTestFinished);
 
@@ -237,6 +314,60 @@ describe.concurrent('updatePhase', () => {
     });
   });
 
+  it('accepts a new settings schema the stored settings satisfy', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { settingsSchema: BUDGET_SCHEMA, settings: { budget: 100 } },
+    });
+    const looserSchema = {
+      type: 'object' as const,
+      properties: { budget: { type: 'number' as const } },
+    };
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { settingsSchema: looserSchema },
+    });
+
+    expect(result.data).toEqual({
+      settingsSchema: looserSchema,
+      settings: { budget: 100 },
+    });
+  });
+
+  it('accepts a settings schema on a phase with no settings', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { settingsSchema: BUDGET_SCHEMA },
+    });
+
+    expect(result.data).toEqual({ settingsSchema: BUDGET_SCHEMA });
+  });
+
+  it('rejects a settings schema that is not a valid JSON Schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { settingsSchema: NOT_A_SCHEMA },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, UNCHANGED);
+  });
+
   it('rejects settings when no schema is stored or sent', async ({
     task,
     onTestFinished,
@@ -271,6 +402,51 @@ describe.concurrent('updatePhase', () => {
       settings: { budget: 100 },
       description: 'Pitch an idea',
     });
+  });
+
+  it('checks the settings of a converted phase once they are touched', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    const converted = { name: PHASE_NAME, data: { settings: { budget: -1 } } };
+    await db
+      .update(processPhases)
+      .set({ data: converted.data })
+      .where(eq(processPhases.id, phase.id));
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { settingsSchema: BUDGET_SCHEMA },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { settings: { budget: 5 } },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    await expectPhase(phase, converted);
+  });
+
+  it('returns a converted phase whose stored headline is blank', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    await db
+      .update(processPhases)
+      .set({ data: { headline: '  ' } })
+      .where(eq(processPhases.id, phase.id));
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { description: 'Pitch an idea' },
+    });
+
+    expect(result.data).toEqual({ description: 'Pitch an idea' });
   });
 
   it('returns a stored pipeline with every block field intact', async ({
@@ -318,6 +494,16 @@ const BUDGET_SCHEMA = {
   type: 'object' as const,
   properties: { budget: { type: 'number' as const, minimum: 0 } },
 };
+
+const RUBRIC_TEMPLATE = {
+  type: 'object' as const,
+  properties: {
+    score: { type: 'integer' as const, minimum: 1, maximum: 5 },
+  },
+};
+
+// Well-typed, but Ajv's meta-schema rejects a negative minLength.
+const NOT_A_SCHEMA = { type: 'string' as const, minLength: -1 };
 
 const expectPhase = async (
   phase: { id: string; profileId: string },
