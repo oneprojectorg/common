@@ -4,11 +4,8 @@ import { authUsers, profiles, users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { parsePhoneNumber, toGoTruePhoneFormat } from '../notification/schemas';
-import {
-  confirmPhoneSignupCode,
-  discardUnconfirmedPhoneSignup,
-  requestPhoneSignupCode,
-} from './phoneSignup';
+import { discardUnconfirmedPhoneSignup } from './discardUnconfirmedPhoneSignup';
+import { confirmPhoneSignupCode, requestPhoneSignupCode } from './phoneSignup';
 
 const PHONE = parsePhoneNumber('+15005550010');
 const LISTED_CODE = '567890';

@@ -211,3 +211,10 @@ export const extractSmsCode = (body: string): string | null => {
   const compact = body.replace(/\s+/g, '');
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
+
+const JOIN_KEYWORD_PATTERN = /^join[.!]?$/i;
+
+export type SmsKeyword = 'join';
+
+export const extractSmsKeyword = (body: string): SmsKeyword | null =>
+  JOIN_KEYWORD_PATTERN.test(body.trim()) ? 'join' : null;

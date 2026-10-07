@@ -14,6 +14,7 @@ import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
+export * from './discardUnconfirmedPhoneSignup';
 export * from './getPhoneSignupState';
 export * from './phoneSignup';
 

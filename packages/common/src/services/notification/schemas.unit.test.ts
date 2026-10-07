@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { ValidationError } from '../../utils/error';
 import {
   extractSmsCode,
+  extractSmsKeyword,
   type GoTruePhoneFormat,
   isValidTypedPhoneNumber,
   normalizePhoneNumber,
@@ -202,5 +203,20 @@ describe('extractSmsCode', () => {
   it('given too few or too many digits, when extracted, then it returns null', () => {
     expect(extractSmsCode('123')).toBeNull();
     expect(extractSmsCode('12345678901')).toBeNull();
+  });
+});
+
+describe('extractSmsKeyword', () => {
+  it('given JOIN in any case or with trailing punctuation, when extracted, then it returns the keyword', () => {
+    expect(extractSmsKeyword('join')).toBe('join');
+    expect(extractSmsKeyword(' JOIN ')).toBe('join');
+    expect(extractSmsKeyword('Join!')).toBe('join');
+  });
+
+  it('given anything that is not the keyword alone, when extracted, then it returns null', () => {
+    expect(extractSmsKeyword('join me')).toBeNull();
+    expect(extractSmsKeyword('YES')).toBeNull();
+    expect(extractSmsKeyword('234567')).toBeNull();
+    expect(extractSmsKeyword('')).toBeNull();
   });
 });

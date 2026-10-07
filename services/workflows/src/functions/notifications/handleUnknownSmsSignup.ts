@@ -21,6 +21,11 @@ const THROTTLE_LIMIT = 200;
 const THROTTLE_PERIOD = '1h';
 const DEBOUNCE_PERIOD = '5s';
 const REPLY_WINDOW_MS = PHONE_SIGNUP_REPLY_WINDOW_MINUTES * 60_000;
+const HELP_MESSAGE =
+  'Text JOIN to sign up. Reply STOP to unsubscribe. Msg&Data Rates May Apply.';
+const CONSENT_MESSAGE =
+  'Reply with the code we just texted you to create your Common account.';
+const WELCOME_MESSAGE = "You're in! Welcome to Common.";
 const { smsInboundReceived } = Events;
 
 type ConfirmationOutcome =
@@ -51,7 +56,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
   },
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
-    const { from } = smsInboundReceived.schema.parse(event.data);
+    const { from, keyword } = smsInboundReceived.schema.parse(event.data);
 
     logger.info('SMS Signup trigger');
 
@@ -105,6 +110,33 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const sendSms = provider.sendSms;
 
+    const text = (stepId: string, label: string, body: string) =>
+      step.run(stepId, async () => {
+        const result = await sendSms({ to, body });
+        if (result.status === 'rejected' && result.retryable) {
+          throw new RateLimitError(`${label} send rejected: ${result.reason}`);
+        }
+        return result;
+      });
+
+    if (keyword !== 'join') {
+      const helpResult = await text(
+        'send-help-reply',
+        'Help reply',
+        HELP_MESSAGE,
+      );
+
+      if (helpResult.status === 'rejected') {
+        logger.warn('Help reply permanently rejected', {
+          reason: helpResult.reason,
+        });
+        return { message: 'help send rejected', reason: helpResult.reason };
+      }
+
+      logger.info('Inbound SMS from an unknown number was not JOIN, sent help');
+      return { message: 'help sent' };
+    }
+
     const discardAbandonedSignup = (codeSentNoLaterThan: number) =>
       step.run('discard-abandoned-signup', () =>
         discardUnconfirmedPhoneSignup({
@@ -124,18 +156,11 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'code send rejected', reason: codeRequest.reason };
     }
 
-    const consentResult = await step.run('send-consent-request', async () => {
-      const result = await sendSms({
-        to,
-        body: 'Reply with the code we just texted you to create your Common account.',
-      });
-      if (result.status === 'rejected' && result.retryable) {
-        throw new RateLimitError(
-          `Consent request send rejected: ${result.reason}`,
-        );
-      }
-      return result;
-    });
+    const consentResult = await text(
+      'send-consent-request',
+      'Consent request',
+      CONSENT_MESSAGE,
+    );
 
     if (consentResult.status === 'rejected') {
       logger.warn('Consent request permanently rejected, aborting signup', {
@@ -226,18 +251,11 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const { authUserId } = outcome;
 
-    const welcomeResult = await step.run('send-welcome-reply', async () => {
-      const result = await sendSms({
-        to,
-        body: "You're in! Welcome to Common.",
-      });
-      if (result.status === 'rejected' && result.retryable) {
-        throw new RateLimitError(
-          `Welcome message send rejected: ${result.reason}`,
-        );
-      }
-      return result;
-    });
+    const welcomeResult = await text(
+      'send-welcome-reply',
+      'Welcome message',
+      WELCOME_MESSAGE,
+    );
 
     if (welcomeResult.status === 'rejected') {
       logger.warn('Welcome message permanently rejected', {

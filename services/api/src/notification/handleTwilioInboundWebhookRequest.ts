@@ -1,5 +1,6 @@
 import {
   extractSmsCode,
+  extractSmsKeyword,
   parseTwilioInboundMessage,
   verifyTwilioWebhookSignature,
 } from '@op/common';
@@ -59,6 +60,7 @@ export const handleTwilioInboundWebhookRequest = async ({
       from: message.from,
       messageSid: message.messageSid,
       code: extractSmsCode(message.body),
+      keyword: extractSmsKeyword(message.body),
     },
   });
 

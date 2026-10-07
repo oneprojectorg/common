@@ -51,7 +51,12 @@ describe('handleTwilioInboundWebhookRequest', () => {
     expect(inngest.send).toHaveBeenCalledWith({
       id: 'sms-inbound-SM456',
       name: Events.smsInboundReceived.name,
-      data: { from: '+15005550006', messageSid: 'SM456', code: null },
+      data: {
+        from: '+15005550006',
+        messageSid: 'SM456',
+        code: null,
+        keyword: null,
+      },
     });
   });
 
@@ -73,7 +78,36 @@ describe('handleTwilioInboundWebhookRequest', () => {
     expect(inngest.send).toHaveBeenCalledWith({
       id: 'sms-inbound-SM456',
       name: Events.smsInboundReceived.name,
-      data: { from: '+15005550006', messageSid: 'SM456', code: '234567' },
+      data: {
+        from: '+15005550006',
+        messageSid: 'SM456',
+        code: '234567',
+        keyword: null,
+      },
+    });
+  });
+
+  it('given a text that is the JOIN keyword, when forwarded, then the event carries the keyword and not the text', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const params = { ...MESSAGE_PARAMS, Body: ' Join! ' };
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const response = await handleTwilioInboundWebhookRequest({
+      rawBody: rawBodyOf(params),
+      signature,
+      url: URL,
+    });
+
+    expect(response.status).toBe(200);
+    expect(inngest.send).toHaveBeenCalledWith({
+      id: 'sms-inbound-SM456',
+      name: Events.smsInboundReceived.name,
+      data: {
+        from: '+15005550006',
+        messageSid: 'SM456',
+        code: null,
+        keyword: 'join',
+      },
     });
   });
 

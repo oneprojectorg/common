@@ -39,15 +39,23 @@ type SendSms = NonNullable<SmsProvider['sendSms']>;
 
 const FROM = '+15005550006';
 
-const triggerEvent = (code: string | null = null) => ({
+const triggerEvent = (
+  code: string | null = null,
+  keyword: 'join' | null = 'join',
+) => ({
   name: Events.smsInboundReceived.name,
-  data: { from: FROM, messageSid: 'SM1', code },
+  data: { from: FROM, messageSid: 'SM1', code, keyword },
 });
 
 const reply = (attempt: number, code: string | null) => ({
   id: `wait-for-confirmation-${attempt}`,
   handler: () => ({
-    data: { from: FROM, messageSid: `SM-reply-${attempt}`, code },
+    data: {
+      from: FROM,
+      messageSid: `SM-reply-${attempt}`,
+      code,
+      keyword: null,
+    },
   }),
 });
 
@@ -153,6 +161,42 @@ describe('handleUnknownSmsSignup', () => {
     expect(requestPhoneSignupCode).not.toHaveBeenCalled();
   });
 
+  it('given a text from an unknown number that is not the JOIN keyword, then it texts help and starts no signup', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn<SendSms>().mockResolvedValue(accepted),
+    );
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({ events: [triggerEvent(null, null)] });
+
+    expect(result).toEqual({ message: 'help sent' });
+    expect(sendSms).toHaveBeenCalledWith({
+      to: FROM,
+      body: expect.stringContaining('JOIN'),
+    });
+    expect(requestPhoneSignupCode).not.toHaveBeenCalled();
+    expect(discardUnconfirmedPhoneSignup).not.toHaveBeenCalled();
+  });
+
+  it('given a help reply that is permanently rejected, then it reports the rejection and starts no signup', async () => {
+    unknownNumberWithProvider(
+      vi.fn<SendSms>().mockResolvedValue({
+        status: 'rejected',
+        reason: 'invalid_number',
+        retryable: false,
+      }),
+    );
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({ events: [triggerEvent(null, null)] });
+
+    expect(result).toEqual({
+      message: 'help send rejected',
+      reason: 'invalid_number',
+    });
+    expect(requestPhoneSignupCode).not.toHaveBeenCalled();
+  });
+
   it('skips signup when the inbound number is not valid E.164', async () => {
     const sendSms = unknownNumberWithProvider();
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
@@ -161,7 +205,12 @@ describe('handleUnknownSmsSignup', () => {
       events: [
         {
           name: Events.smsInboundReceived.name,
-          data: { from: 'not-e164', messageSid: 'SM1', code: null },
+          data: {
+            from: 'not-e164',
+            messageSid: 'SM1',
+            code: null,
+            keyword: 'join',
+          },
         },
       ],
     });

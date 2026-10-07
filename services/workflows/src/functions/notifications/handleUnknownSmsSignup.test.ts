@@ -31,15 +31,24 @@ const TEST_NUMBERS = {
 
 type TestNumber = keyof typeof TEST_NUMBERS;
 
-const inboundText = (from: PhoneNumber, code: string | null = null) => ({
+const inboundText = (
+  from: PhoneNumber,
+  code: string | null = null,
+  keyword: 'join' | null = 'join',
+) => ({
   name: Events.smsInboundReceived.name,
-  data: { from, messageSid: `SM-${from}-${code ?? 'text'}`, code },
+  data: { from, messageSid: `SM-${from}-${code ?? 'text'}`, code, keyword },
 });
 
 const reply = (from: PhoneNumber, attempt: number, code: string | null) => ({
   id: `wait-for-confirmation-${attempt}`,
   handler: () => ({
-    data: { from, messageSid: `SM-reply-${from}-${attempt}`, code },
+    data: {
+      from,
+      messageSid: `SM-reply-${from}-${attempt}`,
+      code,
+      keyword: null,
+    },
   }),
 });
 
@@ -101,6 +110,28 @@ beforeEach(() => {
 });
 
 describe('handleUnknownSmsSignup against the database', () => {
+  it('given a stranger texts something other than JOIN, then they are texted how to join and no account is created', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone } = claimNumber('+15005550008', testData);
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [inboundText(phone, null, null)],
+    });
+
+    expect(result).toEqual({ message: 'help sent' });
+    expect(memorySmsProvider.sent).toEqual([
+      expect.objectContaining({
+        to: phone,
+        body: expect.stringContaining('JOIN'),
+      }),
+    ]);
+    expect(await readAuthUser(phone)).toBeNull();
+  });
+
   it('given a stranger texts, when they reply with the code GoTrue sent, then the number is confirmed, the account exists, and they were texted twice', async ({
     task,
     onTestFinished,
@@ -233,7 +264,12 @@ describe('handleUnknownSmsSignup against the database', () => {
       events: [
         {
           name: Events.smsInboundReceived.name,
-          data: { from: 'not-a-phone', messageSid: 'SM-bad', code: null },
+          data: {
+            from: 'not-a-phone',
+            messageSid: 'SM-bad',
+            code: null,
+            keyword: 'join',
+          },
         },
       ],
     });
