@@ -33,8 +33,6 @@ interface AuthPanelState {
   setPhoneCodeSent: (phoneCodeSent: boolean) => void;
   email: string;
   setEmail: (email: string) => void;
-  emailIsValid: boolean;
-  setEmailIsValid: (emailIsValid: boolean) => void;
   token: string | undefined;
   setToken: (token: string | undefined) => void;
   tokenError: string | undefined;
@@ -81,8 +79,6 @@ export const useAuthPanelStore = create<AuthPanelState>()(
       setPhoneCodeSent: (phoneCodeSent) => set({ phoneCodeSent }),
       email: '',
       setEmail: (email) => set({ email }),
-      emailIsValid: false,
-      setEmailIsValid: (emailIsValid) => set({ emailIsValid }),
       token: undefined,
       setToken: (token) => set({ token }),
       tokenError: undefined,
@@ -97,7 +93,6 @@ export const useAuthPanelStore = create<AuthPanelState>()(
           phone: '',
           phoneCodeSent: false,
           email: '',
-          emailIsValid: false,
           token: undefined,
           tokenError: undefined,
           loginSuccess: false,
