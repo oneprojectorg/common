@@ -10,6 +10,9 @@ import { useCallback } from 'react';
 import { i18nConfig } from '@/lib/i18n/config';
 import type { TranslateFn } from '@/lib/i18n/routing';
 
+import type { PhoneVerifyResult } from './phoneAuth/types';
+import { toVerifyResult } from './phoneAuth/verifyResult';
+
 /**
  * Claim a full account by linking an email identity (via OTP) onto the
  * visitor's anonymous Supabase user, so anything they created while anonymous
@@ -39,7 +42,7 @@ export type ClaimEmailResult =
       alreadySignedIn?: boolean;
     };
 
-export type ClaimVerifyResult = { ok: true } | { ok: false; message?: string };
+export type ClaimVerifyResult = PhoneVerifyResult;
 
 /** Shared flag→copy mapping for failed `requestEmailCode` results. */
 export function getClaimEmailErrorMessage(
@@ -222,16 +225,19 @@ export function useClaimAccount() {
       phone: string;
       token: string;
     }): Promise<ClaimVerifyResult> => {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const answer = await supabase.auth.verifyOtp({
         phone: normalizePhoneNumber(phone),
         token,
         type: 'phone_change',
       });
-
-      if (data.user && data.session && data.user.role === 'authenticated') {
-        return { ok: true };
+      const result = toVerifyResult(answer);
+      if (!result.ok) {
+        logger.error('claim: verifyPhoneCode failed', {
+          code: answer.error?.code,
+          status: answer.error?.status,
+        });
       }
-      return { ok: false, message: error?.message };
+      return result;
     },
     [supabase],
   );
@@ -245,16 +251,19 @@ export function useClaimAccount() {
       email: string;
       token: string;
     }): Promise<ClaimVerifyResult> => {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const answer = await supabase.auth.verifyOtp({
         email,
         token,
         type: 'email_change',
       });
-
-      if (data.user && data.session && data.user.role === 'authenticated') {
-        return { ok: true };
+      const result = toVerifyResult(answer);
+      if (!result.ok) {
+        logger.error('claim: verifyEmailCode failed', {
+          code: answer.error?.code,
+          status: answer.error?.status,
+        });
       }
-      return { ok: false, message: error?.message };
+      return result;
     },
     [supabase],
   );

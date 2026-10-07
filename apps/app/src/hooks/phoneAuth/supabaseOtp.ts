@@ -12,9 +12,7 @@ import type {
   PhoneCodeResult,
   PhoneVerifyResult,
 } from './types';
-
-/** GoTrue's code for a verification that is no longer valid. */
-const EXPIRED_CODE = 'otp_expired';
+import { toVerifyResult } from './verifyResult';
 
 /** GoTrue's code for its own per-number send throttle. */
 const RATE_LIMITED_CODE = 'over_sms_send_rate_limit';
@@ -132,31 +130,20 @@ export const createSupabaseOtpStrategy = ({
     phone: string;
     code: string;
   }): Promise<PhoneVerifyResult> => {
-    const { data, error } = await supabase.auth.verifyOtp({
+    const answer = await supabase.auth.verifyOtp({
       phone,
       token: code,
       type: 'sms',
     });
+    const result = toVerifyResult(answer);
 
-    if (error) {
-      // GoTrue reports an expired verification and a wrong code with the same
-      // code, so a wrong code can read as expired here. Asking for a new code
-      // still recovers, which a bare "wrong code" would not.
-      return {
-        ok: false,
-        reason: error.code === EXPIRED_CODE ? 'expired' : 'wrong_code',
-        diagnostic: error.message,
-      };
-    }
-
-    if (!data.session) {
+    if (!result.ok && !answer.error) {
       // GoTrue answers without an error and without a session when the code did
       // not match. Nothing else is known, so log it: any other cause reaching
       // here would otherwise be invisible.
       logger.error('GoTrue returned neither an error nor a session');
-      return { ok: false, reason: 'wrong_code' };
     }
 
-    return { ok: true };
+    return result;
   },
 });
