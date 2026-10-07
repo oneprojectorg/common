@@ -91,20 +91,24 @@ export const Disabled: Story = {
 
 export const TenDigitsFluid: Story = {
   render: () => (
-    <InputOTP
-      maxLength={10}
-      defaultValue="5404043206"
-      containerClassName="w-full justify-center"
-    >
-      <InputOTPGroup className="w-full justify-center">
-        {Array.from({ length: 10 }, (_, index) => (
-          <InputOTPSlot
-            key={index}
-            index={index}
-            className="max-w-10 min-w-7 flex-1"
-          />
-        ))}
-      </InputOTPGroup>
-    </InputOTP>
+    <div className="grid gap-2">
+      <Label htmlFor="otp-code-ten">Verification code</Label>
+      <InputOTP
+        id="otp-code-ten"
+        maxLength={10}
+        defaultValue="5404043206"
+        containerClassName="w-full justify-center"
+      >
+        <InputOTPGroup className="w-full justify-center">
+          {Array.from({ length: 10 }, (_, index) => (
+            <InputOTPSlot
+              key={index}
+              index={index}
+              className="max-w-10 min-w-7 flex-1"
+            />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+    </div>
   ),
 };
