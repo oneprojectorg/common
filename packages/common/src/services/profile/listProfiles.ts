@@ -1,6 +1,6 @@
 import { match } from '@op/core';
-import { and, db, inArray, sql } from '@op/db/client';
-import { type EntityType, locations, profiles } from '@op/db/schema';
+import { and, db, inArray, ne, sql } from '@op/db/client';
+import { EntityType, locations, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import {
@@ -45,13 +45,12 @@ export const listProfiles = async ({
     const typeCondition =
       types && types.length > 0 ? inArray(profiles.type, types) : undefined;
 
-    const whereConditions = [cursorCondition, typeCondition].filter(Boolean);
-    const whereClause =
-      whereConditions.length > 0
-        ? whereConditions.length === 1
-          ? whereConditions[0]
-          : and(...whereConditions)
-        : undefined;
+    // Listing has no access check, so phase names would leak across decisions.
+    const whereClause = and(
+      cursorCondition,
+      typeCondition,
+      ne(profiles.type, EntityType.PHASE),
+    );
 
     const result = await db._query.profiles.findMany({
       where: whereClause,

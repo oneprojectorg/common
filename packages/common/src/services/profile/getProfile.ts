@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq, ne } from '@op/db/client';
 import { EntityType, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
@@ -50,7 +50,8 @@ export const getProfile = async ({
   user: _user, // Currently unused but kept for future extensibility
 }: GetProfileParams) => {
   const profile = await db._query.profiles.findFirst({
-    where: eq(profiles.slug, slug),
+    // Phases have no page of their own.
+    where: and(eq(profiles.slug, slug), ne(profiles.type, EntityType.PHASE)),
     with: {
       avatarImage: true,
       headerImage: true,

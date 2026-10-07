@@ -23,6 +23,9 @@ export const searchProfiles = async ({
   }
   // TODO: assert authorization
 
+  // Search has no access check, so phase names would leak across decisions.
+  const searchableTypes = types.filter((type) => type !== EntityType.PHASE);
+
   if (query.length < 2) {
     return [];
   }
@@ -81,7 +84,7 @@ export const searchProfiles = async ({
       .orderBy(sql`rank DESC`);
 
   return await Promise.all(
-    types.map(async (type) => ({
+    searchableTypes.map(async (type) => ({
       type,
       results: await searchByType(type),
     })),
