@@ -46,6 +46,8 @@ export const handleUnknownSmsSignup = inngest.createFunction(
   async ({ event, step }) => {
     const { from } = smsInboundReceived.schema.parse(event.data);
 
+    logger.info('SMS Signup trigger');
+
     const flagEnabled = await step.run('check-feature-flag', () =>
       isFeatureEnabled(SMS_SIGNUP_FEATURE_FLAG, 'server'),
     );

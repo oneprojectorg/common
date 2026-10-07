@@ -17,6 +17,15 @@ export const handleTwilioInboundWebhookRequest = async ({
   signature,
   url,
 }: TwilioInboundWebhookRequest): Promise<{ status: number; body?: string }> => {
+  const params = Object.fromEntries(new URLSearchParams(rawBody));
+
+  logger.info('Twilio inbound webhook received', {
+    url,
+    hasSignature: Boolean(signature),
+    bodyLength: rawBody.length,
+    paramKeys: Object.keys(params),
+  });
+
   const authToken = process.env.TWILIO_AUTH_TOKEN;
 
   if (!authToken) {
@@ -30,8 +39,6 @@ export const handleTwilioInboundWebhookRequest = async ({
     logger.warn('Twilio inbound webhook missing X-Twilio-Signature');
     return { status: 401 };
   }
-
-  const params = Object.fromEntries(new URLSearchParams(rawBody));
 
   if (!verifyTwilioWebhookSignature({ authToken, signature, url, params })) {
     logger.warn('Twilio inbound webhook signature verification failed');
