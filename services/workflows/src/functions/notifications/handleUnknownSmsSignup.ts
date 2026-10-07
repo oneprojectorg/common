@@ -2,6 +2,7 @@ import { isFeatureEnabled } from '@op/analytics';
 import {
   type PhoneSignupConfirmation,
   confirmPhoneSignupCode,
+  discardUnconfirmedPhoneSignup,
   getPhoneSignupState,
   getSmsProvider,
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
@@ -19,6 +20,7 @@ const RATE_LIMIT_PERIOD = '1h';
 const THROTTLE_LIMIT = 200;
 const THROTTLE_PERIOD = '1h';
 const DEBOUNCE_PERIOD = '5s';
+const REPLY_WINDOW_MS = PHONE_SIGNUP_REPLY_WINDOW_MINUTES * 60_000;
 const { smsInboundReceived } = Events;
 
 type ConfirmationOutcome =
@@ -103,6 +105,14 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const sendSms = provider.sendSms;
 
+    const discardAbandonedSignup = (codeSentNoLaterThan: number) =>
+      step.run('discard-abandoned-signup', () =>
+        discardUnconfirmedPhoneSignup({
+          phone: to,
+          codeSentNoLaterThan: new Date(codeSentNoLaterThan),
+        }),
+      );
+
     const codeRequest = await step.run('request-signup-code', () =>
       requestPhoneSignupCode({ phone: to }),
     );
@@ -131,12 +141,17 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       logger.warn('Consent request permanently rejected, aborting signup', {
         reason: consentResult.reason,
       });
-      return { message: 'consent send rejected', reason: consentResult.reason };
+      const discard = await discardAbandonedSignup(Date.now());
+      return {
+        message: 'consent send rejected',
+        reason: consentResult.reason,
+        discard: discard.status,
+      };
     }
 
     const replyDeadline = await step.run(
       'start-reply-window',
-      () => Date.now() + PHONE_SIGNUP_REPLY_WINDOW_MINUTES * 60_000,
+      () => Date.now() + REPLY_WINDOW_MS,
     );
 
     const awaitConfirmation = async (
@@ -186,14 +201,27 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     if (outcome.status === 'timed_out') {
       logger.info('No confirmation reply received in time');
-      return { message: 'timed out waiting for confirmation' };
+      const discard = await discardAbandonedSignup(
+        replyDeadline - REPLY_WINDOW_MS,
+      );
+      return {
+        message: 'timed out waiting for confirmation',
+        discard: discard.status,
+      };
     }
 
     if (outcome.status === 'exhausted') {
       logger.info('No valid signup code in the allowed replies', {
         attempts: MAX_REPLY_ATTEMPTS,
       });
-      return { message: 'code not confirmed', attempts: MAX_REPLY_ATTEMPTS };
+      const discard = await discardAbandonedSignup(
+        replyDeadline - REPLY_WINDOW_MS,
+      );
+      return {
+        message: 'code not confirmed',
+        attempts: MAX_REPLY_ATTEMPTS,
+        discard: discard.status,
+      };
     }
 
     const { authUserId } = outcome;

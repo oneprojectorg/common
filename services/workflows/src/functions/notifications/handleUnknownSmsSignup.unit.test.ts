@@ -3,6 +3,7 @@ import { isFeatureEnabled } from '@op/analytics';
 import {
   type SmsProvider,
   confirmPhoneSignupCode,
+  discardUnconfirmedPhoneSignup,
   getPhoneSignupState,
   getSmsProvider,
   requestPhoneSignupCode,
@@ -15,6 +16,7 @@ vi.mock('@op/common', () => {
   class ValidationError extends Error {}
   return {
     confirmPhoneSignupCode: vi.fn(),
+    discardUnconfirmedPhoneSignup: vi.fn(),
     getPhoneSignupState: vi.fn(),
     getSmsProvider: vi.fn(),
     requestPhoneSignupCode: vi.fn(),
@@ -70,8 +72,18 @@ const unknownNumberWithProvider = (sendSms = vi.fn<SendSms>()) => {
   vi.mocked(getPhoneSignupState).mockResolvedValue(free);
   vi.mocked(getSmsProvider).mockReturnValue({ sendSms });
   vi.mocked(requestPhoneSignupCode).mockResolvedValue({ status: 'sent' });
+  vi.mocked(discardUnconfirmedPhoneSignup).mockResolvedValue({
+    status: 'discarded',
+    authUserId: 'auth-user-1',
+  });
   return sendSms;
 };
+
+const discardedThisAttempt = () =>
+  expect(discardUnconfirmedPhoneSignup).toHaveBeenCalledWith({
+    phone: FROM,
+    codeSentNoLaterThan: expect.any(Date),
+  });
 
 afterEach(() => {
   vi.resetAllMocks();
@@ -192,8 +204,10 @@ describe('handleUnknownSmsSignup', () => {
     expect(result).toEqual({
       message: 'consent send rejected',
       reason: 'invalid_number',
+      discard: 'discarded',
     });
     expect(sendSms).toHaveBeenCalledTimes(1);
+    discardedThisAttempt();
   });
 
   it('fails the step on a rate-limited consent send, so Inngest retries it', async () => {
@@ -226,9 +240,13 @@ describe('handleUnknownSmsSignup', () => {
       steps: [silence(1)],
     });
 
-    expect(result).toEqual({ message: 'timed out waiting for confirmation' });
+    expect(result).toEqual({
+      message: 'timed out waiting for confirmation',
+      discard: 'discarded',
+    });
     expect(sendSms).toHaveBeenCalledTimes(1);
     expect(confirmPhoneSignupCode).not.toHaveBeenCalled();
+    discardedThisAttempt();
   });
 
   it('keeps waiting after a reply that is not a code, then confirms the code that follows', async () => {
@@ -276,9 +294,13 @@ describe('handleUnknownSmsSignup', () => {
       steps: [reply(1, '000000'), silence(2)],
     });
 
-    expect(result).toEqual({ message: 'timed out waiting for confirmation' });
+    expect(result).toEqual({
+      message: 'timed out waiting for confirmation',
+      discard: 'discarded',
+    });
     expect(confirmPhoneSignupCode).toHaveBeenCalledTimes(1);
     expect(sendSms).toHaveBeenCalledTimes(1);
+    discardedThisAttempt();
   });
 
   it('gives up after three replies with no valid code and sends no welcome', async () => {
@@ -301,9 +323,14 @@ describe('handleUnknownSmsSignup', () => {
       ],
     });
 
-    expect(result).toEqual({ message: 'code not confirmed', attempts: 3 });
+    expect(result).toEqual({
+      message: 'code not confirmed',
+      attempts: 3,
+      discard: 'discarded',
+    });
     expect(confirmPhoneSignupCode).toHaveBeenCalledTimes(1);
     expect(sendSms).toHaveBeenCalledTimes(1);
+    discardedThisAttempt();
   });
 
   it('confirms the texted code with GoTrue and sends a welcome message', async () => {
@@ -333,6 +360,7 @@ describe('handleUnknownSmsSignup', () => {
       token: '123456',
     });
     expect(sendSms).toHaveBeenCalledTimes(2);
+    expect(discardUnconfirmedPhoneSignup).not.toHaveBeenCalled();
   });
 
   it('still reports success when only the welcome reply is rejected', async () => {

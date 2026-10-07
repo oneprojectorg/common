@@ -8,7 +8,7 @@ import {
 } from '@op/common';
 import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { db, eq } from '@op/db/client';
-import { authUsers, users } from '@op/db/schema';
+import { authUsers, profiles, users } from '@op/db/schema';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -72,6 +72,15 @@ const readProfileId = async (authUserId: string) => {
   return row?.profileId ?? null;
 };
 
+const profileExists = async (profileId: string) => {
+  const [row] = await db
+    .select({ id: profiles.id })
+    .from(profiles)
+    .where(eq(profiles.id, profileId))
+    .limit(1);
+  return row !== undefined;
+};
+
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
 
 /**
@@ -118,17 +127,21 @@ describe('handleUnknownSmsSignup against the database', () => {
     ]);
   });
 
-  it('given an abandoned attempt whose code is older than the reply window, when the number texts again, then a new code is requested and the consent text is sent', async ({
+  it('given an abandoned attempt whose code is older than the reply window, when the number texts again and nobody replies, then the consent text is sent and the unconfirmed account is discarded', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone } = claimNumber('+15005550008', testData);
-    await testData.createUser({
+    const authUserId = await testData.createUser({
       phone,
       confirmed: false,
       codeSentAt: minutesAgo(PHONE_SIGNUP_REPLY_WINDOW_MINUTES + 1),
     });
+    const profileId = await readProfileId(authUserId);
+    if (profileId === null) {
+      throw new Error('The signup trigger created no profile for the test row');
+    }
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -136,11 +149,15 @@ describe('handleUnknownSmsSignup against the database', () => {
       steps: noReply,
     });
 
-    expect(result).toEqual({ message: 'timed out waiting for confirmation' });
+    expect(result).toEqual({
+      message: 'timed out waiting for confirmation',
+      discard: 'discarded',
+    });
     expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
       phone,
     ]);
-    expect((await readAuthUser(phone))?.phoneConfirmedAt).toBeNull();
+    expect(await readAuthUser(phone)).toBeNull();
+    expect(await profileExists(profileId)).toBe(false);
   });
 
   it('given a code was texted moments ago and not yet confirmed, when the number texts again, then nothing is sent and no new code is requested', async ({
@@ -225,7 +242,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(memorySmsProvider.sent).toEqual([]);
   });
 
-  it('given a stranger texts, when they reply with a wrong code and then go quiet, then the number stays unconfirmed and no welcome is sent', async ({
+  it('given a stranger texts, when they reply with a wrong code and then go quiet, then no account remains and no welcome is sent', async ({
     task,
     onTestFinished,
   }) => {
@@ -238,8 +255,11 @@ describe('handleUnknownSmsSignup against the database', () => {
       steps: [reply(phone, 1, '000000'), silence(2)],
     });
 
-    expect(result).toEqual({ message: 'timed out waiting for confirmation' });
-    expect((await readAuthUser(phone))?.phoneConfirmedAt).toBeNull();
+    expect(result).toEqual({
+      message: 'timed out waiting for confirmation',
+      discard: 'discarded',
+    });
+    expect(await readAuthUser(phone)).toBeNull();
     expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
       phone,
     ]);
