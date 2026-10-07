@@ -10,7 +10,9 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, ValidationError } from '../../utils';
 import {
   type PhaseDataInput,
+  assertPhaseSettings,
   getPhaseAsDecisionAdmin,
+  readPhaseSettings,
   toPhaseDataPatch,
 } from './phaseHelpers';
 
@@ -29,6 +31,11 @@ export const updatePhase = async ({
     throw new ValidationError('Nothing to update');
   }
   const patch = data === undefined ? undefined : toPhaseDataPatch(data);
+  // Only when touched: converted legacy phases can hold settings with no schema.
+  const touchesSettings =
+    patch !== undefined &&
+    (patch.set.settings !== undefined ||
+      patch.set.settingsSchema !== undefined);
 
   const { profileId } = await getPhaseAsDecisionAdmin({ user, phaseId });
 
@@ -61,6 +68,14 @@ export const updatePhase = async ({
 
     if (!profile || !phase) {
       throw new NotFoundError('Phase', phaseId);
+    }
+
+    // Checked on the merged row, inside the transaction, so a failure rolls back.
+    if (touchesSettings) {
+      assertPhaseSettings({
+        data: readPhaseSettings(phase.data),
+        phaseLabel: profile.name,
+      });
     }
 
     return { phase, profile };
