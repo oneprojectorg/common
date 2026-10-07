@@ -15,7 +15,7 @@ const createPhaseOutputSchema = z.object({
 
 export const createPhaseRouter = router({
   createPhase: authenticatedConfirmedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 5 },
+    rateLimit: { windowSize: 60, maxRequests: 30 },
   })
     .input(
       z.object({

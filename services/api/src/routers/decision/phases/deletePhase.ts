@@ -5,7 +5,7 @@ import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
 export const deletePhaseRouter = router({
   deletePhase: authenticatedConfirmedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 5 },
+    rateLimit: { windowSize: 60, maxRequests: 30 },
   })
     .input(z.object({ phaseId: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
