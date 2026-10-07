@@ -50,8 +50,6 @@ export const LinkAccountPanel = () => {
   const {
     email,
     setEmail,
-    emailIsValid,
-    setEmailIsValid,
     token,
     setToken,
     tokenError,
@@ -60,6 +58,7 @@ export const LinkAccountPanel = () => {
     setLoginSuccess,
     clearPhoneFlow,
   } = useAuthPanelStore();
+  const emailIsValid = isValidEmail(email);
 
   // This panel links an email onto an anonymous account and offers no phone
   // channel. The phone fields persist to session storage, so an abandoned
@@ -268,7 +267,6 @@ export const LinkAccountPanel = () => {
           value={email}
           isDisabled={isSubmitting}
           onChange={(val) => {
-            setEmailIsValid(isValidEmail(val));
             setEmail(val);
           }}
           onSubmit={() => {
