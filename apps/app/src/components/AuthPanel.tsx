@@ -326,7 +326,7 @@ export const AuthCodeField = ({
       </FieldLabel>
       <InputOTP
         id="auth-code"
-        containerClassName="justify-center"
+        containerClassName="w-full justify-center"
         maxLength={length}
         pattern={DIGITS_ONLY_PATTERN}
         pasteTransformer={keepDigits}
@@ -339,9 +339,13 @@ export const AuthCodeField = ({
           void onSubmit();
         }}
       >
-        <InputOTPGroup>
+        <InputOTPGroup className="w-full justify-center">
           {Array.from({ length }, (_, index) => (
-            <InputOTPSlot key={index} index={index} />
+            <InputOTPSlot
+              key={index}
+              index={index}
+              className="max-w-10 min-w-7 flex-1"
+            />
           ))}
         </InputOTPGroup>
       </InputOTP>
