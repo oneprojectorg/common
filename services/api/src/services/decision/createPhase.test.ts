@@ -45,10 +45,7 @@ describe.concurrent('createPhase', () => {
     expect(profile.slug).toMatch(/^[0-9a-f]{8}$/);
   });
 
-  it('stores the given data and drops a null headline', async ({
-    task,
-    onTestFinished,
-  }) => {
+  it('stores the given data', async ({ task, onTestFinished }) => {
     const { instanceId, user, testData } = await setup(task, onTestFinished);
 
     const { phase, profile } = await createPhase({
@@ -56,11 +53,14 @@ describe.concurrent('createPhase', () => {
       processInstanceId: instanceId,
       name: 'Submissions',
       sortOrder: 0,
-      data: { description: 'Pitch an idea', headline: null },
+      data: { description: 'Pitch an idea', headline: 'Pitch' },
     });
     testData.trackProfileForCleanup(profile.id);
 
-    expect(phase.data).toEqual({ description: 'Pitch an idea' });
+    expect(phase.data).toEqual({
+      description: 'Pitch an idea',
+      headline: 'Pitch',
+    });
   });
 
   it('rejects an invalid rubric template and writes nothing', async ({

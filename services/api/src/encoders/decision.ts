@@ -566,7 +566,7 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
 });
 
 // name lives on the phase's profile; the service validates settingsSchema.
-export const phaseDataInputEncoder = instancePhaseDataInputEncoder
+const phaseDataInputEncoder = instancePhaseDataInputEncoder
   .omit({ phaseId: true, name: true })
   .extend({
     settingsSchema: z
@@ -577,6 +577,15 @@ export const phaseDataInputEncoder = instancePhaseDataInputEncoder
       .optional(),
     selectionPipeline: selectionPipelineSchema.optional(),
   });
+
+// A new phase has nothing to clear, so `null` is dropped here.
+export const createPhaseDataInputEncoder = phaseDataInputEncoder.extend({
+  headline: phaseHeadlineInputEncoder.transform((value) => value ?? undefined),
+  rubricTemplate: rubricTemplateSchema
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
+});
 
 export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),
