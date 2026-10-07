@@ -83,6 +83,8 @@ export interface PhaseInstanceData {
   settings?: Record<string, unknown>;
   /** Phase-specific rubric; resolve via `getPhaseRubricTemplate`, never directly. */
   rubricTemplate?: RubricTemplateSchema;
+  /** Phase-specific form; resolve via `getPhaseProposalTemplate`, never directly. */
+  proposalTemplate?: ProposalTemplateSchema;
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */

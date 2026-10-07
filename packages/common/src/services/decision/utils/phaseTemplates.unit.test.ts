@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { RubricTemplateSchema } from '../types';
-import { getPhaseRubricTemplate } from './phaseTemplates';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
+import {
+  getPhaseProposalTemplate,
+  getPhaseRubricTemplate,
+} from './phaseTemplates';
 
 const instanceRubric: RubricTemplateSchema = {
   type: 'object',
@@ -85,5 +88,32 @@ describe('getPhaseRubricTemplate', () => {
     };
 
     expect(getPhaseRubricTemplate(instanceData, 'review')).toBe(phaseRubric);
+  });
+});
+
+describe('getPhaseProposalTemplate', () => {
+  const instanceForm: ProposalTemplateSchema = {
+    type: 'object',
+    properties: { title: { type: 'string' } },
+  };
+  const phaseForm: ProposalTemplateSchema = {
+    type: 'object',
+    properties: { budget: { type: 'number' } },
+  };
+  const instanceData = {
+    proposalTemplate: instanceForm,
+    rubricTemplate: instanceRubric,
+    phases: [
+      { phaseId: 'develop', proposalTemplate: phaseForm },
+      { phaseId: 'review', rubricTemplate: phaseRubric },
+    ],
+  };
+
+  it("returns the phase's own form", () => {
+    expect(getPhaseProposalTemplate(instanceData, 'develop')).toBe(phaseForm);
+  });
+
+  it('falls back to the instance form, ignoring a phase rubric', () => {
+    expect(getPhaseProposalTemplate(instanceData, 'review')).toBe(instanceForm);
   });
 });

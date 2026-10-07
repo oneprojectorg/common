@@ -113,7 +113,7 @@ describe.concurrent('updatePhase', () => {
     await expect(
       adminCaller.decision.updatePhase({
         phaseId: phase.id,
-        data: { rubricTemplate: NOT_A_SCHEMA },
+        data: { rubricTemplate: notASchema() },
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
     await expectPhase(phase, UNCHANGED);
@@ -152,6 +152,47 @@ describe.concurrent('updatePhase', () => {
         endDate: '2026-12-01T00:00:00.000Z',
       },
     });
+  });
+
+  it('sets a proposal template and clears it with null', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: {
+        description: 'Pitch an idea',
+        proposalTemplate: PROPOSAL_TEMPLATE,
+      },
+    });
+    expect(result.data.proposalTemplate).toEqual(PROPOSAL_TEMPLATE);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { proposalTemplate: null },
+    });
+
+    await expectPhase(phase, {
+      name: PHASE_NAME,
+      data: { description: 'Pitch an idea' },
+    });
+  });
+
+  it('rejects a proposal template that is not a valid JSON Schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { proposalTemplate: notASchema() },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, UNCHANGED);
   });
 
   it('updates the name and data together', async ({ task, onTestFinished }) => {
@@ -362,7 +403,7 @@ describe.concurrent('updatePhase', () => {
     await expect(
       adminCaller.decision.updatePhase({
         phaseId: phase.id,
-        data: { settingsSchema: NOT_A_SCHEMA },
+        data: { settingsSchema: notASchema() },
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
     await expectPhase(phase, UNCHANGED);
@@ -502,8 +543,14 @@ const RUBRIC_TEMPLATE = {
   },
 };
 
-// Well-typed, but Ajv's meta-schema rejects a negative minLength.
-const NOT_A_SCHEMA = { type: 'string' as const, minLength: -1 };
+const PROPOSAL_TEMPLATE = {
+  type: 'object' as const,
+  properties: { budget: { type: 'number' as const, minimum: 0 } },
+};
+
+// Ajv's meta-schema rejects a negative minLength. A fresh object per call:
+// Ajv caches a schema object before checking it, so a reused one passes.
+const notASchema = () => ({ type: 'string' as const, minLength: -1 });
 
 const expectPhase = async (
   phase: { id: string; profileId: string },

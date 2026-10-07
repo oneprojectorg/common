@@ -33,6 +33,7 @@ export {
   isPhaseAtOrBefore,
 } from './services/decision/utils/phaseOrder';
 export {
+  getPhaseProposalTemplate,
   getPhaseRubricTemplate,
   resolvePhaseTemplate,
 } from './services/decision/utils/phaseTemplates';
