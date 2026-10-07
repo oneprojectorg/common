@@ -23,10 +23,14 @@ export type PhoneCodeResult =
   | { ok: true }
   | { ok: false; reason: PhoneCodeFailure; diagnostic?: string };
 
-/** As {@link PhoneCodeResult}, for the check rather than the request. */
+/**
+ * As {@link PhoneCodeResult}, for the check rather than the request. No
+ * diagnostic: GoTrue's verify message adds nothing to its code, and a result
+ * that cannot carry text cannot show it to a person by mistake.
+ */
 export type PhoneVerifyResult =
   | { ok: true }
-  | { ok: false; reason: PhoneVerifyFailure; diagnostic?: string };
+  | { ok: false; reason: PhoneVerifyFailure };
 
 /**
  * One way to sign a person in with a phone number and an SMS code.

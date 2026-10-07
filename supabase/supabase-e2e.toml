@@ -25,7 +25,9 @@ enabled = true
 enabled = false
 
 [inbucket]
-enabled = false
+enabled = true
+port = 56324
+smtp_port = 56325
 
 [storage]
 enabled = true
@@ -59,7 +61,7 @@ double_confirm_changes = true
 enable_confirmations = false
 secure_password_change = false
 max_frequency = "1s"
-otp_length = 6
+otp_length = 10
 otp_expiry = 3600
 
 [auth.email.template.confirmation]
