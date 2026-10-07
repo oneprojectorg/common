@@ -55,6 +55,50 @@ describe.concurrent('deleteDecision', () => {
     expect(deletedProfile).toBeUndefined();
   });
 
+  it("should delete the decision's phase profiles and no others", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [setup, otherSetup] = await Promise.all([
+      testData.createDecisionSetup({ instanceCount: 1, grantAccess: true }),
+      testData.createDecisionSetup({ instanceCount: 1, grantAccess: true }),
+    ]);
+    const [caller, otherCaller] = await Promise.all([
+      createAuthenticatedCaller(setup.userEmail),
+      createAuthenticatedCaller(otherSetup.userEmail),
+    ]);
+
+    const phaseInput = {
+      name: 'Review',
+      sortOrder: 0,
+      data: { phaseId: 'review' },
+    };
+    const [phase, otherPhase] = await Promise.all([
+      caller.decision.createPhase({
+        instanceId: setup.instance.instance.id,
+        ...phaseInput,
+      }),
+      otherCaller.decision.createPhase({
+        instanceId: otherSetup.instance.instance.id,
+        ...phaseInput,
+      }),
+    ]);
+    testData.trackProfileForCleanup(phase.profileId);
+    testData.trackProfileForCleanup(otherPhase.profileId);
+
+    await caller.decision.deleteDecision({
+      instanceId: setup.instance.instance.id,
+    });
+
+    const [phaseProfile, otherPhaseProfile] = await Promise.all([
+      db.query.profiles.findFirst({ where: { id: phase.profileId } }),
+      db.query.profiles.findFirst({ where: { id: otherPhase.profileId } }),
+    ]);
+    expect(phaseProfile).toBeUndefined();
+    expect(otherPhaseProfile).toBeDefined();
+  });
+
   it('should allow a non-owner admin to delete a decision', async ({
     task,
     onTestFinished,
