@@ -117,6 +117,46 @@ describe('client logger', () => {
   });
 
   /**
+   * Given an attribute whose value is an array or an object holding addresses
+   * When it is logged
+   * Then the value is collapsed to a string with every address redacted, as
+   * the server logger does, so no key can smuggle an address inside a list
+   */
+  it('redacts email addresses inside arrays and nested objects', () => {
+    logger.error('Invitations failed', {
+      failed: [
+        { email: 'person@example.com', reason: 'bounced' },
+        'other@example.org',
+      ],
+      batch: { owner: { email: 'owner@example.net' }, size: 2 },
+    });
+
+    expect(lastLog().attributes).toEqual({
+      failed:
+        '[{"email":"[redacted]@example.com","reason":"bounced"},"[redacted]@example.org"]',
+      batch: '{"owner":{"email":"[redacted]@example.net"},"size":2}',
+    });
+  });
+
+  /**
+   * Given data that carries addresses
+   * When it is logged at error or warn
+   * Then the properties Error Tracking receives are the redacted attributes,
+   * not the raw data
+   */
+  it('redacts email addresses from the properties sent to Error Tracking', () => {
+    logger.warn('Invite failed', {
+      recipient: 'other@example.org',
+      failed: ['person@example.com'],
+    });
+
+    expect(exceptions[0]?.properties).toMatchObject({
+      recipient: '[redacted]@example.org',
+      failed: '["[redacted]@example.com"]',
+    });
+  });
+
+  /**
    * Given a warning
    * When it is logged
    * Then it reaches Error Tracking at warning level
