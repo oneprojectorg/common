@@ -207,6 +207,35 @@ describe.concurrent('createPhase', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
+  it('accepts a null headline, rubric and proposal form and stores none', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    const phase = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'Submissions',
+      sortOrder: 0,
+      data: {
+        description: 'Pitch an idea',
+        headline: null,
+        rubricTemplate: null,
+        proposalTemplate: null,
+      },
+    });
+    testData.trackProfileForCleanup(phase.profileId);
+
+    const stored = await db.query.processPhases.findFirst({
+      where: { id: phase.id },
+      columns: { data: true },
+    });
+    expect(stored?.data).toEqual({ description: 'Pitch an idea' });
+  });
+
   it('accepts a settings schema, settings and a pipeline from the client', async ({
     task,
     onTestFinished,

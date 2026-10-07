@@ -19,7 +19,7 @@ export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 
 // Phase entities
-export type { PhaseData, PhaseDataInput } from './phaseHelpers';
+export type { PhaseData } from './phaseHelpers';
 export * from './createPhase';
 export * from './deletePhase';
 export * from './reorderPhases';

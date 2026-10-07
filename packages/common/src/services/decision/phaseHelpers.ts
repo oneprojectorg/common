@@ -15,21 +15,12 @@ import { assertProfileAccess } from '../assert';
 import { schemaValidator } from './schemaValidator';
 import {
   type PhaseInstanceData,
-  type PhaseOverride,
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
-import type { ProposalTemplateSchema } from './types';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
-
-export type PhaseDataInput = Omit<PhaseOverride, 'phaseId' | 'name'> &
-  Pick<PhaseInstanceData, 'settingsSchema' | 'selectionPipeline'> & {
-    proposalTemplate?: ProposalTemplateSchema | null;
-  };
-
-type ClearablePhaseField = 'headline' | 'rubricTemplate' | 'proposalTemplate';
 
 const SLUG_ATTEMPTS = 3;
 
@@ -70,42 +61,24 @@ export const insertPhase = async ({
   return { phase, profile };
 };
 
-export const toPhaseDataPatch = (
-  input: PhaseDataInput,
-): { set: PhaseData; clear: ClearablePhaseField[] } => {
-  const { headline, rubricTemplate, proposalTemplate, ...rest } = input;
-
-  if (rubricTemplate != null) {
+export const assertPhaseSchemasCompile = ({
+  rubricTemplate,
+  proposalTemplate,
+  settingsSchema,
+}: Pick<
+  PhaseData,
+  'rubricTemplate' | 'proposalTemplate' | 'settingsSchema'
+>): void => {
+  if (rubricTemplate) {
     schemaValidator.validateJsonSchema(rubricTemplate);
   }
-  if (proposalTemplate != null) {
+  if (proposalTemplate) {
     schemaValidator.validateJsonSchema(proposalTemplate);
   }
-  if (rest.settingsSchema) {
-    const { ui: _ui, ...settingsSchema } = rest.settingsSchema;
-    schemaValidator.validateJsonSchema(settingsSchema);
+  if (settingsSchema) {
+    const { ui: _ui, ...schema } = settingsSchema;
+    schemaValidator.validateJsonSchema(schema);
   }
-
-  const clear: ClearablePhaseField[] = [];
-  if (headline === null) {
-    clear.push('headline');
-  }
-  if (rubricTemplate === null) {
-    clear.push('rubricTemplate');
-  }
-  if (proposalTemplate === null) {
-    clear.push('proposalTemplate');
-  }
-
-  return {
-    set: {
-      ...rest,
-      ...(headline != null && { headline }),
-      ...(rubricTemplate != null && { rubricTemplate }),
-      ...(proposalTemplate != null && { proposalTemplate }),
-    },
-    clear,
-  };
 };
 
 type PhaseSettingsFields = Pick<PhaseData, 'settings' | 'settingsSchema'>;

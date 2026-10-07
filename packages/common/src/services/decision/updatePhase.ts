@@ -9,12 +9,22 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import {
-  type PhaseDataInput,
+  type PhaseData,
+  assertPhaseSchemasCompile,
   assertPhaseSettings,
   getPhaseAsDecisionAdmin,
   readPhaseSettings,
-  toPhaseDataPatch,
 } from './phaseHelpers';
+import type { PhaseOverride } from './schemas/instanceData';
+import type { ProposalTemplateSchema } from './types';
+
+type ClearablePhaseField = 'headline' | 'rubricTemplate' | 'proposalTemplate';
+
+// `null` on a clearable field deletes the stored key.
+export type PhaseDataUpdate = Omit<PhaseOverride, 'phaseId' | 'name'> &
+  Pick<PhaseData, 'settingsSchema' | 'selectionPipeline'> & {
+    proposalTemplate?: ProposalTemplateSchema | null;
+  };
 
 export const updatePhase = async ({
   user,
@@ -25,7 +35,7 @@ export const updatePhase = async ({
   user: User;
   phaseId: string;
   name?: string;
-  data?: PhaseDataInput;
+  data?: PhaseDataUpdate;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
   if (name === undefined && data === undefined) {
     throw new ValidationError('Nothing to update');
@@ -80,4 +90,31 @@ export const updatePhase = async ({
 
     return { phase, profile };
   });
+};
+
+const toPhaseDataPatch = (
+  input: PhaseDataUpdate,
+): { set: PhaseData; clear: ClearablePhaseField[] } => {
+  const { headline, rubricTemplate, proposalTemplate, ...rest } = input;
+
+  const clear: ClearablePhaseField[] = [];
+  if (headline === null) {
+    clear.push('headline');
+  }
+  if (rubricTemplate === null) {
+    clear.push('rubricTemplate');
+  }
+  if (proposalTemplate === null) {
+    clear.push('proposalTemplate');
+  }
+
+  const set: PhaseData = {
+    ...rest,
+    ...(headline != null && { headline }),
+    ...(rubricTemplate != null && { rubricTemplate }),
+    ...(proposalTemplate != null && { proposalTemplate }),
+  };
+  assertPhaseSchemasCompile(set);
+
+  return { set, clear };
 };

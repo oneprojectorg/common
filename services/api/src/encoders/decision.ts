@@ -592,6 +592,20 @@ export const phaseDataInputEncoder = instancePhaseDataInputEncoder
       .optional(),
   });
 
+// A new phase has nothing to clear, so `null` is dropped here.
+export const createPhaseDataInputEncoder = phaseDataInputEncoder.extend({
+  headline: phaseHeadlineInputEncoder.transform((value) => value ?? undefined),
+  rubricTemplate: rubricTemplateSchema
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
+  proposalTemplate: z
+    .custom<ProposalTemplateSchema>(isJsonObject)
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
+});
+
 export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),
   name: z.string().max(256).optional(),

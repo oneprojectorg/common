@@ -4,11 +4,11 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
 import {
-  type PhaseDataInput,
+  type PhaseData,
   assertDecisionAdmin,
+  assertPhaseSchemasCompile,
   assertPhaseSettings,
   insertPhase,
-  toPhaseDataPatch,
 } from './phaseHelpers';
 
 export const createPhase = async ({
@@ -22,9 +22,10 @@ export const createPhase = async ({
   processInstanceId: string;
   name: string;
   sortOrder: number;
-  data?: PhaseDataInput;
+  data?: PhaseData;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  const phaseData = toPhaseDataPatch(data ?? {}).set;
+  const phaseData = data ?? {};
+  assertPhaseSchemasCompile(phaseData);
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
   const instance = await db.query.processInstances.findFirst({
