@@ -15,18 +15,12 @@ import { assertProfileAccess } from '../assert';
 import { schemaValidator } from './schemaValidator';
 import {
   type PhaseInstanceData,
-  type PhaseOverride,
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
-
-export type PhaseDataInput = Omit<PhaseOverride, 'phaseId' | 'name'> &
-  Pick<PhaseInstanceData, 'settingsSchema' | 'selectionPipeline'>;
-
-type ClearablePhaseField = 'headline' | 'rubricTemplate';
 
 const SLUG_ATTEMPTS = 3;
 
@@ -67,35 +61,17 @@ export const insertPhase = async ({
   return { phase, profile };
 };
 
-export const toPhaseDataPatch = (
-  input: PhaseDataInput,
-): { set: PhaseData; clear: ClearablePhaseField[] } => {
-  const { headline, rubricTemplate, ...rest } = input;
-
-  if (rubricTemplate != null) {
+export const assertPhaseSchemasCompile = ({
+  rubricTemplate,
+  settingsSchema,
+}: Pick<PhaseData, 'rubricTemplate' | 'settingsSchema'>): void => {
+  if (rubricTemplate) {
     schemaValidator.validateJsonSchema(rubricTemplate);
   }
-  if (rest.settingsSchema) {
-    const { ui: _ui, ...settingsSchema } = rest.settingsSchema;
-    schemaValidator.validateJsonSchema(settingsSchema);
+  if (settingsSchema) {
+    const { ui: _ui, ...schema } = settingsSchema;
+    schemaValidator.validateJsonSchema(schema);
   }
-
-  const clear: ClearablePhaseField[] = [];
-  if (headline === null) {
-    clear.push('headline');
-  }
-  if (rubricTemplate === null) {
-    clear.push('rubricTemplate');
-  }
-
-  return {
-    set: {
-      ...rest,
-      ...(headline != null && { headline }),
-      ...(rubricTemplate != null && { rubricTemplate }),
-    },
-    clear,
-  };
 };
 
 type PhaseSettingsFields = Pick<PhaseData, 'settings' | 'settingsSchema'>;
