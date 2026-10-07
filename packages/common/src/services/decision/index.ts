@@ -22,6 +22,7 @@ export * from './updateOverviewHeroImage';
 export type { PhaseData, PhaseDataInput } from './phaseHelpers';
 export * from './createPhase';
 export * from './deletePhase';
+export * from './reorderPhases';
 export * from './updatePhase';
 
 // Instance management

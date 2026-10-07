@@ -58,6 +58,8 @@ export async function setupPhase(
   return {
     phase,
     adminCaller,
+    trackProfileForCleanup: (profileId: string) =>
+      testData.trackProfileForCleanup(profileId),
     createMemberCaller,
     createOtherDecisionAdminCaller,
     createOutsiderCaller,
