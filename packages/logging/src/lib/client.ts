@@ -74,9 +74,9 @@ export const createClientLogger = (sink: ClientLogSink) => {
       level: level === 'warn' ? 'warning' : level,
       message: body,
       ...(error !== undefined && !(error instanceof Error)
-        ? { originalError: error }
+        ? { originalError: toLogAttributeValue(error) }
         : {}),
-      ...context,
+      ...toLogAttributes(context),
     });
   };
 
@@ -97,8 +97,10 @@ export const logger = createClientLogger(posthog);
 
 /**
  * Flattens `data` into log attributes. A caught `Error` becomes three
- * attributes named after its fields; every string is redacted, because an
- * address can arrive under any key.
+ * attributes named after its fields. Every other value collapses to a
+ * primitive before redaction, an array or object to its JSON, as the server
+ * logger does: an address can arrive under any key, inside a list, or nested
+ * in an object, and the string is the one place that catches all three.
  */
 const toLogAttributes = (data?: LogData): LogAttributes | undefined => {
   if (!data) {
@@ -130,15 +132,24 @@ const toLogAttributeValue = (value: unknown): LogAttributes[string] => {
     typeof value === 'number' ||
     typeof value === 'boolean' ||
     value === null ||
-    value === undefined ||
-    Array.isArray(value)
+    value === undefined
   ) {
     return value;
   }
 
   if (typeof value === 'object') {
-    return redactEmails(JSON.stringify(value));
+    return redactEmails(serialize(value));
   }
 
-  return String(value);
+  return serialize(value);
+};
+
+const UNSERIALIZABLE = '(Could not serialize value)';
+
+const serialize = (value: unknown): string => {
+  try {
+    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+  } catch {
+    return UNSERIALIZABLE;
+  }
 };
