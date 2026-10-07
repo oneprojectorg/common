@@ -565,8 +565,7 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });
 
-// The name lives on the phase's profile. The service compiles the settings
-// schema and checks settings against it.
+// name lives on the phase's profile; the service validates settingsSchema.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder
   .omit({ phaseId: true, name: true })
   .extend({

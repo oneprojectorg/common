@@ -19,7 +19,7 @@ import {
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
 
-// The phase's profile slug is its id, and the profile holds its name.
+// phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
 export type PhaseDataInput = Omit<PhaseOverride, 'phaseId' | 'name'> &
@@ -29,8 +29,8 @@ type ClearablePhaseField = 'headline' | 'rubricTemplate';
 
 const SLUG_ATTEMPTS = 3;
 
-// No access check: callers authorize first. No settings check either: legacy
-// instance data can hold settings without a schema, and conversion copies it.
+// Callers authorize first. Settings are unchecked: legacy instance data can
+// hold settings without a schema, and conversion copies it.
 export const insertPhase = async ({
   tx,
   processInstanceId,
@@ -97,7 +97,6 @@ export const toPhaseDataPatch = (
   };
 };
 
-// A phase's settings are only valid against the schema stored beside them.
 export const assertPhaseSettings = ({
   data,
   phaseLabel,
