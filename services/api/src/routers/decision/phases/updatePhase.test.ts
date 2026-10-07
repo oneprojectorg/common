@@ -1,3 +1,4 @@
+import type { PhaseData } from '@op/common';
 import { db } from '@op/db/client';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -25,24 +26,53 @@ describe.concurrent('updatePhase', () => {
       profileId: phase.profileId,
       name: 'Final Review',
       slug: phase.slug,
-      data: { phaseId: 'review' },
+      data: {},
     });
   });
 
-  it('replaces the data and keeps the name', async ({
+  it('merges data into what is stored and keeps the name', async ({
     task,
     onTestFinished,
   }) => {
     const { phase, adminCaller } = await setupPhase(task, onTestFinished);
 
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { description: 'Pitch an idea', headline: 'Submit' },
+    });
     const result = await adminCaller.decision.updatePhase({
       phaseId: phase.id,
-      data: { phaseId: 'final-review' },
+      data: { endDate: '2026-12-01T00:00:00.000Z' },
     });
 
     expect(result).toMatchObject({
       name: PHASE_NAME,
-      data: { phaseId: 'final-review' },
+      data: {
+        description: 'Pitch an idea',
+        headline: 'Submit',
+        endDate: '2026-12-01T00:00:00.000Z',
+      },
+    });
+  });
+
+  it('clears a field set to null and keeps the rest', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { description: 'Pitch an idea', headline: 'Submit' },
+    });
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { headline: null },
+    });
+
+    await expectPhase(phase, {
+      name: PHASE_NAME,
+      data: { description: 'Pitch an idea' },
     });
   });
 
@@ -52,12 +82,12 @@ describe.concurrent('updatePhase', () => {
     await adminCaller.decision.updatePhase({
       phaseId: phase.id,
       name: 'Final Review',
-      data: { phaseId: 'final-review' },
+      data: { description: 'Pitch an idea' },
     });
 
     await expectPhase(phase, {
       name: 'Final Review',
-      data: { phaseId: 'final-review' },
+      data: { description: 'Pitch an idea' },
     });
   });
 
@@ -75,7 +105,7 @@ describe.concurrent('updatePhase', () => {
       caller.decision.updatePhase({
         phaseId: phase.id,
         name: 'Nope',
-        data: { phaseId: 'hijacked' },
+        data: { description: 'Hijacked' },
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
@@ -96,7 +126,7 @@ describe.concurrent('updatePhase', () => {
       caller.decision.updatePhase({
         phaseId: phase.id,
         name: 'Nope',
-        data: { phaseId: 'hijacked' },
+        data: { description: 'Hijacked' },
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
@@ -137,7 +167,7 @@ describe.concurrent('updatePhase', () => {
     const badInputs = [
       { phaseId: phase.id },
       { phaseId: phase.id, name: '  ' },
-      { phaseId: phase.id, data: { phaseId: '' } },
+      { phaseId: phase.id, data: { startDate: 'tomorrow' } },
       { phaseId: 'not-a-uuid', name: 'X' },
     ];
 
@@ -161,11 +191,11 @@ describe.concurrent('updatePhase', () => {
   });
 });
 
-const UNCHANGED = { name: PHASE_NAME, data: { phaseId: 'review' } };
+const UNCHANGED = { name: PHASE_NAME, data: {} };
 
 const expectPhase = async (
   phase: { id: string; profileId: string },
-  expected: { name: string; data: { phaseId: string } },
+  expected: { name: string; data: PhaseData },
 ) => {
   const [profile, row] = await Promise.all([
     db.query.profiles.findFirst({

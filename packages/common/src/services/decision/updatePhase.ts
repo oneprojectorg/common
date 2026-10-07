@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import {
   type ProcessPhase,
   type Profile,
@@ -9,9 +9,9 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import {
-  type PhaseData,
+  type PhaseDataInput,
   getPhaseAsDecisionAdmin,
-  phaseDataSchema,
+  toPhaseDataPatch,
 } from './phaseHelpers';
 
 export const updatePhase = async ({
@@ -23,13 +23,12 @@ export const updatePhase = async ({
   user: User;
   phaseId: string;
   name?: string;
-  data?: PhaseData;
+  data?: PhaseDataInput;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
   if (name === undefined && data === undefined) {
     throw new ValidationError('Nothing to update');
   }
-  const phaseData =
-    data === undefined ? undefined : phaseDataSchema.parse(data);
+  const patch = data === undefined ? undefined : toPhaseDataPatch(data);
 
   const { profileId } = await getPhaseAsDecisionAdmin({ user, phaseId });
 
@@ -44,14 +43,19 @@ export const updatePhase = async ({
             .returning();
 
     const [phase] =
-      phaseData === undefined
+      patch === undefined
         ? await tx
             .select()
             .from(processPhases)
             .where(eq(processPhases.id, phaseId))
         : await tx
             .update(processPhases)
-            .set({ data: phaseData })
+            .set({
+              data: patch.clear.reduce(
+                (merged, key) => sql`${merged} - ${key}::text`,
+                sql`(${processPhases.data} || ${JSON.stringify(patch.set)}::jsonb)`,
+              ),
+            })
             .where(eq(processPhases.id, phaseId))
             .returning();
 

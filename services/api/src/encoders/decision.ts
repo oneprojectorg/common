@@ -564,6 +564,11 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });
 
+export const phaseDataEncoder = instancePhaseDataEncoder.omit({
+  phaseId: true,
+  name: true,
+});
+
 // The name lives on the phase's profile; the template owns the pipeline and settings schema.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder.omit({
   phaseId: true,

@@ -1,6 +1,10 @@
-import { phaseDataSchema, updatePhase } from '@op/common';
+import { updatePhase } from '@op/common';
 import { z } from 'zod';
 
+import {
+  phaseDataEncoder,
+  phaseDataInputEncoder,
+} from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
 const updatePhaseOutputSchema = z.object({
@@ -8,7 +12,7 @@ const updatePhaseOutputSchema = z.object({
   profileId: z.string(),
   name: z.string(),
   slug: z.string(),
-  data: phaseDataSchema,
+  data: phaseDataEncoder,
 });
 
 export const updatePhaseRouter = router({
@@ -18,7 +22,7 @@ export const updatePhaseRouter = router({
         .object({
           phaseId: z.uuid(),
           name: z.string().trim().min(1).max(256).optional(),
-          data: phaseDataSchema.optional(),
+          data: phaseDataInputEncoder.optional(),
         })
         .refine(
           (input) => input.name !== undefined || input.data !== undefined,
