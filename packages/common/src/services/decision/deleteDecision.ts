@@ -1,5 +1,5 @@
-import { db, eq } from '@op/db/client';
-import { profiles } from '@op/db/schema';
+import { db, eq, inArray, or } from '@op/db/client';
+import { processPhases, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -34,13 +34,26 @@ export const deleteDecision = async ({
     ],
   });
 
-  // Delete the decision's profile, which cascades to the instance and all related data
-  const [deletedProfile] = await db
+  // Deleting the decision's profile cascades to the instance and all related
+  // data, but not to phase profiles, which the phase rows point at.
+  const decisionProfileId = instance.profileId;
+  const deletedProfiles = await db
     .delete(profiles)
-    .where(eq(profiles.id, instance.profileId))
-    .returning();
+    .where(
+      or(
+        eq(profiles.id, decisionProfileId),
+        inArray(
+          profiles.id,
+          db
+            .select({ id: processPhases.profileId })
+            .from(processPhases)
+            .where(eq(processPhases.processInstanceId, instanceId)),
+        ),
+      ),
+    )
+    .returning({ id: profiles.id });
 
-  if (!deletedProfile) {
+  if (!deletedProfiles.some(({ id }) => id === decisionProfileId)) {
     throw new CommonError('Failed to delete decision');
   }
 };
