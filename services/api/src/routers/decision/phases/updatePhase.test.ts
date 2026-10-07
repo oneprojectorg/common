@@ -113,7 +113,7 @@ describe.concurrent('updatePhase', () => {
     await expect(
       adminCaller.decision.updatePhase({
         phaseId: phase.id,
-        data: { rubricTemplate: NOT_A_SCHEMA },
+        data: { rubricTemplate: notASchema() },
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
     await expectPhase(phase, UNCHANGED);
@@ -362,7 +362,7 @@ describe.concurrent('updatePhase', () => {
     await expect(
       adminCaller.decision.updatePhase({
         phaseId: phase.id,
-        data: { settingsSchema: NOT_A_SCHEMA },
+        data: { settingsSchema: notASchema() },
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
     await expectPhase(phase, UNCHANGED);
@@ -502,8 +502,9 @@ const RUBRIC_TEMPLATE = {
   },
 };
 
-// Well-typed, but Ajv's meta-schema rejects a negative minLength.
-const NOT_A_SCHEMA = { type: 'string' as const, minLength: -1 };
+// Ajv's meta-schema rejects a negative minLength. A fresh object per call:
+// Ajv caches a schema object before checking it, so a reused one passes.
+const notASchema = () => ({ type: 'string' as const, minLength: -1 });
 
 const expectPhase = async (
   phase: { id: string; profileId: string },
