@@ -47,7 +47,6 @@ export function getInstancePhases(
   return Array.isArray(phases) ? phases : [];
 }
 
-/** JSON Schema for a phase's settings, with RJSF `ui` hints alongside. */
 export type PhaseSettingsSchema = JSONSchema7 & { ui?: UiSchema };
 
 export const assertSettingsMatchSchema = ({

@@ -34,8 +34,7 @@ export const deleteDecision = async ({
     ],
   });
 
-  // Deleting the decision's profile cascades to the instance and all related
-  // data, but not to phase profiles, which the phase rows point at.
+  // Phase profiles don't cascade from the decision's profile.
   const decisionProfileId = instance.profileId;
   const deletedProfiles = await db
     .delete(profiles)

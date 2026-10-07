@@ -70,7 +70,7 @@ export const updatePhase = async ({
       throw new NotFoundError('Phase', phaseId);
     }
 
-    // Checked on the merged row, inside the transaction, so a failure rolls back.
+    // Checked on the merged row so a failure rolls the write back.
     if (touchesSettings) {
       assertPhaseSettings({
         data: readPhaseSettings(phase.data),
