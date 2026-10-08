@@ -24,10 +24,6 @@ export const createPhase = async ({
   sortOrder: number;
   data?: PhaseData;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  const phaseData = data ?? {};
-  assertPhaseSchemasCompile(phaseData);
-  assertPhaseSettings({ data: phaseData, phaseLabel: name });
-
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: { profileId: true },
@@ -38,6 +34,10 @@ export const createPhase = async ({
   }
 
   await assertDecisionAdmin({ user, decisionProfileId: instance.profileId });
+
+  const phaseData = data ?? {};
+  assertPhaseSchemasCompile(phaseData);
+  assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
   return db.transaction((tx) =>
     insertPhase({
