@@ -5,6 +5,7 @@ import {
   createProposal,
   createUser,
   grantDecisionProfileAccess,
+  makeDecisionPublic,
 } from '@op/common/testing/data';
 import {
   TestPhoneAuthDataManager,
@@ -175,6 +176,10 @@ export class SmsVotingFixture {
       email: member.email,
       isAdmin: false,
     });
+  }
+
+  async makePublic(instanceProfileId: string) {
+    await makeDecisionPublic({ profileId: instanceProfileId });
   }
 
   private async cleanup() {
