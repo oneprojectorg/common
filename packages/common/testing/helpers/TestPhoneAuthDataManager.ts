@@ -1,11 +1,11 @@
 import { db, eq } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
-import { createClient } from '@supabase/supabase-js';
 
 import {
   type PhoneNumber,
   toGoTruePhoneFormat,
 } from '../../src/services/notification/schemas';
+import { type TestAdminClient, createTestAdminClient } from './adminClient';
 
 interface CreatePhoneUserOptions {
   /** The number, in E.164 form. */
@@ -53,7 +53,7 @@ export class TestPhoneAuthDataManager {
   /** Auth user ids this instance created, for precise cleanup. */
   private createdAuthUserIds: string[] = [];
 
-  private adminClient: ReturnType<typeof createClient> | null = null;
+  private adminClient: TestAdminClient | null = null;
 
   constructor(
     _testId: string,
@@ -69,13 +69,7 @@ export class TestPhoneAuthDataManager {
    */
   private getAdminClient() {
     if (!this.adminClient) {
-      this.adminClient = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE ?? process.env.SUPABASE_ANON_KEY!,
-        {
-          auth: { persistSession: false, autoRefreshToken: false },
-        },
-      );
+      this.adminClient = createTestAdminClient();
     }
     return this.adminClient;
   }

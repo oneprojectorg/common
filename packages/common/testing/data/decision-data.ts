@@ -222,7 +222,7 @@ export interface CreateDecisionInstanceOptions {
   /** Auth user ID to grant access to */
   authUserId: string;
   /** Email of the user to grant access to */
-  email: string;
+  email: string | null;
   /** Optional name for the instance (auto-generated if not provided) */
   name?: string;
   /** Schema to use for generating instance data (defaults to testSimpleVotingSchema) */
@@ -383,7 +383,7 @@ export interface GrantDecisionProfileAccessOptions {
   /** Auth user ID */
   authUserId: string;
   /** User email */
-  email: string;
+  email: string | null;
   /** Whether to grant admin role (true) or member role (false) */
   isAdmin?: boolean;
 }
