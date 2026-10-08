@@ -57,7 +57,6 @@ interface StepBodyProps {
   onSubmit: () => void;
 }
 
-/** Collects a {@link ProcessDraft}; creating it is the caller's job. */
 export function CreateProcessWizard({
   onExit,
   onComplete,
@@ -68,7 +67,6 @@ export function CreateProcessWizard({
   isSubmitting?: boolean;
 }) {
   const t = useTranslations('decisions.createWizard');
-  // A scoped `t` can't reach the top-level shared labels.
   const tShared = useTranslations();
   const locale = useLocale();
 
@@ -84,7 +82,7 @@ export function CreateProcessWizard({
 
   const isOther = type === 'other';
   const screens = stepThreeScreens(type, other);
-  // Deferred to step 4, so typing on step 3 doesn't recompose the phases.
+  // Not before step 4, so answering step 3 doesn't recompose the phases.
   const isResolved = step >= 4;
   const pieces = useMemo(
     () =>
@@ -104,7 +102,7 @@ export function CreateProcessWizard({
     name,
   });
 
-  // Focus the heading on a step change so the new question is announced.
+  // Focus the new step's heading so it is announced; not on mount.
   const hasStepped = useRef(false);
 
   useEffect(() => {
@@ -159,7 +157,6 @@ export function CreateProcessWizard({
       return;
     }
 
-    // Coming back into step 3 lands on its last screen.
     if (step === 4) {
       setSubIndex(screens.length - 1);
     }
