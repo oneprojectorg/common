@@ -95,6 +95,31 @@ describe.concurrent('createPhase', () => {
     );
   });
 
+  it('rejects a member without decisions ADMIN before checking their schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instanceId } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const caller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      caller.decision.createPhase({
+        instanceId,
+        name: 'Voting',
+        sortOrder: 0,
+        data: { settingsSchema: { type: 'string', minLength: -1 } },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
   it('rejects an org admin without a decision grant', async ({
     task,
     onTestFinished,
