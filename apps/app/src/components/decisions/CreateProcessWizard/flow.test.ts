@@ -48,8 +48,6 @@ describe('canAdvance', () => {
     expect(canAdvance(answers({ step: 2, type: 'pb' }))).toBe(true);
   });
 
-  // The grant pathway has two screens on step 3, and the shape answer must not
-  // satisfy the screen that asks who decides.
   it('checks step 3 against the screen showing, not the step', () => {
     const shaped = answers({
       step: 3,
@@ -77,9 +75,6 @@ describe('canAdvance', () => {
 });
 
 describe('progressPercent', () => {
-  // Step 3's sub-steps have to advance the bar, or it sticks for up to five
-  // questions on the "other" pathway.
-  // With and without the focus screen, which an answer can add mid-step.
   const withFocus: OtherAnswers = {
     ...EMPTY_OTHER,
     subjects: ['funding', 'ideas'],
