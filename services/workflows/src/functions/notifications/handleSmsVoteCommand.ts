@@ -102,7 +102,7 @@ export const handleSmsVoteCommand = inngest.createFunction(
         (phase) => phase.phaseId === profile.processInstance?.currentStateId,
       );
 
-      const votableProposal = await findSmsVotableProposal({
+      const votability = await findSmsVotableProposal({
         processInstanceId: profile.processInstance.id,
         phase: currentPhase,
       });
@@ -111,7 +111,7 @@ export const handleSmsVoteCommand = inngest.createFunction(
         profileId: profile.id,
         name: profile.name,
         processInstanceId: profile.processInstance.id,
-        votableProposalId: votableProposal?.id ?? null,
+        ...votability,
       };
     });
 
@@ -124,15 +124,26 @@ export const handleSmsVoteCommand = inngest.createFunction(
       return { message: 'decision not found' };
     }
 
-    const votableProposalId = decision.votableProposalId;
+    const votableProposalId = decision.proposalId;
 
     if (!votableProposalId) {
+      logger.info('VOTE command refused: no proposal votable by text', {
+        processInstanceId: decision.processInstanceId,
+        votingOpen: decision.votingOpen,
+        eligibleProposalCount: decision.eligibleProposalCount,
+      });
       await text(
         'send-unavailable-reply',
         'Unavailable reply',
-        `Voting for "${decision.name}" is not open by text.`,
+        decision.votingOpen
+          ? `"${decision.name}" has ${decision.eligibleProposalCount} proposals. Voting by text needs a decision with one proposal.`
+          : `Voting for "${decision.name}" is not open.`,
       );
-      return { message: 'no proposal votable by sms' };
+      return {
+        message: 'no proposal votable by sms',
+        votingOpen: decision.votingOpen,
+        eligibleProposalCount: decision.eligibleProposalCount,
+      };
     }
 
     const canVote = await step.run('check-vote-access', async () => {
