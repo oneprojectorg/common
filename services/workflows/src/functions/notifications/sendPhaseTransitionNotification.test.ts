@@ -73,7 +73,7 @@ afterEach(() => {
 });
 
 describe('sendPhaseTransitionNotification against the database', () => {
-  it('given a single-choice voting phase with one eligible proposal, when it opens, then every phone-only member is asked to vote by text and email members are not', async ({
+  it('given a voting phase with one eligible proposal, when it opens, then every phone-only member is asked to vote by text and email members are not', async ({
     task,
     onTestFinished,
   }) => {
@@ -108,7 +108,7 @@ describe('sendPhaseTransitionNotification against the database', () => {
     ]);
   });
 
-  it('given a single-choice voting phase with two eligible proposals, when it opens, then nobody is asked to vote by text', async ({
+  it('given a voting phase with two eligible proposals, when it opens, then nobody is asked to vote by text', async ({
     task,
     onTestFinished,
   }) => {
@@ -130,15 +130,16 @@ describe('sendPhaseTransitionNotification against the database', () => {
     expect(sentEvents()).toEqual([]);
   });
 
-  it('given a voting phase that allows more than one selection, when it opens, then nobody is asked to vote by text', async ({
+  it('given a voting phase that allows more than one selection, when it opens with one eligible proposal, then the phone-only member is still asked to vote by text', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
-    const { instanceId } = await seedInstance(fixture, NUMBERS.multiChoice, {
-      maxVotesPerMember: 2,
-      proposalTitles: ['Fund the park'],
-    });
+    const { phoneOnly, instanceId } = await seedInstance(
+      fixture,
+      NUMBERS.multiChoice,
+      { maxVotesPerMember: 2, proposalTitles: ['Fund the park'] },
+    );
     const t = new InngestTestEngine({
       function: sendPhaseTransitionNotification,
     });
@@ -149,7 +150,12 @@ describe('sendPhaseTransitionNotification against the database', () => {
     });
 
     expect(error).toBeUndefined();
-    expect(sentEvents()).toEqual([]);
+    expect(sentEvents()).toEqual([
+      expect.objectContaining({
+        name: Events.voteSmsPromptRequested.name,
+        data: expect.objectContaining({ authUserId: phoneOnly.authUserId }),
+      }),
+    ]);
   });
 
   it('given the email batch fails, when the phase opens, then phone-only members are still asked to vote by text', async ({

@@ -189,7 +189,7 @@ export * from './utils/phaseTemplates';
 // Voting management
 export * from './voting';
 export * from './votingEligibility';
-export * from './findSingleChoiceBallotProposal';
+export * from './findSmsVotableProposal';
 export * from './assertVoteAccess';
 export * from './listSmsDecisions';
 export * from './formatSmsDecisionList';
