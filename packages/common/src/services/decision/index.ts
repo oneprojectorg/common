@@ -203,6 +203,7 @@ export * from './findSmsVotableProposal';
 export * from './assertVoteAccess';
 export * from './listSmsDecisions';
 export * from './formatSmsDecisionList';
+export * from './getSmsDecisionLink';
 
 // Process survey
 export * from './processSurvey';
