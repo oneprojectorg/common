@@ -22,7 +22,6 @@ export const MAX_PROCESS_NAME_LENGTH = 256;
 export const PHASE_TYPE_LABEL: Record<PhaseType, WizardCopyKey> = {
   submissions: 'submissionsPhase',
   review: 'reviewPhase',
-  develop: 'developPhase',
   voting: 'votingPhase',
   results: 'resultsPhase',
 };
@@ -131,7 +130,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
     {
       name: 'buildProposals',
       phaseName: 'buildProposalsPhase',
-      phaseType: 'develop',
+      phaseType: 'submissions',
       description: 'strongestIdeasBecomeFullCosted',
       capabilities: [
         'chooseWhoDevelopsThem',
@@ -234,11 +233,9 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       ],
     },
     {
-      // A process collects once. The full application isn't a second intake —
-      // it's the shortlist developing what they already sent in.
       name: 'collectFullApplications',
       phaseName: 'sendYourApplication',
-      phaseType: 'develop',
+      phaseType: 'submissions',
       description: 'shortlistDevelopsTheirLetterInto',
       capabilities: [
         'buildWhatLetterAsked',

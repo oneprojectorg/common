@@ -322,7 +322,8 @@ const INTAKE_DESCRIPTION: Record<SubmitKey, WizardCopyKey> = {
 
 /**
  * Build the phase mapping. Order follows practice: intake, a review that
- * narrows, developing what survived, the decision, publishing it.
+ * narrows, a second round of submissions for what survived, the decision,
+ * publishing it.
  */
 export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   const subject = activeSubject(answers);
@@ -399,7 +400,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
     pieces.push({
       name: 'workThemUp',
       phaseName: 'buildThemUp',
-      phaseType: 'develop',
+      phaseType: 'submissions',
       description: 'whatAdvancesGetsBuiltInto',
       capabilities: [
         'buildWhatWasAlreadySubmitted',

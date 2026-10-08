@@ -21,7 +21,7 @@ describe('applyGrantDecision', () => {
     expect(reshaped.map((piece) => piece.phaseType)).toEqual([
       'submissions',
       'review',
-      'develop',
+      'submissions',
       'voting',
       'results',
     ]);
