@@ -4,8 +4,10 @@ import { proposals } from '@op/db/schema';
 import { isVotingPhase } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
-export interface SmsVotableProposal {
-  id: string;
+export interface SmsVotability {
+  proposalId: string | null;
+  votingOpen: boolean;
+  eligibleProposalCount: number;
 }
 
 export async function findSmsVotableProposal({
@@ -14,9 +16,11 @@ export async function findSmsVotableProposal({
 }: {
   processInstanceId: string;
   phase: { rules?: { voting?: { submit?: boolean } } } | undefined;
-}): Promise<SmsVotableProposal | null> {
-  if (!phase || !isVotingPhase(phase)) {
-    return null;
+}): Promise<SmsVotability> {
+  const votingOpen = phase ? isVotingPhase(phase) : false;
+
+  if (!votingOpen) {
+    return { proposalId: null, votingOpen, eligibleProposalCount: 0 };
   }
 
   const rows = await db
@@ -31,6 +35,11 @@ export async function findSmsVotableProposal({
     );
 
   const eligible = rows.filter((row) => isVotingEligible(row.status));
+  const only = eligible.length === 1 ? eligible[0] : undefined;
 
-  return eligible.length === 1 && eligible[0] ? { id: eligible[0].id } : null;
+  return {
+    proposalId: only?.id ?? null,
+    votingOpen,
+    eligibleProposalCount: eligible.length,
+  };
 }

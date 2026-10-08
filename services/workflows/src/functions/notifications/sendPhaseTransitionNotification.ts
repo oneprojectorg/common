@@ -176,11 +176,12 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       }
     }
 
-    const votableProposal = await step.run('find-sms-votable-proposal', () =>
+    const votability = await step.run('find-sms-votable-proposal', () =>
       findSmsVotableProposal({ processInstanceId, phase: toPhase }),
     );
+    const votableProposalId = votability.proposalId;
 
-    if (votableProposal) {
+    if (votableProposalId) {
       const smsParticipants = await step.run(
         'get-sms-only-participants',
         async () => listSmsOnlyProcessParticipants({ processInstanceId }),
@@ -193,7 +194,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
               name: voteSmsPromptRequested.name,
               data: {
                 processInstanceId,
-                proposalId: votableProposal.id,
+                proposalId: votableProposalId,
                 authUserId: participant.authUserId,
                 phone: participant.phone,
               },
@@ -203,7 +204,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
 
         logger.info('Requested SMS vote prompts for phone-only participants', {
           processInstanceId,
-          proposalId: votableProposal.id,
+          proposalId: votableProposalId,
           count: smsParticipants.length,
         });
       }
