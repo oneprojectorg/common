@@ -11,4 +11,5 @@
  * reuse `supabaseTestAdminClient` stay behind `@op/common/testing`, because
  * that client only exists under the shared setup.
  */
+export { createTestAdminClient, type TestAdminClient } from './adminClient';
 export { TestPhoneAuthDataManager } from './TestPhoneAuthDataManager';
