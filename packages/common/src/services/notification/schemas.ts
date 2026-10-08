@@ -73,43 +73,85 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-export type SmsKeyword = 'join' | 'yes' | 'vote' | 'list' | 'show';
+export type SmsKeyword =
+  | 'join'
+  | 'yes'
+  | 'vote'
+  | 'list'
+  | 'show'
+  | 'decisions'
+  | 'proposals'
+  | 'info'
+  | 'more'
+  | 'done'
+  | 'submit'
+  | 'remove';
 
 export interface SmsCommand {
   keyword: SmsKeyword | null;
   argument: string | null;
+  codes: string[];
 }
 
-const BARE_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
-  ['join', /^join[.!]?$/i],
-  ['yes', /^yes[.!]?$/i],
-  ['list', /^list[.!]?$/i],
+const BARE_KEYWORDS: ReadonlyArray<SmsKeyword> = [
+  'join',
+  'yes',
+  'list',
+  'decisions',
+  'more',
+  'done',
+  'submit',
 ];
 
-const ARGUMENT_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
-  ['vote', /^vote(?=[.!:,\s]|$)/i],
-  ['show', /^show(?=[.!:,\s]|$)/i],
+const ARGUMENT_KEYWORDS: ReadonlyArray<SmsKeyword> = [
+  'vote',
+  'show',
+  'proposals',
+  'info',
+  'remove',
 ];
+
+const bareKeywordPattern = (keyword: string) =>
+  new RegExp(`^${keyword}[.!]?$`, 'i');
+
+const argumentKeywordPattern = (keyword: string) =>
+  new RegExp(`^${keyword}(?=[.!:,\\s]|$)`, 'i');
 
 const ARGUMENT_SEPARATOR_PATTERN = /^[.!:,]/;
+const PICK_CODES_PATTERN = /^\d{3}(?:[\s,]+\d{3})*[.!]?$/;
+const CODE_PATTERN = /\d{3}/g;
+
+const noCommand: SmsCommand = { keyword: null, argument: null, codes: [] };
 
 export const parseSmsCommand = (body: string): SmsCommand => {
   const text = body.trim();
-  const bare = BARE_KEYWORD_PATTERNS.find(([, pattern]) => pattern.test(text));
+  const bare = BARE_KEYWORDS.find((keyword) =>
+    bareKeywordPattern(keyword).test(text),
+  );
   if (bare) {
-    return { keyword: bare[0], argument: null };
+    return { keyword: bare, argument: null, codes: [] };
   }
-  const withArgument = ARGUMENT_KEYWORD_PATTERNS.find(([, pattern]) =>
-    pattern.test(text),
+  const withArgument = ARGUMENT_KEYWORDS.find((keyword) =>
+    argumentKeywordPattern(keyword).test(text),
   );
   if (withArgument) {
-    const [keyword] = withArgument;
     const argument = text
-      .slice(keyword.length)
+      .slice(withArgument.length)
       .replace(ARGUMENT_SEPARATOR_PATTERN, '')
       .trim()
       .toLowerCase();
-    return { keyword, argument: argument.length > 0 ? argument : null };
+    return {
+      keyword: withArgument,
+      argument: argument.length > 0 ? argument : null,
+      codes: [],
+    };
   }
-  return { keyword: null, argument: null };
+  if (PICK_CODES_PATTERN.test(text)) {
+    return {
+      keyword: null,
+      argument: null,
+      codes: text.match(CODE_PATTERN) ?? [],
+    };
+  }
+  return noCommand;
 };

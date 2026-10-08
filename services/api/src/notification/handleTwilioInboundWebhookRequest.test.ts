@@ -57,6 +57,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: null,
         keyword: 'yes',
         argument: null,
+        codes: [],
       },
     });
   });
@@ -85,6 +86,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: '234567',
         keyword: null,
         argument: null,
+        codes: ['234', '567'],
       },
     });
   });
@@ -110,6 +112,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: null,
         keyword: 'join',
         argument: null,
+        codes: [],
       },
     });
   });
@@ -135,6 +138,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: null,
         keyword: 'vote',
         argument: 'columbus',
+        codes: [],
       },
     });
   });

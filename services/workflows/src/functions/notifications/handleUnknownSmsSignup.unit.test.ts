@@ -44,7 +44,14 @@ const triggerEvent = (
   keyword: 'join' | null = 'join',
 ) => ({
   name: Events.smsInboundReceived.name,
-  data: { from: FROM, messageSid: 'SM1', code, keyword, argument: null },
+  data: {
+    from: FROM,
+    messageSid: 'SM1',
+    code,
+    keyword,
+    argument: null,
+    codes: [],
+  },
 });
 
 const reply = (attempt: number, code: string | null) => ({
@@ -56,6 +63,7 @@ const reply = (attempt: number, code: string | null) => ({
       code,
       keyword: null,
       argument: null,
+      codes: [],
     },
   }),
 });
@@ -212,6 +220,7 @@ describe('handleUnknownSmsSignup', () => {
             code: null,
             keyword: 'join',
             argument: null,
+            codes: [],
           },
         },
       ],

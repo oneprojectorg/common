@@ -1,10 +1,10 @@
-import type { SmsDecision } from './listSmsDecisions';
+import type { SmsDecisionListItem } from './listSmsDecisions';
 
 const MAX_LISTED_DECISIONS = 10;
 const EMPTY_MESSAGE = 'You are not a participant in any decision yet.';
 
 export const formatSmsDecisionList = (
-  decisions: ReadonlyArray<SmsDecision>,
+  decisions: ReadonlyArray<SmsDecisionListItem>,
 ): string => {
   if (decisions.length === 0) {
     return EMPTY_MESSAGE;

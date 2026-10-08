@@ -1,7 +1,7 @@
 import {
   RateLimitError,
   getPhoneSignupState,
-  getSmsDecisionLink,
+  findSmsDecision,
   getSmsProvider,
   safeParsePhoneNumber,
 } from '@op/common';
@@ -76,8 +76,8 @@ export const handleSmsShowCommand = inngest.createFunction(
       return { message: 'help sent' };
     }
 
-    const link = await step.run('find-decision-link', () =>
-      getSmsDecisionLink({ authUserId: account.authUserId, slug: argument }),
+    const link = await step.run('find-decision', () =>
+      findSmsDecision({ authUserId: account.authUserId, slug: argument }),
     );
 
     if (!link) {
