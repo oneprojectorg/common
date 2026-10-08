@@ -73,12 +73,12 @@ afterEach(() => {
 });
 
 describe('sendPhaseTransitionNotification against the database', () => {
-  it('given a voting phase with one eligible proposal, when it opens, then every phone-only member is asked to vote by text and email members are not', async ({
+  it('given a voting phase with a proposal, when it opens, then every phone-only member is asked to vote by text and email members are not', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
-    const { phoneOnly, instanceId, proposals } = await seedInstance(
+    const { phoneOnly, instanceId } = await seedInstance(
       fixture,
       NUMBERS.singleProposal,
       { maxVotesPerMember: 1, proposalTitles: ['Fund the park'] },
@@ -97,10 +97,9 @@ describe('sendPhaseTransitionNotification against the database', () => {
     });
     expect(sentEvents()).toEqual([
       {
-        name: Events.voteSmsPromptRequested.name,
+        name: Events.voteSmsBallotRequested.name,
         data: {
           processInstanceId: instanceId,
-          proposalId: proposals[0]!.id,
           authUserId: phoneOnly.authUserId,
           phone: NUMBERS.singleProposal,
         },
@@ -108,15 +107,19 @@ describe('sendPhaseTransitionNotification against the database', () => {
     ]);
   });
 
-  it('given a voting phase with two eligible proposals, when it opens, then nobody is asked to vote by text', async ({
+  it('given a voting phase with two eligible proposals, when it opens, then phone-only members are still asked to vote by text', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
-    const { instanceId } = await seedInstance(fixture, NUMBERS.twoProposals, {
-      maxVotesPerMember: 1,
-      proposalTitles: ['Fund the park', 'Repave the lot'],
-    });
+    const { phoneOnly, instanceId } = await seedInstance(
+      fixture,
+      NUMBERS.twoProposals,
+      {
+        maxVotesPerMember: 1,
+        proposalTitles: ['Fund the park', 'Repave the lot'],
+      },
+    );
     const t = new InngestTestEngine({
       function: sendPhaseTransitionNotification,
     });
@@ -127,7 +130,12 @@ describe('sendPhaseTransitionNotification against the database', () => {
     });
 
     expect(error).toBeUndefined();
-    expect(sentEvents()).toEqual([]);
+    expect(sentEvents()).toEqual([
+      expect.objectContaining({
+        name: Events.voteSmsBallotRequested.name,
+        data: expect.objectContaining({ authUserId: phoneOnly.authUserId }),
+      }),
+    ]);
   });
 
   it('given a voting phase that allows more than one selection, when it opens with one eligible proposal, then the phone-only member is still asked to vote by text', async ({
@@ -152,7 +160,7 @@ describe('sendPhaseTransitionNotification against the database', () => {
     expect(error).toBeUndefined();
     expect(sentEvents()).toEqual([
       expect.objectContaining({
-        name: Events.voteSmsPromptRequested.name,
+        name: Events.voteSmsBallotRequested.name,
         data: expect.objectContaining({ authUserId: phoneOnly.authUserId }),
       }),
     ]);
@@ -185,7 +193,7 @@ describe('sendPhaseTransitionNotification against the database', () => {
     });
     expect(sentEvents()).toEqual([
       expect.objectContaining({
-        name: Events.voteSmsPromptRequested.name,
+        name: Events.voteSmsBallotRequested.name,
         data: expect.objectContaining({ authUserId: phoneOnly.authUserId }),
       }),
     ]);
