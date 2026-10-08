@@ -11,18 +11,13 @@ import {
 } from './otherFlow';
 import type { ProcessType, ShapeKey } from './types';
 
-/** The wizard's sequencing, kept out of the shell so it can be tested alone. */
-
 export const TOTAL_STEPS = 5;
 
-/** Every screen step 3 can show, across all three pathways. */
 export type StepThreeScreen = OtherStep | 'shape' | 'grantDecision';
 
 export const isOtherScreen = (screen: StepThreeScreen): screen is OtherStep =>
   screen !== 'shape' && screen !== 'grantDecision';
 
-/** Step 3 is a sequence of its own: grantmaking asks who decides, and
- * "other" asks four questions that compose their own mapping. */
 export function stepThreeScreens(
   type: ProcessType | null,
   other: OtherAnswers,
@@ -44,7 +39,6 @@ export interface WizardAnswers {
   name: string;
 }
 
-/** Whether the current screen has enough of an answer to move on. */
 export function canAdvance({
   step,
   screen,
@@ -77,12 +71,7 @@ export function canAdvance({
   return true;
 }
 
-/**
- * Every screen step 3 could show for a type, whatever the answers. Progress
- * divides by these rather than by the screens currently shown, so an answer
- * that adds a screen cannot move the bar backwards; a skipped screen jumps it
- * forward instead.
- */
+/** Every screen step 3 could show, not only those shown: a changing divisor would move the bar backwards. */
 function stepThreeSlots(type: ProcessType | null): StepThreeScreen[] {
   if (type === 'other') {
     return ['subjects', 'cadence', 'focus', 'submits', 'decision'];
@@ -91,7 +80,6 @@ function stepThreeSlots(type: ProcessType | null): StepThreeScreen[] {
   return type === 'grant' ? ['shape', 'grantDecision'] : ['shape'];
 }
 
-/** Runs smoothly through step 3's sub-steps instead of sticking. */
 export function progressPercent(
   step: number,
   screen: StepThreeScreen,

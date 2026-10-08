@@ -2,19 +2,10 @@ import type { TranslateFn } from '@/lib/i18n';
 
 import type { Choice, ProcessPiece, WizardCopyKey } from './types';
 
-/**
- * The "other process" pathway — four plain-language questions instead of a
- * free-text box, composed into a real phase mapping at the bottom of the file.
- * None of the copy here uses Common's internal vocabulary.
- */
-
-/** Q1 — what the process decides on. */
 export type Subject = 'funding' | 'ideas' | 'people' | 'else';
 
-/** Q2 — whether it runs to an end or stays open. */
 export type Cadence = 'timeline' | 'ongoing';
 
-/** Q3 — what arrives first. `none` means nothing is submitted. */
 export type SubmitKey =
   | 'applications'
   | 'proposals'
@@ -22,14 +13,11 @@ export type SubmitKey =
   | 'nominations'
   | 'none';
 
-/** Q4 — how the call gets made. */
 export type Decision = 'vote' | 'review' | 'both' | 'agree';
 
 export interface OtherAnswers {
   subjects: Subject[];
-  /** Free text, only when 'subjectElseLabel' is one of the subjects. */
   elseText: string;
-  /** Which subject to set up first, when more than one was picked. */
   focus: Subject | null;
   cadence: Cadence | null;
   submits: SubmitKey | null;
@@ -45,15 +33,12 @@ export const EMPTY_OTHER: OtherAnswers = {
   decision: null,
 };
 
-/** The screens this pathway can show, in order. */
 export type OtherStep =
   | 'subjects'
   | 'cadence'
   | 'focus'
   | 'submits'
   | 'decision';
-
-// --- Q1 ---------------------------------------------------------------------
 
 export const SUBJECT_OPTIONS: Choice<Subject>[] = [
   {
@@ -78,15 +63,12 @@ export const SUBJECT_OPTIONS: Choice<Subject>[] = [
   },
 ];
 
-/** Short noun for a subject, for use inside a sentence. */
 const SUBJECT_NOUN: Record<Subject, WizardCopyKey> = {
   funding: 'subjectFundingNoun',
   ideas: 'subjectIdeasNoun',
   people: 'subjectPeopleNoun',
   else: 'subjectElseNoun',
 };
-
-// --- Q2 ---------------------------------------------------------------------
 
 export const CADENCE_OPTIONS: Choice<Cadence>[] = [
   {
@@ -101,9 +83,6 @@ export const CADENCE_OPTIONS: Choice<Cadence>[] = [
   },
 ];
 
-// --- Q3 ---------------------------------------------------------------------
-
-/** Worded per subject. The last option always skips the intake entirely. */
 export const SUBMIT_OPTIONS: Record<Subject, Choice<SubmitKey>[]> = {
   funding: [
     {
@@ -175,15 +154,12 @@ export const SUBMIT_OPTIONS: Record<Subject, Choice<SubmitKey>[]> = {
   ],
 };
 
-/** The Q3 heading, worded for the subject. */
 export const SUBMIT_HEADING: Record<Subject, WizardCopyKey> = {
   funding: 'submitsFundingHeading',
   ideas: 'submitsPutForwardHeading',
   people: 'submitsPeopleHeading',
   else: 'submitsPutForwardHeading',
 };
-
-// --- Q4 ---------------------------------------------------------------------
 
 export const DECISION_OPTIONS: Choice<Decision>[] = [
   {
@@ -208,12 +184,6 @@ export const DECISION_OPTIONS: Choice<Decision>[] = [
   },
 ];
 
-// --- Sequencing -------------------------------------------------------------
-
-/**
- * Several subjects only force a choice when the process has an end, so the
- * focus screen sits after the cadence question rather than before it.
- */
 export function otherStepList(answers: OtherAnswers): OtherStep[] {
   const needsFocus =
     answers.subjects.length > 1 && answers.cadence === 'timeline';
@@ -223,7 +193,6 @@ export function otherStepList(answers: OtherAnswers): OtherStep[] {
   return ['subjects', 'cadence', ...focusStep, 'submits', 'decision'];
 }
 
-/** Whether the current screen has enough of an answer to move on. */
 export function otherCanContinue(
   step: OtherStep,
   answers: OtherAnswers,
@@ -246,7 +215,7 @@ export function otherCanContinue(
   }
 }
 
-/** The subject driving the wording; several at once falls back to general. */
+/** Several subjects at once read as `else`. */
 export function activeSubject(answers: OtherAnswers): Subject {
   if (answers.focus) {
     return answers.focus;
@@ -261,13 +230,11 @@ export function activeSubject(answers: OtherAnswers): Subject {
   return 'else';
 }
 
-/** How to name what is being decided, inside a sentence. */
 export function subjectPhrase(
   answers: OtherAnswers,
   t: TranslateFn<'decisions.createWizard'>,
   locale: string,
 ): string {
-  // 'subjectElseLabel' speaks in the user's own words, untranslated.
   const named = (subject: Subject) =>
     subject === 'else' && answers.elseText.trim()
       ? answers.elseText.trim()
@@ -293,8 +260,6 @@ export function subjectPhrase(
   }).format(answers.subjects.map(named));
 }
 
-// --- Answers → phases -------------------------------------------------------
-
 const INTAKE_NAME: Record<SubmitKey, WizardCopyKey> = {
   applications: 'collectApplications',
   proposals: 'collectProposals',
@@ -303,7 +268,6 @@ const INTAKE_NAME: Record<SubmitKey, WizardCopyKey> = {
   none: 'collectSubmissions',
 };
 
-/** The same phases, named for the people who will read them on the timeline. */
 const INTAKE_PHASE_NAME: Record<SubmitKey, WizardCopyKey> = {
   applications: 'sendYourApplication',
   proposals: 'sendYourProposal',
@@ -320,18 +284,12 @@ const INTAKE_DESCRIPTION: Record<SubmitKey, WizardCopyKey> = {
   none: 'gatherWhatPeoplePutForward',
 };
 
-/**
- * Build the phase mapping. Order follows practice: intake, a review that
- * narrows, a second round of submissions for what survived, the decision,
- * publishing it.
- */
 export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   const subject = activeSubject(answers);
   const submits = answers.submits ?? 'none';
   const decision = answers.decision ?? 'vote';
   const discussionOnly = decision === 'agree';
 
-  // Always open — one intake that never closes, and support shown in the open.
   if (answers.cadence === 'ongoing') {
     const votingCapabilities: WizardCopyKey[] =
       decision === 'vote' || decision === 'both' ? ['runVoteItemWhenYou'] : [];
@@ -358,8 +316,6 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   const pieces: ProcessPiece[] = [];
 
   if (submits !== 'none') {
-    // Without a formal vote, support has to show somewhere — so the intake
-    // itself carries the commenting and liking.
     const supportCapabilities: WizardCopyKey[] = discussionOnly
       ? ['letPeopleCommentLikeShow']
       : [];
@@ -454,7 +410,6 @@ const DECISION_RECAP: Record<Decision, WizardCopyKey> = {
   agree: 'recapDecisionAgree',
 };
 
-/** A plain-language recap, shown above the mapping on the walkthrough screen. */
 export function describeOther(
   answers: OtherAnswers,
   t: TranslateFn<'decisions.createWizard'>,

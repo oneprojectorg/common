@@ -10,8 +10,6 @@ describe('applyGrantDecision', () => {
     expect(applyGrantDecision(pieces, null)).toBe(pieces);
   });
 
-  // In a letter-of-intent process the first review picks who advances, which
-  // happens whoever decides the funding — so only the last review is reshaped.
   it('replaces only the last review when the applicants vote', () => {
     const reshaped = applyGrantDecision(
       piecesFor('grant', 'loi'),

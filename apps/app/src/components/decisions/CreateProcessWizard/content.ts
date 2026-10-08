@@ -9,13 +9,7 @@ import type {
   WizardCopyKey,
 } from './types';
 
-/**
- * Fixed content for the wizard: type labels, the one shape question per type,
- * and the phase mapping each pair resolves to. "Other" composes its own — see
- * `otherFlow.ts`.
- */
-
-/** The name bounds `createInstanceFromTemplate` will take. */
+/** Must match `createInstanceFromTemplate`'s bounds. */
 export const MIN_PROCESS_NAME_LENGTH = 3;
 export const MAX_PROCESS_NAME_LENGTH = 256;
 
@@ -28,12 +22,11 @@ export const PHASE_TYPE_LABEL: Record<PhaseType, WizardCopyKey> = {
 
 export interface TypeMeta {
   label: WizardCopyKey;
-  /** A whole noun phrase, not an interpolated adjective — articles inflect. */
+  /** A whole noun phrase: articles inflect, so an adjective can't be interpolated. */
   subjectPhrase: WizardCopyKey;
   description: WizardCopyKey;
 }
 
-/** Order is the order the cards appear in. */
 export const TYPE_ORDER: ProcessType[] = ['grant', 'pb', 'other'];
 
 export const TYPE_META: Record<ProcessType, TypeMeta> = {
@@ -59,7 +52,6 @@ export interface ShapeQuestion {
   options: Choice<ShapeKey>[];
 }
 
-/** The one shape follow-up, per type. "Other" asks its own questions instead. */
 export const SHAPE_QUESTION: Partial<Record<ProcessType, ShapeQuestion>> = {
   grant: {
     heading: 'grantShapeHeading',
@@ -93,16 +85,9 @@ export const SHAPE_QUESTION: Partial<Record<ProcessType, ShapeQuestion>> = {
   },
 };
 
-/**
- * Every grantmaking and budgeting (type, shape) pair. A total `Record`, so a
- * new shape has to be given a mapping here or `typecheck` fails. "Other" has
- * no entry: `custom` composes its mapping in `otherFlow.ts`, and `blank`
- * builds no phases at all.
- */
 type PieceSetKey = `grant:${GrantShape}` | `pb:${PbShape}`;
 
 const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
-  // Participatory budgeting — rough ideas first.
   'pb:ideas': [
     {
       name: 'collectIdeas',
@@ -161,7 +146,6 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
     },
   ],
 
-  // Participatory budgeting — complete proposals from the start.
   'pb:proposals': [
     {
       name: 'collectProposals',
@@ -207,7 +191,6 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
     },
   ],
 
-  // Grantmaking — a letter of intent first, then full applications.
   'grant:loi': [
     {
       name: 'collectLettersIntent',
@@ -263,7 +246,6 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
     },
   ],
 
-  // Grantmaking — one full application, reviewed as is.
   'grant:single': [
     {
       name: 'collectApplications',
@@ -298,10 +280,6 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
 
 const isPieceSetKey = (key: string): key is PieceSetKey => key in PIECE_SETS;
 
-/**
- * The pieces for a chosen (type, shape). Empty for a pair that maps to nothing,
- * and for a half-answered one — the shape question has not been reached yet.
- */
 export function piecesFor(
   type: ProcessType | null,
   shape: ShapeKey | null,
@@ -315,7 +293,6 @@ export function piecesFor(
   return isPieceSetKey(key) ? PIECE_SETS[key] : [];
 }
 
-/** Grantmaking — who actually makes the call. */
 export type GrantDecision = 'rubric' | 'applicants' | 'hybrid';
 
 export const GRANT_DECISION_QUESTION: {
@@ -355,10 +332,7 @@ const GRANT_VOTE_PIECE: ProcessPiece = {
   ],
 };
 
-/**
- * Reshape a grantmaking set around who decides. Only the *last* review changes:
- * an earlier one picks who advances, which happens either way.
- */
+/** Only the last review changes: an earlier one picks who advances, whoever decides. */
 export function applyGrantDecision(
   pieces: ProcessPiece[],
   decision: GrantDecision | null,
@@ -374,7 +348,6 @@ export function applyGrantDecision(
   }
 
   if (decision === 'applicants') {
-    // No deciding panel at all — the applicants vote instead.
     return pieces.map((p, i) => (i === lastReview ? GRANT_VOTE_PIECE : p));
   }
 
@@ -384,7 +357,6 @@ export function applyGrantDecision(
     return pieces;
   }
 
-  // Hybrid — the panel narrows the field, then the vote settles it.
   const narrowed: ProcessPiece = {
     ...deciding,
     name: 'narrowField',

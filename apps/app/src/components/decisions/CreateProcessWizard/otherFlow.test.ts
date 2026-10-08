@@ -29,8 +29,6 @@ const phases = (input: OtherAnswers) =>
 
 describe('otherStepList', () => {
   it('only asks which subject to focus on when the process has a timeline', () => {
-    // Several subjects at once is only a conflict for a run with stages; an
-    // always-open space covers all of them together.
     expect(
       otherStepList(
         answers({ subjects: ['funding', 'ideas'], cadence: 'timeline' }),
@@ -50,8 +48,6 @@ describe('otherStepList', () => {
     ).toEqual(['subjects', 'cadence', 'submits', 'decision']);
   });
 
-  // The focus screen sits after the cadence question, not before it — that
-  // ordering is what lets the timeline answer decide whether it is asked.
   it('puts focus after cadence', () => {
     const steps = otherStepList(
       answers({ subjects: ['funding', 'people'], cadence: 'timeline' }),
@@ -151,7 +147,6 @@ describe('otherCanContinue', () => {
     ).toBe(true);
   });
 
-  // "Something else" is named in the user's own words, so it needs some.
   it('needs words for something else', () => {
     const picked = answers({ subjects: ['funding', 'else'] });
 
