@@ -181,6 +181,11 @@ export const handleSmsVoteRequest = inngest.createFunction(
         authUserId,
         reason: vote.reason,
       });
+      await text(
+        'send-vote-rejected-reply',
+        'Vote rejected reply',
+        `We could not record your vote for "${proposalTitle}".`,
+      );
       return { message: 'vote rejected', reason: vote.reason };
     }
 

@@ -1,7 +1,6 @@
 import {
   type DecisionInstanceData,
-  isSingleChoiceVotingPhase,
-  isVotingEligible,
+  findSingleChoiceBallotProposal,
   listProcessParticipants,
   listSmsOnlyProcessParticipants,
   resolveManualSelectionStatus,
@@ -9,11 +8,11 @@ import {
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { processInstances, profiles, proposals } from '@op/db/schema';
+import { processInstances, profiles } from '@op/db/schema';
 import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { and, eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const { phaseTransitioned, manualSelectionsConfirmed, voteSmsPromptRequested } =
   Events;
@@ -177,58 +176,36 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       }
     }
 
-    if (toPhase && isSingleChoiceVotingPhase(toPhase)) {
-      const eligibleProposals = await step.run(
-        'get-eligible-proposals',
-        async () => {
-          const rows = await db
-            .select({ id: proposals.id, status: proposals.status })
-            .from(proposals)
-            .where(
-              and(
-                eq(proposals.processInstanceId, processInstanceId),
-                isNull(proposals.deletedAt),
-                isNull(proposals.moderationDetachedAt),
-              ),
-            );
+    const ballotProposal = await step.run('find-sms-ballot-proposal', () =>
+      findSingleChoiceBallotProposal({ processInstanceId, phase: toPhase }),
+    );
 
-          return rows.filter((row) => isVotingEligible(row.status));
-        },
+    if (ballotProposal) {
+      const smsParticipants = await step.run(
+        'get-sms-only-participants',
+        async () => listSmsOnlyProcessParticipants({ processInstanceId }),
       );
 
-      const singleEligibleProposal =
-        eligibleProposals.length === 1 ? eligibleProposals[0] : undefined;
-
-      if (singleEligibleProposal) {
-        const smsParticipants = await step.run(
-          'get-sms-only-participants',
-          async () => listSmsOnlyProcessParticipants({ processInstanceId }),
+      if (smsParticipants.length > 0) {
+        await step.run('request-sms-vote-prompts', async () =>
+          inngest.send(
+            smsParticipants.map((participant) => ({
+              name: voteSmsPromptRequested.name,
+              data: {
+                processInstanceId,
+                proposalId: ballotProposal.id,
+                authUserId: participant.authUserId,
+                phone: participant.phone,
+              },
+            })),
+          ),
         );
 
-        if (smsParticipants.length > 0) {
-          await step.run('request-sms-vote-prompts', async () =>
-            inngest.send(
-              smsParticipants.map((participant) => ({
-                name: voteSmsPromptRequested.name,
-                data: {
-                  processInstanceId,
-                  proposalId: singleEligibleProposal.id,
-                  authUserId: participant.authUserId,
-                  phone: participant.phone,
-                },
-              })),
-            ),
-          );
-
-          logger.info(
-            'Requested SMS vote prompts for phone-only participants',
-            {
-              processInstanceId,
-              proposalId: singleEligibleProposal.id,
-              count: smsParticipants.length,
-            },
-          );
-        }
+        logger.info('Requested SMS vote prompts for phone-only participants', {
+          processInstanceId,
+          proposalId: ballotProposal.id,
+          count: smsParticipants.length,
+        });
       }
     }
 
