@@ -152,6 +152,14 @@ describe.concurrent('reorderPhases', () => {
         phases: [...phases].reverse().map((phase) => ({ phaseId: phase.id })),
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const [review] = phases;
+    await expect(
+      caller.decision.reorderPhases({
+        instanceId,
+        phases: [{ phaseId: review.id }, { phaseId: review.id }],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects the admin of a different decision', async ({

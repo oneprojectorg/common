@@ -32,13 +32,6 @@ export const reorderPhases = async ({
   processInstanceId: string;
   phases: PhasePlacement[];
 }): Promise<ReorderedPhase[]> => {
-  const requestedIds = new Set(phases.map((phase) => phase.phaseId));
-  if (requestedIds.size !== phases.length) {
-    throw new ValidationError('A phase is listed more than once', {
-      phases: 'List each phase once',
-    });
-  }
-
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: { profileId: true },
@@ -49,6 +42,13 @@ export const reorderPhases = async ({
   }
 
   await assertDecisionAdmin({ user, decisionProfileId: instance.profileId });
+
+  const requestedIds = new Set(phases.map((phase) => phase.phaseId));
+  if (requestedIds.size !== phases.length) {
+    throw new ValidationError('A phase is listed more than once', {
+      phases: 'List each phase once',
+    });
+  }
 
   return db.transaction(async (tx) => {
     await lockProcessInstanceOrThrow({ db: tx, instanceId: processInstanceId });
@@ -96,6 +96,6 @@ export const reorderPhases = async ({
       .from(processPhases)
       .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
       .where(eq(processPhases.processInstanceId, processInstanceId))
-      .orderBy(asc(processPhases.sortOrder));
+      .orderBy(asc(processPhases.sortOrder), asc(processPhases.id));
   });
 };
