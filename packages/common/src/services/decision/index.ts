@@ -191,6 +191,8 @@ export * from './voting';
 export * from './votingEligibility';
 export * from './findSingleChoiceBallotProposal';
 export * from './assertVoteAccess';
+export * from './listSmsDecisions';
+export * from './formatSmsDecisionList';
 
 // Process survey
 export * from './processSurvey';
