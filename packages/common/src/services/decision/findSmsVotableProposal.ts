@@ -1,23 +1,21 @@
 import { and, db, eq, isNull } from '@op/db/client';
 import { proposals } from '@op/db/schema';
 
-import { isSingleChoiceVotingPhase } from './utils/phaseSettings';
+import { isVotingPhase } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
-export interface SingleChoiceBallotProposal {
+export interface SmsVotableProposal {
   id: string;
 }
 
-export async function findSingleChoiceBallotProposal({
+export async function findSmsVotableProposal({
   processInstanceId,
   phase,
 }: {
   processInstanceId: string;
-  phase:
-    | { rules?: { voting?: { submit?: boolean; maxVotesPerMember?: number } } }
-    | undefined;
-}): Promise<SingleChoiceBallotProposal | null> {
-  if (!phase || !isSingleChoiceVotingPhase(phase)) {
+  phase: { rules?: { voting?: { submit?: boolean } } } | undefined;
+}): Promise<SmsVotableProposal | null> {
+  if (!phase || !isVotingPhase(phase)) {
     return null;
   }
 

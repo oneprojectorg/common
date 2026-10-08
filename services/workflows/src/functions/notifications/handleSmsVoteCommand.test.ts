@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 describe('handleSmsVoteCommand against the database', () => {
-  it('given a member texts VOTE and the decision slug, when the decision has one proposal on a single-choice ballot, then a vote prompt is requested for them', async ({
+  it('given a member texts VOTE and the decision slug, when the decision has one proposal in a voting phase, then a vote prompt is requested for them', async ({
     task,
     onTestFinished,
   }) => {
@@ -149,7 +149,7 @@ describe('handleSmsVoteCommand against the database', () => {
       events: [voteCommand(phone, slug)],
     });
 
-    expect(result).toEqual({ message: 'ballot unavailable by sms' });
+    expect(result).toEqual({ message: 'no proposal votable by sms' });
     expect(memorySmsProvider.sent).toEqual([
       {
         to: phone,
