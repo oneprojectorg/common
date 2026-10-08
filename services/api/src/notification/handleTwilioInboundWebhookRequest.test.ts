@@ -55,7 +55,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         from: '+15005550006',
         messageSid: 'SM456',
         code: null,
-        keyword: null,
+        keyword: 'yes',
       },
     });
   });

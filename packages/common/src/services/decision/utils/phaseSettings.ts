@@ -41,6 +41,12 @@ export function isVotingPhase(phase: {
   return phase.rules?.voting?.submit ?? false;
 }
 
+export function isSingleChoiceVotingPhase(phase: {
+  rules?: { voting?: { submit?: boolean; maxVotesPerMember?: number } };
+}): boolean {
+  return isVotingPhase(phase) && phase.rules?.voting?.maxVotesPerMember === 1;
+}
+
 /**
  * Participants may comment during this phase — the Process Builder's
  * "Comments" toggle.
