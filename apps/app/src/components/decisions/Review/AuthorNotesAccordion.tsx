@@ -101,7 +101,7 @@ function AuthorNoteEntry({
           <Button
             variant="link"
             size="inline"
-            className="text-sm underline"
+            className="text-sm"
             onClick={() => onViewRequests(note.requestIds)}
           >
             {note.requestIds.length === 1

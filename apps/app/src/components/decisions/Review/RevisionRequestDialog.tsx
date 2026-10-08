@@ -153,7 +153,7 @@ function RevisionRequestCard({
           <Button
             variant="link"
             size="inline"
-            className="text-sm underline"
+            className="text-sm"
             onClick={onCancel}
           >
             {t('decisions.review.cancelRequestAction')}
