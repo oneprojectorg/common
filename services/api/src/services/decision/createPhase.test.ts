@@ -1,4 +1,8 @@
-import { ValidationError, createPhase } from '@op/common';
+import {
+  MAX_PHASES_PER_DECISION,
+  ValidationError,
+  createPhase,
+} from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
@@ -225,6 +229,35 @@ describe.concurrent('createPhase', () => {
         sortOrder: 2 ** 31,
       }),
     ).rejects.toMatchObject({ cause: { code: '22003' } });
+
+    await expectNoProfileNamed(name);
+  });
+
+  it(`refuses a phase past ${MAX_PHASES_PER_DECISION}`, async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+
+    for (let sortOrder = 0; sortOrder < MAX_PHASES_PER_DECISION; sortOrder++) {
+      const { profile } = await createPhase({
+        user,
+        processInstanceId: instanceId,
+        name: `Phase ${sortOrder}`,
+        sortOrder,
+      });
+      testData.trackProfileForCleanup(profile.id);
+    }
+
+    const name = `One Too Many ${randomUUID()}`;
+    await expect(
+      createPhase({
+        user,
+        processInstanceId: instanceId,
+        name,
+        sortOrder: MAX_PHASES_PER_DECISION,
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
 
     await expectNoProfileNamed(name);
   });
