@@ -213,9 +213,15 @@ describe('extractSmsKeyword', () => {
     expect(extractSmsKeyword('Join!')).toBe('join');
   });
 
-  it('given anything that is not the keyword alone, when extracted, then it returns null', () => {
+  it('given YES in any case or with trailing punctuation, when extracted, then it returns the keyword', () => {
+    expect(extractSmsKeyword('yes')).toBe('yes');
+    expect(extractSmsKeyword(' YES ')).toBe('yes');
+    expect(extractSmsKeyword('Yes!')).toBe('yes');
+  });
+
+  it('given anything that is not a keyword alone, when extracted, then it returns null', () => {
     expect(extractSmsKeyword('join me')).toBeNull();
-    expect(extractSmsKeyword('YES')).toBeNull();
+    expect(extractSmsKeyword('yes please')).toBeNull();
     expect(extractSmsKeyword('234567')).toBeNull();
     expect(extractSmsKeyword('')).toBeNull();
   });

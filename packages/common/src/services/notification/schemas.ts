@@ -73,9 +73,16 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-const JOIN_KEYWORD_PATTERN = /^join[.!]?$/i;
+export type SmsKeyword = 'join' | 'yes';
 
-export type SmsKeyword = 'join';
+const SMS_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
+  ['join', /^join[.!]?$/i],
+  ['yes', /^yes[.!]?$/i],
+];
 
-export const extractSmsKeyword = (body: string): SmsKeyword | null =>
-  JOIN_KEYWORD_PATTERN.test(body.trim()) ? 'join' : null;
+export const extractSmsKeyword = (body: string): SmsKeyword | null => {
+  const text = body.trim();
+  return (
+    SMS_KEYWORD_PATTERNS.find(([, pattern]) => pattern.test(text))?.[0] ?? null
+  );
+};
