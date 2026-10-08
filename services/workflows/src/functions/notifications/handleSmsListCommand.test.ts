@@ -12,6 +12,7 @@ import { handleSmsListCommand } from './handleSmsListCommand';
 
 const NUMBERS = {
   member: '+15005550050',
+  publicOnly: '+15005550053',
   nobody: '+15005550051',
   stranger: '+15005550052',
 } as const;
@@ -78,6 +79,41 @@ describe('handleSmsListCommand against the database', () => {
       },
     ]);
     expect(memorySmsProvider.sent[0]!.body).not.toContain(outside.slug);
+  });
+
+  it('given a public decision the account is not a member of, when they text LIST, then it is listed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.publicOnly);
+    await fixture.createPhoneOnlyAccount(phone);
+    const owner = await fixture.createEmailAccount();
+    const open = await fixture.createVotingInstance({
+      owner,
+      maxVotesPerMember: 1,
+      proposalTitles: ['Fund the park'],
+      name: `Columbus ${task.id}`,
+    });
+    const closed = await fixture.createVotingInstance({
+      owner,
+      maxVotesPerMember: 1,
+      proposalTitles: [],
+      name: `Private ${task.id}`,
+    });
+    await fixture.makePublic(open.instanceProfileId);
+    const t = new InngestTestEngine({ function: handleSmsListCommand });
+
+    const { result } = await t.execute({ events: [listCommand(phone)] });
+
+    expect(result).toEqual({ message: 'list sent', count: 1 });
+    expect(memorySmsProvider.sent[0]!.body).toBe(
+      [
+        'Your decisions:',
+        `Columbus ${task.id} (voting open) - VOTE ${open.slug}`,
+      ].join('\n'),
+    );
+    expect(memorySmsProvider.sent[0]!.body).not.toContain(closed.slug);
   });
 
   it('given an account that is in no decision texts LIST, then they are told so', async ({
