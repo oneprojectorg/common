@@ -207,7 +207,7 @@ export const Events = {
       from: z.string(),
       messageSid: z.string(),
       code: z.string().nullable(),
-      keyword: z.enum(['join', 'yes', 'vote']).nullable(),
+      keyword: z.enum(['join', 'yes', 'vote', 'list']).nullable(),
       argument: z.string().nullable(),
     }),
   },

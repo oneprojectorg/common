@@ -17,3 +17,4 @@ export * from './sendDecisionResultNotifications';
 export * from './handleUnknownSmsSignup';
 export * from './handleSmsVoteRequest';
 export * from './handleSmsVoteCommand';
+export * from './handleSmsListCommand';
