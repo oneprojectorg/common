@@ -7,6 +7,7 @@ import {
   profiles,
 } from '@op/db/schema';
 
+import { resolveAccessUserIds } from '../access';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isVotingPhase } from './utils/phaseSettings';
 
@@ -39,7 +40,12 @@ export async function listSmsDecisions({
           db
             .select({ profileId: profileUsers.profileId })
             .from(profileUsers)
-            .where(eq(profileUsers.authUserId, authUserId)),
+            .where(
+              inArray(
+                profileUsers.authUserId,
+                resolveAccessUserIds({ id: authUserId }),
+              ),
+            ),
         ),
       ),
     )
