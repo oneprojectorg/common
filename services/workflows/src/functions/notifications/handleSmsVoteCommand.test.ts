@@ -15,6 +15,7 @@ const NUMBERS = {
   noSlug: '+15005550041',
   unknownSlug: '+15005550042',
   twoProposals: '+15005550043',
+  votingClosed: '+15005550046',
   outsider: '+15005550044',
   stranger: '+15005550045',
 } as const;
@@ -130,7 +131,7 @@ describe('handleSmsVoteCommand against the database', () => {
     expect(sentEvents()).toEqual([]);
   });
 
-  it('given the decision has two eligible proposals, then they are told voting is not open by text', async ({
+  it('given the decision has two eligible proposals, then they are told how many it has and that text voting needs one', async ({
     task,
     onTestFinished,
   }) => {
@@ -149,11 +150,50 @@ describe('handleSmsVoteCommand against the database', () => {
       events: [voteCommand(phone, slug)],
     });
 
-    expect(result).toEqual({ message: 'no proposal votable by sms' });
+    expect(result).toEqual({
+      message: 'no proposal votable by sms',
+      votingOpen: true,
+      eligibleProposalCount: 2,
+    });
     expect(memorySmsProvider.sent).toEqual([
       {
         to: phone,
-        body: expect.stringContaining('not open by text'),
+        body: expect.stringContaining('has 2 proposals'),
+        providerMessageId: expect.any(String),
+      },
+    ]);
+    expect(sentEvents()).toEqual([]);
+  });
+
+  it('given the decision is not in a voting phase, then they are told voting is not open', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.votingClosed);
+    const voter = await fixture.createPhoneOnlyAccount(phone);
+    const { instanceProfileId, slug } = await fixture.createVotingInstance({
+      owner: voter,
+      maxVotesPerMember: 1,
+      proposalTitles: ['Fund the park'],
+      currentPhaseId: 'submission',
+    });
+    await fixture.addMember(instanceProfileId, voter);
+    const t = new InngestTestEngine({ function: handleSmsVoteCommand });
+
+    const { result } = await t.execute({
+      events: [voteCommand(phone, slug)],
+    });
+
+    expect(result).toEqual({
+      message: 'no proposal votable by sms',
+      votingOpen: false,
+      eligibleProposalCount: 0,
+    });
+    expect(memorySmsProvider.sent).toEqual([
+      {
+        to: phone,
+        body: expect.stringContaining('is not open'),
         providerMessageId: expect.any(String),
       },
     ]);
