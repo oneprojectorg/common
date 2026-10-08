@@ -231,6 +231,26 @@ describe.concurrent('updatePhase', () => {
     await expectPhase(phase, UNCHANGED);
   });
 
+  it('rejects a member without decisions ADMIN before checking their schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, createMemberCaller } = await setupPhase(
+      task,
+      onTestFinished,
+    );
+    const caller = await createMemberCaller();
+
+    await expect(
+      caller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { settingsSchema: notASchema() },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    await expectPhase(phase, UNCHANGED);
+  });
+
   it('rejects the admin of a different decision', async ({
     task,
     onTestFinished,

@@ -40,14 +40,15 @@ export const updatePhase = async ({
   if (name === undefined && data === undefined) {
     throw new ValidationError('Nothing to update');
   }
+
+  const { profileId } = await getPhaseAsDecisionAdmin({ user, phaseId });
+
   const patch = data === undefined ? undefined : toPhaseDataPatch(data);
   // Only when touched: converted legacy phases can hold settings with no schema.
   const touchesSettings =
     patch !== undefined &&
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
-
-  const { profileId } = await getPhaseAsDecisionAdmin({ user, phaseId });
 
   return db.transaction(async (tx) => {
     const [profile] =
