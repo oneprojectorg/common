@@ -85,7 +85,9 @@ const BARE_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
   ['yes', /^yes[.!]?$/i],
 ];
 
-const VOTE_COMMAND_PATTERN = /^vote(?:[.!:,]|\s|$)\s*(.*)$/i;
+const VOTE_KEYWORD = 'vote';
+const VOTE_KEYWORD_PATTERN = /^vote(?=[.!:,\s]|$)/i;
+const VOTE_SEPARATOR_PATTERN = /^[.!:,]/;
 
 export const parseSmsCommand = (body: string): SmsCommand => {
   const text = body.trim();
@@ -93,9 +95,12 @@ export const parseSmsCommand = (body: string): SmsCommand => {
   if (bare) {
     return { keyword: bare[0], argument: null };
   }
-  const vote = VOTE_COMMAND_PATTERN.exec(text);
-  if (vote) {
-    const argument = (vote[1] ?? '').trim().toLowerCase();
+  if (VOTE_KEYWORD_PATTERN.test(text)) {
+    const argument = text
+      .slice(VOTE_KEYWORD.length)
+      .replace(VOTE_SEPARATOR_PATTERN, '')
+      .trim()
+      .toLowerCase();
     return { keyword: 'vote', argument: argument.length > 0 ? argument : null };
   }
   return { keyword: null, argument: null };
