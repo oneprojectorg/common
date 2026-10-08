@@ -28,6 +28,7 @@ const voteCommand = (from: PhoneNumber, argument: string | null) => ({
     code: null,
     keyword: 'vote' as const,
     argument,
+    codes: [],
   },
 });
 
@@ -48,14 +49,14 @@ afterEach(() => {
 });
 
 describe('handleSmsVoteCommand against the database', () => {
-  it('given a member texts VOTE and the decision slug, when the decision has one proposal in a voting phase, then a vote prompt is requested for them', async ({
+  it('given a member texts VOTE and the decision slug, when the decision is in a voting phase with proposals, then a ballot is requested for them', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.member);
     const voter = await fixture.createPhoneOnlyAccount(phone);
-    const { instanceId, instanceProfileId, slug, proposals } =
+    const { instanceId, instanceProfileId, slug } =
       await fixture.createVotingInstance({
         owner: voter,
         maxVotesPerMember: 1,
@@ -68,13 +69,12 @@ describe('handleSmsVoteCommand against the database', () => {
       events: [voteCommand(phone, slug)],
     });
 
-    expect(result).toEqual({ message: 'vote prompt requested' });
+    expect(result).toEqual({ message: 'ballot requested' });
     expect(sentEvents()).toEqual([
       {
-        name: Events.voteSmsPromptRequested.name,
+        name: Events.voteSmsBallotRequested.name,
         data: {
           processInstanceId: instanceId,
-          proposalId: proposals[0]!.id,
           authUserId: voter.authUserId,
           phone,
         },
@@ -131,7 +131,7 @@ describe('handleSmsVoteCommand against the database', () => {
     expect(sentEvents()).toEqual([]);
   });
 
-  it('given the decision has two eligible proposals, then they are told how many it has and that text voting needs one', async ({
+  it('given the decision is in a voting phase with no proposals, then they are told there is nothing to vote on', async ({
     task,
     onTestFinished,
   }) => {
@@ -141,7 +141,7 @@ describe('handleSmsVoteCommand against the database', () => {
     const { instanceProfileId, slug } = await fixture.createVotingInstance({
       owner: voter,
       maxVotesPerMember: 1,
-      proposalTitles: ['Fund the park', 'Repave the lot'],
+      proposalTitles: [],
     });
     await fixture.addMember(instanceProfileId, voter);
     const t = new InngestTestEngine({ function: handleSmsVoteCommand });
@@ -151,14 +151,14 @@ describe('handleSmsVoteCommand against the database', () => {
     });
 
     expect(result).toEqual({
-      message: 'no proposal votable by sms',
+      message: 'no ballot by sms',
       votingOpen: true,
-      eligibleProposalCount: 2,
+      eligibleProposalCount: 0,
     });
     expect(memorySmsProvider.sent).toEqual([
       {
         to: phone,
-        body: expect.stringContaining('has 2 proposals'),
+        body: expect.stringContaining('has no proposals'),
         providerMessageId: expect.any(String),
       },
     ]);
@@ -186,7 +186,7 @@ describe('handleSmsVoteCommand against the database', () => {
     });
 
     expect(result).toEqual({
-      message: 'no proposal votable by sms',
+      message: 'no ballot by sms',
       votingOpen: false,
       eligibleProposalCount: 0,
     });

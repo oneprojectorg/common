@@ -5,26 +5,29 @@ import { isVotingPhase } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
 export interface SmsVotability {
-  proposalId: string | null;
   votingOpen: boolean;
   eligibleProposalCount: number;
+  maxVotesPerMember: number | null;
 }
 
-export async function findSmsVotableProposal({
+export async function getSmsVotability({
   processInstanceId,
   phase,
 }: {
   processInstanceId: string;
-  phase: { rules?: { voting?: { submit?: boolean } } } | undefined;
+  phase:
+    | { rules?: { voting?: { submit?: boolean; maxVotesPerMember?: number } } }
+    | undefined;
 }): Promise<SmsVotability> {
   const votingOpen = phase ? isVotingPhase(phase) : false;
+  const maxVotesPerMember = phase?.rules?.voting?.maxVotesPerMember ?? null;
 
   if (!votingOpen) {
-    return { proposalId: null, votingOpen, eligibleProposalCount: 0 };
+    return { votingOpen, eligibleProposalCount: 0, maxVotesPerMember };
   }
 
   const rows = await db
-    .select({ id: proposals.id, status: proposals.status })
+    .select({ status: proposals.status })
     .from(proposals)
     .where(
       and(
@@ -34,12 +37,10 @@ export async function findSmsVotableProposal({
       ),
     );
 
-  const eligible = rows.filter((row) => isVotingEligible(row.status));
-  const only = eligible.length === 1 ? eligible[0] : undefined;
-
   return {
-    proposalId: only?.id ?? null,
     votingOpen,
-    eligibleProposalCount: eligible.length,
+    eligibleProposalCount: rows.filter((row) => isVotingEligible(row.status))
+      .length,
+    maxVotesPerMember,
   };
 }

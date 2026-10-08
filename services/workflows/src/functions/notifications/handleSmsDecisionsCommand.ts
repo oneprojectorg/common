@@ -11,9 +11,9 @@ import { logger } from '@op/logging';
 
 const { smsInboundReceived } = Events;
 
-export const handleSmsListCommand = inngest.createFunction(
+export const handleSmsDecisionsCommand = inngest.createFunction(
   {
-    id: 'handleSmsListCommand',
+    id: 'handleSmsDecisionsCommand',
     debounce: {
       key: 'event.data.from',
       period: '5s',
@@ -23,14 +23,14 @@ export const handleSmsListCommand = inngest.createFunction(
       mode: 'skip',
     },
   },
-  { event: smsInboundReceived.name, if: 'event.data.keyword == "list"' },
+  { event: smsInboundReceived.name, if: 'event.data.keyword == "decisions"' },
   async ({ event, step }) => {
     const { from } = smsInboundReceived.schema.parse(event.data);
 
     const parsedFrom = safeParsePhoneNumber(from);
 
     if (!parsedFrom.success) {
-      logger.info('LIST command from a non-E.164 number, skipping', {
+      logger.info('DECISIONS command from a non-E.164 number, skipping', {
         reason: parsedFrom.error.message,
       });
       return { message: 'invalid phone number' };
@@ -46,7 +46,7 @@ export const handleSmsListCommand = inngest.createFunction(
     });
 
     if (!account) {
-      logger.info('LIST command from a number with no account, skipping');
+      logger.info('DECISIONS command from a number with no account, skipping');
       return { message: 'unknown number, skipped' };
     }
 
@@ -54,7 +54,7 @@ export const handleSmsListCommand = inngest.createFunction(
 
     if (!provider?.sendSms) {
       logger.error(
-        'Cannot answer a LIST command: no Twilio Messaging Service configured',
+        'Cannot answer a DECISIONS command: no Twilio Messaging Service configured',
       );
       return { message: 'sms sending unavailable' };
     }
@@ -86,7 +86,7 @@ export const handleSmsListCommand = inngest.createFunction(
       return { message: 'list send rejected', reason: listResult.reason };
     }
 
-    logger.info('Answered a LIST command', {
+    logger.info('Answered a DECISIONS command', {
       authUserId: account.authUserId,
       count: decisions.length,
     });
