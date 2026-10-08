@@ -1633,7 +1633,6 @@
       "decisionReviewLabel": "A smaller group reviews and decides",
       "decisionVoteDescription": "The whole group decides together",
       "decisionVoteLabel": "Everyone votes",
-      "developPhase": "Develop",
       "elseTextLabel": "What are you deciding on?",
       "elseTextPlaceholder": "e.g. which venue we use next year",
       "everyoneTakingPartDecidesTogether": "Everyone taking part decides together.",

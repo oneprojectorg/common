@@ -1633,7 +1633,6 @@
       "decisionReviewLabel": "Egy kisebb csoport értékel és dönt",
       "decisionVoteDescription": "Az egész csoport együtt dönt",
       "decisionVoteLabel": "Mindenki szavaz",
-      "developPhase": "Kidolgozás",
       "elseTextLabel": "Miről dönt?",
       "elseTextPlaceholder": "pl. melyik helyszínt használjuk jövőre",
       "everyoneTakingPartDecidesTogether": "Minden résztvevő együtt dönt.",
