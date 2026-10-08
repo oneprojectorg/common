@@ -8,7 +8,7 @@ import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
-import { handleSmsListCommand } from './handleSmsListCommand';
+import { handleSmsDecisionsCommand } from './handleSmsDecisionsCommand';
 
 const NUMBERS = {
   member: '+15005550050',
@@ -17,14 +17,15 @@ const NUMBERS = {
   stranger: '+15005550052',
 } as const;
 
-const listCommand = (from: PhoneNumber) => ({
+const decisionsCommand = (from: PhoneNumber) => ({
   name: Events.smsInboundReceived.name,
   data: {
     from,
     messageSid: `SM-list-${from}`,
     code: null,
-    keyword: 'list' as const,
+    keyword: 'decisions' as const,
     argument: null,
+    codes: [],
   },
 });
 
@@ -32,8 +33,8 @@ beforeEach(() => {
   memorySmsProvider.reset();
 });
 
-describe('handleSmsListCommand against the database', () => {
-  it('given a member of two decisions texts LIST, then they are texted both by name and slug, with voting marked where it is open, and not a decision they are outside of', async ({
+describe('handleSmsDecisionsCommand against the database', () => {
+  it('given a member of two decisions texts DECISIONS, then they are texted both by name and slug, with voting marked where it is open, and not a decision they are outside of', async ({
     task,
     onTestFinished,
   }) => {
@@ -62,9 +63,9 @@ describe('handleSmsListCommand against the database', () => {
     });
     await fixture.addMember(voting.instanceProfileId, member);
     await fixture.addMember(submitting.instanceProfileId, member);
-    const t = new InngestTestEngine({ function: handleSmsListCommand });
+    const t = new InngestTestEngine({ function: handleSmsDecisionsCommand });
 
-    const { result } = await t.execute({ events: [listCommand(phone)] });
+    const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toMatchObject({ message: 'list sent' });
     expect(memorySmsProvider.sent).toHaveLength(1);
@@ -80,7 +81,7 @@ describe('handleSmsListCommand against the database', () => {
     expect(body).not.toContain(outside.slug);
   });
 
-  it('given a public decision the account is not a member of, when they text LIST, then it is listed', async ({
+  it('given a public decision the account is not a member of, when they text DECISIONS, then it is listed', async ({
     task,
     onTestFinished,
   }) => {
@@ -101,9 +102,9 @@ describe('handleSmsListCommand against the database', () => {
       name: `Private ${task.id}`,
     });
     await fixture.makePublic(open.instanceProfileId);
-    const t = new InngestTestEngine({ function: handleSmsListCommand });
+    const t = new InngestTestEngine({ function: handleSmsDecisionsCommand });
 
-    const { result } = await t.execute({ events: [listCommand(phone)] });
+    const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toMatchObject({ message: 'list sent' });
     const body = memorySmsProvider.sent[0]!.body;
@@ -113,27 +114,27 @@ describe('handleSmsListCommand against the database', () => {
     expect(body).not.toContain(closed.slug);
   });
 
-  it('given an account that is in no decision texts LIST, then they still get one reply', async ({
+  it('given an account that is in no decision texts DECISIONS, then they still get one reply', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.nobody);
     await fixture.createPhoneOnlyAccount(phone);
-    const t = new InngestTestEngine({ function: handleSmsListCommand });
+    const t = new InngestTestEngine({ function: handleSmsDecisionsCommand });
 
-    const { result } = await t.execute({ events: [listCommand(phone)] });
+    const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toMatchObject({ message: 'list sent' });
     expect(memorySmsProvider.sent).toHaveLength(1);
     expect(memorySmsProvider.sent[0]!.to).toBe(phone);
   });
 
-  it('given a number with no account texts LIST, then nothing is sent', async () => {
+  it('given a number with no account texts DECISIONS, then nothing is sent', async () => {
     const phone = parsePhoneNumber(NUMBERS.stranger);
-    const t = new InngestTestEngine({ function: handleSmsListCommand });
+    const t = new InngestTestEngine({ function: handleSmsDecisionsCommand });
 
-    const { result } = await t.execute({ events: [listCommand(phone)] });
+    const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toEqual({ message: 'unknown number, skipped' });
     expect(memorySmsProvider.sent).toEqual([]);

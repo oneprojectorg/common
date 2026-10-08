@@ -6,21 +6,24 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 
-export interface SmsDecisionLink {
+export interface SmsDecision {
+  profileId: string;
+  processInstanceId: string;
   name: string;
+  slug: string;
   url: string;
 }
 
 export const decisionUrl = (slug: string): string =>
   `${OPURLConfig('APP').ENV_URL}/decisions/${slug}`;
 
-export async function getSmsDecisionLink({
+export async function findSmsDecision({
   authUserId,
   slug,
 }: {
   authUserId: string;
   slug: string;
-}): Promise<SmsDecisionLink | null> {
+}): Promise<SmsDecision | null> {
   const profile = await db.query.profiles.findFirst({
     where: { slug, type: EntityType.DECISION },
     columns: { id: true, name: true, slug: true },
@@ -47,5 +50,11 @@ export async function getSmsDecisionLink({
     throw error;
   }
 
-  return { name: profile.name, url: decisionUrl(profile.slug) };
+  return {
+    profileId: profile.id,
+    processInstanceId: profile.processInstance.id,
+    name: profile.name,
+    slug: profile.slug,
+    url: decisionUrl(profile.slug),
+  };
 }

@@ -3,7 +3,7 @@ import {
   RateLimitError,
   UnauthorizedError,
   assertVoteAccess,
-  findSmsVotableProposal,
+  getSmsVotability,
   getPhoneSignupState,
   getSmsProvider,
   safeParsePhoneNumber,
@@ -14,8 +14,8 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
 const HELP_MESSAGE =
-  'Text VOTE followed by the decision name, for example VOTE columbus.';
-const { smsInboundReceived, voteSmsPromptRequested } = Events;
+  'Text VOTE followed by the decision name, for example VOTE columbus. Text DECISIONS to see yours.';
+const { smsInboundReceived, voteSmsBallotRequested } = Events;
 
 export const handleSmsVoteCommand = inngest.createFunction(
   {
@@ -102,7 +102,7 @@ export const handleSmsVoteCommand = inngest.createFunction(
         (phase) => phase.phaseId === profile.processInstance?.currentStateId,
       );
 
-      const votability = await findSmsVotableProposal({
+      const votability = await getSmsVotability({
         processInstanceId: profile.processInstance.id,
         phase: currentPhase,
       });
@@ -124,10 +124,8 @@ export const handleSmsVoteCommand = inngest.createFunction(
       return { message: 'decision not found' };
     }
 
-    const votableProposalId = decision.proposalId;
-
-    if (!votableProposalId) {
-      logger.info('VOTE command refused: no proposal votable by text', {
+    if (!decision.votingOpen || decision.eligibleProposalCount === 0) {
+      logger.info('VOTE command refused: no ballot by text', {
         processInstanceId: decision.processInstanceId,
         votingOpen: decision.votingOpen,
         eligibleProposalCount: decision.eligibleProposalCount,
@@ -136,11 +134,11 @@ export const handleSmsVoteCommand = inngest.createFunction(
         'send-unavailable-reply',
         'Unavailable reply',
         decision.votingOpen
-          ? `"${decision.name}" has ${decision.eligibleProposalCount} proposals. Voting by text needs a decision with one proposal.`
+          ? `"${decision.name}" has no proposals to vote on.`
           : `Voting for "${decision.name}" is not open.`,
       );
       return {
-        message: 'no proposal votable by sms',
+        message: 'no ballot by sms',
         votingOpen: decision.votingOpen,
         eligibleProposalCount: decision.eligibleProposalCount,
       };
@@ -170,24 +168,22 @@ export const handleSmsVoteCommand = inngest.createFunction(
       return { message: 'not a participant' };
     }
 
-    await step.run('request-vote-prompt', () =>
+    await step.run('request-ballot', () =>
       inngest.send({
-        name: voteSmsPromptRequested.name,
+        name: voteSmsBallotRequested.name,
         data: {
           processInstanceId: decision.processInstanceId,
-          proposalId: votableProposalId,
           authUserId: account.authUserId,
           phone: to,
         },
       }),
     );
 
-    logger.info('Requested an SMS vote prompt from a VOTE command', {
+    logger.info('Requested an SMS ballot from a VOTE command', {
       processInstanceId: decision.processInstanceId,
-      proposalId: votableProposalId,
       authUserId: account.authUserId,
     });
 
-    return { message: 'vote prompt requested' };
+    return { message: 'ballot requested' };
   },
 );

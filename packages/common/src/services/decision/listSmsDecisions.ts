@@ -11,7 +11,7 @@ import { resolveAccessUserIds } from '../access';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isVotingPhase } from './utils/phaseSettings';
 
-export interface SmsDecision {
+export interface SmsDecisionListItem {
   name: string;
   slug: string;
   votingOpen: boolean;
@@ -21,7 +21,7 @@ export async function listSmsDecisions({
   authUserId,
 }: {
   authUserId: string;
-}): Promise<Array<SmsDecision>> {
+}): Promise<Array<SmsDecisionListItem>> {
   const rows = await db
     .select({
       name: profiles.name,

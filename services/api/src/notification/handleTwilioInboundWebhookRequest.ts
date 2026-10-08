@@ -53,7 +53,7 @@ export const handleTwilioInboundWebhookRequest = async ({
     return { status: 400 };
   }
 
-  const { keyword, argument } = parseSmsCommand(message.body);
+  const { keyword, argument, codes } = parseSmsCommand(message.body);
 
   await inngest.send({
     id: `sms-inbound-${message.messageSid}`,
@@ -64,6 +64,7 @@ export const handleTwilioInboundWebhookRequest = async ({
       code: extractSmsCode(message.body),
       keyword,
       argument,
+      codes,
     },
   });
 
