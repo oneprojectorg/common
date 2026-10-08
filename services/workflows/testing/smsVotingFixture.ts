@@ -128,7 +128,7 @@ export class SmsVotingFixture {
       createdByProfileId: owner.profileId,
       schema,
     });
-    const { instance, profileId } = await createDecisionInstance({
+    const { instance, profileId, slug } = await createDecisionInstance({
       processId: process.id,
       ownerProfileId: owner.profileId,
       authUserId: owner.authUserId,
@@ -155,7 +155,12 @@ export class SmsVotingFixture {
       .set({ currentStateId: VOTING_PHASE_ID })
       .where(eq(processInstances.id, instance.id));
 
-    return { instanceId: instance.id, instanceProfileId: profileId, proposals };
+    return {
+      instanceId: instance.id,
+      instanceProfileId: profileId,
+      slug,
+      proposals,
+    };
   }
 
   async addMember(instanceProfileId: string, member: FixtureAccount) {

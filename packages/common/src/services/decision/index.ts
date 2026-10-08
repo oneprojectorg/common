@@ -199,6 +199,8 @@ export * from './utils/phaseTemplates';
 // Voting management
 export * from './voting';
 export * from './votingEligibility';
+export * from './findSingleChoiceBallotProposal';
+export * from './assertVoteAccess';
 
 // Process survey
 export * from './processSurvey';
