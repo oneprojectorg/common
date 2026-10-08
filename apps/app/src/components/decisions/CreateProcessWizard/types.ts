@@ -39,12 +39,7 @@ export type OtherShape = 'custom' | 'blank';
 export type ShapeKey = GrantShape | PbShape | OtherShape;
 
 /** The underlying phase categories a piece can belong to. */
-export type PhaseType =
-  | 'submissions'
-  | 'review'
-  | 'develop'
-  | 'voting'
-  | 'results';
+export type PhaseType = 'submissions' | 'review' | 'voting' | 'results';
 
 /**
  * One piece of Common's functionality for running this *kind* of process — not
