@@ -1,9 +1,11 @@
-import { db } from '@op/db/client';
-import type { ProcessPhase, Profile } from '@op/db/schema';
+import { count, db, eq } from '@op/db/client';
+import { type ProcessPhase, type Profile, processPhases } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError } from '../../utils';
+import { NotFoundError, ValidationError } from '../../utils';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
+  MAX_PHASES_PER_DECISION,
   type PhaseData,
   assertDecisionAdmin,
   assertPhaseSchemasCompile,
@@ -39,13 +41,26 @@ export const createPhase = async ({
   assertPhaseSchemasCompile(phaseData);
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
-  return db.transaction((tx) =>
-    insertPhase({
+  return db.transaction(async (tx) => {
+    await lockProcessInstanceOrThrow({ db: tx, instanceId: processInstanceId });
+
+    const [existing] = await tx
+      .select({ value: count() })
+      .from(processPhases)
+      .where(eq(processPhases.processInstanceId, processInstanceId));
+
+    if ((existing?.value ?? 0) >= MAX_PHASES_PER_DECISION) {
+      throw new ValidationError(
+        `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+      );
+    }
+
+    return insertPhase({
       tx,
       processInstanceId,
       name,
       sortOrder,
       data: phaseData,
-    }),
-  );
+    });
+  });
 };

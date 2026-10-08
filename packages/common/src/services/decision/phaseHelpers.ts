@@ -22,6 +22,8 @@ import {
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
+export const MAX_PHASES_PER_DECISION = 30;
+
 const SLUG_ATTEMPTS = 3;
 
 // Callers authorize first. Settings are unchecked: legacy instance data can
@@ -123,10 +125,10 @@ export const getPhaseAsDecisionAdmin = async ({
 }: {
   user: User;
   phaseId: string;
-}): Promise<{ profileId: string }> => {
+}): Promise<{ profileId: string; processInstanceId: string }> => {
   const phase = await db.query.processPhases.findFirst({
     where: { id: phaseId },
-    columns: { profileId: true },
+    columns: { profileId: true, processInstanceId: true },
     with: { processInstance: { columns: { profileId: true } } },
   });
 
@@ -139,7 +141,10 @@ export const getPhaseAsDecisionAdmin = async ({
     decisionProfileId: phase.processInstance.profileId,
   });
 
-  return { profileId: phase.profileId };
+  return {
+    profileId: phase.profileId,
+    processInstanceId: phase.processInstanceId,
+  };
 };
 
 export const assertDecisionAdmin = async ({

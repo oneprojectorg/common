@@ -1,4 +1,4 @@
-import { reorderPhases } from '@op/common';
+import { MAX_PHASES_PER_DECISION, reorderPhases } from '@op/common';
 import { list } from '@op/common/client';
 import { z } from 'zod';
 
@@ -32,7 +32,7 @@ export const reorderPhasesRouter = router({
               .extend({ phaseId: z.uuid() }),
           )
           .min(1)
-          .max(100),
+          .max(MAX_PHASES_PER_DECISION),
       }),
     )
     .output(reorderPhasesOutputSchema)
