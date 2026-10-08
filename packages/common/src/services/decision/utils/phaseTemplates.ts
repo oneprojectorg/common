@@ -54,7 +54,6 @@ export function getPhaseRubricTemplate(
   );
 }
 
-/** The proposal form in effect for `phaseId`, resolved like the rubric. */
 export function getPhaseProposalTemplate(
   instanceData: {
     proposalTemplate?: ProposalTemplateSchema;
