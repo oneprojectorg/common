@@ -1,3 +1,4 @@
+import { MAX_PHASES_PER_DECISION } from '@op/common';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -209,6 +210,12 @@ describe.concurrent('reorderPhases', () => {
           { phaseId: vote.id },
           { phaseId: results.id },
         ],
+      },
+      {
+        instanceId,
+        phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, () => ({
+          phaseId: randomUUID(),
+        })),
       },
     ];
 
