@@ -118,10 +118,14 @@ export class SmsVotingFixture {
     owner,
     maxVotesPerMember,
     proposalTitles,
+    name,
+    currentPhaseId = VOTING_PHASE_ID,
   }: {
     owner: FixtureAccount;
     maxVotesPerMember: number;
     proposalTitles: string[];
+    name?: string;
+    currentPhaseId?: string;
   }) {
     const schema = votingSchema(maxVotesPerMember);
     const process = await createDecisionProcess({
@@ -133,6 +137,7 @@ export class SmsVotingFixture {
       ownerProfileId: owner.profileId,
       authUserId: owner.authUserId,
       email: owner.email,
+      name,
       schema,
       grantAdminAccess: false,
     });
@@ -152,7 +157,7 @@ export class SmsVotingFixture {
 
     await db
       .update(processInstances)
-      .set({ currentStateId: VOTING_PHASE_ID })
+      .set({ currentStateId: currentPhaseId })
       .where(eq(processInstances.id, instance.id));
 
     return {

@@ -231,6 +231,25 @@ describe('parseSmsCommand', () => {
     expect(parseSmsCommand('Yes!')).toEqual({ keyword: 'yes', argument: null });
   });
 
+  it('given LIST in any case or with trailing punctuation, when parsed, then it is the keyword with no argument', () => {
+    expect(parseSmsCommand('list')).toEqual({
+      keyword: 'list',
+      argument: null,
+    });
+    expect(parseSmsCommand(' LIST ')).toEqual({
+      keyword: 'list',
+      argument: null,
+    });
+    expect(parseSmsCommand('List!')).toEqual({
+      keyword: 'list',
+      argument: null,
+    });
+    expect(parseSmsCommand('list all')).toEqual({
+      keyword: null,
+      argument: null,
+    });
+  });
+
   it('given VOTE followed by a decision slug, when parsed, then the slug is the argument, lowercased', () => {
     expect(parseSmsCommand('VOTE columbus')).toEqual({
       keyword: 'vote',

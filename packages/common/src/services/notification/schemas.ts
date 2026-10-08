@@ -73,7 +73,7 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-export type SmsKeyword = 'join' | 'yes' | 'vote';
+export type SmsKeyword = 'join' | 'yes' | 'vote' | 'list';
 
 export interface SmsCommand {
   keyword: SmsKeyword | null;
@@ -83,6 +83,7 @@ export interface SmsCommand {
 const BARE_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
   ['join', /^join[.!]?$/i],
   ['yes', /^yes[.!]?$/i],
+  ['list', /^list[.!]?$/i],
 ];
 
 const VOTE_KEYWORD = 'vote';
