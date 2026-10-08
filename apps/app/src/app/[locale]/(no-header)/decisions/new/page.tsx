@@ -24,7 +24,6 @@ export async function generateMetadata({
 const NewDecisionProcessPage = async () => {
   const user = await getRequiredUser();
 
-  // Gates the route, not just the menu item.
   const isEnabled = await isServerFeatureEnabled(
     'new_process_admin_enabled',
     user.authUserId,

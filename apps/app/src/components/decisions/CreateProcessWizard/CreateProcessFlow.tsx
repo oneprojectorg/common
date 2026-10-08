@@ -10,8 +10,7 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 import { CreateProcessWizard } from '.';
 import type { ProcessDraft } from './types';
 
-// Only the name persists until phases are rows; the process still
-// comes from the first template.
+// Until phases are rows, only the name persists and the first template is used.
 export function CreateProcessFlow() {
   const t = useTranslations();
   const router = useRouter();
@@ -33,7 +32,7 @@ export function CreateProcessFlow() {
       });
     },
     onSuccess: (decisionProfile) => {
-      // `replace`, so Back can't reopen the wizard and create a second process.
+      // Not push: Back must not reopen the wizard.
       router.replace(`/decisions/${decisionProfile.slug}/edit`);
     },
     onError: (error) => {

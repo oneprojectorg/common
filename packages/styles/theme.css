@@ -263,7 +263,6 @@
   }
 }
 
-/* The create-process intro's blobs: opposite tracks, so they cross. */
 @keyframes intro-blob-a {
   0% {
     transform: translate3d(-40%, 22%, 0) scale(0.9);

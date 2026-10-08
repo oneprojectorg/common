@@ -9,8 +9,6 @@ const TTL = 60 * 1000;
 type FlagState = 'on' | 'off' | 'unreadable';
 
 /**
- * Whether a feature is on for the server. Fails closed on an unreadable flag.
- *
  * Agrees with `useFeatureFlag` only for person or cohort targeting: the browser
  * identifies a user only after tracking consent.
  */

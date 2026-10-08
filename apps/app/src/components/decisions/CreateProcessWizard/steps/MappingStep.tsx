@@ -17,7 +17,6 @@ import { PHASE_TYPE_LABEL } from '../content';
 import type { ProcessPiece } from '../types';
 import { calloutIcon } from './calloutIcons';
 
-// Controlled so exactly one step stays open; an empty value is ignored.
 export function MappingStep({
   pieces,
   recap,
@@ -42,7 +41,7 @@ export function MappingStep({
       ) : null}
 
       <div className="relative">
-        {/* Outside the `ol`, which may only contain `li`. */}
+        {/* Outside the `ol`: it may only contain `li`. */}
         {pieces.length > 1 ? (
           <span
             aria-hidden
@@ -52,6 +51,7 @@ export function MappingStep({
 
         <Accordion
           value={[open]}
+          // Exactly one stays open: ignore a close, keep the newly opened one.
           onValueChange={(next) => {
             const added = next.find(
               (value) => typeof value === 'number' && value !== open,
@@ -61,7 +61,7 @@ export function MappingStep({
               setOpen(added);
             }
           }}
-          // Restated: WebKit drops the list role from flex lists.
+          // WebKit drops the implicit list role from flex lists.
           render={<ol role="list" />}
           className="gap-3"
         >
@@ -97,7 +97,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
       </span>
 
       <div className="relative min-w-0 flex-1 overflow-hidden rounded-lg border bg-background">
-        {/* Ordinal as text: an aria-label would replace the visible name. */}
+        {/* An aria-label would replace the visible name. */}
         <AccordionTrigger className="w-full items-baseline gap-4 rounded-none border-0 px-5 py-3.5 hover:bg-muted/40 hover:no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring **:data-[slot=accordion-trigger-icon]:hidden sm:group-data-open/item:w-3/5">
           <span className="sr-only">
             {t('stepOrdinal', { step: step + 1 })}

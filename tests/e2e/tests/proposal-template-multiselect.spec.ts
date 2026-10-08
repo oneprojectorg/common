@@ -18,10 +18,7 @@ test.describe('Proposal template — multi-select category', () => {
     // 1. Create a draft process from the seeded template.
     await page.goto('/en/');
     await page.getByRole('button', { name: 'Create' }).click();
-    await page
-      // By testid: the wizard item shares this label.
-      .getByTestId('create-decision-process')
-      .click();
+    await page.getByTestId('create-decision-process').click();
     await page.waitForURL(/\/decisions\/[^/]+\/edit/, { timeout: 12_000 });
     await expect(
       page.getByRole('heading', { name: 'Process Settings' }),
