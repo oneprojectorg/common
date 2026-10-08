@@ -3,7 +3,7 @@ import {
   RateLimitError,
   UnauthorizedError,
   assertVoteAccess,
-  findSingleChoiceBallotProposal,
+  findSmsVotableProposal,
   getPhoneSignupState,
   getSmsProvider,
   safeParsePhoneNumber,
@@ -102,7 +102,7 @@ export const handleSmsVoteCommand = inngest.createFunction(
         (phase) => phase.phaseId === profile.processInstance?.currentStateId,
       );
 
-      const ballotProposal = await findSingleChoiceBallotProposal({
+      const votableProposal = await findSmsVotableProposal({
         processInstanceId: profile.processInstance.id,
         phase: currentPhase,
       });
@@ -111,7 +111,7 @@ export const handleSmsVoteCommand = inngest.createFunction(
         profileId: profile.id,
         name: profile.name,
         processInstanceId: profile.processInstance.id,
-        ballotProposalId: ballotProposal?.id ?? null,
+        votableProposalId: votableProposal?.id ?? null,
       };
     });
 
@@ -124,15 +124,15 @@ export const handleSmsVoteCommand = inngest.createFunction(
       return { message: 'decision not found' };
     }
 
-    const ballotProposalId = decision.ballotProposalId;
+    const votableProposalId = decision.votableProposalId;
 
-    if (!ballotProposalId) {
+    if (!votableProposalId) {
       await text(
         'send-unavailable-reply',
         'Unavailable reply',
         `Voting for "${decision.name}" is not open by text.`,
       );
-      return { message: 'ballot unavailable by sms' };
+      return { message: 'no proposal votable by sms' };
     }
 
     const canVote = await step.run('check-vote-access', async () => {
@@ -164,7 +164,7 @@ export const handleSmsVoteCommand = inngest.createFunction(
         name: voteSmsPromptRequested.name,
         data: {
           processInstanceId: decision.processInstanceId,
-          proposalId: ballotProposalId,
+          proposalId: votableProposalId,
           authUserId: account.authUserId,
           phone: to,
         },
@@ -173,7 +173,7 @@ export const handleSmsVoteCommand = inngest.createFunction(
 
     logger.info('Requested an SMS vote prompt from a VOTE command', {
       processInstanceId: decision.processInstanceId,
-      proposalId: ballotProposalId,
+      proposalId: votableProposalId,
       authUserId: account.authUserId,
     });
 
