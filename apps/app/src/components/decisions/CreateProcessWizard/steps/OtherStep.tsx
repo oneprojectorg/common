@@ -53,7 +53,6 @@ export function OtherStep({
 
             onChange({
               subjects: next,
-              // Clear follow-ups the new set no longer supports.
               focus:
                 answers.focus && next.includes(answers.focus)
                   ? answers.focus
@@ -95,7 +94,6 @@ export function OtherStep({
           onChange={(key) =>
             onChange({
               cadence: key,
-              // Always open covers every subject, so there's no focus to keep.
               ...(key === 'ongoing' ? { focus: null, submits: null } : {}),
             })
           }

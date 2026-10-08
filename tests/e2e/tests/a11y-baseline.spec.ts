@@ -150,7 +150,6 @@ const STATIC_AUTH_ROUTES: RouteScan[] = [
   { url: '/en/updates', label: 'Updates', auth: 'authenticated' },
   { url: '/en/decisions', label: 'Decisions index', auth: 'authenticated' },
   {
-    // Creates nothing until the last step, so scanning it is side-effect free.
     url: '/en/decisions/new',
     label: 'Create process wizard',
     auth: 'authenticated',
