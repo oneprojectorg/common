@@ -265,6 +265,18 @@ describe('parseSmsCommand', () => {
     });
   });
 
+  it('given SHOW followed by a decision slug, when parsed, then the slug is the argument', () => {
+    expect(parseSmsCommand('SHOW columbus')).toEqual({
+      keyword: 'show',
+      argument: 'columbus',
+    });
+    expect(parseSmsCommand('show')).toEqual({
+      keyword: 'show',
+      argument: null,
+    });
+    expect(parseSmsCommand('shown')).toEqual({ keyword: null, argument: null });
+  });
+
   it('given VOTE alone, when parsed, then the keyword has no argument', () => {
     expect(parseSmsCommand('vote')).toEqual({
       keyword: 'vote',

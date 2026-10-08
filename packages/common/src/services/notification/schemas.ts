@@ -73,7 +73,7 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-export type SmsKeyword = 'join' | 'yes' | 'vote' | 'list';
+export type SmsKeyword = 'join' | 'yes' | 'vote' | 'list' | 'show';
 
 export interface SmsCommand {
   keyword: SmsKeyword | null;
@@ -86,9 +86,12 @@ const BARE_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
   ['list', /^list[.!]?$/i],
 ];
 
-const VOTE_KEYWORD = 'vote';
-const VOTE_KEYWORD_PATTERN = /^vote(?=[.!:,\s]|$)/i;
-const VOTE_SEPARATOR_PATTERN = /^[.!:,]/;
+const ARGUMENT_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
+  ['vote', /^vote(?=[.!:,\s]|$)/i],
+  ['show', /^show(?=[.!:,\s]|$)/i],
+];
+
+const ARGUMENT_SEPARATOR_PATTERN = /^[.!:,]/;
 
 export const parseSmsCommand = (body: string): SmsCommand => {
   const text = body.trim();
@@ -96,13 +99,17 @@ export const parseSmsCommand = (body: string): SmsCommand => {
   if (bare) {
     return { keyword: bare[0], argument: null };
   }
-  if (VOTE_KEYWORD_PATTERN.test(text)) {
+  const withArgument = ARGUMENT_KEYWORD_PATTERNS.find(([, pattern]) =>
+    pattern.test(text),
+  );
+  if (withArgument) {
+    const [keyword] = withArgument;
     const argument = text
-      .slice(VOTE_KEYWORD.length)
-      .replace(VOTE_SEPARATOR_PATTERN, '')
+      .slice(keyword.length)
+      .replace(ARGUMENT_SEPARATOR_PATTERN, '')
       .trim()
       .toLowerCase();
-    return { keyword: 'vote', argument: argument.length > 0 ? argument : null };
+    return { keyword, argument: argument.length > 0 ? argument : null };
   }
   return { keyword: null, argument: null };
 };
