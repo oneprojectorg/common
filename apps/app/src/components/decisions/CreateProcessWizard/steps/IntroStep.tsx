@@ -34,8 +34,7 @@ export function IntroBackdrop() {
   return (
     <div
       aria-hidden
-      // A sibling before the content: a negative z-index paints behind the page.
-      // Height and blob sizes are hand-tuned; the scale has no match.
+      // The arbitrary sizes are hand-tuned; the scale has no match.
       className="pointer-events-none absolute inset-x-0 bottom-0 h-[calc(60%-75px)] animate-intro-wash overflow-hidden opacity-65 motion-reduce:animate-none"
       style={{
         maskImage: 'linear-gradient(to top, black 15%, transparent 95%)',

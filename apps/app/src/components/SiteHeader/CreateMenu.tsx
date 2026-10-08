@@ -107,7 +107,7 @@ export const CreateMenu = () => {
             </DropdownMenuItem>
           )}
           {newProcessAdminEnabled && (
-            // The badge is in the accessible name; it tells the two items apart.
+            // The badge joins the accessible name, so the two items differ.
             <DropdownMenuItem
               data-testid="create-decision-process-wizard"
               disabled={isCreatingDecision}

@@ -28,7 +28,6 @@ export function NameAccessStep({
     <div className="flex flex-col gap-6">
       <StepHeading title={t('nameHeading')} />
 
-      {/* Enter in a form's only text field submits it. */}
       <form
         onSubmit={(event) => {
           event.preventDefault();
