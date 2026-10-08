@@ -215,7 +215,7 @@ describe.concurrent('createPhase', () => {
   }) => {
     const { instanceId, user } = await setup(task, onTestFinished);
 
-    // Overflows sort_order, so the phase insert fails after the profile insert.
+    // 2^31 overflows sort_order (22003) after the profile is inserted.
     const name = `Orphan Check ${randomUUID()}`;
     await expect(
       createPhase({
@@ -224,7 +224,6 @@ describe.concurrent('createPhase', () => {
         name,
         sortOrder: 2 ** 31,
       }),
-      // 22003: numeric_value_out_of_range
     ).rejects.toMatchObject({ cause: { code: '22003' } });
 
     await expectNoProfileNamed(name);
