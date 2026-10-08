@@ -26,6 +26,7 @@ const showCommand = (from: PhoneNumber, argument: string | null) => ({
     code: null,
     keyword: 'show' as const,
     argument,
+    codes: [],
   },
 });
 

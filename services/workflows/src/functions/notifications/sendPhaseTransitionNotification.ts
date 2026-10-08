@@ -1,6 +1,6 @@
 import {
   type DecisionInstanceData,
-  findSmsVotableProposal,
+  getSmsVotability,
   listProcessParticipants,
   listSmsOnlyProcessParticipants,
   resolveManualSelectionStatus,
@@ -14,7 +14,7 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
-const { phaseTransitioned, manualSelectionsConfirmed, voteSmsPromptRequested } =
+const { phaseTransitioned, manualSelectionsConfirmed, voteSmsBallotRequested } =
   Events;
 
 export const sendPhaseTransitionNotification = inngest.createFunction(
@@ -176,25 +176,23 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       }
     }
 
-    const votability = await step.run('find-sms-votable-proposal', () =>
-      findSmsVotableProposal({ processInstanceId, phase: toPhase }),
+    const votability = await step.run('get-sms-votability', () =>
+      getSmsVotability({ processInstanceId, phase: toPhase }),
     );
-    const votableProposalId = votability.proposalId;
 
-    if (votableProposalId) {
+    if (votability.votingOpen && votability.eligibleProposalCount > 0) {
       const smsParticipants = await step.run(
         'get-sms-only-participants',
         async () => listSmsOnlyProcessParticipants({ processInstanceId }),
       );
 
       if (smsParticipants.length > 0) {
-        await step.run('request-sms-vote-prompts', async () =>
+        await step.run('request-sms-ballots', async () =>
           inngest.send(
             smsParticipants.map((participant) => ({
-              name: voteSmsPromptRequested.name,
+              name: voteSmsBallotRequested.name,
               data: {
                 processInstanceId,
-                proposalId: votableProposalId,
                 authUserId: participant.authUserId,
                 phone: participant.phone,
               },
@@ -202,9 +200,9 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           ),
         );
 
-        logger.info('Requested SMS vote prompts for phone-only participants', {
+        logger.info('Requested SMS ballots for phone-only participants', {
           processInstanceId,
-          proposalId: votableProposalId,
+          eligibleProposalCount: votability.eligibleProposalCount,
           count: smsParticipants.length,
         });
       }

@@ -207,111 +207,72 @@ describe('extractSmsCode', () => {
 });
 
 describe('parseSmsCommand', () => {
-  it('given JOIN in any case or with trailing punctuation, when parsed, then it is the keyword with no argument', () => {
-    expect(parseSmsCommand('join')).toEqual({
-      keyword: 'join',
-      argument: null,
-    });
-    expect(parseSmsCommand(' JOIN ')).toEqual({
-      keyword: 'join',
-      argument: null,
-    });
-    expect(parseSmsCommand('Join!')).toEqual({
-      keyword: 'join',
-      argument: null,
-    });
+  const none = { keyword: null, argument: null, codes: [] };
+  const bare = (keyword: string) => ({ keyword, argument: null, codes: [] });
+
+  it.each(['join', 'yes', 'list', 'decisions', 'more', 'done', 'submit'])(
+    'given %s alone in any case or with trailing punctuation, when parsed, then it is a bare keyword',
+    (keyword) => {
+      expect(parseSmsCommand(keyword)).toEqual(bare(keyword));
+      expect(parseSmsCommand(` ${keyword.toUpperCase()} `)).toEqual(
+        bare(keyword),
+      );
+      expect(parseSmsCommand(`${keyword}!`)).toEqual(bare(keyword));
+    },
+  );
+
+  it('given a bare keyword followed by other words, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('join me')).toEqual(none);
+    expect(parseSmsCommand('yes please')).toEqual(none);
+    expect(parseSmsCommand('list all')).toEqual(none);
   });
 
-  it('given YES in any case or with trailing punctuation, when parsed, then it is the keyword with no argument', () => {
-    expect(parseSmsCommand('yes')).toEqual({ keyword: 'yes', argument: null });
-    expect(parseSmsCommand(' YES ')).toEqual({
-      keyword: 'yes',
-      argument: null,
-    });
-    expect(parseSmsCommand('Yes!')).toEqual({ keyword: 'yes', argument: null });
-  });
-
-  it('given LIST in any case or with trailing punctuation, when parsed, then it is the keyword with no argument', () => {
-    expect(parseSmsCommand('list')).toEqual({
-      keyword: 'list',
-      argument: null,
-    });
-    expect(parseSmsCommand(' LIST ')).toEqual({
-      keyword: 'list',
-      argument: null,
-    });
-    expect(parseSmsCommand('List!')).toEqual({
-      keyword: 'list',
-      argument: null,
-    });
-    expect(parseSmsCommand('list all')).toEqual({
-      keyword: null,
-      argument: null,
-    });
-  });
-
-  it('given VOTE followed by a decision slug, when parsed, then the slug is the argument, lowercased', () => {
-    expect(parseSmsCommand('VOTE columbus')).toEqual({
-      keyword: 'vote',
-      argument: 'columbus',
-    });
-    expect(parseSmsCommand(' vote  Park-Funding ')).toEqual({
-      keyword: 'vote',
-      argument: 'park-funding',
-    });
-    expect(parseSmsCommand('Vote: columbus!')).toEqual({
-      keyword: 'vote',
-      argument: 'columbus!',
-    });
-  });
-
-  it('given SHOW followed by a decision slug, when parsed, then the slug is the argument', () => {
-    expect(parseSmsCommand('SHOW columbus')).toEqual({
-      keyword: 'show',
-      argument: 'columbus',
-    });
-    expect(parseSmsCommand('show')).toEqual({
-      keyword: 'show',
-      argument: null,
-    });
-    expect(parseSmsCommand('shown')).toEqual({ keyword: null, argument: null });
-  });
-
-  it('given VOTE alone, when parsed, then the keyword has no argument', () => {
-    expect(parseSmsCommand('vote')).toEqual({
-      keyword: 'vote',
-      argument: null,
-    });
-    expect(parseSmsCommand('VOTE.')).toEqual({
-      keyword: 'vote',
-      argument: null,
-    });
-  });
-
-  it('given JOIN or YES followed by other words, when parsed, then nothing is recognised', () => {
-    expect(parseSmsCommand('join me')).toEqual({
-      keyword: null,
-      argument: null,
-    });
-    expect(parseSmsCommand('yes please')).toEqual({
-      keyword: null,
-      argument: null,
-    });
-  });
+  it.each(['vote', 'show', 'proposals', 'info', 'remove'])(
+    'given %s followed by an argument, when parsed, then the argument is kept, lowercased',
+    (keyword) => {
+      expect(parseSmsCommand(`${keyword.toUpperCase()} Columbus`)).toEqual({
+        keyword,
+        argument: 'columbus',
+        codes: [],
+      });
+      expect(parseSmsCommand(`${keyword}: 218!`)).toEqual({
+        keyword,
+        argument: '218!',
+        codes: [],
+      });
+      expect(parseSmsCommand(keyword)).toEqual(bare(keyword));
+    },
+  );
 
   it('given a word that starts with a keyword, when parsed, then nothing is recognised', () => {
-    expect(parseSmsCommand('voted')).toEqual({ keyword: null, argument: null });
-    expect(parseSmsCommand('yesterday')).toEqual({
+    expect(parseSmsCommand('voted')).toEqual(none);
+    expect(parseSmsCommand('yesterday')).toEqual(none);
+    expect(parseSmsCommand('shown')).toEqual(none);
+    expect(parseSmsCommand('information')).toEqual(none);
+  });
+
+  it('given one or more three-digit codes, when parsed, then they are the picks in texted order', () => {
+    expect(parseSmsCommand('214')).toEqual({
       keyword: null,
       argument: null,
+      codes: ['214'],
+    });
+    expect(parseSmsCommand(' 108 371 ')).toEqual({
+      keyword: null,
+      argument: null,
+      codes: ['108', '371'],
+    });
+    expect(parseSmsCommand('108, 371.')).toEqual({
+      keyword: null,
+      argument: null,
+      codes: ['108', '371'],
     });
   });
 
-  it('given anything else, when parsed, then nothing is recognised', () => {
-    expect(parseSmsCommand('234567')).toEqual({
-      keyword: null,
-      argument: null,
-    });
-    expect(parseSmsCommand('')).toEqual({ keyword: null, argument: null });
+  it('given digits that are not three-digit codes, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('234567')).toEqual(none);
+    expect(parseSmsCommand('21')).toEqual(none);
+    expect(parseSmsCommand('214 and 218')).toEqual(none);
+    expect(parseSmsCommand('')).toEqual(none);
   });
 });

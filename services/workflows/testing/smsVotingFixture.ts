@@ -30,6 +30,12 @@ export interface FixtureAccount {
 
 export const VOTING_PHASE_ID = 'voting';
 
+export interface FixtureProposal {
+  title: string;
+  budget?: number;
+  summary?: string;
+}
+
 export const votingSchema = (
   maxVotesPerMember: number,
 ): DecisionSchemaDefinition => ({
@@ -124,7 +130,7 @@ export class SmsVotingFixture {
   }: {
     owner: FixtureAccount;
     maxVotesPerMember: number;
-    proposalTitles: string[];
+    proposalTitles: Array<string | FixtureProposal>;
     name?: string;
     currentPhaseId?: string;
   }) {
@@ -145,11 +151,19 @@ export class SmsVotingFixture {
     this.profileIds.push(profileId);
 
     const proposals = [];
-    for (const title of proposalTitles) {
+    for (const entry of proposalTitles) {
+      const { title, budget, summary } =
+        typeof entry === 'string' ? { title: entry } : entry;
       const proposal = await createProposal({
         processInstanceId: instance.id,
         submittedByProfileId: owner.profileId,
-        proposalData: { title },
+        proposalData: {
+          title,
+          ...(budget === undefined
+            ? {}
+            : { budget: { amount: budget, currency: 'USD' } }),
+          ...(summary === undefined ? {} : { summary }),
+        },
         status: ProposalStatus.SUBMITTED,
       });
       this.profileIds.push(proposal.profileId);

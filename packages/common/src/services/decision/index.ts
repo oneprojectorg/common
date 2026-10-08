@@ -189,11 +189,13 @@ export * from './utils/phaseTemplates';
 // Voting management
 export * from './voting';
 export * from './votingEligibility';
-export * from './findSmsVotableProposal';
+export * from './getSmsVotability';
+export * from './listSmsBallotProposals';
+export * from './smsBallotFormat';
 export * from './assertVoteAccess';
 export * from './listSmsDecisions';
 export * from './formatSmsDecisionList';
-export * from './getSmsDecisionLink';
+export * from './findSmsDecision';
 
 // Process survey
 export * from './processSurvey';
