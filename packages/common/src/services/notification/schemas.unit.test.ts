@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { ValidationError } from '../../utils/error';
 import {
   extractSmsCode,
-  extractSmsKeyword,
+  parseSmsCommand,
   type GoTruePhoneFormat,
   isValidTypedPhoneNumber,
   normalizePhoneNumber,
@@ -206,23 +206,81 @@ describe('extractSmsCode', () => {
   });
 });
 
-describe('extractSmsKeyword', () => {
-  it('given JOIN in any case or with trailing punctuation, when extracted, then it returns the keyword', () => {
-    expect(extractSmsKeyword('join')).toBe('join');
-    expect(extractSmsKeyword(' JOIN ')).toBe('join');
-    expect(extractSmsKeyword('Join!')).toBe('join');
+describe('parseSmsCommand', () => {
+  it('given JOIN in any case or with trailing punctuation, when parsed, then it is the keyword with no argument', () => {
+    expect(parseSmsCommand('join')).toEqual({
+      keyword: 'join',
+      argument: null,
+    });
+    expect(parseSmsCommand(' JOIN ')).toEqual({
+      keyword: 'join',
+      argument: null,
+    });
+    expect(parseSmsCommand('Join!')).toEqual({
+      keyword: 'join',
+      argument: null,
+    });
   });
 
-  it('given YES in any case or with trailing punctuation, when extracted, then it returns the keyword', () => {
-    expect(extractSmsKeyword('yes')).toBe('yes');
-    expect(extractSmsKeyword(' YES ')).toBe('yes');
-    expect(extractSmsKeyword('Yes!')).toBe('yes');
+  it('given YES in any case or with trailing punctuation, when parsed, then it is the keyword with no argument', () => {
+    expect(parseSmsCommand('yes')).toEqual({ keyword: 'yes', argument: null });
+    expect(parseSmsCommand(' YES ')).toEqual({
+      keyword: 'yes',
+      argument: null,
+    });
+    expect(parseSmsCommand('Yes!')).toEqual({ keyword: 'yes', argument: null });
   });
 
-  it('given anything that is not a keyword alone, when extracted, then it returns null', () => {
-    expect(extractSmsKeyword('join me')).toBeNull();
-    expect(extractSmsKeyword('yes please')).toBeNull();
-    expect(extractSmsKeyword('234567')).toBeNull();
-    expect(extractSmsKeyword('')).toBeNull();
+  it('given VOTE followed by a decision slug, when parsed, then the slug is the argument, lowercased', () => {
+    expect(parseSmsCommand('VOTE columbus')).toEqual({
+      keyword: 'vote',
+      argument: 'columbus',
+    });
+    expect(parseSmsCommand(' vote  Park-Funding ')).toEqual({
+      keyword: 'vote',
+      argument: 'park-funding',
+    });
+    expect(parseSmsCommand('Vote: columbus!')).toEqual({
+      keyword: 'vote',
+      argument: 'columbus!',
+    });
+  });
+
+  it('given VOTE alone, when parsed, then the keyword has no argument', () => {
+    expect(parseSmsCommand('vote')).toEqual({
+      keyword: 'vote',
+      argument: null,
+    });
+    expect(parseSmsCommand('VOTE.')).toEqual({
+      keyword: 'vote',
+      argument: null,
+    });
+  });
+
+  it('given JOIN or YES followed by other words, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('join me')).toEqual({
+      keyword: null,
+      argument: null,
+    });
+    expect(parseSmsCommand('yes please')).toEqual({
+      keyword: null,
+      argument: null,
+    });
+  });
+
+  it('given a word that starts with a keyword, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('voted')).toEqual({ keyword: null, argument: null });
+    expect(parseSmsCommand('yesterday')).toEqual({
+      keyword: null,
+      argument: null,
+    });
+  });
+
+  it('given anything else, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('234567')).toEqual({
+      keyword: null,
+      argument: null,
+    });
+    expect(parseSmsCommand('')).toEqual({ keyword: null, argument: null });
   });
 });

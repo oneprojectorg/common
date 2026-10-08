@@ -73,16 +73,30 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-export type SmsKeyword = 'join' | 'yes';
+export type SmsKeyword = 'join' | 'yes' | 'vote';
 
-const SMS_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
+export interface SmsCommand {
+  keyword: SmsKeyword | null;
+  argument: string | null;
+}
+
+const BARE_KEYWORD_PATTERNS: ReadonlyArray<[SmsKeyword, RegExp]> = [
   ['join', /^join[.!]?$/i],
   ['yes', /^yes[.!]?$/i],
 ];
 
-export const extractSmsKeyword = (body: string): SmsKeyword | null => {
+const VOTE_COMMAND_PATTERN = /^vote(?:[.!:,]|\s|$)\s*(.*)$/i;
+
+export const parseSmsCommand = (body: string): SmsCommand => {
   const text = body.trim();
-  return (
-    SMS_KEYWORD_PATTERNS.find(([, pattern]) => pattern.test(text))?.[0] ?? null
-  );
+  const bare = BARE_KEYWORD_PATTERNS.find(([, pattern]) => pattern.test(text));
+  if (bare) {
+    return { keyword: bare[0], argument: null };
+  }
+  const vote = VOTE_COMMAND_PATTERN.exec(text);
+  if (vote) {
+    const argument = (vote[1] ?? '').trim().toLowerCase();
+    return { keyword: 'vote', argument: argument.length > 0 ? argument : null };
+  }
+  return { keyword: null, argument: null };
 };

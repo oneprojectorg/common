@@ -51,6 +51,7 @@ const reply = (
       messageSid: `SM-vote-reply-${from}-${attempt}`,
       code: null,
       keyword,
+      argument: null,
     },
   }),
 });
@@ -260,7 +261,7 @@ describe('handleSmsVoteRequest against the database', () => {
     expect(memorySmsProvider.sent).toEqual([]);
   });
 
-  it('given a member already voted, when they reply YES to a second prompt, then the second vote is rejected and one vote remains', async ({
+  it('given a member already voted, when they reply YES to a second prompt, then the second vote is rejected, they are told, and one vote remains', async ({
     task,
     onTestFinished,
   }) => {
@@ -292,5 +293,10 @@ describe('handleSmsVoteRequest against the database', () => {
       reason: expect.stringContaining('already submitted'),
     });
     expect(await readVotes(instanceId)).toHaveLength(1);
+    expect(memorySmsProvider.sent.at(-1)).toEqual({
+      to: phone,
+      body: expect.stringContaining('could not record your vote'),
+      providerMessageId: expect.any(String),
+    });
   });
 });
