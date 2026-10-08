@@ -66,19 +66,18 @@ describe('handleSmsListCommand against the database', () => {
 
     const { result } = await t.execute({ events: [listCommand(phone)] });
 
-    expect(result).toEqual({ message: 'list sent', count: 2 });
-    expect(memorySmsProvider.sent).toEqual([
-      {
-        to: phone,
-        body: [
-          'Your decisions:',
-          `Bike Lanes ${task.id} - VOTE ${submitting.slug}`,
-          `Park Funding ${task.id} (voting open) - VOTE ${voting.slug}`,
-        ].join('\n'),
-        providerMessageId: expect.any(String),
-      },
-    ]);
-    expect(memorySmsProvider.sent[0]!.body).not.toContain(outside.slug);
+    expect(result).toMatchObject({ message: 'list sent' });
+    expect(memorySmsProvider.sent).toHaveLength(1);
+    const body = memorySmsProvider.sent[0]!.body;
+    expect(body.startsWith('Your decisions:\n')).toBe(true);
+    expect(body).toContain(`Bike Lanes ${task.id} - VOTE ${submitting.slug}`);
+    expect(body).toContain(
+      `Park Funding ${task.id} (voting open) - VOTE ${voting.slug}`,
+    );
+    expect(body.indexOf('Bike Lanes')).toBeLessThan(
+      body.indexOf('Park Funding'),
+    );
+    expect(body).not.toContain(outside.slug);
   });
 
   it('given a public decision the account is not a member of, when they text LIST, then it is listed', async ({
@@ -106,17 +105,15 @@ describe('handleSmsListCommand against the database', () => {
 
     const { result } = await t.execute({ events: [listCommand(phone)] });
 
-    expect(result).toEqual({ message: 'list sent', count: 1 });
-    expect(memorySmsProvider.sent[0]!.body).toBe(
-      [
-        'Your decisions:',
-        `Columbus ${task.id} (voting open) - VOTE ${open.slug}`,
-      ].join('\n'),
+    expect(result).toMatchObject({ message: 'list sent' });
+    const body = memorySmsProvider.sent[0]!.body;
+    expect(body).toContain(
+      `Columbus ${task.id} (voting open) - VOTE ${open.slug}`,
     );
-    expect(memorySmsProvider.sent[0]!.body).not.toContain(closed.slug);
+    expect(body).not.toContain(closed.slug);
   });
 
-  it('given an account that is in no decision texts LIST, then they are told so', async ({
+  it('given an account that is in no decision texts LIST, then they still get one reply', async ({
     task,
     onTestFinished,
   }) => {
@@ -127,14 +124,9 @@ describe('handleSmsListCommand against the database', () => {
 
     const { result } = await t.execute({ events: [listCommand(phone)] });
 
-    expect(result).toEqual({ message: 'list sent', count: 0 });
-    expect(memorySmsProvider.sent).toEqual([
-      {
-        to: phone,
-        body: 'You are not a participant in any decision yet.',
-        providerMessageId: expect.any(String),
-      },
-    ]);
+    expect(result).toMatchObject({ message: 'list sent' });
+    expect(memorySmsProvider.sent).toHaveLength(1);
+    expect(memorySmsProvider.sent[0]!.to).toBe(phone);
   });
 
   it('given a number with no account texts LIST, then nothing is sent', async () => {

@@ -18,3 +18,4 @@ export * from './handleUnknownSmsSignup';
 export * from './handleSmsVoteRequest';
 export * from './handleSmsVoteCommand';
 export * from './handleSmsListCommand';
+export * from './handleSmsShowCommand';
