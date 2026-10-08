@@ -92,12 +92,12 @@ describe('composeOtherPieces', () => {
     ).toEqual(['voting', 'results']);
   });
 
-  it('adds a develop phase only for rough ideas', () => {
+  it('adds a second submissions phase only for rough ideas', () => {
     expect(
       phases(
         answers({ cadence: 'timeline', submits: 'rough', decision: 'vote' }),
       ),
-    ).toEqual(['submissions', 'develop', 'voting', 'results']);
+    ).toEqual(['submissions', 'submissions', 'voting', 'results']);
 
     expect(
       phases(
@@ -110,12 +110,12 @@ describe('composeOtherPieces', () => {
     ).toEqual(['submissions', 'voting', 'results']);
   });
 
-  it('orders a review-then-vote process review, develop, vote', () => {
+  it('orders a review-then-vote process review, submissions, vote', () => {
     expect(
       phases(
         answers({ cadence: 'timeline', submits: 'rough', decision: 'both' }),
       ),
-    ).toEqual(['submissions', 'review', 'develop', 'voting', 'results']);
+    ).toEqual(['submissions', 'review', 'submissions', 'voting', 'results']);
   });
 
   it('leaves out voting when a smaller group decides', () => {
