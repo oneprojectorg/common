@@ -261,6 +261,62 @@ describe.concurrent('createPhase', () => {
     expect(stored?.data).toEqual({ description: 'Pitch an idea' });
   });
 
+  it('stores a proposal form', async ({ task, onTestFinished }) => {
+    const { testData, instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    const proposalTemplate = {
+      type: 'object' as const,
+      properties: { title: { type: 'string' as const } },
+      required: ['title'],
+    };
+    const result = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'Submissions',
+      sortOrder: 0,
+      data: { proposalTemplate },
+    });
+    testData.trackProfileForCleanup(result.profileId);
+
+    const phase = await db.query.processPhases.findFirst({
+      where: { id: result.id },
+      columns: { data: true },
+    });
+    expect(phase?.data).toEqual({ proposalTemplate });
+  });
+
+  it('refuses a proposal form that is not a valid JSON Schema and creates nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    const name = `Bad Form ${randomUUID()}`;
+    await expect(
+      adminCaller.decision.createPhase({
+        instanceId,
+        name,
+        sortOrder: 0,
+        data: { proposalTemplate: { type: 'string', minLength: -1 } },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const [phases, profiles] = await Promise.all([
+      db.query.processPhases.findMany({
+        where: { processInstanceId: instanceId },
+        columns: { id: true },
+      }),
+      db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
+    ]);
+    expect(phases).toHaveLength(0);
+    expect(profiles).toHaveLength(0);
+  });
+
   it('accepts a settings schema, settings and a pipeline from the client', async ({
     task,
     onTestFinished,
