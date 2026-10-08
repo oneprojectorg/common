@@ -15,10 +15,6 @@ import { useEffect, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-/**
- * Picks which of the caller's identities stewards a process. Suspends, so a
- * consumer supplies the boundary.
- */
 export const StewardSelect = ({
   stewardProfileId,
   onSelectionChange,
@@ -26,7 +22,6 @@ export const StewardSelect = ({
 }: {
   stewardProfileId: string;
   onSelectionChange: (key: string) => void;
-  /** Kept selectable even when it is no longer one of the caller's own. */
   currentSteward?: { id: string; name: string | null } | null;
 }) => {
   const t = useTranslations();
@@ -60,8 +55,7 @@ export const StewardSelect = ({
         required
         value={stewardProfileId || defaultProfileId || null}
         onValueChange={(value) => onSelectionChange(value as string)}
-        // base-ui Select.Value renders the raw value; pass the id→name map so
-        // the trigger shows the steward's name, not their profile id.
+        // Without `items`, SelectValue renders the raw id.
         items={Object.fromEntries(
           profileItems.map((profile) => [profile.id, profile.name ?? '']),
         )}
