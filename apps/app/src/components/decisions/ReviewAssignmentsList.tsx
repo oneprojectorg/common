@@ -41,7 +41,7 @@ import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import { ProposalViewToggle } from './ProposalViewToggle';
+import { ProposalsViewSwitch } from './ProposalsFilterBar';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
@@ -52,6 +52,7 @@ import {
   useRegisterTranslationSamples,
 } from './TranslationDetectionContext';
 import { TranslationNotice } from './TranslationNotice';
+import { REVIEW_ASSIGNMENT_VIEWS } from './proposalViews';
 import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useReviewersByProposalId } from './useReviewersByProposalId';
@@ -200,13 +201,15 @@ export function ReviewAssignmentsList({
   // flag), but leads with the grid: reviewing a queue is sequential work and
   // the map is the secondary lens.
   const {
-    hasLocationField,
     mapView,
+    availableViews,
     effectiveView,
+    hasMapView,
     isMapMode,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
     defaultView: 'grid',
+    views: REVIEW_ASSIGNMENT_VIEWS,
   });
 
   // The proposal-keyed URL resolves per viewer (own review screen for a
@@ -374,16 +377,16 @@ export function ReviewAssignmentsList({
                 },
               ]}
             />
-            {hasLocationField && (
+            {availableViews.length > 1 && (
               // Desktop control; below `sm` the floating MobileViewSwitch
               // below takes over (same split as the proposals list).
-              <div className="hidden items-center gap-4 sm:flex">
-                <span aria-hidden className="h-6 w-px bg-border" />
-                <ProposalViewToggle
-                  value={effectiveView}
-                  onChange={handleViewChange}
-                />
-              </div>
+              <ProposalsViewSwitch
+                view={{
+                  value: effectiveView,
+                  views: availableViews,
+                  onChange: handleViewChange,
+                }}
+              />
             )}
           </div>
         </StickyFilterBar>
@@ -487,7 +490,7 @@ export function ReviewAssignmentsList({
         />
       )}
 
-      {hasLocationField && (
+      {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>

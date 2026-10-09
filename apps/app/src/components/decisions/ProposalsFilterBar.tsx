@@ -7,8 +7,9 @@ import { useTranslations } from '@/lib/i18n';
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ProposalCount } from './ProposalCount';
 import { ProposalSearchField } from './ProposalSearchField';
-import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
+import { ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import type { ProposalView } from './proposalViews';
 
 export interface ProposalSelectControl {
   items: { id: string; label: string; isDisabled?: boolean }[];
@@ -31,11 +32,35 @@ export interface ProposalControls {
   decisionSlug: string | undefined;
 }
 
-/** Grid/map switch, present only when the process collects a location. */
+/** Browse-view switch, present only when there is more than one view to be in. */
 export interface ProposalViewControls {
   value: ProposalView;
+  /** The views to offer, in display order — see `useProposalViewMode`. */
+  views: readonly ProposalView[];
   onChange: (next: ProposalView) => void;
 }
+
+/**
+ * The view toggle and the rule that sets it off from whatever precedes it.
+ * Desktop-only: below `sm` the floating `MobileViewSwitch` swaps between map
+ * and list instead. Shared so the switch survives the filter-less bar — a
+ * phase that hides proposals drops the filters, and dropping the way out of a
+ * view with them strands whoever arrived on a `?view=` link.
+ */
+export const ProposalsViewSwitch = ({
+  view,
+}: {
+  view: ProposalViewControls;
+}) => (
+  <div className="hidden items-center gap-4 sm:flex">
+    <span aria-hidden className="h-6 w-px bg-border" />
+    <ProposalViewToggle
+      value={view.value}
+      views={view.views}
+      onChange={view.onChange}
+    />
+  </div>
+);
 
 export const ProposalsListHeader = ({
   count,
@@ -143,12 +168,7 @@ export const ProposalsFilterBar = ({
             { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
-        {view && (
-          <div className="hidden items-center gap-4 sm:flex">
-            <span aria-hidden className="h-6 w-px bg-border" />
-            <ProposalViewToggle value={view.value} onChange={view.onChange} />
-          </div>
-        )}
+        {view && <ProposalsViewSwitch view={view} />}
         {exportControl && (
           <div className="flex items-center gap-4">
             <span aria-hidden className="h-6 w-px bg-border" />
