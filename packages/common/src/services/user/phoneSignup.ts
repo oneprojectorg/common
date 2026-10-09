@@ -13,7 +13,7 @@ const EXPIRED_OR_INVALID_CODE = 'otp_expired';
  * text to a number that may not want one, so callers treat it as final for
  * this run rather than as a reason to try again.
  */
-export type PhoneSignupCodeRequest =
+type PhoneSignupCodeRequest =
   | { status: 'sent' }
   | { status: 'rejected'; reason: 'rate_limited' | 'unknown' };
 

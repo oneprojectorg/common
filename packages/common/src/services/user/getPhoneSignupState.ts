@@ -19,7 +19,7 @@ export const PHONE_SIGNUP_REPLY_WINDOW_MINUTES = 10;
  * `free`: no row, or an unconfirmed row whose code is old or never sent. A
  *   text from the number starts a new attempt.
  */
-export type PhoneSignupState =
+type PhoneSignupState =
   | { status: 'confirmed'; authUserId: string; profileId: string | null }
   | { status: 'attempt_in_progress'; codeSentAt: Date }
   | { status: 'free' };

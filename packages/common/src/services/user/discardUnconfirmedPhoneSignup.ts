@@ -7,7 +7,7 @@ import { type PhoneNumber, toGoTruePhoneFormat } from '../notification/schemas';
 
 const publicUsers = alias(users, 'public_users');
 
-export type PhoneSignupDiscard =
+type PhoneSignupDiscard =
   | { status: 'discarded'; authUserId: string }
   | { status: 'kept'; reason: 'no_row' | 'confirmed' | 'newer_attempt' };
 
