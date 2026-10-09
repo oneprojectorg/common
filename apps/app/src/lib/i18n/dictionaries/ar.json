@@ -5,6 +5,7 @@
   "Name": "الاسم",
   "Website": "الموقع الإلكتروني",
   "Email": "البريد الإلكتروني",
+  "SMS": "رسائل SMS",
   "Select": "اختر",
   "Back": "رجوع",
   "Privacy Policy": "سياسة الخصوصية",
@@ -734,6 +735,23 @@
     "noAccessHint": "اتصل بالشخص الذي شارك هذا الرابط إذا كنت تعتقد أن هذا خطأ.",
     "goToCommonAction": "اذهب إلى Common",
     "newTabHint": "(يفتح في علامة تبويب جديدة)"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "description": "إدارة حسابك وتفضيلاتك",
+    "notificationsNav": "الإشعارات",
+    "notificationsHeading": "إشعارات البريد الإلكتروني",
+    "proposalsAndCommentsLabel": "مقترحاتك وتعليقاتك",
+    "proposalsAndCommentsDescription": "يرد عليك أحدهم أو يعلق على مقترحك.",
+    "thingsYouFollowLabel": "ما تتابعه",
+    "thingsYouFollowDescription": "تحديثات من المقترحات والعمليات التي تتابعها.",
+    "processUpdatesLabel": "تحديثات العملية",
+    "processUpdatesDescription": "تغييرات المراحل والمنشورات والفعاليات للعمليات التي تشارك فيها.",
+    "relationshipRequestsLabel": "طلبات العلاقات",
+    "relationshipRequestsDescription": "تطلب منظمة التواصل مع منظمة تديرها.",
+    "savingStatus": "جارٍ الحفظ…",
+    "savedStatus": "تم الحفظ",
+    "saveErrorStatus": "تعذر حفظ التغيير. حاول مرة أخرى."
   },
   "decisions": {
     "processBuilder": {
