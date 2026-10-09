@@ -20,7 +20,7 @@ interface LocaleChooserProps {
 
 // Keyed on Locale so adding a supported locale without its endonym here is a
 // typecheck failure rather than a raw code (`hu`) rendered in the menu.
-const localeDisplayNames: Record<Locale, string> = {
+export const localeDisplayNames: Record<Locale, string> = {
   en: 'English',
   es: 'Español',
   fr: 'Français',
@@ -38,22 +38,10 @@ const localeDisplayNames: Record<Locale, string> = {
  */
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations('shell');
-  const pathname = usePathname();
-  const params = useParams();
-  const localeParam = params.locale;
-  const currentLocale =
-    (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
+  const { currentLocale, switchLocale } = useLocaleSwitch();
 
   const handleValueChange = (value: string) => {
-    if (value && value !== currentLocale) {
-      // Hard navigation (not the client router) so the server applies the
-      // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
-      // as a next.config rewrite, so a client-side transition to `/es/columbus`
-      // can't resolve them and bounces anonymous viewers to /login. A full load
-      // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
-      // so the reload is negligible.
-      window.location.assign(`/${value}${pathname}`);
-    }
+    switchLocale(value);
     onClose?.();
   };
 
@@ -84,4 +72,30 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+};
+
+/**
+ * The locale in the URL, and a way to move to another one. Shared by the
+ * header's globe menu and the language setting in the Settings modal.
+ */
+export const useLocaleSwitch = () => {
+  const pathname = usePathname();
+  const params = useParams();
+  const localeParam = params.locale;
+  const currentLocale =
+    (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
+
+  const switchLocale = (value: string) => {
+    if (value && value !== currentLocale) {
+      // Hard navigation (not the client router) so the server applies the
+      // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
+      // as a next.config rewrite, so a client-side transition to `/es/columbus`
+      // can't resolve them and bounces anonymous viewers to /login. A full load
+      // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
+      // so the reload is negligible.
+      window.location.assign(`/${value}${pathname}`);
+    }
+  };
+
+  return { currentLocale, switchLocale };
 };
