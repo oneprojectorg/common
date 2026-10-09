@@ -1,4 +1,4 @@
-// Phase dates are business dates, not personal moments, and they must format
+// Date-only labels (phase ranges in steppers and cards) must format
 // identically on the server and in the browser or hydration fails (React #418):
 // "2026-07-06T04:00:00Z" is "Jul 6" in UTC and "Jul 5" in America/Los_Angeles.
 // An unset `timeZone` resolves to the runtime's, which differs between the two
