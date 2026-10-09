@@ -1199,7 +1199,7 @@
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Elküldve {timeAgo}",
       "selectedProposalsHeading": "Kiválasztott javaslatok",
-      "awardAmountsDescription": "A kiválasztott javaslatokat és az eredményeket minden résztvevővel megosztjuk.",
+      "awardAmountsDescription": "Minden résztvevő látni fogja a kiválasztott javaslatokat és az egyes javaslatoknak odaítélt összeget.",
       "adjustAmountsAction": "Összegek módosítása",
       "awardedAmountLabel": "Odaítélt összeg",
       "awardedAmountInvalid": "Adjon meg 0-nál nagyobb összeget",

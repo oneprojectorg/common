@@ -288,33 +288,36 @@ describe('submitManualSelection', () => {
   });
 });
 
+/** Three phases with the CURRENT one last, so this call publishes results. */
+const lastPhaseInstanceData = () => ({
+  phases: [
+    { phaseId: 'phase-0', name: 'Submission', rules: {} },
+    { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
+    { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
+  ],
+  config: { reviewsPolicy: 'full_coverage' },
+});
+
+/** The happy-path tx results with the locked instance swapped for `data`. */
+const resultsFor = (data: unknown) => {
+  const results = happyPathResults();
+  results[0] = [
+    {
+      currentStateId: CURRENT_PHASE_ID,
+      status: 'published',
+      instanceData: data,
+    },
+  ];
+  return results;
+};
+
+const lastPhaseResults = () => resultsFor(lastPhaseInstanceData());
+
 describe('submitManualSelection author notifications', () => {
   const PROCESS_RESULT_ID = 'result-1';
   const messages = {
     selected: 'You were selected',
     notSelected: 'Not this round',
-  };
-
-  /** Three phases with the CURRENT one last, so this call publishes results. */
-  const lastPhaseInstanceData = () => ({
-    phases: [
-      { phaseId: 'phase-0', name: 'Submission', rules: {} },
-      { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
-      { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
-    ],
-    config: { reviewsPolicy: 'full_coverage' },
-  });
-
-  const lastPhaseResults = () => {
-    const results = happyPathResults();
-    results[0] = [
-      {
-        currentStateId: CURRENT_PHASE_ID,
-        status: 'published',
-        instanceData: lastPhaseInstanceData(),
-      },
-    ];
-    return results;
   };
 
   beforeEach(() => {
@@ -488,28 +491,12 @@ describe('submitManualSelection author notifications', () => {
 });
 
 describe('submitManualSelection allocations', () => {
-  const lastPhaseInstanceData = () => ({
-    phases: [
-      { phaseId: 'phase-0', name: 'Submission', rules: {} },
-      { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
-      { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
-    ],
-    config: { reviewsPolicy: 'full_coverage' },
-  });
+  const PROPOSAL_A = '00000000-0000-4000-8000-00000000000a';
+  const PROPOSAL_B = '00000000-0000-4000-8000-00000000000b';
+  const PROPOSAL_C = '00000000-0000-4000-8000-00000000000c';
 
-  const resultsFor = (data: unknown) => {
-    const results = happyPathResults();
-    results[0] = [
-      {
-        currentStateId: CURRENT_PHASE_ID,
-        status: 'published',
-        instanceData: data,
-      },
-    ];
-    return results;
-  };
-
-  const useInstance = (data: unknown) => {
+  /** Points both the pre-check read and the locked read at `data`. */
+  const mockInstance = (data: unknown) => {
     mockFindFirst.mockResolvedValue({
       profileId: DECISION_PROFILE_ID,
       status: 'published',
@@ -530,18 +517,18 @@ describe('submitManualSelection allocations', () => {
       profileId: USER_PROFILE_ID,
     } as never);
     mockAssertProfileAccess.mockResolvedValue(undefined as never);
-    mockGetProposalIdsForPhase.mockResolvedValue(['prop-1', 'prop-2']);
+    mockGetProposalIdsForPhase.mockResolvedValue([PROPOSAL_A, PROPOSAL_B]);
     mockProcessResults.mockResolvedValue('result-1');
-    useInstance(lastPhaseInstanceData());
+    mockInstance(lastPhaseInstanceData());
   });
 
   it('hands each awarded amount to the result write', async () => {
     await submitManualSelection({
       processInstanceId: INSTANCE_ID,
-      proposalIds: ['prop-1', 'prop-2'],
+      proposalIds: [PROPOSAL_A, PROPOSAL_B],
       allocations: [
-        { proposalId: 'prop-1', amount: 500 },
-        { proposalId: 'prop-2', amount: 1200.5 },
+        { proposalId: PROPOSAL_A, amount: 500 },
+        { proposalId: PROPOSAL_B, amount: 1200.5 },
       ],
       user,
     });
@@ -549,8 +536,8 @@ describe('submitManualSelection allocations', () => {
     expect(mockProcessResults).toHaveBeenCalledWith(
       expect.objectContaining({
         allocations: new Map([
-          ['prop-1', 500],
-          ['prop-2', 1200.5],
+          [PROPOSAL_A, 500],
+          [PROPOSAL_B, 1200.5],
         ]),
       }),
     );
@@ -559,7 +546,7 @@ describe('submitManualSelection allocations', () => {
   it('writes no amounts when none are supplied', async () => {
     await submitManualSelection({
       processInstanceId: INSTANCE_ID,
-      proposalIds: ['prop-1', 'prop-2'],
+      proposalIds: [PROPOSAL_A, PROPOSAL_B],
       user,
     });
 
@@ -571,48 +558,54 @@ describe('submitManualSelection allocations', () => {
   it.each([
     [
       'an amount is missing for a selected proposal',
-      [{ proposalId: 'prop-1', amount: 500 }],
-      /Missing an awarded amount for proposal prop-2/,
+      [{ proposalId: PROPOSAL_A, amount: 500 }],
+      new RegExp(`Missing an awarded amount for proposal ${PROPOSAL_B}`),
     ],
     [
       'an amount names a proposal that is not selected',
       [
-        { proposalId: 'prop-1', amount: 500 },
-        { proposalId: 'prop-2', amount: 500 },
-        { proposalId: 'prop-3', amount: 500 },
+        { proposalId: PROPOSAL_A, amount: 500 },
+        { proposalId: PROPOSAL_B, amount: 500 },
+        { proposalId: PROPOSAL_C, amount: 500 },
       ],
-      /Proposal prop-3 has an awarded amount but is not selected/,
+      new RegExp(
+        `Proposal ${PROPOSAL_C} has an awarded amount but is not selected`,
+      ),
     ],
     [
       'a proposal has two amounts',
       [
-        { proposalId: 'prop-1', amount: 500 },
-        { proposalId: 'prop-1', amount: 600 },
-        { proposalId: 'prop-2', amount: 500 },
+        { proposalId: PROPOSAL_A, amount: 500 },
+        { proposalId: PROPOSAL_A, amount: 600 },
+        { proposalId: PROPOSAL_B, amount: 500 },
       ],
-      /Proposal prop-1 has more than one awarded amount/,
+      new RegExp(`Proposal ${PROPOSAL_A} has more than one awarded amount`),
     ],
     [
       'an amount is zero',
       [
-        { proposalId: 'prop-1', amount: 0 },
-        { proposalId: 'prop-2', amount: 500 },
+        { proposalId: PROPOSAL_A, amount: 0 },
+        { proposalId: PROPOSAL_B, amount: 500 },
       ],
-      /Awarded amount for proposal prop-1 must be a number greater than 0/,
+      new RegExp(
+        `Awarded amount for proposal ${PROPOSAL_A} must be a number greater than 0`,
+      ),
     ],
     [
       'an amount is not a number',
       [
-        { proposalId: 'prop-1', amount: Number.NaN },
-        { proposalId: 'prop-2', amount: 500 },
+        { proposalId: PROPOSAL_A, amount: Number.NaN },
+        { proposalId: PROPOSAL_B, amount: 500 },
       ],
-      /Awarded amount for proposal prop-1 must be a number greater than 0/,
+      new RegExp(
+        `Awarded amount for proposal ${PROPOSAL_A} must be a number greater than 0`,
+      ),
     ],
   ])('refuses to publish when %s', async (_label, allocations, message) => {
     await expect(
       submitManualSelection({
         processInstanceId: INSTANCE_ID,
-        proposalIds: ['prop-1', 'prop-2'],
+        proposalIds: [PROPOSAL_A, PROPOSAL_B],
         allocations,
         user,
       }),
@@ -623,15 +616,15 @@ describe('submitManualSelection allocations', () => {
   });
 
   it('rejects amounts on a phase that publishes nothing', async () => {
-    useInstance(instanceData(false));
+    mockInstance(instanceData(false));
 
     await expect(
       submitManualSelection({
         processInstanceId: INSTANCE_ID,
-        proposalIds: ['prop-1', 'prop-2'],
+        proposalIds: [PROPOSAL_A, PROPOSAL_B],
         allocations: [
-          { proposalId: 'prop-1', amount: 500 },
-          { proposalId: 'prop-2', amount: 500 },
+          { proposalId: PROPOSAL_A, amount: 500 },
+          { proposalId: PROPOSAL_B, amount: 500 },
         ],
         user,
       }),

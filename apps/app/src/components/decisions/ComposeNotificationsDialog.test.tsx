@@ -44,12 +44,12 @@ const renderDialog = ({
   awardsAmounts?: boolean;
 }) => {
   const onConfirm = vi.fn();
-  const Harness = () => {
+  const Harness = ({ selected }: { selected: Proposal[] }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
       <ComposeNotificationsDialog
-        selectedProposals={proposals}
-        selectedCount={proposals.length}
+        selectedProposals={selected}
+        selectedCount={selected.length}
         notSelectedCount={1}
         awardsAmounts={awardsAmounts}
         isOpen={isOpen}
@@ -61,20 +61,25 @@ const renderDialog = ({
     );
   };
 
-  render(
+  const withProviders = (selected: Proposal[]) => (
     <NextIntlClientProvider locale="en" messages={messages}>
-      <Harness />
-    </NextIntlClientProvider>,
+      <Harness selected={selected} />
+    </NextIntlClientProvider>
   );
+  const { rerender } = render(withProviders(proposals));
 
-  return { onConfirm, user: userEvent.setup() };
+  return {
+    onConfirm,
+    user: userEvent.setup(),
+    /** The live selection moving under the open dialog. */
+    setSelected: (selected: Proposal[]) => rerender(withProviders(selected)),
+  };
 };
 
 const amountField = (title: string) =>
-  within(screen.getByText(title).closest('li') ?? document.body).getByRole(
-    'textbox',
-    { name: 'Awarded amount' },
-  );
+  within(screen.getByRole('listitem', { name: title })).getByRole('textbox', {
+    name: 'Awarded amount',
+  });
 
 afterEach(cleanup);
 
@@ -169,5 +174,68 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     );
 
     expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), undefined);
+  });
+
+  it('keeps the edited amounts when stepping back from the notifications', async () => {
+    const { user } = renderDialog({ proposals: [alpha] });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Adjust amounts' }));
+    await user.clear(amountField('Proposal Alpha'));
+    await user.type(amountField('Proposal Alpha'), '4200');
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(
+      screen.getByRole('dialog', { name: 'Confirm winning proposals' }),
+    ).toBeTruthy();
+    expect(amountField('Proposal Alpha')).toHaveProperty('value', '4200');
+  });
+
+  it('starts over when the dialog is reopened', async () => {
+    const { user } = renderDialog({ proposals: [alpha] });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Adjust amounts' }));
+    await user.clear(amountField('Proposal Alpha'));
+    await user.type(amountField('Proposal Alpha'), '4200');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+
+    expect(screen.getByText('$5,000 Awarded')).toBeTruthy();
+    expect(
+      screen.queryByRole('textbox', { name: 'Awarded amount' }),
+    ).toBeNull();
+  });
+
+  it('keeps the fields open while an amount is invalid', async () => {
+    const { user } = renderDialog({ proposals: [alpha] });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Adjust amounts' }));
+    await user.clear(amountField('Proposal Alpha'));
+    await user.click(screen.getByRole('button', { name: 'Adjust amounts' }));
+
+    expect(screen.getByText('Enter an amount greater than 0')).toBeTruthy();
+    expect(document.activeElement).toBe(amountField('Proposal Alpha'));
+  });
+
+  it('reopens the amounts when the selection changes after they were confirmed', async () => {
+    const { onConfirm, user, setSelected } = renderDialog({
+      proposals: [alpha],
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    setSelected([alpha, beta]);
+    await user.click(
+      screen.getByRole('button', { name: 'Send & publish results' }),
+    );
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('dialog', { name: 'Confirm winning proposals' }),
+    ).toBeTruthy();
+    expect(screen.getByText('$8,000 Awarded')).toBeTruthy();
   });
 });

@@ -1199,7 +1199,7 @@
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Sent {timeAgo}",
       "selectedProposalsHeading": "Selected proposals",
-      "awardAmountsDescription": "The selected proposals and results will be shared with all participants.",
+      "awardAmountsDescription": "Every participant will see the selected proposals and the amount each one is awarded.",
       "adjustAmountsAction": "Adjust amounts",
       "awardedAmountLabel": "Awarded amount",
       "awardedAmountInvalid": "Enter an amount greater than 0",

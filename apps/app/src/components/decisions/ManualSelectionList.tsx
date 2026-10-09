@@ -185,7 +185,12 @@ export const ManualSelectionList = ({
       });
       submitMutation.mutate({
         processInstanceId: instanceId,
-        proposalIds: selectedIds,
+        // With amounts, publish exactly the winners they were confirmed for:
+        // the stored draft can hold ids the proposal cache never resolved,
+        // which the dialog never showed and the service would refuse.
+        proposalIds:
+          allocations?.map((allocation) => allocation.proposalId) ??
+          selectedIds,
         resultNotifications,
         allocations,
       });

@@ -1199,7 +1199,7 @@
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Envoyé {timeAgo}",
       "selectedProposalsHeading": "Propositions sélectionnées",
-      "awardAmountsDescription": "Les propositions sélectionnées et les résultats seront partagés avec tous les participants.",
+      "awardAmountsDescription": "Tous les participants verront les propositions sélectionnées et le montant attribué à chacune.",
       "adjustAmountsAction": "Ajuster les montants",
       "awardedAmountLabel": "Montant attribué",
       "awardedAmountInvalid": "Saisissez un montant supérieur à 0",

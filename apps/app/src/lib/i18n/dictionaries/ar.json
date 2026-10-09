@@ -1199,7 +1199,7 @@
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "أُرسل {timeAgo}",
       "selectedProposalsHeading": "المقترحات المُختارة",
-      "awardAmountsDescription": "ستتم مشاركة المقترحات المختارة والنتائج مع جميع المشاركين.",
+      "awardAmountsDescription": "سيرى جميع المشاركين المقترحات المختارة والمبلغ الممنوح لكل منها.",
       "adjustAmountsAction": "تعديل المبالغ",
       "awardedAmountLabel": "المبلغ الممنوح",
       "awardedAmountInvalid": "أدخل مبلغًا أكبر من 0",

@@ -19,7 +19,7 @@ export type ProposalSelection = z.infer<typeof proposalSelectionSchema>;
  * proposal's requested budget.
  */
 export const proposalAllocationSchema = z.object({
-  proposalId: z.string(),
+  proposalId: z.uuid(),
   amount: z.number().positive(),
 });
 

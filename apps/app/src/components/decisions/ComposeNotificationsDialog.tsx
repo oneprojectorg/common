@@ -27,7 +27,8 @@ import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { AwardAmountsStep, useAwardAmounts } from './AwardAmountsStep';
+import { AwardAmountsStep } from './AwardAmountsStep';
+import { useAwardAmounts } from './useAwardAmounts';
 
 interface ComposeNotificationsDialogProps {
   selectedProposals: Proposal[];
@@ -149,11 +150,7 @@ export const ComposeNotificationsDialog = ({
             proposals={selectedProposals}
             awards={awards}
             onCancel={() => handleOpenChange(false)}
-            onContinue={() => {
-              if (awards.validate()) {
-                setStep('notifications');
-              }
-            }}
+            onContinue={() => awards.confirm(() => setStep('notifications'))}
           />
         ) : (
           <>
@@ -242,10 +239,13 @@ export const ComposeNotificationsDialog = ({
               refetches the selection away while the admin composes, the
               mutation would be rejected for an empty `proposalIds`. */}
               <Button
-                // Amounts were validated on Continue. A proposal joining the
-                // live selection since then without a budget has no amount,
-                // which the service rejects by name.
-                onClick={() => onConfirm(messages, awards.getAllocations())}
+                onClick={() =>
+                  awards.publish({
+                    onPublish: (allocations) =>
+                      onConfirm(messages, allocations),
+                    onReopen: () => setStep('amounts'),
+                  })
+                }
                 disabled={hasError || selectedCount === 0}
                 loading={isSubmitting}
               >
