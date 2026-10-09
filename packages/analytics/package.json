@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@op/core": "workspace:^",
-    "@op/logging": "workspace:*",
     "posthog-node": "^4.3.0"
   },
   "devDependencies": {

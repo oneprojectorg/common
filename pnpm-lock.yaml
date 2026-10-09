@@ -737,9 +737,6 @@ importers:
       '@op/core':
         specifier: workspace:^
         version: link:../core
-      '@op/logging':
-        specifier: workspace:*
-        version: link:../logging
       posthog-node:
         specifier: ^4.3.0
         version: 4.18.0
