@@ -5,6 +5,7 @@
   "Name": "Nom",
   "Website": "Site web",
   "Email": "Courriel",
+  "SMS": "SMS",
   "Select": "Sélectionner",
   "Back": "Retour",
   "Privacy Policy": "Politique de confidentialité",
@@ -734,6 +735,23 @@
     "noAccessHint": "Contactez la personne qui a partagé ce lien si vous pensez qu'il s'agit d'une erreur.",
     "goToCommonAction": "Aller à Common",
     "newTabHint": "(s’ouvre dans un nouvel onglet)"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "description": "Gérez votre compte et vos préférences",
+    "notificationsNav": "Notifications",
+    "notificationsHeading": "Notifications par e-mail",
+    "proposalsAndCommentsLabel": "Vos propositions et commentaires",
+    "proposalsAndCommentsDescription": "Quelqu’un vous répond ou commente votre proposition.",
+    "thingsYouFollowLabel": "Ce que vous suivez",
+    "thingsYouFollowDescription": "Mises à jour des propositions et des processus que vous suivez.",
+    "processUpdatesLabel": "Mises à jour du processus",
+    "processUpdatesDescription": "Changements de phase, publications et événements des processus auxquels vous participez.",
+    "relationshipRequestsLabel": "Demandes de relation",
+    "relationshipRequestsDescription": "Une organisation demande à se connecter à l’une de celles que vous gérez.",
+    "savingStatus": "Enregistrement…",
+    "savedStatus": "Enregistré",
+    "saveErrorStatus": "Nous n’avons pas pu enregistrer votre modification. Réessayez."
   },
   "decisions": {
     "processBuilder": {

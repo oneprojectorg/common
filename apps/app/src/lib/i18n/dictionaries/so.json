@@ -5,6 +5,7 @@
   "Name": "Magac",
   "Website": "Bogga shabakadda",
   "Email": "Iimeel",
+  "SMS": "SMS",
   "Select": "Dooro",
   "Back": "Dib u noqo",
   "Privacy Policy": "Xeerka Asturnaanta",
@@ -734,6 +735,23 @@
     "noAccessHint": "La xiriir qofka xiriiriyaha kula wadaagay haddii aad u malaynayso inay tahay khalad.",
     "goToCommonAction": "Aad Common",
     "newTabHint": "(waxay ka furmaysaa tab cusub)"
+  },
+  "settings": {
+    "title": "Dejinta",
+    "description": "Maamul akoonkaaga iyo doorashooyinkaaga",
+    "notificationsNav": "Ogeysiisyada",
+    "notificationsHeading": "Ogeysiisyada iimaylka",
+    "proposalsAndCommentsLabel": "Soo-jeedintaada iyo faallooyinkaaga",
+    "proposalsAndCommentsDescription": "Qof ayaa kuu jawaabay ama faallo ka bixiyay soo-jeedintaada.",
+    "thingsYouFollowLabel": "Waxyaabaha aad la socoto",
+    "thingsYouFollowDescription": "Cusboonaysiinta soo-jeedinta iyo hababka aad la socoto.",
+    "processUpdatesLabel": "Cusboonaysiinta habka",
+    "processUpdatesDescription": "Isbeddelka marxaladaha, qoraallada iyo dhacdooyinka hababka aad ka qayb tahay.",
+    "relationshipRequestsLabel": "Codsiyada xiriirka",
+    "relationshipRequestsDescription": "Urur ayaa codsanaya inuu la xiriiro mid aad maamusho.",
+    "savingStatus": "Waa la kaydinayaa…",
+    "savedStatus": "Waa la kaydiyay",
+    "saveErrorStatus": "Isbeddelkaaga lama kaydin karin. Mar kale isku day."
   },
   "decisions": {
     "processBuilder": {

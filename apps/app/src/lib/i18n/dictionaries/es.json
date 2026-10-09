@@ -4,6 +4,7 @@
   "Name": "Nombre",
   "Website": "Sitio web",
   "Email": "Correo electrónico",
+  "SMS": "SMS",
   "Select": "Seleccionar",
   "Back": "Atrás",
   "Privacy Policy": "Política de privacidad",
@@ -734,6 +735,23 @@
     "noAccessHint": "Contacta a la persona que compartió este enlace si crees que es un error.",
     "goToCommonAction": "Ir a Common",
     "newTabHint": "(se abre en una pestaña nueva)"
+  },
+  "settings": {
+    "title": "Configuración",
+    "description": "Administra tu cuenta y tus preferencias",
+    "notificationsNav": "Notificaciones",
+    "notificationsHeading": "Notificaciones por correo electrónico",
+    "proposalsAndCommentsLabel": "Tus propuestas y comentarios",
+    "proposalsAndCommentsDescription": "Alguien te responde o comenta tu propuesta.",
+    "thingsYouFollowLabel": "Lo que sigues",
+    "thingsYouFollowDescription": "Novedades de las propuestas y los procesos que sigues.",
+    "processUpdatesLabel": "Novedades del proceso",
+    "processUpdatesDescription": "Cambios de fase, publicaciones y eventos de los procesos en los que participas.",
+    "relationshipRequestsLabel": "Solicitudes de relación",
+    "relationshipRequestsDescription": "Una organización pide conectar con una que administras.",
+    "savingStatus": "Guardando…",
+    "savedStatus": "Guardado",
+    "saveErrorStatus": "No pudimos guardar tu cambio. Inténtalo de nuevo."
   },
   "decisions": {
     "processBuilder": {
