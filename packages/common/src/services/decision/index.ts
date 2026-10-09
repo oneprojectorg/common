@@ -18,6 +18,11 @@ export * from './removeOverviewHeroImage';
 export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 
+// Phase entities
+export { MAX_PHASES_PER_DECISION, type PhaseData } from './phaseHelpers';
+export * from './createPhase';
+export * from './deletePhase';
+
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
@@ -197,6 +202,7 @@ export type {
   DecisionInstanceData,
   PhaseInstanceData,
   PhaseOverride,
+  PhaseSettingsSchema,
 } from './schemas/instanceData';
 export {
   createInstanceDataFromTemplate,

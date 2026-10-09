@@ -47,6 +47,28 @@ export function getInstancePhases(
   return Array.isArray(phases) ? phases : [];
 }
 
+export type PhaseSettingsSchema = JSONSchema7 & { ui?: UiSchema };
+
+export const assertSettingsMatchSchema = ({
+  settings,
+  settingsSchema,
+  phaseLabel,
+}: {
+  settings: Record<string, unknown>;
+  settingsSchema: PhaseSettingsSchema;
+  phaseLabel: string;
+}): void => {
+  // Ajv's strict mode rejects the RJSF `ui` key.
+  const { ui: _ui, ...schema } = settingsSchema;
+  const result = schemaValidator.validate(schema, settings);
+  if (!result.valid) {
+    throw new ValidationError(
+      `Invalid settings for phase "${phaseLabel}"`,
+      result.errors,
+    );
+  }
+};
+
 export interface PhaseInstanceData {
   phaseId: string;
   name?: string;
@@ -55,7 +77,7 @@ export interface PhaseInstanceData {
   additionalInfo?: string;
   rules?: PhaseRules;
   selectionPipeline?: SelectionPipeline;
-  settingsSchema?: JSONSchema7 & { ui?: UiSchema };
+  settingsSchema?: PhaseSettingsSchema;
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;
@@ -162,22 +184,12 @@ export function createInstanceDataFromTemplate(input: {
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 
-      // Validate settings against phase's settings schema if provided
       if (override?.settings && phase.settings) {
-        // Strip RJSF-specific 'ui' property before AJV validation
-        const { ui: _ui, ...settingsSchema } = phase.settings as JSONSchema7 & {
-          ui?: unknown;
-        };
-        const result = schemaValidator.validate(
-          settingsSchema,
-          override.settings,
-        );
-        if (!result.valid) {
-          throw new ValidationError(
-            `Invalid settings for phase "${phase.id}"`,
-            result.errors,
-          );
-        }
+        assertSettingsMatchSchema({
+          settings: override.settings,
+          settingsSchema: phase.settings,
+          phaseLabel: phase.id,
+        });
       }
 
       return {

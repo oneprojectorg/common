@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { isLastPhase } from './instanceData';
+import { ValidationError } from '../../../utils';
+import { simpleVoting } from './definitions';
+import { createInstanceDataFromTemplate, isLastPhase } from './instanceData';
 
 describe('isLastPhase', () => {
   it('returns true when currentStateId matches the last phase', () => {
@@ -33,5 +35,32 @@ describe('isLastPhase', () => {
 
   it('returns false for empty phases array', () => {
     expect(isLastPhase('a', [])).toBe(false);
+  });
+});
+
+describe('createInstanceDataFromTemplate settings', () => {
+  it('copies settings that match the template phase schema', () => {
+    const data = createInstanceDataFromTemplate({
+      template: simpleVoting,
+      phaseOverrides: [
+        { phaseId: 'voting', settings: { maxVotesPerMember: 3, budget: 10 } },
+      ],
+    });
+
+    expect(data.phases.find((p) => p.phaseId === 'voting')?.settings).toEqual({
+      maxVotesPerMember: 3,
+      budget: 10,
+    });
+  });
+
+  it('rejects settings that break the template phase schema', () => {
+    const create = () =>
+      createInstanceDataFromTemplate({
+        template: simpleVoting,
+        phaseOverrides: [{ phaseId: 'voting', settings: { budget: -1 } }],
+      });
+
+    expect(create).toThrow(ValidationError);
+    expect(create).toThrow('Invalid settings for phase "voting"');
   });
 });

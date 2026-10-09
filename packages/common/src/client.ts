@@ -239,7 +239,11 @@ export {
   type PhaseReviewSettings,
   type ReviewsScope,
 } from './services/decision/schemas/types';
-export { isLastPhase } from './services/decision/schemas/instanceData';
+export {
+  isLastPhase,
+  type PhaseSettingsSchema,
+} from './services/decision/schemas/instanceData';
+export { selectionPipelineSchema } from './services/decision/selectionPipeline/schema';
 export {
   VOTING_INELIGIBLE_STATUSES,
   isVotingEligible,

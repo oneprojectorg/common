@@ -9,8 +9,9 @@ import {
   phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
+  selectionPipelineSchema,
 } from '@op/common/client';
-import type { JSONContent } from '@op/common/client';
+import type { JSONContent, PhaseSettingsSchema } from '@op/common/client';
 import type { PhaseRules as CommonPhaseRules } from '@op/common/src/services/decision';
 import {
   ProcessStatus,
@@ -562,6 +563,28 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   headline: phaseHeadlineInputEncoder,
   // `null` clears the phase-level rubric; omitted leaves it unchanged.
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
+});
+
+// name lives on the phase's profile; the service validates settingsSchema.
+const phaseDataInputEncoder = instancePhaseDataInputEncoder
+  .omit({ phaseId: true, name: true })
+  .extend({
+    settingsSchema: z
+      .custom<PhaseSettingsSchema>(
+        (value) =>
+          typeof value === 'object' && value !== null && !Array.isArray(value),
+      )
+      .optional(),
+    selectionPipeline: selectionPipelineSchema.optional(),
+  });
+
+// A new phase has nothing to clear, so `null` is dropped here.
+export const createPhaseDataInputEncoder = phaseDataInputEncoder.extend({
+  headline: phaseHeadlineInputEncoder.transform((value) => value ?? undefined),
+  rubricTemplate: rubricTemplateSchema
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
 });
 
 export const updateDecisionInstanceInputSchema = z.object({
