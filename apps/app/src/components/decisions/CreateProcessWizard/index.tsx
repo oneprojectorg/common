@@ -37,6 +37,7 @@ import type {
   ProcessType,
   ShapeKey,
 } from './types';
+import type { WizardProgress } from './wizardProgress';
 
 interface StepBodyProps {
   step: number;
@@ -58,10 +59,14 @@ interface StepBodyProps {
 }
 
 export function CreateProcessWizard({
+  initial,
+  onProgressChange,
   onExit,
   onComplete,
   isSubmitting = false,
 }: {
+  initial?: WizardProgress | null;
+  onProgressChange?: (progress: WizardProgress) => void;
   onExit: () => void;
   onComplete: (draft: ProcessDraft) => void;
   isSubmitting?: boolean;
@@ -70,15 +75,38 @@ export function CreateProcessWizard({
   const tShared = useTranslations();
   const locale = useLocale();
 
-  const [step, setStep] = useState(1);
-  const [type, setType] = useState<ProcessType | null>(null);
-  const [shape, setShape] = useState<ShapeKey | null>(null);
+  const [step, setStep] = useState(initial?.step ?? 1);
+  const [type, setType] = useState<ProcessType | null>(initial?.type ?? null);
+  const [shape, setShape] = useState<ShapeKey | null>(initial?.shape ?? null);
   const [grantDecision, setGrantDecision] = useState<GrantDecision | null>(
-    null,
+    initial?.grantDecision ?? null,
   );
-  const [other, setOther] = useState<OtherAnswers>(EMPTY_OTHER);
-  const [subIndex, setSubIndex] = useState(0);
-  const [name, setName] = useState('');
+  const [other, setOther] = useState<OtherAnswers>(
+    initial?.other ?? EMPTY_OTHER,
+  );
+  const [subIndex, setSubIndex] = useState(initial?.subIndex ?? 0);
+  const [name, setName] = useState(initial?.name ?? '');
+
+  useEffect(() => {
+    onProgressChange?.({
+      step,
+      subIndex,
+      type,
+      shape,
+      grantDecision,
+      other,
+      name,
+    });
+  }, [
+    onProgressChange,
+    step,
+    subIndex,
+    type,
+    shape,
+    grantDecision,
+    other,
+    name,
+  ]);
 
   const isOther = type === 'other';
   const screens = stepThreeScreens(type, other);
