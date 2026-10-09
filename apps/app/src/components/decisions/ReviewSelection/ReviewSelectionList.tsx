@@ -2,7 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
-import type { ResultNotificationMessages } from '@op/common/client';
+import type {
+  ProposalAllocation,
+  ResultNotificationMessages,
+} from '@op/common/client';
 import { getRubricScoringInfo } from '@op/common/client';
 import {
   Empty,
@@ -124,7 +127,10 @@ export function ReviewSelectionList({
     },
   });
 
-  const handleConfirm = (resultNotifications?: ResultNotificationMessages) =>
+  const handleConfirm = (
+    resultNotifications?: ResultNotificationMessages,
+    allocations?: ProposalAllocation[],
+  ) =>
     submitMutation.mutate({
       processInstanceId,
       // The resolved proposals, not the raw draft: the draft is persisted in
@@ -132,6 +138,7 @@ export function ReviewSelectionList({
       // service rejects for the whole call.
       proposalIds: selectedProposals.map((proposal) => proposal.id),
       resultNotifications,
+      allocations,
     });
 
   const handleAdvanceToggle = (proposalId: string) => {
@@ -180,8 +187,10 @@ export function ReviewSelectionList({
 
       {isFinalPhase ? (
         <FinalPhaseSelectionFooter
+          selectedProposals={selectedProposals}
           numSelected={selectedProposals.length}
           totalCandidates={items.length}
+          awardsAmounts={showBudget}
           isConfirmOpen={isConfirmOpen}
           onConfirmOpenChange={setIsConfirmOpen}
           onConfirm={handleConfirm}

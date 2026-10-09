@@ -288,33 +288,36 @@ describe('submitManualSelection', () => {
   });
 });
 
+/** Three phases with the CURRENT one last, so this call publishes results. */
+const lastPhaseInstanceData = () => ({
+  phases: [
+    { phaseId: 'phase-0', name: 'Submission', rules: {} },
+    { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
+    { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
+  ],
+  config: { reviewsPolicy: 'full_coverage' },
+});
+
+/** The happy-path tx results with the locked instance swapped for `data`. */
+const resultsFor = (data: unknown) => {
+  const results = happyPathResults();
+  results[0] = [
+    {
+      currentStateId: CURRENT_PHASE_ID,
+      status: 'published',
+      instanceData: data,
+    },
+  ];
+  return results;
+};
+
+const lastPhaseResults = () => resultsFor(lastPhaseInstanceData());
+
 describe('submitManualSelection author notifications', () => {
   const PROCESS_RESULT_ID = 'result-1';
   const messages = {
     selected: 'You were selected',
     notSelected: 'Not this round',
-  };
-
-  /** Three phases with the CURRENT one last, so this call publishes results. */
-  const lastPhaseInstanceData = () => ({
-    phases: [
-      { phaseId: 'phase-0', name: 'Submission', rules: {} },
-      { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
-      { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
-    ],
-    config: { reviewsPolicy: 'full_coverage' },
-  });
-
-  const lastPhaseResults = () => {
-    const results = happyPathResults();
-    results[0] = [
-      {
-        currentStateId: CURRENT_PHASE_ID,
-        status: 'published',
-        instanceData: lastPhaseInstanceData(),
-      },
-    ];
-    return results;
   };
 
   beforeEach(() => {
@@ -484,5 +487,157 @@ describe('submitManualSelection author notifications', () => {
 
     expect(mockProcessResults).not.toHaveBeenCalled();
     expect(event.send).not.toHaveBeenCalled();
+  });
+});
+
+describe('submitManualSelection allocations', () => {
+  const PROPOSAL_A = '00000000-0000-4000-8000-00000000000a';
+  const PROPOSAL_B = '00000000-0000-4000-8000-00000000000b';
+  const PROPOSAL_C = '00000000-0000-4000-8000-00000000000c';
+
+  /** Points both the pre-check read and the locked read at `data`. */
+  const mockInstance = (data: unknown) => {
+    mockFindFirst.mockResolvedValue({
+      profileId: DECISION_PROFILE_ID,
+      status: 'published',
+      currentStateId: CURRENT_PHASE_ID,
+      instanceData: data,
+    } as never);
+    mockTransaction.mockImplementation(
+      async (cb) =>
+        await (cb as (tx: unknown) => Promise<unknown>)(
+          makeTx(resultsFor(data)),
+        ),
+    );
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAssertUserByAuthId.mockResolvedValue({
+      profileId: USER_PROFILE_ID,
+    } as never);
+    mockAssertProfileAccess.mockResolvedValue(undefined as never);
+    mockGetProposalIdsForPhase.mockResolvedValue([PROPOSAL_A, PROPOSAL_B]);
+    mockProcessResults.mockResolvedValue('result-1');
+    mockInstance(lastPhaseInstanceData());
+  });
+
+  it('hands each awarded amount to the result write', async () => {
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: [PROPOSAL_A, PROPOSAL_B],
+      allocations: [
+        { proposalId: PROPOSAL_A, amount: 500 },
+        { proposalId: PROPOSAL_B, amount: 1200.5 },
+      ],
+      user,
+    });
+
+    expect(mockProcessResults).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allocations: new Map([
+          [PROPOSAL_A, 500],
+          [PROPOSAL_B, 1200.5],
+        ]),
+      }),
+    );
+  });
+
+  it('writes no amounts when none are supplied', async () => {
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: [PROPOSAL_A, PROPOSAL_B],
+      user,
+    });
+
+    expect(mockProcessResults).toHaveBeenCalledWith(
+      expect.objectContaining({ allocations: undefined }),
+    );
+  });
+
+  it.each([
+    [
+      'an amount is missing for a selected proposal',
+      [{ proposalId: PROPOSAL_A, amount: 500 }],
+      new RegExp(`Missing an awarded amount for proposal ${PROPOSAL_B}`),
+    ],
+    [
+      'an amount names a proposal that is not selected',
+      [
+        { proposalId: PROPOSAL_A, amount: 500 },
+        { proposalId: PROPOSAL_B, amount: 500 },
+        { proposalId: PROPOSAL_C, amount: 500 },
+      ],
+      new RegExp(
+        `Proposal ${PROPOSAL_C} has an awarded amount but is not selected`,
+      ),
+    ],
+    [
+      'a proposal has two amounts',
+      [
+        { proposalId: PROPOSAL_A, amount: 500 },
+        { proposalId: PROPOSAL_A, amount: 600 },
+        { proposalId: PROPOSAL_B, amount: 500 },
+      ],
+      new RegExp(`Proposal ${PROPOSAL_A} has more than one awarded amount`),
+    ],
+    [
+      'an amount is zero',
+      [
+        { proposalId: PROPOSAL_A, amount: 0 },
+        { proposalId: PROPOSAL_B, amount: 500 },
+      ],
+      new RegExp(
+        `Awarded amount for proposal ${PROPOSAL_A} must be a number greater than 0`,
+      ),
+    ],
+    [
+      'an amount names a malformed proposal id',
+      [
+        { proposalId: 'not-a-uuid', amount: 500 },
+        { proposalId: PROPOSAL_B, amount: 500 },
+      ],
+      /Awarded amount names an invalid proposal id: not-a-uuid/,
+    ],
+    [
+      'an amount is not a number',
+      [
+        { proposalId: PROPOSAL_A, amount: Number.NaN },
+        { proposalId: PROPOSAL_B, amount: 500 },
+      ],
+      new RegExp(
+        `Awarded amount for proposal ${PROPOSAL_A} must be a number greater than 0`,
+      ),
+    ],
+  ])('refuses to publish when %s', async (_label, allocations, message) => {
+    await expect(
+      submitManualSelection({
+        processInstanceId: INSTANCE_ID,
+        proposalIds: [PROPOSAL_A, PROPOSAL_B],
+        allocations,
+        user,
+      }),
+    ).rejects.toThrow(message);
+
+    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockProcessResults).not.toHaveBeenCalled();
+  });
+
+  it('rejects amounts on a phase that publishes nothing', async () => {
+    mockInstance(instanceData(false));
+
+    await expect(
+      submitManualSelection({
+        processInstanceId: INSTANCE_ID,
+        proposalIds: [PROPOSAL_A, PROPOSAL_B],
+        allocations: [
+          { proposalId: PROPOSAL_A, amount: 500 },
+          { proposalId: PROPOSAL_B, amount: 500 },
+        ],
+        user,
+      }),
+    ).rejects.toThrow(/only awarded when confirming the final phase/);
+
+    expect(mockProcessResults).not.toHaveBeenCalled();
   });
 });

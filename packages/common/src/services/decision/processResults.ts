@@ -21,6 +21,9 @@ import {
  * row on uncaught errors. Pass `instance` when the caller already loaded the
  * row (e.g. inside a locking tx) to skip a redundant fetch.
  *
+ * Pass `allocations` (proposal id → awarded amount) to stamp `allocated` on
+ * the selection rows; rows without an entry stay `null`.
+ *
  * Returns the id of the row it wrote: `revertPhase` can retire "the latest
  * successful one" out from under a caller that re-resolves it.
  */
@@ -28,16 +31,19 @@ export async function processResults({
   processInstanceId,
   tx,
   instance,
+  allocations,
 }: {
   processInstanceId: string;
   tx?: DbClient;
   instance?: PhaseScopedInstance;
+  allocations?: ReadonlyMap<string, number>;
 }): Promise<string> {
   if (tx) {
     return runProcessResults({
       tx,
       processInstanceId,
       preloadedInstance: instance,
+      allocations,
     });
   }
 
@@ -47,6 +53,7 @@ export async function processResults({
         tx: newTx,
         processInstanceId,
         preloadedInstance: instance,
+        allocations,
       }),
     );
   } catch (error) {
@@ -77,10 +84,12 @@ async function runProcessResults({
   tx,
   processInstanceId,
   preloadedInstance,
+  allocations,
 }: {
   tx: DbClient;
   processInstanceId: string;
   preloadedInstance?: PhaseScopedInstance;
+  allocations?: ReadonlyMap<string, number>;
 }): Promise<string> {
   const resolvedInstance =
     preloadedInstance ??
@@ -101,6 +110,7 @@ async function runProcessResults({
     errorMessage: null,
     selectedProposalIds,
     voterCount,
+    allocations,
   });
 }
 
@@ -143,12 +153,14 @@ async function writeResultRow({
   errorMessage,
   selectedProposalIds,
   voterCount,
+  allocations,
 }: {
   tx: DbClient;
   processInstanceId: string;
   errorMessage: string | null;
   selectedProposalIds: string[];
   voterCount: number;
+  allocations?: ReadonlyMap<string, number>;
 }): Promise<string> {
   const [row] = await tx
     .insert(decisionProcessResults)
@@ -168,11 +180,16 @@ async function writeResultRow({
 
   if (selectedProposalIds.length > 0) {
     await tx.insert(decisionProcessResultSelections).values(
-      selectedProposalIds.map((proposalId) => ({
-        processResultId: row.id,
-        proposalId,
-        selectionRank: 0,
-      })),
+      selectedProposalIds.map((proposalId) => {
+        const amount = allocations?.get(proposalId);
+        return {
+          processResultId: row.id,
+          proposalId,
+          selectionRank: 0,
+          // numeric column: drizzle takes it as a string to keep precision.
+          allocated: amount === undefined ? null : String(amount),
+        };
+      }),
     );
   }
 

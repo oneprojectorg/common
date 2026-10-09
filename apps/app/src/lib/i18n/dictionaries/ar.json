@@ -1198,7 +1198,12 @@
       "revisionRequestedLabel": "تم طلب التعديل",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "أُرسل {timeAgo}",
-      "selectedProposalsHeading": "المقترحات المُختارة"
+      "selectedProposalsHeading": "المقترحات المُختارة",
+      "awardAmountsDescription": "سيرى جميع المشاركين المقترحات المختارة والمبلغ الممنوح لكل منها.",
+      "adjustAmountsAction": "تعديل المبالغ",
+      "awardedAmountLabel": "المبلغ الممنوح",
+      "awardedAmountError": "أدخل مبلغًا أكبر من 0",
+      "totalAwardedLabel": "إجمالي المبالغ الممنوحة"
     },
     "proposals": {
       "amountRequested": "تم طلب {amount}",

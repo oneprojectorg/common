@@ -1198,7 +1198,12 @@
       "revisionRequestedLabel": "Átdolgozás kérve",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Elküldve {timeAgo}",
-      "selectedProposalsHeading": "Kiválasztott javaslatok"
+      "selectedProposalsHeading": "Kiválasztott javaslatok",
+      "awardAmountsDescription": "Minden résztvevő látni fogja a kiválasztott javaslatokat és az egyes javaslatoknak odaítélt összeget.",
+      "adjustAmountsAction": "Összegek módosítása",
+      "awardedAmountLabel": "Odaítélt összeg",
+      "awardedAmountError": "Adjon meg 0-nál nagyobb összeget",
+      "totalAwardedLabel": "Összesen odaítélve"
     },
     "proposals": {
       "amountRequested": "{amount} igényelve",

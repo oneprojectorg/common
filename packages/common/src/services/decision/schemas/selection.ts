@@ -12,3 +12,15 @@ export const proposalSelectionSchema = z.object({
 });
 
 export type ProposalSelection = z.infer<typeof proposalSelectionSchema>;
+
+/**
+ * The amount an admin awards a winning proposal when publishing results.
+ * Stored on the selection row as `allocated`; may be above or below the
+ * proposal's requested budget.
+ */
+export const proposalAllocationSchema = z.object({
+  proposalId: z.uuid(),
+  amount: z.number().positive(),
+});
+
+export type ProposalAllocation = z.infer<typeof proposalAllocationSchema>;

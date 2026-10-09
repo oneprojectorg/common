@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  type Proposal,
+  type ProposalAllocation,
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,
   resultNotificationToken,
@@ -25,17 +27,45 @@ import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { AwardAmountsStep } from './AwardAmountsStep';
+import { useAwardAmounts } from './useAwardAmounts';
+
 interface ComposeNotificationsDialogProps {
+  selectedProposals: Proposal[];
   selectedCount: number;
   notSelectedCount: number;
+  /**
+   * The template collects a budget, so the dialog opens on a step where the
+   * admin confirms the amount each winner is awarded.
+   */
+  awardsAmounts: boolean;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (messages: ResultNotificationMessages) => void;
+  onConfirm: ConfirmResultsHandler;
   isSubmitting: boolean;
   triggerLabel: ReactNode;
 }
 
+/** Publishes results; `allocations` is set when the template awards amounts. */
+export type ConfirmResultsHandler = (
+  messages: ResultNotificationMessages,
+  allocations?: ProposalAllocation[],
+) => void;
+
 type OutcomeTab = 'selected' | 'notSelected';
+
+type Step = 'amounts' | 'notifications';
+
+const STEP_LAYOUT = {
+  amounts: {
+    title: 'decisions.review.confirmWinningProposalsTitle',
+    width: 'sm:max-w-2xl',
+  },
+  notifications: {
+    title: 'decisions.proposals.composeNotificationsTitle',
+    width: 'sm:max-w-lg',
+  },
+} as const;
 
 const isOutcomeTab = (value: string): value is OutcomeTab =>
   value === 'selected' || value === 'notSelected';
@@ -48,8 +78,10 @@ const TOKENS = {
 };
 
 export const ComposeNotificationsDialog = ({
+  selectedProposals,
   selectedCount,
   notSelectedCount,
+  awardsAmounts,
   isOpen,
   onOpenChange,
   onConfirm,
@@ -75,6 +107,13 @@ export const ComposeNotificationsDialog = ({
   const fieldIdPrefix = useId();
   const hintId = `${fieldIdPrefix}-hint`;
 
+  const initialStep = getInitialStep(awardsAmounts);
+  const [step, setStep] = useState<Step>(initialStep);
+  const awards = useAwardAmounts({
+    proposals: selectedProposals,
+    isEnabled: awardsAmounts,
+  });
+
   const handleOpenChange = (open: boolean) => {
     // Closing mid-submit would discard copy the pending mutation may reject.
     if (!open && isSubmitting) {
@@ -83,6 +122,8 @@ export const ComposeNotificationsDialog = ({
     if (open) {
       setCounts({ selected: selectedCount, notSelected: notSelectedCount });
       setActiveTab('selected');
+      setStep(initialStep);
+      awards.reset();
     }
     onOpenChange(open);
   };
@@ -99,106 +140,159 @@ export const ComposeNotificationsDialog = ({
         render={<Button disabled={selectedCount === 0}>{triggerLabel}</Button>}
       />
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className={STEP_LAYOUT[step].width}>
         <DialogHeader>
-          <DialogTitle>
-            {t('decisions.proposals.composeNotificationsTitle')}
-          </DialogTitle>
+          <DialogTitle>{t(STEP_LAYOUT[step].title)}</DialogTitle>
         </DialogHeader>
 
-        <Tabs
-          className="gap-4 px-6 py-4"
-          value={activeTab}
-          onValueChange={(value) => {
-            if (typeof value === 'string' && isOutcomeTab(value)) {
-              setActiveTab(value);
+        {step === 'amounts' ? (
+          <AwardAmountsStep
+            proposals={selectedProposals}
+            awards={awards}
+            onCancel={() => handleOpenChange(false)}
+            onContinue={() =>
+              awards.confirm(() => {
+                // Re-frozen here too: a reopened step may confirm a new set.
+                setCounts({
+                  selected: selectedCount,
+                  notSelected: notSelectedCount,
+                });
+                setStep('notifications');
+              })
             }
-          }}
-        >
-          <div className="w-full border-b">
-            <TabsList
-              variant="line"
-              className="flex gap-6"
-              aria-label={t('decisions.proposals.notificationAudiencesLabel')}
+          />
+        ) : (
+          <>
+            <Tabs
+              className="gap-4 px-6 py-4"
+              value={activeTab}
+              onValueChange={(value) => {
+                if (typeof value === 'string' && isOutcomeTab(value)) {
+                  setActiveTab(value);
+                }
+              }}
             >
-              <OutcomeTabTrigger
-                value="selected"
-                label={t('decisions.proposals.fundedStatus')}
-                count={counts.selected}
-                isInvalid={invalid.selected}
-              />
-              <OutcomeTabTrigger
-                value="notSelected"
-                label={t('decisions.proposals.notFundedStatus')}
-                count={counts.notSelected}
-                isInvalid={invalid.notSelected}
-              />
-            </TabsList>
-          </div>
+              <div className="w-full border-b">
+                <TabsList
+                  variant="line"
+                  className="flex gap-6"
+                  aria-label={t(
+                    'decisions.proposals.notificationAudiencesLabel',
+                  )}
+                >
+                  <OutcomeTabTrigger
+                    value="selected"
+                    label={t('decisions.proposals.fundedStatus')}
+                    count={counts.selected}
+                    isInvalid={invalid.selected}
+                  />
+                  <OutcomeTabTrigger
+                    value="notSelected"
+                    label={t('decisions.proposals.notFundedStatus')}
+                    count={counts.notSelected}
+                    isInvalid={invalid.notSelected}
+                  />
+                </TabsList>
+              </div>
 
-          {/* `role="note"`: identical for both tabs, so the default assertive
+              {/* `role="note"`: identical for both tabs, so the default assertive
               role would re-announce it on every switch. */}
-          <Alert variant="info" role="note" id={hintId}>
-            <LuCircleAlert aria-hidden />
-            <AlertDescription>
-              {t('decisions.proposals.notificationPlaceholderHint', TOKENS)}
-            </AlertDescription>
-          </Alert>
+              <Alert variant="info" role="note" id={hintId}>
+                <LuCircleAlert aria-hidden />
+                <AlertDescription>
+                  {t('decisions.proposals.notificationPlaceholderHint', TOKENS)}
+                </AlertDescription>
+              </Alert>
 
-          {/* `keepMounted` keeps caret and undo history across a tab switch. */}
-          <TabsContent value="selected" keepMounted>
-            <MessageField
-              id={`${fieldIdPrefix}-selected`}
-              hintId={hintId}
-              value={messages.selected}
-              onChange={(selected) =>
-                setMessages((prev) => ({ ...prev, selected }))
-              }
-              isInvalid={invalid.selected}
-            />
-          </TabsContent>
+              {/* `keepMounted` keeps caret and undo history across a tab switch. */}
+              <TabsContent value="selected" keepMounted>
+                <MessageField
+                  id={`${fieldIdPrefix}-selected`}
+                  hintId={hintId}
+                  value={messages.selected}
+                  onChange={(selected) =>
+                    setMessages((prev) => ({ ...prev, selected }))
+                  }
+                  isInvalid={invalid.selected}
+                />
+              </TabsContent>
 
-          <TabsContent value="notSelected" keepMounted>
-            <MessageField
-              id={`${fieldIdPrefix}-not-selected`}
-              hintId={hintId}
-              value={messages.notSelected}
-              onChange={(notSelected) =>
-                setMessages((prev) => ({ ...prev, notSelected }))
-              }
-              isInvalid={invalid.notSelected}
-            />
-          </TabsContent>
+              <TabsContent value="notSelected" keepMounted>
+                <MessageField
+                  id={`${fieldIdPrefix}-not-selected`}
+                  hintId={hintId}
+                  value={messages.notSelected}
+                  onChange={(notSelected) =>
+                    setMessages((prev) => ({ ...prev, notSelected }))
+                  }
+                  isInvalid={invalid.notSelected}
+                />
+              </TabsContent>
 
-          <p className="text-sm text-muted-foreground">
-            {t('decisions.proposals.publishResultsWarning', {
-              fundedCount: counts.selected,
-              notFundedCount: counts.notSelected,
-            })}
-          </p>
-        </Tabs>
+              <p className="text-sm text-muted-foreground">
+                {t('decisions.proposals.publishResultsWarning', {
+                  fundedCount: counts.selected,
+                  notFundedCount: counts.notSelected,
+                })}
+              </p>
+            </Tabs>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            {t('Cancel')}
-          </Button>
-          {/* `selectedCount` is live, not the frozen badge count: if the pool
+            <DialogFooter>
+              <ComposerDismissButton
+                canGoBack={awardsAmounts}
+                onBack={() => setStep('amounts')}
+                onCancel={() => handleOpenChange(false)}
+                disabled={isSubmitting}
+              />
+              {/* `selectedCount` is live, not the frozen badge count: if the pool
               refetches the selection away while the admin composes, the
               mutation would be rejected for an empty `proposalIds`. */}
-          <Button
-            onClick={() => onConfirm(messages)}
-            disabled={hasError || selectedCount === 0}
-            loading={isSubmitting}
-          >
-            {t('decisions.proposals.publishResultsAction')}
-          </Button>
-        </DialogFooter>
+              <Button
+                onClick={() =>
+                  awards.publish({
+                    onPublish: (allocations) =>
+                      onConfirm(messages, allocations),
+                    onReopen: () => setStep('amounts'),
+                  })
+                }
+                disabled={hasError || selectedCount === 0}
+                loading={isSubmitting}
+              >
+                {t('decisions.proposals.publishResultsAction')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
+  );
+};
+
+const getInitialStep = (awardsAmounts: boolean): Step =>
+  awardsAmounts ? 'amounts' : 'notifications';
+
+/** With an amounts step behind it, the composer steps back instead of closing. */
+const ComposerDismissButton = ({
+  canGoBack,
+  onBack,
+  onCancel,
+  disabled,
+}: {
+  canGoBack: boolean;
+  onBack: () => void;
+  onCancel: () => void;
+  disabled: boolean;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <Button
+      variant="outline"
+      onClick={canGoBack ? onBack : onCancel}
+      disabled={disabled}
+    >
+      {canGoBack ? t('Back') : t('Cancel')}
+    </Button>
   );
 };
 

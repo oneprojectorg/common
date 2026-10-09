@@ -706,30 +706,27 @@ describe.concurrent('submitManualSelection', () => {
     expect(notifiedCalls).toHaveLength(0);
   });
 
-  it('rejects author copy on a phase that publishes nothing', async ({
+  it('stores the awarded amount on each selection row', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const schemaWithTrailingPhase = {
-      ...schemaWithoutPipeline,
-      phases: [
-        { id: 'submission', name: 'Submission', rules: {} },
-        { id: 'review', name: 'Review', rules: {} },
-        { id: 'final', name: 'Final', rules: {} },
-      ],
-    };
-    const { instanceId, userEmail, caller } = await seedInstance(
-      testData,
-      schemaWithTrailingPhase,
-    );
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
 
-    const proposal = await testData.createProposal({
-      userEmail,
-      processInstanceId: instanceId,
-      proposalData: { title: `Proposal ${task.id}` },
-      status: ProposalStatus.SUBMITTED,
-    });
+    const [p1, p2] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
 
     await testData.advancePhase({
       instanceId,
@@ -740,26 +737,113 @@ describe.concurrent('submitManualSelection', () => {
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
 
-    await expect(
-      caller.decision.submitManualSelection({
-        processInstanceId: instanceId,
-        proposalIds: [proposal.id],
+    // `review` is the last phase of the default schema, so this publishes.
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [p1.id, p2.id],
+      allocations: [
+        { proposalId: p1.id, amount: 1500 },
+        { proposalId: p2.id, amount: 250.75 },
+      ],
+    });
+
+    const [latestResult] = await db
+      .select({ id: decisionProcessResults.id })
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId))
+      .orderBy(desc(decisionProcessResults.executedAt))
+      .limit(1);
+    if (!latestResult) {
+      throw new Error('Expected a decision_process_results row');
+    }
+
+    const selections = await db
+      .select({
+        proposalId: decisionProcessResultSelections.proposalId,
+        allocated: decisionProcessResultSelections.allocated,
+      })
+      .from(decisionProcessResultSelections)
+      .where(
+        eq(decisionProcessResultSelections.processResultId, latestResult.id),
+      );
+    const allocatedByProposalId = new Map(
+      selections.map((s) => [s.proposalId, Number(s.allocated)]),
+    );
+    expect(allocatedByProposalId).toEqual(
+      new Map([
+        [p1.id, 1500],
+        [p2.id, 250.75],
+      ]),
+    );
+  });
+
+  it.for([
+    {
+      payload: 'author copy',
+      payloadFor: () => ({
         resultNotifications: {
           selected: 'Selected',
           notSelected: 'Not selected',
         },
       }),
-      // Pinned to the message: four other guards on this path also throw
-      // ValidationError, so the name alone proves nothing.
-    ).rejects.toMatchObject({
-      cause: {
-        name: 'ValidationError',
-        message: expect.stringContaining(
-          'only sent when confirming the final phase',
-        ),
-      },
-    });
-  });
+      message: 'only sent when confirming the final phase',
+    },
+    {
+      payload: 'awarded amounts',
+      payloadFor: (proposalId: string) => ({
+        allocations: [{ proposalId, amount: 500 }],
+      }),
+      message: 'only awarded when confirming the final phase',
+    },
+  ])(
+    'rejects $payload on a phase that publishes nothing',
+    async ({ payloadFor, message }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const schemaWithTrailingPhase = {
+        ...schemaWithoutPipeline,
+        phases: [
+          { id: 'submission', name: 'Submission', rules: {} },
+          { id: 'review', name: 'Review', rules: {} },
+          { id: 'final', name: 'Final', rules: {} },
+        ],
+      };
+      const { instanceId, userEmail, caller } = await seedInstance(
+        testData,
+        schemaWithTrailingPhase,
+      );
+
+      const proposal = await testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+
+      await testData.advancePhase({
+        instanceId,
+        fromPhaseId: 'submission',
+        toPhaseId: 'review',
+      });
+      await db
+        .delete(decisionTransitionProposals)
+        .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+      await expect(
+        caller.decision.submitManualSelection({
+          processInstanceId: instanceId,
+          proposalIds: [proposal.id],
+          ...payloadFor(proposal.id),
+        }),
+        // Pinned to the message: four other guards on this path also throw
+        // ValidationError, so the name alone proves nothing.
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: expect.stringContaining(message),
+        },
+      });
+    },
+  );
 
   it.sequential('dispatches a manualSelectionsConfirmed event after a successful manual selection', async ({
     task,

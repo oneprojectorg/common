@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
 import type { BudgetData } from './proposalDataSchema';
 
-// `amount` is omitted until something writes
-// `decision_process_result_selections.allocated`; until then it could only
-// resolve to ''.
+// `amount` is not offered yet: the confirm dialog now writes
+// `decision_process_result_selections.allocated`, but exposing it in the
+// composed copy is a separate change.
 export const RESULT_NOTIFICATION_TOKENS = ['name', 'proposal'] as const;
 
 export type ResultNotificationToken =
