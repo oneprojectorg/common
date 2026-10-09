@@ -1365,7 +1365,7 @@
       "notificationMessageLabel": "نص الإشعار",
       "publishResultsWarning": "يؤدي النشر إلى مراسلة أصحاب {fundedCount, plural, zero {لا مقترحات مُموَّلة} one {مقترح مُموَّل واحد} two {مقترحين مُموَّلين} few {# مقترحات مُموَّلة} many {# مقترحًا مُموَّلًا} other {# مقترح مُموَّل}} و{notFundedCount, plural, zero {لا مقترحات غير مُموَّلة} one {مقترح غير مُموَّل واحد} two {مقترحين غير مُموَّلين} few {# مقترحات غير مُموَّلة} many {# مقترحًا غير مُموَّل} other {# مقترح غير مُموَّل}}. لا يمكن التراجع عن ذلك.",
       "publishResultsAction": "إرسال ونشر النتائج",
-      "notificationPlaceholderHint": "استخدم {name} لاسم مُقدِّم المقترح و{proposal} لعنوان المقترح.",
+      "notificationPlaceholderHint": "استخدم {name} لاسم مُقدِّم المقترح و{proposal} لعنوان المقترح و{amount} للمبلغ الممنوح للمقترح المموَّل.",
       "publishResultsMessageRequired": "اكتب رسالة قبل نشر النتائج.",
       "voteConfirmHint": "يرجى تأكيد اختياراتك قبل الإرسال",
       "voteReviewTitle": "راجع أصواتك",

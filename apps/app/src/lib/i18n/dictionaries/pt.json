@@ -1365,7 +1365,7 @@
       "notificationMessageLabel": "Mensagem de notificação",
       "publishResultsWarning": "Publicar envia e-mails às pessoas autoras de {fundedCount, plural, one {# proposta financiada} other {# propostas financiadas}} e {notFundedCount, plural, one {# proposta não financiada} other {# propostas não financiadas}}. Não é possível desfazer.",
       "publishResultsAction": "Enviar e publicar resultados",
-      "notificationPlaceholderHint": "Use {name} para o nome de quem enviou e {proposal} para o título da proposta.",
+      "notificationPlaceholderHint": "Use {name} para o nome de quem enviou, {proposal} para o título da proposta e {amount} para o valor concedido a uma proposta financiada.",
       "publishResultsMessageRequired": "Escreva uma mensagem antes de publicar os resultados.",
       "voteConfirmHint": "Por favor, confirme suas seleções antes de enviar",
       "voteReviewTitle": "Revise seus votos",

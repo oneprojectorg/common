@@ -1365,7 +1365,7 @@
       "notificationMessageLabel": "Fariinta ogeysiiska",
       "publishResultsWarning": "Daabicidda waxay iimayl u dirtaa qorayaasha {fundedCount, plural, one {# soo jeedin la maalgeliyay} other {# soo jeedimo la maalgeliyay}} iyo {notFundedCount, plural, one {# soo jeedin aan la maalgelin} other {# soo jeedimo aan la maalgelin}}. Tan dib looma celin karo.",
       "publishResultsAction": "Dir oo daabac natiijada",
-      "notificationPlaceholderHint": "Isticmaal {name} magaca soo gudbiyaha iyo {proposal} cinwaanka soo jeedinta.",
+      "notificationPlaceholderHint": "Isticmaal {name} magaca soo gudbiyaha, {proposal} cinwaanka soo jeedinta iyo {amount} qadarka la siiyay soo jeedinta la maalgeliyay.",
       "publishResultsMessageRequired": "Qor fariin ka hor inta aan natiijada la daabicin.",
       "voteConfirmHint": "Fadlan xaqiiji doorashadaada ka hor gudbinta",
       "voteReviewTitle": "Dib u eeg codadkaaga",

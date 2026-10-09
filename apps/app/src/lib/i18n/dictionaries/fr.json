@@ -1365,7 +1365,7 @@
       "notificationMessageLabel": "Message de notification",
       "publishResultsWarning": "La publication envoie un e-mail aux auteurs et autrices de {fundedCount, plural, one {# proposition financée} other {# propositions financées}} et {notFundedCount, plural, one {# proposition non financée} other {# propositions non financées}}. Cette action est irréversible.",
       "publishResultsAction": "Envoyer et publier les résultats",
-      "notificationPlaceholderHint": "Utilisez {name} pour le nom de la personne qui a soumis et {proposal} pour le titre de la proposition.",
+      "notificationPlaceholderHint": "Utilisez {name} pour le nom de la personne qui a soumis, {proposal} pour le titre de la proposition et {amount} pour le montant attribué à une proposition financée.",
       "publishResultsMessageRequired": "Rédigez un message avant de publier les résultats.",
       "voteConfirmHint": "Veuillez confirmer vos sélections avant de soumettre",
       "voteReviewTitle": "Examinez vos votes",

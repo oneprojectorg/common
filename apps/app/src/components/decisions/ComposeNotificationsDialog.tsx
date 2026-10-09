@@ -75,6 +75,7 @@ const isOutcomeTab = (value: string): value is OutcomeTab =>
 const TOKENS = {
   name: resultNotificationToken('name'),
   proposal: resultNotificationToken('proposal'),
+  amount: resultNotificationToken('amount'),
 };
 
 export const ComposeNotificationsDialog = ({

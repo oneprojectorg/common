@@ -1365,7 +1365,7 @@
       "notificationMessageLabel": "Értesítés szövege",
       "publishResultsWarning": "A közzététel e-mailt küld {fundedCount, plural, one {# támogatott javaslat} other {# támogatott javaslat}} és {notFundedCount, plural, one {# nem támogatott javaslat} other {# nem támogatott javaslat}} szerzőinek. Ez nem vonható vissza.",
       "publishResultsAction": "Küldés és eredmények közzététele",
-      "notificationPlaceholderHint": "A {name} a beküldő nevét, a {proposal} pedig a javaslat címét helyettesíti.",
+      "notificationPlaceholderHint": "A {name} a beküldő nevét, a {proposal} a javaslat címét, az {amount} pedig a támogatott javaslatnak odaítélt összeget helyettesíti.",
       "publishResultsMessageRequired": "Írj üzenetet az eredmények közzététele előtt.",
       "voteConfirmHint": "Kérjük, erősítse meg a választásait a beküldés előtt",
       "voteReviewTitle": "Szavazatai áttekintése",
