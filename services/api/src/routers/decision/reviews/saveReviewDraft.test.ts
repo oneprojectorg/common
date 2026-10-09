@@ -4,6 +4,7 @@ import {
   getCurrentProposalHistoryId,
   reviseProposal,
   TestReviewsDataManager,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import {
   ProposalReviewAssignmentStatus,
@@ -23,6 +24,8 @@ import {
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+withoutTestTransactions();
 
 const createCaller = createCallerFactory(appRouter);
 

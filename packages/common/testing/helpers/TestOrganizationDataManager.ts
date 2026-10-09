@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { type Organization, organizationUsers, profiles } from '@op/db/schema';
+import { afterTestTransaction } from '@op/db/test';
 import { inArray } from 'drizzle-orm';
 
 import {
@@ -217,7 +218,11 @@ export class TestOrganizationDataManager {
    * This method is automatically called via onTestFinished when using test data creation methods.
    * You can also call it manually if needed, but this is not recommended.
    */
-  async cleanup(): Promise<void> {
+  cleanup(): Promise<void> {
+    return afterTestTransaction(() => this.removeRows());
+  }
+
+  private async removeRows(): Promise<void> {
     if (!supabaseTestAdminClient) {
       throw new Error('Supabase admin test client not initialized');
     }

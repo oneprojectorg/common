@@ -3,6 +3,7 @@ import {
   TestDecisionsDataManager,
   schemaWithPipeline,
   schemaWithoutPipeline,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import {
@@ -13,6 +14,8 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
+
+withoutTestTransactions();
 
 // Random UUID unlikely to match any real transition
 const NONEXISTENT_PHASE_ID = '00000000-0000-0000-0000-000000000000';

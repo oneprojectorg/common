@@ -1,6 +1,7 @@
 import {
   TestJoinProfileRequestDataManager,
   TestOrganizationDataManager,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -11,6 +12,8 @@ import {
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 import { listJoinRequestsRouter } from './listJoinRequests';
+
+withoutTestTransactions();
 
 describe.concurrent('profile.listJoinRequests', () => {
   const createCaller = createCallerFactory(listJoinRequestsRouter);

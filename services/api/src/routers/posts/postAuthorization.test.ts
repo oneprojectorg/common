@@ -1,4 +1,7 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  withoutTestTransactions,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { postReactions, posts, postsToProfiles } from '@op/db/schema';
 import { randomUUID } from 'crypto';
@@ -11,6 +14,8 @@ import {
   createTestUser,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
+
+withoutTestTransactions();
 
 const createCaller = createCallerFactory(appRouter);
 

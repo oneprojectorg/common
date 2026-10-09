@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { allowList, profiles } from '@op/db/schema';
+import { afterTestTransaction } from '@op/db/test';
 import { randomUUID } from 'crypto';
 import type { TestContext } from 'vitest';
 
@@ -45,12 +46,14 @@ export const signUpConfirmedUser = async (
   }
   const profileId = userRow.profileId;
 
-  onTestFinished(async () => {
-    await db.delete(profiles).where(eq(profiles.id, profileId));
-    await supabaseTestAdminClient.auth.admin
-      .deleteUser(user.id)
-      .catch(() => {});
-  });
+  onTestFinished(() =>
+    afterTestTransaction(async () => {
+      await db.delete(profiles).where(eq(profiles.id, profileId));
+      await supabaseTestAdminClient.auth.admin
+        .deleteUser(user.id)
+        .catch(() => {});
+    }),
+  );
 
   return { email, user, session, profileId };
 };

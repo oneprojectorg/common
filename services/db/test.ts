@@ -3,6 +3,7 @@
  * Same as /client but without server-only - use this in Node.js test environments
  * (vitest, playwright) where server-only would throw.
  */
-export { db } from './index';
+export { db, realDb } from './index';
+export * from './testTransaction';
 export * from 'drizzle-orm';
 export * from './types';
