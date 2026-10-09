@@ -9,7 +9,7 @@ import type {
   WizardCopyKey,
 } from './types';
 
-/** Must match `createInstanceFromTemplate`'s bounds. */
+/** Must match `createInstanceFromWizard`'s bounds. */
 export const MIN_PROCESS_NAME_LENGTH = 3;
 export const MAX_PROCESS_NAME_LENGTH = 256;
 
