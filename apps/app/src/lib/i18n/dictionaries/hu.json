@@ -1202,7 +1202,7 @@
       "awardAmountsDescription": "Minden résztvevő látni fogja a kiválasztott javaslatokat és az egyes javaslatoknak odaítélt összeget.",
       "adjustAmountsAction": "Összegek módosítása",
       "awardedAmountLabel": "Odaítélt összeg",
-      "awardedAmountInvalid": "Adjon meg 0-nál nagyobb összeget",
+      "awardedAmountError": "Adjon meg 0-nál nagyobb összeget",
       "totalAwardedLabel": "Összesen odaítélve"
     },
     "proposals": {

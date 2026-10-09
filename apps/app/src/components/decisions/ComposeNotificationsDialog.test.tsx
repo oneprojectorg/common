@@ -237,5 +237,40 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
       screen.getByRole('dialog', { name: 'Confirm winning proposals' }),
     ).toBeTruthy();
     expect(screen.getByText('$8,000 Awarded')).toBeTruthy();
+
+    // Confirming again publishes the new set, and the counts follow it.
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      screen.getByRole('tab', { name: /^Funded\s*2 proposals$/ }),
+    ).toBeTruthy();
+    await user.click(
+      screen.getByRole('button', { name: 'Send & publish results' }),
+    );
+    expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), [
+      { proposalId: 'alpha', amount: 5000 },
+      { proposalId: 'beta', amount: 8000 },
+    ]);
+  });
+
+  it('reopens the amounts when a requested budget changes after they were confirmed', async () => {
+    const { onConfirm, user, setSelected } = renderDialog({
+      proposals: [alpha],
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    setSelected([
+      proposal({
+        id: 'alpha',
+        title: 'Proposal Alpha',
+        budget: { amount: 6000, currency: 'USD' },
+      }),
+    ]);
+    await user.click(
+      screen.getByRole('button', { name: 'Send & publish results' }),
+    );
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText('$6,000 Awarded')).toBeTruthy();
   });
 });

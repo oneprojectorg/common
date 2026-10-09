@@ -1202,7 +1202,7 @@
       "awardAmountsDescription": "Ka-qaybgale kasta wuxuu arki doonaa soo-jeedinta la doortay iyo qadarka la siiyay mid kasta.",
       "adjustAmountsAction": "Hagaaji qadarrada",
       "awardedAmountLabel": "Qadarka la bixiyay",
-      "awardedAmountInvalid": "Geli qadar ka weyn 0",
+      "awardedAmountError": "Geli qadar ka weyn 0",
       "totalAwardedLabel": "Wadarta la bixiyay"
     },
     "proposals": {

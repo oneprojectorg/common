@@ -1202,7 +1202,7 @@
       "awardAmountsDescription": "প্রত্যেক অংশগ্রহণকারী নির্বাচিত প্রস্তাবগুলি এবং প্রতিটিকে প্রদত্ত পরিমাণ দেখতে পাবেন।",
       "adjustAmountsAction": "পরিমাণ সামঞ্জস্য করুন",
       "awardedAmountLabel": "প্রদত্ত পরিমাণ",
-      "awardedAmountInvalid": "0-এর বেশি একটি পরিমাণ লিখুন",
+      "awardedAmountError": "0-এর বেশি একটি পরিমাণ লিখুন",
       "totalAwardedLabel": "মোট প্রদত্ত"
     },
     "proposals": {

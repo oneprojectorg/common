@@ -179,18 +179,18 @@ export const ManualSelectionList = ({
       resultNotifications?: ResultNotificationMessages,
       allocations?: ProposalAllocation[],
     ) => {
+      // With amounts, publish exactly the winners they were confirmed for:
+      // the stored draft can hold ids the proposal cache never resolved,
+      // which the dialog never showed and the service would refuse.
+      const proposalIds =
+        allocations?.map((allocation) => allocation.proposalId) ?? selectedIds;
       posthog.capture('manual_selection_dialog_confirmed', {
         process_instance_id: instanceId,
-        proposal_count: selectedIds.length,
+        proposal_count: proposalIds.length,
       });
       submitMutation.mutate({
         processInstanceId: instanceId,
-        // With amounts, publish exactly the winners they were confirmed for:
-        // the stored draft can hold ids the proposal cache never resolved,
-        // which the dialog never showed and the service would refuse.
-        proposalIds:
-          allocations?.map((allocation) => allocation.proposalId) ??
-          selectedIds,
+        proposalIds,
         resultNotifications,
         allocations,
       });
@@ -298,7 +298,8 @@ export const ManualSelectionList = ({
       {isFinalPhase ? (
         <FinalPhaseSelectionFooter
           selectedProposals={selectedProposals}
-          numSelected={numSelected}
+          // The resolved list, which is what the amounts step publishes.
+          numSelected={selectedProposals.length}
           totalCandidates={totalCandidates}
           awardsAmounts={showBudget}
           isConfirmOpen={isConfirmOpen}

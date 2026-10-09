@@ -150,7 +150,7 @@ const AwardedAmount = ({
         aria-describedby={getSummaryId(proposal)}
         errorMessage={
           awards.showErrors && !isValidAwardAmount(amount)
-            ? t('decisions.review.awardedAmountInvalid')
+            ? t('decisions.review.awardedAmountError')
             : undefined
         }
         className="shrink-0 sm:w-48"

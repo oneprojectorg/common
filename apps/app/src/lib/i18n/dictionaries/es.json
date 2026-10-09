@@ -1202,7 +1202,7 @@
       "awardAmountsDescription": "Todos los participantes verán las propuestas seleccionadas y el monto otorgado a cada una.",
       "adjustAmountsAction": "Ajustar montos",
       "awardedAmountLabel": "Monto otorgado",
-      "awardedAmountInvalid": "Ingresa un monto mayor que 0",
+      "awardedAmountError": "Ingresa un monto mayor que 0",
       "totalAwardedLabel": "Total otorgado"
     },
     "proposals": {

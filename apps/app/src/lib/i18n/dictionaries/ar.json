@@ -1202,7 +1202,7 @@
       "awardAmountsDescription": "سيرى جميع المشاركين المقترحات المختارة والمبلغ الممنوح لكل منها.",
       "adjustAmountsAction": "تعديل المبالغ",
       "awardedAmountLabel": "المبلغ الممنوح",
-      "awardedAmountInvalid": "أدخل مبلغًا أكبر من 0",
+      "awardedAmountError": "أدخل مبلغًا أكبر من 0",
       "totalAwardedLabel": "إجمالي المبالغ الممنوحة"
     },
     "proposals": {

@@ -31,11 +31,12 @@ export const useAwardAmounts = ({
   const [edits, setEdits] = useState<ReadonlyMap<string, number | null>>(
     () => new Map(),
   );
-  // The winners the admin confirmed amounts for, so a selection that moves
-  // afterwards (another tab, a refetch) can't publish an amount nobody saw.
-  const [confirmedIds, setConfirmedIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
+  // The amounts the admin confirmed, per winner, so a selection or budget
+  // that moves afterwards (another tab, a refetch) can't publish an amount
+  // nobody saw.
+  const [confirmed, setConfirmed] = useState<
+    ReadonlyMap<string, number | null>
+  >(() => new Map());
   const inputs = useRef(new Map<string, HTMLInputElement>());
 
   // Resolving a proposal's fields can walk its rich-text fragments, so it runs
@@ -67,8 +68,12 @@ export const useAwardAmounts = ({
       )
     : undefined;
   const isConfirmedSelection =
-    confirmedIds.size === proposals.length &&
-    proposals.every((proposal) => confirmedIds.has(proposal.id));
+    confirmed.size === proposals.length &&
+    proposals.every(
+      (proposal) =>
+        confirmed.has(proposal.id) &&
+        confirmed.get(proposal.id) === amounts.get(proposal.id),
+    );
 
   // flushSync so the fields exist before focus moves into them.
   const focusAmount = (proposalId: string) => {
@@ -96,18 +101,18 @@ export const useAwardAmounts = ({
       setIsAdjusting(false);
       setShowErrors(false);
       setEdits(new Map());
-      setConfirmedIds(new Set());
+      setConfirmed(new Map());
     },
-    /** Moves on once every amount is valid, remembering which winners they cover. */
+    /** Moves on once every amount is valid, remembering what was confirmed. */
     confirm: (onConfirmed: () => void) => {
       if (validate()) {
-        setConfirmedIds(new Set(proposals.map((proposal) => proposal.id)));
+        setConfirmed(new Map(amounts));
         onConfirmed();
       }
     },
     /**
-     * Publishes the confirmed amounts, or reopens the step when the selection
-     * changed since they were confirmed.
+     * Publishes the confirmed amounts, or reopens the step when the winners
+     * or their amounts changed since they were confirmed.
      */
     publish: ({
       onPublish,

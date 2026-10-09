@@ -150,7 +150,16 @@ export const ComposeNotificationsDialog = ({
             proposals={selectedProposals}
             awards={awards}
             onCancel={() => handleOpenChange(false)}
-            onContinue={() => awards.confirm(() => setStep('notifications'))}
+            onContinue={() =>
+              awards.confirm(() => {
+                // Re-frozen here too: a reopened step may confirm a new set.
+                setCounts({
+                  selected: selectedCount,
+                  notSelected: notSelectedCount,
+                });
+                setStep('notifications');
+              })
+            }
           />
         ) : (
           <>
