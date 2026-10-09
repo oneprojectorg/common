@@ -1,8 +1,5 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
+import { HydrationBoundary, createServerTRPC, dehydrate } from '@op/api/server';
+import { nextCursor } from '@op/common/client';
 import { logger } from '@op/logging';
 import { Header1 } from '@op/sense/Header';
 import type { Metadata } from 'next';
@@ -39,12 +36,14 @@ export default async function ReviewAssignmentsPage({
   ]);
 
   // Best effort: on failure the client refetches under its own boundary.
-  const { utils, queryClient } = await createServerUtils();
+  const { trpc, queryClient } = await createServerTRPC();
   try {
-    await utils.decision.listPhaseReviewerSummaries.fetchInfinite({
-      processInstanceId,
-      phaseId,
-    });
+    await queryClient.fetchInfiniteQuery(
+      trpc.decision.listPhaseReviewerSummaries.infiniteQueryOptions(
+        { processInstanceId, phaseId },
+        { getNextPageParam: nextCursor },
+      ),
+    );
   } catch (error) {
     logger.warn('Failed to preload phase review assignments', {
       processInstanceId,
