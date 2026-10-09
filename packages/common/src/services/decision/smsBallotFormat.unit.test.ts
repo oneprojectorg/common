@@ -28,6 +28,11 @@ describe('formatSmsCost', () => {
     expect(formatSmsCost(85_000, 'USD')).toBe('$85,000');
     expect(formatSmsCost(null, 'USD')).toBe('');
   });
+
+  it('given a currency code Intl does not know, then it formats in the default currency instead of throwing', () => {
+    expect(formatSmsCost(85_000, 'dollars')).toBe('$85,000');
+    expect(formatSmsCost(85_000, '')).toBe('$85,000');
+  });
 });
 
 describe('formatSmsProposalPage', () => {
@@ -66,6 +71,17 @@ describe('formatSmsProposalPage', () => {
       '107 Proposal 7 $70k',
       'Text a code to add it to your ballot, or INFO plus a code.',
     ]);
+  });
+
+  it('given a proposal whose currency code Intl does not know, then its line shows the amount in the default currency instead of throwing', () => {
+    const { body } = formatSmsProposalPage({
+      decisionName: 'Park',
+      proposals: [
+        { ...proposal('101', 'Odd money', 85_000), currency: 'dollars' },
+      ],
+      page: 0,
+    });
+    expect(body).toContain('101 Odd money $85k\n');
   });
 
   it('given a proposal with no cost, then its line omits the amount', () => {
