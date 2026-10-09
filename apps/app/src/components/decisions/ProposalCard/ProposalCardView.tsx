@@ -39,10 +39,13 @@ import { useProposalCardTranslation } from './useProposalCardTranslation';
  * `ownTranslation` is the card's own "See translation" result, which is only
  * ever set when no list-level translation covers the card.
  */
-export function useProposalCardData(
-  proposal: Proposal,
-  ownTranslation?: ProposalTranslation,
-) {
+export function useProposalCardData({
+  proposal,
+  ownTranslation,
+}: {
+  proposal: Proposal;
+  ownTranslation?: ProposalTranslation;
+}) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
   const listTranslation = useCardTranslation(proposal.profileId);
@@ -248,11 +251,15 @@ export const ProposalCardView = ({
   ...rest
 }: ProposalCardViewProps) => {
   const t = useTranslations();
-  const ownTranslation = useProposalCardTranslation(proposal, {
+  const ownTranslation = useProposalCardTranslation({
+    proposal,
     enabled: showTranslateLink,
   });
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal, ownTranslation.translation);
+    useProposalCardData({
+      proposal,
+      ownTranslation: ownTranslation.translation,
+    });
   const engagement = useProposalEngagement({ proposal, canEngage });
   const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
   // Empty unless a review surface provides it; an explicit slot always wins.
@@ -347,7 +354,7 @@ export const ProposalMiniCard = ({
   className?: string;
 }) => {
   const { titleText, budgetText, displayCategories, authors } =
-    useProposalCardData(proposal);
+    useProposalCardData({ proposal });
 
   return (
     <SenseProposalCard

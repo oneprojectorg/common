@@ -45,7 +45,7 @@ export function ReviewAssignmentCard({
   // `ready_for_re_review` already tells the reviewer to look again.
   const showOutOfDate = isReviewOutOfDate && !isRevised;
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal);
+    useProposalCardData({ proposal });
 
   return (
     <SenseProposalCard

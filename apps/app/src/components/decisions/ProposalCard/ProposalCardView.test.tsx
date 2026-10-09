@@ -16,25 +16,21 @@ type TranslateVariables = {
   targetLocale: string;
 };
 
-type MutationOptions = {
-  onSuccess: (
-    data: { translations: Record<string, ProposalTranslation> },
-    variables: TranslateVariables,
-  ) => void;
+type MutateOptions = {
+  onSuccess: (data: {
+    translations: Record<string, ProposalTranslation>;
+  }) => void;
   onError: () => void;
 };
 
-const mutate = vi.fn<(variables: TranslateVariables) => void>();
-let mutationOptions: MutationOptions | undefined;
+const mutate =
+  vi.fn<(variables: TranslateVariables, options: MutateOptions) => void>();
 
 vi.mock('@op/api/client', () => ({
   trpc: {
     translation: {
       translateProposals: {
-        useMutation: (options: MutationOptions) => {
-          mutationOptions = options;
-          return { mutate };
-        },
+        useMutation: () => ({ mutate }),
       },
     },
   },
@@ -117,16 +113,24 @@ const renderCard = (props: CardProps = {}) => {
   };
 };
 
-const succeed = (translations: Record<string, ProposalTranslation>) => {
-  const variables = mutate.mock.lastCall?.[0];
-  if (!mutationOptions || !variables) {
+/** The handlers of the last translate request. */
+const lastRequest = () => {
+  const options = mutate.mock.lastCall?.[1];
+  if (!options) {
     throw new Error('translateProposals was not called');
   }
-  const { onSuccess } = mutationOptions;
-  act(() => onSuccess({ translations }, variables));
+  return options;
 };
 
-const fail = () => act(() => mutationOptions?.onError());
+const succeed = (translations: Record<string, ProposalTranslation>) => {
+  const { onSuccess } = lastRequest();
+  act(() => onSuccess({ translations }));
+};
+
+const fail = () => {
+  const { onError } = lastRequest();
+  act(() => onError());
+};
 
 const title = () => screen.getByRole('heading').textContent;
 const seeTranslation = () =>
@@ -140,7 +144,6 @@ const translateCard = async (user: ReturnType<typeof userEvent.setup>) => {
 
 beforeEach(() => {
   mutate.mockReset();
-  mutationOptions = undefined;
 });
 
 afterEach(() => {
@@ -178,10 +181,10 @@ describe('ProposalCardView translate link', () => {
 
     await user.click(seeTranslation());
 
-    expect(mutate).toHaveBeenCalledWith({
-      profileIds: ['profile-1'],
-      targetLocale: 'en',
-    });
+    expect(mutate).toHaveBeenCalledWith(
+      { profileIds: ['profile-1'], targetLocale: 'en' },
+      expect.anything(),
+    );
     const pending = screen.getByRole('button', { name: 'Translating...' });
     expect(pending.getAttribute('aria-disabled')).toBe('true');
     // The original stays on screen until the result lands.
@@ -231,6 +234,19 @@ describe('ProposalCardView translate link', () => {
     rerender({ bulk: { 'profile-1': { title: TITLE_EN } } });
     // The list's "View original".
     rerender({ bulk: {} });
+
+    expect(title()).toBe(TITLE_ES);
+    expect(seeTranslation()).toBeTruthy();
+  });
+
+  it('ignores a response that lands after the list-level translation took over', async () => {
+    const { user, rerender } = renderCard();
+
+    await user.click(seeTranslation());
+    rerender({ bulk: { 'profile-1': { title: TITLE_EN } } });
+    // The list's "View original", then the card's late response.
+    rerender({ bulk: {} });
+    succeed({ 'profile-1': { title: TITLE_EN } });
 
     expect(title()).toBe(TITLE_ES);
     expect(seeTranslation()).toBeTruthy();

@@ -28,10 +28,14 @@ export type ProposalCardTranslation = ReturnType<
  * request. A list-level translation that already covers the card wins: the
  * link steps aside and detection is skipped.
  */
-export const useProposalCardTranslation = (
-  proposal: Proposal,
-  { enabled = true }: { enabled?: boolean } = {},
-) => {
+export const useProposalCardTranslation = ({
+  proposal,
+  enabled = true,
+}: {
+  proposal: Proposal;
+  /** Off where the card can't host the link (the whole card is a control). */
+  enabled?: boolean;
+}) => {
   const locale = useLocale();
   const supportedLocale = isSupportedLocale(locale) ? locale : null;
   const bulkTranslation = useCardTranslation(proposal.profileId);
@@ -59,20 +63,12 @@ export const useProposalCardTranslation = (
     setStatus('idle');
   }
 
-  const translateMutation = trpc.translation.translateProposals.useMutation({
-    onSuccess: (data, { targetLocale }) => {
-      const translation = data.translations[proposal.profileId];
-      // Nothing back for this card means nothing was translated — saying
-      // "Translated from…" over the unchanged text would be wrong.
-      if (!translation) {
-        setStatus('failed');
-        return;
-      }
-      setCached({ locale: targetLocale, source: detectionText, translation });
-      setStatus('translated');
-    },
-    onError: () => setStatus('failed'),
-  });
+  const translateMutation = trpc.translation.translateProposals.useMutation();
+
+  // A response only lands if the card is still waiting on it: a list-level
+  // takeover in the meantime means the reader moved on.
+  const settle = (next: CardTranslationStatus) =>
+    setStatus((current) => (current === 'translating' ? next : current));
 
   const isCacheFresh =
     cached?.locale === locale && cached.source === detectionText;
@@ -86,10 +82,26 @@ export const useProposalCardTranslation = (
       return;
     }
     setStatus('translating');
-    translateMutation.mutate({
-      profileIds: [proposal.profileId],
-      targetLocale: supportedLocale,
-    });
+    // The text as it was when asked — an edit landing mid-request makes the
+    // result stale rather than current.
+    const source = detectionText;
+    translateMutation.mutate(
+      { profileIds: [proposal.profileId], targetLocale: supportedLocale },
+      {
+        onSuccess: (data) => {
+          const translation = data.translations[proposal.profileId];
+          // Nothing back for this card means nothing was translated — saying
+          // "Translated from…" over the unchanged text would be wrong.
+          if (!translation) {
+            settle('failed');
+            return;
+          }
+          setCached({ locale: supportedLocale, source, translation });
+          settle('translated');
+        },
+        onError: () => settle('failed'),
+      },
+    );
   };
 
   const isOffered = isActive && !!sourceLanguage;
