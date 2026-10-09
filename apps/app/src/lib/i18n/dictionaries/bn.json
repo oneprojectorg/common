@@ -5,6 +5,7 @@
   "Name": "নাম",
   "Website": "ওয়েবসাইট",
   "Email": "ইমেইল",
+  "SMS": "এসএমএস",
   "Select": "নির্বাচন করুন",
   "Back": "পিছনে",
   "Privacy Policy": "গোপনীয়তা নীতি",
@@ -734,6 +735,23 @@
     "noAccessHint": "আপনি যদি মনে করেন এটি একটি ভুল, তাহলে এই লিঙ্কটি যিনি শেয়ার করেছেন তার সাথে যোগাযোগ করুন।",
     "goToCommonAction": "Common-এ যান",
     "newTabHint": "(নতুন ট্যাবে খোলে)"
+  },
+  "settings": {
+    "title": "সেটিংস",
+    "description": "আপনার অ্যাকাউন্ট ও পছন্দসমূহ পরিচালনা করুন",
+    "notificationsNav": "বিজ্ঞপ্তি",
+    "notificationsHeading": "ইমেইল বিজ্ঞপ্তি",
+    "proposalsAndCommentsLabel": "আপনার প্রস্তাব ও মন্তব্য",
+    "proposalsAndCommentsDescription": "কেউ আপনাকে উত্তর দেয় বা আপনার প্রস্তাবে মন্তব্য করে।",
+    "thingsYouFollowLabel": "আপনি যা অনুসরণ করেন",
+    "thingsYouFollowDescription": "আপনি যেসব প্রস্তাব ও প্রক্রিয়া অনুসরণ করেন সেগুলোর আপডেট।",
+    "processUpdatesLabel": "প্রক্রিয়ার আপডেট",
+    "processUpdatesDescription": "আপনি যেসব প্রক্রিয়ার অংশ, সেগুলোর ধাপ পরিবর্তন, পোস্ট ও ইভেন্ট।",
+    "relationshipRequestsLabel": "সম্পর্কের অনুরোধ",
+    "relationshipRequestsDescription": "একটি সংস্থা আপনার পরিচালিত সংস্থার সাথে সংযুক্ত হতে চায়।",
+    "savingStatus": "সংরক্ষণ হচ্ছে…",
+    "savedStatus": "সংরক্ষিত",
+    "saveErrorStatus": "আপনার পরিবর্তন সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।"
   },
   "decisions": {
     "processBuilder": {
