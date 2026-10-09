@@ -1,4 +1,5 @@
 import { MAX_PHASES_PER_DECISION } from '@op/common';
+import { db } from '@op/db/client';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -248,6 +249,19 @@ const setupPhases = async (
 ) => {
   const setup = await setupPhase(task, onTestFinished);
   const instanceId = setup.phase.processInstanceId;
+
+  // Reordering lists every phase, so drop the ones the template minted.
+  const minted = await db.query.processPhases.findMany({
+    where: { processInstanceId: instanceId },
+    columns: { id: true },
+  });
+  await Promise.all(
+    minted
+      .filter((phase) => phase.id !== setup.phase.id)
+      .map((phase) =>
+        setup.adminCaller.decision.deletePhase({ phaseId: phase.id }),
+      ),
+  );
 
   const [vote, results] = await Promise.all(
     ['Vote', 'Results'].map((name, index) =>

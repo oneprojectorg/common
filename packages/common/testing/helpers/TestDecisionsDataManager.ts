@@ -6,6 +6,7 @@ import {
   decisionProcesses,
   locations,
   processInstances,
+  processPhases,
   profileUserToAccessRoles,
   profiles,
   proposals,
@@ -780,7 +781,25 @@ export class TestDecisionsDataManager {
           validProfileIds.map((id) => `proposal-location:${id}`),
         ),
       );
-      await db.delete(profiles).where(inArray(profiles.id, validProfileIds));
+      // A phase profile doesn't cascade from its decision's profile, so collect
+      // them before the instance rows go.
+      const phaseProfiles = await db
+        .select({ profileId: processPhases.profileId })
+        .from(processPhases)
+        .innerJoin(
+          processInstances,
+          eq(processInstances.id, processPhases.processInstanceId),
+        )
+        .where(inArray(processInstances.profileId, validProfileIds));
+
+      await db
+        .delete(profiles)
+        .where(
+          inArray(profiles.id, [
+            ...validProfileIds,
+            ...phaseProfiles.map((row) => row.profileId),
+          ]),
+        );
     }
 
     // 2. Delete users table rows by auth user IDs

@@ -296,6 +296,15 @@ describe.concurrent('createPhase', () => {
       onTestFinished,
     );
 
+    const countPhases = async () =>
+      (
+        await db.query.processPhases.findMany({
+          where: { processInstanceId: instanceId },
+          columns: { id: true },
+        })
+      ).length;
+    const before = await countPhases();
+
     const name = `Bad Form ${randomUUID()}`;
     await expect(
       adminCaller.decision.createPhase({
@@ -306,14 +315,11 @@ describe.concurrent('createPhase', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    const [phases, profiles] = await Promise.all([
-      db.query.processPhases.findMany({
-        where: { processInstanceId: instanceId },
-        columns: { id: true },
-      }),
-      db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
-    ]);
-    expect(phases).toHaveLength(0);
+    expect(await countPhases()).toBe(before);
+    const profiles = await db.query.profiles.findMany({
+      where: { name },
+      columns: { id: true },
+    });
     expect(profiles).toHaveLength(0);
   });
 
