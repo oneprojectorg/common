@@ -133,15 +133,15 @@ export type CreateInstanceFromTemplateOptions = {
   user: User;
 };
 
-/**
- * Creates a decision process instance from a template.
- * Validates the user, fetches the template, and delegates to createDecisionInstance.
- */
-export const createInstanceFromTemplate = async ({
-  templateId,
-  name,
-  user,
-}: CreateInstanceFromTemplateOptions) => {
+export type InstanceCreator = Pick<
+  CreateDecisionInstanceOptions,
+  'ownerProfileId' | 'stewardProfileId' | 'creatorAuthUserId' | 'creatorEmail'
+>;
+
+/** Who a new decision belongs to, as every create path resolves it. */
+export const resolveInstanceCreator = async (
+  user: User,
+): Promise<InstanceCreator> => {
   const dbUser = await assertUserByAuthId(
     user.id,
     new UnauthorizedError('User must be authenticated'),
@@ -163,16 +163,31 @@ export const createInstanceFromTemplate = async ({
     );
   }
 
-  const template = await getTemplate(templateId);
-  const instanceData = createInstanceDataFromTemplate({ template });
-
-  return createDecisionInstance({
-    processId: templateId,
-    instanceData,
-    name,
+  return {
     ownerProfileId,
     stewardProfileId,
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
+  };
+};
+
+/**
+ * Creates a decision process instance from a template.
+ * Validates the user, fetches the template, and delegates to createDecisionInstance.
+ */
+export const createInstanceFromTemplate = async ({
+  templateId,
+  name,
+  user,
+}: CreateInstanceFromTemplateOptions) => {
+  const creator = await resolveInstanceCreator(user);
+  const template = await getTemplate(templateId);
+  const instanceData = createInstanceDataFromTemplate({ template });
+
+  return createDecisionInstance({
+    ...creator,
+    processId: templateId,
+    instanceData,
+    name,
   });
 };
