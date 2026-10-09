@@ -102,7 +102,9 @@ const NotificationPreferencesPane = () => {
   const t = useTranslations('settings');
   const utils = trpc.useUtils();
   const [preferences] =
-    trpc.account.getNotificationPreferences.useSuspenseQuery();
+    trpc.account.getNotificationPreferences.useSuspenseQuery(undefined, {
+      refetchOnMount: 'always',
+    });
 
   const update = trpc.account.updateNotificationPreferences.useMutation({
     onMutate: async (patch) => {
