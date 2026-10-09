@@ -9,29 +9,32 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { CreateProcessWizard } from '.';
 import type { ProcessDraft } from './types';
+import {
+  clearWizardProgress,
+  saveWizardProgress,
+  useSavedWizardProgress,
+} from './wizardProgress';
 
-// Until phases are rows, only the name persists and the first template is used.
 export function CreateProcessFlow() {
   const t = useTranslations();
+  const tWizard = useTranslations('decisions.createWizard');
   const router = useRouter();
   const utils = trpc.useUtils();
+  const savedProgress = useSavedWizardProgress();
 
   const createProcess = useMutation({
-    mutationFn: async (draft: ProcessDraft) => {
-      const { processes: templates } =
-        await utils.decision.listProcesses.ensureData({ limit: 1 });
-      const [firstTemplate] = templates;
-
-      if (!firstTemplate) {
-        throw new Error('No decision process templates available');
-      }
-
-      return utils.client.decision.createInstanceFromTemplate.mutate({
-        templateId: firstTemplate.id,
+    mutationFn: (draft: ProcessDraft) =>
+      utils.client.decision.createInstanceFromWizard.mutate({
         name: draft.name,
-      });
-    },
+        type: draft.type,
+        shape: draft.shape,
+        phases: draft.pieces.map((piece) => ({
+          kind: piece.phaseType,
+          name: tWizard(piece.phaseName ?? piece.name),
+        })),
+      }),
     onSuccess: (decisionProfile) => {
+      clearWizardProgress();
       // Not push: Back must not reopen the wizard.
       router.replace(`/decisions/${decisionProfile.slug}/edit`);
     },
@@ -42,6 +45,8 @@ export function CreateProcessFlow() {
   });
 
   const exit = () => {
+    clearWizardProgress();
+
     if (window.history.length > 1) {
       router.back();
     } else {
@@ -49,8 +54,14 @@ export function CreateProcessFlow() {
     }
   };
 
+  if (savedProgress === undefined) {
+    return <div className="h-dvh bg-muted" />;
+  }
+
   return (
     <CreateProcessWizard
+      initial={savedProgress}
+      onProgressChange={saveWizardProgress}
       onExit={exit}
       onComplete={(draft) => createProcess.mutate(draft)}
       isSubmitting={createProcess.isPending || createProcess.isSuccess}
