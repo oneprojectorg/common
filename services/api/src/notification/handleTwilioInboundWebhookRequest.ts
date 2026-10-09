@@ -13,15 +13,6 @@ export interface TwilioInboundWebhookRequest {
   url: string;
 }
 
-const describeUrl = (url: string) => {
-  try {
-    const { host, pathname, search } = new URL(url);
-    return { host, pathname, hasQuery: search.length > 0 };
-  } catch {
-    return { host: null, pathname: null, hasQuery: false };
-  }
-};
-
 export const handleTwilioInboundWebhookRequest = async ({
   rawBody,
   signature,
@@ -78,4 +69,13 @@ export const handleTwilioInboundWebhookRequest = async ({
   });
 
   return { status: 200, body: '<Response></Response>' };
+};
+
+const describeUrl = (url: string) => {
+  try {
+    const { host, pathname, search } = new URL(url);
+    return { host, pathname, hasQuery: search.length > 0 };
+  } catch {
+    return { host: null, pathname: null, hasQuery: false };
+  }
 };
