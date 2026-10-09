@@ -122,6 +122,12 @@ test.describe('Proposal Feed view', () => {
       )
       .toBe(TOTAL_PROPOSALS);
 
+    // Exactly `sm` is still desktop: the toggle shows there, so the feed must
+    // stay on offer too, or the toggle shows without it.
+    await authenticatedPage.setViewportSize({ width: 640, height: 800 });
+    await expect(feedOption).toBeVisible();
+    await expect(feed).toBeVisible();
+
     // Phones aren't offered the feed: the same `?view=feed` URL falls back to
     // the grid there rather than stranding the reader in a view the floating
     // map/list switch can't leave.
