@@ -14,6 +14,7 @@ import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
+import { insertPhase } from './phaseHelpers';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -77,6 +78,17 @@ export const createDecisionInstance = async ({
 
     if (!newInstance) {
       throw new CommonError('Failed to create decision process instance');
+    }
+
+    for (const [sortOrder, phase] of instanceData.phases.entries()) {
+      const { name: phaseName, ...data } = phase;
+      await insertPhase({
+        tx,
+        processInstanceId: newInstance.id,
+        name: phaseName ?? phase.phaseId,
+        sortOrder,
+        data,
+      });
     }
 
     const { admin: adminRole } = await createDefaultDecisionRoles({
