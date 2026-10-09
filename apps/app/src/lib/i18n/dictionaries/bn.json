@@ -1365,7 +1365,7 @@
       "notificationMessageLabel": "বিজ্ঞপ্তির বার্তা",
       "publishResultsWarning": "প্রকাশ করলে {fundedCount, plural, other {#টি অর্থায়িত প্রস্তাবের}} এবং {notFundedCount, plural, other {#টি অর্থায়িত নয় এমন প্রস্তাবের}} প্রস্তাবকদের ইমেল করা হবে। এটি ফেরানো যাবে না।",
       "publishResultsAction": "পাঠান ও ফলাফল প্রকাশ করুন",
-      "notificationPlaceholderHint": "জমাদানকারীর নামের জন্য {name} এবং প্রস্তাবের শিরোনামের জন্য {proposal} ব্যবহার করুন।",
+      "notificationPlaceholderHint": "জমাদানকারীর নামের জন্য {name}, প্রস্তাবের শিরোনামের জন্য {proposal} এবং অর্থায়িত প্রস্তাবকে প্রদত্ত পরিমাণের জন্য {amount} ব্যবহার করুন।",
       "publishResultsMessageRequired": "ফলাফল প্রকাশের আগে একটি বার্তা লিখুন।",
       "voteConfirmHint": "জমা দেওয়ার আগে অনুগ্রহ করে আপনার নির্বাচন নিশ্চিত করুন",
       "voteReviewTitle": "আপনার ভোট পর্যালোচনা করুন",

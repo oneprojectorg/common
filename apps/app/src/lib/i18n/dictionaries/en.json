@@ -1365,7 +1365,7 @@
       "notificationMessageLabel": "Notification Message",
       "publishResultsWarning": "Publishing emails the authors of {fundedCount, plural, one {# funded proposal} other {# funded proposals}} and {notFundedCount, plural, one {# not funded proposal} other {# not funded proposals}}. This cannot be undone.",
       "publishResultsAction": "Send & publish results",
-      "notificationPlaceholderHint": "Use {name} for the submitter’s name and {proposal} for proposal title.",
+      "notificationPlaceholderHint": "Use {name} for the submitter’s name, {proposal} for the proposal title and {amount} for the amount a funded proposal is awarded.",
       "publishResultsMessageRequired": "Write a message before publishing results.",
       "voteConfirmHint": "Please confirm your selections before submitting",
       "voteReviewTitle": "Review your votes",

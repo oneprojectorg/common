@@ -16,10 +16,13 @@ describe('renderResultNotificationMessage', () => {
   it('substitutes every supported token', () => {
     expect(
       renderResultNotificationMessage({
-        template: 'Hi {{name}},\n\n"{{proposal}}" has an outcome.\n\nThanks.',
+        template:
+          'Hi {{name}},\n\n"{{proposal}}" was awarded {{amount}}.\n\nThanks.',
         values,
       }),
-    ).toBe('Hi Ada,\n\n"Community Garden Revamp" has an outcome.\n\nThanks.');
+    ).toBe(
+      'Hi Ada,\n\n"Community Garden Revamp" was awarded $12,000.\n\nThanks.',
+    );
   });
 
   it('does not re-expand a token that appears inside a substituted value', () => {
@@ -38,17 +41,6 @@ describe('renderResultNotificationMessage', () => {
         values,
       }),
     ).toBe('Hi {{Name}} / {{ name }} / {{proposal_title}}.');
-  });
-
-  // `amount` is off the token list until something writes an allocation, so a
-  // message mentioning it must render literally rather than resolve to ''.
-  it('leaves {{amount}} untouched while it is not an offered token', () => {
-    expect(
-      renderResultNotificationMessage({
-        template: 'You were allocated {{amount}}.',
-        values,
-      }),
-    ).toBe('You were allocated {{amount}}.');
   });
 });
 

@@ -3,10 +3,13 @@ import { z } from 'zod';
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
 import type { BudgetData } from './proposalDataSchema';
 
-// `amount` is not offered yet: the confirm dialog now writes
-// `decision_process_result_selections.allocated`, but exposing it in the
-// composed copy is a separate change.
-export const RESULT_NOTIFICATION_TOKENS = ['name', 'proposal'] as const;
+// `amount` resolves to the awarded amount for a selected proposal, and to ''
+// for one that was not selected or was published without an amount.
+export const RESULT_NOTIFICATION_TOKENS = [
+  'name',
+  'proposal',
+  'amount',
+] as const;
 
 export type ResultNotificationToken =
   (typeof RESULT_NOTIFICATION_TOKENS)[number];
