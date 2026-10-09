@@ -1,12 +1,9 @@
 import { InngestTestEngine } from '@inngest/test';
-import {
-  type PhoneNumber,
-  memorySmsProvider,
-  parsePhoneNumber,
-} from '@op/common';
+import { type PhoneNumber, parsePhoneNumber } from '@op/common';
 import { Events, inngest } from '@op/events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsVoteCommand } from './handleSmsVoteCommand';
 
@@ -40,7 +37,7 @@ const sentEvents = () =>
     );
 
 beforeEach(() => {
-  memorySmsProvider.reset();
+  resetRecordedSms();
   vi.spyOn(inngest, 'send').mockResolvedValue({ ids: [] });
 });
 
@@ -80,7 +77,7 @@ describe('handleSmsVoteCommand against the database', () => {
         },
       },
     ]);
-    expect(memorySmsProvider.sent).toEqual([]);
+    expect(recordedSms).toEqual([]);
   });
 
   it('given a member texts VOTE with no decision named, then they are told how to name one', async ({
@@ -97,7 +94,7 @@ describe('handleSmsVoteCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'help sent' });
-    expect(memorySmsProvider.sent).toEqual([
+    expect(recordedSms).toEqual([
       {
         to: phone,
         body: expect.stringContaining('VOTE'),
@@ -121,7 +118,7 @@ describe('handleSmsVoteCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'decision not found' });
-    expect(memorySmsProvider.sent).toEqual([
+    expect(recordedSms).toEqual([
       {
         to: phone,
         body: expect.stringContaining('no-such-decision'),
@@ -155,7 +152,7 @@ describe('handleSmsVoteCommand against the database', () => {
       votingOpen: true,
       eligibleProposalCount: 0,
     });
-    expect(memorySmsProvider.sent).toEqual([
+    expect(recordedSms).toEqual([
       {
         to: phone,
         body: expect.stringContaining('has no proposals'),
@@ -190,7 +187,7 @@ describe('handleSmsVoteCommand against the database', () => {
       votingOpen: false,
       eligibleProposalCount: 0,
     });
-    expect(memorySmsProvider.sent).toEqual([
+    expect(recordedSms).toEqual([
       {
         to: phone,
         body: expect.stringContaining('is not open'),
@@ -220,7 +217,7 @@ describe('handleSmsVoteCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'not a participant' });
-    expect(memorySmsProvider.sent).toEqual([
+    expect(recordedSms).toEqual([
       {
         to: phone,
         body: expect.stringContaining('not a participant'),
@@ -240,7 +237,7 @@ describe('handleSmsVoteCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'unknown number, skipped' });
-    expect(memorySmsProvider.sent).toEqual([]);
+    expect(recordedSms).toEqual([]);
     expect(sentEvents()).toEqual([]);
   });
 });
