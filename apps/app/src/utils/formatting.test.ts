@@ -7,8 +7,16 @@ describe('formatAwardedAmount', () => {
     [20000, 'USD', '$20K'],
     [1000, 'USD', '$1K'],
     [4000, 'EUR', '€4K'],
+    [1500000, 'USD', '$1,500K'],
   ])('shortens whole thousands: %s %s → %s', (amount, currency, expected) => {
     expect(formatAwardedAmount({ amount, currency })).toBe(expected);
+  });
+
+  it.each([
+    [1000000, '$1M'],
+    [12000000, '$12M'],
+  ])('shortens whole millions: %s → %s', (amount, expected) => {
+    expect(formatAwardedAmount({ amount, currency: 'USD' })).toBe(expected);
   });
 
   it.each([
