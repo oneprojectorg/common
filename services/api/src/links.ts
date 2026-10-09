@@ -148,6 +148,30 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
 }
 
 /**
+ * tRPC stores infinite queries under a different cache key than plain queries:
+ * `type: 'infinite'` with the `cursor`/`direction` pagination fields stripped
+ * (see getQueryKeyInternal). The link only ever sees `op.type === 'query'`, so
+ * the `type: 'query'` key it builds never matches an infinite list's cache
+ * entry. Registering this variant too lets channel invalidations reach
+ * paginated feeds (proposals, posts, …). Returns null when the input can't be
+ * an infinite key.
+ */
+function buildInfiniteQueryKey(
+  path: string,
+  input: unknown,
+): TRPCQueryKey | null {
+  if (!input || typeof input !== 'object') {
+    return null;
+  }
+  const {
+    cursor: _cursor,
+    direction: _direction,
+    ...rest
+  } = input as Record<string, unknown>;
+  return [path.split('.'), { input: rest, type: 'infinite' }];
+}
+
+/**
  * Custom link that registers queries and mutations with the channel registry.
  *
  * Extracts channels from wrapped response body (_meta.channels) and unwraps
@@ -177,6 +201,19 @@ export function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                   if (op.type === 'query') {
                     // Register query's channels for future invalidation
                     queryChannelRegistry.registerQuery({ queryKey, channels });
+                    // Infinite queries live under a `type: 'infinite'` cache key,
+                    // so also register that variant — otherwise paginated lists
+                    // never get invalidated by their channels.
+                    const infiniteQueryKey = buildInfiniteQueryKey(
+                      op.path,
+                      op.input,
+                    );
+                    if (infiniteQueryKey) {
+                      queryChannelRegistry.registerQuery({
+                        queryKey: infiniteQueryKey,
+                        channels,
+                      });
+                    }
                   } else if (op.type === 'mutation') {
                     // Get request ID from response headers, fallback to random UUID
                     const response = value.context?.response as
