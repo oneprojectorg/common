@@ -9,8 +9,7 @@
     "deny": [
       "Bash(pnpm build:*)",
       "Bash(pnpm w:db migrate:*)",
-      "Bash(pnpm w:db generate:*)",
-      "Bash(pnpm format:*)"
+      "Bash(pnpm format)"
     ],
     "ask": []
   },
