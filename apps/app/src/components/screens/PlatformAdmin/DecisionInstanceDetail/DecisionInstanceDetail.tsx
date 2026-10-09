@@ -1,5 +1,6 @@
 'use client';
 
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type {
@@ -63,6 +64,7 @@ const DecisionInstanceDetailContent = ({
 }) => {
   const t = useTranslations();
   const format = useFormatter();
+  const timeZone = useDisplayTimeZone();
   const [detail] = trpc.platform.admin.getDecisionInstance.useSuspenseQuery({
     instanceId,
   });
@@ -128,7 +130,7 @@ const DecisionInstanceDetailContent = ({
             label={t('admin.createdLabel')}
             value={
               createdAt
-                ? format.dateTime(createdAt, { dateStyle: 'medium' })
+                ? format.dateTime(createdAt, { dateStyle: 'medium', timeZone })
                 : '—'
             }
           />

@@ -23,6 +23,7 @@ import { useMemo, useState } from 'react';
 import { LuCheck, LuCircleAlert, LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
+import { APP_TIME_ZONE } from '@/lib/i18n/config';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
@@ -69,7 +70,12 @@ export function PhasesSectionContent({
   // "Jan 15 – Feb 15" for a configured phase — formatRange handles locale,
   // same-month collapsing, and RTL; falls back to the end date alone.
   const dateFormat = useMemo(
-    () => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }),
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: APP_TIME_ZONE,
+      }),
     [locale],
   );
   const phaseDateRange = (phase: PhaseDefinition): string | null => {

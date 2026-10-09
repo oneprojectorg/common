@@ -1,6 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
+import { formatNumber } from '@/utils/formatting';
 import type { BudgetData } from '@op/common/client';
 import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
 import { NumberField } from '@op/sense/NumberField';
@@ -69,7 +70,7 @@ export function CollaborativeBudgetField({
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount
-    ? t('editor.budgetMaxHint', { amount: maxAmount.toLocaleString() })
+    ? t('editor.budgetMaxHint', { amount: formatNumber(maxAmount) })
     : t('editor.budgetPlaceholder');
 
   const handleChange = (value: number | null) => {

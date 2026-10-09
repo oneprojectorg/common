@@ -1,5 +1,7 @@
 'use client';
 
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
+import { formatDeadline } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
@@ -30,15 +32,6 @@ import type { TranslationKey } from '@/lib/i18n';
 
 import { DecisionCardHeader } from './DecisionCardHeader';
 import { DuplicateProcessModal } from './DuplicateProcessModal';
-
-const formatDateShort = (dateString: string, locale: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
 
 const isClosingSoon = (dateString: string) => {
   const date = new Date(dateString);
@@ -342,6 +335,7 @@ const DecisionStat = ({
 const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
   const t = useTranslations();
   const locale = useLocale();
+  const timeZone = useDisplayTimeZone();
   const closingSoon = isClosingSoon(closingDate);
 
   return (
@@ -353,7 +347,7 @@ const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
     >
       <LuCalendar className="size-4" aria-hidden />
       {t('decisions.closesOnDate', {
-        date: formatDateShort(closingDate, locale),
+        date: formatDeadline(closingDate, locale, timeZone),
       })}
     </div>
   );

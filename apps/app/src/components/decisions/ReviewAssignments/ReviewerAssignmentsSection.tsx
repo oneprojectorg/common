@@ -1,5 +1,6 @@
 'use client';
 
+import { useDisplayTimeZone } from '@/hooks/useDisplayTimeZone';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
@@ -206,6 +207,7 @@ function ReviewerAssignmentsContent({
 function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
   const t = useTranslations();
   const format = useFormatter();
+  const timeZone = useDisplayTimeZone();
 
   const breakdown = useMemo(
     () =>
@@ -257,7 +259,10 @@ function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
         label={t('decisions.review.lastSubmissionLabel')}
         value={
           lastSubmittedAt
-            ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
+            ? format.dateTime(lastSubmittedAt, {
+                dateStyle: 'medium',
+                timeZone,
+              })
             : '—'
         }
       />

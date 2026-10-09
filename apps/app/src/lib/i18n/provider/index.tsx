@@ -4,6 +4,8 @@ import { logger } from '@op/logging/client';
 import { IntlErrorCode, NextIntlClientProvider } from 'next-intl';
 import { ReactNode, useEffect } from 'react';
 
+import { APP_TIME_ZONE } from '../config';
+
 type Props = {
   children: ReactNode;
   messages: Record<string, any>;
@@ -32,13 +34,19 @@ export const I18nProvider = ({ children, messages, locale }: Props) => {
     <NextIntlClientProvider
       locale={locale}
       messages={messages}
+      // Without this the client provider has no time zone, so `format.dateTime`
+      // falls back to the browser's while the server renders in the one
+      // `request.ts` sets — the two passes then disagree and hydration fails
+      // (React #418). Same constant on both sides keeps them equal.
+      timeZone={APP_TIME_ZONE}
       onError={(error: { code: string; message?: string }): void => {
         if (
           error.code === IntlErrorCode.MISSING_MESSAGE ||
           error.code === IntlErrorCode.ENVIRONMENT_FALLBACK
         ) {
           // MISSING_MESSAGE: natural keys strategy — sweep back later for translations
-          // ENVIRONMENT_FALLBACK: timeZone/now fallbacks are non-fatal client-side
+          // ENVIRONMENT_FALLBACK: `now` still falls back client-side, which is
+          // non-fatal (relative times are rendered after mount)
           return;
         }
         logger.error('NextIntlClientProvider error', {
