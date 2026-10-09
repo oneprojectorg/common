@@ -82,8 +82,6 @@ export const db: RealDb = new Proxy(realDb, {
     const scope = testTransactionStorage.getStore();
     const source: RealDb | TestTransaction = scope ? scope.tx : target;
     const value: unknown = Reflect.get(source, property, source);
-    // Methods live on the prototype and read `this`; own fields such as
-    // `$client` (a callable postgres-js client) must come back untouched.
     return typeof value === 'function' && !Object.hasOwn(source, property)
       ? value.bind(source)
       : value;

@@ -119,15 +119,6 @@ beforeAll(async () => {
   deferAuthDeletesPastTheRollback(testSupabaseAdmin);
 });
 
-// GoTrue deletes an auth user on its own connection and cascades into
-// `users`. A test that updated that row through `db` holds its lock until the
-// rollback, which runs after every `onTestFinished` hook, so a delete issued
-// from a hook waits on the test's own lock until the hook times out. Inside a
-// test transaction the delete is queued for after the rollback instead, and
-// the caller gets a response whose error code says so; outside one it runs at
-// once with the real response. The deferred delete also removes the profile
-// the signup trigger made for the user: a cleanup that deleted it through
-// `db` did so inside the transaction, and the rollback brought it back.
 const DEFERRED_DELETE = new AuthError(
   'Deferred until the test transaction is rolled back',
   202,
@@ -160,12 +151,6 @@ beforeEach(async () => {
   vi.clearAllMocks();
 });
 
-// Every test runs inside one transaction that is rolled back when the test
-// ends, so the rows it writes through `db` never commit. Rows GoTrue writes
-// (auth users and their trigger-made profiles) commit regardless; the
-// managers delete those through `afterTestTransaction`, which runs after the
-// rollback on the real pool. `TEST_DB_TRANSACTIONS=off` restores the old
-// behaviour for comparison.
 const TEST_TRANSACTION_TIMEOUT_MS = 60_000;
 
 if (process.env.TEST_DB_TRANSACTIONS !== 'off') {
