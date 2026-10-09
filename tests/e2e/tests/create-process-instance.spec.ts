@@ -15,9 +15,7 @@ test.describe('Create Process Instance', () => {
     await authenticatedPage.goto('/en/');
 
     await authenticatedPage.getByRole('button', { name: 'Create' }).click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Decision-making process' })
-      .click();
+    await authenticatedPage.getByTestId('create-decision-process').click();
 
     await authenticatedPage.waitForURL(/\/decisions\/[^/]+\/edit/, {
       timeout: 12_000,
