@@ -12,7 +12,10 @@ import {
   selectionPipelineSchema,
 } from '@op/common/client';
 import type { JSONContent, PhaseSettingsSchema } from '@op/common/client';
-import type { PhaseRules as CommonPhaseRules } from '@op/common/src/services/decision';
+import type {
+  PhaseRules as CommonPhaseRules,
+  SelectionPipeline,
+} from '@op/common/src/services/decision';
 import {
   ProcessStatus,
   ProfileRelationshipType,
@@ -565,16 +568,21 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });
 
-// name lives on the phase's profile; the service validates settingsSchema.
-const phaseDataInputEncoder = instancePhaseDataInputEncoder
+const isJsonObject = (value: unknown) =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// selectionPipelineEncoder strips block-specific fields; pass the pipeline whole.
+export const phaseDataEncoder = instancePhaseDataEncoder
   .omit({ phaseId: true, name: true })
   .extend({
-    settingsSchema: z
-      .custom<PhaseSettingsSchema>(
-        (value) =>
-          typeof value === 'object' && value !== null && !Array.isArray(value),
-      )
-      .optional(),
+    selectionPipeline: z.custom<SelectionPipeline>(isJsonObject).optional(),
+  });
+
+// name lives on the phase's profile; the service validates settingsSchema.
+export const phaseDataInputEncoder = instancePhaseDataInputEncoder
+  .omit({ phaseId: true, name: true })
+  .extend({
+    settingsSchema: z.custom<PhaseSettingsSchema>(isJsonObject).optional(),
     selectionPipeline: selectionPipelineSchema.optional(),
   });
 

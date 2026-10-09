@@ -15,6 +15,7 @@ import { assertProfileAccess } from '../assert';
 import { schemaValidator } from './schemaValidator';
 import {
   type PhaseInstanceData,
+  type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
 
@@ -75,11 +76,13 @@ export const assertPhaseSchemasCompile = ({
   }
 };
 
+type PhaseSettingsFields = Pick<PhaseData, 'settings' | 'settingsSchema'>;
+
 export const assertPhaseSettings = ({
   data,
   phaseLabel,
 }: {
-  data: PhaseData;
+  data: PhaseSettingsFields;
   phaseLabel: string;
 }): void => {
   if (!data.settings) {
@@ -95,6 +98,18 @@ export const assertPhaseSettings = ({
     settingsSchema: data.settingsSchema,
     phaseLabel,
   });
+};
+
+export const readPhaseSettings = (data: unknown): PhaseSettingsFields => {
+  if (!isJsonObject(data)) {
+    return {};
+  }
+  return {
+    ...(isJsonObject(data.settings) && { settings: data.settings }),
+    ...(isSettingsSchema(data.settingsSchema) && {
+      settingsSchema: data.settingsSchema,
+    }),
+  };
 };
 
 export const getPhaseAsDecisionAdmin = async ({
@@ -173,3 +188,10 @@ const insertPhaseProfile = async ({
 };
 
 const generatePhaseSlug = () => randomUUID().slice(0, 8);
+
+const isJsonObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// Shape only; Ajv compiles it when the settings are checked.
+const isSettingsSchema = (value: unknown): value is PhaseSettingsSchema =>
+  isJsonObject(value);
