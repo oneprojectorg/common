@@ -1,9 +1,5 @@
 import { InngestTestEngine } from '@inngest/test';
-import {
-  type PhoneNumber,
-  memorySmsProvider,
-  parsePhoneNumber,
-} from '@op/common';
+import { type PhoneNumber, parsePhoneNumber } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   decisionsVoteProposals,
@@ -12,6 +8,7 @@ import {
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsBallot } from './handleSmsBallot';
 
@@ -73,7 +70,7 @@ const silence = (turn: number) => ({
   handler: () => null,
 });
 
-const bodies = () => memorySmsProvider.sent.map((message) => message.body);
+const bodies = () => recordedSms.map((message) => message.body);
 
 const readVotes = (processInstanceId: string) =>
   db
@@ -109,7 +106,7 @@ const seed = async (
 };
 
 beforeEach(() => {
-  memorySmsProvider.reset();
+  resetRecordedSms();
 });
 
 describe('handleSmsBallot against the database', () => {
