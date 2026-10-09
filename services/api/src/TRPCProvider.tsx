@@ -2,7 +2,6 @@
 
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { TRPCClientError } from '@trpc/client';
 import {
   createTRPCReact,
   getQueryKey as getQueryKeyTRPC,
@@ -10,6 +9,7 @@ import {
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import React, { createContext, useState } from 'react';
 
+import { isNetworkError } from './clientErrors';
 import { createLinks } from './links';
 import { queryPersister } from './queryPersister';
 import type { AppRouter } from './routers';
@@ -33,12 +33,6 @@ export type RouterOutput = inferRouterOutputs<AppRouter>;
 
 export const getQueryKey = getQueryKeyTRPC;
 
-export function isTRPCClientError(
-  cause: unknown,
-): cause is TRPCClientError<AppRouter> {
-  return cause instanceof TRPCClientError;
-}
-
 /**
  * TRPCProvider with SSR cookie support
  *
@@ -58,7 +52,10 @@ export function TRPCProvider({
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: false,
+            // Retry only transient network failures; tRPC errors (4xx/5xx) are
+            // never retried, preserving the prior `retry: false` behaviour.
+            retry: (failureCount, error) =>
+              failureCount < 2 && isNetworkError(error),
             gcTime: 1000 * 60 * 60 * 24, // 24 hours
             refetchOnWindowFocus: false,
           },
