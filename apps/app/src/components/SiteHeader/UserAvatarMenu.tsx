@@ -40,6 +40,7 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile/UpdateProfileModal';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
+import { SettingsModal } from '../SettingsModal';
 
 /**
  * A compact profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
@@ -420,9 +421,11 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const t = useTranslations();
   const { user } = useRequiredUser();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
+  const isSettingsEnabled = useFeatureFlag('settings_modal');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
     name: string;
@@ -443,9 +446,9 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     setIsDrawerOpen(false);
   };
 
-  // Placeholder until #2203's settings modal lands.
   const openSettings = () => {
     closeMenus();
+    setIsSettingsOpen(true);
   };
 
   const openEditProfile = () => {
@@ -499,6 +502,9 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         profileName={switchingToProfile?.name}
         onOpenChange={setIsSwitchingProfile}
       />
+      {isSettingsEnabled ? (
+        <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      ) : null}
     </>
   );
 
