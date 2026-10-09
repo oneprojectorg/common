@@ -178,6 +178,10 @@ export {
 } from './services/decision/templateLocation';
 export { templateCollectsBudget } from './services/decision/templateBudget';
 export {
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+} from './services/decision/schemas/wizard';
+export {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,
   resultNotificationMessagesSchema,

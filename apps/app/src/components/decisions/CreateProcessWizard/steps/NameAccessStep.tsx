@@ -1,12 +1,15 @@
 'use client';
 
+import {
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+} from '@op/common/client';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { StepHeading } from '../StepHeading';
-import { MAX_PROCESS_NAME_LENGTH, MIN_PROCESS_NAME_LENGTH } from '../content';
 
 const NAME_ID = 'process-name';
 const NAME_HINT_ID = 'process-name-hint';
@@ -22,7 +25,7 @@ export function NameAccessStep({
 }) {
   const t = useTranslations('decisions.createWizard');
   const trimmed = name.trim();
-  const isNameTooShort = trimmed.length < MIN_PROCESS_NAME_LENGTH;
+  const isNameTooShort = trimmed.length < PROCESS_NAME_MIN_LENGTH;
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,13 +44,13 @@ export function NameAccessStep({
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
             placeholder={t('namePlaceholder')}
-            maxLength={MAX_PROCESS_NAME_LENGTH}
+            maxLength={PROCESS_NAME_MAX_LENGTH}
             aria-invalid={trimmed.length > 0 && isNameTooShort}
             aria-describedby={NAME_HINT_ID}
           />
           <FieldDescription id={NAME_HINT_ID} aria-live="polite">
             {isNameTooShort
-              ? t('nameTooShort', { count: MIN_PROCESS_NAME_LENGTH })
+              ? t('nameTooShort', { count: PROCESS_NAME_MIN_LENGTH })
               : null}
           </FieldDescription>
         </Field>
