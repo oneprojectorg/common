@@ -130,6 +130,12 @@
   max-height: calc(100dvh - 2rem);
 }
 
+/* The width counterpart: a wide dialog (`w-200`, say) shrinks to keep the same
+ * margin on viewports narrower than it, instead of running edge to edge. */
+@utility max-w-dialog {
+  max-width: calc(100dvw - 2rem);
+}
+
 /* Bare `border` (no color utility) defaults to the sense border token,
  * mirroring the app-wide rule below (which hardcodes the legacy neutral and is
  * retired with it). Explicit utilities like border-input still win — they live

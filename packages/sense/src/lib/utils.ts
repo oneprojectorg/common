@@ -9,7 +9,7 @@ import { extendTailwindMerge } from 'tailwind-merge';
 // `max-h` needs both our own `max-h-dialog` and upstream's `max-h-none`, which
 // tailwind-merge omits from that group (it has it for `max-w`). Unregistered,
 // neither displaces a numeric `max-h-*` — both classes survive the merge and
-// whichever CSS emits later silently wins.
+// whichever CSS emits later silently wins. `max-w-dialog` likewise for `max-w`.
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
@@ -21,6 +21,7 @@ const twMerge = extendTailwindMerge({
       ],
       'font-weight': ['font-strong'],
       'max-h': ['max-h-dialog', 'max-h-none'],
+      'max-w': ['max-w-dialog'],
     },
   },
 });
