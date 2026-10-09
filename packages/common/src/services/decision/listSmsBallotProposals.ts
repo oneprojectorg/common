@@ -1,6 +1,8 @@
 import { and, asc, db, eq, isNull } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
 
+import { DEFAULT_MONEY_CURRENCY } from '../../money';
+import { normalizeBudget } from './proposalDataSchema';
 import { isVotingEligible } from './votingEligibility';
 
 export const SMS_PROPOSAL_FIRST_CODE = 101;
@@ -18,17 +20,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 const readCost = (data: unknown): { cost: number | null; currency: string } => {
-  const budget = isRecord(data) ? data.budget : undefined;
-  if (typeof budget === 'number') {
-    return { cost: budget, currency: 'USD' };
-  }
-  if (isRecord(budget)) {
-    return {
-      cost: typeof budget.amount === 'number' ? budget.amount : null,
-      currency: typeof budget.currency === 'string' ? budget.currency : 'USD',
-    };
-  }
-  return { cost: null, currency: 'USD' };
+  const budget = normalizeBudget(isRecord(data) ? data.budget : undefined);
+  return {
+    cost: budget?.amount ?? null,
+    currency: budget?.currency ?? DEFAULT_MONEY_CURRENCY,
+  };
 };
 
 const readSummary = (data: unknown): string | null => {

@@ -1,13 +1,17 @@
+import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
 import type { SmsBallotProposal } from './listSmsBallotProposals';
 
 export const SMS_PROPOSALS_PAGE_SIZE = 5;
+
+const smsCurrency = (currency: string): string =>
+  isValidCurrencyCode(currency) ? currency : DEFAULT_MONEY_CURRENCY;
 
 export const formatSmsCost = (cost: number | null, currency: string): string =>
   cost === null
     ? ''
     : new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency,
+        currency: smsCurrency(currency),
         maximumFractionDigits: 0,
       }).format(cost);
 
@@ -16,7 +20,7 @@ const formatSmsShortCost = (cost: number | null, currency: string): string =>
     ? ''
     : new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency,
+        currency: smsCurrency(currency),
         notation: 'compact',
         maximumFractionDigits: 1,
       })
