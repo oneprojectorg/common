@@ -55,7 +55,9 @@ describe('handleTwilioInboundWebhookRequest', () => {
         from: '+15005550006',
         messageSid: 'SM456',
         code: null,
-        keyword: null,
+        keyword: 'yes',
+        argument: null,
+        codes: [],
       },
     });
   });
@@ -83,6 +85,8 @@ describe('handleTwilioInboundWebhookRequest', () => {
         messageSid: 'SM456',
         code: '234567',
         keyword: null,
+        argument: null,
+        codes: ['234', '567'],
       },
     });
   });
@@ -107,6 +111,34 @@ describe('handleTwilioInboundWebhookRequest', () => {
         messageSid: 'SM456',
         code: null,
         keyword: 'join',
+        argument: null,
+        codes: [],
+      },
+    });
+  });
+
+  it('given a text that is VOTE and a decision slug, when forwarded, then the event carries the keyword and the slug', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const params = { ...MESSAGE_PARAMS, Body: 'Vote Columbus' };
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const response = await handleTwilioInboundWebhookRequest({
+      rawBody: rawBodyOf(params),
+      signature,
+      url: URL,
+    });
+
+    expect(response.status).toBe(200);
+    expect(inngest.send).toHaveBeenCalledWith({
+      id: 'sms-inbound-SM456',
+      name: Events.smsInboundReceived.name,
+      data: {
+        from: '+15005550006',
+        messageSid: 'SM456',
+        code: null,
+        keyword: 'vote',
+        argument: 'columbus',
+        codes: [],
       },
     });
   });

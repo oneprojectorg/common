@@ -199,7 +199,32 @@ export const Events = {
       from: z.string(),
       messageSid: z.string(),
       code: z.string().nullable(),
-      keyword: z.enum(['join']).nullable(),
+      keyword: z
+        .enum([
+          'join',
+          'yes',
+          'vote',
+          'list',
+          'show',
+          'decisions',
+          'proposals',
+          'info',
+          'more',
+          'done',
+          'submit',
+          'remove',
+        ])
+        .nullable(),
+      argument: z.string().nullable(),
+      codes: z.array(z.string()),
+    }),
+  },
+  voteSmsBallotRequested: {
+    name: 'vote/sms-ballot-requested' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      authUserId: z.string().uuid(),
+      phone: z.string(),
     }),
   },
 } as const;

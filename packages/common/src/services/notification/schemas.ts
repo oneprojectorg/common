@@ -73,9 +73,85 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-const JOIN_KEYWORD_PATTERN = /^join[.!]?$/i;
+export type SmsKeyword =
+  | 'join'
+  | 'yes'
+  | 'vote'
+  | 'list'
+  | 'show'
+  | 'decisions'
+  | 'proposals'
+  | 'info'
+  | 'more'
+  | 'done'
+  | 'submit'
+  | 'remove';
 
-export type SmsKeyword = 'join';
+export interface SmsCommand {
+  keyword: SmsKeyword | null;
+  argument: string | null;
+  codes: string[];
+}
 
-export const extractSmsKeyword = (body: string): SmsKeyword | null =>
-  JOIN_KEYWORD_PATTERN.test(body.trim()) ? 'join' : null;
+const BARE_KEYWORDS: ReadonlyArray<SmsKeyword> = [
+  'join',
+  'yes',
+  'list',
+  'decisions',
+  'more',
+  'done',
+  'submit',
+];
+
+const ARGUMENT_KEYWORDS: ReadonlyArray<SmsKeyword> = [
+  'vote',
+  'show',
+  'proposals',
+  'info',
+  'remove',
+];
+
+const bareKeywordPattern = (keyword: string) =>
+  new RegExp(`^${keyword}[.!]?$`, 'i');
+
+const argumentKeywordPattern = (keyword: string) =>
+  new RegExp(`^${keyword}(?=[.!:,\\s]|$)`, 'i');
+
+const ARGUMENT_SEPARATOR_PATTERN = /^[.!:,]/;
+const PICK_CODES_PATTERN = /^\d{3}(?:[\s,]+\d{3})*[.!]?$/;
+const CODE_PATTERN = /\d{3}/g;
+
+const noCommand: SmsCommand = { keyword: null, argument: null, codes: [] };
+
+export const parseSmsCommand = (body: string): SmsCommand => {
+  const text = body.trim();
+  const bare = BARE_KEYWORDS.find((keyword) =>
+    bareKeywordPattern(keyword).test(text),
+  );
+  if (bare) {
+    return { keyword: bare, argument: null, codes: [] };
+  }
+  const withArgument = ARGUMENT_KEYWORDS.find((keyword) =>
+    argumentKeywordPattern(keyword).test(text),
+  );
+  if (withArgument) {
+    const argument = text
+      .slice(withArgument.length)
+      .replace(ARGUMENT_SEPARATOR_PATTERN, '')
+      .trim()
+      .toLowerCase();
+    return {
+      keyword: withArgument,
+      argument: argument.length > 0 ? argument : null,
+      codes: [],
+    };
+  }
+  if (PICK_CODES_PATTERN.test(text)) {
+    return {
+      keyword: null,
+      argument: null,
+      codes: text.match(CODE_PATTERN) ?? [],
+    };
+  }
+  return noCommand;
+};
