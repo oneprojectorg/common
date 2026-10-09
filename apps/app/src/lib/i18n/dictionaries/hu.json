@@ -5,6 +5,7 @@
   "Name": "Név",
   "Website": "Weboldal",
   "Email": "E-mail",
+  "SMS": "SMS",
   "Select": "Válasszon",
   "Back": "Vissza",
   "Privacy Policy": "Adatvédelmi szabályzat",
@@ -734,6 +735,23 @@
     "noAccessHint": "Ha úgy gondolja, hogy ez tévedés, forduljon ahhoz, aki megosztotta Önnel ezt a hivatkozást.",
     "goToCommonAction": "Ugrás a Commonra",
     "newTabHint": "(új lapon nyílik meg)"
+  },
+  "settings": {
+    "title": "Beállítások",
+    "description": "Fiókod és beállításaid kezelése",
+    "notificationsNav": "Értesítések",
+    "notificationsHeading": "E-mail-értesítések",
+    "proposalsAndCommentsLabel": "Javaslataid és hozzászólásaid",
+    "proposalsAndCommentsDescription": "Valaki válaszol neked vagy hozzászól a javaslatodhoz.",
+    "thingsYouFollowLabel": "Amit követsz",
+    "thingsYouFollowDescription": "Frissítések az általad követett javaslatokról és folyamatokról.",
+    "processUpdatesLabel": "Folyamatfrissítések",
+    "processUpdatesDescription": "Szakaszváltások, bejegyzések és események azokban a folyamatokban, amelyekben részt veszel.",
+    "relationshipRequestsLabel": "Kapcsolati kérelmek",
+    "relationshipRequestsDescription": "Egy szervezet kapcsolódni szeretne egy általad kezelt szervezethez.",
+    "savingStatus": "Mentés…",
+    "savedStatus": "Mentve",
+    "saveErrorStatus": "Nem sikerült menteni a módosítást. Próbáld újra."
   },
   "decisions": {
     "processBuilder": {
