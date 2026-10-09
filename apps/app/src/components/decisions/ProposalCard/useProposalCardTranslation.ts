@@ -5,15 +5,23 @@ import { trpc } from '@op/api/client';
 import {
   type Proposal,
   type ProposalTranslation,
+  type SupportedLocale,
   isSupportedLocale,
 } from '@op/common/client';
 import { useLocale } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
 
 import { useCardTranslation } from '../ProposalTranslationContext';
 import { getProposalDetectionText } from '../translationDetectionText';
 
 type CardTranslationStatus = 'idle' | 'translating' | 'translated' | 'failed';
+
+type CachedTranslation = {
+  locale: SupportedLocale;
+  /** The text it was translated from — an edit makes the result stale. */
+  source: string;
+  translation: ProposalTranslation;
+};
 
 export type ProposalCardTranslation = ReturnType<
   typeof useProposalCardTranslation
@@ -50,12 +58,7 @@ export const useProposalCardTranslation = ({
   const sourceLanguage = useForeignContentLanguage(detectionText);
 
   const [status, setStatus] = useState<CardTranslationStatus>('idle');
-  const [cached, setCached] = useState<{
-    locale: string;
-    /** The text it was translated from — an edit makes the result stale. */
-    source: string;
-    translation: ProposalTranslation;
-  } | null>(null);
+  const [cached, setCached] = useState<CachedTranslation | null>(null);
 
   // A list-level translation took over: drop back to the original, so the
   // list's "View original" doesn't leave this one card translated.
@@ -63,15 +66,13 @@ export const useProposalCardTranslation = ({
     setStatus('idle');
   }
 
-  const translateMutation = trpc.translation.translateProposals.useMutation();
+  const requestTranslation = useTranslationRequest({
+    profileId: proposal.profileId,
+    setStatus,
+    setCached,
+  });
 
-  // A response only lands if the card is still waiting on it: a list-level
-  // takeover in the meantime means the reader moved on.
-  const settle = (next: CardTranslationStatus) =>
-    setStatus((current) => (current === 'translating' ? next : current));
-
-  const isCacheFresh =
-    cached?.locale === locale && cached.source === detectionText;
+  const isCacheFresh = isFresh({ cached, locale, source: detectionText });
 
   const translate = () => {
     if (!supportedLocale) {
@@ -82,53 +83,116 @@ export const useProposalCardTranslation = ({
       return;
     }
     setStatus('translating');
-    // The text as it was when asked — an edit landing mid-request makes the
-    // result stale rather than current.
-    const source = detectionText;
+    requestTranslation({ locale: supportedLocale, source: detectionText });
+  };
+
+  const isOffered = isActive && !!sourceLanguage;
+  const shown = getShownState({
+    status,
+    cached: isOffered && isCacheFresh ? cached : null,
+  });
+
+  const sourceLanguageName = useLanguageName(sourceLanguage);
+
+  return {
+    isOffered,
+    status: shown.status,
+    sourceLanguageName,
+    /** The card's translated text, set only while the translation is shown. */
+    translation: shown.translation,
+    translate,
+    showOriginal: () => setStatus('idle'),
+  };
+};
+
+/**
+ * Whether `cached` still matches what the card shows: a result for another
+ * locale, or for text since edited, is stale.
+ */
+const isFresh = ({
+  cached,
+  locale,
+  source,
+}: {
+  cached: CachedTranslation | null;
+  locale: string;
+  source: string;
+}) => cached?.locale === locale && cached.source === source;
+
+/**
+ * What the card shows: the translation only while it is asked for and still
+ * fresh (`cached` is null otherwise), and "idle" when a translation was asked
+ * for but has gone stale.
+ */
+const getShownState = ({
+  status,
+  cached,
+}: {
+  status: CardTranslationStatus;
+  cached: CachedTranslation | null;
+}): {
+  status: CardTranslationStatus;
+  translation: ProposalTranslation | undefined;
+} => {
+  if (status !== 'translated') {
+    return { status, translation: undefined };
+  }
+  return cached
+    ? { status, translation: cached.translation }
+    : { status: 'idle', translation: undefined };
+};
+
+/**
+ * Sends one card's translation request and settles the card from the response.
+ */
+const useTranslationRequest = ({
+  profileId,
+  setStatus,
+  setCached,
+}: {
+  profileId: string;
+  setStatus: Dispatch<SetStateAction<CardTranslationStatus>>;
+  setCached: Dispatch<SetStateAction<CachedTranslation | null>>;
+}) => {
+  const translateMutation = trpc.translation.translateProposals.useMutation();
+
+  // A response only lands if the card is still waiting on it: a list-level
+  // takeover in the meantime means the reader moved on.
+  const settle = (next: CardTranslationStatus) =>
+    setStatus((current) => (current === 'translating' ? next : current));
+
+  // `source` is the text as it was when asked, so an edit landing mid-request
+  // makes the result stale rather than current.
+  return ({ locale, source }: { locale: SupportedLocale; source: string }) =>
     translateMutation.mutate(
-      { profileIds: [proposal.profileId], targetLocale: supportedLocale },
+      { profileIds: [profileId], targetLocale: locale },
       {
         onSuccess: (data) => {
-          const translation = data.translations[proposal.profileId];
+          const translation = data.translations[profileId];
           // Nothing back for this card means nothing was translated — saying
           // "Translated from…" over the unchanged text would be wrong.
           if (!translation) {
             settle('failed');
             return;
           }
-          setCached({ locale: supportedLocale, source, translation });
+          setCached({ locale, source, translation });
           settle('translated');
         },
         onError: () => settle('failed'),
       },
     );
-  };
+};
 
-  const isOffered = isActive && !!sourceLanguage;
-  // A result cached for another locale or older text is stale.
-  const translation =
-    isOffered && status === 'translated' && isCacheFresh
-      ? cached.translation
-      : undefined;
+/** `language`'s name in the reader's locale, or '' when there is none. */
+const useLanguageName = (language: string | undefined) => {
+  const locale = useLocale();
 
   // The browser's Intl API localizes the language name — no dictionary keys.
-  const sourceLanguageName = useMemo(
-    () =>
-      sourceLanguage
-        ? (new Intl.DisplayNames([locale], { type: 'language' }).of(
-            sourceLanguage,
-          ) ?? sourceLanguage)
-        : '',
-    [locale, sourceLanguage],
-  );
-
-  return {
-    isOffered,
-    status: status === 'translated' && !translation ? 'idle' : status,
-    sourceLanguageName,
-    /** The card's translated text, set only while the translation is shown. */
-    translation,
-    translate,
-    showOriginal: () => setStatus('idle'),
-  };
+  return useMemo(() => {
+    if (!language) {
+      return '';
+    }
+    const names = new Intl.DisplayNames([locale], { type: 'language' });
+    return names.of(language) ?? language;
+  }, [locale, language]);
 };

@@ -260,8 +260,6 @@ export const ProposalCardView = ({
       proposal,
       ownTranslation: ownTranslation.translation,
     });
-  const engagement = useProposalEngagement({ proposal, canEngage });
-  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
   // Empty unless a review surface provides it; an explicit slot always wins.
   const decoration = useProposalReviewDecoration(proposal.id);
 
@@ -270,35 +268,7 @@ export const ProposalCardView = ({
       ? undefined
       : displayCategories;
 
-  // Labels are passed rather than left to the card's English defaults: they're
-  // the metrics' accessible names.
-  const metrics = showMetrics
-    ? {
-        likes: {
-          count: proposal.likesCount || 0,
-          label: t('decisions.proposals.likesLabel'),
-          ...(engagement && {
-            active: engagement.isLiked,
-            onClick: engagement.onLike,
-          }),
-        },
-        bookmarks: {
-          count: proposal.followersCount || 0,
-          label: t('Followers'),
-          // No `onFollow` for an author — the count stays, the press goes.
-          ...(engagement?.onFollow && {
-            active: engagement.isFollowed,
-            onClick: engagement.onFollow,
-          }),
-        },
-        ...(commentsEnabled && {
-          comments: {
-            count: proposal.commentsCount || 0,
-            label: t('decisions.proposals.commentsHeading'),
-          },
-        }),
-      }
-    : undefined;
+  const metrics = useProposalCardMetrics({ proposal, showMetrics, canEngage });
 
   const badge = revisionRequested ? (
     <StatusBadge variant="revision">
@@ -341,6 +311,56 @@ export const ProposalCardView = ({
     />
   );
 };
+
+/**
+ * The engagement counts (likes / follows / comments) for the card, or
+ * `undefined` when the surface doesn't show them.
+ */
+function useProposalCardMetrics({
+  proposal,
+  showMetrics,
+  canEngage,
+}: {
+  proposal: Proposal;
+  showMetrics: boolean;
+  canEngage: boolean;
+}) {
+  const t = useTranslations();
+  const engagement = useProposalEngagement({ proposal, canEngage });
+  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
+
+  if (!showMetrics) {
+    return undefined;
+  }
+
+  // Labels are passed rather than left to the card's English defaults: they're
+  // the metrics' accessible names.
+  return {
+    likes: {
+      count: proposal.likesCount || 0,
+      label: t('decisions.proposals.likesLabel'),
+      ...(engagement && {
+        active: engagement.isLiked,
+        onClick: engagement.onLike,
+      }),
+    },
+    bookmarks: {
+      count: proposal.followersCount || 0,
+      label: t('Followers'),
+      // No `onFollow` for an author — the count stays, the press goes.
+      ...(engagement?.onFollow && {
+        active: engagement.isFollowed,
+        onClick: engagement.onFollow,
+      }),
+    },
+    ...(commentsEnabled && {
+      comments: {
+        count: proposal.commentsCount || 0,
+        label: t('decisions.proposals.commentsHeading'),
+      },
+    }),
+  };
+}
 
 /**
  * Compact proposal card for confirm modals and selection lists: title, budget,
