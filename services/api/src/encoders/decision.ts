@@ -14,6 +14,7 @@ import {
 import type { JSONContent, PhaseSettingsSchema } from '@op/common/client';
 import type {
   PhaseRules as CommonPhaseRules,
+  ProposalTemplateSchema,
   SelectionPipeline,
 } from '@op/common/src/services/decision';
 import {
@@ -576,20 +577,30 @@ export const phaseDataEncoder = instancePhaseDataEncoder
   .omit({ phaseId: true, name: true })
   .extend({
     selectionPipeline: z.custom<SelectionPipeline>(isJsonObject).optional(),
+    proposalTemplate: z.custom<ProposalTemplateSchema>(isJsonObject).optional(),
   });
 
-// name lives on the phase's profile; the service validates settingsSchema.
+// name lives on the phase's profile; the service validates both schemas.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder
   .omit({ phaseId: true, name: true })
   .extend({
     settingsSchema: z.custom<PhaseSettingsSchema>(isJsonObject).optional(),
     selectionPipeline: selectionPipelineSchema.optional(),
+    proposalTemplate: z
+      .custom<ProposalTemplateSchema>(isJsonObject)
+      .nullable()
+      .optional(),
   });
 
 // A new phase has nothing to clear, so `null` is dropped here.
 export const createPhaseDataInputEncoder = phaseDataInputEncoder.extend({
   headline: phaseHeadlineInputEncoder.transform((value) => value ?? undefined),
   rubricTemplate: rubricTemplateSchema
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
+  proposalTemplate: z
+    .custom<ProposalTemplateSchema>(isJsonObject)
     .nullable()
     .optional()
     .transform((value) => value ?? undefined),

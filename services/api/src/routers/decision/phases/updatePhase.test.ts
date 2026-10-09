@@ -154,6 +154,47 @@ describe.concurrent('updatePhase', () => {
     });
   });
 
+  it('sets a proposal template and clears it with null', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: {
+        description: 'Pitch an idea',
+        proposalTemplate: PROPOSAL_TEMPLATE,
+      },
+    });
+    expect(result.data.proposalTemplate).toEqual(PROPOSAL_TEMPLATE);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { proposalTemplate: null },
+    });
+
+    await expectPhase(phase, {
+      name: PHASE_NAME,
+      data: { description: 'Pitch an idea' },
+    });
+  });
+
+  it('rejects a proposal template that is not a valid JSON Schema', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { proposalTemplate: notASchema() },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, UNCHANGED);
+  });
+
   it('updates the name and data together', async ({ task, onTestFinished }) => {
     const { phase, adminCaller } = await setupPhase(task, onTestFinished);
 
@@ -520,6 +561,11 @@ const RUBRIC_TEMPLATE = {
   properties: {
     score: { type: 'integer' as const, minimum: 1, maximum: 5 },
   },
+};
+
+const PROPOSAL_TEMPLATE = {
+  type: 'object' as const,
+  properties: { budget: { type: 'number' as const, minimum: 0 } },
 };
 
 // Ajv's meta-schema rejects a negative minLength. A fresh object per call:

@@ -65,10 +65,17 @@ export const insertPhase = async ({
 
 export const assertPhaseSchemasCompile = ({
   rubricTemplate,
+  proposalTemplate,
   settingsSchema,
-}: Pick<PhaseData, 'rubricTemplate' | 'settingsSchema'>): void => {
+}: Pick<
+  PhaseData,
+  'rubricTemplate' | 'proposalTemplate' | 'settingsSchema'
+>): void => {
   if (rubricTemplate) {
     schemaValidator.validateJsonSchema(rubricTemplate);
+  }
+  if (proposalTemplate) {
+    schemaValidator.validateJsonSchema(proposalTemplate);
   }
   if (settingsSchema) {
     const { ui: _ui, ...schema } = settingsSchema;
