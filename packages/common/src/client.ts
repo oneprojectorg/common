@@ -93,6 +93,8 @@ export {
   type ReviewerQueueStatus,
 } from './services/decision/schemas/reviewAssignments';
 export {
+  proposalAllocationSchema,
+  type ProposalAllocation,
   proposalSelectionSchema,
   type ProposalSelection,
 } from './services/decision/schemas/selection';

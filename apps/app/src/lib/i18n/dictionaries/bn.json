@@ -1198,7 +1198,12 @@
       "revisionRequestedLabel": "সংশোধনের অনুরোধ করা হয়েছে",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "{timeAgo} পাঠানো হয়েছে",
-      "selectedProposalsHeading": "নির্বাচিত প্রস্তাব"
+      "selectedProposalsHeading": "নির্বাচিত প্রস্তাব",
+      "awardAmountsDescription": "নির্বাচিত প্রস্তাব এবং ফলাফল সকল অংশগ্রহণকারীর সাথে শেয়ার করা হবে।",
+      "adjustAmountsAction": "পরিমাণ সামঞ্জস্য করুন",
+      "awardedAmountLabel": "প্রদত্ত পরিমাণ",
+      "awardedAmountInvalid": "0-এর বেশি একটি পরিমাণ লিখুন",
+      "totalAwardedLabel": "মোট প্রদত্ত"
     },
     "proposals": {
       "amountRequested": "{amount} অনুরোধ করা হয়েছে",

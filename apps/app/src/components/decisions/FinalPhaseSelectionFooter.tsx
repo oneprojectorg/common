@@ -1,6 +1,6 @@
 'use client';
 
-import type { ResultNotificationMessages } from '@op/common/client';
+import type { Proposal } from '@op/common/client';
 import {
   FooterBar,
   FooterBarCenter,
@@ -11,20 +11,28 @@ import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ComposeNotificationsDialog } from './ComposeNotificationsDialog';
+import {
+  ComposeNotificationsDialog,
+  type ConfirmResultsHandler,
+} from './ComposeNotificationsDialog';
 
 interface FinalPhaseSelectionFooterProps {
+  selectedProposals: Proposal[];
   numSelected: number;
   totalCandidates: number;
+  /** The template collects a budget, so winners are awarded an amount. */
+  awardsAmounts: boolean;
   isConfirmOpen: boolean;
   onConfirmOpenChange: (open: boolean) => void;
-  onConfirm: (messages: ResultNotificationMessages) => void;
+  onConfirm: ConfirmResultsHandler;
   isSubmitting: boolean;
 }
 
 export const FinalPhaseSelectionFooter = ({
+  selectedProposals,
   numSelected,
   totalCandidates,
+  awardsAmounts,
   isConfirmOpen,
   onConfirmOpenChange,
   onConfirm,
@@ -45,8 +53,10 @@ export const FinalPhaseSelectionFooter = ({
       <FooterBarCenter />
       <FooterBarEnd>
         <ComposeNotificationsDialog
+          selectedProposals={selectedProposals}
           selectedCount={numSelected}
           notSelectedCount={Math.max(totalCandidates - numSelected, 0)}
+          awardsAmounts={awardsAmounts}
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
           onConfirm={onConfirm}

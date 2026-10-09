@@ -486,3 +486,157 @@ describe('submitManualSelection author notifications', () => {
     expect(event.send).not.toHaveBeenCalled();
   });
 });
+
+describe('submitManualSelection allocations', () => {
+  const lastPhaseInstanceData = () => ({
+    phases: [
+      { phaseId: 'phase-0', name: 'Submission', rules: {} },
+      { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
+      { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
+    ],
+    config: { reviewsPolicy: 'full_coverage' },
+  });
+
+  const resultsFor = (data: unknown) => {
+    const results = happyPathResults();
+    results[0] = [
+      {
+        currentStateId: CURRENT_PHASE_ID,
+        status: 'published',
+        instanceData: data,
+      },
+    ];
+    return results;
+  };
+
+  const useInstance = (data: unknown) => {
+    mockFindFirst.mockResolvedValue({
+      profileId: DECISION_PROFILE_ID,
+      status: 'published',
+      currentStateId: CURRENT_PHASE_ID,
+      instanceData: data,
+    } as never);
+    mockTransaction.mockImplementation(
+      async (cb) =>
+        await (cb as (tx: unknown) => Promise<unknown>)(
+          makeTx(resultsFor(data)),
+        ),
+    );
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAssertUserByAuthId.mockResolvedValue({
+      profileId: USER_PROFILE_ID,
+    } as never);
+    mockAssertProfileAccess.mockResolvedValue(undefined as never);
+    mockGetProposalIdsForPhase.mockResolvedValue(['prop-1', 'prop-2']);
+    mockProcessResults.mockResolvedValue('result-1');
+    useInstance(lastPhaseInstanceData());
+  });
+
+  it('hands each awarded amount to the result write', async () => {
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: ['prop-1', 'prop-2'],
+      allocations: [
+        { proposalId: 'prop-1', amount: 500 },
+        { proposalId: 'prop-2', amount: 1200.5 },
+      ],
+      user,
+    });
+
+    expect(mockProcessResults).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allocations: new Map([
+          ['prop-1', 500],
+          ['prop-2', 1200.5],
+        ]),
+      }),
+    );
+  });
+
+  it('writes no amounts when none are supplied', async () => {
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: ['prop-1', 'prop-2'],
+      user,
+    });
+
+    expect(mockProcessResults).toHaveBeenCalledWith(
+      expect.objectContaining({ allocations: undefined }),
+    );
+  });
+
+  it.each([
+    [
+      'an amount is missing for a selected proposal',
+      [{ proposalId: 'prop-1', amount: 500 }],
+      /Missing an awarded amount for proposal prop-2/,
+    ],
+    [
+      'an amount names a proposal that is not selected',
+      [
+        { proposalId: 'prop-1', amount: 500 },
+        { proposalId: 'prop-2', amount: 500 },
+        { proposalId: 'prop-3', amount: 500 },
+      ],
+      /Proposal prop-3 has an awarded amount but is not selected/,
+    ],
+    [
+      'a proposal has two amounts',
+      [
+        { proposalId: 'prop-1', amount: 500 },
+        { proposalId: 'prop-1', amount: 600 },
+        { proposalId: 'prop-2', amount: 500 },
+      ],
+      /Proposal prop-1 has more than one awarded amount/,
+    ],
+    [
+      'an amount is zero',
+      [
+        { proposalId: 'prop-1', amount: 0 },
+        { proposalId: 'prop-2', amount: 500 },
+      ],
+      /Awarded amount for proposal prop-1 must be a number greater than 0/,
+    ],
+    [
+      'an amount is not a number',
+      [
+        { proposalId: 'prop-1', amount: Number.NaN },
+        { proposalId: 'prop-2', amount: 500 },
+      ],
+      /Awarded amount for proposal prop-1 must be a number greater than 0/,
+    ],
+  ])('refuses to publish when %s', async (_label, allocations, message) => {
+    await expect(
+      submitManualSelection({
+        processInstanceId: INSTANCE_ID,
+        proposalIds: ['prop-1', 'prop-2'],
+        allocations,
+        user,
+      }),
+    ).rejects.toThrow(message);
+
+    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockProcessResults).not.toHaveBeenCalled();
+  });
+
+  it('rejects amounts on a phase that publishes nothing', async () => {
+    useInstance(instanceData(false));
+
+    await expect(
+      submitManualSelection({
+        processInstanceId: INSTANCE_ID,
+        proposalIds: ['prop-1', 'prop-2'],
+        allocations: [
+          { proposalId: 'prop-1', amount: 500 },
+          { proposalId: 'prop-2', amount: 500 },
+        ],
+        user,
+      }),
+    ).rejects.toThrow(/only awarded when confirming the final phase/);
+
+    expect(mockProcessResults).not.toHaveBeenCalled();
+  });
+});

@@ -13,10 +13,11 @@ import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { formatBudget } from './BudgetDisplay';
+import { formatBudget, getAllocatedAmount } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
+import { resolveProposalSystemFields } from './proposalContentUtils';
 import { proposalHref } from './proposalHrefs';
 import { useOpenProposalInSheet } from './proposalSheetState';
 
@@ -63,7 +64,12 @@ export const ResultsList = ({
 
           const awardedText =
             proposal.allocated != null
-              ? formatBudget(proposal.allocated)
+              ? formatBudget(
+                  getAllocatedAmount({
+                    allocated: proposal.allocated,
+                    budget: resolveProposalSystemFields(proposal).budget,
+                  }),
+                )
               : undefined;
 
           return (

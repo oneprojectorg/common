@@ -1,7 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { Proposal, ResultNotificationMessages } from '@op/common/client';
+import type {
+  Proposal,
+  ProposalAllocation,
+  ResultNotificationMessages,
+} from '@op/common/client';
 import { templateCollectsBudget } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -171,7 +175,10 @@ export const ManualSelectionList = ({
   );
 
   const handleConfirmSelection = useCallback(
-    (resultNotifications?: ResultNotificationMessages) => {
+    (
+      resultNotifications?: ResultNotificationMessages,
+      allocations?: ProposalAllocation[],
+    ) => {
       posthog.capture('manual_selection_dialog_confirmed', {
         process_instance_id: instanceId,
         proposal_count: selectedIds.length,
@@ -180,6 +187,7 @@ export const ManualSelectionList = ({
         processInstanceId: instanceId,
         proposalIds: selectedIds,
         resultNotifications,
+        allocations,
       });
     },
     [instanceId, selectedIds, submitMutation, posthog],
@@ -284,8 +292,10 @@ export const ManualSelectionList = ({
 
       {isFinalPhase ? (
         <FinalPhaseSelectionFooter
+          selectedProposals={selectedProposals}
           numSelected={numSelected}
           totalCandidates={totalCandidates}
+          awardsAmounts={showBudget}
           isConfirmOpen={isConfirmOpen}
           onConfirmOpenChange={handleConfirmDialogOpenChange}
           onConfirm={handleConfirmSelection}

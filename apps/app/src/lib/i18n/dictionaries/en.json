@@ -1198,7 +1198,12 @@
       "revisionRequestedLabel": "Revision requested",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Sent {timeAgo}",
-      "selectedProposalsHeading": "Selected proposals"
+      "selectedProposalsHeading": "Selected proposals",
+      "awardAmountsDescription": "The selected proposals and results will be shared with all participants.",
+      "adjustAmountsAction": "Adjust amounts",
+      "awardedAmountLabel": "Awarded amount",
+      "awardedAmountInvalid": "Enter an amount greater than 0",
+      "totalAwardedLabel": "Total awarded"
     },
     "proposals": {
       "amountRequested": "{amount} requested",

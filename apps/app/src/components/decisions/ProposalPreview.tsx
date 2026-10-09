@@ -37,7 +37,11 @@ import { Link as NavLink } from '@/lib/i18n/routing';
 import { Bullet } from '../Bullet';
 import { ButtonLink } from '../ButtonLink';
 import { ProfileAvatar } from '../ProfileAvatar';
-import { BudgetDisplay, formatBudget } from './BudgetDisplay';
+import {
+  BudgetDisplay,
+  formatBudget,
+  getAllocatedAmount,
+} from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
@@ -209,7 +213,10 @@ export function ProposalPreview({
                     <BudgetDisplay
                       value={
                         selection?.allocated != null
-                          ? selection.allocated
+                          ? getAllocatedAmount({
+                              allocated: selection.allocated,
+                              budget,
+                            })
                           : budget
                       }
                     />

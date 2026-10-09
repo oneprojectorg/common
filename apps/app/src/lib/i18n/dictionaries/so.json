@@ -1198,7 +1198,12 @@
       "revisionRequestedLabel": "Dib-u-habeyn la codsaday",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "La diray {timeAgo}",
-      "selectedProposalsHeading": "Soo jeedimaha la xushay"
+      "selectedProposalsHeading": "Soo jeedimaha la xushay",
+      "awardAmountsDescription": "Soo-jeedinta la doortay iyo natiijooyinka waxaa lala wadaagi doonaa dhammaan ka-qaybgalayaasha.",
+      "adjustAmountsAction": "Hagaaji qadarrada",
+      "awardedAmountLabel": "Qadarka la bixiyay",
+      "awardedAmountInvalid": "Geli qadar ka weyn 0",
+      "totalAwardedLabel": "Wadarta la bixiyay"
     },
     "proposals": {
       "amountRequested": "{amount} la codsaday",

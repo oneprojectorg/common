@@ -234,6 +234,20 @@ test.describe('Results phase notifications — every predecessor phase kind', ()
       await expect(confirmButton).toBeEnabled();
 
       await confirmButton.click();
+      // The seeded proposals request no budget, so each award has to be
+      // entered before the notifications step.
+      const amountsDialog = page.getByRole('dialog', {
+        name: 'Confirm winning proposals',
+      });
+      await amountsDialog.getByRole('button', { name: 'Continue' }).click();
+      const amountFields = amountsDialog.getByRole('textbox', {
+        name: 'Awarded amount',
+      });
+      await expect(amountFields).toHaveCount(2);
+      await amountFields.nth(0).fill('1000');
+      await amountFields.nth(1).fill('2000');
+      await amountsDialog.getByRole('button', { name: 'Continue' }).click();
+
       const dialog = page.getByRole('dialog', {
         name: 'Compose Notifications',
       });

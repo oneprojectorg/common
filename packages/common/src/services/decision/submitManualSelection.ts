@@ -29,6 +29,10 @@ import {
 } from './resultNotificationTemplate';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import {
+  type ProposalAllocation,
+  proposalAllocationSchema,
+} from './schemas/selection';
 import type {
   ManualSelectionAudit,
   TransitionData,
@@ -45,6 +49,12 @@ export interface SubmitManualSelectionInput {
    * composes them, so that path is for callers outside the selection UI.
    */
   resultNotifications?: ResultNotificationMessages;
+  /**
+   * The amount awarded to each selected proposal, written to the result's
+   * selection rows. Final phase only, like `resultNotifications`; when given
+   * it must name every selected proposal exactly once.
+   */
+  allocations?: ProposalAllocation[];
   user: User;
 }
 
@@ -60,6 +70,7 @@ export async function submitManualSelection({
   processInstanceId,
   proposalIds,
   resultNotifications,
+  allocations,
   user,
 }: SubmitManualSelectionInput): Promise<void> {
   const uniqueProposalIds = [...new Set(proposalIds)];
@@ -113,6 +124,10 @@ export async function submitManualSelection({
   const composedNotifications = resultNotifications
     ? parseResultNotifications(resultNotifications)
     : undefined;
+  const allocatedByProposalId = parseAllocations({
+    allocations,
+    proposalIds: uniqueProposalIds,
+  });
 
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
@@ -297,14 +312,12 @@ export async function submitManualSelection({
       };
     }
 
-    // Rejected rather than silently dropped: copy arriving on a phase that
-    // publishes nothing would never be sent and the admin would never know.
     const publishesResults = isLastPhase(currentStateId, lockedPhases ?? []);
-    if (composedNotifications && !publishesResults) {
-      throw new ValidationError(
-        'Author notifications are only sent when confirming the final phase',
-      );
-    }
+    assertResultsPayloadAllowed({
+      publishesResults,
+      composedNotifications,
+      allocatedByProposalId,
+    });
 
     // On the final phase, fold results processing into this transaction so
     // the new result row is atomic with the attachment write.
@@ -312,6 +325,7 @@ export async function submitManualSelection({
       processResultId = await processResults({
         processInstanceId,
         tx,
+        allocations: allocatedByProposalId,
         instance: {
           id: processInstanceId,
           instanceData: lockedInstance.instanceData,
@@ -373,6 +387,34 @@ export async function submitManualSelection({
   }
 }
 
+/**
+ * Rejected rather than silently dropped: copy or amounts arriving on a phase
+ * that publishes nothing would never be used and the admin would never know.
+ */
+function assertResultsPayloadAllowed({
+  publishesResults,
+  composedNotifications,
+  allocatedByProposalId,
+}: {
+  publishesResults: boolean;
+  composedNotifications: ResultNotificationMessages | undefined;
+  allocatedByProposalId: Map<string, number> | undefined;
+}) {
+  if (publishesResults) {
+    return;
+  }
+  if (composedNotifications) {
+    throw new ValidationError(
+      'Author notifications are only sent when confirming the final phase',
+    );
+  }
+  if (allocatedByProposalId) {
+    throw new ValidationError(
+      'Amounts are only awarded when confirming the final phase',
+    );
+  }
+}
+
 /** Asserted here, not trusted from the router: this is a public entry point. */
 function parseResultNotifications(
   resultNotifications: ResultNotificationMessages,
@@ -388,4 +430,53 @@ function parseResultNotifications(
   }
 
   return parsed.data;
+}
+
+/**
+ * Asserted here, not trusted from the router: this is a public entry point.
+ * Every selected proposal needs exactly one amount, or a winner would publish
+ * with no award and nobody would notice.
+ */
+function parseAllocations({
+  allocations,
+  proposalIds,
+}: {
+  allocations: ProposalAllocation[] | undefined;
+  proposalIds: string[];
+}): Map<string, number> | undefined {
+  if (!allocations) {
+    return undefined;
+  }
+  const selected = new Set(proposalIds);
+  const allocatedByProposalId = new Map<string, number>();
+
+  for (const allocation of allocations) {
+    const { proposalId } = allocation;
+    if (!proposalAllocationSchema.safeParse(allocation).success) {
+      throw new ValidationError(
+        `Awarded amount for proposal ${proposalId} must be a number greater than 0`,
+      );
+    }
+    if (!selected.has(proposalId)) {
+      throw new ValidationError(
+        `Proposal ${proposalId} has an awarded amount but is not selected`,
+      );
+    }
+    if (allocatedByProposalId.has(proposalId)) {
+      throw new ValidationError(
+        `Proposal ${proposalId} has more than one awarded amount`,
+      );
+    }
+    allocatedByProposalId.set(proposalId, allocation.amount);
+  }
+
+  for (const proposalId of proposalIds) {
+    if (!allocatedByProposalId.has(proposalId)) {
+      throw new ValidationError(
+        `Missing an awarded amount for proposal ${proposalId}`,
+      );
+    }
+  }
+
+  return allocatedByProposalId;
 }

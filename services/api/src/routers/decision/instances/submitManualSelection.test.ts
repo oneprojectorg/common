@@ -706,6 +706,77 @@ describe.concurrent('submitManualSelection', () => {
     expect(notifiedCalls).toHaveLength(0);
   });
 
+  it('stores the awarded amount on each selection row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+
+    const [p1, p2] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    // `review` is the last phase of the default schema, so this publishes.
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [p1.id, p2.id],
+      allocations: [
+        { proposalId: p1.id, amount: 1500 },
+        { proposalId: p2.id, amount: 250.75 },
+      ],
+    });
+
+    const [latestResult] = await db
+      .select({ id: decisionProcessResults.id })
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId))
+      .orderBy(desc(decisionProcessResults.executedAt))
+      .limit(1);
+    if (!latestResult) {
+      throw new Error('Expected a decision_process_results row');
+    }
+
+    const selections = await db
+      .select({
+        proposalId: decisionProcessResultSelections.proposalId,
+        allocated: decisionProcessResultSelections.allocated,
+      })
+      .from(decisionProcessResultSelections)
+      .where(
+        eq(decisionProcessResultSelections.processResultId, latestResult.id),
+      );
+    const allocatedByProposalId = new Map(
+      selections.map((s) => [s.proposalId, Number(s.allocated)]),
+    );
+    expect(allocatedByProposalId).toEqual(
+      new Map([
+        [p1.id, 1500],
+        [p2.id, 250.75],
+      ]),
+    );
+  });
+
   it('rejects author copy on a phase that publishes nothing', async ({
     task,
     onTestFinished,

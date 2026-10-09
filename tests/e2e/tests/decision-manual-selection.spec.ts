@@ -349,8 +349,40 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(confirmButton).toBeEnabled();
 
     await confirmButton.click();
-    // The final-phase confirm is the Compose Notifications modal: one editable
-    // message per outcome, prefilled, sent to the authors on publish.
+    // The template collects a budget, so the confirm opens on the awarded
+    // amounts, each defaulting to the proposal's requested budget.
+    const amountsDialog = authenticatedPage.getByRole('dialog', {
+      name: 'Confirm winning proposals',
+    });
+    await expect(amountsDialog).toBeVisible();
+    await expect(amountsDialog.getByText('$5,000 Awarded')).toBeVisible();
+    await expect(amountsDialog.getByText('$8,000 Awarded')).toBeVisible();
+    await expect(amountsDialog.getByText('$13,000')).toBeVisible();
+
+    // Award Alpha less than it asked for and Beta more: both are allowed.
+    await amountsDialog.getByRole('button', { name: 'Adjust amounts' }).click();
+    const amountField = (title: string) =>
+      amountsDialog
+        .getByRole('listitem')
+        .filter({ hasText: title })
+        .getByRole('textbox', { name: 'Awarded amount' });
+    await expect(amountField('Proposal Alpha')).toBeFocused();
+
+    // An empty amount blocks the step and sends focus to it.
+    await amountField('Proposal Alpha').fill('');
+    await amountsDialog.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      amountsDialog.getByText('Enter an amount greater than 0'),
+    ).toBeVisible();
+    await expect(amountField('Proposal Alpha')).toBeFocused();
+
+    await amountField('Proposal Alpha').fill('3000');
+    await amountField('Proposal Beta').fill('9000');
+    await expect(amountsDialog.getByText('$12,000')).toBeVisible();
+    await amountsDialog.getByRole('button', { name: 'Continue' }).click();
+
+    // Then the Compose Notifications step: one editable message per outcome,
+    // prefilled, sent to the authors on publish.
     const dialog = authenticatedPage.getByRole('dialog', {
       name: 'Compose Notifications',
     });
@@ -413,11 +445,19 @@ test.describe('Decision Manual Selection — full flow', () => {
     expect(latestRow.success).toBe(true);
 
     const selections = await db
-      .select({ proposalId: decisionProcessResultSelections.proposalId })
+      .select({
+        proposalId: decisionProcessResultSelections.proposalId,
+        allocated: decisionProcessResultSelections.allocated,
+      })
       .from(decisionProcessResultSelections)
       .where(eq(decisionProcessResultSelections.processResultId, latestRow.id));
-    expect(new Set(selections.map((s) => s.proposalId))).toEqual(
-      new Set([alpha.id, beta.id]),
+    expect(
+      new Map(selections.map((s) => [s.proposalId, Number(s.allocated)])),
+    ).toEqual(
+      new Map([
+        [alpha.id, 3000],
+        [beta.id, 9000],
+      ]),
     );
 
     // The composed copy is stamped on the transition row, which is what the
@@ -436,31 +476,6 @@ test.describe('Decision Manual Selection — full flow', () => {
         },
       },
     });
-
-    // submitManualSelection writes selection rows with `allocated = null`.
-    // The "allocated vs requested" UI only kicks in when a numeric allocation
-    // exists, so we set one explicitly here to exercise that code path
-    // end-to-end. Alpha gets a lower allocation than its request ($3k vs $5k);
-    // Beta gets a higher one ($9k vs $8k) — the UI must render whatever the
-    // pipeline produced, including over-allocation.
-    await db
-      .update(decisionProcessResultSelections)
-      .set({ allocated: '3000' })
-      .where(eq(decisionProcessResultSelections.proposalId, alpha.id));
-    await db
-      .update(decisionProcessResultSelections)
-      .set({ allocated: '9000' })
-      .where(eq(decisionProcessResultSelections.proposalId, beta.id));
-
-    // The allocations above were written straight to the DB, bypassing the
-    // app mutations that normally invalidate the query cache. React Query is
-    // persisted to localStorage (PersistQueryClientProvider), so a plain
-    // reload rehydrates the pre-update results (allocated=null) and renders
-    // them stale-while-revalidate — a race the assertions below can lose.
-    // Drop the persisted cache so the reload fetches the allocations fresh.
-    await authenticatedPage.evaluate(() =>
-      window.localStorage.removeItem('REACT_QUERY_OFFLINE_CACHE'),
-    );
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
 

@@ -1198,7 +1198,12 @@
       "revisionRequestedLabel": "Revisão solicitada",
       "reviewNotesHeading": "Review notes",
       "sentTimeAgo": "Enviado {timeAgo}",
-      "selectedProposalsHeading": "Propostas selecionadas"
+      "selectedProposalsHeading": "Propostas selecionadas",
+      "awardAmountsDescription": "As propostas selecionadas e os resultados serão compartilhados com todos os participantes.",
+      "adjustAmountsAction": "Ajustar valores",
+      "awardedAmountLabel": "Valor concedido",
+      "awardedAmountInvalid": "Insira um valor maior que 0",
+      "totalAwardedLabel": "Total concedido"
     },
     "proposals": {
       "amountRequested": "{amount} solicitado",

@@ -3,7 +3,10 @@ import {
   invalidateDecisionInstance,
   submitManualSelection,
 } from '@op/common';
-import { resultNotificationMessagesSchema } from '@op/common/client';
+import {
+  proposalAllocationSchema,
+  resultNotificationMessagesSchema,
+} from '@op/common/client';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -16,6 +19,9 @@ const submitManualSelectionInputSchema = z.object({
   // Whether this phase publishes results isn't knowable here; the service
   // owns that half of the gate.
   resultNotifications: resultNotificationMessagesSchema.optional(),
+  // Same split: the service owns the final-phase gate and the check that
+  // every selected proposal has exactly one amount.
+  allocations: z.array(proposalAllocationSchema).optional(),
 });
 
 export const submitManualSelectionRouter = router({
@@ -26,6 +32,7 @@ export const submitManualSelectionRouter = router({
         processInstanceId: input.processInstanceId,
         proposalIds: input.proposalIds,
         resultNotifications: input.resultNotifications,
+        allocations: input.allocations,
         user: ctx.user,
       });
 
