@@ -72,6 +72,63 @@ describe.concurrent('account.notificationPreferences', () => {
       relationshipRequests: { email: false, sms: false },
     });
   });
+
+  it('given a patch with an unknown category, when it is sent, then the category is dropped and nothing is stored', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.account.updateNotificationPreferences(
+        JSON.parse('{"marketing":{"email":false}}'),
+      ),
+    ).resolves.toEqual(allOn);
+
+    await expect(caller.account.getNotificationPreferences()).resolves.toEqual(
+      allOn,
+    );
+  });
+
+  it('given a patch whose channel value is not a boolean, when it is sent, then the call fails as bad request and nothing is stored', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.account.updateNotificationPreferences(
+        JSON.parse('{"processUpdates":{"sms":"off"}}'),
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+    await expect(caller.account.getNotificationPreferences()).resolves.toEqual(
+      allOn,
+    );
+  });
+
+  it('given two members, when one turns a channel off, then the other still reads every channel on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const first = await testData.createDecisionSetup({ grantAccess: true });
+    const second = await testData.createDecisionSetup({ grantAccess: true });
+    const firstCaller = await createAuthenticatedCaller(first.userEmail);
+    const secondCaller = await createAuthenticatedCaller(second.userEmail);
+
+    await firstCaller.account.updateNotificationPreferences({
+      proposalsAndComments: { email: false },
+    });
+
+    await expect(
+      secondCaller.account.getNotificationPreferences(),
+    ).resolves.toEqual(allOn);
+  });
 });
 
 describeAccessTierGating('account.getNotificationPreferences', {
