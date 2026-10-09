@@ -1,12 +1,9 @@
 import { InngestTestEngine } from '@inngest/test';
-import {
-  type PhoneNumber,
-  memorySmsProvider,
-  parsePhoneNumber,
-} from '@op/common';
+import { type PhoneNumber, parsePhoneNumber } from '@op/common';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsDecisionsCommand } from './handleSmsDecisionsCommand';
 
@@ -30,7 +27,7 @@ const decisionsCommand = (from: PhoneNumber) => ({
 });
 
 beforeEach(() => {
-  memorySmsProvider.reset();
+  resetRecordedSms();
 });
 
 describe('handleSmsDecisionsCommand against the database', () => {
@@ -68,8 +65,8 @@ describe('handleSmsDecisionsCommand against the database', () => {
     const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toMatchObject({ message: 'list sent' });
-    expect(memorySmsProvider.sent).toHaveLength(1);
-    const body = memorySmsProvider.sent[0]!.body;
+    expect(recordedSms).toHaveLength(1);
+    const body = recordedSms[0]!.body;
     expect(body.startsWith('Your decisions:\n')).toBe(true);
     expect(body).toContain(`Bike Lanes ${task.id} - VOTE ${submitting.slug}`);
     expect(body).toContain(
@@ -107,7 +104,7 @@ describe('handleSmsDecisionsCommand against the database', () => {
     const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toMatchObject({ message: 'list sent' });
-    const body = memorySmsProvider.sent[0]!.body;
+    const body = recordedSms[0]!.body;
     expect(body).toContain(
       `Columbus ${task.id} (voting open) - VOTE ${open.slug}`,
     );
@@ -126,8 +123,8 @@ describe('handleSmsDecisionsCommand against the database', () => {
     const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toMatchObject({ message: 'list sent' });
-    expect(memorySmsProvider.sent).toHaveLength(1);
-    expect(memorySmsProvider.sent[0]!.to).toBe(phone);
+    expect(recordedSms).toHaveLength(1);
+    expect(recordedSms[0]!.to).toBe(phone);
   });
 
   it('given a number with no account texts DECISIONS, then nothing is sent', async () => {
@@ -137,6 +134,6 @@ describe('handleSmsDecisionsCommand against the database', () => {
     const { result } = await t.execute({ events: [decisionsCommand(phone)] });
 
     expect(result).toEqual({ message: 'unknown number, skipped' });
-    expect(memorySmsProvider.sent).toEqual([]);
+    expect(recordedSms).toEqual([]);
   });
 });
