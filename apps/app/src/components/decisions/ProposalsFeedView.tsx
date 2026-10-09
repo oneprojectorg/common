@@ -44,11 +44,14 @@ export function ProposalsFeedView({
   }
 
   return (
-    // `centerFirstAndLast` pads the list by a third of the scroll container so
-    // the end cards can reach the focal centre. In the browse page that reads
-    // as the whole feed being pushed down away from the filter bar, so the
-    // cards start where the grid's would.
-    <ProposalFeed centerFirstAndLast={false} dimStrength={FEED_DIM_STRENGTH}>
+    // No top padding: it read as the whole feed being pushed down away from
+    // the filter bar. End padding stays, so the last card can still be
+    // scrolled up to the center rather than stopping under the fade.
+    <ProposalFeed
+      centerFirstAndLast={false}
+      centerLast
+      dimStrength={FEED_DIM_STRENGTH}
+    >
       {proposals.map((proposal) => (
         <ProposalFeedItem key={proposal.id}>
           {renderCard(proposal, CARD_OPTIONS)}

@@ -101,3 +101,21 @@ export const KeyboardFocus: Story = {
     </div>
   ),
 };
+
+export const CenterLast: Story = {
+  render: () => (
+    <div className="h-[40rem] w-[64rem] overflow-y-auto rounded-xl border bg-background px-6">
+      <p className="py-6 text-muted-foreground">
+        Content above the feed stays put; scroll to the end and the last
+        proposal still reaches the center.
+      </p>
+      <ProposalFeed centerFirstAndLast={false} centerLast>
+        {PROPOSALS.map((proposal) => (
+          <ProposalFeedItem key={proposal.title}>
+            <ProposalCard {...proposal} href="#" />
+          </ProposalFeedItem>
+        ))}
+      </ProposalFeed>
+    </div>
+  ),
+};

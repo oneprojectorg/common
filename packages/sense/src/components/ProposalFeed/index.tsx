@@ -16,6 +16,13 @@ export interface ProposalFeedProps extends ComponentProps<'ul'> {
    * last items can reach the center. Defaults to true.
    */
   centerFirstAndLast?: boolean;
+  /**
+   * Pad only the end, by exactly enough for the last item to reach the center,
+   * leaving the first item where it falls. For a feed that sits below other
+   * content, where top padding would push it away from what's above. Ignored
+   * when `centerFirstAndLast` is set. Defaults to false.
+   */
+  centerLast?: boolean;
   /** `ProposalFeedItem` children. */
   children: ReactNode;
 }
@@ -37,18 +44,19 @@ const SETTLE_SCALE = 0.02;
 export function ProposalFeed({
   dimStrength = 0.6,
   centerFirstAndLast = true,
+  centerLast = false,
   children,
   className,
   ...rest
 }: ProposalFeedProps) {
   const listRef = useRef<HTMLUListElement>(null);
-  const optionsRef = useRef({ dimStrength, centerFirstAndLast });
+  const optionsRef = useRef({ dimStrength, centerFirstAndLast, centerLast });
   const scheduleRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    optionsRef.current = { dimStrength, centerFirstAndLast };
+    optionsRef.current = { dimStrength, centerFirstAndLast, centerLast };
     scheduleRef.current?.();
-  }, [dimStrength, centerFirstAndLast]);
+  }, [dimStrength, centerFirstAndLast, centerLast]);
 
   useEffect(() => {
     const list = listRef.current;
@@ -61,12 +69,16 @@ export function ProposalFeed({
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     let frame = 0;
-    let appliedPadding: string | null = null;
+    const appliedPadding: { start: string | null; end: string | null } = {
+      start: null,
+      end: null,
+    };
 
     const update = () => {
       frame = 0;
 
-      const { dimStrength, centerFirstAndLast } = optionsRef.current;
+      const { dimStrength, centerFirstAndLast, centerLast } =
+        optionsRef.current;
       const strength = clampStrength(dimStrength);
       const settle = reducedMotion.matches ? 0 : SETTLE_SCALE;
       const focusedItem = document.activeElement?.closest<HTMLLIElement>(
@@ -86,9 +98,11 @@ export function ProposalFeed({
       const measured: Array<{ item: HTMLLIElement; t: number }> = [];
       let focal: HTMLLIElement | null = null;
       let focalDistance = Number.POSITIVE_INFINITY;
+      let lastItemHeight: number | null = null;
 
       for (const item of items) {
         const rect = item.getBoundingClientRect();
+        lastItemHeight = rect.height;
         const distance = Math.abs(rect.top + rect.height / 2 - containerCenter);
         if (distance < focalDistance) {
           focalDistance = distance;
@@ -97,12 +111,19 @@ export function ProposalFeed({
         measured.push({ item, t: Math.min(distance / halfHeight, 1) });
       }
 
-      const padding = centerFirstAndLast
-        ? `${Math.round(containerHeight * CENTER_PADDING_RATIO)}px`
-        : '';
-      if (padding !== appliedPadding) {
-        list.style.paddingBlock = padding;
-        appliedPadding = padding;
+      const padding = getCenteringPadding({
+        centerFirstAndLast,
+        centerLast,
+        containerHeight,
+        lastItemHeight,
+      });
+      if (padding.start !== appliedPadding.start) {
+        list.style.paddingBlockStart = padding.start;
+        appliedPadding.start = padding.start;
+      }
+      if (padding.end !== appliedPadding.end) {
+        list.style.paddingBlockEnd = padding.end;
+        appliedPadding.end = padding.end;
       }
 
       for (const { item, t } of measured) {
@@ -191,6 +212,36 @@ export function ProposalFeedItem({
       {...rest}
     />
   );
+}
+
+/**
+ * Inline block padding for the centering modes, as two longhands: writing a
+ * shorthand and then clearing one edge would wipe the edge the shorthand set.
+ * An empty string clears that edge's inline style.
+ */
+function getCenteringPadding({
+  centerFirstAndLast,
+  centerLast,
+  containerHeight,
+  lastItemHeight,
+}: {
+  centerFirstAndLast: boolean;
+  centerLast: boolean;
+  containerHeight: number;
+  /** Null while the feed has no items. */
+  lastItemHeight: number | null;
+}): { start: string; end: string } {
+  if (centerFirstAndLast) {
+    const ratio = `${Math.round(containerHeight * CENTER_PADDING_RATIO)}px`;
+    return { start: ratio, end: ratio };
+  }
+  if (centerLast && lastItemHeight !== null) {
+    // Exact rather than the ratio: the last item's center has to clear half
+    // the container, and a fixed ratio falls short on a tall container.
+    const end = Math.max(0, Math.round((containerHeight - lastItemHeight) / 2));
+    return { start: '', end: `${end}px` };
+  }
+  return { start: '', end: '' };
 }
 
 /** Nearest vertical scroll container; null means the window. */
