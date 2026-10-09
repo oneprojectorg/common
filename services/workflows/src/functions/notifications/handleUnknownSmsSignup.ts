@@ -110,7 +110,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const sendSms = provider.sendSms;
 
-    const text = (stepId: string, label: string, body: string) =>
+    const sendText = (stepId: string, label: string, body: string) =>
       step.run(stepId, async () => {
         const result = await sendSms({ to, body });
         if (result.status === 'rejected' && result.retryable) {
@@ -120,7 +120,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       });
 
     if (keyword !== 'join') {
-      const helpResult = await text(
+      const helpResult = await sendText(
         'send-help-reply',
         'Help reply',
         HELP_MESSAGE,
@@ -156,7 +156,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'code send rejected', reason: codeRequest.reason };
     }
 
-    const consentResult = await text(
+    const consentResult = await sendText(
       'send-consent-request',
       'Consent request',
       CONSENT_MESSAGE,
@@ -251,7 +251,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const { authUserId } = outcome;
 
-    const welcomeResult = await text(
+    const welcomeResult = await sendText(
       'send-welcome-reply',
       'Welcome message',
       WELCOME_MESSAGE,
