@@ -7,6 +7,7 @@ import type { MouseEvent } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Bullet } from '../../Bullet';
 import type { ProposalCardTranslation } from './useProposalCardTranslation';
 
 /**
@@ -31,21 +32,45 @@ export const ProposalTranslateLink = ({
     return null;
   }
 
-  const notice = match(status, {
-    translated: t('decisions.proposals.translatedFromNotice', {
-      language: sourceLanguageName,
-    }),
-    failed: t('decisions.proposals.translationFailedNotice'),
-    _: null,
+  const { notice, label, action } = match(status, {
+    translating: {
+      notice: null,
+      label: (
+        <>
+          <Spinner aria-hidden />
+          {t('decisions.proposals.translatingProgress')}
+        </>
+      ),
+      action: translate,
+    },
+    translated: {
+      // Same "Translated from Spanish · View original" as `TranslationNotice`.
+      notice: (
+        <>
+          {t('decisions.proposals.translatedFromNotice', {
+            language: sourceLanguageName,
+          })}
+          <Bullet />
+        </>
+      ),
+      label: t('decisions.proposals.viewOriginalAction'),
+      action: showOriginal,
+    },
+    failed: {
+      notice: t('decisions.proposals.translationFailedNotice'),
+      label: t('Try again'),
+      action: translate,
+    },
+    _: {
+      notice: null,
+      label: t('decisions.proposals.seeTranslationAction'),
+      action: translate,
+    },
   });
 
   const onClick = (event: MouseEvent) => {
     event.stopPropagation();
-    if (status === 'translated') {
-      showOriginal();
-    } else {
-      translate();
-    }
+    action();
   };
 
   return (
@@ -55,7 +80,9 @@ export const ProposalTranslateLink = ({
     >
       {/* Always rendered (possibly empty) so the button keeps its place in the
           tree and keyboard focus survives each state change. */}
-      <span className="text-muted-foreground">{notice}</span>
+      <span className="flex items-center gap-1 text-muted-foreground empty:hidden">
+        {notice}
+      </span>
       <Button
         variant="link"
         size="inline"
@@ -63,17 +90,7 @@ export const ProposalTranslateLink = ({
         disabled={status === 'translating'}
         onClick={onClick}
       >
-        {match(status, {
-          translating: (
-            <>
-              <Spinner aria-hidden />
-              {t('decisions.proposals.translatingProgress')}
-            </>
-          ),
-          translated: t('decisions.proposals.viewOriginalAction'),
-          failed: t('Try again'),
-          _: t('decisions.proposals.seeTranslationAction'),
-        })}
+        {label}
       </Button>
     </div>
   );

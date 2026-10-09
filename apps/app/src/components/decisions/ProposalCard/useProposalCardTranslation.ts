@@ -1,5 +1,6 @@
 'use client';
 
+import { useForeignContentLanguage } from '@/hooks/useContentNeedsTranslation';
 import { trpc } from '@op/api/client';
 import {
   type Proposal,
@@ -8,9 +9,7 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { useLocale } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
-
-import { baseLanguage, detectLanguages } from '@/lib/languageDetection';
+import { useMemo, useState } from 'react';
 
 import { useCardTranslation } from '../ProposalTranslationContext';
 import { getProposalDetectionText } from '../translationDetectionText';
@@ -27,10 +26,13 @@ export type ProposalCardTranslation = ReturnType<
  * Each card detects its own language, so a grid can offer translation on the
  * Spanish card and not on the English one beside it. The result is cached per
  * locale — "View original" then "See translation" again sends no second
- * request — and a list-level translation that already covers the card takes
- * precedence, so the link steps aside.
+ * request. A list-level translation that already covers the card wins: the
+ * link steps aside and detection is skipped.
  */
-export const useProposalCardTranslation = (proposal: Proposal) => {
+export const useProposalCardTranslation = (
+  proposal: Proposal,
+  { enabled = true }: { enabled?: boolean } = {},
+) => {
   const locale = useLocale();
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
     locale,
@@ -38,19 +40,15 @@ export const useProposalCardTranslation = (proposal: Proposal) => {
     ? (locale as SupportedLocale)
     : null;
   const bulkTranslation = useCardTranslation(proposal.profileId);
+  const isActive = enabled && !!supportedLocale && !bulkTranslation;
 
   const detectionText = useMemo(
-    () => getProposalDetectionText(proposal),
-    [proposal],
+    () => (isActive ? getProposalDetectionText(proposal) : ''),
+    [isActive, proposal],
   );
   // The detected language names the "Translated from" label too: the server's
   // `sourceLocale` is `UNKNOWN` for cached rows and for the OpenL provider.
-  const sourceLanguage = useMemo(() => {
-    const localeLanguage = baseLanguage(locale);
-    return detectLanguages(detectionText).find(
-      (language) => language !== localeLanguage,
-    );
-  }, [detectionText, locale]);
+  const sourceLanguage = useForeignContentLanguage(detectionText);
 
   const [status, setStatus] = useState<CardTranslationStatus>('idle');
   const [cached, setCached] = useState<{
@@ -73,7 +71,7 @@ export const useProposalCardTranslation = (proposal: Proposal) => {
     onError: () => setStatus('failed'),
   });
 
-  const translate = useCallback(() => {
+  const translate = () => {
     if (!supportedLocale) {
       return;
     }
@@ -86,18 +84,14 @@ export const useProposalCardTranslation = (proposal: Proposal) => {
       profileIds: [proposal.profileId],
       targetLocale: supportedLocale,
     });
-  }, [cached, supportedLocale, translateMutation, proposal.profileId]);
+  };
 
-  const showOriginal = useCallback(() => setStatus('idle'), []);
-
-  const isOffered = !!supportedLocale && !!sourceLanguage && !bulkTranslation;
+  const isOffered = isActive && !!sourceLanguage;
   // A result cached for another locale is stale — the reader switched language.
   const translation =
     isOffered && status === 'translated' && cached?.locale === locale
       ? cached.translation
       : undefined;
-  const effectiveStatus: CardTranslationStatus =
-    status === 'translated' && !translation ? 'idle' : status;
 
   // The browser's Intl API localizes the language name — no dictionary keys.
   const sourceLanguageName = useMemo(
@@ -112,11 +106,11 @@ export const useProposalCardTranslation = (proposal: Proposal) => {
 
   return {
     isOffered,
-    status: effectiveStatus,
+    status: status === 'translated' && !translation ? 'idle' : status,
     sourceLanguageName,
     /** The card's translated text, set only while the translation is shown. */
     translation,
     translate,
-    showOriginal,
+    showOriginal: () => setStatus('idle'),
   };
 };

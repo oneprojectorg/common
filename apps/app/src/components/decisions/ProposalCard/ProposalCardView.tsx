@@ -36,8 +36,8 @@ import { useProposalCardTranslation } from './useProposalCardTranslation';
  * preview), applying any per-card translation. Shared by every proposal-card
  * surface so the mapping lives in one place.
  *
- * `ownTranslation` is the card's own "See translation" result; a list-level
- * translation covering the card wins over it.
+ * `ownTranslation` is the card's own "See translation" result, which is only
+ * ever set when no list-level translation covers the card.
  */
 export function useProposalCardData(
   proposal: Proposal,
@@ -45,8 +45,8 @@ export function useProposalCardData(
 ) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
-  const cardTranslation =
-    useCardTranslation(proposal.profileId) ?? ownTranslation;
+  const listTranslation = useCardTranslation(proposal.profileId);
+  const cardTranslation = ownTranslation ?? listTranslation;
   const { title, budget, category } = resolveProposalSystemFields(proposal);
 
   const titleText =
@@ -248,12 +248,11 @@ export const ProposalCardView = ({
   ...rest
 }: ProposalCardViewProps) => {
   const t = useTranslations();
-  const ownTranslation = useProposalCardTranslation(proposal);
+  const ownTranslation = useProposalCardTranslation(proposal, {
+    enabled: showTranslateLink,
+  });
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(
-      proposal,
-      showTranslateLink ? ownTranslation.translation : undefined,
-    );
+    useProposalCardData(proposal, ownTranslation.translation);
   const engagement = useProposalEngagement({ proposal, canEngage });
   const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
   // Empty unless a review surface provides it; an explicit slot always wins.
@@ -303,13 +302,11 @@ export const ProposalCardView = ({
   );
   // The link sits first in the header block, directly above the title, and
   // rides along with the badge so `headerBadge={null}` callers still get it.
-  const header = showTranslateLink ? (
+  const header = (
     <>
       <ProposalTranslateLink translation={ownTranslation} />
       {badge}
     </>
-  ) : (
-    badge
   );
 
   return (

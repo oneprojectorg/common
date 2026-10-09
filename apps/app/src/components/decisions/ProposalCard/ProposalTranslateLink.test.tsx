@@ -65,8 +65,14 @@ const proposal = ({
 const spanish = proposal({ title: TITLE_ES, previewText: PREVIEW_ES });
 const english = proposal({ title: TITLE_EN, previewText: PREVIEW_EN });
 
-const Harness = ({ proposal }: { proposal: Proposal }) => {
-  const translation = useProposalCardTranslation(proposal);
+const Harness = ({
+  proposal,
+  enabled,
+}: {
+  proposal: Proposal;
+  enabled?: boolean;
+}) => {
+  const translation = useProposalCardTranslation(proposal, { enabled });
   return (
     <>
       <ProposalTranslateLink translation={translation} />
@@ -78,14 +84,21 @@ const Harness = ({ proposal }: { proposal: Proposal }) => {
 const renderLink = ({
   subject = spanish,
   bulk = {},
+  enabled,
+  onCardClick,
 }: {
   subject?: Proposal;
   bulk?: Record<string, ProposalTranslation>;
+  enabled?: boolean;
+  /** An interactive card root around the link, e.g. the voting toggle. */
+  onCardClick?: () => void;
 } = {}) => {
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <ProposalTranslationProvider translations={bulk}>
-        <Harness proposal={subject} />
+        <div onClick={onCardClick}>
+          <Harness proposal={subject} enabled={enabled} />
+        </div>
       </ProposalTranslationProvider>
     </NextIntlClientProvider>,
   );
@@ -101,13 +114,7 @@ const succeed = (translations: Record<string, ProposalTranslation>) => {
   act(() => onSuccess({ translations }, variables));
 };
 
-const fail = () => {
-  if (!mutationOptions) {
-    throw new Error('translateProposals was not mounted');
-  }
-  const { onError } = mutationOptions;
-  act(() => onError());
-};
+const fail = () => act(() => mutationOptions?.onError());
 
 const seeTranslation = () =>
   screen.getByRole('button', { name: 'See translation' });
@@ -136,6 +143,12 @@ describe('ProposalTranslateLink', () => {
 
   it('offers nothing once the list-level translation covers the card', () => {
     renderLink({ bulk: { 'profile-1': { title: TITLE_EN } } });
+
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('offers nothing on a card that turned the link off', () => {
+    renderLink({ enabled: false });
 
     expect(screen.queryByRole('button')).toBeNull();
   });
@@ -206,15 +219,9 @@ describe('ProposalTranslateLink', () => {
 
   it('does not let the click reach an interactive card behind it', async () => {
     const onCardClick = vi.fn();
-    render(
-      <NextIntlClientProvider locale="en" messages={messages}>
-        <div onClick={onCardClick}>
-          <Harness proposal={spanish} />
-        </div>
-      </NextIntlClientProvider>,
-    );
+    const user = renderLink({ onCardClick });
 
-    await userEvent.setup().click(seeTranslation());
+    await user.click(seeTranslation());
 
     expect(onCardClick).not.toHaveBeenCalled();
   });
