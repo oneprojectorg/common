@@ -64,6 +64,10 @@ const handler = async (req: NextRequest) => {
     req,
     router: appRouter,
     createContext,
+    // Headroom over the client's `maxItems: 4` (see `createLinks`) so our own
+    // batches never hit it, while a caller past the CSRF gate can no longer
+    // make one request fan out into arbitrarily many procedure calls.
+    maxBatchSize: 10,
     onError({ error, path }) {
       logger.error('tRPC error', { path, error });
     },
