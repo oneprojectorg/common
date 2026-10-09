@@ -72,7 +72,7 @@ the same change. A component with no story is undocumented.
    `alt`, and any string passed to a sense component as copy (sense itself is
    i18n-agnostic and takes copy as props).
 7. **Do the four a11y things** listed below.
-8. **Verify**: `pnpm typecheck` then `pnpm format`.
+8. **Verify**: `pnpm typecheck` then `pnpm format:changes`.
 
 ### The four accessibility obligations
 
@@ -215,7 +215,7 @@ Then:
 7. **Record any patch.** If you had to modify registry output to make it
    compile, add it to the "Known upstream patches" list in `README.md` so the
    next regeneration reapplies it.
-8. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format`.
+8. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format:changes`.
 
 ---
 
@@ -243,7 +243,7 @@ Composites are ours and are never overwritten by a tool.
    `"./<PascalName>": "./src/components/<PascalName>/index.tsx"`.
 8. **JSDoc the component and its non-obvious props**, and write
    `index.stories.tsx` with `title: 'Composites/<PascalName>'`.
-9. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format`.
+9. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format:changes`.
 
 ---
 
@@ -297,14 +297,12 @@ Hard-won; each of these cost real debugging time.
 ```bash
 pnpm typecheck        # whole repo, not just this package
 pnpm w:sense build    # every story has to compile and bundle
-pnpm format
+pnpm format:changes
 ```
 
-`pnpm w:sense build` and `dev` call Storybook directly, so on a fresh clone run
-`pnpm build` once first — `@op/styles` resolves to a generated
-`dist/styles.css`, and without it you get
-`Failed to resolve entry for package "@op/styles"`. CI runs
-`turbo build --filter=@op/sense`, which compiles the dependency first.
+`@op/styles` resolves to a generated `dist/styles.css`, which its `postinstall`
+builds. If you see `Failed to resolve entry for package "@op/styles"`, run
+`pnpm -C packages/styles build`.
 
 Then open the component's story in `pnpm w:sense dev` and read the **A11y**
 panel. Axe runs against whatever is on screen, so a violation there is a real
