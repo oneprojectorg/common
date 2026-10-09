@@ -22,6 +22,7 @@ export * from './updateOverviewHeroImage';
 export { MAX_PHASES_PER_DECISION, type PhaseData } from './phaseHelpers';
 export * from './createPhase';
 export * from './deletePhase';
+export * from './reorderPhases';
 export * from './updatePhase';
 
 // Instance management
