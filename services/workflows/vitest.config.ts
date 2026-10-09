@@ -35,8 +35,7 @@ export default defineConfig({
           ],
           env: {
             ...integration.test.env,
-            SMS_PROVIDER: 'memory',
-            FEATURE_FLAG_OVERRIDES: 'sms-signup:true',
+            NEXT_PUBLIC_E2E: 'true',
             NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_never_sent',
           },
           sequence: { groupOrder: 1 },

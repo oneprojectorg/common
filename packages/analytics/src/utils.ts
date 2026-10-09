@@ -2,9 +2,9 @@ import PostHogClient from '@op/analytics/client';
 
 import {
   type DecisionCommonProperties,
+  areFeatureFlagsForcedOn,
   getDecisionCommonProperties,
 } from './client-utils';
-import { parseFeatureFlagOverrides } from './featureFlagOverrides';
 
 const posthog = PostHogClient();
 
@@ -76,12 +76,8 @@ export async function isFeatureEnabled(
   key: string,
   distinctId: string,
 ): Promise<boolean> {
-  const override = parseFeatureFlagOverrides(
-    process.env.FEATURE_FLAG_OVERRIDES,
-  ).get(key);
-
-  if (override !== undefined) {
-    return override;
+  if (areFeatureFlagsForcedOn()) {
+    return true;
   }
 
   return (await posthog.isFeatureEnabled(key, distinctId)) ?? false;

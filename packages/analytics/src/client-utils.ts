@@ -59,9 +59,8 @@ export function getDecisionCommonProperties({
  * Development and end-to-end runs answer `true`, so a contributor and CI meet
  * a new feature without a PostHog project behind them.
  *
- * `useFeatureFlag` in the browser reads this. The server does not: it reads
- * `FEATURE_FLAG_OVERRIDES` per flag instead (`isFeatureEnabled` in
- * `utils.ts`), so a server path is never forced on by accident.
+ * `useFeatureFlag` in the browser and `isFeatureEnabled` on the server both
+ * read this; a deployed build asks PostHog.
  */
 export const areFeatureFlagsForcedOn = (): boolean =>
   process.env.NODE_ENV === 'development' ||

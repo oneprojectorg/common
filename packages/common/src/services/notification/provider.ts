@@ -1,7 +1,6 @@
 import twilio from 'twilio';
 
 import { CommonError } from '../../utils/error';
-import { memorySmsProvider } from './providers/memory';
 import { createTwilioProvider } from './providers/twilio';
 import type { SmsProvider } from './types';
 
@@ -64,15 +63,6 @@ import type { SmsProvider } from './types';
  * @see {@link https://www.twilio.com/docs/iam/api-keys}
  */
 export const getSmsProvider = (): SmsProvider | null => {
-  if (process.env.SMS_PROVIDER === 'memory') {
-    if (process.env.NODE_ENV === 'production') {
-      throw new CommonError(
-        'SMS_PROVIDER=memory is for tests and cannot be used in production. Unset it to send through Twilio.',
-      );
-    }
-    return memorySmsProvider;
-  }
-
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const apiKeySid = process.env.TWILIO_API_KEY_SID;

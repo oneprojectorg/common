@@ -20,7 +20,6 @@ its own through `supabase/supabase-*.toml`.
 | `TWILIO_API_KEY_SECRET`           | —      | `getSmsProvider`                                | Secret for `TWILIO_API_KEY_SID`. Required when the SID is set.                                                                                                                             |
 | `TWILIO_VERIFY_SERVICE_SID`       | `VA`   | GoTrue                                          | Verify service that confirms a phone number at signup. GoTrue sends the code, checks the reply, and issues the session. Twilio exempts Verify traffic from A2P 10DLC, so it works at once. |
 | `TWILIO_MESSAGING_SERVICE_SID`    | `MG`   | `getSmsProvider`                                | Messaging service that sends notifications and the inbound-signup consent text. Needs an approved A2P 10DLC campaign; review takes 10–15 days.                                             |
-| `SMS_PROVIDER`                    | —      | `getSmsProvider`                                | Set to `memory` to replace Twilio with an in-memory provider for tests. The resolver throws when `NODE_ENV=production`; leave unset elsewhere.                                              |
 | `NEXT_PUBLIC_AUTH_SMS_OTP_LENGTH` | —      | `@op/core` (`AUTH_SMS_OTP_LENGTH`)              | Digit count of the Verify code. Must match the Verify service's **Code length** (4–10, default 6). The email code has its own `NEXT_PUBLIC_AUTH_EMAIL_OTP_LENGTH`; the two can differ.     |
 
 ### Rules the resolver enforces

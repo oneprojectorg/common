@@ -1,8 +1,11 @@
 import { and, db, eq, isNull, lte, or } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
 import { logger } from '@op/logging';
+import { alias } from 'drizzle-orm/pg-core';
 
 import { type PhoneNumber, toGoTruePhoneFormat } from '../notification/schemas';
+
+const publicUsers = alias(users, 'public_users');
 
 export type PhoneSignupDiscard =
   | { status: 'discarded'; authUserId: string }
@@ -16,20 +19,15 @@ export const discardUnconfirmedPhoneSignup = async ({
   codeSentNoLaterThan: Date;
 }): Promise<PhoneSignupDiscard> => {
   const [authUser] = await db
-    .select({ id: authUsers.id })
+    .select({ id: authUsers.id, profileId: publicUsers.profileId })
     .from(authUsers)
+    .leftJoin(publicUsers, eq(publicUsers.authUserId, authUsers.id))
     .where(eq(authUsers.phone, toGoTruePhoneFormat(phone)))
     .limit(1);
 
   if (!authUser) {
     return { status: 'kept', reason: 'no_row' };
   }
-
-  const [user] = await db
-    .select({ profileId: users.profileId })
-    .from(users)
-    .where(eq(users.authUserId, authUser.id))
-    .limit(1);
 
   const [deleted] = await db
     .delete(authUsers)
@@ -62,8 +60,8 @@ export const discardUnconfirmedPhoneSignup = async ({
     };
   }
 
-  if (user?.profileId) {
-    await db.delete(profiles).where(eq(profiles.id, user.profileId));
+  if (authUser.profileId) {
+    await db.delete(profiles).where(eq(profiles.id, authUser.profileId));
   }
 
   logger.info('Discarded an abandoned phone signup', {

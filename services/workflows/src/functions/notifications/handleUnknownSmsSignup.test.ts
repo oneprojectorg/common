@@ -1,7 +1,6 @@
 import { InngestTestEngine } from '@inngest/test';
 import {
   type PhoneNumber,
-  memorySmsProvider,
   parsePhoneNumber,
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
   toGoTruePhoneFormat,
@@ -12,6 +11,7 @@ import { authUsers, profiles, users } from '@op/db/schema';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { handleUnknownSmsSignup } from './handleUnknownSmsSignup';
 
 /**
@@ -106,7 +106,7 @@ const claimNumber = (
 };
 
 beforeEach(() => {
-  memorySmsProvider.reset();
+  resetRecordedSms();
 });
 
 describe('handleUnknownSmsSignup against the database', () => {
@@ -123,7 +123,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     });
 
     expect(result).toEqual({ message: 'help sent' });
-    expect(memorySmsProvider.sent).toEqual([
+    expect(recordedSms).toEqual([
       expect.objectContaining({
         to: phone,
         body: expect.stringContaining('JOIN'),
@@ -152,10 +152,7 @@ describe('handleUnknownSmsSignup against the database', () => {
       authUserId: authUser?.id,
     });
     expect(await readProfileId(authUser!.id)).toEqual(expect.any(String));
-    expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
-      phone,
-      phone,
-    ]);
+    expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
   });
 
   it('given an abandoned attempt whose code is older than the reply window, when the number texts again and nobody replies, then the consent text is sent and the unconfirmed account is discarded', async ({
@@ -184,9 +181,7 @@ describe('handleUnknownSmsSignup against the database', () => {
       message: 'timed out waiting for confirmation',
       discard: 'discarded',
     });
-    expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
-      phone,
-    ]);
+    expect(recordedSms.map((message) => message.to)).toEqual([phone]);
     expect(await readAuthUser(phone)).toBeNull();
     expect(await profileExists(profileId)).toBe(false);
   });
@@ -211,7 +206,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     });
 
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
-    expect(memorySmsProvider.sent).toEqual([]);
+    expect(recordedSms).toEqual([]);
     expect((await readAuthUser(phone))?.phoneConfirmedAt).toBeNull();
   });
 
@@ -229,7 +224,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     });
 
     expect(result).toEqual({ message: 'known number, skipped' });
-    expect(memorySmsProvider.sent).toEqual([]);
+    expect(recordedSms).toEqual([]);
   });
 
   it('given the sms-signup flag is off, when a stranger texts, then nothing is sent and no account is created', async ({
@@ -240,20 +235,20 @@ describe('handleUnknownSmsSignup against the database', () => {
     const { phone } = claimNumber('+15005550007', testData);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    // The project config pins the flag on; the override map is read per call,
-    // so the test can flip it and restore it.
-    const previous = process.env.FEATURE_FLAG_OVERRIDES;
-    process.env.FEATURE_FLAG_OVERRIDES = 'sms-signup:false';
+    // The project config forces every flag on through NEXT_PUBLIC_E2E, read
+    // per call, so the test can lift it and restore it.
+    const previous = process.env.NEXT_PUBLIC_E2E;
+    delete process.env.NEXT_PUBLIC_E2E;
     try {
       const { result } = await t.execute({
         events: [inboundText(phone)],
       });
 
       expect(result).toEqual({ message: 'sms signup disabled' });
-      expect(memorySmsProvider.sent).toEqual([]);
+      expect(recordedSms).toEqual([]);
       expect(await readAuthUser(phone)).toBeNull();
     } finally {
-      process.env.FEATURE_FLAG_OVERRIDES = previous;
+      process.env.NEXT_PUBLIC_E2E = previous;
     }
   });
 
@@ -275,7 +270,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     });
 
     expect(result).toEqual({ message: 'invalid phone number' });
-    expect(memorySmsProvider.sent).toEqual([]);
+    expect(recordedSms).toEqual([]);
   });
 
   it('given a stranger texts, when they reply with a wrong code and then go quiet, then no account remains and no welcome is sent', async ({
@@ -296,9 +291,7 @@ describe('handleUnknownSmsSignup against the database', () => {
       discard: 'discarded',
     });
     expect(await readAuthUser(phone)).toBeNull();
-    expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
-      phone,
-    ]);
+    expect(recordedSms.map((message) => message.to)).toEqual([phone]);
   });
 
   it('given a stranger texts, when they reply with words first and the code second, then the account is created', async ({
@@ -320,9 +313,6 @@ describe('handleUnknownSmsSignup against the database', () => {
       message: 'account created',
       authUserId: authUser?.id,
     });
-    expect(memorySmsProvider.sent.map((message) => message.to)).toEqual([
-      phone,
-      phone,
-    ]);
+    expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
   });
 });
