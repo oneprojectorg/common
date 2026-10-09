@@ -22,6 +22,10 @@ import {
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
+// Until readers move to rows, `instance_data` still keys a phase by its
+// instance-scoped id; a row minted from it keeps that id so the two join.
+export type PhaseRowData = PhaseData & { phaseId?: string };
+
 export const MAX_PHASES_PER_DECISION = 30;
 
 const SLUG_ATTEMPTS = 3;
@@ -40,7 +44,7 @@ export const insertPhase = async ({
   processInstanceId: string;
   name: string;
   sortOrder: number;
-  data?: PhaseData;
+  data?: PhaseRowData;
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {

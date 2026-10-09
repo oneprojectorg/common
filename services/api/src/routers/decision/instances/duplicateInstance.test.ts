@@ -6,6 +6,7 @@ import {
   ProcessStatus,
   decisionProcesses,
   processInstances,
+  processPhases,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -139,6 +140,41 @@ describe.concurrent('duplicateInstance', () => {
 
     expect(instanceData.phases.length).toBeGreaterThan(0);
     expect(instanceData.templateId).toBe(simpleVoting.id);
+  });
+
+  it('mints its own phase rows rather than sharing the source phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Duplicate of ${source.name}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const [sourceRows, duplicateRows] = await Promise.all(
+      [source, duplicate].map((decision) =>
+        db
+          .select({ profileId: processPhases.profileId })
+          .from(processPhases)
+          .where(
+            eq(processPhases.processInstanceId, decision.processInstance.id),
+          ),
+      ),
+    );
+
+    expect(duplicateRows).toHaveLength(simpleVoting.phases.length);
+    const sourceProfileIds = new Set(sourceRows!.map((row) => row.profileId));
+    for (const row of duplicateRows!) {
+      expect(sourceProfileIds.has(row.profileId)).toBe(false);
+    }
   });
 
   it('should create a new profile with a unique slug', async ({
