@@ -1,12 +1,9 @@
 import { InngestTestEngine } from '@inngest/test';
-import {
-  type PhoneNumber,
-  memorySmsProvider,
-  parsePhoneNumber,
-} from '@op/common';
+import { type PhoneNumber, parsePhoneNumber } from '@op/common';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsProposalsCommand } from './handleSmsProposalsCommand';
 
@@ -39,7 +36,7 @@ const more = (from: PhoneNumber, page: number) => ({
 });
 
 beforeEach(() => {
-  memorySmsProvider.reset();
+  resetRecordedSms();
 });
 
 describe('handleSmsProposalsCommand against the database', () => {
@@ -68,9 +65,7 @@ describe('handleSmsProposalsCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'proposals sent', pages: 2 });
-    const [first, second] = memorySmsProvider.sent.map(
-      (message) => message.body,
-    );
+    const [first, second] = recordedSms.map((message) => message.body);
     expect(first).toBe(
       [
         `"Browse ${task.id}" has 7 proposals. First 5:`,
@@ -112,6 +107,6 @@ describe('handleSmsProposalsCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'decision not found' });
-    expect(memorySmsProvider.sent[0]!.body).toContain(slug);
+    expect(recordedSms[0]!.body).toContain(slug);
   });
 });

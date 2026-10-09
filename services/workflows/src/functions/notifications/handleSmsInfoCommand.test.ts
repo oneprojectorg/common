@@ -1,12 +1,9 @@
 import { InngestTestEngine } from '@inngest/test';
-import {
-  type PhoneNumber,
-  memorySmsProvider,
-  parsePhoneNumber,
-} from '@op/common';
+import { type PhoneNumber, parsePhoneNumber } from '@op/common';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsInfoCommand } from './handleSmsInfoCommand';
 
@@ -25,7 +22,7 @@ const infoCommand = (from: PhoneNumber, argument: string) => ({
 });
 
 beforeEach(() => {
-  memorySmsProvider.reset();
+  resetRecordedSms();
 });
 
 describe('handleSmsInfoCommand against the database', () => {
@@ -56,7 +53,7 @@ describe('handleSmsInfoCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'info sent' });
-    expect(memorySmsProvider.sent[0]!.body).toBe(
+    expect(recordedSms[0]!.body).toBe(
       '102: "Cleveland Ave protected bike lane" ($310,000). A curb-protected lane between Morse Rd and Innis Ave. Text 102 to add it to your ballot.',
     );
   });
@@ -81,6 +78,6 @@ describe('handleSmsInfoCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'proposal not found' });
-    expect(memorySmsProvider.sent[0]!.body).toContain(`PROPOSALS ${slug}`);
+    expect(recordedSms[0]!.body).toContain(`PROPOSALS ${slug}`);
   });
 });
