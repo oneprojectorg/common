@@ -113,6 +113,17 @@ export const ManualSelectionList = ({
     [selectedIds, proposalCache],
   );
 
+  // The final phase publishes what its confirm dialog lists: the resolved
+  // proposals, not the stored draft, which can hold ids the cache never
+  // resolved and the service would refuse.
+  const confirmIds = useMemo(
+    () =>
+      isFinalPhase
+        ? selectedProposals.map((proposal) => proposal.id)
+        : selectedIds,
+    [isFinalPhase, selectedProposals, selectedIds],
+  );
+
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       // Channel-based invalidation flips selectionsAreConfirmed in the client
@@ -142,19 +153,19 @@ export const ManualSelectionList = ({
       if (open) {
         posthog.capture('manual_selection_dialog_opened', {
           process_instance_id: instanceId,
-          proposal_count: selectedIds.length,
+          proposal_count: confirmIds.length,
         });
       } else if (submitMutation.status === 'idle') {
         // Only treat a close as a user-initiated dismiss when no submission
         // has run. Pending → in-flight close, success → already-submitted.
         posthog.capture('manual_selection_dialog_dismissed', {
           process_instance_id: instanceId,
-          proposal_count: selectedIds.length,
+          proposal_count: confirmIds.length,
         });
       }
       setIsConfirmOpen(open);
     },
-    [instanceId, selectedIds.length, submitMutation.status, posthog],
+    [instanceId, confirmIds.length, submitMutation.status, posthog],
   );
 
   const toolbarFilters = useMemo<SelectionFilters>(
@@ -179,23 +190,18 @@ export const ManualSelectionList = ({
       resultNotifications?: ResultNotificationMessages,
       allocations?: ProposalAllocation[],
     ) => {
-      // With amounts, publish exactly the winners they were confirmed for:
-      // the stored draft can hold ids the proposal cache never resolved,
-      // which the dialog never showed and the service would refuse.
-      const proposalIds =
-        allocations?.map((allocation) => allocation.proposalId) ?? selectedIds;
       posthog.capture('manual_selection_dialog_confirmed', {
         process_instance_id: instanceId,
-        proposal_count: proposalIds.length,
+        proposal_count: confirmIds.length,
       });
       submitMutation.mutate({
         processInstanceId: instanceId,
-        proposalIds,
+        proposalIds: confirmIds,
         resultNotifications,
         allocations,
       });
     },
-    [instanceId, selectedIds, submitMutation, posthog],
+    [instanceId, confirmIds, submitMutation, posthog],
   );
 
   if (candidatesQuery.isError) {
@@ -250,7 +256,7 @@ export const ManualSelectionList = ({
     );
   };
 
-  const numSelected = selectedIds.length;
+  const numSelected = confirmIds.length;
   // No budget key in the instance's proposal template means the process
   // collects no budgets, so the column would only ever show "—".
   const showBudget = templateCollectsBudget(
@@ -298,8 +304,7 @@ export const ManualSelectionList = ({
       {isFinalPhase ? (
         <FinalPhaseSelectionFooter
           selectedProposals={selectedProposals}
-          // The resolved list, which is what the amounts step publishes.
-          numSelected={selectedProposals.length}
+          numSelected={numSelected}
           totalCandidates={totalCandidates}
           awardsAmounts={showBudget}
           isConfirmOpen={isConfirmOpen}
