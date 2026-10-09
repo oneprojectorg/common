@@ -71,6 +71,7 @@ export function formatDate(
  * own wall-clock time once mounted.
  */
 export const DEADLINE_FORMAT = {
+  year: 'numeric',
   month: 'short',
   day: 'numeric',
   hour: 'numeric',

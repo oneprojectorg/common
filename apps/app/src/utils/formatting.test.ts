@@ -72,11 +72,11 @@ describe('formatDeadline', () => {
   // tell each viewer the wall-clock time they actually have to beat.
   it('gives each viewer their own wall-clock cutoff for one instant', () => {
     expect(formatDeadline(MIDNIGHT_EASTERN, 'en-US', 'America/New_York')).toBe(
-      'Jul 6, 12:00 AM EDT',
+      'Jul 6, 2026, 12:00 AM EDT',
     );
     expect(
       formatDeadline(MIDNIGHT_EASTERN, 'en-US', 'America/Los_Angeles'),
-    ).toBe('Jul 5, 9:00 PM PDT');
+    ).toBe('Jul 5, 2026, 9:00 PM PDT');
   });
 
   it('names the zone so a bare date can never be read as local midnight', () => {
