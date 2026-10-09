@@ -239,7 +239,17 @@ describe.concurrent('createPhase', () => {
   }) => {
     const { instanceId, user, testData } = await setup(task, onTestFinished);
 
-    for (let sortOrder = 0; sortOrder < MAX_PHASES_PER_DECISION; sortOrder++) {
+    // The decision already holds its template's phases.
+    const existing = await db.query.processPhases.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true },
+    });
+
+    for (
+      let sortOrder = existing.length;
+      sortOrder < MAX_PHASES_PER_DECISION;
+      sortOrder++
+    ) {
       const { profile } = await createPhase({
         user,
         processInstanceId: instanceId,
