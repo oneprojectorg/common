@@ -1,12 +1,9 @@
 import { InngestTestEngine } from '@inngest/test';
-import {
-  type PhoneNumber,
-  memorySmsProvider,
-  parsePhoneNumber,
-} from '@op/common';
+import { type PhoneNumber, parsePhoneNumber } from '@op/common';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsShowCommand } from './handleSmsShowCommand';
 
@@ -31,7 +28,7 @@ const showCommand = (from: PhoneNumber, argument: string | null) => ({
 });
 
 beforeEach(() => {
-  memorySmsProvider.reset();
+  resetRecordedSms();
 });
 
 describe('handleSmsShowCommand against the database', () => {
@@ -54,7 +51,7 @@ describe('handleSmsShowCommand against the database', () => {
     const { result } = await t.execute({ events: [showCommand(phone, slug)] });
 
     expect(result).toEqual({ message: 'link sent' });
-    expect(memorySmsProvider.sent).toEqual([
+    expect(recordedSms).toEqual([
       {
         to: phone,
         body: expect.stringMatching(
@@ -84,7 +81,7 @@ describe('handleSmsShowCommand against the database', () => {
     const { result } = await t.execute({ events: [showCommand(phone, slug)] });
 
     expect(result).toEqual({ message: 'link sent' });
-    expect(memorySmsProvider.sent[0]!.body).toContain(`/decisions/${slug}`);
+    expect(recordedSms[0]!.body).toContain(`/decisions/${slug}`);
   });
 
   it('given a private decision the account cannot read, when they text SHOW, then it is reported as not found', async ({
@@ -105,8 +102,8 @@ describe('handleSmsShowCommand against the database', () => {
     const { result } = await t.execute({ events: [showCommand(phone, slug)] });
 
     expect(result).toEqual({ message: 'decision not found' });
-    expect(memorySmsProvider.sent[0]!.body).not.toContain('/decisions/');
-    expect(memorySmsProvider.sent[0]!.body).toContain(slug);
+    expect(recordedSms[0]!.body).not.toContain('/decisions/');
+    expect(recordedSms[0]!.body).toContain(slug);
   });
 
   it('given SHOW with no decision named, then they are told how to name one', async ({
@@ -121,7 +118,7 @@ describe('handleSmsShowCommand against the database', () => {
     const { result } = await t.execute({ events: [showCommand(phone, null)] });
 
     expect(result).toEqual({ message: 'help sent' });
-    expect(memorySmsProvider.sent[0]!.body).toContain('SHOW');
+    expect(recordedSms[0]!.body).toContain('SHOW');
   });
 
   it('given a number with no account texts SHOW, then nothing is sent', async () => {
@@ -133,6 +130,6 @@ describe('handleSmsShowCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'unknown number, skipped' });
-    expect(memorySmsProvider.sent).toEqual([]);
+    expect(recordedSms).toEqual([]);
   });
 });
