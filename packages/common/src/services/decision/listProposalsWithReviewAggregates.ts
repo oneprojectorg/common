@@ -1,6 +1,7 @@
 import { and, db, eq, inArray, isNull } from '@op/db/client';
 import {
   ProposalReviewState,
+  ProposalStatus,
   proposalCategories,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -11,12 +12,16 @@ import { z } from 'zod';
 import { UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
 import { getCurrentProposalHistoryIds } from './proposal/history';
+import { parseProposalData } from './proposalDataSchema';
+import { buildProposalListPreview } from './proposalListPreview';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
@@ -25,7 +30,7 @@ import {
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
-import type { RubricTemplateSchema } from './types';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from './types';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 // ── Input schema ───────────────────────────────────────────────────────
@@ -100,8 +105,9 @@ export async function listProposalsWithReviewAggregates(
     });
   }
 
-  const [phaseProposalIds] = await Promise.all([
+  const [phaseProposalIds, proposalTemplate] = await Promise.all([
     getProposalIdsForPhase({ instance, phaseId }),
+    resolveProposalTemplate(instance.instanceData, instance.processId),
     accessCheck,
   ]);
 
@@ -113,6 +119,7 @@ export async function listProposalsWithReviewAggregates(
       phaseId,
       scoredCriterionKeys,
       rubricTemplate,
+      proposalTemplate,
     });
   }
 
@@ -122,6 +129,7 @@ export async function listProposalsWithReviewAggregates(
     phaseProposalIds,
     scoredCriterionKeys,
     rubricTemplate,
+    proposalTemplate,
   });
 }
 
@@ -134,6 +142,7 @@ async function listProposalsFiltered({
   phaseId,
   scoredCriterionKeys,
   rubricTemplate,
+  proposalTemplate,
 }: {
   proposalIds: string[];
   phaseProposalIds: string[];
@@ -141,6 +150,7 @@ async function listProposalsFiltered({
   phaseId: string | undefined;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
+  proposalTemplate: ProposalTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   const phaseProposalIdSet = new Set(phaseProposalIds);
   const filteredProposalIds = proposalIds.filter((id) =>
@@ -151,7 +161,7 @@ async function listProposalsFiltered({
     return { items: [], rubricTemplate };
   }
 
-  const [proposalsFull, categoriesByProposalId, currentHistoryIdByProposal] =
+  const [storedProposals, categoriesByProposalId, currentHistoryIdByProposal] =
     await Promise.all([
       db.query.proposals.findMany({
         // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
@@ -169,6 +179,10 @@ async function listProposalsFiltered({
       getCategoriesByProposalIds(filteredProposalIds),
       getCurrentProposalHistoryIds({ proposalIds: filteredProposalIds }),
     ]);
+  const proposalsFull = await withSubmittedSystemFields({
+    proposals: storedProposals,
+    proposalTemplate,
+  });
 
   const items = proposalsFull.map((proposal) => ({
     proposal,
@@ -195,18 +209,20 @@ async function listPhaseProposalsWithAggregates({
   phaseProposalIds,
   scoredCriterionKeys,
   rubricTemplate,
+  proposalTemplate,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
   phaseProposalIds: string[];
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
+  proposalTemplate: ProposalTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   if (phaseProposalIds.length === 0) {
     return { items: [], rubricTemplate };
   }
 
-  const rows = await db.query.proposals.findMany({
+  const storedRows = await db.query.proposals.findMany({
     // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
     // getProposalsForPhase, but the extra `moderationDetachedAt IS NULL`
     // guards against a future caller / bug slipping a detached ID in.
@@ -221,13 +237,14 @@ async function listPhaseProposalsWithAggregates({
     orderBy: { createdAt: 'desc', id: 'desc' },
   });
 
-  if (rows.length === 0) {
+  if (storedRows.length === 0) {
     return { items: [], rubricTemplate };
   }
 
-  const rowProposalIds = rows.map((p) => p.id);
-  const [categoriesByProposalId, currentHistoryIdByProposal] =
+  const rowProposalIds = storedRows.map((p) => p.id);
+  const [rows, categoriesByProposalId, currentHistoryIdByProposal] =
     await Promise.all([
+      withSubmittedSystemFields({ proposals: storedRows, proposalTemplate }),
       getCategoriesByProposalIds(rowProposalIds),
       getCurrentProposalHistoryIds({ proposalIds: rowProposalIds }),
     ]);
@@ -249,6 +266,50 @@ async function listPhaseProposalsWithAggregates({
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Overlays each proposal's title and budget from its collaboration document
+ * onto `proposalData`, as the proposal list does. The stored copy can lag the
+ * document (submit pins a version but stamps back only location and
+ * category), and the results confirm step awards the budget shown here by
+ * default.
+ */
+async function withSubmittedSystemFields<
+  T extends { id: string; status: string | null; proposalData: unknown },
+>({
+  proposals,
+  proposalTemplate,
+}: {
+  proposals: T[];
+  proposalTemplate: ProposalTemplateSchema | null;
+}): Promise<T[]> {
+  const documentContentMap = await getProposalDocumentsContent(
+    proposals.map((proposal) => ({
+      id: proposal.id,
+      proposalData: proposal.proposalData,
+      proposalTemplate,
+      collaborationDocVersionId:
+        proposal.status === ProposalStatus.DRAFT
+          ? undefined
+          : parseProposalData(proposal.proposalData).collaborationDocVersionId,
+    })),
+    // A single unavailable document must not break the whole list.
+    { onFetchError: 'omit' },
+  );
+
+  return proposals.map((proposal) => {
+    const parsed = parseProposalData(proposal.proposalData);
+    const { systemFieldOverrides } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate,
+      existingBudget: parsed.budget,
+    });
+    return {
+      ...proposal,
+      proposalData: { ...parsed, ...systemFieldOverrides },
+    };
+  });
+}
 
 /** The review columns the aggregates and the staleness rule read. */
 type ReviewAggregateRow = {

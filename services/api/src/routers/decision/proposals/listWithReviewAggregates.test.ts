@@ -1,3 +1,4 @@
+import { mockCollab, textFragment } from '@op/collab/testing';
 import type { RubricTemplateSchema } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
@@ -494,6 +495,57 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(tagged?.categories).toEqual([
       { id: term.id, label: 'Infrastructure', termUri: term.termUri },
     ]);
+  });
+
+  // The stored proposalData can lag the collaboration document: submit pins
+  // a document version but only stamps location and category back. The
+  // results confirm step awards this budget by default, so it must be the
+  // submitted one.
+  it('returns the budget from the submitted document, not the stored copy', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const created = await testData.createReviewAssignment({
+      context,
+      title: 'Budgeted',
+    });
+
+    const collaborationDocId = `review-budget-${created.proposal.id}`;
+    await db
+      .update(proposalsTable)
+      .set({
+        proposalData: {
+          title: 'Budgeted',
+          budget: { amount: 1000, currency: 'USD' },
+          collaborationDocId,
+          collaborationDocVersionId: 3,
+        },
+      })
+      .where(eq(proposalsTable.id, created.proposal.id));
+    mockCollab.setVersionedDocFragmentResponses(collaborationDocId, 3, {
+      title: textFragment('Budgeted'),
+      budget: textFragment('{"amount":2500,"currency":"USD"}'),
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    const budgeted = result.items.find(
+      (i) => i.proposal.id === created.proposal.id,
+    );
+    expect(budgeted?.proposal.proposalData.budget).toEqual({
+      amount: 2500,
+      currency: 'USD',
+    });
   });
 
   it('keeps proposals with zero submitted reviews and exposes their reviewer roster', async ({

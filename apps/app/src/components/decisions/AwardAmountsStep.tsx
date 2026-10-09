@@ -76,7 +76,10 @@ export const AwardAmountsStep = ({
         </ul>
 
         {total ? (
-          <div className="flex items-center justify-between gap-4 border-t pt-3">
+          <div
+            aria-live="polite"
+            className="flex items-center justify-between gap-4 border-t pt-3"
+          >
             <span className="text-sm text-muted-foreground">
               {t('decisions.review.totalAwardedLabel')}
             </span>
