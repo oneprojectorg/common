@@ -1,8 +1,15 @@
 import { logger } from '@op/logging/client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import type { ScreenId, WizardAnswers } from './flow';
+import {
+  isScreenComplete,
+  previousScreen,
+  reconcileAnswers,
+  screensFor,
+  type ScreenId,
+  type WizardAnswers,
+} from './flow';
 
 export interface WizardProgress {
   screen: ScreenId;
@@ -47,12 +54,22 @@ const progressSchema: z.ZodType<WizardProgress> = z.object({
   }),
 });
 
-/** `undefined` until mounted, so the server render and hydration agree. */
+/**
+ * `undefined` until mounted, so the server render and hydration agree. Leaving
+ * the page in-app discards the answers; a reload never unmounts, so it keeps them.
+ */
 export function useSavedWizardProgress(): WizardProgress | null | undefined {
   const [saved, setSaved] = useState<WizardProgress | null>();
+  // Survives Strict Mode's remount, whose cleanup has already cleared storage.
+  const restored = useRef<WizardProgress | null | undefined>(undefined);
 
   useEffect(() => {
-    setSaved(readWizardProgress());
+    const progress =
+      restored.current === undefined ? readWizardProgress() : restored.current;
+    restored.current = progress;
+    setSaved(progress);
+
+    return clearWizardProgress;
   }, []);
 
   return saved;
@@ -84,8 +101,27 @@ export function readWizardProgress(): WizardProgress | null {
 
     const parsed = progressSchema.safeParse(JSON.parse(raw));
 
-    return parsed.success ? parsed.data : null;
+    return parsed.success ? resumableProgress(parsed.data) : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Pulls saved progress back to the first unanswered question, so answers from
+ * an older wizard can't land the creator past one.
+ */
+export function resumableProgress(saved: WizardProgress): WizardProgress {
+  const answers = reconcileAnswers(saved.answers);
+  const screens = screensFor(answers);
+  const target = screens.includes(saved.screen)
+    ? saved.screen
+    : (previousScreen(saved.screen, answers) ?? 'intro');
+  const screen =
+    screens.find(
+      (candidate) =>
+        candidate === target || !isScreenComplete(candidate, answers),
+    ) ?? target;
+
+  return { screen, answers };
 }
