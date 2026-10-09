@@ -426,6 +426,7 @@ const VotingProposalsList = ({
                 proposal={proposal}
                 selected={isSelected}
                 headerBadge={null}
+                showTranslateLink={false}
                 role="button"
                 aria-pressed={isSelected}
                 aria-label={

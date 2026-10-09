@@ -349,6 +349,74 @@ test.describe('UGC translation coverage', () => {
     ).toBeVisible();
   });
 
+  test('only the Spanish proposal card offers its own translation link', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-card-${testInfo.workerIndex}-${Date.now()}`;
+
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'submission',
+      overview: {
+        headline: OVERVIEW_HEADLINE_EN,
+        description: OVERVIEW_DESCRIPTION_EN,
+      },
+    });
+
+    // Each card detects its own language: the English card beside the
+    // Spanish one is the negative control.
+    for (const proposalData of [
+      { title: PROPOSAL_TITLE_ES, description: PROPOSAL_BODY_ES },
+      { title: PROPOSAL_TITLE_EN, description: PROPOSAL_BODY_EN },
+    ]) {
+      await createProposal({
+        processInstanceId: instance.instance.id,
+        submittedByProfileId: author.profileId,
+        authUserId: author.authUserId,
+        email: author.email,
+        status: ProposalStatus.SUBMITTED,
+        proposalData,
+      });
+    }
+
+    const reader = await signIn(author);
+
+    // Fail the request deterministically — no test calls DeepL. Aborting
+    // doesn't depend on tRPC's batch or transformer format.
+    await reader.route('**/*translation.translateProposals*', (route) =>
+      route.abort(),
+    );
+
+    await reader.goto(`/en/decisions/${instance.slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(reader.getByText(PROPOSAL_TITLE_EN).first()).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
+    await expect(reader.getByText(PROPOSAL_TITLE_ES).first()).toBeVisible();
+
+    const seeTranslation = reader.getByRole('button', {
+      name: 'See translation',
+    });
+    await expect(seeTranslation).toHaveCount(1);
+
+    const urlBefore = reader.url();
+    await seeTranslation.click();
+
+    // The failure is inline, in the link's place, and the original stays.
+    await expect(reader.getByText('Translation failed.')).toBeVisible();
+    await expect(
+      reader.getByRole('button', { name: 'Try again' }),
+    ).toBeVisible();
+    await expect(reader.getByText(PROPOSAL_TITLE_ES).first()).toBeVisible();
+    // The link is an action, not navigation: the proposal didn't open.
+    expect(reader.url()).toBe(urlBefore);
+  });
+
   test('a Spanish update offers translation when the rest of the decision is English', async ({
     cleanup,
     org,

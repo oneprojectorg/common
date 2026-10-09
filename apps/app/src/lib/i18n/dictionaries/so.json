@@ -1430,6 +1430,8 @@
       "translateToAction": "U tarjum {language}",
       "translatedFromNotice": "Laga tarjumay {language}",
       "translationProviderNotice": "Waxaa lagu tarjumay DeepL",
+      "seeTranslationAction": "Arag tarjumaadda",
+      "translationFailedNotice": "Tarjumaaddu way guuldarraysatay.",
       "translatingProgress": "Waa la tarjumayaa...",
       "viewOriginalAction": "Eeg aslka",
       "locationSearchPlaceholder": "Cinwaan, isgoysyada waddooyinka, ama calaamad muuqata",

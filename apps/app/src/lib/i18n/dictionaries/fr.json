@@ -1430,6 +1430,8 @@
       "translateToAction": "Traduire en {language}",
       "translatedFromNotice": "Traduit de l''{language}",
       "translationProviderNotice": "Traduit avec DeepL",
+      "seeTranslationAction": "Voir la traduction",
+      "translationFailedNotice": "La traduction a échoué.",
       "translatingProgress": "Traduction en cours...",
       "viewOriginalAction": "Voir l'original",
       "locationSearchPlaceholder": "Adresse, intersection ou point de repère",

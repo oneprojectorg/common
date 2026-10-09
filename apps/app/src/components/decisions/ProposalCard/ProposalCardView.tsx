@@ -7,6 +7,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalTemplateSchema,
+  type ProposalTranslation,
   normalizeProposalCategories,
 } from '@op/common/client';
 import { match } from '@op/core';
@@ -26,17 +27,26 @@ import {
 } from '../proposalContentUtils';
 import { useProposalReviewDecoration } from '../proposalReviewDecoration';
 import { useCommentsAllowed } from '../useCommentsAllowed';
+import { ProposalTranslateLink } from './ProposalTranslateLink';
+import { useProposalCardTranslation } from './useProposalCardTranslation';
 
 /**
  * Maps the app's `Proposal` into the presentational values the sense
  * `ProposalCard` composite expects (title / budget / category tags / authors /
  * preview), applying any per-card translation. Shared by every proposal-card
  * surface so the mapping lives in one place.
+ *
+ * `ownTranslation` is the card's own "See translation" result; a list-level
+ * translation covering the card wins over it.
  */
-export function useProposalCardData(proposal: Proposal) {
+export function useProposalCardData(
+  proposal: Proposal,
+  ownTranslation?: ProposalTranslation,
+) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
-  const cardTranslation = useCardTranslation(proposal.profileId);
+  const cardTranslation =
+    useCardTranslation(proposal.profileId) ?? ownTranslation;
   const { title, budget, category } = resolveProposalSystemFields(proposal);
 
   const titleText =
@@ -190,6 +200,12 @@ export interface ProposalCardViewProps extends Omit<
   headerBadge?: ReactNode;
   /** Selected treatment (teal border + title) for vote/selection phases. */
   selected?: boolean;
+  /**
+   * Offer the card's own "See translation" link when its text is in another
+   * language. Turn it off where the whole card is a control (the active-voting
+   * toggle), since a button can't nest inside one.
+   */
+  showTranslateLink?: boolean;
   /** Running vote total; renders the "N Total Votes" row when set. */
   totalVotes?: number;
   /** Awarded badge for funded proposals — shown on the right of the votes row. */
@@ -223,6 +239,7 @@ export const ProposalCardView = ({
   // absent prop still gets the standard one.
   headerBadge = <ProposalStatusBadge proposal={proposal} />,
   selected,
+  showTranslateLink = true,
   totalVotes,
   awardedLabel,
   status,
@@ -231,8 +248,12 @@ export const ProposalCardView = ({
   ...rest
 }: ProposalCardViewProps) => {
   const t = useTranslations();
+  const ownTranslation = useProposalCardTranslation(proposal);
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal);
+    useProposalCardData(
+      proposal,
+      showTranslateLink ? ownTranslation.translation : undefined,
+    );
   const engagement = useProposalEngagement({ proposal, canEngage });
   const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
   // Empty unless a review surface provides it; an explicit slot always wins.
@@ -280,6 +301,16 @@ export const ProposalCardView = ({
   ) : (
     headerBadge
   );
+  // The link sits first in the header block, directly above the title, and
+  // rides along with the badge so `headerBadge={null}` callers still get it.
+  const header = showTranslateLink ? (
+    <>
+      <ProposalTranslateLink translation={ownTranslation} />
+      {badge}
+    </>
+  ) : (
+    badge
+  );
 
   return (
     <SenseProposalCard
@@ -289,7 +320,7 @@ export const ProposalCardView = ({
       linkComponent={Link}
       className={className}
       selected={selected}
-      headerBadge={badge}
+      headerBadge={header}
       aside={aside}
       budget={budgetText}
       tags={tags}

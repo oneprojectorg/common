@@ -1430,6 +1430,8 @@
       "translateToAction": "Fordítás erre: {language}",
       "translatedFromNotice": "Lefordítva erről: {language}",
       "translationProviderNotice": "Lefordítva a DeepL segítségével",
+      "seeTranslationAction": "Fordítás megtekintése",
+      "translationFailedNotice": "A fordítás nem sikerült.",
       "translatingProgress": "Fordítás...",
       "viewOriginalAction": "Eredeti megtekintése",
       "locationSearchPlaceholder": "Cím, kereszteződés vagy nevezetesség",

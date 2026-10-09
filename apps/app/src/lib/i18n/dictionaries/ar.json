@@ -1430,6 +1430,8 @@
       "translateToAction": "ترجم إلى {language}",
       "translatedFromNotice": "تمت الترجمة من {language}",
       "translationProviderNotice": "تمت الترجمة باستخدام DeepL",
+      "seeTranslationAction": "عرض الترجمة",
+      "translationFailedNotice": "تعذّرت الترجمة.",
       "translatingProgress": "جارٍ الترجمة...",
       "viewOriginalAction": "عرض النص الأصلي",
       "locationSearchPlaceholder": "العنوان أو تقاطع الشوارع أو معلم بارز",

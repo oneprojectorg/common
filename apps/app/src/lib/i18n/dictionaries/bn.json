@@ -1430,6 +1430,8 @@
       "translateToAction": "{language}-তে অনুবাদ করুন",
       "translatedFromNotice": "{language} থেকে অনূদিত",
       "translationProviderNotice": "DeepL দিয়ে অনুবাদ করা হয়েছে",
+      "seeTranslationAction": "অনুবাদ দেখুন",
+      "translationFailedNotice": "অনুবাদ ব্যর্থ হয়েছে।",
       "translatingProgress": "অনুবাদ হচ্ছে...",
       "viewOriginalAction": "মূল দেখুন",
       "locationSearchPlaceholder": "ঠিকানা, ক্রস স্ট্রিট, বা ল্যান্ডমার্ক",
