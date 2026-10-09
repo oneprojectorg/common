@@ -78,7 +78,7 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 
 - **Translation files location**: `apps/app/src/lib/i18n/dictionaries/` — every `.json` file there is a supported language; keep them all in sync
 - **ALWAYS** wrap user-facing strings with `t('...')` — never hardcode user-facing text
-- **A feature string lives in that feature's namespace under a camelCase ID that names its role, not its wording** (ADR 0005): `const t = useTranslations('onboarding')` then `t('fullName')`, with the English copy as the value in `en.json`. A string belongs to the feature that owns the concept even when another screen reads it
+- **A feature string lives in that feature's namespace under a camelCase ID that names its role, not its wording** ([draft ADR](docs/adr/draft-key-feature-messages-by-id-inside-namespaces.md)): `const t = useTranslations('onboarding')` then `t('fullName')`, with the English copy as the value in `en.json`. A string belongs to the feature that owns the concept even when another screen reads it
 - **A shared label keeps its English text as the key at the top level** — `Cancel`, `Back`, `Email`, `No results` — but only if it is at most four words and holds no `{`, `<` or `.`. Anything longer is a sentence a feature owns
 - **No key contains a period**, at any depth — next-intl reads one as a path separator
 - **Client components**: `const t = useTranslations('ns')`. **Server components**: `const t = await getTranslations({ locale, namespace: 'ns' })`, or `getTranslations('ns')` in a request-scoped call. Import both from `@/lib/i18n`, which types them from `en.json`
