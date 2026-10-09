@@ -287,6 +287,7 @@ import { SUPPORTED_LOCALES } from './services/translation/locales';
 
 export {
   SUPPORTED_LOCALES,
+  isSupportedLocale,
   LOCALE_TO_DEEPL,
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';

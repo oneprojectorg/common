@@ -6,8 +6,7 @@ import {
   type Proposal,
   type ProposalTranslation,
   type ResourceTranslation,
-  SUPPORTED_LOCALES,
-  type SupportedLocale,
+  isSupportedLocale,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
@@ -59,11 +58,7 @@ export const useTranslateDecision = ({
 }) => {
   const t = useTranslations('decisions');
   const locale = useLocale();
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
+  const supportedLocale = isSupportedLocale(locale) ? locale : null;
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translationState, setTranslationState] = useState<{

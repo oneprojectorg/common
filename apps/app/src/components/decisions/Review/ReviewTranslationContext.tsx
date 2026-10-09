@@ -3,8 +3,7 @@
 import { useAnyContentNeedsTranslation } from '@/hooks/useAnyContentNeedsTranslation';
 import { trpc } from '@op/api/client';
 import {
-  SUPPORTED_LOCALES,
-  type SupportedLocale,
+  isSupportedLocale,
   type TranslatedFields,
   parseTranslatedMeta,
 } from '@op/common/client';
@@ -66,11 +65,7 @@ export function ReviewTranslationProvider({
   const { assignment, rubricTemplate } = useReviewForm();
   const proposal = assignment.proposal;
 
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
+  const supportedLocale = isSupportedLocale(locale) ? locale : null;
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translated, setTranslated] = useState<{

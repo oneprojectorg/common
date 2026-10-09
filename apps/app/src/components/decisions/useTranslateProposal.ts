@@ -5,8 +5,7 @@ import { trpc } from '@op/api/client';
 import {
   type Proposal,
   type ProposalTranslation,
-  SUPPORTED_LOCALES,
-  type SupportedLocale,
+  isSupportedLocale,
 } from '@op/common/client';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
@@ -36,11 +35,7 @@ type ProposalPreviewTranslation =
 export const useTranslateProposal = (proposal: Proposal) => {
   const t = useTranslations('decisions');
   const locale = useLocale();
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
+  const supportedLocale = isSupportedLocale(locale) ? locale : null;
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translated, setTranslated] = useState<{

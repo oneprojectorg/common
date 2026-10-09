@@ -88,6 +88,9 @@ export const ProposalTranslateLink = ({
         size="inline"
         className="text-sm font-normal"
         disabled={status === 'translating'}
+        // Keep focus on the button while it waits, so a keyboard user lands
+        // on "View original" when the translation arrives.
+        focusableWhenDisabled
         onClick={onClick}
       >
         {label}

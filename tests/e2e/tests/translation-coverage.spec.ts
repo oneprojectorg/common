@@ -402,6 +402,9 @@ test.describe('UGC translation coverage', () => {
     const seeTranslation = reader.getByRole('button', {
       name: 'See translation',
     });
+    // Wait for detection to offer the link before counting, or the count
+    // could read before a wrongly offered English link renders.
+    await expect(seeTranslation.first()).toBeVisible();
     await expect(seeTranslation).toHaveCount(1);
 
     const urlBefore = reader.url();

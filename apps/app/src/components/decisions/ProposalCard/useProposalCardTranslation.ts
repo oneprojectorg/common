@@ -5,8 +5,7 @@ import { trpc } from '@op/api/client';
 import {
   type Proposal,
   type ProposalTranslation,
-  SUPPORTED_LOCALES,
-  type SupportedLocale,
+  isSupportedLocale,
 } from '@op/common/client';
 import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -34,11 +33,7 @@ export const useProposalCardTranslation = (
   { enabled = true }: { enabled?: boolean } = {},
 ) => {
   const locale = useLocale();
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
+  const supportedLocale = isSupportedLocale(locale) ? locale : null;
   const bulkTranslation = useCardTranslation(proposal.profileId);
   const isActive = enabled && !!supportedLocale && !bulkTranslation;
 
@@ -53,8 +48,16 @@ export const useProposalCardTranslation = (
   const [status, setStatus] = useState<CardTranslationStatus>('idle');
   const [cached, setCached] = useState<{
     locale: string;
+    /** The text it was translated from — an edit makes the result stale. */
+    source: string;
     translation: ProposalTranslation;
   } | null>(null);
+
+  // A list-level translation took over: drop back to the original, so the
+  // list's "View original" doesn't leave this one card translated.
+  if (bulkTranslation && status !== 'idle') {
+    setStatus('idle');
+  }
 
   const translateMutation = trpc.translation.translateProposals.useMutation({
     onSuccess: (data, { targetLocale }) => {
@@ -65,17 +68,20 @@ export const useProposalCardTranslation = (
         setStatus('failed');
         return;
       }
-      setCached({ locale: targetLocale, translation });
+      setCached({ locale: targetLocale, source: detectionText, translation });
       setStatus('translated');
     },
     onError: () => setStatus('failed'),
   });
 
+  const isCacheFresh =
+    cached?.locale === locale && cached.source === detectionText;
+
   const translate = () => {
     if (!supportedLocale) {
       return;
     }
-    if (cached?.locale === supportedLocale) {
+    if (isCacheFresh) {
       setStatus('translated');
       return;
     }
@@ -87,9 +93,9 @@ export const useProposalCardTranslation = (
   };
 
   const isOffered = isActive && !!sourceLanguage;
-  // A result cached for another locale is stale — the reader switched language.
+  // A result cached for another locale or older text is stale.
   const translation =
-    isOffered && status === 'translated' && cached?.locale === locale
+    isOffered && status === 'translated' && isCacheFresh
       ? cached.translation
       : undefined;
 
