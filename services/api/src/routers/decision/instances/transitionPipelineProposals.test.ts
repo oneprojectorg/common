@@ -5,6 +5,7 @@ import {
   schemaWithPipeline,
   schemaWithThreePhasesAndPipelines,
   schemaWithoutPipeline,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
@@ -14,6 +15,8 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
+
+withoutTestTransactions();
 
 describe.concurrent('Transition pipeline: join table population', () => {
   it('creates exactly 2 join rows when selectionPipeline limits to 2 from 3 proposals', async ({

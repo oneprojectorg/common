@@ -1,5 +1,18 @@
-import { type SupabaseClient, createClient } from '@supabase/supabase-js';
-import { beforeAll, beforeEach, vi } from 'vitest';
+import { db, eq, inArray } from '@op/db/client';
+import { profiles, users } from '@op/db/schema';
+import {
+  afterTestTransaction,
+  inTestTransaction,
+  runInTestTransaction,
+} from '@op/db/test';
+import {
+  AuthError,
+  type SupabaseClient,
+  createClient,
+} from '@supabase/supabase-js';
+import { aroundEach, beforeAll, beforeEach, vi } from 'vitest';
+
+import './taskMeta';
 
 // Mocks a test asserts against live in `./mocks` — see ./mocks/README.md.
 
@@ -103,9 +116,66 @@ beforeAll(async () => {
   // Make test clients available globally
   supabaseTestClient = testSupabase;
   supabaseTestAdminClient = testSupabaseAdmin;
+  deferAuthDeletesPastTheRollback(testSupabaseAdmin);
 });
+
+// GoTrue deletes an auth user on its own connection and cascades into
+// `users`. A test that updated that row through `db` holds its lock until the
+// rollback, which runs after every `onTestFinished` hook, so a delete issued
+// from a hook waits on the test's own lock until the hook times out. Inside a
+// test transaction the delete is queued for after the rollback instead, and
+// the caller gets a response whose error code says so; outside one it runs at
+// once with the real response. The deferred delete also removes the profile
+// the signup trigger made for the user: a cleanup that deleted it through
+// `db` did so inside the transaction, and the rollback brought it back.
+const DEFERRED_DELETE = new AuthError(
+  'Deferred until the test transaction is rolled back',
+  202,
+  'deferred_delete',
+);
+
+const deferAuthDeletesPastTheRollback = (client: SupabaseClient) => {
+  const admin = client.auth.admin;
+  const deleteUser = admin.deleteUser.bind(admin);
+  admin.deleteUser = (id, shouldSoftDelete) =>
+    inTestTransaction()
+      ? afterTestTransaction(async () => {
+          const owned = await db
+            .select({ profileId: users.profileId })
+            .from(users)
+            .where(eq(users.authUserId, id));
+          await deleteUser(id, shouldSoftDelete);
+          const profileIds = owned.flatMap(({ profileId }) =>
+            profileId ? [profileId] : [],
+          );
+          if (profileIds.length > 0) {
+            await db.delete(profiles).where(inArray(profiles.id, profileIds));
+          }
+        }).then(() => ({ data: { user: null }, error: DEFERRED_DELETE }))
+      : deleteUser(id, shouldSoftDelete);
+};
 
 // Setup test environment for each test
 beforeEach(async () => {
   vi.clearAllMocks();
 });
+
+// Every test runs inside one transaction that is rolled back when the test
+// ends, so the rows it writes through `db` never commit. Rows GoTrue writes
+// (auth users and their trigger-made profiles) commit regardless; the
+// managers delete those through `afterTestTransaction`, which runs after the
+// rollback on the real pool. `TEST_DB_TRANSACTIONS=off` restores the old
+// behaviour for comparison.
+const TEST_TRANSACTION_TIMEOUT_MS = 60_000;
+
+if (process.env.TEST_DB_TRANSACTIONS !== 'off') {
+  aroundEach(async (runTest, _context, suite) => {
+    if (suite.file.meta.testTransactions === 'off') {
+      await runTest();
+      return;
+    }
+    await runInTestTransaction(async () => {
+      await runTest();
+    });
+  }, TEST_TRANSACTION_TIMEOUT_MS);
+}

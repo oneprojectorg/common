@@ -2,6 +2,7 @@ import {
   signUpAllowlistedUser,
   signUpConfirmedUser,
   signUpNonAllowlistedUser,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
@@ -16,6 +17,8 @@ import {
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 import { wasCreatedByThisSignIn } from './login';
+
+withoutTestTransactions();
 
 const createCaller = createCallerFactory(appRouter);
 

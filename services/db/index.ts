@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 import config from './drizzle.config';
 import { relations } from './relations';
@@ -47,7 +48,7 @@ const startupParameters = isMaintenance
       ),
     };
 
-export const db = drizzle({
+export const realDb = drizzle({
   connection: {
     url: process.env.DATABASE_URL,
     max: poolMax,
@@ -60,4 +61,31 @@ export const db = drizzle({
   schema,
   relations,
   logger: false,
+});
+
+type RealDb = typeof realDb;
+
+export type TestTransaction = Parameters<
+  Parameters<RealDb['transaction']>[0]
+>[0];
+
+export interface TestTransactionScope {
+  tx: TestTransaction;
+  afterRollback: Array<() => Promise<void>>;
+}
+
+export const testTransactionStorage =
+  new AsyncLocalStorage<TestTransactionScope>();
+
+export const db: RealDb = new Proxy(realDb, {
+  get(target, property) {
+    const scope = testTransactionStorage.getStore();
+    const source: RealDb | TestTransaction = scope ? scope.tx : target;
+    const value: unknown = Reflect.get(source, property, source);
+    // Methods live on the prototype and read `this`; own fields such as
+    // `$client` (a callable postgres-js client) must come back untouched.
+    return typeof value === 'function' && !Object.hasOwn(source, property)
+      ? value.bind(source)
+      : value;
+  },
 });

@@ -1,4 +1,7 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  withoutTestTransactions,
+} from '@op/common/testing';
 import { ProcessStatus, ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -13,6 +16,8 @@ import {
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+withoutTestTransactions();
 
 const createCaller = createCallerFactory(appRouter);
 

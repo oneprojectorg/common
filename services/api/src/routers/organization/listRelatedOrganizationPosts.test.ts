@@ -1,4 +1,7 @@
-import { TestOrganizationDataManager } from '@op/common/testing';
+import {
+  TestOrganizationDataManager,
+  withoutTestTransactions,
+} from '@op/common/testing';
 import { db, inArray } from '@op/db/client';
 import { posts } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +13,8 @@ import {
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import { createAuthenticatedCaller } from '../../test/supabase-utils';
+
+withoutTestTransactions();
 
 describeAccessTierGating('organization.listAllPosts', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {

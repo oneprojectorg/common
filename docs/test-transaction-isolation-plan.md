@@ -28,6 +28,37 @@ connection, and the signup trigger adds `users`, `profiles` and
 first kind. It can never hold the second: a session only works for a
 committed user, and 117 of 223 files create one.
 
+## Status
+
+Implemented on branch `test-transaction-isolation` on 2026-10-08, with
+three departures from the design below, each forced by a measurement:
+
+- **`aroundEach`, not `test.extend`.** Vitest 4.1 has `aroundEach`, which
+  wraps `beforeEach`, the test, `afterEach` and `onTestFinished` in one
+  callback and runs from a setup file. Registered once in
+  `packages/common/testing/setup.ts`, it covers every integration file with
+  no import change, so Phase 3's migration is gone.
+- **GoTrue deletes are deferred by the harness.** `onTestFinished` runs
+  inside the `aroundEach` callback, before the rollback. An inline cleanup
+  that called `auth.admin.deleteUser` waited on the test's own row lock
+  until the hook timed out (13 tests). The shared setup now wraps the admin
+  client's `deleteUser`: inside a test transaction it is queued for after
+  the rollback, deletes the user's trigger-made profile on the pool as well,
+  and returns an `AuthError` with code `deferred_delete`. Cleanups needed
+  no change.
+- **Twenty files opt out with `withoutTestTransactions()`.** Postgres pins
+  `now()` for a transaction, so every `createdAt` in a test is equal:
+  cursor pagination, phase attribution, `updatedAt > createdAt`, and
+  `tstzrange` history windows all break. Two more files exercise a real
+  race across connections, and one expects GoTrue to see a row the test
+  updated. Each of those files calls `withoutTestTransactions()` at the
+  top and cleans up as before. `clock_timestamp()` defaults would bring
+  the time-dependent ones in; that is a schema decision, filed below.
+
+Measured, `services/api`, 202 files, 2011 tests, local machine: 71 s with
+transactions on, 60 s off; every file passes in both modes; teardown finds
+no leftover row. `packages/common` integration: 19 tests, 13 s.
+
 ## The design
 
 ```mermaid
@@ -220,6 +251,17 @@ the files the codemod flags.
   leaks, which Phase 0 names.
 - Done when ten green runs show no timeout and no lock wait above one
   second.
+
+## Follow-ups
+
+- **`clock_timestamp()` for `createdAt` and `updatedAt`.** Twenty files
+  stay on the pool because `now()` is the transaction start. Changing the
+  column defaults, the history trigger and the 19 service-side `sql\`now()\``
+  calls to `clock_timestamp()` would let them in, at the cost of rows
+  written in one request carrying different timestamps. A product decision
+  before a migration.
+- **Phase 0's teardown naming.** Still worth doing: an opted-out file can
+  still leak, and the teardown still does not say which test.
 
 ## What this does not fix
 
