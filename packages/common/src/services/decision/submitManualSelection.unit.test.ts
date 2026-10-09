@@ -592,6 +592,14 @@ describe('submitManualSelection allocations', () => {
       ),
     ],
     [
+      'an amount names a malformed proposal id',
+      [
+        { proposalId: 'not-a-uuid', amount: 500 },
+        { proposalId: PROPOSAL_B, amount: 500 },
+      ],
+      /Awarded amount names an invalid proposal id: not-a-uuid/,
+    ],
+    [
       'an amount is not a number',
       [
         { proposalId: PROPOSAL_A, amount: Number.NaN },

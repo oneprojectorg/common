@@ -452,9 +452,12 @@ function parseAllocations({
 
   for (const allocation of allocations) {
     const { proposalId } = allocation;
-    if (!proposalAllocationSchema.safeParse(allocation).success) {
+    const parsed = proposalAllocationSchema.safeParse(allocation);
+    if (!parsed.success) {
       throw new ValidationError(
-        `Awarded amount for proposal ${proposalId} must be a number greater than 0`,
+        parsed.error.issues[0]?.path[0] === 'proposalId'
+          ? `Awarded amount names an invalid proposal id: ${proposalId}`
+          : `Awarded amount for proposal ${proposalId} must be a number greater than 0`,
       );
     }
     if (!selected.has(proposalId)) {
