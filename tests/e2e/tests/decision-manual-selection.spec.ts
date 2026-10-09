@@ -500,8 +500,8 @@ test.describe('Decision Manual Selection — full flow', () => {
     // Results cards: the requested budget renders as the tag, and the
     // allocation as a success "Awarded" badge (allocated may differ from the
     // request — Alpha under, Beta over).
-    await expect(authenticatedPage.getByText('$3,000 Awarded')).toBeVisible();
-    await expect(authenticatedPage.getByText('$9,000 Awarded')).toBeVisible();
+    await expect(authenticatedPage.getByText('$3K Awarded')).toBeVisible();
+    await expect(authenticatedPage.getByText('$9K Awarded')).toBeVisible();
     await expect(authenticatedPage.getByText('$5,000').first()).toBeVisible();
     await expect(authenticatedPage.getByText('$8,000').first()).toBeVisible();
 

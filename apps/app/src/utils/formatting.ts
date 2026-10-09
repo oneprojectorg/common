@@ -18,6 +18,23 @@ export function formatCurrency(
 }
 
 /**
+ * Format an awarded amount for a results card: whole thousands read as "K"
+ * ($20,000 → $20K); anything else keeps the full amount.
+ */
+export function formatAwardedAmount({
+  amount,
+  currency,
+}: {
+  amount: number;
+  currency: string;
+}): string {
+  if (amount >= 1000 && amount % 1000 === 0) {
+    return `${formatCurrency(amount / 1000, undefined, currency)}K`;
+  }
+  return formatCurrency(amount, undefined, currency);
+}
+
+/**
  * Format single date using locale-aware formatting
  */
 export function formatDate(

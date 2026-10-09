@@ -1,5 +1,6 @@
 'use client';
 
+import { formatAwardedAmount } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
   Empty,
@@ -9,11 +10,11 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
+import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { formatBudget, getAllocatedAmount } from './BudgetDisplay';
+import { getAllocatedAmount } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
@@ -64,7 +65,7 @@ export const ResultsList = ({
 
           const awardedText =
             proposal.allocated != null
-              ? formatBudget(
+              ? formatAwardedAmount(
                   getAllocatedAmount({
                     allocated: proposal.allocated,
                     budget: resolveProposalSystemFields(proposal).budget,
@@ -82,7 +83,7 @@ export const ResultsList = ({
               totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
               awardedLabel={
                 awardedText ? (
-                  <StatusBadge variant="success" icon={LuBadgeCheck}>
+                  <StatusBadge variant="success" icon={false}>
                     {t('decisions.amountAwarded', { amount: awardedText })}
                   </StatusBadge>
                 ) : undefined

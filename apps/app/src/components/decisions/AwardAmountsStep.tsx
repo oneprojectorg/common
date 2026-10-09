@@ -13,7 +13,6 @@ import { Header3 } from '@op/sense/Header';
 import { NumberField } from '@op/sense/NumberField';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { Toggle } from '@op/sense/Toggle';
-import { LuBadgeCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -162,7 +161,7 @@ const AwardedAmount = ({
   }
 
   return isValidAwardAmount(amount) ? (
-    <StatusBadge variant="success" icon={LuBadgeCheck} className="shrink-0">
+    <StatusBadge variant="success" icon={false} className="shrink-0">
       {t('decisions.amountAwarded', {
         amount: formatCurrency(amount, undefined, currency),
       })}
