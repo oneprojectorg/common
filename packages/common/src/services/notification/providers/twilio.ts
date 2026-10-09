@@ -2,12 +2,8 @@ import { logger } from '@op/logging';
 import twilio from 'twilio';
 
 import { CommonError } from '../../../utils/error';
-import type {
-  PhoneNumber,
-  SmsFailureReason,
-  SmsProvider,
-  SmsSendResult,
-} from '../types';
+import type { PhoneNumber } from '../schemas';
+import type { SmsFailureReason, SmsProvider, SmsSendResult } from '../types';
 
 /**
  * The Twilio SDK surface that {@link createTwilioProvider} calls.
@@ -283,4 +279,18 @@ export const parseTwilioStatusCallback = (
   messageSid: params.MessageSid ?? '',
   status: params.MessageStatus ?? 'unknown',
   errorCode: params.ErrorCode,
+});
+
+export interface TwilioInboundMessage {
+  from: string;
+  body: string;
+  messageSid: string;
+}
+
+export const parseTwilioInboundMessage = (
+  params: Record<string, string>,
+): TwilioInboundMessage => ({
+  from: params.From ?? '',
+  body: params.Body ?? '',
+  messageSid: params.MessageSid ?? '',
 });

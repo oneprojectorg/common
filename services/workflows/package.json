@@ -10,9 +10,12 @@
   "scripts": {
     "dev": "inngest-cli dev",
     "format:check": "oxfmt --check",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@op/analytics": "workspace:*",
     "@op/cache": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
@@ -28,7 +31,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@inngest/test": "^0.1.9",
     "@op/typescript-config": "workspace:*",
-    "typescript": "7.0.2"
+    "@op/vitest-config": "workspace:*",
+    "@vitest/coverage-istanbul": "catalog:",
+    "typescript": "7.0.2",
+    "vitest": "catalog:"
   }
 }

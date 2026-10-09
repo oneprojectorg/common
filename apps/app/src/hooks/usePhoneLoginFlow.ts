@@ -1,7 +1,10 @@
 'use client';
 
 import { usePhoneLogin } from '@/hooks/usePhoneLogin';
-import { normalizePhoneNumber, phoneNumberSchema } from '@op/common/client';
+import {
+  isValidTypedPhoneNumber,
+  normalizePhoneNumber,
+} from '@op/common/client';
 import { useCallback, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -40,7 +43,7 @@ export const usePhoneLoginFlow = ({
 
   // People type `(415) 555-0132`. Validate and send what they meant.
   const normalized = normalizePhoneNumber(phone);
-  const isValid = phoneNumberSchema.safeParse(normalized).success;
+  const isValid = isValidTypedPhoneNumber(phone);
   const isLoading = phoneLogin.isSending || phoneLogin.isVerifying;
 
   const requestCode = useCallback(async () => {

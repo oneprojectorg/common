@@ -7,14 +7,7 @@
  * `getSmsProvider` picks one from the environment.
  */
 
-/**
- * An E.164 phone number, such as `+15005550006`, that has passed validation.
- *
- * Obtain one from `parsePhoneNumber` in `schemas.ts`. That function is the only
- * way to produce this type, so an unchecked string cannot reach a vendor. The
- * brand exists for that reason alone; at runtime the value is a plain string.
- */
-export type PhoneNumber = string & { readonly __brand: 'PhoneNumber' };
+import type { PhoneNumber } from './schemas';
 
 /**
  * Why a send or a verification failed, in our vocabulary rather than a
@@ -78,7 +71,7 @@ export type SmsSendResult =
  *
  * This interface does not confirm a phone number. GoTrue owns that lifecycle
  * through `[auth.sms.twilio_verify]`, and the browser calls GoTrue directly, so
- * no code of ours generates or checks a code. ADR 0003 records that decision.
+ * no code of ours generates or checks a code.
  *
  * Nothing calls `sendSms` yet. GoTrue sends every sign-in code, so the one SMS
  * the product sends today does not pass through here. This interface stays for

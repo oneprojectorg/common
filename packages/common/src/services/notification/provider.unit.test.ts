@@ -38,7 +38,9 @@ const setEnv = (values: Partial<Record<(typeof ENV_KEYS)[number], string>>) => {
   }
 };
 
-afterEach(() => setEnv({}));
+afterEach(() => {
+  setEnv({});
+});
 
 describe('getSmsProvider', () => {
   it('returns null when no account is configured', () => {

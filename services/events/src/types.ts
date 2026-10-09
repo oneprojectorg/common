@@ -193,4 +193,13 @@ export const Events = {
       actorAuthUserId: z.string().uuid(),
     }),
   },
+  smsInboundReceived: {
+    name: 'sms/inbound.received' as const,
+    schema: z.object({
+      from: z.string(),
+      messageSid: z.string(),
+      code: z.string().nullable(),
+      keyword: z.enum(['join']).nullable(),
+    }),
+  },
 } as const;

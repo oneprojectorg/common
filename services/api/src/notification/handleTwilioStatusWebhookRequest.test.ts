@@ -40,7 +40,10 @@ describe('handleTwilioStatusWebhookRequest', () => {
       url: URL,
     });
 
-    expect(result).toEqual({ status: 200 });
+    expect(result).toEqual({
+      status: 200,
+      body: '<Response></Response>',
+    });
     expect(logger.info).toHaveBeenCalledWith('Twilio message status callback', {
       messageSid: 'SM123',
       status: 'delivered',

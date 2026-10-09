@@ -2,6 +2,7 @@ import PostHogClient from '@op/analytics/client';
 
 import {
   type DecisionCommonProperties,
+  areFeatureFlagsForcedOn,
   getDecisionCommonProperties,
 } from './client-utils';
 
@@ -69,6 +70,17 @@ export async function identifyUser({
     distinctId,
     properties,
   });
+}
+
+export async function isFeatureEnabled(
+  key: string,
+  distinctId: string,
+): Promise<boolean> {
+  if (areFeatureFlagsForcedOn()) {
+    return true;
+  }
+
+  return (await posthog.isFeatureEnabled(key, distinctId)) ?? false;
 }
 
 /**
