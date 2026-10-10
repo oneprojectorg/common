@@ -91,8 +91,8 @@ export type ProposalPreviewProps = {
   /** When set, overrides proposal content with translated HTML and shows attribution */
   translation?: ProposalTranslation;
   /**
-   * The "See translation" link, directly above the title. It carries its own
-   * "Translated from…" attribution, so the notice under the title is dropped.
+   * The "See translation" link, directly above the title. Passing it hides the
+   * "Translated from…" notice under the title: the link carries its own.
    */
   translateLink?: ReactNode;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
@@ -206,7 +206,7 @@ export function ProposalPreview({
               </Header1>
             </div>
 
-            {translation && !translateLink && (
+            {translation && translateLink === undefined && (
               <TranslationNotice
                 sourceLanguageName={translation.sourceLanguageName}
                 onViewOriginal={translation.onViewOriginal}

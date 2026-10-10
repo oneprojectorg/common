@@ -100,6 +100,17 @@ describe('useTranslateProposal', () => {
     expect(screen.getByText('Translated from Spanish')).toBeTruthy();
   });
 
+  it('shows the failure inline when the request fails', async () => {
+    const user = renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'See translation' }));
+    await act(async () => pending?.reject(new Error('translation failed')));
+
+    expect(screen.getByText('Translation failed.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(title()).toBe(TITLE_ES);
+  });
+
   it('treats an empty translation as a failure', async () => {
     const user = renderPage();
 
