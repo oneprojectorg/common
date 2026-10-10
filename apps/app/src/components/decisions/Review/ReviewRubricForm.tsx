@@ -52,12 +52,10 @@ import {
   getCriterionMaxPoints,
   getSelectedOptionValues,
   inferCriterionType,
-  translateRubricTemplate,
 } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
-import { useReviewTranslation } from './ReviewTranslationContext';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
@@ -108,7 +106,7 @@ function MyReviewForm() {
   const t = useTranslations();
   const {
     reviewSettings: { anonymousFeedback },
-    rubricTemplate: authoredTemplate,
+    rubricTemplate: template,
     values,
     rationales,
     overallComment,
@@ -120,14 +118,6 @@ function MyReviewForm() {
     isEditing,
     review,
   } = useReviewForm();
-  const { rubricMeta } = useReviewTranslation();
-
-  // Display copy only — option values, bounds and the required list are
-  // untouched, so the answers this form collects are identical either way.
-  const template = useMemo(
-    () => translateRubricTemplate(authoredTemplate, rubricMeta),
-    [authoredTemplate, rubricMeta],
-  );
   const fields = compileRubricSchema(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(

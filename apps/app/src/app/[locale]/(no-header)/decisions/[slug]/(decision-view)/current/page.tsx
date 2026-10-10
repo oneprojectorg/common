@@ -60,7 +60,7 @@ const CurrentPhasePage = async ({
   params: Promise<{ slug: string }>;
 }) => {
   const { slug } = await params;
-  const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
+  const { instanceId, ownerSlug } = await loadDecision(slug);
 
   // Seed the getInstance cache the current-phase content (DecisionStateRouter)
   // hydrates from. The (decision-view) layout no longer fetches getInstance
@@ -83,7 +83,6 @@ const CurrentPhasePage = async ({
           instanceId={instanceId}
           slug={ownerSlug}
           decisionSlug={slug}
-          decisionProfileId={decisionProfile.id}
         />
       </Suspense>
     </HydrationBoundary>

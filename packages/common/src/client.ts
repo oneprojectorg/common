@@ -287,13 +287,16 @@ import { SUPPORTED_LOCALES } from './services/translation/locales';
 
 export {
   SUPPORTED_LOCALES,
+  isSupportedLocale,
   LOCALE_TO_DEEPL,
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';
 export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta';
-export type { PostTranslation } from './services/translation/translatePosts';
+export type { PostTranslation } from './services/translation/translatePost';
 export type { ProposalTranslation } from './services/translation/translateProposal';
 export type { ResourceTranslation } from './services/translation/translateResources';
+export type { ReviewTranslation } from './services/translation/translateReview';
+export type { RevisionRequestTranslation } from './services/translation/translateRevisionRequest';
 export type {
   TranslatedFieldValue,
   TranslatedFields,

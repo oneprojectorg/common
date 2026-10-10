@@ -33,7 +33,6 @@ import {
 import { PostUpdate } from '@/components/PostUpdate';
 import { ResourcesTabContent } from '@/components/Resources/ResourcesTabContent';
 
-import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
 
 const isPanelTab = (key: string): key is PanelTab =>
@@ -273,16 +272,6 @@ const UpdatesFeed = ({
     [paginatedData.pages],
   );
 
-  // `handleTranslate` already sends this decision's updates to translatePosts.
-  // Register them so the Translate control appears for a reader whose only
-  // unreadable content is an update — the proposals and the overview may well
-  // be in their language.
-  const postSamples = useMemo(
-    () => posts.map((post) => post.content ?? ''),
-    [posts],
-  );
-  useRegisterTranslationSamples('updates', postSamples);
-
   const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
     fetchNextPage,
     {
@@ -322,6 +311,7 @@ const UpdatesFeed = ({
         {posts.map((post) => (
           <Fragment key={post.id}>
             <PostItem
+              translatable
               post={post}
               organization={null}
               user={user}
@@ -342,6 +332,7 @@ const UpdatesFeed = ({
       <DiscussionModalContainer
         discussionModal={discussionModal}
         onClose={handleModalClose}
+        translatable
       />
     </>
   );

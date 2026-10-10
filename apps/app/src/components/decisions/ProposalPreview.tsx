@@ -47,14 +47,11 @@ import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
-import { TranslationNotice } from './TranslationNotice';
 import { resolveProposalSystemFields } from './proposalContentUtils';
 import { useCommentsAllowed } from './useCommentsAllowed';
 
 export type ProposalTranslation = {
   htmlContent: Record<string, string | string[]>;
-  sourceLanguageName: string;
-  onViewOriginal: () => void;
 };
 
 /**
@@ -88,8 +85,13 @@ export type ProposalPreviewProps = {
   engagement?: ProposalEngagement;
   /** Selection record from the latest confirmed result, if any. */
   selection?: ProposalSelection | null;
-  /** When set, overrides proposal content with translated HTML and shows attribution */
+  /** When set, overrides proposal content with the translated HTML. */
   translation?: ProposalTranslation;
+  /**
+   * The "See translation" link, directly above the title. It carries the
+   * "Translated from…" attribution for `translation`.
+   */
+  translateLink?: ReactNode;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
   submissionMetaSuffix?: ReactNode;
   /** Rendered between the header section and the proposal body. */
@@ -109,6 +111,7 @@ export function ProposalPreview({
   engagement,
   selection,
   translation,
+  translateLink,
   submissionMetaSuffix,
   headerBanner,
   documentState = 'ready',
@@ -193,16 +196,12 @@ export function ProposalPreview({
           )}
 
           <div className="flex flex-col gap-4">
-            <Header1 className="text-headline font-light">
-              {title || t('decisions.proposals.untitledProposal')}
-            </Header1>
-
-            {translation && (
-              <TranslationNotice
-                sourceLanguageName={translation.sourceLanguageName}
-                onViewOriginal={translation.onViewOriginal}
-              />
-            )}
+            <div className="flex flex-col gap-2">
+              {translateLink}
+              <Header1 className="text-headline font-light">
+                {title || t('decisions.proposals.untitledProposal')}
+              </Header1>
+            </div>
 
             {(budget != null ||
               selection?.allocated != null ||

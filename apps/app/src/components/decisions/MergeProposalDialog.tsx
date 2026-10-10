@@ -584,7 +584,9 @@ function MergeSearchEmptyState({
 }
 
 function MergeSearchResult({ candidate }: { candidate: MergeCandidate }) {
-  const { description } = useProposalCardData(candidate.proposal);
+  const { description } = useProposalCardData({
+    proposal: candidate.proposal,
+  });
 
   return (
     <div className="flex min-w-0 flex-col">
@@ -723,7 +725,7 @@ function MergeProposalSummaryCard({
   className?: string;
 }) {
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal);
+    useProposalCardData({ proposal });
 
   return (
     <ProposalCard
