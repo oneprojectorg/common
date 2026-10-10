@@ -66,8 +66,10 @@ export async function generateMetadata({
  * access) comes from `loadDecision` (getDecisionBySlug, which the router
  * enriches with `access` + encoded `instanceData`). No separate `getInstance`
  * call — the content + per-user access ride on the one slug fetch the route
- * already makes. The client components read this via props, so there's no
- * client `getInstance` query on this route either.
+ * already makes. The client overview reads that same payload out of the
+ * `getDecisionBySlug` query the layout hydrates from it, so the phase state
+ * follows the instance's realtime channel instead of freezing at this
+ * snapshot.
  */
 const DecisionOverviewPage = async ({
   params,
@@ -92,7 +94,6 @@ const DecisionOverviewPage = async ({
     <DecisionOverview
       instanceId={instanceId}
       decisionSlug={slug}
-      processInstance={instance}
       aboutSlot={aboutSlot}
       isActive={isActive}
     />

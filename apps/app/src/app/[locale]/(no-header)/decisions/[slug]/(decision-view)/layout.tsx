@@ -1,3 +1,8 @@
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
 import { type ReactNode, Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -20,6 +25,16 @@ import { loadDecision } from './loadDecision';
  * enriched with `access` + encoded `instanceData`), so the layout makes no
  * separate `getInstance` call. The /current tab seeds its own `getInstance`
  * cache in its page.
+ *
+ * The phase state (current phase, stepper, Advance button, proposal CTAs) is
+ * hydrated as a `getDecisionBySlug` query rather than handed down as a prop:
+ * only a client query registers the `decisionInstance` realtime channel (the
+ * server-side fetch in `loadDecision` registers nothing — see
+ * `withChannelMeta`), and without that registration an admin advancing the
+ * phase left every other open client stale. The hydrated payload is the one
+ * `loadDecision` already fetched, so the first paint is still server-rendered
+ * and costs no extra round trip; the client's refetch on mount is what carries
+ * the channel meta.
  */
 const DecisionViewLayout = async ({
   children,
@@ -41,74 +56,87 @@ const DecisionViewLayout = async ({
   // process — the header offers Join (account claim) instead of Log in.
   const canJoin = access?.submitProposals === true;
 
+  // Seed the getDecisionBySlug query with the payload loadDecision already
+  // fetched (setQueryData, not a second fetch) so the client components render
+  // the same snapshot server-side and then refetch on mount to register the
+  // decisionInstance channel.
+  const { utils, queryClient } = await createServerUtils();
+  const { queryKey } = utils.decision.getDecisionBySlug.queryOptions({ slug });
+  queryClient.setQueryData(queryKey, decisionProfile);
+
   return (
-    <DecisionTranslationProvider>
-      {/* Detection spans the whole screen — the side panel's updates and
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DecisionTranslationProvider>
+        {/* Detection spans the whole screen — the side panel's updates and
           resources register alongside the proposals and the phase copy, so one
           Translate control covers everything the screen can translate. */}
-      <TranslationDetectionProvider>
-        {/* Fixed header + scrolling content: the grid keeps the header in place
+        <TranslationDetectionProvider>
+          {/* Fixed header + scrolling content: the grid keeps the header in place
           and confines the scrollbar to the content row. The content row is the
           scroll container the proposals filter bar pins inside. */}
-        <div className="grid h-dvh grid-rows-[auto_1fr]">
-          <DecisionHeader
-            instanceId={instanceId}
-            decisionSlug={slug}
-            isAdmin={access?.admin}
-            canReadUpdates={access?.admin === true || access?.read === true}
-            profileName={decisionProfile.name}
-            // Pass the instance so the header renders from props (no client
-            // getInstance query on this route).
-            processInstance={instance}
-            showStepper={false}
-            // Hidden until the first phase begins.
-            centerSlot={
-              isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
-            }
-          />
-          {/* overflow-x-clip: the bar's full-bleed `w-screen` chrome is 100vw,
+          <div className="grid h-dvh grid-rows-[auto_1fr]">
+            <DecisionHeader
+              instanceId={instanceId}
+              decisionSlug={slug}
+              isAdmin={access?.admin}
+              canReadUpdates={access?.admin === true || access?.read === true}
+              profileName={decisionProfile.name}
+              // Read the instance from the hydrated getDecisionBySlug query so
+              // the stepper and admin controls follow a phase advance made in
+              // another client.
+              fromDecisionSlug={slug}
+              showStepper={false}
+              // Hidden until the first phase begins.
+              centerSlot={
+                isActive ? (
+                  <DecisionViewToggle decisionSlug={slug} />
+                ) : undefined
+              }
+            />
+            {/* overflow-x-clip: the bar's full-bleed `w-screen` chrome is 100vw,
             which exceeds the content width by the scrollbar on desktop and would
             otherwise add a few px of horizontal scroll. */}
-          <div className="overflow-x-clip overflow-y-auto">{children}</div>
-        </div>
-        {/*
-         * Like the header's updates toggle, the side panel reads the `panel`
-         * search param (nuqs/useSearchParams). It lives in this layout, which
-         * Next prerenders as the route's static shell (see loading.tsx), so the
-         * read would happen outside a request scope and throw. Suspense defers
-         * it out of the shell; the panel is closed by default, so null fallback.
-         */}
-        <Suspense fallback={null}>
-          <DecisionSidePanel
-            decisionProfileId={decisionProfile.id}
-            instanceId={instanceId}
-            access={access}
-          />
-        </Suspense>
-        {/*
-         * Post-anon-submit promote modal. Mounted here (not on the deleted
-         * `/decisions/[slug]/page.tsx` from #1458) so the `?promote=1` redirect
-         * the proposal editor issues still opens the modal regardless of whether
-         * the user lands on the overview or the current-phase tab. Reads
-         * `?promote=` via nuqs and renders null when the param is absent.
-         */}
-        <Suspense fallback={null}>
-          <PromoteAccountModal />
-        </Suspense>
-        {/*
-         * Header "Join" modal (account claim on public processes). Mounted in the
-         * layout like PromoteAccountModal so `?join=1` works on both tabs; reads
-         * the param via nuqs, hence the Suspense (see the side panel comment).
-         * Only mounted when the process is public — non-public pages hydrate
-         * nothing.
-         */}
-        {canJoin ? (
+            <div className="overflow-x-clip overflow-y-auto">{children}</div>
+          </div>
+          {/*
+           * Like the header's updates toggle, the side panel reads the `panel`
+           * search param (nuqs/useSearchParams). It lives in this layout, which
+           * Next prerenders as the route's static shell (see loading.tsx), so the
+           * read would happen outside a request scope and throw. Suspense defers
+           * it out of the shell; the panel is closed by default, so null fallback.
+           */}
           <Suspense fallback={null}>
-            <JoinAccountModal />
+            <DecisionSidePanel
+              decisionProfileId={decisionProfile.id}
+              instanceId={instanceId}
+              access={access}
+            />
           </Suspense>
-        ) : null}
-      </TranslationDetectionProvider>
-    </DecisionTranslationProvider>
+          {/*
+           * Post-anon-submit promote modal. Mounted here (not on the deleted
+           * `/decisions/[slug]/page.tsx` from #1458) so the `?promote=1` redirect
+           * the proposal editor issues still opens the modal regardless of whether
+           * the user lands on the overview or the current-phase tab. Reads
+           * `?promote=` via nuqs and renders null when the param is absent.
+           */}
+          <Suspense fallback={null}>
+            <PromoteAccountModal />
+          </Suspense>
+          {/*
+           * Header "Join" modal (account claim on public processes). Mounted in the
+           * layout like PromoteAccountModal so `?join=1` works on both tabs; reads
+           * the param via nuqs, hence the Suspense (see the side panel comment).
+           * Only mounted when the process is public — non-public pages hydrate
+           * nothing.
+           */}
+          {canJoin ? (
+            <Suspense fallback={null}>
+              <JoinAccountModal />
+            </Suspense>
+          ) : null}
+        </TranslationDetectionProvider>
+      </DecisionTranslationProvider>
+    </HydrationBoundary>
   );
 };
 
