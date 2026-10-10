@@ -14,11 +14,11 @@ import { useTranslations } from '@/lib/i18n';
 
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
+import { ProposalTranslateLink } from '../ProposalTranslateLink';
 import { AuthorNotesSection } from '../Review/AuthorNotesSection';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
-import { TranslateBanner } from '../TranslateBanner';
 import { useTranslateProposal } from '../useTranslateProposal';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
@@ -81,14 +81,7 @@ export function ReviewSummaryView({
   // Scoped to the proposal deliberately. `translateRubric` takes an assignment
   // id, and reviewer-authored notes have no endpoint, so detection stays on the
   // proposal rather than offering a control that cannot move what triggered it.
-  const {
-    translation,
-    showBanner,
-    isTranslating,
-    targetLanguageName,
-    handleTranslate,
-    dismissBanner,
-  } = useTranslateProposal(proposal);
+  const { link, translation } = useTranslateProposal(proposal);
 
   // 'newest' orders by assignedAt in SQL, as ProposalReviewsLayout does.
   const ownAssignment = ownAssignments[0];
@@ -174,6 +167,7 @@ export function ReviewSummaryView({
     <ProposalPreview
       proposal={proposal}
       translation={translation}
+      translateLink={<ProposalTranslateLink translation={link} />}
       // The reviews on the right are read against the author's last
       // resubmission.
       headerBanner={<AuthorNotesSection proposalId={proposalId} />}
@@ -285,15 +279,6 @@ export function ReviewSummaryView({
           instanceId={instanceId}
           proposalId={proposalId}
           phaseId={phaseId}
-        />
-      )}
-
-      {showBanner && (
-        <TranslateBanner
-          onTranslate={handleTranslate}
-          onDismiss={dismissBanner}
-          isTranslating={isTranslating}
-          languageName={targetLanguageName}
         />
       )}
     </div>

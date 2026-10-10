@@ -1,108 +1,52 @@
 'use client';
 
-import { useContentNeedsTranslation } from '@/hooks/useContentNeedsTranslation';
 import { trpc } from '@op/api/client';
-import {
-  type Proposal,
-  type ProposalTranslation,
-  isSupportedLocale,
-} from '@op/common/client';
-import { toast } from '@op/sense/Toast';
-import { useLocale } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import type { Proposal } from '@op/common/client';
+import { useMemo } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
-
+import type { ProposalTranslation } from './ProposalPreview';
 import { getProposalDetectionText } from './translationDetectionText';
-
-/** The `translation` prop `ProposalPreview` accepts, or undefined when untranslated. */
-type ProposalPreviewTranslation =
-  | {
-      htmlContent: ProposalTranslation;
-      sourceLanguageName: string;
-      onViewOriginal: () => void;
-    }
-  | undefined;
+import { useTranslateLink } from './useTranslateLink';
 
 /**
- * Per-proposal translation: detection, the translate mutation, and the banner
- * state for one proposal.
+ * The proposal page's "See translation" link: the same link as the proposal
+ * card's, translating the whole proposal — title, categories and every
+ * free-text answer — through `translateProposal`.
  *
- * Shared by every screen that renders a single proposal — the proposal page and
- * the rubric review screen — so a reviewer gets the same affordance as a reader.
- * The review screen previously had none (ONE COWOP report).
+ * Shared by every screen that renders one proposal as a page (the proposal
+ * route, its sheet, and the admin review summary), so each offers the same
+ * control. Each starts in the original language.
  */
 export const useTranslateProposal = (proposal: Proposal) => {
-  const t = useTranslations('decisions');
-  const locale = useLocale();
-  const supportedLocale = isSupportedLocale(locale) ? locale : null;
-
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [translated, setTranslated] = useState<{
-    translated: ProposalTranslation;
-    sourceLocale: string;
-  } | null>(null);
-
-  const translateMutation = trpc.translation.translateProposal.useMutation({
-    onSuccess: (data) => {
-      setTranslated({
-        translated: data.translated,
-        sourceLocale: data.sourceLocale,
-      });
-    },
-    onError: () => {
-      toast.error(t('translateContentError'));
-    },
-  });
-
-  const handleTranslate = useCallback(() => {
-    if (!supportedLocale) {
-      return;
-    }
-    translateMutation.mutate({
-      profileId: proposal.profileId,
-      targetLocale: supportedLocale,
-    });
-  }, [translateMutation, proposal.profileId, supportedLocale]);
-
-  const handleViewOriginal = useCallback(() => setTranslated(null), []);
-
-  // The browser's Intl API localizes the language names — no dictionary keys.
-  const languageNames = useMemo(
-    () => new Intl.DisplayNames([locale], { type: 'language' }),
-    [locale],
-  );
-
-  const sourceLanguageName = translated
-    ? (languageNames.of(
-        translated.sourceLocale.toLowerCase().split('-')[0] ?? '',
-      ) ?? '')
-    : '';
-
-  // Only offer translation when the proposal's own content is in a language
-  // other than the reader's locale — no badge for same-language proposals.
   const detectionText = useMemo(
     () => getProposalDetectionText(proposal),
     [proposal],
   );
-  const needsTranslation = useContentNeedsTranslation(detectionText);
 
-  const translation: ProposalPreviewTranslation = translated
-    ? {
-        htmlContent: translated.translated,
-        sourceLanguageName,
-        onViewOriginal: handleViewOriginal,
-      }
-    : undefined;
+  const translateMutation = trpc.translation.translateProposal.useMutation();
+
+  const link = useTranslateLink({
+    detectionText,
+    enabled: true,
+    request: (targetLocale) =>
+      translateMutation
+        .mutateAsync({ profileId: proposal.profileId, targetLocale })
+        // Nothing translated comes back as `{}` — a failure, as on the card.
+        .then(({ translated }) =>
+          Object.keys(translated).length > 0 ? translated : undefined,
+        ),
+  });
+
+  const translation: ProposalTranslation | undefined = link.translation && {
+    htmlContent: link.translation,
+    sourceLanguageName: link.sourceLanguageName,
+    onViewOriginal: link.showOriginal,
+  };
 
   return {
+    /** Pass to `ProposalTranslateLink`. */
+    link,
     /** Pass straight to `ProposalPreview`'s `translation` prop. */
     translation,
-    showBanner:
-      !!supportedLocale && needsTranslation && !bannerDismissed && !translated,
-    isTranslating: translateMutation.isPending,
-    targetLanguageName: languageNames.of(locale) ?? locale,
-    handleTranslate,
-    dismissBanner: () => setBannerDismissed(true),
   };
 };

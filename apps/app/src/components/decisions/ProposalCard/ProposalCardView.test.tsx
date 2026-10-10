@@ -16,21 +16,30 @@ type TranslateVariables = {
   targetLocale: string;
 };
 
-type MutateOptions = {
-  onSuccess: (data: {
-    translations: Record<string, ProposalTranslation>;
-  }) => void;
-  onError: () => void;
+type TranslateResponse = {
+  translations: Record<string, ProposalTranslation>;
 };
 
-const mutate =
-  vi.fn<(variables: TranslateVariables, options: MutateOptions) => void>();
+/** Settles the last translate request, held open until the test says so. */
+let pending:
+  | {
+      resolve: (data: TranslateResponse) => void;
+      reject: (error: Error) => void;
+    }
+  | undefined;
+
+const mutateAsync = vi.fn(
+  (_variables: TranslateVariables) =>
+    new Promise<TranslateResponse>((resolve, reject) => {
+      pending = { resolve, reject };
+    }),
+);
 
 vi.mock('@op/api/client', () => ({
   trpc: {
     translation: {
       translateProposals: {
-        useMutation: () => ({ mutate }),
+        useMutation: () => ({ mutateAsync }),
       },
     },
   },
@@ -113,23 +122,21 @@ const renderCard = (props: CardProps = {}) => {
   };
 };
 
-/** The handlers of the last translate request. */
 const lastRequest = () => {
-  const options = mutate.mock.lastCall?.[1];
-  if (!options) {
+  if (!pending) {
     throw new Error('translateProposals was not called');
   }
-  return options;
+  return pending;
 };
 
 const succeed = (translations: Record<string, ProposalTranslation>) => {
-  const { onSuccess } = lastRequest();
-  act(() => onSuccess({ translations }));
+  const { resolve } = lastRequest();
+  return act(async () => resolve({ translations }));
 };
 
 const fail = () => {
-  const { onError } = lastRequest();
-  act(() => onError());
+  const { reject } = lastRequest();
+  return act(async () => reject(new Error('translation failed')));
 };
 
 const title = () => screen.getByRole('heading').textContent;
@@ -139,11 +146,12 @@ const seeTranslation = () =>
 /** Translates the Spanish card into English through the link. */
 const translateCard = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(seeTranslation());
-  succeed({ 'profile-1': { title: TITLE_EN } });
+  await succeed({ 'profile-1': { title: TITLE_EN } });
 };
 
 beforeEach(() => {
-  mutate.mockReset();
+  mutateAsync.mockClear();
+  pending = undefined;
 });
 
 afterEach(() => {
@@ -181,10 +189,10 @@ describe('ProposalCardView translate link', () => {
 
     await user.click(seeTranslation());
 
-    expect(mutate).toHaveBeenCalledWith(
-      { profileIds: ['profile-1'], targetLocale: 'en' },
-      expect.anything(),
-    );
+    expect(mutateAsync).toHaveBeenCalledWith({
+      profileIds: ['profile-1'],
+      targetLocale: 'en',
+    });
     const pending = screen.getByRole('button', { name: 'Translating...' });
     expect(pending.getAttribute('aria-disabled')).toBe('true');
     // The original stays on screen until the result lands.
@@ -212,7 +220,7 @@ describe('ProposalCardView translate link', () => {
     await user.click(seeTranslation());
 
     expect(title()).toBe(TITLE_EN);
-    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
   });
 
   it('drops a translation made for another locale', async () => {
@@ -246,7 +254,7 @@ describe('ProposalCardView translate link', () => {
     rerender({ bulk: { 'profile-1': { title: TITLE_EN } } });
     // The list's "View original", then the card's late response.
     rerender({ bulk: {} });
-    succeed({ 'profile-1': { title: TITLE_EN } });
+    await succeed({ 'profile-1': { title: TITLE_EN } });
 
     expect(title()).toBe(TITLE_ES);
     expect(seeTranslation()).toBeTruthy();
@@ -256,21 +264,21 @@ describe('ProposalCardView translate link', () => {
     const { user } = renderCard();
 
     await user.click(seeTranslation());
-    fail();
+    await fail();
 
     expect(screen.getByText('Translation failed.')).toBeTruthy();
     expect(title()).toBe(TITLE_ES);
 
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
-    expect(mutate).toHaveBeenCalledTimes(2);
+    expect(mutateAsync).toHaveBeenCalledTimes(2);
   });
 
   it('treats a response without this proposal as a failure', async () => {
     const { user } = renderCard();
 
     await user.click(seeTranslation());
-    succeed({});
+    await succeed({});
 
     expect(screen.getByText('Translation failed.')).toBeTruthy();
     expect(title()).toBe(TITLE_ES);

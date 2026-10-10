@@ -107,6 +107,12 @@ const RESOURCE_DESCRIPTION_EN =
 const TRANSLATE_BUTTON = /Translate to/;
 
 /**
+ * The per-proposal link above the title — on a card, the proposal page, its
+ * sheet, and the admin review summary — in place of the floating banner.
+ */
+const SEE_TRANSLATION = 'See translation';
+
+/**
  * Budget for the first assertion after a navigation — the e2e build compiles
  * pages on demand, so a cold route is slow. Bounded by the 60s per-test
  * timeout in `playwright.config.ts`, so it is a ceiling on one page load
@@ -332,7 +338,7 @@ test.describe('UGC translation coverage', () => {
       { waitUntil: 'domcontentloaded' },
     );
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
 
     // Subject: the title is the only Spanish text on the page. Detection now
@@ -345,7 +351,7 @@ test.describe('UGC translation coverage', () => {
       page.getByRole('heading', { name: PROPOSAL_TITLE_ES }).first(),
     ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible();
   });
 
@@ -400,7 +406,7 @@ test.describe('UGC translation coverage', () => {
     await expect(reader.getByText(PROPOSAL_TITLE_ES).first()).toBeVisible();
 
     const seeTranslation = reader.getByRole('button', {
-      name: 'See translation',
+      name: SEE_TRANSLATION,
     });
     // Wait for detection to offer the link before counting, or the count
     // could read before a wrongly offered English link renders.
@@ -418,6 +424,16 @@ test.describe('UGC translation coverage', () => {
     await expect(reader.getByText(PROPOSAL_TITLE_ES).first()).toBeVisible();
     // The link is an action, not navigation: the proposal didn't open.
     expect(reader.url()).toBe(urlBefore);
+
+    // Opened, the proposal offers the same link above its title, starting
+    // from the original.
+    await reader
+      .getByRole('link', { name: PROPOSAL_TITLE_ES, exact: true })
+      .click();
+    const sheet = reader.getByRole('dialog', { name: 'Proposal' });
+    await expect(
+      sheet.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
   });
 
   test('a Spanish update offers translation when the rest of the decision is English', async ({
@@ -706,7 +722,7 @@ test.describe('UGC translation coverage', () => {
     ).toBeAttached();
 
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible();
   });
 
@@ -905,6 +921,9 @@ test.describe('UGC translation coverage', () => {
 
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toHaveCount(0);
   });
 });

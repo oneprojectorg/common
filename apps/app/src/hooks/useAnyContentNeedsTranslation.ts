@@ -7,7 +7,7 @@ import { baseLanguage, detectLanguages } from '@/lib/languageDetection';
 
 /**
  * Returns `true` when any of the given text samples is in a language other than
- * the active locale — the list counterpart to {@link useContentNeedsTranslation}.
+ * the active locale — the list counterpart to {@link useForeignContentLanguage}.
  *
  * Each distinct sample is detected once and cached, so as more items stream in
  * (e.g. paginating a proposals list) only the newly added samples are detected;

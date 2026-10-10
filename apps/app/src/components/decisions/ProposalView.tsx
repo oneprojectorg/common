@@ -16,10 +16,10 @@ import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
+import { ProposalTranslateLink } from './ProposalTranslateLink';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
-import { TranslateBanner } from './TranslateBanner';
 import type { ProposalAffordances } from './getProposalAffordances';
 import { useCommentsAllowed } from './useCommentsAllowed';
 import { useLiveProposalDocument } from './useLiveProposalDocument';
@@ -81,14 +81,7 @@ export function ProposalView({
     enabled: affordances.review.feedback,
   });
 
-  const {
-    translation,
-    showBanner,
-    isTranslating,
-    targetLanguageName,
-    handleTranslate,
-    dismissBanner,
-  } = useTranslateProposal(currentProposal);
+  const { link, translation } = useTranslateProposal(currentProposal);
 
   // The server orders newest first.
   const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
@@ -103,6 +96,7 @@ export function ProposalView({
         // access gets the controls (the hook returns undefined otherwise).
         engagement={toPreviewEngagement(engagement)}
         translation={translation}
+        translateLink={<ProposalTranslateLink translation={link} />}
         submissionMetaSuffix={
           latestRespondedAt ? (
             <RevisedOnBadge respondedAt={latestRespondedAt} />
@@ -194,16 +188,6 @@ export function ProposalView({
             {proposalBody}
           </div>
         </div>
-      )}
-
-      {/* Translation banner */}
-      {showBanner && (
-        <TranslateBanner
-          onTranslate={handleTranslate}
-          onDismiss={dismissBanner}
-          isTranslating={isTranslating}
-          languageName={targetLanguageName}
-        />
       )}
     </ProposalViewLayout>
   );

@@ -7,12 +7,13 @@ import type { MouseEvent } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../../Bullet';
-import type { ProposalCardTranslation } from './useProposalCardTranslation';
+import { Bullet } from '../Bullet';
+import type { TranslateLinkState } from './useTranslateLink';
 
 /**
- * The per-card "See translation" link, shown above the title only when the
- * card's own text is in another language than the reader's.
+ * The per-proposal "See translation" link, shown directly above the title — on
+ * the card and on the proposal page — only when the proposal's own text is in
+ * another language than the reader's.
  *
  * The wrapper is a polite live region that stays mounted across states, so a
  * screen reader hears "Translating..." and "Translated from Spanish" as they
@@ -22,7 +23,7 @@ import type { ProposalCardTranslation } from './useProposalCardTranslation';
 export const ProposalTranslateLink = ({
   translation,
 }: {
-  translation: ProposalCardTranslation;
+  translation: TranslateLinkState;
 }) => {
   const t = useTranslations();
   const { isOffered, status, sourceLanguageName, translate, showOriginal } =

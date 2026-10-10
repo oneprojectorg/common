@@ -20,6 +20,7 @@ import { LuCircleX } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
+import { ProposalTranslateLink } from '../ProposalTranslateLink';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import {
   getProposalContentPreview,
@@ -27,7 +28,6 @@ import {
 } from '../proposalContentUtils';
 import { useProposalReviewDecoration } from '../proposalReviewDecoration';
 import { useCommentsAllowed } from '../useCommentsAllowed';
-import { ProposalTranslateLink } from './ProposalTranslateLink';
 import { useProposalCardTranslation } from './useProposalCardTranslation';
 
 /**

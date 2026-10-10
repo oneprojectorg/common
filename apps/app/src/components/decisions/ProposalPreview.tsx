@@ -90,6 +90,11 @@ export type ProposalPreviewProps = {
   selection?: ProposalSelection | null;
   /** When set, overrides proposal content with translated HTML and shows attribution */
   translation?: ProposalTranslation;
+  /**
+   * The "See translation" link, directly above the title. It carries its own
+   * "Translated from…" attribution, so the notice under the title is dropped.
+   */
+  translateLink?: ReactNode;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
   submissionMetaSuffix?: ReactNode;
   /** Rendered between the header section and the proposal body. */
@@ -109,6 +114,7 @@ export function ProposalPreview({
   engagement,
   selection,
   translation,
+  translateLink,
   submissionMetaSuffix,
   headerBanner,
   documentState = 'ready',
@@ -193,11 +199,14 @@ export function ProposalPreview({
           )}
 
           <div className="flex flex-col gap-4">
-            <Header1 className="text-headline font-light">
-              {title || t('decisions.proposals.untitledProposal')}
-            </Header1>
+            <div className="flex flex-col gap-2">
+              {translateLink}
+              <Header1 className="text-headline font-light">
+                {title || t('decisions.proposals.untitledProposal')}
+              </Header1>
+            </div>
 
-            {translation && (
+            {translation && !translateLink && (
               <TranslationNotice
                 sourceLanguageName={translation.sourceLanguageName}
                 onViewOriginal={translation.onViewOriginal}
