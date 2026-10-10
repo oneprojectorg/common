@@ -17,8 +17,6 @@ interface AdminReviewProposalsListProps {
   slug: string;
   /** Decision profile slug — the per-proposal reviews link is built from it. */
   decisionSlug: string;
-  /** Decision profile whose phase copy, updates and resources translate with the list. */
-  decisionProfileId?: string | null;
   access?: DecisionAccess;
   /** Current phase; capability flags are derived from `rules`. */
   currentPhase?: InstancePhaseData;
@@ -46,7 +44,6 @@ export function AdminReviewProposalsList({
   processInstanceId,
   slug,
   decisionSlug,
-  decisionProfileId,
   access,
   currentPhase,
   pinOffset,
@@ -68,7 +65,6 @@ export function AdminReviewProposalsList({
             slug={slug}
             instanceId={processInstanceId}
             decisionSlug={decisionSlug}
-            decisionProfileId={decisionProfileId}
             permissions={access}
             currentPhase={currentPhase}
             pinOffset={pinOffset}

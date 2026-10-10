@@ -12,7 +12,6 @@ import type {
 import {
   type Proposal,
   ProposalReviewRequestState,
-  type ProposalTranslation,
   isReviewPhase,
   isVotingPhase,
   nextCursor,
@@ -40,7 +39,6 @@ import {
   ProposalCardSkeleton,
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
-import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ProposalsFeedView } from './ProposalsFeedView';
 import type {
   ProposalControls,
@@ -53,12 +51,6 @@ import {
 } from './ProposalsMapView';
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import { getScrollParent } from './StickyFilterBar';
-import { TranslateBanner } from './TranslateBanner';
-import {
-  useDecisionNeedsTranslation,
-  useRegisterTranslationSamples,
-} from './TranslationDetectionContext';
-import { TranslationNotice } from './TranslationNotice';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import {
@@ -66,7 +58,6 @@ import {
   PROPOSAL_VIEWS,
   type ProposalView,
 } from './proposalViews';
-import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalStatusItems } from './useProposalFilterItems';
 import {
   type ProposalFilterState,
@@ -74,15 +65,12 @@ import {
   useProposalFilters,
 } from './useProposalFilters';
 import { useProposalViewMode } from './useProposalViewMode';
-import { useTranslateDecision } from './useTranslateDecision';
 
 export interface ProposalsListProps {
   slug: string;
   instanceId: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision content */
-  decisionProfileId?: string | null;
   /** Role-based capabilities for the current user. */
   permissions?: DecisionAccess | null;
   /** Override the default proposal filter */
@@ -117,7 +105,6 @@ export interface ProposalsListProps {
 
 // Stable identity: the provider's value is read by every card, so a fresh `{}`
 // per render would re-run all of them for nothing.
-const NO_TRANSLATIONS: Record<string, ProposalTranslation> = {};
 
 type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
@@ -300,7 +287,6 @@ const ProposalsListContent = ({
   slug,
   instanceId,
   decisionSlug,
-  decisionProfileId,
   permissions,
   currentPhase,
   proposalsHidden,
@@ -461,33 +447,6 @@ const ProposalsListContent = ({
     ],
   );
 
-  // Detect per proposal (not one concatenated sample) so proposals that
-  // paginate in later are each checked — the badge can appear once a
-  // different-language proposal loads further down the list.
-  //
-  // The phase copy is sampled alongside them because this list owns the only
-  // trigger that translates it (`translateDecision` supplies the headline,
-  // phase description and additionalInfo the phase pages render). Sampling
-  // proposals alone hid the button on a foreign-language phase whose proposals
-  // happened to match the reader's locale, leaving that copy untranslatable.
-  const detectionSamples = useMemo(
-    () => [
-      ...allProposals.map(getProposalDetectionText),
-      currentPhase?.headline ?? '',
-      currentPhase?.description ?? '',
-    ],
-    [allProposals, currentPhase?.headline, currentPhase?.description],
-  );
-
-  useRegisterTranslationSamples('proposals', detectionSamples);
-  const needsTranslation = useDecisionNeedsTranslation();
-
-  const translation = useTranslateDecision({
-    proposals: allProposals,
-    decisionProfileId,
-    needsTranslation,
-  });
-
   const hideFilters = !!proposalsHidden && !canManageProposals;
 
   // The applied term, not the live field: it names the search the empty result
@@ -495,7 +454,6 @@ const ProposalsListContent = ({
   const emptyStateProps = {
     hasFilter: hasActiveFilter,
     searchQuery: queryParams.search,
-    isTranslated: !!translation.translationState,
     onClearFilters: canClearFilters ? clearFilters : undefined,
     excludeAssignedForReview,
   };
@@ -683,43 +641,12 @@ const ProposalsListContent = ({
         />
       )}
 
-      {translation.translationState && (
-        <TranslationNotice
-          sourceLanguageName={translation.sourceLanguageName}
-          onViewOriginal={translation.handleViewOriginal}
-          searchActive={!!queryParams.search}
-        />
-      )}
-
-      <ProposalTranslationProvider
-        // Search matched the untranslated titles, and only proposals loaded
-        // before Translate was pressed have a translation at all — so a search
-        // otherwise returns a mix of both languages. Show the source language
-        // for all of them instead, which is what the notice above now says.
-        // Display-only: `translationState` is untouched, so clearing the search
-        // brings the translations straight back.
-        translations={
-          queryParams.search
-            ? NO_TRANSLATIONS
-            : (translation.translationState?.translations ?? NO_TRANSLATIONS)
-        }
-      >
-        {browseViews[browseView]}
-      </ProposalTranslationProvider>
+      {browseViews[browseView]}
 
       {/* Grid mode: the load-more skeletons render inside the masonry (see
           ProposalMasonry `loadingMore`), so the sentinel is just the trigger.
           Map and feed host their own sentinel inside their card column. */}
       {browseView === 'grid' && renderScrollSentinel(null)}
-
-      {translation.showBanner && (
-        <TranslateBanner
-          onTranslate={translation.handleTranslate}
-          onDismiss={translation.dismissBanner}
-          isTranslating={translation.isTranslating}
-          languageName={translation.targetLanguageName}
-        />
-      )}
 
       {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />

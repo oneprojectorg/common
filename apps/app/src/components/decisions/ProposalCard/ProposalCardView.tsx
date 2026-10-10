@@ -20,8 +20,7 @@ import { LuCircleX } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
-import { ProposalTranslateLink } from '../ProposalTranslateLink';
-import { useCardTranslation } from '../ProposalTranslationContext';
+import { TranslateLink } from '../TranslateLink';
 import {
   getProposalContentPreview,
   resolveProposalSystemFields,
@@ -36,8 +35,8 @@ import { useProposalCardTranslation } from './useProposalCardTranslation';
  * preview), applying any per-card translation. Shared by every proposal-card
  * surface so the mapping lives in one place.
  *
- * `ownTranslation` is the card's own "See translation" result, which is only
- * ever set when no list-level translation covers the card.
+ * `ownTranslation` is the card's own "See translation" result, shown in place
+ * of the original while it is on.
  */
 export function useProposalCardData({
   proposal,
@@ -48,8 +47,7 @@ export function useProposalCardData({
 }) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
-  const listTranslation = useCardTranslation(proposal.profileId);
-  const cardTranslation = ownTranslation ?? listTranslation;
+  const cardTranslation = ownTranslation;
   const { title, budget, category } = resolveProposalSystemFields(proposal);
 
   const titleText =
@@ -281,7 +279,7 @@ export const ProposalCardView = ({
   // rides along with the badge so `headerBadge={null}` callers still get it.
   const header = (
     <>
-      <ProposalTranslateLink translation={ownTranslation} />
+      <TranslateLink translation={ownTranslation} />
       {badge}
     </>
   );

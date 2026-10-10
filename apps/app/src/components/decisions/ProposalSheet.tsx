@@ -25,8 +25,8 @@ import { ButtonLink } from '../ButtonLink';
 import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
 import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
-import { ProposalTranslateLink } from './ProposalTranslateLink';
 import { ReportProposalDialog } from './ReportProposalDialog';
+import { TranslateLink } from './TranslateLink';
 import {
   type ProposalRoute,
   decisionRootHref,
@@ -174,7 +174,7 @@ function ProposalSheetBody({
         documentState={documentState}
         engagement={toPreviewEngagement(engagement)}
         translation={translation}
-        translateLink={<ProposalTranslateLink translation={link} />}
+        translateLink={<TranslateLink translation={link} />}
       />
 
       <ContributingIdeas proposal={proposal} decisionRoot={decisionRoot} />

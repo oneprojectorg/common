@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react';
 
 type TranslateLinkStatus = 'idle' | 'translating' | 'translated' | 'failed';
 
-/** What `ProposalTranslateLink` renders from. */
+/** What `TranslateLink` renders from. */
 export type TranslateLinkState = {
   isOffered: boolean;
   status: TranslateLinkStatus;

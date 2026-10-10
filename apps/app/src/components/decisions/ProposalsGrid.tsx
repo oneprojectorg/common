@@ -53,8 +53,6 @@ export interface ProposalsProps {
   hasFilter: boolean;
   /** Applied search term — named in the empty state when it returns nothing. */
   searchQuery?: string;
-  /** Machine translation is showing; tailors the empty state's search copy. */
-  isTranslated?: boolean;
   /** Resets every filter from the empty state. */
   onClearFilters?: () => void;
   /** When true, the current phase has voting enabled — always show voting UI */
@@ -102,12 +100,6 @@ export interface NoProposalsFoundProps {
   excludeAssignedForReview?: boolean;
   /** The applied search term, quoted back so the miss names itself. */
   searchQuery?: string;
-  /**
-   * Machine translation is showing. Search matched the untranslated titles, so
-   * a term read off a translated card can miss — say so rather than imply the
-   * proposal isn't there.
-   */
-  isTranslated?: boolean;
   /** Resets search, category and the All/Mine/Shortlisted filter. */
   onClearFilters?: () => void;
 }
@@ -121,7 +113,6 @@ export const NoProposalsFound = ({
   hasFilter,
   excludeAssignedForReview,
   searchQuery,
-  isTranslated = false,
   onClearFilters,
 }: NoProposalsFoundProps) => {
   const t = useTranslations();
@@ -154,9 +145,7 @@ export const NoProposalsFound = ({
   // Under a search the term is already in the title, so the only line worth
   // adding is the one that explains a miss the reader can see is wrong.
   const description = searchQuery
-    ? isTranslated
-      ? t('decisions.proposals.translationSearchNotice')
-      : null
+    ? null
     : hasFilter
       ? t('decisions.proposals.adjustFiltersHint')
       : t('decisions.proposals.noProposalsFirstHint');
@@ -233,7 +222,6 @@ const VotingProposalsList = ({
   votedProposalIds = [],
   hasFilter,
   searchQuery,
-  isTranslated,
   onClearFilters,
   proposalsHidden,
   excludeAssignedForReview,
@@ -367,7 +355,6 @@ const VotingProposalsList = ({
         hasFilter={hasFilter}
         excludeAssignedForReview={excludeAssignedForReview}
         searchQuery={searchQuery}
-        isTranslated={isTranslated}
         onClearFilters={onClearFilters}
       />
     );
@@ -571,7 +558,6 @@ const ViewProposalsList = ({
   permissions,
   hasFilter,
   searchQuery,
-  isTranslated,
   onClearFilters,
   proposalsHidden,
   excludeAssignedForReview,
@@ -589,7 +575,6 @@ const ViewProposalsList = ({
         hasFilter={hasFilter}
         excludeAssignedForReview={excludeAssignedForReview}
         searchQuery={searchQuery}
-        isTranslated={isTranslated}
         onClearFilters={onClearFilters}
       />
     );

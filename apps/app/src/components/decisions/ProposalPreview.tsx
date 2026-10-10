@@ -47,14 +47,11 @@ import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
-import { TranslationNotice } from './TranslationNotice';
 import { resolveProposalSystemFields } from './proposalContentUtils';
 import { useCommentsAllowed } from './useCommentsAllowed';
 
 export type ProposalTranslation = {
   htmlContent: Record<string, string | string[]>;
-  sourceLanguageName: string;
-  onViewOriginal: () => void;
 };
 
 /**
@@ -88,11 +85,11 @@ export type ProposalPreviewProps = {
   engagement?: ProposalEngagement;
   /** Selection record from the latest confirmed result, if any. */
   selection?: ProposalSelection | null;
-  /** When set, overrides proposal content with translated HTML and shows attribution */
+  /** When set, overrides proposal content with the translated HTML. */
   translation?: ProposalTranslation;
   /**
-   * The "See translation" link, directly above the title. Passing it hides the
-   * "Translated from…" notice under the title: the link carries its own.
+   * The "See translation" link, directly above the title. It carries the
+   * "Translated from…" attribution for `translation`.
    */
   translateLink?: ReactNode;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
@@ -205,13 +202,6 @@ export function ProposalPreview({
                 {title || t('decisions.proposals.untitledProposal')}
               </Header1>
             </div>
-
-            {translation && translateLink === undefined && (
-              <TranslationNotice
-                sourceLanguageName={translation.sourceLanguageName}
-                onViewOriginal={translation.onViewOriginal}
-              />
-            )}
 
             {(budget != null ||
               selection?.allocated != null ||

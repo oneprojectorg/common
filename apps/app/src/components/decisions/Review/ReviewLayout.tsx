@@ -20,7 +20,6 @@ import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewProposalPane } from './ReviewProposalPane';
 import { ReviewRubricForm } from './ReviewRubricForm';
 import type { PreviousReviewPhase } from './ReviewTabs';
-import { ReviewTranslationProvider } from './ReviewTranslationContext';
 
 interface ReviewLayoutProps {
   decisionSlug: string;
@@ -92,30 +91,21 @@ export async function ReviewLayout({
         decisionSlug={decisionSlug}
         reviewSettings={reviewSettings}
       >
-        {/* Inside ReviewFormProvider: the proposal and the rubric it translates
-            both come from the assignment that provider loads. */}
-        <ReviewTranslationProvider assignmentId={assignmentId}>
-          <div className="flex h-dvh flex-col overflow-hidden bg-white">
-            <ReviewNavbar decisionSlug={decisionSlug} />
+        <div className="flex h-dvh flex-col overflow-hidden bg-white">
+          <ReviewNavbar decisionSlug={decisionSlug} />
 
-            <SplitPane
-              className="mx-auto max-w-6xl"
-              defaultMobileTabId="review"
+          <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="review">
+            <SplitPane.Pane
+              id="proposal"
+              label={t('decisions.proposals.proposalLabel')}
             >
-              <SplitPane.Pane
-                id="proposal"
-                label={t('decisions.proposals.proposalLabel')}
-              >
-                <ReviewProposalPane
-                  decisionRoot={`/decisions/${decisionSlug}`}
-                />
-              </SplitPane.Pane>
-              <SplitPane.Pane id="review" label={t('Review')}>
-                <ReviewRubricForm previousReviewPhases={previousReviewPhases} />
-              </SplitPane.Pane>
-            </SplitPane>
-          </div>
-        </ReviewTranslationProvider>
+              <ReviewProposalPane decisionRoot={`/decisions/${decisionSlug}`} />
+            </SplitPane.Pane>
+            <SplitPane.Pane id="review" label={t('Review')}>
+              <ReviewRubricForm previousReviewPhases={previousReviewPhases} />
+            </SplitPane.Pane>
+          </SplitPane>
+        </div>
       </ReviewFormProvider>
     </HydrationBoundary>
   );

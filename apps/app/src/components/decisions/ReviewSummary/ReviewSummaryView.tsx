@@ -14,11 +14,11 @@ import { useTranslations } from '@/lib/i18n';
 
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
-import { ProposalTranslateLink } from '../ProposalTranslateLink';
 import { AuthorNotesSection } from '../Review/AuthorNotesSection';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
+import { TranslateLink } from '../TranslateLink';
 import { useTranslateProposal } from '../useTranslateProposal';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
@@ -167,7 +167,7 @@ export function ReviewSummaryView({
     <ProposalPreview
       proposal={proposal}
       translation={translation}
-      translateLink={<ProposalTranslateLink translation={link} />}
+      translateLink={<TranslateLink translation={link} />}
       // The reviews on the right are read against the author's last
       // resubmission.
       headerBanner={<AuthorNotesSection proposalId={proposalId} />}

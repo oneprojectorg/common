@@ -3,6 +3,7 @@
 import { match } from '@op/core';
 import { Button } from '@op/sense/Button';
 import { Spinner } from '@op/sense/Spinner';
+import { cn } from '@op/sense/lib/utils';
 import type { MouseEvent } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -11,19 +12,23 @@ import { Bullet } from '../Bullet';
 import type { TranslateLinkState } from './useTranslateLink';
 
 /**
- * The per-proposal "See translation" link, shown directly above the title — on
- * the card and on the proposal page — only when the proposal's own text is in
- * another language than the reader's.
+ * The "See translation" link for one authored object — a proposal, a comment,
+ * a review, a revision request, the process overview. It sits at the top of
+ * the object's content, above everything the author wrote, and shows only when
+ * that object's own text is in another language than the reader's.
  *
  * The wrapper is a polite live region that stays mounted across states, so a
  * screen reader hears "Translating..." and "Translated from Spanish" as they
  * land. `relative z-10` lifts it above the title's stretched link, and clicks
  * stop here so they never open the proposal or toggle an interactive card.
  */
-export const ProposalTranslateLink = ({
+export const TranslateLink = ({
   translation,
+  align = 'start',
 }: {
   translation: TranslateLinkState;
+  /** The alignment of the text under it — `center` on the overview banner. */
+  align?: 'start' | 'center';
 }) => {
   const t = useTranslations();
   const { isOffered, status, sourceLanguageName, translate, showOriginal } =
@@ -45,7 +50,6 @@ export const ProposalTranslateLink = ({
       action: translate,
     },
     translated: {
-      // Same "Translated from Spanish · View original" as `TranslationNotice`.
       notice: (
         <>
           {t('decisions.proposals.translatedFromNotice', {
@@ -77,7 +81,10 @@ export const ProposalTranslateLink = ({
   return (
     <div
       aria-live="polite"
-      className="relative z-10 flex w-fit flex-wrap items-center gap-x-1 text-sm"
+      className={cn(
+        'relative z-10 flex w-fit flex-wrap items-center gap-x-1 text-sm',
+        align === 'center' && 'mx-auto justify-center',
+      )}
     >
       {/* Always rendered (possibly empty) so the button keeps its place in the
           tree and keyboard focus survives each state change. */}

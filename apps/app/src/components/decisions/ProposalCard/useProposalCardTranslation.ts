@@ -4,7 +4,6 @@ import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { useMemo } from 'react';
 
-import { useCardTranslation } from '../ProposalTranslationContext';
 import { getProposalDetectionText } from '../translationDetectionText';
 import { useTranslateLink } from '../useTranslateLink';
 
@@ -13,9 +12,7 @@ import { useTranslateLink } from '../useTranslateLink';
  * through `translateProposals` for just this proposal.
  *
  * Each card detects its own language, so a grid can offer translation on the
- * Spanish card and not on the English one beside it. A list-level translation
- * that already covers the card wins: the link steps aside and detection is
- * skipped.
+ * Spanish card and not on the English one beside it.
  */
 export const useProposalCardTranslation = ({
   proposal,
@@ -26,19 +23,16 @@ export const useProposalCardTranslation = ({
   enabled?: boolean;
 }) => {
   const { profileId } = proposal;
-  const listTranslation = useCardTranslation(profileId);
-  const isActive = enabled && !listTranslation;
-
   const detectionText = useMemo(
-    () => (isActive ? getProposalDetectionText(proposal) : ''),
-    [isActive, proposal],
+    () => (enabled ? getProposalDetectionText(proposal) : ''),
+    [enabled, proposal],
   );
 
   const translateMutation = trpc.translation.translateProposals.useMutation();
 
   return useTranslateLink({
     detectionText,
-    enabled: isActive,
+    enabled,
     request: (targetLocale) =>
       translateMutation
         .mutateAsync({ profileIds: [profileId], targetLocale })

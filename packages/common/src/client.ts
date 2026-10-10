@@ -295,6 +295,8 @@ export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta'
 export type { PostTranslation } from './services/translation/translatePosts';
 export type { ProposalTranslation } from './services/translation/translateProposal';
 export type { ResourceTranslation } from './services/translation/translateResources';
+export type { ReviewTranslation } from './services/translation/translateReview';
+export type { RevisionRequestTranslation } from './services/translation/translateRevisionRequest';
 export type {
   TranslatedFieldValue,
   TranslatedFields,

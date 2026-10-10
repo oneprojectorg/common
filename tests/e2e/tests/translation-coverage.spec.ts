@@ -7,19 +7,19 @@ import {
   createDecisionInstance,
   createInstanceMember,
   createProposal,
+  createProposalReview,
   createReviewScenario,
   getSeededTemplate,
   grantInstanceReviewerRole,
 } from '@op/common/testing/data';
 import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  ProposalReviewState,
   ProposalStatus,
   posts,
   postsToProfiles,
   processInstances,
-  resourceCollectionItems,
-  resourceCollectionProfiles,
-  resourceCollections,
-  resources,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -33,39 +33,23 @@ import {
 } from '../fixtures/index.js';
 
 /**
- * Covers the reported gaps in user-content translation (ONE COWOP report:
- * "when viewing proposals, browsing all, viewing a proposal, and reviewing a
- * proposal against the rubric — none of the UGC is available. But I did see the
- * overview page translating").
+ * Covers the per-object "See translation" link (ONE COWOP report: "when
+ * viewing proposals, browsing all, viewing a proposal, and reviewing a proposal
+ * against the rubric — none of the UGC is available").
  *
- * The gaps fixed and pinned here:
- * 1. The rubric review screen had no translate affordance at all. It now
- *    mounts `ReviewTranslationProvider`, whose single banner moves the
- *    proposal pane and the rubric together.
- * 2. Language detection sampled the body and skipped the title, so a proposal
- *    with a foreign title over a short body looked same-language.
- * 3. Detection was computed by whichever component owned the control, from
- *    only the content that component rendered, so updates and resources were
- *    never sampled. `TranslationDetectionContext` now collects a sample from
- *    every surface on the screen.
+ * Every authored object carries its own link — the process overview (above the
+ * overview banner and the phase hero), a proposal (card, page, sheet, the
+ * reviewer's proposal pane, the admin review summary) and an update — offered
+ * only when that object's own text is in another language than the reader's.
+ * There is no page-level translate control, and rubric text is configuration.
  *
- * Every surface that renders author-written content has to register into that
- * context, and three of them did not. Each has a test below: the reviewer's
- * queue (the default tab of a review phase, which mounts with the "Other
- * proposals" list unmounted beside it), the review phase hero copy, and the
- * overview's "Pinned Resources" list. A surface that renders content but
- * registers nothing is the recurring shape of this bug.
- *
- * No test clicks Translate, so no test calls DeepL — reaching the affordance
- * is what the report is about. The click path (the mutation, the "Translated
- * from Spanish · View original" swap, and the failure toast) is therefore not
- * covered here.
+ * DeepL is never called: the success path is unit-tested in the app, and the
+ * card test fails the request on purpose to pin the inline failure state.
  *
  * `no translation is offered when every surface is already in English` is the
  * negative control for the whole file. Detection is a gate, so without it every
  * test here would still pass against a build that dropped the gate and showed
- * the control unconditionally — verified by forcing the gate open and watching
- * only that test fail.
+ * the link unconditionally.
  *
  * The Spanish samples below are long enough for franc (used by
  * `lib/languageDetection.ts`) to resolve a language. Short strings return
@@ -87,6 +71,15 @@ const PHASE_DESCRIPTION_ES =
 const POST_ES =
   'La fase de revisión comienza el lunes que viene. Los vecinos que quieran revisar propuestas deben inscribirse antes del viernes, y el equipo enviará las instrucciones por correo.';
 
+const COMMENT_ES =
+  'Me encanta esta propuesta. Los vecinos de la calle mayor llevamos años pidiendo un espacio verde donde los niños puedan jugar después de la escuela.';
+
+const REVIEW_NOTE_ES =
+  'La propuesta es clara y el presupuesto es razonable, pero falta explicar quién se encargará del mantenimiento de la huerta durante el invierno.';
+
+const REVISION_REQUEST_ES =
+  'Por favor, añade un calendario con las fechas de construcción y explica cómo participarán los vecinos en el cuidado de la huerta.';
+
 const PROPOSAL_TITLE_EN = 'Community garden in the central park';
 const PROPOSAL_BODY_EN =
   '<p>We propose building a community garden in the central park. The garden will offer fresh food to families and a meeting place for neighbours. We are asking for funds for tools, seeds and an irrigation system.</p>';
@@ -95,20 +88,11 @@ const PROPOSAL_TITLE_ES = 'Huerta comunitaria en el parque central del barrio';
 const PROPOSAL_BODY_ES =
   '<p>Proponemos construir una huerta comunitaria en el parque central del barrio. La huerta ofrecerá alimentos frescos a las familias y será un espacio de encuentro para los vecinos. Solicitamos fondos para herramientas, semillas y un sistema de riego.</p>';
 
-const RESOURCE_TITLE_ES = 'Guía para preparar una propuesta vecinal';
-const RESOURCE_DESCRIPTION_ES =
-  'Este documento explica cómo preparar una propuesta para el presupuesto participativo del barrio, qué documentos hacen falta y cuáles son los plazos de entrega para cada fase del proceso.';
-
-const RESOURCE_TITLE_EN = 'How to prepare a neighbourhood proposal';
-const RESOURCE_DESCRIPTION_EN =
-  'This document explains how to prepare a proposal for the neighbourhood participatory budget, which supporting documents are needed, and the deadlines that apply to each phase of the process.';
-
-/** Matches the `Translate to {language}` label in `TranslateBanner`. */
-const TRANSLATE_BUTTON = /Translate to/;
-
 /**
- * The per-proposal link above the title — on a card, the proposal page, its
- * sheet, and the admin review summary — in place of the floating banner.
+ * Every authored object — the process overview, a proposal, a comment or
+ * update, a review — carries its own "See translation" link, offered only when
+ * that object's own text is in another language. There is no page-level
+ * translate control.
  */
 const SEE_TRANSLATION = 'See translation';
 
@@ -266,8 +250,9 @@ test.describe('UGC translation coverage', () => {
     await expect(
       page.getByRole('heading', { name: OVERVIEW_HEADLINE_ES }).first(),
     ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
+    // The process's own link, above the overview banner.
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible();
 
     // The reviewer scoring the same Spanish proposal gets the same affordance.
@@ -283,9 +268,11 @@ test.describe('UGC translation coverage', () => {
       page.getByRole('heading', { name: PROPOSAL_TITLE_ES }).first(),
     ).toBeAttached();
     await expect(page.getByText('Proponemos construir').first()).toBeAttached();
+    // The proposal pane carries the proposal's own link; the rubric is process
+    // configuration and is not offered.
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
-    ).toBeVisible();
+      page.getByRole('button', { name: SEE_TRANSLATION }).first(),
+    ).toBeAttached();
   });
 
   test('a proposal with a Spanish title but no body offers translation', async ({
@@ -436,7 +423,7 @@ test.describe('UGC translation coverage', () => {
     ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
   });
 
-  test('a Spanish update offers translation when the rest of the decision is English', async ({
+  test('a Spanish update offers its own translation link', async ({
     cleanup,
     org,
     signIn,
@@ -498,32 +485,21 @@ test.describe('UGC translation coverage', () => {
       timeout: PAGE_READY_TIMEOUT,
     });
 
-    // The side panel is a modal, so it marks the page behind it aria-hidden and
-    // the control is unreachable while the panel is open. Close it to read the
-    // control the way a reader would.
-    await closeSidePanel(page);
-
-    // `handleTranslate` already sends this decision's updates to
-    // translatePosts, so the control has to be reachable for a reader whose
-    // only unreadable content is an update.
+    // The update is its own authored object: its link sits under the author
+    // row, inside the panel.
+    const panel = page.getByRole('dialog', { name: 'Decision updates panel' });
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      panel.getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible();
   });
 
-  test('the reviewer queue offers translation for foreign content elsewhere on the screen', async ({
-    cleanup,
+  test('a Spanish proposal in the reviewer queue offers its own translation link', async ({
     org,
     signIn,
     supabaseAdmin,
   }, testInfo) => {
     const testId = `translation-queue-${testInfo.workerIndex}-${Date.now()}`;
 
-    // A review phase puts the reviewer's queue in front of them, and that tab
-    // is the only proposal surface mounted — Base UI unmounts the inactive
-    // panel, so the "Other proposals" list is not on the page. The queue has to
-    // read the screen's detection set like every other surface, or the control
-    // is unreachable for everything the reader did not happen to be assigned.
     const { instance, author } = await seedDecision({
       org,
       supabaseAdmin,
@@ -549,58 +525,34 @@ test.describe('UGC translation coverage', () => {
       roleName: `Reviewer-${testId}`,
     });
 
-    // The one proposal this reviewer is assigned is English, so the queue's own
-    // content gives it no reason to offer translation.
     await createReviewScenario({
       instance: { id: instance.instance.id },
       author,
       reviewer: { profileId: reviewer.profileId },
       proposalData: {
-        title: PROPOSAL_TITLE_EN,
-        description: PROPOSAL_BODY_EN,
+        title: PROPOSAL_TITLE_ES,
+        description: PROPOSAL_BODY_ES,
       },
     });
 
-    // The Spanish text is an update — a surface the side panel already
-    // registers, and one `handleTranslate` already covers.
-    const [post] = await db
-      .insert(posts)
-      .values({ content: POST_ES, profileId: org.organizationProfile.id })
-      .returning();
-    if (!post) {
-      throw new Error('Failed to seed the update post');
-    }
-    cleanup(async () => {
-      await db.delete(posts).where(eq(posts.id, post.id));
-    });
-    await db
-      .insert(postsToProfiles)
-      .values({ postId: post.id, profileId: instance.profileId });
-
     const page = await signIn(reviewer);
 
-    await page.goto(`/en/decisions/${instance.slug}/current?panel=updates`, {
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
-
-    await expect(page.getByText('La fase de revisión').first()).toBeVisible({
-      timeout: PAGE_READY_TIMEOUT,
-    });
-
-    await closeSidePanel(page);
 
     // Anchor on the queue so a routing change cannot pass this by rendering
     // some other phase's screen.
     await expect(
       page.getByRole('tab', { name: 'Proposals to review' }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
 
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible();
   });
 
-  test('a Spanish review phase offers translation when the proposals are English', async ({
+  test('a Spanish review phase offers the process translation link', async ({
     org,
     signIn,
     supabaseAdmin,
@@ -663,8 +615,9 @@ test.describe('UGC translation coverage', () => {
       page.getByRole('heading', { name: PHASE_HEADLINE_ES }).first(),
     ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
 
+    // The process's link, above the phase hero.
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible();
   });
 
@@ -726,29 +679,23 @@ test.describe('UGC translation coverage', () => {
     ).toBeVisible();
   });
 
-  test('a Spanish pinned resource on the overview offers translation', async ({
+  test('a Spanish comment offers its own translation link', async ({
     cleanup,
     org,
     signIn,
     supabaseAdmin,
   }, testInfo) => {
-    const testId = `translation-pinned-${testInfo.workerIndex}-${Date.now()}`;
+    const testId = `translation-comment-${testInfo.workerIndex}-${Date.now()}`;
 
-    // The overview renders the decision's resources itself, in "Pinned
-    // Resources" — a separate read from the side panel's manager. A reader who
-    // never opens the panel still has that Spanish text in front of them.
     const { instance, author } = await seedDecision({
       org,
       supabaseAdmin,
       testId,
       currentStateId: 'submission',
-      overview: {
-        headline: OVERVIEW_HEADLINE_EN,
-        description: OVERVIEW_DESCRIPTION_EN,
-      },
     });
 
-    await createProposal({
+    // An English proposal, so the only foreign text is the comment under it.
+    const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: author.profileId,
       authUserId: author.authUserId,
@@ -760,115 +707,164 @@ test.describe('UGC translation coverage', () => {
       },
     });
 
-    await seedResourceCollection({
-      cleanup,
-      profileId: instance.profileId,
-      addedByProfileId: author.profileId,
-      name: `Guías ${testId}`,
-      sortKey: 'a0',
-      resource: {
-        title: RESOURCE_TITLE_ES,
-        description: RESOURCE_DESCRIPTION_ES,
-      },
+    const [comment] = await db
+      .insert(posts)
+      .values({ content: COMMENT_ES, profileId: author.profileId })
+      .returning();
+    if (!comment) {
+      throw new Error('Failed to seed the comment');
+    }
+    cleanup(async () => {
+      await db.delete(posts).where(eq(posts.id, comment.id));
     });
+    await db
+      .insert(postsToProfiles)
+      .values({ postId: comment.id, profileId: proposal.profileId });
 
     const page = await signIn(author);
 
-    // No panel — the pinned list is the only place this text appears.
-    await page.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'domcontentloaded',
-    });
-
-    await expect(page.getByText(RESOURCE_TITLE_ES).first()).toBeVisible({
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.getByText('Me encanta esta propuesta')).toBeVisible({
       timeout: PAGE_READY_TIMEOUT,
     });
 
+    // One link on the page: the comment's. The English proposal offers none.
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole('feed').getByRole('button', { name: SEE_TRANSLATION }),
     ).toBeVisible();
   });
 
-  test('a Spanish resource offers translation when a later collection is English', async ({
-    cleanup,
+  test('a submitted review in Spanish offers its own translation link', async ({
     org,
     signIn,
     supabaseAdmin,
   }, testInfo) => {
-    const testId = `translation-resource-${testInfo.workerIndex}-${Date.now()}`;
+    const testId = `translation-review-note-${testInfo.workerIndex}-${Date.now()}`;
 
-    // English everywhere except one resource, as above. Two collections is the
-    // point: they render together in the open accordion, and each list used to
-    // register its samples under one shared key, so the last collection
-    // replaced every earlier one's samples.
     const { instance, author } = await seedDecision({
       org,
       supabaseAdmin,
       testId,
-      currentStateId: 'submission',
-      overview: {
-        headline: OVERVIEW_HEADLINE_EN,
-        description: OVERVIEW_DESCRIPTION_EN,
-      },
+      currentStateId: 'review',
+      rubricTemplate: RUBRIC_TEMPLATE,
     });
 
-    await createProposal({
-      processInstanceId: instance.instance.id,
-      submittedByProfileId: author.profileId,
-      authUserId: author.authUserId,
-      email: author.email,
-      status: ProposalStatus.SUBMITTED,
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    // English proposal, Spanish review: only the review's link should show.
+    const { proposal, assignment, assignedProposalHistoryId } =
+      await createReviewScenario({
+        instance: { id: instance.instance.id },
+        author,
+        reviewer: { profileId: reviewer.profileId },
+        proposalData: {
+          title: PROPOSAL_TITLE_EN,
+          description: PROPOSAL_BODY_EN,
+        },
+        assignmentStatus: ProposalReviewAssignmentStatus.COMPLETED,
+      });
+    await createProposalReview({
+      assignmentId: assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: { innovation: 2 },
+        rationales: { innovation: REVIEW_NOTE_ES },
+      },
+      overallComment: REVIEW_NOTE_ES,
+      submittedAt: new Date().toISOString(),
+      reviewedProposalHistoryId: assignedProposalHistoryId,
+    });
+
+    // The org admin owns the decision, so this URL resolves to the summary;
+    // the deep link opens the review itself.
+    const page = await signIn(org.adminUser);
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews?assignment=${assignment.id}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.getByText('La propuesta es clara').first()).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
+
+    await expect(
+      page.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toHaveCount(1);
+  });
+
+  test('a Spanish revision request offers its own translation link', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-request-${testInfo.workerIndex}-${Date.now()}`;
+
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      rubricTemplate: RUBRIC_TEMPLATE,
+    });
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    const { proposal } = await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author,
+      reviewer: { profileId: reviewer.profileId },
       proposalData: {
         title: PROPOSAL_TITLE_EN,
         description: PROPOSAL_BODY_EN,
       },
-    });
-
-    // Spanish first, English second — the order that failed. `sortKey` uses
-    // the same fractional-index alphabet the service writes, so 'a0' sorts
-    // ahead of 'a1' and the English collection registers last.
-    await seedResourceCollection({
-      cleanup,
-      profileId: instance.profileId,
-      addedByProfileId: author.profileId,
-      name: `Guías ${testId}`,
-      sortKey: 'a0',
-      resource: {
-        title: RESOURCE_TITLE_ES,
-        description: RESOURCE_DESCRIPTION_ES,
-      },
-    });
-    await seedResourceCollection({
-      cleanup,
-      profileId: instance.profileId,
-      addedByProfileId: author.profileId,
-      name: `Guides ${testId}`,
-      sortKey: 'a1',
-      resource: {
-        title: RESOURCE_TITLE_EN,
-        description: RESOURCE_DESCRIPTION_EN,
+      assignmentStatus: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+      revisionRequest: {
+        state: ProposalReviewRequestState.REQUESTED,
+        requestComment: REVISION_REQUEST_ES,
       },
     });
 
     const page = await signIn(author);
-
-    // The phase tab, not the overview: "Pinned Resources" is an overview-only
-    // section that reads the same resources, and it would satisfy the waits
-    // below without either panel list ever mounting.
-    await page.goto(`/en/decisions/${instance.slug}/current?panel=resources`, {
-      waitUntil: 'domcontentloaded',
-    });
-
-    // Both collections are open, so both lists have registered their samples.
-    await expect(page.getByText(RESOURCE_TITLE_ES).first()).toBeVisible({
-      timeout: PAGE_READY_TIMEOUT,
-    });
-    await expect(page.getByText(RESOURCE_TITLE_EN).first()).toBeVisible();
-
-    await closeSidePanel(page);
-
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await page
+      .getByRole('button', { name: 'Review notes' })
+      .click({ timeout: PAGE_READY_TIMEOUT });
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
+      page.getByText('Por favor, añade un calendario'),
     ).toBeVisible();
+
+    // The English proposal offers nothing; the request offers its own link.
+    await expect(
+      page.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toHaveCount(1);
   });
 
   test('no translation is offered when every surface is already in English', async ({
@@ -920,31 +916,10 @@ test.describe('UGC translation coverage', () => {
     });
 
     await expect(
-      page.getByRole('button', { name: TRANSLATE_BUTTON }),
-    ).toHaveCount(0);
-    await expect(
       page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toHaveCount(0);
   });
 });
-
-/**
- * Closes the decision side panel and waits for it to go.
- *
- * The panel is a modal: while it is open the page behind it is aria-hidden, and
- * `getByRole` skips an aria-hidden subtree. Asserting on the Translate control
- * straight after the click raced the close and reported the button missing.
- *
- * Waiting on the dialog rather than on panel content, because the overview also
- * renders resources inline ("Pinned Resources") — that copy stays on screen
- * after the panel closes and would never satisfy a content-based wait.
- */
-async function closeSidePanel(page: Page) {
-  await page.getByRole('button', { name: 'Close', exact: true }).click();
-  await expect(
-    page.getByRole('dialog', { name: 'Decision updates panel' }),
-  ).toHaveCount(0);
-}
 
 /**
  * A decision instance with one member, ready to read as that member. Every
@@ -1017,68 +992,4 @@ async function seedDecision({
   });
 
   return { instance, author };
-}
-
-/**
- * A resource collection on `profileId` holding one link resource. Removed in
- * teardown — collections hang off the decision profile, and a leftover one
- * would change what a later test on the same worker detects.
- */
-async function seedResourceCollection({
-  cleanup,
-  profileId,
-  addedByProfileId,
-  name,
-  sortKey,
-  resource,
-}: {
-  cleanup: (remove: () => Promise<void>) => void;
-  profileId: string;
-  addedByProfileId: string;
-  name: string;
-  sortKey: string;
-  resource: { title: string; description: string };
-}) {
-  const [collection] = await db
-    .insert(resourceCollections)
-    .values({ name, addedByProfileId })
-    .returning();
-  if (!collection) {
-    throw new Error(`Failed to seed the resource collection "${name}"`);
-  }
-  // The junction rows cascade from the collection, so one delete covers them.
-  cleanup(async () => {
-    await db
-      .delete(resourceCollections)
-      .where(eq(resourceCollections.id, collection.id));
-  });
-
-  await db
-    .insert(resourceCollectionProfiles)
-    .values({ collectionId: collection.id, profileId, sortKey });
-
-  // `type` is a generated column (link when there is no attachment), so the
-  // insert supplies `linkUrl` and leaves the type to Postgres.
-  const [record] = await db
-    .insert(resources)
-    .values({
-      title: resource.title,
-      description: resource.description,
-      linkUrl: `https://example.test/${collection.id}`,
-      addedByProfileId,
-    })
-    .returning();
-  if (!record) {
-    throw new Error(`Failed to seed the resource "${resource.title}"`);
-  }
-  cleanup(async () => {
-    await db.delete(resources).where(eq(resources.id, record.id));
-  });
-
-  await db.insert(resourceCollectionItems).values({
-    collectionId: collection.id,
-    resourceId: record.id,
-    sortKey: 'a0',
-    addedByProfileId,
-  });
 }

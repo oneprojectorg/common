@@ -39,12 +39,10 @@ export const useTranslateProposal = (proposal: Proposal) => {
 
   const translation: ProposalTranslation | undefined = link.translation && {
     htmlContent: link.translation,
-    sourceLanguageName: link.sourceLanguageName,
-    onViewOriginal: link.showOriginal,
   };
 
   return {
-    /** Pass to `ProposalTranslateLink`. */
+    /** Pass to `TranslateLink`. */
     link,
     /** Pass straight to `ProposalPreview`'s `translation` prop. */
     translation,

@@ -6,7 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import en from '../../lib/i18n/dictionaries/en.json';
-import { ProposalTranslateLink } from './ProposalTranslateLink';
+import { TranslateLink } from './TranslateLink';
 import { useTranslateProposal } from './useTranslateProposal';
 
 type TranslateVariables = { profileId: string; targetLocale: string };
@@ -56,7 +56,7 @@ const Page = () => {
   const { link, translation } = useTranslateProposal(spanish);
   return (
     <>
-      <ProposalTranslateLink translation={link} />
+      <TranslateLink translation={link} />
       <h1>{translation?.htmlContent.title ?? TITLE_ES}</h1>
     </>
   );

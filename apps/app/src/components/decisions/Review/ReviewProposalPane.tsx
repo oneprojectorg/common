@@ -4,11 +4,12 @@ import { ProposalReviewRequestState } from '@op/common/client';
 
 import { ProposalComments } from '../ProposalComments';
 import { ProposalPreview } from '../ProposalPreview';
+import { TranslateLink } from '../TranslateLink';
 import { useCommentsAllowed } from '../useCommentsAllowed';
+import { useTranslateProposal } from '../useTranslateProposal';
 import { AuthorNotesSection } from './AuthorNotesSection';
 import { RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
-import { useReviewTranslation } from './ReviewTranslationContext';
 
 export function ReviewProposalPane({
   decisionRoot,
@@ -20,7 +21,7 @@ export function ReviewProposalPane({
   const commentsEnabled = useCommentsAllowed(
     assignment.proposal.processInstanceId,
   );
-  const { proposal: translation } = useReviewTranslation();
+  const { link, translation } = useTranslateProposal(assignment.proposal);
 
   const respondedAt =
     ownLatestRevisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
@@ -34,6 +35,7 @@ export function ReviewProposalPane({
       <ProposalPreview
         proposal={assignment.proposal}
         translation={translation}
+        translateLink={<TranslateLink translation={link} />}
         // The badge shows on the date alone, so a note-less resubmission
         // still shows.
         submissionMetaSuffix={

@@ -20,6 +20,7 @@ import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { TranslateLink } from '../TranslateLink';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import {
@@ -27,6 +28,7 @@ import {
   getSelectedOptionValues,
   inferCriterionType,
 } from '../rubricTemplate';
+import { useReviewTranslation } from './useReviewTranslation';
 
 /**
  * A submitted review, read-only: each criterion's prompt above a bordered card
@@ -50,10 +52,18 @@ export function SubmittedReviewView({
 }) {
   const t = useTranslations();
   const fields = compileRubricSchema(rubricTemplate);
-  const { answers, rationales } = review.reviewData;
+  const { answers } = review.reviewData;
+  const translation = useReviewTranslation(review);
+  const rationales =
+    translation.translation?.rationales ?? review.reviewData.rationales;
+  const overallComment =
+    translation.translation?.overallComment ?? review.overallComment;
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Above the first rubric question: the link moves only what the
+          reviewer wrote. */}
+      <TranslateLink translation={translation} />
       {fields.map((field) => (
         <ResultSection
           key={field.key}
@@ -71,13 +81,13 @@ export function SubmittedReviewView({
 
       {scoreSlot}
 
-      {review.overallComment && (
+      {overallComment && (
         <ResultSection
           title={t('decisions.review.feedbackToAuthorHeading')}
           description={t('decisions.review.feedbackAnonymousAfterPhaseHint')}
         >
           <ReviewResultCard className="mt-1">
-            <ReviewResultText>{review.overallComment}</ReviewResultText>
+            <ReviewResultText>{overallComment}</ReviewResultText>
           </ReviewResultCard>
         </ResultSection>
       )}

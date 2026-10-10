@@ -107,7 +107,6 @@
     "./Toggle": "./src/components/ui/toggle.tsx",
     "./ToggleGroup": "./src/components/ui/toggle-group.tsx",
     "./Tooltip": "./src/components/ui/tooltip.tsx",
-    "./TranslateBanner": "./src/components/TranslateBanner/index.tsx",
     "./icons": "./src/components/icons/index.ts"
   },
   "module": "./src/index.ts",

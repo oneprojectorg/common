@@ -16,10 +16,10 @@ import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
-import { ProposalTranslateLink } from './ProposalTranslateLink';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
+import { TranslateLink } from './TranslateLink';
 import type { ProposalAffordances } from './getProposalAffordances';
 import { useCommentsAllowed } from './useCommentsAllowed';
 import { useLiveProposalDocument } from './useLiveProposalDocument';
@@ -96,7 +96,7 @@ export function ProposalView({
         // access gets the controls (the hook returns undefined otherwise).
         engagement={toPreviewEngagement(engagement)}
         translation={translation}
-        translateLink={<ProposalTranslateLink translation={link} />}
+        translateLink={<TranslateLink translation={link} />}
         submissionMetaSuffix={
           latestRespondedAt ? (
             <RevisedOnBadge respondedAt={latestRespondedAt} />

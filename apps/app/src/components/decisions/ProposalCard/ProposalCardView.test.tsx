@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import en from '../../../lib/i18n/dictionaries/en.json';
 import fr from '../../../lib/i18n/dictionaries/fr.json';
-import { ProposalTranslationProvider } from '../ProposalTranslationContext';
 import { ProposalCardView } from './ProposalCardView';
 
 type TranslateVariables = {
@@ -89,7 +88,6 @@ const english = proposal({ title: TITLE_EN, previewText: PREVIEW_EN });
 type CardProps = {
   subject?: Proposal;
   locale?: 'en' | 'fr';
-  bulk?: Record<string, ProposalTranslation>;
   showTranslateLink?: boolean;
   /** An interactive card root around the link, e.g. the voting toggle. */
   onCardClick?: () => void;
@@ -98,19 +96,16 @@ type CardProps = {
 const card = ({
   subject = spanish,
   locale = 'en',
-  bulk = {},
   showTranslateLink,
   onCardClick,
 }: CardProps): ReactNode => (
   <NextIntlClientProvider locale={locale} messages={locale === 'fr' ? fr : en}>
-    <ProposalTranslationProvider translations={bulk}>
-      <ProposalCardView
-        proposal={subject}
-        headerBadge={null}
-        showTranslateLink={showTranslateLink}
-        onClick={onCardClick}
-      />
-    </ProposalTranslationProvider>
+    <ProposalCardView
+      proposal={subject}
+      headerBadge={null}
+      showTranslateLink={showTranslateLink}
+      onClick={onCardClick}
+    />
   </NextIntlClientProvider>
 );
 
@@ -171,13 +166,6 @@ describe('ProposalCardView translate link', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('offers nothing once the list-level translation covers the card', () => {
-    renderCard({ bulk: { 'profile-1': { title: TITLE_EN } } });
-
-    expect(screen.queryByRole('button')).toBeNull();
-    expect(title()).toBe(TITLE_EN);
-  });
-
   it('offers nothing on a card that turned the link off', () => {
     renderCard({ showTranslateLink: false });
 
@@ -235,25 +223,12 @@ describe('ProposalCardView translate link', () => {
     ).toBeTruthy();
   });
 
-  it('stays on the original after the list-level translation is reverted', async () => {
-    const { user, rerender } = renderCard();
-
-    await translateCard(user);
-    rerender({ bulk: { 'profile-1': { title: TITLE_EN } } });
-    // The list's "View original".
-    rerender({ bulk: {} });
-
-    expect(title()).toBe(TITLE_ES);
-    expect(seeTranslation()).toBeTruthy();
-  });
-
-  it('ignores a response that lands after the list-level translation took over', async () => {
+  it('ignores a response that lands after the link was turned off', async () => {
     const { user, rerender } = renderCard();
 
     await user.click(seeTranslation());
-    rerender({ bulk: { 'profile-1': { title: TITLE_EN } } });
-    // The list's "View original", then the card's late response.
-    rerender({ bulk: {} });
+    rerender({ showTranslateLink: false });
+    rerender({ showTranslateLink: true });
     await succeed({ 'profile-1': { title: TITLE_EN } });
 
     expect(title()).toBe(TITLE_ES);

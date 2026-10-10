@@ -29,15 +29,12 @@ export function StandardDecisionPage({
   instanceId,
   slug,
   decisionSlug,
-  decisionProfileId,
   pinOffset,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision content (phase titles, headline, descriptions) */
-  decisionProfileId?: string | null;
   /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
   pinOffset?: number;
 }) {
@@ -188,7 +185,6 @@ export function StandardDecisionPage({
                   slug={slug}
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
-                  decisionProfileId={decisionProfileId}
                   permissions={instance.access}
                   proposalsHidden={proposalsHidden}
                   pinOffset={pinOffset}

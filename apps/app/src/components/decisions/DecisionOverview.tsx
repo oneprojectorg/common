@@ -4,7 +4,6 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
-import type { Proposal } from '@op/common/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
 import {
@@ -18,7 +17,7 @@ import { GradientHeader, Header1, Header3 } from '@op/sense/Header';
 import { Spinner } from '@op/sense/Spinner';
 import { cn } from '@op/sense/lib/utils';
 import he from 'he';
-import { Suspense, type ReactNode, useMemo } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,6 +27,7 @@ import { ButtonLink } from '@/components/ButtonLink';
 
 import { DecisionHeroBackgroundImage } from './DecisionHeroBanner';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
+import { DecisionTranslateLink } from './DecisionTranslateLink';
 import { useDecisionTranslation } from './DecisionTranslationContext';
 import { EditBannerModal } from './EditBannerModal';
 import {
@@ -36,19 +36,7 @@ import {
   PinnedResourcesSkeleton,
 } from './OverviewPinnedResources';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
-import { TranslateBanner } from './TranslateBanner';
-import {
-  useDecisionNeedsTranslation,
-  useRegisterTranslationSamples,
-} from './TranslationDetectionContext';
-import { TranslationNotice } from './TranslationNotice';
-import { getOverviewDetectionText } from './translationDetectionText';
 import { useCreateProposal } from './useCreateProposal';
-import { useTranslateDecision } from './useTranslateDecision';
-
-// Stable empty array: the overview has no proposals to translate, and a fresh
-// [] each render would churn useTranslateDecision's memoized callbacks.
-const NO_PROPOSALS: Proposal[] = [];
 
 interface DecisionOverviewProps {
   instanceId: string;
@@ -136,36 +124,11 @@ function DecisionOverviewContent({
 }: DecisionOverviewProps) {
   const t = useTranslations();
 
-  // Translation: the banner offers to translate the overview into the viewer's
-  // locale. translateDecision returns the authored overview fields, which we
-  // prefer over the source content once present. Empty proposals here — the
-  // overview has none; handleTranslate skips the proposal batch.
+  // The process's "See translation" link (above the hero) swaps in the
+  // authored overview fields; prefer them over the source content once shown.
   const translation = useDecisionTranslation();
 
   const overview = instance.instanceData?.overview;
-
-  // Register the authored overview as this screen's own detection sample. The
-  // side panel's updates and resources register separately, so the banner
-  // appears when any of them is in a language other than the reader's locale.
-  const detectionSamples = useMemo(
-    () => [
-      getOverviewDetectionText({
-        headline: overview?.headline ?? instance.name,
-        description: overview?.description ?? instance.description ?? undefined,
-        body: overview?.body,
-      }),
-    ],
-    [overview, instance.name, instance.description],
-  );
-
-  useRegisterTranslationSamples('overview', detectionSamples);
-  const needsTranslation = useDecisionNeedsTranslation();
-
-  const decisionTranslation = useTranslateDecision({
-    proposals: NO_PROPOSALS,
-    decisionProfileId: instance.profileId,
-    needsTranslation,
-  });
 
   const headline =
     translation?.overviewHeadline ?? overview?.headline ?? instance.name;
@@ -257,12 +220,6 @@ function DecisionOverviewContent({
           ) : null}
         </div>
         <div className="flex min-w-0 flex-col gap-4 md:col-span-7 md:col-start-6">
-          {decisionTranslation.translationState ? (
-            <TranslationNotice
-              sourceLanguageName={decisionTranslation.sourceLanguageName}
-              onViewOriginal={decisionTranslation.handleViewOriginal}
-            />
-          ) : null}
           <OverviewAbout
             bodySlot={translatedAbout ?? aboutSlot}
             fallbackText={
@@ -271,14 +228,6 @@ function DecisionOverviewContent({
           />
         </div>
       </div>
-      {decisionTranslation.showBanner ? (
-        <TranslateBanner
-          onTranslate={decisionTranslation.handleTranslate}
-          onDismiss={decisionTranslation.dismissBanner}
-          isTranslating={decisionTranslation.isTranslating}
-          languageName={decisionTranslation.targetLanguageName}
-        />
-      ) : null}
     </div>
   );
 }
@@ -342,6 +291,7 @@ const OverviewHero = ({
       ) : null}
       <div className="relative z-10 mx-auto flex flex-col items-center gap-8 px-4 pt-16 pb-8 text-center md:col-span-6 md:col-start-4 md:px-6 md:pb-16">
         <div className="flex flex-col items-center gap-3">
+          <DecisionTranslateLink />
           {/* Brand teal→green gradient clipped to the title text. This hero is
               the page's <h1>; the sticky DecisionInstanceHeader carries a
               secondary <h2>, so there's exactly one <h1> and tests can target
