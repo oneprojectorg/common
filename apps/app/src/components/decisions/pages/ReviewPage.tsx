@@ -109,9 +109,6 @@ export function ReviewPage({
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
-  // ProposalsList also samples this copy but can render unmounted here, so
-  // register it from the screen that actually shows it.
-
   const assignmentsTabTrigger = (
     <TabsTrigger value="assignments">{t('assignmentsTab')}</TabsTrigger>
   );

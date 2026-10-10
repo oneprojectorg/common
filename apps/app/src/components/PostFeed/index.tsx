@@ -578,6 +578,7 @@ export const PostItemOnDetailPage = ({
 export const DiscussionModalContainer = ({
   discussionModal,
   onClose,
+  translatable = false,
 }: {
   discussionModal: {
     isOpen: boolean;
@@ -585,6 +586,8 @@ export const DiscussionModalContainer = ({
     organization?: Organization | null;
   };
   onClose: () => void;
+  /** Offer each post's own "See translation" link (decision updates). */
+  translatable?: boolean;
 }) => {
   if (!discussionModal.isOpen || !discussionModal.post) {
     return null;
@@ -596,6 +599,7 @@ export const DiscussionModalContainer = ({
       organization={discussionModal.organization ?? null}
       isOpen={discussionModal.isOpen}
       onClose={onClose}
+      translatable={translatable}
     />
   );
 };

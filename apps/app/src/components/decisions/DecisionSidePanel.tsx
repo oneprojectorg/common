@@ -332,6 +332,7 @@ const UpdatesFeed = ({
       <DiscussionModalContainer
         discussionModal={discussionModal}
         onClose={handleModalClose}
+        translatable
       />
     </>
   );

@@ -8,7 +8,14 @@ import { TranslateLink } from './TranslateLink';
  * overview hero, the phase hero). Every placement drives the same state, so
  * the overview, phase copy, phase names and resources translate together.
  */
-export const DecisionTranslateLink = () => {
+export const DecisionTranslateLink = ({
+  hasImage = false,
+}: {
+  /** The banner sits over an image, so its text is white. */
+  hasImage?: boolean;
+}) => {
   const link = useDecisionTranslateLink();
-  return link ? <TranslateLink translation={link} align="center" /> : null;
+  return link ? (
+    <TranslateLink translation={link} align="center" inverse={hasImage} />
+  ) : null;
 };

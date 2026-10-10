@@ -292,7 +292,7 @@ export {
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';
 export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta';
-export type { PostTranslation } from './services/translation/translatePosts';
+export type { PostTranslation } from './services/translation/translatePost';
 export type { ProposalTranslation } from './services/translation/translateProposal';
 export type { ResourceTranslation } from './services/translation/translateResources';
 export type { ReviewTranslation } from './services/translation/translateReview';

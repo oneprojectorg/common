@@ -8,6 +8,7 @@ import {
   ProposalStatus,
   contentTranslations,
   moderationFlags,
+  posts,
 } from '@op/db/schema';
 import { eq, like } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -89,7 +90,7 @@ describe('translation.translatePost', () => {
       targetLocale: 'es',
     });
 
-    // Cached under the key `translatePosts` uses, so the two share rows.
+    // Cached per post, so a second reader's click is served from the cache.
     const cached = await db.query.contentTranslations.findFirst({
       where: { contentKey: `post:${comment.id}:content` },
     });
@@ -219,6 +220,51 @@ describe('translation.translatePost', () => {
     expect(result.content).toBe(
       '[ES] Flagged comment, hidden from non-admins.',
     );
+  });
+
+  it('does not treat a visitor as the author of a flagged post with no author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, comment } = await createProposalComment(
+      testData,
+      onTestFinished,
+      'Flagged comment whose author is unrecorded.',
+    );
+
+    // A legacy post: `posts.profileId` is nullable, and a visitor has no
+    // profile either — the two nulls must not match as "the author".
+    await db
+      .update(posts)
+      .set({ profileId: null })
+      .where(eq(posts.id, comment.id));
+    await db.insert(moderationFlags).values({
+      itemType: ModerationItemType.POST,
+      itemId: comment.id,
+      status: ModerationFlagStatus.FLAGGED,
+      source: ModerationSource.AUTOMATED,
+      reason: 'translatePost test',
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(moderationFlags)
+        .where(eq(moderationFlags.itemId, comment.id));
+    });
+
+    await testData.makeDecisionPublic(setup.instance.profileId);
+
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    await expect(
+      visitorCaller.translation.translatePost({
+        postId: comment.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
   });
 });
 

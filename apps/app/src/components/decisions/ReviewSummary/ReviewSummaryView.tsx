@@ -73,14 +73,8 @@ export function ReviewSummaryView({
 
   const rubricTemplate = proposalWithReviews.rubricTemplate;
 
-  // This screen is the admin half of `/proposal/<id>/reviews`; the reviewer
-  // half gets its translation from `ReviewTranslationProvider`, which is keyed
-  // by an assignment this screen does not have. An admin reading a proposal in
-  // a language they don't speak had no control at all.
-  //
-  // Scoped to the proposal deliberately. `translateRubric` takes an assignment
-  // id, and reviewer-authored notes have no endpoint, so detection stays on the
-  // proposal rather than offering a control that cannot move what triggered it.
+  // The proposal's own link, above its title; each review in the drill-in
+  // carries its own.
   const { link, translation } = useTranslateProposal(proposal);
 
   // 'newest' orders by assignedAt in SQL, as ProposalReviewsLayout does.

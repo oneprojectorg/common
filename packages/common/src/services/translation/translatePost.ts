@@ -11,7 +11,6 @@ import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import { assertPostReadAccess } from '../posts/access';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
-import type { PostTranslation } from './translatePosts';
 
 /**
  * Translates one decision-domain post's `content` — a proposal comment, a
@@ -19,9 +18,12 @@ import type { PostTranslation } from './translatePosts';
  * every profile the post is linked to (the same gate `listProposalComments`
  * and `listProfilePosts` read through), then applies the moderation rule
  * those feeds apply: a flagged post is readable only by its author and the
- * decision's admins. Shares the `post:${id}:content` cache key with
- * `translatePosts`.
+ * decision's admins. Cached under `post:${id}:content`.
  */
+export type PostTranslation = {
+  content?: string;
+};
+
 export async function translatePost({
   postId,
   targetLocale,
@@ -60,28 +62,13 @@ export async function translatePost({
   );
 
   if (await hasActiveModerationFlag('post', post.id)) {
-    const actorProfileId = user ? await getCurrentProfileId(user.id) : null;
-    const isAuthor = actorProfileId === post.profileId;
-
-    if (!isAuthor) {
-      const moderationRoles = await Promise.all(
-        readAccesses.map(({ moderationProfileId }) =>
-          getProfileAccessRolesWithOrgFallback({
-            user: accessUser,
-            profileId: moderationProfileId,
-          }),
-        ),
-      );
-      const isModerator = moderationRoles.every((roles) =>
-        checkPermission({ profile: permission.ADMIN }, roles),
-      );
-
-      // Same as a missing post, so a flagged post's existence doesn't leak —
-      // matches `getPost`.
-      if (!isModerator) {
-        throw new NotFoundError('Post', postId);
-      }
-    }
+    await assertCanReadFlaggedPost({
+      post,
+      user,
+      moderationProfileIds: readAccesses.map(
+        ({ moderationProfileId }) => moderationProfileId,
+      ),
+    });
   }
 
   if (!post.content) {
@@ -99,3 +86,39 @@ export async function translatePost({
     targetLocale,
   };
 }
+
+/**
+ * A flagged post is readable only by its author and the decision's admins.
+ * Anyone else gets the same NotFound as a missing post, so a flagged post's
+ * existence doesn't leak — matches `getPost`.
+ */
+const assertCanReadFlaggedPost = async ({
+  post,
+  user,
+  moderationProfileIds,
+}: {
+  post: { id: string; profileId: string | null };
+  user: User | undefined;
+  moderationProfileIds: string[];
+}) => {
+  const actorProfileId = user ? await getCurrentProfileId(user.id) : null;
+  // A caller with no profile is nobody's author — not even of a post whose
+  // author is unrecorded (`posts.profileId` is nullable).
+  if (actorProfileId != null && actorProfileId === post.profileId) {
+    return;
+  }
+
+  const accessUser = user ? { id: user.id } : undefined;
+  const moderationRoles = await Promise.all(
+    moderationProfileIds.map((profileId) =>
+      getProfileAccessRolesWithOrgFallback({ user: accessUser, profileId }),
+    ),
+  );
+  const isModerator = moderationRoles.every((roles) =>
+    checkPermission({ profile: permission.ADMIN }, roles),
+  );
+
+  if (!isModerator) {
+    throw new NotFoundError('Post', post.id);
+  }
+};

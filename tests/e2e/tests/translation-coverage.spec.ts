@@ -457,8 +457,8 @@ test.describe('UGC translation coverage', () => {
     });
 
     // A Spanish update on the decision's own profile — what the side panel
-    // renders, and what `translatePosts` already knows how to translate. The
-    // post belongs to the worker-scoped org profile, so it is removed in
+    // renders, and what `translatePost` translates one at a time. The post
+    // belongs to the worker-scoped org profile, so it is removed in
     // teardown rather than left on a profile later tests share.
     const [post] = await db
       .insert(posts)

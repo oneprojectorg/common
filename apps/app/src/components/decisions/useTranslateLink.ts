@@ -24,8 +24,9 @@ type CachedTranslation<T> = {
 };
 
 /**
- * The "See translation" link's state for one proposal, on the card and on the
- * proposal page alike: detection, the request, and the cached result.
+ * The "See translation" link's state for one authored object — a proposal, a
+ * post, a review, a revision request, the process: detection, the request, and
+ * the cached result.
  *
  * The link is offered only when `detectionText` is in another language than
  * the reader's. The result is cached per locale and source text, so "View
@@ -57,14 +58,14 @@ export const useTranslateLink = <T>({
   const [status, setStatus] = useState<TranslateLinkStatus>('idle');
   const [cached, setCached] = useState<CachedTranslation<T> | null>(null);
 
-  // Turned off (e.g. a list-level translation took over): drop back to the
-  // original, so the list's "View original" doesn't leave this one translated.
+  // Turned off: drop back to the original, so turning it back on doesn't
+  // resurface a translation nobody asked for again.
   if (!isActive && status !== 'idle') {
     setStatus('idle');
   }
 
-  // A response only lands if the link is still waiting on it: a takeover in
-  // the meantime means the reader moved on.
+  // A response only lands if the link is still waiting on it: turning the
+  // link off in the meantime means the reader moved on.
   const settle = (next: TranslateLinkStatus) =>
     setStatus((current) => (current === 'translating' ? next : current));
 

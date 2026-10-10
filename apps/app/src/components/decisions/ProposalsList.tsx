@@ -103,9 +103,6 @@ export interface ProposalsListProps {
   pinOffset?: number;
 }
 
-// Stable identity: the provider's value is read by every card, so a fresh `{}`
-// per render would re-run all of them for nothing.
-
 type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
   /** Full server-side proposal count for the active filter, independent of how many pages are loaded. */

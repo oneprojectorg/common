@@ -1,8 +1,7 @@
 import type { TranslatedFields } from './translatedFields';
 
 /**
- * Splits a flat translation result (as produced by `translateProposal` or
- * `translateRubric`) into the per-field maps a renderer needs: field titles and
+ * Splits a flat translation result (as produced by `translateProposal`) into the per-field maps a renderer needs: field titles and
  * descriptions keyed by field key, and option labels and descriptions keyed by
  * field key then option value.
  */

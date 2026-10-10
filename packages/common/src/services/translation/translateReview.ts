@@ -22,8 +22,8 @@ export type ReviewTranslation = {
 /**
  * Translates the reviewer-written text of one submitted review: the
  * per-criterion `rationales` and the `overallComment`. Rubric prompts are
- * translated by `translateRubric`; answers, scores and the recommendation are
- * never sent.
+ * process configuration and are not translated; answers, scores and the
+ * recommendation are never sent.
  *
  * Readable by the same callers the submitted-review views serve: anyone
  * `canReadPhaseReviews` admits for the review's phase (admins; reviewers when

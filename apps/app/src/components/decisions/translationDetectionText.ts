@@ -39,7 +39,7 @@ const joinSample = (parts: string[]): string =>
  * The title always leads the sample: list reads ship no document fragments and
  * `previewText` is empty for a proposal with a short or empty body, so the title
  * is often the only text there is. Without it those proposals detected as
- * "nothing to translate" and the list never offered the banner at all.
+ * "nothing to translate" and the card never offered its link.
  *
  * For the body, prefers the server-computed `previewText` (list payloads), then
  * `documentContent` (single-proposal payloads, what the cards render from), and

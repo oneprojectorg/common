@@ -25,10 +25,13 @@ import type { TranslateLinkState } from './useTranslateLink';
 export const TranslateLink = ({
   translation,
   align = 'start',
+  inverse = false,
 }: {
   translation: TranslateLinkState;
   /** The alignment of the text under it — `center` on the overview banner. */
   align?: 'start' | 'center';
+  /** White over a hero image's dark scrim, like the heading it sits above. */
+  inverse?: boolean;
 }) => {
   const t = useTranslations();
   const { isOffered, status, sourceLanguageName, translate, showOriginal } =
@@ -88,13 +91,18 @@ export const TranslateLink = ({
     >
       {/* Always rendered (possibly empty) so the button keeps its place in the
           tree and keyboard focus survives each state change. */}
-      <span className="flex items-center gap-1 text-muted-foreground empty:hidden">
+      <span
+        className={cn(
+          'flex items-center gap-1 empty:hidden',
+          inverse ? 'text-white' : 'text-muted-foreground',
+        )}
+      >
         {notice}
       </span>
       <Button
         variant="link"
         size="inline"
-        className="text-sm font-normal"
+        className={cn('text-sm font-normal', inverse && 'text-white underline')}
         disabled={status === 'translating'}
         // Keep focus on the button while it waits, so a keyboard user lands
         // on "View original" when the translation arrives.
