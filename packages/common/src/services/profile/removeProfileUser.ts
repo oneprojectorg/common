@@ -1,10 +1,11 @@
 import { db, eq } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
+import { EntityType, profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils/error';
 import { invalidateProfileUserAccessCache } from '../access';
-import { assertProfileAdmin, assertProfileUser } from '../assert';
+import { assertProfileAdmin } from '../assert';
+import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionMemberRolesChanged';
 
 /**
  * Remove a member from a profile
@@ -16,7 +17,19 @@ export const removeProfileUser = async ({
   profileUserId: string;
   user: User;
 }) => {
-  const targetProfileUser = await assertProfileUser(profileUserId);
+  // Roles are read before the delete, which cascades them away.
+  const targetProfileUser = await db.query.profileUsers.findFirst({
+    where: { id: profileUserId },
+    with: {
+      roles: { columns: { accessRoleId: true } },
+      // Gates the decision-scoped role-change event below.
+      profile: { columns: { type: true } },
+    },
+  });
+
+  if (!targetProfileUser) {
+    throw new NotFoundError('Profile user', profileUserId);
+  }
 
   // Check if user has ADMIN access on the profile
   await assertProfileAdmin({ user, profileId: targetProfileUser.profileId });
@@ -33,6 +46,15 @@ export const removeProfileUser = async ({
 
   if (!deletedUser) {
     throw new NotFoundError('Profile user', profileUserId);
+  }
+
+  if (targetProfileUser.profile.type === EntityType.DECISION) {
+    emitDecisionMemberRolesChanged({
+      decisionProfileId: deletedUser.profileId,
+      authUserId: deletedUser.authUserId,
+      addedRoleIds: [],
+      removedRoleIds: targetProfileUser.roles.map((role) => role.accessRoleId),
+    });
   }
 
   await invalidateProfileUserAccessCache({
