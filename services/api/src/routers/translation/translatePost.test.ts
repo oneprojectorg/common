@@ -239,6 +239,10 @@ describe('translation.translatePost', () => {
       .update(posts)
       .set({ profileId: null })
       .where(eq(posts.id, comment.id));
+    // Detached from its author, the post no longer cascades with test teardown.
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, comment.id));
+    });
     await db.insert(moderationFlags).values({
       itemType: ModerationItemType.POST,
       itemId: comment.id,

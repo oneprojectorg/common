@@ -1,4 +1,3 @@
-import { getTextPreview } from '@op/core';
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
@@ -16,6 +15,8 @@ import {
   flattenTranslatableFields,
   unflattenTranslatedFields,
 } from './translatedFields';
+
+const MAX_PREVIEW_LENGTH = 200;
 
 /**
  * Translates proposal card-level content (title, category, preview text) for
@@ -135,18 +136,15 @@ export async function translateProposals({
       continue;
     }
 
-    // The same body preview the card shows. System fields (title, budget,
-    // category) are document fragments too, and the title comes first, so
-    // taking the first fragment would translate the title twice.
+    // The body text the card shows, not the first fragment (the title).
     const { previewText } = buildProposalListPreview({
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate:
         templateByProcessId.get(proposal.processInstance.processId) ?? null,
     });
-    const preview = previewText
-      ? getTextPreview({ content: previewText, maxLines: 3, maxLength: 200 }) ||
-        undefined
-      : undefined;
+    // Already plain text: cap it without re-parsing it as HTML.
+    const preview =
+      previewText?.slice(0, MAX_PREVIEW_LENGTH).trim() || undefined;
 
     entries.push(
       ...flattenTranslatableFields(`batch:${pid}:`, {

@@ -14,23 +14,11 @@ import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
 export type ReviewTranslation = {
-  /** Translated rationale per rubric criterion key. */
   rationales: Record<string, string>;
   overallComment?: string;
 };
 
-/**
- * Translates the reviewer-written text of one submitted review: the
- * per-criterion `rationales` and the `overallComment`. Rubric prompts are
- * process configuration and are not translated; answers, scores and the
- * recommendation are never sent.
- *
- * Readable by the same callers the submitted-review views serve: anyone
- * `canReadPhaseReviews` admits for the review's phase (admins; reviewers when
- * the phase has open reviews — `getProposalWithReviewAggregates`), and the
- * review's own reviewer (`getReviewAssignment`). The response carries no
- * reviewer identity.
- */
+/** Translates a submitted review's notes and feedback for anyone who can read the review. */
 export async function translateReview({
   reviewId,
   targetLocale,
@@ -65,7 +53,6 @@ export async function translateReview({
     assertUserByAuthId(user.id),
   ]);
 
-  // Moderation-detached proposals 404 for everyone, as on every review read.
   if (!review || review.assignment.proposal.moderationDetachedAt) {
     throw new NotFoundError('Review', reviewId);
   }
@@ -98,11 +85,7 @@ export async function translateReview({
   return { ...readReviewTranslation({ prefix, results }), targetLocale };
 }
 
-/**
- * Admits anyone `canReadPhaseReviews` admits for the review's phase, and the
- * review's own reviewer while they keep the standing
- * `assertReviewAssignmentContext` requires.
- */
+/** `canReadPhaseReviews`, or the review's own reviewer while they keep the REVIEW role. */
 const assertCanReadReview = async ({
   instance,
   assignment,
@@ -138,7 +121,6 @@ const assertCanReadReview = async ({
   });
 };
 
-/** One entry per non-blank rationale, plus the overall comment. */
 const buildReviewEntries = ({
   prefix,
   reviewData,

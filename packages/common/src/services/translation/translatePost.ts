@@ -12,14 +12,7 @@ import { assertPostReadAccess } from '../posts/access';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
-/**
- * Translates one decision-domain post's `content` — a proposal comment, a
- * reply, or a decision update. Authorizes through `assertPostReadAccess` on
- * every profile the post is linked to (the same gate `listProposalComments`
- * and `listProfilePosts` read through), then applies the moderation rule
- * those feeds apply: a flagged post is readable only by its author and the
- * decision's admins. Cached under `post:${id}:content`.
- */
+/** Translates one comment or decision update for readers of every profile it's linked to. */
 export type PostTranslation = {
   content?: string;
 };
@@ -48,8 +41,7 @@ export async function translatePost({
     throw new NotFoundError('Post', postId);
   }
 
-  // Fail closed: a post with no profile link (e.g. a legacy org-feed post) is
-  // outside the surfaces this endpoint serves.
+  // A post outside any decision or proposal (e.g. an org-feed post) is refused.
   if (post.postsToProfiles.length === 0) {
     throw new UnauthorizedError('You do not have access to this post');
   }
@@ -87,11 +79,7 @@ export async function translatePost({
   };
 }
 
-/**
- * A flagged post is readable only by its author and the decision's admins.
- * Anyone else gets the same NotFound as a missing post, so a flagged post's
- * existence doesn't leak — matches `getPost`.
- */
+/** A flagged post is NotFound to everyone but its author and the decision's admins. */
 const assertCanReadFlaggedPost = async ({
   post,
   user,
@@ -102,8 +90,7 @@ const assertCanReadFlaggedPost = async ({
   moderationProfileIds: string[];
 }) => {
   const actorProfileId = user ? await getCurrentProfileId(user.id) : null;
-  // A caller with no profile is nobody's author — not even of a post whose
-  // author is unrecorded (`posts.profileId` is nullable).
+  // No profile is nobody's author, even of a post with no recorded author.
   if (actorProfileId != null && actorProfileId === post.profileId) {
     return;
   }

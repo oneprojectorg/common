@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { openProcedure, router } from '../../trpcFactory';
 
 export const translatePostRouter = router({
-  // Same tier as `posts.listProposalComments` / `posts.listProfilePosts`, the
-  // feeds this post is read through; the service gates the post itself.
   translatePost: openProcedure()
     .input(
       z.object({

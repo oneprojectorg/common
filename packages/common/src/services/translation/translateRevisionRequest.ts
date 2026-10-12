@@ -10,13 +10,7 @@ export type RevisionRequestTranslation = {
   requestComment: string | undefined;
 };
 
-/**
- * Translates a revision request's `requestComment`. Gated exactly like
- * `listProposalRevisionRequests` / `listProposalRevisionNotes` — through
- * `loadProposalForReviewRead` on the request's proposal: its authors, decision
- * admins, and REVIEW holders on the instance. The response carries no
- * reviewer identity.
- */
+/** Translates a revision request for anyone who can read the proposal's revision requests. */
 export async function translateRevisionRequest({
   requestId,
   targetLocale,

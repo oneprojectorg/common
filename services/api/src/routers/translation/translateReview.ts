@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const translateReviewRouter = router({
-  // Matches `decision.getReviewAssignment` and
-  // `decision.getProposalWithReviewAggregates`, which serve submitted reviews.
   translateReview: networkAuthenticatedProcedure()
     .input(
       z.object({

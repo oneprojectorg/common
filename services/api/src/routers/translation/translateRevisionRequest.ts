@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { authenticatedProcedure, router } from '../../trpcFactory';
 
 export const translateRevisionRequestRouter = router({
-  // Matches `decision.listProposalRevisionRequests`, which serves the request.
   translateRevisionRequest: authenticatedProcedure()
     .input(
       z.object({
