@@ -3,6 +3,7 @@ import {
   type DecisionSchemaDefinition,
   createDecisionRole,
   listPhaseReviewerSummaries,
+  removeProfileUser,
   triggerPhaseAdvancement,
   updateProfileUserRoles,
 } from '@op/common';
@@ -206,6 +207,45 @@ describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
       authUserId: reviewer.authUserId,
       addedRoleIds: [],
       removedRoleIds: [reviewerRole.id],
+    });
+
+    const remaining = await getReviewerAssignments(
+      instance.instance.id,
+      reviewer.profileId,
+    );
+    expect(remaining).toEqual([]);
+
+    const summaries = await listPhaseReviewerSummaries({
+      user: setup.user,
+      processInstanceId: instance.instance.id,
+      phaseId: 'review',
+    });
+    expect(summaries.items.map((row) => row.reviewer.id)).not.toContain(
+      reviewer.profileId,
+    );
+  });
+
+  it('drops a member removed from the process from the phase reviewer list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, reviewer, decisionProfileUser } =
+      await createReviewerWithAssignments(testData, ['Reviewer']);
+    const heldRoleIds = decisionProfileUser.roles.map((r) => r.accessRoleId);
+    expect(heldRoleIds).toContain(ROLES.MEMBER.id);
+    expect(heldRoleIds).toHaveLength(2);
+
+    await removeProfileUser({
+      profileUserId: decisionProfileUser.id,
+      user: setup.user,
+    });
+
+    await executeRolesChanged({
+      decisionProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      addedRoleIds: [],
+      removedRoleIds: heldRoleIds,
     });
 
     const remaining = await getReviewerAssignments(

@@ -6,6 +6,7 @@ import {
   backfillReviewAssignments,
   createDecisionRole,
   generateReviewAssignments,
+  removeProfileUser,
   updateProfileUserRoles,
 } from '@op/common';
 import {
@@ -21,7 +22,7 @@ import {
 import { ROLES } from '@op/db/seedData/accessControl';
 import { event } from '@op/events';
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createIsolatedSession } from '../../../test/supabase-utils';
 
@@ -500,6 +501,92 @@ describe('decision/member-roles-changed emission', () => {
     await updateProfileUserRoles({
       profileUserId: orgMember.profileUserId,
       roleIds: [ROLES.MEMBER.id, ROLES.ADMIN.id],
+      user: session.user,
+    });
+
+    expect(event.send).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'decision/member-roles-changed',
+        data: expect.objectContaining({
+          decisionProfileId: orgProfile.id,
+        }),
+      }),
+    );
+  });
+
+  it('emits every held role as removed when a member is removed from a decision profile, and nothing for an org profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createReviewInstance(testData);
+    const reviewerRole = await createReviewerRole(instance.profileId);
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    await testData.assignRole(
+      member.authUserId,
+      instance.profileId,
+      reviewerRole.id,
+    );
+
+    const decisionProfileUser = await db.query.profileUsers.findFirst({
+      where: {
+        profileId: instance.profileId,
+        authUserId: member.authUserId,
+      },
+      with: { roles: true },
+    });
+    if (!decisionProfileUser) {
+      throw new Error('Expected decision profileUser for member');
+    }
+    const heldRoleIds = decisionProfileUser.roles.map((r) => r.accessRoleId);
+    expect(heldRoleIds).toEqual(
+      expect.arrayContaining([ROLES.MEMBER.id, reviewerRole.id]),
+    );
+
+    await removeProfileUser({
+      profileUserId: decisionProfileUser.id,
+      user: setup.user,
+    });
+
+    // Order-insensitive on the removed ids, exact on everything else.
+    const removalEmissions = vi
+      .mocked(event.send)
+      .mock.calls.flatMap(([payload]) =>
+        Array.isArray(payload) ? payload : [payload],
+      )
+      .flatMap((payload) =>
+        payload.name === 'decision/member-roles-changed' &&
+        payload.data.decisionProfileId === instance.profileId &&
+        payload.data.authUserId === member.authUserId &&
+        payload.data.addedRoleIds.length === 0
+          ? [payload.data]
+          : [],
+      );
+    expect(removalEmissions).toHaveLength(1);
+    expect([...(removalEmissions[0]?.removedRoleIds ?? [])].sort()).toEqual(
+      [...heldRoleIds].sort(),
+    );
+
+    const orgTestData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const {
+      profile: orgProfile,
+      adminUser,
+      memberUsers,
+    } = await orgTestData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+    const orgMember = memberUsers[0];
+    if (!orgMember) {
+      throw new Error('Expected org member to be defined');
+    }
+    const { session } = await createIsolatedSession(adminUser.email);
+
+    await removeProfileUser({
+      profileUserId: orgMember.profileUserId,
       user: session.user,
     });
 
