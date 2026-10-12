@@ -193,7 +193,8 @@ const CurrentPhaseProposalsLoader = ({
       dir: queryParams.dir,
       limit: 1,
       phase: queryParams.phase,
-      // The unfiltered pool still holds what didn't advance, as the All tab does.
+      // Under "Not advanced" the pool also holds what earlier phases left
+      // behind, so the "of N" denominator can't fall below the filtered count.
       notAdvanced: queryParams.notAdvanced && 'include',
       excludeAssignedForReview: queryParams.excludeAssignedForReview,
     },

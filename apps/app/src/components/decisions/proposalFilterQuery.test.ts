@@ -154,8 +154,11 @@ describe('buildQueryParams', () => {
     expect(params.status).toBeUndefined();
   });
 
-  it('asks for what did not advance alongside the current phase', () => {
-    expect(build().notAdvanced).toBe('include');
+  it('keeps the All list to the current phase', () => {
+    expect(build().notAdvanced).toBeUndefined();
+    expect(build({ filter: ProposalFilter.MY_PROPOSALS }).notAdvanced).toBe(
+      undefined,
+    );
   });
 
   it('filters the results phase by rejection, which spans every phase already', () => {

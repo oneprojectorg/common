@@ -122,12 +122,19 @@ test.describe('Advance a proposal into the current phase', () => {
       proposalHistoryId: keptHistory.historyId,
     });
 
-    // Reach it the way an admin would: from the All tab of the current phase,
-    // where it is listed and badged although the review phase left it behind.
-    await authenticatedPage.goto(
-      `/en/decisions/${instance.slug}/current?filter=all`,
-      { waitUntil: 'load' },
-    );
+    // All stays the current phase: the kept proposal only.
+    const allUrl = `/en/decisions/${instance.slug}/current?filter=all`;
+    const notAdvancedUrl = `${allUrl}&proposalStatus=not-advanced`;
+    await authenticatedPage.goto(allUrl, { waitUntil: 'load' });
+    await expect(proposalCard(authenticatedPage, 'Proposal Kept')).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(
+      proposalCard(authenticatedPage, 'Proposal Left Behind'),
+    ).toHaveCount(0);
+
+    // An admin reaches it under "Not advanced", badged, with the action.
+    await authenticatedPage.goto(notAdvancedUrl, { waitUntil: 'load' });
     const leftBehindCard = proposalCard(
       authenticatedPage,
       'Proposal Left Behind',
@@ -135,11 +142,9 @@ test.describe('Advance a proposal into the current phase', () => {
     await expect(leftBehindCard.getByText('Not advanced')).toBeVisible({
       timeout: 30_000,
     });
-    await expect(
-      proposalCard(authenticatedPage, 'Proposal Kept').getByText(
-        'Not advanced',
-      ),
-    ).toHaveCount(0);
+    await expect(proposalCard(authenticatedPage, 'Proposal Kept')).toHaveCount(
+      0,
+    );
 
     await leftBehindCard
       .getByRole('button', { name: 'Proposal options' })
@@ -162,11 +167,17 @@ test.describe('Advance a proposal into the current phase', () => {
       [kept.id, leftBehind.id].sort(),
     );
 
-    // Now in the phase: no longer badged, and the item is gone.
-    await expect(leftBehindCard.getByText('Not advanced')).toHaveCount(0, {
-      timeout: 15_000,
-    });
-    await leftBehindCard
+    // Now in the phase: it leaves "Not advanced" and joins All, unbadged and
+    // without the action.
+    await expect(leftBehindCard).toHaveCount(0, { timeout: 15_000 });
+    await authenticatedPage.goto(allUrl, { waitUntil: 'load' });
+    const advancedCard = proposalCard(
+      authenticatedPage,
+      'Proposal Left Behind',
+    );
+    await expect(advancedCard).toBeVisible({ timeout: 30_000 });
+    await expect(advancedCard.getByText('Not advanced')).toHaveCount(0);
+    await advancedCard
       .getByRole('button', { name: 'Proposal options' })
       .click();
     await expect(

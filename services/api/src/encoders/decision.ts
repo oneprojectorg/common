@@ -764,8 +764,9 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    */
   excludeAssignedForReview: z.boolean().optional(),
   /**
-   * Admins only, current phase only: `include` adds proposals left behind in
-   * earlier phases; `only` narrows to those plus rejected ones.
+   * Admins only, current phase only: `only` is the "Not advanced" filter —
+   * rejected proposals plus those earlier phases left behind; `include` adds
+   * the left-behind ones to the phase, for that filter's "of N" count.
    */
   notAdvanced: z.enum(['include', 'only']).optional(),
   /** When set to 'results', all proposals are returned as non-editable */

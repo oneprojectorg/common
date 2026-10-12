@@ -112,7 +112,7 @@ const outsideById = (
 ) => Object.fromEntries(items.map((p) => [p.id, p.isOutsideCurrentPhase]));
 
 describe.concurrent('listProposals: not advanced', () => {
-  it('lists left-behind proposals for an admin on the All tab, flagged', async ({
+  it("widens an admin's pool with left-behind proposals, flagged", async ({
     task,
     onTestFinished,
   }) => {

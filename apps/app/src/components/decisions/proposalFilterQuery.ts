@@ -28,7 +28,7 @@ export type ProposalQueryParams = {
   submittedByProfileId?: string;
   votedByProfileId?: string;
   status?: ProposalStatus;
-  /** Admins also see what didn't advance into the current phase. */
+  /** "Not advanced": rejected, plus (for admins) what earlier phases left behind. */
   notAdvanced?: 'include' | 'only';
   dir: 'asc' | 'desc';
   limit: number;
@@ -149,16 +149,16 @@ export const buildQueryParams = ({
     params.votedByProfileId = currentProfileId;
   }
 
-  // Not in the results phase, whose list already spans every phase. The
-  // server widens only an admin's list: everyone else still gets rejected
-  // proposals for "Not advanced".
-  if (phase !== 'results') {
-    params.notAdvanced =
-      status === 'not-advanced' || filter === ProposalFilter.REJECTED
-        ? 'only'
-        : 'include';
-  } else if (status === 'not-advanced' || filter === ProposalFilter.REJECTED) {
-    params.status = ProposalStatus.REJECTED;
+  // "Not advanced" is the one place an admin sees what earlier phases left
+  // behind; All stays the current phase. The server widens only an admin's
+  // list, so everyone else still gets rejected proposals. The results phase
+  // already spans every phase, so it filters on rejection alone.
+  if (status === 'not-advanced' || filter === ProposalFilter.REJECTED) {
+    if (phase === 'results') {
+      params.status = ProposalStatus.REJECTED;
+    } else {
+      params.notAdvanced = 'only';
+    }
   }
 
   return params;

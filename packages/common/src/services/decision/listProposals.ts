@@ -42,10 +42,11 @@ export interface ListProposalsInput {
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
   /**
-   * Current-phase lists only, and only for admins: `include` adds proposals
-   * left behind in earlier phases (so they stay reachable for "Advance to
-   * [phase]"); `only` narrows to what didn't advance — those plus rejected
-   * ones. Each row then reports `isOutsideCurrentPhase`.
+   * Current-phase lists only, and only for admins: `only` is the "Not
+   * advanced" filter — rejected proposals plus those earlier phases left
+   * behind (so "Advance to [phase]" can reach them); `include` is that pool
+   * together with the phase, for the filter's "of N" count. Each row then
+   * reports `isOutsideCurrentPhase`.
    */
   notAdvanced?: 'include' | 'only';
   /**
