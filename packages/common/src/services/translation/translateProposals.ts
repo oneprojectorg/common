@@ -5,9 +5,9 @@ import type { TranslatableEntry } from '@op/translation';
 import { permission } from 'access-zones';
 
 import { assertInstanceProfileAccess } from '../access';
-import { generateProposalHtml } from '../decision/generateProposalHtml';
 import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
 import { parseProposalData } from '../decision/proposalDataSchema';
+import { buildProposalListPreview } from '../decision/proposalListPreview';
 import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -135,29 +135,18 @@ export async function translateProposals({
       continue;
     }
 
-    let preview: string | undefined;
-
-    // Generate HTML from document content and extract plain-text preview
-    const documentContent = documentContentMap.get(proposal.id);
-    let htmlContent: Record<string, string> | undefined;
-
-    if (documentContent?.type === 'json') {
-      htmlContent = generateProposalHtml(documentContent.fragments);
-    } else if (documentContent?.type === 'html') {
-      htmlContent = { default: documentContent.content };
-    }
-
-    if (htmlContent) {
-      const firstHtml = Object.values(htmlContent).find(Boolean);
-      if (firstHtml) {
-        const plainText = getTextPreview({
-          content: firstHtml,
-          maxLines: 3,
-          maxLength: 200,
-        });
-        preview = plainText || undefined;
-      }
-    }
+    // The same body preview the card shows. System fields (title, budget,
+    // category) are document fragments too, and the title comes first, so
+    // taking the first fragment would translate the title twice.
+    const { previewText } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate:
+        templateByProcessId.get(proposal.processInstance.processId) ?? null,
+    });
+    const preview = previewText
+      ? getTextPreview({ content: previewText, maxLines: 3, maxLength: 200 }) ||
+        undefined
+      : undefined;
 
     entries.push(
       ...flattenTranslatableFields(`batch:${pid}:`, {
