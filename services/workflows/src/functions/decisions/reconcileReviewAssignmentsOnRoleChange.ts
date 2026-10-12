@@ -13,9 +13,9 @@ const { decisionMemberRolesChanged } = Events;
  * services re-derive eligibility from the DB, and the concurrency key
  * serializes edits per decision, so the last run converges.
  */
-export const backfillReviewAssignmentsOnRoleChange = inngest.createFunction(
+export const reconcileReviewAssignmentsOnRoleChange = inngest.createFunction(
   {
-    id: 'backfillReviewAssignmentsOnRoleChange',
+    id: 'reconcileReviewAssignmentsOnRoleChange',
     concurrency: { key: 'event.data.decisionProfileId', limit: 1 },
   },
   { event: decisionMemberRolesChanged.name },

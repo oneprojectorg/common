@@ -23,7 +23,7 @@ import { ROLES } from '@op/db/seedData/accessControl';
 import { Events } from '@op/events';
 import { describe, expect, it } from 'vitest';
 
-import { backfillReviewAssignmentsOnRoleChange } from './backfillReviewAssignmentsOnRoleChange';
+import { reconcileReviewAssignmentsOnRoleChange } from './reconcileReviewAssignmentsOnRoleChange';
 
 const decisionSchemaWithReview = {
   id: 'role-change-prune-test-schema',
@@ -173,12 +173,12 @@ const executeRolesChanged = (data: {
   removedRoleIds: string[];
 }) =>
   new InngestTestEngine({
-    function: backfillReviewAssignmentsOnRoleChange,
+    function: reconcileReviewAssignmentsOnRoleChange,
   }).execute({
     events: [{ name: Events.decisionMemberRolesChanged.name, data }],
   });
 
-describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
+describe('reconcileReviewAssignmentsOnRoleChange on a role removal', () => {
   it('drops a member with only pending assignments from the phase reviewer list', async ({
     task,
     onTestFinished,
