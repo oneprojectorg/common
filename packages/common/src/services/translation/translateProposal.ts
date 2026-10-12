@@ -44,8 +44,7 @@ export async function translateProposal({
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
 
-  // The title is plain text: the same resolved title the card and page show,
-  // never its document fragment's HTML (which would come back as markup).
+  // Translate the title the reader sees as plain text, not its fragment's HTML.
   const { systemFieldOverrides } = buildProposalListPreview({
     documentContent: proposal.documentContent,
     proposalTemplate: template,
@@ -57,9 +56,7 @@ export async function translateProposal({
     }),
   );
 
-  // HTML fragments from TipTap — proposal.htmlContent is the server-generated
-  // HTML (Record<string, string>). System fields (title, budget, category) are
-  // fragments too but are translated above as plain text, or not at all.
+  // System fields are translated above as plain text, or not at all.
   if (proposal.htmlContent) {
     const htmlContent = proposal.htmlContent as Record<string, string>;
     for (const [fragmentName, html] of Object.entries(htmlContent)) {

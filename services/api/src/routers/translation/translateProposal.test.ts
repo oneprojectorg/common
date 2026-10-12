@@ -1,4 +1,5 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
+import { parseProposalData } from '@op/common';
 import {
   TestDecisionsDataManager,
   TestTranslationDataManager,
@@ -257,8 +258,6 @@ describe('translation.translateProposal', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // On a template the title is a document fragment like the body, so it
-    // also renders to HTML — that HTML must not become the translated title.
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
@@ -279,12 +278,14 @@ describe('translation.translateProposal', () => {
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: setup.instance.instance.id,
-      proposalData: { title: 'Community Garden' },
+      // A stale saved title: the document fragment is what the reader sees.
+      proposalData: { title: 'Old Title' },
     });
 
-    const { collaborationDocId } = proposal.proposalData as {
-      collaborationDocId: string;
-    };
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error('Proposal has no collaboration document');
+    }
     mockCollab.setDocFragmentResponses(collaborationDocId, {
       title: textFragment('Community Garden'),
       summary: textFragment('Fresh food for neighbours'),
