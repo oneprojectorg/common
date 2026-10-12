@@ -7,7 +7,7 @@ import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
-import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
+import { LuArrowRight, LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -24,8 +24,8 @@ import { useProposalModerationActions } from './useProposalModerationActions';
 import { useProposalRejectionActions } from './useProposalRejectionActions';
 
 /**
- * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide
- * and delete.
+ * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide,
+ * delete, and "Advance to [phase]" for a proposal outside the current phase.
  * Mirrors the browse-card kebab (`ProposalCard/ProposalCardMenu`) and shares its
  * mutation + toast copy via {@link useProposalModerationActions}, so the two
  * surfaces can't drift.
@@ -96,6 +96,23 @@ function ProposalAdminMenuItems({
   );
   const supersededBy = mergedAway?.items[0];
 
+  // Present only while the proposal sits outside the current phase; the item
+  // stays hidden until this resolves so it never flashes in and out.
+  const { data: advanceTarget } =
+    trpc.decision.getProposalAdvanceTarget.useQuery({
+      proposalId: proposal.id,
+    });
+  // No invalidation needed: the endpoint registers the affected channels.
+  const advanceMutation = trpc.decision.advanceProposal.useMutation({
+    onError: (error) => {
+      toast.error(error.message || t('decisions.proposals.advanceError'));
+      logger.error('Failed to advance proposal', {
+        error,
+        context: 'ProposalAdminMenu',
+      });
+    },
+  });
+
   const triggerLabel = t('decisions.proposals.proposalOptionsLabel');
   const showMergeDialog = mergeEnabled && !supersededBy;
 
@@ -145,9 +162,33 @@ function ProposalAdminMenuItems({
       })
     : null;
 
+  const advanceItem: ProposalOptionsMenuItem | null = advanceTarget
+    ? {
+        key: 'advance',
+        icon: <LuArrowRight className="size-5 rtl:-scale-x-100" />,
+        label: t('decisions.proposals.advanceToPhaseAction', {
+          phase: advanceTarget.phaseName,
+        }),
+        onAction: () =>
+          advanceMutation.mutate(
+            { proposalId: proposal.id, phaseId: advanceTarget.phaseId },
+            {
+              onSuccess: () =>
+                toast.success(
+                  t('decisions.proposals.advanceSuccess', {
+                    phase: advanceTarget.phaseName,
+                  }),
+                ),
+            },
+          ),
+        isDisabled: isLoading || advanceMutation.isPending,
+      }
+    : null;
+
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
     ...(rejectItem ? [rejectItem] : []),
+    ...(advanceItem ? [advanceItem] : []),
     {
       key: 'visibility',
       icon: isHidden ? (
