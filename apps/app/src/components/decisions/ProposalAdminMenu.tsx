@@ -116,10 +116,7 @@ function ProposalAdminMenuItems({
       },
     );
 
-  const { advanceTarget, advance, isAdvancing } = useProposalAdvance({
-    proposal,
-    isRejected,
-  });
+  const { advanceTarget, advance, isAdvancing } = useProposalAdvance(proposal);
   // Advancing, rejecting and unmerging all move the proposal between pools,
   // so none starts while another is in flight.
   const isBusy =
@@ -231,21 +228,13 @@ function ProposalAdminMenuItems({
  * when it can't move), and the action that advances it. No invalidation
  * needed: the endpoints register the proposal channels.
  */
-function useProposalAdvance({
-  proposal,
-  isRejected,
-}: {
-  proposal: Proposal;
-  /** A rejected proposal can never advance, so it isn't asked about. */
-  isRejected: boolean;
-}) {
+function useProposalAdvance(proposal: Proposal) {
   const t = useTranslations();
-  const { data } = trpc.decision.getProposalAdvanceTarget.useQuery(
-    { proposalId: proposal.id },
-    { enabled: !isRejected },
-  );
-  // A disabled query keeps its last data, so rejecting would leave it stale.
-  const advanceTarget = isRejected ? undefined : data;
+  // Refetched over the proposal channel, so a rejection clears it.
+  const { data: advanceTarget } =
+    trpc.decision.getProposalAdvanceTarget.useQuery({
+      proposalId: proposal.id,
+    });
   const advanceMutation = trpc.decision.advanceProposal.useMutation({
     onError: (error) => {
       toast.error(t('decisions.proposals.advanceError'));

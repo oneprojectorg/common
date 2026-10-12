@@ -6,7 +6,7 @@ import { NotFoundError } from '../../utils';
 import { assertProposalAdmin, resolveAdvancement } from './proposalAdvancement';
 import type { proposalAdvanceTargetSchema } from './schemas/advanceProposal';
 
-export type ProposalAdvanceTarget = z.infer<typeof proposalAdvanceTargetSchema>;
+type ProposalAdvanceTarget = z.infer<typeof proposalAdvanceTargetSchema>;
 
 /**
  * The phase an admin can advance this proposal into, or a `null` target when
@@ -35,8 +35,7 @@ export async function getProposalAdvanceTarget({
 
   const advancement = await resolveAdvancement({
     dbClient: db,
-    processInstanceId,
-    instance,
+    instance: { id: processInstanceId, ...instance },
     proposalId,
   });
 

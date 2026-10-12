@@ -1,14 +1,13 @@
 import { type DbClient, and, eq, isNull, sql } from '@op/db/client';
 import { ProcessStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
-import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getPhaseProposalSqlScope } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
+import { assertDecisionAdmin } from './phaseHelpers';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import {
   type PhaseInstanceData,
@@ -16,12 +15,7 @@ import {
   isLastPhase,
 } from './schemas/instanceData';
 
-/**
- * Shared by `getProposalAdvanceTarget` and `advanceProposal`: who may advance
- * a proposal into the current phase, and whether it can go.
- */
-
-export type Advancement =
+type Advancement =
   | {
       ok: true;
       currentPhase: PhaseInstanceData;
@@ -43,10 +37,9 @@ export async function assertProposalAdmin({
 }): Promise<string> {
   const context = await getProposalAccessContext(proposalId);
 
-  await assertProfileAccess({
+  await assertDecisionAdmin({
     user,
-    profileId: context.instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    decisionProfileId: context.instance.profileId,
   });
 
   return context.processInstanceId;
@@ -63,13 +56,11 @@ export async function assertProposalAdmin({
  */
 export async function resolveAdvancement({
   dbClient,
-  processInstanceId,
   instance,
   proposalId,
 }: {
   dbClient: DbClient;
-  processInstanceId: string;
-  instance: LockedProcessInstance;
+  instance: LockedProcessInstance & { id: string };
   proposalId: string;
 }): Promise<Advancement> {
   const { currentStateId, instanceData } = instance;
@@ -103,7 +94,7 @@ export async function resolveAdvancement({
 
   const transition = await getAdvancementTransition({
     dbClient,
-    instance: { id: processInstanceId, instanceData, currentStateId },
+    instance: { id: instance.id, instanceData, currentStateId },
     proposalId,
   });
 

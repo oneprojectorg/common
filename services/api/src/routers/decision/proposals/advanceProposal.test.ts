@@ -129,12 +129,11 @@ async function seedInstance(
   ]);
 
   return {
-    setup,
     instanceId,
     author,
     caller,
     creatorProfileId: creator?.profileId,
-    proposalIds: [first.id, second.id],
+    proposalIds: [first.id, second.id] as const,
   };
 }
 
@@ -153,7 +152,7 @@ async function getReviewPhaseIds(instanceId: string) {
 async function advanceLeavingOneBehind(
   testData: TestDecisionsDataManager,
   instanceId: string,
-  proposalIds: string[],
+  proposalIds: readonly string[],
 ) {
   await testData.advancePhase({
     instanceId,
@@ -167,6 +166,24 @@ async function advanceLeavingOneBehind(
     throw new Error('Expected the pipeline to keep exactly one proposal');
   }
   return { advanced, leftBehind };
+}
+
+/** Not offered to the admin, and refused if attempted anyway. */
+async function expectNotAdvanceable({
+  caller,
+  proposalId,
+  phaseId,
+}: {
+  caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>;
+  proposalId: string;
+  phaseId: string;
+}) {
+  await expect(
+    caller.decision.getProposalAdvanceTarget({ proposalId }),
+  ).resolves.toBeNull();
+  await expect(
+    caller.decision.advanceProposal({ proposalId, phaseId }),
+  ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 }
 
 type IneligibleSetup = {
@@ -218,7 +235,7 @@ describe.concurrent('advanceProposal', () => {
     });
 
     expect(await getReviewPhaseIds(instanceId)).toEqual(
-      expect.arrayContaining(proposalIds),
+      expect.arrayContaining([...proposalIds]),
     );
 
     const assignments = await db
@@ -233,15 +250,11 @@ describe.concurrent('advanceProposal', () => {
       phaseId: 'review',
     });
 
-    await expect(
-      caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
-    ).resolves.toBeNull();
-    await expect(
-      caller.decision.advanceProposal({
-        proposalId: leftBehind,
-        phaseId: 'review',
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectNotAdvanceable({
+      caller,
+      proposalId: leftBehind,
+      phaseId: 'review',
+    });
   });
 
   it('refuses when the decision is no longer in the offered phase', async ({
@@ -267,18 +280,12 @@ describe.concurrent('advanceProposal', () => {
 
   it('offers nothing in the first phase', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { caller, proposalIds } = await seedInstance(testData);
-    const [proposalId] = proposalIds;
-    if (!proposalId) {
-      throw new Error('Expected a proposal');
-    }
+    const {
+      caller,
+      proposalIds: [proposalId],
+    } = await seedInstance(testData);
 
-    await expect(
-      caller.decision.getProposalAdvanceTarget({ proposalId }),
-    ).resolves.toBeNull();
-    await expect(
-      caller.decision.advanceProposal({ proposalId, phaseId: 'submission' }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectNotAdvanceable({ caller, proposalId, phaseId: 'submission' });
   });
 
   it('offers nothing in the final phase', async ({ task, onTestFinished }) => {
@@ -295,15 +302,11 @@ describe.concurrent('advanceProposal', () => {
       toPhaseId: 'results',
     });
 
-    await expect(
-      caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
-    ).resolves.toBeNull();
-    await expect(
-      caller.decision.advanceProposal({
-        proposalId: leftBehind,
-        phaseId: 'results',
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectNotAdvanceable({
+      caller,
+      proposalId: leftBehind,
+      phaseId: 'results',
+    });
   });
 
   it('offers nothing while the phase awaits its manual selection', async ({
@@ -311,56 +314,31 @@ describe.concurrent('advanceProposal', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller, proposalIds } = await seedInstance(
-      testData,
-      pendingSelectionSchema,
-    );
+    const {
+      instanceId,
+      caller,
+      proposalIds: [proposalId],
+    } = await seedInstance(testData, pendingSelectionSchema);
     await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
     });
-    const [proposalId] = proposalIds;
-    if (!proposalId) {
-      throw new Error('Expected a proposal');
-    }
 
-    await expect(
-      caller.decision.getProposalAdvanceTarget({ proposalId }),
-    ).resolves.toBeNull();
-    await expect(
-      caller.decision.advanceProposal({ proposalId, phaseId: 'review' }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
-  });
-
-  it('offers nothing for a rejected proposal', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller, proposalIds } = await seedInstance(testData);
-    const { leftBehind } = await advanceLeavingOneBehind(
-      testData,
-      instanceId,
-      proposalIds,
-    );
-    await caller.decision.rejectProposal({
-      proposalId: leftBehind,
-      reason: RejectionReason.INELIGIBLE,
-    });
-
-    await expect(
-      caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
-    ).resolves.toBeNull();
-    await expect(
-      caller.decision.advanceProposal({
-        proposalId: leftBehind,
-        phaseId: 'review',
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectNotAdvanceable({ caller, proposalId, phaseId: 'review' });
   });
 
   it.for([
+    {
+      label: 'a rejected proposal',
+      makeIneligible: async ({ caller, leftBehind }: IneligibleSetup) => {
+        await caller.decision.rejectProposal({
+          proposalId: leftBehind,
+          reason: RejectionReason.INELIGIBLE,
+        });
+        return leftBehind;
+      },
+    },
     {
       label: 'a deleted proposal',
       makeIneligible: async ({ leftBehind }: IneligibleSetup) => {
@@ -421,12 +399,7 @@ describe.concurrent('advanceProposal', () => {
         leftBehind,
       });
 
-      await expect(
-        caller.decision.getProposalAdvanceTarget({ proposalId }),
-      ).resolves.toBeNull();
-      await expect(
-        caller.decision.advanceProposal({ proposalId, phaseId: 'review' }),
-      ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+      await expectNotAdvanceable({ caller, proposalId, phaseId: 'review' });
     },
   );
 
@@ -446,15 +419,11 @@ describe.concurrent('advanceProposal', () => {
       .set({ status: ProcessStatus.DRAFT })
       .where(eq(processInstances.id, instanceId));
 
-    await expect(
-      caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
-    ).resolves.toBeNull();
-    await expect(
-      caller.decision.advanceProposal({
-        proposalId: leftBehind,
-        phaseId: 'review',
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectNotAdvanceable({
+      caller,
+      proposalId: leftBehind,
+      phaseId: 'review',
+    });
   });
 
   it('offers nothing when the latest transition leads out of the current phase', async ({
@@ -475,15 +444,11 @@ describe.concurrent('advanceProposal', () => {
       transitionData: {},
     });
 
-    await expect(
-      caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
-    ).resolves.toBeNull();
-    await expect(
-      caller.decision.advanceProposal({
-        proposalId: leftBehind,
-        phaseId: 'review',
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectNotAdvanceable({
+      caller,
+      proposalId: leftBehind,
+      phaseId: 'review',
+    });
   });
 
   it('assigns no reviews when the current phase is not a review phase', async ({

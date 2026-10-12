@@ -14,5 +14,3 @@ export const advanceProposalInputSchema = z.object({
   /** The phase the admin was offered; a mismatch means the decision moved on. */
   phaseId: z.string().min(1),
 });
-
-export type AdvanceProposalInput = z.infer<typeof advanceProposalInputSchema>;

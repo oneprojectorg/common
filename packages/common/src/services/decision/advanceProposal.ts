@@ -1,8 +1,8 @@
 import { db } from '@op/db/client';
-import { decisionTransitionProposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { ConflictError, NotFoundError, ValidationError } from '../../utils';
+import { ConflictError, ValidationError } from '../../utils';
+import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { lockProcessInstance } from './lockProcessInstance';
 import { assertProposalAdmin, resolveAdvancement } from './proposalAdvancement';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
@@ -45,8 +45,7 @@ export async function advanceProposal({
 
     const advancement = await resolveAdvancement({
       dbClient: tx,
-      processInstanceId,
-      instance: lockedInstance,
+      instance: { id: processInstanceId, ...lockedInstance },
       proposalId,
     });
 
@@ -54,21 +53,11 @@ export async function advanceProposal({
       throw new ValidationError(advancement.reason);
     }
 
-    const latestHistory = await tx.query.proposalHistory.findFirst({
-      where: { id: proposalId, processInstanceId },
-      orderBy: { historyCreatedAt: 'desc' },
-      columns: { historyId: true },
-    });
-
-    if (!latestHistory) {
-      throw new NotFoundError('Proposal history', proposalId);
-    }
-
-    await tx.insert(decisionTransitionProposals).values({
+    await attachProposalsToTransition({
+      dbClient: tx,
       processInstanceId,
       transitionHistoryId: advancement.transitionHistoryId,
-      proposalId,
-      proposalHistoryId: latestHistory.historyId,
+      proposalIds: [proposalId],
     });
 
     return isReviewPhase(advancement.currentPhase)

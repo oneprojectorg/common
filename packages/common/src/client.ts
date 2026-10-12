@@ -123,7 +123,6 @@ export {
   advanceProposalInputSchema,
   getProposalAdvanceTargetInputSchema,
   proposalAdvanceTargetSchema,
-  type AdvanceProposalInput,
 } from './services/decision/schemas/advanceProposal';
 export {
   listContributingProposalsInputSchema,
