@@ -131,6 +131,15 @@ describe.concurrent('listProposals: not advanced', () => {
       [leftBehind]: true,
       [alsoLeftBehind]: true,
     });
+    // The card's kebab reads this instead of asking per row.
+    const target = { phaseId: 'review', phaseName: 'Review' };
+    expect(
+      Object.fromEntries(items.map((p) => [p.id, p.advanceTarget])),
+    ).toEqual({
+      [advanced]: undefined,
+      [leftBehind]: target,
+      [alsoLeftBehind]: target,
+    });
   });
 
   it('narrows the Not advanced filter to left-behind and rejected proposals', async ({
@@ -159,6 +168,43 @@ describe.concurrent('listProposals: not advanced', () => {
       [advanced]: false,
       [leftBehind]: true,
     });
+  });
+
+  it('gives non-admins only rejected proposals under Not advanced', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, admin, memberCaller, advanced } =
+      await seedReviewPhase(testData);
+    await admin.decision.rejectProposal({
+      proposalId: advanced,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    const { items } = await memberCaller.decision.listProposals({
+      processInstanceId: instanceId,
+      notAdvanced: 'only',
+    });
+
+    expect(items.map((p) => p.id)).toEqual([advanced]);
+  });
+
+  it('leaves an explicitly chosen phase alone', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, admin, advanced } = await seedReviewPhase(testData);
+
+    const { items } = await admin.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+      notAdvanced: 'include',
+    });
+
+    expect(items.map((p) => p.id)).toEqual([advanced]);
+    expect(items[0]?.isOutsideCurrentPhase).toBeUndefined();
   });
 
   it('keeps the list as it was for non-admins and when not asked', async ({

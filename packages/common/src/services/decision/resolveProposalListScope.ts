@@ -6,7 +6,6 @@ import {
   inArray,
   isNull,
   ne,
-  not,
   notExists,
   or,
   sql,
@@ -50,6 +49,7 @@ type InstanceScopeRow = Pick<
   | 'instanceData'
   | 'processId'
   | 'currentStateId'
+  | 'status'
 >;
 
 export interface ProposalListScope {
@@ -264,6 +264,7 @@ export const resolveProposalListScope = async ({
         instanceData: processInstances.instanceData,
         processId: processInstances.processId,
         currentStateId: processInstances.currentStateId,
+        status: processInstances.status,
       })
       .from(processInstances)
       .where(eq(processInstances.id, processInstanceId))
@@ -397,7 +398,8 @@ export const resolveProposalListScope = async ({
         and(
           ne(proposalsTable.status, ProposalStatus.DRAFT),
           isNull(proposalsTable.deletedAt),
-          not(phaseScope.buildNonDraftFilter(proposalsTable)),
+          // Not `not(...)`: a NULL membership must read as outside.
+          sql`(${phaseScope.buildNonDraftFilter(proposalsTable)}) IS NOT TRUE`,
         )!
     : undefined;
 

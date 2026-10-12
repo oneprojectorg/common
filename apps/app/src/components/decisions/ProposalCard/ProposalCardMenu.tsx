@@ -56,11 +56,10 @@ export function ProposalCardMenu({
   // Undo only — it has no dialog. Rejecting runs from the host, whose dialog
   // owns the confirm button that calls it.
   const { unreject, isUnrejecting } = useProposalRejectionActions(proposal);
-  // Only an admin's list carries proposals that didn't advance; the lookup is
-  // skipped for the rest.
+  // Only an admin's list row carries an advance target.
   const { advanceItem, isAdvancing } = useProposalAdvance({
     proposal,
-    enabled: canManage && proposal.isOutsideCurrentPhase === true,
+    lookUpTarget: false,
   });
 
   const getMenuItems = () => {

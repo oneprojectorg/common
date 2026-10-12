@@ -6,6 +6,7 @@ import {
   PROPOSAL_TITLE_MAX_LENGTH,
   proposalDataSchema,
 } from '../proposalDataSchema';
+import { proposalAdvanceTargetSchema } from './advanceProposal';
 
 export const storageItemSchema = z.object({
   id: z.string(),
@@ -141,6 +142,11 @@ export const proposalSchema = z.object({
    * earlier transition left it behind (`notAdvanced` on `listProposals`).
    */
   isOutsideCurrentPhase: z.boolean().optional(),
+  /**
+   * Set on such a row when an admin can advance it into the current phase —
+   * the target `getProposalAdvanceTarget` would return, without a per-row call.
+   */
+  advanceTarget: proposalAdvanceTargetSchema.optional(),
   /** True when an active moderation flag hides this proposal from general
    *  readers. Only the creator (+ collaborators) and admins ever receive a
    *  flagged proposal, so this drives their "Flagged" indicator. */

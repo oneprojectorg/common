@@ -11,25 +11,27 @@ import { useTranslations } from '@/lib/i18n';
 import type { ProposalOptionsMenuItem } from './ProposalOptionsMenu';
 
 /**
- * "Advance to [phase]" for a proposal outside the current phase: the phase it
- * can move into (`undefined` while loading or when it can't move) and the
- * action, shared by the card kebab and the proposal page's menu. Refetched
- * over the proposal channel, so an advance or a rejection clears it.
+ * "Advance to [phase]" for a proposal outside the current phase, shared by the
+ * card kebab and the proposal page's menu. A list row already carries its
+ * target (`proposal.advanceTarget`); the proposal page looks it up. Either way
+ * it's refreshed over the proposal channels, so an advance or a rejection
+ * clears it.
  */
 export function useProposalAdvance({
   proposal,
-  enabled = true,
+  lookUpTarget,
 }: {
   proposal: Proposal;
-  /** Skip the lookup where the proposal is known to be in the phase. */
-  enabled?: boolean;
+  /** Fetch the target instead of reading it off a list row. */
+  lookUpTarget: boolean;
 }) {
   const t = useTranslations();
-  const { data: advanceTarget } =
+  const { data: fetchedTarget } =
     trpc.decision.getProposalAdvanceTarget.useQuery(
       { proposalId: proposal.id },
-      { enabled },
+      { enabled: lookUpTarget },
     );
+  const advanceTarget = lookUpTarget ? fetchedTarget : proposal.advanceTarget;
   const advanceMutation = trpc.decision.advanceProposal.useMutation({
     onError: (error) => {
       toast.error(t('decisions.proposals.advanceError'));
@@ -41,7 +43,7 @@ export function useProposalAdvance({
   });
 
   const advanceItem = (isDisabled: boolean): ProposalOptionsMenuItem | null => {
-    if (!enabled || !advanceTarget) {
+    if (!advanceTarget) {
       return null;
     }
     const { phaseId, phaseName } = advanceTarget;

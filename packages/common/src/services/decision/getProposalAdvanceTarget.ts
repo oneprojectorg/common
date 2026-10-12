@@ -6,7 +6,7 @@ import { NotFoundError } from '../../utils';
 import { assertProposalAdmin, resolveAdvancement } from './proposalAdvancement';
 import type { proposalAdvanceTargetSchema } from './schemas/advanceProposal';
 
-type ProposalAdvanceTarget = z.infer<typeof proposalAdvanceTargetSchema>;
+export type ProposalAdvanceTarget = z.infer<typeof proposalAdvanceTargetSchema>;
 
 /**
  * The phase an admin can advance this proposal into, or a `null` target when

@@ -117,7 +117,10 @@ function ProposalAdminMenuItems({
       },
     );
 
-  const { advanceItem, isAdvancing } = useProposalAdvance({ proposal });
+  const { advanceItem, isAdvancing } = useProposalAdvance({
+    proposal,
+    lookUpTarget: true,
+  });
   // Advancing, rejecting and unmerging all move the proposal between pools,
   // so none starts while another is in flight.
   const isBusy =

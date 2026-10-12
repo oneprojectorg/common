@@ -17,13 +17,11 @@ import type { Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/index.js';
 
-/** The innermost element holding both the card's title and its kebab. */
+/** One proposal card in the list, by its title. */
 const proposalCard = (page: Page, title: string) =>
   page
-    .locator('div')
-    .filter({ has: page.getByRole('heading', { name: title }) })
-    .filter({ has: page.getByRole('button', { name: 'Proposal options' }) })
-    .last();
+    .getByTestId('proposal-card')
+    .filter({ has: page.getByRole('heading', { name: title }) });
 
 const schema: DecisionSchemaDefinition = {
   id: 'test-advance-to-phase',

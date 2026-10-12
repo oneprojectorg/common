@@ -305,6 +305,7 @@ export const ProposalCardView = ({
       status={status}
       reviewedLabel={reviewedLabel ?? decoration.reviewedLabel}
       actions={actions}
+      data-testid="proposal-card"
       {...rest}
     />
   );
