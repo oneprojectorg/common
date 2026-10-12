@@ -1433,6 +1433,8 @@
       "translateToAction": "Translate to {language}",
       "translatedFromNotice": "Translated from {language}",
       "translationProviderNotice": "Translated with DeepL",
+      "seeTranslationAction": "See translation",
+      "translationFailedNotice": "Translation failed.",
       "translatingProgress": "Translating...",
       "viewOriginalAction": "View original",
       "locationSearchPlaceholder": "Address, cross streets, or landmark",

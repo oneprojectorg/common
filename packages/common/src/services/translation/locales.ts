@@ -4,6 +4,10 @@ export { SUPPORTED_LOCALES };
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
+/** Narrows an app locale (e.g. next-intl's `useLocale()`) to one we translate into. */
+export const isSupportedLocale = (locale: string): locale is SupportedLocale =>
+  SUPPORTED_LOCALES.some((supported) => supported === locale);
+
 /**
  * Maps platform locale codes to DeepL target language codes.
  * DeepL requires regional variants for some languages (e.g. EN-US, PT-BR).

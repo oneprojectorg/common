@@ -38,6 +38,7 @@ import type { TranslateFn } from '@/lib/i18n';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
+import { TranslateLink } from '@/components/decisions/TranslateLink';
 
 import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
@@ -45,6 +46,7 @@ import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { DeletePostMenuItem } from './DeletePostMenuItem';
 import { ReportPostModal } from './ReportPostModal';
+import { usePostTranslation } from './usePostTranslation';
 
 const PostDisplayName = ({
   profile,
@@ -426,6 +428,7 @@ export const PostItem = ({
   onLikeClick,
   onCommentClick,
   contentFooter,
+  translatable = false,
   className,
 }: {
   post: Post;
@@ -436,11 +439,24 @@ export const PostItem = ({
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   /** Rendered under the post body, above the like/comment row. */
   contentFooter?: ReactNode;
+  /**
+   * Offer the post's own "See translation" link (proposal comments, decision
+   * updates) when it is in another language than the reader's.
+   */
+  translatable?: boolean;
   className?: string;
 }) => {
+  const translation = usePostTranslation({
+    postId: post.id,
+    content: post.content ?? '',
+    enabled: translatable,
+  });
+  // The page-level decision banner still translates updates as a batch.
   const decisionTranslation = useDecisionTranslation();
-  const translatedContent = decisionTranslation?.posts[post.id]?.content;
-  const displayContent = translatedContent ?? post?.content;
+  const displayContent =
+    translation.translation ??
+    decisionTranslation?.posts[post.id]?.content ??
+    post?.content;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
   const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
@@ -474,6 +490,8 @@ export const PostItem = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
+          {/* Below the author row, above what the author wrote. */}
+          <TranslateLink translation={translation} />
           <PostFlaggedIndicator post={post} />
           <PostContent content={displayContent} />
           <PostAttachments attachments={post.attachments} />
@@ -566,6 +584,7 @@ export const PostItemOnDetailPage = ({
 export const DiscussionModalContainer = ({
   discussionModal,
   onClose,
+  translatable = false,
 }: {
   discussionModal: {
     isOpen: boolean;
@@ -573,6 +592,8 @@ export const DiscussionModalContainer = ({
     organization?: Organization | null;
   };
   onClose: () => void;
+  /** Offer each post's own "See translation" link (decision updates). */
+  translatable?: boolean;
 }) => {
   if (!discussionModal.isOpen || !discussionModal.post) {
     return null;
@@ -584,6 +605,7 @@ export const DiscussionModalContainer = ({
       organization={discussionModal.organization ?? null}
       isOpen={discussionModal.isOpen}
       onClose={onClose}
+      translatable={translatable}
     />
   );
 };

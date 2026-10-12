@@ -322,6 +322,7 @@ const UpdatesFeed = ({
         {posts.map((post) => (
           <Fragment key={post.id}>
             <PostItem
+              translatable
               post={post}
               organization={null}
               user={user}
@@ -342,6 +343,7 @@ const UpdatesFeed = ({
       <DiscussionModalContainer
         discussionModal={discussionModal}
         onClose={handleModalClose}
+        translatable
       />
     </>
   );

@@ -146,6 +146,7 @@ export function ProposalComments({
               {comments.map(({ post, originProposal }, i) => (
                 <div key={post.id}>
                   <PostItem
+                    translatable
                     post={post}
                     organization={null}
                     user={user}

@@ -8,6 +8,7 @@ import type {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { RevisionRequestCard } from './RevisionRequestCard';
 import { RevisionFeedbackCard } from './proposalEditor/RevisionFeedbackCard';
 
 interface ReviewNotesPanelProps {
@@ -41,13 +42,7 @@ export function ReviewNotesPanel({
           </h3>
 
           {openRequests.map((request) => (
-            <RevisionFeedbackCard
-              key={request.id}
-              comment={request.requestComment}
-              sentAt={request.requestedAt}
-              variant="request"
-              meta="bare"
-            />
+            <RevisionRequestCard key={request.id} request={request} />
           ))}
         </>
       ) : null}
@@ -89,13 +84,7 @@ export function ReviewNotesPanel({
           ) : null}
 
           {group.requests.map((request) => (
-            <RevisionFeedbackCard
-              key={request.id}
-              comment={request.requestComment}
-              sentAt={request.requestedAt}
-              variant="request"
-              meta="bare"
-            />
+            <RevisionRequestCard key={request.id} request={request} />
           ))}
         </div>
       ))}
