@@ -106,6 +106,34 @@ describe('translation.translateRevisionRequest', () => {
     );
   });
 
+  it('rejects an admin of another decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { request } = await createRevisionRequestScenario(
+      testData,
+      onTestFinished,
+    );
+
+    const otherData = new TestReviewsDataManager(
+      `${task.id}-other`,
+      onTestFinished,
+    );
+    const otherContext = await otherData.createContext();
+    const otherCaller = await createAuthenticatedCaller(
+      otherContext.defaultReviewer.email,
+    );
+
+    await expect(
+      otherCaller.translation.translateRevisionRequest({
+        requestId: request.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toThrow();
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
   it('rejects an instance member who is neither author, reviewer, nor admin', async ({
     task,
     onTestFinished,

@@ -158,6 +158,66 @@ describe('translation.translateReview', () => {
     );
   });
 
+  it('denies a peer reviewer a review from a phase the process has not reached', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, review } = await createSubmittedReviewScenario(
+      testData,
+      onTestFinished,
+    );
+
+    const peerData = new TestReviewsDataManager(
+      `${task.id}-peer`,
+      onTestFinished,
+    );
+    const peer = await peerData.createInstanceReviewerWithRole(context);
+    const peerCaller = await createAuthenticatedCaller(peer.email);
+
+    // Open reviews would admit the peer, but not into a later phase.
+    const instanceId = context.instance.instance.id;
+    await testData.setPhaseOpenReviews(instanceId, 'review', true);
+    await testData.setCurrentPhase(instanceId, 'submission');
+
+    await expect(
+      peerCaller.translation.translateReview({
+        reviewId: review.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('rejects an admin of another decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { review } = await createSubmittedReviewScenario(
+      testData,
+      onTestFinished,
+    );
+
+    // The default reviewer of another decision is that decision's admin.
+    const otherData = new TestReviewsDataManager(
+      `${task.id}-other`,
+      onTestFinished,
+    );
+    const otherContext = await otherData.createContext();
+    const otherCaller = await createAuthenticatedCaller(
+      otherContext.defaultReviewer.email,
+    );
+
+    await expect(
+      otherCaller.translation.translateReview({
+        reviewId: review.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toThrow();
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
   it("rejects the proposal's author and a plain instance member", async ({
     task,
     onTestFinished,
