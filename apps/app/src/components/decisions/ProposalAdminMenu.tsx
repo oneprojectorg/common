@@ -116,10 +116,23 @@ function ProposalAdminMenuItems({
       },
     );
 
+  const { advanceTarget, advance, isAdvancing } = useProposalAdvance({
+    proposal,
+    isRejected,
+  });
+  // Advancing, rejecting and unmerging all move the proposal between pools,
+  // so none starts while another is in flight.
+  const isBusy =
+    isLoading ||
+    unmergeMutation.isPending ||
+    isRejecting ||
+    isUnrejecting ||
+    isAdvancing;
+
   // Merge leads, matching the card kebab (Figma 15311:9078).
   const mergeItem = mergeEnabled
     ? buildMergeMenuItem({
-        isDisabled: isLoading || unmergeMutation.isPending,
+        isDisabled: isBusy,
         mergeLabel: t('decisions.proposals.mergeProposalAction'),
         onMerge: () => setIsMergeModalOpen(true),
         unmerge: {
@@ -132,11 +145,7 @@ function ProposalAdminMenuItems({
 
   const rejectItem = rejectEnabled
     ? buildRejectMenuItem({
-        isDisabled:
-          isLoading ||
-          unmergeMutation.isPending ||
-          isRejecting ||
-          isUnrejecting,
+        isDisabled: isBusy,
         isRejected,
         rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
         undoLabel: t('decisions.proposals.undoRejectionAction'),
@@ -145,16 +154,22 @@ function ProposalAdminMenuItems({
       })
     : null;
 
-  const advanceItem = useAdvanceMenuItem({
-    proposal,
-    isRejected,
-    isDisabled: isLoading,
-  });
-
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
     ...(rejectItem ? [rejectItem] : []),
-    ...(advanceItem ? [advanceItem] : []),
+    ...(advanceTarget
+      ? [
+          {
+            key: 'advance',
+            icon: <LuArrowRight className="size-5 rtl:-scale-x-100" />,
+            label: t('decisions.proposals.advanceToPhaseAction', {
+              phase: advanceTarget.phaseName,
+            }),
+            onAction: advance,
+            isDisabled: isBusy,
+          },
+        ]
+      : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -212,20 +227,18 @@ function ProposalAdminMenuItems({
 }
 
 /**
- * "Advance to [phase]", present only while the proposal sits outside the
- * current phase. Stays hidden until the target resolves so it never flashes
- * in and out. No invalidation needed: the endpoints register the channels.
+ * The phase this proposal can be advanced into (`undefined` while loading or
+ * when it can't move), and the action that advances it. No invalidation
+ * needed: the endpoints register the proposal channels.
  */
-function useAdvanceMenuItem({
+function useProposalAdvance({
   proposal,
   isRejected,
-  isDisabled,
 }: {
   proposal: Proposal;
   /** A rejected proposal can never advance, so it isn't asked about. */
   isRejected: boolean;
-  isDisabled: boolean;
-}): ProposalOptionsMenuItem | null {
+}) {
   const t = useTranslations();
   const { data: advanceTarget } =
     trpc.decision.getProposalAdvanceTarget.useQuery(
@@ -234,7 +247,7 @@ function useAdvanceMenuItem({
     );
   const advanceMutation = trpc.decision.advanceProposal.useMutation({
     onError: (error) => {
-      toast.error(error.message || t('decisions.proposals.advanceError'));
+      toast.error(t('decisions.proposals.advanceError'));
       logger.error('Failed to advance proposal', {
         error,
         context: 'ProposalAdminMenu',
@@ -242,28 +255,25 @@ function useAdvanceMenuItem({
     },
   });
 
-  if (!advanceTarget) {
-    return null;
-  }
-
-  return {
-    key: 'advance',
-    icon: <LuArrowRight className="size-5 rtl:-scale-x-100" />,
-    label: t('decisions.proposals.advanceToPhaseAction', {
-      phase: advanceTarget.phaseName,
-    }),
-    onAction: () =>
+  const advance = () => {
+    if (advanceTarget) {
+      const { phaseId, phaseName } = advanceTarget;
       advanceMutation.mutate(
-        { proposalId: proposal.id, phaseId: advanceTarget.phaseId },
+        { proposalId: proposal.id, phaseId },
         {
+          // Per-call so the toast can name the phase it was offered.
           onSuccess: () =>
             toast.success(
-              t('decisions.proposals.advanceSuccess', {
-                phase: advanceTarget.phaseName,
-              }),
+              t('decisions.proposals.advanceSuccess', { phase: phaseName }),
             ),
         },
-      ),
-    isDisabled: isDisabled || advanceMutation.isPending,
+      );
+    }
+  };
+
+  return {
+    advanceTarget,
+    advance,
+    isAdvancing: advanceMutation.isPending,
   };
 }

@@ -9,6 +9,7 @@ import { getProposalRouter } from './get';
 import { getCollabTokenRouter } from './getCollabToken';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
+import { getProposalAdvanceTargetRouter } from './getProposalAdvanceTarget';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
 import { getReviewedVersionRouter } from './getReviewedVersion';
 import { listProposalsRouter } from './list';
@@ -31,6 +32,7 @@ export const proposalsRouter = mergeRouters(
   removeProposalRelationshipRouter,
   createProposalRouter,
   getProposalRouter,
+  getProposalAdvanceTargetRouter,
   getCollabTokenRouter,
   getLatestSelectionForProposalRouter,
   getProposalWithReviewAggregatesRouter,

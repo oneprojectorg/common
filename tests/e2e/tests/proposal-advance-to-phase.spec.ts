@@ -117,7 +117,7 @@ test.describe('Advance a proposal into the current phase', () => {
 
     await authenticatedPage.goto(
       `/en/decisions/${instance.slug}/proposal/${leftBehind.profileId}`,
-      { waitUntil: 'networkidle' },
+      { waitUntil: 'load' },
     );
 
     await authenticatedPage

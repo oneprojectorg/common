@@ -8,7 +8,10 @@ import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
+  processInstances,
   proposalReviewAssignments,
+  proposals,
+  stateTransitionHistory,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -71,6 +74,16 @@ const pendingSelectionSchema = {
   ],
 } satisfies DecisionSchemaDefinition;
 
+/** Same phases, but the middle one isn't a review phase. */
+const nonReviewSchema = {
+  ...reviewSchema,
+  phases: [
+    reviewSchema.phases[0],
+    { ...reviewSchema.phases[1], rules: {} },
+    reviewSchema.phases[2],
+  ],
+} satisfies DecisionSchemaDefinition;
+
 /**
  * A published instance with two submitted proposals by a non-reviewing member
  * (so the admin creator is an eligible reviewer for both).
@@ -79,7 +92,8 @@ async function seedInstance(
   testData: TestDecisionsDataManager,
   processSchema:
     | typeof reviewSchema
-    | typeof pendingSelectionSchema = reviewSchema,
+    | typeof pendingSelectionSchema
+    | typeof nonReviewSchema = reviewSchema,
 ) {
   const setup = await testData.createDecisionSetup({
     instanceCount: 1,
@@ -154,6 +168,15 @@ async function advanceLeavingOneBehind(
   }
   return { advanced, leftBehind };
 }
+
+type IneligibleSetup = {
+  testData: TestDecisionsDataManager;
+  instanceId: string;
+  caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>;
+  author: { email: string };
+  advanced: string;
+  leftBehind: string;
+};
 
 describe.concurrent('advanceProposal', () => {
   it('offers the current phase only for a proposal outside it', async ({
@@ -239,6 +262,7 @@ describe.concurrent('advanceProposal', () => {
         phaseId: 'submission',
       }),
     ).rejects.toMatchObject({ cause: { name: 'ConflictError' } });
+    expect(await getReviewPhaseIds(instanceId)).not.toContain(leftBehind);
   });
 
   it('offers nothing in the first phase', async ({ task, onTestFinished }) => {
@@ -274,6 +298,12 @@ describe.concurrent('advanceProposal', () => {
     await expect(
       caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
     ).resolves.toBeNull();
+    await expect(
+      caller.decision.advanceProposal({
+        proposalId: leftBehind,
+        phaseId: 'results',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('offers nothing while the phase awaits its manual selection', async ({
@@ -322,6 +352,166 @@ describe.concurrent('advanceProposal', () => {
     await expect(
       caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
     ).resolves.toBeNull();
+    await expect(
+      caller.decision.advanceProposal({
+        proposalId: leftBehind,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it.for([
+    {
+      label: 'a deleted proposal',
+      makeIneligible: async ({ leftBehind }: IneligibleSetup) => {
+        await db
+          .update(proposals)
+          .set({ deletedAt: new Date().toISOString() })
+          .where(eq(proposals.id, leftBehind));
+        return leftBehind;
+      },
+    },
+    {
+      label: 'a merged-away proposal',
+      makeIneligible: async ({
+        caller,
+        leftBehind,
+        advanced,
+      }: IneligibleSetup) => {
+        await caller.decision.mergeProposals({
+          sourceProposalId: leftBehind,
+          targetProposalId: advanced,
+        });
+        return leftBehind;
+      },
+    },
+    {
+      label: 'a draft',
+      makeIneligible: async ({
+        testData,
+        instanceId,
+        author,
+      }: IneligibleSetup) => {
+        const draft = await testData.createProposal({
+          userEmail: author.email,
+          processInstanceId: instanceId,
+          proposalData: { title: 'Draft proposal' },
+          status: ProposalStatus.DRAFT,
+        });
+        return draft.id;
+      },
+    },
+  ])(
+    'offers nothing for $label',
+    async ({ makeIneligible }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, caller, author, proposalIds } =
+        await seedInstance(testData);
+      const { advanced, leftBehind } = await advanceLeavingOneBehind(
+        testData,
+        instanceId,
+        proposalIds,
+      );
+      const proposalId = await makeIneligible({
+        testData,
+        instanceId,
+        caller,
+        author,
+        advanced,
+        leftBehind,
+      });
+
+      await expect(
+        caller.decision.getProposalAdvanceTarget({ proposalId }),
+      ).resolves.toBeNull();
+      await expect(
+        caller.decision.advanceProposal({ proposalId, phaseId: 'review' }),
+      ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    },
+  );
+
+  it('offers nothing once the decision is unpublished', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, proposalIds } = await seedInstance(testData);
+    const { leftBehind } = await advanceLeavingOneBehind(
+      testData,
+      instanceId,
+      proposalIds,
+    );
+    await db
+      .update(processInstances)
+      .set({ status: ProcessStatus.DRAFT })
+      .where(eq(processInstances.id, instanceId));
+
+    await expect(
+      caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
+    ).resolves.toBeNull();
+    await expect(
+      caller.decision.advanceProposal({
+        proposalId: leftBehind,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('offers nothing when the latest transition leads out of the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, proposalIds } = await seedInstance(testData);
+    const { leftBehind } = await advanceLeavingOneBehind(
+      testData,
+      instanceId,
+      proposalIds,
+    );
+    await db.insert(stateTransitionHistory).values({
+      processInstanceId: instanceId,
+      fromStateId: 'review',
+      toStateId: 'results',
+      transitionData: {},
+    });
+
+    await expect(
+      caller.decision.getProposalAdvanceTarget({ proposalId: leftBehind }),
+    ).resolves.toBeNull();
+    await expect(
+      caller.decision.advanceProposal({
+        proposalId: leftBehind,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('assigns no reviews when the current phase is not a review phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, proposalIds } = await seedInstance(
+      testData,
+      nonReviewSchema,
+    );
+    const { leftBehind } = await advanceLeavingOneBehind(
+      testData,
+      instanceId,
+      proposalIds,
+    );
+
+    await caller.decision.advanceProposal({
+      proposalId: leftBehind,
+      phaseId: 'review',
+    });
+
+    expect(await getReviewPhaseIds(instanceId)).toContain(leftBehind);
+    const assignments = await db
+      .select({ id: proposalReviewAssignments.id })
+      .from(proposalReviewAssignments)
+      .where(eq(proposalReviewAssignments.processInstanceId, instanceId));
+    expect(assignments).toHaveLength(0);
   });
 
   it('refuses a member without decision-admin access', async ({
