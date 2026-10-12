@@ -240,11 +240,12 @@ function useProposalAdvance({
   isRejected: boolean;
 }) {
   const t = useTranslations();
-  const { data: advanceTarget } =
-    trpc.decision.getProposalAdvanceTarget.useQuery(
-      { proposalId: proposal.id },
-      { enabled: !isRejected },
-    );
+  const { data } = trpc.decision.getProposalAdvanceTarget.useQuery(
+    { proposalId: proposal.id },
+    { enabled: !isRejected },
+  );
+  // A disabled query keeps its last data, so rejecting would leave it stale.
+  const advanceTarget = isRejected ? undefined : data;
   const advanceMutation = trpc.decision.advanceProposal.useMutation({
     onError: (error) => {
       toast.error(t('decisions.proposals.advanceError'));

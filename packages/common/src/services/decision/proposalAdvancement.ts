@@ -1,5 +1,5 @@
 import { type DbClient, and, eq, isNull, sql } from '@op/db/client';
-import { ProcessStatus, type processInstances, proposals } from '@op/db/schema';
+import { ProcessStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -7,6 +7,7 @@ import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getPhaseProposalSqlScope } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
+import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import {
@@ -19,11 +20,6 @@ import {
  * Shared by `getProposalAdvanceTarget` and `advanceProposal`: who may advance
  * a proposal into the current phase, and whether it can go.
  */
-
-type AdvancementInstance = Pick<
-  typeof processInstances.$inferSelect,
-  'currentStateId' | 'status' | 'instanceData'
->;
 
 export type Advancement =
   | {
@@ -73,7 +69,7 @@ export async function resolveAdvancement({
 }: {
   dbClient: DbClient;
   processInstanceId: string;
-  instance: AdvancementInstance;
+  instance: LockedProcessInstance;
   proposalId: string;
 }): Promise<Advancement> {
   const { currentStateId, instanceData } = instance;
