@@ -87,11 +87,6 @@ const createReviewerRole = (instanceProfileId: string, name: string) =>
     },
   });
 
-/**
- * A published decision with one member who holds the given extra roles on top
- * of the member role, and two submitted proposals by other authors. Advancing
- * into review under full coverage assigns both proposals to the member.
- */
 async function createReviewerWithAssignments(
   testData: TestDecisionsDataManager,
   roleNames: string[],
@@ -202,12 +197,13 @@ describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
       user: setup.user,
     });
 
-    await executeRolesChanged({
+    const { error } = await executeRolesChanged({
       decisionProfileId: instance.profileId,
       authUserId: reviewer.authUserId,
       addedRoleIds: [],
       removedRoleIds: [reviewerRole.id],
     });
+    expect(error).toBeUndefined();
 
     const remaining = await getReviewerAssignments(
       instance.instance.id,
@@ -241,12 +237,13 @@ describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
       user: setup.user,
     });
 
-    await executeRolesChanged({
+    const { error } = await executeRolesChanged({
       decisionProfileId: instance.profileId,
       authUserId: reviewer.authUserId,
       addedRoleIds: [],
       removedRoleIds: heldRoleIds,
     });
+    expect(error).toBeUndefined();
 
     const remaining = await getReviewerAssignments(
       instance.instance.id,
@@ -295,12 +292,13 @@ describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
       user: setup.user,
     });
 
-    await executeRolesChanged({
+    const { error } = await executeRolesChanged({
       decisionProfileId: instance.profileId,
       authUserId: reviewer.authUserId,
       addedRoleIds: [],
       removedRoleIds: [reviewerRole.id],
     });
+    expect(error).toBeUndefined();
 
     const remaining = await getReviewerAssignments(
       instance.instance.id,
@@ -344,12 +342,13 @@ describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
       user: setup.user,
     });
 
-    await executeRolesChanged({
+    const { error } = await executeRolesChanged({
       decisionProfileId: instance.profileId,
       authUserId: reviewer.authUserId,
       addedRoleIds: [],
       removedRoleIds: [removedRole.id],
     });
+    expect(error).toBeUndefined();
 
     const after = await getReviewerAssignments(
       instance.instance.id,
@@ -385,12 +384,13 @@ describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
       user: setup.user,
     });
 
-    await executeRolesChanged({
+    const { error } = await executeRolesChanged({
       decisionProfileId: instance.profileId,
       authUserId: reviewer.authUserId,
       addedRoleIds: [],
       removedRoleIds: [ROLES.MEMBER.id],
     });
+    expect(error).toBeUndefined();
 
     const after = await getReviewerAssignments(
       instance.instance.id,

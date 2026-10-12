@@ -552,7 +552,6 @@ describe('decision/member-roles-changed emission', () => {
       user: setup.user,
     });
 
-    // Order-insensitive on the removed ids, exact on everything else.
     const removalEmissions = vi
       .mocked(event.send)
       .mock.calls.flatMap(([payload]) =>

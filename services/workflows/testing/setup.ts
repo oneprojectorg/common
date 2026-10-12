@@ -13,9 +13,7 @@ vi.mock('@op/analytics/client', () => ({
 vi.mock('@op/common/src/services/notification/provider', async () =>
   (await import('./mocks/sms')).smsProviderMock(),
 );
-// `@op/common/testing` gets its Supabase clients from the shared setup module,
-// whose `vi.mock('@op/events')` would strip `inngest.createFunction`. Serve the
-// clients without loading that module.
+// The shared setup's `vi.mock('@op/events')` strips `inngest.createFunction`.
 vi.mock('../../../packages/common/testing/setup', async () => {
   const { createSBServiceClient } = await import('@op/supabase/server');
   return {

@@ -9,12 +9,9 @@ const { decisionMemberRolesChanged } = Events;
 
 /**
  * Reconciles a member's review assignments in the current phase when their
- * roles on a decision change mid-phase, including removal from the decision.
- * Prune drops their pending assignments if they lost the REVIEW capability;
- * backfill adds the assignments they would have received at the phase
- * transition if they gained it. Both services re-derive eligibility from the
- * DB and are idempotent, and the concurrency key serializes rapid edits per
- * decision, so the last run converges.
+ * roles on a decision change, including removal from the decision. Both
+ * services re-derive eligibility from the DB, and the concurrency key
+ * serializes edits per decision, so the last run converges.
  */
 export const backfillReviewAssignmentsOnRoleChange = inngest.createFunction(
   {

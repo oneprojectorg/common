@@ -22,7 +22,6 @@ export const removeProfileUser = async ({
     where: { id: profileUserId },
     with: {
       roles: { columns: { accessRoleId: true } },
-      // Gates the decision-scoped role-change event below.
       profile: { columns: { type: true } },
     },
   });
