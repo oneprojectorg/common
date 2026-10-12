@@ -29,7 +29,7 @@ export type ProposalQueryParams = {
   votedByProfileId?: string;
   status?: ProposalStatus;
   /** "Not advanced": rejected, plus (for admins) what earlier phases left behind. */
-  notAdvanced?: 'include' | 'only';
+  notAdvanced?: boolean;
   dir: 'asc' | 'desc';
   limit: number;
   phase?: 'results';
@@ -94,7 +94,7 @@ export const isFilterActive = (
     params.search ||
     params.categoryId ||
     params.status ||
-    params.notAdvanced === 'only' ||
+    params.notAdvanced ||
     (!ignoreAudience &&
       (params.submittedByProfileId || params.votedByProfileId)),
   );
@@ -157,7 +157,7 @@ export const buildQueryParams = ({
     if (phase === 'results') {
       params.status = ProposalStatus.REJECTED;
     } else {
-      params.notAdvanced = 'only';
+      params.notAdvanced = true;
     }
   }
 

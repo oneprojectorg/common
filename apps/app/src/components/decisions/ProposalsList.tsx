@@ -193,9 +193,6 @@ const CurrentPhaseProposalsLoader = ({
       dir: queryParams.dir,
       limit: 1,
       phase: queryParams.phase,
-      // Under "Not advanced" the pool also holds what earlier phases left
-      // behind, so the "of N" denominator can't fall below the filtered count.
-      notAdvanced: queryParams.notAdvanced && 'include',
       excludeAssignedForReview: queryParams.excludeAssignedForReview,
     },
     { staleTime: 30 * 1000 },

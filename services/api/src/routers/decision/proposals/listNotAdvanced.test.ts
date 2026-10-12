@@ -112,22 +112,21 @@ const outsideById = (
 ) => Object.fromEntries(items.map((p) => [p.id, p.isOutsideCurrentPhase]));
 
 describe.concurrent('listProposals: not advanced', () => {
-  it("widens an admin's pool with left-behind proposals, flagged", async ({
+  it('lists what earlier phases left behind under Not advanced for an admin', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, admin, advanced, leftBehind, alsoLeftBehind } =
+    const { instanceId, admin, leftBehind, alsoLeftBehind } =
       await seedReviewPhase(testData);
 
     const { items, total } = await admin.decision.listProposals({
       processInstanceId: instanceId,
-      notAdvanced: 'include',
+      notAdvanced: true,
     });
 
-    expect(total).toBe(3);
+    expect(total).toBe(2);
     expect(outsideById(items)).toEqual({
-      [advanced]: false,
       [leftBehind]: true,
       [alsoLeftBehind]: true,
     });
@@ -135,14 +134,10 @@ describe.concurrent('listProposals: not advanced', () => {
     const target = { phaseId: 'review', phaseName: 'Review' };
     expect(
       Object.fromEntries(items.map((p) => [p.id, p.advanceTarget])),
-    ).toEqual({
-      [advanced]: undefined,
-      [leftBehind]: target,
-      [alsoLeftBehind]: target,
-    });
+    ).toEqual({ [leftBehind]: target, [alsoLeftBehind]: target });
   });
 
-  it('narrows the Not advanced filter to left-behind and rejected proposals', async ({
+  it('lists rejected proposals alongside, and drops one once advanced', async ({
     task,
     onTestFinished,
   }) => {
@@ -160,7 +155,7 @@ describe.concurrent('listProposals: not advanced', () => {
 
     const { items } = await admin.decision.listProposals({
       processInstanceId: instanceId,
-      notAdvanced: 'only',
+      notAdvanced: true,
     });
 
     // The advanced-by-hand one is in the phase now; the rejected one stays.
@@ -184,13 +179,35 @@ describe.concurrent('listProposals: not advanced', () => {
 
     const { items } = await memberCaller.decision.listProposals({
       processInstanceId: instanceId,
-      notAdvanced: 'only',
+      notAdvanced: true,
     });
 
     expect(items.map((p) => p.id)).toEqual([advanced]);
+    expect(items[0]?.isOutsideCurrentPhase).toBeUndefined();
   });
 
-  it('leaves an explicitly chosen phase alone', async ({
+  it('keeps an explicitly chosen phase to its own rejected proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, admin, advanced } = await seedReviewPhase(testData);
+    await admin.decision.rejectProposal({
+      proposalId: advanced,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    const { items } = await admin.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+      notAdvanced: true,
+    });
+
+    expect(items.map((p) => p.id)).toEqual([advanced]);
+    expect(items[0]?.isOutsideCurrentPhase).toBeUndefined();
+  });
+
+  it('lists only the phase without the filter (All proposals)', async ({
     task,
     onTestFinished,
   }) => {
@@ -199,32 +216,9 @@ describe.concurrent('listProposals: not advanced', () => {
 
     const { items } = await admin.decision.listProposals({
       processInstanceId: instanceId,
-      phaseId: 'review',
-      notAdvanced: 'include',
     });
 
     expect(items.map((p) => p.id)).toEqual([advanced]);
     expect(items[0]?.isOutsideCurrentPhase).toBeUndefined();
-  });
-
-  it('keeps the list as it was for non-admins and when not asked', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, admin, memberCaller, advanced } =
-      await seedReviewPhase(testData);
-
-    const [memberList, adminDefault] = await Promise.all([
-      memberCaller.decision.listProposals({
-        processInstanceId: instanceId,
-        notAdvanced: 'include',
-      }),
-      admin.decision.listProposals({ processInstanceId: instanceId }),
-    ]);
-
-    expect(memberList.items.map((p) => p.id)).toEqual([advanced]);
-    expect(memberList.items[0]?.isOutsideCurrentPhase).toBeUndefined();
-    expect(adminDefault.items.map((p) => p.id)).toEqual([advanced]);
   });
 });

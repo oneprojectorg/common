@@ -42,13 +42,12 @@ export interface ListProposalsInput {
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
   /**
-   * Current-phase lists only, and only for admins: `only` is the "Not
-   * advanced" filter — rejected proposals plus those earlier phases left
-   * behind (so "Advance to [phase]" can reach them); `include` is that pool
-   * together with the phase, for the filter's "of N" count. Each row then
-   * reports `isOutsideCurrentPhase`.
+   * The "Not advanced" filter: rejected proposals, plus — on an admin's
+   * current-phase list — those earlier phases left behind, so "Advance to
+   * [phase]" can reach them. Each row then reports `isOutsideCurrentPhase`.
+   * Without it the list is the phase's proposals ("All proposals").
    */
-  notAdvanced?: 'include' | 'only';
+  notAdvanced?: boolean;
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
    * resolution so a ballot remains accessible after the process advances past

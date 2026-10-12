@@ -143,14 +143,14 @@ describe('buildQueryParams', () => {
     });
 
     expect(params.submittedByProfileId).toBe(MY_PROFILE);
-    expect(params.notAdvanced).toBe('only');
+    expect(params.notAdvanced).toBe(true);
   });
 
   it('applies the status axis on its own', () => {
     const params = build({ status: 'not-advanced' });
 
     expect(params.submittedByProfileId).toBeUndefined();
-    expect(params.notAdvanced).toBe('only');
+    expect(params.notAdvanced).toBe(true);
     expect(params.status).toBeUndefined();
   });
 

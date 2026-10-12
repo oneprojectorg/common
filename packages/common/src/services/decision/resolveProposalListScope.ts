@@ -384,16 +384,17 @@ export const resolveProposalListScope = async ({
     }
   }
 
-  // Admins browsing the current phase can see what didn't advance into it:
-  // every submitted proposal outside the phase was left behind by an earlier
-  // transition, since a proposal can't predate the instance's first phase.
-  const includesNotAdvanced =
-    input.notAdvanced !== undefined &&
+  // Under "Not advanced", admins browsing the current phase also see what
+  // didn't advance into it: every submitted proposal outside the phase was
+  // left behind by an earlier transition, since a proposal can't predate the
+  // instance's first phase.
+  const includesLeftBehind =
+    input.notAdvanced === true &&
     canManageProposals &&
     explicitScopeIds === undefined &&
     input.phaseId === undefined &&
     input.phase !== 'results';
-  const buildIsOutsideCurrentPhase = includesNotAdvanced
+  const buildIsOutsideCurrentPhase = includesLeftBehind
     ? (proposalsTable: typeof proposals): SQL =>
         and(
           ne(proposalsTable.status, ProposalStatus.DRAFT),
@@ -403,7 +404,7 @@ export const resolveProposalListScope = async ({
         )!
     : undefined;
 
-  // Non-drafts in the phase — plus, when included, those left behind before it.
+  // Non-drafts in the phase, plus those left behind before it when included.
   const buildPhaseScopedNonDraftFilter = (
     proposalsTable: typeof proposals,
   ): SQL => {
@@ -420,7 +421,7 @@ export const resolveProposalListScope = async ({
   const buildNotAdvancedFilter = (
     proposalsTable: typeof proposals,
   ): SQL | undefined =>
-    input.notAdvanced === 'only'
+    input.notAdvanced
       ? or(
           eq(proposalsTable.status, ProposalStatus.REJECTED),
           buildIsOutsideCurrentPhase?.(proposalsTable),

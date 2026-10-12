@@ -139,7 +139,8 @@ export const proposalSchema = z.object({
   isSelected: z.boolean().optional(),
   /**
    * True when an admin's current-phase list carries this proposal although an
-   * earlier transition left it behind (`notAdvanced` on `listProposals`).
+   * earlier transition left it behind (the `notAdvanced` filter on
+   * `listProposals`).
    */
   isOutsideCurrentPhase: z.boolean().optional(),
   /**
