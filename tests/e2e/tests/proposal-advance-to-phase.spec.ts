@@ -149,9 +149,15 @@ test.describe('Advance a proposal into the current phase', () => {
     await leftBehindCard
       .getByRole('button', { name: 'Proposal options' })
       .click();
-    await authenticatedPage
-      .getByRole('menuitem', { name: 'Advance to Review' })
-      .click();
+    const advanceItem = authenticatedPage.getByRole('menuitem', {
+      name: 'Advance to Review',
+    });
+    await expect(advanceItem).toBeVisible();
+    // Offered "Advance", so not "Do not advance" as well.
+    await expect(
+      authenticatedPage.getByRole('menuitem', { name: 'Do not advance' }),
+    ).toHaveCount(0);
+    await advanceItem.click();
 
     await expect(authenticatedPage.getByText('Advanced to Review')).toBeVisible(
       { timeout: 15_000 },

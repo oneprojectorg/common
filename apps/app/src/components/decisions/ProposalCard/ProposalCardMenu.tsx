@@ -95,8 +95,9 @@ export function ProposalCardMenu({
     }
 
     // Reject sits with merge as an admin curation action (Figma flyout), and
-    // becomes Undo once rejected.
-    if (canRejectOrUndo) {
+    // becomes Undo once rejected. A proposal that can be advanced gets that
+    // choice instead: "Advance" and "Do not advance" together contradict.
+    if (canRejectOrUndo && !advance) {
       items.push(
         buildRejectMenuItem({
           isDisabled: isLoading || isUnrejecting || isAdvancing,
