@@ -140,16 +140,19 @@ function ProposalAdminMenuItems({
       })
     : null;
 
-  const rejectItem = rejectEnabled
-    ? buildRejectMenuItem({
-        isDisabled: isBusy,
-        isRejected,
-        rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
-        undoLabel: t('decisions.proposals.undoRejectionAction'),
-        onReject: () => setIsRejectModalOpen(true),
-        onUndo: unreject,
-      })
-    : null;
+  // A proposal the admin can advance gets that choice instead: offering both
+  // "Advance" and "Do not advance" would read as contradictory.
+  const rejectItem =
+    rejectEnabled && !advanceTarget
+      ? buildRejectMenuItem({
+          isDisabled: isBusy,
+          isRejected,
+          rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
+          undoLabel: t('decisions.proposals.undoRejectionAction'),
+          onReject: () => setIsRejectModalOpen(true),
+          onUndo: unreject,
+        })
+      : null;
 
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
