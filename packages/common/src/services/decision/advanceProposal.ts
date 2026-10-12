@@ -109,23 +109,16 @@ export async function advanceProposal({
     user,
   });
 
-  let reviewAssignmentInput:
-    | Parameters<typeof runGenerateReviewAssignments>[0]
-    | null = null;
-
-  await db.transaction(async (tx) => {
+  const reviewAssignmentInput = await db.transaction(async (tx) => {
     // Same lock every phase writer takes, so a concurrent advance, revert or
     // manual selection can't move the phase between the checks and the insert.
+    // A vanished instance reads as a moved phase: either way, refresh.
     const lockedInstance = await lockProcessInstance({
       db: tx,
       instanceId: processInstanceId,
     });
 
-    if (!lockedInstance) {
-      throw new NotFoundError('Process instance', processInstanceId);
-    }
-
-    if (lockedInstance.currentStateId !== phaseId) {
+    if (lockedInstance?.currentStateId !== phaseId) {
       throw new ConflictError(
         'The decision has moved to another phase; refresh and retry',
       );
@@ -167,19 +160,19 @@ export async function advanceProposal({
       proposalHistoryId: latestHistory.historyId,
     });
 
-    if (isReviewPhase(advancement.currentPhase)) {
-      reviewAssignmentInput = {
-        instanceId: processInstanceId,
-        fromPhaseId: advancement.previousPhaseId,
-        toPhaseId: phaseId,
-        phases: advancement.phases,
-        advanceResult: {
-          conflict: false,
-          transitionHistoryId: advancement.transitionHistoryId,
-          selectedProposalIds: [proposalId],
-        },
-      };
-    }
+    return isReviewPhase(advancement.currentPhase)
+      ? {
+          instanceId: processInstanceId,
+          fromPhaseId: advancement.previousPhaseId,
+          toPhaseId: phaseId,
+          phases: advancement.phases,
+          advanceResult: {
+            conflict: false as const,
+            transitionHistoryId: advancement.transitionHistoryId,
+            selectedProposalIds: [proposalId],
+          },
+        }
+      : null;
   });
 
   // After commit, as in `submitManualSelection`: generation reads the attached
@@ -239,30 +232,27 @@ type Advancement =
     }
   | { ok: false; reason: string };
 
+type TargetPhase =
+  | {
+      ok: true;
+      currentStateId: string;
+      currentPhase: PhaseInstanceData;
+      previousPhaseId: string;
+      phases: PhaseInstanceData[];
+    }
+  | { ok: false; reason: string };
+
 /**
- * Whether the proposal can be advanced into the instance's current phase.
- * It can't when:
- * - the instance isn't published, is legacy, or sits in its first phase (no
- *   inbound transition to attach to) or its last (results already processed);
- * - the current phase is still awaiting its manual selection, which an
- *   attachment would pre-empt;
- * - the proposal is a draft, rejected, superseded, or already in the phase.
+ * The instance's current phase, when a proposal can be advanced into it: the
+ * instance is published and not legacy, and the phase is neither its first
+ * (no inbound transition to attach to) nor its last (results already
+ * processed).
  */
-async function resolveAdvancement({
-  dbClient,
-  processInstanceId,
-  instance,
-  proposalId,
-}: {
-  dbClient: DbClient;
-  processInstanceId: string;
-  instance: {
-    currentStateId: string | null;
-    status: string | null;
-    instanceData: unknown;
-  };
-  proposalId: string;
-}): Promise<Advancement> {
+function getTargetPhase(instance: {
+  currentStateId: string | null;
+  status: string | null;
+  instanceData: unknown;
+}): TargetPhase {
   const { currentStateId } = instance;
 
   if (
@@ -293,6 +283,40 @@ async function resolveAdvancement({
     };
   }
 
+  return {
+    ok: true,
+    currentStateId,
+    currentPhase,
+    previousPhaseId: previousPhase.phaseId,
+    phases,
+  };
+}
+
+/**
+ * Whether the proposal can be advanced into the instance's current phase: see
+ * {@link getTargetPhase} and {@link getAdvancementBlocker}.
+ */
+async function resolveAdvancement({
+  dbClient,
+  processInstanceId,
+  instance,
+  proposalId,
+}: {
+  dbClient: DbClient;
+  processInstanceId: string;
+  instance: {
+    currentStateId: string | null;
+    status: string | null;
+    instanceData: unknown;
+  };
+  proposalId: string;
+}): Promise<Advancement> {
+  const targetPhase = getTargetPhase(instance);
+  if (!targetPhase.ok) {
+    return targetPhase;
+  }
+  const { currentStateId, currentPhase } = targetPhase;
+
   const latestTransition =
     await dbClient.query.stateTransitionHistory.findFirst({
       where: { processInstanceId },
@@ -300,13 +324,59 @@ async function resolveAdvancement({
       columns: { id: true, toStateId: true, transitionData: true },
     });
 
-  if (!latestTransition || latestTransition.toStateId !== currentStateId) {
+  if (latestTransition?.toStateId !== currentStateId) {
     return {
       ok: false,
       reason: 'This decision has no phase to advance into',
     };
   }
 
+  const blocker = await getAdvancementBlocker({
+    dbClient,
+    processInstanceId,
+    instanceData: instance.instanceData,
+    currentStateId,
+    latestTransition,
+    proposalId,
+  });
+
+  if (blocker) {
+    return { ok: false, reason: blocker };
+  }
+
+  return {
+    ok: true,
+    target: {
+      phaseId: currentStateId,
+      phaseName: currentPhase.name ?? currentStateId,
+    },
+    transitionHistoryId: latestTransition.id,
+    previousPhaseId: targetPhase.previousPhaseId,
+    currentPhase,
+    phases: targetPhase.phases,
+  };
+}
+
+/**
+ * Why this proposal can't join the current phase, or `null` if it can: the
+ * phase still awaits its manual selection (an attachment would pre-empt it),
+ * or the proposal is a draft, rejected, superseded, or already in the phase.
+ */
+async function getAdvancementBlocker({
+  dbClient,
+  processInstanceId,
+  instanceData,
+  currentStateId,
+  latestTransition,
+  proposalId,
+}: {
+  dbClient: DbClient;
+  processInstanceId: string;
+  instanceData: unknown;
+  currentStateId: string;
+  latestTransition: { id: string; transitionData: unknown };
+  proposalId: string;
+}): Promise<string | null> {
   const [eligible, attached, idsInPhase] = await Promise.all([
     dbClient
       .select({ id: proposals.id })
@@ -329,7 +399,7 @@ async function resolveAdvancement({
     getProposalIdsForPhase({
       instance: {
         id: processInstanceId,
-        instanceData: instance.instanceData,
+        instanceData,
         currentStateId,
       },
       phaseId: currentStateId,
@@ -343,35 +413,13 @@ async function resolveAdvancement({
       ?.manualSelection;
 
   if (selectionIsPending) {
-    return {
-      ok: false,
-      reason: "Confirm this phase's selected proposals first",
-    };
+    return "Confirm this phase's selected proposals first";
   }
-
   if (eligible.length === 0) {
-    return {
-      ok: false,
-      reason: 'Only submitted proposals can be advanced',
-    };
+    return 'Only submitted proposals can be advanced';
   }
-
   if (idsInPhase.includes(proposalId)) {
-    return {
-      ok: false,
-      reason: 'This proposal is already in the current phase',
-    };
+    return 'This proposal is already in the current phase';
   }
-
-  return {
-    ok: true,
-    target: {
-      phaseId: currentStateId,
-      phaseName: currentPhase.name ?? currentStateId,
-    },
-    transitionHistoryId: latestTransition.id,
-    previousPhaseId: previousPhase.phaseId,
-    currentPhase,
-    phases,
-  };
+  return null;
 }

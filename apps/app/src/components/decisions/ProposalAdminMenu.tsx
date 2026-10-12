@@ -96,23 +96,6 @@ function ProposalAdminMenuItems({
   );
   const supersededBy = mergedAway?.items[0];
 
-  // Present only while the proposal sits outside the current phase; the item
-  // stays hidden until this resolves so it never flashes in and out.
-  const { data: advanceTarget } =
-    trpc.decision.getProposalAdvanceTarget.useQuery({
-      proposalId: proposal.id,
-    });
-  // No invalidation needed: the endpoint registers the affected channels.
-  const advanceMutation = trpc.decision.advanceProposal.useMutation({
-    onError: (error) => {
-      toast.error(error.message || t('decisions.proposals.advanceError'));
-      logger.error('Failed to advance proposal', {
-        error,
-        context: 'ProposalAdminMenu',
-      });
-    },
-  });
-
   const triggerLabel = t('decisions.proposals.proposalOptionsLabel');
   const showMergeDialog = mergeEnabled && !supersededBy;
 
@@ -162,28 +145,7 @@ function ProposalAdminMenuItems({
       })
     : null;
 
-  const advanceItem: ProposalOptionsMenuItem | null = advanceTarget
-    ? {
-        key: 'advance',
-        icon: <LuArrowRight className="size-5 rtl:-scale-x-100" />,
-        label: t('decisions.proposals.advanceToPhaseAction', {
-          phase: advanceTarget.phaseName,
-        }),
-        onAction: () =>
-          advanceMutation.mutate(
-            { proposalId: proposal.id, phaseId: advanceTarget.phaseId },
-            {
-              onSuccess: () =>
-                toast.success(
-                  t('decisions.proposals.advanceSuccess', {
-                    phase: advanceTarget.phaseName,
-                  }),
-                ),
-            },
-          ),
-        isDisabled: isLoading || advanceMutation.isPending,
-      }
-    : null;
+  const advanceItem = useAdvanceMenuItem({ proposal, isDisabled: isLoading });
 
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
@@ -243,4 +205,57 @@ function ProposalAdminMenuItems({
       ) : null}
     </ProposalOptionsMenu>
   );
+}
+
+/**
+ * "Advance to [phase]", present only while the proposal sits outside the
+ * current phase. Stays hidden until the target resolves so it never flashes
+ * in and out. No invalidation needed: the endpoints register the channels.
+ */
+function useAdvanceMenuItem({
+  proposal,
+  isDisabled,
+}: {
+  proposal: Proposal;
+  isDisabled: boolean;
+}): ProposalOptionsMenuItem | null {
+  const t = useTranslations();
+  const { data: advanceTarget } =
+    trpc.decision.getProposalAdvanceTarget.useQuery({
+      proposalId: proposal.id,
+    });
+  const advanceMutation = trpc.decision.advanceProposal.useMutation({
+    onError: (error) => {
+      toast.error(error.message || t('decisions.proposals.advanceError'));
+      logger.error('Failed to advance proposal', {
+        error,
+        context: 'ProposalAdminMenu',
+      });
+    },
+  });
+
+  if (!advanceTarget) {
+    return null;
+  }
+
+  return {
+    key: 'advance',
+    icon: <LuArrowRight className="size-5 rtl:-scale-x-100" />,
+    label: t('decisions.proposals.advanceToPhaseAction', {
+      phase: advanceTarget.phaseName,
+    }),
+    onAction: () =>
+      advanceMutation.mutate(
+        { proposalId: proposal.id, phaseId: advanceTarget.phaseId },
+        {
+          onSuccess: () =>
+            toast.success(
+              t('decisions.proposals.advanceSuccess', {
+                phase: advanceTarget.phaseName,
+              }),
+            ),
+        },
+      ),
+    isDisabled: isDisabled || advanceMutation.isPending,
+  };
 }
