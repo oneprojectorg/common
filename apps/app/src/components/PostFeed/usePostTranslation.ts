@@ -4,11 +4,6 @@ import { trpc } from '@op/api/client';
 
 import { useTranslateLink } from '@/components/decisions/useTranslateLink';
 
-/**
- * A post's own "See translation" — a proposal comment or a decision update,
- * each its own authored object, translated on its own. Translating one post
- * leaves the others, and the proposal they sit under, alone.
- */
 export const usePostTranslation = ({
   postId,
   content,

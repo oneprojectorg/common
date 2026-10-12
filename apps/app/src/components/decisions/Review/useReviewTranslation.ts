@@ -6,12 +6,7 @@ import { useMemo } from 'react';
 
 import { useTranslateLink } from '../useTranslateLink';
 
-/**
- * A submitted review's own "See translation": the reviewer's notes and the
- * feedback to the author, translated through `translateReview`. The rubric's
- * questions, scores and recommendation are process configuration and stay as
- * authored.
- */
+/** Translates the reviewer's notes and feedback; rubric text is config and stays as is. */
 export const useReviewTranslation = (review: ProposalReview) => {
   const { rationales } = review.reviewData;
   const detectionText = useMemo(

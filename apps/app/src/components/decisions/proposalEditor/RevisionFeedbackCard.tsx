@@ -22,7 +22,6 @@ interface RevisionFeedbackCardProps {
    * `anonymousReviewer` → "Reviewer · 3 days ago", `bare` → "3 days ago".
    */
   meta?: 'sent' | 'anonymousReviewer' | 'bare';
-  /** The comment's "See translation" link, directly above it. */
   translateLink?: ReactNode;
 }
 

@@ -7,11 +7,6 @@ import { TranslateLink } from './TranslateLink';
 import { RevisionFeedbackCard } from './proposalEditor/RevisionFeedbackCard';
 import { useTranslateLink } from './useTranslateLink';
 
-/**
- * A revision request in the Feedback panel, with its own "See translation"
- * link above the request text — the request is its reviewer's authored text,
- * translated on its own.
- */
 export function RevisionRequestCard({
   request,
 }: {

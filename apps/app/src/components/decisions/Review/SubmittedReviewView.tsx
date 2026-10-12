@@ -61,8 +61,6 @@ export function SubmittedReviewView({
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Above the first rubric question: the link moves only what the
-          reviewer wrote. */}
       <TranslateLink translation={translation} />
       {fields.map((field) => (
         <ResultSection

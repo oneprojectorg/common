@@ -38,7 +38,6 @@ export function DiscussionModal({
   organization: Organization | null;
   isOpen: boolean;
   onClose: () => void;
-  /** Offer each post's own "See translation" link (decision updates). */
   translatable?: boolean;
 }) {
   const { user } = useUser();

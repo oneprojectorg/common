@@ -439,10 +439,6 @@ export const PostItem = ({
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   /** Rendered under the post body, above the like/comment row. */
   contentFooter?: ReactNode;
-  /**
-   * Offer the post's own "See translation" link (proposal comments, decision
-   * updates) when it is in another language than the reader's.
-   */
   translatable?: boolean;
   className?: string;
 }) => {
@@ -451,7 +447,7 @@ export const PostItem = ({
     content: post.content ?? '',
     enabled: translatable,
   });
-  // The page-level decision banner still translates updates as a batch.
+  // Until the page-level banner goes, it still translates updates in bulk.
   const decisionTranslation = useDecisionTranslation();
   const displayContent =
     translation.translation ??
@@ -490,7 +486,6 @@ export const PostItem = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
-          {/* Below the author row, above what the author wrote. */}
           <TranslateLink translation={translation} />
           <PostFlaggedIndicator post={post} />
           <PostContent content={displayContent} />
@@ -592,7 +587,6 @@ export const DiscussionModalContainer = ({
     organization?: Organization | null;
   };
   onClose: () => void;
-  /** Offer each post's own "See translation" link (decision updates). */
   translatable?: boolean;
 }) => {
   if (!discussionModal.isOpen || !discussionModal.post) {
