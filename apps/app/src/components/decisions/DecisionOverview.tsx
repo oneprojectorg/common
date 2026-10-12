@@ -124,8 +124,6 @@ function DecisionOverviewContent({
 }: DecisionOverviewProps) {
   const t = useTranslations();
 
-  // The process's "See translation" link (above the hero) swaps in the
-  // authored overview fields; prefer them over the source content once shown.
   const translation = useDecisionTranslation();
 
   const overview = instance.instanceData?.overview;

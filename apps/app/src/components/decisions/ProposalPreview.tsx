@@ -85,12 +85,7 @@ export type ProposalPreviewProps = {
   engagement?: ProposalEngagement;
   /** Selection record from the latest confirmed result, if any. */
   selection?: ProposalSelection | null;
-  /** When set, overrides proposal content with the translated HTML. */
   translation?: ProposalTranslation;
-  /**
-   * The "See translation" link, directly above the title. It carries the
-   * "Translated from…" attribution for `translation`.
-   */
   translateLink?: ReactNode;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
   submissionMetaSuffix?: ReactNode;

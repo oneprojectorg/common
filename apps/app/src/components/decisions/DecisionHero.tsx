@@ -27,8 +27,6 @@ export function DecisionHero({
 }) {
   return (
     <div className="flex flex-col gap-2 text-center">
-      {/* The phase copy is the process's authored text: its link sits above
-          the title, the same one the overview banner shows. */}
       {variant === 'standard' ? (
         <DecisionTranslateLink hasImage={hasImage} />
       ) : null}

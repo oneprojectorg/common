@@ -50,7 +50,7 @@ export function ReviewAssignmentCard({
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData({
       proposal,
-      ownTranslation: translation.translation,
+      cardTranslation: translation.translation,
     });
 
   return (
@@ -59,7 +59,6 @@ export function ReviewAssignmentCard({
       title={titleText}
       href={viewHref}
       linkComponent={Link}
-      // Above the title, as on every proposal card.
       headerBadge={<TranslateLink translation={translation} />}
       budget={budgetText}
       authors={authors}

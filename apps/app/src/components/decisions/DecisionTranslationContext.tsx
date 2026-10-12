@@ -26,23 +26,13 @@ interface DecisionTranslationContextValue {
 const DecisionTranslationContext =
   createContext<DecisionTranslationContextValue | null>(null);
 
-/**
- * The process as one translatable object: the overview, the current phase's
- * copy, the phase names and the pinned resources, all moved by one "See
- * translation" link. Every surface that renders that copy — the overview
- * banner, the phase hero, the phase timeline, the resource cards — reads the
- * same state, so one click translates them together.
- *
- * Without a `decisionProfileId` (the legacy route, which loads its instance on
- * the client) nothing is offered.
- */
+/** One link translates the process: overview, phase copy, phase names and pinned resources. */
 export function DecisionTranslationProvider({
   decisionProfileId,
   detectionText = '',
   children,
 }: {
   decisionProfileId?: string | null;
-  /** The process's authored copy, sampled for language detection. */
   detectionText?: string;
   children: ReactNode;
 }) {
@@ -64,7 +54,6 @@ export function DecisionTranslationProvider({
     ]);
     const { sourceLocale: _source, targetLocale: _target, ...copy } = decision;
     const translation = { ...copy, resources: resources.translations };
-    // Nothing came back — a failure, not a "translation" of unchanged text.
     return hasTranslatedText(translation) ? translation : undefined;
   };
 
@@ -93,7 +82,6 @@ export function useDecisionTranslation(): DecisionTranslation | null {
   return useContext(DecisionTranslationContext)?.translation ?? null;
 }
 
-/** The process's "See translation" link state, or null outside a provider. */
 export function useDecisionTranslateLink(): TranslateLinkState | null {
   return useContext(DecisionTranslationContext)?.link ?? null;
 }

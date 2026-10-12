@@ -112,11 +112,7 @@ export const getOverviewDetectionText = ({
   return joinSample(parts);
 };
 
-/**
- * Plain-text sample of the process as one translatable object: the overview,
- * the current phase's copy and every phase name — what `translateDecision`
- * translates, so the link is offered when any of it is in another language.
- */
+/** Plain-text sample of everything `translateDecision` translates. */
 export const getDecisionDetectionText = ({
   name,
   description,

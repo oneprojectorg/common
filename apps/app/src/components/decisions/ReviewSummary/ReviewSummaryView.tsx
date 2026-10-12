@@ -73,8 +73,6 @@ export function ReviewSummaryView({
 
   const rubricTemplate = proposalWithReviews.rubricTemplate;
 
-  // The proposal's own link, above its title; each review in the drill-in
-  // carries its own.
   const { link, translation } = useTranslateProposal(proposal);
 
   // 'newest' orders by assignedAt in SQL, as ProposalReviewsLayout does.

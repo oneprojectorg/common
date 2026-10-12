@@ -34,20 +34,16 @@ import { useProposalCardTranslation } from './useProposalCardTranslation';
  * `ProposalCard` composite expects (title / budget / category tags / authors /
  * preview), applying any per-card translation. Shared by every proposal-card
  * surface so the mapping lives in one place.
- *
- * `ownTranslation` is the card's own "See translation" result, shown in place
- * of the original while it is on.
  */
 export function useProposalCardData({
   proposal,
-  ownTranslation,
+  cardTranslation,
 }: {
   proposal: Proposal;
-  ownTranslation?: ProposalTranslation;
+  cardTranslation?: ProposalTranslation;
 }) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
-  const cardTranslation = ownTranslation;
   const { title, budget, category } = resolveProposalSystemFields(proposal);
 
   const titleText =
@@ -204,11 +200,7 @@ export interface ProposalCardViewProps extends Omit<
   headerBadge?: ReactNode;
   /** Selected treatment (teal border + title) for vote/selection phases. */
   selected?: boolean;
-  /**
-   * Offer the card's own "See translation" link when its text is in another
-   * language. Turn it off where the whole card is a control (the active-voting
-   * toggle), since a button can't nest inside one.
-   */
+  /** Off where the whole card is a control (active voting): a button can't nest in it. */
   showTranslateLink?: boolean;
   /** Running vote total; renders the "N Total Votes" row when set. */
   totalVotes?: number;
@@ -252,14 +244,14 @@ export const ProposalCardView = ({
   ...rest
 }: ProposalCardViewProps) => {
   const t = useTranslations();
-  const ownTranslation = useProposalCardTranslation({
+  const translation = useProposalCardTranslation({
     proposal,
     enabled: showTranslateLink,
   });
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData({
       proposal,
-      ownTranslation: ownTranslation.translation,
+      cardTranslation: translation.translation,
     });
   // Empty unless a review surface provides it; an explicit slot always wins.
   const decoration = useProposalReviewDecoration(proposal.id);
@@ -278,11 +270,9 @@ export const ProposalCardView = ({
   ) : (
     headerBadge
   );
-  // The link sits first in the header block, directly above the title, and
-  // rides along with the badge so `headerBadge={null}` callers still get it.
   const header = (
     <>
-      <TranslateLink translation={ownTranslation} />
+      <TranslateLink translation={translation} />
       {badge}
     </>
   );

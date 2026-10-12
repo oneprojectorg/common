@@ -3,15 +3,10 @@
 import { useDecisionTranslateLink } from './DecisionTranslationContext';
 import { TranslateLink } from './TranslateLink';
 
-/**
- * The process's "See translation" link, centered above a banner header (the
- * overview hero, the phase hero). Every placement drives the same state, so
- * the overview, phase copy, phase names and resources translate together.
- */
+/** The process's link, centered above the overview and phase heroes. */
 export const DecisionTranslateLink = ({
   hasImage = false,
 }: {
-  /** The banner sits over an image, so its text is white. */
   hasImage?: boolean;
 }) => {
   const link = useDecisionTranslateLink();
