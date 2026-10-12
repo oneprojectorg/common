@@ -40,6 +40,13 @@ export interface ListProposalsInput {
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
   /**
+   * Current-phase lists only, and only for admins: `include` adds proposals
+   * left behind in earlier phases (so they stay reachable for "Advance to
+   * [phase]"); `only` narrows to what didn't advance — those plus rejected
+   * ones. Each row then reports `isOutsideCurrentPhase`.
+   */
+  notAdvanced?: 'include' | 'only';
+  /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
    * resolution so a ballot remains accessible after the process advances past
    * the voting phase.
@@ -104,6 +111,7 @@ export const listProposals = async ({
     profileRoles,
     isEmpty,
     buildWhereClause,
+    buildIsOutsideCurrentPhase,
   } = await resolveProposalListScope({ input, user });
 
   // Template resolution depends only on the instance row — start it now so
@@ -204,12 +212,18 @@ export const listProposals = async ({
       },
       // Fetch one extra to detect whether a next page exists.
       limit: limit + 1,
-      ...(effectiveIncludeVoteCounts && {
-        extras: {
+      extras: {
+        ...(effectiveIncludeVoteCounts && {
           voteCount: (table, { sql: sqlOp }) =>
             sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
-        },
-      }),
+        }),
+        ...(buildIsOutsideCurrentPhase && {
+          isOutsideCurrentPhase: (table, { sql: sqlOp }) =>
+            sqlOp<boolean>`${buildIsOutsideCurrentPhase(table)}`.as(
+              'is_outside_current_phase',
+            ),
+        }),
+      },
       orderBy: (table, { asc: ascOp, desc: descOp }) => {
         // `id` tie-break: without it, rows sharing the primary sort key
         // return in undefined order and flipping `dir` has no visible effect.
@@ -349,6 +363,10 @@ export const listProposals = async ({
       commentsCount: relationshipInfo?.commentsCount || 0,
       isEditable,
       isSelected: selectedIds.has(proposal.id),
+      isOutsideCurrentPhase:
+        'isOutsideCurrentPhase' in proposal
+          ? Boolean(proposal.isOutsideCurrentPhase)
+          : undefined,
       isFlagged: flaggedIds.has(proposal.id),
       previewText: previewText ?? undefined,
       documentContent: input.includeDocumentContent

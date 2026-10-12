@@ -143,13 +143,25 @@ describe('buildQueryParams', () => {
     });
 
     expect(params.submittedByProfileId).toBe(MY_PROFILE);
-    expect(params.status).toBe(ProposalStatus.REJECTED);
+    expect(params.notAdvanced).toBe('only');
   });
 
   it('applies the status axis on its own', () => {
     const params = build({ status: 'not-advanced' });
 
     expect(params.submittedByProfileId).toBeUndefined();
+    expect(params.notAdvanced).toBe('only');
+    expect(params.status).toBeUndefined();
+  });
+
+  it('asks for what did not advance alongside the current phase', () => {
+    expect(build().notAdvanced).toBe('include');
+  });
+
+  it('filters the results phase by rejection, which spans every phase already', () => {
+    const params = build({ phase: 'results', status: 'not-advanced' });
+
+    expect(params.notAdvanced).toBeUndefined();
     expect(params.status).toBe(ProposalStatus.REJECTED);
   });
 

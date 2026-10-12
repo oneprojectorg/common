@@ -144,15 +144,18 @@ export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
     );
   }
 
+  if (isNotAdvanced(proposal)) {
+    return (
+      <StatusBadge variant="alert" icon={LuCircleX}>
+        {t('decisions.proposals.notAdvancedStatus')}
+      </StatusBadge>
+    );
+  }
+
   return match(status, {
     [ProposalStatus.APPROVED]: (
       <StatusBadge variant="success">
         {t('decisions.proposals.shortlistedStatus')}
-      </StatusBadge>
-    ),
-    [ProposalStatus.REJECTED]: (
-      <StatusBadge variant="alert" icon={LuCircleX}>
-        {t('decisions.proposals.notAdvancedStatus')}
       </StatusBadge>
     ),
     _: null,
@@ -331,3 +334,10 @@ export const ProposalMiniCard = ({
     />
   );
 };
+
+/** Rejected, or left behind by an earlier transition whatever its status. */
+const isNotAdvanced = ({
+  status,
+  isOutsideCurrentPhase,
+}: Pick<Proposal, 'status' | 'isOutsideCurrentPhase'>) =>
+  isOutsideCurrentPhase === true || status === ProposalStatus.REJECTED;

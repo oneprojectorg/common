@@ -6,6 +6,7 @@ import {
   inArray,
   isNull,
   ne,
+  not,
   notExists,
   or,
   sql,
@@ -68,6 +69,11 @@ export interface ProposalListScope {
    * table) and a plain `db.select().from(proposals)` count query.
    */
   buildWhereClause: (proposalsTable: typeof proposals) => SQL;
+  /**
+   * Set when the list includes proposals left behind in earlier phases (see
+   * `notAdvanced`): true for a row outside the current phase.
+   */
+  buildIsOutsideCurrentPhase?: (proposalsTable: typeof proposals) => SQL;
 }
 
 /**
@@ -377,6 +383,48 @@ export const resolveProposalListScope = async ({
     }
   }
 
+  // Admins browsing the current phase can see what didn't advance into it:
+  // every submitted proposal outside the phase was left behind by an earlier
+  // transition, since a proposal can't predate the instance's first phase.
+  const includesNotAdvanced =
+    input.notAdvanced !== undefined &&
+    canManageProposals &&
+    explicitScopeIds === undefined &&
+    input.phaseId === undefined &&
+    input.phase !== 'results';
+  const buildIsOutsideCurrentPhase = includesNotAdvanced
+    ? (proposalsTable: typeof proposals): SQL =>
+        and(
+          ne(proposalsTable.status, ProposalStatus.DRAFT),
+          isNull(proposalsTable.deletedAt),
+          not(phaseScope.buildNonDraftFilter(proposalsTable)),
+        )!
+    : undefined;
+
+  // Non-drafts in the phase — plus, when included, those left behind before it.
+  const buildPhaseScopedNonDraftFilter = (
+    proposalsTable: typeof proposals,
+  ): SQL => {
+    const inPhase = and(
+      ne(proposalsTable.status, ProposalStatus.DRAFT),
+      phaseScope.buildNonDraftFilter(proposalsTable),
+    )!;
+    return buildIsOutsideCurrentPhase
+      ? or(inPhase, buildIsOutsideCurrentPhase(proposalsTable))!
+      : inPhase;
+  };
+
+  // "Not advanced": rejected, or (for admins) left behind in an earlier phase.
+  const buildNotAdvancedFilter = (
+    proposalsTable: typeof proposals,
+  ): SQL | undefined =>
+    input.notAdvanced === 'only'
+      ? or(
+          eq(proposalsTable.status, ProposalStatus.REJECTED),
+          buildIsOutsideCurrentPhase?.(proposalsTable),
+        )
+      : undefined;
+
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
   // passes an aliased `table`) and the plain count query (which passes the
@@ -409,10 +457,9 @@ export const resolveProposalListScope = async ({
     // caller's `profileUsers` access set. Every scope predicate (including
     // the explicit-scope one above) carries the `isNull(deletedAt)` filter,
     // so the outer query stays soft-delete-safe without its own check.
-    const phaseScopedNonDraftIdFilter = and(
-      ne(proposalsTable.status, ProposalStatus.DRAFT),
-      phaseScope.buildNonDraftFilter(proposalsTable),
-    )!;
+    const phaseScopedNonDraftIdFilter =
+      buildPhaseScopedNonDraftFilter(proposalsTable);
+    clause = and(clause, buildNotAdvancedFilter(proposalsTable))!;
 
     if (skipAccessCheck) {
       // Trusted contexts get all phase-scoped non-draft proposals.
@@ -474,5 +521,6 @@ export const resolveProposalListScope = async ({
     profileRoles,
     isEmpty,
     buildWhereClause,
+    buildIsOutsideCurrentPhase,
   };
 };

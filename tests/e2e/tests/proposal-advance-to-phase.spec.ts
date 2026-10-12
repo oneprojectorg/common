@@ -13,8 +13,17 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { db, desc, eq, inArray } from '@op/db/test';
+import type { Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/index.js';
+
+/** The innermost element holding both the card's title and its kebab. */
+const proposalCard = (page: Page, title: string) =>
+  page
+    .locator('div')
+    .filter({ has: page.getByRole('heading', { name: title }) })
+    .filter({ has: page.getByRole('button', { name: 'Proposal options' }) })
+    .last();
 
 const schema: DecisionSchemaDefinition = {
   id: 'test-advance-to-phase',
@@ -115,12 +124,26 @@ test.describe('Advance a proposal into the current phase', () => {
       proposalHistoryId: keptHistory.historyId,
     });
 
+    // Reach it the way an admin would: from the All tab of the current phase,
+    // where it is listed and badged although the review phase left it behind.
     await authenticatedPage.goto(
-      `/en/decisions/${instance.slug}/proposal/${leftBehind.profileId}`,
+      `/en/decisions/${instance.slug}/current?filter=all`,
       { waitUntil: 'load' },
     );
+    const leftBehindCard = proposalCard(
+      authenticatedPage,
+      'Proposal Left Behind',
+    );
+    await expect(leftBehindCard.getByText('Not advanced')).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(
+      proposalCard(authenticatedPage, 'Proposal Kept').getByText(
+        'Not advanced',
+      ),
+    ).toHaveCount(0);
 
-    await authenticatedPage
+    await leftBehindCard
       .getByRole('button', { name: 'Proposal options' })
       .click();
     await authenticatedPage
@@ -141,8 +164,11 @@ test.describe('Advance a proposal into the current phase', () => {
       [kept.id, leftBehind.id].sort(),
     );
 
-    // Now in the phase, so the item is gone.
-    await authenticatedPage
+    // Now in the phase: no longer badged, and the item is gone.
+    await expect(leftBehindCard.getByText('Not advanced')).toHaveCount(0, {
+      timeout: 15_000,
+    });
+    await leftBehindCard
       .getByRole('button', { name: 'Proposal options' })
       .click();
     await expect(

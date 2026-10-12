@@ -136,6 +136,11 @@ export const proposalSchema = z.object({
   isEditable: z.boolean().optional(),
   /** True when this proposal is in the latest results selection set. */
   isSelected: z.boolean().optional(),
+  /**
+   * True when an admin's current-phase list carries this proposal although an
+   * earlier transition left it behind (`notAdvanced` on `listProposals`).
+   */
+  isOutsideCurrentPhase: z.boolean().optional(),
   /** True when an active moderation flag hides this proposal from general
    *  readers. Only the creator (+ collaborators) and admins ever receive a
    *  flagged proposal, so this drives their "Flagged" indicator. */

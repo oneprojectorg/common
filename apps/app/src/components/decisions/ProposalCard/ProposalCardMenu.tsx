@@ -14,6 +14,7 @@ import {
 } from '../ProposalOptionsMenu';
 import { buildMergeMenuItem } from '../proposals/merge';
 import { buildRejectMenuItem } from '../proposals/reject';
+import { useProposalAdvance } from '../useProposalAdvance';
 import { useProposalModerationActions } from '../useProposalModerationActions';
 import { useProposalRejectionActions } from '../useProposalRejectionActions';
 
@@ -55,6 +56,12 @@ export function ProposalCardMenu({
   // Undo only — it has no dialog. Rejecting runs from the host, whose dialog
   // owns the confirm button that calls it.
   const { unreject, isUnrejecting } = useProposalRejectionActions(proposal);
+  // Only an admin's list carries proposals that didn't advance; the lookup is
+  // skipped for the rest.
+  const { advanceItem, isAdvancing } = useProposalAdvance({
+    proposal,
+    enabled: canManage && proposal.isOutsideCurrentPhase === true,
+  });
 
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
@@ -83,12 +90,17 @@ export function ProposalCardMenu({
       });
     }
 
+    const advance = advanceItem(isLoading || isUnrejecting);
+    if (advance) {
+      items.push(advance);
+    }
+
     // Reject sits with merge as an admin curation action (Figma flyout), and
     // becomes Undo once rejected.
     if (canRejectOrUndo) {
       items.push(
         buildRejectMenuItem({
-          isDisabled: isLoading || isUnrejecting,
+          isDisabled: isLoading || isUnrejecting || isAdvancing,
           isRejected,
           rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
           undoLabel: t('decisions.proposals.undoRejectionAction'),

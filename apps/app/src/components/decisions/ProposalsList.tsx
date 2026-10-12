@@ -193,6 +193,8 @@ const CurrentPhaseProposalsLoader = ({
       dir: queryParams.dir,
       limit: 1,
       phase: queryParams.phase,
+      // The unfiltered pool still holds what didn't advance, as the All tab does.
+      notAdvanced: queryParams.notAdvanced && 'include',
       excludeAssignedForReview: queryParams.excludeAssignedForReview,
     },
     { staleTime: 30 * 1000 },
@@ -580,6 +582,7 @@ const ProposalsListContent = ({
                 submittedByProfileId: queryParams.submittedByProfileId,
                 votedByProfileId: queryParams.votedByProfileId,
                 status: queryParams.status,
+                notAdvanced: queryParams.notAdvanced,
                 excludeAssignedForReview: queryParams.excludeAssignedForReview,
               }}
               listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}

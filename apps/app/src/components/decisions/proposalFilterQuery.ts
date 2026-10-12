@@ -28,6 +28,8 @@ export type ProposalQueryParams = {
   submittedByProfileId?: string;
   votedByProfileId?: string;
   status?: ProposalStatus;
+  /** Admins also see what didn't advance into the current phase. */
+  notAdvanced?: 'include' | 'only';
   dir: 'asc' | 'desc';
   limit: number;
   phase?: 'results';
@@ -92,6 +94,7 @@ export const isFilterActive = (
     params.search ||
     params.categoryId ||
     params.status ||
+    params.notAdvanced === 'only' ||
     (!ignoreAudience &&
       (params.submittedByProfileId || params.votedByProfileId)),
   );
@@ -146,7 +149,15 @@ export const buildQueryParams = ({
     params.votedByProfileId = currentProfileId;
   }
 
-  if (status === 'not-advanced' || filter === ProposalFilter.REJECTED) {
+  // Not in the results phase, whose list already spans every phase. The
+  // server widens only an admin's list: everyone else still gets rejected
+  // proposals for "Not advanced".
+  if (phase !== 'results') {
+    params.notAdvanced =
+      status === 'not-advanced' || filter === ProposalFilter.REJECTED
+        ? 'only'
+        : 'include';
+  } else if (status === 'not-advanced' || filter === ProposalFilter.REJECTED) {
     params.status = ProposalStatus.REJECTED;
   }
 
