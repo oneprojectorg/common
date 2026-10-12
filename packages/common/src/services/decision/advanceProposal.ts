@@ -1,12 +1,4 @@
-import {
-  type DbClient,
-  and,
-  db,
-  desc,
-  eq,
-  isNull,
-  notInArray,
-} from '@op/db/client';
+import { type DbClient, and, db, desc, eq, isNull, sql } from '@op/db/client';
 import {
   ProcessStatus,
   decisionTransitionProposals,
@@ -15,6 +7,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
+import type { z } from 'zod';
 
 import {
   CommonError,
@@ -23,29 +16,26 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { getProposalAccessContext } from './getProposalAccessContext';
+import {
+  getPhaseProposalSqlScope,
+  phaseEligiblePredicate,
+} from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
-import { notSuperseded } from './proposalSupersession';
+import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
+import type { proposalAdvanceTargetSchema } from './schemas/advanceProposal';
 import {
-  type DecisionInstanceData,
   type PhaseInstanceData,
+  getInstancePhases,
   isLastPhase,
 } from './schemas/instanceData';
-import type { TransitionData } from './schemas/transitionData';
 import { isReviewPhase } from './utils/phaseSettings';
-import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
 
-export type ProposalAdvanceTarget = {
-  phaseId: string;
-  phaseName: string;
-};
+export type ProposalAdvanceTarget = z.infer<typeof proposalAdvanceTargetSchema>;
 
-export type AdvanceProposalResult = {
-  processInstanceId: string;
-  proposalId: string;
-};
+const NO_PHASE_TO_ADVANCE_INTO = 'This decision has no phase to advance into';
 
 /**
  * The phase an admin can advance this proposal into, or a `null` target when
@@ -62,27 +52,33 @@ export async function getProposalAdvanceTarget({
   processInstanceId: string;
   target: ProposalAdvanceTarget | null;
 }> {
-  const proposal = await getAdminScopedProposal({ proposalId, user });
+  const processInstanceId = await assertProposalAdmin({ proposalId, user });
 
   const instance = await db.query.processInstances.findFirst({
-    where: { id: proposal.processInstanceId },
+    where: { id: processInstanceId },
     columns: { currentStateId: true, status: true, instanceData: true },
   });
 
   if (!instance) {
-    throw new NotFoundError('Process instance', proposal.processInstanceId);
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
   const advancement = await resolveAdvancement({
     dbClient: db,
-    processInstanceId: proposal.processInstanceId,
+    processInstanceId,
     instance,
     proposalId,
   });
 
   return {
-    processInstanceId: proposal.processInstanceId,
-    target: advancement.ok ? advancement.target : null,
+    processInstanceId,
+    target: advancement.ok
+      ? {
+          phaseId: advancement.currentPhase.phaseId,
+          phaseName:
+            advancement.currentPhase.name ?? advancement.currentPhase.phaseId,
+        }
+      : null,
   };
 }
 
@@ -103,11 +99,8 @@ export async function advanceProposal({
   proposalId: string;
   phaseId: string;
   user: User;
-}): Promise<AdvanceProposalResult> {
-  const { processInstanceId } = await getAdminScopedProposal({
-    proposalId,
-    user,
-  });
+}): Promise<{ processInstanceId: string }> {
+  const processInstanceId = await assertProposalAdmin({ proposalId, user });
 
   const reviewAssignmentInput = await db.transaction(async (tx) => {
     // Same lock every phase writer takes, so a concurrent advance, revert or
@@ -165,7 +158,7 @@ export async function advanceProposal({
           instanceId: processInstanceId,
           fromPhaseId: advancement.previousPhaseId,
           toPhaseId: phaseId,
-          phases: advancement.phases,
+          phases: [...advancement.phases],
           advanceResult: {
             conflict: false as const,
             transitionHistoryId: advancement.transitionHistoryId,
@@ -181,90 +174,73 @@ export async function advanceProposal({
     await runGenerateReviewAssignments(reviewAssignmentInput);
   }
 
-  return { processInstanceId, proposalId };
+  return { processInstanceId };
 }
 
-/**
- * Loads the proposal and asserts decision-admin on its instance. Deleted and
- * moderation-detached proposals read as missing, as they do everywhere else.
- */
-async function getAdminScopedProposal({
+/** Asserts decision-admin on the proposal's instance; returns the instance id. */
+async function assertProposalAdmin({
   proposalId,
   user,
 }: {
   proposalId: string;
   user: User;
-}): Promise<{ processInstanceId: string }> {
-  const proposal = await db.query.proposals.findFirst({
-    where: {
-      RAW: (table) =>
-        and(
-          eq(table.id, proposalId),
-          isNull(table.deletedAt),
-          isNull(table.moderationDetachedAt),
-        )!,
-    },
-    columns: { processInstanceId: true },
-    with: { processInstance: { columns: { profileId: true } } },
-  });
-
-  if (!proposal?.processInstance?.profileId) {
-    throw new NotFoundError('Proposal', proposalId);
-  }
+}): Promise<string> {
+  const context = await getProposalAccessContext(proposalId);
 
   await assertProfileAccess({
     user,
-    profileId: proposal.processInstance.profileId,
+    profileId: context.instance.profileId,
     permissions: { decisions: permission.ADMIN },
   });
 
-  return { processInstanceId: proposal.processInstanceId };
+  return context.processInstanceId;
 }
 
 type Advancement =
   | {
       ok: true;
-      target: ProposalAdvanceTarget;
+      currentPhase: PhaseInstanceData;
+      previousPhaseId: string;
+      phases: readonly PhaseInstanceData[];
       transitionHistoryId: string;
-      previousPhaseId: string;
-      currentPhase: PhaseInstanceData;
-      phases: PhaseInstanceData[];
-    }
-  | { ok: false; reason: string };
-
-type TargetPhase =
-  | {
-      ok: true;
-      currentStateId: string;
-      currentPhase: PhaseInstanceData;
-      previousPhaseId: string;
-      phases: PhaseInstanceData[];
     }
   | { ok: false; reason: string };
 
 /**
- * The instance's current phase, when a proposal can be advanced into it: the
- * instance is published and not legacy, and the phase is neither its first
- * (no inbound transition to attach to) nor its last (results already
- * processed).
+ * Whether the proposal can be advanced into the instance's current phase. It
+ * can't when the instance isn't published or is legacy; when the current
+ * phase is the first (no inbound transition to attach to) or the last
+ * (results already processed); when the phase still awaits its manual
+ * selection, which an attachment would pre-empt; or when the proposal isn't
+ * phase-eligible (deleted, draft, rejected, superseded) or is already in the
+ * phase.
  */
-function getTargetPhase(instance: {
-  currentStateId: string | null;
-  status: string | null;
-  instanceData: unknown;
-}): TargetPhase {
-  const { currentStateId } = instance;
+async function resolveAdvancement({
+  dbClient,
+  processInstanceId,
+  instance,
+  proposalId,
+}: {
+  dbClient: DbClient;
+  processInstanceId: string;
+  instance: {
+    currentStateId: string | null;
+    status: string | null;
+    instanceData: unknown;
+  };
+  proposalId: string;
+}): Promise<Advancement> {
+  const { currentStateId, instanceData } = instance;
 
   if (
     instance.status !== ProcessStatus.PUBLISHED ||
     !currentStateId ||
-    isLegacyInstanceData(instance.instanceData)
+    isLegacyInstanceData(instanceData)
   ) {
-    return { ok: false, reason: 'This decision has no phase to advance into' };
+    return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
   }
 
-  const phases =
-    (instance.instanceData as DecisionInstanceData | null)?.phases ?? [];
+  const phases = getInstancePhases(instanceData);
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];
   const previousPhase = phases[currentIndex - 1];
@@ -283,143 +259,91 @@ function getTargetPhase(instance: {
     };
   }
 
+  const transition = await getAdvancementTransition({
+    dbClient,
+    instance: { id: processInstanceId, instanceData, currentStateId },
+    proposalId,
+  });
+
+  if (!transition.ok) {
+    return transition;
+  }
+
   return {
     ok: true,
-    currentStateId,
     currentPhase,
     previousPhaseId: previousPhase.phaseId,
     phases,
+    transitionHistoryId: transition.transitionHistoryId,
   };
 }
 
 /**
- * Whether the proposal can be advanced into the instance's current phase: see
- * {@link getTargetPhase} and {@link getAdvancementBlocker}.
+ * The checks that need the database: the current phase's inbound transition
+ * exists and its selection is confirmed, and the proposal is phase-eligible
+ * but not yet in the phase.
  */
-async function resolveAdvancement({
+async function getAdvancementTransition({
   dbClient,
-  processInstanceId,
   instance,
   proposalId,
 }: {
   dbClient: DbClient;
-  processInstanceId: string;
-  instance: {
-    currentStateId: string | null;
-    status: string | null;
-    instanceData: unknown;
-  };
+  instance: { id: string; instanceData: unknown; currentStateId: string };
   proposalId: string;
-}): Promise<Advancement> {
-  const targetPhase = getTargetPhase(instance);
-  if (!targetPhase.ok) {
-    return targetPhase;
-  }
-  const { currentStateId, currentPhase } = targetPhase;
-
-  const latestTransition =
-    await dbClient.query.stateTransitionHistory.findFirst({
-      where: { processInstanceId },
+}): Promise<
+  { ok: true; transitionHistoryId: string } | { ok: false; reason: string }
+> {
+  const [latestTransition, selectionStatus, phaseScope] = await Promise.all([
+    dbClient.query.stateTransitionHistory.findFirst({
+      where: { processInstanceId: instance.id },
       orderBy: { transitionedAt: 'desc' },
-      columns: { id: true, toStateId: true, transitionData: true },
-    });
-
-  if (latestTransition?.toStateId !== currentStateId) {
-    return {
-      ok: false,
-      reason: 'This decision has no phase to advance into',
-    };
-  }
-
-  const blocker = await getAdvancementBlocker({
-    dbClient,
-    processInstanceId,
-    instanceData: instance.instanceData,
-    currentStateId,
-    latestTransition,
-    proposalId,
-  });
-
-  if (blocker) {
-    return { ok: false, reason: blocker };
-  }
-
-  return {
-    ok: true,
-    target: {
-      phaseId: currentStateId,
-      phaseName: currentPhase.name ?? currentStateId,
-    },
-    transitionHistoryId: latestTransition.id,
-    previousPhaseId: targetPhase.previousPhaseId,
-    currentPhase,
-    phases: targetPhase.phases,
-  };
-}
-
-/**
- * Why this proposal can't join the current phase, or `null` if it can: the
- * phase still awaits its manual selection (an attachment would pre-empt it),
- * or the proposal is a draft, rejected, superseded, or already in the phase.
- */
-async function getAdvancementBlocker({
-  dbClient,
-  processInstanceId,
-  instanceData,
-  currentStateId,
-  latestTransition,
-  proposalId,
-}: {
-  dbClient: DbClient;
-  processInstanceId: string;
-  instanceData: unknown;
-  currentStateId: string;
-  latestTransition: { id: string; transitionData: unknown };
-  proposalId: string;
-}): Promise<string | null> {
-  const [eligible, attached, idsInPhase] = await Promise.all([
-    dbClient
-      .select({ id: proposals.id })
-      .from(proposals)
-      .where(
-        and(
-          eq(proposals.id, proposalId),
-          notInArray(proposals.status, PIPELINE_INELIGIBLE_STATUSES),
-          notSuperseded({
-            proposalId: proposals.id,
-            processInstanceId: proposals.processInstanceId,
-          }),
-        ),
-      )
-      .limit(1),
-    dbClient.query.decisionTransitionProposals.findFirst({
-      where: { transitionHistoryId: latestTransition.id },
-      columns: { id: true },
+      columns: { id: true, toStateId: true },
     }),
-    getProposalIdsForPhase({
-      instance: {
-        id: processInstanceId,
-        instanceData,
-        currentStateId,
-      },
-      phaseId: currentStateId,
+    resolveManualSelectionStatus({ instance, dbClient }),
+    getPhaseProposalSqlScope({
+      instance,
+      phaseId: instance.currentStateId,
+      authUserIds: [],
       db: dbClient,
     }),
   ]);
 
-  const selectionIsPending =
-    !attached &&
-    !(latestTransition.transitionData as TransitionData | null)
-      ?.manualSelection;
+  if (latestTransition?.toStateId !== instance.currentStateId) {
+    return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
+  }
 
-  if (selectionIsPending) {
-    return "Confirm this phase's selected proposals first";
+  if (!selectionStatus.selectionsAreConfirmed) {
+    return {
+      ok: false,
+      reason: "Confirm this phase's selected proposals first",
+    };
   }
-  if (eligible.length === 0) {
-    return 'Only submitted proposals can be advanced';
+
+  const [proposal] = await dbClient
+    .select({
+      isInPhase: sql<boolean>`${phaseScope.buildNonDraftFilter(proposals)}`,
+    })
+    .from(proposals)
+    .where(
+      and(
+        eq(proposals.id, proposalId),
+        isNull(proposals.deletedAt),
+        phaseEligiblePredicate(proposals),
+      ),
+    )
+    .limit(1);
+
+  if (!proposal) {
+    return { ok: false, reason: 'Only submitted proposals can be advanced' };
   }
-  if (idsInPhase.includes(proposalId)) {
-    return 'This proposal is already in the current phase';
+
+  if (proposal.isInPhase) {
+    return {
+      ok: false,
+      reason: 'This proposal is already in the current phase',
+    };
   }
-  return null;
+
+  return { ok: true, transitionHistoryId: latestTransition.id };
 }

@@ -43,7 +43,7 @@ export const advanceProposalRouter = router({
   advanceProposal: networkAuthenticatedProcedure()
     .input(advanceProposalInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const { processInstanceId, proposalId } = await advanceProposal({
+      const { processInstanceId } = await advanceProposal({
         proposalId: input.proposalId,
         phaseId: input.phaseId,
         user: ctx.user,
@@ -53,7 +53,7 @@ export const advanceProposalRouter = router({
       // reviewers' queues.
       ctx.registerMutationChannels([
         Channels.decisionProposals(processInstanceId),
-        Channels.decisionProposal(processInstanceId, proposalId),
+        Channels.decisionProposal(processInstanceId, input.proposalId),
         Channels.reviewAssignments(processInstanceId),
       ]);
     }),

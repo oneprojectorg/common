@@ -145,7 +145,11 @@ function ProposalAdminMenuItems({
       })
     : null;
 
-  const advanceItem = useAdvanceMenuItem({ proposal, isDisabled: isLoading });
+  const advanceItem = useAdvanceMenuItem({
+    proposal,
+    isRejected,
+    isDisabled: isLoading,
+  });
 
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
@@ -214,16 +218,20 @@ function ProposalAdminMenuItems({
  */
 function useAdvanceMenuItem({
   proposal,
+  isRejected,
   isDisabled,
 }: {
   proposal: Proposal;
+  /** A rejected proposal can never advance, so it isn't asked about. */
+  isRejected: boolean;
   isDisabled: boolean;
 }): ProposalOptionsMenuItem | null {
   const t = useTranslations();
   const { data: advanceTarget } =
-    trpc.decision.getProposalAdvanceTarget.useQuery({
-      proposalId: proposal.id,
-    });
+    trpc.decision.getProposalAdvanceTarget.useQuery(
+      { proposalId: proposal.id },
+      { enabled: !isRejected },
+    );
   const advanceMutation = trpc.decision.advanceProposal.useMutation({
     onError: (error) => {
       toast.error(error.message || t('decisions.proposals.advanceError'));
