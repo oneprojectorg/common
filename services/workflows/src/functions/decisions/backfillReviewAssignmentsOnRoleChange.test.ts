@@ -2,6 +2,7 @@ import { InngestTestEngine } from '@inngest/test';
 import {
   type DecisionSchemaDefinition,
   createDecisionRole,
+  listPhaseReviewerSummaries,
   triggerPhaseAdvancement,
   updateProfileUserRoles,
 } from '@op/common';
@@ -182,6 +183,47 @@ const executeRolesChanged = (data: {
   });
 
 describe('backfillReviewAssignmentsOnRoleChange on a role removal', () => {
+  it('drops a member with only pending assignments from the phase reviewer list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, reviewer, decisionProfileUser, roles } =
+      await createReviewerWithAssignments(testData, ['Reviewer']);
+    const [reviewerRole] = roles;
+    if (!reviewerRole) {
+      throw new Error('Expected one reviewer role');
+    }
+
+    await updateProfileUserRoles({
+      profileUserId: decisionProfileUser.id,
+      roleIds: [ROLES.MEMBER.id],
+      user: setup.user,
+    });
+
+    await executeRolesChanged({
+      decisionProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      addedRoleIds: [],
+      removedRoleIds: [reviewerRole.id],
+    });
+
+    const remaining = await getReviewerAssignments(
+      instance.instance.id,
+      reviewer.profileId,
+    );
+    expect(remaining).toEqual([]);
+
+    const summaries = await listPhaseReviewerSummaries({
+      user: setup.user,
+      processInstanceId: instance.instance.id,
+      phaseId: 'review',
+    });
+    expect(summaries.items.map((row) => row.reviewer.id)).not.toContain(
+      reviewer.profileId,
+    );
+  });
+
   it('prunes the pending assignments of a member who lost the review capability and keeps the started one', async ({
     task,
     onTestFinished,
