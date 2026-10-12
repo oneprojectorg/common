@@ -7,7 +7,7 @@ import { type InstancePhaseData } from '@op/api/encoders';
 import { getPhaseReviewSettings } from '@op/common/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
@@ -22,7 +22,6 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
-import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
 import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 
 type Instance = RouterOutput['decision']['getInstance'];
@@ -38,13 +37,11 @@ export function ReviewPage({
   instance,
   decisionSlug,
   slug,
-  decisionProfileId,
   pinOffset,
 }: {
   instance: Instance;
   decisionSlug: string;
   slug: string;
-  decisionProfileId?: string | null;
   /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
   pinOffset?: number;
 }) {
@@ -112,14 +109,6 @@ export function ReviewPage({
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
-  // ProposalsList also samples this copy but can render unmounted here, so
-  // register it from the screen that actually shows it.
-  const phaseSamples = useMemo(
-    () => [currentPhase.headline ?? '', currentPhase.description ?? ''],
-    [currentPhase.headline, currentPhase.description],
-  );
-  useRegisterTranslationSamples('review-phase', phaseSamples);
-
   const assignmentsTabTrigger = (
     <TabsTrigger value="assignments">{t('assignmentsTab')}</TabsTrigger>
   );
@@ -142,7 +131,6 @@ export function ReviewPage({
       processInstanceId={instance.id}
       slug={slug}
       decisionSlug={decisionSlug}
-      decisionProfileId={decisionProfileId}
       access={instance.access}
       currentPhase={currentPhase}
       pinOffset={pinOffset}
@@ -214,7 +202,6 @@ export function ReviewPage({
                     <ReviewAssignmentsList
                       processInstanceId={instance.id}
                       decisionSlug={decisionSlug}
-                      decisionProfileId={decisionProfileId}
                       access={instance.access}
                       pinOffset={pinOffset}
                     />
@@ -238,7 +225,6 @@ export function ReviewPage({
                         slug={slug}
                         instanceId={instance.id}
                         decisionSlug={decisionSlug}
-                        decisionProfileId={decisionProfileId}
                         permissions={instance.access}
                         currentPhase={currentPhase}
                         pinOffset={pinOffset}
@@ -285,7 +271,6 @@ export function ReviewPage({
                   slug={slug}
                   instanceId={instance.id}
                   decisionSlug={decisionSlug}
-                  decisionProfileId={decisionProfileId}
                   permissions={instance.access}
                   currentPhase={currentPhase}
                   pinOffset={pinOffset}

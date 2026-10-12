@@ -37,7 +37,6 @@ import { LuEllipsis, LuFlag, LuLeaf } from 'react-icons/lu';
 import type { TranslateFn } from '@/lib/i18n';
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
 import { TranslateLink } from '@/components/decisions/TranslateLink';
 
 import { DiscussionModal } from '../DiscussionModal';
@@ -447,12 +446,7 @@ export const PostItem = ({
     content: post.content ?? '',
     enabled: translatable,
   });
-  // Until the page-level banner goes, it still translates updates in bulk.
-  const decisionTranslation = useDecisionTranslation();
-  const displayContent =
-    translation.translation ??
-    decisionTranslation?.posts[post.id]?.content ??
-    post?.content;
+  const displayContent = translation.translation ?? post?.content;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
   const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 

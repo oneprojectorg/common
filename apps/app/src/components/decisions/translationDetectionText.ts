@@ -1,8 +1,7 @@
+import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalTemplateSchema,
-  type RubricTemplateSchema,
-  parseSchemaOptions,
   serverExtensions,
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
@@ -40,7 +39,7 @@ const joinSample = (parts: string[]): string =>
  * The title always leads the sample: list reads ship no document fragments and
  * `previewText` is empty for a proposal with a short or empty body, so the title
  * is often the only text there is. Without it those proposals detected as
- * "nothing to translate" and the list never offered the banner at all.
+ * "nothing to translate" and the card never offered its link.
  *
  * For the body, prefers the server-computed `previewText` (list payloads), then
  * `documentContent` (single-proposal payloads, what the cards render from), and
@@ -84,34 +83,6 @@ const getProposalBodyText = (proposal: ProposalTextSource): string => {
     .trim();
 };
 
-/**
- * Plain-text sample of a rubric — every criterion's prompt and description, and
- * each option's label. The reviewer reads this alongside the proposal, so a
- * foreign-language rubric has to offer translation even when the proposal
- * itself is already in the reader's language.
- */
-export const getRubricDetectionText = (
-  rubricTemplate: RubricTemplateSchema | null | undefined,
-): string => {
-  const parts: string[] = [];
-
-  for (const property of Object.values(rubricTemplate?.properties ?? {})) {
-    if (property.title) {
-      parts.push(property.title);
-    }
-    if (property.description) {
-      parts.push(property.description);
-    }
-    for (const option of parseSchemaOptions(property)) {
-      if (option.title) {
-        parts.push(option.title);
-      }
-    }
-  }
-
-  return joinSample(parts);
-};
-
 /** Plain-text sample of a decision overview (headline + description + body). */
 export const getOverviewDetectionText = ({
   headline,
@@ -139,4 +110,35 @@ export const getOverviewDetectionText = ({
     }
   }
   return joinSample(parts);
+};
+
+/**
+ * Plain-text sample of the process as one translatable object: the overview,
+ * the current phase's copy and every phase name — what `translateDecision`
+ * translates, so the link is offered when any of it is in another language.
+ */
+export const getDecisionDetectionText = ({
+  name,
+  description,
+  instanceData,
+  currentStateId,
+}: Pick<
+  ProcessInstance,
+  'name' | 'description' | 'instanceData' | 'currentStateId'
+>): string => {
+  const overview = instanceData?.overview;
+  const phases = instanceData?.phases ?? [];
+  const currentPhase = phases.find((phase) => phase.phaseId === currentStateId);
+
+  return joinSample([
+    getOverviewDetectionText({
+      headline: overview?.headline ?? name,
+      description: overview?.description ?? description ?? undefined,
+      body: overview?.body,
+    }),
+    currentPhase?.headline ?? '',
+    currentPhase?.description ?? '',
+    currentPhase?.additionalInfo ? htmlToText(currentPhase.additionalInfo) : '',
+    ...phases.map((phase) => phase.name ?? ''),
+  ]);
 };

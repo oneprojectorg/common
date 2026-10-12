@@ -40,23 +40,14 @@ import { useTranslations } from '@/lib/i18n';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
-import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ProposalsViewSwitch } from './ProposalsFilterBar';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
 import { StickyFilterBar } from './StickyFilterBar';
-import { TranslateBanner } from './TranslateBanner';
-import {
-  useDecisionNeedsTranslation,
-  useRegisterTranslationSamples,
-} from './TranslationDetectionContext';
-import { TranslationNotice } from './TranslationNotice';
 import { REVIEW_ASSIGNMENT_VIEWS } from './proposalViews';
-import { getProposalDetectionText } from './translationDetectionText';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useReviewersByProposalId } from './useReviewersByProposalId';
-import { useTranslateDecision } from './useTranslateDecision';
 
 const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
   string,
@@ -66,14 +57,11 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
-  decisionProfileId,
   access,
   pinOffset,
 }: {
   processInstanceId: string;
   decisionSlug: string;
-  /** Decision profile whose phase copy, updates and resources translate with the queue. */
-  decisionProfileId?: string | null;
   access?: DecisionAccess;
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
@@ -139,29 +127,10 @@ export function ReviewAssignmentsList({
       rootMargin: '50px',
     });
 
-  // The reviewer's queue renders the same proposal cards as the "Other
-  // proposals" tab, so it gets the same translation wiring — without it the two
-  // tabs disagreed, one offering translation and one not.
   const assignedProposals = useMemo(
     () => assignments.map((item) => item.assignment.proposal),
     [assignments],
   );
-  const proposalSamples = useMemo(
-    () => assignedProposals.map(getProposalDetectionText),
-    [assignedProposals],
-  );
-  // A review phase mounts this tab and unmounts the "Other proposals" list
-  // beside it, so this is the only proposal surface on the screen. Detecting
-  // from the queue alone left everything else the control translates — the
-  // decision copy, the updates, the resources — with no way to reach it.
-  useRegisterTranslationSamples('review-assignments', proposalSamples);
-  const needsTranslation = useDecisionNeedsTranslation();
-  const translation = useTranslateDecision({
-    proposals: assignedProposals,
-    decisionProfileId,
-    needsTranslation,
-  });
-
   const reviewersByProposalId = useReviewersByProposalId({
     processInstanceId,
     proposalIds,
@@ -392,13 +361,6 @@ export function ReviewAssignmentsList({
         </StickyFilterBar>
       )}
 
-      {translation.translationState && (
-        <TranslationNotice
-          sourceLanguageName={translation.sourceLanguageName}
-          onViewOriginal={translation.handleViewOriginal}
-        />
-      )}
-
       {/* Cards grid */}
       {isLoading ? (
         <ReviewAssignmentListSkeletonGrid />
@@ -421,9 +383,7 @@ export function ReviewAssignmentsList({
           </EmptyHeader>
         </Empty>
       ) : (
-        <ProposalTranslationProvider
-          translations={translation.translationState?.translations ?? {}}
-        >
+        <>
           {isMapMode ? (
             // Local boundaries keep the filter bar mounted while pins load or fail.
             <APIErrorBoundary
@@ -471,7 +431,7 @@ export function ReviewAssignmentsList({
               ))}
             </ProposalMasonry>
           )}
-        </ProposalTranslationProvider>
+        </>
       )}
 
       {/* Grid mode: the masonry renders its own load-more skeletons. */}
@@ -480,15 +440,6 @@ export function ReviewAssignmentsList({
       <p aria-live="polite" className="sr-only">
         {isFetchingNextPage ? t('decisions.review.loadingMoreProposals') : ''}
       </p>
-
-      {translation.showBanner && (
-        <TranslateBanner
-          onTranslate={translation.handleTranslate}
-          onDismiss={translation.dismissBanner}
-          isTranslating={translation.isTranslating}
-          languageName={translation.targetLanguageName}
-        />
-      )}
 
       {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
