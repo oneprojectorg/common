@@ -84,7 +84,7 @@ export function SidebarNavItems({
 
   return (
     <SidebarGroup className="p-0">
-      <SidebarGroupLabel className="text-sm text-muted-foreground">
+      <SidebarGroupLabel>
         {t('decisions.processBuilder.processSettingsSectionLabel')}
       </SidebarGroupLabel>
       <SidebarMenu className="gap-1">

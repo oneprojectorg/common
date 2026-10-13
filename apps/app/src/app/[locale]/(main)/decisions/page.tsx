@@ -20,7 +20,7 @@ const DecisionsListingPage = async () => {
   const t = await getTranslations();
 
   return (
-    <ListPageLayout className="max-w-none gap-4 pt-8 sm:gap-10 sm:py-14">
+    <ListPageLayout>
       <div className="flex flex-col gap-2">
         <Header1 className="text-headline">
           {t('shell.decisionsPageTitle')}

@@ -720,10 +720,6 @@
     "welcomeHeading": "স্বাগতম",
     "welcomeBackHeading": "পুনরায় স্বাগতম",
     "welcomeBackTitle": "Common-এ পুনরায় স্বাগতম!",
-    "landingSubtitle": "নতুন সংযোগ অন্বেষণ করুন এবং বিদ্যমান সম্পর্ক শক্তিশালী করুন।",
-    "newOrganizationsHeading": "নতুন সংস্থা",
-    "discoverTab": "আবিষ্কার করুন",
-    "recentTab": "সাম্প্রতিক",
     "feedLoadError": "পোস্ট লোড করতে অক্ষম। অনুগ্রহ করে রিফ্রেশ করার চেষ্টা করুন।",
     "notFoundToastTitle": "ওহো! খুঁজে পাওয়া যায়নি",
     "notFoundToastBody": "আমরা সেটি খুঁজে পাচ্ছি না। এটি সরানো হয়ে থাকতে পারে।",
@@ -732,7 +728,20 @@
     "noAccessTitle": "আপনার এই পৃষ্ঠায় অ্যাক্সেস নেই",
     "noAccessHint": "আপনি যদি মনে করেন এটি একটি ভুল, তাহলে এই লিঙ্কটি যিনি শেয়ার করেছেন তার সাথে যোগাযোগ করুন।",
     "goToCommonAction": "Common-এ যান",
-    "newTabHint": "(নতুন ট্যাবে খোলে)"
+    "newTabHint": "(নতুন ট্যাবে খোলে)",
+    "toggleSidebarLabel": "সাইডবার দেখান বা লুকান",
+    "exploreNavHeading": "অন্বেষণ",
+    "updatesNavTitle": "আপডেট",
+    "updatesPageSubtitle": "Common জুড়ে সংগঠনগুলোর আপডেট।",
+    "seeMoreAction": "আরও দেখুন",
+    "activeProcessesHeading": "সক্রিয় প্রক্রিয়া",
+    "participateInProcessLabel": "{name}-এ অংশ নিন",
+    "homeSubtitle": "আপনার প্রক্রিয়া এবং তার চারপাশের মানুষদের সাথে যুক্ত থাকুন।",
+    "setUpProfileHeading": "আপনার প্রোফাইল সেট আপ করুন",
+    "setUpProfileBody": "মানুষ যখন দেখতে পায় কে আইডিয়ার পেছনে আছে, তখন তা আরও দূরে যায়। আপনি অন্যথা বেছে না নেওয়া পর্যন্ত আপনার প্রক্রিয়াগুলোতে বেনামী থাকবেন।",
+    "setUpProfileAction": "প্রোফাইল সেট আপ করুন",
+    "dismissSetUpProfileLabel": "বাতিল করুন",
+    "seeLessAction": "কম দেখুন"
   },
   "decisions": {
     "processBuilder": {
@@ -1623,7 +1632,8 @@
     "stewardedByDescription": "{stewardName} দ্বারা পরিচালিত একটি সিদ্ধান্ত গ্রহণ প্রক্রিয়া।",
     "editingPageTitle": "সম্পাদনা",
     "participantCount": "{count, plural, one {# জন অংশগ্রহণকারী} other {# জন অংশগ্রহণকারী}}",
-    "membersSubmittedCount": "{count, plural, =1 {১ জন সদস্য প্রস্তাব জমা দিয়েছেন} other {# জন সদস্য প্রস্তাব জমা দিয়েছেন}}"
+    "membersSubmittedCount": "{count, plural, =1 {১ জন সদস্য প্রস্তাব জমা দিয়েছেন} other {# জন সদস্য প্রস্তাব জমা দিয়েছেন}}",
+    "revisionRequestsHeading": "সংশোধনের অনুরোধ"
   },
   "loadingProgress": "লোড হচ্ছে...",
   "validEmailError": "একটি বৈধ ইমেল ঠিকানা লিখুন",
