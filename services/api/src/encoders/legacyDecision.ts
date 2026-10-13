@@ -1,5 +1,7 @@
 import {
   PAGE_LIMIT,
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
   documentContentSchema,
   list,
   paginated,
@@ -252,7 +254,7 @@ export const legacyInstanceResultsEncoder = paginated(legacyProposalEncoder);
 
 // Input Schemas
 export const legacyCreateProcessInputSchema = z.object({
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
   description: z.string().optional(),
   processSchema: legacyProcessSchemaEncoder,
 });
