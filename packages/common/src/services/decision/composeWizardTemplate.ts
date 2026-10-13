@@ -80,14 +80,13 @@ export function composeWizardTemplate(
 export function blankWizardInstanceData(
   draft: WizardDraft,
 ): DecisionInstanceData {
-  const { id, version, name, config, proposalTemplate } = processLevel(draft);
+  const { id, version, name, config } = processLevel(draft);
 
   return {
     templateId: id,
     templateVersion: version,
     templateName: name,
     config,
-    proposalTemplate,
     phases: [],
   };
 }
@@ -105,8 +104,6 @@ function processLevel(draft: WizardDraft) {
     version: WIZARD_TEMPLATE_VERSION,
     name: `Wizard: ${TYPE_LABEL[draft.type]} (${draft.shape})`,
     config,
-    // TODO: drop the instance-level form once phases are written as entities (phase-dual-write).
-    proposalTemplate: simpleVoting.proposalTemplate,
   };
 }
 
