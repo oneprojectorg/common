@@ -22,7 +22,7 @@ import {
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
-export const MAX_PHASES_PER_DECISION = 30;
+export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 const SLUG_ATTEMPTS = 3;
 
