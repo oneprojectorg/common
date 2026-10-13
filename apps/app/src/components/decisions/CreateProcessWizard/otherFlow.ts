@@ -33,12 +33,15 @@ export const EMPTY_OTHER: OtherAnswers = {
   decision: null,
 };
 
-export type OtherStep =
-  | 'subjects'
-  | 'cadence'
-  | 'focus'
-  | 'submits'
-  | 'decision';
+export const OTHER_STEPS = [
+  'subjects',
+  'cadence',
+  'focus',
+  'submits',
+  'decision',
+] as const;
+
+export type OtherStep = (typeof OTHER_STEPS)[number];
 
 export const SUBJECT_OPTIONS: Choice<Subject>[] = [
   {
@@ -184,13 +187,33 @@ export const DECISION_OPTIONS: Choice<Decision>[] = [
   },
 ];
 
-export function otherStepList(answers: OtherAnswers): OtherStep[] {
-  const needsFocus =
-    answers.subjects.length > 1 && answers.cadence === 'timeline';
-  // Declared, not inlined: `['focus']` inside a spread widens to `string[]`.
-  const focusStep: OtherStep[] = needsFocus ? ['focus'] : [];
+export const needsFocus = ({ subjects, cadence }: OtherAnswers): boolean =>
+  subjects.length > 1 && cadence === 'timeline';
 
-  return ['subjects', 'cadence', ...focusStep, 'submits', 'decision'];
+/** `submits` also clears when the active subject changes: a key is labelled per subject. */
+export function reconcileOther(
+  next: OtherAnswers,
+  previous?: OtherAnswers,
+): OtherAnswers {
+  const settled: OtherAnswers = {
+    ...next,
+    elseText: next.subjects.includes('else') ? next.elseText : '',
+    focus:
+      next.focus && needsFocus(next) && next.subjects.includes(next.focus)
+        ? next.focus
+        : null,
+  };
+  const subject = activeSubject(settled);
+  const isOffered = SUBMIT_OPTIONS[subject].some(
+    (option) => option.key === settled.submits,
+  );
+  const subjectChanged =
+    previous !== undefined && activeSubject(previous) !== subject;
+
+  return {
+    ...settled,
+    submits: isOffered && !subjectChanged ? settled.submits : null,
+  };
 }
 
 export function otherCanContinue(
