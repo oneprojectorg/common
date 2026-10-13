@@ -1,7 +1,7 @@
 import { db } from '@op/db/client';
 import { EntityType, postsToOrganizations } from '@op/db/schema';
 import { logger } from '@op/logging';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -9,6 +9,8 @@ import {
   type AccessUser,
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
+  getCurrentProfileId,
+  getProfileAccessRolesWithOrgFallback,
   getUserSession,
 } from '../access';
 import { decisionPermission } from '../decision/permissions';
@@ -110,6 +112,37 @@ export const assertPostReadAccess = async ({
 
     default:
       throw new UnauthorizedError('You do not have access to these posts');
+  }
+};
+
+/** A flagged post is NotFound to everyone but its author and the decision's admins. */
+export const assertCanReadFlaggedPost = async ({
+  post,
+  user,
+  moderationProfileIds,
+}: {
+  post: { id: string; profileId: string | null };
+  user: AccessUser | undefined;
+  moderationProfileIds: string[];
+}) => {
+  const actorProfileId = user ? await getCurrentProfileId(user.id) : null;
+  // No profile is nobody's author, even of a post with no recorded author.
+  if (actorProfileId != null && actorProfileId === post.profileId) {
+    return;
+  }
+
+  const accessUser = user ? { id: user.id } : undefined;
+  const moderationRoles = await Promise.all(
+    moderationProfileIds.map((profileId) =>
+      getProfileAccessRolesWithOrgFallback({ user: accessUser, profileId }),
+    ),
+  );
+  const isModerator = moderationRoles.every((roles) =>
+    checkPermission({ profile: permission.ADMIN }, roles),
+  );
+
+  if (!isModerator) {
+    throw new NotFoundError('Post', post.id);
   }
 };
 

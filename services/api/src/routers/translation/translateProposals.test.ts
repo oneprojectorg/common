@@ -1,4 +1,5 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
+import { parseProposalData } from '@op/common';
 import {
   TestDecisionsDataManager,
   TestTranslationDataManager,
@@ -14,6 +15,7 @@ import {
   describeAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { mockTranslateText } from '../../test/mocks/deepl';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -361,6 +363,128 @@ describe('translation.translateProposals', () => {
     expect(t2).toBeDefined();
     expect(t2?.title).toBe('[ES] Water Purification Project');
     expect(t2?.preview).toMatch(/^\[ES\] .*clean water/i);
+  });
+
+  it('should translate the body as the preview, not the title fragment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // The title is a document fragment like the body, and it comes first.
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Community Garden' },
+    });
+
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error('Proposal has no collaboration document');
+    }
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Community Garden'),
+      summary: textFragment('Fresh food and a meeting place for neighbours'),
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `batch:${proposal.profileId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposals({
+      profileIds: [proposal.profileId],
+      targetLocale: 'es',
+    });
+
+    const translation = result.translations[proposal.profileId];
+    expect(translation?.title).toBe('[ES] Community Garden');
+    expect(translation?.preview).toBe(
+      '[ES] Fresh food and a meeting place for neighbours',
+    );
+  });
+
+  it('should send literal entity text in the preview as typed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Community Garden' },
+    });
+
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error('Proposal has no collaboration document');
+    }
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Community Garden'),
+      summary: textFragment('Use &lt;name&gt; in the form.'),
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `batch:${proposal.profileId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.translation.translateProposals({
+      profileIds: [proposal.profileId],
+      targetLocale: 'es',
+    });
+
+    expect(mockTranslateText).toHaveBeenCalledWith(
+      'Use &lt;name&gt; in the form.',
+      null,
+      'ES',
+      expect.anything(),
+    );
   });
 
   it('should return cached batch translations without calling DeepL', async ({

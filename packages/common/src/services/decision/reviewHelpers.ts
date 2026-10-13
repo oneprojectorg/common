@@ -323,6 +323,42 @@ export async function assertCanReadPhaseReviews(args: {
   }
 }
 
+/** `canReadPhaseReviews`, or the review's own reviewer while they keep the REVIEW role. */
+export async function assertCanReadReview({
+  instance,
+  assignment,
+  reviewerProfileId,
+  user,
+}: {
+  instance: PhaseReviewsReadContext;
+  assignment: { phaseId: string; reviewerProfileId: string };
+  reviewerProfileId: string | null;
+  user: User;
+}): Promise<void> {
+  if (
+    await canReadPhaseReviews({ instance, phaseId: assignment.phaseId, user })
+  ) {
+    return;
+  }
+
+  const isOwnReview =
+    reviewerProfileId != null &&
+    assignment.reviewerProfileId === reviewerProfileId;
+
+  if (!isOwnReview || !instance.profileId) {
+    throw new UnauthorizedError("You don't have access to this review");
+  }
+
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: [
+      { decisions: decisionPermission.REVIEW },
+      { decisions: permission.ADMIN },
+    ],
+  });
+}
+
 /**
  * Assignments deliberately survive a phase advance, so review writes and the
  * revision cycle must assert the assignment's phase is still current — admins

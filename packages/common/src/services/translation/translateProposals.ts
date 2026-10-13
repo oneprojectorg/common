@@ -1,13 +1,12 @@
-import { getTextPreview } from '@op/core';
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 import { permission } from 'access-zones';
 
 import { assertInstanceProfileAccess } from '../access';
-import { generateProposalHtml } from '../decision/generateProposalHtml';
 import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
 import { parseProposalData } from '../decision/proposalDataSchema';
+import { buildProposalListPreview } from '../decision/proposalListPreview';
 import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -16,6 +15,8 @@ import {
   flattenTranslatableFields,
   unflattenTranslatedFields,
 } from './translatedFields';
+
+const MAX_PREVIEW_LENGTH = 200;
 
 /**
  * Translates proposal card-level content (title, category, preview text) for
@@ -135,29 +136,15 @@ export async function translateProposals({
       continue;
     }
 
-    let preview: string | undefined;
-
-    // Generate HTML from document content and extract plain-text preview
-    const documentContent = documentContentMap.get(proposal.id);
-    let htmlContent: Record<string, string> | undefined;
-
-    if (documentContent?.type === 'json') {
-      htmlContent = generateProposalHtml(documentContent.fragments);
-    } else if (documentContent?.type === 'html') {
-      htmlContent = { default: documentContent.content };
-    }
-
-    if (htmlContent) {
-      const firstHtml = Object.values(htmlContent).find(Boolean);
-      if (firstHtml) {
-        const plainText = getTextPreview({
-          content: firstHtml,
-          maxLines: 3,
-          maxLength: 200,
-        });
-        preview = plainText || undefined;
-      }
-    }
+    // The body text the card shows, not the first fragment (the title).
+    const { previewText } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate:
+        templateByProcessId.get(proposal.processInstance.processId) ?? null,
+    });
+    // Already plain text: cap it without re-parsing it as HTML.
+    const preview =
+      previewText?.slice(0, MAX_PREVIEW_LENGTH).trim() || undefined;
 
     entries.push(
       ...flattenTranslatableFields(`batch:${pid}:`, {
