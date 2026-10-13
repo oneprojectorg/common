@@ -1,9 +1,9 @@
-import { and, asc, db, eq, isNull } from '@op/db/client';
+import { asc, db, eq } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
 
 import { DEFAULT_MONEY_CURRENCY } from '../../money';
 import { normalizeBudget } from './proposalDataSchema';
-import { isVotingEligible } from './votingEligibility';
+import { buildSmsBallotProposalFilter } from './smsBallotScope';
 
 export const SMS_PROPOSAL_FIRST_CODE = 101;
 
@@ -39,31 +39,28 @@ export async function listSmsBallotProposals({
 }: {
   processInstanceId: string;
 }): Promise<Array<SmsBallotProposal>> {
+  const filter = await buildSmsBallotProposalFilter({ processInstanceId });
+
+  if (!filter) {
+    return [];
+  }
+
   const rows = await db
     .select({
       id: proposals.id,
-      status: proposals.status,
       title: profiles.name,
       proposalData: proposals.proposalData,
     })
     .from(proposals)
     .innerJoin(profiles, eq(profiles.id, proposals.profileId))
-    .where(
-      and(
-        eq(proposals.processInstanceId, processInstanceId),
-        isNull(proposals.deletedAt),
-        isNull(proposals.moderationDetachedAt),
-      ),
-    )
+    .where(filter)
     .orderBy(asc(proposals.createdAt), asc(proposals.id));
 
-  return rows
-    .filter((row) => isVotingEligible(row.status))
-    .map((row, index) => ({
-      code: String(SMS_PROPOSAL_FIRST_CODE + index),
-      proposalId: row.id,
-      title: row.title,
-      ...readCost(row.proposalData),
-      summary: readSummary(row.proposalData),
-    }));
+  return rows.map((row, index) => ({
+    code: String(SMS_PROPOSAL_FIRST_CODE + index),
+    proposalId: row.id,
+    title: row.title,
+    ...readCost(row.proposalData),
+    summary: readSummary(row.proposalData),
+  }));
 }

@@ -1,8 +1,8 @@
-import { and, db, eq, isNull } from '@op/db/client';
+import { count, db } from '@op/db/client';
 import { proposals } from '@op/db/schema';
 
+import { buildSmsBallotProposalFilter } from './smsBallotScope';
 import { isVotingPhase } from './utils/phaseSettings';
-import { isVotingEligible } from './votingEligibility';
 
 export interface SmsVotability {
   votingOpen: boolean;
@@ -26,21 +26,20 @@ export async function getSmsVotability({
     return { votingOpen, eligibleProposalCount: 0, maxVotesPerMember };
   }
 
-  const rows = await db
-    .select({ status: proposals.status })
+  const filter = await buildSmsBallotProposalFilter({ processInstanceId });
+
+  if (!filter) {
+    return { votingOpen, eligibleProposalCount: 0, maxVotesPerMember };
+  }
+
+  const [row] = await db
+    .select({ eligibleProposalCount: count() })
     .from(proposals)
-    .where(
-      and(
-        eq(proposals.processInstanceId, processInstanceId),
-        isNull(proposals.deletedAt),
-        isNull(proposals.moderationDetachedAt),
-      ),
-    );
+    .where(filter);
 
   return {
     votingOpen,
-    eligibleProposalCount: rows.filter((row) => isVotingEligible(row.status))
-      .length,
+    eligibleProposalCount: row?.eligibleProposalCount ?? 0,
     maxVotesPerMember,
   };
 }
