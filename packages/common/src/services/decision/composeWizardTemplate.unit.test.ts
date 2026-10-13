@@ -24,11 +24,11 @@ const pbIdeas: WizardDraft = {
 };
 
 describe('composeWizardTemplate', () => {
-  it('names the template after the process and ids it by the answers', () => {
+  it('names and ids the template by the answers, not the process', () => {
     const template = composeWizardTemplate(pbIdeas);
 
     expect(template.id).toBe('wizard:pb:ideas');
-    expect(template.name).toBe('Neighbourhood fund');
+    expect(template.name).toBe('Wizard: Participatory budgeting (ideas)');
     expect(template.proposalTemplate).toEqual(simpleVoting.proposalTemplate);
   });
 
