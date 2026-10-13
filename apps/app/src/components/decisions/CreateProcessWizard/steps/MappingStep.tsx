@@ -15,7 +15,7 @@ import { Callout } from '../Callout';
 import { StepHeading } from '../StepHeading';
 import { PHASE_TYPE_LABEL } from '../content';
 import type { ProcessPiece } from '../types';
-import { calloutIcon } from './calloutIcons';
+import { capabilityIcon } from './capabilityIcons';
 
 export function MappingStep({
   pieces,
@@ -25,7 +25,7 @@ export function MappingStep({
   recap?: ReactNode;
 }) {
   const t = useTranslations('decisions.createWizard');
-  const [open, setOpen] = useState(0);
+  const [open, setOpen] = useState<number | null>(0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -50,16 +50,13 @@ export function MappingStep({
         ) : null}
 
         <Accordion
-          value={[open]}
-          // Exactly one stays open: ignore a close, keep the newly opened one.
+          value={open === null ? [] : [open]}
           onValueChange={(next) => {
             const added = next.find(
               (value) => typeof value === 'number' && value !== open,
             );
 
-            if (typeof added === 'number') {
-              setOpen(added);
-            }
+            setOpen(typeof added === 'number' ? added : null);
           }}
           // WebKit drops the implicit list role from flex lists.
           render={<ol role="list" />}
@@ -123,7 +120,7 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
 
             <ul role="list" className="flex flex-col gap-4">
               {piece.capabilities.map((capability) => {
-                const Icon = calloutIcon(capability);
+                const Icon = capabilityIcon(capability);
 
                 return (
                   <li key={capability} className="flex items-start gap-2.5">

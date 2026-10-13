@@ -147,12 +147,12 @@ export function CreateProcessWizard({
   };
 
   const isTypedStep = step === TOTAL_STEPS;
-  const primaryLabel =
-    step === 1
-      ? t('getStartedAction')
-      : step === TOTAL_STEPS
-        ? t('submitAction')
-        : tShared('Continue');
+  let primaryLabel = tShared('Continue');
+  if (step === 1) {
+    primaryLabel = t('getStartedAction');
+  } else if (step === TOTAL_STEPS) {
+    primaryLabel = t('submitAction');
+  }
 
   return (
     <div className="flex h-dvh flex-col bg-muted">
@@ -213,7 +213,7 @@ export function CreateProcessWizard({
           className={cn(
             'mx-auto flex w-full px-4 sm:px-6',
             step === 1 ? 'flex-1' : 'flex-col pt-8',
-            step === 1 ? '' : step === 4 ? 'pb-40' : 'pb-12',
+            step > 1 && (step === 4 ? 'pb-40' : 'pb-12'),
             step === 4 ? 'max-w-177' : 'max-w-lg',
           )}
         >
@@ -343,5 +343,3 @@ function resolvePieces({
 
   return piecesFor(type, shape);
 }
-
-export type { ProcessDraft };
