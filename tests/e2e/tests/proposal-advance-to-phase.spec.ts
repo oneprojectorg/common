@@ -268,7 +268,11 @@ test.describe('Advance a proposal into the current phase', () => {
     await expect(otherTab).toBeVisible({ timeout: 36_000 });
     await otherTab.click();
 
-    const filter = page.getByRole('combobox', { name: 'Filter proposals' });
+    // Exact: "Filter proposals by category" sits beside it.
+    const filter = page.getByRole('combobox', {
+      name: 'Filter proposals',
+      exact: true,
+    });
     await expect(filter).toBeVisible({ timeout: 36_000 });
     await filter.click();
     await page.getByRole('option', { name: 'Not advanced' }).click();
