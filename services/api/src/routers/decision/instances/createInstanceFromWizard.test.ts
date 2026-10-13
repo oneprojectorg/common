@@ -1,6 +1,12 @@
-import { type DecisionInstanceData, simpleVoting } from '@op/common';
+import {
+  type DecisionInstanceData,
+  MAX_PHASES_PER_DECISION,
+  PROCESS_NAME_MAX_LENGTH,
+  simpleVoting,
+} from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db } from '@op/db/client';
+import { asc, db, eq, sql } from '@op/db/client';
+import { ProcessStatus, decisionProcesses } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -129,7 +135,159 @@ describe.concurrent('createInstanceFromWizard', () => {
         // @ts-expect-error -- the kind enum is the contract under test
         phases: [{ kind: 'deliberation', name: 'Talk it over' }],
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it.for([
+    { label: 'shorter than the minimum once trimmed', name: '  ab  ' },
+    {
+      label: 'longer than the maximum',
+      name: 'a'.repeat(PROCESS_NAME_MAX_LENGTH + 1),
+    },
+  ])('rejects a name $label', async ({ name }, { task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createInstanceFromWizard({ ...grantDraft, name }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it.for([
+    {
+      label: 'more phases than a decision can hold',
+      phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, () => ({
+        kind: 'submissions' as const,
+        name: 'Ideas',
+      })),
+    },
+    {
+      label: 'a blank phase name',
+      phases: [{ kind: 'submissions' as const, name: '   ' }],
+    },
+  ])('rejects $label', async ({ phases }, { task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createInstanceFromWizard({
+        ...grantDraft,
+        name: `Wizard phases ${task.id}`,
+        phases,
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('starts a blank draft on its first phase once phases are added', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstanceFromWizard({
+      name: `Wizard blank to live ${task.id}`,
+      type: 'other',
+      shape: 'blank',
+      phases: [],
+    });
+    testData.trackProfileForCleanup(result.id);
+    const instanceId = result.processInstance.id;
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        {
+          phaseId: 'ideas',
+          name: 'Ideas',
+          rules: {
+            proposals: { submit: true },
+            advancement: { method: 'manual' },
+          },
+        },
+        { phaseId: 'vote', name: 'Vote', rules: { voting: { submit: true } } },
+      ],
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    const { instance } = await loadInstanceData(instanceId);
+
+    expect(instance.status).toBe(ProcessStatus.PUBLISHED);
+    expect(instance.currentStateId).toBe('ideas');
+  });
+
+  it('refuses to launch a process with no phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstanceFromWizard({
+      name: `Wizard empty launch ${task.id}`,
+      type: 'other',
+      shape: 'blank',
+      phases: [],
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: result.processInstance.id,
+        status: ProcessStatus.PUBLISHED,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const { instance } = await loadInstanceData(result.processInstance.id);
+    expect(instance.status).toBe(ProcessStatus.DRAFT);
+  });
+
+  it('points at the seeded template even when a later copy exists', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const [seeded] = await db
+      .select({ id: decisionProcesses.id })
+      .from(decisionProcesses)
+      .where(
+        sql`${decisionProcesses.processSchema}->>'id' = ${simpleVoting.id}`,
+      )
+      .orderBy(asc(decisionProcesses.createdAt))
+      .limit(1);
+    const [laterCopy] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Later copy ${task.id}`,
+        processSchema: simpleVoting,
+        createdByProfileId: setup.organization.profileId,
+      })
+      .returning({ id: decisionProcesses.id });
+    onTestFinished(async () => {
+      if (laterCopy) {
+        await db
+          .delete(decisionProcesses)
+          .where(eq(decisionProcesses.id, laterCopy.id));
+      }
+    });
+
+    const result = await caller.decision.createInstanceFromWizard({
+      ...grantDraft,
+      name: `Wizard seeded ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const { instance } = await loadInstanceData(result.processInstance.id);
+
+    expect(seeded).toBeDefined();
+    expect(instance.processId).toBe(seeded?.id);
   });
 });
 
