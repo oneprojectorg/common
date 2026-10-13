@@ -1,5 +1,4 @@
-import { CommonError, ValidationError } from '../../utils';
-import { simpleVoting } from './schemas/definitions';
+import { ValidationError } from '../../utils';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type {
   DecisionSchemaDefinition,
@@ -13,6 +12,7 @@ import type {
   WizardPhaseKind,
   WizardProcessType,
 } from './schemas/wizard';
+import type { SelectionPipeline } from './selectionPipeline/types';
 
 export const WIZARD_TEMPLATE_VERSION = '1.0.0';
 
@@ -47,13 +47,14 @@ const RULES_BY_KIND: Record<WizardPhaseKind, PhaseRules> = {
   },
 };
 
-// The seeded template's phases carry each kind's settings form and pipeline.
-const SEEDED_PHASE_BY_KIND: Record<WizardPhaseKind, string> = {
-  submissions: 'submission',
-  review: 'review',
-  voting: 'voting',
-  results: 'results',
-};
+// Without a pipeline nothing carries over, and an admin picks what does.
+const PIPELINE_BY_KIND: Record<WizardPhaseKind, SelectionPipeline | undefined> =
+  {
+    submissions: { version: '1.0.0', blocks: [] },
+    review: undefined,
+    voting: undefined,
+    results: undefined,
+  };
 
 /** A template for the wizard's answers; the wizard needs no row of its own. */
 export function composeWizardTemplate(
@@ -113,32 +114,15 @@ function composePhase({
   id,
   isLast,
 }: WizardPhaseDraft & { id: string; isLast: boolean }): PhaseDefinition {
-  const seeded = seededPhase(kind);
+  const selectionPipeline = PIPELINE_BY_KIND[kind];
 
   return {
     id,
     name,
     rules: RULES_BY_KIND[kind],
-    ...(seeded.settings && { settings: seeded.settings }),
     // Nothing advances out of the last phase.
-    ...(!isLast &&
-      seeded.selectionPipeline && {
-        selectionPipeline: seeded.selectionPipeline,
-      }),
+    ...(!isLast && selectionPipeline && { selectionPipeline }),
   };
-}
-
-function seededPhase(kind: WizardPhaseKind): PhaseDefinition {
-  const seededId = SEEDED_PHASE_BY_KIND[kind];
-  const phase = simpleVoting.phases.find(
-    (candidate) => candidate.id === seededId,
-  );
-
-  if (!phase) {
-    throw new CommonError(`The seeded template has no "${seededId}" phase`);
-  }
-
-  return phase;
 }
 
 // A kind can repeat (ideas, then built-up proposals), and ids must not.
