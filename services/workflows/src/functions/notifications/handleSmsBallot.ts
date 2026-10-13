@@ -45,10 +45,6 @@ interface BallotContext {
 export const handleSmsBallot = inngest.createFunction(
   {
     id: 'handleSmsBallot',
-    debounce: {
-      key: 'event.data.phone + "-" + event.data.processInstanceId',
-      period: '1m',
-    },
     singleton: {
       key: 'event.data.phone',
       mode: 'skip',
