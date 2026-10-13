@@ -9,6 +9,7 @@
     "./decisions": "./src/decisions.ts",
     "./fulog": "./src/fulog.ts",
     "./previews": "./previews.mjs",
+    "./sms": "./src/sms.ts",
     "./utils": "./src/utils.ts"
   },
   "types": "./src/config.ts",
