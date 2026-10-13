@@ -171,6 +171,7 @@ export const handleSmsBallot = inngest.createFunction(
     );
     const picks: SmsBallotProposal[] = [];
     let page = 0;
+    let paging: 'ballot' | 'command' | null = null;
 
     const submitBallot = async () => {
       const outcome = await step.run('submit-ballot', async () => {
@@ -331,14 +332,23 @@ export const handleSmsBallot = inngest.createFunction(
         }
         case 'proposals':
           if (argument !== null) {
+            paging = 'command';
             continue;
           }
           page = 0;
+          paging = 'ballot';
           await say(
             formatSmsProposalPage({ decisionName, proposals, page }).body,
           );
           continue;
         case 'more': {
+          if (paging === 'command') {
+            continue;
+          }
+          if (paging === null) {
+            await say(GUIDANCE);
+            continue;
+          }
           const nextPage = page + 1;
           if (nextPage * SMS_PROPOSALS_PAGE_SIZE < proposals.length) {
             page = nextPage;
