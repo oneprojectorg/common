@@ -5,7 +5,6 @@ import {
   blankWizardInstanceData,
   composeWizardTemplate,
 } from './composeWizardTemplate';
-import { simpleVoting } from './schemas/definitions';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 import type { WizardDraft } from './schemas/wizard';
 import { isReviewPhase } from './utils/phaseSettings';
@@ -29,7 +28,7 @@ describe('composeWizardTemplate', () => {
 
     expect(template.id).toBe('wizard:pb:ideas');
     expect(template.name).toBe('Wizard: Participatory budgeting (ideas)');
-    expect(template.proposalTemplate).toEqual(simpleVoting.proposalTemplate);
+    expect(template.proposalTemplate).toBeUndefined();
   });
 
   it('keeps the phases in order with the names the creator saw', () => {
@@ -163,7 +162,7 @@ describe('blankWizardInstanceData', () => {
 
     expect(blank.phases).toEqual([]);
     expect(blank.templateId).toBe('wizard:other:blank');
-    expect(blank.proposalTemplate).toEqual(simpleVoting.proposalTemplate);
+    expect(blank.proposalTemplate).toBeUndefined();
     expect(blank.config?.hideBudget).toBe(true);
   });
 

@@ -74,9 +74,7 @@ describe.concurrent('createInstanceFromWizard', () => {
     expect(instanceData.phases[0]?.rules?.proposals?.submit).toBe(true);
     expect(instanceData.phases[1]?.rules?.reviews?.submit).toBe(true);
     expect(instanceData.templateId).toBe('wizard:grant:single');
-    expect(instanceData.proposalTemplate).toEqual(
-      simpleVoting.proposalTemplate,
-    );
+    expect(instanceData.proposalTemplate).toBeUndefined();
     expect(instance.currentStateId).toBe(instanceData.phases[0]?.phaseId);
   });
 
