@@ -10,6 +10,7 @@ import {
   moderationFlags,
   posts,
 } from '@op/db/schema';
+import { randomUUID } from 'crypto';
 import { eq, like } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -23,6 +24,7 @@ import { mockTranslateText } from '../../test/mocks/deepl';
 import {
   createIsolatedSession,
   createTestContextWithSession,
+  createTestUser,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -64,6 +66,64 @@ async function createProposalComment(
   });
 
   return { setup, proposal, comment };
+}
+
+/** An org-feed post (linked via `postsToOrganizations`) by the org's admin. */
+async function createFeedPost(
+  testData: TestDecisionsDataManager,
+  onTestFinished: (fn: () => Promise<void>) => void,
+  content: string,
+) {
+  const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+  const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+  const feedPost = await adminCaller.organization.createPost({
+    id: setup.organization.id,
+    content,
+  });
+
+  // Feed posts carry no author profile, so they escape the data manager's
+  // profile-cascade cleanup — delete the row (and its comments) directly.
+  onTestFinished(async () => {
+    await db.delete(posts).where(eq(posts.id, feedPost.id));
+    await db
+      .delete(contentTranslations)
+      .where(like(contentTranslations.contentKey, `post:${feedPost.id}:%`));
+  });
+
+  return { setup, adminCaller, feedPost };
+}
+
+/** A signed-in user outside the walled garden (no network email domain). */
+async function createNonNetworkCaller(testData: TestDecisionsDataManager) {
+  const email = `non-network-${randomUUID()}@example.com`;
+  const { user } = await createTestUser(email);
+  if (!user) {
+    throw new Error(`Failed to create non-network user: ${email}`);
+  }
+  testData.trackAuthUserForCleanup(user.id);
+  const userRecord = await db.query.users.findFirst({
+    where: { authUserId: user.id },
+  });
+  if (userRecord?.profileId) {
+    testData.trackProfileForCleanup(userRecord.profileId);
+  }
+  return createAuthenticatedCaller(email);
+}
+
+async function flagPost(
+  onTestFinished: (fn: () => Promise<void>) => void,
+  postId: string,
+) {
+  await db.insert(moderationFlags).values({
+    itemType: ModerationItemType.POST,
+    itemId: postId,
+    status: ModerationFlagStatus.FLAGGED,
+    source: ModerationSource.AUTOMATED,
+    reason: 'translatePost test',
+  });
+  onTestFinished(async () => {
+    await db.delete(moderationFlags).where(eq(moderationFlags.itemId, postId));
+  });
 }
 
 describe('translation.translatePost', () => {
@@ -269,6 +329,198 @@ describe('translation.translatePost', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
     expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('translates an org-feed post for a network member outside the org', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { feedPost } = await createFeedPost(
+      testData,
+      onTestFinished,
+      'Our harvest festival is this weekend.',
+    );
+
+    // A network user from an unrelated org — the feed is open to them.
+    const reader = await testData.createDecisionSetup({ instanceCount: 0 });
+    const readerCaller = await createAuthenticatedCaller(reader.userEmail);
+
+    const result = await readerCaller.translation.translatePost({
+      postId: feedPost.id,
+      targetLocale: 'es',
+    });
+
+    expect(result.content).toBe('[ES] Our harvest festival is this weekend.');
+  });
+
+  it('translates a comment on an org-feed post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, feedPost } = await createFeedPost(
+      testData,
+      onTestFinished,
+      'Feed post with a comment.',
+    );
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Count me in for the festival.',
+      parentPostId: feedPost.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(like(contentTranslations.contentKey, `post:${comment.id}:%`));
+    });
+
+    const reader = await testData.createDecisionSetup({ instanceCount: 0 });
+    const readerCaller = await createAuthenticatedCaller(reader.userEmail);
+
+    const result = await readerCaller.translation.translatePost({
+      postId: comment.id,
+      targetLocale: 'es',
+    });
+
+    expect(result.content).toBe('[ES] Count me in for the festival.');
+  });
+
+  it('rejects a visitor or non-network caller on an org-feed post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { feedPost } = await createFeedPost(
+      testData,
+      onTestFinished,
+      'Network-only feed post.',
+    );
+
+    const nonNetworkCaller = await createNonNetworkCaller(testData);
+    await expect(
+      nonNetworkCaller.translation.translatePost({
+        postId: feedPost.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+    await expect(
+      visitorCaller.translation.translatePost({
+        postId: feedPost.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('rejects a post linked to neither a profile nor an organization', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const [orphan] = await db
+      .insert(posts)
+      .values({ content: 'Unlinked post.' })
+      .returning({ id: posts.id });
+    if (!orphan) {
+      throw new Error('Failed to insert unlinked post');
+    }
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, orphan.id));
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await expect(
+      caller.translation.translatePost({
+        postId: orphan.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('limits a flagged org-feed post to its org admins', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { adminCaller, feedPost } = await createFeedPost(
+      testData,
+      onTestFinished,
+      'Flagged feed post.',
+    );
+    await flagPost(onTestFinished, feedPost.id);
+
+    const reader = await testData.createDecisionSetup({ instanceCount: 0 });
+    const readerCaller = await createAuthenticatedCaller(reader.userEmail);
+    await expect(
+      readerCaller.translation.translatePost({
+        postId: feedPost.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
+
+    const result = await adminCaller.translation.translatePost({
+      postId: feedPost.id,
+      targetLocale: 'es',
+    });
+    expect(result.content).toBe('[ES] Flagged feed post.');
+  });
+
+  it('limits a flagged org-feed comment to its author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, adminCaller, feedPost } = await createFeedPost(
+      testData,
+      onTestFinished,
+      'Feed post with a flagged comment.',
+    );
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Flagged feed comment.',
+      parentPostId: feedPost.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(like(contentTranslations.contentKey, `post:${comment.id}:%`));
+    });
+    await flagPost(onTestFinished, comment.id);
+
+    // Flagged comments are hidden from the thread for everyone but their
+    // author, org admins included.
+    await expect(
+      adminCaller.translation.translatePost({
+        postId: comment.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
+
+    const result = await memberCaller.translation.translatePost({
+      postId: comment.id,
+      targetLocale: 'es',
+    });
+    expect(result.content).toBe('[ES] Flagged feed comment.');
   });
 });
 

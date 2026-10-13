@@ -1,16 +1,17 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import {
   assertCanReadFlaggedPost,
+  assertFeedPostReadAccess,
   assertPostReadAccess,
 } from '../posts/access';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
-/** Translates one comment or decision update for readers of every profile it's linked to. */
+/** Translates one comment, decision update or org-feed post for a reader who can see it. */
 export type PostTranslation = {
   content?: string;
 };
@@ -31,7 +32,7 @@ export async function translatePost({
 > {
   const post = await db.query.posts.findFirst({
     where: { id: postId },
-    columns: { id: true, content: true, profileId: true },
+    columns: { id: true, content: true, profileId: true, rootPostId: true },
     with: { postsToProfiles: { columns: { profileId: true } } },
   });
 
@@ -39,26 +40,23 @@ export async function translatePost({
     throw new NotFoundError('Post', postId);
   }
 
-  // A post outside any decision or proposal (e.g. an org-feed post) is refused.
-  if (post.postsToProfiles.length === 0) {
-    throw new UnauthorizedError('You do not have access to this post');
-  }
-
   const accessUser = user ? { id: user.id } : undefined;
-  const readAccesses = await Promise.all(
-    post.postsToProfiles.map(({ profileId }) =>
-      assertPostReadAccess({ user: accessUser, profileId }),
-    ),
-  );
+  // A post on a decision or proposal is gated by those profiles; one on none
+  // is checked as an org-feed post, and refused if it isn't one either.
+  const moderationProfileIds =
+    post.postsToProfiles.length > 0
+      ? (
+          await Promise.all(
+            post.postsToProfiles.map(({ profileId }) =>
+              assertPostReadAccess({ user: accessUser, profileId }),
+            ),
+          )
+        ).map(({ moderationProfileId }) => moderationProfileId)
+      : (await assertFeedPostReadAccess({ user: accessUser, post }))
+          .moderationProfileIds;
 
   if (await hasActiveModerationFlag('post', post.id)) {
-    await assertCanReadFlaggedPost({
-      post,
-      user,
-      moderationProfileIds: readAccesses.map(
-        ({ moderationProfileId }) => moderationProfileId,
-      ),
-    });
+    await assertCanReadFlaggedPost({ post, user, moderationProfileIds });
   }
 
   if (!post.content) {

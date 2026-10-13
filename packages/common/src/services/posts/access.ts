@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { EntityType, postsToOrganizations } from '@op/db/schema';
+import { EntityType, organizations, postsToOrganizations } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { checkPermission, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
@@ -137,9 +137,12 @@ export const assertCanReadFlaggedPost = async ({
       getProfileAccessRolesWithOrgFallback({ user: accessUser, profileId }),
     ),
   );
-  const isModerator = moderationRoles.every((roles) =>
-    checkPermission({ profile: permission.ADMIN }, roles),
-  );
+  // No governing profile means no moderator, not a vacuous pass.
+  const isModerator =
+    moderationRoles.length > 0 &&
+    moderationRoles.every((roles) =>
+      checkPermission({ profile: permission.ADMIN }, roles),
+    );
 
   if (!isModerator) {
     throw new NotFoundError('Post', post.id);
@@ -152,6 +155,7 @@ type ResolvedInstance = {
 };
 
 const WRITE_DENIED = 'You do not have access to write here';
+const READ_DENIED = 'You do not have access to this post';
 const COMMENTS_DISABLED = 'Comments are turned off for this phase';
 
 const assertPhaseAllowsComments = async (
@@ -190,15 +194,54 @@ const assertPhaseAllowsComments = async (
 // the walled garden can comment on any org post, regardless of per-org
 // membership. Fails closed when the caller has no resolvable email
 // (anonymous / sentinel callers).
-const assertOnWalledGarden = async (user: AccessUser | undefined) => {
+const assertOnWalledGarden = async (
+  user: AccessUser | undefined,
+  deniedMessage = WRITE_DENIED,
+) => {
   if (!user?.id) {
-    throw new UnauthorizedError(WRITE_DENIED);
+    throw new UnauthorizedError(deniedMessage);
   }
   const session = await getUserSession({ authUserId: user.id });
   const isMember = await getNetworkMembership(session?.user?.email);
   if (!isMember) {
-    throw new UnauthorizedError(WRITE_DENIED);
+    throw new UnauthorizedError(deniedMessage);
   }
+};
+
+// Asserts a caller's READ access to an org-feed post or comment — a thread
+// whose root is linked to an org via `postsToOrganizations`. The feed is open
+// to the whole walled garden, so the gate is membership, not per-org roles.
+//
+// Returns the profiles whose admins moderate the post: its orgs' profiles for
+// a top-level feed post (as getPost does), none for a comment, which a flag
+// hides from everyone but its author.
+export const assertFeedPostReadAccess = async ({
+  user,
+  post,
+}: {
+  user: AccessUser | undefined;
+  post: { id: string; rootPostId: string | null };
+}): Promise<{ moderationProfileIds: string[] }> => {
+  const orgLinks = await db
+    .select({ profileId: organizations.profileId })
+    .from(postsToOrganizations)
+    .innerJoin(
+      organizations,
+      eq(organizations.id, postsToOrganizations.organizationId),
+    )
+    .where(eq(postsToOrganizations.postId, post.rootPostId ?? post.id));
+
+  if (orgLinks.length === 0) {
+    throw new UnauthorizedError(READ_DENIED);
+  }
+
+  await assertOnWalledGarden(user, READ_DENIED);
+
+  return {
+    moderationProfileIds: post.rootPostId
+      ? []
+      : orgLinks.map(({ profileId }) => profileId),
+  };
 };
 
 // Asserts a caller's WRITE access for a new post, dispatching on the

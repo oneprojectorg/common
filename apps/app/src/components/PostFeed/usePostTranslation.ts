@@ -7,17 +7,15 @@ import { useTranslateLink } from '@/components/decisions/useTranslateLink';
 export const usePostTranslation = ({
   postId,
   content,
-  enabled,
 }: {
   postId: string;
   content: string;
-  enabled: boolean;
 }) => {
   const translatePost = trpc.translation.translatePost.useMutation();
 
   return useTranslateLink({
-    detectionText: enabled ? content : '',
-    enabled,
+    detectionText: content,
+    enabled: true,
     request: (targetLocale) =>
       translatePost
         .mutateAsync({ postId, targetLocale })

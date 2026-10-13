@@ -427,7 +427,6 @@ export const PostItem = ({
   onLikeClick,
   onCommentClick,
   contentFooter,
-  translatable = false,
   className,
 }: {
   post: Post;
@@ -438,13 +437,11 @@ export const PostItem = ({
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   /** Rendered under the post body, above the like/comment row. */
   contentFooter?: ReactNode;
-  translatable?: boolean;
   className?: string;
 }) => {
   const translation = usePostTranslation({
     postId: post.id,
     content: post.content ?? '',
-    enabled: translatable,
   });
   const displayContent = translation.translation ?? post?.content;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
@@ -519,6 +516,10 @@ export const PostItemOnDetailPage = ({
   className?: string;
 }) => {
   const t = useTranslations();
+  const translation = usePostTranslation({
+    postId: post.id,
+    content: post.content ?? '',
+  });
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
   const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
@@ -552,8 +553,9 @@ export const PostItemOnDetailPage = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
+          <TranslateLink translation={translation} />
           <PostFlaggedIndicator post={post} />
-          <PostContent content={post?.content} />
+          <PostContent content={translation.translation ?? post?.content} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
           <div className="-ms-2 flex items-center">
@@ -573,7 +575,6 @@ export const PostItemOnDetailPage = ({
 export const DiscussionModalContainer = ({
   discussionModal,
   onClose,
-  translatable = false,
 }: {
   discussionModal: {
     isOpen: boolean;
@@ -581,7 +582,6 @@ export const DiscussionModalContainer = ({
     organization?: Organization | null;
   };
   onClose: () => void;
-  translatable?: boolean;
 }) => {
   if (!discussionModal.isOpen || !discussionModal.post) {
     return null;
@@ -593,7 +593,6 @@ export const DiscussionModalContainer = ({
       organization={discussionModal.organization ?? null}
       isOpen={discussionModal.isOpen}
       onClose={onClose}
-      translatable={translatable}
     />
   );
 };
