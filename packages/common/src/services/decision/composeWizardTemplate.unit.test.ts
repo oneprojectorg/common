@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { ValidationError } from '../../utils';
 import {
-  type WizardDraft,
   blankWizardInstanceData,
   composeWizardTemplate,
 } from './composeWizardTemplate';
 import { simpleVoting } from './schemas/definitions';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
+import type { WizardDraft } from './schemas/wizard';
 import { isReviewPhase } from './utils/phaseSettings';
 
 const pbIdeas: WizardDraft = {
@@ -52,6 +52,34 @@ describe('composeWizardTemplate', () => {
     ]);
   });
 
+  it('counts on past the second repeat of a kind', () => {
+    const template = composeWizardTemplate({
+      ...pbIdeas,
+      phases: [
+        { kind: 'submissions', name: 'Ideas' },
+        { kind: 'submissions', name: 'Drafts' },
+        { kind: 'submissions', name: 'Proposals' },
+      ],
+    });
+
+    expect(template.phases.map((phase) => phase.id)).toEqual([
+      'submissions',
+      'submissions-2',
+      'submissions-3',
+    ]);
+  });
+
+  it('labels the template with the process type', () => {
+    expect(
+      composeWizardTemplate({ ...pbIdeas, type: 'grant', shape: 'single' })
+        .name,
+    ).toBe('Wizard: Grant (single)');
+    expect(
+      composeWizardTemplate({ ...pbIdeas, type: 'other', shape: 'custom' })
+        .name,
+    ).toBe('Wizard: Custom (custom)');
+  });
+
   it('lets each kind do only its own thing', () => {
     const [intake, review, develop, vote, results] =
       composeWizardTemplate(pbIdeas).phases;
@@ -77,9 +105,21 @@ describe('composeWizardTemplate', () => {
     const vote = template.phases[3];
     const results = template.phases[4];
 
+    expect(template.phases[0]?.settings?.properties).toHaveProperty(
+      'maxProposalsPerMember',
+    );
     expect(vote?.settings?.properties).toHaveProperty('maxVotesPerMember');
     expect(vote?.selectionPipeline).toBeDefined();
     expect(results?.selectionPipeline).toBeUndefined();
+  });
+
+  it('gives a single-phase process no pipeline, since it is also the last', () => {
+    const [only] = composeWizardTemplate({
+      ...pbIdeas,
+      phases: [{ kind: 'voting', name: 'Vote' }],
+    }).phases;
+
+    expect(only.selectionPipeline).toBeUndefined();
   });
 
   it('hides budgets only for a process that is neither grants nor PB', () => {
@@ -125,5 +165,11 @@ describe('blankWizardInstanceData', () => {
     expect(blank.templateId).toBe('wizard:other:blank');
     expect(blank.proposalTemplate).toEqual(simpleVoting.proposalTemplate);
     expect(blank.config?.hideBudget).toBe(true);
+  });
+
+  it('shows budgets on a blank PB draft', () => {
+    const blank = blankWizardInstanceData({ ...pbIdeas, phases: [] });
+
+    expect(blank.config?.hideBudget).toBe(false);
   });
 });
