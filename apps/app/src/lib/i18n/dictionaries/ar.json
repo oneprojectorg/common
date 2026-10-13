@@ -742,7 +742,11 @@
     "setUpProfileBody": "تصل الأفكار إلى أبعد عندما يرى الناس من يقف وراءها. تبقى مجهول الهوية في عملياتك حتى تختار غير ذلك.",
     "setUpProfileAction": "إعداد الملف الشخصي",
     "dismissSetUpProfileLabel": "تجاهل",
-    "seeLessAction": "عرض أقل"
+    "seeLessAction": "عرض أقل",
+    "editProfileAction": "تعديل الملف الشخصي",
+    "profilesMenuHeading": "الملفات الشخصية",
+    "activeProfileLabel": "نشط",
+    "settingsAction": "الإعدادات"
   },
   "decisions": {
     "processBuilder": {
