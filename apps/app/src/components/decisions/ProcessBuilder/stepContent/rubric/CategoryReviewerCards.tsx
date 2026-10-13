@@ -15,6 +15,7 @@ import { CategoryReviewerCard } from './CategoryReviewerCard';
 
 export interface CategoryReviewerCardsProps {
   instanceId: string;
+  phaseId?: string;
 }
 
 /**
@@ -24,11 +25,15 @@ export interface CategoryReviewerCardsProps {
  */
 export function CategoryReviewerCards({
   instanceId,
+  phaseId,
 }: CategoryReviewerCardsProps) {
   return (
     <ErrorBoundary fallback={<ErrorMessage />}>
       <Suspense fallback={<CategoryReviewerCardsSkeleton />}>
-        <CategoryReviewerCardsContent instanceId={instanceId} />
+        <CategoryReviewerCardsContent
+          instanceId={instanceId}
+          phaseId={phaseId}
+        />
       </Suspense>
     </ErrorBoundary>
   );
@@ -36,6 +41,7 @@ export function CategoryReviewerCards({
 
 function CategoryReviewerCardsContent({
   instanceId,
+  phaseId,
 }: CategoryReviewerCardsProps) {
   const t = useTranslations('decisions.processBuilder');
   const [, setSection] = useQueryState('section', { history: 'push' });
@@ -43,6 +49,7 @@ function CategoryReviewerCardsContent({
   const [{ items: categories }] =
     trpc.decision.listCategoryReviewers.useSuspenseQuery({
       processInstanceId: instanceId,
+      phaseId,
     });
   const [{ items: eligibleReviewers }] =
     trpc.decision.listEligibleReviewers.useSuspenseQuery({
@@ -113,6 +120,7 @@ function CategoryReviewerCardsContent({
         <CategoryReviewerCard
           key={entry.category.id}
           processInstanceId={instanceId}
+          phaseId={phaseId}
           category={entry.category}
           reviewers={entry.reviewers}
           eligibleReviewers={eligibleReviewers}

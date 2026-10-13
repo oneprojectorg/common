@@ -32,6 +32,7 @@ type EligibleReviewer =
 
 export interface CategoryReviewerCardProps {
   processInstanceId: string;
+  phaseId?: string;
   category: CategoryWithReviewers['category'];
   reviewers: CategoryWithReviewers['reviewers'];
   eligibleReviewers: EligibleReviewer[];
@@ -45,6 +46,7 @@ export interface CategoryReviewerCardProps {
  */
 export function CategoryReviewerCard({
   processInstanceId,
+  phaseId,
   category,
   reviewers,
   eligibleReviewers,
@@ -54,7 +56,10 @@ export function CategoryReviewerCard({
   const posthog = usePostHog();
 
   const invalidate = () =>
-    utils.decision.listCategoryReviewers.invalidate({ processInstanceId });
+    utils.decision.listCategoryReviewers.invalidate({
+      processInstanceId,
+      phaseId,
+    });
 
   const addReviewer = trpc.decision.addCategoryReviewer.useMutation({
     onError: (error) => {
@@ -119,6 +124,7 @@ export function CategoryReviewerCard({
     );
     addReviewer.mutate({
       processInstanceId,
+      phaseId,
       taxonomyTermId: category.id,
       reviewerProfileId: added.value,
     });
@@ -207,6 +213,7 @@ export function CategoryReviewerCard({
                     );
                     removeReviewer.mutate({
                       processInstanceId,
+                      phaseId,
                       taxonomyTermId: category.id,
                       reviewerProfileId: reviewer.reviewerProfileId,
                     });
