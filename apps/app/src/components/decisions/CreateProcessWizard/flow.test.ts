@@ -1,6 +1,6 @@
+import { PROCESS_NAME_MAX_LENGTH } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
-import { MAX_PROCESS_NAME_LENGTH } from './content';
 import {
   EMPTY_ANSWERS,
   TOTAL_STEPS,
@@ -169,7 +169,7 @@ describe('isScreenComplete', () => {
   });
 
   it('holds the name screen when the name is longer than the API accepts', () => {
-    const longest = 'a'.repeat(MAX_PROCESS_NAME_LENGTH);
+    const longest = 'a'.repeat(PROCESS_NAME_MAX_LENGTH);
 
     expect(isScreenComplete('name', answers({ name: ` ${longest} ` }))).toBe(
       true,
