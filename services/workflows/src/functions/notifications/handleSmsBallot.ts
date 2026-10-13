@@ -6,6 +6,7 @@ import {
   SMS_PROPOSALS_PAGE_SIZE,
   UnauthorizedError,
   ValidationError,
+  assertVoteAccess,
   formatSmsBallot,
   formatSmsBallotWelcome,
   formatSmsOverLimit,
@@ -33,6 +34,7 @@ const GUIDANCE =
 const { voteSmsBallotRequested, smsInboundReceived } = Events;
 
 interface BallotContext {
+  profileId: string;
   decisionName: string;
   slug: string | null;
   votingOpen: boolean;
@@ -62,6 +64,7 @@ export const handleSmsBallot = inngest.createFunction(
       async (): Promise<BallotContext | null> => {
         const [instance] = await db
           .select({
+            profileId: processInstances.profileId,
             instanceData: processInstances.instanceData,
             currentStateId: processInstances.currentStateId,
             name: profiles.name,
@@ -72,7 +75,7 @@ export const handleSmsBallot = inngest.createFunction(
           .where(eq(processInstances.id, processInstanceId))
           .limit(1);
 
-        if (!instance) {
+        if (!instance?.profileId) {
           return null;
         }
 
@@ -84,6 +87,7 @@ export const handleSmsBallot = inngest.createFunction(
         const proposals = await listSmsBallotProposals({ processInstanceId });
 
         return {
+          profileId: instance.profileId,
           decisionName: instance.name ?? '',
           slug: instance.slug ?? null,
           votingOpen: votability.votingOpen,
@@ -99,6 +103,26 @@ export const handleSmsBallot = inngest.createFunction(
         authUserId,
       });
       return { message: 'no ballot available' };
+    }
+
+    const canVote = await step.run('check-vote-access', async () => {
+      try {
+        await assertVoteAccess({ authUserId, profileId: context.profileId });
+        return true;
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          return false;
+        }
+        throw error;
+      }
+    });
+
+    if (!canVote) {
+      logger.info('SMS ballot refused: the account cannot vote', {
+        processInstanceId,
+        authUserId,
+      });
+      return { message: 'not allowed to vote' };
     }
 
     const provider = getSmsProvider();

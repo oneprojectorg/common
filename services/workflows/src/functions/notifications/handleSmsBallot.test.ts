@@ -20,6 +20,7 @@ const NUMBERS = {
   silent: '+15005550074',
   votedTwice: '+15005550075',
   unknownCode: '+15005550076',
+  reader: '+15005550077',
 } as const;
 
 const PROPOSALS = [
@@ -351,5 +352,33 @@ describe('handleSmsBallot against the database', () => {
     expect(result).toMatchObject({ message: 'ballot rejected' });
     expect(await readVotes(instanceId)).toHaveLength(1);
     expect(bodies().at(-1)).toContain('We could not record your ballot');
+  });
+
+  it('given a public decision that is open to read but not to vote, when a ballot is requested for a non-member, then no text is sent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.reader);
+    const reader = await fixture.createPhoneOnlyAccount(phone);
+    const owner = await fixture.createEmailAccount();
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner,
+        maxVotesPerMember: 1,
+        proposalTitles: PROPOSALS,
+        name: `Park Funding ${NUMBERS.reader}`,
+      });
+    await fixture.makePublic(instanceProfileId, { vote: false });
+
+    const { result } = await new InngestTestEngine({
+      function: handleSmsBallot,
+    }).execute({
+      events: [ballotRequest(instanceId, reader.authUserId, phone)],
+    });
+
+    expect(result).toEqual({ message: 'not allowed to vote' });
+    expect(recordedSms).toEqual([]);
+    expect(await readVotes(instanceId)).toEqual([]);
   });
 });
