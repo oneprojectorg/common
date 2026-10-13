@@ -36,6 +36,13 @@ export interface WizardDraft {
 
 export const WIZARD_TEMPLATE_VERSION = '1.0.0';
 
+// Platform admin shows the template name as the process type.
+const TYPE_LABEL: Record<WizardProcessType, string> = {
+  grant: 'Grant',
+  pb: 'Participatory budgeting',
+  other: 'Custom',
+};
+
 const RULES_BY_KIND: Record<WizardPhaseKind, PhaseRules> = {
   submissions: {
     proposals: { submit: true, edit: true },
@@ -121,7 +128,7 @@ function processLevel(draft: WizardDraft) {
   return {
     id: wizardTemplateId(draft),
     version: WIZARD_TEMPLATE_VERSION,
-    name: draft.name,
+    name: `Wizard: ${TYPE_LABEL[draft.type]} (${draft.shape})`,
     config,
     proposalTemplate: simpleVoting.proposalTemplate,
   };
