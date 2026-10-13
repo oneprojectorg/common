@@ -316,13 +316,15 @@ export const AuthCodeField = ({
 
   return (
     <Field>
+      <FieldLabel htmlFor="auth-code" className="justify-center">
+        {t('auth.codeLabel')}
+      </FieldLabel>
       <InputOTP
         id="auth-code"
         containerClassName="w-full"
         maxLength={length}
         pattern={DIGITS_ONLY_PATTERN}
         pasteTransformer={keepDigits}
-        aria-label={t('auth.codeLabel')}
         autoFocus
         disabled={isDisabled}
         value={value ?? ''}

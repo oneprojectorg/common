@@ -164,16 +164,20 @@ describe('AuthCodeField', () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  it('names the code field for assistive technology without a visible label', async () => {
+  it('shows an "Enter verification code" label linked to the code field', async () => {
     const AuthCodeField = await loadAuthCodeField({
       emailLength: 6,
       smsLength: 6,
     });
     renderCodeField({ AuthCodeField, channel: 'email', onSubmit: vi.fn() });
 
-    expect(
-      screen.getByRole('textbox', { name: 'Enter verification code' }),
-    ).toBeDefined();
-    expect(screen.queryByText('Enter verification code')).toBeNull();
+    const label = screen.getByText('Enter verification code');
+    const input = screen.getByLabelText<HTMLInputElement>(
+      'Enter verification code',
+    );
+
+    expect(label.tagName).toBe('LABEL');
+    expect(label.getAttribute('for')).toBe(input.id);
+    expect(input.getAttribute('aria-label')).toBeNull();
   });
 });
