@@ -71,7 +71,7 @@ describe('wizard progress', () => {
     expect(readWizardProgress()).toBeNull();
   });
 
-  it('keeps working in memory when storage throws', () => {
+  it('does not throw when storage is unavailable', () => {
     vi.stubGlobal('sessionStorage', {
       getItem: () => {
         throw new Error('SecurityError');
