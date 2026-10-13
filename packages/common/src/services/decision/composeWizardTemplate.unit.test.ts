@@ -99,23 +99,30 @@ describe('composeWizardTemplate', () => {
     }
   });
 
-  it('carries the seeded settings forms and drops the pipeline off the last phase', () => {
-    const template = composeWizardTemplate(pbIdeas);
-    const vote = template.phases[3];
-    const results = template.phases[4];
+  it('passes every submission on and leaves later selections to an admin', () => {
+    const [intake, review, develop, vote, results] =
+      composeWizardTemplate(pbIdeas).phases;
 
-    expect(template.phases[0]?.settings?.properties).toHaveProperty(
-      'maxProposalsPerMember',
-    );
-    expect(vote?.settings?.properties).toHaveProperty('maxVotesPerMember');
-    expect(vote?.selectionPipeline).toBeDefined();
+    expect(intake?.selectionPipeline).toEqual({ version: '1.0.0', blocks: [] });
+    expect(develop?.selectionPipeline).toEqual({
+      version: '1.0.0',
+      blocks: [],
+    });
+    expect(review?.selectionPipeline).toBeUndefined();
+    expect(vote?.selectionPipeline).toBeUndefined();
     expect(results?.selectionPipeline).toBeUndefined();
+  });
+
+  it('adds no settings forms of its own', () => {
+    for (const phase of composeWizardTemplate(pbIdeas).phases) {
+      expect(phase.settings).toBeUndefined();
+    }
   });
 
   it('gives a single-phase process no pipeline, since it is also the last', () => {
     const [only] = composeWizardTemplate({
       ...pbIdeas,
-      phases: [{ kind: 'voting', name: 'Vote' }],
+      phases: [{ kind: 'submissions', name: 'Ideas' }],
     }).phases;
 
     expect(only.selectionPipeline).toBeUndefined();
