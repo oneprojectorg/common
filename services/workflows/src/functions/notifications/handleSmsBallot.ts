@@ -1,6 +1,7 @@
 import {
   type DecisionInstanceData,
   type SmsBallotProposal,
+  type SmsFailureReason,
   RateLimitError,
   SMS_BALLOT_SUBMITTED,
   SMS_PROPOSALS_PAGE_SIZE,
@@ -138,27 +139,40 @@ export const handleSmsBallot = inngest.createFunction(
     const to = parsePhoneNumber(phone);
     const { decisionName, maxVotesPerMember, proposals } = context;
 
-    const text = (stepId: string, body: string) =>
-      step.run(stepId, async () => {
-        const result = await sendSms({ to, body });
-        if (result.status === 'rejected' && result.retryable) {
-          throw new RateLimitError(`Ballot text rejected: ${result.reason}`);
-        }
-        return result;
-      });
+    const picks: SmsBallotProposal[] = [];
+    let stopped: SmsFailureReason | null = null;
 
-    const welcome = await text(
+    const text = async (stepId: string, body: string) => {
+      const result = await step.run(stepId, async () => {
+        const sent = await sendSms({ to, body });
+        if (sent.status === 'rejected' && sent.retryable) {
+          throw new RateLimitError(`Ballot text rejected: ${sent.reason}`);
+        }
+        return sent;
+      });
+      if (result.status === 'rejected') {
+        stopped = result.reason;
+      }
+      return result;
+    };
+
+    const stop = (reason: SmsFailureReason) => {
+      logger.warn('Ballot text permanently rejected, ending the ballot', {
+        processInstanceId,
+        authUserId,
+        reason,
+        picks: picks.length,
+      });
+      return { message: 'send rejected', reason, picks: picks.length };
+    };
+
+    await text(
       'send-welcome',
       formatSmsBallotWelcome({ decisionName, proposals, maxVotesPerMember }),
     );
 
-    if (welcome.status === 'rejected') {
-      logger.warn('Ballot welcome permanently rejected', {
-        processInstanceId,
-        authUserId,
-        reason: welcome.reason,
-      });
-      return { message: 'welcome send rejected', reason: welcome.reason };
+    if (stopped) {
+      return stop(stopped);
     }
 
     const deadline = await step.run(
@@ -169,7 +183,6 @@ export const handleSmsBallot = inngest.createFunction(
     const byCode = new Map(
       proposals.map((proposal) => [proposal.code, proposal]),
     );
-    const picks: SmsBallotProposal[] = [];
     let page = 0;
     let paging: 'ballot' | 'command' | null = null;
 
@@ -261,6 +274,9 @@ export const handleSmsBallot = inngest.createFunction(
     };
 
     for (let turn = 1; turn <= MAX_TURNS; turn++) {
+      if (stopped) {
+        return stop(stopped);
+      }
       const reply = await step.waitForEvent(`wait-for-reply-${turn}`, {
         event: smsInboundReceived.name,
         if: 'event.data.phone == async.data.from',

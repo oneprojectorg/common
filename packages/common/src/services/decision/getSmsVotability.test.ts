@@ -1,7 +1,9 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProcessStatus, ProposalStatus, moderationFlags } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
+import { createAutomatedFlag } from '../moderation/moderationFlagStore';
 import { getSmsVotability } from './getSmsVotability';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
@@ -73,5 +75,49 @@ describe.concurrent('getSmsVotability', () => {
       eligibleProposalCount: 2,
       maxVotesPerMember: 1,
     });
+  });
+
+  it('given one of two advanced proposals is under an open moderation flag, then only the other is counted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: shortlistSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    const [flagged] = await Promise.all(
+      ['Flagged', 'Clean'].map((title) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title: `${title} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
+    );
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    expect(advanced).toMatchObject({ conflict: false });
+    const { flag } = await createAutomatedFlag({
+      itemType: 'proposal',
+      itemId: flagged!.id,
+    });
+    onTestFinished(async () => {
+      await db.delete(moderationFlags).where(eq(moderationFlags.id, flag.id));
+    });
+
+    const votability = await getSmsVotability({
+      processInstanceId: instanceId,
+      phase: votingPhase,
+    });
+
+    expect(votability).toMatchObject({ eligibleProposalCount: 1 });
   });
 });

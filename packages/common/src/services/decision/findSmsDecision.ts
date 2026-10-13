@@ -1,6 +1,6 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { EntityType } from '@op/db/schema';
+import { EntityType, ProcessStatus } from '@op/db/schema';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
@@ -34,12 +34,20 @@ export async function findSmsDecision({
     columns: { id: true, name: true, slug: true },
     with: {
       processInstance: {
-        columns: { id: true, instanceData: true, currentStateId: true },
+        columns: {
+          id: true,
+          status: true,
+          instanceData: true,
+          currentStateId: true,
+        },
       },
     },
   });
 
-  if (!profile?.processInstance) {
+  if (
+    !profile?.processInstance ||
+    profile.processInstance.status !== ProcessStatus.PUBLISHED
+  ) {
     return null;
   }
 
