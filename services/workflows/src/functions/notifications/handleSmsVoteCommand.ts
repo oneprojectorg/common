@@ -11,6 +11,8 @@ import {
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
+import { smsNumberRateLimit } from './smsInboundLimits';
+
 const HELP_MESSAGE =
   'Text VOTE followed by the decision name, for example VOTE columbus. Text DECISIONS to see yours.';
 const { smsInboundReceived, voteSmsBallotRequested } = Events;
@@ -18,6 +20,7 @@ const { smsInboundReceived, voteSmsBallotRequested } = Events;
 export const handleSmsVoteCommand = inngest.createFunction(
   {
     id: 'handleSmsVoteCommand',
+    rateLimit: smsNumberRateLimit('event.data.from'),
     debounce: {
       key: 'event.data.from',
       period: '5s',
