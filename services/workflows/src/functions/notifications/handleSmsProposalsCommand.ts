@@ -11,6 +11,8 @@ import {
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
+import { smsNumberRateLimit } from './smsInboundLimits';
+
 const HELP_MESSAGE =
   'Text PROPOSALS followed by the decision name, for example PROPOSALS columbus.';
 const MORE_TIMEOUT = '10m';
@@ -19,6 +21,7 @@ const { smsInboundReceived } = Events;
 export const handleSmsProposalsCommand = inngest.createFunction(
   {
     id: 'handleSmsProposalsCommand',
+    rateLimit: smsNumberRateLimit('event.data.from'),
     debounce: {
       key: 'event.data.from',
       period: '5s',
