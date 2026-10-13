@@ -88,3 +88,17 @@ export const Disabled: Story = {
     </InputOTP>
   ),
 };
+
+export const FullWidth: Story = {
+  render: () => (
+    <div className="w-96">
+      <InputOTP maxLength={6} containerClassName="w-full">
+        <InputOTPGroup className="w-full">
+          {Array.from({ length: 6 }, (_, index) => (
+            <InputOTPSlot key={index} index={index} className="w-auto flex-1" />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+    </div>
+  ),
+};
