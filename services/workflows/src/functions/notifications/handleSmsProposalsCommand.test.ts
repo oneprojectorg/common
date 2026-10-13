@@ -7,7 +7,11 @@ import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsProposalsCommand } from './handleSmsProposalsCommand';
 
-const NUMBERS = { browser: '+15005550080', outsider: '+15005550081' } as const;
+const NUMBERS = {
+  browser: '+15005550080',
+  outsider: '+15005550081',
+  shortlist: '+15005550083',
+} as const;
 
 const proposalsCommand = (from: PhoneNumber, argument: string) => ({
   name: Events.smsInboundReceived.name,
@@ -40,6 +44,38 @@ beforeEach(() => {
 });
 
 describe('handleSmsProposalsCommand against the database', () => {
+  it('given the selection step left a proposal behind in submission, when a member texts PROPOSALS and the slug, then only the advanced proposals are listed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.shortlist);
+    const member = await fixture.createPhoneOnlyAccount(phone);
+    const { instanceProfileId, slug } = await fixture.createVotingInstance({
+      owner: member,
+      maxVotesPerMember: 1,
+      proposalTitles: [
+        { title: 'Advanced one', budget: 10_000 },
+        { title: 'Left behind', budget: 20_000, leftBehind: true },
+        { title: 'Advanced two', budget: 30_000 },
+      ],
+      name: `Shortlist ${task.id}`,
+    });
+    await fixture.addMember(instanceProfileId, member);
+    const t = new InngestTestEngine({ function: handleSmsProposalsCommand });
+
+    const { result } = await t.execute({
+      events: [proposalsCommand(phone, slug)],
+    });
+
+    expect(result).toEqual({ message: 'proposals sent', pages: 1 });
+    const [body] = recordedSms.map((message) => message.body);
+    expect(body).toContain(`"Shortlist ${task.id}" has 2 proposals. First 2:`);
+    expect(body).toContain('101 Advanced one $10k');
+    expect(body).toContain('102 Advanced two $30k');
+    expect(body).not.toContain('Left behind');
+  });
+
   it('given seven proposals, when a member texts PROPOSALS and the slug, then they get a page of five and the rest after MORE', async ({
     task,
     onTestFinished,

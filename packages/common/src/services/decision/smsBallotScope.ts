@@ -1,8 +1,9 @@
-import { type SQL, and, db, eq, isNull, notInArray, sql } from '@op/db/client';
+import { type SQL, and, db, eq, notInArray, sql } from '@op/db/client';
 import { processInstances, proposals } from '@op/db/schema';
 
 import { getPhaseProposalSqlScope } from './getProposalsForPhase';
 import { notSuperseded } from './proposalSupersession';
+import { isReadableByEveryone } from './proposalVisibility';
 import { VOTING_INELIGIBLE_STATUSES } from './votingEligibility';
 
 export async function buildSmsBallotProposalFilter({
@@ -32,8 +33,7 @@ export async function buildSmsBallotProposalFilter({
 
   return and(
     eq(proposals.processInstanceId, processInstanceId),
-    isNull(proposals.deletedAt),
-    isNull(proposals.moderationDetachedAt),
+    isReadableByEveryone(proposals),
     notInArray(sql<string>`${proposals.status}::text`, [
       ...VOTING_INELIGIBLE_STATUSES,
     ]),
