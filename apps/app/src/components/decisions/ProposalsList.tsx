@@ -580,6 +580,7 @@ const ProposalsListContent = ({
                 submittedByProfileId: queryParams.submittedByProfileId,
                 votedByProfileId: queryParams.votedByProfileId,
                 status: queryParams.status,
+                notAdvanced: queryParams.notAdvanced,
                 excludeAssignedForReview: queryParams.excludeAssignedForReview,
               }}
               listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
@@ -613,15 +614,8 @@ const ProposalsListContent = ({
     ),
   };
 
-  // With nothing to filter, sort, or export, the control bar is just noise —
-  // collapse to the empty state alone. A zero-result FILTERED list keeps the
-  // bar so the filter can be cleared. Map mode is not an exception:
-  // unfiltered-empty renders the grid empty state, so the bar would only
-  // toggle between two empty states.
-  const showFilterBar = !isEmptyUnfiltered;
-
   // Same terms as the select they replace.
-  const showTabs = showFilterTabs && showFilterBar && !hideFilters;
+  const showTabs = showFilterTabs && !hideFilters;
 
   // With a tab bar the select is the status axis; without one it is the only
   // control and keeps the combined filter.
@@ -651,37 +645,37 @@ const ProposalsListContent = ({
 
   const listBody = (
     <>
-      {showFilterBar && (
-        <ProposalsStickyFilterBar
-          pinOffset={pinOffset}
-          count={total}
-          total={totalProposalCount}
-          header={header?.(total)}
-          // Omitted when the phase hides proposals from non-admins.
-          controls={hideFilters ? undefined : controls}
-          leadingSelect={leadingSelect}
-          // Omitted when there is only one view to be in.
-          view={
-            availableViews.length > 1
-              ? {
-                  value: effectiveView,
-                  views: availableViews,
-                  onChange: handleViewChange,
-                }
-              : undefined
-          }
-          exportControl={
-            canExportProposals ? (
-              <ExportProposalsButton
-                processInstanceId={queryParams.processInstanceId}
-                // The phase's unfiltered count: the export ignores the list's
-                // filters, so a filter matching nothing must not disable it.
-                isEmpty={totalProposalCount === 0}
-              />
-            ) : null
-          }
-        />
-      )}
+      {/* Kept on an empty list too: "Not advanced" can hold what the list
+          doesn't, such as proposals earlier phases left behind. */}
+      <ProposalsStickyFilterBar
+        pinOffset={pinOffset}
+        count={total}
+        total={totalProposalCount}
+        header={header?.(total)}
+        // Omitted when the phase hides proposals from non-admins.
+        controls={hideFilters ? undefined : controls}
+        leadingSelect={leadingSelect}
+        // Omitted when there is only one view to be in.
+        view={
+          availableViews.length > 1
+            ? {
+                value: effectiveView,
+                views: availableViews,
+                onChange: handleViewChange,
+              }
+            : undefined
+        }
+        exportControl={
+          canExportProposals ? (
+            <ExportProposalsButton
+              processInstanceId={queryParams.processInstanceId}
+              // The phase's unfiltered count: the export ignores the list's
+              // filters, so a filter matching nothing must not disable it.
+              isEmpty={totalProposalCount === 0}
+            />
+          ) : null
+        }
+      />
 
       {translation.translationState && (
         <TranslationNotice

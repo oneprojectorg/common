@@ -16,9 +16,11 @@ import {
 } from '../../utils';
 import type { AccessUser } from '../access';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
+import type { ProposalAdvanceTarget } from './getProposalAdvanceTarget';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import { resolvePhaseAdvancement } from './proposalAdvancement';
 import {
   isAnonymousAuthor,
   proposalAuthorRelation,
@@ -39,6 +41,13 @@ export interface ListProposalsInput {
   categoryId?: string;
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
+  /**
+   * The "Not advanced" filter: rejected proposals, plus — on an admin's
+   * current-phase list — those earlier phases left behind, so "Advance to
+   * [phase]" can reach them. Each row then reports `isOutsideCurrentPhase`.
+   * Without it the list is the phase's proposals ("All proposals").
+   */
+  notAdvanced?: boolean;
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
    * resolution so a ballot remains accessible after the process advances past
@@ -104,6 +113,7 @@ export const listProposals = async ({
     profileRoles,
     isEmpty,
     buildWhereClause,
+    buildIsOutsideCurrentPhase,
   } = await resolveProposalListScope({ input, user });
 
   // Template resolution depends only on the instance row — start it now so
@@ -118,6 +128,12 @@ export const listProposals = async ({
   // must not surface as an unhandled promise rejection. The later `await`
   // still rethrows.
   proposalTemplatePromise.catch(() => {});
+
+  const advanceTargetPromise = getListAdvanceTarget({
+    instance,
+    includesNotAdvanced: buildIsOutsideCurrentPhase !== undefined,
+  });
+  advanceTargetPromise.catch(() => {});
 
   // The empty short-circuit is split around the cursor decode to preserve
   // pre-existing error semantics: trusted contexts always exited before
@@ -204,12 +220,18 @@ export const listProposals = async ({
       },
       // Fetch one extra to detect whether a next page exists.
       limit: limit + 1,
-      ...(effectiveIncludeVoteCounts && {
-        extras: {
+      extras: {
+        ...(effectiveIncludeVoteCounts && {
           voteCount: (table, { sql: sqlOp }) =>
             sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
-        },
-      }),
+        }),
+        ...(buildIsOutsideCurrentPhase && {
+          isOutsideCurrentPhase: (table, { sql: sqlOp }) =>
+            sqlOp<boolean>`${buildIsOutsideCurrentPhase(table)}`.as(
+              'is_outside_current_phase',
+            ),
+        }),
+      },
       orderBy: (table, { asc: ascOp, desc: descOp }) => {
         // `id` tie-break: without it, rows sharing the primary sort key
         // return in undefined order and flipping `dir` has no visible effect.
@@ -247,6 +269,7 @@ export const listProposals = async ({
   // Resolved from instanceData (falling back to processSchema) — the promise
   // was started right after the scope resolved, so this await is usually free.
   const proposalTemplate = await proposalTemplatePromise;
+  const advanceTarget = await advanceTargetPromise;
 
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
@@ -355,6 +378,7 @@ export const listProposals = async ({
         ? documentContent
         : undefined,
       proposalTemplate,
+      ...getAdvancementFields({ proposal, advanceTarget }),
       // Ballot reads always carry the field: `null` until results are
       // published (so no live tally leaks), a real count afterwards — where
       // `0` unambiguously means zero recorded votes.
@@ -386,3 +410,49 @@ export const listProposals = async ({
     next,
   };
 };
+
+/**
+ * Where a left-behind row can advance to. The rules past the row's own status
+ * are the same for every row, so this is checked once per page.
+ */
+async function getListAdvanceTarget({
+  instance,
+  includesNotAdvanced,
+}: {
+  instance: Parameters<typeof resolvePhaseAdvancement>[0]['instance'];
+  includesNotAdvanced: boolean;
+}): Promise<ProposalAdvanceTarget | undefined> {
+  if (!includesNotAdvanced) {
+    return undefined;
+  }
+  const advancement = await resolvePhaseAdvancement({ dbClient: db, instance });
+  if (!advancement.ok) {
+    return undefined;
+  }
+  const { phaseId, name } = advancement.currentPhase;
+  return { phaseId, phaseName: name ?? phaseId };
+}
+
+/**
+ * `isOutsideCurrentPhase` is only an extra when the list includes what didn't
+ * advance; a rejected row stays listed but can't advance.
+ */
+function getAdvancementFields({
+  proposal,
+  advanceTarget,
+}: {
+  proposal: { status: string | null; isOutsideCurrentPhase?: unknown };
+  advanceTarget: ProposalAdvanceTarget | undefined;
+}) {
+  if (!('isOutsideCurrentPhase' in proposal)) {
+    return {};
+  }
+  const isOutsideCurrentPhase = Boolean(proposal.isOutsideCurrentPhase);
+  return {
+    isOutsideCurrentPhase,
+    advanceTarget:
+      isOutsideCurrentPhase && proposal.status !== ProposalStatus.REJECTED
+        ? advanceTarget
+        : undefined,
+  };
+}

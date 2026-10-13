@@ -15,7 +15,7 @@ import {
   isLastPhase,
 } from './schemas/instanceData';
 
-type Advancement =
+export type PhaseAdvancement =
   | {
       ok: true;
       currentPhase: PhaseInstanceData;
@@ -24,6 +24,8 @@ type Advancement =
       transitionHistoryId: string;
     }
   | { ok: false; reason: string };
+
+type AdvancementInstance = LockedProcessInstance & { id: string };
 
 const NO_PHASE_TO_ADVANCE_INTO = 'This decision has no phase to advance into';
 
@@ -46,23 +48,19 @@ export async function assertProposalAdmin({
 }
 
 /**
- * Whether the proposal can be advanced into the instance's current phase. It
- * can't when the instance isn't published or is legacy; when the current
- * phase is the first (no inbound transition to attach to) or the last
- * (results already processed); when the phase still awaits its manual
- * selection, which an attachment would pre-empt; or when the proposal isn't
- * phase-eligible (deleted, draft, rejected, superseded) or is already in the
- * phase.
+ * Whether the instance's current phase can take proposals advanced into it
+ * one at a time. It can't when the instance isn't published or is legacy;
+ * when the current phase is the first (no inbound transition to attach to) or
+ * the last (results already processed); or when the phase still awaits its
+ * manual selection, which an attachment would pre-empt.
  */
-export async function resolveAdvancement({
+export async function resolvePhaseAdvancement({
   dbClient,
   instance,
-  proposalId,
 }: {
   dbClient: DbClient;
-  instance: LockedProcessInstance & { id: string };
-  proposalId: string;
-}): Promise<Advancement> {
+  instance: AdvancementInstance;
+}): Promise<PhaseAdvancement> {
   const { currentStateId, instanceData } = instance;
 
   if (
@@ -92,57 +90,19 @@ export async function resolveAdvancement({
     };
   }
 
-  const transition = await getAdvancementTransition({
-    dbClient,
-    instance: { id: instance.id, instanceData, currentStateId },
-    proposalId,
-  });
-
-  if (!transition.ok) {
-    return transition;
-  }
-
-  return {
-    ok: true,
-    currentPhase,
-    previousPhaseId: previousPhase.phaseId,
-    phases,
-    transitionHistoryId: transition.transitionHistoryId,
-  };
-}
-
-/**
- * The checks that need the database: the current phase's inbound transition
- * exists and its selection is confirmed, and the proposal is phase-eligible
- * but not yet in the phase.
- */
-async function getAdvancementTransition({
-  dbClient,
-  instance,
-  proposalId,
-}: {
-  dbClient: DbClient;
-  instance: { id: string; instanceData: unknown; currentStateId: string };
-  proposalId: string;
-}): Promise<
-  { ok: true; transitionHistoryId: string } | { ok: false; reason: string }
-> {
-  const [latestTransition, selectionStatus, phaseScope] = await Promise.all([
+  const [latestTransition, selectionStatus] = await Promise.all([
     dbClient.query.stateTransitionHistory.findFirst({
       where: { processInstanceId: instance.id },
       orderBy: { transitionedAt: 'desc' },
       columns: { id: true, toStateId: true },
     }),
-    resolveManualSelectionStatus({ instance, dbClient }),
-    getPhaseProposalSqlScope({
-      instance,
-      phaseId: instance.currentStateId,
-      authUserIds: [],
-      db: dbClient,
+    resolveManualSelectionStatus({
+      instance: { id: instance.id, instanceData, currentStateId },
+      dbClient,
     }),
   ]);
 
-  if (latestTransition?.toStateId !== instance.currentStateId) {
+  if (latestTransition?.toStateId !== currentStateId) {
     return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
   }
 
@@ -152,6 +112,41 @@ async function getAdvancementTransition({
       reason: "Confirm this phase's selected proposals first",
     };
   }
+
+  return {
+    ok: true,
+    currentPhase,
+    previousPhaseId: previousPhase.phaseId,
+    phases,
+    transitionHistoryId: latestTransition.id,
+  };
+}
+
+/**
+ * {@link resolvePhaseAdvancement} for one proposal, which must also be
+ * phase-eligible (not deleted, draft, rejected or superseded) and not already
+ * in the phase.
+ */
+export async function resolveAdvancement({
+  dbClient,
+  instance,
+  proposalId,
+}: {
+  dbClient: DbClient;
+  instance: AdvancementInstance;
+  proposalId: string;
+}): Promise<PhaseAdvancement> {
+  const advancement = await resolvePhaseAdvancement({ dbClient, instance });
+  if (!advancement.ok) {
+    return advancement;
+  }
+
+  const phaseScope = await getPhaseProposalSqlScope({
+    instance,
+    phaseId: advancement.currentPhase.phaseId,
+    authUserIds: [],
+    db: dbClient,
+  });
 
   // A plain select rather than RBQ: phase membership is an SQL predicate from
   // the phase scope, projected here as a column.
@@ -180,5 +175,5 @@ async function getAdvancementTransition({
     };
   }
 
-  return { ok: true, transitionHistoryId: latestTransition.id };
+  return advancement;
 }

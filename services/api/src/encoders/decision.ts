@@ -763,6 +763,12 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    * the reviewer's "Other proposals" tab.
    */
   excludeAssignedForReview: z.boolean().optional(),
+  /**
+   * The "Not advanced" filter: rejected proposals, plus (for admins, on the
+   * current phase) those earlier phases left behind. Omitted lists the
+   * phase's proposals.
+   */
+  notAdvanced: z.boolean().optional(),
   /** When set to 'results', all proposals are returned as non-editable */
   phase: z.enum(['results']).optional(),
   /** Keyset pagination cursor from the previous page's `next`. */
@@ -783,6 +789,7 @@ export const proposalLocationsFilterSchema =
     search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
     excludeAssignedForReview: z.boolean().optional(),
+    notAdvanced: z.boolean().optional(),
     phase: z.enum(['results']).optional(),
   });
 

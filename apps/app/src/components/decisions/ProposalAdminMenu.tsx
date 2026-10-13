@@ -7,7 +7,7 @@ import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
-import { LuArrowRight, LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
+import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -20,6 +20,7 @@ import {
 import { RejectProposalDialog } from './RejectProposalDialog';
 import { buildMergeMenuItem, getProposalDisplayTitle } from './proposals/merge';
 import { buildRejectMenuItem } from './proposals/reject';
+import { useProposalAdvance } from './useProposalAdvance';
 import { useProposalModerationActions } from './useProposalModerationActions';
 import { useProposalRejectionActions } from './useProposalRejectionActions';
 
@@ -116,7 +117,10 @@ function ProposalAdminMenuItems({
       },
     );
 
-  const { advanceTarget, advance, isAdvancing } = useProposalAdvance(proposal);
+  const { advanceItem, isAdvancing } = useProposalAdvance({
+    proposal,
+    lookUpTarget: true,
+  });
   // Advancing, rejecting and unmerging all move the proposal between pools,
   // so none starts while another is in flight.
   const isBusy =
@@ -140,10 +144,12 @@ function ProposalAdminMenuItems({
       })
     : null;
 
+  const advanceMenuItem = advanceItem(isBusy);
+
   // A proposal the admin can advance gets that choice instead: offering both
   // "Advance" and "Do not advance" would read as contradictory.
   const rejectItem =
-    rejectEnabled && !advanceTarget
+    rejectEnabled && !advanceMenuItem
       ? buildRejectMenuItem({
           isDisabled: isBusy,
           isRejected,
@@ -157,19 +163,7 @@ function ProposalAdminMenuItems({
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
     ...(rejectItem ? [rejectItem] : []),
-    ...(advanceTarget
-      ? [
-          {
-            key: 'advance',
-            icon: <LuArrowRight className="size-5 rtl:-scale-x-100" />,
-            label: t('decisions.proposals.advanceToPhaseAction', {
-              phase: advanceTarget.phaseName,
-            }),
-            onAction: advance,
-            isDisabled: isBusy,
-          },
-        ]
-      : []),
+    ...(advanceMenuItem ? [advanceMenuItem] : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -224,49 +218,4 @@ function ProposalAdminMenuItems({
       ) : null}
     </ProposalOptionsMenu>
   );
-}
-
-/**
- * The phase this proposal can be advanced into (`undefined` while loading or
- * when it can't move), and the action that advances it. No invalidation
- * needed: the endpoints register the proposal channels.
- */
-function useProposalAdvance(proposal: Proposal) {
-  const t = useTranslations();
-  // Refetched over the proposal channel, so a rejection clears it.
-  const { data: advanceTarget } =
-    trpc.decision.getProposalAdvanceTarget.useQuery({
-      proposalId: proposal.id,
-    });
-  const advanceMutation = trpc.decision.advanceProposal.useMutation({
-    onError: (error) => {
-      toast.error(t('decisions.proposals.advanceError'));
-      logger.error('Failed to advance proposal', {
-        error,
-        context: 'ProposalAdminMenu',
-      });
-    },
-  });
-
-  const advance = () => {
-    if (advanceTarget) {
-      const { phaseId, phaseName } = advanceTarget;
-      advanceMutation.mutate(
-        { proposalId: proposal.id, phaseId },
-        {
-          // Per-call so the toast can name the phase it was offered.
-          onSuccess: () =>
-            toast.success(
-              t('decisions.proposals.advanceSuccess', { phase: phaseName }),
-            ),
-        },
-      );
-    }
-  };
-
-  return {
-    advanceTarget,
-    advance,
-    isAdvancing: advanceMutation.isPending,
-  };
 }

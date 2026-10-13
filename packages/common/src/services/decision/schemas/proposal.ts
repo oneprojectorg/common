@@ -6,6 +6,7 @@ import {
   PROPOSAL_TITLE_MAX_LENGTH,
   proposalDataSchema,
 } from '../proposalDataSchema';
+import { proposalAdvanceTargetSchema } from './advanceProposal';
 
 export const storageItemSchema = z.object({
   id: z.string(),
@@ -136,6 +137,17 @@ export const proposalSchema = z.object({
   isEditable: z.boolean().optional(),
   /** True when this proposal is in the latest results selection set. */
   isSelected: z.boolean().optional(),
+  /**
+   * True when an admin's current-phase list carries this proposal although an
+   * earlier transition left it behind (the `notAdvanced` filter on
+   * `listProposals`).
+   */
+  isOutsideCurrentPhase: z.boolean().optional(),
+  /**
+   * Set on such a row when an admin can advance it into the current phase —
+   * the target `getProposalAdvanceTarget` would return, without a per-row call.
+   */
+  advanceTarget: proposalAdvanceTargetSchema.optional(),
   /** True when an active moderation flag hides this proposal from general
    *  readers. Only the creator (+ collaborators) and admins ever receive a
    *  flagged proposal, so this drives their "Flagged" indicator. */

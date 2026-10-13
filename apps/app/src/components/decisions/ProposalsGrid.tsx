@@ -378,7 +378,10 @@ const VotingProposalsList = ({
       <ProposalMasonry loadingMore={isFetchingNextPage}>
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
-          const isEligibleForVote = isVotingEligible(proposal.status);
+          // A proposal left behind in an earlier phase isn't on this ballot.
+          const isEligibleForVote =
+            isVotingEligible(proposal.status) &&
+            !proposal.isOutsideCurrentPhase;
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
