@@ -1,3 +1,4 @@
+import type { WizardPhaseKind, WizardProcessType } from '@op/common';
 import type { MessageKeys, Messages, NestedKeyOf } from 'next-intl';
 
 type WizardMessages = Messages['decisions']['createWizard'];
@@ -7,7 +8,7 @@ export type WizardCopyKey = MessageKeys<
   NestedKeyOf<WizardMessages>
 >;
 
-export type ProcessType = 'grant' | 'pb' | 'other';
+export type ProcessType = WizardProcessType;
 
 export type GrantShape = 'single' | 'loi';
 
@@ -18,7 +19,7 @@ export type OtherShape = 'custom' | 'blank';
 
 export type ShapeKey = GrantShape | PbShape | OtherShape;
 
-export type PhaseType = 'submissions' | 'review' | 'voting' | 'results';
+export type PhaseType = WizardPhaseKind;
 
 export interface ProcessPiece {
   /** The pitch while choosing; `phaseName` is the timeline label. */
