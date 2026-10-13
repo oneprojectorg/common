@@ -93,7 +93,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'collectIdeas',
       phaseName: 'shareYourIdeas',
       phaseType: 'submissions',
-      description: 'keptLightSoAnyoneCan',
+      description: 'collectIdeasDescription',
       capabilities: [
         'setYourOwnQuestions',
         'openAllInviteOnly',
@@ -104,7 +104,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'screenIdeas',
       phaseName: 'reviewIdeas',
       phaseType: 'review',
-      description: 'yourTeamsFirstPassOver',
+      description: 'screenIdeasDescription',
       capabilities: [
         'checkEligibilityFeasibility',
         'mergeGroupDuplicates',
@@ -114,9 +114,9 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
     },
     {
       name: 'buildProposals',
-      phaseName: 'buildProposalsPhase',
+      phaseName: 'buildProposalsPhaseName',
       phaseType: 'submissions',
-      description: 'strongestIdeasBecomeFullCosted',
+      description: 'buildProposalsDescription',
       capabilities: [
         'chooseWhoDevelopsThem',
         'setWhatProposalMustInclude',
@@ -132,7 +132,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
         'setBudgetLimits',
         'decideWhoCanVote',
       ],
-      norm: 'mostPbLetsPeopleSpread',
+      norm: 'pbVoteNorm',
     },
     {
       name: 'shareResults',
@@ -151,7 +151,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'collectProposals',
       phaseName: 'sendYourProposals',
       phaseType: 'submissions',
-      description: 'peopleSubmitCompleteProposalsReady',
+      description: 'collectCompleteProposalsDescription',
       capabilities: [
         'setYourOwnQuestions',
         'openAllInviteOnly',
@@ -177,7 +177,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
         'setBudgetLimits',
         'decideWhoCanVote',
       ],
-      norm: 'mostPbLetsPeopleSpread',
+      norm: 'pbVoteNorm',
     },
     {
       name: 'shareResults',
@@ -196,7 +196,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'collectLettersIntent',
       phaseName: 'sendLetterIntent',
       phaseType: 'submissions',
-      description: 'shortLetterFirstGistNothing',
+      description: 'collectLettersIntentDescription',
       capabilities: [
         'setWhatLetterShouldCover',
         'openAllInviteOnly',
@@ -207,7 +207,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'pickShortlist',
       phaseName: 'shortlisting',
       phaseType: 'review',
-      description: 'panelReviewsLettersInvitesShortlist',
+      description: 'pickShortlistDescription',
       capabilities: [
         'buildScoringRubric',
         'addQuestionsReviewers',
@@ -219,7 +219,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'collectFullApplications',
       phaseName: 'sendYourApplication',
       phaseType: 'submissions',
-      description: 'shortlistDevelopsTheirLetterInto',
+      description: 'collectFullApplicationsDescription',
       capabilities: [
         'buildWhatLetterAsked',
         'addQuestionsFullApplication',
@@ -230,7 +230,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'chooseWhosFunded',
       phaseName: 'reviewDecide',
       phaseType: 'review',
-      description: 'panelReviewsFullApplicationsDecides',
+      description: 'chooseFromFullApplicationsDescription',
       capabilities: [
         'buildScoringRubric',
         'inviteReviewers',
@@ -261,7 +261,7 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
       name: 'chooseWhosFunded',
       phaseName: 'reviewDecide',
       phaseType: 'review',
-      description: 'panelReviewsApplicationsDecides',
+      description: 'chooseFromApplicationsDescription',
       capabilities: [
         'buildScoringRubric',
         'addQuestionsReviewers',
@@ -323,7 +323,7 @@ const GRANT_VOTE_PIECE: ProcessPiece = {
   name: 'putVote',
   phaseName: 'votePhase',
   phaseType: 'voting',
-  description: 'peopleInvitedVoteDecideWhere',
+  description: 'grantVoteDescription',
   capabilities: [
     'chooseHowPeopleVote',
     'combineWaysVoting',
@@ -360,8 +360,8 @@ export function applyGrantDecision(
   const narrowed: ProcessPiece = {
     ...deciding,
     name: 'narrowField',
-    phaseName: 'shortlisting',
-    description: 'reviewersScoreWhatCamePick',
+    phaseName: 'pickFinalists',
+    description: 'narrowFieldDescription',
   };
 
   return [
