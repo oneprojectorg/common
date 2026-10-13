@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@op/sense/Accordion';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { LuCircleCheckBig } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -22,7 +22,7 @@ export function MappingStep({
   recap,
 }: {
   pieces: ProcessPiece[];
-  recap?: string;
+  recap?: ReactNode;
 }) {
   const t = useTranslations('decisions.createWizard');
   const [open, setOpen] = useState(0);
