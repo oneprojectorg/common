@@ -49,6 +49,14 @@ test.describe('Login by email code', () => {
       code.length,
     );
 
+    const codeBox = await page
+      .locator('[data-slot="input-otp-group"]')
+      .boundingBox();
+    const verifyBox = await page
+      .getByRole('button', { name: 'Verify and continue' })
+      .boundingBox();
+    expect(codeBox?.width).toBe(verifyBox?.width);
+
     await page.getByRole('textbox', { name: 'Code' }).fill(code);
 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
