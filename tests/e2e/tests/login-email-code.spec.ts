@@ -49,7 +49,21 @@ test.describe('Login by email code', () => {
       code.length,
     );
 
-    await page.getByRole('textbox', { name: 'Code' }).fill(code);
+    const slots = page.locator('[data-slot="input-otp-slot"]');
+    const firstSlot = await slots.first().boundingBox();
+    const lastSlot = await slots.last().boundingBox();
+    const verifyBox = await page
+      .getByRole('button', { name: 'Verify and continue' })
+      .boundingBox();
+    expect(firstSlot?.x).toBeCloseTo(verifyBox?.x ?? NaN, 0);
+    expect((lastSlot?.x ?? NaN) + (lastSlot?.width ?? NaN)).toBeCloseTo(
+      (verifyBox?.x ?? NaN) + (verifyBox?.width ?? NaN),
+      0,
+    );
+
+    await page
+      .getByRole('textbox', { name: 'Enter verification code' })
+      .fill(code);
 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
     await expect(

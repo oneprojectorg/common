@@ -19,7 +19,7 @@ type Story = StoryObj<typeof InputOTP>;
 
 export const Default: Story = {
   render: () => (
-    <InputOTP maxLength={6}>
+    <InputOTP maxLength={6} aria-label="Enter verification code">
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -34,7 +34,11 @@ export const Default: Story = {
 
 export const WithSeparators: Story = {
   render: () => (
-    <InputOTP maxLength={6} defaultValue="12">
+    <InputOTP
+      maxLength={6}
+      defaultValue="12"
+      aria-label="Enter verification code"
+    >
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -76,7 +80,12 @@ export const WithLabel: Story = {
 
 export const Disabled: Story = {
   render: () => (
-    <InputOTP maxLength={6} defaultValue="123456" disabled>
+    <InputOTP
+      maxLength={6}
+      defaultValue="123456"
+      aria-label="Enter verification code"
+      disabled
+    >
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -86,5 +95,20 @@ export const Disabled: Story = {
         <InputOTPSlot index={5} />
       </InputOTPGroup>
     </InputOTP>
+  ),
+};
+
+export const FullWidth: Story = {
+  render: () => (
+    <div className="grid w-96 gap-2">
+      <Label htmlFor="otp-full-width">Verification code</Label>
+      <InputOTP id="otp-full-width" maxLength={6} containerClassName="w-full">
+        <InputOTPGroup className="w-full">
+          {Array.from({ length: 6 }, (_, index) => (
+            <InputOTPSlot key={index} index={index} className="w-auto flex-1" />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+    </div>
   ),
 };

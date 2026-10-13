@@ -192,7 +192,7 @@
     "continueAsGuestAction": "Folytatás vendégként",
     "accountOptionHeading": "Fiókkal",
     "policyConsentShort": "Elfogadom a <tos>szolgáltatási feltételeket</tos> és az <privacy>adatvédelmi szabályzatot</privacy>.",
-    "codeLabel": "Kód",
+    "codeLabel": "Add meg az ellenőrző kódot",
     "codeSentToPhone": "Kódot küldtünk a(z) {phone} számra",
     "codeSentToEmail": "Kódot küldtünk a(z) {email} címre",
     "verifyAction": "Ellenőrzés és folytatás",

@@ -102,7 +102,7 @@ describe('AuthCodeField', () => {
     expect(countSlots(container)).toBe(10);
 
     const input = screen.getByRole<HTMLInputElement>('textbox', {
-      name: 'Code',
+      name: 'Enter verification code',
     });
     await userEvent.type(input, '5404043206');
 
@@ -126,7 +126,7 @@ describe('AuthCodeField', () => {
     renderCodeField({ AuthCodeField, channel: 'email', onSubmit });
 
     const input = screen.getByRole<HTMLInputElement>('textbox', {
-      name: 'Code',
+      name: 'Enter verification code',
     });
     await userEvent.click(input);
     await userEvent.paste(' 5404043206\n');
@@ -156,11 +156,28 @@ describe('AuthCodeField', () => {
     expect(countSlots(container)).toBe(6);
 
     const input = screen.getByRole<HTMLInputElement>('textbox', {
-      name: 'Code',
+      name: 'Enter verification code',
     });
     await userEvent.type(input, '234567');
 
     expect(input.value).toBe('234567');
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows an "Enter verification code" label linked to the code field', async () => {
+    const AuthCodeField = await loadAuthCodeField({
+      emailLength: 6,
+      smsLength: 6,
+    });
+    renderCodeField({ AuthCodeField, channel: 'email', onSubmit: vi.fn() });
+
+    const label = screen.getByText('Enter verification code');
+    const input = screen.getByLabelText<HTMLInputElement>(
+      'Enter verification code',
+    );
+
+    expect(label.tagName).toBe('LABEL');
+    expect(label.getAttribute('for')).toBe(input.id);
+    expect(input.getAttribute('aria-label')).toBeNull();
   });
 });

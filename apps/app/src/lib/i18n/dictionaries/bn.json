@@ -192,7 +192,7 @@
     "continueAsGuestAction": "অতিথি হিসেবে চালিয়ে যান",
     "accountOptionHeading": "অ্যাকাউন্ট দিয়ে",
     "policyConsentShort": "আমি <tos>সেবার শর্তাবলী</tos> এবং <privacy>গোপনীয়তা নীতি</privacy>তে সম্মত।",
-    "codeLabel": "কোড",
+    "codeLabel": "যাচাইকরণ কোড লিখুন",
     "codeSentToPhone": "{phone}-এ একটি কোড পাঠানো হয়েছে",
     "codeSentToEmail": "{email}-এ একটি কোড পাঠানো হয়েছে",
     "verifyAction": "যাচাই করুন এবং এগিয়ে যান",

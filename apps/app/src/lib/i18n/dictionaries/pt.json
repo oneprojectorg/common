@@ -192,7 +192,7 @@
     "continueAsGuestAction": "Continuar como convidado",
     "accountOptionHeading": "Com uma conta",
     "policyConsentShort": "Concordo com os <tos>Termos de Serviço</tos> e a <privacy>Política de Privacidade</privacy>.",
-    "codeLabel": "Código",
+    "codeLabel": "Insira o código de verificação",
     "codeSentToPhone": "Enviamos um código para {phone}",
     "codeSentToEmail": "Enviamos um código para {email}",
     "verifyAction": "Verificar e continuar",
