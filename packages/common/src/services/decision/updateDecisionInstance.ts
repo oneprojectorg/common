@@ -12,7 +12,12 @@ import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
@@ -149,6 +154,11 @@ export const updateDecisionInstance = async ({
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
   const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
+  const existingInstanceData =
+    existingInstance.instanceData as DecisionInstanceData;
+  // Legacy rows predate `phases`.
+  let nextPhases = existingInstanceData.phases ?? [];
+
   if (
     hasConfigUpdate ||
     hasOverviewUpdate ||
@@ -156,9 +166,6 @@ export const updateDecisionInstance = async ({
     hasProposalTemplateUpdate ||
     hasRubricTemplateUpdate
   ) {
-    const existingInstanceData =
-      existingInstance.instanceData as DecisionInstanceData;
-
     let updatedInstanceData: DecisionInstanceData = { ...existingInstanceData };
 
     // Apply config updates (merge with existing config)
@@ -253,6 +260,7 @@ export const updateDecisionInstance = async ({
         }
         return merged;
       });
+      nextPhases = updatedInstanceData.phases;
     }
 
     // Apply proposal template update (replace entirely)
@@ -274,6 +282,31 @@ export const updateDecisionInstance = async ({
     updateData.instanceData = updatedInstanceData;
   }
 
+  const isBeingPublished =
+    status === ProcessStatus.PUBLISHED &&
+    existingInstance.status === ProcessStatus.DRAFT;
+  const isUnstarted =
+    isBeingPublished ||
+    (status ?? existingInstance.status) === ProcessStatus.DRAFT;
+
+  if (isBeingPublished && nextPhases.length === 0) {
+    throw new ValidationError('A process needs a phase before it launches', {
+      phases: 'Add a phase',
+    });
+  }
+
+  // A blank draft has no current phase, and a draft can delete its current
+  // one; either way it starts on its first phase.
+  if (
+    isUnstarted &&
+    (hasPhaseUpdates || isBeingPublished) &&
+    !nextPhases.some(
+      (phase) => phase.phaseId === existingInstance.currentStateId,
+    )
+  ) {
+    updateData.currentStateId = nextPhases[0]?.phaseId ?? null;
+  }
+
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {
     // Nothing to update, just return the existing profile
@@ -290,10 +323,6 @@ export const updateDecisionInstance = async ({
 
     return { profile, phaseEndDateChanges, didPublish: false };
   }
-
-  const isBeingPublished =
-    status === ProcessStatus.PUBLISHED &&
-    existingInstance.status === ProcessStatus.DRAFT;
 
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
