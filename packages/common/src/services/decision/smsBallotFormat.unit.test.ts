@@ -7,6 +7,7 @@ import {
   formatSmsPickConfirmation,
   formatSmsProposalInfo,
   formatSmsProposalPage,
+  SMS_MAX_BODY_LENGTH,
 } from './smsBallotFormat';
 
 const proposal = (
@@ -40,7 +41,7 @@ describe('formatSmsProposalPage', () => {
     proposal(String(101 + i), `Proposal ${i + 1}`, (i + 1) * 10_000),
   );
 
-  it('given the first page, then it counts the proposals and asks for MORE', () => {
+  it('given the first of two pages, then it counts the proposals and ends on the last line of the page', () => {
     const { body, hasMore } = formatSmsProposalPage({
       decisionName: 'Park',
       proposals,
@@ -54,7 +55,6 @@ describe('formatSmsProposalPage', () => {
       '103 Proposal 3 $30k',
       '104 Proposal 4 $40k',
       '105 Proposal 5 $50k',
-      'Reply MORE for the next ones, or INFO plus a code.',
     ]);
   });
 
@@ -106,6 +106,18 @@ describe('formatSmsProposalInfo', () => {
     expect(formatSmsProposalInfo(proposal('218', 'Bike lane', null))).toBe(
       '218: "Bike lane". Text 218 to add it to your ballot.',
     );
+  });
+
+  it('given a summary longer than one text can carry, then the summary is cut so the whole body fits and the call to action survives', () => {
+    const summary = Array.from({ length: 400 }, () => 'words').join(' ');
+
+    const body = formatSmsProposalInfo(
+      proposal('218', 'Bike lane', 310_000, summary),
+    );
+
+    expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+    expect(body.startsWith('218: "Bike lane" ($310,000). words')).toBe(true);
+    expect(body.endsWith('… Text 218 to add it to your ballot.')).toBe(true);
   });
 });
 

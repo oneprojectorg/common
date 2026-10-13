@@ -8,7 +8,7 @@ import {
 } from '@op/db/schema';
 
 import { resolveAccessUserIds } from '../access';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
 import { isVotingPhase } from './utils/phaseSettings';
 
 export interface SmsDecisionListItem {
@@ -52,7 +52,7 @@ export async function listSmsDecisions({
     .orderBy(asc(profiles.name), asc(profiles.id));
 
   return rows.map(({ name, slug, instanceData, currentStateId }) => {
-    const phases = (instanceData as DecisionInstanceData | null)?.phases ?? [];
+    const phases = getInstancePhases(instanceData);
     const currentPhase = phases.find(
       (phase) => phase.phaseId === currentStateId,
     );

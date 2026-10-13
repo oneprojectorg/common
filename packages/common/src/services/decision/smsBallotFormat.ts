@@ -52,20 +52,28 @@ export const formatSmsProposalPage = ({
     [code, title, formatSmsShortCost(cost, currency)].filter(Boolean).join(' '),
   );
   const footer = hasMore
-    ? 'Reply MORE for the next ones, or INFO plus a code.'
-    : 'Text a code to add it to your ballot, or INFO plus a code.';
+    ? []
+    : ['Text a code to add it to your ballot, or INFO plus a code.'];
 
-  return { body: [heading, ...lines, footer].join('\n'), hasMore };
+  return { body: [heading, ...lines, ...footer].join('\n'), hasMore };
 };
 
-export const formatSmsProposalInfo = (proposal: SmsBallotProposal): string =>
-  [
-    `${proposal.code}: ${withCost(proposal.title, proposal.cost, proposal.currency)}.`,
-    proposal.summary,
-    `Text ${proposal.code} to add it to your ballot.`,
-  ]
-    .filter(Boolean)
-    .join(' ');
+export const SMS_MAX_BODY_LENGTH = 1600;
+
+const fitSummary = (summary: string, room: number): string =>
+  summary.length <= room
+    ? summary
+    : `${summary.slice(0, Math.max(0, room - 1)).trimEnd()}…`;
+
+export const formatSmsProposalInfo = (proposal: SmsBallotProposal): string => {
+  const heading = `${proposal.code}: ${withCost(proposal.title, proposal.cost, proposal.currency)}.`;
+  const action = `Text ${proposal.code} to add it to your ballot.`;
+  const room = SMS_MAX_BODY_LENGTH - heading.length - action.length - 2;
+  const summary =
+    proposal.summary && room > 1 ? fitSummary(proposal.summary, room) : null;
+
+  return [heading, summary, action].filter(Boolean).join(' ');
+};
 
 export const formatSmsBallotWelcome = ({
   decisionName,

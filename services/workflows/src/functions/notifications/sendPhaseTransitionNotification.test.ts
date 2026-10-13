@@ -4,6 +4,10 @@ import { Events, inngest } from '@op/events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  recordedEmails,
+  resetRecordedEmails,
+} from '../../../testing/mocks/email';
+import {
   SmsVotingFixture,
   VOTING_PHASE_ID,
 } from '../../../testing/smsVotingFixture';
@@ -25,9 +29,7 @@ const transition = (processInstanceId: string) => ({
   },
 });
 
-const emailsSent = { id: 'send-emails', handler: () => ({ sent: 1 }) };
-
-const emailsFailed = {
+const emailStepFailedAfterRetries = {
   id: 'send-emails',
   handler: () => {
     throw new Error('Phase transition email batch failed for 1 recipient(s)');
@@ -65,6 +67,7 @@ const seedInstance = async (
 };
 
 beforeEach(() => {
+  resetRecordedEmails();
   vi.spyOn(inngest, 'send').mockResolvedValue({ ids: [] });
 });
 
@@ -78,7 +81,7 @@ describe('sendPhaseTransitionNotification against the database', () => {
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
-    const { phoneOnly, instanceId } = await seedInstance(
+    const { owner, phoneOnly, instanceId } = await seedInstance(
       fixture,
       NUMBERS.singleProposal,
       { maxVotesPerMember: 1, proposalTitles: ['Fund the park'] },
@@ -89,12 +92,15 @@ describe('sendPhaseTransitionNotification against the database', () => {
 
     const { result } = await t.execute({
       events: [transition(instanceId)],
-      steps: [emailsSent],
     });
 
     expect(result).toEqual({
       message: '1 phase transition notification(s) sent',
     });
+    expect(recordedEmails.map((email) => email.to)).toEqual([owner.email]);
+    expect(recordedEmails[0]?.idempotencyKeyPrefix).toMatch(
+      /^phase-transition\//,
+    );
     expect(sentEvents()).toEqual([
       {
         name: Events.voteSmsBallotRequested.name,
@@ -126,7 +132,6 @@ describe('sendPhaseTransitionNotification against the database', () => {
 
     const { error } = await t.execute({
       events: [transition(instanceId)],
-      steps: [emailsSent],
     });
 
     expect(error).toBeUndefined();
@@ -154,7 +159,6 @@ describe('sendPhaseTransitionNotification against the database', () => {
 
     const { error } = await t.execute({
       events: [transition(instanceId)],
-      steps: [emailsSent],
     });
 
     expect(error).toBeUndefined();
@@ -185,7 +189,7 @@ describe('sendPhaseTransitionNotification against the database', () => {
 
     const { result } = await t.execute({
       events: [transition(instanceId)],
-      steps: [emailsFailed],
+      steps: [emailStepFailedAfterRetries],
     });
 
     expect(result).toEqual({

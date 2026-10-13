@@ -15,7 +15,6 @@ import { smsNumberRateLimit } from './smsInboundLimits';
 
 const HELP_MESSAGE =
   'Text PROPOSALS followed by the decision name, for example PROPOSALS columbus.';
-const MORE_TIMEOUT = '10m';
 const { smsInboundReceived } = Events;
 
 export const handleSmsProposalsCommand = inngest.createFunction(
@@ -113,26 +112,11 @@ export const handleSmsProposalsCommand = inngest.createFunction(
     const pageCount = Math.ceil(proposals.length / SMS_PROPOSALS_PAGE_SIZE);
 
     for (let page = 0; page < pageCount; page++) {
-      const { body, hasMore } = formatSmsProposalPage({
-        decisionName: decision.name,
-        proposals,
-        page,
-      });
-      await text(`send-page-${page + 1}`, body);
-
-      if (!hasMore) {
-        return { message: 'proposals sent', pages: page + 1 };
-      }
-
-      const more = await step.waitForEvent(`wait-for-more-${page + 1}`, {
-        event: smsInboundReceived.name,
-        if: 'event.data.from == async.data.from && async.data.keyword == "more"',
-        timeout: MORE_TIMEOUT,
-      });
-
-      if (!more) {
-        return { message: 'proposals sent', pages: page + 1 };
-      }
+      await text(
+        `send-page-${page + 1}`,
+        formatSmsProposalPage({ decisionName: decision.name, proposals, page })
+          .body,
+      );
     }
 
     return { message: 'proposals sent', pages: pageCount };
