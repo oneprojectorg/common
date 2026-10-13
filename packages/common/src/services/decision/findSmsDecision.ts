@@ -5,6 +5,10 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import {
+  type PhaseInstanceData,
+  getInstancePhases,
+} from './schemas/instanceData';
 
 export interface SmsDecision {
   profileId: string;
@@ -12,6 +16,7 @@ export interface SmsDecision {
   name: string;
   slug: string;
   url: string;
+  currentPhase: PhaseInstanceData | null;
 }
 
 export const decisionUrl = (slug: string): string =>
@@ -27,7 +32,11 @@ export async function findSmsDecision({
   const profile = await db.query.profiles.findFirst({
     where: { slug, type: EntityType.DECISION },
     columns: { id: true, name: true, slug: true },
-    with: { processInstance: { columns: { id: true } } },
+    with: {
+      processInstance: {
+        columns: { id: true, instanceData: true, currentStateId: true },
+      },
+    },
   });
 
   if (!profile?.processInstance) {
@@ -50,11 +59,18 @@ export async function findSmsDecision({
     throw error;
   }
 
+  const { id, instanceData, currentStateId } = profile.processInstance;
+  const currentPhase =
+    getInstancePhases(instanceData).find(
+      (phase) => phase.phaseId === currentStateId,
+    ) ?? null;
+
   return {
     profileId: profile.id,
-    processInstanceId: profile.processInstance.id,
+    processInstanceId: id,
     name: profile.name,
     slug: profile.slug,
     url: decisionUrl(profile.slug),
+    currentPhase,
   };
 }

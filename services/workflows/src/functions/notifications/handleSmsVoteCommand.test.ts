@@ -15,6 +15,7 @@ const NUMBERS = {
   votingClosed: '+15005550046',
   outsider: '+15005550044',
   stranger: '+15005550045',
+  reader: '+15005550047',
 } as const;
 
 const voteCommand = (from: PhoneNumber, argument: string | null) => ({
@@ -197,18 +198,20 @@ describe('handleSmsVoteCommand against the database', () => {
     expect(sentEvents()).toEqual([]);
   });
 
-  it('given a confirmed account that is not a member of the decision, then they are told they are not a participant', async ({
+  it('given a confirmed account with no access to a private decision, when they text VOTE and its slug, then they are told it was not found and its name is not revealed', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.outsider);
-    const outsider = await fixture.createPhoneOnlyAccount(phone);
+    await fixture.createPhoneOnlyAccount(phone);
     const owner = await fixture.createEmailAccount();
+    const name = `Board Layoffs ${task.id}`;
     const { slug } = await fixture.createVotingInstance({
       owner,
       maxVotesPerMember: 1,
       proposalTitles: ['Fund the park'],
+      name,
     });
     const t = new InngestTestEngine({ function: handleSmsVoteCommand });
 
@@ -216,16 +219,49 @@ describe('handleSmsVoteCommand against the database', () => {
       events: [voteCommand(phone, slug)],
     });
 
-    expect(result).toEqual({ message: 'not a participant' });
+    expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms).toEqual([
       {
         to: phone,
-        body: expect.stringContaining('not a participant'),
+        body: expect.stringContaining(slug),
+        providerMessageId: expect.any(String),
+      },
+    ]);
+    expect(recordedSms[0]?.body).not.toContain(name);
+    expect(sentEvents()).toEqual([]);
+  });
+
+  it('given a public decision that is open to read but not to vote, when a non-member texts VOTE and its slug, then they are told they cannot vote in it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.reader);
+    await fixture.createPhoneOnlyAccount(phone);
+    const owner = await fixture.createEmailAccount();
+    const name = `Open Reading ${task.id}`;
+    const { instanceProfileId, slug } = await fixture.createVotingInstance({
+      owner,
+      maxVotesPerMember: 1,
+      proposalTitles: ['Fund the park'],
+      name,
+    });
+    await fixture.makePublic(instanceProfileId, { vote: false });
+    const t = new InngestTestEngine({ function: handleSmsVoteCommand });
+
+    const { result } = await t.execute({
+      events: [voteCommand(phone, slug)],
+    });
+
+    expect(result).toEqual({ message: 'not allowed to vote' });
+    expect(recordedSms).toEqual([
+      {
+        to: phone,
+        body: `You cannot vote in "${name}".`,
         providerMessageId: expect.any(String),
       },
     ]);
     expect(sentEvents()).toEqual([]);
-    expect(outsider.authUserId).toEqual(expect.any(String));
   });
 
   it('given a number with no account texts VOTE, then nothing is sent and no prompt is requested', async () => {

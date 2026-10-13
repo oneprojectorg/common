@@ -18,6 +18,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
+import { DECISION_BITS, PERMISSIONS } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
@@ -192,8 +193,17 @@ export class SmsVotingFixture {
     });
   }
 
-  async makePublic(instanceProfileId: string) {
-    await makeDecisionPublic({ profileId: instanceProfileId });
+  async makePublic(
+    instanceProfileId: string,
+    { vote = true }: { vote?: boolean } = {},
+  ) {
+    await makeDecisionPublic({
+      profileId: instanceProfileId,
+      permissionBits:
+        PERMISSIONS.READ |
+        DECISION_BITS.SUBMIT_PROPOSALS |
+        (vote ? DECISION_BITS.VOTE : 0),
+    });
   }
 
   private async cleanup() {
