@@ -245,10 +245,18 @@ const getThreadRootPostId = async (post: {
       columns: { id: true, parentPostId: true, rootPostId: true },
     });
     if (!parent) {
+      // Parent links cascade on delete, so this means the rows disagree.
+      logger.warn('Post parent is missing; treating post as thread root', {
+        postId: current.id,
+      });
       return current.id;
     }
     current = parent;
   }
+  logger.warn('Post thread exceeds max depth; treating post as thread root', {
+    postId: post.id,
+    maxDepth: MAX_THREAD_DEPTH,
+  });
   return current.id;
 };
 
