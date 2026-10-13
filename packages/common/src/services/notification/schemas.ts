@@ -101,6 +101,7 @@ const argumentKeywordPattern = (keyword: string) =>
   new RegExp(`^${keyword}(?=[.!:,\\s]|$)`, 'i');
 
 const ARGUMENT_SEPARATOR_PATTERN = /^[.!:,]/;
+const ARGUMENT_TERMINATOR_PATTERN = /[.!]+$/;
 const PICK_CODES_PATTERN = /^\d{3}(?:[\s,]+\d{3})*[.!]?$/;
 const CODE_PATTERN = /\d{3}/g;
 
@@ -121,6 +122,7 @@ export const parseSmsCommand = (body: string): SmsCommand => {
     const argument = text
       .slice(withArgument.length)
       .replace(ARGUMENT_SEPARATOR_PATTERN, '')
+      .replace(ARGUMENT_TERMINATOR_PATTERN, '')
       .trim()
       .toLowerCase();
     return {

@@ -237,7 +237,17 @@ describe('parseSmsCommand', () => {
       });
       expect(parseSmsCommand(`${keyword}: 218!`)).toEqual({
         keyword,
-        argument: '218!',
+        argument: '218',
+        codes: [],
+      });
+      expect(parseSmsCommand(`${keyword} 101.`)).toEqual({
+        keyword,
+        argument: '101',
+        codes: [],
+      });
+      expect(parseSmsCommand(`${keyword} columbus.`)).toEqual({
+        keyword,
+        argument: 'columbus',
         codes: [],
       });
       expect(parseSmsCommand(keyword)).toEqual(bare(keyword));

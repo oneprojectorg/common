@@ -25,20 +25,6 @@ const proposalsCommand = (from: PhoneNumber, argument: string) => ({
   },
 });
 
-const more = (from: PhoneNumber, page: number) => ({
-  id: `wait-for-more-${page}`,
-  handler: () => ({
-    data: {
-      from,
-      messageSid: `SM-more-${from}-${page}`,
-      code: null,
-      keyword: 'more',
-      argument: null,
-      codes: [],
-    },
-  }),
-});
-
 beforeEach(() => {
   resetRecordedSms();
 });
@@ -76,7 +62,7 @@ describe('handleSmsProposalsCommand against the database', () => {
     expect(body).not.toContain('Left behind');
   });
 
-  it('given seven proposals, when a member texts PROPOSALS and the slug, then they get a page of five and the rest after MORE', async ({
+  it('given seven proposals, when a member texts PROPOSALS and the slug, then they get a page of five and a page of two at once', async ({
     task,
     onTestFinished,
   }) => {
@@ -97,7 +83,6 @@ describe('handleSmsProposalsCommand against the database', () => {
 
     const { result } = await t.execute({
       events: [proposalsCommand(phone, slug)],
-      steps: [more(phone, 1)],
     });
 
     expect(result).toEqual({ message: 'proposals sent', pages: 2 });
@@ -110,7 +95,6 @@ describe('handleSmsProposalsCommand against the database', () => {
         '103 Proposal 3 $30k',
         '104 Proposal 4 $40k',
         '105 Proposal 5 $50k',
-        'Reply MORE for the next ones, or INFO plus a code.',
       ].join('\n'),
     );
     expect(second).toBe(

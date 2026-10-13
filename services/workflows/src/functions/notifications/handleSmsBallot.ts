@@ -1,12 +1,11 @@
 import {
-  type DecisionInstanceData,
   type SmsBallotProposal,
   type SmsFailureReason,
+  CommonError,
   RateLimitError,
   SMS_BALLOT_SUBMITTED,
   SMS_PROPOSALS_PAGE_SIZE,
   UnauthorizedError,
-  ValidationError,
   assertVoteAccess,
   formatSmsBallot,
   formatSmsBallotWelcome,
@@ -15,6 +14,7 @@ import {
   formatSmsPicksLeft,
   formatSmsProposalInfo,
   formatSmsProposalPage,
+  getInstancePhases,
   getSmsProvider,
   getSmsVotability,
   listSmsBallotProposals,
@@ -79,8 +79,7 @@ export const handleSmsBallot = inngest.createFunction(
           return null;
         }
 
-        const instanceData = instance.instanceData as DecisionInstanceData;
-        const phase = instanceData?.phases?.find(
+        const phase = getInstancePhases(instance.instanceData).find(
           (candidate) => candidate.phaseId === instance.currentStateId,
         );
         const votability = await getSmsVotability({ processInstanceId, phase });
@@ -183,9 +182,6 @@ export const handleSmsBallot = inngest.createFunction(
     const byCode = new Map(
       proposals.map((proposal) => [proposal.code, proposal]),
     );
-    let page = 0;
-    let paging: 'ballot' | 'command' | null = null;
-
     const submitBallot = async () => {
       const outcome = await step.run('submit-ballot', async () => {
         try {
@@ -202,10 +198,7 @@ export const handleSmsBallot = inngest.createFunction(
             voteSubmissionId: submission.id,
           };
         } catch (error) {
-          if (
-            error instanceof ValidationError ||
-            error instanceof UnauthorizedError
-          ) {
+          if (error instanceof CommonError) {
             return { status: 'rejected' as const, reason: error.message };
           }
           throw error;
@@ -273,6 +266,14 @@ export const handleSmsBallot = inngest.createFunction(
         .join(' ');
     };
 
+    const expire = async (message: 'ballot expired' | 'ballot abandoned') => {
+      await text(
+        'send-ballot-expired',
+        `Your ballot for "${decisionName}" was not submitted.${context.slug ? ` Text VOTE ${context.slug} to start again.` : ''}`,
+      );
+      return { message, picks: picks.length };
+    };
+
     for (let turn = 1; turn <= MAX_TURNS; turn++) {
       if (stopped) {
         return stop(stopped);
@@ -289,11 +290,7 @@ export const handleSmsBallot = inngest.createFunction(
           authUserId,
           picks: picks.length,
         });
-        await text(
-          'send-ballot-expired',
-          `Your ballot for "${decisionName}" was not submitted.${context.slug ? ` Text VOTE ${context.slug} to start again.` : ''}`,
-        );
-        return { message: 'ballot expired', picks: picks.length };
+        return expire('ballot expired');
       }
 
       const { keyword, argument, codes } = smsInboundReceived.schema.parse(
@@ -320,12 +317,44 @@ export const handleSmsBallot = inngest.createFunction(
         case 'done':
           await say(formatSmsBallot({ decisionName, picks }));
           continue;
-        case 'submit':
+        case 'submit': {
           if (picks.length === 0) {
             await say(formatSmsBallot({ decisionName, picks }));
             continue;
           }
+          const onBallot = await step.run(`check-picks-${turn}`, async () => {
+            const current = await listSmsBallotProposals({ processInstanceId });
+            return current.map((proposal) => proposal.proposalId);
+          });
+          const dropped = picks.filter(
+            (pick) => !onBallot.includes(pick.proposalId),
+          );
+          if (dropped.length > 0) {
+            picks.splice(
+              0,
+              picks.length,
+              ...picks.filter((pick) => onBallot.includes(pick.proposalId)),
+            );
+            await say(
+              [
+                ...dropped.map(
+                  (pick) =>
+                    `"${pick.title}" is no longer on the ballot and was removed.`,
+                ),
+                picks.length === 0
+                  ? formatSmsBallot({ decisionName, picks })
+                  : [
+                      formatSmsPicksLeft(picks.length, maxVotesPerMember),
+                      'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
+                    ]
+                      .filter(Boolean)
+                      .join(' '),
+              ].join(' '),
+            );
+            continue;
+          }
           return submitBallot();
+        }
         case 'remove': {
           const index = picks.findIndex((pick) => pick.code === argument);
           if (index === -1) {
@@ -346,34 +375,24 @@ export const handleSmsBallot = inngest.createFunction(
           );
           continue;
         }
-        case 'proposals':
+        case 'proposals': {
           if (argument !== null) {
-            paging = 'command';
             continue;
           }
-          page = 0;
-          paging = 'ballot';
-          await say(
-            formatSmsProposalPage({ decisionName, proposals, page }).body,
+          const pageCount = Math.ceil(
+            proposals.length / SMS_PROPOSALS_PAGE_SIZE,
           );
-          continue;
-        case 'more': {
-          if (paging === 'command') {
-            continue;
+          for (let page = 0; page < pageCount; page++) {
+            await text(
+              `reply-${turn}-page-${page + 1}`,
+              formatSmsProposalPage({ decisionName, proposals, page }).body,
+            );
           }
-          if (paging === null) {
-            await say(GUIDANCE);
-            continue;
-          }
-          const nextPage = page + 1;
-          if (nextPage * SMS_PROPOSALS_PAGE_SIZE < proposals.length) {
-            page = nextPage;
-          }
-          await say(
-            formatSmsProposalPage({ decisionName, proposals, page }).body,
-          );
           continue;
         }
+        case 'more':
+          await say(GUIDANCE);
+          continue;
         case 'info': {
           if (argument === null || !CODE_PATTERN.test(argument)) {
             continue;
@@ -399,7 +418,8 @@ export const handleSmsBallot = inngest.createFunction(
     logger.info('SMS ballot reached its turn limit without a submission', {
       processInstanceId,
       authUserId,
+      picks: picks.length,
     });
-    return { message: 'ballot abandoned', picks: picks.length };
+    return expire('ballot abandoned');
   },
 );
