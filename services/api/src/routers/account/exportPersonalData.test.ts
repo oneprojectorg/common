@@ -1,4 +1,5 @@
 import { collectPersonalData } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   customFormSubmissions,
@@ -8,7 +9,6 @@ import {
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
