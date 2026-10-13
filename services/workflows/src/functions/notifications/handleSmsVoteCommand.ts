@@ -1,15 +1,13 @@
 import {
-  type DecisionInstanceData,
   RateLimitError,
   UnauthorizedError,
   assertVoteAccess,
+  findSmsDecision,
   getSmsVotability,
   getPhoneSignupState,
   getSmsProvider,
   safeParsePhoneNumber,
 } from '@op/common';
-import { db } from '@op/db/client';
-import { EntityType } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
@@ -81,39 +79,9 @@ export const handleSmsVoteCommand = inngest.createFunction(
       return { message: 'help sent' };
     }
 
-    const decision = await step.run('find-decision', async () => {
-      const profile = await db.query.profiles.findFirst({
-        where: { slug: argument, type: EntityType.DECISION },
-        columns: { id: true, name: true },
-        with: {
-          processInstance: {
-            columns: { id: true, instanceData: true, currentStateId: true },
-          },
-        },
-      });
-
-      if (!profile?.processInstance) {
-        return null;
-      }
-
-      const instanceData = profile.processInstance
-        .instanceData as DecisionInstanceData;
-      const currentPhase = instanceData?.phases?.find(
-        (phase) => phase.phaseId === profile.processInstance?.currentStateId,
-      );
-
-      const votability = await getSmsVotability({
-        processInstanceId: profile.processInstance.id,
-        phase: currentPhase,
-      });
-
-      return {
-        profileId: profile.id,
-        name: profile.name,
-        processInstanceId: profile.processInstance.id,
-        ...votability,
-      };
-    });
+    const decision = await step.run('find-decision', () =>
+      findSmsDecision({ authUserId: account.authUserId, slug: argument }),
+    );
 
     if (!decision) {
       await text(
@@ -122,26 +90,6 @@ export const handleSmsVoteCommand = inngest.createFunction(
         `No decision named "${argument}" was found.`,
       );
       return { message: 'decision not found' };
-    }
-
-    if (!decision.votingOpen || decision.eligibleProposalCount === 0) {
-      logger.info('VOTE command refused: no ballot by text', {
-        processInstanceId: decision.processInstanceId,
-        votingOpen: decision.votingOpen,
-        eligibleProposalCount: decision.eligibleProposalCount,
-      });
-      await text(
-        'send-unavailable-reply',
-        'Unavailable reply',
-        decision.votingOpen
-          ? `"${decision.name}" has no proposals to vote on.`
-          : `Voting for "${decision.name}" is not open.`,
-      );
-      return {
-        message: 'no ballot by sms',
-        votingOpen: decision.votingOpen,
-        eligibleProposalCount: decision.eligibleProposalCount,
-      };
     }
 
     const canVote = await step.run('check-vote-access', async () => {
@@ -161,11 +109,38 @@ export const handleSmsVoteCommand = inngest.createFunction(
 
     if (!canVote) {
       await text(
-        'send-not-participant-reply',
-        'Not participant reply',
-        `You are not a participant in "${decision.name}".`,
+        'send-cannot-vote-reply',
+        'Cannot vote reply',
+        `You cannot vote in "${decision.name}".`,
       );
-      return { message: 'not a participant' };
+      return { message: 'not allowed to vote' };
+    }
+
+    const votability = await step.run('get-sms-votability', () =>
+      getSmsVotability({
+        processInstanceId: decision.processInstanceId,
+        phase: decision.currentPhase ?? undefined,
+      }),
+    );
+
+    if (!votability.votingOpen || votability.eligibleProposalCount === 0) {
+      logger.info('VOTE command refused: no ballot by text', {
+        processInstanceId: decision.processInstanceId,
+        votingOpen: votability.votingOpen,
+        eligibleProposalCount: votability.eligibleProposalCount,
+      });
+      await text(
+        'send-unavailable-reply',
+        'Unavailable reply',
+        votability.votingOpen
+          ? `"${decision.name}" has no proposals to vote on.`
+          : `Voting for "${decision.name}" is not open.`,
+      );
+      return {
+        message: 'no ballot by sms',
+        votingOpen: votability.votingOpen,
+        eligibleProposalCount: votability.eligibleProposalCount,
+      };
     }
 
     await step.run('request-ballot', () =>
