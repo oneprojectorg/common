@@ -31,7 +31,13 @@ export async function translatePost({
 > {
   const post = await db.query.posts.findFirst({
     where: { id: postId },
-    columns: { id: true, content: true, profileId: true, rootPostId: true },
+    columns: {
+      id: true,
+      content: true,
+      profileId: true,
+      parentPostId: true,
+      rootPostId: true,
+    },
     with: { postsToProfiles: { columns: { profileId: true } } },
   });
 

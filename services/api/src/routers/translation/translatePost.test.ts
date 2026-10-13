@@ -10,8 +10,7 @@ import {
   moderationFlags,
   posts,
 } from '@op/db/schema';
-import { randomUUID } from 'crypto';
-import { eq, like } from 'drizzle-orm';
+import { eq, inArray, like } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -20,11 +19,11 @@ import {
   describeAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { createNonNetworkUser } from '../../test/helpers/nonNetworkUser';
 import { mockTranslateText } from '../../test/mocks/deepl';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-  createTestUser,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -93,22 +92,8 @@ async function createFeedPost(
   return { setup, adminCaller, feedPost };
 }
 
-/** A signed-in user outside the walled garden (no network email domain). */
-async function createNonNetworkCaller(testData: TestDecisionsDataManager) {
-  const email = `non-network-${randomUUID()}@example.com`;
-  const { user } = await createTestUser(email);
-  if (!user) {
-    throw new Error(`Failed to create non-network user: ${email}`);
-  }
-  testData.trackAuthUserForCleanup(user.id);
-  const userRecord = await db.query.users.findFirst({
-    where: { authUserId: user.id },
-  });
-  if (userRecord?.profileId) {
-    testData.trackProfileForCleanup(userRecord.profileId);
-  }
-  return createAuthenticatedCaller(email);
-}
+const createNonNetworkCaller = async (testData: TestDecisionsDataManager) =>
+  createAuthenticatedCaller(await createNonNetworkUser(testData));
 
 async function flagPost(
   onTestFinished: (fn: () => Promise<void>) => void,
@@ -389,6 +374,55 @@ describe('translation.translatePost', () => {
     });
 
     expect(result.content).toBe('[ES] Count me in for the festival.');
+  });
+
+  it('translates a legacy comment on an org-feed post that has no rootPostId', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, feedPost } = await createFeedPost(
+      testData,
+      onTestFinished,
+      'Feed post with a legacy reply thread.',
+    );
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'A comment from before threads pinned their root.',
+      parentPostId: feedPost.id,
+    });
+    const reply = await memberCaller.posts.createPost({
+      content: 'A reply from before threads pinned their root.',
+      parentPostId: comment.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(like(contentTranslations.contentKey, `post:${reply.id}:%`));
+    });
+
+    // Rows written before `rootPostId` existed were never backfilled.
+    await db
+      .update(posts)
+      .set({ rootPostId: null })
+      .where(inArray(posts.id, [comment.id, reply.id]));
+
+    const reader = await testData.createDecisionSetup({ instanceCount: 0 });
+    const readerCaller = await createAuthenticatedCaller(reader.userEmail);
+
+    const result = await readerCaller.translation.translatePost({
+      postId: reply.id,
+      targetLocale: 'es',
+    });
+
+    expect(result.content).toBe(
+      '[ES] A reply from before threads pinned their root.',
+    );
   });
 
   it('rejects a visitor or non-network caller on an org-feed post', async ({

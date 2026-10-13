@@ -1,8 +1,7 @@
 import { db } from '@op/db/client';
-import { EntityType, organizations, postsToOrganizations } from '@op/db/schema';
+import { EntityType } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { checkPermission, permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
@@ -115,7 +114,7 @@ export const assertPostReadAccess = async ({
   }
 };
 
-/** A flagged post is NotFound to everyone but its author and the decision's admins. */
+/** A flagged post is NotFound to everyone but its author and the admins of every profile that moderates it. */
 export const assertCanReadFlaggedPost = async ({
   post,
   user,
@@ -194,10 +193,13 @@ const assertPhaseAllowsComments = async (
 // the walled garden can comment on any org post, regardless of per-org
 // membership. Fails closed when the caller has no resolvable email
 // (anonymous / sentinel callers).
-const assertOnWalledGarden = async (
-  user: AccessUser | undefined,
+const assertOnWalledGarden = async ({
+  user,
   deniedMessage = WRITE_DENIED,
-) => {
+}: {
+  user: AccessUser | undefined;
+  deniedMessage?: string;
+}) => {
   if (!user?.id) {
     throw new UnauthorizedError(deniedMessage);
   }
@@ -212,15 +214,42 @@ const assertOnWalledGarden = async (
 // root post's `postsToOrganizations` links. Empty when the thread is not on any
 // org's feed.
 const getOrgFeedThreadProfileIds = async (rootPostId: string) => {
-  const links = await db
-    .select({ profileId: organizations.profileId })
-    .from(postsToOrganizations)
-    .innerJoin(
-      organizations,
-      eq(organizations.id, postsToOrganizations.organizationId),
-    )
-    .where(eq(postsToOrganizations.postId, rootPostId));
-  return links.map(({ profileId }) => profileId);
+  const links = await db.query.postsToOrganizations.findMany({
+    where: { postId: rootPostId },
+    columns: {},
+    with: { organization: { columns: { profileId: true } } },
+  });
+  return links.map(({ organization }) => organization.profileId);
+};
+
+// Comments written before `rootPostId` existed have it null, so walk their
+// parents up to the thread's top-level post. Threads are at most a few levels
+// deep; the cap only guards against a malformed parent cycle.
+const MAX_THREAD_DEPTH = 10;
+
+const getThreadRootPostId = async (post: {
+  id: string;
+  parentPostId: string | null;
+  rootPostId: string | null;
+}) => {
+  let current = post;
+  for (let depth = 0; depth < MAX_THREAD_DEPTH; depth++) {
+    if (current.rootPostId) {
+      return current.rootPostId;
+    }
+    if (!current.parentPostId) {
+      return current.id;
+    }
+    const parent = await db.query.posts.findFirst({
+      where: { id: current.parentPostId },
+      columns: { id: true, parentPostId: true, rootPostId: true },
+    });
+    if (!parent) {
+      return current.id;
+    }
+    current = parent;
+  }
+  return current.id;
 };
 
 /**
@@ -240,6 +269,7 @@ export const assertPostReadAccessForPost = async ({
   user: AccessUser | undefined;
   post: {
     id: string;
+    parentPostId: string | null;
     rootPostId: string | null;
     postsToProfiles: { profileId: string }[];
   };
@@ -258,15 +288,15 @@ export const assertPostReadAccessForPost = async ({
   }
 
   const orgProfileIds = await getOrgFeedThreadProfileIds(
-    post.rootPostId ?? post.id,
+    await getThreadRootPostId(post),
   );
   if (orgProfileIds.length === 0) {
     throw new UnauthorizedError(READ_DENIED);
   }
 
-  await assertOnWalledGarden(user, READ_DENIED);
+  await assertOnWalledGarden({ user, deniedMessage: READ_DENIED });
 
-  return { moderationProfileIds: post.rootPostId ? [] : orgProfileIds };
+  return { moderationProfileIds: post.parentPostId ? [] : orgProfileIds };
 };
 
 // Asserts a caller's WRITE access for a new post, dispatching on the
@@ -301,7 +331,7 @@ export const assertPostWriteAccess = async ({
     if (orgProfileIds.length === 0) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    await assertOnWalledGarden(user);
+    await assertOnWalledGarden({ user });
     return;
   }
 
@@ -366,7 +396,7 @@ export const assertPostWriteAccess = async ({
         });
         return;
       }
-      await assertOnWalledGarden(user);
+      await assertOnWalledGarden({ user });
       return;
 
     // INDIVIDUAL / USER profiles aren't a supported posting surface yet.

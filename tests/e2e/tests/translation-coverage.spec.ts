@@ -78,6 +78,9 @@ const COMMENT_ES =
 const FEED_POST_ES =
   'Este sábado organizamos una jornada de voluntariado en la huerta comunitaria. Traed guantes y agua; nosotros ponemos las herramientas y el almuerzo para todos.';
 
+const FEED_COMMENT_ES =
+  'Allí estaré con mis hijos. Llevaremos semillas de tomate y lechuga para plantar en los bancales nuevos del fondo de la huerta.';
+
 const REVIEW_NOTE_ES =
   'La propuesta es clara y el presupuesto es razonable, pero falta explicar quién se encargará del mantenimiento de la huerta durante el invierno.';
 
@@ -904,6 +907,47 @@ test.describe('UGC translation coverage', () => {
     await expect(
       page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toHaveCount(1);
+  });
+
+  test('a Spanish feed post and its comment each offer a link on the post page', async ({
+    cleanup,
+    org,
+    signIn,
+  }) => {
+    const [feedPost] = await db
+      .insert(posts)
+      .values({ content: FEED_POST_ES })
+      .returning();
+    if (!feedPost) {
+      throw new Error('Failed to seed the feed post');
+    }
+    cleanup(async () => {
+      await db.delete(posts).where(eq(posts.id, feedPost.id));
+    });
+    await db
+      .insert(postsToOrganizations)
+      .values({ postId: feedPost.id, organizationId: org.organization.id });
+    await db.insert(posts).values({
+      content: FEED_COMMENT_ES,
+      parentPostId: feedPost.id,
+      rootPostId: feedPost.id,
+      profileId: org.adminUser.profileId,
+    });
+
+    const page = await signIn(org.adminUser);
+
+    await page.goto(
+      `/en/profile/${org.organizationProfile.slug}/posts/${feedPost.id}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.getByText('Allí estaré con mis hijos')).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
+
+    // The post at the top and the comment under it each carry their own link.
+    await expect(
+      page.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toHaveCount(2);
   });
 
   test('no translation is offered when every surface is already in English', async ({

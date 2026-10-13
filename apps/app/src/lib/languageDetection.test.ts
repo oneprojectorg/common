@@ -38,4 +38,15 @@ describe('detectLanguages', () => {
       ),
     ).toEqual(['hu']);
   });
+
+  it('ignores URLs, which are not written in any language', () => {
+    expect(
+      detectLanguages('https://www.example.com/news/2024/community-garden'),
+    ).toEqual([]);
+    expect(
+      detectLanguages(
+        'This is a fairly long English sentence about https://www.example.com/actualites/jardin-communautaire that the detector should recognize.',
+      ),
+    ).toEqual(['en']);
+  });
 });

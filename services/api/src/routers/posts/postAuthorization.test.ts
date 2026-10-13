@@ -1,14 +1,13 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { postReactions, posts, postsToProfiles } from '@op/db/schema';
-import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
+import { createNonNetworkUser } from '../../test/helpers/nonNetworkUser';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-  createTestUser,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -30,26 +29,8 @@ const createOutsiderCaller = async (testData: TestDecisionsDataManager) => {
   return createAuthenticatedCaller(outsider.email);
 };
 
-// Confirmed, signed-in user with a non-network email — i.e., NOT in the
-// walled garden (no allowedEmailDomains match, no allow-list entry). Used
-// to exercise the walled-garden denial path on `posts.createPost` org
-// comments. Cleanup is registered via the TestDecisionsDataManager so the
-// user / profile row gets torn down with the rest of the test data.
-const createNonNetworkCaller = async (testData: TestDecisionsDataManager) => {
-  const email = `non-network-${randomUUID()}@example.com`;
-  const { user } = await createTestUser(email);
-  if (!user) {
-    throw new Error(`Failed to create non-network user: ${email}`);
-  }
-  testData.trackAuthUserForCleanup(user.id);
-  const userRecord = await db.query.users.findFirst({
-    where: { authUserId: user.id },
-  });
-  if (userRecord?.profileId) {
-    testData.trackProfileForCleanup(userRecord.profileId);
-  }
-  return createAuthenticatedCaller(email);
-};
+const createNonNetworkCaller = async (testData: TestDecisionsDataManager) =>
+  createAuthenticatedCaller(await createNonNetworkUser(testData));
 
 const fetchPostRoots = async (postId: string) => {
   const [row] = await db
