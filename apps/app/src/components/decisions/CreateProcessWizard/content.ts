@@ -9,10 +9,6 @@ import type {
   WizardCopyKey,
 } from './types';
 
-/** Must match `createInstanceFromTemplate`'s bounds. */
-export const MIN_PROCESS_NAME_LENGTH = 3;
-export const MAX_PROCESS_NAME_LENGTH = 256;
-
 export const PHASE_TYPE_LABEL: Record<PhaseType, WizardCopyKey> = {
   submissions: 'submissionsPhase',
   review: 'reviewPhase',
