@@ -51,15 +51,7 @@ export function OtherStep({
               ? answers.subjects.filter((subject) => subject !== key)
               : [...answers.subjects, key];
 
-            onChange({
-              subjects: next,
-              focus:
-                answers.focus && next.includes(answers.focus)
-                  ? answers.focus
-                  : null,
-              submits: null,
-              elseText: next.includes('else') ? answers.elseText : '',
-            });
+            onChange({ subjects: next });
           }}
           renderDetail={(key) =>
             key === 'else' ? (
@@ -91,12 +83,7 @@ export function OtherStep({
           idPrefix="other-cadence"
           options={CADENCE_OPTIONS}
           value={answers.cadence}
-          onChange={(key) =>
-            onChange({
-              cadence: key,
-              ...(key === 'ongoing' ? { focus: null, submits: null } : {}),
-            })
-          }
+          onChange={(key) => onChange({ cadence: key })}
         />
         <div aria-live="polite">
           {answers.cadence === 'ongoing' ? (
@@ -123,7 +110,7 @@ export function OtherStep({
           idPrefix="other-focus"
           options={picked}
           value={answers.focus}
-          onChange={(key) => onChange({ focus: key, submits: null })}
+          onChange={(key) => onChange({ focus: key })}
         />
       </div>
     );
