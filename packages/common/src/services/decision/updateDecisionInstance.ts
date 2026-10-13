@@ -12,23 +12,17 @@ import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
-import {
-  type DecisionInstanceData,
-  type InstanceOverview,
-  type InstanceOverviewUpdate,
-  type PhaseOverride,
-  getInstancePhases,
+import type {
+  DecisionInstanceData,
+  InstanceOverview,
+  InstanceOverviewUpdate,
+  PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import type { RubricTemplateSchema } from './types';
@@ -155,11 +149,6 @@ export const updateDecisionInstance = async ({
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
   const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
-  // Legacy rows predate `phases` and keep their own current state.
-  const tracksPhases =
-    hasPhaseUpdates || hasPhaseList(existingInstance.instanceData);
-  let nextPhases = getInstancePhases(existingInstance.instanceData);
-
   if (
     hasConfigUpdate ||
     hasOverviewUpdate ||
@@ -264,7 +253,6 @@ export const updateDecisionInstance = async ({
         }
         return merged;
       });
-      nextPhases = updatedInstanceData.phases;
     }
 
     // Apply proposal template update (replace entirely)
@@ -286,30 +274,6 @@ export const updateDecisionInstance = async ({
     updateData.instanceData = updatedInstanceData;
   }
 
-  const isBeingPublished =
-    status === ProcessStatus.PUBLISHED &&
-    existingInstance.status === ProcessStatus.DRAFT;
-  const isUnstarted =
-    isBeingPublished ||
-    (status ?? existingInstance.status) === ProcessStatus.DRAFT;
-
-  if (tracksPhases && isBeingPublished && nextPhases.length === 0) {
-    throw new ValidationError('A process needs a phase before it launches', {
-      phases: 'Add a phase',
-    });
-  }
-
-  // An unstarted process starts on its first phase, however its phases changed.
-  const firstPhaseId = nextPhases[0]?.phaseId ?? null;
-  if (
-    tracksPhases &&
-    isUnstarted &&
-    (hasPhaseUpdates || isBeingPublished) &&
-    existingInstance.currentStateId !== firstPhaseId
-  ) {
-    updateData.currentStateId = firstPhaseId;
-  }
-
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {
     // Nothing to update, just return the existing profile
@@ -326,6 +290,10 @@ export const updateDecisionInstance = async ({
 
     return { profile, phaseEndDateChanges, didPublish: false };
   }
+
+  const isBeingPublished =
+    status === ProcessStatus.PUBLISHED &&
+    existingInstance.status === ProcessStatus.DRAFT;
 
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
@@ -463,8 +431,3 @@ export const updateDecisionInstance = async ({
  */
 const isBlankHeadline = (headline: string | undefined) =>
   headline?.trim() === '';
-
-const hasPhaseList = (instanceData: unknown) =>
-  typeof instanceData === 'object' &&
-  instanceData !== null &&
-  'phases' in instanceData;
