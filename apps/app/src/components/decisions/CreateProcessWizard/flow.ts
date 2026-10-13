@@ -1,11 +1,15 @@
 import {
   MAX_PROCESS_NAME_LENGTH,
   MIN_PROCESS_NAME_LENGTH,
+  SHAPE_QUESTION,
   type GrantDecision,
 } from './content';
 import {
+  EMPTY_OTHER,
+  OTHER_STEPS,
+  needsFocus,
   otherCanContinue,
-  otherStepList,
+  reconcileOther,
   type OtherAnswers,
   type OtherStep,
 } from './otherFlow';
@@ -13,25 +17,7 @@ import type { ProcessType, ShapeKey } from './types';
 
 export const TOTAL_STEPS = 5;
 
-export type StepThreeScreen = OtherStep | 'shape' | 'grantDecision';
-
-export const isOtherScreen = (screen: StepThreeScreen): screen is OtherStep =>
-  screen !== 'shape' && screen !== 'grantDecision';
-
-export function stepThreeScreens(
-  type: ProcessType | null,
-  other: OtherAnswers,
-): StepThreeScreen[] {
-  if (type === 'other') {
-    return otherStepList(other);
-  }
-
-  return type === 'grant' ? ['shape', 'grantDecision'] : ['shape'];
-}
-
 export interface WizardAnswers {
-  step: number;
-  screen: StepThreeScreen;
   type: ProcessType | null;
   shape: ShapeKey | null;
   grantDecision: GrantDecision | null;
@@ -39,58 +25,199 @@ export interface WizardAnswers {
   name: string;
 }
 
-export function canAdvance({
-  step,
-  screen,
-  type,
-  shape,
-  grantDecision,
-  other,
-  name,
-}: WizardAnswers): boolean {
-  if (step === 2) {
-    return !!type;
-  }
+export const EMPTY_ANSWERS: WizardAnswers = {
+  type: null,
+  shape: null,
+  grantDecision: null,
+  other: EMPTY_OTHER,
+  name: '',
+};
 
-  if (step === 3) {
-    if (isOtherScreen(screen)) {
-      return otherCanContinue(screen, other);
-    }
+export type ScreenId =
+  | 'intro'
+  | 'type'
+  | 'shape'
+  | 'grantDecision'
+  | OtherStep
+  | 'mapping'
+  | 'name';
 
-    return screen === 'grantDecision' ? !!grantDecision : !!shape;
-  }
-
-  if (step === TOTAL_STEPS) {
-    const length = name.trim().length;
-
-    return (
-      length >= MIN_PROCESS_NAME_LENGTH && length <= MAX_PROCESS_NAME_LENGTH
-    );
-  }
-
-  return true;
+interface Screen {
+  step: number;
+  /** Omitted for a screen every type shows. */
+  types?: ProcessType[];
+  /** Whether the answers so far call for it, beyond its type. */
+  isAsked?: (answers: WizardAnswers) => boolean;
+  isComplete: (answers: WizardAnswers) => boolean;
 }
 
-/** Every screen step 3 could show, not only those shown: a changing divisor would move the bar backwards. */
-function stepThreeSlots(type: ProcessType | null): StepThreeScreen[] {
-  if (type === 'other') {
-    return ['subjects', 'cadence', 'focus', 'submits', 'decision'];
-  }
+const SCREEN: Record<ScreenId, Screen> = {
+  intro: { step: 1, isComplete: () => true },
+  type: { step: 2, isComplete: ({ type }) => !!type },
+  shape: {
+    step: 3,
+    types: ['grant', 'pb'],
+    isComplete: ({ shape }) => !!shape,
+  },
+  grantDecision: {
+    step: 3,
+    types: ['grant'],
+    isComplete: ({ grantDecision }) => !!grantDecision,
+  },
+  subjects: {
+    step: 3,
+    types: ['other'],
+    isComplete: ({ other }) => otherCanContinue('subjects', other),
+  },
+  cadence: {
+    step: 3,
+    types: ['other'],
+    isComplete: ({ other }) => otherCanContinue('cadence', other),
+  },
+  focus: {
+    step: 3,
+    types: ['other'],
+    isAsked: ({ other }) => needsFocus(other),
+    isComplete: ({ other }) => otherCanContinue('focus', other),
+  },
+  submits: {
+    step: 3,
+    types: ['other'],
+    isComplete: ({ other }) => otherCanContinue('submits', other),
+  },
+  decision: {
+    step: 3,
+    types: ['other'],
+    isComplete: ({ other }) => otherCanContinue('decision', other),
+  },
+  mapping: { step: 4, isComplete: () => true },
+  name: {
+    step: 5,
+    isComplete: ({ name }) => {
+      const length = name.trim().length;
 
-  return type === 'grant' ? ['shape', 'grantDecision'] : ['shape'];
+      return (
+        length >= MIN_PROCESS_NAME_LENGTH && length <= MAX_PROCESS_NAME_LENGTH
+      );
+    },
+  },
+};
+
+const SCREEN_ORDER: ScreenId[] = [
+  'intro',
+  'type',
+  'shape',
+  'grantDecision',
+  ...OTHER_STEPS,
+  'mapping',
+  'name',
+];
+
+export const isOtherScreen = (screen: ScreenId): screen is OtherStep =>
+  OTHER_STEPS.some((step) => step === screen);
+
+export const stepOf = (screen: ScreenId): number => SCREEN[screen].step;
+
+export const isScreenComplete = (
+  screen: ScreenId,
+  answers: WizardAnswers,
+): boolean => SCREEN[screen].isComplete(answers);
+
+function isForType(screen: ScreenId, type: ProcessType | null): boolean {
+  const { types } = SCREEN[screen];
+
+  return !types || (type !== null && types.includes(type));
 }
 
+function isAsked(screen: ScreenId, answers: WizardAnswers): boolean {
+  return (
+    isForType(screen, answers.type) &&
+    (SCREEN[screen].isAsked?.(answers) ?? true)
+  );
+}
+
+/** The screens these answers lead through, in order. */
+export function screensFor(answers: WizardAnswers): ScreenId[] {
+  return SCREEN_ORDER.filter((screen) => isAsked(screen, answers));
+}
+
+export function nextScreen(
+  screen: ScreenId,
+  answers: WizardAnswers,
+): ScreenId | null {
+  return (
+    SCREEN_ORDER.slice(SCREEN_ORDER.indexOf(screen) + 1).find((candidate) =>
+      isAsked(candidate, answers),
+    ) ?? null
+  );
+}
+
+export function previousScreen(
+  screen: ScreenId,
+  answers: WizardAnswers,
+): ScreenId | null {
+  return (
+    SCREEN_ORDER.slice(0, SCREEN_ORDER.indexOf(screen))
+      .reverse()
+      .find((candidate) => isAsked(candidate, answers)) ?? null
+  );
+}
+
+/** Step 3 divides by every screen the type could ask, so an answer that adds one can't move the bar backwards. */
 export function progressPercent(
-  step: number,
-  screen: StepThreeScreen,
+  screen: ScreenId,
   type: ProcessType | null,
 ): number {
-  if (step === 3) {
-    const slots = stepThreeSlots(type);
-    const slot = Math.max(slots.indexOf(screen), 0);
+  const step = stepOf(screen);
 
-    return ((2 + (slot + 1) / slots.length) / TOTAL_STEPS) * 100;
+  if (step !== 3) {
+    return (step / TOTAL_STEPS) * 100;
   }
 
-  return (step / TOTAL_STEPS) * 100;
+  const slots = SCREEN_ORDER.filter(
+    (candidate) => stepOf(candidate) === 3 && isForType(candidate, type),
+  );
+  const slot = slots.indexOf(screen);
+
+  if (slot < 0) {
+    return (2 / TOTAL_STEPS) * 100;
+  }
+
+  return ((2 + (slot + 1) / slots.length) / TOTAL_STEPS) * 100;
+}
+
+/** Run on every change; `previous` is the reconciled state the change was made to. */
+export function reconcileAnswers(
+  next: WizardAnswers,
+  previous?: WizardAnswers,
+): WizardAnswers {
+  const { type } = next;
+
+  return {
+    ...next,
+    shape: fittingShape(type, next.shape),
+    grantDecision: type === 'grant' ? next.grantDecision : null,
+    other:
+      type === 'other'
+        ? reconcileOther(
+            next.other,
+            previous?.type === 'other' ? previous.other : undefined,
+          )
+        : EMPTY_OTHER,
+  };
+}
+
+function fittingShape(
+  type: ProcessType | null,
+  shape: ShapeKey | null,
+): ShapeKey | null {
+  if (type === 'other') {
+    return 'custom';
+  }
+
+  const fits =
+    type !== null &&
+    !!SHAPE_QUESTION[type]?.options.some((option) => option.key === shape);
+
+  return fits ? shape : null;
 }
