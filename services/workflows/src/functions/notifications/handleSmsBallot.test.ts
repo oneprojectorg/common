@@ -21,6 +21,9 @@ const NUMBERS = {
   votedTwice: '+15005550075',
   unknownCode: '+15005550076',
   reader: '+15005550077',
+  browseOther: '+15005550078',
+  strayMore: '+15005550079',
+  pages: '+15005550082',
 } as const;
 
 const PROPOSALS = [
@@ -31,6 +34,13 @@ const PROPOSALS = [
   },
   { title: 'Linden rec center evening hours', budget: 240_000 },
   { title: 'Neighborhood tree planting', budget: 150_000 },
+];
+
+const SIX_PROPOSALS = [
+  ...PROPOSALS,
+  { title: 'Riverside bike lane', budget: 60_000 },
+  { title: 'Library late hours', budget: 30_000 },
+  { title: 'Market street benches', budget: 12_000 },
 ];
 
 const ballotRequest = (
@@ -268,6 +278,85 @@ describe('handleSmsBallot against the database', () => {
     expect(list).toContain('Your ballot is empty.');
     expect(expired).toContain('was not submitted');
     expect(await readVotes(instanceId)).toEqual([]);
+  });
+
+  it('given the voter browses another decision with PROPOSALS and its slug, when they text MORE, then the ballot answers neither text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId } = await seed(
+      fixture,
+      NUMBERS.browseOther,
+      { maxVotesPerMember: 3, proposals: PROPOSALS },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        reply(phone, 1, { keyword: 'proposals', argument: 'other-decision' }),
+        reply(phone, 2, { keyword: 'more' }),
+        silence(3),
+      ],
+    });
+
+    expect(result).toMatchObject({ message: 'ballot expired', picks: 0 });
+    const [welcome, expired, ...rest] = bodies();
+    expect(welcome).toContain('Voting is open');
+    expect(expired).toContain('was not submitted');
+    expect(rest).toEqual([]);
+  });
+
+  it('given no proposals page is open, when the voter texts MORE, then they get the guidance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId } = await seed(
+      fixture,
+      NUMBERS.strayMore,
+      { maxVotesPerMember: 3, proposals: PROPOSALS },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [reply(phone, 1, { keyword: 'more' }), silence(2)],
+    });
+
+    const [, guidance] = bodies();
+    expect(guidance).toBe(
+      'Text a proposal code to add a pick, LIST to see your ballot, or DONE to review.',
+    );
+  });
+
+  it('given the voter browses the ballot with PROPOSALS, when they text MORE, then the next page of the same decision is sent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId } = await seed(fixture, NUMBERS.pages, {
+      maxVotesPerMember: 3,
+      proposals: SIX_PROPOSALS,
+    });
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        reply(phone, 1, { keyword: 'proposals' }),
+        reply(phone, 2, { keyword: 'more' }),
+        silence(3),
+      ],
+    });
+
+    const [, first, next] = bodies();
+    expect(first).toContain(
+      `"Park Funding ${NUMBERS.pages}" has 6 proposals. First 5:`,
+    );
+    expect(next).toContain('Next 1:');
+    expect(next).toContain('106 Market street benches $12k');
   });
 
   it('given the voter never replies, then no vote is recorded and they are told the ballot was not submitted', async ({
