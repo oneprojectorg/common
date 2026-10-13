@@ -49,13 +49,17 @@ test.describe('Login by email code', () => {
       code.length,
     );
 
-    const codeBox = await page
-      .locator('[data-slot="input-otp-group"]')
-      .boundingBox();
+    const slots = page.locator('[data-slot="input-otp-slot"]');
+    const firstSlot = await slots.first().boundingBox();
+    const lastSlot = await slots.last().boundingBox();
     const verifyBox = await page
       .getByRole('button', { name: 'Verify and continue' })
       .boundingBox();
-    expect(codeBox?.width).toBe(verifyBox?.width);
+    expect(firstSlot?.x).toBeCloseTo(verifyBox?.x ?? NaN, 0);
+    expect((lastSlot?.x ?? NaN) + (lastSlot?.width ?? NaN)).toBeCloseTo(
+      (verifyBox?.x ?? NaN) + (verifyBox?.width ?? NaN),
+      0,
+    );
 
     await page.getByRole('textbox', { name: 'Code' }).fill(code);
 
