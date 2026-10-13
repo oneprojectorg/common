@@ -1,0 +1,2 @@
+export const PROCESS_NAME_MIN_LENGTH = 3;
+export const PROCESS_NAME_MAX_LENGTH = 256;
