@@ -12,15 +12,19 @@ import { useTranslations } from '@/lib/i18n';
 import { STEP_HEADING_ID } from './StepHeading';
 import { applyGrantDecision, piecesFor, type GrantDecision } from './content';
 import {
+  EMPTY_ANSWERS,
   TOTAL_STEPS,
-  canAdvance,
   isOtherScreen,
+  isScreenComplete,
+  nextScreen,
+  previousScreen,
   progressPercent,
-  stepThreeScreens,
-  type StepThreeScreen,
+  reconcileAnswers,
+  stepOf,
+  type ScreenId,
+  type WizardAnswers,
 } from './flow';
 import {
-  EMPTY_OTHER,
   composeOtherPieces,
   describeOther,
   type OtherAnswers,
@@ -40,7 +44,7 @@ import type {
 
 interface StepBodyProps {
   step: number;
-  screen: StepThreeScreen;
+  screen: ScreenId;
   type: ProcessType | null;
   shape: ShapeKey | null;
   grantDecision: GrantDecision | null;
@@ -70,18 +74,17 @@ export function CreateProcessWizard({
   const tShared = useTranslations();
   const locale = useLocale();
 
-  const [step, setStep] = useState(1);
-  const [type, setType] = useState<ProcessType | null>(null);
-  const [shape, setShape] = useState<ShapeKey | null>(null);
-  const [grantDecision, setGrantDecision] = useState<GrantDecision | null>(
-    null,
-  );
-  const [other, setOther] = useState<OtherAnswers>(EMPTY_OTHER);
-  const [subIndex, setSubIndex] = useState(0);
-  const [name, setName] = useState('');
+  const [screen, setScreen] = useState<ScreenId>('intro');
+  const [answers, setAnswers] = useState<WizardAnswers>(EMPTY_ANSWERS);
+  const { type, shape, grantDecision, other, name } = answers;
 
+  const answer = (patch: Partial<WizardAnswers>) =>
+    setAnswers((previous) =>
+      reconcileAnswers({ ...previous, ...patch }, previous),
+    );
+
+  const step = stepOf(screen);
   const isOther = type === 'other';
-  const screens = stepThreeScreens(type, other);
   // Not before step 4, so answering step 3 doesn't recompose the phases.
   const isResolved = step >= 4;
   const pieces = useMemo(
@@ -89,18 +92,8 @@ export function CreateProcessWizard({
       isResolved ? resolvePieces({ type, shape, grantDecision, other }) : [],
     [isResolved, type, shape, grantDecision, other],
   );
-  const screen: StepThreeScreen =
-    screens[Math.min(subIndex, screens.length - 1)] ?? 'shape';
 
-  const canContinue = canAdvance({
-    step,
-    screen,
-    type,
-    shape,
-    grantDecision,
-    other,
-    name,
-  });
+  const canContinue = isScreenComplete(screen, answers);
 
   // Focus the new step's heading so it is announced; not on mount.
   const hasStepped = useRef(false);
@@ -113,22 +106,16 @@ export function CreateProcessWizard({
     }
 
     document.getElementById(STEP_HEADING_ID)?.focus();
-  }, [step, subIndex]);
-
-  const pickType = (next: ProcessType) => {
-    setType(next);
-    setShape(next === 'other' ? 'custom' : null);
-    setGrantDecision(null);
-    setOther(EMPTY_OTHER);
-    setSubIndex(0);
-  };
+  }, [screen]);
 
   const advance = () => {
     if (!canContinue || isSubmitting) {
       return;
     }
 
-    if (step === TOTAL_STEPS) {
+    const next = nextScreen(screen, answers);
+
+    if (!next) {
       if (type && shape) {
         onComplete({
           type,
@@ -141,27 +128,11 @@ export function CreateProcessWizard({
       return;
     }
 
-    if (step === 3 && subIndex < screens.length - 1) {
-      setSubIndex(subIndex + 1);
-
-      return;
-    }
-
-    setStep(step + 1);
+    setScreen(next);
   };
 
   const back = () => {
-    if (step === 3 && subIndex > 0) {
-      setSubIndex(subIndex - 1);
-
-      return;
-    }
-
-    if (step === 4) {
-      setSubIndex(screens.length - 1);
-    }
-
-    setStep((previous) => Math.max(1, previous - 1));
+    setScreen(previousScreen(screen, answers) ?? screen);
   };
 
   const isTypedStep = step === TOTAL_STEPS;
@@ -176,7 +147,7 @@ export function CreateProcessWizard({
     <div className="flex h-dvh flex-col bg-muted">
       {step > 1 ? (
         <Progress
-          value={progressPercent(step, screen, type)}
+          value={progressPercent(screen, type)}
           aria-label={t('stepProgress', {
             current: step,
             total: TOTAL_STEPS,
@@ -250,13 +221,18 @@ export function CreateProcessWizard({
             }
             name={name}
             onStart={advance}
-            onTypeChange={pickType}
-            onShapeChange={setShape}
-            onGrantDecisionChange={setGrantDecision}
+            onTypeChange={(next) => answer({ type: next })}
+            onShapeChange={(next) => answer({ shape: next })}
+            onGrantDecisionChange={(next) => answer({ grantDecision: next })}
             onOtherChange={(patch) =>
-              setOther((previous) => ({ ...previous, ...patch }))
+              setAnswers((previous) =>
+                reconcileAnswers(
+                  { ...previous, other: { ...previous.other, ...patch } },
+                  previous,
+                ),
+              )
             }
-            onNameChange={setName}
+            onNameChange={(next) => answer({ name: next })}
             onSubmit={advance}
           />
 
