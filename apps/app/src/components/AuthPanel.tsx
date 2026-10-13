@@ -325,7 +325,6 @@ export const AuthCodeField = ({
         maxLength={length}
         pattern={DIGITS_ONLY_PATTERN}
         pasteTransformer={keepDigits}
-        aria-label={t('auth.codeLabel')}
         autoFocus
         disabled={isDisabled}
         value={value ?? ''}
