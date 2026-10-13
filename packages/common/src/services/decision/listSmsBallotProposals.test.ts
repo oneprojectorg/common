@@ -1,11 +1,79 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
-import { ProposalStatus, proposals } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { listSmsBallotProposals } from './listSmsBallotProposals';
+import type { DecisionSchemaDefinition } from './schemas/types';
+
+const shortlistSchema: DecisionSchemaDefinition = {
+  id: 'sms-shortlist',
+  version: '1.0.0',
+  name: 'SMS Shortlist',
+  description: 'A submission phase that advances two proposals into voting',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: { proposals: { submit: true }, voting: { submit: false } },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'shortlist', type: 'limit', count: 2 }],
+      },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: true, maxVotesPerMember: 1 },
+      },
+    },
+  ],
+};
 
 describe.concurrent('listSmsBallotProposals', () => {
+  it('given a selection phase advanced two of three proposals into voting, then only the advanced proposals get ballot codes', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: shortlistSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    const submitted = await Promise.all(
+      ['One', 'Two', 'Three'].map((title) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title: `${title} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
+    );
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    expect(advanced).toMatchObject({ conflict: false });
+
+    const rows = await listSmsBallotProposals({
+      processInstanceId: instanceId,
+    });
+
+    const submittedIds = submitted.map((proposal) => proposal.id);
+    expect(rows).toHaveLength(2);
+    expect(submittedIds).toEqual(
+      expect.arrayContaining(rows.map((row) => row.proposalId)),
+    );
+    expect(rows.map((row) => row.code)).toEqual(['101', '102']);
+  });
+
   it('given a legacy snapshot that stores the budget as a numeric string (planted directly, no service writes that shape), then the proposal carries that amount in the default currency', async ({
     task,
     onTestFinished,
