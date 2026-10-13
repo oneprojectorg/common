@@ -105,6 +105,7 @@ function processLevel(draft: WizardDraft) {
     version: WIZARD_TEMPLATE_VERSION,
     name: `Wizard: ${TYPE_LABEL[draft.type]} (${draft.shape})`,
     config,
+    // TODO: drop the instance-level form once phases are written as entities (phase-dual-write).
     proposalTemplate: simpleVoting.proposalTemplate,
   };
 }
