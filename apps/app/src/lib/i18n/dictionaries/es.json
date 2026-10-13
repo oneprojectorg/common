@@ -721,10 +721,6 @@
     "welcomeHeading": "Bienvenido",
     "welcomeBackHeading": "Bienvenido de vuelta",
     "welcomeBackTitle": "¡Bienvenido de vuelta a Common!",
-    "landingSubtitle": "Explora nuevas conexiones y fortalece las relaciones existentes.",
-    "newOrganizationsHeading": "Nuevas organizaciones",
-    "discoverTab": "Descubrir",
-    "recentTab": "Reciente",
     "feedLoadError": "No se pudieron cargar las publicaciones. Por favor actualiza la página.",
     "notFoundToastTitle": "¡Vaya! No encontrado",
     "notFoundToastBody": "No podemos encontrar eso. Es posible que se haya eliminado.",
@@ -733,7 +729,20 @@
     "noAccessTitle": "No tienes acceso a esta página",
     "noAccessHint": "Contacta a la persona que compartió este enlace si crees que es un error.",
     "goToCommonAction": "Ir a Common",
-    "newTabHint": "(se abre en una pestaña nueva)"
+    "newTabHint": "(se abre en una pestaña nueva)",
+    "toggleSidebarLabel": "Mostrar u ocultar la barra lateral",
+    "exploreNavHeading": "Explorar",
+    "updatesNavTitle": "Novedades",
+    "updatesPageSubtitle": "Novedades de organizaciones de todo Common.",
+    "seeMoreAction": "Ver más",
+    "activeProcessesHeading": "Procesos activos",
+    "participateInProcessLabel": "Participar en {name}",
+    "homeSubtitle": "Mantente al día con tus procesos y las personas que los rodean.",
+    "setUpProfileHeading": "Configura tu perfil",
+    "setUpProfileBody": "Las ideas llegan más lejos cuando la gente puede ver quién está detrás. Sigues siendo anónimo en tus procesos hasta que decidas lo contrario.",
+    "setUpProfileAction": "Configurar perfil",
+    "dismissSetUpProfileLabel": "Descartar",
+    "seeLessAction": "Ver menos"
   },
   "decisions": {
     "processBuilder": {
@@ -1589,7 +1598,8 @@
     "stewardedByDescription": "Un proceso de toma de decisiones administrado por {stewardName}.",
     "editingPageTitle": "Editando",
     "participantCount": "{count, plural, one {# participante} other {# participantes}}",
-    "membersSubmittedCount": "{count, plural, =1 {1 miembro ha enviado propuestas} other {# miembros han enviado propuestas}}"
+    "membersSubmittedCount": "{count, plural, =1 {1 miembro ha enviado propuestas} other {# miembros han enviado propuestas}}",
+    "revisionRequestsHeading": "Solicitudes de revisión"
   },
   "loadingProgress": "Cargando...",
   "validEmailError": "Ingresa una dirección de correo electrónico válida",

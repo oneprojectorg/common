@@ -239,3 +239,6 @@ published source lags its declared dependency versions. Reapply if you re-run
   reports those two as `data-side` values on its positioned surfaces; `Sheet`
   is the one that did not accept them, which left every RTL caller writing
   `side={isRtl ? 'left' : 'right'}`.
+- `sidebar.tsx` — `SidebarGroupLabel` is `text-sm text-muted-foreground`
+  instead of the registry's `text-xs text-sidebar-foreground`. We don't use a
+  12px size, and every sidebar was overriding both at the call site.
