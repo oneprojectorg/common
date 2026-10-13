@@ -2,6 +2,7 @@ import {
   type DecisionInstanceData,
   MAX_PHASES_PER_DECISION,
   PROCESS_NAME_MAX_LENGTH,
+  getSeededTemplateId,
   simpleVoting,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
@@ -288,6 +289,12 @@ describe.concurrent('createInstanceFromWizard', () => {
 
     expect(seeded).toBeDefined();
     expect(instance.processId).toBe(seeded?.id);
+  });
+
+  it('refuses to fall back when no template carries the schema id', async () => {
+    await expect(getSeededTemplateId('no-such-schema')).rejects.toThrow(
+      'No "no-such-schema" decision template has been seeded',
+    );
   });
 });
 
