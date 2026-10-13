@@ -1,8 +1,14 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
-import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  moderationFlags,
+  proposals,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
+import { createAutomatedFlag } from '../moderation/moderationFlagStore';
 import { listSmsBallotProposals } from './listSmsBallotProposals';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
@@ -32,7 +38,98 @@ const shortlistSchema: DecisionSchemaDefinition = {
   ],
 };
 
+const hiddenSubmissionSchema: DecisionSchemaDefinition = {
+  ...shortlistSchema,
+  id: 'sms-shortlist-hidden',
+  phases: shortlistSchema.phases.map((phase) =>
+    phase.id === 'submission'
+      ? {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            proposals: { submit: true, defaults: { hidden: true } },
+          },
+        }
+      : phase,
+  ),
+};
+
 describe.concurrent('listSmsBallotProposals', () => {
+  it('given a proposal submitted in a phase that hides submissions by default, then it gets no ballot code', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: hiddenSubmissionSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    const hidden = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Hidden ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    expect(advanced).toMatchObject({ conflict: false });
+
+    const rows = await listSmsBallotProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(rows.map((row) => row.proposalId)).not.toContain(hidden.id);
+  });
+
+  it('given a proposal under an open moderation flag, then it gets no ballot code', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: shortlistSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    const [flagged, clean] = await Promise.all(
+      ['Flagged', 'Clean'].map((title) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title: `${title} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
+    );
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    expect(advanced).toMatchObject({ conflict: false });
+    const { flag } = await createAutomatedFlag({
+      itemType: 'proposal',
+      itemId: flagged!.id,
+    });
+    onTestFinished(async () => {
+      await db.delete(moderationFlags).where(eq(moderationFlags.id, flag.id));
+    });
+
+    const rows = await listSmsBallotProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(rows.map((row) => row.proposalId)).toEqual([clean!.id]);
+  });
+
   it('given a selection phase advanced two of three proposals into voting, then only the advanced proposals get ballot codes', async ({
     task,
     onTestFinished,

@@ -8,7 +8,11 @@ import {
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
+import {
+  optOutNumber,
+  recordedSms,
+  resetRecordedSms,
+} from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsBallot } from './handleSmsBallot';
 
@@ -24,6 +28,7 @@ const NUMBERS = {
   browseOther: '+15005550078',
   strayMore: '+15005550079',
   pages: '+15005550082',
+  optedOut: '+15005550084',
 } as const;
 
 const PROPOSALS = [
@@ -357,6 +362,39 @@ describe('handleSmsBallot against the database', () => {
     );
     expect(next).toContain('Next 1:');
     expect(next).toContain('106 Market street benches $12k');
+  });
+
+  it('given the voter opts out after the welcome, when their next text cannot be answered, then the ballot stops and sends nothing more', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId } = await seed(fixture, NUMBERS.optedOut, {
+      maxVotesPerMember: 3,
+      proposals: PROPOSALS,
+    });
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        {
+          id: 'wait-for-reply-1',
+          handler: () => {
+            optOutNumber(phone);
+            return reply(phone, 1, { codes: ['101'] }).handler();
+          },
+        },
+      ],
+    });
+
+    expect(result).toEqual({
+      message: 'send rejected',
+      reason: 'opted_out',
+      picks: 1,
+    });
+    expect(bodies()).toHaveLength(1);
+    expect(await readVotes(instanceId)).toEqual([]);
   });
 
   it('given the voter never replies, then no vote is recorded and they are told the ballot was not submitted', async ({

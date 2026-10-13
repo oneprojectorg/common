@@ -1,4 +1,9 @@
-import type { DecisionSchemaDefinition, PhoneNumber } from '@op/common';
+import {
+  type DecisionSchemaDefinition,
+  type PhoneNumber,
+  advancePhase,
+  createInstanceDataFromTemplate,
+} from '@op/common';
 import {
   createDecisionInstance,
   createDecisionProcess,
@@ -12,12 +17,7 @@ import {
   createTestAdminClient,
 } from '@op/common/testing/helpers';
 import { db, eq, inArray } from '@op/db/client';
-import {
-  ProposalStatus,
-  processInstances,
-  profiles,
-  users,
-} from '@op/db/schema';
+import { ProposalStatus, profiles, proposals, users } from '@op/db/schema';
 import { DECISION_BITS, PERMISSIONS } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 
@@ -35,6 +35,7 @@ export interface FixtureProposal {
   title: string;
   budget?: number;
   summary?: string;
+  leftBehind?: boolean;
 }
 
 export const votingSchema = (
@@ -52,6 +53,22 @@ export const votingSchema = (
         proposals: { submit: true },
         voting: { submit: false },
         advancement: { method: 'manual' as const },
+      },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [
+          {
+            id: 'advance-submitted',
+            type: 'filter' as const,
+            condition: {
+              not: {
+                operator: 'equals' as const,
+                left: { field: 'proposalData.leftBehind' },
+                right: { value: true },
+              },
+            },
+          },
+        ],
       },
     },
     {
@@ -151,9 +168,9 @@ export class SmsVotingFixture {
     });
     this.profileIds.push(profileId);
 
-    const proposals = [];
+    const created = [];
     for (const entry of proposalTitles) {
-      const { title, budget, summary } =
+      const { title, budget, summary, leftBehind } =
         typeof entry === 'string' ? { title: entry } : entry;
       const proposal = await createProposal({
         processInstanceId: instance.id,
@@ -164,23 +181,46 @@ export class SmsVotingFixture {
             ? {}
             : { budget: { amount: budget, currency: 'USD' } }),
           ...(summary === undefined ? {} : { summary }),
+          ...(leftBehind ? { leftBehind } : {}),
         },
-        status: ProposalStatus.SUBMITTED,
       });
       this.profileIds.push(proposal.profileId);
-      proposals.push(proposal);
+      await db
+        .update(proposals)
+        .set({ status: ProposalStatus.SUBMITTED })
+        .where(eq(proposals.id, proposal.id));
+      created.push({ ...proposal, status: ProposalStatus.SUBMITTED });
     }
 
-    await db
-      .update(processInstances)
-      .set({ currentStateId: currentPhaseId })
-      .where(eq(processInstances.id, instance.id));
+    const phaseIds = schema.phases.map((phase) => phase.id);
+    const instanceData = createInstanceDataFromTemplate({ template: schema });
+    for (let index = 0; index < phaseIds.indexOf(currentPhaseId); index++) {
+      const fromPhaseId = phaseIds[index];
+      const toPhaseId = phaseIds[index + 1];
+      if (!fromPhaseId || !toPhaseId) {
+        throw new Error(`No phase to advance into after ${fromPhaseId}`);
+      }
+      const result = await db.transaction((tx) =>
+        advancePhase({
+          db: tx,
+          instance: { id: instance.id, instanceData },
+          fromPhaseId,
+          toPhaseId,
+          triggeredByProfileId: null,
+        }),
+      );
+      if (result.conflict) {
+        throw new Error(
+          `Could not advance ${instance.id} from ${fromPhaseId} to ${toPhaseId}`,
+        );
+      }
+    }
 
     return {
       instanceId: instance.id,
       instanceProfileId: profileId,
       slug,
-      proposals,
+      proposals: created,
     };
   }
 
