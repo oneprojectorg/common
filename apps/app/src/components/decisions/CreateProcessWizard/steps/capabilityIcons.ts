@@ -75,6 +75,6 @@ const BY_ID: Partial<Record<WizardCopyKey, IconComponent>> = {
   showTitlesOnlyFullEntries: LuFileText,
 };
 
-export function calloutIcon(id: WizardCopyKey): IconComponent {
+export function capabilityIcon(id: WizardCopyKey): IconComponent {
   return BY_ID[id] ?? LuSparkles;
 }

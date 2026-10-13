@@ -102,7 +102,8 @@ export function readWizardProgress(): WizardProgress | null {
     const parsed = progressSchema.safeParse(JSON.parse(raw));
 
     return parsed.success ? resumableProgress(parsed.data) : null;
-  } catch {
+  } catch (error) {
+    logger.warn('Failed to read create-process wizard progress', { error });
     return null;
   }
 }
