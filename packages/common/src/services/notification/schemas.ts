@@ -1,3 +1,4 @@
+import { SMS_KEYWORDS, type SmsKeyword } from '@op/core/sms';
 import { z } from 'zod';
 
 import { ValidationError } from '../../utils/error';
@@ -73,35 +74,13 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-export type SmsKeyword =
-  | 'join'
-  | 'yes'
-  | 'vote'
-  | 'list'
-  | 'show'
-  | 'decisions'
-  | 'proposals'
-  | 'info'
-  | 'more'
-  | 'done'
-  | 'submit'
-  | 'remove';
+export type { SmsKeyword };
 
 export interface SmsCommand {
   keyword: SmsKeyword | null;
   argument: string | null;
   codes: string[];
 }
-
-const BARE_KEYWORDS: ReadonlyArray<SmsKeyword> = [
-  'join',
-  'yes',
-  'list',
-  'decisions',
-  'more',
-  'done',
-  'submit',
-];
 
 const ARGUMENT_KEYWORDS: ReadonlyArray<SmsKeyword> = [
   'vote',
@@ -110,6 +89,10 @@ const ARGUMENT_KEYWORDS: ReadonlyArray<SmsKeyword> = [
   'info',
   'remove',
 ];
+
+const BARE_KEYWORDS: ReadonlyArray<SmsKeyword> = SMS_KEYWORDS.filter(
+  (keyword) => !ARGUMENT_KEYWORDS.includes(keyword),
+);
 
 const bareKeywordPattern = (keyword: string) =>
   new RegExp(`^${keyword}[.!]?$`, 'i');
