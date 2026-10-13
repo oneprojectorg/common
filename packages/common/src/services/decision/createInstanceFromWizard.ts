@@ -9,7 +9,7 @@ import {
   createDecisionInstance,
   resolveInstanceCreator,
 } from './createInstanceFromTemplate';
-import { findSeededTemplateId } from './getTemplate';
+import { getSeededTemplateId } from './getTemplate';
 import { simpleVoting } from './schemas/definitions';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -27,7 +27,7 @@ export const createInstanceFromWizard = async ({
 }) => {
   const [creator, processId] = await Promise.all([
     resolveInstanceCreator(user),
-    findSeededTemplateId(simpleVoting.id),
+    getSeededTemplateId(simpleVoting.id),
   ]);
 
   const instanceData =
