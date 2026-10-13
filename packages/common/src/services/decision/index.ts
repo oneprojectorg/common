@@ -27,20 +27,8 @@ export * from './updatePhase';
 
 // Instance management
 export * from './createInstanceFromTemplate';
-export { createInstanceFromWizard } from './createInstanceFromWizard';
-export {
-  PROCESS_NAME_MAX_LENGTH,
-  PROCESS_NAME_MIN_LENGTH,
-  WIZARD_PHASE_KINDS,
-  WIZARD_PROCESS_TYPES,
-  WIZARD_SHAPES,
-  type WizardDraft,
-  type WizardPhaseDraft,
-  type WizardPhaseKind,
-  type WizardProcessType,
-  type WizardShape,
-  wizardDraftSchema,
-} from './schemas/wizard';
+export * from './createInstanceFromWizard';
+export * from './schemas/wizard';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';
 export * from './listInstances';
