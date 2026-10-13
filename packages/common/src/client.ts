@@ -180,6 +180,15 @@ export { templateCollectsBudget } from './services/decision/templateBudget';
 export {
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
+  WIZARD_PHASE_KINDS,
+  WIZARD_PROCESS_TYPES,
+  WIZARD_SHAPES,
+  type WizardDraft,
+  type WizardPhaseDraft,
+  type WizardPhaseKind,
+  type WizardProcessType,
+  type WizardShape,
+  wizardDraftSchema,
 } from './services/decision/schemas/wizard';
 export {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,

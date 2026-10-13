@@ -7,32 +7,12 @@ import type {
   PhaseRules,
   ProcessConfig,
 } from './schemas/types';
-
-export const WIZARD_PHASE_KINDS = [
-  'submissions',
-  'review',
-  'voting',
-  'results',
-] as const;
-
-export type WizardPhaseKind = (typeof WIZARD_PHASE_KINDS)[number];
-
-export const WIZARD_PROCESS_TYPES = ['grant', 'pb', 'other'] as const;
-
-export type WizardProcessType = (typeof WIZARD_PROCESS_TYPES)[number];
-
-export interface WizardPhaseDraft {
-  kind: WizardPhaseKind;
-  /** Already in the creator's language; the wizard translates its labels. */
-  name: string;
-}
-
-export interface WizardDraft {
-  name: string;
-  type: WizardProcessType;
-  shape: string;
-  phases: WizardPhaseDraft[];
-}
+import type {
+  WizardDraft,
+  WizardPhaseDraft,
+  WizardPhaseKind,
+  WizardProcessType,
+} from './schemas/wizard';
 
 export const WIZARD_TEMPLATE_VERSION = '1.0.0';
 
@@ -79,14 +59,9 @@ const SEEDED_PHASE_BY_KIND: Record<WizardPhaseKind, string> = {
 export function composeWizardTemplate(
   draft: WizardDraft,
 ): DecisionSchemaDefinition {
-  const ids = uniquePhaseIds(draft.phases);
   const last = draft.phases.length - 1;
-  const [head, ...tail] = draft.phases.map((phase, index) =>
-    composePhase({
-      ...phase,
-      id: ids[index] ?? phase.kind,
-      isLast: index === last,
-    }),
+  const [head, ...tail] = withUniqueIds(draft.phases).map((phase, index) =>
+    composePhase({ ...phase, isLast: index === last }),
   );
 
   if (!head) {
@@ -169,13 +144,18 @@ function seededPhase(kind: WizardPhaseKind): PhaseDefinition {
 }
 
 // A kind can repeat (ideas, then built-up proposals), and ids must not.
-function uniquePhaseIds(phases: readonly WizardPhaseDraft[]): string[] {
+function withUniqueIds(
+  phases: readonly WizardPhaseDraft[],
+): Array<WizardPhaseDraft & { id: string }> {
   const seen = new Map<WizardPhaseKind, number>();
 
-  return phases.map(({ kind }) => {
-    const count = (seen.get(kind) ?? 0) + 1;
-    seen.set(kind, count);
+  return phases.map((phase) => {
+    const count = (seen.get(phase.kind) ?? 0) + 1;
+    seen.set(phase.kind, count);
 
-    return count === 1 ? kind : `${kind}-${count}`;
+    return {
+      ...phase,
+      id: count === 1 ? phase.kind : `${phase.kind}-${count}`,
+    };
   });
 }
