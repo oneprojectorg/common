@@ -154,6 +154,16 @@ describe('buildQueryParams', () => {
     expect(params.status).toBeUndefined();
   });
 
+  it("carries Not advanced into the review phase's Other proposals tab", () => {
+    const params = build({
+      filter: ProposalFilter.REJECTED,
+      excludeAssignedForReview: true,
+    });
+
+    expect(params.notAdvanced).toBe(true);
+    expect(params.excludeAssignedForReview).toBe(true);
+  });
+
   it('keeps the All list to the current phase', () => {
     expect(build().notAdvanced).toBeUndefined();
     expect(build({ filter: ProposalFilter.MY_PROPOSALS }).notAdvanced).toBe(
