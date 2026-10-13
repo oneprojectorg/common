@@ -8,7 +8,7 @@ import {
   composeOtherPieces,
   describeOther,
   otherCanContinue,
-  otherStepList,
+  reconcileOther,
   subjectPhrase,
   type OtherAnswers,
 } from './otherFlow';
@@ -27,33 +27,67 @@ const t = createTranslator({
 const phases = (input: OtherAnswers) =>
   composeOtherPieces(input).map((piece) => piece.phaseType);
 
-describe('otherStepList', () => {
-  it('only asks which subject to focus on when the process has a timeline', () => {
-    expect(
-      otherStepList(
-        answers({ subjects: ['funding', 'ideas'], cadence: 'timeline' }),
-      ),
-    ).toEqual(['subjects', 'cadence', 'focus', 'submits', 'decision']);
-
-    expect(
-      otherStepList(
-        answers({ subjects: ['funding', 'ideas'], cadence: 'ongoing' }),
-      ),
-    ).toEqual(['subjects', 'cadence', 'submits', 'decision']);
+describe('reconcileOther', () => {
+  const twoOnTimeline = answers({
+    subjects: ['funding', 'people'],
+    cadence: 'timeline',
+    focus: 'people',
+    submits: 'nominations',
   });
 
-  it('does not ask about focus for a single subject', () => {
-    expect(
-      otherStepList(answers({ subjects: ['funding'], cadence: 'timeline' })),
-    ).toEqual(['subjects', 'cadence', 'submits', 'decision']);
+  it('keeps answers the others still support', () => {
+    expect(reconcileOther(twoOnTimeline, twoOnTimeline)).toEqual(twoOnTimeline);
   });
 
-  it('puts focus after cadence', () => {
-    const steps = otherStepList(
-      answers({ subjects: ['funding', 'people'], cadence: 'timeline' }),
+  it('drops the focus, and what it asked for, once the process has no end', () => {
+    const ongoing = reconcileOther(
+      { ...twoOnTimeline, cadence: 'ongoing' },
+      twoOnTimeline,
     );
 
-    expect(steps.indexOf('focus')).toBeGreaterThan(steps.indexOf('cadence'));
+    expect(ongoing.focus).toBeNull();
+    expect(ongoing.submits).toBeNull();
+  });
+
+  it('drops a focus that is no longer among the subjects', () => {
+    expect(
+      reconcileOther(
+        { ...twoOnTimeline, subjects: ['funding', 'ideas'] },
+        twoOnTimeline,
+      ).focus,
+    ).toBeNull();
+  });
+
+  it('keeps what is submitted when one subject remains and it was the focus', () => {
+    const narrowed = reconcileOther(
+      { ...twoOnTimeline, subjects: ['people'] },
+      twoOnTimeline,
+    );
+
+    expect(narrowed.focus).toBeNull();
+    expect(narrowed.submits).toBe('nominations');
+  });
+
+  it('drops what is submitted when the subject changes, even to one offering the same key', () => {
+    const funding = answers({ subjects: ['funding'], submits: 'applications' });
+
+    expect(
+      reconcileOther({ ...funding, subjects: ['people'] }, funding).submits,
+    ).toBeNull();
+  });
+
+  it('drops a submission the subject does not offer, with nothing to compare against', () => {
+    expect(
+      reconcileOther(answers({ subjects: ['funding'], submits: 'nominations' }))
+        .submits,
+    ).toBeNull();
+  });
+
+  it('drops the words for something else once it is unticked', () => {
+    expect(
+      reconcileOther(answers({ subjects: ['funding'], elseText: 'A new logo' }))
+        .elseText,
+    ).toBe('');
   });
 });
 
