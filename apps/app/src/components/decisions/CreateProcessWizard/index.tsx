@@ -41,6 +41,7 @@ import type {
   ProcessType,
   ShapeKey,
 } from './types';
+import type { WizardProgress } from './wizardProgress';
 
 interface StepBodyProps {
   step: number;
@@ -62,10 +63,14 @@ interface StepBodyProps {
 }
 
 export function CreateProcessWizard({
+  initial,
+  onProgressChange,
   onExit,
   onComplete,
   isSubmitting = false,
 }: {
+  initial?: WizardProgress | null;
+  onProgressChange?: (progress: WizardProgress) => void;
   onExit: () => void;
   onComplete: (draft: ProcessDraft) => void;
   isSubmitting?: boolean;
@@ -74,9 +79,15 @@ export function CreateProcessWizard({
   const tShared = useTranslations();
   const locale = useLocale();
 
-  const [screen, setScreen] = useState<ScreenId>('intro');
-  const [answers, setAnswers] = useState<WizardAnswers>(EMPTY_ANSWERS);
+  const [screen, setScreen] = useState<ScreenId>(initial?.screen ?? 'intro');
+  const [answers, setAnswers] = useState<WizardAnswers>(
+    initial?.answers ?? EMPTY_ANSWERS,
+  );
   const { type, shape, grantDecision, other, name } = answers;
+
+  useEffect(() => {
+    onProgressChange?.({ screen, answers });
+  }, [onProgressChange, screen, answers]);
 
   const answer = (patch: Partial<WizardAnswers>) =>
     setAnswers((previous) =>
