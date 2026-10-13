@@ -1,5 +1,7 @@
 import {
   MAX_PHASES_PER_DECISION,
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
   WIZARD_PHASE_KINDS,
   WIZARD_PROCESS_TYPES,
   createInstanceFromWizard,
@@ -10,7 +12,11 @@ import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
 export const createInstanceFromWizardInputSchema = z.object({
-  name: z.string().trim().min(3).max(256),
+  name: z
+    .string()
+    .trim()
+    .min(PROCESS_NAME_MIN_LENGTH)
+    .max(PROCESS_NAME_MAX_LENGTH),
   type: z.enum(WIZARD_PROCESS_TYPES),
   shape: z.string().trim().min(1).max(32),
   phases: z

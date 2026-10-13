@@ -29,6 +29,7 @@ export * from './updatePhase';
 export * from './createInstanceFromTemplate';
 export * from './createInstanceFromWizard';
 export * from './composeWizardTemplate';
+export * from './schemas/wizard';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';
 export * from './listInstances';
