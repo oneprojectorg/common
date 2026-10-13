@@ -10,6 +10,10 @@ export interface ProcessPhase {
   name: string;
 }
 
+interface NamedPhase {
+  name?: string;
+}
+
 export function useProcessPhases(
   instanceId: string,
   decisionProfileId?: string,
@@ -23,26 +27,39 @@ export function useProcessPhases(
     { enabled: !!instanceId },
   );
 
-  return useMemo(() => {
-    if (storePhases?.length) {
-      return storePhases.map((p) => ({
-        phaseId: p.phaseId,
-        name: p.name ?? '',
-      }));
-    }
-    // An empty list is an answer; only an instance without one is still on
-    // its template.
-    const instancePhases = instance?.instanceData?.phases;
-    if (instancePhases) {
-      return instancePhases.map((p) => ({
-        phaseId: p.phaseId,
-        name: p.name ?? '',
-      }));
-    }
-    const templatePhases = instance?.process?.processSchema?.phases;
-    if (templatePhases?.length) {
-      return templatePhases.map((p) => ({ phaseId: p.id, name: p.name ?? '' }));
-    }
-    return [];
-  }, [storePhases, instance]);
+  return useMemo(
+    () =>
+      resolveProcessPhases({
+        storePhases,
+        instancePhases: instance?.instanceData?.phases,
+        templatePhases: instance?.process?.processSchema?.phases,
+      }),
+    [storePhases, instance],
+  );
+}
+
+export function resolveProcessPhases({
+  storePhases,
+  instancePhases,
+  templatePhases,
+}: {
+  storePhases?: Array<NamedPhase & { phaseId: string }>;
+  instancePhases?: Array<NamedPhase & { phaseId: string }>;
+  templatePhases?: Array<NamedPhase & { id: string }>;
+}): ProcessPhase[] {
+  if (storePhases?.length) {
+    return storePhases.map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }));
+  }
+  // An empty list is an answer; only an instance without one is still on
+  // its template.
+  if (instancePhases) {
+    return instancePhases.map((p) => ({
+      phaseId: p.phaseId,
+      name: p.name ?? '',
+    }));
+  }
+  return (templatePhases ?? []).map((p) => ({
+    phaseId: p.id,
+    name: p.name ?? '',
+  }));
 }
