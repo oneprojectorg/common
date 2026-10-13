@@ -7,11 +7,15 @@ import {
   createDecisionInstance,
   createInstanceMember,
   createProposal,
+  createProposalReview,
   createReviewScenario,
   getSeededTemplate,
   grantInstanceReviewerRole,
 } from '@op/common/testing/data';
 import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  ProposalReviewState,
   ProposalStatus,
   posts,
   postsToProfiles,
@@ -87,6 +91,15 @@ const PHASE_DESCRIPTION_ES =
 const POST_ES =
   'La fase de revisión comienza el lunes que viene. Los vecinos que quieran revisar propuestas deben inscribirse antes del viernes, y el equipo enviará las instrucciones por correo.';
 
+const COMMENT_ES =
+  'Me encanta esta propuesta. Los vecinos de la calle mayor llevamos años pidiendo un espacio verde donde los niños puedan jugar después de la escuela.';
+
+const REVIEW_NOTE_ES =
+  'La propuesta es clara y el presupuesto es razonable, pero falta explicar quién se encargará del mantenimiento de la huerta durante el invierno.';
+
+const REVISION_REQUEST_ES =
+  'Por favor, añade un calendario con las fechas de construcción y explica cómo participarán los vecinos en el cuidado de la huerta.';
+
 const PROPOSAL_TITLE_EN = 'Community garden in the central park';
 const PROPOSAL_BODY_EN =
   '<p>We propose building a community garden in the central park. The garden will offer fresh food to families and a meeting place for neighbours. We are asking for funds for tools, seeds and an irrigation system.</p>';
@@ -105,6 +118,12 @@ const RESOURCE_DESCRIPTION_EN =
 
 /** Matches the `Translate to {language}` label in `TranslateBanner`. */
 const TRANSLATE_BUTTON = /Translate to/;
+
+/**
+ * A comment's, review's or revision request's own link — each authored object
+ * carries one, offered only when its own text is in another language.
+ */
+const SEE_TRANSLATION = 'See translation';
 
 /**
  * Budget for the first assertion after a navigation — the e2e build compiles
@@ -782,6 +801,194 @@ test.describe('UGC translation coverage', () => {
     await expect(
       page.getByRole('button', { name: TRANSLATE_BUTTON }),
     ).toBeVisible();
+  });
+
+  test('a Spanish comment offers its own translation link', async ({
+    cleanup,
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-comment-${testInfo.workerIndex}-${Date.now()}`;
+
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'submission',
+    });
+
+    // An English proposal, so the only foreign text is the comment under it.
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: author.profileId,
+      authUserId: author.authUserId,
+      email: author.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: PROPOSAL_TITLE_EN,
+        description: PROPOSAL_BODY_EN,
+      },
+    });
+
+    const [comment] = await db
+      .insert(posts)
+      .values({ content: COMMENT_ES, profileId: author.profileId })
+      .returning();
+    if (!comment) {
+      throw new Error('Failed to seed the comment');
+    }
+    cleanup(async () => {
+      await db.delete(posts).where(eq(posts.id, comment.id));
+    });
+    await db
+      .insert(postsToProfiles)
+      .values({ postId: comment.id, profileId: proposal.profileId });
+
+    const page = await signIn(author);
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.getByText('Me encanta esta propuesta')).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
+
+    // One link on the page: the comment's. The English proposal offers none.
+    await expect(
+      page.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole('feed').getByRole('button', { name: SEE_TRANSLATION }),
+    ).toBeVisible();
+  });
+
+  test('a submitted review in Spanish offers its own translation link', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-review-note-${testInfo.workerIndex}-${Date.now()}`;
+
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      rubricTemplate: RUBRIC_TEMPLATE,
+    });
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    // English proposal, Spanish review: only the review's link should show.
+    const { proposal, assignment, assignedProposalHistoryId } =
+      await createReviewScenario({
+        instance: { id: instance.instance.id },
+        author,
+        reviewer: { profileId: reviewer.profileId },
+        proposalData: {
+          title: PROPOSAL_TITLE_EN,
+          description: PROPOSAL_BODY_EN,
+        },
+        assignmentStatus: ProposalReviewAssignmentStatus.COMPLETED,
+      });
+    await createProposalReview({
+      assignmentId: assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: {
+        answers: { innovation: 2 },
+        rationales: { innovation: REVIEW_NOTE_ES },
+      },
+      overallComment: REVIEW_NOTE_ES,
+      submittedAt: new Date().toISOString(),
+      reviewedProposalHistoryId: assignedProposalHistoryId,
+    });
+
+    // The org admin owns the decision, so this URL resolves to the summary;
+    // the deep link opens the review itself.
+    const page = await signIn(org.adminUser);
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews?assignment=${assignment.id}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.getByText('La propuesta es clara').first()).toBeVisible({
+      timeout: PAGE_READY_TIMEOUT,
+    });
+
+    await expect(
+      page.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toHaveCount(1);
+  });
+
+  test('a Spanish revision request offers its own translation link', async ({
+    org,
+    signIn,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `translation-request-${testInfo.workerIndex}-${Date.now()}`;
+
+    const { instance, author } = await seedDecision({
+      org,
+      supabaseAdmin,
+      testId,
+      currentStateId: 'review',
+      rubricTemplate: RUBRIC_TEMPLATE,
+    });
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    const { proposal } = await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author,
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE_EN,
+        description: PROPOSAL_BODY_EN,
+      },
+      assignmentStatus: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+      revisionRequest: {
+        state: ProposalReviewRequestState.REQUESTED,
+        requestComment: REVISION_REQUEST_ES,
+      },
+    });
+
+    const page = await signIn(author);
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await page
+      .getByRole('button', { name: 'Review notes' })
+      .click({ timeout: PAGE_READY_TIMEOUT });
+    await expect(
+      page.getByText('Por favor, añade un calendario'),
+    ).toBeVisible();
+
+    // The English proposal offers nothing; the request offers its own link.
+    await expect(
+      page.getByRole('button', { name: SEE_TRANSLATION }),
+    ).toHaveCount(1);
   });
 
   test('no translation is offered when every surface is already in English', async ({

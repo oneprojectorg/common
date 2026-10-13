@@ -2,6 +2,7 @@
 
 import { useRelativeTime } from '@op/hooks';
 import { cn } from '@op/sense/lib/utils';
+import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,6 +22,7 @@ interface RevisionFeedbackCardProps {
    * `anonymousReviewer` → "Reviewer · 3 days ago", `bare` → "3 days ago".
    */
   meta?: 'sent' | 'anonymousReviewer' | 'bare';
+  translateLink?: ReactNode;
 }
 
 export function RevisionFeedbackCard({
@@ -29,6 +31,7 @@ export function RevisionFeedbackCard({
   variant,
   title,
   meta = 'sent',
+  translateLink,
 }: RevisionFeedbackCardProps) {
   return (
     <div
@@ -38,6 +41,7 @@ export function RevisionFeedbackCard({
       )}
     >
       {title ? <h4 className="font-serif text-label">{title}</h4> : null}
+      {translateLink}
 
       <p
         dir="auto"

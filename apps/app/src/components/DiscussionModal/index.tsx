@@ -32,11 +32,13 @@ export function DiscussionModal({
   organization,
   isOpen,
   onClose,
+  translatable = false,
 }: {
   post: Post;
   organization: Organization | null;
   isOpen: boolean;
   onClose: () => void;
+  translatable?: boolean;
 }) {
   const { user } = useUser();
   const t = useTranslations();
@@ -111,6 +113,7 @@ export function DiscussionModal({
           {/* Original Post Display */}
           <PostFeed className="originalPost border-none pb-0">
             <PostItem
+              translatable={translatable}
               post={post}
               organization={organization ?? null}
               user={user}
@@ -139,6 +142,7 @@ export function DiscussionModal({
                       data-is-first-comment={i === 0}
                     >
                       <PostItem
+                        translatable={translatable}
                         post={comment}
                         organization={organization ?? null}
                         user={user}
