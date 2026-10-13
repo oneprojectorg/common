@@ -742,7 +742,11 @@
     "setUpProfileBody": "Ideas go further when people can see who's behind them. You stay anonymous in your processes until you choose otherwise.",
     "setUpProfileAction": "Set up profile",
     "dismissSetUpProfileLabel": "Dismiss",
-    "seeLessAction": "Show less"
+    "seeLessAction": "Show less",
+    "editProfileAction": "Edit Profile",
+    "profilesMenuHeading": "Profiles",
+    "activeProfileLabel": "Active",
+    "settingsAction": "Settings"
   },
   "decisions": {
     "processBuilder": {
