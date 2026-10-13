@@ -1,0 +1,77 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
+import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { describe, expect, it } from 'vitest';
+
+import { getSmsVotability } from './getSmsVotability';
+import type { DecisionSchemaDefinition } from './schemas/types';
+
+const votingPhase = {
+  id: 'voting',
+  name: 'Voting',
+  rules: {
+    proposals: { submit: false },
+    voting: { submit: true, maxVotesPerMember: 1 },
+  },
+};
+
+const shortlistSchema: DecisionSchemaDefinition = {
+  id: 'sms-shortlist-votability',
+  version: '1.0.0',
+  name: 'SMS Shortlist Votability',
+  description: 'A submission phase that advances two proposals into voting',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: { proposals: { submit: true }, voting: { submit: false } },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'shortlist', type: 'limit', count: 2 }],
+      },
+    },
+    votingPhase,
+  ],
+};
+
+describe.concurrent('getSmsVotability', () => {
+  it('given a selection phase advanced two of three proposals into voting, then only the advanced proposals are counted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: shortlistSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    await Promise.all(
+      ['One', 'Two', 'Three'].map((title) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title: `${title} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
+    );
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    expect(advanced).toMatchObject({ conflict: false });
+
+    const votability = await getSmsVotability({
+      processInstanceId: instanceId,
+      phase: votingPhase,
+    });
+
+    expect(votability).toEqual({
+      votingOpen: true,
+      eligibleProposalCount: 2,
+      maxVotesPerMember: 1,
+    });
+  });
+});
