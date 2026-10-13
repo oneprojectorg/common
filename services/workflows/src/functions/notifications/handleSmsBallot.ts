@@ -26,6 +26,8 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
+import { smsNumberRateLimit } from './smsInboundLimits';
+
 const BALLOT_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_TURNS = 40;
 const CODE_PATTERN = /^\d{3}$/;
@@ -45,6 +47,7 @@ interface BallotContext {
 export const handleSmsBallot = inngest.createFunction(
   {
     id: 'handleSmsBallot',
+    rateLimit: smsNumberRateLimit('event.data.phone'),
     singleton: {
       key: 'event.data.phone',
       mode: 'skip',

@@ -13,12 +13,14 @@ import {
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
+import {
+  SMS_THROTTLE_LIMIT,
+  SMS_THROTTLE_PERIOD,
+  smsNumberRateLimit,
+} from './smsInboundLimits';
+
 const SMS_SIGNUP_FEATURE_FLAG = 'sms-signup';
 const MAX_REPLY_ATTEMPTS = 3;
-const RATE_LIMIT_PER_NUMBER = 100;
-const RATE_LIMIT_PERIOD = '1h';
-const THROTTLE_LIMIT = 200;
-const THROTTLE_PERIOD = '1h';
 const DEBOUNCE_PERIOD = '5s';
 const REPLY_WINDOW_MS = PHONE_SIGNUP_REPLY_WINDOW_MINUTES * 60_000;
 const HELP_MESSAGE =
@@ -36,14 +38,10 @@ type ConfirmationOutcome =
 export const handleUnknownSmsSignup = inngest.createFunction(
   {
     id: 'handleUnknownSmsSignup',
-    rateLimit: {
-      key: 'event.data.from',
-      limit: RATE_LIMIT_PER_NUMBER,
-      period: RATE_LIMIT_PERIOD,
-    },
+    rateLimit: smsNumberRateLimit('event.data.from'),
     throttle: {
-      limit: THROTTLE_LIMIT,
-      period: THROTTLE_PERIOD,
+      limit: SMS_THROTTLE_LIMIT,
+      period: SMS_THROTTLE_PERIOD,
     },
     debounce: {
       key: 'event.data.from',
