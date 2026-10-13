@@ -2,6 +2,7 @@ import {
   type DecisionInstanceData,
   MAX_PHASES_PER_DECISION,
   PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
   getSeededTemplateId,
   simpleVoting,
 } from '@op/common';
@@ -20,7 +21,7 @@ import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 const grantDraft = {
   type: 'grant' as const,
-  shape: 'single',
+  shape: 'single' as const,
   phases: [
     { kind: 'submissions' as const, name: 'Send your application' },
     { kind: 'review' as const, name: 'Review and decide' },
@@ -54,10 +55,11 @@ describe.concurrent('createInstanceFromWizard', () => {
 
     const result = await caller.decision.createInstanceFromWizard({
       ...grantDraft,
-      name: `Wizard grant ${task.id}`,
+      name: `  Wizard grant ${task.id}  `,
     });
     testData.trackProfileForCleanup(result.id);
 
+    expect(result.name).toBe(`Wizard grant ${task.id}`);
     expect(result.processInstance.status).toBe('draft');
 
     const { instance, instanceData } = await loadInstanceData(
@@ -137,6 +139,58 @@ describe.concurrent('createInstanceFromWizard', () => {
         phases: [{ kind: 'deliberation', name: 'Talk it over' }],
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('rejects a shape the wizard does not offer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createInstanceFromWizard({
+        ...grantDraft,
+        name: `Wizard bad shape ${task.id}`,
+        // @ts-expect-error -- the shape enum is the contract under test
+        shape: 'anything goes',
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it.for([
+    {
+      label: 'a name at the minimum length',
+      name: 'a'.repeat(PROCESS_NAME_MIN_LENGTH),
+      phases: grantDraft.phases,
+    },
+    {
+      label: 'a name at the maximum length',
+      name: 'a'.repeat(PROCESS_NAME_MAX_LENGTH),
+      phases: grantDraft.phases,
+    },
+    {
+      label: 'as many phases as a decision can hold',
+      name: 'Wizard most phases',
+      phases: Array.from({ length: MAX_PHASES_PER_DECISION }, () => ({
+        kind: 'submissions' as const,
+        name: 'Ideas',
+      })),
+    },
+  ])('accepts $label', async ({ name, phases }, { task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstanceFromWizard({
+      ...grantDraft,
+      name,
+      phases,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    expect(result.processInstance.status).toBe('draft');
   });
 
   it.for([
@@ -241,10 +295,81 @@ describe.concurrent('createInstanceFromWizard', () => {
         instanceId: result.processInstance.id,
         status: ProcessStatus.PUBLISHED,
       }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        fieldErrors: { phases: 'Add a phase' },
+      },
+    });
 
     const { instance } = await loadInstanceData(result.processInstance.id);
     expect(instance.status).toBe(ProcessStatus.DRAFT);
+  });
+
+  it('launches a reordered draft on its new first phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstanceFromWizard({
+      ...grantDraft,
+      name: `Wizard reorder ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+    const instanceId = result.processInstance.id;
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'review', name: 'Review and decide' },
+        { phaseId: 'submissions', name: 'Send your application' },
+        { phaseId: 'results', name: 'See awards' },
+      ],
+    });
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    const { instance } = await loadInstanceData(instanceId);
+
+    expect(instance.currentStateId).toBe('review');
+  });
+
+  it('keeps a live process on its current phase when its phases change', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstanceFromWizard({
+      ...grantDraft,
+      name: `Wizard live edit ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+    const instanceId = result.processInstance.id;
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      status: ProcessStatus.PUBLISHED,
+    });
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'review', name: 'Review and decide' },
+        { phaseId: 'submissions', name: 'Send your application' },
+        { phaseId: 'results', name: 'See awards' },
+      ],
+    });
+
+    const { instance } = await loadInstanceData(instanceId);
+
+    expect(instance.currentStateId).toBe('submissions');
   });
 
   it('points at the seeded template even when a later copy exists', async ({
@@ -347,8 +472,14 @@ describeDecisionAccessTierGating('createInstanceFromWizard', {
         ...grantDraft,
         name: `user ${task.id}`,
       });
-      await expectPassesAccessTierGate(created);
-      testData.trackProfileForCleanup((await created).id);
+      try {
+        await expectPassesAccessTierGate(created);
+      } finally {
+        const profile = await created.catch(() => null);
+        if (profile) {
+          testData.trackProfileForCleanup(profile.id);
+        }
+      }
     },
   ),
 
