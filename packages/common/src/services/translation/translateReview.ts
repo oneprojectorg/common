@@ -2,13 +2,11 @@ import { db } from '@op/db/client';
 import { ProposalReviewState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
-import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
-import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { NotFoundError } from '../../utils';
+import { assertUserByAuthId } from '../assert';
 import { getInstance } from '../decision/getInstance';
-import { decisionPermission } from '../decision/permissions';
-import { canReadPhaseReviews } from '../decision/reviewHelpers';
+import { assertCanReadReview } from '../decision/reviewHelpers';
 import { rubricReviewDataSchema } from '../decision/schemas/reviews';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -84,42 +82,6 @@ export async function translateReview({
 
   return { ...readReviewTranslation({ prefix, results }), targetLocale };
 }
-
-/** `canReadPhaseReviews`, or the review's own reviewer while they keep the REVIEW role. */
-const assertCanReadReview = async ({
-  instance,
-  assignment,
-  reviewerProfileId,
-  user,
-}: {
-  instance: Awaited<ReturnType<typeof getInstance>>;
-  assignment: { phaseId: string; reviewerProfileId: string };
-  reviewerProfileId: string | null;
-  user: User;
-}) => {
-  if (
-    await canReadPhaseReviews({ instance, phaseId: assignment.phaseId, user })
-  ) {
-    return;
-  }
-
-  const isOwnReview =
-    reviewerProfileId != null &&
-    assignment.reviewerProfileId === reviewerProfileId;
-
-  if (!isOwnReview || !instance.profileId) {
-    throw new UnauthorizedError("You don't have access to this review");
-  }
-
-  await assertProfileAccess({
-    user,
-    profileId: instance.profileId,
-    permissions: [
-      { decisions: decisionPermission.REVIEW },
-      { decisions: permission.ADMIN },
-    ],
-  });
-};
 
 const buildReviewEntries = ({
   prefix,

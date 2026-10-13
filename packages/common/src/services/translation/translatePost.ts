@@ -1,14 +1,12 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import {
-  getCurrentProfileId,
-  getProfileAccessRolesWithOrgFallback,
-} from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
-import { assertPostReadAccess } from '../posts/access';
+import {
+  assertCanReadFlaggedPost,
+  assertPostReadAccess,
+} from '../posts/access';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
@@ -78,34 +76,3 @@ export async function translatePost({
     targetLocale,
   };
 }
-
-/** A flagged post is NotFound to everyone but its author and the decision's admins. */
-const assertCanReadFlaggedPost = async ({
-  post,
-  user,
-  moderationProfileIds,
-}: {
-  post: { id: string; profileId: string | null };
-  user: User | undefined;
-  moderationProfileIds: string[];
-}) => {
-  const actorProfileId = user ? await getCurrentProfileId(user.id) : null;
-  // No profile is nobody's author, even of a post with no recorded author.
-  if (actorProfileId != null && actorProfileId === post.profileId) {
-    return;
-  }
-
-  const accessUser = user ? { id: user.id } : undefined;
-  const moderationRoles = await Promise.all(
-    moderationProfileIds.map((profileId) =>
-      getProfileAccessRolesWithOrgFallback({ user: accessUser, profileId }),
-    ),
-  );
-  const isModerator = moderationRoles.every((roles) =>
-    checkPermission({ profile: permission.ADMIN }, roles),
-  );
-
-  if (!isModerator) {
-    throw new NotFoundError('Post', post.id);
-  }
-};
