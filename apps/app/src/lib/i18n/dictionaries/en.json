@@ -721,10 +721,6 @@
     "welcomeHeading": "Welcome",
     "welcomeBackHeading": "Welcome back",
     "welcomeBackTitle": "Welcome back, to Common!",
-    "landingSubtitle": "Explore new connections and strengthen existing relationships.",
-    "newOrganizationsHeading": "New Organizations",
-    "discoverTab": "Discover",
-    "recentTab": "Recent",
     "feedLoadError": "Unable to load posts. Please try refreshing.",
     "notFoundToastTitle": "Oops! Not found",
     "notFoundToastBody": "We can't seem to find that. It might have been removed.",
@@ -733,7 +729,20 @@
     "noAccessTitle": "You don't have access to this page",
     "noAccessHint": "Contact the person who shared this link if you think this is a mistake.",
     "goToCommonAction": "Go to Common",
-    "newTabHint": "(opens in a new tab)"
+    "newTabHint": "(opens in a new tab)",
+    "toggleSidebarLabel": "Toggle sidebar",
+    "exploreNavHeading": "Explore",
+    "updatesNavTitle": "Updates",
+    "updatesPageSubtitle": "Updates from organizations across Common.",
+    "seeMoreAction": "See more",
+    "activeProcessesHeading": "Active processes",
+    "participateInProcessLabel": "Participate in {name}",
+    "homeSubtitle": "Keep up with your processes and the people around them.",
+    "setUpProfileHeading": "Set up your profile",
+    "setUpProfileBody": "Ideas go further when people can see who's behind them. You stay anonymous in your processes until you choose otherwise.",
+    "setUpProfileAction": "Set up profile",
+    "dismissSetUpProfileLabel": "Dismiss",
+    "seeLessAction": "Show less"
   },
   "decisions": {
     "processBuilder": {
@@ -1587,7 +1596,8 @@
     "stewardedByDescription": "A decision-making process stewarded by {stewardName}.",
     "editingPageTitle": "Editing",
     "participantCount": "{count, plural, one {# participant} other {# participants}}",
-    "membersSubmittedCount": "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}"
+    "membersSubmittedCount": "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}",
+    "revisionRequestsHeading": "Revision Requests"
   },
   "loadingProgress": "Loading...",
   "validEmailError": "Enter a valid email address",

@@ -101,8 +101,11 @@ export const SiteHeader = () => {
         )}
       >
         <SidebarTrigger
-          aria-label={t('shell.openMenuLabel')}
-          className="size-8 rounded-lg md:size-11"
+          aria-label={t('shell.toggleSidebarLabel')}
+          variant="secondary"
+          // The gray fill is the desktop design; on a phone the always-filled
+          // square reads as stuck in a pressed state, so it goes bare there.
+          className="size-8 rounded-lg max-md:bg-transparent md:size-11"
         >
           <LuAlignJustify className="size-4" />
         </SidebarTrigger>
