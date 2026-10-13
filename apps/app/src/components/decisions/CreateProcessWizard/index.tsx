@@ -4,7 +4,7 @@ import { Button } from '@op/sense/Button';
 import { Progress } from '@op/sense/Progress';
 import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { LuArrowLeft, LuArrowRight, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -50,7 +50,7 @@ interface StepBodyProps {
   grantDecision: GrantDecision | null;
   other: OtherAnswers;
   pieces: ProcessPiece[];
-  recap?: string;
+  recap?: ReactNode;
   name: string;
   onStart: () => void;
   onTypeChange: (type: ProcessType) => void;
