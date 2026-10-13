@@ -1,4 +1,5 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
+import { parseProposalData } from '@op/common';
 import {
   TestDecisionsDataManager,
   TestTranslationDataManager,
@@ -248,6 +249,72 @@ describe('translation.translateProposal', () => {
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
+    );
+  });
+
+  it('should translate the title as plain text, not its HTML fragment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      // A stale saved title: the document fragment is what the reader sees.
+      proposalData: { title: 'Old Title' },
+    });
+
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error('Proposal has no collaboration document');
+    }
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Community Garden'),
+      summary: textFragment('Fresh food for neighbours'),
+    });
+
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result.translated.title).toBe('[ES] Community Garden');
+    expect(result.translated.summary).toMatch(/^\[ES\] <p[^>]*>Fresh food/);
+    // The title fragment's HTML is never sent; the summary's is.
+    expect(mockTranslateText).not.toHaveBeenCalledWith(
+      expect.stringMatching(/<p[^>]*>Community Garden</),
+      null,
+      'ES',
+      expect.anything(),
     );
   });
 
