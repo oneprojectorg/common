@@ -43,7 +43,7 @@ const readFlag = async (
 
     // posthog-node resolves `undefined` for a timeout or an unknown key.
     if (answer === undefined) {
-      logger.error('PostHog returned no answer for a feature flag', { key });
+      logger.warn('PostHog returned no answer for a feature flag', { key });
       return 'unreadable';
     }
 
