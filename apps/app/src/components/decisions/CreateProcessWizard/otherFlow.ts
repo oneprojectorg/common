@@ -1,3 +1,5 @@
+import { type ReactNode, createElement } from 'react';
+
 import type { TranslateFn } from '@/lib/i18n';
 
 import type { Choice, ProcessPiece, WizardCopyKey } from './types';
@@ -107,7 +109,7 @@ export const SUBMIT_OPTIONS: Record<Subject, Choice<SubmitKey>[]> = {
   ideas: [
     {
       key: 'rough',
-      label: 'pbShapeIdeasLabel',
+      label: 'submitsIdeasLabel',
       description: 'submitsRoughIdeasDescription',
     },
     {
@@ -300,11 +302,11 @@ const INTAKE_PHASE_NAME: Record<SubmitKey, WizardCopyKey> = {
 };
 
 const INTAKE_DESCRIPTION: Record<SubmitKey, WizardCopyKey> = {
-  applications: 'gatherFullApplicationsFromAnyone',
-  proposals: 'gatherWrittenProposalsFromAnyone',
-  rough: 'keptLightSoAnyoneCan',
-  nominations: 'gatherNamesPeoplePutForward',
-  none: 'gatherWhatPeoplePutForward',
+  applications: 'collectApplicationsDescription',
+  proposals: 'collectWrittenProposalsDescription',
+  rough: 'collectIdeasDescription',
+  nominations: 'collectNominationsDescription',
+  none: 'collectSubmissionsDescription',
 };
 
 export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
@@ -323,7 +325,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
         phaseName:
           INTAKE_PHASE_NAME[submits === 'none' ? 'proposals' : submits],
         phaseType: 'submissions',
-        description: 'staysOpenMembersPostWhenever',
+        description: 'ongoingIntakeDescription',
         capabilities: [
           'setYourOwnQuestions',
           'inviteYourGroup',
@@ -331,7 +333,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
           ...votingCapabilities,
           'noClosingDateRunsLong',
         ],
-        norm: 'mostGroupsRunningThisWay',
+        norm: 'ongoingIntakeNorm',
       },
     ];
   }
@@ -364,8 +366,8 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
       phaseType: 'review',
       description:
         decision === 'both'
-          ? 'smallerGroupNarrowsDescription'
-          : 'smallerGroupDecidesDescription',
+          ? 'narrowDownDescription'
+          : 'reviewDecideDescription',
       capabilities: [
         'buildScoringRubric',
         'inviteReviewersPanel',
@@ -380,7 +382,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
       name: 'workThemUp',
       phaseName: 'buildThemUp',
       phaseType: 'submissions',
-      description: 'whatAdvancesGetsBuiltInto',
+      description: 'workThemUpDescription',
       capabilities: [
         'buildWhatWasAlreadySubmitted',
         'addQuestionsFullerVersion',
@@ -394,7 +396,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
       name: subject === 'people' ? 'holdVote' : 'putVote',
       phaseName: 'votePhase',
       phaseType: 'voting',
-      description: 'everyoneTakingPartDecidesTogether',
+      description: 'groupVoteDescription',
       capabilities: [
         'chooseHowPeopleVote',
         'combineWaysVoting',
@@ -437,15 +439,17 @@ export function describeOther(
   answers: OtherAnswers,
   t: TranslateFn<'decisions.createWizard'>,
   locale: string,
-): string {
+): ReactNode {
   const subject = subjectPhrase(answers, t, locale);
+  const bdi = (chunks: ReactNode) => createElement('bdi', null, chunks);
 
   if (answers.cadence === 'ongoing') {
-    return t('recapOngoing', { subject });
+    return t.rich('recapOngoing', { subject, bdi });
   }
 
-  return t('recapTimeline', {
+  return t.rich('recapTimeline', {
     subject,
+    bdi,
     intake: t(INTAKE_RECAP[answers.submits ?? 'none']),
     call: t(DECISION_RECAP[answers.decision ?? 'vote']),
   });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MAX_PROCESS_NAME_LENGTH } from './content';
 import {
   EMPTY_ANSWERS,
   TOTAL_STEPS,
@@ -167,6 +168,17 @@ describe('isScreenComplete', () => {
     expect(isScreenComplete('name', answers({ name: ' abc ' }))).toBe(true);
   });
 
+  it('holds the name screen when the name is longer than the API accepts', () => {
+    const longest = 'a'.repeat(MAX_PROCESS_NAME_LENGTH);
+
+    expect(isScreenComplete('name', answers({ name: ` ${longest} ` }))).toBe(
+      true,
+    );
+    expect(isScreenComplete('name', answers({ name: `${longest}a` }))).toBe(
+      false,
+    );
+  });
+
   it('lets the intro and mapping walkthrough through — there is nothing to answer', () => {
     expect(isScreenComplete('intro', EMPTY_ANSWERS)).toBe(true);
     expect(isScreenComplete('mapping', EMPTY_ANSWERS)).toBe(true);
@@ -224,6 +236,14 @@ describe('reconcileAnswers', () => {
     expect(
       reconcileAnswers(answers({ type: 'pb', other: withFocus })).other,
     ).toEqual(EMPTY_OTHER);
+  });
+
+  it('drops the composed shape when the other pathway is left', () => {
+    const other = answers({ type: 'other', shape: 'custom', other: withFocus });
+
+    expect(
+      reconcileAnswers({ ...other, type: 'grant' }, other).shape,
+    ).toBeNull();
   });
 
   it('keeps every answer when the same type is picked again', () => {

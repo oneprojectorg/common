@@ -1,10 +1,14 @@
 import { createTranslator } from 'next-intl';
+import type { ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import english from '@/lib/i18n/dictionaries/en.json';
 
 import {
+  DECISION_OPTIONS,
   EMPTY_OTHER,
+  SUBMIT_OPTIONS,
   composeOtherPieces,
   describeOther,
   otherCanContinue,
@@ -23,6 +27,10 @@ const t = createTranslator({
   messages: english,
   namespace: 'decisions.createWizard',
 });
+
+const copy: Record<string, unknown> = english.decisions.createWizard;
+
+const markup = (node: ReactNode) => renderToStaticMarkup(<>{node}</>);
 
 const phases = (input: OtherAnswers) =>
   composeOtherPieces(input).map((piece) => piece.phaseType);
@@ -214,7 +222,9 @@ describe('subjectPhrase', () => {
   it('joins several subjects as a list', () => {
     expect(
       subjectPhrase(answers({ subjects: ['funding', 'ideas'] }), t, 'en'),
-    ).toBe('funding and ideas and priorities');
+    ).toBe(
+      `${english.decisions.createWizard.subjectFundingNoun} and ${english.decisions.createWizard.subjectIdeasNoun}`,
+    );
   });
 
   it('names only the focus when one is picked', () => {
@@ -241,27 +251,90 @@ describe('subjectPhrase', () => {
 describe('describeOther', () => {
   it('recaps an always-open process', () => {
     expect(
-      describeOther(
-        answers({ subjects: ['funding'], cadence: 'ongoing' }),
-        t,
-        'en',
+      markup(
+        describeOther(
+          answers({ subjects: ['funding'], cadence: 'ongoing' }),
+          t,
+          'en',
+        ),
       ),
-    ).toMatch(/^Deciding on funding, always open/);
+    ).toMatch(/^Deciding on <bdi>funding<\/bdi>, always open/);
   });
 
   it('recaps a process with a timeline, filling every slot', () => {
-    const recap = describeOther(
-      answers({
-        subjects: ['funding'],
-        cadence: 'timeline',
-        submits: 'proposals',
-        decision: 'vote',
-      }),
-      t,
-      'en',
+    const recap = markup(
+      describeOther(
+        answers({
+          subjects: ['funding'],
+          cadence: 'timeline',
+          submits: 'proposals',
+          decision: 'vote',
+        }),
+        t,
+        'en',
+      ),
     );
 
-    expect(recap).toMatch(/^Deciding on funding, start to finish: /);
+    expect(recap).toMatch(
+      /^Deciding on <bdi>funding<\/bdi>, start to finish: /,
+    );
     expect(recap).not.toMatch(/[{}]/);
   });
+
+  it('isolates the user’s own words from the sentence around them', () => {
+    expect(
+      markup(
+        describeOther(
+          answers({
+            subjects: ['else'],
+            elseText: 'مكان جديد!',
+            cadence: 'ongoing',
+          }),
+          t,
+          'en',
+        ),
+      ),
+    ).toContain('<bdi>مكان جديد!</bdi>');
+  });
+});
+
+describe('every process the other questions compose', () => {
+  const cases = (['timeline', 'ongoing'] as const).flatMap((cadence) =>
+    (['funding', 'ideas', 'people', 'else'] as const).flatMap((subject) =>
+      SUBMIT_OPTIONS[subject].flatMap((submits) =>
+        DECISION_OPTIONS.map(
+          (decision) => [cadence, subject, submits.key, decision.key] as const,
+        ),
+      ),
+    ),
+  );
+
+  it.each(cases)(
+    '%s, %s, %s, decided by %s',
+    (cadence, subject, submits, decision) => {
+      const input = answers({
+        subjects: [subject],
+        elseText: subject === 'else' ? 'A new logo' : '',
+        cadence,
+        submits,
+        decision,
+      });
+      const pieces = composeOtherPieces(input);
+      const phaseNames = pieces.map((piece) => piece.phaseName ?? piece.name);
+      const keys = pieces.flatMap((piece) => [
+        piece.name,
+        piece.phaseName,
+        piece.description,
+        piece.norm,
+        ...piece.capabilities,
+      ]);
+
+      expect(pieces.length).toBeGreaterThan(0);
+      expect(new Set(phaseNames).size).toBe(phaseNames.length);
+      expect(keys.filter((key) => key !== undefined && !(key in copy))).toEqual(
+        [],
+      );
+      expect(markup(describeOther(input, t, 'en'))).not.toMatch(/[{}]/);
+    },
+  );
 });
