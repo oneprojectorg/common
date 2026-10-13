@@ -101,7 +101,15 @@ const argumentKeywordPattern = (keyword: string) =>
   new RegExp(`^${keyword}(?=[.!:,\\s]|$)`, 'i');
 
 const ARGUMENT_SEPARATOR_PATTERN = /^[.!:,]/;
-const ARGUMENT_TERMINATOR_PATTERN = /[.!]+$/;
+const ARGUMENT_TERMINATORS = new Set(['.', '!']);
+
+const trimTerminators = (value: string): string => {
+  let end = value.length;
+  while (end > 0 && ARGUMENT_TERMINATORS.has(value.charAt(end - 1))) {
+    end--;
+  }
+  return value.slice(0, end);
+};
 const PICK_CODES_PATTERN = /^\d{3}(?:[\s,]+\d{3})*[.!]?$/;
 const CODE_PATTERN = /\d{3}/g;
 
@@ -119,12 +127,10 @@ export const parseSmsCommand = (body: string): SmsCommand => {
     argumentKeywordPattern(keyword).test(text),
   );
   if (withArgument) {
-    const argument = text
+    const rest = text
       .slice(withArgument.length)
-      .replace(ARGUMENT_SEPARATOR_PATTERN, '')
-      .replace(ARGUMENT_TERMINATOR_PATTERN, '')
-      .trim()
-      .toLowerCase();
+      .replace(ARGUMENT_SEPARATOR_PATTERN, '');
+    const argument = trimTerminators(rest).trim().toLowerCase();
     return {
       keyword: withArgument,
       argument: argument.length > 0 ? argument : null,
