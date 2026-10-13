@@ -208,40 +208,65 @@ const assertOnWalledGarden = async (
   }
 };
 
-// Asserts a caller's READ access to an org-feed post or comment — a thread
-// whose root is linked to an org via `postsToOrganizations`. The feed is open
-// to the whole walled garden, so the gate is membership, not per-org roles.
-//
-// Returns the profiles whose admins moderate the post: its orgs' profiles for
-// a top-level feed post (as getPost does), none for a comment, which a flag
-// hides from everyone but its author.
-export const assertFeedPostReadAccess = async ({
-  user,
-  post,
-}: {
-  user: AccessUser | undefined;
-  post: { id: string; rootPostId: string | null };
-}): Promise<{ moderationProfileIds: string[] }> => {
-  const orgLinks = await db
+// The profiles of the orgs an org-feed thread is posted to, found through its
+// root post's `postsToOrganizations` links. Empty when the thread is not on any
+// org's feed.
+const getOrgFeedThreadProfileIds = async (rootPostId: string) => {
+  const links = await db
     .select({ profileId: organizations.profileId })
     .from(postsToOrganizations)
     .innerJoin(
       organizations,
       eq(organizations.id, postsToOrganizations.organizationId),
     )
-    .where(eq(postsToOrganizations.postId, post.rootPostId ?? post.id));
+    .where(eq(postsToOrganizations.postId, rootPostId));
+  return links.map(({ profileId }) => profileId);
+};
 
-  if (orgLinks.length === 0) {
+/**
+ * Asserts a caller's READ access to one post and returns the profiles whose
+ * admins moderate it. A post on a decision or proposal is gated by those
+ * profiles. A post on neither must be on an org's feed, which is open to the
+ * whole walled garden, the same as the feed's own reads.
+ *
+ * An org-feed post is moderated by its orgs' admins, as getPost does. A
+ * comment under one has no moderators, so a flag hides it from everyone but
+ * its author.
+ */
+export const assertPostReadAccessForPost = async ({
+  user,
+  post,
+}: {
+  user: AccessUser | undefined;
+  post: {
+    id: string;
+    rootPostId: string | null;
+    postsToProfiles: { profileId: string }[];
+  };
+}): Promise<{ moderationProfileIds: string[] }> => {
+  if (post.postsToProfiles.length > 0) {
+    const readAccesses = await Promise.all(
+      post.postsToProfiles.map(({ profileId }) =>
+        assertPostReadAccess({ user, profileId }),
+      ),
+    );
+    return {
+      moderationProfileIds: readAccesses.map(
+        ({ moderationProfileId }) => moderationProfileId,
+      ),
+    };
+  }
+
+  const orgProfileIds = await getOrgFeedThreadProfileIds(
+    post.rootPostId ?? post.id,
+  );
+  if (orgProfileIds.length === 0) {
     throw new UnauthorizedError(READ_DENIED);
   }
 
   await assertOnWalledGarden(user, READ_DENIED);
 
-  return {
-    moderationProfileIds: post.rootPostId
-      ? []
-      : orgLinks.map(({ profileId }) => profileId),
-  };
+  return { moderationProfileIds: post.rootPostId ? [] : orgProfileIds };
 };
 
 // Asserts a caller's WRITE access for a new post, dispatching on the
@@ -272,12 +297,8 @@ export const assertPostWriteAccess = async ({
     if (!rootPostId) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    const [legacyLink] = await db
-      .select({ organizationId: postsToOrganizations.organizationId })
-      .from(postsToOrganizations)
-      .where(eq(postsToOrganizations.postId, rootPostId))
-      .limit(1);
-    if (!legacyLink) {
+    const orgProfileIds = await getOrgFeedThreadProfileIds(rootPostId);
+    if (orgProfileIds.length === 0) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
     await assertOnWalledGarden(user);

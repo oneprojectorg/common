@@ -5,8 +5,7 @@ import { NotFoundError } from '../../utils';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import {
   assertCanReadFlaggedPost,
-  assertFeedPostReadAccess,
-  assertPostReadAccess,
+  assertPostReadAccessForPost,
 } from '../posts/access';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -40,20 +39,10 @@ export async function translatePost({
     throw new NotFoundError('Post', postId);
   }
 
-  const accessUser = user ? { id: user.id } : undefined;
-  // A post on a decision or proposal is gated by those profiles; one on none
-  // is checked as an org-feed post, and refused if it isn't one either.
-  const moderationProfileIds =
-    post.postsToProfiles.length > 0
-      ? (
-          await Promise.all(
-            post.postsToProfiles.map(({ profileId }) =>
-              assertPostReadAccess({ user: accessUser, profileId }),
-            ),
-          )
-        ).map(({ moderationProfileId }) => moderationProfileId)
-      : (await assertFeedPostReadAccess({ user: accessUser, post }))
-          .moderationProfileIds;
+  const { moderationProfileIds } = await assertPostReadAccessForPost({
+    user: user ? { id: user.id } : undefined,
+    post,
+  });
 
   if (await hasActiveModerationFlag('post', post.id)) {
     await assertCanReadFlaggedPost({ post, user, moderationProfileIds });
