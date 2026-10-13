@@ -11,6 +11,11 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import en from '../../lib/i18n/dictionaries/en.json';
+import { DecisionTranslateLink } from './DecisionTranslateLink';
+import {
+  DecisionTranslationProvider,
+  useDecisionTranslation,
+} from './DecisionTranslationContext';
 import { SubmittedReviewView } from './Review/SubmittedReviewView';
 import { RevisionRequestCard } from './RevisionRequestCard';
 
@@ -36,6 +41,8 @@ const { pending, endpoint } = vi.hoisted(() => {
 vi.mock('@op/api/client', () => ({
   trpc: {
     translation: {
+      translateDecision: endpoint('translateDecision'),
+      translateResources: endpoint('translateResources'),
       translateReview: endpoint('translateReview'),
       translateRevisionRequest: endpoint('translateRevisionRequest'),
     },
@@ -66,6 +73,75 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+});
+
+describe('the process link', () => {
+  const Headline = () => {
+    const translation = useDecisionTranslation();
+    return <h1>{translation?.overviewHeadline ?? ES}</h1>;
+  };
+
+  const renderProcess = () => {
+    render(
+      withIntl(
+        <DecisionTranslationProvider
+          decisionProfileId="decision-1"
+          detectionText={ES}
+        >
+          <DecisionTranslateLink />
+          <Headline />
+        </DecisionTranslationProvider>,
+      ),
+    );
+    return userEvent.setup();
+  };
+
+  it('translates the overview and resources together', async () => {
+    const user = renderProcess();
+
+    await user.click(seeTranslation());
+    await act(async () => {
+      pending.translateDecision?.resolve({
+        overviewHeadline: EN,
+        phases: [],
+        sourceLocale: 'ES',
+        targetLocale: 'en',
+      });
+      pending.translateResources?.resolve({ translations: {} });
+    });
+
+    expect(screen.getByRole('heading').textContent).toBe(EN);
+    expect(screen.getByText('Translated from Spanish')).toBeTruthy();
+  });
+
+  it('treats a response with nothing translated as a failure', async () => {
+    const user = renderProcess();
+
+    await user.click(seeTranslation());
+    await act(async () => {
+      pending.translateDecision?.resolve({
+        phases: [],
+        sourceLocale: '',
+        targetLocale: 'en',
+      });
+      pending.translateResources?.resolve({ translations: {} });
+    });
+
+    expect(screen.getByText('Translation failed.')).toBeTruthy();
+    expect(screen.getByRole('heading').textContent).toBe(ES);
+  });
+
+  it('offers nothing without a decision', () => {
+    render(
+      withIntl(
+        <DecisionTranslationProvider detectionText={ES}>
+          <DecisionTranslateLink />
+        </DecisionTranslationProvider>,
+      ),
+    );
+
+    expect(screen.queryByRole('button')).toBeNull();
+  });
 });
 
 describe('the review link', () => {

@@ -12,8 +12,10 @@ import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { useProposalCardData } from './ProposalCard';
+import { useProposalCardTranslation } from './ProposalCard/useProposalCardTranslation';
 import { ProposalReviewsCount } from './ProposalReviewsCount';
 import { ReviewStatusBadge } from './ReviewStatusBadge';
+import { TranslateLink } from './TranslateLink';
 
 type Reviewers = ProposalReviewAggregates['reviewers'];
 
@@ -44,8 +46,12 @@ export function ReviewAssignmentCard({
   const isRevised = status === 'ready_for_re_review';
   // `ready_for_re_review` already tells the reviewer to look again.
   const showOutOfDate = isReviewOutOfDate && !isRevised;
+  const translation = useProposalCardTranslation({ proposal });
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal);
+    useProposalCardData({
+      proposal,
+      cardTranslation: translation.translation,
+    });
 
   return (
     <SenseProposalCard
@@ -53,6 +59,7 @@ export function ReviewAssignmentCard({
       title={titleText}
       href={viewHref}
       linkComponent={Link}
+      headerBadge={<TranslateLink translation={translation} />}
       budget={budgetText}
       authors={authors}
       tags={

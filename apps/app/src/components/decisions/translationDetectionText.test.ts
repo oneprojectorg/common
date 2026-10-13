@@ -2,9 +2,9 @@ import { parseProposalData } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
 import {
+  getDecisionDetectionText,
   getOverviewDetectionText,
   getProposalDetectionText,
-  getRubricDetectionText,
 } from './translationDetectionText';
 
 type ProposalArg = Parameters<typeof getProposalDetectionText>[0];
@@ -94,36 +94,6 @@ describe('getProposalDetectionText', () => {
   });
 });
 
-describe('getRubricDetectionText', () => {
-  it('joins criterion prompts, descriptions, and option labels', () => {
-    const text = getRubricDetectionText({
-      type: 'object',
-      properties: {
-        impact: {
-          type: 'string',
-          title: 'Impacto comunitario',
-          description: '¿A cuántas personas beneficia?',
-          'x-format': 'dropdown',
-          oneOf: [
-            { const: 'high', title: 'Alto' },
-            { const: 'low', title: 'Bajo' },
-          ],
-        },
-      },
-    });
-
-    expect(text).toContain('Impacto comunitario');
-    expect(text).toContain('¿A cuántas personas beneficia?');
-    expect(text).toContain('Alto');
-    expect(text).toContain('Bajo');
-  });
-
-  it('returns an empty string for a rubric with no criteria', () => {
-    expect(getRubricDetectionText({ type: 'object', properties: {} })).toBe('');
-    expect(getRubricDetectionText(null)).toBe('');
-  });
-});
-
 describe('getOverviewDetectionText', () => {
   it('joins headline, description, and a string body', () => {
     const text = getOverviewDetectionText({
@@ -155,5 +125,52 @@ describe('getOverviewDetectionText', () => {
 
   it('returns an empty string when nothing is provided', () => {
     expect(getOverviewDetectionText({})).toBe('');
+  });
+});
+
+describe('getDecisionDetectionText', () => {
+  type DecisionArg = Parameters<typeof getDecisionDetectionText>[0];
+
+  const decision = (
+    instanceData: DecisionArg['instanceData'],
+  ): DecisionArg => ({
+    name: 'Process name',
+    description: 'Process description',
+    currentStateId: 'review',
+    instanceData,
+  });
+
+  it('samples the overview, the current phase copy and every phase name', () => {
+    const text = getDecisionDetectionText(
+      decision({
+        overview: { headline: 'Overview headline' },
+        phases: [
+          {
+            phaseId: 'submission',
+            name: 'Submission',
+            headline: 'Not current',
+          },
+          {
+            phaseId: 'review',
+            name: 'Review',
+            headline: 'Review headline',
+            description: 'Review description',
+            additionalInfo: '<p>Review info</p>',
+          },
+        ],
+      }),
+    );
+
+    expect(text).toContain('Overview headline');
+    expect(text).toContain('Process description');
+    expect(text).toContain('Review headline');
+    expect(text).toContain('Review description');
+    expect(text).toContain('Review info');
+    expect(text).toContain('Submission');
+    expect(text).not.toContain('Not current');
+  });
+
+  it('falls back to the process name without an overview', () => {
+    expect(getDecisionDetectionText(decision({}))).toContain('Process name');
   });
 });

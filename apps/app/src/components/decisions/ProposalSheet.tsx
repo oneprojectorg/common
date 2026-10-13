@@ -26,6 +26,7 @@ import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
 import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
 import { ReportProposalDialog } from './ReportProposalDialog';
+import { TranslateLink } from './TranslateLink';
 import {
   type ProposalRoute,
   decisionRootHref,
@@ -33,6 +34,7 @@ import {
 } from './proposalHrefs';
 import { useCommentsAllowed } from './useCommentsAllowed';
 import { useLiveProposalDocument } from './useLiveProposalDocument';
+import { useTranslateProposal } from './useTranslateProposal';
 
 export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
 
@@ -162,6 +164,7 @@ function ProposalSheetBody({
     canEngage: canEngageWithProposals(proposal.access),
   });
   const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
+  const { link, translation } = useTranslateProposal(proposal);
 
   return (
     // Each section's own `pt` mirrors this gap, centring the rules between.
@@ -170,6 +173,8 @@ function ProposalSheetBody({
         proposal={proposal}
         documentState={documentState}
         engagement={toPreviewEngagement(engagement)}
+        translation={translation}
+        translateLink={<TranslateLink translation={link} />}
       />
 
       <ContributingIdeas proposal={proposal} decisionRoot={decisionRoot} />

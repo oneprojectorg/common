@@ -7,6 +7,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalTemplateSchema,
+  type ProposalTranslation,
   normalizeProposalCategories,
 } from '@op/common/client';
 import { match } from '@op/core';
@@ -19,13 +20,14 @@ import { LuCircleX } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
-import { useCardTranslation } from '../ProposalTranslationContext';
+import { TranslateLink } from '../TranslateLink';
 import {
   getProposalContentPreview,
   resolveProposalSystemFields,
 } from '../proposalContentUtils';
 import { useProposalReviewDecoration } from '../proposalReviewDecoration';
 import { useCommentsAllowed } from '../useCommentsAllowed';
+import { useProposalCardTranslation } from './useProposalCardTranslation';
 
 /**
  * Maps the app's `Proposal` into the presentational values the sense
@@ -33,10 +35,15 @@ import { useCommentsAllowed } from '../useCommentsAllowed';
  * preview), applying any per-card translation. Shared by every proposal-card
  * surface so the mapping lives in one place.
  */
-export function useProposalCardData(proposal: Proposal) {
+export function useProposalCardData({
+  proposal,
+  cardTranslation,
+}: {
+  proposal: Proposal;
+  cardTranslation?: ProposalTranslation;
+}) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
-  const cardTranslation = useCardTranslation(proposal.profileId);
   const { title, budget, category } = resolveProposalSystemFields(proposal);
 
   const titleText =
@@ -193,6 +200,8 @@ export interface ProposalCardViewProps extends Omit<
   headerBadge?: ReactNode;
   /** Selected treatment (teal border + title) for vote/selection phases. */
   selected?: boolean;
+  /** Off where the whole card is a control (active voting): a button can't nest in it. */
+  showTranslateLink?: boolean;
   /** Running vote total; renders the "N Total Votes" row when set. */
   totalVotes?: number;
   /** Awarded badge for funded proposals — shown on the right of the votes row. */
@@ -226,6 +235,7 @@ export const ProposalCardView = ({
   // absent prop still gets the standard one.
   headerBadge = <ProposalStatusBadge proposal={proposal} />,
   selected,
+  showTranslateLink = true,
   totalVotes,
   awardedLabel,
   status,
@@ -234,10 +244,15 @@ export const ProposalCardView = ({
   ...rest
 }: ProposalCardViewProps) => {
   const t = useTranslations();
+  const translation = useProposalCardTranslation({
+    proposal,
+    enabled: showTranslateLink,
+  });
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal);
-  const engagement = useProposalEngagement({ proposal, canEngage });
-  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
+    useProposalCardData({
+      proposal,
+      cardTranslation: translation.translation,
+    });
   // Empty unless a review surface provides it; an explicit slot always wins.
   const decoration = useProposalReviewDecoration(proposal.id);
 
@@ -246,35 +261,7 @@ export const ProposalCardView = ({
       ? undefined
       : displayCategories;
 
-  // Labels are passed rather than left to the card's English defaults: they're
-  // the metrics' accessible names.
-  const metrics = showMetrics
-    ? {
-        likes: {
-          count: proposal.likesCount || 0,
-          label: t('decisions.proposals.likesLabel'),
-          ...(engagement && {
-            active: engagement.isLiked,
-            onClick: engagement.onLike,
-          }),
-        },
-        bookmarks: {
-          count: proposal.followersCount || 0,
-          label: t('Followers'),
-          // No `onFollow` for an author — the count stays, the press goes.
-          ...(engagement?.onFollow && {
-            active: engagement.isFollowed,
-            onClick: engagement.onFollow,
-          }),
-        },
-        ...(commentsEnabled && {
-          comments: {
-            count: proposal.commentsCount || 0,
-            label: t('decisions.proposals.commentsHeading'),
-          },
-        }),
-      }
-    : undefined;
+  const metrics = useProposalCardMetrics({ proposal, showMetrics, canEngage });
 
   const badge = revisionRequested ? (
     <StatusBadge variant="revision">
@@ -282,6 +269,12 @@ export const ProposalCardView = ({
     </StatusBadge>
   ) : (
     headerBadge
+  );
+  const header = (
+    <>
+      <TranslateLink translation={translation} />
+      {badge}
+    </>
   );
 
   return (
@@ -292,7 +285,7 @@ export const ProposalCardView = ({
       linkComponent={Link}
       className={className}
       selected={selected}
-      headerBadge={badge}
+      headerBadge={header}
       aside={aside}
       budget={budgetText}
       tags={tags}
@@ -312,6 +305,56 @@ export const ProposalCardView = ({
 };
 
 /**
+ * The engagement counts (likes / follows / comments) for the card, or
+ * `undefined` when the surface doesn't show them.
+ */
+function useProposalCardMetrics({
+  proposal,
+  showMetrics,
+  canEngage,
+}: {
+  proposal: Proposal;
+  showMetrics: boolean;
+  canEngage: boolean;
+}) {
+  const t = useTranslations();
+  const engagement = useProposalEngagement({ proposal, canEngage });
+  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
+
+  if (!showMetrics) {
+    return undefined;
+  }
+
+  // Labels are passed rather than left to the card's English defaults: they're
+  // the metrics' accessible names.
+  return {
+    likes: {
+      count: proposal.likesCount || 0,
+      label: t('decisions.proposals.likesLabel'),
+      ...(engagement && {
+        active: engagement.isLiked,
+        onClick: engagement.onLike,
+      }),
+    },
+    bookmarks: {
+      count: proposal.followersCount || 0,
+      label: t('Followers'),
+      // No `onFollow` for an author — the count stays, the press goes.
+      ...(engagement?.onFollow && {
+        active: engagement.isFollowed,
+        onClick: engagement.onFollow,
+      }),
+    },
+    ...(commentsEnabled && {
+      comments: {
+        count: proposal.commentsCount || 0,
+        label: t('decisions.proposals.commentsHeading'),
+      },
+    }),
+  };
+}
+
+/**
  * Compact proposal card for confirm modals and selection lists: title, budget,
  * category tags, and author only — no preview, status, or actions.
  */
@@ -323,7 +366,7 @@ export const ProposalMiniCard = ({
   className?: string;
 }) => {
   const { titleText, budgetText, displayCategories, authors } =
-    useProposalCardData(proposal);
+    useProposalCardData({ proposal });
 
   return (
     <SenseProposalCard

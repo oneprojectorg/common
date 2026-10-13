@@ -93,9 +93,8 @@ export function ProposalCardDialogProvider({
 }
 
 /**
- * The card menu's dialog openers. Throws without a provider, like
- * {@link useSetDecisionTranslation} — a menu item that silently did nothing
- * would look like the bug this provider exists to fix.
+ * The card menu's dialog openers. Throws without a provider — a menu item that
+ * silently did nothing would look like the bug this provider exists to fix.
  */
 export function useProposalCardDialogs() {
   const dialogs = useContext(ProposalCardDialogContext);

@@ -74,7 +74,7 @@ export interface ProposalCardProps extends Omit<
   linkComponent?: ElementType<ProposalCardLinkProps>;
   /** Click handler on the title link; `preventDefault()` cancels the navigation. */
   onTitleClick?: MouseEventHandler<HTMLAnchorElement>;
-  /** Visibility/status badge above the title (e.g. Draft, Hidden, Flagged). */
+  /** Header content above the title, e.g. a status badge or a translate link. */
   headerBadge?: ReactNode;
   /** Alert below the title — typically a `StatusBadge` (e.g. "Revision requested"). */
   alert?: ReactNode;
