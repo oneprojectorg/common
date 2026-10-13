@@ -1,26 +1,37 @@
-import { asc, db, eq, sql } from '@op/db/client';
+import { and, asc, db, desc, eq, sql } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
 
-import { NotFoundError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
 /**
- * The oldest template row whose schema carries `schemaId`: the seeded copy,
- * since tests and admins insert later ones.
- * @throws NotFoundError when nothing was seeded
+ * A template row to satisfy an instance's foreign key when its template lives
+ * in `instance_data`. Prefers the oldest row carrying `schemaId` (the seeded
+ * copy; tests and admins insert later ones), else the oldest template.
+ * @throws CommonError when there is no template at all
  */
-export const findTemplateIdBySchemaId = async (
+export const findSeededTemplateId = async (
   schemaId: string,
 ): Promise<string> => {
+  const schemaIdOf = sql`${decisionProcesses.processSchema}->>'id'`;
   const [row] = await db
     .select({ id: decisionProcesses.id })
     .from(decisionProcesses)
-    .where(sql`${decisionProcesses.processSchema}->>'id' = ${schemaId}`)
-    .orderBy(asc(decisionProcesses.createdAt))
+    .where(
+      and(
+        sql`${schemaIdOf} IS NOT NULL`,
+        sql`${decisionProcesses.processSchema}->>'version' IS NOT NULL`,
+        sql`${decisionProcesses.processSchema}->'phases' IS NOT NULL`,
+      ),
+    )
+    .orderBy(
+      desc(sql`${schemaIdOf} = ${schemaId}`),
+      asc(decisionProcesses.createdAt),
+    )
     .limit(1);
 
   if (!row) {
-    throw new NotFoundError('Template', schemaId);
+    throw new CommonError('No decision template has been seeded');
   }
 
   return row.id;

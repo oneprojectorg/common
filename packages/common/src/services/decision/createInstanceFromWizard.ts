@@ -9,7 +9,7 @@ import {
   createDecisionInstance,
   resolveInstanceCreator,
 } from './createInstanceFromTemplate';
-import { findTemplateIdBySchemaId } from './getTemplate';
+import { findSeededTemplateId } from './getTemplate';
 import { simpleVoting } from './schemas/definitions';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -25,8 +25,10 @@ export const createInstanceFromWizard = async ({
   draft: WizardDraft;
   user: User;
 }) => {
-  const creator = await resolveInstanceCreator(user);
-  const processId = await findTemplateIdBySchemaId(simpleVoting.id);
+  const [creator, processId] = await Promise.all([
+    resolveInstanceCreator(user),
+    findSeededTemplateId(simpleVoting.id),
+  ]);
 
   const instanceData =
     draft.phases.length > 0
