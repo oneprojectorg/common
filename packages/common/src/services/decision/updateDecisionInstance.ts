@@ -23,11 +23,12 @@ import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
-import type {
-  DecisionInstanceData,
-  InstanceOverview,
-  InstanceOverviewUpdate,
-  PhaseOverride,
+import {
+  type DecisionInstanceData,
+  type InstanceOverview,
+  type InstanceOverviewUpdate,
+  type PhaseOverride,
+  getInstancePhases,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import type { RubricTemplateSchema } from './types';
@@ -154,10 +155,10 @@ export const updateDecisionInstance = async ({
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
   const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
-  const existingInstanceData =
-    existingInstance.instanceData as DecisionInstanceData;
-  // Legacy rows predate `phases`.
-  let nextPhases = existingInstanceData.phases ?? [];
+  // Legacy rows predate `phases` and keep their own current state.
+  const tracksPhases =
+    hasPhaseUpdates || hasPhaseList(existingInstance.instanceData);
+  let nextPhases = getInstancePhases(existingInstance.instanceData);
 
   if (
     hasConfigUpdate ||
@@ -166,6 +167,9 @@ export const updateDecisionInstance = async ({
     hasProposalTemplateUpdate ||
     hasRubricTemplateUpdate
   ) {
+    const existingInstanceData =
+      existingInstance.instanceData as DecisionInstanceData;
+
     let updatedInstanceData: DecisionInstanceData = { ...existingInstanceData };
 
     // Apply config updates (merge with existing config)
@@ -289,22 +293,21 @@ export const updateDecisionInstance = async ({
     isBeingPublished ||
     (status ?? existingInstance.status) === ProcessStatus.DRAFT;
 
-  if (isBeingPublished && nextPhases.length === 0) {
+  if (tracksPhases && isBeingPublished && nextPhases.length === 0) {
     throw new ValidationError('A process needs a phase before it launches', {
       phases: 'Add a phase',
     });
   }
 
-  // A blank draft has no current phase, and a draft can delete its current
-  // one; either way it starts on its first phase.
+  // An unstarted process starts on its first phase, however its phases changed.
+  const firstPhaseId = nextPhases[0]?.phaseId ?? null;
   if (
+    tracksPhases &&
     isUnstarted &&
     (hasPhaseUpdates || isBeingPublished) &&
-    !nextPhases.some(
-      (phase) => phase.phaseId === existingInstance.currentStateId,
-    )
+    existingInstance.currentStateId !== firstPhaseId
   ) {
-    updateData.currentStateId = nextPhases[0]?.phaseId ?? null;
+    updateData.currentStateId = firstPhaseId;
   }
 
   // Only update if there's something to update
@@ -460,3 +463,8 @@ export const updateDecisionInstance = async ({
  */
 const isBlankHeadline = (headline: string | undefined) =>
   headline?.trim() === '';
+
+const hasPhaseList = (instanceData: unknown) =>
+  typeof instanceData === 'object' &&
+  instanceData !== null &&
+  'phases' in instanceData;
