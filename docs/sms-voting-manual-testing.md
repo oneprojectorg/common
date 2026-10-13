@@ -63,23 +63,16 @@ Send:
 PROPOSALS columbus-dry-run-19afa414
 ```
 
-Expect five proposals with codes from `101`, then an offer of more:
+Expect three texts, one per page of five, with codes from `101`:
 
 ```
 "OVOC Dry Run - Idea Collection 19afa414" has 12 proposals. First 5:
 101 Fifth Ave crosswalk lighting $85k
 102 Linden rec center evening hours $240k
 ...
-Reply MORE for the next ones, or INFO plus a code.
 ```
 
-Send:
-
-```
-MORE
-```
-
-Expect the next page. The last page ends with
+The last page ends with
 `Text a code to add it to your ballot, or INFO plus a code.`
 
 Send:

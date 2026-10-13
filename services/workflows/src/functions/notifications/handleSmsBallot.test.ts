@@ -2,8 +2,11 @@ import { InngestTestEngine } from '@inngest/test';
 import { type PhoneNumber, parsePhoneNumber } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
+  ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
+  profiles,
+  proposals as proposalsTable,
 } from '@op/db/schema';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -29,6 +32,9 @@ const NUMBERS = {
   strayMore: '+15005550079',
   pages: '+15005550082',
   optedOut: '+15005550084',
+  deletedDecision: '+15005550085',
+  turnLimit: '+15005550086',
+  stalePick: '+15005550087',
 } as const;
 
 const PROPOSALS = [
@@ -285,7 +291,7 @@ describe('handleSmsBallot against the database', () => {
     expect(await readVotes(instanceId)).toEqual([]);
   });
 
-  it('given the voter browses another decision with PROPOSALS and its slug, when they text MORE, then the ballot answers neither text', async ({
+  it('given the voter browses another decision with PROPOSALS and its slug, then the ballot leaves that text to the command and answers a later MORE with the guidance', async ({
     task,
     onTestFinished,
   }) => {
@@ -307,8 +313,11 @@ describe('handleSmsBallot against the database', () => {
     });
 
     expect(result).toMatchObject({ message: 'ballot expired', picks: 0 });
-    const [welcome, expired, ...rest] = bodies();
+    const [welcome, guidance, expired, ...rest] = bodies();
     expect(welcome).toContain('Voting is open');
+    expect(guidance).toBe(
+      'Text a proposal code to add a pick, LIST to see your ballot, or DONE to review.',
+    );
     expect(expired).toContain('was not submitted');
     expect(rest).toEqual([]);
   });
@@ -336,7 +345,7 @@ describe('handleSmsBallot against the database', () => {
     );
   });
 
-  it('given the voter browses the ballot with PROPOSALS, when they text MORE, then the next page of the same decision is sent', async ({
+  it('given six proposals, when the voter texts PROPOSALS, then every page of the ballot is sent at once', async ({
     task,
     onTestFinished,
   }) => {
@@ -349,19 +358,18 @@ describe('handleSmsBallot against the database', () => {
 
     await t.execute({
       events: [ballotRequest(instanceId, voter.authUserId, phone)],
-      steps: [
-        reply(phone, 1, { keyword: 'proposals' }),
-        reply(phone, 2, { keyword: 'more' }),
-        silence(3),
-      ],
+      steps: [reply(phone, 1, { keyword: 'proposals' }), silence(2)],
     });
 
-    const [, first, next] = bodies();
+    const [, first, next, expired] = bodies();
     expect(first).toContain(
       `"Park Funding ${NUMBERS.pages}" has 6 proposals. First 5:`,
     );
+    expect(first).not.toContain('MORE');
     expect(next).toContain('Next 1:');
     expect(next).toContain('106 Market street benches $12k');
+    expect(next).toContain('Text a code to add it to your ballot');
+    expect(expired).toContain('was not submitted');
   });
 
   it('given the voter opts out after the welcome, when their next text cannot be answered, then the ballot stops and sends nothing more', async ({
@@ -395,6 +403,101 @@ describe('handleSmsBallot against the database', () => {
     });
     expect(bodies()).toHaveLength(1);
     expect(await readVotes(instanceId)).toEqual([]);
+  });
+
+  it('given the decision is deleted while the ballot is open, when the voter submits, then they are told the ballot could not be recorded', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId, instanceProfileId } = await seed(
+      fixture,
+      NUMBERS.deletedDecision,
+      { maxVotesPerMember: 1, proposals: [PROPOSALS[0]!] },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        {
+          id: 'wait-for-reply-1',
+          handler: async () => {
+            await db.delete(profiles).where(eq(profiles.id, instanceProfileId));
+            return reply(phone, 1, { keyword: 'yes' }).handler();
+          },
+        },
+      ],
+    });
+
+    expect(result).toMatchObject({ message: 'ballot rejected' });
+    expect(bodies().at(-1)).toContain('We could not record your ballot');
+  });
+
+  it('given the voter uses up every turn without submitting, then they are told the ballot was not submitted and how to start again', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId, slug } = await seed(
+      fixture,
+      NUMBERS.turnLimit,
+      { maxVotesPerMember: 3, proposals: PROPOSALS },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: Array.from({ length: 40 }, (_, index) =>
+        reply(phone, index + 1, { keyword: 'list' }),
+      ),
+    });
+
+    expect(result).toEqual({ message: 'ballot abandoned', picks: 0 });
+    expect(bodies().at(-1)).toBe(
+      `Your ballot for "Park Funding ${NUMBERS.turnLimit}" was not submitted. Text VOTE ${slug} to start again.`,
+    );
+    expect(await readVotes(instanceId)).toEqual([]);
+  });
+
+  it('given a pick is rejected while the ballot is open (rejected directly: the fixture holds no admin session), when the voter submits, then that pick is dropped and named, and the rest can be submitted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId, proposals } = await seed(
+      fixture,
+      NUMBERS.stalePick,
+      { maxVotesPerMember: 3, proposals: PROPOSALS },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        reply(phone, 1, { codes: ['101', '102'] }),
+        {
+          id: 'wait-for-reply-2',
+          handler: async () => {
+            await db
+              .update(proposalsTable)
+              .set({ status: ProposalStatus.REJECTED })
+              .where(eq(proposalsTable.id, proposals[0]!.id));
+            return reply(phone, 2, { keyword: 'submit' }).handler();
+          },
+        },
+        reply(phone, 3, { keyword: 'submit' }),
+      ],
+    });
+
+    expect(result).toMatchObject({ message: 'ballot submitted' });
+    const [, , dropped] = bodies();
+    expect(dropped).toBe(
+      '"Fifth Ave crosswalk lighting" is no longer on the ballot and was removed. 2 picks left. Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
+    );
+    expect(
+      (await readVotes(instanceId)).map((vote) => vote.proposalId),
+    ).toEqual([proposals[1]!.id]);
   });
 
   it('given the voter never replies, then no vote is recorded and they are told the ballot was not submitted', async ({
