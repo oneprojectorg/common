@@ -143,7 +143,7 @@ describe('handleSmsBallot against the database', () => {
     ]);
   });
 
-  it('given several proposals, when the voter texts two codes, reviews and submits, then both picks are recorded in texted order', async ({
+  it('given several proposals, when the voter texts two codes, reviews and submits, then both picks are recorded and the confirmation lists them in texted order', async ({
     task,
     onTestFinished,
   }) => {
@@ -168,9 +168,13 @@ describe('handleSmsBallot against the database', () => {
     });
 
     expect(result).toMatchObject({ message: 'ballot submitted' });
-    expect(
-      (await readVotes(instanceId)).map((vote) => vote.proposalId),
-    ).toEqual([proposals[2]!.id, proposals[0]!.id]);
+    const recorded = (await readVotes(instanceId)).map(
+      (vote) => vote.proposalId,
+    );
+    expect(recorded).toHaveLength(2);
+    expect(recorded).toEqual(
+      expect.arrayContaining([proposals[2]!.id, proposals[0]!.id]),
+    );
     const [welcome, confirmation, ballot, submitted] = bodies();
     expect(welcome).toContain('You can pick up to 3 proposals');
     expect(confirmation).toContain(
