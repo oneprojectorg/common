@@ -2,6 +2,7 @@ import type { DecisionSchemaDefinition } from '@op/common';
 import {
   createDecisionInstance,
   createProposal,
+  createReviewAssignment,
   getSeededTemplate,
 } from '@op/common/testing/data';
 import {
@@ -56,71 +57,124 @@ const schema: DecisionSchemaDefinition = {
   ],
 };
 
+/** The same phases with `review` as a review phase, so it has its tabs. */
+const reviewSchema: DecisionSchemaDefinition = {
+  ...schema,
+  id: 'test-advance-to-review-phase',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'manual' },
+      },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: {
+        proposals: { submit: false, review: true },
+        advancement: { method: 'manual' },
+      },
+    },
+    {
+      id: 'final',
+      name: 'Final',
+      rules: {
+        proposals: { submit: false },
+        advancement: { method: 'manual' },
+      },
+    },
+  ],
+};
+
+type SeedOrg = {
+  organizationProfile: { id: string };
+  adminUser: { authUserId: string; email: string; profileId: string };
+};
+
+/**
+ * An instance in `review` with two submitted proposals, only "Proposal Kept"
+ * carried over by the submission → review transition.
+ */
+async function seedLeftBehind(
+  org: SeedOrg,
+  decisionSchema: DecisionSchemaDefinition,
+) {
+  const template = await getSeededTemplate();
+  const instance = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: decisionSchema,
+  });
+
+  // INSERT-as-DRAFT then UPDATE so the proposal_history trigger writes the
+  // snapshot rows the transition attaches.
+  const [kept, leftBehind] = await Promise.all(
+    ['Proposal Kept', 'Proposal Left Behind'].map((title) =>
+      createProposal({
+        processInstanceId: instance.instance.id,
+        submittedByProfileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+        proposalData: { title },
+        status: ProposalStatus.DRAFT,
+      }),
+    ),
+  );
+  if (!kept || !leftBehind) {
+    throw new Error('Expected two seeded proposals');
+  }
+  await db
+    .update(proposalsTable)
+    .set({ status: ProposalStatus.SUBMITTED })
+    .where(inArray(proposalsTable.id, [kept.id, leftBehind.id]));
+
+  // Land in `review` with only `kept` carried over.
+  await db
+    .update(processInstances)
+    .set({ currentStateId: 'review' })
+    .where(eq(processInstances.id, instance.instance.id));
+  const [transition] = await db
+    .insert(stateTransitionHistory)
+    .values({
+      processInstanceId: instance.instance.id,
+      fromStateId: 'submission',
+      toStateId: 'review',
+      transitionData: {},
+    })
+    .returning();
+  const [keptHistory] = await db
+    .select({ historyId: proposalHistory.historyId })
+    .from(proposalHistory)
+    .where(eq(proposalHistory.id, kept.id))
+    .orderBy(desc(proposalHistory.historyCreatedAt))
+    .limit(1);
+  if (!transition || !keptHistory) {
+    throw new Error('Failed to seed the review transition');
+  }
+  await db.insert(decisionTransitionProposals).values({
+    processInstanceId: instance.instance.id,
+    transitionHistoryId: transition.id,
+    proposalId: kept.id,
+    proposalHistoryId: keptHistory.historyId,
+  });
+
+  return { instance, kept, leftBehind, transition };
+}
+
 test.describe('Advance a proposal into the current phase', () => {
   test('admin advances a proposal the review phase left behind', async ({
     authenticatedPage,
     org,
   }) => {
-    const template = await getSeededTemplate();
-    const instance = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
+    const { instance, kept, leftBehind, transition } = await seedLeftBehind(
+      org,
       schema,
-    });
-
-    // INSERT-as-DRAFT then UPDATE so the proposal_history trigger writes the
-    // snapshot rows the transition attaches.
-    const [kept, leftBehind] = await Promise.all(
-      ['Proposal Kept', 'Proposal Left Behind'].map((title) =>
-        createProposal({
-          processInstanceId: instance.instance.id,
-          submittedByProfileId: org.organizationProfile.id,
-          authUserId: org.adminUser.authUserId,
-          email: org.adminUser.email,
-          proposalData: { title },
-          status: ProposalStatus.DRAFT,
-        }),
-      ),
     );
-    if (!kept || !leftBehind) {
-      throw new Error('Expected two seeded proposals');
-    }
-    await db
-      .update(proposalsTable)
-      .set({ status: ProposalStatus.SUBMITTED })
-      .where(inArray(proposalsTable.id, [kept.id, leftBehind.id]));
-
-    // Land in `review` with only `kept` carried over.
-    await db
-      .update(processInstances)
-      .set({ currentStateId: 'review' })
-      .where(eq(processInstances.id, instance.instance.id));
-    const [transition] = await db
-      .insert(stateTransitionHistory)
-      .values({
-        processInstanceId: instance.instance.id,
-        fromStateId: 'submission',
-        toStateId: 'review',
-        transitionData: {},
-      })
-      .returning();
-    const [keptHistory] = await db
-      .select({ historyId: proposalHistory.historyId })
-      .from(proposalHistory)
-      .where(eq(proposalHistory.id, kept.id))
-      .orderBy(desc(proposalHistory.historyCreatedAt))
-      .limit(1);
-    if (!transition || !keptHistory) {
-      throw new Error('Failed to seed the review transition');
-    }
-    await db.insert(decisionTransitionProposals).values({
-      processInstanceId: instance.instance.id,
-      transitionHistoryId: transition.id,
-      proposalId: kept.id,
-      proposalHistoryId: keptHistory.historyId,
-    });
 
     // All stays the current phase: the kept proposal only.
     const allUrl = `/en/decisions/${instance.slug}/current?filter=all`;
@@ -192,5 +246,42 @@ test.describe('Advance a proposal into the current phase', () => {
     await expect(
       authenticatedPage.getByRole('menuitem', { name: 'Advance to Review' }),
     ).toHaveCount(0);
+  });
+
+  test("finds a left-behind proposal in the review phase's Other proposals tab", async ({
+    authenticatedPage: page,
+    org,
+  }) => {
+    const { instance, kept } = await seedLeftBehind(org, reviewSchema);
+    // The kept proposal is the admin's to review, so "Other proposals" has
+    // nothing under All: the filter has to stay to reach "Not advanced".
+    await createReviewAssignment({
+      processInstanceId: instance.instance.id,
+      proposalId: kept.id,
+      reviewerProfileId: org.adminUser.profileId,
+    });
+
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
+      waitUntil: 'load',
+    });
+    const otherTab = page.getByRole('tab', { name: 'Other proposals' });
+    await expect(otherTab).toBeVisible({ timeout: 36_000 });
+    await otherTab.click();
+
+    const filter = page.getByRole('combobox', { name: 'Filter proposals' });
+    await expect(filter).toBeVisible({ timeout: 36_000 });
+    await filter.click();
+    await page.getByRole('option', { name: 'Not advanced' }).click();
+
+    const leftBehindCard = proposalCard(page, 'Proposal Left Behind');
+    await expect(leftBehindCard.getByText('Not advanced')).toBeVisible({
+      timeout: 36_000,
+    });
+    await leftBehindCard
+      .getByRole('button', { name: 'Proposal options' })
+      .click();
+    await expect(
+      page.getByRole('menuitem', { name: 'Advance to Review' }),
+    ).toBeVisible();
   });
 });

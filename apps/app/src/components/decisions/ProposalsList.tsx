@@ -616,10 +616,16 @@ const ProposalsListContent = ({
 
   // With nothing to filter, sort, or export, the control bar is just noise —
   // collapse to the empty state alone. A zero-result FILTERED list keeps the
-  // bar so the filter can be cleared. Map mode is not an exception:
+  // bar so the filter can be cleared, and so does an admin's empty list with
+  // something under "Not advanced" — what earlier phases left behind is only
+  // reachable through that filter. Map mode is not an exception:
   // unfiltered-empty renders the grid empty state, so the bar would only
   // toggle between two empty states.
-  const showFilterBar = !isEmptyUnfiltered;
+  const hasNotAdvanced = useHasNotAdvancedProposals({
+    queryParams,
+    enabled: isEmptyUnfiltered && canManageProposals,
+  });
+  const showFilterBar = !isEmptyUnfiltered || hasNotAdvanced;
 
   // Same terms as the select they replace.
   const showTabs = showFilterTabs && showFilterBar && !hideFilters;
@@ -756,3 +762,28 @@ const ProposalsListContent = ({
     </div>
   );
 };
+
+/**
+ * Whether anything sits under "Not advanced" for this list. Only asked when an
+ * admin's unfiltered list is empty: everyone else's not-advanced proposals are
+ * already part of that list.
+ */
+function useHasNotAdvancedProposals({
+  queryParams,
+  enabled,
+}: {
+  queryParams: ProposalQueryParams;
+  enabled: boolean;
+}): boolean {
+  const { data } = trpc.decision.listProposals.useQuery(
+    {
+      processInstanceId: queryParams.processInstanceId,
+      limit: 1,
+      phase: queryParams.phase,
+      excludeAssignedForReview: queryParams.excludeAssignedForReview,
+      notAdvanced: true,
+    },
+    { enabled },
+  );
+  return enabled && (data?.total ?? 0) > 0;
+}
