@@ -1,13 +1,12 @@
-import { type DbClient, and, desc, eq, inArray, isNull } from '@op/db/client';
+import { type DbClient, and, eq, isNull } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
-  decisionTransitionProposals,
   processInstances,
-  proposalHistory,
   stateTransitionHistory,
 } from '@op/db/schema';
 
+import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
 import type {
   DecisionInstanceData,
@@ -179,36 +178,12 @@ export async function advancePhase(
     );
   }
 
-  if (selectedProposalIds.length > 0) {
-    const latestHistoryRows = await db
-      .selectDistinctOn([proposalHistory.id], {
-        proposalId: proposalHistory.id,
-        historyId: proposalHistory.historyId,
-      })
-      .from(proposalHistory)
-      .where(
-        and(
-          eq(proposalHistory.processInstanceId, instanceId),
-          inArray(proposalHistory.id, selectedProposalIds),
-        ),
-      )
-      .orderBy(proposalHistory.id, desc(proposalHistory.historyCreatedAt));
-
-    if (latestHistoryRows.length !== selectedProposalIds.length) {
-      throw new Error(
-        `Proposals missing history records during phase advance for instance ${instanceId}: expected ${selectedProposalIds.length}, got ${latestHistoryRows.length}`,
-      );
-    }
-
-    await db.insert(decisionTransitionProposals).values(
-      latestHistoryRows.map(({ proposalId, historyId }) => ({
-        processInstanceId: instanceId,
-        transitionHistoryId: insertedTransition.id,
-        proposalId,
-        proposalHistoryId: historyId,
-      })),
-    );
-  }
+  await attachProposalsToTransition({
+    dbClient: db,
+    processInstanceId: instanceId,
+    transitionHistoryId: insertedTransition.id,
+    proposalIds: selectedProposalIds,
+  });
 
   return {
     conflict: false,

@@ -7,7 +7,7 @@ import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
-import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
+import { LuArrowRight, LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -24,8 +24,8 @@ import { useProposalModerationActions } from './useProposalModerationActions';
 import { useProposalRejectionActions } from './useProposalRejectionActions';
 
 /**
- * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide
- * and delete.
+ * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide,
+ * delete, and "Advance to [phase]" for a proposal outside the current phase.
  * Mirrors the browse-card kebab (`ProposalCard/ProposalCardMenu`) and shares its
  * mutation + toast copy via {@link useProposalModerationActions}, so the two
  * surfaces can't drift.
@@ -116,10 +116,20 @@ function ProposalAdminMenuItems({
       },
     );
 
+  const { advanceTarget, advance, isAdvancing } = useProposalAdvance(proposal);
+  // Advancing, rejecting and unmerging all move the proposal between pools,
+  // so none starts while another is in flight.
+  const isBusy =
+    isLoading ||
+    unmergeMutation.isPending ||
+    isRejecting ||
+    isUnrejecting ||
+    isAdvancing;
+
   // Merge leads, matching the card kebab (Figma 15311:9078).
   const mergeItem = mergeEnabled
     ? buildMergeMenuItem({
-        isDisabled: isLoading || unmergeMutation.isPending,
+        isDisabled: isBusy,
         mergeLabel: t('decisions.proposals.mergeProposalAction'),
         onMerge: () => setIsMergeModalOpen(true),
         unmerge: {
@@ -130,24 +140,36 @@ function ProposalAdminMenuItems({
       })
     : null;
 
-  const rejectItem = rejectEnabled
-    ? buildRejectMenuItem({
-        isDisabled:
-          isLoading ||
-          unmergeMutation.isPending ||
-          isRejecting ||
-          isUnrejecting,
-        isRejected,
-        rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
-        undoLabel: t('decisions.proposals.undoRejectionAction'),
-        onReject: () => setIsRejectModalOpen(true),
-        onUndo: unreject,
-      })
-    : null;
+  // A proposal the admin can advance gets that choice instead: offering both
+  // "Advance" and "Do not advance" would read as contradictory.
+  const rejectItem =
+    rejectEnabled && !advanceTarget
+      ? buildRejectMenuItem({
+          isDisabled: isBusy,
+          isRejected,
+          rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
+          undoLabel: t('decisions.proposals.undoRejectionAction'),
+          onReject: () => setIsRejectModalOpen(true),
+          onUndo: unreject,
+        })
+      : null;
 
   const items: ProposalOptionsMenuItem[] = [
     ...(mergeItem ? [mergeItem] : []),
     ...(rejectItem ? [rejectItem] : []),
+    ...(advanceTarget
+      ? [
+          {
+            key: 'advance',
+            icon: <LuArrowRight className="size-5 rtl:-scale-x-100" />,
+            label: t('decisions.proposals.advanceToPhaseAction', {
+              phase: advanceTarget.phaseName,
+            }),
+            onAction: advance,
+            isDisabled: isBusy,
+          },
+        ]
+      : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -202,4 +224,49 @@ function ProposalAdminMenuItems({
       ) : null}
     </ProposalOptionsMenu>
   );
+}
+
+/**
+ * The phase this proposal can be advanced into (`undefined` while loading or
+ * when it can't move), and the action that advances it. No invalidation
+ * needed: the endpoints register the proposal channels.
+ */
+function useProposalAdvance(proposal: Proposal) {
+  const t = useTranslations();
+  // Refetched over the proposal channel, so a rejection clears it.
+  const { data: advanceTarget } =
+    trpc.decision.getProposalAdvanceTarget.useQuery({
+      proposalId: proposal.id,
+    });
+  const advanceMutation = trpc.decision.advanceProposal.useMutation({
+    onError: (error) => {
+      toast.error(t('decisions.proposals.advanceError'));
+      logger.error('Failed to advance proposal', {
+        error,
+        context: 'ProposalAdminMenu',
+      });
+    },
+  });
+
+  const advance = () => {
+    if (advanceTarget) {
+      const { phaseId, phaseName } = advanceTarget;
+      advanceMutation.mutate(
+        { proposalId: proposal.id, phaseId },
+        {
+          // Per-call so the toast can name the phase it was offered.
+          onSuccess: () =>
+            toast.success(
+              t('decisions.proposals.advanceSuccess', { phase: phaseName }),
+            ),
+        },
+      );
+    }
+  };
+
+  return {
+    advanceTarget,
+    advance,
+    isAdvancing: advanceMutation.isPending,
+  };
 }

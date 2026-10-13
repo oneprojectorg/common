@@ -1,8 +1,7 @@
-import { and, db, desc, eq, inArray } from '@op/db/client';
+import { db, desc, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionTransitionProposals,
-  proposalHistory,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
@@ -18,6 +17,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
@@ -264,34 +264,12 @@ export async function submitManualSelection({
       })
       .where(eq(stateTransitionHistory.id, latestRow.id));
 
-    const latestHistoryRows = await tx
-      .selectDistinctOn([proposalHistory.id], {
-        proposalId: proposalHistory.id,
-        historyId: proposalHistory.historyId,
-      })
-      .from(proposalHistory)
-      .where(
-        and(
-          eq(proposalHistory.processInstanceId, processInstanceId),
-          inArray(proposalHistory.id, uniqueProposalIds),
-        ),
-      )
-      .orderBy(proposalHistory.id, desc(proposalHistory.historyCreatedAt));
-
-    if (latestHistoryRows.length !== uniqueProposalIds.length) {
-      throw new CommonError(
-        `Proposals missing history records during manual selection for instance ${processInstanceId}: expected ${uniqueProposalIds.length}, got ${latestHistoryRows.length}`,
-      );
-    }
-
-    await tx.insert(decisionTransitionProposals).values(
-      latestHistoryRows.map(({ proposalId, historyId }) => ({
-        processInstanceId,
-        transitionHistoryId: latestRow.id,
-        proposalId,
-        proposalHistoryId: historyId,
-      })),
-    );
+    await attachProposalsToTransition({
+      dbClient: tx,
+      processInstanceId,
+      transitionHistoryId: latestRow.id,
+      proposalIds: uniqueProposalIds,
+    });
 
     // Defer review-assignment generation until after the transaction commits:
     // generateReviewAssignments reads the just-attached decisionTransitionProposals

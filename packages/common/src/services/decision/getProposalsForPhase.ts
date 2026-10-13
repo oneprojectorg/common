@@ -10,7 +10,6 @@ import {
   inArray,
   isNull,
   lt,
-  notInArray,
   or,
   sql,
 } from '@op/db/client';
@@ -25,26 +24,7 @@ import {
 } from '@op/db/schema';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
-import { notSuperseded } from './proposalSupersession';
-import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
-
-/**
- * Excludes drafts (never in a phase), rejected proposals, and superseded
- * proposals. Every selection, review, and results path resolves membership
- * through this file, so this is what keeps them out of all of them. Since the
- * proposal list stopped filtering on rejection (`resolveProposalListScope`),
- * this predicate is the whole of the rejection rule for the pipeline: a
- * rejected proposal is listed and readable by everyone, and what it no longer
- * does is advance, get reviewed, or be voted on.
- */
-const phaseEligiblePredicate = (t: typeof proposals): SQL =>
-  and(
-    notInArray(t.status, PIPELINE_INELIGIBLE_STATUSES),
-    notSuperseded({
-      proposalId: t.id,
-      processInstanceId: t.processInstanceId,
-    }),
-  )!;
+import { phaseEligiblePredicate } from './phaseEligibility';
 
 /**
  * Minimal `processInstances` row shape required by the phase resolvers.

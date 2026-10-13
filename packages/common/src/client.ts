@@ -120,6 +120,11 @@ export {
   type UnrejectProposalInput,
 } from './services/decision/schemas/rejectProposal';
 export {
+  advanceProposalInputSchema,
+  getProposalAdvanceTargetInputSchema,
+  proposalAdvanceTargetSchema,
+} from './services/decision/schemas/advanceProposal';
+export {
   listContributingProposalsInputSchema,
   contributingProposalListSchema,
   type ListContributingProposalsInput,
