@@ -216,7 +216,12 @@ export class SmsVotingFixture {
         .from(users)
         .where(eq(users.authUserId, authUserId))
         .limit(1);
-      await this.admin.auth.admin.deleteUser(authUserId);
+      const { error } = await this.admin.auth.admin.deleteUser(authUserId);
+      if (error && error.code !== 'user_not_found') {
+        throw new Error(
+          `Failed to delete email user ${authUserId}: ${error.message}`,
+        );
+      }
       if (row?.profileId) {
         await db.delete(profiles).where(eq(profiles.id, row.profileId));
       }
