@@ -3,22 +3,25 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { type DecisionProfile, ProcessStatus } from '@op/api/encoders';
-import { PAGE_LIMIT } from '@op/common/client';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { getTextPreview } from '@op/core';
+import { Button } from '@op/sense/Button';
 import { Header2, Header3 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Skeleton } from '@op/sense/Skeleton';
 import Image from 'next/image';
-import { Suspense } from 'react';
-import { LuChevronRight } from 'react-icons/lu';
+import { Suspense, useState } from 'react';
+import { LuChevronDown, LuChevronUp } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-/** How many processes the home page lists before deferring to /decisions. */
+/** How many processes show before "See more" expands the list in place. */
 const MAX_HOME_PROCESSES = 3;
+
+const ACTIVE_PROCESSES_LIST_ID = 'home-active-processes';
 
 /**
  * The published processes the user belongs to, as cover-image cards
@@ -36,42 +39,73 @@ export const ActiveProcesses = () => {
 
 const ActiveProcessesList = () => {
   const t = useTranslations();
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Same input as the sidebar's Active Decisions group: one cache entry.
-  const [{ items: decisions, next }] =
-    trpc.decision.listDecisionProfiles.useSuspenseQuery({
-      status: [ProcessStatus.PUBLISHED],
-      limit: PAGE_LIMIT.sm,
-    });
+  // Same query and input as the sidebar's Active Decisions group, so both
+  // read one cache entry and page together.
+  const [{ pages }, { hasNextPage, fetchNextPage, isFetchingNextPage }] =
+    trpc.decision.listDecisionProfiles.useSuspenseInfiniteQuery(
+      { status: [ProcessStatus.PUBLISHED], limit: PAGE_LIMIT.sm },
+      { getNextPageParam: nextCursor },
+    );
+  const decisions = pages.flatMap((page) => page.items);
 
   if (decisions.length === 0) {
     return null;
   }
 
-  const visible = decisions.slice(0, MAX_HOME_PROCESSES);
-  const hasMore = next !== null || decisions.length > MAX_HOME_PROCESSES;
+  const visible = isExpanded
+    ? decisions
+    : decisions.slice(0, MAX_HOME_PROCESSES);
+  // Collapsed: more if anything is hidden. Expanded: more if the server has
+  // another page.
+  const canSeeMore = isExpanded
+    ? hasNextPage
+    : decisions.length > MAX_HOME_PROCESSES || hasNextPage;
+
+  const seeMore = () => {
+    if (isExpanded || decisions.length <= MAX_HOME_PROCESSES) {
+      fetchNextPage();
+    }
+    setIsExpanded(true);
+  };
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="text-label font-normal">
         {t('shell.activeProcessesHeading')}
       </Header2>
-      <ul className="flex flex-col gap-4">
+      <ul id={ACTIVE_PROCESSES_LIST_ID} className="flex flex-col gap-4">
         {visible.map((decision) => (
           <li key={decision.id}>
             <ProcessCard decision={decision} />
           </li>
         ))}
       </ul>
-      {hasMore && (
-        <ButtonLink
-          href="/decisions"
+      {canSeeMore && (
+        <Button
           variant="secondary"
           className="self-center"
+          onClick={seeMore}
+          loading={isFetchingNextPage}
+          aria-expanded={false}
+          aria-controls={ACTIVE_PROCESSES_LIST_ID}
         >
           {t('shell.seeMoreAction')}
-          <LuChevronRight className="rtl:-scale-x-100" />
-        </ButtonLink>
+          <LuChevronDown />
+        </Button>
+      )}
+      {isExpanded && !canSeeMore && (
+        <Button
+          variant="secondary"
+          className="self-center"
+          onClick={() => setIsExpanded(false)}
+          aria-expanded
+          aria-controls={ACTIVE_PROCESSES_LIST_ID}
+        >
+          {t('shell.seeLessAction')}
+          <LuChevronUp />
+        </Button>
       )}
     </section>
   );
