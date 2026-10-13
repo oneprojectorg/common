@@ -27,6 +27,8 @@ export * from './updatePhase';
 
 // Instance management
 export * from './createInstanceFromTemplate';
+export * from './createInstanceFromWizard';
+export * from './composeWizardTemplate';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';
 export * from './listInstances';
