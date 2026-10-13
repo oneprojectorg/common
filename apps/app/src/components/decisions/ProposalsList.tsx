@@ -614,21 +614,8 @@ const ProposalsListContent = ({
     ),
   };
 
-  // With nothing to filter, sort, or export, the control bar is just noise —
-  // collapse to the empty state alone. A zero-result FILTERED list keeps the
-  // bar so the filter can be cleared, and so does an admin's empty list with
-  // something under "Not advanced" — what earlier phases left behind is only
-  // reachable through that filter. Map mode is not an exception:
-  // unfiltered-empty renders the grid empty state, so the bar would only
-  // toggle between two empty states.
-  const hasNotAdvanced = useHasNotAdvancedProposals({
-    queryParams,
-    enabled: isEmptyUnfiltered && canManageProposals,
-  });
-  const showFilterBar = !isEmptyUnfiltered || hasNotAdvanced;
-
   // Same terms as the select they replace.
-  const showTabs = showFilterTabs && showFilterBar && !hideFilters;
+  const showTabs = showFilterTabs && !hideFilters;
 
   // With a tab bar the select is the status axis; without one it is the only
   // control and keeps the combined filter.
@@ -658,37 +645,37 @@ const ProposalsListContent = ({
 
   const listBody = (
     <>
-      {showFilterBar && (
-        <ProposalsStickyFilterBar
-          pinOffset={pinOffset}
-          count={total}
-          total={totalProposalCount}
-          header={header?.(total)}
-          // Omitted when the phase hides proposals from non-admins.
-          controls={hideFilters ? undefined : controls}
-          leadingSelect={leadingSelect}
-          // Omitted when there is only one view to be in.
-          view={
-            availableViews.length > 1
-              ? {
-                  value: effectiveView,
-                  views: availableViews,
-                  onChange: handleViewChange,
-                }
-              : undefined
-          }
-          exportControl={
-            canExportProposals ? (
-              <ExportProposalsButton
-                processInstanceId={queryParams.processInstanceId}
-                // The phase's unfiltered count: the export ignores the list's
-                // filters, so a filter matching nothing must not disable it.
-                isEmpty={totalProposalCount === 0}
-              />
-            ) : null
-          }
-        />
-      )}
+      {/* Kept on an empty list too: "Not advanced" can hold what the list
+          doesn't, such as proposals earlier phases left behind. */}
+      <ProposalsStickyFilterBar
+        pinOffset={pinOffset}
+        count={total}
+        total={totalProposalCount}
+        header={header?.(total)}
+        // Omitted when the phase hides proposals from non-admins.
+        controls={hideFilters ? undefined : controls}
+        leadingSelect={leadingSelect}
+        // Omitted when there is only one view to be in.
+        view={
+          availableViews.length > 1
+            ? {
+                value: effectiveView,
+                views: availableViews,
+                onChange: handleViewChange,
+              }
+            : undefined
+        }
+        exportControl={
+          canExportProposals ? (
+            <ExportProposalsButton
+              processInstanceId={queryParams.processInstanceId}
+              // The phase's unfiltered count: the export ignores the list's
+              // filters, so a filter matching nothing must not disable it.
+              isEmpty={totalProposalCount === 0}
+            />
+          ) : null
+        }
+      />
 
       {translation.translationState && (
         <TranslationNotice
@@ -762,28 +749,3 @@ const ProposalsListContent = ({
     </div>
   );
 };
-
-/**
- * Whether anything sits under "Not advanced" for this list. Only asked when an
- * admin's unfiltered list is empty: everyone else's not-advanced proposals are
- * already part of that list.
- */
-function useHasNotAdvancedProposals({
-  queryParams,
-  enabled,
-}: {
-  queryParams: ProposalQueryParams;
-  enabled: boolean;
-}): boolean {
-  const { data } = trpc.decision.listProposals.useQuery(
-    {
-      processInstanceId: queryParams.processInstanceId,
-      limit: 1,
-      phase: queryParams.phase,
-      excludeAssignedForReview: queryParams.excludeAssignedForReview,
-      notAdvanced: true,
-    },
-    { enabled },
-  );
-  return enabled && (data?.total ?? 0) > 0;
-}
