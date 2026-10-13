@@ -741,7 +741,11 @@
     "setUpProfileBody": "Fikradaha way sii fogaadaan marka dadku arkaan qofka ka dambeeya. Hababkaaga waxaad ku ahaanaysaa qof aan la aqoon ilaa aad si kale doorato.",
     "setUpProfileAction": "Diyaari astaanta",
     "dismissSetUpProfileLabel": "Iska dhaaf",
-    "seeLessAction": "Eeg wax yar"
+    "seeLessAction": "Eeg wax yar",
+    "editProfileAction": "Wax ka beddel astaanta",
+    "profilesMenuHeading": "Astaamaha",
+    "activeProfileLabel": "Firfircoon",
+    "settingsAction": "Dejinta"
   },
   "decisions": {
     "processBuilder": {

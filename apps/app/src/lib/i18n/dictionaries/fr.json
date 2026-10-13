@@ -741,7 +741,11 @@
     "setUpProfileBody": "Les idées vont plus loin quand on voit qui se cache derrière. Vous restez anonyme dans vos processus jusqu'à ce que vous en décidiez autrement.",
     "setUpProfileAction": "Configurer le profil",
     "dismissSetUpProfileLabel": "Ignorer",
-    "seeLessAction": "Voir moins"
+    "seeLessAction": "Voir moins",
+    "editProfileAction": "Modifier le profil",
+    "profilesMenuHeading": "Profils",
+    "activeProfileLabel": "Actif",
+    "settingsAction": "Paramètres"
   },
   "decisions": {
     "processBuilder": {

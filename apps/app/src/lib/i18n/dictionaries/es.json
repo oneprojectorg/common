@@ -741,7 +741,11 @@
     "setUpProfileBody": "Las ideas llegan más lejos cuando la gente puede ver quién está detrás. Sigues siendo anónimo en tus procesos hasta que decidas lo contrario.",
     "setUpProfileAction": "Configurar perfil",
     "dismissSetUpProfileLabel": "Descartar",
-    "seeLessAction": "Ver menos"
+    "seeLessAction": "Ver menos",
+    "editProfileAction": "Editar perfil",
+    "profilesMenuHeading": "Perfiles",
+    "activeProfileLabel": "Activo",
+    "settingsAction": "Configuración"
   },
   "decisions": {
     "processBuilder": {

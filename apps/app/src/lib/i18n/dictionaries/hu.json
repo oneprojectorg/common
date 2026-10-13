@@ -741,7 +741,11 @@
     "setUpProfileBody": "Az ötletek messzebbre jutnak, ha látszik, ki áll mögöttük. A folyamataidban névtelen maradsz, amíg másként nem döntesz.",
     "setUpProfileAction": "Profil beállítása",
     "dismissSetUpProfileLabel": "Elvetés",
-    "seeLessAction": "Kevesebb"
+    "seeLessAction": "Kevesebb",
+    "editProfileAction": "Profil szerkesztése",
+    "profilesMenuHeading": "Profilok",
+    "activeProfileLabel": "Aktív",
+    "settingsAction": "Beállítások"
   },
   "decisions": {
     "processBuilder": {

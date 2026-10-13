@@ -59,7 +59,8 @@ const HeaderActions = () => {
   return (
     <ClientOnly>
       {user && <CreateMenu />}
-      <LocaleChooser />
+      {/* Signed in, language lives in the Settings modal. */}
+      {!user && <LocaleChooser />}
       {user && (
         <ErrorBoundary
           fallback={
@@ -102,10 +103,9 @@ export const SiteHeader = () => {
       >
         <SidebarTrigger
           aria-label={t('shell.toggleSidebarLabel')}
-          variant="secondary"
-          // The gray fill is the desktop design; on a phone the always-filled
-          // square reads as stuck in a pressed state, so it goes bare there.
-          className="size-8 rounded-lg max-md:bg-transparent md:size-11"
+          // Ghost, not Figma's gray square: a resting fill read as a button
+          // stuck in its pressed state.
+          className="size-8 rounded-lg md:size-11"
         >
           <LuAlignJustify className="size-4" />
         </SidebarTrigger>
