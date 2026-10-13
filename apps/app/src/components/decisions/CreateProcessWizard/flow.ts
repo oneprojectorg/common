@@ -1,9 +1,9 @@
 import {
-  MAX_PROCESS_NAME_LENGTH,
-  MIN_PROCESS_NAME_LENGTH,
-  SHAPE_QUESTION,
-  type GrantDecision,
-} from './content';
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+} from '@op/common/client';
+
+import { SHAPE_QUESTION, type GrantDecision } from './content';
 import {
   EMPTY_OTHER,
   OTHER_STEPS,
@@ -97,7 +97,7 @@ const SCREEN: Record<ScreenId, Screen> = {
       const length = name.trim().length;
 
       return (
-        length >= MIN_PROCESS_NAME_LENGTH && length <= MAX_PROCESS_NAME_LENGTH
+        length >= PROCESS_NAME_MIN_LENGTH && length <= PROCESS_NAME_MAX_LENGTH
       );
     },
   },
