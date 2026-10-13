@@ -61,7 +61,9 @@ test.describe('Login by email code', () => {
       0,
     );
 
-    await page.getByRole('textbox', { name: 'Code' }).fill(code);
+    await page
+      .getByRole('textbox', { name: 'Enter verification code' })
+      .fill(code);
 
     await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
     await expect(

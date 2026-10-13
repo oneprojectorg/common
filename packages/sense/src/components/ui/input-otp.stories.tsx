@@ -19,7 +19,7 @@ type Story = StoryObj<typeof InputOTP>;
 
 export const Default: Story = {
   render: () => (
-    <InputOTP maxLength={6} aria-label="Verification code">
+    <InputOTP maxLength={6} aria-label="Enter verification code">
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -34,7 +34,11 @@ export const Default: Story = {
 
 export const WithSeparators: Story = {
   render: () => (
-    <InputOTP maxLength={6} defaultValue="12" aria-label="Verification code">
+    <InputOTP
+      maxLength={6}
+      defaultValue="12"
+      aria-label="Enter verification code"
+    >
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -79,7 +83,7 @@ export const Disabled: Story = {
     <InputOTP
       maxLength={6}
       defaultValue="123456"
-      aria-label="Verification code"
+      aria-label="Enter verification code"
       disabled
     >
       <InputOTPGroup>

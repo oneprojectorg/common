@@ -192,7 +192,7 @@
     "continueAsGuestAction": "المتابعة كضيف",
     "accountOptionHeading": "باستخدام حساب",
     "policyConsentShort": "أوافق على <tos>شروط الخدمة</tos> و<privacy>سياسة الخصوصية</privacy>.",
-    "codeLabel": "رمز",
+    "codeLabel": "أدخل رمز التحقق",
     "codeSentToPhone": "أرسلنا رمزًا إلى {phone}",
     "codeSentToEmail": "أرسلنا رمزًا إلى {email}",
     "verifyAction": "تحقق وتابع",

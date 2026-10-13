@@ -192,7 +192,7 @@
     "continueAsGuestAction": "Continue as guest",
     "accountOptionHeading": "With an account",
     "policyConsentShort": "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.",
-    "codeLabel": "Code",
+    "codeLabel": "Enter verification code",
     "codeSentToPhone": "We sent a code to {phone}",
     "codeSentToEmail": "We sent a code to {email}",
     "verifyAction": "Verify and continue",
