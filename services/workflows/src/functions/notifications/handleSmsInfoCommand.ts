@@ -112,7 +112,10 @@ export const handleSmsInfoCommand = inngest.createFunction(
       return { message: 'proposal not found' };
     }
 
-    await text('send-info-reply', formatSmsProposalInfo(proposal));
+    await text(
+      'send-info-reply',
+      formatSmsProposalInfo(proposal, { slug: decision.slug }),
+    );
 
     return { message: 'info sent' };
   },

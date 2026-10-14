@@ -110,6 +110,7 @@ export const handleSmsProposalsCommand = inngest.createFunction(
 
     const bodies = formatSmsProposalPages({
       decisionName: decision.name,
+      slug: decision.slug,
       proposals,
     });
 

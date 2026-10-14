@@ -54,7 +54,7 @@ describe('handleSmsInfoCommand against the database', () => {
 
     expect(result).toEqual({ message: 'info sent' });
     expect(recordedSms[0]!.body).toBe(
-      '102: "Cleveland Ave protected bike lane" ($310,000). A curb-protected lane between Morse Rd and Innis Ave. Text 102 to add it to your ballot.',
+      `102: "Cleveland Ave protected bike lane" ($310,000). A curb-protected lane between Morse Rd and Innis Ave. Text VOTE ${slug} to start your ballot.`,
     );
   });
 
