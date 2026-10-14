@@ -14,6 +14,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
+import { isExportEmpty } from './exportEmpty';
 import { resolveExportRetryOutcome } from './exportRetry';
 import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
@@ -267,8 +268,7 @@ const ExportProposalsButtonContent = ({
 }: ExportProposalsButtonProps) => {
   const t = useTranslations();
 
-  // The list leaves rejected proposals out, but the export includes them, so a
-  // phase holding only rejected proposals still has rows to hand over.
+  // The list leaves rejected proposals out, but the export includes them.
   const { data: rejectedData, isError } = trpc.decision.listProposals.useQuery(
     { processInstanceId, status: ProposalStatus.REJECTED, limit: 1 },
     {
@@ -279,14 +279,11 @@ const ExportProposalsButtonContent = ({
       refetchOnMount: 'always',
     },
   );
-  // Pending counts as empty, so the button never enables ahead of the answer. A
-  // read that failed with no answer to fall back on does not: it would leave
-  // the button disabled with no reason given, when the export can still run.
-  const isRejectedCountUnreadable = isError && rejectedData === undefined;
-  const isEmpty =
-    isListEmpty &&
-    !isRejectedCountUnreadable &&
-    (rejectedData?.total ?? 0) === 0;
+  const isEmpty = isExportEmpty({
+    isListEmpty,
+    rejectedCount: rejectedData?.total,
+    errored: isError,
+  });
 
   const [exportId, setExportId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
