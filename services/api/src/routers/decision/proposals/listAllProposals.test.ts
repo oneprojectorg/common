@@ -223,9 +223,7 @@ describe.concurrent('listAllProposals', () => {
     ]);
 
     const ids = result.items.map((p) => p.id);
-    // A rejected proposal lives under Not advanced (the status filter), the
-    // same as on the phase-scoped list. A merged-away duplicate has no page of
-    // its own, so it stays out everywhere.
+    // A merged-away duplicate has no page of its own, so it stays out.
     expect(ids).toEqual(
       expect.arrayContaining([submitted.id, approved.id, selected.id]),
     );

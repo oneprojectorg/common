@@ -8,10 +8,8 @@ import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
  * Excludes drafts (never in a phase), rejected proposals, and superseded
  * proposals. Every selection, review, and results path resolves membership
  * through `getProposalsForPhase`, so this is what keeps them out of all of them.
- * This predicate is the whole of the rejection rule for the pipeline: a rejected
- * proposal stays readable by everyone and is listed under "Not advanced"
- * (`resolveProposalListScope`); what it no longer does is advance, get
- * reviewed, or be voted on.
+ * A rejected proposal stays readable, but no longer advances, gets reviewed, or
+ * is voted on.
  */
 export const phaseEligiblePredicate = (t: typeof proposals): SQL =>
   and(
@@ -23,9 +21,8 @@ export const phaseEligiblePredicate = (t: typeof proposals): SQL =>
   )!;
 
 /**
- * Browse lists leave rejected proposals out, since "Not advanced" is where
- * they're found, unless the caller asked for a status or a fixed set of rows
- * (a ballot, an export).
+ * Rejected proposals belong under "Not advanced", so other lists drop them
+ * unless the caller asked for a status or a fixed set (a ballot, an export).
  */
 export const excludeRejectedUnlessAsked = (
   t: typeof proposals,

@@ -100,7 +100,6 @@ async function seedReviewPhase(testData: TestDecisionsDataManager) {
     instanceId,
     admin,
     memberCaller,
-    /** Adds a member who reads the process but authored nothing. */
     createViewer: async () =>
       createAuthenticatedCaller(
         (
@@ -265,7 +264,7 @@ describe.concurrent('listProposals: not advanced', () => {
 
     expect(viewerList.items.map((p) => p.id)).toEqual([alsoLeftBehind]);
     expect(viewerList.total).toBe(1);
-    // Its author still sees it, the same as everywhere else.
+    // The author still sees their hidden proposal.
     expect(authorList.total).toBe(2);
   });
 

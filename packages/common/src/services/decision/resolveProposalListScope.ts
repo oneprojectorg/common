@@ -385,20 +385,15 @@ export const resolveProposalListScope = async ({
     }
   }
 
-  // "Not advanced" on the current phase reaches back into earlier phases, so
-  // `buildStatusAxisFilter` alone narrows the list instead of phase scoping.
-  // That way a rejected proposal shows whatever phase it was rejected in:
-  // rejection drops it from later transition snapshots, so phase scoping
-  // would lose it once the instance moves on. An explicit phase or ID scope
-  // keeps the list to what was asked for.
+  // Rejection drops a proposal from later phases' snapshots, so "Not advanced"
+  // on the current phase skips phase scoping and lets the status filter narrow.
   const includesEarlierPhases =
     input.notAdvanced === true &&
     explicitScopeIds === undefined &&
     input.phaseId === undefined;
 
-  // It also lists what didn't advance into the current phase: every submitted
-  // proposal outside it was left behind by an earlier transition, since a
-  // proposal can't predate the instance's first phase.
+  // A submitted proposal outside the current phase was left behind by an
+  // earlier transition.
   const buildIsOutsideCurrentPhase =
     includesEarlierPhases && input.phase !== 'results'
       ? (proposalsTable: typeof proposals): SQL =>
@@ -418,9 +413,8 @@ export const resolveProposalListScope = async ({
         : phaseScope.buildNonDraftFilter(proposalsTable),
     )!;
 
-  // "Not advanced" is rejected or left behind in an earlier phase; every other
-  // list drops rejected proposals. An explicit ID scope (a ballot) and trusted
-  // reads (the export) are fixed sets, not lists a viewer browses.
+  // Ballots and trusted reads (the export) are fixed sets, so they keep
+  // rejected proposals.
   const buildStatusAxisFilter = (
     proposalsTable: typeof proposals,
   ): SQL | undefined =>
@@ -461,17 +455,16 @@ export const resolveProposalListScope = async ({
     }
 
     // Phase scoping is composed in SQL: non-drafts match the attachment
-    // snapshot ∪ a strict `(inboundAt, outboundAt)` `createdAt` window (unless
-    // `includesEarlierPhases` drops phase scoping for them), while drafts
-    // match the half-open `[inboundAt, outboundAt)` window AND the caller's
-    // `profileUsers` access set. Every scope predicate (including the
-    // explicit-scope one above) carries the `isNull(deletedAt)` filter, so
-    // the outer query stays soft-delete-safe without its own check.
+    // snapshot ∪ a strict `(inboundAt, outboundAt)` `createdAt` window, while
+    // drafts match the half-open `[inboundAt, outboundAt)` window AND the
+    // caller's `profileUsers` access set. Every scope predicate (including
+    // the explicit-scope one above) carries the `isNull(deletedAt)` filter,
+    // so the outer query stays soft-delete-safe without its own check.
     const nonDraftScopeFilter = buildNonDraftScopeFilter(proposalsTable);
     clause = and(clause, buildStatusAxisFilter(proposalsTable))!;
 
     if (skipAccessCheck) {
-      // Trusted contexts get every non-draft proposal in scope.
+      // Trusted contexts get all non-draft proposals in scope.
       return and(clause, nonDraftScopeFilter)!;
     }
 

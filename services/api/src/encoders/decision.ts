@@ -764,9 +764,8 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    */
   excludeAssignedForReview: z.boolean().optional(),
   /**
-   * The "Not advanced" filter: rejected proposals, plus (on the current phase)
-   * those earlier phases left behind. Omitted lists the phase's proposals,
-   * rejected ones dropped.
+   * The "Not advanced" filter: rejected proposals plus, on the current phase,
+   * those earlier phases left behind. Omitted lists the phase's other proposals.
    */
   notAdvanced: z.boolean().optional(),
   /** When set to 'results', all proposals are returned as non-editable */

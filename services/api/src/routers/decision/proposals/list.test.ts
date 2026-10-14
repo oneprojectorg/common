@@ -371,8 +371,6 @@ describe.concurrent('listProposals', () => {
       ),
     );
 
-    // Both viewers get the same split: All without the rejected proposal, Not
-    // advanced with it, carrying its status so the card can badge it.
     for (const [index, result] of results.entries()) {
       const isNotAdvanced = index % 2 === 1;
       expect(result.items.map((p) => p.id)).toEqual([
@@ -496,7 +494,7 @@ describe.concurrent('listProposals', () => {
       ]);
 
     // It stays a record where it lived: the rejection happened in `submission`,
-    // and that phase's Not advanced list still carries it. Its All list doesn't.
+    // and that phase's Not advanced list still carries it.
     expect(submissionPhase.items.map((p) => p.id)).toContain(
       rejectedProposal.id,
     );

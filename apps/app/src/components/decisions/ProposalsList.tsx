@@ -605,8 +605,7 @@ const ProposalsListContent = ({
       <ProposalsStickyFilterBar
         pinOffset={pinOffset}
         count={total}
-        // "Not advanced" isn't a slice of the unfiltered pool, which leaves
-        // rejected proposals out, so its count stands alone.
+        // "Not advanced" isn't a slice of the unfiltered pool.
         total={
           queryParams.notAdvanced || queryParams.status
             ? undefined

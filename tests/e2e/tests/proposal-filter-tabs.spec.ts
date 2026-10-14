@@ -249,7 +249,6 @@ test.describe('Proposal filter tabs', () => {
       name: OTHER_REJECTED_TITLE,
     });
 
-    // Rejected proposals only show under Not advanced.
     await expect(mineOpen).toBeVisible({ timeout: 30_000 });
     await expect(theirsRejected).toBeHidden();
     await expect(mineRejected).toBeHidden();

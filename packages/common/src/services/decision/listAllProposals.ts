@@ -58,10 +58,9 @@ import type { AllProposalsFilter } from './schemas/proposal';
 /**
  * Returns proposals on the instance for the "All proposals" tab on the
  * results page. Drafts, duplicate, merged, and soft-deleted proposals are
- * excluded for everyone, and rejected ones unless asked for (see
- * `excludeRejectedUnlessAsked`). Non-admin members additionally see only
- * visible proposals; decision admins also see hidden proposals so they can
- * audit and report on what was submitted to the process.
+ * excluded for everyone, and rejected ones unless asked for. Non-admin members
+ * additionally see only visible proposals; decision admins also see hidden
+ * proposals so they can audit and report on what was submitted to the process.
  */
 export const listAllProposals = async ({
   input,

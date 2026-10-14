@@ -128,7 +128,6 @@ describe.concurrent('listProposalLocations', () => {
       }),
     ]);
 
-    // Pins follow the list: the map can't show what the list leaves out.
     expect(all.items.map((p) => p.id)).toEqual([kept.id]);
     expect(notAdvanced.items.map((p) => p.id)).toEqual([rejected.id]);
   });
