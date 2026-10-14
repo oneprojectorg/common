@@ -68,25 +68,29 @@ export const handleSmsDecisionsCommand = inngest.createFunction(
       listSmsDecisions({ authUserId: account.authUserId }),
     );
 
-    const listResult = await step.run('send-decision-list', async () => {
-      const result = await sendSms({
-        to,
-        body: formatSmsDecisionList(decisions),
-      });
-      if (result.status === 'rejected' && result.retryable) {
-        throw new RateLimitError(
-          `Decision list send rejected: ${result.reason}`,
-        );
-      }
-      return result;
-    });
+    const bodies = formatSmsDecisionList(decisions);
 
-    if (listResult.status === 'rejected') {
-      logger.warn('Decision list permanently rejected', {
-        authUserId: account.authUserId,
-        reason: listResult.reason,
-      });
-      return { message: 'list send rejected', reason: listResult.reason };
+    for (const [index, body] of bodies.entries()) {
+      const listResult = await step.run(
+        `send-decision-list-${index + 1}`,
+        async () => {
+          const result = await sendSms({ to, body });
+          if (result.status === 'rejected' && result.retryable) {
+            throw new RateLimitError(
+              `Decision list send rejected: ${result.reason}`,
+            );
+          }
+          return result;
+        },
+      );
+
+      if (listResult.status === 'rejected') {
+        logger.warn('Decision list permanently rejected', {
+          authUserId: account.authUserId,
+          reason: listResult.reason,
+        });
+        return { message: 'list send rejected', reason: listResult.reason };
+      }
     }
 
     logger.info('Answered a DECISIONS command', {

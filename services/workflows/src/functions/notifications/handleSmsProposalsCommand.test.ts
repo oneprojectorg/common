@@ -56,13 +56,13 @@ describe('handleSmsProposalsCommand against the database', () => {
 
     expect(result).toEqual({ message: 'proposals sent', pages: 1 });
     const [body] = recordedSms.map((message) => message.body);
-    expect(body).toContain(`"Shortlist ${task.id}" has 2 proposals. First 2:`);
+    expect(body).toContain(`"Shortlist ${task.id}" has 2 proposals:`);
     expect(body).toContain('101 Advanced one $10k');
     expect(body).toContain('103 Advanced two $30k');
     expect(body).not.toContain('Left behind');
   });
 
-  it('given seven proposals, when a member texts PROPOSALS and the slug, then they get a page of five and a page of two at once', async ({
+  it('given seven proposals, when a member texts PROPOSALS and the slug, then the whole guide arrives in one text', async ({
     task,
     onTestFinished,
   }) => {
@@ -85,26 +85,20 @@ describe('handleSmsProposalsCommand against the database', () => {
       events: [proposalsCommand(phone, slug)],
     });
 
-    expect(result).toEqual({ message: 'proposals sent', pages: 2 });
-    const [first, second] = recordedSms.map((message) => message.body);
-    expect(first).toBe(
+    expect(result).toEqual({ message: 'proposals sent', pages: 1 });
+    expect(recordedSms.map((message) => message.body)).toEqual([
       [
-        `"Browse ${task.id}" has 7 proposals. First 5:`,
+        `"Browse ${task.id}" has 7 proposals:`,
         '101 Proposal 1 $10k',
         '102 Proposal 2 $20k',
         '103 Proposal 3 $30k',
         '104 Proposal 4 $40k',
         '105 Proposal 5 $50k',
-      ].join('\n'),
-    );
-    expect(second).toBe(
-      [
-        'Next 2:',
         '106 Proposal 6 $60k',
         '107 Proposal 7 $70k',
         'Text a code to add it to your ballot, or INFO plus a code.',
       ].join('\n'),
-    );
+    ]);
   });
 
   it('given a private decision the account cannot read, then it is reported as not found', async ({

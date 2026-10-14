@@ -297,7 +297,7 @@ describe('handleSmsBallot against the database', () => {
     expect(result).toMatchObject({ message: 'ballot expired', picks: 0 });
     const [, page, info, list, expired] = bodies();
     expect(page).toContain(
-      `"Park Funding ${NUMBERS.browse}" has 3 proposals. First 3:`,
+      `"Park Funding ${NUMBERS.browse}" has 3 proposals:`,
     );
     expect(page).toContain('101 Fifth Ave crosswalk lighting $85k');
     expect(page).toContain('102 Linden rec center evening hours $240k');
@@ -363,7 +363,7 @@ describe('handleSmsBallot against the database', () => {
     );
   });
 
-  it('given six proposals, when the voter texts PROPOSALS, then every page of the ballot is sent at once', async ({
+  it('given six proposals, when the voter texts PROPOSALS, then the whole guide arrives in one text', async ({
     task,
     onTestFinished,
   }) => {
@@ -379,14 +379,12 @@ describe('handleSmsBallot against the database', () => {
       steps: [reply(phone, 1, { keyword: 'proposals' }), silence(2)],
     });
 
-    const [, first, next, expired] = bodies();
-    expect(first).toContain(
-      `"Park Funding ${NUMBERS.pages}" has 6 proposals. First 5:`,
-    );
-    expect(first).not.toContain('MORE');
-    expect(next).toContain('Next 1:');
-    expect(next).toContain('106 Market street benches $12k');
-    expect(next).toContain('Text a code to add it to your ballot');
+    const [, guide, expired] = bodies();
+    expect(guide).toContain(`"Park Funding ${NUMBERS.pages}" has 6 proposals:`);
+    expect(guide).not.toContain('MORE');
+    expect(guide).toContain('101 Fifth Ave crosswalk lighting $85k');
+    expect(guide).toContain('106 Market street benches $12k');
+    expect(guide).toContain('Text a code to add it to your ballot');
     expect(expired).toContain('was not submitted');
   });
 

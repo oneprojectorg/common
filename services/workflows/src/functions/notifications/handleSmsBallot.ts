@@ -3,8 +3,8 @@ import {
   type SmsFailureReason,
   CommonError,
   RateLimitError,
+  SMS_BALLOT_EMPTY,
   SMS_BALLOT_SUBMITTED,
-  SMS_PROPOSALS_PAGE_SIZE,
   UnauthorizedError,
   assertVoteAccess,
   formatSmsBallot,
@@ -13,7 +13,7 @@ import {
   formatSmsPickConfirmation,
   formatSmsPicksLeft,
   formatSmsProposalInfo,
-  formatSmsProposalPage,
+  formatSmsProposalPages,
   getInstancePhases,
   getSmsProvider,
   getSmsVotability,
@@ -240,7 +240,7 @@ export const handleSmsBallot = inngest.createFunction(
       });
     };
 
-    const addPicks = (codes: ReadonlyArray<string>): string => {
+    const addPicks = (codes: ReadonlyArray<string>): string[] => {
       const added: Array<{ rank: number; proposal: SmsBallotProposal }> = [];
       const notes: string[] = [];
 
@@ -262,18 +262,15 @@ export const handleSmsBallot = inngest.createFunction(
         added.push({ rank: picks.length, proposal });
       }
 
-      const confirmation =
-        added.length > 0
-          ? formatSmsPickConfirmation({
-              added,
-              pickCount: picks.length,
-              maxVotesPerMember,
-            })
-          : null;
-
-      return [...notes, confirmation ?? (notes.length > 0 ? '' : GUIDANCE)]
-        .filter(Boolean)
-        .join(' ');
+      if (added.length === 0) {
+        return [notes.length > 0 ? notes.join(' ') : GUIDANCE];
+      }
+      return formatSmsPickConfirmation({
+        notes,
+        added,
+        pickCount: picks.length,
+        maxVotesPerMember,
+      });
     };
 
     const dropStalePicks = async (turn: number): Promise<boolean> => {
@@ -300,7 +297,7 @@ export const handleSmsBallot = inngest.createFunction(
               `"${pick.title}" is no longer on the ballot and was removed.`,
           ),
           picks.length === 0
-            ? formatSmsBallot({ decisionName, picks })
+            ? SMS_BALLOT_EMPTY
             : [
                 formatSmsPicksLeft(picks.length, maxVotesPerMember),
                 'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
@@ -342,7 +339,15 @@ export const handleSmsBallot = inngest.createFunction(
       const { keyword, argument, codes } = smsInboundReceived.schema.parse(
         reply.data,
       );
-      const say = (body: string) => text(`reply-${turn}`, body);
+      const say = async (bodies: string | ReadonlyArray<string>) => {
+        const list = typeof bodies === 'string' ? [bodies] : bodies;
+        for (const [index, body] of list.entries()) {
+          await text(
+            index === 0 ? `reply-${turn}` : `reply-${turn}-${index + 1}`,
+            body,
+          );
+        }
+      };
 
       if (codes.length > 0) {
         await say(addPicks(codes));
@@ -400,15 +405,7 @@ export const handleSmsBallot = inngest.createFunction(
           if (argument !== null) {
             continue;
           }
-          const pageCount = Math.ceil(
-            proposals.length / SMS_PROPOSALS_PAGE_SIZE,
-          );
-          for (let page = 0; page < pageCount; page++) {
-            await text(
-              `reply-${turn}-page-${page + 1}`,
-              formatSmsProposalPage({ decisionName, proposals, page }).body,
-            );
-          }
+          await say(formatSmsProposalPages({ decisionName, proposals }));
           continue;
         }
         case 'more':
