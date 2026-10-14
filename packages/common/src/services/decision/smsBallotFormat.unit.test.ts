@@ -92,6 +92,20 @@ describe('formatSmsProposalPages', () => {
     expect(body).toContain('101 Odd money $85k\n');
   });
 
+  it('given a slug, then the call to action starts a ballot for that decision instead of naming a bare code', () => {
+    const [body] = formatSmsProposalPages({
+      decisionName: 'Park',
+      slug: 'park-2026',
+      proposals: [proposal('101', 'Free idea', null)],
+    });
+    expect(
+      body.endsWith(
+        'Text VOTE park-2026 to start your ballot, or INFO park-2026 plus a code.',
+      ),
+    ).toBe(true);
+    expect(body).not.toContain('Text a code');
+  });
+
   it('given a proposal with no cost, then its line omits the amount', () => {
     const [body] = formatSmsProposalPages({
       decisionName: 'Park',
@@ -102,6 +116,14 @@ describe('formatSmsProposalPages', () => {
 });
 
 describe('formatSmsProposalInfo', () => {
+  it('given a slug, then the call to action starts a ballot for that decision instead of naming the code', () => {
+    expect(
+      formatSmsProposalInfo(proposal('218', 'Bike lane', null), {
+        slug: 'park-2026',
+      }),
+    ).toBe('218: "Bike lane". Text VOTE park-2026 to start your ballot.');
+  });
+
   it('includes the summary when there is one', () => {
     expect(
       formatSmsProposalInfo(
