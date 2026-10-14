@@ -5,18 +5,9 @@ import { signExportDownloadUrl } from './signedUrl';
 
 export interface UploadedExportFile {
   signedUrl: string;
-  /**
-   * Pinned to the signature. Both callers run inside a memoized Inngest step, so
-   * recomputing it afterwards would record an expiry past the real one.
-   */
   urlExpiresAt: string;
 }
 
-/**
- * Write a generated export to {@link EXPORTS_BUCKET} and sign a download for it.
- * `upsert: false` because each run mints a fresh name, so a collision is a
- * failure worth surfacing rather than one export overwriting another.
- */
 export const uploadExportFile = async ({
   filePath,
   fileName,

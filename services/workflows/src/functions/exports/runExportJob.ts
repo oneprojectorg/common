@@ -4,16 +4,11 @@ import { logger } from '@op/logging';
 
 import { notifyExportChanged } from './notifyExportChanged';
 
-/** Declared structurally so this does not depend on Inngest's handler types. */
 interface ExportStepRunner {
   run: (id: string, handler: () => Promise<unknown>) => Promise<unknown>;
 }
 
-/**
- * Run one export to a terminal, broadcast status. Export state lives only in the
- * cache, so a run that never reaches `completed` or `failed` is unreachable.
- * `seed` restates the fields a reader needs, in case the request's write was evicted.
- */
+// `seed` restores the fields a reader needs if the request's record was evicted.
 export const runExportJob = async ({
   step,
   exportId,
@@ -59,8 +54,7 @@ export const runExportJob = async ({
 
     return { exportId, status: 'completed' };
   } catch (error) {
-    // The cause is logged, not recorded: the client sees the record, and a driver
-    // error can carry the subject's own rows as query parameters.
+    // Logged, not recorded: the error can contain the user's data.
     logger.error('Export run failed', { exportId, error });
 
     await step.run('update-status-failed', () =>

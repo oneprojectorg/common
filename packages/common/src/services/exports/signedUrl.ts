@@ -9,7 +9,6 @@ import {
   exportDownloadOptions,
 } from './constants';
 
-/** The record fields the refresh reads and writes. */
 export interface RefreshableExportRecord {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   fileName?: string;
@@ -17,9 +16,7 @@ export interface RefreshableExportRecord {
   urlExpiresAt?: string;
 }
 
-// Service-role client: every `storage.objects` policy scopes to
-// `bucket_id = 'assets'`, so a caller-scoped client cannot sign here. Callers
-// settle authorization before calling.
+// Service-role: no storage policy covers this bucket. Authorize first.
 export const signExportDownloadUrl = async ({
   filePath,
   fileName,
@@ -53,8 +50,7 @@ const urlServesAsAttachment = (signedUrl: string | undefined): boolean => {
   return query !== undefined && new URLSearchParams(query).has('download');
 };
 
-// A URL with seconds left passes a bare expiry check, then answers 400 when the
-// reader clicks. The margin also absorbs clock skew against storage.
+// Re-sign slightly early so a URL doesn't expire between the read and the click.
 const URL_EXPIRY_MARGIN_MS = 60 * 1000;
 
 const needsFreshUrl = ({
@@ -67,8 +63,7 @@ const needsFreshUrl = ({
     return false;
   }
 
-  // NaN counts as lapsed: `new Date('nonsense') < new Date()` is false, so a
-  // garbled expiry would otherwise read as fresh for the record's whole life.
+  // An unparseable expiry counts as lapsed.
   const expiresAt =
     typeof urlExpiresAt === 'string' ? Date.parse(urlExpiresAt) : Number.NaN;
 
@@ -79,9 +74,7 @@ const needsFreshUrl = ({
   );
 };
 
-// Matched on the message because this Supabase build answers 400 with no error
-// code for every signing failure. A wording missed here falls to the retryable
-// branch, which is the safe direction.
+// Matched on the message: Supabase returns no error code for signing failures.
 const PERMANENT_SIGNING_FAILURES = ['Object not found', 'Bucket not found'];
 
 const isPermanentlyGone = (error: unknown): boolean => {
@@ -97,11 +90,7 @@ const isPermanentlyGone = (error: unknown): boolean => {
   );
 };
 
-/**
- * Re-sign a lapsed export URL, mutating `record` in place so the caller can
- * return the same object. `resolveFilePath` builds the storage key, whose format
- * each pipeline owns.
- */
+// Mutates `record` in place.
 export const refreshStaleSignedUrl = async ({
   record,
   exportId,
@@ -116,8 +105,6 @@ export const refreshStaleSignedUrl = async ({
   const { fileName } = record;
 
   if (!fileName) {
-    // Nothing to sign, and no later read supplies a name. Left `completed`, the
-    // client would retry forever on an export it can never download.
     if (record.status === 'completed') {
       logger.error('Completed export has no file name', { exportId });
 
@@ -134,8 +121,6 @@ export const refreshStaleSignedUrl = async ({
 
   logger.info('Refreshing signed URL', { exportId });
 
-  // Broad on purpose: a failed re-sign costs the download link, an escaped throw
-  // costs the whole record. `createSBServiceClient` throws synchronously.
   try {
     record.signedUrl = await signExportDownloadUrl({
       filePath: resolveFilePath(fileName),
@@ -151,10 +136,7 @@ export const refreshStaleSignedUrl = async ({
 
     record.signedUrl = undefined;
 
-    // A missing file fails the same way on every retry, so it goes terminal. Any
-    // other failure may be momentary and stays `completed` with no URL, which is
-    // the state the client offers a retry for. The cached record is left alone
-    // either way.
+    // A missing file is permanent; other failures stay retryable.
     if (isPermanentlyGone(error)) {
       record.status = 'failed';
     }

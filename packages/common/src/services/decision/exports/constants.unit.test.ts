@@ -12,9 +12,7 @@ import {
 // the file. `getExportStatus` reads it back.
 //
 // Each site hardcoded its own copy, and they drifted. That produced the
-// dead-download-link bug these tests pin down. The bucket and the two TTLs moved
-// to `services/exports`, where every export pipeline shares them;
-// `exports/constants.test.ts` pins those.
+// dead-download-link bug these tests pin down.
 
 describe('exportStatusCacheKey', () => {
   it('namespaces the key by export id', () => {

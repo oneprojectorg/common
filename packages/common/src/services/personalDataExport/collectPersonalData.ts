@@ -17,22 +17,8 @@ import { NotFoundError } from '../../utils';
 import { PERSONAL_DATA_EXPORT_MAX_ROWS_PER_SECTION } from './constants';
 import type { PersonalDataExportSection } from './schemas';
 
-/**
- * Read everything a personal data export covers for one data subject. Article 20
- * covers only what the subject provided, so there are no analytics or inferred
- * attributes here, and attachments are metadata only.
- *
- * Every collection is scoped to the subject's personal profile
- * (`users.profileId`, the profile `getIndividualProfileId` resolves). Most
- * writers attribute a row to `getCurrentProfileId` instead, so anything written
- * while acting as an organisation stays out. That is the only attribution
- * available: an organisation's profile is shared by its members and no column
- * records which of them wrote a given row, so widening would hand one member
- * their colleagues' work.
- *
- * Soft-deleted and moderation-detached rows stay out — returning them would undo
- * the deletion they record.
- */
+// Personal profile only: org profiles are shared, so their rows have no
+// single author.
 export const collectPersonalData = async ({
   authUserId,
 }: {
@@ -67,8 +53,6 @@ export const collectPersonalData = async ({
 
   const { profileId, ...user } = account;
 
-  // No personal profile means nothing was authored under one. The empty
-  // collections are the answer, not a degraded one.
   if (!profileId) {
     return {
       exportedAt,
@@ -137,11 +121,7 @@ interface CollectedSection<T> {
   truncated: boolean;
 }
 
-/**
- * Run a section's query with the row ceiling applied. It asks for one row past
- * the ceiling, which is what separates "exactly at it" from "beyond it" without
- * a second count query.
- */
+// Reads one row past the ceiling to detect truncation without a count query.
 const collectSection = async <T>({
   section,
   read,
@@ -206,8 +186,6 @@ const readIndividual = async (profileId: string) => {
   return individual ?? null;
 };
 
-// Every collection orders by `createdAt` then `id`: the timestamp alone is not
-// unique, so two exports of unchanged data could otherwise differ.
 const readPosts = (profileId: string) =>
   collectSection({
     section: 'posts',
@@ -248,8 +226,6 @@ const readPostReactions = (profileId: string) =>
         .limit(limit),
   });
 
-// Shared by the proposals section and the form submissions filed against those
-// proposals' profiles, so a deleted proposal cannot take its submissions with it.
 const whereSubmittedBySubject = (profileId: string) =>
   and(
     eq(proposals.submittedByProfileId, profileId),
@@ -301,12 +277,7 @@ const readAttachments = (profileId: string) =>
         .limit(limit),
   });
 
-/**
- * `custom_form_submissions.profileId` is the target entity's profile, not the
- * submitter's, so the form someone fills in to submit a proposal is filed under
- * the proposal. The subquery reaches those, and only for proposals this subject
- * submitted.
- */
+// `profileId` is the target's, so proposal forms sit under the proposal.
 const readCustomFormSubmissions = (profileId: string) =>
   collectSection({
     section: 'customFormSubmissions',
@@ -343,11 +314,7 @@ const readCustomFormSubmissions = (profileId: string) =>
         .limit(limit),
   });
 
-/**
- * Selections come from the join table because `voteData` holds a signature, not
- * the choice. Two queries rather than a join so the row ceiling counts votes, not
- * selections.
- */
+// `voteData` holds a signature, not the choice, so read the join table.
 const readVoteSubmissions = async (profileId: string) => {
   const submissions = await collectSection({
     section: 'voteSubmissions',

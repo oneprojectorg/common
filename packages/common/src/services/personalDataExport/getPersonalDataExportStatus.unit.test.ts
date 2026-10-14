@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Reading the record and refreshing the URL are shared delivery code with their
-// own tests. What is under test here is who may read a record.
 vi.mock('../exports', () => ({
   readExportRecord: vi.fn(),
   refreshStaleSignedUrl: vi.fn(),
@@ -50,8 +48,6 @@ describe('getPersonalDataExportStatus authorization', () => {
     });
   });
 
-  // No role grants access to someone else's record, and an export id is a UUID a
-  // caller could hold from a shared link or a log line.
   it('refuses a caller who is not the subject', async () => {
     await expect(readAs(OTHER_AUTH_ID)).rejects.toThrow(UnauthorizedError);
   });
@@ -62,8 +58,6 @@ describe('getPersonalDataExportStatus authorization', () => {
     expect(refreshStaleSignedUrl).not.toHaveBeenCalled();
   });
 
-  // An unreadable record carries no owner, so it must not reach the ownership
-  // check — that would compare the caller against `undefined`.
   it('reports an unreadable record as not found rather than checking its owner', async () => {
     vi.mocked(readExportRecord).mockResolvedValue(null);
 
@@ -75,7 +69,6 @@ describe('getPersonalDataExportStatus authorization', () => {
 });
 
 describe('getPersonalDataExportStatus record reads', () => {
-  // Dropped on the way out, the subject holds a short file that reports success.
   it('carries the truncation notice through the read', async () => {
     vi.mocked(readExportRecord).mockResolvedValue({
       ...completedRecord,

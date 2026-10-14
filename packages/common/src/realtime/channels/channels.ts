@@ -112,10 +112,7 @@ export const Channels = {
    */
   proposalExport: (exportId: string) => `proposalExport:${exportId}` as const,
 
-  /**
-   * Channel for a single personal data export run. Scoped per run, like
-   * {@link Channels.proposalExport}: the run belongs to one data subject.
-   */
+  /** Per-run, like {@link Channels.proposalExport}. */
   personalDataExport: (exportId: string) =>
     `personalDataExport:${exportId}` as const,
 } as const;

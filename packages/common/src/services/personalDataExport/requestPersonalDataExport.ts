@@ -7,14 +7,6 @@ import { assertUserByAuthId } from '../assert';
 import { EXPORT_CACHE_TTL_SECONDS } from '../exports';
 import { personalDataExportCacheKey } from './constants';
 
-/**
- * Queue a personal data export for the calling subject. Takes no id, so there is
- * no parameter through which one account could ask for another's data.
- *
- * The account lookup is not a permission check: it fails a missing account here,
- * where the caller sees it, rather than inside a job whose only report is a
- * failed export record.
- */
 export const requestPersonalDataExport = async ({
   user,
 }: {
@@ -24,8 +16,6 @@ export const requestPersonalDataExport = async ({
 
   const exportId = randomUUID();
 
-  // Seeded in full: `userId` is what the first status read checks ownership
-  // against, and this cache is the only store that could supply it.
   await set(
     personalDataExportCacheKey(exportId),
     {

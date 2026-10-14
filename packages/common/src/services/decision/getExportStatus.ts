@@ -25,10 +25,6 @@ export type { ExportStatusData } from './schemas/exportStatus';
  * stops an admin who lost the role from holding a working download for the rest
  * of the record's day.
  *
- * The cache holds the only copy of the record, and {@link readExportRecord} owns
- * what that costs: it keeps "Redis held nothing" apart from "Redis did not
- * answer", and validates rather than asserts the shape it finds.
- *
  * @param exportId - The export to read. Also the cache key, via
  *   `exportStatusCacheKey`.
  * @param user - The calling user, checked for ownership and then for decision
@@ -56,7 +52,6 @@ export const getExportStatus = async ({
     schema: exportStatusRecordSchema,
   });
 
-  // Nothing cached, or something that describes no export.
   if (!exportStatus) {
     return { status: 'not_found' as const };
   }

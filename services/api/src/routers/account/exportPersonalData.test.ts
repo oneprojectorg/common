@@ -16,9 +16,6 @@ import {
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
-// One tier below the network gate: the right belongs to the account holder, and
-// the service reads nothing but the caller's own rows. An anonymous sign-in has
-// a `users` row but is not a data subject with a record to hand over.
 describeAccessTierGating('account.exportPersonalData', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -60,18 +57,8 @@ describeAccessTierGating('account.exportPersonalData', {
   ),
 });
 
-/**
- * The read behind the endpoint. It lives in `@op/common`, whose Vitest project
- * has no database, and what must be proven is which rows real SQL returns.
- *
- * Every case pairs "the subject's row is present" with "the other person's row
- * is absent": a filter that returns everything passes the first on its own.
- */
 describe.concurrent('collectPersonalData', () => {
-  // Written directly because `createPostOnProfile` authors as
-  // `getCurrentProfileId` and so cannot address the personal profile. The only
-  // derived write skipped is the `posts_to_profiles` feed index, which the
-  // export does not read.
+  // Inserted directly: `createPostOnProfile` writes under the current profile.
   const writePost = async (profileId: string, content: string) => {
     const [post] = await db
       .insert(posts)
@@ -85,11 +72,6 @@ describe.concurrent('collectPersonalData', () => {
     return post;
   };
 
-  /**
-   * A participant acting as themselves. Pinning `currentProfileId` back to their
-   * own profile is what separates this fixture from someone writing on an
-   * organisation's behalf, whose rows stay out of the export by design.
-   */
   const createParticipant = async (
     testData: TestDecisionsDataManager,
     organization: { id: string },
@@ -193,9 +175,6 @@ describe.concurrent('collectPersonalData', () => {
     expect(exportedIds).not.toContain(theirs.id);
   });
 
-  // The one place the read looks outside the subject's own profile: a proposal's
-  // form submission is filed under the proposal. Reading only their profile
-  // drops most of what they wrote; one row too far hands them someone else's.
   it('reaches submissions filed against the subject’s own proposals, and stops there', async ({
     task,
     onTestFinished,
@@ -236,7 +215,6 @@ describe.concurrent('collectPersonalData', () => {
     expect(exportedIds).not.toContain(onTheirProposal.id);
   });
 
-  // The `users` row exists from sign-up; the profile arrives at onboarding.
   it('exports the account alone when the subject has no personal profile', async ({
     task,
     onTestFinished,
@@ -261,8 +239,6 @@ describe.concurrent('collectPersonalData', () => {
     expect(file.truncatedSections).toEqual([]);
   });
 
-  // Article 20 covers what the subject provided. Which org they last opened and
-  // which profile they act as are our records of their session, not their data.
   it('leaves our own bookkeeping out of the account section', async ({
     task,
     onTestFinished,

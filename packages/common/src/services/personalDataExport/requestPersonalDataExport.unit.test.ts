@@ -27,8 +27,6 @@ beforeEach(() => {
 });
 
 describe('requestPersonalDataExport request', () => {
-  // Asserted whole rather than by naming absent keys: a subject id put back by
-  // way of a spread is the difference between an export and a data breach.
   it('tells the job which subject and nothing else', async () => {
     const { exportId } = await requestPersonalDataExport({ user });
 
@@ -43,8 +41,6 @@ describe('requestPersonalDataExport request', () => {
     });
   });
 
-  // Otherwise a missing account surfaces as a failed export rather than as the
-  // missing account it is.
   it('does not queue a job for an auth user with no account', async () => {
     vi.mocked(assertUserByAuthId).mockRejectedValueOnce(new Error('User'));
 
@@ -66,8 +62,6 @@ describe('requestPersonalDataExport status record', () => {
     return record;
   };
 
-  // The first status read almost always lands while the run is still pending, so
-  // an incomplete seed fails the most common read of all.
   it('seeds a record the first status read can be answered from', async () => {
     const { exportId } = await requestPersonalDataExport({ user });
 
@@ -79,15 +73,12 @@ describe('requestPersonalDataExport status record', () => {
     });
   });
 
-  // `userId` is the whole ownership check on every later read.
   it('records the subject the status read will check against', async () => {
     await requestPersonalDataExport({ user });
 
     expect(seededRecord().userId).toBe(AUTH_USER_ID);
   });
 
-  // Diverge these and the client waits out its timeout on an export that
-  // succeeded, reading a record nothing ever writes to.
   it('files the record under the id it hands back', async () => {
     const { exportId } = await requestPersonalDataExport({ user });
 

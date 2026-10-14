@@ -7,8 +7,6 @@ import {
   expectFailsAccessTierGate,
 } from '../../test/helpers/gating';
 
-// Same tier as the mutation: the record's own `userId` decides who may read it,
-// so the gate only establishes that there is a real account behind the request.
 describeAccessTierGating('account.getPersonalDataExportStatus', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -31,8 +29,6 @@ describeAccessTierGating('account.getPersonalDataExportStatus', {
     },
   ),
 
-  // Past the gate an unowned id reads as `not_found`; the ownership check itself
-  // is asserted in `@op/common`.
   userJwt: accessTierGatingCell(
     'admits an out-of-network account holder',
     async ({ callers }) => {

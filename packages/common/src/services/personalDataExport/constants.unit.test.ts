@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-// Reached directly rather than through the barrel, which pulls in the
-// server-only database client.
+// Not via the barrel, which pulls in the database client.
 import { exportStatusCacheKey } from '../decision/exports/constants';
 import { EXPORTS_BUCKET } from '../exports';
 import {
@@ -17,8 +16,6 @@ describe('personalDataExportCacheKey', () => {
     );
   });
 
-  // A shared prefix would let either status read parse the other pipeline's
-  // record against the wrong schema.
   it('does not collide with the proposal export namespace', () => {
     expect(personalDataExportCacheKey('abc-123')).not.toBe(
       exportStatusCacheKey('abc-123'),
@@ -33,8 +30,6 @@ describe('personalDataExportFilePath', () => {
     ).toBe('user/user-1/personal-data/personal_data_export_123.json');
   });
 
-  // The path is relative to the bucket; prefixing it would nest the object at
-  // exports/exports/...
   it('does not re-prefix the bucket name into the key', () => {
     expect(personalDataExportFilePath('user-1', 'f.json')).not.toMatch(
       new RegExp(`^${EXPORTS_BUCKET}/`),
@@ -56,7 +51,6 @@ describe('personalDataExportFileName', () => {
     expect(names.size).toBe(100);
   });
 
-  // Supabase rejects keys outside this set, and only at upload time.
   it('produces a key Supabase will accept', () => {
     expect(
       personalDataExportFilePath('user-1', personalDataExportFileName()),

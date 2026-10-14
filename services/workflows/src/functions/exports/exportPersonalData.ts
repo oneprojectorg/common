@@ -12,7 +12,6 @@ import { runExportJob } from './runExportJob';
 
 const { personalDataExportRequested } = Events;
 
-/** Build one data subject's Article 20 export file. */
 export const exportPersonalData = inngest.createFunction(
   {
     id: 'exportPersonalData',

@@ -1,9 +1,3 @@
-/**
- * Configuration specific to the proposal export pipeline. The bucket, the TTLs,
- * and the download options are shared by every pipeline and live in
- * `services/exports/constants.ts`.
- */
-
 export const exportStatusCacheKey = (exportId: string) =>
   `export:proposal:${exportId}`;
 

@@ -15,8 +15,6 @@ describe('personalDataExportRecordSchema', () => {
     expect(personalDataExportRecordSchema.safeParse(record).success).toBe(true);
   });
 
-  // The status read builds the storage key from `userId`, so a record carrying
-  // path separators would sign a URL against a neighbouring subject's prefix.
   it.each(['../44444444-4444-4444-8444-444444444444', 'not-a-uuid', ''])(
     'rejects a record whose userId is not a uuid (%p)',
     (userId) => {

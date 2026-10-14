@@ -47,8 +47,6 @@ describe('readExportRecord', () => {
     await expect(read()).resolves.toBeNull();
   });
 
-  // Reported as a miss, one timeout retires a finished run the client cannot
-  // get back — export state lives only in the cache.
   it.each(['timeout', 'error'] as const)(
     'refuses to call a %s a missing export',
     async (status) => {
@@ -58,8 +56,6 @@ describe('readExportRecord', () => {
     },
   );
 
-  // Must be null, not the value: such a record carries no owner, so a caller
-  // that received it would authorize against `undefined`.
   it('returns null for a record that does not match its schema', async () => {
     vi.mocked(getWithStatus).mockResolvedValue({
       status: 'hit',

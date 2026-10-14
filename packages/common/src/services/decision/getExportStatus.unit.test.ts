@@ -38,8 +38,6 @@ import {
 import { permission } from 'access-zones';
 
 import { assertInstanceProfileAccess } from '../access';
-// The bucket and the TTLs are shared by every export pipeline; only the storage
-// key is the proposal export's own.
 import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,

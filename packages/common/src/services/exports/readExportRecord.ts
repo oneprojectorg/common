@@ -4,11 +4,6 @@ import type { ZodType } from 'zod';
 
 import { CommonError } from '../../utils';
 
-/**
- * Read and validate an export's cached status record, or null when the cache held
- * nothing valid. Throws when the cache did not answer, so a Redis timeout is not
- * reported as `not_found`.
- */
 export const readExportRecord = async <T>({
   exportId,
   cacheKey,
@@ -20,6 +15,7 @@ export const readExportRecord = async <T>({
 }): Promise<T | null> => {
   const cached = await getWithStatus(cacheKey);
 
+  // A Redis timeout must not read as `not_found`.
   if (cached.status === 'timeout' || cached.status === 'error') {
     throw new CommonError('Could not read the export record.');
   }

@@ -18,8 +18,6 @@ beforeEach(() => {
 });
 
 describe('patchExportRecord', () => {
-  // A write that replaced the record would drop the subject and the format on
-  // the way to `completed`, leaving a record the status read cannot parse.
   it('merges the update over the stored record', async () => {
     vi.mocked(get).mockResolvedValue({
       exportId: 'e1',
@@ -48,7 +46,6 @@ describe('patchExportRecord', () => {
     expect(written()[1]).toEqual({ status: 'processing' });
   });
 
-  // Spreading a string would scatter its character indices across the record.
   it.each([['a string'], [42], [true]])(
     'ignores a stored value that is not an object (%p)',
     async (stored) => {

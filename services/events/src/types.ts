@@ -46,13 +46,10 @@ export const Events = {
       format: z.enum(['csv']),
     }),
   },
-  // Carries the subject and nothing else: the job fixes what an export covers,
-  // so no parameter here can widen it or name another account.
   personalDataExportRequested: {
     name: 'user/personal-data-export-requested' as const,
     schema: z.object({
       exportId: z.string().uuid(),
-      /** Auth user id of the data subject, who is also the requester. */
       userId: z.string().uuid(),
     }),
   },

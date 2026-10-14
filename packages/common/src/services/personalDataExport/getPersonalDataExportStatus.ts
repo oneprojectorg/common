@@ -8,13 +8,6 @@ import {
 } from './constants';
 import { personalDataExportRecordSchema } from './schemas';
 
-/**
- * Read one personal data export's status, re-signing its download URL when the
- * stored one has lapsed.
- *
- * Ownership is the whole authorization question — no role grants access to
- * someone else's record — and it is settled before anything is signed.
- */
 export const getPersonalDataExportStatus = async ({
   exportId,
   user,

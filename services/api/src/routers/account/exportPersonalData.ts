@@ -8,8 +8,6 @@ const exportPersonalDataOutputSchema = z.object({
 });
 
 export const exportPersonalDataRouter = router({
-  // No input: the subject is always the caller. Tight rate limit because each
-  // request queues a full export job.
   exportPersonalData: authenticatedConfirmedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 3 },
   })
