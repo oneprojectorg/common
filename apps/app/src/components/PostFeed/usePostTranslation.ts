@@ -15,7 +15,6 @@ export const usePostTranslation = ({
 
   return useTranslateLink({
     detectionText: content,
-    enabled: true,
     request: (targetLocale) =>
       translatePost
         .mutateAsync({ postId, targetLocale })

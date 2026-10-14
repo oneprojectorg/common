@@ -17,7 +17,6 @@ export function RevisionRequestCard({
 
   const translation = useTranslateLink({
     detectionText: request.requestComment,
-    enabled: true,
     request: (targetLocale) =>
       translateRequest
         .mutateAsync({ requestId: request.id, targetLocale })

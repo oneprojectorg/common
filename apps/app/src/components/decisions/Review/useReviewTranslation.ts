@@ -21,7 +21,6 @@ export const useReviewTranslation = (review: ProposalReview) => {
 
   return useTranslateLink({
     detectionText,
-    enabled: true,
     request: (targetLocale) =>
       translateReview
         .mutateAsync({ reviewId: review.id, targetLocale })
