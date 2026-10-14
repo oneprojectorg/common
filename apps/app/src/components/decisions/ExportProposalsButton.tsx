@@ -14,7 +14,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
-import { isExportEmpty } from './exportEmpty';
 import { resolveExportRetryOutcome } from './exportRetry';
 import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
@@ -276,11 +275,9 @@ const ExportProposalsButtonContent = ({
       refetchOnMount: 'always',
     },
   );
-  const isEmpty = isExportEmpty({
-    isListEmpty,
-    rejectedCount: rejectedData?.total,
-    errored: isError,
-  });
+  const isEmpty =
+    isListEmpty &&
+    (rejectedData === undefined ? !isError : rejectedData.total === 0);
 
   const [exportId, setExportId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
