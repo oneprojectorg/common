@@ -679,6 +679,8 @@
     "supportLinkLabel": "Solicitações de funcionalidades e suporte",
     "logOutAction": "Sair",
     "deleteAccountAction": "Delete my account",
+    "downloadMyDataAction": "Baixar meus dados",
+    "personalDataExportFailed": "Não foi possível exportar seus dados. Tente novamente.",
     "ethicalOpenSourceLink": "Código Aberto Ético",
     "openMenuLabel": "Abrir menu",
     "logInAction": "Entrar",

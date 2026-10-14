@@ -679,6 +679,8 @@
     "supportLinkLabel": "طلبات الميزات والدعم",
     "logOutAction": "تسجيل الخروج",
     "deleteAccountAction": "حذف حسابي",
+    "downloadMyDataAction": "تنزيل بياناتي",
+    "personalDataExportFailed": "تعذّر تصدير بياناتك. يُرجى المحاولة مرة أخرى.",
     "ethicalOpenSourceLink": "مفتوح المصدر الأخلاقي",
     "openMenuLabel": "فتح القائمة",
     "logInAction": "تسجيل الدخول",
