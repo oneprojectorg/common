@@ -50,13 +50,10 @@ export const SidebarNav = () => {
     <Sidebar
       side={isRtl ? 'right' : 'left'}
       collapsible="offcanvas"
-      className="top-(--header-height) h-[calc(100svh-var(--header-height))]! border-e"
+      className="top-(--header-height) h-[calc(100svh-var(--header-height))]! border-none"
     >
-      {/* Spacing per Figma 21477:62719: 24px side inset, 16px above the
-          first item and on both sides of each separator (group padding 8px
-          plus the separator's 8px margin). */}
-      <SidebarContent className="overscroll-contain px-4 py-2">
-        <SidebarGroup>
+      <SidebarContent className="gap-4 overscroll-contain ps-6 pe-4 pt-4 pb-8">
+        <SidebarGroup className="p-0">
           <SidebarGroupContent>
             <SidebarMenu>
               <NavLink href="/" active={pathname === '/'}>
@@ -65,8 +62,8 @@ export const SidebarNav = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarSeparator className="my-2" />
-        <SidebarGroup>
+        <SidebarSeparator className="mx-0" />
+        <SidebarGroup className="p-0">
           <SidebarGroupLabel>{t('shell.exploreNavHeading')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -132,8 +129,8 @@ const ActiveDecisionsGroup = () => {
 
   return (
     <>
-      <SidebarSeparator className="my-2" />
-      <SidebarGroup>
+      <SidebarSeparator className="mx-0" />
+      <SidebarGroup className="p-0">
         <SidebarGroupLabel>
           {t('decisions.activeDecisionsHeading')}
         </SidebarGroupLabel>
