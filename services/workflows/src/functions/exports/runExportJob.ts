@@ -8,7 +8,7 @@ interface ExportStepRunner {
   run: (id: string, handler: () => Promise<unknown>) => Promise<unknown>;
 }
 
-// `seed` restores the fields a reader needs if the request's record was evicted.
+// `seed`: the fields a reader needs beyond what the run itself writes.
 export const runExportJob = async ({
   step,
   exportId,
@@ -24,13 +24,11 @@ export const runExportJob = async ({
   seed: Record<string, unknown>;
   produce: () => Promise<Record<string, unknown>>;
 }): Promise<{ exportId: string; status: 'completed' }> => {
+  // On every patch, so an evicted record comes back whole.
+  const restore = { ...seed, exportId };
+
   await step.run('update-status-processing', () =>
-    patchExportRecord(cacheKey, {
-      ...seed,
-      exportId,
-      status: 'processing',
-      createdAt: new Date().toISOString(),
-    }),
+    patchExportRecord(cacheKey, { ...restore, status: 'processing' }),
   );
 
   try {
@@ -42,6 +40,7 @@ export const runExportJob = async ({
 
     await step.run('update-status-completed', () =>
       patchExportRecord(cacheKey, {
+        ...restore,
         ...completion,
         status: 'completed',
         completedAt: new Date().toISOString(),
@@ -59,6 +58,7 @@ export const runExportJob = async ({
 
     await step.run('update-status-failed', () =>
       patchExportRecord(cacheKey, {
+        ...restore,
         status: 'failed',
         completedAt: new Date().toISOString(),
       }),

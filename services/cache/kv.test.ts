@@ -66,7 +66,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, getWithStatus, set } = await import('./kv');
+const { cache, get, getWithStatus, set, setWithStatus } = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -369,5 +369,37 @@ describe('set()', () => {
     await expect(set('k', { a: 1 })).resolves.toBeUndefined();
     expect(recordError).toHaveBeenCalledWith('set');
     expect(recordTimeout).not.toHaveBeenCalled();
+  });
+});
+
+describe('setWithStatus()', () => {
+  beforeEach(() => {
+    fakeRedis.setEx.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('reports ok once setEx resolves', async () => {
+    fakeRedis.setEx.mockResolvedValue('OK');
+    await expect(setWithStatus('k', { a: 1 }, 60)).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(fakeRedis.setEx).toHaveBeenCalledWith('k', 60, '{"a":1}');
+  });
+
+  it('reports a timeout when setEx is too slow', async () => {
+    fakeRedis.setEx.mockImplementation(() => new Promise<string>(() => {}));
+    await expect(setWithStatus('k', { a: 1 })).resolves.toEqual({
+      status: 'timeout',
+    });
+  });
+
+  it('reports an error when setEx rejects with a non-abort error', async () => {
+    fakeRedis.setEx.mockRejectedValue(new Error('connection refused'));
+    await expect(setWithStatus('k', { a: 1 })).resolves.toEqual({
+      status: 'error',
+    });
   });
 });

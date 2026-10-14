@@ -379,9 +379,22 @@ export const getWithStatus = async (key: string): Promise<RedisGetResult> =>
 
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing
-export const set = async (key: string, data: unknown, ttl?: number) => {
+// `disabled` means no Redis client exists, so nothing was written anywhere.
+export type RedisSetResult =
+  | { status: 'ok' }
+  | { status: 'disabled' }
+  | { status: 'timeout' }
+  | { status: 'error' };
+
+// For a caller whose only copy of the data is this write. `set` discards the
+// result for callers that treat the cache as optional.
+export const setWithStatus = async (
+  key: string,
+  data: unknown,
+  ttl?: number,
+): Promise<RedisSetResult> => {
   if (!redis) {
-    return;
+    return { status: 'disabled' };
   }
 
   const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
@@ -394,13 +407,24 @@ export const set = async (key: string, data: unknown, ttl?: number) => {
     } else {
       await scopedRedis.setEx(key, ttl || DEFAULT_TTL, serializedData);
     }
+
+    return { status: 'ok' };
   } catch (e) {
     if (signal.aborted) {
       cacheMetrics.recordTimeout({ layer: 'command' });
-      return;
+      return { status: 'timeout' };
     }
 
     logger.error('CACHE: error setting to Redis', { error: e });
     cacheMetrics.recordError('set');
+    return { status: 'error' };
   }
+};
+
+export const set = async (
+  key: string,
+  data: unknown,
+  ttl?: number,
+): Promise<void> => {
+  await setWithStatus(key, data, ttl);
 };

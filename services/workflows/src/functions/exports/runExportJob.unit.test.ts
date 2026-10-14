@@ -26,13 +26,16 @@ const run = (produce: () => Promise<Record<string, unknown>>) =>
 describe('runExportJob', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('records completion', async () => {
+  it('records completion with the seed, so an evicted record is whole', async () => {
     await run(async () => ({ fileName: 'f.json' }));
 
-    expect(patchExportRecord).toHaveBeenLastCalledWith(
-      'key',
-      expect.objectContaining({ status: 'completed', fileName: 'f.json' }),
-    );
+    expect(patchExportRecord).toHaveBeenLastCalledWith('key', {
+      exportId: 'e1',
+      userId: 'u1',
+      status: 'completed',
+      fileName: 'f.json',
+      completedAt: expect.any(String),
+    });
   });
 
   it('records a failure without its cause and logs the cause', async () => {
@@ -41,6 +44,8 @@ describe('runExportJob', () => {
     await expect(run(() => Promise.reject(cause))).rejects.toBe(cause);
 
     expect(patchExportRecord).toHaveBeenLastCalledWith('key', {
+      exportId: 'e1',
+      userId: 'u1',
       status: 'failed',
       completedAt: expect.any(String),
     });
