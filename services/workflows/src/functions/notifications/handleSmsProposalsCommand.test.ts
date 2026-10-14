@@ -58,7 +58,7 @@ describe('handleSmsProposalsCommand against the database', () => {
     const [body] = recordedSms.map((message) => message.body);
     expect(body).toContain(`"Shortlist ${task.id}" has 2 proposals. First 2:`);
     expect(body).toContain('101 Advanced one $10k');
-    expect(body).toContain('102 Advanced two $30k');
+    expect(body).toContain('103 Advanced two $30k');
     expect(body).not.toContain('Left behind');
   });
 

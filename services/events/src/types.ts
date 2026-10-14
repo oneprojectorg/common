@@ -201,8 +201,8 @@ export const Events = {
       messageSid: z.string(),
       code: z.string().nullable(),
       keyword: z.enum(SMS_KEYWORDS).nullable(),
-      argument: z.string().nullable(),
-      codes: z.array(z.string()),
+      argument: z.string().nullable().default(null),
+      codes: z.array(z.string()).default([]),
     }),
   },
   voteSmsBallotRequested: {

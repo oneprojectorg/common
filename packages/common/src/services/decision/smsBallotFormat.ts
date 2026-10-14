@@ -1,5 +1,6 @@
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
 import type { SmsBallotProposal } from './listSmsBallotProposals';
+import { SMS_MAX_BODY_LENGTH, clipSmsText } from './smsText';
 
 export const SMS_PROPOSALS_PAGE_SIZE = 5;
 
@@ -58,19 +59,16 @@ export const formatSmsProposalPage = ({
   return { body: [heading, ...lines, ...footer].join('\n'), hasMore };
 };
 
-export const SMS_MAX_BODY_LENGTH = 1600;
+export { SMS_MAX_BODY_LENGTH } from './smsText';
 
-const fitSummary = (summary: string, room: number): string =>
-  summary.length <= room
-    ? summary
-    : `${summary.slice(0, Math.max(0, room - 1)).trimEnd()}…`;
+const SMS_LIST_TITLE_LENGTH = 100;
 
 export const formatSmsProposalInfo = (proposal: SmsBallotProposal): string => {
   const heading = `${proposal.code}: ${withCost(proposal.title, proposal.cost, proposal.currency)}.`;
   const action = `Text ${proposal.code} to add it to your ballot.`;
   const room = SMS_MAX_BODY_LENGTH - heading.length - action.length - 2;
   const summary =
-    proposal.summary && room > 1 ? fitSummary(proposal.summary, room) : null;
+    proposal.summary && room > 1 ? clipSmsText(proposal.summary, room) : null;
 
   return [heading, summary, action].filter(Boolean).join(' ');
 };
@@ -143,7 +141,7 @@ export const formatSmsBallot = ({
     `Your ballot for "${decisionName}":`,
     ...picks.map(
       (pick, index) =>
-        `${index + 1}. ${pick.title}${pick.cost === null ? '' : ` ${formatSmsCost(pick.cost, pick.currency)}`}`,
+        `${index + 1}. ${clipSmsText(pick.title, SMS_LIST_TITLE_LENGTH)}${pick.cost === null ? '' : ` ${formatSmsCost(pick.cost, pick.currency)}`}`,
     ),
     'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
   ].join('\n');
