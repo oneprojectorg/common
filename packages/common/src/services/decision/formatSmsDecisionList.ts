@@ -1,6 +1,8 @@
 import type { SmsDecisionListItem } from './listSmsDecisions';
+import { clipSmsText } from './smsText';
 
 const MAX_LISTED_DECISIONS = 10;
+const SMS_LIST_NAME_LENGTH = 80;
 const EMPTY_MESSAGE = 'You are not a participant in any decision yet.';
 
 export const formatSmsDecisionList = (
@@ -14,7 +16,7 @@ export const formatSmsDecisionList = (
     .slice(0, MAX_LISTED_DECISIONS)
     .map(
       ({ name, slug, votingOpen }) =>
-        `${name}${votingOpen ? ' (voting open)' : ''} - VOTE ${slug}`,
+        `${clipSmsText(name, SMS_LIST_NAME_LENGTH)}${votingOpen ? ' (voting open)' : ''} - VOTE ${slug}`,
     );
   const remaining = decisions.length - lines.length;
 
