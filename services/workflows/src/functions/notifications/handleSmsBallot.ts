@@ -147,7 +147,8 @@ export const handleSmsBallot = inngest.createFunction(
 
     const sendSms = provider.sendSms;
     const to = parsePhoneNumber(phone);
-    const { decisionName, maxVotesPerMember, proposals } = context;
+    const { decisionName, maxVotesPerMember } = context;
+    let proposals = context.proposals;
 
     let stopped: SmsFailureReason | null = null;
 
@@ -189,9 +190,15 @@ export const handleSmsBallot = inngest.createFunction(
       () => Date.now() + BALLOT_WINDOW_MS,
     );
 
-    const byCode = new Map(
+    let byCode = new Map(
       proposals.map((proposal) => [proposal.code, proposal]),
     );
+    const refreshProposals = async (turn: number): Promise<void> => {
+      proposals = await step.run(`refresh-proposals-${turn}`, () =>
+        listSmsBallotProposals({ processInstanceId }),
+      );
+      byCode = new Map(proposals.map((proposal) => [proposal.code, proposal]));
+    };
     const submitBallot = async () => {
       const outcome = await step.run('submit-ballot', async () => {
         try {
@@ -405,6 +412,7 @@ export const handleSmsBallot = inngest.createFunction(
           if (argument !== null) {
             continue;
           }
+          await refreshProposals(turn);
           await say(formatSmsProposalPages({ decisionName, proposals }));
           continue;
         }
@@ -415,6 +423,7 @@ export const handleSmsBallot = inngest.createFunction(
           if (argument === null || !CODE_PATTERN.test(argument)) {
             continue;
           }
+          await refreshProposals(turn);
           const proposal = byCode.get(argument);
           await say(
             proposal

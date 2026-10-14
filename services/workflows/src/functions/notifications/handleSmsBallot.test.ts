@@ -42,6 +42,7 @@ const NUMBERS = {
   turnLimit: '+15005550086',
   stalePick: '+15005550087',
   flaggedYes: '+15005550088',
+  flaggedBrowse: '+15005550089',
 } as const;
 
 const PROPOSALS = [
@@ -553,6 +554,52 @@ describe('handleSmsBallot against the database', () => {
     expect(bodies()[1]).toBe(
       '"Fifth Ave crosswalk lighting" is no longer on the ballot and was removed. Your ballot is empty. Text a code to add a pick, or PROPOSALS to browse.',
     );
+    expect(await readVotes(instanceId)).toEqual([]);
+  });
+
+  it('given a proposal is flagged for moderation while the ballot is open, when the voter texts PROPOSALS and INFO with its code, then the guide no longer lists it and the code is unknown', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId, proposals } = await seed(
+      fixture,
+      NUMBERS.flaggedBrowse,
+      { maxVotesPerMember: 3, proposals: PROPOSALS },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        {
+          id: 'wait-for-reply-1',
+          handler: async () => {
+            const { flag } = await createAutomatedFlag({
+              itemType: 'proposal',
+              itemId: proposals[1]!.id,
+            });
+            onTestFinished(async () => {
+              await db
+                .delete(moderationFlags)
+                .where(eq(moderationFlags.id, flag.id));
+            });
+            return reply(phone, 1, { keyword: 'proposals' }).handler();
+          },
+        },
+        reply(phone, 2, { keyword: 'info', argument: '102' }),
+        silence(3),
+      ],
+    });
+
+    expect(result).toMatchObject({ message: 'ballot expired', picks: 0 });
+    const [, page, info] = bodies();
+    expect(page).toContain(
+      `"Park Funding ${NUMBERS.flaggedBrowse}" has 2 proposals:`,
+    );
+    expect(page).toContain('101 Fifth Ave crosswalk lighting $85k');
+    expect(page).not.toContain('102 Linden rec center evening hours $240k');
+    expect(info).toBe('No proposal with code 102. Text PROPOSALS to browse.');
     expect(await readVotes(instanceId)).toEqual([]);
   });
 
