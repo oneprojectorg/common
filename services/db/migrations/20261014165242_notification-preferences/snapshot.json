@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "a8f65d7c-6ed1-494e-a6c4-4f9b7a107d2e",
+  "id": "154ba2cf-7cf5-4587-8e41-5657a5d63c36",
   "prevIds": [
-    "ec66dcd2-0440-466f-a12d-11543118c461"
+    "59d21873-5162-4d87-a8a7-fa07a679aa1e"
   ],
   "ddl": [
     {
@@ -4391,7 +4391,7 @@
       "default": "101",
       "generated": null,
       "identity": null,
-      "name": "next_sms_code",
+      "name": "next_short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_process_instances"
@@ -6607,7 +6607,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "sms_code",
+      "name": "short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_proposals"
@@ -11624,7 +11624,7 @@
           "opclass": null
         },
         {
-          "value": "sms_code",
+          "value": "short_code",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -11636,7 +11636,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "proposals_process_sms_code_uniq",
+      "name": "proposals_process_short_code_uniq",
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_proposals"
