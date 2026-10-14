@@ -132,10 +132,11 @@ const NotificationPreferencesPane = () => {
     <>
       <NotificationPreferencesForm
         preferences={preferences}
-        onChange={(category, channel, enabled) => {
+        onChange={async (category, channel, enabled) => {
           const patch: PreferencesPatch = {
             [category]: { [channel]: enabled },
           };
+          await utils.account.getNotificationPreferences.cancel();
           utils.account.getNotificationPreferences.setData(undefined, (prev) =>
             prev ? applyPatch(prev, patch) : prev,
           );
