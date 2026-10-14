@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
+import { Header2 } from '@op/sense/Header';
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +20,7 @@ import {
   SidebarProvider,
 } from '@op/sense/Sidebar';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -64,9 +65,9 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
             </SidebarContent>
           </Sidebar>
           <section className="flex min-w-0 flex-1 flex-col gap-4 p-8">
-            <h2 className="font-serif text-title font-normal">
+            <Header2 className="text-title font-normal">
               {t('notificationsHeading')}
-            </h2>
+            </Header2>
             <ErrorBoundary>
               <Suspense fallback={<NotificationPreferencesSkeleton />}>
                 <NotificationPreferencesPane />
@@ -101,6 +102,7 @@ const applyPatch = (
 const NotificationPreferencesPane = () => {
   const t = useTranslations('settings');
   const utils = trpc.useUtils();
+  const inFlight = useRef(0);
   const [preferences] =
     trpc.account.getNotificationPreferences.useSuspenseQuery(undefined, {
       refetchOnMount: 'always',
@@ -108,16 +110,17 @@ const NotificationPreferencesPane = () => {
 
   const update = trpc.account.updateNotificationPreferences.useMutation({
     onMutate: async (patch) => {
+      inFlight.current += 1;
       await utils.account.getNotificationPreferences.cancel();
       utils.account.getNotificationPreferences.setData(undefined, (prev) =>
         prev ? applyPatch(prev, patch) : prev,
       );
     },
-    onSuccess: (saved) => {
-      utils.account.getNotificationPreferences.setData(undefined, saved);
-    },
-    onError: () => {
-      void utils.account.getNotificationPreferences.invalidate();
+    onSettled: () => {
+      inFlight.current -= 1;
+      if (inFlight.current === 0) {
+        void utils.account.getNotificationPreferences.invalidate();
+      }
     },
   });
 
