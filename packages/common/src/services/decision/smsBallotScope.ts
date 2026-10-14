@@ -31,7 +31,7 @@ export async function buildSmsBallotProposalFilter({
     return null;
   }
 
-  return and(
+  const filter = and(
     eq(proposals.processInstanceId, processInstanceId),
     isReadableByEveryone(proposals),
     notInArray(sql<string>`${proposals.status}::text`, [
@@ -39,5 +39,7 @@ export async function buildSmsBallotProposalFilter({
     ]),
     notSuperseded({ proposalId: proposals.id, processInstanceId }),
     scope.buildNonDraftFilter(proposals),
-  )!;
+  );
+
+  return filter ?? null;
 }

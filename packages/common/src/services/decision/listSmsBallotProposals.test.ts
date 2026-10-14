@@ -235,16 +235,17 @@ describe.concurrent('listSmsBallotProposals', () => {
       processSchema: shortlistSchema,
     });
     const instanceId = setup.instance.instance.id;
-    const submitted = await Promise.all(
-      ['One', 'Two', 'Three'].map((title) =>
-        testData.createProposal({
+    const submitted = [];
+    for (const title of ['One', 'Two', 'Three']) {
+      submitted.push(
+        await testData.createProposal({
           userEmail: setup.userEmail,
           processInstanceId: instanceId,
           proposalData: { title: `${title} ${task.id}` },
           status: ProposalStatus.SUBMITTED,
         }),
-      ),
-    );
+      );
+    }
     const advanced = await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
