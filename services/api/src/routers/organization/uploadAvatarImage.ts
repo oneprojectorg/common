@@ -1,4 +1,8 @@
-import { CommonError, ValidationError } from '@op/common';
+import {
+  CommonError,
+  ValidationError,
+  signStorageDownloadUrl,
+} from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
@@ -96,28 +100,20 @@ export const uploadAvatarImage = router({
         throw new CommonError(uploadError.message);
       }
 
-      // Get signed URL
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60); // 1 hour
+      const signedUrl = await signStorageDownloadUrl({
+        bucket,
+        storagePath: filePath,
+        ttlSeconds: 60 * 60,
+      });
 
-      logger.info('GOT SIGNED URL' + signedUrlData);
-
-      if (signedUrlError || !signedUrlData) {
-        throw new CommonError(
-          signedUrlError?.message || 'Could not get signed url',
-        );
-      }
-
-      logger.info(
-        'RETURNING UPLOAD URL' + signedUrlData.signedUrl + ' - ' + filePath,
-      );
+      logger.info('RETURNING UPLOAD URL' + signedUrl + ' - ' + filePath);
 
       // Track analytics - for organization uploads, we'll track as new uploads since they're temporary (non-blocking)
       const imageType = filePath.includes('banner') ? 'banner' : 'profile';
       waitUntil(trackImageUpload(ctx, imageType, false));
 
       return {
-        url: signedUrlData.signedUrl,
+        url: signedUrl,
         path: filePath,
         id: data.id,
       };

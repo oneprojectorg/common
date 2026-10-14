@@ -2,6 +2,7 @@ import { cache, invalidate } from '@op/cache';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from '../../utils/error';
+import { signStorageDownloadUrl } from '../../utils/signStorageDownloadUrl';
 import { signStorageUploadUrl } from '../../utils/signStorageUploadUrl';
 import { ASSETS_BUCKET } from '../../utils/storage';
 import { resourcePathPrefix } from './constants';
@@ -33,23 +34,28 @@ export const signResourceUploadUrl = (input: {
     fileName: input.fileName,
   });
 
+// Null, not a throw: a list view degrades to a missing link rather than failing.
+const signOrNull = async (
+  filePath: string,
+  ttlSeconds: number,
+): Promise<string | null> => {
+  try {
+    return await signStorageDownloadUrl({ storagePath: filePath, ttlSeconds });
+  } catch (error) {
+    if (error instanceof CommonError) {
+      return null;
+    }
+    throw error;
+  }
+};
+
 export const getResourceSignedUrl = async (
   filePath: string,
 ): Promise<string | null> => {
   return cache({
     type: 'resourceSignedUrl',
     params: [filePath],
-    fetch: async () => {
-      const sb = supabase();
-      const { data, error } = await sb.storage
-        .from(ASSETS_BUCKET)
-        .createSignedUrl(filePath, SIGNED_URL_TTL_SECONDS);
-
-      if (error || !data?.signedUrl) {
-        return null;
-      }
-      return data.signedUrl;
-    },
+    fetch: () => signOrNull(filePath, SIGNED_URL_TTL_SECONDS),
     options: {
       ttl: SIGNED_URL_CACHE_TTL_MS,
     },
@@ -65,18 +71,10 @@ const EXTERNAL_SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
 /** Uncached, long-lived signed URL for handing to an external service. Not
  *  for list views — use {@link getResourceSignedUrl} there, where the cache
  *  prevents per-row sign requests. */
-export const getExternalResourceSignedUrl = async (
+export const getExternalResourceSignedUrl = (
   filePath: string,
-): Promise<string | null> => {
-  const { data, error } = await supabase()
-    .storage.from(ASSETS_BUCKET)
-    .createSignedUrl(filePath, EXTERNAL_SIGNED_URL_TTL_SECONDS);
-
-  if (error || !data?.signedUrl) {
-    return null;
-  }
-  return data.signedUrl;
-};
+): Promise<string | null> =>
+  signOrNull(filePath, EXTERNAL_SIGNED_URL_TTL_SECONDS);
 
 export const deleteResourceObject = async (filePath: string): Promise<void> => {
   const sb = supabase();

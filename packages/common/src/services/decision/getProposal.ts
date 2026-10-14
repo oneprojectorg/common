@@ -7,10 +7,10 @@ import type {
 } from '@op/db/schema';
 import { ProposalStatus, Visibility } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
+import { signStorageDownloadUrl } from '../../utils/signStorageDownloadUrl';
 import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import { generateProposalHtml } from './generateProposalHtml';
@@ -198,8 +198,6 @@ export const getProposal = async ({
   let attachmentsWithUrls = proposal.attachments ?? [];
 
   if (attachmentsWithUrls.length > 0) {
-    const supabase = createSBServiceClient();
-
     attachmentsWithUrls = await Promise.all(
       attachmentsWithUrls.map(async (pa) => {
         const storagePath = pa.attachment?.storageObject?.name;
@@ -207,15 +205,14 @@ export const getProposal = async ({
           return pa;
         }
 
-        const { data } = await supabase.storage
-          .from('assets')
-          .createSignedUrl(storagePath, 60 * 60 * 24);
+        const url = await signStorageDownloadUrl({
+          storagePath,
+          ttlSeconds: 60 * 60 * 24,
+        });
 
         return {
           ...pa,
-          attachment: pa.attachment
-            ? { ...pa.attachment, url: data?.signedUrl }
-            : pa.attachment,
+          attachment: pa.attachment ? { ...pa.attachment, url } : pa.attachment,
         };
       }),
     );
