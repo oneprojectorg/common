@@ -315,7 +315,7 @@ describe.concurrent('listProposals', () => {
     expect(result.items).toHaveLength(2);
   });
 
-  it('shows rejected proposals to admins and non-admins alike', async ({
+  it('lists rejected proposals under Not advanced only, for admins and non-admins alike', async ({
     task,
     onTestFinished,
   }) => {
@@ -360,23 +360,32 @@ describe.concurrent('listProposals', () => {
       reason: RejectionReason.INELIGIBLE,
     });
 
-    const [memberResult, adminResult] = await Promise.all([
-      memberCaller.decision.listProposals({
-        processInstanceId: instance.instance.id,
-      }),
-      adminCaller.decision.listProposals({
-        processInstanceId: instance.instance.id,
-      }),
-    ]);
+    const processInstanceId = instance.instance.id;
+    const cases = [
+      { input: {}, expected: keptProposal.id },
+      { input: { notAdvanced: true }, expected: rejectedProposal.id },
+      {
+        input: { status: ProposalStatus.REJECTED },
+        expected: rejectedProposal.id,
+      },
+      {
+        input: { submittedByProfileId: memberUser.profileId },
+        expected: keptProposal.id,
+      },
+    ];
+    const results = await Promise.all(
+      [memberCaller, adminCaller].flatMap((caller) =>
+        cases.map(async ({ input, expected }) => ({
+          expected,
+          ids: (
+            await caller.decision.listProposals({ processInstanceId, ...input })
+          ).items.map((p) => p.id),
+        })),
+      ),
+    );
 
-    // Rejection is a verdict, not a visibility rule: both viewers see the same
-    // two proposals, and the rejected one carries its status so the card can
-    // badge it.
-    for (const result of [memberResult, adminResult]) {
-      expect(result.items).toHaveLength(2);
-      expect(
-        result.items.find((p) => p.id === rejectedProposal.id)?.status,
-      ).toBe(ProposalStatus.REJECTED);
+    for (const { ids, expected } of results) {
+      expect(ids).toEqual([expected]);
     }
   });
 
@@ -416,12 +425,18 @@ describe.concurrent('listProposals', () => {
     // `listProposals` is an openProcedure, so logged-out visitors are part of
     // the "everyone" this rule promises.
     const publicCaller = createCaller(await createTestContextWithSession(null));
-    const result = await publicCaller.decision.listProposals({
-      processInstanceId: instance.instance.id,
-    });
+    const [all, result] = await Promise.all(
+      [false, true].map((notAdvanced) =>
+        publicCaller.decision.listProposals({
+          processInstanceId: instance.instance.id,
+          notAdvanced,
+        }),
+      ),
+    );
 
-    expect(result.items.map((p) => p.id)).toEqual([rejectedProposal.id]);
-    expect(result.items[0]?.status).toBe(ProposalStatus.REJECTED);
+    expect(all?.items).toEqual([]);
+    expect(result?.items.map((p) => p.id)).toEqual([rejectedProposal.id]);
+    expect(result?.items[0]?.status).toBe(ProposalStatus.REJECTED);
   });
 
   it('keeps a rejected proposal in its own phase but out of later phases and the review read', async ({
@@ -469,26 +484,33 @@ describe.concurrent('listProposals', () => {
       toPhaseId: 'review',
     });
 
-    const [submissionPhase, reviewPhase, reviewAggregates] = await Promise.all([
-      adminCaller.decision.listProposals({
-        processInstanceId: instanceId,
-        phaseId: 'submission',
-      }),
-      adminCaller.decision.listProposals({
-        processInstanceId: instanceId,
-        phaseId: 'review',
-      }),
-      adminCaller.decision.listWithReviewAggregates({
-        processInstanceId: instanceId,
-        phaseId: 'review',
-      }),
-    ]);
+    const [submissionPhase, submissionAll, reviewPhase, reviewAggregates] =
+      await Promise.all([
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'submission',
+          notAdvanced: true,
+        }),
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'submission',
+        }),
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'review',
+        }),
+        adminCaller.decision.listWithReviewAggregates({
+          processInstanceId: instanceId,
+          phaseId: 'review',
+        }),
+      ]);
 
     // It stays a record where it lived: the rejection happened in `submission`,
-    // and that phase's list still carries it.
+    // and that phase's Not advanced list still carries it.
     expect(submissionPhase.items.map((p) => p.id)).toContain(
       rejectedProposal.id,
     );
+    expect(submissionAll.items.map((p) => p.id)).toEqual([keptProposal.id]);
 
     // Rejected proposals are dropped when the advance snapshot is written, so
     // `review` never receives it — the pipeline exclusion this change must not

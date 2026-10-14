@@ -42,10 +42,8 @@ export interface ListProposalsInput {
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
   /**
-   * The "Not advanced" filter: rejected proposals, plus — on an admin's
-   * current-phase list — those earlier phases left behind, so "Advance to
-   * [phase]" can reach them. Each row then reports `isOutsideCurrentPhase`.
-   * Without it the list is the phase's proposals ("All proposals").
+   * The "Not advanced" filter: rejected proposals plus, on the current phase,
+   * those earlier phases left behind. Without it, the phase's other proposals.
    */
   notAdvanced?: boolean;
   /**
@@ -131,7 +129,8 @@ export const listProposals = async ({
 
   const advanceTargetPromise = getListAdvanceTarget({
     instance,
-    includesNotAdvanced: buildIsOutsideCurrentPhase !== undefined,
+    includesNotAdvanced:
+      canManageProposals && buildIsOutsideCurrentPhase !== undefined,
   });
   advanceTargetPromise.catch(() => {});
 

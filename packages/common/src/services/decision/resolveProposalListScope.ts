@@ -39,7 +39,10 @@ import {
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
-import { isProposalProfileMember } from './proposalVisibility';
+import {
+  excludeRejectedUnlessAsked,
+  isProposalProfileMember,
+} from './proposalVisibility';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -384,49 +387,50 @@ export const resolveProposalListScope = async ({
     }
   }
 
-  // Under "Not advanced", admins browsing the current phase also see what
-  // didn't advance into it: every submitted proposal outside the phase was
-  // left behind by an earlier transition, since a proposal can't predate the
-  // instance's first phase.
-  const includesLeftBehind =
+  // Rejection drops a proposal from later phases' snapshots, so "Not advanced"
+  // on the current phase skips phase scoping and lets the status filter narrow.
+  const includesEarlierPhases =
     input.notAdvanced === true &&
-    canManageProposals &&
     explicitScopeIds === undefined &&
-    input.phaseId === undefined &&
-    input.phase !== 'results';
-  const buildIsOutsideCurrentPhase = includesLeftBehind
-    ? (proposalsTable: typeof proposals): SQL =>
-        and(
-          ne(proposalsTable.status, ProposalStatus.DRAFT),
-          isNull(proposalsTable.deletedAt),
-          // Not `not(...)`: a NULL membership must read as outside.
-          sql`(${phaseScope.buildNonDraftFilter(proposalsTable)}) IS NOT TRUE`,
-        )!
-    : undefined;
+    input.phaseId === undefined;
 
-  // Non-drafts in the phase, plus those left behind before it when included.
-  const buildPhaseScopedNonDraftFilter = (
-    proposalsTable: typeof proposals,
-  ): SQL => {
-    const inPhase = and(
-      ne(proposalsTable.status, ProposalStatus.DRAFT),
-      phaseScope.buildNonDraftFilter(proposalsTable),
-    )!;
-    return buildIsOutsideCurrentPhase
-      ? or(inPhase, buildIsOutsideCurrentPhase(proposalsTable))!
-      : inPhase;
-  };
-
-  // "Not advanced": rejected, or (for admins) left behind in an earlier phase.
-  const buildNotAdvancedFilter = (
-    proposalsTable: typeof proposals,
-  ): SQL | undefined =>
-    input.notAdvanced
-      ? or(
-          eq(proposalsTable.status, ProposalStatus.REJECTED),
-          buildIsOutsideCurrentPhase?.(proposalsTable),
-        )
+  // A submitted proposal outside the current phase was left behind by an
+  // earlier transition.
+  const buildIsOutsideCurrentPhase =
+    includesEarlierPhases && input.phase !== 'results'
+      ? (proposalsTable: typeof proposals): SQL =>
+          and(
+            ne(proposalsTable.status, ProposalStatus.DRAFT),
+            isNull(proposalsTable.deletedAt),
+            // Not `not(...)`: a NULL membership must read as outside.
+            sql`(${phaseScope.buildNonDraftFilter(proposalsTable)}) IS NOT TRUE`,
+          )!
       : undefined;
+
+  const buildNonDraftScopeFilter = (proposalsTable: typeof proposals): SQL =>
+    and(
+      ne(proposalsTable.status, ProposalStatus.DRAFT),
+      includesEarlierPhases
+        ? isNull(proposalsTable.deletedAt)
+        : phaseScope.buildNonDraftFilter(proposalsTable),
+    )!;
+
+  // Under "Not advanced", only rejected and left-behind rows; otherwise every
+  // row but the rejected ones, unless a status filter asks for them.
+  const buildRejectedAndLeftBehindFilter = (
+    proposalsTable: typeof proposals,
+  ): SQL | undefined => {
+    if (input.notAdvanced) {
+      return or(
+        eq(proposalsTable.status, ProposalStatus.REJECTED),
+        buildIsOutsideCurrentPhase?.(proposalsTable),
+      );
+    }
+    // The trusted export is a full record, not a list a viewer browses.
+    return skipAccessCheck
+      ? undefined
+      : excludeRejectedUnlessAsked({ proposalsTable, status: input.status });
+  };
 
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
@@ -460,13 +464,12 @@ export const resolveProposalListScope = async ({
     // caller's `profileUsers` access set. Every scope predicate (including
     // the explicit-scope one above) carries the `isNull(deletedAt)` filter,
     // so the outer query stays soft-delete-safe without its own check.
-    const phaseScopedNonDraftIdFilter =
-      buildPhaseScopedNonDraftFilter(proposalsTable);
-    clause = and(clause, buildNotAdvancedFilter(proposalsTable))!;
+    const nonDraftScopeFilter = buildNonDraftScopeFilter(proposalsTable);
+    clause = and(clause, buildRejectedAndLeftBehindFilter(proposalsTable))!;
 
     if (skipAccessCheck) {
-      // Trusted contexts get all phase-scoped non-draft proposals.
-      return and(clause, phaseScopedNonDraftIdFilter)!;
+      // Trusted contexts get all non-draft proposals in scope.
+      return and(clause, nonDraftScopeFilter)!;
     }
 
     // Draft proposals are phase-scoped to their `createdAt` window: a draft
@@ -483,9 +486,9 @@ export const resolveProposalListScope = async ({
     // The profile-member arm is what keeps a collaborator's view of a
     // co-authored proposal from changing the moment it is submitted as HIDDEN.
     const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
+      ? nonDraftScopeFilter
       : and(
-          phaseScopedNonDraftIdFilter,
+          nonDraftScopeFilter,
           or(
             eq(proposalsTable.visibility, Visibility.VISIBLE),
             isProposalProfileMember(proposalsTable, accountUserId),
@@ -504,12 +507,7 @@ export const resolveProposalListScope = async ({
         )!;
 
     // Rejected proposals carry no visibility filter of their own: a rejection
-    // is a public verdict on a public submission, and the detail page has never
-    // gated on it (`getProposal`), so hiding the row here only made the list
-    // disagree with a URL that still worked. Rejection is a pipeline rule now —
-    // the phase, review and voting reads drop them via their own predicates
-    // (`PIPELINE_INELIGIBLE_STATUSES`, `VOTING_INELIGIBLE_STATUSES`), and the
-    // card badges the status so the list stays honest about it.
+    // is a public verdict, and `getProposal` has never gated on it.
     return and(
       clause,
       or(draftFilter, nonDraftVisibilityFilter)!,

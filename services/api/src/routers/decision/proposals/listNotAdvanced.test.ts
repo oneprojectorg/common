@@ -5,7 +5,7 @@ import {
 import { RejectionReason } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
-import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -45,8 +45,13 @@ const schema = {
 /**
  * A published instance in `review` with three submitted proposals, one of
  * which the pipeline carried over: returns it and the two it left behind.
+ * `rejectBeforeAdvance` rejects the first during `submission`, so the advance
+ * drops it from the review snapshot.
  */
-async function seedReviewPhase(testData: TestDecisionsDataManager) {
+async function seedReviewPhase(
+  testData: TestDecisionsDataManager,
+  { rejectBeforeAdvance = false } = {},
+) {
   const setup = await testData.createDecisionSetup({
     instanceCount: 1,
     grantAccess: true,
@@ -59,8 +64,10 @@ async function seedReviewPhase(testData: TestDecisionsDataManager) {
     instanceProfileIds: [setup.instance.profileId],
   });
 
-  const created = await Promise.all(
-    ['First', 'Second', 'Third'].map((title) =>
+  const [admin, memberCaller, ...created] = await Promise.all([
+    createAuthenticatedCaller(setup.userEmail),
+    createAuthenticatedCaller(member.email),
+    ...['First', 'Second', 'Third'].map((title) =>
       testData.createProposal({
         userEmail: member.email,
         processInstanceId: instanceId,
@@ -68,7 +75,14 @@ async function seedReviewPhase(testData: TestDecisionsDataManager) {
         status: ProposalStatus.SUBMITTED,
       }),
     ),
-  );
+  ]);
+  const rejectedEarly = created[0];
+  if (rejectBeforeAdvance && rejectedEarly) {
+    await admin.decision.rejectProposal({
+      proposalId: rejectedEarly.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
+  }
   await testData.advancePhase({
     instanceId,
     fromPhaseId: 'submission',
@@ -91,15 +105,20 @@ async function seedReviewPhase(testData: TestDecisionsDataManager) {
     throw new Error('Expected the pipeline to keep exactly one proposal');
   }
 
-  const [admin, memberCaller] = await Promise.all([
-    createAuthenticatedCaller(setup.userEmail),
-    createAuthenticatedCaller(member.email),
-  ]);
-
   return {
     instanceId,
+    instanceProfileId: setup.instance.profileId,
     admin,
     memberCaller,
+    createViewer: async () =>
+      createAuthenticatedCaller(
+        (
+          await testData.createMemberUser({
+            organization: setup.organization,
+            instanceProfileIds: [setup.instance.profileId],
+          })
+        ).email,
+      ),
     advanced: advanced.id,
     leftBehind: leftBehind.id,
     alsoLeftBehind: alsoLeftBehind.id,
@@ -186,25 +205,118 @@ describe.concurrent('listProposals: not advanced', () => {
     });
   });
 
-  it('gives non-admins only rejected proposals under Not advanced', async ({
+  it('gives non-admins and anonymous visitors the same Not advanced list, without the advance action', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, admin, memberCaller, advanced } =
-      await seedReviewPhase(testData);
-    await admin.decision.rejectProposal({
-      proposalId: advanced,
-      reason: RejectionReason.INELIGIBLE,
-    });
+    const {
+      instanceId,
+      instanceProfileId,
+      admin,
+      memberCaller,
+      advanced,
+      leftBehind,
+      alsoLeftBehind,
+    } = await seedReviewPhase(testData);
+    await Promise.all([
+      admin.decision.rejectProposal({
+        proposalId: advanced,
+        reason: RejectionReason.INELIGIBLE,
+      }),
+      testData.makeDecisionPublic(instanceProfileId),
+    ]);
+    const publicCaller = createCaller(await createTestContextWithSession(null));
 
-    const { items } = await memberCaller.decision.listProposals({
-      processInstanceId: instanceId,
-      notAdvanced: true,
-    });
+    const lists = await Promise.all(
+      [memberCaller, publicCaller].map((caller) =>
+        caller.decision.listProposals({
+          processInstanceId: instanceId,
+          notAdvanced: true,
+        }),
+      ),
+    );
 
-    expect(items.map((p) => p.id)).toEqual([advanced]);
-    expect(items[0]?.isOutsideCurrentPhase).toBeUndefined();
+    for (const { items, total } of lists) {
+      expect(total).toBe(3);
+      expect(outsideById(items)).toEqual({
+        [advanced]: false,
+        [leftBehind]: true,
+        [alsoLeftBehind]: true,
+      });
+      expect(items.map((p) => p.advanceTarget)).toEqual([
+        undefined,
+        undefined,
+        undefined,
+      ]);
+    }
+  });
+
+  it('keeps a hidden left-behind proposal from members who cannot see it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      instanceId,
+      admin,
+      memberCaller,
+      createViewer,
+      leftBehind,
+      alsoLeftBehind,
+    } = await seedReviewPhase(testData);
+    const [viewerCaller] = await Promise.all([
+      createViewer(),
+      admin.decision.updateProposal({
+        proposalId: leftBehind,
+        data: { visibility: Visibility.HIDDEN },
+      }),
+    ]);
+
+    const listNotAdvanced = (caller: typeof memberCaller) =>
+      caller.decision.listProposals({
+        processInstanceId: instanceId,
+        notAdvanced: true,
+      });
+    const [viewerList, authorList] = await Promise.all([
+      listNotAdvanced(viewerCaller),
+      listNotAdvanced(memberCaller),
+    ]);
+
+    expect(viewerList.items.map((p) => p.id)).toEqual([alsoLeftBehind]);
+    expect(viewerList.total).toBe(1);
+    // The author still sees their hidden proposal.
+    expect(authorList.total).toBe(2);
+  });
+
+  it('lists a proposal rejected in an earlier phase once', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, admin, memberCaller, leftBehind, alsoLeftBehind } =
+      await seedReviewPhase(testData, { rejectBeforeAdvance: true });
+
+    const lists = await Promise.all(
+      [memberCaller, admin].map((caller) =>
+        caller.decision.listProposals({
+          processInstanceId: instanceId,
+          notAdvanced: true,
+        }),
+      ),
+    );
+
+    for (const { items, total } of lists) {
+      expect(total).toBe(2);
+      expect(items).toHaveLength(2);
+      expect(outsideById(items)).toEqual({
+        [leftBehind]: true,
+        [alsoLeftBehind]: true,
+      });
+      expect(items.find((p) => p.id === leftBehind)?.status).toBe(
+        ProposalStatus.REJECTED,
+      );
+    }
   });
 
   it('keeps an explicitly chosen phase to its own rejected proposals', async ({
@@ -212,11 +324,17 @@ describe.concurrent('listProposals: not advanced', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, admin, advanced } = await seedReviewPhase(testData);
-    await admin.decision.rejectProposal({
-      proposalId: advanced,
-      reason: RejectionReason.INELIGIBLE,
-    });
+    const { instanceId, admin, advanced, leftBehind } =
+      await seedReviewPhase(testData);
+    // One rejected in the phase, one rejected before it.
+    await Promise.all(
+      [advanced, leftBehind].map((proposalId) =>
+        admin.decision.rejectProposal({
+          proposalId,
+          reason: RejectionReason.INELIGIBLE,
+        }),
+      ),
+    );
 
     const { items } = await admin.decision.listProposals({
       processInstanceId: instanceId,
@@ -241,5 +359,33 @@ describe.concurrent('listProposals: not advanced', () => {
 
     expect(items.map((p) => p.id)).toEqual([advanced]);
     expect(items[0]?.isOutsideCurrentPhase).toBeUndefined();
+  });
+
+  it('drops rejected proposals from All for everyone', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, admin, memberCaller, advanced, alsoLeftBehind } =
+      await seedReviewPhase(testData);
+    await admin.decision.advanceProposal({
+      proposalId: alsoLeftBehind,
+      phaseId: 'review',
+    });
+    await admin.decision.rejectProposal({
+      proposalId: advanced,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    const lists = await Promise.all(
+      [memberCaller, admin].map((caller) =>
+        caller.decision.listProposals({ processInstanceId: instanceId }),
+      ),
+    );
+
+    for (const { items, total } of lists) {
+      expect(items.map((p) => p.id)).toEqual([alsoLeftBehind]);
+      expect(total).toBe(1);
+    }
   });
 });

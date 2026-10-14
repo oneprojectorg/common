@@ -281,6 +281,66 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
     expect(result.total).toBe(1);
   });
 
+  it('drops a proposal rejected after the vote from the ballot list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const voter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const voterCaller = await createAuthenticatedCaller(voter.email);
+
+    const createSubmitted = (title: string) =>
+      testData.createProposal({
+        userEmail: voter.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: `${title} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+    const [keptProposal, rejectedProposal] = await Promise.all([
+      createSubmitted('Kept'),
+      createSubmitted('Rejected after vote'),
+    ]);
+
+    await Promise.all([
+      seedBallot({
+        processInstanceId: instance.instance.id,
+        voterProfileId: voter.profileId,
+        proposalIds: [keptProposal.id, rejectedProposal.id],
+      }),
+      db
+        .update(proposals)
+        .set({ status: ProposalStatus.REJECTED })
+        .where(eq(proposals.id, rejectedProposal.id)),
+    ]);
+
+    const ballots = await Promise.all([
+      voterCaller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+        votedByProfileId: voter.profileId,
+      }),
+      voterCaller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+        votedByProfileId: voter.profileId,
+      }),
+    ]);
+
+    for (const ballot of ballots) {
+      expect(ballot.items.map((p) => p.id)).toEqual([keptProposal.id]);
+    }
+  });
+
   it('returns accurate voteCount per proposal on a ballot query', async ({
     task,
     onTestFinished,

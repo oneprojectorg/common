@@ -138,9 +138,8 @@ export const proposalSchema = z.object({
   /** True when this proposal is in the latest results selection set. */
   isSelected: z.boolean().optional(),
   /**
-   * True when an admin's current-phase list carries this proposal although an
-   * earlier transition left it behind (the `notAdvanced` filter on
-   * `listProposals`).
+   * True when the current-phase list carries this proposal although an earlier
+   * transition left it behind (the `notAdvanced` filter on `listProposals`).
    */
   isOutsideCurrentPhase: z.boolean().optional(),
   /**
@@ -221,8 +220,9 @@ export type ProposalLocations = z.infer<typeof proposalLocationsSchema>;
 
 /**
  * Input schema for `decision.listAllProposals`. Returns every valid submission
- * regardless of phase scoping, so there are no phase/voting filters. Uses
- * cursor pagination — pass `cursor` from the previous response's `next`.
+ * regardless of phase scoping, so there are no phase/voting filters. Rejected
+ * proposals are left out unless `status` asks for them.
+ * Uses cursor pagination — pass `cursor` from the previous response's `next`.
  */
 export const allProposalsFilterSchema = z.object({
   processInstanceId: z.uuid(),

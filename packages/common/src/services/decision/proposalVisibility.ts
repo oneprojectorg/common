@@ -93,3 +93,14 @@ export const isProposalReadable = (
       isProposalProfileMember(proposalsTable, accountUserId),
     )!,
   )!;
+
+export const excludeRejectedUnlessAsked = ({
+  proposalsTable,
+  status,
+}: {
+  proposalsTable: typeof proposals;
+  status: ProposalStatus | undefined;
+}): SQL | undefined =>
+  status === undefined
+    ? ne(proposalsTable.status, ProposalStatus.REJECTED)
+    : undefined;
