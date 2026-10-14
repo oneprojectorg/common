@@ -335,6 +335,7 @@ const AvatarMenuContent = ({
     ) ?? {};
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const settingsEnabled = useFeatureFlag('notification-preferences');
 
   return (
     <>
@@ -366,13 +367,15 @@ const AvatarMenuContent = ({
       <MenuDivider asMenuItem={asMenuItem} />
 
       <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-1 p-2">
-        <ActionRow
-          asMenuItem={asMenuItem}
-          className="font-normal text-foreground"
-          onClick={onOpenSettings}
-        >
-          <LuSettings className="size-4" /> {t('settings.title')}
-        </ActionRow>
+        {settingsEnabled ? (
+          <ActionRow
+            asMenuItem={asMenuItem}
+            className="font-normal text-foreground"
+            onClick={onOpenSettings}
+          >
+            <LuSettings className="size-4" /> {t('settings.title')}
+          </ActionRow>
+        ) : null}
         <LinkRow
           asMenuItem={asMenuItem}
           href="https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b"
@@ -544,6 +547,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   };
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const settingsEnabled = useFeatureFlag('notification-preferences');
 
   // Hide modal when profile actually changes
   useEffect(() => {
@@ -581,7 +585,12 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   // shadcn "menu item opens a dialog" pattern).
   const overlays = (
     <>
-      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      {settingsEnabled ? (
+        <SettingsDialog
+          open={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
+        />
+      ) : null}
       <LegalDialogs
         open={legalDialog}
         onOpenChange={(next) => {
