@@ -384,38 +384,38 @@ export const resolveProposalListScope = async ({
     }
   }
 
-  // Under "Not advanced", admins browsing the current phase also see what
-  // didn't advance into it: every submitted proposal outside the phase was
-  // left behind by an earlier transition, since a proposal can't predate the
-  // instance's first phase.
-  const includesLeftBehind =
+  // "Not advanced" on the current phase reaches back into earlier phases, so
+  // `buildNotAdvancedFilter` alone narrows the list instead of phase scoping.
+  // That way everyone sees a rejected proposal whatever phase it was rejected
+  // in: rejection drops it from later transition snapshots, so phase scoping
+  // would lose it once the instance moves on. An explicit phase or ID scope
+  // keeps the list to what was asked for.
+  const includesEarlierPhases =
     input.notAdvanced === true &&
-    canManageProposals &&
     explicitScopeIds === undefined &&
-    input.phaseId === undefined &&
-    input.phase !== 'results';
-  const buildIsOutsideCurrentPhase = includesLeftBehind
-    ? (proposalsTable: typeof proposals): SQL =>
-        and(
-          ne(proposalsTable.status, ProposalStatus.DRAFT),
-          isNull(proposalsTable.deletedAt),
-          // Not `not(...)`: a NULL membership must read as outside.
-          sql`(${phaseScope.buildNonDraftFilter(proposalsTable)}) IS NOT TRUE`,
-        )!
-    : undefined;
+    input.phaseId === undefined;
 
-  // Non-drafts in the phase, plus those left behind before it when included.
-  const buildPhaseScopedNonDraftFilter = (
-    proposalsTable: typeof proposals,
-  ): SQL => {
-    const inPhase = and(
+  // Admins also see what didn't advance into the current phase: every
+  // submitted proposal outside it was left behind by an earlier transition,
+  // since a proposal can't predate the instance's first phase.
+  const buildIsOutsideCurrentPhase =
+    includesEarlierPhases && canManageProposals && input.phase !== 'results'
+      ? (proposalsTable: typeof proposals): SQL =>
+          and(
+            ne(proposalsTable.status, ProposalStatus.DRAFT),
+            isNull(proposalsTable.deletedAt),
+            // Not `not(...)`: a NULL membership must read as outside.
+            sql`(${phaseScope.buildNonDraftFilter(proposalsTable)}) IS NOT TRUE`,
+          )!
+      : undefined;
+
+  const buildNonDraftScopeFilter = (proposalsTable: typeof proposals): SQL =>
+    and(
       ne(proposalsTable.status, ProposalStatus.DRAFT),
-      phaseScope.buildNonDraftFilter(proposalsTable),
+      includesEarlierPhases
+        ? isNull(proposalsTable.deletedAt)
+        : phaseScope.buildNonDraftFilter(proposalsTable),
     )!;
-    return buildIsOutsideCurrentPhase
-      ? or(inPhase, buildIsOutsideCurrentPhase(proposalsTable))!
-      : inPhase;
-  };
 
   // "Not advanced": rejected, or (for admins) left behind in an earlier phase.
   const buildNotAdvancedFilter = (
@@ -455,18 +455,18 @@ export const resolveProposalListScope = async ({
     }
 
     // Phase scoping is composed in SQL: non-drafts match the attachment
-    // snapshot ∪ a strict `(inboundAt, outboundAt)` `createdAt` window, while
-    // drafts match the half-open `[inboundAt, outboundAt)` window AND the
-    // caller's `profileUsers` access set. Every scope predicate (including
-    // the explicit-scope one above) carries the `isNull(deletedAt)` filter,
-    // so the outer query stays soft-delete-safe without its own check.
-    const phaseScopedNonDraftIdFilter =
-      buildPhaseScopedNonDraftFilter(proposalsTable);
+    // snapshot ∪ a strict `(inboundAt, outboundAt)` `createdAt` window (unless
+    // `includesEarlierPhases` drops phase scoping for them), while drafts
+    // match the half-open `[inboundAt, outboundAt)` window AND the caller's
+    // `profileUsers` access set. Every scope predicate (including the
+    // explicit-scope one above) carries the `isNull(deletedAt)` filter, so
+    // the outer query stays soft-delete-safe without its own check.
+    const nonDraftScopeFilter = buildNonDraftScopeFilter(proposalsTable);
     clause = and(clause, buildNotAdvancedFilter(proposalsTable))!;
 
     if (skipAccessCheck) {
-      // Trusted contexts get all phase-scoped non-draft proposals.
-      return and(clause, phaseScopedNonDraftIdFilter)!;
+      // Trusted contexts get every non-draft proposal in scope.
+      return and(clause, nonDraftScopeFilter)!;
     }
 
     // Draft proposals are phase-scoped to their `createdAt` window: a draft
@@ -483,9 +483,9 @@ export const resolveProposalListScope = async ({
     // The profile-member arm is what keeps a collaborator's view of a
     // co-authored proposal from changing the moment it is submitted as HIDDEN.
     const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
+      ? nonDraftScopeFilter
       : and(
-          phaseScopedNonDraftIdFilter,
+          nonDraftScopeFilter,
           or(
             eq(proposalsTable.visibility, Visibility.VISIBLE),
             isProposalProfileMember(proposalsTable, accountUserId),

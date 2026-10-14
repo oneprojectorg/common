@@ -207,16 +207,54 @@ describe.concurrent('listProposals: not advanced', () => {
     expect(items[0]?.isOutsideCurrentPhase).toBeUndefined();
   });
 
+  it('gives non-admins proposals rejected in an earlier phase too', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, admin, memberCaller, leftBehind, alsoLeftBehind } =
+      await seedReviewPhase(testData);
+    await admin.decision.rejectProposal({
+      proposalId: leftBehind,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    const [{ items }, adminList] = await Promise.all([
+      memberCaller.decision.listProposals({
+        processInstanceId: instanceId,
+        notAdvanced: true,
+      }),
+      admin.decision.listProposals({
+        processInstanceId: instanceId,
+        notAdvanced: true,
+      }),
+    ]);
+
+    expect(items.map((p) => p.id)).toEqual([leftBehind]);
+    // An admin already saw it as left behind; rejecting it doesn't list it twice.
+    expect(adminList.total).toBe(2);
+    expect(outsideById(adminList.items)).toEqual({
+      [leftBehind]: true,
+      [alsoLeftBehind]: true,
+    });
+  });
+
   it('keeps an explicitly chosen phase to its own rejected proposals', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, admin, advanced } = await seedReviewPhase(testData);
-    await admin.decision.rejectProposal({
-      proposalId: advanced,
-      reason: RejectionReason.INELIGIBLE,
-    });
+    const { instanceId, admin, advanced, leftBehind } =
+      await seedReviewPhase(testData);
+    // One rejected in the phase, one rejected before it.
+    await Promise.all(
+      [advanced, leftBehind].map((proposalId) =>
+        admin.decision.rejectProposal({
+          proposalId,
+          reason: RejectionReason.INELIGIBLE,
+        }),
+      ),
+    );
 
     const { items } = await admin.decision.listProposals({
       processInstanceId: instanceId,
