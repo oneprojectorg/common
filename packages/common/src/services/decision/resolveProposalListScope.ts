@@ -37,10 +37,12 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
-import { excludeRejectedUnlessAsked } from './phaseEligibility';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
-import { isProposalProfileMember } from './proposalVisibility';
+import {
+  excludeRejectedUnlessAsked,
+  isProposalProfileMember,
+} from './proposalVisibility';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -413,7 +415,6 @@ export const resolveProposalListScope = async ({
         : phaseScope.buildNonDraftFilter(proposalsTable),
     )!;
 
-  // The trusted export is a full record, not a list a viewer browses.
   const buildStatusAxisFilter = (
     proposalsTable: typeof proposals,
   ): SQL | undefined => {
@@ -423,9 +424,10 @@ export const resolveProposalListScope = async ({
         buildIsOutsideCurrentPhase?.(proposalsTable),
       );
     }
+    // The trusted export is a full record, not a list a viewer browses.
     return skipAccessCheck
       ? undefined
-      : excludeRejectedUnlessAsked(proposalsTable, input.status);
+      : excludeRejectedUnlessAsked({ proposalsTable, status: input.status });
   };
 
   // Assemble the full WHERE clause. Parameterized on the table reference so

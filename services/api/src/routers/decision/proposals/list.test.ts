@@ -360,25 +360,32 @@ describe.concurrent('listProposals', () => {
       reason: RejectionReason.INELIGIBLE,
     });
 
+    const processInstanceId = instance.instance.id;
+    const cases = [
+      { input: {}, expected: keptProposal.id },
+      { input: { notAdvanced: true }, expected: rejectedProposal.id },
+      {
+        input: { status: ProposalStatus.REJECTED },
+        expected: rejectedProposal.id,
+      },
+      {
+        input: { submittedByProfileId: memberUser.profileId },
+        expected: keptProposal.id,
+      },
+    ];
     const results = await Promise.all(
       [memberCaller, adminCaller].flatMap((caller) =>
-        [false, true].map((notAdvanced) =>
-          caller.decision.listProposals({
-            processInstanceId: instance.instance.id,
-            notAdvanced,
-          }),
-        ),
+        cases.map(async ({ input, expected }) => ({
+          expected,
+          ids: (
+            await caller.decision.listProposals({ processInstanceId, ...input })
+          ).items.map((p) => p.id),
+        })),
       ),
     );
 
-    for (const [index, result] of results.entries()) {
-      const isNotAdvanced = index % 2 === 1;
-      expect(result.items.map((p) => p.id)).toEqual([
-        isNotAdvanced ? rejectedProposal.id : keptProposal.id,
-      ]);
-      expect(result.items[0]?.status).toBe(
-        isNotAdvanced ? ProposalStatus.REJECTED : ProposalStatus.SUBMITTED,
-      );
+    for (const { ids, expected } of results) {
+      expect(ids).toEqual([expected]);
     }
   });
 

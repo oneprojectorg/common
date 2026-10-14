@@ -88,7 +88,7 @@ describe.concurrent('listProposalLocations', () => {
     expect(first?.submittedBy).toBeDefined();
   });
 
-  it('pins a rejected proposal only under Not advanced', async ({
+  it('pins a rejected proposal only under Not advanced, for admins and members alike', async ({
     task,
     onTestFinished,
   }) => {
@@ -99,8 +99,12 @@ describe.concurrent('listProposalLocations', () => {
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
 
-    const [kept, rejected, caller] = await Promise.all([
+    const [kept, rejected, adminCaller, memberCaller] = await Promise.all([
       testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instanceId,
@@ -114,22 +118,27 @@ describe.concurrent('listProposalLocations', () => {
         status: ProposalStatus.REJECTED,
       }),
       createAuthenticatedCaller(setup.userEmail),
+      createAuthenticatedCaller(member.email),
     ]);
     await Promise.all([
       setLocation(kept.id, { lat: 40.7, lng: -74 }),
       setLocation(rejected.id, { lat: 34, lng: -118.2 }),
     ]);
 
-    const [all, notAdvanced] = await Promise.all([
-      caller.decision.listProposalLocations({ processInstanceId: instanceId }),
-      caller.decision.listProposalLocations({
-        processInstanceId: instanceId,
-        notAdvanced: true,
-      }),
-    ]);
+    for (const caller of [adminCaller, memberCaller]) {
+      const [all, notAdvanced] = await Promise.all([
+        caller.decision.listProposalLocations({
+          processInstanceId: instanceId,
+        }),
+        caller.decision.listProposalLocations({
+          processInstanceId: instanceId,
+          notAdvanced: true,
+        }),
+      ]);
 
-    expect(all.items.map((p) => p.id)).toEqual([kept.id]);
-    expect(notAdvanced.items.map((p) => p.id)).toEqual([rejected.id]);
+      expect(all.items.map((p) => p.id)).toEqual([kept.id]);
+      expect(notAdvanced.items.map((p) => p.id)).toEqual([rejected.id]);
+    }
   });
 
   it('does not surface a hidden proposal to a non-admin member', async ({

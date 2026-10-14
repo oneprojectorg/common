@@ -42,7 +42,6 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
-import { excludeRejectedUnlessAsked } from './phaseEligibility';
 import {
   isAnonymousAuthor,
   proposalAuthorRelation,
@@ -52,6 +51,7 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
+import { excludeRejectedUnlessAsked } from './proposalVisibility';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
@@ -159,7 +159,7 @@ export const listAllProposals = async ({
       eq(t.processInstanceId, processInstanceId),
       buildProposalTitleSearchCondition(t, input.search),
       status ? eq(t.status, status) : undefined,
-      excludeRejectedUnlessAsked(t, status),
+      excludeRejectedUnlessAsked({ proposalsTable: t, status }),
       input.submittedByProfileId
         ? eq(t.submittedByProfileId, input.submittedByProfileId)
         : undefined,

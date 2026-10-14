@@ -1,5 +1,5 @@
-import { type SQL, and, ne, notInArray } from '@op/db/client';
-import { ProposalStatus, type proposals } from '@op/db/schema';
+import { type SQL, and, notInArray } from '@op/db/client';
+import type { proposals } from '@op/db/schema';
 
 import { notSuperseded } from './proposalSupersession';
 import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
@@ -19,13 +19,3 @@ export const phaseEligiblePredicate = (t: typeof proposals): SQL =>
       processInstanceId: t.processInstanceId,
     }),
   )!;
-
-/**
- * Lists drop rejected proposals unless the caller filters by status; "Not
- * advanced" asks for them on its own.
- */
-export const excludeRejectedUnlessAsked = (
-  t: typeof proposals,
-  status: string | undefined,
-): SQL | undefined =>
-  status === undefined ? ne(t.status, ProposalStatus.REJECTED) : undefined;

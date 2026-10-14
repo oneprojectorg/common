@@ -10,8 +10,8 @@ export const rejectProposalRouter = router({
    * Move a proposal to `REJECTED`. Closed-network + `decisions: ADMIN`.
    *
    * The status change stops the proposal advancing through phases, being
-   * reviewed, and being votable; it stays listed and readable, badged with its
-   * status.
+   * reviewed, and being votable; lists show it only under "Not advanced" or
+   * when filtered by status.
    */
   rejectProposal: networkAuthenticatedProcedure()
     .input(rejectProposalInputSchema)

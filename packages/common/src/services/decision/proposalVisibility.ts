@@ -93,3 +93,18 @@ export const isProposalReadable = (
       isProposalProfileMember(proposalsTable, accountUserId),
     )!,
   )!;
+
+/**
+ * Lists drop rejected proposals unless the caller filters by status; "Not
+ * advanced" asks for them on its own.
+ */
+export const excludeRejectedUnlessAsked = ({
+  proposalsTable,
+  status,
+}: {
+  proposalsTable: typeof proposals;
+  status: ProposalStatus | undefined;
+}): SQL | undefined =>
+  status === undefined
+    ? ne(proposalsTable.status, ProposalStatus.REJECTED)
+    : undefined;
