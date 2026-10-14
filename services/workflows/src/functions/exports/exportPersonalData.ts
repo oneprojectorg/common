@@ -12,11 +12,7 @@ import { runExportJob } from './runExportJob';
 
 const { personalDataExportRequested } = Events;
 
-/**
- * Build one data subject's Article 20 export. A background job because the read
- * spans nine tables and an active organiser's record outlasts any request
- * timeout. {@link runExportJob} owns the status reporting either side of it.
- */
+/** Build one data subject's Article 20 export file. */
 export const exportPersonalData = inngest.createFunction(
   {
     id: 'exportPersonalData',
@@ -33,40 +29,26 @@ export const exportPersonalData = inngest.createFunction(
       cacheKey: personalDataExportCacheKey(exportId),
       channel: Channels.personalDataExport(exportId),
       seed: { userId },
-      produce: async () => {
-        // Reading and rendering share one step so the rows never cross a step
-        // boundary: Inngest serializes a step's return into function state, and
-        // the rows carry every proposal's full submitted document. The cost is
-        // that an upload failure re-reads rather than resuming.
-        const { content, truncatedSections } = await step.run(
-          'collect-personal-data',
-          async () => {
-            const data = await collectPersonalData({ authUserId: userId });
-
-            return {
-              // Indented: the file is what the subject receives, and Article 20
-              // asks for a format they can use.
-              content: JSON.stringify(data, null, 2),
-              truncatedSections: data.truncatedSections,
-            };
-          },
-        );
-
-        const completion = await step.run('upload-to-storage', async () => {
+      // One step so the file never crosses a step boundary into Inngest state.
+      produce: () =>
+        step.run('collect-and-upload', async () => {
+          const data = await collectPersonalData({ authUserId: userId });
           const fileName = personalDataExportFileName();
 
           const { signedUrl, urlExpiresAt } = await uploadExportFile({
             filePath: personalDataExportFilePath(userId, fileName),
             fileName,
-            content,
+            content: JSON.stringify(data, null, 2),
             mimeType: 'application/json',
           });
 
-          return { fileName, signedUrl, urlExpiresAt };
-        });
-
-        return { ...completion, truncatedSections };
-      },
+          return {
+            fileName,
+            signedUrl,
+            urlExpiresAt,
+            truncatedSections: data.truncatedSections,
+          };
+        }),
     });
   },
 );

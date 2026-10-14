@@ -18,131 +18,9 @@ import { PERSONAL_DATA_EXPORT_MAX_ROWS_PER_SECTION } from './constants';
 import type { PersonalDataExportSection } from './schemas';
 
 /**
- * The file one personal data export produces. Article 20 covers what the subject
- * provided, so there are no analytics, inferred attributes, or moderation
- * verdicts here.
- */
-export interface PersonalDataExportFile {
-  exportedAt: string;
-  user: SubjectUser;
-  /** Null when the subject never completed onboarding. */
-  profile: SubjectProfile | null;
-  individual: SubjectIndividual | null;
-  posts: SubjectPost[];
-  postReactions: SubjectPostReaction[];
-  proposals: SubjectProposal[];
-  /** Metadata only. The stored files are not in this export. */
-  attachments: SubjectAttachment[];
-  customFormSubmissions: SubjectCustomFormSubmission[];
-  voteSubmissions: SubjectVoteSubmission[];
-  /**
-   * Sections the row ceiling cut short. In the file as well as on the record,
-   * because the file outlives the record by which time only it can say so.
-   */
-  truncatedSections: PersonalDataExportSection[];
-}
-
-export interface SubjectUser {
-  id: string;
-  name: string | null;
-  username: string | null;
-  email: string | null;
-  about: string | null;
-  title: string | null;
-  tos: boolean | null;
-  privacy: boolean | null;
-  tosAcceptedOn: string | null;
-  privacyAcceptedOn: string | null;
-  onboardedAt: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-export interface SubjectProfile {
-  id: string;
-  name: string;
-  slug: string;
-  bio: string | null;
-  mission: string | null;
-  email: string | null;
-  phone: string | null;
-  website: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-export interface SubjectIndividual {
-  pronouns: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-export interface SubjectPost {
-  id: string;
-  content: string;
-  parentPostId: string | null;
-  rootPostId: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-export interface SubjectPostReaction {
-  postId: string;
-  reactionType: string;
-  createdAt: string | null;
-}
-
-export interface SubjectProposal {
-  id: string;
-  processInstanceId: string;
-  proposalData: unknown;
-  status: string | null;
-  visibility: string;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-export interface SubjectAttachment {
-  id: string;
-  postId: string | null;
-  fileName: string;
-  mimeType: string;
-  fileSize: number | null;
-  createdAt: string | null;
-}
-
-export interface SubjectCustomFormSubmission {
-  id: string;
-  customFormId: string;
-  /** The subject's own profile, or the profile of a proposal they submitted. */
-  profileId: string;
-  data: Record<string, unknown>;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-export interface SubjectVoteSubmission {
-  id: string;
-  processInstanceId: string;
-  voteData: unknown;
-  customData: Record<string, unknown> | null;
-  /**
-   * Read from the join table. `voteData` holds a schema version and a signature,
-   * not the choice, so an export built from it alone would record that someone
-   * voted with no record of what for.
-   */
-  selectedProposalIds: string[];
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-/**
- * Read everything a personal data export covers for one data subject, named by
- * the auth user id their session resolved to. Nothing widens that.
+ * Read everything a personal data export covers for one data subject. Article 20
+ * covers only what the subject provided, so there are no analytics or inferred
+ * attributes here, and attachments are metadata only.
  *
  * Every collection is scoped to the subject's personal profile
  * (`users.profileId`, the profile `getIndividualProfileId` resolves). Most
@@ -159,7 +37,7 @@ export const collectPersonalData = async ({
   authUserId,
 }: {
   authUserId: string;
-}): Promise<PersonalDataExportFile> => {
+}) => {
   const exportedAt = new Date().toISOString();
 
   const [account] = await db
@@ -289,9 +167,7 @@ const collectSection = async <T>({
   };
 };
 
-const readProfile = async (
-  profileId: string,
-): Promise<SubjectProfile | null> => {
+const readProfile = async (profileId: string) => {
   const [profile] = await db
     .select({
       id: profiles.id,
@@ -316,9 +192,7 @@ const readProfile = async (
   return profile ?? null;
 };
 
-const readIndividual = async (
-  profileId: string,
-): Promise<SubjectIndividual | null> => {
+const readIndividual = async (profileId: string) => {
   const [individual] = await db
     .select({
       pronouns: individuals.pronouns,
@@ -335,7 +209,7 @@ const readIndividual = async (
 // Every collection orders by `createdAt` then `id`: the timestamp alone is not
 // unique, so two exports of unchanged data could otherwise differ.
 const readPosts = (profileId: string) =>
-  collectSection<SubjectPost>({
+  collectSection({
     section: 'posts',
     read: (limit) =>
       db
@@ -354,7 +228,7 @@ const readPosts = (profileId: string) =>
   });
 
 const readPostReactions = (profileId: string) =>
-  collectSection<SubjectPostReaction>({
+  collectSection({
     section: 'postReactions',
     read: (limit) =>
       db
@@ -384,7 +258,7 @@ const whereSubmittedBySubject = (profileId: string) =>
   );
 
 const readProposals = (profileId: string) =>
-  collectSection<SubjectProposal>({
+  collectSection({
     section: 'proposals',
     read: (limit) =>
       db
@@ -404,7 +278,7 @@ const readProposals = (profileId: string) =>
   });
 
 const readAttachments = (profileId: string) =>
-  collectSection<SubjectAttachment>({
+  collectSection({
     section: 'attachments',
     read: (limit) =>
       db
@@ -434,7 +308,7 @@ const readAttachments = (profileId: string) =>
  * submitted.
  */
 const readCustomFormSubmissions = (profileId: string) =>
-  collectSection<SubjectCustomFormSubmission>({
+  collectSection({
     section: 'customFormSubmissions',
     read: (limit) =>
       db
@@ -470,12 +344,11 @@ const readCustomFormSubmissions = (profileId: string) =>
   });
 
 /**
- * Two queries rather than a join: one submission selects many proposals, and a
- * join would make the row ceiling count selections instead of votes.
+ * Selections come from the join table because `voteData` holds a signature, not
+ * the choice. Two queries rather than a join so the row ceiling counts votes, not
+ * selections.
  */
-const readVoteSubmissions = async (
-  profileId: string,
-): Promise<CollectedSection<SubjectVoteSubmission>> => {
+const readVoteSubmissions = async (profileId: string) => {
   const submissions = await collectSection({
     section: 'voteSubmissions',
     read: (limit) =>

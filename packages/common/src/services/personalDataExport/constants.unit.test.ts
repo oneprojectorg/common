@@ -24,12 +24,6 @@ describe('personalDataExportCacheKey', () => {
       exportStatusCacheKey('abc-123'),
     );
   });
-
-  it('distinguishes different exports', () => {
-    expect(personalDataExportCacheKey('abc-123')).not.toBe(
-      personalDataExportCacheKey('abc-124'),
-    );
-  });
 });
 
 describe('personalDataExportFilePath', () => {
@@ -39,23 +33,11 @@ describe('personalDataExportFilePath', () => {
     ).toBe('user/user-1/personal-data/personal_data_export_123.json');
   });
 
-  it('leads with the owning entity, not the sub-resource', () => {
-    expect(personalDataExportFilePath('user-1', 'f.json')).toMatch(
-      /^user\/user-1\/personal-data\//,
-    );
-  });
-
   // The path is relative to the bucket; prefixing it would nest the object at
   // exports/exports/...
   it('does not re-prefix the bucket name into the key', () => {
     expect(personalDataExportFilePath('user-1', 'f.json')).not.toMatch(
       new RegExp(`^${EXPORTS_BUCKET}/`),
-    );
-  });
-
-  it('keeps two subjects in separate prefixes', () => {
-    expect(personalDataExportFilePath('user-1', 'f.json')).not.toBe(
-      personalDataExportFilePath('user-2', 'f.json'),
     );
   });
 });

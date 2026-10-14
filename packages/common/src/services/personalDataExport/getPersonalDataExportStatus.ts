@@ -6,7 +6,6 @@ import {
   personalDataExportCacheKey,
   personalDataExportFilePath,
 } from './constants';
-import type { PersonalDataExportStatusData } from './schemas';
 import { personalDataExportRecordSchema } from './schemas';
 
 /**
@@ -22,7 +21,7 @@ export const getPersonalDataExportStatus = async ({
 }: {
   exportId: string;
   user: User;
-}): Promise<PersonalDataExportStatusData | { status: 'not_found' }> => {
+}) => {
   const key = personalDataExportCacheKey(exportId);
 
   const exportStatus = await readExportRecord({
@@ -31,8 +30,6 @@ export const getPersonalDataExportStatus = async ({
     schema: personalDataExportRecordSchema,
   });
 
-  // A record that failed validation lands here too, and must: it carries no
-  // `userId` for the ownership check below to compare against.
   if (!exportStatus) {
     return { status: 'not_found' as const };
   }

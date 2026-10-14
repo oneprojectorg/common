@@ -5,9 +5,9 @@
  */
 
 /**
- * Private bucket for generated exports. Not the `assets` bucket, which
- * `apps/app/next.config.mjs` serves publicly. `services/db/migrate.ts` creates
- * it and re-asserts `public: false` on every deploy.
+ * Private bucket for generated exports. Not the `assets` bucket, which is served
+ * publicly; proposal exports written there before the move still exist (Asana
+ * 1217696316242182). `services/db/migrate.ts` keeps this one private.
  */
 export const EXPORTS_BUCKET = 'exports';
 

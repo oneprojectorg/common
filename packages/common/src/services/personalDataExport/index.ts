@@ -3,14 +3,7 @@ export {
   personalDataExportFileName,
   personalDataExportFilePath,
 } from './constants';
-export {
-  collectPersonalData,
-  type PersonalDataExportFile,
-} from './collectPersonalData';
+export { collectPersonalData } from './collectPersonalData';
 export { getPersonalDataExportStatus } from './getPersonalDataExportStatus';
 export { requestPersonalDataExport } from './requestPersonalDataExport';
-export {
-  personalDataExportResponseSchema,
-  type PersonalDataExportSection,
-  type PersonalDataExportStatusData,
-} from './schemas';
+export { personalDataExportResponseSchema } from './schemas';

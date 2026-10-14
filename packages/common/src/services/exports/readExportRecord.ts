@@ -5,14 +5,9 @@ import type { ZodType } from 'zod';
 import { CommonError } from '../../utils';
 
 /**
- * Read and validate an export's cached status record, or null when the cache
- * held nothing usable.
- *
- * A record that fails the schema returns null rather than the value: it carries
- * no owner, so no caller can authorize against it.
- *
- * @throws CommonError when the cache did not answer. Reported as `not_found`,
- *   one Redis timeout would retire a finished run the client cannot get back.
+ * Read and validate an export's cached status record, or null when the cache held
+ * nothing valid. Throws when the cache did not answer, so a Redis timeout is not
+ * reported as `not_found`.
  */
 export const readExportRecord = async <T>({
   exportId,

@@ -33,7 +33,6 @@ export const personalDataExportRecordSchema = z.object({
   fileName: z.string().optional(),
   signedUrl: z.string().optional(),
   urlExpiresAt: z.string().optional(),
-  errorMessage: z.string().optional(),
   createdAt: z.string(),
   completedAt: z.string().optional(),
   /**

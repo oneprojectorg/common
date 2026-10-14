@@ -1,5 +1,6 @@
-import { failedExportPatch, patchExportRecord } from '@op/common';
+import { patchExportRecord } from '@op/common';
 import type { ChannelName } from '@op/common/realtime';
+import { logger } from '@op/logging';
 
 import { notifyExportChanged } from './notifyExportChanged';
 
@@ -9,15 +10,9 @@ interface ExportStepRunner {
 }
 
 /**
- * Run one export to a terminal state, reported and broadcast.
- *
- * The `catch` wraps `produce` rather than sitting inside it because that is what
- * guarantees the property both pipelines depend on: export state lives only in a
- * cache with no history, so a run that ends without a terminal status is a file
- * nothing can reach. The error is rethrown, so Inngest still records the failure.
- *
- * `seed` restates the fields the record cannot be read without, in case the
- * request's own write was evicted in between.
+ * Run one export to a terminal, broadcast status. Export state lives only in the
+ * cache, so a run that never reaches `completed` or `failed` is unreachable.
+ * `seed` restates the fields a reader needs, in case the request's write was evicted.
  */
 export const runExportJob = async ({
   step,
@@ -64,8 +59,15 @@ export const runExportJob = async ({
 
     return { exportId, status: 'completed' };
   } catch (error) {
+    // The cause is logged, not recorded: the client sees the record, and a driver
+    // error can carry the subject's own rows as query parameters.
+    logger.error('Export run failed', { exportId, error });
+
     await step.run('update-status-failed', () =>
-      patchExportRecord(cacheKey, failedExportPatch(exportId, error)),
+      patchExportRecord(cacheKey, {
+        status: 'failed',
+        completedAt: new Date().toISOString(),
+      }),
     );
 
     await step.run('notify-export-failed', () => notifyExportChanged(channel));

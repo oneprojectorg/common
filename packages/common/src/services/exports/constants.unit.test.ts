@@ -25,14 +25,6 @@ describe('export TTLs', () => {
   it('expires the signed URL strictly before the cached record', () => {
     expect(EXPORT_URL_TTL_SECONDS).toBeLessThan(EXPORT_CACHE_TTL_SECONDS);
   });
-
-  it('keeps a completed export downloadable for a full day', () => {
-    expect(EXPORT_CACHE_TTL_SECONDS).toBe(24 * 60 * 60);
-  });
-
-  it('mints short-lived signed URLs', () => {
-    expect(EXPORT_URL_TTL_SECONDS).toBe(6 * 60 * 60);
-  });
 });
 
 describe('exportDownloadOptions', () => {

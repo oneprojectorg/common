@@ -4,7 +4,7 @@ export {
   EXPORT_URL_TTL_SECONDS,
   exportDownloadOptions,
 } from './constants';
-export { failedExportPatch, patchExportRecord } from './patchExportRecord';
+export { patchExportRecord } from './patchExportRecord';
 export { readExportRecord } from './readExportRecord';
 export { refreshStaleSignedUrl } from './signedUrl';
 export { uploadExportFile } from './uploadExportFile';
