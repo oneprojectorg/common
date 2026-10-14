@@ -9,6 +9,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { createAutomatedFlag } from '../moderation/moderationFlagStore';
+import { deleteProposal } from './deleteProposal';
 import { listSmsBallotProposals } from './listSmsBallotProposals';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
@@ -177,6 +178,47 @@ describe.concurrent('listSmsBallotProposals', () => {
       ['102', second.id],
     ]);
     expect(after.map((row) => [row.code, row.proposalId])).toEqual([
+      ['102', second.id],
+    ]);
+  });
+
+  it('given the first of two advanced proposals is later deleted, then the other keeps its code', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: shortlistSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    const first = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `First ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const second = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Second ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    expect(advanced).toMatchObject({ conflict: false });
+    await deleteProposal({ proposalId: first.id, user: setup.user });
+
+    const rows = await listSmsBallotProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(rows.map((row) => [row.code, row.proposalId])).toEqual([
       ['102', second.id],
     ]);
   });

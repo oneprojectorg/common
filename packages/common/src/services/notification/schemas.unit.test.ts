@@ -283,6 +283,11 @@ describe('parseSmsCommand', () => {
     expect(parseSmsCommand('234567')).toEqual(none);
     expect(parseSmsCommand('21')).toEqual(none);
     expect(parseSmsCommand('214 and 218')).toEqual(none);
+    expect(parseSmsCommand('1001 102')).toEqual({
+      keyword: null,
+      argument: null,
+      codes: ['1001', '102'],
+    });
     expect(parseSmsCommand('')).toEqual(none);
   });
 });
