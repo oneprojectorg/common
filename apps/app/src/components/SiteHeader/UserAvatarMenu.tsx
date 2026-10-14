@@ -301,6 +301,7 @@ const AvatarMenuContent = ({
   const t = useTranslations();
   const { user } = useRequiredUser();
   const logout = useAuthLogout();
+  const isSettingsEnabled = useFeatureFlag('settings_modal');
 
   const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
   const profiles = profilesData?.items;
@@ -368,9 +369,11 @@ const AvatarMenuContent = ({
         <ActionRow asMenuItem={asMenuItem} onClick={onEditProfile}>
           <LuPencil className="size-4" /> {t('shell.editProfileAction')}
         </ActionRow>
-        <ActionRow asMenuItem={asMenuItem} onClick={onOpenSettings}>
-          <LuSettings className="size-4" /> {t('shell.settingsAction')}
-        </ActionRow>
+        {isSettingsEnabled && (
+          <ActionRow asMenuItem={asMenuItem} onClick={onOpenSettings}>
+            <LuSettings className="size-4" /> {t('shell.settingsAction')}
+          </ActionRow>
+        )}
       </MenuSection>
 
       {profiles?.length ? (
