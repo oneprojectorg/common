@@ -6,7 +6,8 @@ import {
   SMS_BALLOT_EMPTY,
   SMS_BALLOT_SUBMITTED,
   UnauthorizedError,
-  assertVoteAccess,
+  assertProfileAccess,
+  decisionPermission,
   formatSmsBallot,
   formatSmsBallotWelcome,
   formatSmsOverLimit,
@@ -25,6 +26,7 @@ import { db } from '@op/db/client';
 import { processInstances, profiles } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
+import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { smsNumberRateLimit } from './smsInboundLimits';
@@ -117,7 +119,14 @@ export const handleSmsBallot = inngest.createFunction(
 
     const canVote = await step.run('check-vote-access', async () => {
       try {
-        await assertVoteAccess({ authUserId, profileId: context.profileId });
+        await assertProfileAccess({
+          user: { id: authUserId },
+          profileId: context.profileId,
+          permissions: [
+            { decisions: permission.ADMIN },
+            { decisions: decisionPermission.VOTE },
+          ],
+        });
         return true;
       } catch (error) {
         if (error instanceof UnauthorizedError) {

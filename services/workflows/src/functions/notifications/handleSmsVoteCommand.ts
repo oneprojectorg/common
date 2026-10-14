@@ -1,7 +1,8 @@
 import {
   RateLimitError,
   UnauthorizedError,
-  assertVoteAccess,
+  assertProfileAccess,
+  decisionPermission,
   findSmsDecision,
   getSmsVotability,
   getPhoneSignupState,
@@ -10,6 +11,7 @@ import {
 } from '@op/common';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
+import { permission } from 'access-zones';
 
 import { smsNumberRateLimit } from './smsInboundLimits';
 
@@ -97,9 +99,13 @@ export const handleSmsVoteCommand = inngest.createFunction(
 
     const canVote = await step.run('check-vote-access', async () => {
       try {
-        await assertVoteAccess({
-          authUserId: account.authUserId,
+        await assertProfileAccess({
+          user: { id: account.authUserId },
           profileId: decision.profileId,
+          permissions: [
+            { decisions: permission.ADMIN },
+            { decisions: decisionPermission.VOTE },
+          ],
         });
         return true;
       } catch (error) {

@@ -202,7 +202,6 @@ export * from './votingEligibility';
 export * from './getSmsVotability';
 export * from './listSmsBallotProposals';
 export * from './smsBallotFormat';
-export * from './assertVoteAccess';
 export * from './listSmsDecisions';
 export * from './formatSmsDecisionList';
 export * from './findSmsDecision';

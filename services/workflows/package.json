@@ -24,6 +24,7 @@
     "@op/logging": "workspace:*",
     "@op/realtime": "workspace:*",
     "@op/supabase": "workspace:*",
+    "access-zones": "catalog:",
     "drizzle-orm": "catalog:",
     "inngest": "3.54.0",
     "inngest-cli": "^1.12.1",
