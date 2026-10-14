@@ -58,6 +58,17 @@ export const handleSmsBallot = inngest.createFunction(
   async ({ event, step }) => {
     const { processInstanceId, authUserId, phone } =
       voteSmsBallotRequested.schema.parse(event.data);
+    const picks: SmsBallotProposal[] = [];
+
+    const end = <T extends { message: string }>(result: T): T => {
+      logger.event('sms.ballot.ended', {
+        outcome: result.message,
+        processInstanceId,
+        authUserId,
+        picks: picks.length,
+      });
+      return result;
+    };
 
     const context = await step.run(
       'load-ballot',
@@ -101,7 +112,7 @@ export const handleSmsBallot = inngest.createFunction(
         processInstanceId,
         authUserId,
       });
-      return { message: 'no ballot available' };
+      return end({ message: 'no ballot available' });
     }
 
     const canVote = await step.run('check-vote-access', async () => {
@@ -121,7 +132,7 @@ export const handleSmsBallot = inngest.createFunction(
         processInstanceId,
         authUserId,
       });
-      return { message: 'not allowed to vote' };
+      return end({ message: 'not allowed to vote' });
     }
 
     const provider = getSmsProvider();
@@ -131,14 +142,13 @@ export const handleSmsBallot = inngest.createFunction(
         'Cannot send an SMS ballot: no Twilio Messaging Service configured',
         { processInstanceId },
       );
-      return { message: 'sms sending unavailable' };
+      return end({ message: 'sms sending unavailable' });
     }
 
     const sendSms = provider.sendSms;
     const to = parsePhoneNumber(phone);
     const { decisionName, maxVotesPerMember, proposals } = context;
 
-    const picks: SmsBallotProposal[] = [];
     let stopped: SmsFailureReason | null = null;
 
     const text = async (stepId: string, body: string) => {
@@ -162,7 +172,7 @@ export const handleSmsBallot = inngest.createFunction(
         reason,
         picks: picks.length,
       });
-      return { message: 'send rejected', reason, picks: picks.length };
+      return end({ message: 'send rejected', reason, picks: picks.length });
     };
 
     await text(
@@ -215,7 +225,7 @@ export const handleSmsBallot = inngest.createFunction(
           'send-ballot-rejected',
           `We could not record your ballot for "${decisionName}".`,
         );
-        return { message: 'ballot rejected', reason: outcome.reason };
+        return end({ message: 'ballot rejected', reason: outcome.reason });
       }
 
       await text('send-ballot-submitted', SMS_BALLOT_SUBMITTED);
@@ -224,10 +234,10 @@ export const handleSmsBallot = inngest.createFunction(
         authUserId,
         picks: picks.length,
       });
-      return {
+      return end({
         message: 'ballot submitted',
         voteSubmissionId: outcome.voteSubmissionId,
-      };
+      });
     };
 
     const addPicks = (codes: ReadonlyArray<string>): string => {
@@ -271,7 +281,7 @@ export const handleSmsBallot = inngest.createFunction(
         'send-ballot-expired',
         `Your ballot for "${decisionName}" was not submitted.${context.slug ? ` Text VOTE ${context.slug} to start again.` : ''}`,
       );
-      return { message, picks: picks.length };
+      return end({ message, picks: picks.length });
     };
 
     for (let turn = 1; turn <= MAX_TURNS; turn++) {

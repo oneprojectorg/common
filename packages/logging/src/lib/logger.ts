@@ -118,6 +118,10 @@ export class Logger {
     this.log('error', message, data);
   }
 
+  event(name: string, data?: LogData) {
+    this.log('info', name, { ...data, 'event.name': name });
+  }
+
   async flush(): Promise<void> {
     const provider = logs.getLoggerProvider();
     if ('forceFlush' in provider && typeof provider.forceFlush === 'function') {
