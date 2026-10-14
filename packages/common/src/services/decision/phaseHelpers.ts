@@ -1,4 +1,4 @@
-import { type TransactionType, db } from '@op/db/client';
+import { type DbClient, db } from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -23,7 +23,7 @@ import {
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
 // TODO: drop phaseId from row data once every reference uses the row id.
-type PhaseRowData = PhaseData & { phaseId?: string };
+export type PhaseRowData = PhaseData & { phaseId?: string };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 
@@ -39,7 +39,7 @@ export const insertPhase = async ({
   data,
   generateSlug = generatePhaseSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   processInstanceId: string;
   name: string;
   sortOrder: number;
@@ -86,6 +86,17 @@ export const assertPhasesCanBeMinted = (
       });
     }
     phaseIds.add(phase.phaseId);
+  }
+};
+
+export const assertPhaseNameFits = (name: string): void => {
+  // Counts code points: `varchar(256)` does, `String.length` counts UTF-16 units.
+  const chars = [...name];
+  if (chars.length > MAX_PHASE_NAME_LENGTH) {
+    throw new ValidationError(
+      `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
+      { name: `Shorten "${chars.slice(0, 40).join('')}…"` },
+    );
   }
 };
 
@@ -197,7 +208,7 @@ const insertPhaseProfile = async ({
   name,
   generateSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   name: string;
   generateSlug: () => string;
 }): Promise<Profile> => {
