@@ -1,5 +1,5 @@
-import { and, asc, db, eq, isNull } from '@op/db/client';
-import { profiles, proposals } from '@op/db/schema';
+import { and, asc, db, eq, isNull, sql } from '@op/db/client';
+import { processInstances, profiles, proposals } from '@op/db/schema';
 
 import { DEFAULT_MONEY_CURRENCY } from '../../money';
 import { normalizeBudget } from './proposalDataSchema';
@@ -34,23 +34,42 @@ const readSummary = (data: unknown): string | null => {
     : null;
 };
 
-const readCodes = async (
+export const assignSmsCodes = async (
   processInstanceId: string,
-): Promise<Map<string, string>> => {
-  const rows = await db
-    .select({ id: proposals.id })
-    .from(proposals)
-    .where(
-      and(
-        eq(proposals.processInstanceId, processInstanceId),
-        isNull(proposals.deletedAt),
-      ),
-    )
-    .orderBy(asc(proposals.createdAt), asc(proposals.id));
+): Promise<void> => {
+  await db.transaction(async (tx) => {
+    await tx
+      .select({ id: processInstances.id })
+      .from(processInstances)
+      .where(eq(processInstances.id, processInstanceId))
+      .for('update');
 
-  return new Map(
-    rows.map((row, index) => [row.id, String(SMS_PROPOSAL_FIRST_CODE + index)]),
-  );
+    const uncoded = await tx
+      .select({ id: proposals.id })
+      .from(proposals)
+      .where(
+        and(
+          eq(proposals.processInstanceId, processInstanceId),
+          isNull(proposals.smsCode),
+        ),
+      )
+      .orderBy(asc(proposals.createdAt), asc(proposals.id));
+
+    for (const proposal of uncoded) {
+      const [reserved] = await tx
+        .update(processInstances)
+        .set({ nextSmsCode: sql`${processInstances.nextSmsCode} + 1` })
+        .where(eq(processInstances.id, processInstanceId))
+        .returning({ next: processInstances.nextSmsCode });
+      if (!reserved) {
+        return;
+      }
+      await tx
+        .update(proposals)
+        .set({ smsCode: reserved.next - 1 })
+        .where(eq(proposals.id, proposal.id));
+    }
+  });
 };
 
 export async function listSmsBallotProposals({
@@ -64,32 +83,31 @@ export async function listSmsBallotProposals({
     return [];
   }
 
-  const [codes, rows] = await Promise.all([
-    readCodes(processInstanceId),
-    db
-      .select({
-        id: proposals.id,
-        title: profiles.name,
-        proposalData: proposals.proposalData,
-      })
-      .from(proposals)
-      .innerJoin(profiles, eq(profiles.id, proposals.profileId))
-      .where(filter)
-      .orderBy(asc(proposals.createdAt), asc(proposals.id)),
-  ]);
+  await assignSmsCodes(processInstanceId);
 
-  return rows.flatMap((row) => {
-    const code = codes.get(row.id);
-    return code
-      ? [
+  const rows = await db
+    .select({
+      id: proposals.id,
+      smsCode: proposals.smsCode,
+      title: profiles.name,
+      proposalData: proposals.proposalData,
+    })
+    .from(proposals)
+    .innerJoin(profiles, eq(profiles.id, proposals.profileId))
+    .where(filter)
+    .orderBy(asc(proposals.smsCode));
+
+  return rows.flatMap((row) =>
+    row.smsCode === null
+      ? []
+      : [
           {
-            code,
+            code: String(row.smsCode),
             proposalId: row.id,
             title: row.title,
             ...readCost(row.proposalData),
             summary: readSummary(row.proposalData),
           },
-        ]
-      : [];
-  });
+        ],
+  );
 }
