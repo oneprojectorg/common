@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { saveProfileImage as saveProfileImageService } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -8,7 +9,7 @@ import { trackImageUpload } from '../../utils/analytics';
 /**
  * Records a profile avatar/banner uploaded directly to storage via a signed
  * URL (see `signProfileImageUploadUrl`). Validation + persistence live in the
- * @op/common service; this wrapper only adds analytics.
+ * @op/common service; this wrapper adds cache invalidation and analytics.
  */
 export const saveProfileImageRouter = router({
   saveProfileImage: authenticatedConfirmedProcedure()
@@ -26,6 +27,8 @@ export const saveProfileImageRouter = router({
         input,
         user: ctx.user,
       });
+      // getMyAccount caches the user's profile images
+      await invalidate({ type: 'user', params: [ctx.user.id] });
       waitUntil(
         trackImageUpload(
           ctx,
