@@ -74,6 +74,29 @@ describe('Logger', () => {
     );
   });
 
+  it('emits an event as an info record named by its event.name attribute', () => {
+    logger.event('sms.ballot.ended', {
+      outcome: 'ballot submitted',
+      picks: 2,
+    });
+
+    expect(lastRecord()).toMatchObject({
+      severityText: 'INFO',
+      body: 'sms.ballot.ended',
+      attributes: {
+        'event.name': 'sms.ballot.ended',
+        outcome: 'ballot submitted',
+        picks: 2,
+      },
+    });
+  });
+
+  it('redacts an email address carried by an event', () => {
+    logger.event('invite.sent', { to: 'person@example.com' });
+
+    expect(lastRecord().attributes?.to).toBe('[redacted]@example.com');
+  });
+
   it('leaves the rest of the attributes intact', () => {
     logger.info('Login attempt', {
       emailDomain: 'example.com',

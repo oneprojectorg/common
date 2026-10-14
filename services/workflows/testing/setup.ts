@@ -1,5 +1,7 @@
 import { vi } from 'vitest';
 
+import './mocks/otel';
+
 vi.mock('@op/analytics/client', () => ({
   default: () => ({
     capture() {},

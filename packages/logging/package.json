@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/lib/client.ts",
-    "./instrumentation": "./src/lib/instrumentation.ts"
+    "./instrumentation": "./src/lib/instrumentation.ts",
+    "./testing": "./src/lib/testing.ts"
   },
   "main": "src/index.ts",
   "scripts": {
