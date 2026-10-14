@@ -3,8 +3,7 @@ import { Header3 } from '@op/sense/Header';
 import { useTranslations } from '@/lib/i18n';
 
 // "328 proposals", or "6 of 328 proposals" once `total` says something was
-// filtered out. A filter can reach past the phase's pool ("Not advanced" adds
-// what earlier phases left behind), so a count above `total` stands alone.
+// filtered out. A count above `total` stands alone.
 export const ProposalCount = ({
   count,
   total,

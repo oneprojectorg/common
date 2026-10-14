@@ -5,7 +5,7 @@ import {
 import { RejectionReason } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
-import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -100,6 +100,16 @@ async function seedReviewPhase(testData: TestDecisionsDataManager) {
     instanceId,
     admin,
     memberCaller,
+    /** Adds a member who reads the process but authored nothing. */
+    createViewer: async () =>
+      createAuthenticatedCaller(
+        (
+          await testData.createMemberUser({
+            organization: setup.organization,
+            instanceProfileIds: [setup.instance.profileId],
+          })
+        ).email,
+      ),
     advanced: advanced.id,
     leftBehind: leftBehind.id,
     alsoLeftBehind: alsoLeftBehind.id,
@@ -220,6 +230,43 @@ describe.concurrent('listProposals: not advanced', () => {
       undefined,
       undefined,
     ]);
+  });
+
+  it('keeps a hidden left-behind proposal from members who cannot see it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      instanceId,
+      admin,
+      memberCaller,
+      createViewer,
+      leftBehind,
+      alsoLeftBehind,
+    } = await seedReviewPhase(testData);
+    const [viewerCaller] = await Promise.all([
+      createViewer(),
+      admin.decision.updateProposal({
+        proposalId: leftBehind,
+        data: { visibility: Visibility.HIDDEN },
+      }),
+    ]);
+
+    const listNotAdvanced = (caller: typeof memberCaller) =>
+      caller.decision.listProposals({
+        processInstanceId: instanceId,
+        notAdvanced: true,
+      });
+    const [viewerList, authorList] = await Promise.all([
+      listNotAdvanced(viewerCaller),
+      listNotAdvanced(memberCaller),
+    ]);
+
+    expect(viewerList.items.map((p) => p.id)).toEqual([alsoLeftBehind]);
+    expect(viewerList.total).toBe(1);
+    // Its author still sees it, the same as everywhere else.
+    expect(authorList.total).toBe(2);
   });
 
   it('lists a proposal rejected in an earlier phase once', async ({

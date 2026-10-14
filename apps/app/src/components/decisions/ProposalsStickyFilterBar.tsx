@@ -13,8 +13,8 @@ import { StickyFilterBar } from './StickyFilterBar';
 export interface ProposalsStickyFilterBarProps {
   /** Server count for the active filter. */
   count: number;
-  /** Unfiltered count for the phase — the "of N" pool. */
-  total: number;
+  /** Unfiltered count for the phase — the "of N" pool, if the count is a slice of it. */
+  total?: number;
   /** Replaces the proposal count on the left — e.g. the admin review title. */
   header?: React.ReactNode;
   /**

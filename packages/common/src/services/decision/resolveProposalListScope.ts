@@ -37,6 +37,7 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
+import { excludeRejectedUnlessAsked } from './phaseEligibility';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import { isProposalProfileMember } from './proposalVisibility';
@@ -417,22 +418,21 @@ export const resolveProposalListScope = async ({
         : phaseScope.buildNonDraftFilter(proposalsTable),
     )!;
 
-  // "Not advanced" is rejected or left behind in an earlier phase. Every other
-  // list drops rejected proposals, since Not advanced is where they're found,
-  // unless an explicit status or ID scope already says which rows it wants.
+  // "Not advanced" is rejected or left behind in an earlier phase; every other
+  // list drops rejected proposals. An explicit ID scope (a ballot) and trusted
+  // reads (the export) are fixed sets, not lists a viewer browses.
   const buildStatusAxisFilter = (
     proposalsTable: typeof proposals,
-  ): SQL | undefined => {
-    if (input.notAdvanced) {
-      return or(
-        eq(proposalsTable.status, ProposalStatus.REJECTED),
-        buildIsOutsideCurrentPhase?.(proposalsTable),
-      );
-    }
-    return input.status === undefined && explicitScopeIds === undefined
-      ? ne(proposalsTable.status, ProposalStatus.REJECTED)
-      : undefined;
-  };
+  ): SQL | undefined =>
+    input.notAdvanced
+      ? or(
+          eq(proposalsTable.status, ProposalStatus.REJECTED),
+          buildIsOutsideCurrentPhase?.(proposalsTable),
+        )
+      : excludeRejectedUnlessAsked(proposalsTable, {
+          status: input.status,
+          isFixedSet: explicitScopeIds !== undefined || skipAccessCheck,
+        });
 
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
@@ -510,9 +510,7 @@ export const resolveProposalListScope = async ({
         )!;
 
     // Rejected proposals carry no visibility filter of their own: a rejection
-    // is a public verdict on a public submission, and the detail page has never
-    // gated on it (`getProposal`). The status axis above decides which list
-    // they show in (Not advanced), the same for every caller.
+    // is a public verdict, and `getProposal` has never gated on it.
     return and(
       clause,
       or(draftFilter, nonDraftVisibilityFilter)!,

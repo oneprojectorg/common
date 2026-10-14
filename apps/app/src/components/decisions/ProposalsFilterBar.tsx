@@ -67,7 +67,7 @@ export const ProposalsListHeader = ({
   total,
 }: {
   count: number;
-  total: number;
+  total?: number;
 }) => (
   // Filtering swaps the results in place, so the count is the only feedback a
   // screen reader gets that a search or filter landed. Announce it.
@@ -114,7 +114,7 @@ export const ProposalsFilterBar = ({
   /** Server count for the active filter. */
   count: number;
   /** Unfiltered count for the phase — the "of N" pool. */
-  total: number;
+  total?: number;
   /** Replaces the count — e.g. the admin review title. */
   header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */

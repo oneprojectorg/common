@@ -6,7 +6,6 @@ import {
   exists,
   inArray,
   isNull,
-  ne,
   notInArray,
   or,
   sql,
@@ -43,6 +42,7 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import { excludeRejectedUnlessAsked } from './phaseEligibility';
 import {
   isAnonymousAuthor,
   proposalAuthorRelation,
@@ -58,11 +58,10 @@ import type { AllProposalsFilter } from './schemas/proposal';
 /**
  * Returns proposals on the instance for the "All proposals" tab on the
  * results page. Drafts, duplicate, merged, and soft-deleted proposals are
- * excluded for everyone. Rejected proposals are excluded too unless the caller
- * asks for them by status (the "Not advanced" filter) or reads a ballot,
- * matching the phase-scoped proposal list. Non-admin members additionally see only visible
- * proposals; decision admins also see hidden proposals so they can audit and
- * report on what was submitted to the process.
+ * excluded for everyone, and rejected ones unless asked for (see
+ * `excludeRejectedUnlessAsked`). Non-admin members additionally see only
+ * visible proposals; decision admins also see hidden proposals so they can
+ * audit and report on what was submitted to the process.
  */
 export const listAllProposals = async ({
   input,
@@ -160,13 +159,11 @@ export const listAllProposals = async ({
     and(
       eq(t.processInstanceId, processInstanceId),
       buildProposalTitleSearchCondition(t, input.search),
-      // Rejected proposals live under Not advanced (`status: REJECTED`); a
-      // ballot still lists what the voter picked.
-      status
-        ? eq(t.status, status)
-        : votedProposalIds
-          ? undefined
-          : ne(t.status, ProposalStatus.REJECTED),
+      status ? eq(t.status, status) : undefined,
+      excludeRejectedUnlessAsked(t, {
+        status,
+        isFixedSet: votedProposalIds !== undefined,
+      }),
       input.submittedByProfileId
         ? eq(t.submittedByProfileId, input.submittedByProfileId)
         : undefined,

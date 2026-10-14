@@ -474,27 +474,33 @@ describe.concurrent('listProposals', () => {
       toPhaseId: 'review',
     });
 
-    const [submissionPhase, reviewPhase, reviewAggregates] = await Promise.all([
-      adminCaller.decision.listProposals({
-        processInstanceId: instanceId,
-        phaseId: 'submission',
-        notAdvanced: true,
-      }),
-      adminCaller.decision.listProposals({
-        processInstanceId: instanceId,
-        phaseId: 'review',
-      }),
-      adminCaller.decision.listWithReviewAggregates({
-        processInstanceId: instanceId,
-        phaseId: 'review',
-      }),
-    ]);
+    const [submissionPhase, submissionAll, reviewPhase, reviewAggregates] =
+      await Promise.all([
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'submission',
+          notAdvanced: true,
+        }),
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'submission',
+        }),
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'review',
+        }),
+        adminCaller.decision.listWithReviewAggregates({
+          processInstanceId: instanceId,
+          phaseId: 'review',
+        }),
+      ]);
 
     // It stays a record where it lived: the rejection happened in `submission`,
-    // and that phase's Not advanced list still carries it.
+    // and that phase's Not advanced list still carries it. Its All list doesn't.
     expect(submissionPhase.items.map((p) => p.id)).toContain(
       rejectedProposal.id,
     );
+    expect(submissionAll.items.map((p) => p.id)).toEqual([keptProposal.id]);
 
     // Rejected proposals are dropped when the advance snapshot is written, so
     // `review` never receives it — the pipeline exclusion this change must not

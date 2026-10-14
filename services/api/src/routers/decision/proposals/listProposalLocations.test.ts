@@ -88,6 +88,51 @@ describe.concurrent('listProposalLocations', () => {
     expect(first?.submittedBy).toBeDefined();
   });
 
+  it('pins a rejected proposal only under Not advanced', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [kept, rejected, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Kept' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Rejected' },
+        status: ProposalStatus.REJECTED,
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+    await Promise.all([
+      setLocation(kept.id, { lat: 40.7, lng: -74 }),
+      setLocation(rejected.id, { lat: 34, lng: -118.2 }),
+    ]);
+
+    const [all, notAdvanced] = await Promise.all([
+      caller.decision.listProposalLocations({ processInstanceId: instanceId }),
+      caller.decision.listProposalLocations({
+        processInstanceId: instanceId,
+        notAdvanced: true,
+      }),
+    ]);
+
+    // Pins follow the list: the map can't show what the list leaves out.
+    expect(all.items.map((p) => p.id)).toEqual([kept.id]);
+    expect(notAdvanced.items.map((p) => p.id)).toEqual([rejected.id]);
+  });
+
   it('does not surface a hidden proposal to a non-admin member', async ({
     task,
     onTestFinished,
