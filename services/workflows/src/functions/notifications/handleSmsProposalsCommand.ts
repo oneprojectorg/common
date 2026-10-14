@@ -1,8 +1,7 @@
 import {
   RateLimitError,
-  SMS_PROPOSALS_PAGE_SIZE,
   findSmsDecision,
-  formatSmsProposalPage,
+  formatSmsProposalPages,
   getPhoneSignupState,
   getSmsProvider,
   listSmsBallotProposals,
@@ -109,16 +108,15 @@ export const handleSmsProposalsCommand = inngest.createFunction(
       return { message: 'no proposals', pages: 0 };
     }
 
-    const pageCount = Math.ceil(proposals.length / SMS_PROPOSALS_PAGE_SIZE);
+    const bodies = formatSmsProposalPages({
+      decisionName: decision.name,
+      proposals,
+    });
 
-    for (let page = 0; page < pageCount; page++) {
-      await text(
-        `send-page-${page + 1}`,
-        formatSmsProposalPage({ decisionName: decision.name, proposals, page })
-          .body,
-      );
+    for (const [index, body] of bodies.entries()) {
+      await text(`send-page-${index + 1}`, body);
     }
 
-    return { message: 'proposals sent', pages: pageCount };
+    return { message: 'proposals sent', pages: bodies.length };
   },
 );

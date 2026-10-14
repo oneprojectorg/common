@@ -1,8 +1,10 @@
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
 import type { SmsBallotProposal } from './listSmsBallotProposals';
-import { SMS_MAX_BODY_LENGTH, clipSmsText } from './smsText';
+import { SMS_MAX_BODY_LENGTH, clipSmsText, splitSmsBody } from './smsText';
 
-export const SMS_PROPOSALS_PAGE_SIZE = 5;
+export { SMS_MAX_BODY_LENGTH } from './smsText';
+
+const SMS_LIST_TITLE_LENGTH = 100;
 
 const smsCurrency = (currency: string): string =>
   isValidCurrencyCode(currency) ? currency : DEFAULT_MONEY_CURRENCY;
@@ -30,38 +32,29 @@ const formatSmsShortCost = (cost: number | null, currency: string): string =>
 
 const withCost = (title: string, cost: number | null, currency: string) =>
   cost === null
-    ? `"${title}"`
-    : `"${title}" (${formatSmsCost(cost, currency)})`;
+    ? `"${clipSmsText(title, SMS_LIST_TITLE_LENGTH)}"`
+    : `"${clipSmsText(title, SMS_LIST_TITLE_LENGTH)}" (${formatSmsCost(cost, currency)})`;
 
-export const formatSmsProposalPage = ({
+export const formatSmsProposalPages = ({
   decisionName,
   proposals,
-  page,
 }: {
   decisionName: string;
   proposals: ReadonlyArray<SmsBallotProposal>;
-  page: number;
-}): { body: string; hasMore: boolean } => {
-  const start = page * SMS_PROPOSALS_PAGE_SIZE;
-  const slice = proposals.slice(start, start + SMS_PROPOSALS_PAGE_SIZE);
-  const hasMore = start + slice.length < proposals.length;
-  const heading =
-    page === 0
-      ? `"${decisionName}" has ${proposals.length} proposals. First ${slice.length}:`
-      : `Next ${slice.length}:`;
-  const lines = slice.map(({ code, title, cost, currency }) =>
-    [code, title, formatSmsShortCost(cost, currency)].filter(Boolean).join(' '),
-  );
-  const footer = hasMore
-    ? []
-    : ['Text a code to add it to your ballot, or INFO plus a code.'];
-
-  return { body: [heading, ...lines, ...footer].join('\n'), hasMore };
-};
-
-export { SMS_MAX_BODY_LENGTH } from './smsText';
-
-const SMS_LIST_TITLE_LENGTH = 100;
+}): string[] =>
+  splitSmsBody({
+    heading: `"${clipSmsText(decisionName, SMS_LIST_TITLE_LENGTH)}" has ${proposals.length} proposals:`,
+    lines: proposals.map(({ code, title, cost, currency }) =>
+      [
+        code,
+        clipSmsText(title, SMS_LIST_TITLE_LENGTH),
+        formatSmsShortCost(cost, currency),
+      ]
+        .filter(Boolean)
+        .join(' '),
+    ),
+    footer: 'Text a code to add it to your ballot, or INFO plus a code.',
+  });
 
 export const formatSmsProposalInfo = (proposal: SmsBallotProposal): string => {
   const heading = `${proposal.code}: ${withCost(proposal.title, proposal.cost, proposal.currency)}.`;
@@ -105,27 +98,38 @@ export const formatSmsPicksLeft = (
 };
 
 export const formatSmsPickConfirmation = ({
+  notes = [],
   added,
   pickCount,
   maxVotesPerMember,
 }: {
+  notes?: ReadonlyArray<string>;
   added: ReadonlyArray<{ rank: number; proposal: SmsBallotProposal }>;
   pickCount: number;
   maxVotesPerMember: number | null;
-}): string =>
-  [
-    ...added.map(
-      ({ rank, proposal }) =>
-        `Pick ${rank}: ${withCost(proposal.title, proposal.cost, proposal.currency)}.`,
-    ),
-    formatSmsPicksLeft(pickCount, maxVotesPerMember),
-    'Text another code, LIST to see your ballot, or DONE to review.',
-  ]
-    .filter(Boolean)
-    .join(' ');
+}): string[] =>
+  splitSmsBody({
+    lines: [
+      ...notes,
+      ...added.map(
+        ({ rank, proposal }) =>
+          `Pick ${rank}: ${withCost(proposal.title, proposal.cost, proposal.currency)}.`,
+      ),
+    ],
+    footer: [
+      formatSmsPicksLeft(pickCount, maxVotesPerMember),
+      'Text another code, LIST to see your ballot, or DONE to review.',
+    ]
+      .filter(Boolean)
+      .join(' '),
+    separator: ' ',
+  });
 
 export const formatSmsOverLimit = (maxVotesPerMember: number): string =>
   `You can pick ${maxVotesPerMember}. Reply REMOVE plus a code to make room.`;
+
+export const SMS_BALLOT_EMPTY =
+  'Your ballot is empty. Text a code to add a pick, or PROPOSALS to browse.';
 
 export const formatSmsBallot = ({
   decisionName,
@@ -133,19 +137,18 @@ export const formatSmsBallot = ({
 }: {
   decisionName: string;
   picks: ReadonlyArray<SmsBallotProposal>;
-}): string => {
-  if (picks.length === 0) {
-    return 'Your ballot is empty. Text a code to add a pick, or PROPOSALS to browse.';
-  }
-  return [
-    `Your ballot for "${decisionName}":`,
-    ...picks.map(
-      (pick, index) =>
-        `${index + 1}. ${clipSmsText(pick.title, SMS_LIST_TITLE_LENGTH)}${pick.cost === null ? '' : ` ${formatSmsCost(pick.cost, pick.currency)}`}`,
-    ),
-    'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
-  ].join('\n');
-};
+}): string[] =>
+  picks.length === 0
+    ? [SMS_BALLOT_EMPTY]
+    : splitSmsBody({
+        heading: `Your ballot for "${clipSmsText(decisionName, SMS_LIST_TITLE_LENGTH)}":`,
+        lines: picks.map(
+          (pick, index) =>
+            `${index + 1}. ${clipSmsText(pick.title, SMS_LIST_TITLE_LENGTH)}${pick.cost === null ? '' : ` ${formatSmsCost(pick.cost, pick.currency)}`}`,
+        ),
+        footer:
+          'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
+      });
 
 export const SMS_BALLOT_SUBMITTED =
   'Your ballot is in. One ballot per person. How you vote is never public.';

@@ -6,7 +6,8 @@ import {
   formatSmsCost,
   formatSmsPickConfirmation,
   formatSmsProposalInfo,
-  formatSmsProposalPage,
+  formatSmsProposalPages,
+  SMS_BALLOT_EMPTY,
   SMS_MAX_BODY_LENGTH,
 } from './smsBallotFormat';
 
@@ -36,59 +37,65 @@ describe('formatSmsCost', () => {
   });
 });
 
-describe('formatSmsProposalPage', () => {
+describe('formatSmsProposalPages', () => {
   const proposals = Array.from({ length: 7 }, (_, i) =>
     proposal(String(101 + i), `Proposal ${i + 1}`, (i + 1) * 10_000),
   );
 
-  it('given the first of two pages, then it counts the proposals and ends on the last line of the page', () => {
-    const { body, hasMore } = formatSmsProposalPage({
-      decisionName: 'Park',
-      proposals,
-      page: 0,
-    });
-    expect(hasMore).toBe(true);
-    expect(body.split('\n')).toEqual([
-      '"Park" has 7 proposals. First 5:',
-      '101 Proposal 1 $10k',
-      '102 Proposal 2 $20k',
-      '103 Proposal 3 $30k',
-      '104 Proposal 4 $40k',
-      '105 Proposal 5 $50k',
-    ]);
+  it('given seven short proposals, then one text carries the count, every line and the call to action', () => {
+    expect(formatSmsProposalPages({ decisionName: 'Park', proposals })).toEqual(
+      [
+        [
+          '"Park" has 7 proposals:',
+          '101 Proposal 1 $10k',
+          '102 Proposal 2 $20k',
+          '103 Proposal 3 $30k',
+          '104 Proposal 4 $40k',
+          '105 Proposal 5 $50k',
+          '106 Proposal 6 $60k',
+          '107 Proposal 7 $70k',
+          'Text a code to add it to your ballot, or INFO plus a code.',
+        ].join('\n'),
+      ],
+    );
   });
 
-  it('given the last page, then it invites a pick', () => {
-    const { body, hasMore } = formatSmsProposalPage({
-      decisionName: 'Park',
-      proposals,
-      page: 1,
+  it('given forty proposals with titles as long as a title can be under a name as long as a name can be, then every text fits and the call to action closes the last', () => {
+    const long = Array.from({ length: 40 }, (_, i) =>
+      proposal(String(101 + i), `Proposal ${i + 1} `.padEnd(256, 'x'), 10_000),
+    );
+
+    const bodies = formatSmsProposalPages({
+      decisionName: 'Park '.padEnd(256, 'y'),
+      proposals: long,
     });
-    expect(hasMore).toBe(false);
-    expect(body.split('\n')).toEqual([
-      'Next 2:',
-      '106 Proposal 6 $60k',
-      '107 Proposal 7 $70k',
-      'Text a code to add it to your ballot, or INFO plus a code.',
-    ]);
+
+    expect(bodies.length).toBeGreaterThan(1);
+    bodies.forEach((body) => {
+      expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+    });
+    expect(
+      bodies
+        .at(-1)!
+        .endsWith('Text a code to add it to your ballot, or INFO plus a code.'),
+    ).toBe(true);
+    expect(bodies.join('\n')).toContain('\n140 Proposal 40');
   });
 
   it('given a proposal whose currency code Intl does not know, then its line shows the amount in the default currency instead of throwing', () => {
-    const { body } = formatSmsProposalPage({
+    const [body] = formatSmsProposalPages({
       decisionName: 'Park',
       proposals: [
         { ...proposal('101', 'Odd money', 85_000), currency: 'dollars' },
       ],
-      page: 0,
     });
     expect(body).toContain('101 Odd money $85k\n');
   });
 
   it('given a proposal with no cost, then its line omits the amount', () => {
-    const { body } = formatSmsProposalPage({
+    const [body] = formatSmsProposalPages({
       decisionName: 'Park',
       proposals: [proposal('101', 'Free idea', null)],
-      page: 0,
     });
     expect(body).toContain('101 Free idea\n');
   });
@@ -171,9 +178,9 @@ describe('formatSmsPickConfirmation', () => {
         pickCount: 3,
         maxVotesPerMember: 4,
       }),
-    ).toBe(
+    ).toEqual([
       'Pick 2: "Rec center" ($240,000). Pick 3: "Trees" ($150,000). 1 pick left. Text another code, LIST to see your ballot, or DONE to review.',
-    );
+    ]);
   });
 
   it('omits the picks left when there is no limit', () => {
@@ -183,27 +190,93 @@ describe('formatSmsPickConfirmation', () => {
         pickCount: 1,
         maxVotesPerMember: null,
       }),
-    ).toBe(
+    ).toEqual([
       'Pick 1: "A". Text another code, LIST to see your ballot, or DONE to review.',
-    );
+    ]);
+  });
+
+  it('given notes about codes that were not added, then they come before the picks', () => {
+    expect(
+      formatSmsPickConfirmation({
+        notes: ['No proposal with code 999.'],
+        added: [{ rank: 1, proposal: proposal('101', 'A', null) }],
+        pickCount: 1,
+        maxVotesPerMember: null,
+      }),
+    ).toEqual([
+      'No proposal with code 999. Pick 1: "A". Text another code, LIST to see your ballot, or DONE to review.',
+    ]);
+  });
+
+  it('given twenty codes in one text with titles as long as a title can be, then every confirmation fits a text and the guidance closes the last', () => {
+    const added = Array.from({ length: 20 }, (_, i) => ({
+      rank: i + 1,
+      proposal: proposal(
+        String(101 + i),
+        `Proposal ${i + 1} `.padEnd(256, 'x'),
+        10_000,
+      ),
+    }));
+
+    const bodies = formatSmsPickConfirmation({
+      added,
+      pickCount: 20,
+      maxVotesPerMember: null,
+    });
+
+    expect(bodies.length).toBeGreaterThan(1);
+    bodies.forEach((body) => {
+      expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+    });
+    expect(
+      bodies
+        .at(-1)!
+        .endsWith(
+          'Text another code, LIST to see your ballot, or DONE to review.',
+        ),
+    ).toBe(true);
+    expect(bodies.join(' ')).toContain('Pick 20: "Proposal 20');
   });
 });
 
 describe('formatSmsBallot', () => {
-  it('given ten picks with titles as long as a title can be, then the body fits one text and still asks for SUBMIT', () => {
+  it('given ten picks with titles as long as a title can be, then one text fits and still asks for SUBMIT', () => {
     const picks = Array.from({ length: 10 }, (_, i) =>
       proposal(String(101 + i), `Proposal ${i + 1} `.padEnd(256, 'x'), 10_000),
     );
 
-    const body = formatSmsBallot({ decisionName: 'Park', picks });
+    const [body, ...rest] = formatSmsBallot({ decisionName: 'Park', picks });
 
-    expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
-    expect(body.split('\n')).toHaveLength(12);
+    expect(rest).toEqual([]);
+    expect(body!.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+    expect(body!.split('\n')).toHaveLength(12);
     expect(
-      body.endsWith(
+      body!.endsWith(
         'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
       ),
     ).toBe(true);
+  });
+
+  it('given thirty picks on a ballot with no limit, then every text fits, the heading opens the first and SUBMIT closes the last', () => {
+    const picks = Array.from({ length: 30 }, (_, i) =>
+      proposal(String(101 + i), `Proposal ${i + 1} `.padEnd(256, 'x'), 10_000),
+    );
+
+    const bodies = formatSmsBallot({ decisionName: 'Park', picks });
+
+    expect(bodies.length).toBeGreaterThan(1);
+    bodies.forEach((body) => {
+      expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+    });
+    expect(bodies[0]!.startsWith('Your ballot for "Park":')).toBe(true);
+    expect(
+      bodies
+        .at(-1)!
+        .endsWith(
+          'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
+        ),
+    ).toBe(true);
+    expect(bodies.join('\n')).toContain('\n30. Proposal 30');
   });
 
   it('lists picks in order with their cost and asks for SUBMIT', () => {
@@ -215,19 +288,20 @@ describe('formatSmsBallot', () => {
           proposal('102', 'Trees', null),
         ],
       }),
-    ).toBe(
+    ).toEqual([
       [
         'Your ballot for "Park":',
         '1. Lights $85,000',
         '2. Trees',
         'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
       ].join('\n'),
-    );
+    ]);
   });
 
   it('given no picks, then it says the ballot is empty', () => {
-    expect(formatSmsBallot({ decisionName: 'Park', picks: [] })).toContain(
-      'Your ballot is empty.',
-    );
+    expect(formatSmsBallot({ decisionName: 'Park', picks: [] })).toEqual([
+      SMS_BALLOT_EMPTY,
+    ]);
+    expect(SMS_BALLOT_EMPTY).toContain('Your ballot is empty.');
   });
 });
