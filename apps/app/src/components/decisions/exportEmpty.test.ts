@@ -10,8 +10,6 @@ describe('isExportEmpty', () => {
   });
 
   it('is not empty when the phase holds only rejected proposals', () => {
-    // This pins the regression. The list leaves rejected proposals out, so a
-    // phase holding nothing else counted zero and disabled the export.
     expect(
       isExportEmpty({ isListEmpty: true, rejectedCount: 2, errored: false }),
     ).toBe(false);

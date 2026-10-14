@@ -21,8 +21,8 @@ import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 export interface ExportProposalsButtonProps {
   processInstanceId: string;
   /**
-   * The list counts nothing. Not the filtered count: the export ignores the
-   * list's filters, so a view narrowed to nothing still has rows to hand over.
+   * Nothing to export. Not the filtered count: the export ignores the list's
+   * filters, so a view narrowed to nothing still has rows to hand over.
    *
    * The phase's unfiltered count is the closest signal the list already holds.
    * It is near enough to enable a button, but not an exact preview. The caller's
@@ -258,9 +258,9 @@ const CompletedExportAction = ({
  * being exported, so a reset remounts it and discards that state.
  *
  * @param processInstanceId - Decision instance whose current phase is exported.
- * @param isListEmpty - The list counts nothing. The button stays disabled unless
- *   the phase holds rejected proposals, which the list leaves out. See
- *   {@link ExportProposalsButtonProps} for why this is not the filtered count.
+ * @param isListEmpty - The phase holds no proposals, so the button stays disabled.
+ *   See {@link ExportProposalsButtonProps} for why this is not the filtered
+ *   count.
  */
 const ExportProposalsButtonContent = ({
   processInstanceId,
@@ -268,14 +268,11 @@ const ExportProposalsButtonContent = ({
 }: ExportProposalsButtonProps) => {
   const t = useTranslations();
 
-  // The list leaves rejected proposals out, but the export includes them.
   const { data: rejectedData, isError } = trpc.decision.listProposals.useQuery(
     { processInstanceId, status: ProposalStatus.REJECTED, limit: 1 },
     {
       enabled: isListEmpty,
       staleTime: 30 * 1000,
-      // A count restored from the persisted cache would otherwise pass as fresh
-      // and never register its invalidation channel, as on the list loaders.
       refetchOnMount: 'always',
     },
   );
