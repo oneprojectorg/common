@@ -311,6 +311,32 @@ test.describe('Proposals CSV export', () => {
     expect(exported?.Description).toContain(FIXTURE_SUMMARY_TEXT);
     expect(exported?.Description).toContain(FIXTURE_SUMMARY_LIST_ITEM);
   });
+
+  test('stays enabled when every proposal in the phase is rejected', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { instance, slug } = await createProcessAndInstance({ org });
+
+    // The browse list leaves rejected rows out, so it counts zero here. The
+    // export still includes them, which is what the button has to follow.
+    await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId: org.adminUser.profileId,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.REJECTED,
+      proposalData: { title: 'Rejected Proposal' },
+    });
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(
+      authenticatedPage.getByRole('button', { name: 'Export all' }),
+    ).toBeEnabled({ timeout: 30_000 });
+  });
 });
 
 /**

@@ -4,10 +4,11 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type {
-  DecisionAccess,
-  InstancePhaseData,
-  ProposalFilter,
+import {
+  type DecisionAccess,
+  type InstancePhaseData,
+  type ProposalFilter,
+  ProposalStatus,
 } from '@op/api/encoders';
 import {
   type Proposal,
@@ -393,6 +394,21 @@ const ProposalsListContent = ({
   const exportEnabled = useFeatureFlag('export-feature') ?? false;
   const canExportProposals = canManageProposals && exportEnabled;
 
+  // The browse counts leave rejected proposals out, but the export includes
+  // them. Only asked when the list counts nothing, so a phase holding nothing
+  // but rejected proposals can still be exported.
+  const { data: rejectedData } = trpc.decision.listProposals.useQuery(
+    {
+      processInstanceId: queryParams.processInstanceId,
+      status: ProposalStatus.REJECTED,
+      limit: 1,
+    },
+    { enabled: canExportProposals && totalProposalCount === 0 },
+  );
+  // Unknown counts as empty, so the button is never enabled ahead of the answer.
+  const isExportEmpty =
+    totalProposalCount === 0 && (rejectedData?.total ?? 0) === 0;
+
   const { data: revisionRequestsData } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       { states: [ProposalReviewRequestState.REQUESTED] },
@@ -626,7 +642,7 @@ const ProposalsListContent = ({
               processInstanceId={queryParams.processInstanceId}
               // The phase's unfiltered count: the export ignores the list's
               // filters, so a filter matching nothing must not disable it.
-              isEmpty={totalProposalCount === 0}
+              isEmpty={isExportEmpty}
             />
           ) : null
         }

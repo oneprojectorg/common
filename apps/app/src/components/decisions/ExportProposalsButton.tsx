@@ -22,9 +22,9 @@ export interface ExportProposalsButtonProps {
    * Nothing to export. Not the filtered count: the export ignores the list's
    * filters, so a view narrowed to nothing still has rows to hand over.
    *
-   * The phase's unfiltered count is the closest signal the list already holds.
-   * It is near enough to enable a button, but not an exact preview. The caller's
-   * own visibility counts it.
+   * The phase's unfiltered count, plus the rejected proposals that count leaves
+   * out, is the closest signal the list has. It is near enough to enable a
+   * button, but not an exact preview. The caller's own visibility counts it.
    */
   isEmpty?: boolean;
 }
