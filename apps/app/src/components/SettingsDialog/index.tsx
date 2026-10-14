@@ -20,7 +20,7 @@ import {
   SidebarProvider,
 } from '@op/sense/Sidebar';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Suspense, useRef } from 'react';
+import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -32,6 +32,7 @@ import {
   type NotificationPreferences,
   NotificationPreferencesForm,
 } from './NotificationPreferencesForm';
+import { createSaveQueue } from './saveQueue';
 
 export interface SettingsDialogProps {
   open: boolean;
@@ -102,27 +103,22 @@ const applyPatch = (
 const NotificationPreferencesPane = () => {
   const t = useTranslations('settings');
   const utils = trpc.useUtils();
-  const inFlight = useRef(0);
   const [preferences] =
     trpc.account.getNotificationPreferences.useSuspenseQuery(undefined, {
       refetchOnMount: 'always',
     });
 
   const update = trpc.account.updateNotificationPreferences.useMutation({
-    onMutate: async (patch) => {
-      inFlight.current += 1;
-      await utils.account.getNotificationPreferences.cancel();
-      utils.account.getNotificationPreferences.setData(undefined, (prev) =>
-        prev ? applyPatch(prev, patch) : prev,
-      );
-    },
-    onSettled: () => {
-      inFlight.current -= 1;
-      if (inFlight.current === 0) {
-        void utils.account.getNotificationPreferences.invalidate();
-      }
-    },
+    onMutate: () => utils.account.getNotificationPreferences.cancel(),
   });
+  const [save] = useState(() =>
+    createSaveQueue<PreferencesPatch>({
+      run: (patch) => update.mutateAsync(patch),
+      onIdle: () => {
+        void utils.account.getNotificationPreferences.invalidate();
+      },
+    }),
+  );
 
   const status = update.isPending
     ? t('savingStatus')
@@ -136,9 +132,15 @@ const NotificationPreferencesPane = () => {
     <>
       <NotificationPreferencesForm
         preferences={preferences}
-        onChange={(category, channel, enabled) =>
-          update.mutate({ [category]: { [channel]: enabled } })
-        }
+        onChange={(category, channel, enabled) => {
+          const patch: PreferencesPatch = {
+            [category]: { [channel]: enabled },
+          };
+          utils.account.getNotificationPreferences.setData(undefined, (prev) =>
+            prev ? applyPatch(prev, patch) : prev,
+          );
+          void save(patch);
+        }}
       />
       <p aria-live="polite" className="text-sm text-muted-foreground">
         {status}
