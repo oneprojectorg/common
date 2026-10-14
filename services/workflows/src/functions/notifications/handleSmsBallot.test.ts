@@ -11,6 +11,7 @@ import {
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { recordedOtel } from '../../../testing/mocks/otel';
 import {
   optOutNumber,
   recordedSms,
@@ -129,6 +130,7 @@ const seed = async (
 
 beforeEach(() => {
   resetRecordedSms();
+  recordedOtel.reset();
 });
 
 describe('handleSmsBallot against the database', () => {
@@ -153,6 +155,16 @@ describe('handleSmsBallot against the database', () => {
     });
 
     expect(result).toMatchObject({ message: 'ballot submitted' });
+    expect(recordedOtel.events('sms.ballot.ended')).toEqual([
+      expect.objectContaining({
+        attributes: expect.objectContaining({
+          outcome: 'ballot submitted',
+          processInstanceId: instanceId,
+          authUserId: voter.authUserId,
+          picks: 1,
+        }),
+      }),
+    ]);
     expect(await readVotes(instanceId)).toEqual([
       { submittedByProfileId: voter.profileId, proposalId: proposals[0]!.id },
     ]);
@@ -612,6 +624,16 @@ describe('handleSmsBallot against the database', () => {
     });
 
     expect(result).toEqual({ message: 'not allowed to vote' });
+    expect(recordedOtel.events('sms.ballot.ended')).toEqual([
+      expect.objectContaining({
+        attributes: expect.objectContaining({
+          outcome: 'not allowed to vote',
+          processInstanceId: instanceId,
+          authUserId: reader.authUserId,
+          picks: 0,
+        }),
+      }),
+    ]);
     expect(recordedSms).toEqual([]);
     expect(await readVotes(instanceId)).toEqual([]);
   });

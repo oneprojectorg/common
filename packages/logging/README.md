@@ -16,7 +16,15 @@ logger.info('User logged in', { userId: '123' });
 logger.error('Failed to process request', { error: err.message });
 logger.warn('Rate limit approaching', { remaining: 5 });
 logger.debug('Processing item', { itemId: 'abc' });
+
+// A domain event: an info record whose `event.name` attribute names it,
+// so PostHog can count and filter it apart from free-text log lines
+logger.event('sms.ballot.ended', { outcome: 'ballot submitted', picks: 2 });
 ```
+
+In a test, `installRecordingLoggerProvider` from `@op/logging/testing`
+captures every record the process emits; call it before the module under
+test imports `@op/logging`.
 
 ## Middleware
 
