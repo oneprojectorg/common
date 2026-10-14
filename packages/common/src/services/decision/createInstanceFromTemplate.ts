@@ -14,11 +14,8 @@ import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
-import {
-  assertPhasesCanBeMinted,
-  getPhaseProfileName,
-  insertPhase,
-} from './phaseHelpers';
+import { assertPhasesCanBeMinted } from './phaseHelpers';
+import { insertPhaseRows } from './phaseRows';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -87,16 +84,11 @@ export const createDecisionInstance = async ({
     }
 
     // TODO: stop writing phases to instance_data once readers move to rows.
-    for (const [sortOrder, phase] of instanceData.phases.entries()) {
-      const { name: _name, ...data } = phase;
-      await insertPhase({
-        tx,
-        processInstanceId: newInstance.id,
-        name: getPhaseProfileName(phase),
-        sortOrder,
-        data,
-      });
-    }
+    await insertPhaseRows({
+      db: tx,
+      processInstanceId: newInstance.id,
+      phases: instanceData.phases,
+    });
 
     const { admin: adminRole } = await createDefaultDecisionRoles({
       profileId: instanceProfile.id,
