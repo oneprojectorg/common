@@ -43,6 +43,7 @@ const NUMBERS = {
   stalePick: '+15005550087',
   flaggedYes: '+15005550088',
   flaggedBrowse: '+15005550089',
+  swappedYes: '+15005550092',
 } as const;
 
 const PROPOSALS = [
@@ -600,6 +601,63 @@ describe('handleSmsBallot against the database', () => {
     expect(page).toContain('101 Fifth Ave crosswalk lighting $85k');
     expect(page).not.toContain('102 Linden rec center evening hours $240k');
     expect(info).toBe('No proposal with code 102. Text PROPOSALS to browse.');
+    expect(await readVotes(instanceId)).toEqual([]);
+  });
+
+  it('given the welcome names the only visible proposal, when an admin hides it and reveals another before the voter browses and replies YES, then no vote is recorded and the voter is told it left the ballot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId, proposals } = await seed(
+      fixture,
+      NUMBERS.swappedYes,
+      { maxVotesPerMember: 1, proposals: [PROPOSALS[0]!, PROPOSALS[1]!] },
+    );
+    const hiddenAtStart = await createAutomatedFlag({
+      itemType: 'proposal',
+      itemId: proposals[1]!.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(moderationFlags)
+        .where(eq(moderationFlags.id, hiddenAtStart.flag.id));
+    });
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        {
+          id: 'wait-for-reply-1',
+          handler: async () => {
+            const { flag } = await createAutomatedFlag({
+              itemType: 'proposal',
+              itemId: proposals[0]!.id,
+            });
+            onTestFinished(async () => {
+              await db
+                .delete(moderationFlags)
+                .where(eq(moderationFlags.id, flag.id));
+            });
+            await db
+              .delete(moderationFlags)
+              .where(eq(moderationFlags.id, hiddenAtStart.flag.id));
+            return reply(phone, 1, { keyword: 'proposals' }).handler();
+          },
+        },
+        reply(phone, 2, { keyword: 'yes' }),
+        silence(3),
+      ],
+    });
+
+    expect(result).toMatchObject({ message: 'ballot expired', picks: 0 });
+    expect(bodies()[0]).toContain(
+      'Reply YES to vote for "Fifth Ave crosswalk lighting"',
+    );
+    expect(bodies()[2]).toBe(
+      '"Fifth Ave crosswalk lighting" is no longer on the ballot and was removed. Your ballot is empty. Text a code to add a pick, or PROPOSALS to browse.',
+    );
     expect(await readVotes(instanceId)).toEqual([]);
   });
 
