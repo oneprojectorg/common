@@ -2,7 +2,6 @@ export {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
-  exportDownloadOptions,
 } from './constants';
 export { patchExportRecord } from './patchExportRecord';
 export { readExportRecord } from './readExportRecord';

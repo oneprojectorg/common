@@ -6,8 +6,3 @@ export const EXPORTS_BUCKET = 'exports';
 export const EXPORT_URL_TTL_SECONDS = 6 * 60 * 60;
 
 export const EXPORT_CACHE_TTL_SECONDS = 24 * 60 * 60;
-
-// Without this Supabase serves the file inline.
-export const exportDownloadOptions = (fileName: string) => ({
-  download: fileName,
-});

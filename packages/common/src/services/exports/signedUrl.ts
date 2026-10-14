@@ -1,12 +1,11 @@
 import { set } from '@op/cache';
 import { logger } from '@op/logging';
-import { createSBServiceClient } from '@op/supabase/server';
 
+import { signStorageDownloadUrl } from '../../utils/signStorageDownloadUrl';
 import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
-  exportDownloadOptions,
 } from './constants';
 
 export interface RefreshableExportRecord {
@@ -16,29 +15,21 @@ export interface RefreshableExportRecord {
   urlExpiresAt?: string;
 }
 
-// Service-role: no storage policy covers this bucket. Authorize first.
-export const signExportDownloadUrl = async ({
+// No storage policy covers this bucket. Authorize first.
+export const signExportDownloadUrl = ({
   filePath,
   fileName,
 }: {
   filePath: string;
   fileName: string;
-}): Promise<string> => {
-  const supabase = createSBServiceClient();
-  const { data, error } = await supabase.storage
-    .from(EXPORTS_BUCKET)
-    .createSignedUrl(
-      filePath,
-      EXPORT_URL_TTL_SECONDS,
-      exportDownloadOptions(fileName),
-    );
-
-  if (error || !data) {
-    throw error ?? new Error('Signing returned no URL');
-  }
-
-  return data.signedUrl;
-};
+}): Promise<string> =>
+  signStorageDownloadUrl({
+    bucket: EXPORTS_BUCKET,
+    storagePath: filePath,
+    ttlSeconds: EXPORT_URL_TTL_SECONDS,
+    // Without this Supabase serves the file inline.
+    downloadAs: fileName,
+  });
 
 const urlServesAsAttachment = (signedUrl: string | undefined): boolean => {
   if (signedUrl === undefined) {
