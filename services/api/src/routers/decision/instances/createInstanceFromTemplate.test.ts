@@ -1,6 +1,7 @@
 import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
+  MAX_PHASE_NAME_LENGTH,
   simpleVoting,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
@@ -163,6 +164,70 @@ describe.concurrent('createInstanceFromTemplate', () => {
       });
       expect(row.data).not.toHaveProperty('name');
     });
+  });
+
+  it('names a nameless phase after its id', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [first, ...rest] = simpleVoting.phases;
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases: [{ ...first!, name: '  ' }, ...rest] },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Nameless Phase ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const [row] = await db
+      .select({ name: profiles.name })
+      .from(processPhases)
+      .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+      .where(eq(processPhases.processInstanceId, result.processInstance.id))
+      .orderBy(asc(processPhases.sortOrder))
+      .limit(1);
+
+    expect(row?.name).toBe(first!.id);
+  });
+
+  it('rolls the instance back when a phase name does not fit its profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [first, ...rest] = simpleVoting.phases;
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      {
+        phases: [
+          { ...first!, name: 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1) },
+          ...rest,
+        ],
+      },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const name = `Rolled Back ${task.id}`;
+    await expect(
+      caller.decision.createInstanceFromTemplate({ templateId, name }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const [instances, decisionProfiles] = await Promise.all([
+      db.query.processInstances.findMany({
+        where: { name },
+        columns: { id: true },
+      }),
+      db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
+    ]);
+    expect(instances).toHaveLength(0);
+    expect(decisionProfiles).toHaveLength(0);
   });
 
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({
