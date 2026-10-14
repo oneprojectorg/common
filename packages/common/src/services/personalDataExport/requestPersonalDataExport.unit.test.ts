@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@op/cache', () => ({
-  set: vi.fn(),
+  setWithStatus: vi.fn(),
 }));
 
 vi.mock('../assert', () => ({
   assertUserByAuthId: vi.fn(),
 }));
 
-import { set } from '@op/cache';
+import { setWithStatus } from '@op/cache';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 
@@ -23,6 +23,7 @@ const sendEvent = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(setWithStatus).mockResolvedValue({ status: 'ok' });
   vi.spyOn(event, 'send').mockImplementation(sendEvent);
 });
 
@@ -47,13 +48,21 @@ describe('requestPersonalDataExport request', () => {
     await expect(requestPersonalDataExport({ user })).rejects.toThrow();
 
     expect(sendEvent).not.toHaveBeenCalled();
-    expect(set).not.toHaveBeenCalled();
+    expect(setWithStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not queue a job when the record could not be written', async () => {
+    vi.mocked(setWithStatus).mockResolvedValueOnce({ status: 'timeout' });
+
+    await expect(requestPersonalDataExport({ user })).rejects.toThrow();
+
+    expect(sendEvent).not.toHaveBeenCalled();
   });
 });
 
 describe('requestPersonalDataExport status record', () => {
   const seededRecord = (): Record<string, unknown> => {
-    const [, record] = vi.mocked(set).mock.calls[0] as [
+    const [, record] = vi.mocked(setWithStatus).mock.calls[0] as [
       string,
       Record<string, unknown>,
       number,
@@ -82,7 +91,10 @@ describe('requestPersonalDataExport status record', () => {
   it('files the record under the id it hands back', async () => {
     const { exportId } = await requestPersonalDataExport({ user });
 
-    const [key] = vi.mocked(set).mock.calls[0] as [string, ...unknown[]];
+    const [key] = vi.mocked(setWithStatus).mock.calls[0] as [
+      string,
+      ...unknown[],
+    ];
     const [payload] = sendEvent.mock.calls[0] as [
       { data: { exportId: string } },
     ];
