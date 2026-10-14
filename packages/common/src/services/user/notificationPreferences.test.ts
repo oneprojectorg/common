@@ -116,6 +116,35 @@ describe.concurrent('notificationPreferences', () => {
     );
   });
 
+  it('given two updates for the same member run at the same time, when both finish, then the row holds both changes', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { authUserId } = await testData.createStandaloneUser();
+
+    await Promise.all([
+      updateNotificationPreferences({
+        authUserId,
+        patch: { proposalsAndComments: { sms: false } },
+      }),
+      updateNotificationPreferences({
+        authUserId,
+        patch: { thingsYouFollow: { email: false } },
+      }),
+    ]);
+
+    await expect(readStoredPreferences(authUserId)).resolves.toEqual({
+      proposalsAndComments: { sms: false },
+      thingsYouFollow: { email: false },
+    });
+    await expect(getNotificationPreferences({ authUserId })).resolves.toEqual({
+      ...allOn,
+      proposalsAndComments: { email: true, sms: false },
+      thingsYouFollow: { email: false, sms: true },
+    });
+  });
+
   it('given a patch that names a category with no channels, when it is saved, then the row stays empty', async ({
     task,
     onTestFinished,
