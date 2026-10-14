@@ -94,10 +94,6 @@ export const isProposalReadable = (
     )!,
   )!;
 
-/**
- * Lists drop rejected proposals unless the caller filters by status; "Not
- * advanced" asks for them on its own.
- */
 export const excludeRejectedUnlessAsked = ({
   proposalsTable,
   status,
