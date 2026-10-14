@@ -31,7 +31,7 @@ import { smsNumberRateLimit } from './smsInboundLimits';
 
 const BALLOT_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_TURNS = 40;
-const CODE_PATTERN = /^\d{3}$/;
+const CODE_PATTERN = /^\d{3,4}$/;
 const GUIDANCE =
   'Text a proposal code to add a pick, LIST to see your ballot, or DONE to review.';
 const { voteSmsBallotRequested, smsInboundReceived } = Events;

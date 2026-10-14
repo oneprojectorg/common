@@ -12,7 +12,7 @@ import { logger } from '@op/logging';
 
 import { smsNumberRateLimit } from './smsInboundLimits';
 
-const INFO_ARGUMENT_PATTERN = /^(.+?)\s+(\d{3})$/;
+const INFO_ARGUMENT_PATTERN = /^(.+?)\s+(\d{3,4})$/;
 const { smsInboundReceived } = Events;
 
 export const handleSmsInfoCommand = inngest.createFunction(

@@ -1,8 +1,9 @@
-import { db } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
   Visibility,
+  processInstances,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -199,10 +200,21 @@ export const createProposal = async ({
     const proposalId = crypto.randomUUID();
     const collaborationDocId = `proposal-${proposalId}`;
 
+    const [reservedCode] = await tx
+      .update(processInstances)
+      .set({ nextSmsCode: sql`${processInstances.nextSmsCode} + 1` })
+      .where(eq(processInstances.id, data.processInstanceId))
+      .returning({ next: processInstances.nextSmsCode });
+
+    if (!reservedCode) {
+      throw new CommonError('Failed to reserve a proposal code');
+    }
+
     const [insertedProposal] = await tx
       .insert(proposals)
       .values({
         id: proposalId,
+        smsCode: reservedCode.next - 1,
         processInstanceId: data.processInstanceId,
         proposalData: {
           ...data.proposalData,
