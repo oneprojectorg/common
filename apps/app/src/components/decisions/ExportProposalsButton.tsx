@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { ProposalStatus } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
@@ -19,14 +20,14 @@ import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 export interface ExportProposalsButtonProps {
   processInstanceId: string;
   /**
-   * Nothing to export. Not the filtered count: the export ignores the list's
-   * filters, so a view narrowed to nothing still has rows to hand over.
+   * The list counts nothing. Not the filtered count: the export ignores the
+   * list's filters, so a view narrowed to nothing still has rows to hand over.
    *
-   * The phase's unfiltered count, plus the rejected proposals that count leaves
-   * out, is the closest signal the list has. It is near enough to enable a
-   * button, but not an exact preview. The caller's own visibility counts it.
+   * The phase's unfiltered count is the closest signal the list already holds.
+   * It is near enough to enable a button, but not an exact preview. The caller's
+   * own visibility counts it.
    */
-  isEmpty?: boolean;
+  isListEmpty?: boolean;
 }
 
 /**
@@ -256,15 +257,25 @@ const CompletedExportAction = ({
  * being exported, so a reset remounts it and discards that state.
  *
  * @param processInstanceId - Decision instance whose current phase is exported.
- * @param isEmpty - The phase holds no proposals, so the button stays disabled.
- *   See {@link ExportProposalsButtonProps} for why this is not the filtered
- *   count.
+ * @param isListEmpty - The list counts nothing. The button stays disabled unless
+ *   the phase holds rejected proposals, which the list leaves out. See
+ *   {@link ExportProposalsButtonProps} for why this is not the filtered count.
  */
 const ExportProposalsButtonContent = ({
   processInstanceId,
-  isEmpty = false,
+  isListEmpty = false,
 }: ExportProposalsButtonProps) => {
   const t = useTranslations();
+
+  // The list leaves rejected proposals out, but the export includes them, so a
+  // phase holding only rejected proposals still has rows to hand over.
+  const { data: rejectedData } = trpc.decision.listProposals.useQuery(
+    { processInstanceId, status: ProposalStatus.REJECTED, limit: 1 },
+    { enabled: isListEmpty, staleTime: 30 * 1000 },
+  );
+  // Unknown counts as empty, so the button never enables ahead of the answer.
+  const isEmpty = isListEmpty && (rejectedData?.total ?? 0) === 0;
+
   const [exportId, setExportId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
