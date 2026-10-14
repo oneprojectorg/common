@@ -202,9 +202,9 @@ export const createProposal = async ({
 
     const [reservedCode] = await tx
       .update(processInstances)
-      .set({ nextSmsCode: sql`${processInstances.nextSmsCode} + 1` })
+      .set({ nextShortCode: sql`${processInstances.nextShortCode} + 1` })
       .where(eq(processInstances.id, data.processInstanceId))
-      .returning({ next: processInstances.nextSmsCode });
+      .returning({ next: processInstances.nextShortCode });
 
     if (!reservedCode) {
       throw new CommonError('Failed to reserve a proposal code');
@@ -214,7 +214,7 @@ export const createProposal = async ({
       .insert(proposals)
       .values({
         id: proposalId,
-        smsCode: reservedCode.next - 1,
+        shortCode: reservedCode.next - 1,
         processInstanceId: data.processInstanceId,
         proposalData: {
           ...data.proposalData,
