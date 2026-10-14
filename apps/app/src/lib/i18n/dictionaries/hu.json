@@ -278,7 +278,18 @@
     "accountAvatarAlt": "Felhasználó profilképe",
     "accountDeletedTitle": "A fiókot töröltük",
     "accountDeletedBody": "A(z) {profileName} törölve. Az összes kapcsolódó adatot véglegesen eltávolítottuk.",
-    "deleteAccountError": "Nem sikerült törölni a fiókot"
+    "deleteAccountError": "Nem sikerült törölni a fiókot",
+    "directorySubtitle": "Fedezd fel a Common összes szervezetét.",
+    "allFocusAreasOption": "Minden fókuszterület",
+    "focusAreaFilterLabel": "Szűrés fókuszterület szerint",
+    "allStrategiesOption": "Minden stratégia",
+    "strategyFilterLabel": "Szűrés stratégia szerint",
+    "sortLabel": "Szervezetek rendezése",
+    "sortNewest": "Legújabb",
+    "sortOldest": "Legrégebbi",
+    "sortName": "Név (A–Z)",
+    "directoryLoadError": "Nem sikerült betölteni a szervezeteket. Próbáld frissíteni az oldalt.",
+    "directoryEmpty": "Egy szervezet sem felel meg ezeknek a szűrőknek."
   },
   "profile": {
     "aboutTab": "Névjegy",
