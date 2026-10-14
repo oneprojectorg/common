@@ -269,12 +269,18 @@ const ExportProposalsButtonContent = ({
 
   // The list leaves rejected proposals out, but the export includes them, so a
   // phase holding only rejected proposals still has rows to hand over.
-  const { data: rejectedData } = trpc.decision.listProposals.useQuery(
-    { processInstanceId, status: ProposalStatus.REJECTED, limit: 1 },
-    { enabled: isListEmpty, staleTime: 30 * 1000 },
-  );
-  // Unknown counts as empty, so the button never enables ahead of the answer.
-  const isEmpty = isListEmpty && (rejectedData?.total ?? 0) === 0;
+  const { data: rejectedData, isError: isRejectedCountUnreadable } =
+    trpc.decision.listProposals.useQuery(
+      { processInstanceId, status: ProposalStatus.REJECTED, limit: 1 },
+      { enabled: isListEmpty, staleTime: 30 * 1000 },
+    );
+  // Pending counts as empty, so the button never enables ahead of the answer. A
+  // failed read does not: it would leave the button disabled with no reason
+  // given, when the export itself can still run.
+  const isEmpty =
+    isListEmpty &&
+    !isRejectedCountUnreadable &&
+    (rejectedData?.total ?? 0) === 0;
 
   const [exportId, setExportId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);

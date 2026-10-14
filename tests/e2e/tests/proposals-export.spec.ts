@@ -312,14 +312,24 @@ test.describe('Proposals CSV export', () => {
     expect(exported?.Description).toContain(FIXTURE_SUMMARY_LIST_ITEM);
   });
 
-  test('stays enabled when every proposal in the phase is rejected', async ({
+  test('enables once the phase holds only rejected proposals', async ({
     authenticatedPage,
     org,
   }) => {
     const { instance, slug } = await createProcessAndInstance({ org });
+    const exportButton = authenticatedPage.getByRole('button', {
+      name: 'Export all',
+    });
 
-    // The browse list leaves rejected rows out, so it counts zero here. The
-    // export still includes them, which is what the button has to follow.
+    // A phase with nothing in it has nothing to export.
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(exportButton).toBeVisible({ timeout: 30_000 });
+    await expect(exportButton).toBeDisabled();
+
+    // The browse list leaves rejected rows out, so it still counts zero. The
+    // export includes them, which is what the button has to follow.
     await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: org.adminUser.profileId,
@@ -329,13 +339,9 @@ test.describe('Proposals CSV export', () => {
       proposalData: { title: 'Rejected Proposal' },
     });
 
-    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
-      waitUntil: 'domcontentloaded',
-    });
+    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
 
-    await expect(
-      authenticatedPage.getByRole('button', { name: 'Export all' }),
-    ).toBeEnabled({ timeout: 30_000 });
+    await expect(exportButton).toBeEnabled({ timeout: 30_000 });
   });
 });
 
