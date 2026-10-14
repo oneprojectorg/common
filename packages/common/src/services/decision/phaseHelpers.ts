@@ -1,4 +1,4 @@
-import { type TransactionType, db } from '@op/db/client';
+import { type DbClient, db } from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -43,7 +43,7 @@ export const insertPhase = async ({
   data,
   generateSlug = generatePhaseSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   processInstanceId: string;
   name: string;
   sortOrder: number;
@@ -51,14 +51,7 @@ export const insertPhase = async ({
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  // Counts code points: `varchar(256)` does, `String.length` counts UTF-16 units.
-  const chars = [...name];
-  if (chars.length > MAX_PHASE_NAME_LENGTH) {
-    throw new ValidationError(
-      `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
-      { name: `Shorten "${chars.slice(0, 40).join('')}…"` },
-    );
-  }
+  assertPhaseNameFits(name);
 
   const profile = await insertPhaseProfile({ tx, name, generateSlug });
 
@@ -77,6 +70,17 @@ export const insertPhase = async ({
   }
 
   return { phase, profile };
+};
+
+export const assertPhaseNameFits = (name: string): void => {
+  // Counts code points: `varchar(256)` does, `String.length` counts UTF-16 units.
+  const chars = [...name];
+  if (chars.length > MAX_PHASE_NAME_LENGTH) {
+    throw new ValidationError(
+      `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
+      { name: `Shorten "${chars.slice(0, 40).join('')}…"` },
+    );
+  }
 };
 
 export const assertPhaseSchemasCompile = ({
@@ -187,7 +191,7 @@ const insertPhaseProfile = async ({
   name,
   generateSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   name: string;
   generateSlug: () => string;
 }): Promise<Profile> => {
