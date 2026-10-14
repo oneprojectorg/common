@@ -19,7 +19,8 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
-import { assertVoteAccess } from './assertVoteAccess';
+import { assertProfileAccess } from '../assert';
+import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -186,9 +187,13 @@ export const submitVote = async ({
     }
 
     // Check user permissions
-    await assertVoteAccess({
-      authUserId,
+    await assertProfileAccess({
+      user: { id: authUserId },
       profileId: processInstance.profileId,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.VOTE },
+      ],
     });
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
