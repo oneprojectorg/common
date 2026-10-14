@@ -123,7 +123,12 @@ export {
   profileRelationshipTypeEnum,
 } from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
-export type { CommonUser } from './tables/users.sql';
+export type {
+  CommonUser,
+  NotificationCategory,
+  NotificationChannel,
+  StoredNotificationPreferences,
+} from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';
 
 // Decision system tables
