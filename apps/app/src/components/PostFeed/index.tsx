@@ -321,7 +321,7 @@ const PostMenu = ({
               variant="ghost"
               size="icon-xs"
               aria-label={t('posts.optionsLabel')}
-              className="absolute end-0 top-0 aspect-square aria-expanded:bg-secondary"
+              className="aspect-square aria-expanded:bg-secondary"
             >
               <LuEllipsis className="size-4" />
             </Button>
@@ -428,6 +428,8 @@ export const PostItem = ({
   onCommentClick,
   contentFooter,
   className,
+  avatarClassName,
+  stacked = false,
 }: {
   post: Post;
   organization: Organization | null;
@@ -438,6 +440,8 @@ export const PostItem = ({
   /** Rendered under the post body, above the like/comment row. */
   contentFooter?: ReactNode;
   className?: string;
+  avatarClassName?: string;
+  stacked?: boolean;
 }) => {
   const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
@@ -449,24 +453,35 @@ export const PostItem = ({
 
   return (
     <FeedItem className={cn('sm:px-4', className)}>
-      <OrganizationAvatar
-        profile={profile}
-        withLink={withLinks}
-        className="!size-8 max-h-8 max-w-8"
-      />
-      <FeedMain>
+      {!stacked && (
+        <OrganizationAvatar
+          profile={profile}
+          withLink={withLinks}
+          className={cn('size-8', avatarClassName)}
+        />
+      )}
+      <FeedMain className={cn(stacked && 'gap-4')}>
         <FeedHeader className="relative w-full justify-between">
-          <div className="flex flex-col items-baseline gap-2">
-            <Header3 className="font-sans text-base font-normal">
-              <PostDisplayName
+          <div className="flex gap-2">
+            {stacked && (
+              <OrganizationAvatar
                 profile={profile}
-                displayName={displayName}
-                withLinks={withLinks}
+                withLink={withLinks}
+                className={cn('size-8', avatarClassName)}
               />
-            </Header3>
-            {post.createdAt ? (
-              <PostTimestamp createdAt={post.createdAt} />
-            ) : null}
+            )}
+            <div className="flex flex-col items-baseline">
+              <Header3 className="font-sans text-base font-normal">
+                <PostDisplayName
+                  profile={profile}
+                  displayName={displayName}
+                  withLinks={withLinks}
+                />
+              </Header3>
+              {post.createdAt ? (
+                <PostTimestamp createdAt={post.createdAt} />
+              ) : null}
+            </div>
           </div>
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
