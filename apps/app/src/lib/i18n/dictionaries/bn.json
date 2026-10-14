@@ -742,6 +742,7 @@
     "setUpProfileAction": "প্রোফাইল সেট আপ করুন",
     "dismissSetUpProfileLabel": "বাতিল করুন",
     "seeLessAction": "কম দেখুন",
+    "visibleDecisionsCount": "{count, plural, other {#টি সিদ্ধান্ত দেখানো হচ্ছে}}",
     "editProfileAction": "প্রোফাইল সম্পাদনা",
     "profilesMenuHeading": "প্রোফাইল",
     "activeProfileLabel": "সক্রিয়",

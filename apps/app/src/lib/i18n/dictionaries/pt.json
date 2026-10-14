@@ -742,6 +742,7 @@
     "setUpProfileAction": "Configurar perfil",
     "dismissSetUpProfileLabel": "Dispensar",
     "seeLessAction": "Ver menos",
+    "visibleDecisionsCount": "{count, plural, one {Mostrando # decisão} other {Mostrando # decisões}}",
     "editProfileAction": "Editar perfil",
     "profilesMenuHeading": "Perfis",
     "activeProfileLabel": "Ativo",

@@ -742,6 +742,7 @@
     "setUpProfileAction": "إعداد الملف الشخصي",
     "dismissSetUpProfileLabel": "تجاهل",
     "seeLessAction": "عرض أقل",
+    "visibleDecisionsCount": "{count, plural, zero {يتم عرض # قرار} one {يتم عرض قرار واحد} two {يتم عرض قرارين} few {يتم عرض # قرارات} many {يتم عرض # قرارًا} other {يتم عرض # قرار}}",
     "editProfileAction": "تعديل الملف الشخصي",
     "profilesMenuHeading": "الملفات الشخصية",
     "activeProfileLabel": "نشط",

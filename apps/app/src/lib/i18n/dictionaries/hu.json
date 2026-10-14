@@ -742,6 +742,7 @@
     "setUpProfileAction": "Profil beállítása",
     "dismissSetUpProfileLabel": "Elvetés",
     "seeLessAction": "Kevesebb",
+    "visibleDecisionsCount": "{count, plural, other {# döntés látható}}",
     "editProfileAction": "Profil szerkesztése",
     "profilesMenuHeading": "Profilok",
     "activeProfileLabel": "Aktív",
