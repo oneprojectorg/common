@@ -161,7 +161,7 @@ describe.concurrent('listAllProposals', () => {
     expect(reversed.items.map((p) => p.id)).toEqual([matching.id]);
   });
 
-  it('includes REJECTED but excludes DUPLICATE proposals for non-admin viewers', async ({
+  it('lists REJECTED only when asked for by status and never DUPLICATE for non-admin viewers', async ({
     task,
     onTestFinished,
   }) => {
@@ -212,24 +212,26 @@ describe.concurrent('listAllProposals', () => {
       ]);
 
     const memberCaller = await createAuthenticatedCaller(memberUser.email);
-    const result = await memberCaller.decision.listAllProposals({
-      processInstanceId: instance.instance.id,
-    });
+    const [result, rejectedResult] = await Promise.all([
+      memberCaller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+      }),
+      memberCaller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+        status: ProposalStatus.REJECTED,
+      }),
+    ]);
 
     const ids = result.items.map((p) => p.id);
-    // Rejection is a pipeline rule, not a visibility one, so this listing
-    // carries a rejected proposal the same way the phase-scoped list does.
-    // A merged-away duplicate has no page of its own, so it stays out.
+    // A rejected proposal lives under Not advanced (the status filter), the
+    // same as on the phase-scoped list. A merged-away duplicate has no page of
+    // its own, so it stays out everywhere.
     expect(ids).toEqual(
-      expect.arrayContaining([
-        submitted.id,
-        approved.id,
-        selected.id,
-        rejected.id,
-      ]),
+      expect.arrayContaining([submitted.id, approved.id, selected.id]),
     );
     expect(ids).not.toContain(duplicate.id);
-    expect(result.items).toHaveLength(4);
+    expect(result.items).toHaveLength(3);
+    expect(rejectedResult.items.map((p) => p.id)).toEqual([rejected.id]);
   });
 
   it('excludes DRAFT proposals from non-admin viewers', async ({
@@ -364,7 +366,7 @@ describe.concurrent('listAllProposals', () => {
     expect(memberResult.items.map((p) => p.id)).toEqual([visible.id]);
   });
 
-  it('shows HIDDEN and REJECTED proposals to admin viewers but still hides DRAFT, DUPLICATE, and soft-deleted', async ({
+  it('shows HIDDEN proposals to admin viewers but still hides DRAFT, DUPLICATE, REJECTED, and soft-deleted', async ({
     task,
     onTestFinished,
   }) => {
@@ -431,13 +433,12 @@ describe.concurrent('listAllProposals', () => {
     });
 
     const ids = result.items.map((p) => p.id);
-    expect(ids).toEqual(
-      expect.arrayContaining([submitted.id, hidden.id, rejected.id]),
-    );
+    expect(ids).toEqual(expect.arrayContaining([submitted.id, hidden.id]));
     expect(ids).not.toContain(draft.id);
     expect(ids).not.toContain(duplicate.id);
+    expect(ids).not.toContain(rejected.id);
     expect(ids).not.toContain(deleted.id);
-    expect(result.items).toHaveLength(3);
+    expect(result.items).toHaveLength(2);
   });
 
   it('paginates proposals filtered by category with a cursor', async ({

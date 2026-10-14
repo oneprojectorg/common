@@ -315,7 +315,7 @@ describe.concurrent('listProposals', () => {
     expect(result.items).toHaveLength(2);
   });
 
-  it('shows rejected proposals to admins and non-admins alike', async ({
+  it('lists rejected proposals under Not advanced only, for admins and non-admins alike', async ({
     task,
     onTestFinished,
   }) => {
@@ -360,23 +360,27 @@ describe.concurrent('listProposals', () => {
       reason: RejectionReason.INELIGIBLE,
     });
 
-    const [memberResult, adminResult] = await Promise.all([
-      memberCaller.decision.listProposals({
-        processInstanceId: instance.instance.id,
-      }),
-      adminCaller.decision.listProposals({
-        processInstanceId: instance.instance.id,
-      }),
-    ]);
+    const results = await Promise.all(
+      [memberCaller, adminCaller].flatMap((caller) =>
+        [false, true].map((notAdvanced) =>
+          caller.decision.listProposals({
+            processInstanceId: instance.instance.id,
+            notAdvanced,
+          }),
+        ),
+      ),
+    );
 
-    // Rejection is a verdict, not a visibility rule: both viewers see the same
-    // two proposals, and the rejected one carries its status so the card can
-    // badge it.
-    for (const result of [memberResult, adminResult]) {
-      expect(result.items).toHaveLength(2);
-      expect(
-        result.items.find((p) => p.id === rejectedProposal.id)?.status,
-      ).toBe(ProposalStatus.REJECTED);
+    // Both viewers get the same split: All without the rejected proposal, Not
+    // advanced with it, carrying its status so the card can badge it.
+    for (const [index, result] of results.entries()) {
+      const isNotAdvanced = index % 2 === 1;
+      expect(result.items.map((p) => p.id)).toEqual([
+        isNotAdvanced ? rejectedProposal.id : keptProposal.id,
+      ]);
+      expect(result.items[0]?.status).toBe(
+        isNotAdvanced ? ProposalStatus.REJECTED : ProposalStatus.SUBMITTED,
+      );
     }
   });
 
@@ -418,6 +422,7 @@ describe.concurrent('listProposals', () => {
     const publicCaller = createCaller(await createTestContextWithSession(null));
     const result = await publicCaller.decision.listProposals({
       processInstanceId: instance.instance.id,
+      notAdvanced: true,
     });
 
     expect(result.items.map((p) => p.id)).toEqual([rejectedProposal.id]);
@@ -473,6 +478,7 @@ describe.concurrent('listProposals', () => {
       adminCaller.decision.listProposals({
         processInstanceId: instanceId,
         phaseId: 'submission',
+        notAdvanced: true,
       }),
       adminCaller.decision.listProposals({
         processInstanceId: instanceId,
@@ -485,7 +491,7 @@ describe.concurrent('listProposals', () => {
     ]);
 
     // It stays a record where it lived: the rejection happened in `submission`,
-    // and that phase's list still carries it.
+    // and that phase's Not advanced list still carries it.
     expect(submissionPhase.items.map((p) => p.id)).toContain(
       rejectedProposal.id,
     );

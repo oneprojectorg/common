@@ -136,8 +136,9 @@ test.describe('Results screen proposal tabs', () => {
       name: MY_OPEN_TITLE,
     });
 
+    // Rejected proposals only show under Not advanced.
     await expect(myOpen).toBeVisible({ timeout: 30_000 });
-    await expect(myRejected).toBeVisible();
+    await expect(myRejected).toBeHidden();
     await expect(theirRejected).toBeHidden();
 
     // The tabs pin the audience axis here, so the select is the status axis

@@ -385,9 +385,9 @@ export const resolveProposalListScope = async ({
   }
 
   // "Not advanced" on the current phase reaches back into earlier phases, so
-  // `buildNotAdvancedFilter` alone narrows the list instead of phase scoping.
-  // That way everyone sees a rejected proposal whatever phase it was rejected
-  // in: rejection drops it from later transition snapshots, so phase scoping
+  // `buildStatusAxisFilter` alone narrows the list instead of phase scoping.
+  // That way a rejected proposal shows whatever phase it was rejected in:
+  // rejection drops it from later transition snapshots, so phase scoping
   // would lose it once the instance moves on. An explicit phase or ID scope
   // keeps the list to what was asked for.
   const includesEarlierPhases =
@@ -395,11 +395,11 @@ export const resolveProposalListScope = async ({
     explicitScopeIds === undefined &&
     input.phaseId === undefined;
 
-  // Admins also see what didn't advance into the current phase: every
-  // submitted proposal outside it was left behind by an earlier transition,
-  // since a proposal can't predate the instance's first phase.
+  // It also lists what didn't advance into the current phase: every submitted
+  // proposal outside it was left behind by an earlier transition, since a
+  // proposal can't predate the instance's first phase.
   const buildIsOutsideCurrentPhase =
-    includesEarlierPhases && canManageProposals && input.phase !== 'results'
+    includesEarlierPhases && input.phase !== 'results'
       ? (proposalsTable: typeof proposals): SQL =>
           and(
             ne(proposalsTable.status, ProposalStatus.DRAFT),
@@ -417,16 +417,22 @@ export const resolveProposalListScope = async ({
         : phaseScope.buildNonDraftFilter(proposalsTable),
     )!;
 
-  // "Not advanced": rejected, or (for admins) left behind in an earlier phase.
-  const buildNotAdvancedFilter = (
+  // "Not advanced" is rejected or left behind in an earlier phase. Every other
+  // list drops rejected proposals, since Not advanced is where they're found,
+  // unless an explicit status or ID scope already says which rows it wants.
+  const buildStatusAxisFilter = (
     proposalsTable: typeof proposals,
-  ): SQL | undefined =>
-    input.notAdvanced
-      ? or(
-          eq(proposalsTable.status, ProposalStatus.REJECTED),
-          buildIsOutsideCurrentPhase?.(proposalsTable),
-        )
+  ): SQL | undefined => {
+    if (input.notAdvanced) {
+      return or(
+        eq(proposalsTable.status, ProposalStatus.REJECTED),
+        buildIsOutsideCurrentPhase?.(proposalsTable),
+      );
+    }
+    return input.status === undefined && explicitScopeIds === undefined
+      ? ne(proposalsTable.status, ProposalStatus.REJECTED)
       : undefined;
+  };
 
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
@@ -462,7 +468,7 @@ export const resolveProposalListScope = async ({
     // explicit-scope one above) carries the `isNull(deletedAt)` filter, so
     // the outer query stays soft-delete-safe without its own check.
     const nonDraftScopeFilter = buildNonDraftScopeFilter(proposalsTable);
-    clause = and(clause, buildNotAdvancedFilter(proposalsTable))!;
+    clause = and(clause, buildStatusAxisFilter(proposalsTable))!;
 
     if (skipAccessCheck) {
       // Trusted contexts get every non-draft proposal in scope.
@@ -505,11 +511,8 @@ export const resolveProposalListScope = async ({
 
     // Rejected proposals carry no visibility filter of their own: a rejection
     // is a public verdict on a public submission, and the detail page has never
-    // gated on it (`getProposal`), so hiding the row here only made the list
-    // disagree with a URL that still worked. Rejection is a pipeline rule now —
-    // the phase, review and voting reads drop them via their own predicates
-    // (`PIPELINE_INELIGIBLE_STATUSES`, `VOTING_INELIGIBLE_STATUSES`), and the
-    // card badges the status so the list stays honest about it.
+    // gated on it (`getProposal`). The status axis above decides which list
+    // they show in (Not advanced), the same for every caller.
     return and(
       clause,
       or(draftFilter, nonDraftVisibilityFilter)!,

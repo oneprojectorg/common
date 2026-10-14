@@ -149,10 +149,10 @@ export const buildQueryParams = ({
     params.votedByProfileId = currentProfileId;
   }
 
-  // "Not advanced" reaches back into earlier phases: everyone sees rejected
-  // proposals from any phase, and an admin also sees what earlier phases left
-  // behind; All stays the current phase. The results phase already spans
-  // every phase, so it filters on rejection alone.
+  // "Not advanced" is the one place rejected proposals and what earlier phases
+  // left behind are listed; All stays the current phase, without rejections.
+  // The results phase already spans every phase, so it filters on rejection
+  // alone.
   if (status === 'not-advanced' || filter === ProposalFilter.REJECTED) {
     if (phase === 'results') {
       params.status = ProposalStatus.REJECTED;

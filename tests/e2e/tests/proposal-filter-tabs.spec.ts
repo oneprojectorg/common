@@ -249,12 +249,17 @@ test.describe('Proposal filter tabs', () => {
       name: OTHER_REJECTED_TITLE,
     });
 
+    // Rejected proposals only show under Not advanced.
     await expect(mineOpen).toBeVisible({ timeout: 30_000 });
-    await expect(theirsRejected).toBeVisible();
+    await expect(theirsRejected).toBeHidden();
+    await expect(mineRejected).toBeHidden();
 
     await authenticatedPage.getByRole('tab', { name: 'My proposals' }).click();
-    await expect(theirsRejected).toBeHidden({ timeout: 15_000 });
-    await expect(mineRejected).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole('tab', { name: 'My proposals' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    await expect(mineOpen).toBeVisible({ timeout: 15_000 });
+    await expect(mineRejected).toBeHidden();
 
     await authenticatedPage
       .getByRole('combobox', { name: 'Filter by status' })

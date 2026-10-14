@@ -6,6 +6,7 @@ import {
   exists,
   inArray,
   isNull,
+  ne,
   notInArray,
   or,
   sql,
@@ -57,10 +58,9 @@ import type { AllProposalsFilter } from './schemas/proposal';
 /**
  * Returns proposals on the instance for the "All proposals" tab on the
  * results page. Drafts, duplicate, merged, and soft-deleted proposals are
- * excluded for everyone. Rejected proposals are NOT excluded: this is a
- * listing, it matches the phase-scoped proposal list, and because that list is
- * phase-scoped it is the only browse surface that still reaches a proposal
- * rejected in an earlier phase. Non-admin members additionally see only visible
+ * excluded for everyone. Rejected proposals are excluded too unless the caller
+ * asks for them by status (the "Not advanced" filter) or reads a ballot,
+ * matching the phase-scoped proposal list. Non-admin members additionally see only visible
  * proposals; decision admins also see hidden proposals so they can audit and
  * report on what was submitted to the process.
  */
@@ -160,7 +160,13 @@ export const listAllProposals = async ({
     and(
       eq(t.processInstanceId, processInstanceId),
       buildProposalTitleSearchCondition(t, input.search),
-      status ? eq(t.status, status) : undefined,
+      // Rejected proposals live under Not advanced (`status: REJECTED`); a
+      // ballot still lists what the voter picked.
+      status
+        ? eq(t.status, status)
+        : votedProposalIds
+          ? undefined
+          : ne(t.status, ProposalStatus.REJECTED),
       input.submittedByProfileId
         ? eq(t.submittedByProfileId, input.submittedByProfileId)
         : undefined,
