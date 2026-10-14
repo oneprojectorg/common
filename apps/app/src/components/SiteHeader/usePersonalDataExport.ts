@@ -7,10 +7,6 @@ import { useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-/**
- * Starts a personal data export and downloads the file once the run completes.
- * Lives above the avatar menu so the wait survives the menu closing.
- */
 export const usePersonalDataExport = () => {
   const t = useTranslations();
   const [exportId, setExportId] = useState<string | null>(null);
@@ -42,7 +38,6 @@ export const usePersonalDataExport = () => {
     }
 
     if (status?.status === 'completed' && status.signedUrl) {
-      // The signed URL forces an attachment, so this downloads in place.
       window.location.assign(status.signedUrl);
     } else {
       toast.error(t('shell.personalDataExportFailed'));
