@@ -159,10 +159,7 @@ export const listAllProposals = async ({
       eq(t.processInstanceId, processInstanceId),
       buildProposalTitleSearchCondition(t, input.search),
       status ? eq(t.status, status) : undefined,
-      excludeRejectedUnlessAsked(t, {
-        status,
-        isFixedSet: votedProposalIds !== undefined,
-      }),
+      excludeRejectedUnlessAsked(t, status),
       input.submittedByProfileId
         ? eq(t.submittedByProfileId, input.submittedByProfileId)
         : undefined,

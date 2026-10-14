@@ -413,20 +413,20 @@ export const resolveProposalListScope = async ({
         : phaseScope.buildNonDraftFilter(proposalsTable),
     )!;
 
-  // Ballots and trusted reads (the export) are fixed sets, so they keep
-  // rejected proposals.
+  // The trusted export is a full record, not a list a viewer browses.
   const buildStatusAxisFilter = (
     proposalsTable: typeof proposals,
-  ): SQL | undefined =>
-    input.notAdvanced
-      ? or(
-          eq(proposalsTable.status, ProposalStatus.REJECTED),
-          buildIsOutsideCurrentPhase?.(proposalsTable),
-        )
-      : excludeRejectedUnlessAsked(proposalsTable, {
-          status: input.status,
-          isFixedSet: explicitScopeIds !== undefined || skipAccessCheck,
-        });
+  ): SQL | undefined => {
+    if (input.notAdvanced) {
+      return or(
+        eq(proposalsTable.status, ProposalStatus.REJECTED),
+        buildIsOutsideCurrentPhase?.(proposalsTable),
+      );
+    }
+    return skipAccessCheck
+      ? undefined
+      : excludeRejectedUnlessAsked(proposalsTable, input.status);
+  };
 
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle

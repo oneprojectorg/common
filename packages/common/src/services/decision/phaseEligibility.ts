@@ -21,13 +21,11 @@ export const phaseEligiblePredicate = (t: typeof proposals): SQL =>
   )!;
 
 /**
- * Rejected proposals belong under "Not advanced", so other lists drop them
- * unless the caller asked for a status or a fixed set (a ballot, an export).
+ * Lists drop rejected proposals unless the caller filters by status; "Not
+ * advanced" asks for them on its own.
  */
 export const excludeRejectedUnlessAsked = (
   t: typeof proposals,
-  { status, isFixedSet }: { status: string | undefined; isFixedSet: boolean },
+  status: string | undefined,
 ): SQL | undefined =>
-  status === undefined && !isFixedSet
-    ? ne(t.status, ProposalStatus.REJECTED)
-    : undefined;
+  status === undefined ? ne(t.status, ProposalStatus.REJECTED) : undefined;

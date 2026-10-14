@@ -281,7 +281,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
     expect(result.total).toBe(1);
   });
 
-  it('keeps a proposal rejected after the vote on the ballot', async ({
+  it('drops a proposal rejected after the vote from the ballot list', async ({
     task,
     onTestFinished,
   }) => {
@@ -325,7 +325,6 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
         .where(eq(proposals.id, rejectedProposal.id)),
     ]);
 
-    // A ballot is a record of the vote, so rejection doesn't rewrite it.
     const ballots = await Promise.all([
       voterCaller.decision.listProposals({
         processInstanceId: instance.instance.id,
@@ -338,9 +337,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
     ]);
 
     for (const ballot of ballots) {
-      expect(ballot.items.map((p) => p.id).sort()).toEqual(
-        [keptProposal.id, rejectedProposal.id].sort(),
-      );
+      expect(ballot.items.map((p) => p.id)).toEqual([keptProposal.id]);
     }
   });
 

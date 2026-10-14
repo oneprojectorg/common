@@ -221,7 +221,7 @@ export type ProposalLocations = z.infer<typeof proposalLocationsSchema>;
 /**
  * Input schema for `decision.listAllProposals`. Returns every valid submission
  * regardless of phase scoping, so there are no phase/voting filters. Rejected
- * proposals are left out unless `status` or `votedByProfileId` asks for them.
+ * proposals are left out unless `status` asks for them.
  * Uses cursor pagination — pass `cursor` from the previous response's `next`.
  */
 export const allProposalsFilterSchema = z.object({

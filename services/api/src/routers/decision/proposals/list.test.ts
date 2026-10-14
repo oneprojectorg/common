@@ -418,13 +418,18 @@ describe.concurrent('listProposals', () => {
     // `listProposals` is an openProcedure, so logged-out visitors are part of
     // the "everyone" this rule promises.
     const publicCaller = createCaller(await createTestContextWithSession(null));
-    const result = await publicCaller.decision.listProposals({
-      processInstanceId: instance.instance.id,
-      notAdvanced: true,
-    });
+    const [all, result] = await Promise.all(
+      [false, true].map((notAdvanced) =>
+        publicCaller.decision.listProposals({
+          processInstanceId: instance.instance.id,
+          notAdvanced,
+        }),
+      ),
+    );
 
-    expect(result.items.map((p) => p.id)).toEqual([rejectedProposal.id]);
-    expect(result.items[0]?.status).toBe(ProposalStatus.REJECTED);
+    expect(all?.items).toEqual([]);
+    expect(result?.items.map((p) => p.id)).toEqual([rejectedProposal.id]);
+    expect(result?.items[0]?.status).toBe(ProposalStatus.REJECTED);
   });
 
   it('keeps a rejected proposal in its own phase but out of later phases and the review read', async ({

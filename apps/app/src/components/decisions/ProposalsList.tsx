@@ -605,12 +605,7 @@ const ProposalsListContent = ({
       <ProposalsStickyFilterBar
         pinOffset={pinOffset}
         count={total}
-        // "Not advanced" isn't a slice of the unfiltered pool.
-        total={
-          queryParams.notAdvanced || queryParams.status
-            ? undefined
-            : totalProposalCount
-        }
+        total={totalProposalCount}
         header={header?.(total)}
         // Omitted when the phase hides proposals from non-admins.
         controls={hideFilters ? undefined : controls}
