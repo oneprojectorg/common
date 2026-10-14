@@ -7,6 +7,11 @@ import { useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { EXPORT_WAIT_TIMEOUT_MS } from '@/components/decisions/exportWait';
+
+const isSettledStatus = (status: string | undefined) =>
+  status === 'completed' || status === 'failed' || status === 'not_found';
+
 export const usePersonalDataExport = () => {
   const t = useTranslations();
   const [exportId, setExportId] = useState<string | null>(null);
@@ -21,18 +26,19 @@ export const usePersonalDataExport = () => {
     },
   });
 
-  const { data: status, isError } =
-    trpc.account.getPersonalDataExportStatus.useQuery(
-      { exportId: exportId ?? '' },
-      { enabled: Boolean(exportId), retry: 2 },
-    );
+  const {
+    data: status,
+    isError,
+    refetch,
+  } = trpc.account.getPersonalDataExportStatus.useQuery(
+    { exportId: exportId ?? '' },
+    { enabled: Boolean(exportId), retry: 2 },
+  );
+
+  const reportedStatus = status?.status;
+  const isSettled = isError || isSettledStatus(reportedStatus);
 
   useEffect(() => {
-    const isSettled =
-      isError ||
-      status?.status === 'completed' ||
-      status?.status === 'failed' ||
-      status?.status === 'not_found';
     if (!isSettled) {
       return;
     }
@@ -43,7 +49,27 @@ export const usePersonalDataExport = () => {
       toast.error(t('shell.personalDataExportFailed'));
     }
     setExportId(null);
-  }, [status, isError, t]);
+  }, [status, isSettled, t]);
+
+  // Bounds silence: a lost broadcast would otherwise leave the button spinning.
+  // Re-armed on each reported state, and re-reads once before giving up.
+  useEffect(() => {
+    if (exportId === null || isSettled) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      const { data } = await refetch();
+      if (isSettledStatus(data?.status)) {
+        return;
+      }
+      logger.error('Personal data export timed out', { exportId });
+      toast.error(t('shell.personalDataExportFailed'));
+      setExportId(null);
+    }, EXPORT_WAIT_TIMEOUT_MS);
+
+    return () => clearTimeout(timer);
+  }, [exportId, reportedStatus, isSettled, refetch, t]);
 
   return {
     start: () => startExport.mutate(undefined),
