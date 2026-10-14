@@ -278,7 +278,18 @@
     "accountAvatarAlt": "ব্যবহারকারীর অবতার",
     "accountDeletedTitle": "অ্যাকাউন্ট মুছে ফেলা হয়েছে",
     "accountDeletedBody": "{profileName} মুছে ফেলা হয়েছে। সমস্ত সম্পর্কিত ডেটা স্থায়ীভাবে সরানো হয়েছে।",
-    "deleteAccountError": "অ্যাকাউন্ট মুছতে ব্যর্থ"
+    "deleteAccountError": "অ্যাকাউন্ট মুছতে ব্যর্থ",
+    "directorySubtitle": "Common-এর অংশ সব সংগঠন খুঁজে দেখুন।",
+    "allFocusAreasOption": "সব ফোকাস এলাকা",
+    "focusAreaFilterLabel": "ফোকাস এলাকা অনুযায়ী ফিল্টার করুন",
+    "allStrategiesOption": "সব কৌশল",
+    "strategyFilterLabel": "কৌশল অনুযায়ী ফিল্টার করুন",
+    "sortLabel": "সংগঠন সাজান",
+    "sortNewest": "নতুনতম",
+    "sortOldest": "পুরোনো",
+    "sortName": "নাম (A–Z)",
+    "directoryLoadError": "সংগঠনগুলো লোড করা যায়নি। পেজটি রিফ্রেশ করে দেখুন।",
+    "directoryEmpty": "এই ফিল্টারগুলোর সাথে কোনো সংগঠন মেলেনি।"
   },
   "profile": {
     "aboutTab": "সম্পর্কে",

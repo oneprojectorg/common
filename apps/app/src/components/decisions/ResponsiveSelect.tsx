@@ -71,9 +71,7 @@ export function ResponsiveSelect<T extends string>({
           className={`${className} max-w-48 shrink-0 justify-between shadow-none`}
           onClick={() => setIsOpen(true)}
         >
-          <span className="min-w-0 overflow-hidden whitespace-nowrap">
-            {displayLabel}
-          </span>
+          <span className="min-w-0 truncate">{displayLabel}</span>
           <LuChevronDown className="size-4 shrink-0" />
         </Button>
         <Sheet open={isOpen} onOpenChange={setIsOpen}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { type RouterOutput, trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -10,10 +10,7 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProfileSummaryList } from '@/components/ProfileList';
 
-type ProfileListResponse = {
-  items: Array<any>;
-  next?: string | null;
-};
+type ProfileListResponse = RouterOutput['profile']['list'];
 
 export const AllOrganizationsSuspense = ({
   limit = PAGE_LIMIT.md,
@@ -34,15 +31,13 @@ export const AllOrganizationsSuspense = ({
       limit,
       types: types ?? [EntityType.ORG],
     },
-    initialData
-      ? {
-          initialData: {
-            pages: [initialData],
-            pageParams: [null],
-          },
-          getNextPageParam: nextCursor,
-        }
-      : undefined,
+    {
+      // Always set: without it the list never pages past the first fetch.
+      getNextPageParam: nextCursor,
+      initialData: initialData
+        ? { pages: [initialData], pageParams: [null] }
+        : undefined,
+    },
   );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
