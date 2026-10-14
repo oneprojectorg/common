@@ -150,18 +150,22 @@ const ActiveDecisionsGroup = () => {
             {canSeeMore && (
               <ListToggle
                 onClick={seeMore}
-                isExpanded={false}
+                // Expanded, this only loads more pages
+                isExpanded={isExpanded ? undefined : false}
                 isLoading={isFetchingNextPage}
               >
                 {t('shell.seeMoreAction')}
               </ListToggle>
             )}
-            {isExpanded && !canSeeMore && (
+            {isExpanded && (
               <ListToggle onClick={() => setIsExpanded(false)} isExpanded>
                 {t('shell.seeLessAction')}
               </ListToggle>
             )}
           </SidebarMenu>
+          <span role="status" className="sr-only">
+            {t('shell.visibleDecisionsCount', { count: visible.length })}
+          </span>
         </SidebarGroupContent>
       </SidebarGroup>
     </>
@@ -176,7 +180,7 @@ const ListToggle = ({
   children,
 }: {
   onClick: () => void;
-  isExpanded: boolean;
+  isExpanded?: boolean;
   isLoading?: boolean;
   children: ReactNode;
 }) => (
