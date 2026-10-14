@@ -19,7 +19,6 @@ export const useTranslateProposal = (proposal: Proposal) => {
 
   const link = useTranslateLink({
     detectionText,
-    enabled: true,
     request: (targetLocale) =>
       translateMutation
         .mutateAsync({ profileId: proposal.profileId, targetLocale })

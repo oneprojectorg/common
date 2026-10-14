@@ -1,3 +1,4 @@
+import { extractUrls } from '@/utils/linkDetection';
 import { type SupportedLocale } from '@op/common/client';
 import { franc } from 'franc';
 
@@ -23,13 +24,15 @@ export const baseLanguage = (code: string): string =>
   code.toLowerCase().split('-')[0] ?? code;
 
 /**
- * Detects the language of `text` using franc (pure-JS trigram detection),
+ * Detects the language of `text`, URLs aside, using franc (pure-JS trigram detection),
  * restricted to the platform's supported locales. Returns the matching locale
  * code, or an empty array when the text is too short to judge or its language
  * isn't one we support.
  */
 export const detectLanguages = (text: string): string[] => {
-  const trimmed = text.trim();
+  const trimmed = extractUrls(text)
+    .reduce((prose, url) => prose.replace(url, ' '), text)
+    .trim();
   if (!trimmed) {
     return [];
   }

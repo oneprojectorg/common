@@ -24,11 +24,11 @@ type CachedTranslation<T> = {
 /** One authored object's "See translation" state: detection, request and a per-locale cache. */
 export const useTranslateLink = <T>({
   detectionText,
-  enabled,
+  enabled = true,
   request,
 }: {
   detectionText: string;
-  enabled: boolean;
+  enabled?: boolean;
   request: (targetLocale: SupportedLocale) => Promise<T | undefined>;
 }): TranslateLinkState & { translation: T | undefined } => {
   const locale = useLocale();

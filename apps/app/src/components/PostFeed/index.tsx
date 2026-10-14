@@ -427,7 +427,6 @@ export const PostItem = ({
   onLikeClick,
   onCommentClick,
   contentFooter,
-  translatable = false,
   className,
 }: {
   post: Post;
@@ -438,16 +437,8 @@ export const PostItem = ({
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   /** Rendered under the post body, above the like/comment row. */
   contentFooter?: ReactNode;
-  translatable?: boolean;
   className?: string;
 }) => {
-  const translation = usePostTranslation({
-    postId: post.id,
-    content: post.content ?? '',
-    enabled: translatable,
-  });
-  const displayContent = translation.translation ?? post?.content;
-  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
   const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
   // For comments (posts without organization), show the post author
@@ -480,11 +471,7 @@ export const PostItem = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
-          <TranslateLink translation={translation} />
-          <PostFlaggedIndicator post={post} />
-          <PostContent content={displayContent} />
-          <PostAttachments attachments={post.attachments} />
-          <PostUrls urls={urls} />
+          <PostBody post={post} />
           {contentFooter}
           <div className="-ms-2 flex items-center">
             <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
@@ -498,6 +485,22 @@ export const PostItem = ({
         </FeedContent>
       </FeedMain>
     </FeedItem>
+  );
+};
+
+const PostBody = ({ post }: { post: Post }) => {
+  const content = post.content ?? '';
+  const translation = usePostTranslation({ postId: post.id, content });
+  const { urls } = useMemo(() => detectLinks(content), [content]);
+
+  return (
+    <>
+      <TranslateLink translation={translation} />
+      <PostFlaggedIndicator post={post} />
+      <PostContent content={translation.translation ?? content} />
+      <PostAttachments attachments={post.attachments} />
+      <PostUrls urls={urls} />
+    </>
   );
 };
 
@@ -519,7 +522,6 @@ export const PostItemOnDetailPage = ({
   className?: string;
 }) => {
   const t = useTranslations();
-  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
   const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
   // For comments (posts without organization), show the post author
@@ -552,10 +554,7 @@ export const PostItemOnDetailPage = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
-          <PostFlaggedIndicator post={post} />
-          <PostContent content={post?.content} />
-          <PostAttachments attachments={post.attachments} />
-          <PostUrls urls={urls} />
+          <PostBody post={post} />
           <div className="-ms-2 flex items-center">
             <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             <CommentButton
@@ -573,7 +572,6 @@ export const PostItemOnDetailPage = ({
 export const DiscussionModalContainer = ({
   discussionModal,
   onClose,
-  translatable = false,
 }: {
   discussionModal: {
     isOpen: boolean;
@@ -581,7 +579,6 @@ export const DiscussionModalContainer = ({
     organization?: Organization | null;
   };
   onClose: () => void;
-  translatable?: boolean;
 }) => {
   if (!discussionModal.isOpen || !discussionModal.post) {
     return null;
@@ -593,7 +590,6 @@ export const DiscussionModalContainer = ({
       organization={discussionModal.organization ?? null}
       isOpen={discussionModal.isOpen}
       onClose={onClose}
-      translatable={translatable}
     />
   );
 };

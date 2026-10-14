@@ -1,8 +1,7 @@
 import { db } from '@op/db/client';
-import { EntityType, postsToOrganizations } from '@op/db/schema';
+import { EntityType } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { checkPermission, permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
@@ -115,7 +114,7 @@ export const assertPostReadAccess = async ({
   }
 };
 
-/** A flagged post is NotFound to everyone but its author and the decision's admins. */
+/** A flagged post is NotFound to everyone but its author and its moderators. */
 export const assertCanReadFlaggedPost = async ({
   post,
   user,
@@ -137,9 +136,12 @@ export const assertCanReadFlaggedPost = async ({
       getProfileAccessRolesWithOrgFallback({ user: accessUser, profileId }),
     ),
   );
-  const isModerator = moderationRoles.every((roles) =>
-    checkPermission({ profile: permission.ADMIN }, roles),
-  );
+  // `[].every` is true, so an empty list must not grant moderator standing.
+  const isModerator =
+    moderationRoles.length > 0 &&
+    moderationRoles.every((roles) =>
+      checkPermission({ profile: permission.ADMIN }, roles),
+    );
 
   if (!isModerator) {
     throw new NotFoundError('Post', post.id);
@@ -152,6 +154,7 @@ type ResolvedInstance = {
 };
 
 const WRITE_DENIED = 'You do not have access to write here';
+const READ_DENIED = 'You do not have access to this post';
 const COMMENTS_DISABLED = 'Comments are turned off for this phase';
 
 const assertPhaseAllowsComments = async (
@@ -190,15 +193,67 @@ const assertPhaseAllowsComments = async (
 // the walled garden can comment on any org post, regardless of per-org
 // membership. Fails closed when the caller has no resolvable email
 // (anonymous / sentinel callers).
-const assertOnWalledGarden = async (user: AccessUser | undefined) => {
+const assertOnWalledGarden = async ({
+  user,
+  deniedMessage = WRITE_DENIED,
+}: {
+  user: AccessUser | undefined;
+  deniedMessage?: string;
+}) => {
   if (!user?.id) {
-    throw new UnauthorizedError(WRITE_DENIED);
+    throw new UnauthorizedError(deniedMessage);
   }
   const session = await getUserSession({ authUserId: user.id });
   const isMember = await getNetworkMembership(session?.user?.email);
   if (!isMember) {
-    throw new UnauthorizedError(WRITE_DENIED);
+    throw new UnauthorizedError(deniedMessage);
   }
+};
+
+const getOrgProfileIds = async (postId: string) => {
+  const links = await db.query.postsToOrganizations.findMany({
+    where: { postId },
+    columns: {},
+    with: { organization: { columns: { profileId: true } } },
+  });
+  return links.map(({ organization }) => organization.profileId);
+};
+
+/**
+ * Asserts READ access to a post and returns the profiles whose admins moderate it.
+ * A post off any decision or proposal is an org post, open to the whole network.
+ */
+export const assertPostReadAccessForPost = async ({
+  user,
+  post,
+}: {
+  user: AccessUser | undefined;
+  post: {
+    id: string;
+    parentPostId: string | null;
+    postsToProfiles: { profileId: string }[];
+  };
+}): Promise<{ moderationProfileIds: string[] }> => {
+  if (post.postsToProfiles.length > 0) {
+    const readAccesses = await Promise.all(
+      post.postsToProfiles.map(({ profileId }) =>
+        assertPostReadAccess({ user, profileId }),
+      ),
+    );
+    return {
+      moderationProfileIds: readAccesses.map(
+        ({ moderationProfileId }) => moderationProfileId,
+      ),
+    };
+  }
+
+  await assertOnWalledGarden({ user, deniedMessage: READ_DENIED });
+
+  return {
+    moderationProfileIds: post.parentPostId
+      ? []
+      : await getOrgProfileIds(post.id),
+  };
 };
 
 // Asserts a caller's WRITE access for a new post, dispatching on the
@@ -229,15 +284,11 @@ export const assertPostWriteAccess = async ({
     if (!rootPostId) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    const [legacyLink] = await db
-      .select({ organizationId: postsToOrganizations.organizationId })
-      .from(postsToOrganizations)
-      .where(eq(postsToOrganizations.postId, rootPostId))
-      .limit(1);
-    if (!legacyLink) {
+    const orgProfileIds = await getOrgProfileIds(rootPostId);
+    if (orgProfileIds.length === 0) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    await assertOnWalledGarden(user);
+    await assertOnWalledGarden({ user });
     return;
   }
 
@@ -302,7 +353,7 @@ export const assertPostWriteAccess = async ({
         });
         return;
       }
-      await assertOnWalledGarden(user);
+      await assertOnWalledGarden({ user });
       return;
 
     // INDIVIDUAL / USER profiles aren't a supported posting surface yet.
