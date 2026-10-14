@@ -34,7 +34,7 @@ const readSummary = (data: unknown): string | null => {
     : null;
 };
 
-export const assignSmsCodes = async (
+export const assignShortCodes = async (
   processInstanceId: string,
 ): Promise<void> => {
   await db.transaction(async (tx) => {
@@ -50,7 +50,7 @@ export const assignSmsCodes = async (
       .where(
         and(
           eq(proposals.processInstanceId, processInstanceId),
-          isNull(proposals.smsCode),
+          isNull(proposals.shortCode),
         ),
       )
       .orderBy(asc(proposals.createdAt), asc(proposals.id));
@@ -58,15 +58,15 @@ export const assignSmsCodes = async (
     for (const proposal of uncoded) {
       const [reserved] = await tx
         .update(processInstances)
-        .set({ nextSmsCode: sql`${processInstances.nextSmsCode} + 1` })
+        .set({ nextShortCode: sql`${processInstances.nextShortCode} + 1` })
         .where(eq(processInstances.id, processInstanceId))
-        .returning({ next: processInstances.nextSmsCode });
+        .returning({ next: processInstances.nextShortCode });
       if (!reserved) {
         return;
       }
       await tx
         .update(proposals)
-        .set({ smsCode: reserved.next - 1 })
+        .set({ shortCode: reserved.next - 1 })
         .where(eq(proposals.id, proposal.id));
     }
   });
@@ -83,26 +83,26 @@ export async function listSmsBallotProposals({
     return [];
   }
 
-  await assignSmsCodes(processInstanceId);
+  await assignShortCodes(processInstanceId);
 
   const rows = await db
     .select({
       id: proposals.id,
-      smsCode: proposals.smsCode,
+      shortCode: proposals.shortCode,
       title: profiles.name,
       proposalData: proposals.proposalData,
     })
     .from(proposals)
     .innerJoin(profiles, eq(profiles.id, proposals.profileId))
     .where(filter)
-    .orderBy(asc(proposals.smsCode));
+    .orderBy(asc(proposals.shortCode));
 
   return rows.flatMap((row) =>
-    row.smsCode === null
+    row.shortCode === null
       ? []
       : [
           {
-            code: String(row.smsCode),
+            code: String(row.shortCode),
             proposalId: row.id,
             title: row.title,
             ...readCost(row.proposalData),
