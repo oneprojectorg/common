@@ -3,8 +3,13 @@ import {
   type RubricTemplateSchema,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
-import { ProcessStatus, processInstances } from '@op/db/schema';
+import { asc, db, eq } from '@op/db/client';
+import {
+  ProcessStatus,
+  processInstances,
+  processPhases,
+  profiles,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -39,6 +44,19 @@ async function getFirstPhaseId(instanceId: string) {
   }
 
   return phaseId;
+}
+
+async function loadPhaseRows(instanceId: string) {
+  return db
+    .select({
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, instanceId))
+    .orderBy(asc(processPhases.sortOrder));
 }
 
 describe.concurrent('updateDecisionInstance', () => {
@@ -667,6 +685,89 @@ describe.concurrent('updateDecisionInstance', () => {
       (p) => p.phaseId === firstPhaseId,
     );
     expect(firstPhase?.settings?.maxProposalsPerMember).toBe(10);
+  });
+
+  it('mints the phase rows of a decision that has none on its first save', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.removePhaseRows(instanceId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      name: `Converted ${task.id}`,
+    });
+
+    const rows = await loadPhaseRows(instanceId);
+    expect(rows.map((row) => [row.name, row.sortOrder])).toEqual([
+      ['Initial Phase', 0],
+      ['Final Phase', 1],
+    ]);
+  });
+
+  it('writes phase edits to the rows and mirrors them back into the instance data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const extraName = `Extra ${task.id}`;
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'final', name: 'Decide' },
+        { phaseId: 'initial' },
+        { phaseId: 'extra', name: extraName, description: 'One more' },
+      ],
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { name: 'Decide', sortOrder: 0, data: { phaseId: 'final' } },
+      { name: 'Initial Phase', sortOrder: 1, data: { phaseId: 'initial' } },
+      {
+        name: extraName,
+        sortOrder: 2,
+        data: { phaseId: 'extra', description: 'One more' },
+      },
+    ]);
+
+    const updated = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const instanceData = updated!.instanceData as DecisionInstanceData;
+    expect(instanceData.phases.map((p) => [p.phaseId, p.name])).toEqual([
+      ['final', 'Decide'],
+      ['initial', 'Initial Phase'],
+      ['extra', extraName],
+    ]);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [{ phaseId: 'final' }, { phaseId: 'initial' }],
+    });
+
+    expect((await loadPhaseRows(instanceId)).map((row) => row.name)).toEqual([
+      'Decide',
+      'Initial Phase',
+    ]);
+    const leftover = await db.query.profiles.findMany({
+      where: { name: extraName },
+      columns: { id: true },
+    });
+    expect(leftover).toHaveLength(0);
   });
 
   it('should update multiple fields at once', async ({
