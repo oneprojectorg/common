@@ -19,9 +19,12 @@ import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import {
+  type PhaseEndDateChange,
   getNormalizedCategories,
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { ensurePhaseRows, reconcilePhaseRows } from './phaseRows';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -117,11 +120,16 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
+  const hasPhaseUpdates = phases !== undefined && phases.length > 0;
+  const existingInstanceData =
+    existingInstance.instanceData as DecisionInstanceData;
+
+  // Phase overrides are applied inside the transaction, against the rows.
   const instanceDataUpdate = getUpdatedInstanceData({
-    existing: existingInstance.instanceData as DecisionInstanceData,
-    update: { config, overview, phases, proposalTemplate, rubricTemplate },
+    existing: existingInstanceData,
+    update: { config, overview, proposalTemplate, rubricTemplate },
   });
-  const phaseEndDateChanges = instanceDataUpdate?.phaseEndDateChanges ?? [];
+  const phaseEndDateChanges: PhaseEndDateChange[] = [];
 
   if (instanceDataUpdate) {
     if (config !== undefined) {
@@ -130,18 +138,18 @@ export const updateDecisionInstance = async ({
       );
     }
 
-    if ((phases !== undefined && phases.length > 0) || proposalTemplate) {
-      await assertVoterCostField({
-        instanceData: instanceDataUpdate.instanceData,
-        processId: existingInstance.processId,
-      });
-    }
-
     updateData.instanceData = instanceDataUpdate.instanceData;
   }
 
+  if (hasPhaseUpdates || proposalTemplate) {
+    await assertVoterCostField({
+      instanceData: instanceDataUpdate?.instanceData ?? existingInstanceData,
+      processId: existingInstance.processId,
+    });
+  }
+
   // Only update if there's something to update
-  if (Object.keys(updateData).length === 0) {
+  if (Object.keys(updateData).length === 0 && !hasPhaseUpdates) {
     return {
       profile: await getDecisionProfile(profileId),
       phaseEndDateChanges,
@@ -155,6 +163,39 @@ export const updateDecisionInstance = async ({
 
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
+    const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
+
+    // Rows are the source of truth; a decision that has none converts here.
+    const currentPhases = await ensurePhaseRows({
+      db: tx,
+      processInstanceId: instanceId,
+      phases:
+        (locked.instanceData as DecisionInstanceData | null)?.phases ?? [],
+    });
+
+    const phaseUpdate = hasPhaseUpdates
+      ? getUpdatedInstanceData({
+          existing: {
+            ...(instanceDataUpdate?.instanceData ?? existingInstanceData),
+            phases: currentPhases,
+          },
+          update: { phases },
+        })
+      : undefined;
+
+    if (phaseUpdate) {
+      phaseEndDateChanges.push(...phaseUpdate.phaseEndDateChanges);
+
+      await reconcilePhaseRows({
+        db: tx,
+        processInstanceId: instanceId,
+        phases: phaseUpdate.instanceData.phases,
+      });
+
+      // The blob mirrors the rows for the readers still on it.
+      updateData.instanceData = phaseUpdate.instanceData;
+    }
+
     // Update the instance
     const [updatedInstance] = await tx
       .update(processInstances)
@@ -179,7 +220,7 @@ export const updateDecisionInstance = async ({
       updatedInstance,
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
-      phasesChanged: phases !== undefined && phases.length > 0,
+      phasesChanged: hasPhaseUpdates,
     });
   });
 
