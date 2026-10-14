@@ -36,7 +36,6 @@ export async function translatePost({
       content: true,
       profileId: true,
       parentPostId: true,
-      rootPostId: true,
     },
     with: { postsToProfiles: { columns: { profileId: true } } },
   });

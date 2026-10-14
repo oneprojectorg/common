@@ -210,33 +210,19 @@ const assertOnWalledGarden = async ({
   }
 };
 
-const getOrgFeedThreadProfileIds = async (rootPostId: string) => {
+const getOrgProfileIds = async (postId: string) => {
   const links = await db.query.postsToOrganizations.findMany({
-    where: { postId: rootPostId },
+    where: { postId },
     columns: {},
     with: { organization: { columns: { profileId: true } } },
   });
   return links.map(({ organization }) => organization.profileId);
 };
 
-// Comments written before `rootPostId` existed have it null; threads are at
-// most a post, a comment and a reply deep.
-const getThreadRootPostId = async (post: {
-  id: string;
-  parentPostId: string | null;
-  rootPostId: string | null;
-}) => {
-  if (post.rootPostId || !post.parentPostId) {
-    return post.rootPostId ?? post.id;
-  }
-  const parent = await db.query.posts.findFirst({
-    where: { id: post.parentPostId },
-    columns: { id: true, parentPostId: true, rootPostId: true },
-  });
-  return parent?.rootPostId ?? parent?.parentPostId ?? post.parentPostId;
-};
-
-/** Asserts READ access to a decision, proposal or org-feed post and returns the profiles whose admins moderate it. */
+/**
+ * Asserts READ access to a post and returns the profiles whose admins moderate it.
+ * A post off any decision or proposal is an org post, open to the whole network.
+ */
 export const assertPostReadAccessForPost = async ({
   user,
   post,
@@ -245,7 +231,6 @@ export const assertPostReadAccessForPost = async ({
   post: {
     id: string;
     parentPostId: string | null;
-    rootPostId: string | null;
     postsToProfiles: { profileId: string }[];
   };
 }): Promise<{ moderationProfileIds: string[] }> => {
@@ -262,16 +247,13 @@ export const assertPostReadAccessForPost = async ({
     };
   }
 
-  const orgProfileIds = await getOrgFeedThreadProfileIds(
-    await getThreadRootPostId(post),
-  );
-  if (orgProfileIds.length === 0) {
-    throw new UnauthorizedError(READ_DENIED);
-  }
-
   await assertOnWalledGarden({ user, deniedMessage: READ_DENIED });
 
-  return { moderationProfileIds: post.parentPostId ? [] : orgProfileIds };
+  return {
+    moderationProfileIds: post.parentPostId
+      ? []
+      : await getOrgProfileIds(post.id),
+  };
 };
 
 // Asserts a caller's WRITE access for a new post, dispatching on the
@@ -302,7 +284,7 @@ export const assertPostWriteAccess = async ({
     if (!rootPostId) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    const orgProfileIds = await getOrgFeedThreadProfileIds(rootPostId);
+    const orgProfileIds = await getOrgProfileIds(rootPostId);
     if (orgProfileIds.length === 0) {
       throw new UnauthorizedError(WRITE_DENIED);
     }

@@ -10,7 +10,7 @@ import {
   moderationFlags,
   posts,
 } from '@op/db/schema';
-import { eq, inArray, like } from 'drizzle-orm';
+import { eq, like } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -373,55 +373,6 @@ describe('translation.translatePost', () => {
     expect(result.content).toBe('[ES] Count me in for the festival.');
   });
 
-  it('translates a legacy comment on an org-feed post that has no rootPostId', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, feedPost } = await createFeedPost(
-      testData,
-      onTestFinished,
-      'Feed post with a legacy reply thread.',
-    );
-
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [],
-    });
-    const memberCaller = await createAuthenticatedCaller(member.email);
-    const comment = await memberCaller.posts.createPost({
-      content: 'A comment from before threads pinned their root.',
-      parentPostId: feedPost.id,
-    });
-    const reply = await memberCaller.posts.createPost({
-      content: 'A reply from before threads pinned their root.',
-      parentPostId: comment.id,
-    });
-    onTestFinished(async () => {
-      await db
-        .delete(contentTranslations)
-        .where(like(contentTranslations.contentKey, `post:${reply.id}:%`));
-    });
-
-    // Rows written before `rootPostId` existed were never backfilled.
-    await db
-      .update(posts)
-      .set({ rootPostId: null })
-      .where(inArray(posts.id, [comment.id, reply.id]));
-
-    const reader = await testData.createDecisionSetup({ instanceCount: 0 });
-    const readerCaller = await createAuthenticatedCaller(reader.userEmail);
-
-    const result = await readerCaller.translation.translatePost({
-      postId: reply.id,
-      targetLocale: 'es',
-    });
-
-    expect(result.content).toBe(
-      '[ES] A reply from before threads pinned their root.',
-    );
-  });
-
   it('rejects a visitor or non-network caller on an org-feed post', async ({
     task,
     onTestFinished,
@@ -451,33 +402,6 @@ describe('translation.translatePost', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
-    expect(mockTranslateText).not.toHaveBeenCalled();
-  });
-
-  it('rejects a post linked to neither a profile nor an organization', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-    const [orphan] = await db
-      .insert(posts)
-      .values({ content: 'Unlinked post.' })
-      .returning({ id: posts.id });
-    if (!orphan) {
-      throw new Error('Failed to insert unlinked post');
-    }
-    onTestFinished(async () => {
-      await db.delete(posts).where(eq(posts.id, orphan.id));
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    await expect(
-      caller.translation.translatePost({
-        postId: orphan.id,
-        targetLocale: 'es',
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
     expect(mockTranslateText).not.toHaveBeenCalled();
   });
 
