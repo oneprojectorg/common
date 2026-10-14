@@ -488,7 +488,6 @@ export const PostItem = ({
   );
 };
 
-/** The post's text and media, with its own "See translation" link. */
 const PostBody = ({ post }: { post: Post }) => {
   const content = post.content ?? '';
   const translation = usePostTranslation({ postId: post.id, content });

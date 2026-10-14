@@ -28,7 +28,6 @@ export const useTranslateLink = <T>({
   request,
 }: {
   detectionText: string;
-  /** Off skips detection and hides the link, e.g. before the object is known. */
   enabled?: boolean;
   request: (targetLocale: SupportedLocale) => Promise<T | undefined>;
 }): TranslateLinkState & { translation: T | undefined } => {

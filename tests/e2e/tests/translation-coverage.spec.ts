@@ -903,7 +903,6 @@ test.describe('UGC translation coverage', () => {
       timeout: PAGE_READY_TIMEOUT,
     });
 
-    // The feed's only post is the Spanish one, so it owns the only link.
     await expect(
       page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toHaveCount(1);
@@ -944,7 +943,6 @@ test.describe('UGC translation coverage', () => {
       timeout: PAGE_READY_TIMEOUT,
     });
 
-    // The post at the top and the comment under it each carry their own link.
     await expect(
       page.getByRole('button', { name: SEE_TRANSLATION }),
     ).toHaveCount(2);

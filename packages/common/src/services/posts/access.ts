@@ -114,7 +114,7 @@ export const assertPostReadAccess = async ({
   }
 };
 
-/** A flagged post is NotFound to everyone but its author and the admins of every profile that moderates it. */
+/** A flagged post is NotFound to everyone but its author and its moderators. */
 export const assertCanReadFlaggedPost = async ({
   post,
   user,
@@ -136,7 +136,7 @@ export const assertCanReadFlaggedPost = async ({
       getProfileAccessRolesWithOrgFallback({ user: accessUser, profileId }),
     ),
   );
-  // No governing profile means no moderator, not a vacuous pass.
+  // `[].every` is true, so an empty list must not grant moderator standing.
   const isModerator =
     moderationRoles.length > 0 &&
     moderationRoles.every((roles) =>
@@ -210,9 +210,6 @@ const assertOnWalledGarden = async ({
   }
 };
 
-// The profiles of the orgs an org-feed thread is posted to, found through its
-// root post's `postsToOrganizations` links. Empty when the thread is not on any
-// org's feed.
 const getOrgFeedThreadProfileIds = async (rootPostId: string) => {
   const links = await db.query.postsToOrganizations.findMany({
     where: { postId: rootPostId },
@@ -222,54 +219,24 @@ const getOrgFeedThreadProfileIds = async (rootPostId: string) => {
   return links.map(({ organization }) => organization.profileId);
 };
 
-// Comments written before `rootPostId` existed have it null, so walk their
-// parents up to the thread's top-level post. Threads are at most a few levels
-// deep; the cap only guards against a malformed parent cycle.
-const MAX_THREAD_DEPTH = 10;
-
+// Comments written before `rootPostId` existed have it null; threads are at
+// most a post, a comment and a reply deep.
 const getThreadRootPostId = async (post: {
   id: string;
   parentPostId: string | null;
   rootPostId: string | null;
 }) => {
-  let current = post;
-  for (let depth = 0; depth < MAX_THREAD_DEPTH; depth++) {
-    if (current.rootPostId) {
-      return current.rootPostId;
-    }
-    if (!current.parentPostId) {
-      return current.id;
-    }
-    const parent = await db.query.posts.findFirst({
-      where: { id: current.parentPostId },
-      columns: { id: true, parentPostId: true, rootPostId: true },
-    });
-    if (!parent) {
-      // Parent links cascade on delete, so this means the rows disagree.
-      logger.warn('Post parent is missing; treating post as thread root', {
-        postId: current.id,
-      });
-      return current.id;
-    }
-    current = parent;
+  if (post.rootPostId || !post.parentPostId) {
+    return post.rootPostId ?? post.id;
   }
-  logger.warn('Post thread exceeds max depth; treating post as thread root', {
-    postId: post.id,
-    maxDepth: MAX_THREAD_DEPTH,
+  const parent = await db.query.posts.findFirst({
+    where: { id: post.parentPostId },
+    columns: { id: true, parentPostId: true, rootPostId: true },
   });
-  return current.id;
+  return parent?.rootPostId ?? parent?.parentPostId ?? post.parentPostId;
 };
 
-/**
- * Asserts a caller's READ access to one post and returns the profiles whose
- * admins moderate it. A post on a decision or proposal is gated by those
- * profiles. A post on neither must be on an org's feed, which is open to the
- * whole walled garden, the same as the feed's own reads.
- *
- * An org-feed post is moderated by its orgs' admins, as getPost does. A
- * comment under one has no moderators, so a flag hides it from everyone but
- * its author.
- */
+/** Asserts READ access to a decision, proposal or org-feed post and returns the profiles whose admins moderate it. */
 export const assertPostReadAccessForPost = async ({
   user,
   post,

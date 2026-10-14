@@ -67,7 +67,6 @@ async function createProposalComment(
   return { setup, proposal, comment };
 }
 
-/** An org-feed post (linked via `postsToOrganizations`) by the org's admin. */
 async function createFeedPost(
   testData: TestDecisionsDataManager,
   onTestFinished: (fn: () => Promise<void>) => void,
@@ -80,8 +79,7 @@ async function createFeedPost(
     content,
   });
 
-  // Feed posts carry no author profile, so they escape the data manager's
-  // profile-cascade cleanup — delete the row (and its comments) directly.
+  // Feed posts have no author profile, so the data manager can't cascade-delete them.
   onTestFinished(async () => {
     await db.delete(posts).where(eq(posts.id, feedPost.id));
     await db
@@ -327,7 +325,6 @@ describe('translation.translatePost', () => {
       'Our harvest festival is this weekend.',
     );
 
-    // A network user from an unrelated org — the feed is open to them.
     const reader = await testData.createDecisionSetup({ instanceCount: 0 });
     const readerCaller = await createAuthenticatedCaller(reader.userEmail);
 
@@ -540,8 +537,6 @@ describe('translation.translatePost', () => {
     });
     await flagPost(onTestFinished, comment.id);
 
-    // Flagged comments are hidden from the thread for everyone but their
-    // author, org admins included.
     await expect(
       adminCaller.translation.translatePost({
         postId: comment.id,

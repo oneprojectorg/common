@@ -46,7 +46,7 @@ export async function translatePost({
   }
 
   const { moderationProfileIds } = await assertPostReadAccessForPost({
-    user: user ? { id: user.id } : undefined,
+    user,
     post,
   });
 

@@ -30,7 +30,6 @@ export const baseLanguage = (code: string): string =>
  * isn't one we support.
  */
 export const detectLanguages = (text: string): string[] => {
-  // A URL is not written in any language, but its path reads as one to franc.
   const trimmed = extractUrls(text)
     .reduce((prose, url) => prose.replace(url, ' '), text)
     .trim();

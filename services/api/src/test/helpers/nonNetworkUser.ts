@@ -4,11 +4,7 @@ import { randomUUID } from 'crypto';
 
 import { createTestUser } from '../supabase-utils';
 
-/**
- * A confirmed, signed-in user with a non-network email — i.e. NOT in the
- * walled garden (no allowedEmailDomains match, no allow-list entry). Cleanup
- * is registered on `testData`. Returns the user's email.
- */
+/** Creates a confirmed user outside the walled garden and returns their email. */
 export const createNonNetworkUser = async (
   testData: TestDecisionsDataManager,
 ) => {
