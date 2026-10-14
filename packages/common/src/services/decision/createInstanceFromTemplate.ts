@@ -85,7 +85,7 @@ export const createDecisionInstance = async ({
       await insertPhase({
         tx,
         processInstanceId: newInstance.id,
-        name: phaseName ?? phase.phaseId,
+        name: phaseName?.trim() || phase.phaseId,
         sortOrder,
         data,
       });
