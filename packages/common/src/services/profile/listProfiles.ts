@@ -1,6 +1,13 @@
 import { match } from '@op/core';
-import { and, db, inArray, ne, sql } from '@op/db/client';
-import { EntityType, locations, profiles } from '@op/db/schema';
+import { and, db, eq, inArray, ne, sql } from '@op/db/client';
+import {
+  EntityType,
+  locations,
+  organizations,
+  organizationsStrategies,
+  organizationsTerms,
+  profiles,
+} from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import {
@@ -17,12 +24,18 @@ export const listProfiles = async ({
   orderBy = 'updatedAt',
   dir = 'desc',
   types,
+  focusAreaIds,
+  strategyIds,
 }: {
   cursor?: string | null;
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
   types?: EntityType[];
+  /** Organizations tagged with any of these focus-area taxonomy terms. */
+  focusAreaIds?: string[];
+  /** Organizations tagged with any of these strategy taxonomy terms. */
+  strategyIds?: string[];
 }) => {
   try {
     const orderByColumn = match(orderBy, {
@@ -31,11 +44,12 @@ export const listProfiles = async ({
       _: profiles.updatedAt,
     });
 
-    // Build cursor condition for pagination
+    // `id` breaks ties for every ordering, in both ORDER BY and the cursor:
+    // equal names or timestamps otherwise repeat or skip rows across pages.
     const cursorCondition = cursor
       ? getCursorCondition({
           column: orderByColumn,
-          tieBreakerColumn: orderBy === 'name' ? profiles.id : undefined,
+          tieBreakerColumn: profiles.id,
           cursor: decodeCursor<{ value: string | Date; id?: string }>(cursor),
           direction: dir,
         })
@@ -45,10 +59,43 @@ export const listProfiles = async ({
     const typeCondition =
       types && types.length > 0 ? inArray(profiles.type, types) : undefined;
 
+    // Term filters match an organization's profile. Each is "any of these
+    // terms"; together they must both hold.
+    const focusAreaCondition = focusAreaIds?.length
+      ? inArray(
+          profiles.id,
+          db
+            .select({ profileId: organizations.profileId })
+            .from(organizations)
+            .innerJoin(
+              organizationsTerms,
+              eq(organizationsTerms.organizationId, organizations.id),
+            )
+            .where(inArray(organizationsTerms.taxonomyTermId, focusAreaIds)),
+        )
+      : undefined;
+    const strategyCondition = strategyIds?.length
+      ? inArray(
+          profiles.id,
+          db
+            .select({ profileId: organizations.profileId })
+            .from(organizations)
+            .innerJoin(
+              organizationsStrategies,
+              eq(organizationsStrategies.organizationId, organizations.id),
+            )
+            .where(
+              inArray(organizationsStrategies.taxonomyTermId, strategyIds),
+            ),
+        )
+      : undefined;
+
     // Listing has no access check, so phase names would leak across decisions.
     const whereClause = and(
       cursorCondition,
       typeCondition,
+      focusAreaCondition,
+      strategyCondition,
       ne(profiles.type, EntityType.PHASE),
     );
 
@@ -84,7 +131,9 @@ export const listProfiles = async ({
         },
       },
       orderBy: (_, { asc, desc }) =>
-        dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+        dir === 'asc'
+          ? [asc(orderByColumn), asc(profiles.id)]
+          : [desc(orderByColumn), desc(profiles.id)],
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
@@ -114,7 +163,7 @@ export const listProfiles = async ({
       hasMore && lastItem && cursorValue
         ? encodeCursor<{ value: string | Date; id?: string }>({
             value: cursorValue,
-            id: orderBy === 'name' ? lastItem.id : undefined,
+            id: lastItem.id,
           })
         : null;
 
