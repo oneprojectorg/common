@@ -415,7 +415,9 @@ export const resolveProposalListScope = async ({
         : phaseScope.buildNonDraftFilter(proposalsTable),
     )!;
 
-  const buildStatusAxisFilter = (
+  // Under "Not advanced", only rejected and left-behind rows; otherwise every
+  // row but the rejected ones, unless a status filter asks for them.
+  const buildRejectedAndLeftBehindFilter = (
     proposalsTable: typeof proposals,
   ): SQL | undefined => {
     if (input.notAdvanced) {
@@ -463,7 +465,7 @@ export const resolveProposalListScope = async ({
     // the explicit-scope one above) carries the `isNull(deletedAt)` filter,
     // so the outer query stays soft-delete-safe without its own check.
     const nonDraftScopeFilter = buildNonDraftScopeFilter(proposalsTable);
-    clause = and(clause, buildStatusAxisFilter(proposalsTable))!;
+    clause = and(clause, buildRejectedAndLeftBehindFilter(proposalsTable))!;
 
     if (skipAccessCheck) {
       // Trusted contexts get all non-draft proposals in scope.
