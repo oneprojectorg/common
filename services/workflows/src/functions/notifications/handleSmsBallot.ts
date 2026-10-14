@@ -158,6 +158,7 @@ export const handleSmsBallot = inngest.createFunction(
     const to = parsePhoneNumber(phone);
     const { decisionName, maxVotesPerMember } = context;
     let proposals = context.proposals;
+    const yesTarget = proposals.length === 1 ? proposals[0] : undefined;
 
     let stopped: SmsFailureReason | null = null;
 
@@ -372,9 +373,8 @@ export const handleSmsBallot = inngest.createFunction(
 
       switch (keyword) {
         case 'yes': {
-          const only = proposals.length === 1 ? proposals[0] : undefined;
-          if (only && picks.length === 0) {
-            picks.push(only);
+          if (yesTarget && picks.length === 0) {
+            picks.push(yesTarget);
             if (await dropStalePicks(turn)) {
               continue;
             }
