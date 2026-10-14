@@ -8,6 +8,8 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
+import { lockProcessInstance } from './lockProcessInstance';
+import { ensurePhaseRows } from './phaseRows';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -90,15 +92,7 @@ export async function advancePhase(
 
   // Lock the instance row so a concurrent submitManualSelection can't
   // attach proposals to the inbound transition while we're advancing out.
-  const [lockedInstance] = await db
-    .select({
-      currentStateId: processInstances.currentStateId,
-      status: processInstances.status,
-    })
-    .from(processInstances)
-    .where(eq(processInstances.id, instanceId))
-    .limit(1)
-    .for('update');
+  const lockedInstance = await lockProcessInstance({ db, instanceId });
 
   if (
     !lockedInstance ||
@@ -107,6 +101,15 @@ export async function advancePhase(
   ) {
     return { conflict: true };
   }
+
+  // Rows are the source of truth; a decision that has none converts here.
+  await ensurePhaseRows({
+    db,
+    processInstanceId: instanceId,
+    phases:
+      (lockedInstance.instanceData as DecisionInstanceData | null)?.phases ??
+      [],
+  });
 
   const selectionPipeline = departingPhase.selectionPipeline;
 

@@ -107,6 +107,27 @@ describe.concurrent('advancePhase', () => {
     expect(history!.triggeredByProfileId).toBeNull();
   });
 
+  it('mints the phase rows of a decision that has none when it advances', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const loaded = await loadPublishedInstance(testData);
+    await testData.removePhaseRows(loaded.dbInstance.id);
+
+    const result = await callAdvancePhase(loaded, {
+      fromPhaseId: 'initial',
+      toPhaseId: 'final',
+    });
+    expect(result.conflict).toBe(false);
+
+    const rows = await db.query.processPhases.findMany({
+      where: { processInstanceId: loaded.dbInstance.id },
+      columns: { sortOrder: true },
+    });
+    expect(rows.map((row) => row.sortOrder).sort()).toEqual([0, 1]);
+  });
+
   it('returns conflict when fromPhaseId does not match current state', async ({
     task,
     onTestFinished,
