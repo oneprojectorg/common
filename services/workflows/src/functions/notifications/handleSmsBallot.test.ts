@@ -1,10 +1,15 @@
 import { InngestTestEngine } from '@inngest/test';
-import { type PhoneNumber, parsePhoneNumber } from '@op/common';
+import {
+  type PhoneNumber,
+  createAutomatedFlag,
+  parsePhoneNumber,
+} from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
+  moderationFlags,
   profiles,
   proposals as proposalsTable,
 } from '@op/db/schema';
@@ -36,6 +41,7 @@ const NUMBERS = {
   deletedDecision: '+15005550085',
   turnLimit: '+15005550086',
   stalePick: '+15005550087',
+  flaggedYes: '+15005550088',
 } as const;
 
 const PROPOSALS = [
@@ -417,26 +423,27 @@ describe('handleSmsBallot against the database', () => {
     expect(await readVotes(instanceId)).toEqual([]);
   });
 
-  it('given the decision is deleted while the ballot is open, when the voter submits, then they are told the ballot could not be recorded', async ({
+  it('given the decision is deleted between the ballot check and the submit (the check is stubbed: nothing else can slip a deletion into that gap), when the voter submits, then they are told the ballot could not be recorded', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsVotingFixture(task.id, onTestFinished);
-    const { phone, voter, instanceId, instanceProfileId } = await seed(
-      fixture,
-      NUMBERS.deletedDecision,
-      { maxVotesPerMember: 1, proposals: [PROPOSALS[0]!] },
-    );
+    const { phone, voter, instanceId, instanceProfileId, proposals } =
+      await seed(fixture, NUMBERS.deletedDecision, {
+        maxVotesPerMember: 1,
+        proposals: [PROPOSALS[0]!],
+      });
     const t = new InngestTestEngine({ function: handleSmsBallot });
 
     const { result } = await t.execute({
       events: [ballotRequest(instanceId, voter.authUserId, phone)],
       steps: [
+        reply(phone, 1, { keyword: 'yes' }),
         {
-          id: 'wait-for-reply-1',
+          id: 'check-picks-1',
           handler: async () => {
             await db.delete(profiles).where(eq(profiles.id, instanceProfileId));
-            return reply(phone, 1, { keyword: 'yes' }).handler();
+            return [proposals[0]!.id];
           },
         },
       ],
@@ -510,6 +517,47 @@ describe('handleSmsBallot against the database', () => {
     expect(
       (await readVotes(instanceId)).map((vote) => vote.proposalId),
     ).toEqual([proposals[1]!.id]);
+  });
+
+  it('given the only proposal is flagged for moderation while the ballot is open, when the voter replies YES, then no vote is recorded and they are told it left the ballot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId, proposals } = await seed(
+      fixture,
+      NUMBERS.flaggedYes,
+      { maxVotesPerMember: 1, proposals: [PROPOSALS[0]!] },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        {
+          id: 'wait-for-reply-1',
+          handler: async () => {
+            const { flag } = await createAutomatedFlag({
+              itemType: 'proposal',
+              itemId: proposals[0]!.id,
+            });
+            onTestFinished(async () => {
+              await db
+                .delete(moderationFlags)
+                .where(eq(moderationFlags.id, flag.id));
+            });
+            return reply(phone, 1, { keyword: 'yes' }).handler();
+          },
+        },
+        silence(2),
+      ],
+    });
+
+    expect(result).toMatchObject({ message: 'ballot expired', picks: 0 });
+    expect(bodies()[1]).toBe(
+      '"Fifth Ave crosswalk lighting" is no longer on the ballot and was removed. Your ballot is empty. Text a code to add a pick, or PROPOSALS to browse.',
+    );
+    expect(await readVotes(instanceId)).toEqual([]);
   });
 
   it('given the voter never replies, then no vote is recorded and they are told the ballot was not submitted', async ({

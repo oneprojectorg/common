@@ -130,7 +130,58 @@ describe.concurrent('listSmsBallotProposals', () => {
     expect(rows.map((row) => row.proposalId)).toEqual([clean!.id]);
   });
 
-  it('given a selection phase advanced two of three proposals into voting, then only the advanced proposals get ballot codes', async ({
+  it('given the first of two advanced proposals is later rejected (rejected directly: rejection needs an admin session), then the other keeps its code', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: shortlistSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    const first = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `First ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const second = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Second ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    expect(advanced).toMatchObject({ conflict: false });
+    const before = await listSmsBallotProposals({
+      processInstanceId: instanceId,
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.REJECTED })
+      .where(eq(proposals.id, first.id));
+
+    const after = await listSmsBallotProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(before.map((row) => [row.code, row.proposalId])).toEqual([
+      ['101', first.id],
+      ['102', second.id],
+    ]);
+    expect(after.map((row) => [row.code, row.proposalId])).toEqual([
+      ['102', second.id],
+    ]);
+  });
+
+  it('given a selection phase advanced two of three proposals into voting, then only the advanced proposals are listed, each under the code of its creation order', async ({
     task,
     onTestFinished,
   }) => {
@@ -168,7 +219,7 @@ describe.concurrent('listSmsBallotProposals', () => {
     expect(submittedIds).toEqual(
       expect.arrayContaining(rows.map((row) => row.proposalId)),
     );
-    expect(rows.map((row) => row.code)).toEqual(['101', '102']);
+    expect(rows.map((row) => row.code)).toEqual(['102', '103']);
   });
 
   it('given a legacy snapshot that stores the budget as a numeric string (planted directly, no service writes that shape), then the proposal carries that amount in the default currency', async ({

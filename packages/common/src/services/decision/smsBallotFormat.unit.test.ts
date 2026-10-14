@@ -190,6 +190,22 @@ describe('formatSmsPickConfirmation', () => {
 });
 
 describe('formatSmsBallot', () => {
+  it('given ten picks with titles as long as a title can be, then the body fits one text and still asks for SUBMIT', () => {
+    const picks = Array.from({ length: 10 }, (_, i) =>
+      proposal(String(101 + i), `Proposal ${i + 1} `.padEnd(256, 'x'), 10_000),
+    );
+
+    const body = formatSmsBallot({ decisionName: 'Park', picks });
+
+    expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+    expect(body.split('\n')).toHaveLength(12);
+    expect(
+      body.endsWith(
+        'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
+      ),
+    ).toBe(true);
+  });
+
   it('lists picks in order with their cost and asks for SUBMIT', () => {
     expect(
       formatSmsBallot({

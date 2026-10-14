@@ -276,6 +276,42 @@ export const handleSmsBallot = inngest.createFunction(
         .join(' ');
     };
 
+    const dropStalePicks = async (turn: number): Promise<boolean> => {
+      const onBallot = await step.run(`check-picks-${turn}`, async () => {
+        const current = await listSmsBallotProposals({ processInstanceId });
+        return current.map((proposal) => proposal.proposalId);
+      });
+      const dropped = picks.filter(
+        (pick) => !onBallot.includes(pick.proposalId),
+      );
+      if (dropped.length === 0) {
+        return false;
+      }
+      picks.splice(
+        0,
+        picks.length,
+        ...picks.filter((pick) => onBallot.includes(pick.proposalId)),
+      );
+      await text(
+        `reply-${turn}`,
+        [
+          ...dropped.map(
+            (pick) =>
+              `"${pick.title}" is no longer on the ballot and was removed.`,
+          ),
+          picks.length === 0
+            ? formatSmsBallot({ decisionName, picks })
+            : [
+                formatSmsPicksLeft(picks.length, maxVotesPerMember),
+                'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
+              ]
+                .filter(Boolean)
+                .join(' '),
+        ].join(' '),
+      );
+      return true;
+    };
+
     const expire = async (message: 'ballot expired' | 'ballot abandoned') => {
       await text(
         'send-ballot-expired',
@@ -318,6 +354,9 @@ export const handleSmsBallot = inngest.createFunction(
           const only = proposals.length === 1 ? proposals[0] : undefined;
           if (only && picks.length === 0) {
             picks.push(only);
+            if (await dropStalePicks(turn)) {
+              continue;
+            }
             return submitBallot();
           }
           await say(GUIDANCE);
@@ -332,35 +371,7 @@ export const handleSmsBallot = inngest.createFunction(
             await say(formatSmsBallot({ decisionName, picks }));
             continue;
           }
-          const onBallot = await step.run(`check-picks-${turn}`, async () => {
-            const current = await listSmsBallotProposals({ processInstanceId });
-            return current.map((proposal) => proposal.proposalId);
-          });
-          const dropped = picks.filter(
-            (pick) => !onBallot.includes(pick.proposalId),
-          );
-          if (dropped.length > 0) {
-            picks.splice(
-              0,
-              picks.length,
-              ...picks.filter((pick) => onBallot.includes(pick.proposalId)),
-            );
-            await say(
-              [
-                ...dropped.map(
-                  (pick) =>
-                    `"${pick.title}" is no longer on the ballot and was removed.`,
-                ),
-                picks.length === 0
-                  ? formatSmsBallot({ decisionName, picks })
-                  : [
-                      formatSmsPicksLeft(picks.length, maxVotesPerMember),
-                      'Reply SUBMIT to cast your ballot, or REMOVE plus a code to change it.',
-                    ]
-                      .filter(Boolean)
-                      .join(' '),
-              ].join(' '),
-            );
+          if (await dropStalePicks(turn)) {
             continue;
           }
           return submitBallot();

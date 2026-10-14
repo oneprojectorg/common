@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatSmsDecisionList } from './formatSmsDecisionList';
+import { SMS_MAX_BODY_LENGTH } from './smsText';
 
 describe('formatSmsDecisionList', () => {
   it('given no decisions, when formatted, then it says so', () => {
@@ -22,6 +23,20 @@ describe('formatSmsDecisionList', () => {
         'Bike Lanes - VOTE bike-lanes',
       ].join('\n'),
     );
+  });
+
+  it('given ten decisions with names as long as a name can be, then the body fits one text and every line keeps its slug', () => {
+    const decisions = Array.from({ length: 10 }, (_, i) => ({
+      name: `Decision ${i + 1} `.padEnd(256, 'x'),
+      slug: `decision-${i + 1}`,
+      votingOpen: i % 2 === 0,
+    }));
+
+    const body = formatSmsDecisionList(decisions);
+
+    expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+    expect(body.split('\n')).toHaveLength(11);
+    expect(body).toContain('VOTE decision-10');
   });
 
   it('given more decisions than fit, when formatted, then the first ten are listed and the rest are counted', () => {

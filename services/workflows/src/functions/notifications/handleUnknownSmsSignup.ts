@@ -154,6 +154,13 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'code send rejected', reason: codeRequest.reason };
     }
 
+    const codeSentAt = await step.run('read-code-sent-at', async () => {
+      const attempt = await getPhoneSignupState({ phone: to });
+      return attempt.status === 'attempt_in_progress'
+        ? attempt.codeSentAt.getTime()
+        : Date.now();
+    });
+
     const consentResult = await sendText(
       'send-consent-request',
       'Consent request',
@@ -164,7 +171,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       logger.warn('Consent request permanently rejected, aborting signup', {
         reason: consentResult.reason,
       });
-      const discard = await discardAbandonedSignup(Date.now());
+      const discard = await discardAbandonedSignup(codeSentAt);
       return {
         message: 'consent send rejected',
         reason: consentResult.reason,
@@ -224,9 +231,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     if (outcome.status === 'timed_out') {
       logger.info('No confirmation reply received in time');
-      const discard = await discardAbandonedSignup(
-        replyDeadline - REPLY_WINDOW_MS,
-      );
+      const discard = await discardAbandonedSignup(codeSentAt);
       return {
         message: 'timed out waiting for confirmation',
         discard: discard.status,
@@ -237,9 +242,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       logger.info('No valid signup code in the allowed replies', {
         attempts: MAX_REPLY_ATTEMPTS,
       });
-      const discard = await discardAbandonedSignup(
-        replyDeadline - REPLY_WINDOW_MS,
-      );
+      const discard = await discardAbandonedSignup(codeSentAt);
       return {
         message: 'code not confirmed',
         attempts: MAX_REPLY_ATTEMPTS,
