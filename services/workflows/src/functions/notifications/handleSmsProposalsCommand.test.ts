@@ -96,7 +96,7 @@ describe('handleSmsProposalsCommand against the database', () => {
         '105 Proposal 5 $50k',
         '106 Proposal 6 $60k',
         '107 Proposal 7 $70k',
-        'Text a code to add it to your ballot, or INFO plus a code.',
+        `Text VOTE ${slug} to start your ballot, or INFO ${slug} plus a code.`,
       ].join('\n'),
     ]);
   });

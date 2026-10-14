@@ -38,9 +38,11 @@ const withCost = (title: string, cost: number | null, currency: string) =>
 export const formatSmsProposalPages = ({
   decisionName,
   proposals,
+  slug,
 }: {
   decisionName: string;
   proposals: ReadonlyArray<SmsBallotProposal>;
+  slug?: string;
 }): string[] =>
   splitSmsBody({
     heading: `"${clipSmsText(decisionName, SMS_LIST_TITLE_LENGTH)}" has ${proposals.length} proposals:`,
@@ -53,12 +55,21 @@ export const formatSmsProposalPages = ({
         .filter(Boolean)
         .join(' '),
     ),
-    footer: 'Text a code to add it to your ballot, or INFO plus a code.',
+    footer:
+      slug === undefined
+        ? 'Text a code to add it to your ballot, or INFO plus a code.'
+        : `Text VOTE ${slug} to start your ballot, or INFO ${slug} plus a code.`,
   });
 
-export const formatSmsProposalInfo = (proposal: SmsBallotProposal): string => {
+export const formatSmsProposalInfo = (
+  proposal: SmsBallotProposal,
+  { slug }: { slug?: string } = {},
+): string => {
   const heading = `${proposal.code}: ${withCost(proposal.title, proposal.cost, proposal.currency)}.`;
-  const action = `Text ${proposal.code} to add it to your ballot.`;
+  const action =
+    slug === undefined
+      ? `Text ${proposal.code} to add it to your ballot.`
+      : `Text VOTE ${slug} to start your ballot.`;
   const room = SMS_MAX_BODY_LENGTH - heading.length - action.length - 2;
   const summary =
     proposal.summary && room > 1 ? clipSmsText(proposal.summary, room) : null;
