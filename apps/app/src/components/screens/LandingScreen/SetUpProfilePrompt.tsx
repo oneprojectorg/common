@@ -10,9 +10,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileModal } from '@/components/Profile/ProfileDetails/UpdateProfile/UpdateProfileModal';
 
-const dismissKey = (profileId: string) =>
-  `home:setUpProfilePromptDismissed:${profileId}`;
-
 /**
  * Nudges a person whose profile is still bare — no avatar and no headline —
  * to fill it in (Figma 21477:62250). Dismissal is remembered per profile in
@@ -42,7 +39,8 @@ export const SetUpProfilePrompt = () => {
 
   const isBare = profile && !profile.avatarImage && !profile.bio;
 
-  if (!profile || !isBare || isDismissed !== false) {
+  // An avatar upload un-bares the profile mid-edit; unmounting would drop edits
+  if (!profile || isDismissed !== false || (!isBare && !isEditing)) {
     return null;
   }
 
@@ -80,3 +78,6 @@ export const SetUpProfilePrompt = () => {
     </section>
   );
 };
+
+const dismissKey = (profileId: string) =>
+  `home:setUpProfilePromptDismissed:${profileId}`;

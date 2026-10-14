@@ -743,6 +743,7 @@
     "setUpProfileAction": "Configurer le profil",
     "dismissSetUpProfileLabel": "Ignorer",
     "seeLessAction": "Voir moins",
+    "visibleDecisionsCount": "{count, plural, one {# décision affichée} other {# décisions affichées}}",
     "editProfileAction": "Modifier le profil",
     "profilesMenuHeading": "Profils",
     "activeProfileLabel": "Actif",

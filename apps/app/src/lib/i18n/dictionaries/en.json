@@ -743,6 +743,7 @@
     "setUpProfileAction": "Set up profile",
     "dismissSetUpProfileLabel": "Dismiss",
     "seeLessAction": "Show less",
+    "visibleDecisionsCount": "{count, plural, one {Showing # decision} other {Showing # decisions}}",
     "editProfileAction": "Edit Profile",
     "profilesMenuHeading": "Profiles",
     "activeProfileLabel": "Active",

@@ -743,6 +743,7 @@
     "setUpProfileAction": "Diyaari astaanta",
     "dismissSetUpProfileLabel": "Iska dhaaf",
     "seeLessAction": "Eeg wax yar",
+    "visibleDecisionsCount": "{count, plural, one {Waxaa la muujinayaa # go’aan} other {Waxaa la muujinayaa # go’aanno}}",
     "editProfileAction": "Wax ka beddel astaanta",
     "profilesMenuHeading": "Astaamaha",
     "activeProfileLabel": "Firfircoon",
