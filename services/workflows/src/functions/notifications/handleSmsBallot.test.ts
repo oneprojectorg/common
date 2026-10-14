@@ -296,9 +296,7 @@ describe('handleSmsBallot against the database', () => {
 
     expect(result).toMatchObject({ message: 'ballot expired', picks: 0 });
     const [, page, info, list, expired] = bodies();
-    expect(page).toContain(
-      `"Park Funding ${NUMBERS.browse}" has 3 proposals:`,
-    );
+    expect(page).toContain(`"Park Funding ${NUMBERS.browse}" has 3 proposals:`);
     expect(page).toContain('101 Fifth Ave crosswalk lighting $85k');
     expect(page).toContain('102 Linden rec center evening hours $240k');
     expect(info).toBe(
