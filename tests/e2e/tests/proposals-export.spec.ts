@@ -321,11 +321,23 @@ test.describe('Proposals CSV export', () => {
       name: 'Export all',
     });
 
+    // Pending also renders disabled, so the button is only read once the
+    // rejected count has answered.
+    const rejectedCounted = () =>
+      authenticatedPage.waitForResponse(
+        (response) =>
+          response.url().includes('decision.listProposals') &&
+          decodeURIComponent(response.url()).includes('"status":"rejected"') &&
+          response.ok(),
+        { timeout: 30_000 },
+      );
+
     // A phase with nothing in it has nothing to export.
+    const emptyCounted = rejectedCounted();
     await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(exportButton).toBeVisible({ timeout: 30_000 });
+    await emptyCounted;
     await expect(exportButton).toBeDisabled();
 
     // The browse list leaves rejected rows out, so it still counts zero. The
@@ -339,9 +351,12 @@ test.describe('Proposals CSV export', () => {
       proposalData: { title: 'Rejected Proposal' },
     });
 
+    // Within the count's staleTime, so a cached answer from the first load
+    // would still pass as fresh.
+    const rejectedCountedAgain = rejectedCounted();
     await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
-
-    await expect(exportButton).toBeEnabled({ timeout: 30_000 });
+    await rejectedCountedAgain;
+    await expect(exportButton).toBeEnabled();
   });
 });
 
