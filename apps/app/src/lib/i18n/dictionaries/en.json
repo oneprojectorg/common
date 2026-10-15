@@ -1814,7 +1814,6 @@
       "pageTitle": "Manage {decisionName}",
       "underConstruction": "The new process admin is being built here.",
       "bannerTitle": "Try the new process admin",
-      "bannerDescription": "We're rebuilding how you set up and manage a process. Preview the new version for this process.",
       "bannerAction": "Open the new admin"
     }
   },

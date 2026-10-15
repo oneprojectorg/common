@@ -1814,7 +1814,6 @@
       "pageTitle": "{decisionName} kezelése",
       "underConstruction": "Itt készül az új folyamatkezelő felület.",
       "bannerTitle": "Próbálja ki az új folyamatkezelő felületet",
-      "bannerDescription": "Újraépítjük a folyamatok beállítását és kezelését. Nézze meg az új változatot ennél a folyamatnál.",
       "bannerAction": "Az új felület megnyitása"
     }
   },

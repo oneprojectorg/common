@@ -1814,7 +1814,6 @@
       "pageTitle": "Gerenciar {decisionName}",
       "underConstruction": "A nova administração do processo está sendo construída aqui.",
       "bannerTitle": "Experimente a nova administração do processo",
-      "bannerDescription": "Estamos reconstruindo a forma de configurar e gerenciar um processo. Veja a nova versão para este processo.",
       "bannerAction": "Abrir a nova administração"
     }
   },
