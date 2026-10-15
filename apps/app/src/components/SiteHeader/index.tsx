@@ -59,8 +59,7 @@ const HeaderActions = () => {
   return (
     <ClientOnly>
       {user && <CreateMenu />}
-      {/* Signed in, language lives in the Settings modal. */}
-      {!user && <LocaleChooser />}
+      <LocaleChooser />
       {user && (
         <ErrorBoundary
           fallback={
