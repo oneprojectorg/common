@@ -21,6 +21,7 @@ export const listSelectionCandidatesRouter = router({
     .query(async ({ ctx, input }) => {
       ctx.registerQueryChannels([
         Channels.decisionInstance(input.processInstanceId),
+        Channels.decisionProposals(input.processInstanceId),
       ]);
 
       return listSelectionCandidates({

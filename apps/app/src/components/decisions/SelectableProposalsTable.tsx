@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import {
@@ -14,6 +15,9 @@ import { screens } from '@op/styles/constants';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
+import { useProposalCardDialogs } from './ProposalCardDialogContext';
+import { ProposalOptionsMenu } from './ProposalOptionsMenu';
+import { buildMergeMenuItem } from './proposals/merge';
 import { AdvanceToggleButton } from './selection/AdvanceToggleButton';
 import { SelectionCard } from './selection/SelectionCard';
 import { SelectionCategoryChips } from './selection/SelectionCategoryChips';
@@ -41,6 +45,7 @@ export const SelectableProposalsTable = ({
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const selectedSet = new Set(selectedIds);
+  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
 
   if (isMobile) {
     return (
@@ -84,6 +89,13 @@ export const SelectableProposalsTable = ({
               {t('decisions.proposals.selectProposalLabel')}
             </span>
           </TableHead>
+          {mergeEnabled ? (
+            <TableHead className="w-10">
+              <span className="sr-only">
+                {t('decisions.proposals.proposalOptionsLabel')}
+              </span>
+            </TableHead>
+          ) : null}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -96,7 +108,7 @@ export const SelectableProposalsTable = ({
           const href = getProposalHref?.(proposal);
 
           return (
-            <TableRow key={proposal.id}>
+            <TableRow key={proposal.id} className="group">
               <TableCell>
                 <div className="flex flex-col">
                   {href ? (
@@ -147,11 +159,49 @@ export const SelectableProposalsTable = ({
                   className="ms-auto"
                 />
               </TableCell>
+              {mergeEnabled ? (
+                <TableCell>
+                  <ProposalRowMenu
+                    proposal={proposal}
+                    isSelected={isSelected}
+                  />
+                </TableCell>
+              ) : null}
             </TableRow>
           );
         })}
       </TableBody>
     </Table>
+  );
+};
+
+const ProposalRowMenu = ({
+  proposal,
+  isSelected,
+}: {
+  proposal: Proposal;
+  isSelected: boolean;
+}) => {
+  const t = useTranslations();
+  const { openMergeDialog } = useProposalCardDialogs();
+
+  return (
+    <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 has-aria-expanded:opacity-100">
+      <ProposalOptionsMenu
+        groups={[
+          [
+            // A merged proposal can't be advanced, so deselect it first.
+            buildMergeMenuItem({
+              isDisabled: isSelected,
+              mergeLabel: t('decisions.proposals.mergeProposalAction'),
+              onMerge: () => openMergeDialog(proposal),
+            }),
+          ],
+        ]}
+        label={t('decisions.proposals.proposalOptionsLabel')}
+        triggerProps={{ variant: 'ghost', size: 'icon-xs' }}
+      />
+    </div>
   );
 };
 
