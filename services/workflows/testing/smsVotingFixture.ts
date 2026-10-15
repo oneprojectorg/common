@@ -17,7 +17,13 @@ import {
   createTestAdminClient,
 } from '@op/common/testing/helpers';
 import { db, eq, inArray } from '@op/db/client';
-import { ProposalStatus, profiles, proposals, users } from '@op/db/schema';
+import {
+  ProposalStatus,
+  processInstances,
+  profiles,
+  proposals,
+  users,
+} from '@op/db/schema';
 import { DECISION_BITS, PERMISSIONS } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 
@@ -145,12 +151,14 @@ export class SmsVotingFixture {
     proposalTitles,
     name,
     currentPhaseId = VOTING_PHASE_ID,
+    firstCode,
   }: {
     owner: FixtureAccount;
     maxVotesPerMember: number;
     proposalTitles: Array<string | FixtureProposal>;
     name?: string;
     currentPhaseId?: string;
+    firstCode?: number;
   }) {
     const schema = votingSchema(maxVotesPerMember);
     const process = await createDecisionProcess({
@@ -167,6 +175,13 @@ export class SmsVotingFixture {
       grantAdminAccess: false,
     });
     this.profileIds.push(profileId);
+
+    if (firstCode !== undefined) {
+      await db
+        .update(processInstances)
+        .set({ nextShortCode: firstCode })
+        .where(eq(processInstances.id, instance.id));
+    }
 
     const created = [];
     for (const entry of proposalTitles) {

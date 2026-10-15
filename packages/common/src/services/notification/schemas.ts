@@ -1,4 +1,4 @@
-import { SMS_KEYWORDS, type SmsKeyword } from '@op/core/sms';
+import { SMS_KEYWORDS, SMS_PROPOSAL_CODE, type SmsKeyword } from '@op/core/sms';
 import { z } from 'zod';
 
 import { ValidationError } from '../../utils/error';
@@ -110,8 +110,10 @@ const trimTerminators = (value: string): string => {
   }
   return value.slice(0, end);
 };
-const PICK_CODES_PATTERN = /^\d{3,4}(?:[\s,]+\d{3,4})*[.!]?$/;
-const CODE_PATTERN = /\d{3,4}/g;
+const PICK_CODES_PATTERN = new RegExp(
+  `^${SMS_PROPOSAL_CODE}(?:[\\s,]+${SMS_PROPOSAL_CODE})*[.!]?$`,
+);
+const CODE_PATTERN = new RegExp(SMS_PROPOSAL_CODE, 'g');
 
 const noCommand: SmsCommand = { keyword: null, argument: null, codes: [] };
 
