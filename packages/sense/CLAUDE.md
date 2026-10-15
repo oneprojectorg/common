@@ -84,7 +84,9 @@ reimplement or work around any of it. These four are yours:
    a nameless button. Add `aria-label={t('Close')}`. This is the single most
    common defect in this codebase.
 2. **Label every input.** `Field` + `FieldLabel`, or `htmlFor` matching the
-   control's `id`. A placeholder is not a label.
+   control's `id`, where the design shows a label; `aria-label` where the field
+   stands in for its content (`EditableText`, a search box). A placeholder is
+   not a label.
 3. **Announce content that changes without a navigation.** Async results, live
    counts, validation errors, save states → `aria-live="polite"` on the region
    that updates.

@@ -38,6 +38,21 @@ export const Disabled: Story = {
   ),
 };
 
+// `unstyled`: no chrome, no resize grip and no type size, so the field takes
+// the type around it. One row, growing with the text.
+export const Unstyled: Story = {
+  render: () => (
+    <div className="max-w-sm font-serif text-headline font-light">
+      <Textarea
+        unstyled
+        rows={1}
+        aria-label="Title"
+        defaultValue="Reads as the heading it sits in"
+      />
+    </div>
+  ),
+};
+
 export const Invalid: Story = {
   render: () => (
     <Textarea

@@ -43,6 +43,7 @@
     "./Direction": "./src/components/ui/direction.tsx",
     "./Drawer": "./src/components/ui/drawer.tsx",
     "./DropdownMenu": "./src/components/ui/dropdown-menu.tsx",
+    "./EditableText": "./src/components/EditableText/index.tsx",
     "./Empty": "./src/components/ui/empty.tsx",
     "./FacePile": "./src/components/FacePile/index.tsx",
     "./Field": "./src/components/ui/field.tsx",
