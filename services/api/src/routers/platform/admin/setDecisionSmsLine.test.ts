@@ -115,7 +115,7 @@ describe.concurrent('platform.admin.setDecisionSmsLine', () => {
         instanceId: other.instance.id,
         phoneNumber: NUMBERS.taken,
       }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject({ cause: { name: 'ConflictError' } });
 
     const line = await db.query.decisionSmsLines.findFirst({
       where: { phoneNumber: NUMBERS.taken },

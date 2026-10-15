@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { isValidTypedPhoneNumber } from '@op/common/client';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
 import { toast } from '@op/sense/Toast';
@@ -69,7 +70,14 @@ const SetSmsLineButton = ({
       handleOpenChange(false);
     },
     onError: (error) => {
-      toast.error(error.message);
+      const status = httpStatusOf(error);
+      toast.error(
+        status === 409
+          ? t('smsLineTakenError')
+          : status === 400
+            ? t('smsLineInvalidError')
+            : t('setSmsLineError'),
+      );
     },
   });
 
@@ -89,6 +97,7 @@ const SetSmsLineButton = ({
         variant: 'default',
       }}
       isPending={setLine.isPending}
+      confirmDisabled={!isValidTypedPhoneNumber(phoneNumber)}
       isOpen={isOpen}
       onOpenChange={handleOpenChange}
       onConfirm={() => setLine.mutate({ instanceId, phoneNumber })}
@@ -131,8 +140,8 @@ const ClearSmsLineButton = ({
       utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
       setIsOpen(false);
     },
-    onError: (error) => {
-      toast.error(error.message);
+    onError: () => {
+      toast.error(t('clearSmsLineError'));
     },
   });
 
@@ -162,3 +171,10 @@ const ClearSmsLineButton = ({
 };
 
 const isolateNumber = (chunks: ReactNode) => <bdi dir="ltr">{chunks}</bdi>;
+
+const httpStatusOf = (error: { data?: object | null }): number | undefined =>
+  error.data &&
+  'httpStatus' in error.data &&
+  typeof error.data.httpStatus === 'number'
+    ? error.data.httpStatus
+    : undefined;
