@@ -22,7 +22,7 @@ interface EditableTextProps extends Omit<
   onCommit: (nextValue: string) => void;
   /** Names the field while editing, and the text at rest when it is blank and has no `placeholder`. */
   label: string;
-  /** Names the button at rest, with the text ("Edit Budget 2027"). */
+  /** Names the button at rest, before the text ("Edit Budget 2027"). */
   editHint?: string;
   /** Names the same button while editing. */
   doneLabel?: string;
@@ -59,9 +59,11 @@ function EditableText({
   const [draft, setDraft] = React.useState(value);
   const fieldRef = React.useRef<FieldElement | null>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const textId = React.useId();
-  const hintId = React.useId();
-  const editing = isEditing && !disabled;
+
+  // Disabling mid-edit closes it, so re-enabling does not reopen a stale draft.
+  if (disabled && isEditing) {
+    setIsEditing(false);
+  }
 
   const setFieldRef = React.useCallback((node: FieldElement | null) => {
     fieldRef.current = node;
@@ -69,7 +71,7 @@ function EditableText({
     node?.select();
   }, []);
 
-  useContentHeight(fieldRef, draft, wrap && editing);
+  useContentHeight(fieldRef, draft, wrap && isEditing);
 
   const open = () => {
     setDraft(value);
@@ -90,20 +92,14 @@ function EditableText({
     commit();
   };
 
+  const isBlank = value.trim() === '';
+  const shownText = isBlank ? (placeholder ?? label) : value;
   const boxClassName = cn(
     'relative -mx-2 flex w-fit max-w-full gap-2 rounded-lg px-2 py-1',
     wrap ? 'items-start' : 'items-center',
     className,
   );
-  const iconSizeClassName = cn('size-4', iconClassName);
-  const text = (
-    <DisplayText
-      id={textId}
-      value={value}
-      fallback={placeholder ?? label}
-      wrap={wrap}
-    />
-  );
+  const text = <DisplayText muted={isBlank} wrap={wrap} text={shownText} />;
 
   if (disabled) {
     return (
@@ -115,15 +111,13 @@ function EditableText({
     );
   }
 
-  const fieldClassName =
-    'h-auto max-w-full rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0';
+  const Icon = isEditing ? LuCheck : LuPencil;
   const fieldProps = {
+    ref: setFieldRef,
     value: draft,
     'aria-label': label,
     placeholder,
     maxLength,
-    // Inline so it beats the field's type classes; the field keeps the box's metrics.
-    style: INHERIT_TYPOGRAPHY,
     onChange: (event: React.ChangeEvent<FieldElement>) =>
       setDraft(event.target.value),
     onPaste: (event: React.ClipboardEvent<FieldElement>) => {
@@ -148,15 +142,12 @@ function EditableText({
     <div
       className={cn(
         boxClassName,
-        // At rest the button covers the box, so the box paints its hover and focus.
-        editing
-          ? 'ring-2 ring-ring'
-          : 'transition-colors has-hover:bg-accent has-focus-visible:bg-accent has-focus-visible:ring-3 has-focus-visible:ring-ring/50 motion-reduce:transition-none',
+        isEditing ? 'ring-2 ring-ring' : REST_BOX_CLASSNAME,
       )}
       onKeyDown={(event) => {
         // Safari reports the Enter that ends a composition with keyCode 229 instead.
         if (
-          !editing ||
+          !isEditing ||
           event.nativeEvent.isComposing ||
           event.keyCode === 229
         ) {
@@ -175,7 +166,7 @@ function EditableText({
       }}
       onBlur={(event) => {
         // Moving between the field and the button stays inside the edit.
-        if (!editing || event.currentTarget.contains(event.relatedTarget)) {
+        if (!isEditing || event.currentTarget.contains(event.relatedTarget)) {
           return;
         }
         // Switching tab or window keeps the edit open.
@@ -186,27 +177,19 @@ function EditableText({
       }}
     >
       <Tag className="min-w-0" {...props}>
-        {!editing ? (
+        {!isEditing ? (
           text
         ) : wrap ? (
           <Textarea
-            ref={setFieldRef}
             rows={1}
             enterKeyHint="done"
-            className={cn(
-              fieldClassName,
-              'min-h-0 w-full resize-none overflow-hidden',
-            )}
+            className={TEXTAREA_CLASSNAME}
             {...fieldProps}
           />
         ) : (
           <Input
-            ref={setFieldRef}
             enterKeyHint="done"
-            className={cn(
-              fieldClassName,
-              'field-sizing-content w-auto min-w-24',
-            )}
+            className={INPUT_CLASSNAME}
             {...fieldProps}
           />
         )}
@@ -216,65 +199,55 @@ function EditableText({
         <Button
           ref={buttonRef}
           variant="bare"
-          aria-labelledby={editing ? undefined : `${hintId} ${textId}`}
-          aria-label={editing ? doneLabel : undefined}
-          className={cn(
-            '-m-1 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground motion-reduce:transition-none',
-            // At rest a transparent pseudo covers the box, so the text is the click and hover target.
-            !editing &&
-              'static after:absolute after:inset-0 focus-visible:ring-0 active:not-aria-[haspopup]:translate-none',
-          )}
+          aria-label={isEditing ? doneLabel : `${editHint} ${shownText}`}
+          className={cn(BUTTON_CLASSNAME, !isEditing && REST_BUTTON_CLASSNAME)}
           // Keeps focus in the field on press, so the click commits once.
-          onMouseDown={editing ? (event) => event.preventDefault() : undefined}
-          onClick={editing ? commitAndFocus : open}
+          onMouseDown={
+            isEditing ? (event) => event.preventDefault() : undefined
+          }
+          onClick={isEditing ? commitAndFocus : open}
         >
-          {editing ? (
-            <LuCheck aria-hidden className={iconSizeClassName} />
-          ) : (
-            <LuPencil aria-hidden className={iconSizeClassName} />
-          )}
+          <Icon aria-hidden className={cn('size-4', iconClassName)} />
         </Button>
-      </span>
-      <span id={hintId} hidden>
-        {editHint}
       </span>
     </div>
   );
 }
 
-// Form controls reset these; inheriting them keeps the field in the box's type.
-const INHERIT_TYPOGRAPHY: React.CSSProperties = {
-  font: 'inherit',
-  letterSpacing: 'inherit',
-  color: 'inherit',
-};
+// At rest the button's pseudo covers the box, so the box paints the hover and focus.
+const REST_BOX_CLASSNAME =
+  'transition-colors has-hover:bg-accent has-focus-visible:bg-accent has-focus-visible:ring-3 has-focus-visible:ring-ring/50 motion-reduce:transition-none';
+const BUTTON_CLASSNAME =
+  '-m-1 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground motion-reduce:transition-none';
+const REST_BUTTON_CLASSNAME =
+  'static focus-visible:ring-0 after:absolute after:inset-0';
+// No chrome, and the box's type: the field looks like the text it replaces.
+const FIELD_CLASSNAME =
+  'h-auto max-w-full rounded-none border-0 bg-transparent p-0 text-current shadow-none [font:inherit] [letter-spacing:inherit] focus-visible:border-0 focus-visible:ring-0';
+const INPUT_CLASSNAME = `${FIELD_CLASSNAME} field-sizing-content w-auto min-w-24`;
+const TEXTAREA_CLASSNAME = `${FIELD_CLASSNAME} min-h-0 w-full resize-none overflow-hidden`;
 
 function DisplayText({
-  id,
-  value,
-  fallback,
+  text,
+  muted,
   wrap,
 }: {
-  id: string;
-  value: string;
-  fallback: string;
+  text: string;
+  muted: boolean;
   wrap: boolean;
 }) {
-  const isBlank = value.trim() === '';
-
   // The text takes its direction on the element, with alignment pinned to the
   // page: truncation needs that, and the same pair serves wrapped text.
   return (
     <span
-      id={id}
       dir="auto"
       className={cn(
         'block min-w-0 ltr:text-left rtl:text-right',
         wrap ? 'wrap-break-word whitespace-normal' : 'truncate',
-        isBlank && 'text-muted-foreground',
+        muted && 'text-muted-foreground',
       )}
     >
-      {isBlank ? fallback : value}
+      {text}
     </span>
   );
 }
@@ -286,25 +259,37 @@ function useContentHeight(
   enabled: boolean,
 ) {
   React.useLayoutEffect(() => {
-    if (!enabled || CSS.supports('field-sizing', 'content')) {
-      return;
+    if (enabled && !supportsFieldSizing()) {
+      fitToContent(fieldRef.current);
     }
-    const field = fieldRef.current;
-    if (!(field instanceof HTMLTextAreaElement)) {
-      return;
-    }
-
-    const fit = () => {
-      field.style.height = 'auto';
-      field.style.height = `${field.scrollHeight}px`;
-    };
-    fit();
-
-    window.addEventListener('resize', fit);
-    return () => {
-      window.removeEventListener('resize', fit);
-    };
   }, [fieldRef, value, enabled]);
+
+  React.useEffect(() => {
+    const field = fieldRef.current;
+    if (!enabled || supportsFieldSizing() || !field) {
+      return;
+    }
+    const observer = new ResizeObserver(() => fitToContent(field));
+    observer.observe(field);
+    return () => {
+      observer.disconnect();
+    };
+  }, [fieldRef, enabled]);
+}
+
+function fitToContent(field: FieldElement | null) {
+  if (!(field instanceof HTMLTextAreaElement)) {
+    return;
+  }
+  field.style.height = 'auto';
+  field.style.height = `${field.scrollHeight}px`;
+}
+
+let fieldSizingSupport: boolean | undefined;
+
+function supportsFieldSizing() {
+  fieldSizingSupport ??= CSS.supports('field-sizing', 'content');
+  return fieldSizingSupport;
 }
 
 export { EditableText };
