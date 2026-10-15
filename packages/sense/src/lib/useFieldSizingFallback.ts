@@ -75,7 +75,9 @@ function fitToContent(field: HTMLTextAreaElement | null) {
 let fieldSizingSupport: boolean | undefined;
 
 function supportsFieldSizing() {
-  fieldSizingSupport ??= CSS.supports('field-sizing', 'content');
+  // No `CSS` (jsdom) counts as supported, so the fallback stays inert there.
+  fieldSizingSupport ??=
+    typeof CSS === 'undefined' || CSS.supports('field-sizing', 'content');
   return fieldSizingSupport;
 }
 
