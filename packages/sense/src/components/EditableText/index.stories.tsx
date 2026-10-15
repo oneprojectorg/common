@@ -26,9 +26,9 @@ export default meta;
 
 type Story = StoryObj<typeof EditableText>;
 
-// Click the title, or Tab to it and press Enter. The text is selected on
-// entry; Enter, the Done button or clicking away commits, Escape reverts, a
-// blank value reverts.
+// Click the title, or Tab to its button and press Enter. The text is selected
+// on entry, and the pencil becomes a check: Enter, the check or clicking away
+// commits, Escape reverts, a blank value reverts.
 export const Default: Story = {
   render: (args) => <ControlledText {...args} initial="Community fund 2027" />,
 };
@@ -84,7 +84,7 @@ export const Empty: Story = {
   ),
 };
 
-// Plain text: no pencil, no button, nothing in the tab order.
+// Plain text: no button, nothing in the tab order.
 export const Disabled: Story = {
   args: { disabled: true },
   render: (args) => <ControlledText {...args} initial="Community fund 2027" />,
@@ -141,16 +141,15 @@ export const EmptyWithoutPlaceholder: Story = {
 // Interaction checks. They run in the Interactions panel; nothing runs them in
 // CI until the @storybook/addon-vitest gate lands (see README.md).
 
-// The title is the button's name, "Edit" its description; entering selects all;
-// Enter commits the trimmed value once and hands focus back to the title.
+// The button is named by the hint and the title; entering selects all; Enter
+// commits the trimmed value once and hands focus back to the button.
 export const CommitsOnEnter: Story = {
   args: { value: 'Community fund 2027', onCommit: fn() },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    const trigger = canvas.getByRole('button', { name: 'Community fund 2027' });
-    await expect(trigger).toHaveAccessibleDescription('Edit');
-
-    await userEvent.click(trigger);
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Edit Community fund 2027' }),
+    );
     const field = canvas.getByRole<HTMLInputElement>('textbox', {
       name: 'Process name',
     });
@@ -164,13 +163,14 @@ export const CommitsOnEnter: Story = {
     await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
     await waitFor(() =>
       expect(
-        canvas.getByRole('button', { name: 'Community fund 2027' }),
+        canvas.getByRole('button', { name: 'Edit Community fund 2027' }),
       ).toHaveFocus(),
     );
   },
 };
 
-// Done commits by click, and Tab reaches it without committing first.
+// The same button commits while editing: Tab reaches it without committing,
+// and clicking it commits once.
 export const CommitsOnDone: Story = {
   args: { value: 'Community fund 2027', onCommit: fn() },
   play: async ({ args, canvasElement }) => {
@@ -190,13 +190,13 @@ export const CommitsOnDone: Story = {
     await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
     await waitFor(() =>
       expect(
-        canvas.getByRole('button', { name: 'Community fund 2027' }),
+        canvas.getByRole('button', { name: 'Edit Community fund 2027' }),
       ).toHaveFocus(),
     );
   },
 };
 
-// Escape reverts even though the field's removal can fire a blur.
+// Escape reverts and hands focus back to the button.
 export const RevertsOnEscape: Story = {
   args: { value: 'Community fund 2027', onCommit: fn() },
   play: async ({ args, canvasElement }) => {
@@ -206,7 +206,9 @@ export const RevertsOnEscape: Story = {
     await userEvent.type(field, 'Something else{Escape}');
 
     await expect(args.onCommit).not.toHaveBeenCalled();
-    const trigger = canvas.getByRole('button', { name: 'Community fund 2027' });
+    const trigger = canvas.getByRole('button', {
+      name: 'Edit Community fund 2027',
+    });
     await waitFor(() => expect(trigger).toHaveFocus());
   },
 };
@@ -271,7 +273,7 @@ export const WrapKeepsOneLine: Story = {
     await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
     await waitFor(() =>
       expect(
-        canvas.getByRole('button', { name: 'Community fund 2027' }),
+        canvas.getByRole('button', { name: 'Edit Community fund 2027' }),
       ).toHaveFocus(),
     );
   },
