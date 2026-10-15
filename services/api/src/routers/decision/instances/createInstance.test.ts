@@ -21,7 +21,6 @@ import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 const grantDraft = {
   type: 'grant' as const,
-  shape: 'single' as const,
   phases: [
     { kind: 'submissions' as const, name: 'Send your application' },
     { kind: 'review' as const, name: 'Review and decide' },
@@ -44,8 +43,8 @@ async function loadInstanceData(instanceId: string) {
   };
 }
 
-describe.concurrent('createInstanceFromWizard', () => {
-  it('creates a draft whose phases are the wizard answers', async ({
+describe.concurrent('createInstance', () => {
+  it('creates a draft from the phases it is given', async ({
     task,
     onTestFinished,
   }) => {
@@ -53,13 +52,13 @@ describe.concurrent('createInstanceFromWizard', () => {
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.createInstanceFromWizard({
+    const result = await caller.decision.createInstance({
       ...grantDraft,
-      name: `  Wizard grant ${task.id}  `,
+      name: `  Grant ${task.id}  `,
     });
     testData.trackProfileForCleanup(result.id);
 
-    expect(result.name).toBe(`Wizard grant ${task.id}`);
+    expect(result.name).toBe(`Grant ${task.id}`);
     expect(result.processInstance.status).toBe('draft');
 
     const { instance, instanceData } = await loadInstanceData(
@@ -73,7 +72,7 @@ describe.concurrent('createInstanceFromWizard', () => {
     ]);
     expect(instanceData.phases[0]?.rules?.proposals?.submit).toBe(true);
     expect(instanceData.phases[1]?.rules?.reviews?.submit).toBe(true);
-    expect(instanceData.templateId).toBe('wizard:grant:single');
+    expect(instanceData.templateId).toBe('composed:grant');
     expect(instanceData.proposalTemplate).toBeUndefined();
     expect(instance.currentStateId).toBe(instanceData.phases[0]?.phaseId);
   });
@@ -86,10 +85,9 @@ describe.concurrent('createInstanceFromWizard', () => {
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.createInstanceFromWizard({
-      name: `Wizard blank ${task.id}`,
+    const result = await caller.decision.createInstance({
+      name: `Blank ${task.id}`,
       type: 'other',
-      shape: 'blank',
       phases: [],
     });
     testData.trackProfileForCleanup(result.id);
@@ -110,9 +108,9 @@ describe.concurrent('createInstanceFromWizard', () => {
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.createInstanceFromWizard({
+    const result = await caller.decision.createInstance({
       ...grantDraft,
-      name: `Wizard steward ${task.id}`,
+      name: `Steward ${task.id}`,
     });
     testData.trackProfileForCleanup(result.id);
 
@@ -121,7 +119,7 @@ describe.concurrent('createInstanceFromWizard', () => {
     expect(instance.stewardProfileId).toBe(setup.organization.profileId);
   });
 
-  it('rejects a phase kind the wizard does not offer', async ({
+  it('rejects a phase kind it does not offer', async ({
     task,
     onTestFinished,
   }) => {
@@ -130,29 +128,11 @@ describe.concurrent('createInstanceFromWizard', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     await expect(
-      caller.decision.createInstanceFromWizard({
+      caller.decision.createInstance({
         ...grantDraft,
-        name: `Wizard bad kind ${task.id}`,
+        name: `Bad kind ${task.id}`,
         // @ts-expect-error -- the kind enum is the contract under test
         phases: [{ kind: 'deliberation', name: 'Talk it over' }],
-      }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
-  });
-
-  it('rejects a shape the wizard does not offer', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    await expect(
-      caller.decision.createInstanceFromWizard({
-        ...grantDraft,
-        name: `Wizard bad shape ${task.id}`,
-        // @ts-expect-error -- the shape enum is the contract under test
-        shape: 'anything goes',
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
@@ -170,7 +150,7 @@ describe.concurrent('createInstanceFromWizard', () => {
     },
     {
       label: 'as many phases as a decision can hold',
-      name: 'Wizard most phases',
+      name: 'Most phases',
       phases: Array.from({ length: MAX_PHASES_PER_DECISION }, () => ({
         kind: 'submissions' as const,
         name: 'Ideas',
@@ -181,7 +161,7 @@ describe.concurrent('createInstanceFromWizard', () => {
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.createInstanceFromWizard({
+    const result = await caller.decision.createInstance({
       ...grantDraft,
       name,
       phases,
@@ -203,7 +183,7 @@ describe.concurrent('createInstanceFromWizard', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     await expect(
-      caller.decision.createInstanceFromWizard({ ...grantDraft, name }),
+      caller.decision.createInstance({ ...grantDraft, name }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
@@ -225,9 +205,9 @@ describe.concurrent('createInstanceFromWizard', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     await expect(
-      caller.decision.createInstanceFromWizard({
+      caller.decision.createInstance({
         ...grantDraft,
-        name: `Wizard phases ${task.id}`,
+        name: `Phases ${task.id}`,
         phases,
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
@@ -265,9 +245,9 @@ describe.concurrent('createInstanceFromWizard', () => {
       }
     });
 
-    const result = await caller.decision.createInstanceFromWizard({
+    const result = await caller.decision.createInstance({
       ...grantDraft,
-      name: `Wizard seeded ${task.id}`,
+      name: `Seeded ${task.id}`,
     });
     testData.trackProfileForCleanup(result.id);
 
@@ -284,7 +264,7 @@ describe.concurrent('createInstanceFromWizard', () => {
   });
 });
 
-describeDecisionAccessTierGating('createInstanceFromWizard', {
+describeDecisionAccessTierGating('createInstance', {
   noJwtNonPublic: accessTierGatingCell(
     'rejects no-JWT caller on non-public instance',
     async ({ task, onTestFinished, callers }) => {
@@ -294,7 +274,7 @@ describeDecisionAccessTierGating('createInstanceFromWizard', {
       const caller = await callers.noJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.createInstanceFromWizard({
+        caller.decision.createInstance({
           ...grantDraft,
           name: `no-JWT ${task.id}`,
         }),
@@ -312,7 +292,7 @@ describeDecisionAccessTierGating('createInstanceFromWizard', {
       const caller = await callers.anonJwt();
 
       await expectFailsAccessTierGate(
-        caller.decision.createInstanceFromWizard({
+        caller.decision.createInstance({
           ...grantDraft,
           name: `anon ${task.id}`,
         }),
@@ -329,7 +309,7 @@ describeDecisionAccessTierGating('createInstanceFromWizard', {
 
       const caller = await callers.userJwt();
 
-      const created = caller.decision.createInstanceFromWizard({
+      const created = caller.decision.createInstance({
         ...grantDraft,
         name: `user ${task.id}`,
       });
@@ -352,7 +332,7 @@ describeDecisionAccessTierGating('createInstanceFromWizard', {
 
       const caller = await callers.networkJwt(setup.userEmail);
 
-      const result = await caller.decision.createInstanceFromWizard({
+      const result = await caller.decision.createInstance({
         ...grantDraft,
         name: `Common-JWT ${task.id}`,
       });

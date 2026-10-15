@@ -1,15 +1,15 @@
-import { createInstanceFromWizard } from '@op/common';
-import { wizardDraftSchema } from '@op/common/client';
+import { createInstance } from '@op/common';
+import { createInstanceSchema } from '@op/common/client';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 
-export const createInstanceFromWizardRouter = router({
-  createInstanceFromWizard: authenticatedConfirmedProcedure()
-    .input(wizardDraftSchema)
+export const createInstanceRouter = router({
+  createInstance: authenticatedConfirmedProcedure()
+    .input(createInstanceSchema)
     .output(decisionProfileWithSchemaEncoder)
     .mutation(async ({ ctx, input }) => {
-      const profile = await createInstanceFromWizard({
+      const profile = await createInstance({
         draft: input,
         user: ctx.user,
       });

@@ -1,28 +1,23 @@
 import type { User } from '@op/supabase/lib';
 
 import {
-  blankWizardInstanceData,
-  composeWizardTemplate,
-} from './composeWizardTemplate';
+  blankInstanceData,
+  composeInstanceTemplate,
+} from './composeInstanceTemplate';
 import {
   createDecisionInstance,
   resolveInstanceCreator,
 } from './createInstanceFromTemplate';
 import { getSeededTemplateId } from './getTemplate';
+import type { CreateInstanceInput } from './schemas/createInstance';
 import { simpleVoting } from './schemas/definitions';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
-import type { WizardDraft } from './schemas/wizard';
 
-/**
- * Creates a draft decision from the create-process wizard's answers. The
- * composed template lives in `instance_data`; the seeded template row only
- * satisfies the instance's foreign key.
- */
-export const createInstanceFromWizard = async ({
+export const createInstance = async ({
   draft,
   user,
 }: {
-  draft: WizardDraft;
+  draft: CreateInstanceInput;
   user: User;
 }) => {
   const [creator, processId] = await Promise.all([
@@ -33,9 +28,9 @@ export const createInstanceFromWizard = async ({
   const instanceData =
     draft.phases.length > 0
       ? createInstanceDataFromTemplate({
-          template: composeWizardTemplate(draft),
+          template: composeInstanceTemplate(draft),
         })
-      : blankWizardInstanceData(draft);
+      : blankInstanceData(draft);
 
   return createDecisionInstance({
     ...creator,

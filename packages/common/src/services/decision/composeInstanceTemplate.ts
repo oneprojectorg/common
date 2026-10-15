@@ -1,4 +1,10 @@
 import { ValidationError } from '../../utils';
+import type {
+  CreateInstanceInput,
+  InstancePhaseInput,
+  PhaseKind,
+  ProcessType,
+} from './schemas/createInstance';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type {
   DecisionSchemaDefinition,
@@ -6,24 +12,18 @@ import type {
   PhaseRules,
   ProcessConfig,
 } from './schemas/types';
-import type {
-  WizardDraft,
-  WizardPhaseDraft,
-  WizardPhaseKind,
-  WizardProcessType,
-} from './schemas/wizard';
 import type { SelectionPipeline } from './selectionPipeline/types';
 
-export const WIZARD_TEMPLATE_VERSION = '1.0.0';
+export const COMPOSED_TEMPLATE_VERSION = '1.0.0';
 
 // Platform admin shows the template name as the process type.
-const TYPE_LABEL: Record<WizardProcessType, string> = {
+const TYPE_LABEL: Record<ProcessType, string> = {
   grant: 'Grant',
   pb: 'Participatory budgeting',
   other: 'Custom',
 };
 
-const RULES_BY_KIND: Record<WizardPhaseKind, PhaseRules> = {
+const RULES_BY_KIND: Record<PhaseKind, PhaseRules> = {
   submissions: {
     proposals: { submit: true, edit: true },
     voting: { submit: false },
@@ -48,17 +48,15 @@ const RULES_BY_KIND: Record<WizardPhaseKind, PhaseRules> = {
 };
 
 // Without a pipeline nothing carries over, and an admin picks what does.
-const PIPELINE_BY_KIND: Record<WizardPhaseKind, SelectionPipeline | undefined> =
-  {
-    submissions: { version: '1.0.0', blocks: [] },
-    review: undefined,
-    voting: undefined,
-    results: undefined,
-  };
+const PIPELINE_BY_KIND: Record<PhaseKind, SelectionPipeline | undefined> = {
+  submissions: { version: '1.0.0', blocks: [] },
+  review: undefined,
+  voting: undefined,
+  results: undefined,
+};
 
-/** A template for the wizard's answers; the wizard needs no row of its own. */
-export function composeWizardTemplate(
-  draft: WizardDraft,
+export function composeInstanceTemplate(
+  draft: CreateInstanceInput,
 ): DecisionSchemaDefinition {
   const last = draft.phases.length - 1;
   const [head, ...tail] = withUniqueIds(draft.phases).map((phase, index) =>
@@ -78,8 +76,8 @@ export function composeWizardTemplate(
 }
 
 /** The "start from scratch" choice: no phases until the admin adds one. */
-export function blankWizardInstanceData(
-  draft: WizardDraft,
+export function blankInstanceData(
+  draft: CreateInstanceInput,
 ): DecisionInstanceData {
   const { id, version, name, config } = processLevel(draft);
 
@@ -92,18 +90,17 @@ export function blankWizardInstanceData(
   };
 }
 
-export const wizardTemplateId = ({
+export const composedTemplateId = ({
   type,
-  shape,
-}: Pick<WizardDraft, 'type' | 'shape'>): string => `wizard:${type}:${shape}`;
+}: Pick<CreateInstanceInput, 'type'>): string => `composed:${type}`;
 
-function processLevel(draft: WizardDraft) {
+function processLevel(draft: CreateInstanceInput) {
   const config: ProcessConfig = { hideBudget: draft.type === 'other' };
 
   return {
-    id: wizardTemplateId(draft),
-    version: WIZARD_TEMPLATE_VERSION,
-    name: `Wizard: ${TYPE_LABEL[draft.type]} (${draft.shape})`,
+    id: composedTemplateId(draft),
+    version: COMPOSED_TEMPLATE_VERSION,
+    name: TYPE_LABEL[draft.type],
     config,
   };
 }
@@ -113,7 +110,7 @@ function composePhase({
   name,
   id,
   isLast,
-}: WizardPhaseDraft & { id: string; isLast: boolean }): PhaseDefinition {
+}: InstancePhaseInput & { id: string; isLast: boolean }): PhaseDefinition {
   const selectionPipeline = PIPELINE_BY_KIND[kind];
 
   return {
@@ -127,9 +124,9 @@ function composePhase({
 
 // A kind can repeat (ideas, then built-up proposals), and ids must not.
 function withUniqueIds(
-  phases: readonly WizardPhaseDraft[],
-): Array<WizardPhaseDraft & { id: string }> {
-  const seen = new Map<WizardPhaseKind, number>();
+  phases: readonly InstancePhaseInput[],
+): Array<InstancePhaseInput & { id: string }> {
+  const seen = new Map<PhaseKind, number>();
 
   return phases.map((phase) => {
     const count = (seen.get(phase.kind) ?? 0) + 1;
