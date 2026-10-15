@@ -20,16 +20,24 @@ export async function assertWalledGardenAccess(
   { allowNonMembers = false }: { allowNonMembers?: boolean } = {},
 ) {
   if (!user || user.isAnonymous) {
-    const pathname = (await headers()).get('x-pathname');
-
-    redirect(
-      isSafeRedirectPath(pathname)
-        ? `/login?redirect=${encodeURIComponent(pathname)}`
-        : '/login',
-    );
+    return redirectToLogin();
   }
 
   if (!allowNonMembers && !user.isNetworkMember) {
     forbidden();
   }
+}
+
+/**
+ * Redirects to login, carrying the attempted path so the user lands back on it
+ * after signing in.
+ */
+export async function redirectToLogin(): Promise<never> {
+  const pathname = (await headers()).get('x-pathname');
+
+  redirect(
+    isSafeRedirectPath(pathname)
+      ? `/login?redirect=${encodeURIComponent(pathname)}`
+      : '/login',
+  );
 }
