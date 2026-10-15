@@ -109,7 +109,7 @@ export const ManualSelectionList = ({
   // Unfiltered, the list is the whole pool, so a pick missing from it has left
   // (merged or deleted) and would make the submit fail.
   useEffect(() => {
-    if (!candidates || categoryId || candidatesQuery.isPlaceholderData) return;
+    if (!candidates || categoryId || candidatesQuery.isFetching) return;
     const poolIds = new Set(candidates.map((p) => p.id));
     if (selectedIds.some((id) => !poolIds.has(id))) {
       setSelectedIds(selectedIds.filter((id) => poolIds.has(id)));
@@ -117,7 +117,7 @@ export const ManualSelectionList = ({
   }, [
     candidates,
     categoryId,
-    candidatesQuery.isPlaceholderData,
+    candidatesQuery.isFetching,
     selectedIds,
     setSelectedIds,
   ]);
