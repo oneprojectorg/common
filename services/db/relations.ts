@@ -422,6 +422,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processInstances.id,
       to: r.categoryReviewers.processInstanceId,
     }),
+    smsLine: r.one.decisionSmsLines({
+      from: r.processInstances.id,
+      to: r.decisionSmsLines.processInstanceId,
+    }),
     phases: r.many.processPhases({
       from: r.processInstances.id,
       to: r.processPhases.processInstanceId,
@@ -563,6 +567,14 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.categoryReviewers.reviewerProfileId,
       to: r.profiles.id,
       alias: 'categoryReviewer_reviewer',
+      optional: false,
+    }),
+  },
+
+  decisionSmsLines: {
+    processInstance: r.one.processInstances({
+      from: r.decisionSmsLines.processInstanceId,
+      to: r.processInstances.id,
       optional: false,
     }),
   },
