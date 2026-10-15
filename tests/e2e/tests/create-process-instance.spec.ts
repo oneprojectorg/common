@@ -242,7 +242,9 @@ test.describe('Create process wizard', () => {
 
     await expectScreen(page, 'What should we call your process?');
     await page.reload();
-    await expectScreen(page, 'What should we call your process?');
+    await expectScreen(page, 'What should we call your process?', {
+      scan: false,
+    });
 
     await page.getByLabel('Process name').fill('E2E Wizard Process');
     await page.getByRole('button', { name: 'Set up my process' }).click();
@@ -260,10 +262,12 @@ test.describe('Create process wizard', () => {
 
     await page.goto('/en/decisions/new');
     await page.getByRole('button', { name: 'Get started' }).click();
-    await expectScreen(page, 'What kind of process are you running?');
+    await expectScreen(page, 'What kind of process are you running?', {
+      scan: false,
+    });
     await choose(page, 'Other process type');
 
-    await expectScreen(page, 'What are you deciding?');
+    await expectScreen(page, 'What are you deciding?', { scan: false });
     await page.getByRole('checkbox', { name: /^Funding/ }).click();
     await page.getByRole('checkbox', { name: /^Something else/ }).click();
     await page.getByLabel('What are you deciding on?').fill('A venue');
@@ -288,16 +292,25 @@ test.describe('Create process wizard', () => {
     await expectScreen(page, 'How does the decision get made?');
     await choose(page, 'Everyone votes');
 
-    await expectScreen(page, "Here's how your process could run on Common");
+    await expectScreen(page, "Here's how your process could run on Common", {
+      scan: false,
+    });
   });
 });
 
-/** Waits for a screen by its heading, then scans it. */
-async function expectScreen(page: Page, heading: string) {
+/** Waits for a screen by its heading, then scans it unless another test already does. */
+async function expectScreen(
+  page: Page,
+  heading: string,
+  { scan = true }: { scan?: boolean } = {},
+) {
   await expect(
     page.getByRole('heading', { level: 1, name: heading }),
   ).toBeVisible({ timeout: 12_000 });
-  await expectNoAxeViolations(page);
+
+  if (scan) {
+    await expectNoAxeViolations(page);
+  }
 }
 
 /** Picks a radio option on the current screen, then continues. */
