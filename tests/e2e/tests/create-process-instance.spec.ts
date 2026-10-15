@@ -1,3 +1,6 @@
+import AxeBuilder from '@axe-core/playwright';
+import type { Page } from '@playwright/test';
+
 import { expect, test, waitForAutoSave } from '../fixtures/index.js';
 
 // Use a wider viewport so the participant preview panel (xl:block >= 1280px) is visible.
@@ -208,3 +211,117 @@ test.describe('Create Process Instance', () => {
     await expect(launchButton).toBeEnabled({ timeout: 18_000 });
   });
 });
+
+// The wizard's screens share one URL, so the route baseline only scans the intro.
+test.describe('Create process wizard', () => {
+  test.beforeEach(async ({ authenticatedPage }) => {
+    // The intro backdrop animates; reduced motion keeps axe's contrast reads stable.
+    await authenticatedPage.emulateMedia({ reducedMotion: 'reduce' });
+  });
+
+  test('creates a grant process, resuming after a reload, with no axe violations', async ({
+    authenticatedPage: page,
+  }) => {
+    test.setTimeout(90_000);
+
+    await page.goto('/en/decisions/new');
+    await expectScreen(page, 'Set up your process on Common');
+    await page.getByRole('button', { name: 'Get started' }).click();
+
+    await expectScreen(page, 'What kind of process are you running?');
+    await choose(page, 'Participatory grantmaking');
+
+    await expectScreen(page, 'How do applications come in?');
+    await choose(page, 'One full application');
+
+    await expectScreen(page, 'Who decides what gets funded?');
+    await choose(page, 'Reviewers score against a rubric');
+
+    await expectScreen(page, "Here's how your process could run on Common");
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await expectScreen(page, 'What should we call your process?');
+    await page.reload();
+    await expectScreen(page, 'What should we call your process?');
+
+    await page.getByLabel('Process name').fill('E2E Wizard Process');
+    await page.getByRole('button', { name: 'Set up my process' }).click();
+
+    await page.waitForURL(/\/decisions\/[^/]+\/edit/, { timeout: 12_000 });
+    await expect(
+      page.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({ timeout: 36_000 });
+  });
+
+  test('walks the other-process questions with no axe violations', async ({
+    authenticatedPage: page,
+  }) => {
+    test.setTimeout(90_000);
+
+    await page.goto('/en/decisions/new');
+    await page.getByRole('button', { name: 'Get started' }).click();
+    await expectScreen(page, 'What kind of process are you running?');
+    await choose(page, 'Other process type');
+
+    await expectScreen(page, 'What are you deciding?');
+    await page.getByRole('checkbox', { name: /^Funding/ }).click();
+    await page.getByRole('checkbox', { name: /^Something else/ }).click();
+    await page.getByLabel('What are you deciding on?').fill('A venue');
+    await expectNoAxeViolations(page);
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await expectScreen(
+      page,
+      'Does this process have an end, or is it always open?',
+    );
+    await choose(page, 'It has a timeline');
+
+    await expectScreen(
+      page,
+      'Common currently supports one decision per process. Which decision would you like to set up?',
+    );
+    await choose(page, 'Funding');
+
+    await expectScreen(page, 'What do people send in first?');
+    await choose(page, 'Full applications');
+
+    await expectScreen(page, 'How does the decision get made?');
+    await choose(page, 'Everyone votes');
+
+    await expectScreen(page, "Here's how your process could run on Common");
+  });
+});
+
+/** Waits for a screen by its heading, then scans it. */
+async function expectScreen(page: Page, heading: string) {
+  await expect(
+    page.getByRole('heading', { level: 1, name: heading }),
+  ).toBeVisible({ timeout: 12_000 });
+  await expectNoAxeViolations(page);
+}
+
+/** Picks a radio option on the current screen, then continues. */
+async function choose(page: Page, label: string) {
+  await page
+    .getByRole('radio', { name: new RegExp(`^${escapeRegExp(label)}`) })
+    .click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+}
+
+async function expectNoAxeViolations(page: Page) {
+  await page.evaluate(() => document.fonts.ready);
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+
+  expect(
+    violations.map(
+      (violation) =>
+        `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`,
+    ),
+  ).toEqual([]);
+}
+
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
