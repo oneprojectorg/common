@@ -14,6 +14,13 @@ export async function generateMetadata({
   return { title: t('shell.updatesNavTitle') };
 }
 
-const UpdatesPage = () => <UpdatesScreen />;
+const UpdatesPage = async ({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) => {
+  const { locale } = await params;
+  return <UpdatesScreen locale={locale} />;
+};
 
 export default UpdatesPage;

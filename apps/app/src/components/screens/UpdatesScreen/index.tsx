@@ -23,8 +23,8 @@ import { Feed } from './Feed';
  * Posts from organizations across Common (Figma 21477:64224). Moved off the
  * home page, which now centres on the user's own processes.
  */
-export const UpdatesScreen = async () => {
-  const t = await getTranslations();
+export const UpdatesScreen = async ({ locale }: { locale: string }) => {
+  const t = await getTranslations({ locale });
 
   return (
     <ListPageLayout>
@@ -37,17 +37,17 @@ export const UpdatesScreen = async () => {
         </p>
       </div>
       <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
-        <UpdatesFeed />
+        <UpdatesFeed locale={locale} />
       </Suspense>
     </ListPageLayout>
   );
 };
 
-const UpdatesFeed = async () => {
+const UpdatesFeed = async ({ locale }: { locale: string }) => {
   // Prefetch on the server to prevent a hydration mismatch; if this fails the
   // client fetches instead.
   const [t, user, { utils, queryClient }] = await Promise.all([
-    getTranslations(),
+    getTranslations({ locale }),
     getRequiredUser(),
     createServerUtils(),
   ]);
