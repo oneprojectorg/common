@@ -37,7 +37,7 @@ export const ProposalRowMenu = ({
           ],
         ]}
         label={t('decisions.proposals.proposalOptionsLabel')}
-        triggerProps={{ variant: 'ghost', size: 'icon-xs' }}
+        triggerProps={{ variant: 'outline', size: 'icon-sm' }}
       />
     </div>
   );
