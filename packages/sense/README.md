@@ -152,7 +152,9 @@ work around it — if a component fights you, the composition is usually wrong.
 1. **An accessible name on every icon-only control.** `<Button size="icon-sm">`
    with only an icon inside is a nameless button. Pass `aria-label`.
 2. **A real label on every input.** `Field` + `FieldLabel`, or `htmlFor`
-   pointing at the control's `id`. A placeholder is not a label.
+   pointing at the control's `id`, where the design shows a label;
+   `aria-label` where the field stands in for its content (`EditableText`, a
+   search box). A placeholder is not a label.
 3. **Announcements for content that changes without a navigation.** Async
    results, counts, validation errors, save states — `aria-live="polite"`.
 4. **Semantics for anything clickable that isn't a button or link.** A clickable

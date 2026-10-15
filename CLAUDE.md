@@ -43,7 +43,7 @@ Architecture decisions are recorded as ADRs — the numbered files matching `doc
 Treat accessibility as a correctness property, not a polish pass. Base UI gives us focus management, keyboard navigation and `aria-*` wiring for free — don't reimplement or work around it. Four things it can't infer, which are on you:
 
 1. **An accessible name on every icon-only control** (`aria-label` on `<Button size="icon-*">`) — the most common defect in this codebase
-2. **A real label on every input** (`Field` + `FieldLabel`, or `htmlFor`) — a placeholder is not a label
+2. **A real label on every input** — `Field` + `FieldLabel` or `htmlFor` where the design shows a label; `aria-label` where the field stands in for its content (an inline-edited title, a search box). A placeholder is not a label
 3. **`aria-live="polite"` on content that changes without a navigation** — async results, counts, validation errors, save states
 4. **Real controls for anything clickable** — never `onClick` on a `div`
 
