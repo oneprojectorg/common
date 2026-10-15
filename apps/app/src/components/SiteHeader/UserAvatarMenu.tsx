@@ -42,9 +42,7 @@ import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile/Upda
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 
 /**
- * A compact profile/org switcher row (Figma 21477:63338): small avatar, name,
- * and "Active" on the profile you're acting as. Renders as a base-ui
- * `DropdownMenuItem` in the
+ * A compact profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
  * desktop dropdown (`asMenuItem`) and as a plain button in the mobile bottom
  * sheet — base-ui `Menu.Item` needs a `Menu.Root` context and cannot render
  * inside the sheet's `Dialog`.
@@ -147,12 +145,7 @@ const ProfileMenuRow = ({
   );
 };
 
-/**
- * Every row in the menu is 40px with 14px text (Figma 21477:63338). The
- * explicit `font-normal` undoes Button's `font-strong` in the mobile sheet.
- * Rows are square like Figma's menu items; the popover itself has the 6px
- * (`rounded-md`) corner.
- */
+// `font-normal` undoes Button's `font-strong` in the mobile sheet.
 const MENU_ROW_CLASS =
   'flex h-10 w-full cursor-pointer items-center justify-start gap-2 rounded-xs px-2 py-0 text-start text-sm font-normal text-foreground outline-none';
 
@@ -178,7 +171,6 @@ const MenuSection = ({
     <div className={className}>{children}</div>
   );
 
-/** A muted group heading: base-ui `Menu.GroupLabel` on desktop, a div in the sheet. */
 const MenuLabel = ({
   asMenuItem,
   children,
@@ -376,7 +368,6 @@ const AvatarMenuContent = ({
             <MenuLabel asMenuItem={asMenuItem}>
               {t('shell.profilesMenuHeading')}
             </MenuLabel>
-            {/* Organizations first, then you (Figma 21477:63338). */}
             {[...(orgProfiles ?? []), ...(userProfiles ?? [])].map(
               (profile) => (
                 <ProfileMenuRow
@@ -452,8 +443,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     setIsDrawerOpen(false);
   };
 
-  // Placeholder until the settings modal (oneprojectorg/common#2203) lands:
-  // that PR opens <SettingsModal> here. For now the item just closes the menu.
+  // Placeholder until #2203's settings modal lands.
   const openSettings = () => {
     closeMenus();
   };

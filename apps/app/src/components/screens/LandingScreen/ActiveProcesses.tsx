@@ -20,15 +20,10 @@ import { useTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-/** How many processes show before "See more" expands the list in place. */
 const MAX_HOME_PROCESSES = 3;
 
 const ACTIVE_PROCESSES_LIST_ID = 'home-active-processes';
 
-/**
- * The published processes the user belongs to, as cover-image cards
- * (Figma 21477:62866). Hidden entirely when there are none.
- */
 export const ActiveProcesses = () => {
   return (
     <ErrorBoundary fallback={<></>}>
@@ -43,8 +38,7 @@ const ActiveProcessesList = () => {
   const t = useTranslations();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Same query and input as the sidebar's Active Decisions group, so both
-  // read one cache entry and page together.
+  // Same query and input as the sidebar's Active Decisions, so both share one cache entry.
   const [{ pages }, { hasNextPage, fetchNextPage, isFetchingNextPage }] =
     trpc.decision.listDecisionProfiles.useSuspenseInfiniteQuery(
       { status: [ProcessStatus.PUBLISHED], limit: PAGE_LIMIT.sm },
@@ -59,8 +53,6 @@ const ActiveProcessesList = () => {
   const visible = isExpanded
     ? decisions
     : decisions.slice(0, MAX_HOME_PROCESSES);
-  // Collapsed: more if anything is hidden. Expanded: more if the server has
-  // another page.
   const canSeeMore = isExpanded
     ? hasNextPage
     : decisions.length > MAX_HOME_PROCESSES || hasNextPage;

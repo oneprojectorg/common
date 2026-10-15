@@ -29,7 +29,6 @@ interface NavLinkProps {
   children: ReactNode;
 }
 
-/** How many decisions the sidebar lists before deferring to /decisions. */
 const MAX_SIDEBAR_DECISIONS = 3;
 
 const ACTIVE_DECISIONS_LIST_ID = 'sidebar-active-decisions';
@@ -43,10 +42,7 @@ export const SidebarNav = () => {
   const isRtl = useDirection() === 'rtl';
 
   return (
-    // Offcanvas: the header trigger collapses the nav, pushing content; overlay
-    // Sheet on mobile. Per shadcn's "sticky site header" (sidebar-16) pattern,
-    // the desktop fixed panel is offset below the full-width header via
-    // --header-height (set on the content row in the (main) layout).
+    // Offset below the full-width header via --header-height (shadcn sidebar-16).
     <Sidebar
       side={isRtl ? 'right' : 'left'}
       collapsible="offcanvas"
@@ -79,8 +75,7 @@ export const SidebarNav = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {/* Empty fragment, not null: ErrorBoundary renders `fallback ?? <ErrorMessage />`,
-            so an explicit null still shows the error UI instead of hiding the group. */}
+        {/* Not null: ErrorBoundary treats a null fallback as none and shows its error UI. */}
         <ErrorBoundary fallback={<></>}>
           <Suspense fallback={null}>
             <ActiveDecisionsGroup />
@@ -91,10 +86,6 @@ export const SidebarNav = () => {
   );
 };
 
-/**
- * The published decisions the user belongs to: three, then "See more"
- * expands the list in place (paging further when the server has more).
- */
 const ActiveDecisionsGroup = () => {
   const t = useTranslations();
   const pathname = usePathname();
@@ -114,8 +105,6 @@ const ActiveDecisionsGroup = () => {
   const visible = isExpanded
     ? decisions
     : decisions.slice(0, MAX_SIDEBAR_DECISIONS);
-  // Collapsed: more if anything is hidden. Expanded: more if the server has
-  // another page.
   const canSeeMore = isExpanded
     ? hasNextPage
     : decisions.length > MAX_SIDEBAR_DECISIONS || hasNextPage;
@@ -172,7 +161,6 @@ const ActiveDecisionsGroup = () => {
   );
 };
 
-/** Expands or collapses the Active Decisions list in place. */
 const ListToggle = ({
   onClick,
   isExpanded,
