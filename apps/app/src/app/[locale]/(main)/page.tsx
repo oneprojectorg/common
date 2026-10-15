@@ -18,10 +18,15 @@ export async function generateMetadata({
   return { title: t('Home') };
 }
 
-const MainPage = () => {
+const MainPage = async ({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) => {
+  const { locale } = await params;
   return (
-    <Suspense fallback={<LandingScreenSkeleton />}>
-      <LandingScreen />
+    <Suspense fallback={<LandingScreenSkeleton locale={locale} />}>
+      <LandingScreen locale={locale} />
     </Suspense>
   );
 };
