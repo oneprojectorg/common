@@ -1812,7 +1812,20 @@
     },
     "processAdmin": {
       "pageTitle": "{decisionName} kezelése",
-      "underConstruction": "Itt készül az új folyamatkezelő felület."
+      "backToEditor": "Vissza a szerkesztőbe",
+      "viewProcess": "Folyamat megtekintése",
+      "stewardedBy": "Gondozza: <steward>{name}</steward>",
+      "aboutHeading": "A folyamatról",
+      "statusDraft": "Piszkozat",
+      "statusLive": "Élő",
+      "statusCompleted": "Befejezett",
+      "statusCancelled": "Megszakítva",
+      "noPhasesTitle": "Még nincsenek szakaszok",
+      "noPhasesDescription": "A szerkesztőben hozzáadott szakaszok itt jelennek meg.",
+      "noResourcesTitle": "Nincsenek kitűzött források",
+      "noResourcesDescription": "Útmutatók, dokumentumok és linkek, amelyeket a résztvevők használhatnak.",
+      "noAboutTitle": "Még nincs leírás",
+      "noAboutDescription": "Írd le a folyamatot a szerkesztőben, hogy a résztvevők tudják, mire való."
     }
   },
   "loadingProgress": "Betöltés...",
