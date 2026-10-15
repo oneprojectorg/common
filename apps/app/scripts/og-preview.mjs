@@ -21,6 +21,8 @@ const GRADIENTS = {
     'radial-gradient(91.78% 91.78% at 89.17% 4.38%, #5DB131 0%, #446FCC 100%)',
   'bg-orangePurple':
     'radial-gradient(70.56% 70.56% at 72.75% 33.21%, #A1649F 0%, #e35f00 100%)',
+  'bg-coralCoral':
+    'radial-gradient(96.92% 140.1% at 72.02% 100%, #DD2D1E 0%, #DB862A 92.19%)',
 };
 
 const fonts = [

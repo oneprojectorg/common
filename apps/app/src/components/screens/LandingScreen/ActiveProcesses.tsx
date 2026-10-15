@@ -9,6 +9,8 @@ import { Button } from '@op/sense/Button';
 import { Header2, Header3 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
+import { getGradientForString } from '@op/styles/constants';
 import Image from 'next/image';
 import { Suspense, useState } from 'react';
 import { LuChevronDown, LuChevronUp } from 'react-icons/lu';
@@ -124,7 +126,12 @@ const ProcessCard = ({ decision }: { decision: DecisionProfile }) => {
 
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border bg-background sm:flex-row">
-      <div className="relative h-32 shrink-0 bg-coralCoral sm:h-auto sm:w-52">
+      <div
+        className={cn(
+          'relative h-32 shrink-0 sm:h-auto sm:w-52',
+          getGradientForString(decision.name),
+        )}
+      >
         {coverUrl && (
           <Image
             src={coverUrl}
