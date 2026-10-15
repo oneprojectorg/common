@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import { decisionSmsLines } from '@op/db/schema';
 import { logger } from '@op/logging';
 
@@ -40,6 +40,10 @@ export const setDecisionSmsLine = async ({
     if (!locked) {
       throw new NotFoundError('Decision instance', instanceId);
     }
+
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${'decision_sms_lines:' + phone}))`,
+    );
 
     const holder = await tx.query.decisionSmsLines.findFirst({
       where: { phoneNumber: phone },
