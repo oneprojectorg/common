@@ -79,11 +79,14 @@ type MergeStep = 'select' | 'confirm';
  */
 export function MergeProposalDialog({
   proposal,
+  phaseId,
   open,
   onOpenChange,
 }: {
   /** The proposal being merged away. */
   proposal: Proposal;
+  /** Phase to pick the target from. Defaults to the current phase. */
+  phaseId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -160,6 +163,7 @@ export function MergeProposalDialog({
         {step === 'select' ? (
           <SelectMergeTargetStep
             proposal={proposal}
+            phaseId={phaseId}
             sourceTitle={sourceTitle}
             target={target}
             onSelect={setTarget}
@@ -184,12 +188,14 @@ export function MergeProposalDialog({
 
 function SelectMergeTargetStep({
   proposal,
+  phaseId,
   sourceTitle,
   target,
   onSelect,
   onContinue,
 }: {
   proposal: Proposal;
+  phaseId?: string;
   sourceTitle: string;
   target: MergeCandidate | null;
   onSelect: (candidate: MergeCandidate | null) => void;
@@ -255,6 +261,7 @@ function SelectMergeTargetStep({
               <MergeTargetSearchField
                 labelledBy={mergeIntoHeadingId}
                 proposal={proposal}
+                phaseId={phaseId}
                 onSelect={onSelect}
               />
 
@@ -284,6 +291,7 @@ function SelectMergeTargetStep({
                   <Suspense fallback={<MergeCandidateListSkeleton />}>
                     <MergeCandidateListSuspense
                       proposal={proposal}
+                      phaseId={phaseId}
                       scrollRoot={candidateScrollRoot}
                       onSelect={onSelect}
                     />
@@ -414,11 +422,13 @@ function ConfirmMergeStep({
 function MergeTargetSearchField({
   labelledBy,
   proposal,
+  phaseId,
   onSelect,
 }: {
   /** Id of the "Merge into" heading — Figma shows no label on the field. */
   labelledBy: string;
   proposal: Proposal;
+  phaseId?: string;
   onSelect: (candidate: MergeCandidate | null) => void;
 }) {
   const t = useTranslations();
@@ -430,6 +440,7 @@ function MergeTargetSearchField({
   const [searchTerm, setSearchTerm] = useState('');
   const { results, hasQuery, isSearching, isError } = useMergeCandidateSearch({
     proposal,
+    phaseId,
     searchQuery: searchTerm.trim(),
     isOpen,
   });
@@ -494,10 +505,12 @@ function MergeTargetSearchField({
 /** Only runs while the list is open: a field showing the pick isn't a query. */
 function useMergeCandidateSearch({
   proposal,
+  phaseId,
   searchQuery,
   isOpen,
 }: {
   proposal: Proposal;
+  phaseId?: string;
   /** Trimmed. Empty means the field is not asking anything. */
   searchQuery: string;
   isOpen: boolean;
@@ -509,6 +522,7 @@ function useMergeCandidateSearch({
   const query = trpc.decision.listProposals.useQuery(
     {
       processInstanceId: proposal.processInstanceId,
+      phaseId,
       dir: 'desc',
       // Same tier as the list picker below, so a search can reach whatever
       // the list can.
@@ -605,10 +619,12 @@ function MergeSearchResult({ candidate }: { candidate: MergeCandidate }) {
 /** Reads `listProposals`, so this can't offer what the browse list would hide. */
 function MergeCandidateListSuspense({
   proposal,
+  phaseId,
   scrollRoot,
   onSelect,
 }: {
   proposal: Proposal;
+  phaseId?: string;
   /** The list's own scroll container — see the `root` note on the sentinel. */
   scrollRoot: Element | null;
   onSelect: (candidate: MergeCandidate) => void;
@@ -619,6 +635,7 @@ function MergeCandidateListSuspense({
     trpc.decision.listProposals.useSuspenseInfiniteQuery(
       {
         processInstanceId: proposal.processInstanceId,
+        phaseId,
         dir: 'desc',
         limit: PAGE_LIMIT.lg,
       },

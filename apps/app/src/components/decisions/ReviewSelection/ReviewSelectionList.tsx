@@ -151,7 +151,7 @@ export function ReviewSelectionList({
   };
 
   return (
-    <ProposalCardDialogProvider>
+    <ProposalCardDialogProvider mergePhaseId={previousPhaseId}>
       <div className="flex flex-col gap-6 pb-20">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Header3 className="flex items-center gap-2">

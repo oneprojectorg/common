@@ -263,13 +263,16 @@ export const ManualSelectionList = ({
   const showBudget = templateCollectsBudget(
     instance.instanceData?.proposalTemplate,
   );
-  const currentPhaseName =
-    instance.instanceData?.phases?.find(
-      (p) => p.phaseId === instance.currentStateId,
-    )?.name ?? '';
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhaseIndex = phases.findIndex(
+    (p) => p.phaseId === instance.currentStateId,
+  );
+  const currentPhaseName = phases[currentPhaseIndex]?.name ?? '';
+  // Candidates come from the previous phase, so merge targets do too.
+  const previousPhaseId = phases[currentPhaseIndex - 1]?.phaseId;
 
   return (
-    <ProposalCardDialogProvider>
+    <ProposalCardDialogProvider mergePhaseId={previousPhaseId}>
       <div className="relative flex flex-col gap-6 pb-20">
         <ManualSelectionToolbar
           count={candidates.length}
