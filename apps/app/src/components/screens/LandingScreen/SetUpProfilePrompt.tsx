@@ -10,17 +10,11 @@ import { useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileModal } from '@/components/Profile/ProfileDetails/UpdateProfile/UpdateProfileModal';
 
-/**
- * Nudges a person whose profile is still bare — no avatar and no headline —
- * to fill it in (Figma 21477:62250). Dismissal is remembered per profile in
- * this browser only; it is a nudge, not a task.
- */
 export const SetUpProfilePrompt = () => {
   const t = useTranslations('shell');
   const { user } = useRequiredUser();
   const profile = user.profile;
-  // null until localStorage has been read, so the prompt never flashes in
-  // for someone who already dismissed it.
+  // null until localStorage is read, so a dismissed prompt never flashes in.
   const [isDismissed, setIsDismissed] = useState<boolean | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 

@@ -1,11 +1,7 @@
 import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
-/**
- * The main well's content column. Home, Updates, Decisions and Organizations
- * all share this width so moving between them in the sidebar doesn't make the
- * column jump (Figma 20924-74143 draws every one at the same width).
- */
+/** Shared column width so switching pages in the sidebar doesn't jump. */
 export const ListPageLayout = ({
   children,
   className,

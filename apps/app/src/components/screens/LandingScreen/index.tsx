@@ -17,11 +17,6 @@ import { ActiveProcesses } from './ActiveProcesses';
 import { SetUpProfilePrompt } from './SetUpProfilePrompt';
 import { Welcome } from './Welcome';
 
-/**
- * The home page (Figma 21477:62716): a greeting, anything waiting on the user
- * (profile setup, invites, revision and relationship requests), then the
- * processes they belong to. The org-posts feed lives at /updates.
- */
 export const LandingScreen = () => {
   return (
     <HomeColumn>
@@ -94,9 +89,6 @@ const UserContent = async () => {
   );
 };
 
-/**
- * Join requests and pending relationships, for a user acting as an org.
- */
 const OrgNotifications = (props: {
   currentProfile: Organization['profile'];
 }) => {

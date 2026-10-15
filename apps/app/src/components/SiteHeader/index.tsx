@@ -102,8 +102,6 @@ export const SiteHeader = () => {
       >
         <SidebarTrigger
           aria-label={t('shell.toggleSidebarLabel')}
-          // Ghost, not Figma's gray square: a resting fill read as a button
-          // stuck in its pressed state.
           className="size-8 rounded-lg md:size-11"
         >
           <LuAlignJustify className="size-4" />
