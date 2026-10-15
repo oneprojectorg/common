@@ -64,10 +64,10 @@ git diff tests/e2e/a11y-baseline/known-violations.json   # sanity-check
 
 ## Routes
 
-Currently scans 16 routes (see `PUBLIC_ROUTES`, `STATIC_AUTH_ROUTES`, and `seedDynamicRoutes` in `tests/e2e/tests/a11y-baseline.spec.ts`):
+Currently scans 19 routes (see `PUBLIC_ROUTES`, `STATIC_AUTH_ROUTES`, and `seedDynamicRoutes` in `tests/e2e/tests/a11y-baseline.spec.ts`):
 
-- 3 public — login, privacy, terms
-- 6 static authenticated — home, decisions index, profile index, search, org index, 404
+- 5 public — login, privacy, terms, community commitments, Columbus addendum
+- 7 static authenticated — home, updates, decisions index, profile index, search, org index, 404
 - 7 dynamic authenticated (seeded inline) — org page, org relationships, user profile, decision detail/editor, proposal view/editor
 
 ## Troubleshooting
