@@ -311,6 +311,42 @@ test.describe('Proposals CSV export', () => {
     expect(exported?.Description).toContain(FIXTURE_SUMMARY_TEXT);
     expect(exported?.Description).toContain(FIXTURE_SUMMARY_LIST_ITEM);
   });
+
+  test('enables once the phase holds only rejected proposals', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { instance, slug } = await createProcessAndInstance({ org });
+    const exportButton = authenticatedPage.getByRole('button', {
+      name: 'Export all',
+    });
+    const rejectedCounted = () =>
+      authenticatedPage.waitForResponse(
+        (response) =>
+          response.url().includes('decision.listProposals') &&
+          decodeURIComponent(response.url()).includes('"status":"rejected"') &&
+          response.ok(),
+        { timeout: 30_000 },
+      );
+    const emptyCounted = rejectedCounted();
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await emptyCounted;
+    await expect(exportButton).toBeDisabled();
+    await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId: org.adminUser.profileId,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.REJECTED,
+      proposalData: { title: 'Rejected Proposal' },
+    });
+    const rejectedCountedAgain = rejectedCounted();
+    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
+    await rejectedCountedAgain;
+    await expect(exportButton).toBeEnabled();
+  });
 });
 
 /**

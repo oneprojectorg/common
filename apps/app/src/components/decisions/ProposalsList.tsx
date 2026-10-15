@@ -626,7 +626,7 @@ const ProposalsListContent = ({
               processInstanceId={queryParams.processInstanceId}
               // The phase's unfiltered count: the export ignores the list's
               // filters, so a filter matching nothing must not disable it.
-              isEmpty={totalProposalCount === 0}
+              isListEmpty={totalProposalCount === 0}
             />
           ) : null
         }

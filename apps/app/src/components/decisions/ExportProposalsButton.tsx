@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { ProposalStatus } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
@@ -26,7 +27,7 @@ export interface ExportProposalsButtonProps {
    * It is near enough to enable a button, but not an exact preview. The caller's
    * own visibility counts it.
    */
-  isEmpty?: boolean;
+  isListEmpty?: boolean;
 }
 
 /**
@@ -256,15 +257,28 @@ const CompletedExportAction = ({
  * being exported, so a reset remounts it and discards that state.
  *
  * @param processInstanceId - Decision instance whose current phase is exported.
- * @param isEmpty - The phase holds no proposals, so the button stays disabled.
+ * @param isListEmpty - The phase holds no proposals, so the button stays disabled.
  *   See {@link ExportProposalsButtonProps} for why this is not the filtered
  *   count.
  */
 const ExportProposalsButtonContent = ({
   processInstanceId,
-  isEmpty = false,
+  isListEmpty = false,
 }: ExportProposalsButtonProps) => {
   const t = useTranslations();
+
+  const { data: rejectedData, isError } = trpc.decision.listProposals.useQuery(
+    { processInstanceId, status: ProposalStatus.REJECTED, limit: 1 },
+    {
+      enabled: isListEmpty,
+      staleTime: 30 * 1000,
+      refetchOnMount: 'always',
+    },
+  );
+  const isEmpty =
+    isListEmpty &&
+    (rejectedData === undefined ? !isError : rejectedData.total === 0);
+
   const [exportId, setExportId] = useState<string | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
