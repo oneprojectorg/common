@@ -1866,7 +1866,20 @@
     },
     "processAdmin": {
       "pageTitle": "Gérer {decisionName}",
-      "underConstruction": "La nouvelle administration du processus est en cours de construction ici."
+      "backToEditor": "Retour à l’éditeur",
+      "viewProcess": "Voir le processus",
+      "stewardedBy": "Géré par <steward>{name}</steward>",
+      "aboutHeading": "À propos du processus",
+      "statusDraft": "Brouillon",
+      "statusLive": "En cours",
+      "statusCompleted": "Terminé",
+      "statusCancelled": "Annulé",
+      "noPhasesTitle": "Aucune phase pour l’instant",
+      "noPhasesDescription": "Les phases que vous ajoutez dans l’éditeur apparaissent ici.",
+      "noResourcesTitle": "Aucune ressource épinglée",
+      "noResourcesDescription": "Guides, documents et liens que les participants peuvent consulter.",
+      "noAboutTitle": "Aucune description pour l’instant",
+      "noAboutDescription": "Décrivez le processus dans l’éditeur pour que les participants sachent à quoi il sert."
     }
   },
   "loadingProgress": "En train de charger…",

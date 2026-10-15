@@ -1866,7 +1866,20 @@
     },
     "processAdmin": {
       "pageTitle": "إدارة {decisionName}",
-      "underConstruction": "يجري بناء أداة إدارة العملية الجديدة هنا."
+      "backToEditor": "العودة إلى المحرر",
+      "viewProcess": "عرض العملية",
+      "stewardedBy": "بإشراف <steward>{name}</steward>",
+      "aboutHeading": "عن العملية",
+      "statusDraft": "مسودة",
+      "statusLive": "نشطة",
+      "statusCompleted": "مكتملة",
+      "statusCancelled": "ملغاة",
+      "noPhasesTitle": "لا توجد مراحل بعد",
+      "noPhasesDescription": "تظهر هنا المراحل التي تضيفها في المحرر.",
+      "noResourcesTitle": "لا توجد موارد مثبتة",
+      "noResourcesDescription": "أدلة ومستندات وروابط يمكن للمشاركين الرجوع إليها.",
+      "noAboutTitle": "لا يوجد وصف بعد",
+      "noAboutDescription": "صف العملية في المحرر ليعرف المشاركون الغرض منها."
     }
   },
   "loadingProgress": "جارٍ التحميل...",
