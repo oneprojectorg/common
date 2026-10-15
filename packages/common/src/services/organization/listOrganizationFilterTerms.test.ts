@@ -93,10 +93,80 @@ describe.concurrent('listOrganizationFilterTerms', () => {
 
     expect(result).toEqual({
       focusAreas: [
-        { id: focusA.id, label: 'A' },
-        { id: focusB.id, label: 'B' },
+        { id: focusA.id, label: 'A', slug: 'a' },
+        { id: focusB.id, label: 'B', slug: 'b' },
       ],
-      strategies: [{ id: strategy.id, label: 'S' }],
+      strategies: [{ id: strategy.id, label: 'S', slug: 's' }],
+    });
+  });
+
+  it('defaults to the focus-area and strategy taxonomies the app tags with', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    const [focusTaxonomy, strategyTaxonomy] = await db
+      .insert(taxonomies)
+      .values([
+        { name: `necSimple-${task.id}`, namespaceUri: 'necSimple' },
+        { name: `splcStrategies-${task.id}`, namespaceUri: 'splcStrategies' },
+      ])
+      .returning({ id: taxonomies.id });
+    if (!focusTaxonomy || !strategyTaxonomy) {
+      throw new Error('Failed to insert taxonomy fixtures');
+    }
+    const taxonomyIds = [focusTaxonomy.id, strategyTaxonomy.id];
+    onTestFinished(async () => {
+      await db
+        .delete(taxonomyTerms)
+        .where(inArray(taxonomyTerms.taxonomyId, taxonomyIds));
+      await db.delete(taxonomies).where(inArray(taxonomies.id, taxonomyIds));
+    });
+
+    const [focusArea, strategy] = await db
+      .insert(taxonomyTerms)
+      .values([
+        {
+          taxonomyId: focusTaxonomy.id,
+          termUri: `necSimple:energyAndUtilities${task.id}`,
+          label: `Focus ${task.id}`,
+          facet: 'focusArea',
+        },
+        {
+          taxonomyId: strategyTaxonomy.id,
+          termUri: `splc:DirectAction${task.id}`,
+          label: `Strategy ${task.id}`,
+        },
+      ])
+      .returning({ id: taxonomyTerms.id, label: taxonomyTerms.label });
+    if (!focusArea || !strategy) {
+      throw new Error('Failed to insert taxonomy term fixtures');
+    }
+
+    const { organization } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+    await Promise.all([
+      db.insert(organizationsTerms).values({
+        organizationId: organization.id,
+        taxonomyTermId: focusArea.id,
+      }),
+      db.insert(organizationsStrategies).values({
+        organizationId: organization.id,
+        taxonomyTermId: strategy.id,
+      }),
+    ]);
+
+    const { focusAreas, strategies } = await listOrganizationFilterTerms();
+
+    expect(focusAreas).toContainEqual({
+      ...focusArea,
+      slug: `energy-and-utilities${task.id}`.toLowerCase(),
+    });
+    expect(strategies).toContainEqual({
+      ...strategy,
+      slug: `direct-action${task.id}`.toLowerCase(),
     });
   });
 });

@@ -289,7 +289,8 @@
     "sortOldest": "Kuwa ugu da'da weyn",
     "sortName": "Magaca (A–Z)",
     "directoryLoadError": "Ururada lama soo gelin karin. Fadlan cusboonaysii bogga.",
-    "directoryEmpty": "Ma jiro urur la jaanqaadaya shaandhooyinkan."
+    "directoryEmpty": "Ma jiro urur la jaanqaadaya shaandhooyinkan.",
+    "directoryResultCount": "{count, plural, one {Waxaa la muujinayaa # urur} other {Waxaa la muujinayaa # urur}}"
   },
   "profile": {
     "aboutTab": "Ku saabsan",

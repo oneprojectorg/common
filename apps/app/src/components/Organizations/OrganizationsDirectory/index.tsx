@@ -1,82 +1,67 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type RouterOutput, trpc } from '@op/api/client';
-import { EntityType } from '@op/api/encoders';
-import { PAGE_LIMIT, nextCursor } from '@op/common/client';
+import { nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Suspense, useState } from 'react';
+import { cn } from '@op/sense/lib/utils';
+import { useQueryStates } from 'nuqs';
+import { Suspense, useTransition } from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { ResponsiveSelect } from '@/components/decisions/ResponsiveSelect';
 
-type OrganizationsPage = RouterOutput['profile']['list'];
-type OrganizationProfile = OrganizationsPage['items'][number];
+import {
+  type Sort,
+  directorySearchParams,
+  getOrganizationListInput,
+} from './searchParams';
+
+type OrganizationProfile = RouterOutput['profile']['list']['items'][number];
 type TermOption =
   RouterOutput['organization']['listFilterTerms']['focusAreas'][number];
 
-type Sort = 'newest' | 'oldest' | 'name';
-
-/** Sentinel for "no filter" — a select needs a string value. */
 const ALL = 'all';
 
-const SORT_INPUT = {
-  newest: { orderBy: 'createdAt', dir: 'desc' },
-  oldest: { orderBy: 'createdAt', dir: 'asc' },
-  name: { orderBy: 'name', dir: 'asc' },
-} as const;
-
-/**
- * The Organizations page body (Figma 21478:65267): filter by focus area and
- * strategy, sort, and an infinitely scrolling list of organization cards.
- */
-export const OrganizationsDirectory = ({
-  initialData,
-}: {
-  /** Server-fetched first page for the default view (Newest, no filters). */
-  initialData?: OrganizationsPage;
-}) => {
+export const OrganizationsDirectory = () => {
   const t = useTranslations('org');
-  const [focusAreaId, setFocusAreaId] = useState<string>(ALL);
-  const [strategyId, setStrategyId] = useState<string>(ALL);
-  const [sort, setSort] = useState<Sort>('newest');
-  const { data: filterTerms } = trpc.organization.listFilterTerms.useQuery(
-    undefined,
-    { staleTime: 5 * 60_000 },
-  );
-
-  const isDefaultView =
-    focusAreaId === ALL && strategyId === ALL && sort === 'newest';
+  const [isPending, startTransition] = useTransition();
+  const [filters, setFilters] = useQueryStates(directorySearchParams, {
+    startTransition,
+  });
+  const { data: filterTerms, isPending: isLoadingTerms } =
+    trpc.organization.listFilterTerms.useQuery(undefined, {
+      staleTime: 5 * 60_000,
+    });
+  const input = getOrganizationListInput(filters, filterTerms);
+  const hasTermFilter = Boolean(filters.focusArea || filters.strategy);
 
   return (
     <div className="flex flex-col gap-8">
-      {/* On a phone the selects stay on one row and scroll sideways, bleeding
-          to the screen edges (cancelling ListPageLayout's px-4). py-1 keeps
-          focus rings from being clipped by the scroll container. */}
       <div className="-mx-4 -my-1 no-scrollbar flex gap-3 overflow-x-auto px-4 py-1 *:shrink-0 sm:mx-0 sm:my-0 sm:gap-6 sm:overflow-visible sm:px-0 sm:py-0">
         <TermFilter
           options={filterTerms?.focusAreas ?? []}
           allLabel={t('allFocusAreasOption')}
           ariaLabel={t('focusAreaFilterLabel')}
-          value={focusAreaId}
-          onChange={setFocusAreaId}
+          value={filters.focusArea}
+          onChange={(focusArea) => setFilters({ focusArea })}
         />
         <TermFilter
           options={filterTerms?.strategies ?? []}
           allLabel={t('allStrategiesOption')}
           ariaLabel={t('strategyFilterLabel')}
-          value={strategyId}
-          onChange={setStrategyId}
+          value={filters.strategy}
+          onChange={(strategy) => setFilters({ strategy })}
         />
         <ResponsiveSelect<Sort>
           aria-label={t('sortLabel')}
           className="w-auto sm:w-40"
-          selectedKey={sort}
-          onSelectionChange={setSort}
+          selectedKey={filters.sort}
+          onSelectionChange={(sort) => setFilters({ sort })}
           items={[
             { id: 'newest', label: t('sortNewest') },
             { id: 'oldest', label: t('sortOldest') },
@@ -85,25 +70,26 @@ export const OrganizationsDirectory = ({
         />
       </div>
 
-      <ErrorBoundary
-        fallback={
-          <p className="text-muted-foreground">{t('directoryLoadError')}</p>
-        }
+      <APIErrorBoundary
+        resetKeys={[filters.focusArea, filters.strategy, filters.sort]}
+        fallbacks={{
+          default: () => (
+            <p className="text-muted-foreground">{t('directoryLoadError')}</p>
+          ),
+        }}
       >
-        <Suspense fallback={<OrganizationListSkeleton />}>
-          <OrganizationList
-            focusAreaId={focusAreaId === ALL ? undefined : focusAreaId}
-            strategyId={strategyId === ALL ? undefined : strategyId}
-            sort={sort}
-            initialData={isDefaultView ? initialData : undefined}
-          />
-        </Suspense>
-      </ErrorBoundary>
+        {isLoadingTerms && hasTermFilter ? (
+          <OrganizationListSkeleton />
+        ) : (
+          <Suspense fallback={<OrganizationListSkeleton />}>
+            <OrganizationList input={input} isPending={isPending} />
+          </Suspense>
+        )}
+      </APIErrorBoundary>
     </div>
   );
 };
 
-/** A single-select over the terms at least one organization is tagged with. */
 const TermFilter = ({
   options,
   allLabel,
@@ -114,48 +100,36 @@ const TermFilter = ({
   options: TermOption[];
   allLabel: string;
   ariaLabel: string;
-  value: string;
-  onChange: (id: string) => void;
-}) => {
-  return (
-    <ResponsiveSelect
-      aria-label={ariaLabel}
-      className="w-auto sm:w-40"
-      selectedKey={value}
-      onSelectionChange={onChange}
-      items={[{ id: ALL, label: allLabel }, ...options]}
-    />
-  );
-};
+  value: string | null;
+  onChange: (id: string | null) => void;
+}) => (
+  <ResponsiveSelect
+    aria-label={ariaLabel}
+    className="w-auto sm:w-40"
+    selectedKey={
+      options.some(({ slug }) => slug === value) && value ? value : ALL
+    }
+    onSelectionChange={(slug) => onChange(slug === ALL ? null : slug)}
+    items={[
+      { id: ALL, label: allLabel },
+      ...options.map(({ slug, label }) => ({ id: slug, label })),
+    ]}
+  />
+);
 
 const OrganizationList = ({
-  focusAreaId,
-  strategyId,
-  sort,
-  initialData,
+  input,
+  isPending,
 }: {
-  focusAreaId?: string;
-  strategyId?: string;
-  sort: Sort;
-  initialData?: OrganizationsPage;
+  input: ReturnType<typeof getOrganizationListInput>;
+  isPending: boolean;
 }) => {
   const t = useTranslations('org');
   const [{ pages }, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.profile.list.useSuspenseInfiniteQuery(
-      {
-        limit: PAGE_LIMIT.md,
-        types: [EntityType.ORG],
-        ...SORT_INPUT[sort],
-        focusAreaIds: focusAreaId ? [focusAreaId] : undefined,
-        strategyIds: strategyId ? [strategyId] : undefined,
-      },
-      {
-        getNextPageParam: nextCursor,
-        initialData: initialData
-          ? { pages: [initialData], pageParams: [null] }
-          : undefined,
-      },
-    );
+    trpc.profile.list.useSuspenseInfiniteQuery(input, {
+      getNextPageParam: nextCursor,
+      staleTime: 60_000,
+    });
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
     hasNextPage,
@@ -166,29 +140,35 @@ const OrganizationList = ({
 
   const organizations = pages.flatMap((page) => page.items);
 
-  if (organizations.length === 0) {
-    return (
-      <p aria-live="polite" className="text-muted-foreground">
-        {t('directoryEmpty')}
-      </p>
-    );
-  }
-
   return (
-    <>
-      <ul className="flex flex-col gap-8">
-        {organizations.map((organization) => (
-          <li key={organization.id}>
-            <OrganizationCard organization={organization} />
-          </li>
-        ))}
-      </ul>
+    <div
+      aria-busy={isPending}
+      className={cn('flex flex-col gap-8', isPending && 'opacity-60')}
+    >
+      <p aria-live="polite" className="sr-only">
+        {organizations.length === 0
+          ? t('directoryEmpty')
+          : t('directoryResultCount', { count: organizations.length })}
+      </p>
+      {organizations.length === 0 ? (
+        <p aria-hidden className="text-muted-foreground">
+          {t('directoryEmpty')}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-8">
+          {organizations.map((organization) => (
+            <li key={organization.id}>
+              <OrganizationCard organization={organization} />
+            </li>
+          ))}
+        </ul>
+      )}
       {shouldShowTrigger && (
         <div ref={ref} className="flex justify-center">
           {isFetchingNextPage ? <OrganizationListSkeleton count={1} /> : null}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
