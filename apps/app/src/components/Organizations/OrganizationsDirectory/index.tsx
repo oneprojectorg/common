@@ -5,11 +5,20 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type RouterOutput, trpc } from '@op/api/client';
 import { nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
+import { Button } from '@op/sense/Button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { useQueryStates } from 'nuqs';
 import { Suspense, useTransition } from 'react';
+import { LuTriangleAlert } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -33,10 +42,14 @@ export const OrganizationsDirectory = () => {
   const [filters, setFilters] = useQueryStates(directorySearchParams, {
     startTransition,
   });
-  const { data: filterTerms, isPending: isLoadingTerms } =
-    trpc.organization.listFilterTerms.useQuery(undefined, {
-      staleTime: 5 * 60_000,
-    });
+  const {
+    data: filterTerms,
+    isPending: isLoadingTerms,
+    isError: hasTermsError,
+    refetch: refetchTerms,
+  } = trpc.organization.listFilterTerms.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+  });
   const input = getOrganizationListInput(filters, filterTerms);
   const hasTermFilter = Boolean(filters.focusArea || filters.strategy);
 
@@ -70,23 +83,48 @@ export const OrganizationsDirectory = () => {
         />
       </div>
 
-      <APIErrorBoundary
-        resetKeys={[filters.focusArea, filters.strategy, filters.sort]}
-        fallbacks={{
-          default: () => (
-            <p className="text-muted-foreground">{t('directoryLoadError')}</p>
-          ),
-        }}
-      >
-        {isLoadingTerms && hasTermFilter ? (
-          <OrganizationListSkeleton />
-        ) : (
-          <Suspense fallback={<OrganizationListSkeleton />}>
-            <OrganizationList input={input} isPending={isPending} />
-          </Suspense>
-        )}
-      </APIErrorBoundary>
+      {hasTermsError ? (
+        <DirectoryError onRetry={() => refetchTerms()} />
+      ) : (
+        <APIErrorBoundary
+          resetKeys={[filters.focusArea, filters.strategy, filters.sort]}
+          fallbacks={{
+            default: ({ resetErrorBoundary }) => (
+              <DirectoryError onRetry={resetErrorBoundary} />
+            ),
+          }}
+        >
+          {isLoadingTerms && hasTermFilter ? (
+            <OrganizationListSkeleton />
+          ) : (
+            <Suspense fallback={<OrganizationListSkeleton />}>
+              <OrganizationList input={input} isPending={isPending} />
+            </Suspense>
+          )}
+        </APIErrorBoundary>
+      )}
     </div>
+  );
+};
+
+const DirectoryError = ({ onRetry }: { onRetry: () => void }) => {
+  const t = useTranslations('org');
+  const tCommon = useTranslations();
+
+  return (
+    <Empty role="alert">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuTriangleAlert className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('directoryLoadError')}</EmptyTitle>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          {tCommon('Try again')}
+        </Button>
+      </EmptyContent>
+    </Empty>
   );
 };
 

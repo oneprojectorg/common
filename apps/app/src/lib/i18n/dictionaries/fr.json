@@ -288,7 +288,7 @@
     "sortNewest": "Plus récentes",
     "sortOldest": "Plus anciennes",
     "sortName": "Nom (A–Z)",
-    "directoryLoadError": "Impossible de charger les organisations. Veuillez actualiser la page.",
+    "directoryLoadError": "Impossible de charger les organisations.",
     "directoryEmpty": "Aucune organisation ne correspond à ces filtres.",
     "directoryResultCount": "{count, plural, one {# organisation affichée} other {# organisations affichées}}"
   },

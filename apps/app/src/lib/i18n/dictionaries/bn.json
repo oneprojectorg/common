@@ -288,7 +288,7 @@
     "sortNewest": "নতুনতম",
     "sortOldest": "পুরোনো",
     "sortName": "নাম (A–Z)",
-    "directoryLoadError": "সংগঠনগুলো লোড করা যায়নি। পেজটি রিফ্রেশ করে দেখুন।",
+    "directoryLoadError": "সংগঠনগুলো লোড করা যায়নি।",
     "directoryEmpty": "এই ফিল্টারগুলোর সাথে কোনো সংগঠন মেলেনি।",
     "directoryResultCount": "{count, plural, one {#টি সংগঠন দেখানো হচ্ছে} other {#টি সংগঠন দেখানো হচ্ছে}}"
   },

@@ -360,8 +360,8 @@ describe.concurrent('profile.list', () => {
         await db
           .update(profiles)
           .set({
-            createdAt: '2026-01-01T00:00:00.000Z',
-            updatedAt: '2026-01-01T00:00:00.000Z',
+            createdAt: '2026-01-01T00:00:00.123456Z',
+            updatedAt: '2026-01-01T00:00:00.123456Z',
           })
           .where(inArray(profiles.id, profileIds));
 
