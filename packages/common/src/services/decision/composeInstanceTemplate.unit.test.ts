@@ -2,17 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import { ValidationError } from '../../utils';
 import {
-  blankWizardInstanceData,
-  composeWizardTemplate,
-} from './composeWizardTemplate';
+  blankInstanceData,
+  composeInstanceTemplate,
+} from './composeInstanceTemplate';
+import type { CreateInstanceInput } from './schemas/createInstance';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
-import type { WizardDraft } from './schemas/wizard';
 import { isReviewPhase } from './utils/phaseSettings';
 
-const pbIdeas: WizardDraft = {
+const pbIdeas: CreateInstanceInput = {
   name: 'Neighbourhood fund',
   type: 'pb',
-  shape: 'ideas',
   phases: [
     { kind: 'submissions', name: 'Share your ideas' },
     { kind: 'review', name: 'Review ideas' },
@@ -22,17 +21,17 @@ const pbIdeas: WizardDraft = {
   ],
 };
 
-describe('composeWizardTemplate', () => {
+describe('composeInstanceTemplate', () => {
   it('names and ids the template by the answers, not the process', () => {
-    const template = composeWizardTemplate(pbIdeas);
+    const template = composeInstanceTemplate(pbIdeas);
 
-    expect(template.id).toBe('wizard:pb:ideas');
-    expect(template.name).toBe('Wizard: Participatory budgeting (ideas)');
+    expect(template.id).toBe('composed:pb');
+    expect(template.name).toBe('Participatory budgeting');
     expect(template.proposalTemplate).toBeUndefined();
   });
 
   it('keeps the phases in order with the names the creator saw', () => {
-    const template = composeWizardTemplate(pbIdeas);
+    const template = composeInstanceTemplate(pbIdeas);
 
     expect(template.phases.map((phase) => phase.name)).toEqual(
       pbIdeas.phases.map((phase) => phase.name),
@@ -40,7 +39,7 @@ describe('composeWizardTemplate', () => {
   });
 
   it('gives a repeated kind a distinct id', () => {
-    const template = composeWizardTemplate(pbIdeas);
+    const template = composeInstanceTemplate(pbIdeas);
 
     expect(template.phases.map((phase) => phase.id)).toEqual([
       'submissions',
@@ -52,7 +51,7 @@ describe('composeWizardTemplate', () => {
   });
 
   it('counts on past the second repeat of a kind', () => {
-    const template = composeWizardTemplate({
+    const template = composeInstanceTemplate({
       ...pbIdeas,
       phases: [
         { kind: 'submissions', name: 'Ideas' },
@@ -69,19 +68,17 @@ describe('composeWizardTemplate', () => {
   });
 
   it('labels the template with the process type', () => {
-    expect(
-      composeWizardTemplate({ ...pbIdeas, type: 'grant', shape: 'single' })
-        .name,
-    ).toBe('Wizard: Grant (single)');
-    expect(
-      composeWizardTemplate({ ...pbIdeas, type: 'other', shape: 'custom' })
-        .name,
-    ).toBe('Wizard: Custom (custom)');
+    expect(composeInstanceTemplate({ ...pbIdeas, type: 'grant' }).name).toBe(
+      'Grant',
+    );
+    expect(composeInstanceTemplate({ ...pbIdeas, type: 'other' }).name).toBe(
+      'Custom',
+    );
   });
 
   it('lets each kind do only its own thing', () => {
     const [intake, review, develop, vote, results] =
-      composeWizardTemplate(pbIdeas).phases;
+      composeInstanceTemplate(pbIdeas).phases;
 
     expect(intake?.rules.proposals).toEqual({ submit: true, edit: true });
     expect(isReviewPhase(review ?? {})).toBe(true);
@@ -94,14 +91,14 @@ describe('composeWizardTemplate', () => {
   });
 
   it('advances by hand everywhere, so a draft needs no dates', () => {
-    for (const phase of composeWizardTemplate(pbIdeas).phases) {
+    for (const phase of composeInstanceTemplate(pbIdeas).phases) {
       expect(phase.rules.advancement).toEqual({ method: 'manual' });
     }
   });
 
   it('passes every submission on and leaves later selections to an admin', () => {
     const [intake, review, develop, vote, results] =
-      composeWizardTemplate(pbIdeas).phases;
+      composeInstanceTemplate(pbIdeas).phases;
 
     expect(intake?.selectionPipeline).toEqual({ version: '1.0.0', blocks: [] });
     expect(develop?.selectionPipeline).toEqual({
@@ -114,13 +111,13 @@ describe('composeWizardTemplate', () => {
   });
 
   it('adds no settings forms of its own', () => {
-    for (const phase of composeWizardTemplate(pbIdeas).phases) {
+    for (const phase of composeInstanceTemplate(pbIdeas).phases) {
       expect(phase.settings).toBeUndefined();
     }
   });
 
   it('gives a single-phase process no pipeline, since it is also the last', () => {
-    const [only] = composeWizardTemplate({
+    const [only] = composeInstanceTemplate({
       ...pbIdeas,
       phases: [{ kind: 'submissions', name: 'Ideas' }],
     }).phases;
@@ -129,16 +126,15 @@ describe('composeWizardTemplate', () => {
   });
 
   it('hides budgets only for a process that is neither grants nor PB', () => {
-    expect(composeWizardTemplate(pbIdeas).config?.hideBudget).toBe(false);
+    expect(composeInstanceTemplate(pbIdeas).config?.hideBudget).toBe(false);
     expect(
-      composeWizardTemplate({ ...pbIdeas, type: 'other', shape: 'custom' })
-        .config?.hideBudget,
+      composeInstanceTemplate({ ...pbIdeas, type: 'other' }).config?.hideBudget,
     ).toBe(true);
   });
 
   it('is a template the instance builder accepts', () => {
     const instanceData = createInstanceDataFromTemplate({
-      template: composeWizardTemplate(pbIdeas),
+      template: composeInstanceTemplate(pbIdeas),
     });
 
     expect(instanceData.phases.map((phase) => phase.phaseId)).toEqual([
@@ -152,29 +148,28 @@ describe('composeWizardTemplate', () => {
   });
 
   it('refuses a draft with no phases', () => {
-    expect(() => composeWizardTemplate({ ...pbIdeas, phases: [] })).toThrow(
+    expect(() => composeInstanceTemplate({ ...pbIdeas, phases: [] })).toThrow(
       ValidationError,
     );
   });
 });
 
-describe('blankWizardInstanceData', () => {
+describe('blankInstanceData', () => {
   it('starts with no phases but the same process-level defaults', () => {
-    const blank = blankWizardInstanceData({
+    const blank = blankInstanceData({
       name: 'Untitled',
       type: 'other',
-      shape: 'blank',
       phases: [],
     });
 
     expect(blank.phases).toEqual([]);
-    expect(blank.templateId).toBe('wizard:other:blank');
+    expect(blank.templateId).toBe('composed:other');
     expect(blank.proposalTemplate).toBeUndefined();
     expect(blank.config?.hideBudget).toBe(true);
   });
 
   it('shows budgets on a blank PB draft', () => {
-    const blank = blankWizardInstanceData({ ...pbIdeas, phases: [] });
+    const blank = blankInstanceData({ ...pbIdeas, phases: [] });
 
     expect(blank.config?.hideBudget).toBe(false);
   });
