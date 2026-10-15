@@ -117,6 +117,23 @@ describe.concurrent('platform.admin.getDecisionInstance', () => {
     }
   });
 
+  it('reports no SMS line for a decision with none bound', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+
+    const { session } = await createIsolatedSession(setup.userEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const detail = await caller.getDecisionInstance({
+      instanceId: setup.instance.instance.id,
+    });
+
+    expect(detail.smsLine).toBeNull();
+  });
+
   it('throws NotFound for an unknown instance id', async ({
     task,
     onTestFinished,

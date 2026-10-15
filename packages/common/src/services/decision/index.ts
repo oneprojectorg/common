@@ -198,6 +198,7 @@ export * from './smsBallotFormat';
 export * from './listSmsDecisions';
 export * from './formatSmsDecisionList';
 export * from './findSmsDecision';
+export * from './decisionSmsLine';
 
 // Process survey
 export * from './processSurvey';
