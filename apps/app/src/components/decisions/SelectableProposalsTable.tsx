@@ -161,10 +161,7 @@ export const SelectableProposalsTable = ({
               </TableCell>
               {mergeEnabled ? (
                 <TableCell>
-                  <ProposalRowMenu
-                    proposal={proposal}
-                    isSelected={isSelected}
-                  />
+                  {isSelected ? null : <ProposalRowMenu proposal={proposal} />}
                 </TableCell>
               ) : null}
             </TableRow>
@@ -175,24 +172,18 @@ export const SelectableProposalsTable = ({
   );
 };
 
-const ProposalRowMenu = ({
-  proposal,
-  isSelected,
-}: {
-  proposal: Proposal;
-  isSelected: boolean;
-}) => {
+// A merged proposal can't be advanced, so selected rows get no merge.
+const ProposalRowMenu = ({ proposal }: { proposal: Proposal }) => {
   const t = useTranslations();
   const { openMergeDialog } = useProposalCardDialogs();
 
   return (
-    <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 has-aria-expanded:opacity-100">
+    <div className="transition-opacity motion-reduce:transition-none pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-within:opacity-100 pointer-fine:has-aria-expanded:opacity-100">
       <ProposalOptionsMenu
         groups={[
           [
-            // A merged proposal can't be advanced, so deselect it first.
             buildMergeMenuItem({
-              isDisabled: isSelected,
+              isDisabled: false,
               mergeLabel: t('decisions.proposals.mergeProposalAction'),
               onMerge: () => openMergeDialog(proposal),
             }),
