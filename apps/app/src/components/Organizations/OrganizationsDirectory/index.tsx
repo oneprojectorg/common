@@ -16,15 +16,13 @@ import { ResponsiveSelect } from '@/components/decisions/ResponsiveSelect';
 
 type OrganizationsPage = RouterOutput['profile']['list'];
 type OrganizationProfile = OrganizationsPage['items'][number];
-type TermTree = RouterOutput['taxonomy']['getTerms']['items'];
+type TermOption =
+  RouterOutput['organization']['listFilterTerms']['focusAreas'][number];
 
 type Sort = 'newest' | 'oldest' | 'name';
 
 /** Sentinel for "no filter" — a select needs a string value. */
 const ALL = 'all';
-
-const FOCUS_AREA_TAXONOMY = 'necSimple:focusArea';
-const STRATEGY_TAXONOMY = 'splcStrategies';
 
 const SORT_INPUT = {
   newest: { orderBy: 'createdAt', dir: 'desc' },
@@ -46,6 +44,10 @@ export const OrganizationsDirectory = ({
   const [focusAreaId, setFocusAreaId] = useState<string>(ALL);
   const [strategyId, setStrategyId] = useState<string>(ALL);
   const [sort, setSort] = useState<Sort>('newest');
+  const { data: filterTerms } = trpc.organization.listFilterTerms.useQuery(
+    undefined,
+    { staleTime: 5 * 60_000 },
+  );
 
   const isDefaultView =
     focusAreaId === ALL && strategyId === ALL && sort === 'newest';
@@ -57,14 +59,14 @@ export const OrganizationsDirectory = ({
           focus rings from being clipped by the scroll container. */}
       <div className="-mx-4 -my-1 no-scrollbar flex gap-3 overflow-x-auto px-4 py-1 *:shrink-0 sm:mx-0 sm:my-0 sm:gap-6 sm:overflow-visible sm:px-0 sm:py-0">
         <TermFilter
-          taxonomy={FOCUS_AREA_TAXONOMY}
+          options={filterTerms?.focusAreas ?? []}
           allLabel={t('allFocusAreasOption')}
           ariaLabel={t('focusAreaFilterLabel')}
           value={focusAreaId}
           onChange={setFocusAreaId}
         />
         <TermFilter
-          taxonomy={STRATEGY_TAXONOMY}
+          options={filterTerms?.strategies ?? []}
           allLabel={t('allStrategiesOption')}
           ariaLabel={t('strategyFilterLabel')}
           value={strategyId}
@@ -101,26 +103,20 @@ export const OrganizationsDirectory = ({
   );
 };
 
-/**
- * A single-select over one taxonomy. Organizations are tagged with leaf
- * terms, so a tree's group headings are left out of the options.
- */
+/** A single-select over the terms at least one organization is tagged with. */
 const TermFilter = ({
-  taxonomy,
+  options,
   allLabel,
   ariaLabel,
   value,
   onChange,
 }: {
-  taxonomy: string;
+  options: TermOption[];
   allLabel: string;
   ariaLabel: string;
   value: string;
   onChange: (id: string) => void;
 }) => {
-  const { data } = trpc.taxonomy.getTerms.useQuery({ name: taxonomy });
-  const options = collectLeaves(data?.items ?? []);
-
   return (
     <ResponsiveSelect
       aria-label={ariaLabel}
@@ -235,10 +231,3 @@ const OrganizationListSkeleton = ({ count = 4 }: { count?: number }) => (
     ))}
   </div>
 );
-
-const collectLeaves = (terms: TermTree): { id: string; label: string }[] =>
-  terms.flatMap((term) =>
-    term.children.length === 0
-      ? [{ id: term.id, label: term.label }]
-      : collectLeaves(term.children),
-  );
