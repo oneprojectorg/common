@@ -1809,6 +1809,10 @@
       "votingPhase": "ভোটগ্রহণ",
       "workThemUp": "সেগুলো তৈরি করা",
       "workThemUpDescription": "যা এগিয়ে যায় তা আরও পূর্ণ কিছুতে পরিণত হয়।"
+    },
+    "processAdmin": {
+      "pageTitle": "{decisionName} পরিচালনা করুন",
+      "underConstruction": "নতুন প্রক্রিয়া প্রশাসন এখানে তৈরি করা হচ্ছে।"
     }
   },
   "loadingProgress": "লোড হচ্ছে...",
