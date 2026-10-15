@@ -45,6 +45,21 @@ export const LongText: Story = {
   ),
 };
 
+// `wrap`: the same long title runs onto more lines instead of truncating, with
+// the pencil on the first line. It is still one line of text: Enter commits,
+// and the field grows with the draft while editing.
+export const Wrap: Story = {
+  args: { wrap: true },
+  render: (args) => (
+    <div className="w-96">
+      <ControlledText
+        {...args}
+        initial="Participatory budgeting for neighbourhood infrastructure, parks and libraries across the eastern district"
+      />
+    </div>
+  ),
+};
+
 // Arabic on an Arabic page, and English on an Arabic page: the truncating title
 // takes its direction from its text (`dir="auto"`) with alignment pinned to the
 // page, and the field picks its direction from the text being typed.
@@ -205,6 +220,33 @@ export const CompositionAndPaste: Story = {
     await userEvent.clear(field);
     await userEvent.paste('Budget\n2028');
     await expect(field).toHaveValue('Budget 2028');
+  },
+};
+
+// Wrapped text edits in a textarea, but keeps the one-line contract: Enter
+// commits instead of adding a line, and pasted line breaks become spaces.
+export const WrapKeepsOneLine: Story = {
+  args: { value: 'Community fund 2027', onCommit: fn(), wrap: true },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button'));
+    const field = canvas.getByRole<HTMLTextAreaElement>('textbox', {
+      name: 'Process name',
+    });
+    await expect(field.tagName).toBe('TEXTAREA');
+
+    await userEvent.clear(field);
+    await userEvent.paste('Budget\n2028');
+    await expect(field).toHaveValue('Budget 2028');
+
+    await userEvent.keyboard('{Enter}');
+    await expect(args.onCommit).toHaveBeenCalledTimes(1);
+    await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
+    await waitFor(() =>
+      expect(
+        canvas.getByRole('button', { name: 'Community fund 2027' }),
+      ).toHaveFocus(),
+    );
   },
 };
 
