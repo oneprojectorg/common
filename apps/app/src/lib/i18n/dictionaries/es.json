@@ -288,7 +288,7 @@
     "sortNewest": "Más recientes",
     "sortOldest": "Más antiguas",
     "sortName": "Nombre (A–Z)",
-    "directoryLoadError": "No se pudieron cargar las organizaciones. Intenta actualizar la página.",
+    "directoryLoadError": "No se pudieron cargar las organizaciones.",
     "directoryEmpty": "Ninguna organización coincide con estos filtros.",
     "directoryResultCount": "{count, plural, one {Mostrando # organización} other {Mostrando # organizaciones}}"
   },

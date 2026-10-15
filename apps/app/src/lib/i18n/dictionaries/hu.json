@@ -288,7 +288,7 @@
     "sortNewest": "Legújabb",
     "sortOldest": "Legrégebbi",
     "sortName": "Név (A–Z)",
-    "directoryLoadError": "Nem sikerült betölteni a szervezeteket. Próbáld frissíteni az oldalt.",
+    "directoryLoadError": "Nem sikerült betölteni a szervezeteket.",
     "directoryEmpty": "Egy szervezet sem felel meg ezeknek a szűrőknek.",
     "directoryResultCount": "{count, plural, one {# szervezet látható} other {# szervezet látható}}"
   },
