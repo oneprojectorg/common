@@ -22,6 +22,7 @@ import {
   parsePhoneNumber,
   submitVote,
 } from '@op/common';
+import { SMS_PROPOSAL_CODE_PATTERN } from '@op/core/sms';
 import { db } from '@op/db/client';
 import { processInstances, profiles } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
@@ -33,7 +34,6 @@ import { smsNumberRateLimit } from './smsInboundLimits';
 
 const BALLOT_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_TURNS = 40;
-const CODE_PATTERN = /^\d{3,4}$/;
 const GUIDANCE =
   'Text a proposal code to add a pick, LIST to see your ballot, or DONE to review.';
 const { voteSmsBallotRequested, smsInboundReceived } = Events;
@@ -429,7 +429,7 @@ export const handleSmsBallot = inngest.createFunction(
           await say(GUIDANCE);
           continue;
         case 'info': {
-          if (argument === null || !CODE_PATTERN.test(argument)) {
+          if (argument === null || !SMS_PROPOSAL_CODE_PATTERN.test(argument)) {
             continue;
           }
           await refreshProposals(turn);

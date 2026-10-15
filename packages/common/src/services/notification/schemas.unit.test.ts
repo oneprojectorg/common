@@ -261,7 +261,7 @@ describe('parseSmsCommand', () => {
     expect(parseSmsCommand('information')).toEqual(none);
   });
 
-  it('given one or more three-digit codes, when parsed, then they are the picks in texted order', () => {
+  it('given one or more proposal codes, when parsed, then they are the picks in texted order', () => {
     expect(parseSmsCommand('214')).toEqual({
       keyword: null,
       argument: null,
@@ -277,17 +277,40 @@ describe('parseSmsCommand', () => {
       argument: null,
       codes: ['108', '371'],
     });
-  });
-
-  it('given digits that are not three-digit codes, when parsed, then nothing is recognised', () => {
-    expect(parseSmsCommand('234567')).toEqual(none);
-    expect(parseSmsCommand('21')).toEqual(none);
-    expect(parseSmsCommand('214 and 218')).toEqual(none);
     expect(parseSmsCommand('1001 102')).toEqual({
       keyword: null,
       argument: null,
       codes: ['1001', '102'],
     });
+  });
+
+  it('given a decision has issued more than 9999 codes, when a five-digit or longer code is texted, then it is a pick', () => {
+    expect(parseSmsCommand('10000')).toEqual({
+      keyword: null,
+      argument: null,
+      codes: ['10000'],
+    });
+    expect(parseSmsCommand('101 10000')).toEqual({
+      keyword: null,
+      argument: null,
+      codes: ['101', '10000'],
+    });
+    expect(parseSmsCommand('234567')).toEqual({
+      keyword: null,
+      argument: null,
+      codes: ['234567'],
+    });
+    expect(parseSmsCommand('2147483647')).toEqual({
+      keyword: null,
+      argument: null,
+      codes: ['2147483647'],
+    });
+  });
+
+  it('given digits that cannot be a proposal code, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('21')).toEqual(none);
+    expect(parseSmsCommand('12345678901')).toEqual(none);
+    expect(parseSmsCommand('214 and 218')).toEqual(none);
     expect(parseSmsCommand('')).toEqual(none);
   });
 });

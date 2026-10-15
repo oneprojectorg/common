@@ -7,7 +7,11 @@ import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
 import { handleSmsInfoCommand } from './handleSmsInfoCommand';
 
-const NUMBERS = { member: '+15005550090', wrongCode: '+15005550091' } as const;
+const NUMBERS = {
+  member: '+15005550090',
+  wrongCode: '+15005550091',
+  fiveDigit: '+15005550093',
+} as const;
 
 const infoCommand = (from: PhoneNumber, argument: string) => ({
   name: Events.smsInboundReceived.name,
@@ -79,5 +83,34 @@ describe('handleSmsInfoCommand against the database', () => {
 
     expect(result).toEqual({ message: 'proposal not found' });
     expect(recordedSms[0]!.body).toContain(`PROPOSALS ${slug}`);
+  });
+
+  it('given a decision whose codes have passed 9999 (planted directly, no service issues that many), when a member texts INFO with the slug and a five-digit code, then they get that proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.fiveDigit);
+    const member = await fixture.createPhoneOnlyAccount(phone);
+    const { instanceProfileId, slug } = await fixture.createVotingInstance({
+      owner: member,
+      maxVotesPerMember: 1,
+      firstCode: 10000,
+      proposalTitles: [
+        'Fund the park',
+        { title: 'Cleveland Ave protected bike lane', budget: 310_000 },
+      ],
+    });
+    await fixture.addMember(instanceProfileId, member);
+    const t = new InngestTestEngine({ function: handleSmsInfoCommand });
+
+    const { result } = await t.execute({
+      events: [infoCommand(phone, `${slug} 10001`)],
+    });
+
+    expect(result).toEqual({ message: 'info sent' });
+    expect(recordedSms[0]!.body).toBe(
+      `10001: "Cleveland Ave protected bike lane" ($310,000). Text VOTE ${slug} to start your ballot.`,
+    );
   });
 });
