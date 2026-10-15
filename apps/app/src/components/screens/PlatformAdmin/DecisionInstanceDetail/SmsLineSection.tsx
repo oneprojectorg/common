@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
 import { toast } from '@op/sense/Toast';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { LuPhone, LuPhoneOff } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,7 +28,10 @@ export const SmsLineSection = ({
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {smsLine === null
           ? t('smsLineUnboundHint')
-          : t('smsLineBoundHint', { phoneNumber: smsLine })}
+          : t.rich('smsLineBoundHint', {
+              phoneNumber: smsLine,
+              bdi: isolateNumber,
+            })}
       </p>
       <div className="flex flex-wrap gap-2">
         <SetSmsLineButton instanceId={instanceId} smsLine={smsLine} />
@@ -52,23 +55,23 @@ const SetSmsLineButton = ({
   const [isOpen, setIsOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  const setLine = trpc.platform.admin.setDecisionSmsLine.useMutation({
-    onSuccess: () => {
-      toast.success(t('setSmsLineSuccess'));
-      utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
-      setIsOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
       setPhoneNumber('');
     }
   };
+
+  const setLine = trpc.platform.admin.setDecisionSmsLine.useMutation({
+    onSuccess: () => {
+      toast.success(t('setSmsLineSuccess'));
+      utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
+      handleOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
   return (
     <AdminActionConfirmation
@@ -140,7 +143,10 @@ const ClearSmsLineButton = ({
         icon: <LuPhoneOff data-icon="inline-start" />,
         variant: 'destructive',
       }}
-      title={t('clearSmsLineConfirmTitle', { phoneNumber: smsLine })}
+      title={t.rich('clearSmsLineConfirmTitle', {
+        phoneNumber: smsLine,
+        bdi: isolateNumber,
+      })}
       description={t('clearSmsLineConfirmHint')}
       confirm={{
         label: t('clearSmsLineConfirmAction'),
@@ -154,3 +160,5 @@ const ClearSmsLineButton = ({
     />
   );
 };
+
+const isolateNumber = (chunks: ReactNode) => <bdi dir="ltr">{chunks}</bdi>;

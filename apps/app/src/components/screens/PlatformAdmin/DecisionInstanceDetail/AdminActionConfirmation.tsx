@@ -44,7 +44,7 @@ export const AdminActionConfirmation = ({
   children,
 }: {
   trigger: AdminActionTrigger;
-  title: string;
+  title: ReactNode;
   description: string;
   confirm: AdminActionConfirm;
   isPending: boolean;

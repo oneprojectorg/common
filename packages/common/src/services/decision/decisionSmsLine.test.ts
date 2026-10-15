@@ -15,6 +15,7 @@ const NUMBERS = {
   shared: '+15005550096',
   clear: '+15005550097',
   spaced: '+15005550098',
+  raced: '+15005550099',
 } as const;
 
 const readLineByNumber = (phoneNumber: string) =>
@@ -88,6 +89,43 @@ describe.concurrent('decisionSmsLine', () => {
     await expect(readLineByNumber(NUMBERS.shared)).resolves.toMatchObject({
       processInstanceId: holder.instance.id,
     });
+  });
+
+  it('given a free number, when two admins bind it to two decisions at the same time, then one decision holds it and the other fails as a validation error', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 2 });
+    const [first, second] = setup.instances;
+    if (!first || !second) {
+      throw new Error('expected two instances');
+    }
+
+    const outcomes = await Promise.allSettled([
+      setDecisionSmsLine({
+        instanceId: first.instance.id,
+        phoneNumber: NUMBERS.raced,
+      }),
+      setDecisionSmsLine({
+        instanceId: second.instance.id,
+        phoneNumber: NUMBERS.raced,
+      }),
+    ]);
+
+    const fulfilled = outcomes.filter(
+      (outcome) => outcome.status === 'fulfilled',
+    );
+    const rejected = outcomes.filter(
+      (outcome) => outcome.status === 'rejected',
+    );
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0]?.reason).toMatchObject({ name: 'ValidationError' });
+    const holder = await readLineByNumber(NUMBERS.raced);
+    expect([first.instance.id, second.instance.id]).toContain(
+      holder?.processInstanceId,
+    );
   });
 
   it('given a number that is not E.164, when an admin binds it, then it fails as a validation error and nothing is stored', async ({
