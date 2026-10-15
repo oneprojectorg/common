@@ -22,11 +22,11 @@ import { Welcome } from './Welcome';
  * (profile setup, invites, revision and relationship requests), then the
  * processes they belong to. The org-posts feed lives at /updates.
  */
-export const LandingScreen = ({ locale }: { locale: string }) => {
+export const LandingScreen = () => {
   return (
     <HomeColumn>
-      <Suspense fallback={<WelcomeSkeleton locale={locale} />}>
-        <WelcomeSection locale={locale} />
+      <Suspense fallback={<WelcomeSkeleton />}>
+        <WelcomeSection />
       </Suspense>
       <Suspense fallback={null}>
         <UserContent />
@@ -37,10 +37,10 @@ export const LandingScreen = ({ locale }: { locale: string }) => {
   );
 };
 
-export const LandingScreenSkeleton = ({ locale }: { locale: string }) => {
+export const LandingScreenSkeleton = () => {
   return (
     <HomeColumn>
-      <WelcomeSkeleton locale={locale} />
+      <WelcomeSkeleton />
       <Skeleton className="h-36 w-full rounded-xl" />
       <Skeleton className="h-36 w-full rounded-xl" />
     </HomeColumn>
@@ -51,11 +51,8 @@ const HomeColumn = ({ children }: { children: React.ReactNode }) => (
   <ListPageLayout>{children}</ListPageLayout>
 );
 
-const WelcomeSection = async ({ locale }: { locale: string }) => {
-  const [t, user] = await Promise.all([
-    getTranslations({ locale }),
-    getRequiredUser(),
-  ]);
+const WelcomeSection = async () => {
+  const [t, user] = await Promise.all([getTranslations(), getRequiredUser()]);
 
   return (
     <div className="flex flex-col gap-2 text-center">
@@ -65,8 +62,8 @@ const WelcomeSection = async ({ locale }: { locale: string }) => {
   );
 };
 
-const WelcomeSkeleton = async ({ locale }: { locale: string }) => {
-  const t = await getTranslations({ locale });
+const WelcomeSkeleton = async () => {
+  const t = await getTranslations();
 
   return (
     <div className="flex flex-col gap-2">
