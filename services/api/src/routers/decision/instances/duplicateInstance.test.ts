@@ -1076,3 +1076,36 @@ describeDecisionAccessTierGating('duplicateInstance', {
     },
   ),
 });
+
+describe.concurrent('duplicateInstance after its template is deleted', () => {
+  it('copies the snapshot into a draft with no template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      result: source,
+      caller,
+      templateId,
+    } = await createSourceInstance(testData, task.id);
+
+    await db
+      .delete(decisionProcesses)
+      .where(eq(decisionProcesses.id, templateId));
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Duplicate of ${source.name}`,
+      include: ALL_INCLUDED,
+    });
+
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    expect(instance?.processId).toBeNull();
+    const instanceData = instance?.instanceData as DecisionInstanceData;
+    expect(instanceData.phases.length).toBeGreaterThan(0);
+  });
+});

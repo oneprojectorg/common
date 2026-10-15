@@ -33,8 +33,25 @@ describe.concurrent('resolveProposalTemplate', () => {
     expect(orphan?.instanceData).toMatchObject({ proposalTemplate });
 
     await expect(
-      resolveProposalTemplate(instance.instance.instanceData, null),
+      resolveProposalTemplate(
+        orphan?.instanceData ?? null,
+        orphan?.processId ?? null,
+      ),
     ).resolves.toEqual(proposalTemplate);
+  });
+
+  it('falls back to the template schema while the template exists', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { process } = await testData.createDecisionSetup({
+      proposalTemplate,
+    });
+
+    await expect(resolveProposalTemplate({}, process.id)).resolves.toEqual(
+      proposalTemplate,
+    );
   });
 
   it('has no template-level fallback without a template', async () => {

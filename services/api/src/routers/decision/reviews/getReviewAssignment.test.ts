@@ -6,10 +6,12 @@ import {
   reviseProposal,
   TestReviewsDataManager,
 } from '@op/common/testing';
+import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   ProposalReviewState,
+  decisionProcesses,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -396,4 +398,37 @@ describeDecisionAccessTierGating('getReviewAssignment', {
       });
     },
   ),
+});
+
+describe.concurrent('getReviewAssignment after the template is deleted', () => {
+  it('still serves the assignment from the instance snapshot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Orphaned Template Review',
+    });
+
+    const { collaborationDocId } = created.proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    seedMockCollab(collaborationDocId);
+
+    await db
+      .delete(decisionProcesses)
+      .where(eq(decisionProcesses.id, created.context.process.id));
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    const result = await reviewerCaller.decision.getReviewAssignment({
+      assignmentId: created.assignment.id,
+    });
+
+    expect(result.assignment.proposal.id).toBe(created.proposal.id);
+    expect(result.assignment.proposal.proposalData.title).toBe(
+      'Orphaned Template Review',
+    );
+  });
 });
