@@ -1,4 +1,5 @@
 import {
+  type CreateOrganizationResult,
   createDecisionInstance,
   createOrganization,
   getSeededTemplate,
@@ -19,16 +20,9 @@ test.describe('Process admin shell', () => {
     authenticatedPage,
     org,
   }) => {
-    const template = await getSeededTemplate();
-    const instance = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-      schema: template.processSchema,
-    });
+    const { instance, managePath } = await seedDecision(org);
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}/manage`, {
+    await authenticatedPage.goto(managePath, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -42,14 +36,7 @@ test.describe('Process admin shell', () => {
     org,
     supabaseAdmin,
   }) => {
-    const template = await getSeededTemplate();
-    const instance = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-      schema: template.processSchema,
-    });
+    const { instance, managePath } = await seedDecision(org);
 
     const memberOrg = await createOrganization({
       testId: `process-admin-shell-${Date.now()}`,
@@ -73,7 +60,7 @@ test.describe('Process admin shell', () => {
         password: TEST_USER_DEFAULT_PASSWORD,
       });
 
-      await memberPage.goto(`/en/decisions/${instance.slug}/manage`, {
+      await memberPage.goto(managePath, {
         waitUntil: 'domcontentloaded',
       });
 
@@ -98,15 +85,7 @@ test.describe('Process admin shell', () => {
       page,
       org,
     }) => {
-      const template = await getSeededTemplate();
-      const instance = await createDecisionInstance({
-        processId: template.id,
-        ownerProfileId: org.organizationProfile.id,
-        authUserId: org.adminUser.authUserId,
-        email: org.adminUser.email,
-        schema: template.processSchema,
-      });
-      const managePath = `/en/decisions/${instance.slug}/manage`;
+      const { managePath } = await seedDecision(org);
 
       await page.goto(managePath, { waitUntil: 'domcontentloaded' });
 
@@ -115,3 +94,16 @@ test.describe('Process admin shell', () => {
     });
   });
 });
+
+async function seedDecision(org: CreateOrganizationResult) {
+  const template = await getSeededTemplate();
+  const instance = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: template.processSchema,
+  });
+
+  return { instance, managePath: `/en/decisions/${instance.slug}/manage` };
+}
