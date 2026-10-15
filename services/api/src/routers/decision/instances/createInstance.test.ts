@@ -3,12 +3,9 @@ import {
   MAX_PHASES_PER_DECISION,
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
-  getSeededTemplateId,
-  simpleVoting,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { asc, db, eq, sql } from '@op/db/client';
-import { decisionProcesses } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -213,54 +210,20 @@ describe.concurrent('createInstance', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
-  it('points at the seeded template even when a later copy exists', async ({
-    task,
-    onTestFinished,
-  }) => {
+  it('links no process template', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const [seeded] = await db
-      .select({ id: decisionProcesses.id })
-      .from(decisionProcesses)
-      .where(
-        sql`${decisionProcesses.processSchema}->>'id' = ${simpleVoting.id}`,
-      )
-      .orderBy(asc(decisionProcesses.createdAt))
-      .limit(1);
-    const [laterCopy] = await db
-      .insert(decisionProcesses)
-      .values({
-        name: `Later copy ${task.id}`,
-        processSchema: simpleVoting,
-        createdByProfileId: setup.organization.profileId,
-      })
-      .returning({ id: decisionProcesses.id });
-    onTestFinished(async () => {
-      if (laterCopy) {
-        await db
-          .delete(decisionProcesses)
-          .where(eq(decisionProcesses.id, laterCopy.id));
-      }
-    });
-
     const result = await caller.decision.createInstance({
       ...grantDraft,
-      name: `Seeded ${task.id}`,
+      name: `Templateless ${task.id}`,
     });
     testData.trackProfileForCleanup(result.id);
 
     const { instance } = await loadInstanceData(result.processInstance.id);
 
-    expect(seeded).toBeDefined();
-    expect(instance.processId).toBe(seeded?.id);
-  });
-
-  it('refuses to fall back when no template carries the schema id', async () => {
-    await expect(getSeededTemplateId('no-such-schema')).rejects.toThrow(
-      'No "no-such-schema" decision template has been seeded',
-    );
+    expect(instance.processId).toBeNull();
   });
 });
 
