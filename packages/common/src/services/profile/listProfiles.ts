@@ -46,7 +46,7 @@ export const listProfiles = async ({
       ? getCursorCondition({
           column: orderByColumn,
           tieBreakerColumn: profiles.id,
-          cursor: decodeCursor<{ value: string | Date; id?: string }>(cursor),
+          cursor: decodeCursor<{ value: string; id?: string }>(cursor),
           direction: dir,
         })
       : undefined;
@@ -147,15 +147,16 @@ export const listProfiles = async ({
     const items = result.slice(0, limit);
     const lastItem = items[items.length - 1];
 
+    // Raw timestamp string: a Date would drop the microseconds Postgres compares.
     const cursorValue = match(orderBy, {
       name: lastItem?.name ?? null,
-      createdAt: lastItem?.createdAt ? new Date(lastItem.createdAt) : null,
-      _: lastItem?.updatedAt ? new Date(lastItem.updatedAt) : null,
+      createdAt: lastItem?.createdAt ?? null,
+      _: lastItem?.updatedAt ?? null,
     });
 
     const nextCursor =
       hasMore && lastItem && cursorValue
-        ? encodeCursor<{ value: string | Date; id?: string }>({
+        ? encodeCursor<{ value: string; id?: string }>({
             value: cursorValue,
             id: lastItem.id,
           })

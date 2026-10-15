@@ -288,7 +288,7 @@
     "sortNewest": "Newest",
     "sortOldest": "Oldest",
     "sortName": "Name (A–Z)",
-    "directoryLoadError": "Unable to load organizations. Please try refreshing.",
+    "directoryLoadError": "Unable to load organizations.",
     "directoryEmpty": "No organizations match these filters.",
     "directoryResultCount": "{count, plural, one {Showing # organization} other {Showing # organizations}}"
   },
