@@ -250,7 +250,8 @@ async function listPhaseProposalsWithAggregates({
     ]);
 
   const items = rows.map((proposal) => ({
-    proposal,
+    // Only a decisions admin reaches this mode, and they can edit any proposal.
+    proposal: { ...proposal, isEditable: true },
     aggregates: getComputedReviewAggregates({
       reviewAssignments: proposal.reviewAssignments,
       scoredCriterionKeys,

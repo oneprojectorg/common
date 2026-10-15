@@ -137,6 +137,35 @@ describe.concurrent('listWithReviewAggregates', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
+  it('marks phase-scoped rows editable but not filtered ones', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+    const { proposal } = await testData.createReviewAssignment({ context });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const [phaseScoped, filtered] = await Promise.all([
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+      }),
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        proposalIds: [proposal.id],
+      }),
+    ]);
+
+    expect(phaseScoped.items.map((item) => item.proposal.isEditable)).toEqual([
+      true,
+    ]);
+    expect(filtered.items[0]?.proposal.isEditable).toBeUndefined();
+  });
+
   it('returns aggregates for the requested proposalIds in filtered mode', async ({
     task,
     onTestFinished,
