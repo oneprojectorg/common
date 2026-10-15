@@ -1,5 +1,10 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  decisionProcesses,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -561,4 +566,29 @@ describeDecisionAccessTierGating('listDecisionProfiles', {
       expect(result.items).toBeDefined();
     },
   ),
+});
+
+describe.concurrent('listDecisionProfiles after a template is deleted', () => {
+  it('still lists every instance of that template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 2,
+      grantAccess: true,
+    });
+
+    await db
+      .delete(decisionProcesses)
+      .where(eq(decisionProcesses.id, setup.process.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.listDecisionProfiles({ limit: 10 });
+
+    expect(result.items).toHaveLength(2);
+    result.items.forEach((profile) => {
+      expect(profile.processInstance.process).toBeNull();
+    });
+  });
 });

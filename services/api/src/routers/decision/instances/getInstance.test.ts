@@ -1,5 +1,6 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProposalStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProposalStatus, decisionProcesses } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -389,4 +390,30 @@ describeDecisionAccessTierGating('getLegacyInstance', {
       );
     },
   ),
+});
+
+describe.concurrent('getInstance after its template is deleted', () => {
+  it('still loads the instance, with a null process', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    await db
+      .delete(decisionProcesses)
+      .where(eq(decisionProcesses.id, setup.process.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getInstance({
+      instanceId: setup.instance.instance.id,
+    });
+
+    expect(result.id).toBe(setup.instance.instance.id);
+    expect(result.process).toBeNull();
+    expect(result.access?.admin).toBe(true);
+  });
 });

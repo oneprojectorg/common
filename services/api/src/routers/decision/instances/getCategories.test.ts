@@ -6,6 +6,7 @@ import {
   processInstances,
   taxonomies,
   taxonomyTerms,
+  decisionProcesses,
 } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -552,4 +553,36 @@ describeDecisionAccessTierGating('getCategories', {
       );
     },
   ),
+});
+
+describe.concurrent('getCategories after the template is deleted', () => {
+  it('still returns the categories from the instance config', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const label = 'Orphaned Template Category';
+    await seedProposalTaxonomy([label], onTestFinished);
+    await injectInstanceCategories(instance.instance.id, [
+      { id: 'cat-orphan', label, description: 'Survives template deletion' },
+    ]);
+
+    await db
+      .delete(decisionProcesses)
+      .where(eq(decisionProcesses.id, setup.process.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.termUri).toBe(categoryTermUri(label));
+  });
 });

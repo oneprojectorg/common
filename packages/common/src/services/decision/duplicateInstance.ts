@@ -78,10 +78,6 @@ export const duplicateInstance = async ({
     throw new CommonError('Source instance has no profile');
   }
 
-  if (!sourceInstance.processId) {
-    throw new CommonError('Source instance has no process template');
-  }
-
   // Verify the caller has admin access on the source instance
   await assertProfileAccess({
     user,

@@ -10,6 +10,7 @@ import {
   profileUserToAccessRoles,
   profiles,
   proposalRelationships,
+  decisionProcesses,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
@@ -556,4 +557,33 @@ describeDecisionAccessTierGating('decision.listReviewerAssignments', {
       expect(result.items).toEqual([]);
     },
   ),
+});
+
+describe.concurrent('listReviewerAssignments after the template is deleted', () => {
+  it('still lists the reviewer assignments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: `Orphaned template proposal ${task.id}`,
+    });
+    const context = created.context;
+
+    await db
+      .delete(decisionProcesses)
+      .where(eq(decisionProcesses.id, context.process.id));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.listReviewerAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      reviewerProfileId: context.defaultReviewer.profileId,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.assignment.proposal.id).toBe(created.proposal.id);
+  });
 });

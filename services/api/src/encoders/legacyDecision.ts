@@ -178,7 +178,7 @@ export const legacyProcessInstanceEncoder = createSelectSchema(processInstances)
   })
   .extend({
     instanceData: legacyInstanceDataEncoder,
-    process: legacyDecisionProcessEncoder.optional(),
+    process: legacyDecisionProcessEncoder.nullish(),
     owner: baseProfileEncoder.optional(),
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),

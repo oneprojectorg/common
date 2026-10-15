@@ -12,6 +12,7 @@ import {
   Visibility,
   moderationFlags,
   proposals,
+  decisionProcesses,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
 import { eq } from 'drizzle-orm';
@@ -355,4 +356,34 @@ describeDecisionAccessTierGating('getReviewedVersion', {
       expect(result.proposal.id).toBe(created.proposal.id);
     },
   ),
+});
+
+describe.concurrent('getReviewedVersion after the template is deleted', () => {
+  it('still resolves the reviewed proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Orphaned template title',
+    });
+    const review = await submitReviewAtCurrentVersion({
+      assignmentId: created.assignment.id,
+      proposalId: created.proposal.id,
+    });
+
+    await db
+      .delete(decisionProcesses)
+      .where(eq(decisionProcesses.id, created.context.process.id));
+
+    const adminCaller = await createAuthenticatedCaller(
+      created.context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.getReviewedVersion({
+      reviewId: review.id,
+    });
+
+    expect(result.isCurrent).toBe(true);
+    expect(result.proposal.proposalData.title).toBe('Orphaned template title');
+  });
 });

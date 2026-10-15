@@ -361,7 +361,7 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
   })
   .extend({
     instanceData: instanceDataWithSchemaEncoder,
-    process: decisionProcessWithSchemaEncoder.optional(),
+    process: decisionProcessWithSchemaEncoder.nullish(),
     owner: baseProfileEncoder.optional(),
     steward: baseProfileEncoder.nullish(),
     slug: z.string().nullish(),
@@ -501,7 +501,7 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
   })
   .extend({
     instanceData: instanceDataEncoder,
-    process: decisionProcessEncoder.optional(),
+    process: decisionProcessEncoder.nullish(),
     owner: baseProfileEncoder.optional(),
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
