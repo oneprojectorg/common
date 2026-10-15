@@ -85,7 +85,7 @@ export const SelectableProposalsTable = ({
               {t('decisions.proposals.selectProposalLabel')}
             </span>
           </TableHead>
-          <TableHead className="w-10">
+          <TableHead className="w-11">
             <span className="sr-only">
               {t('decisions.proposals.proposalOptionsLabel')}
             </span>

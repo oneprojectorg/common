@@ -109,7 +109,7 @@ export function ReviewSelectionTable({
           <TableHead scope="col" className="w-28">
             <span className="sr-only">{t('decisions.advanceAction')}</span>
           </TableHead>
-          <TableHead scope="col" className="w-10">
+          <TableHead scope="col" className="w-11">
             <span className="sr-only">
               {t('decisions.proposals.proposalOptionsLabel')}
             </span>
