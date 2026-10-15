@@ -51,6 +51,7 @@ export async function translateProposals({
       },
       processInstance: {
         columns: {
+          id: true,
           profileId: true,
           ownerProfileId: true,
           instanceData: true,
@@ -65,32 +66,22 @@ export async function translateProposals({
   }
 
   // 2. Deduplicate process instances and assert read access + resolve templates
-  const uniqueProcesses = new Map<
+  const uniqueInstances = new Map<
     string,
-    {
-      profileId: string | null;
-      ownerProfileId: string | null;
-      instanceData: unknown;
-      processId: string;
-    }
+    (typeof proposals)[number]['processInstance']
   >();
   for (const p of proposals) {
-    if (!uniqueProcesses.has(p.processInstance.processId)) {
-      uniqueProcesses.set(p.processInstance.processId, {
-        profileId: p.processInstance.profileId,
-        ownerProfileId: p.processInstance.ownerProfileId,
-        instanceData: p.processInstance.instanceData,
-        processId: p.processInstance.processId,
-      });
+    if (!uniqueInstances.has(p.processInstance.id)) {
+      uniqueInstances.set(p.processInstance.id, p.processInstance);
     }
   }
 
-  const templateByProcessId = new Map<
+  const templateByInstanceId = new Map<
     string,
     Awaited<ReturnType<typeof resolveProposalTemplate>>
   >();
   await Promise.all(
-    [...uniqueProcesses.values()].map(async (instance) => {
+    [...uniqueInstances.values()].map(async (instance) => {
       // Assert the user has decisions:READ on each unique process instance
       await assertInstanceProfileAccess({
         user: user ? { id: user.id } : undefined,
@@ -109,7 +100,7 @@ export async function translateProposals({
         instance.instanceData as Record<string, unknown> | null,
         instance.processId,
       );
-      templateByProcessId.set(instance.processId, template);
+      templateByInstanceId.set(instance.id, template);
     }),
   );
 
@@ -118,8 +109,7 @@ export async function translateProposals({
     proposals.map((p) => ({
       id: p.id,
       proposalData: p.proposalData,
-      proposalTemplate:
-        templateByProcessId.get(p.processInstance.processId) ?? null,
+      proposalTemplate: templateByInstanceId.get(p.processInstance.id) ?? null,
     })),
     // A single unavailable document must not break the whole batch.
     { onFetchError: 'omit' },
@@ -140,7 +130,7 @@ export async function translateProposals({
     const { previewText } = buildProposalListPreview({
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate:
-        templateByProcessId.get(proposal.processInstance.processId) ?? null,
+        templateByInstanceId.get(proposal.processInstance.id) ?? null,
     });
     // Already plain text: cap it without re-parsing it as HTML.
     const preview =

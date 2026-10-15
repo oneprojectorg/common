@@ -9,19 +9,24 @@ import type { ProposalTemplateSchema } from './types';
  * Checks `instanceData.proposalTemplate` first (written when a proposal form
  * is configured per-instance). Falls back to `decisionProcesses.processSchema`
  * (the process-level default) when the instance doesn't carry its own template.
+ * `processId` is null once the template has been deleted; there is no fallback then.
  *
  * TODO: remove or adapt this function. it seems that we just need to fix the typing since we have the data
  *
  */
 export async function resolveProposalTemplate(
   instanceData: DecisionInstanceData | Record<string, unknown> | null,
-  processId: string,
+  processId: string | null,
 ): Promise<ProposalTemplateSchema | null> {
   const fromInstance =
     (instanceData?.proposalTemplate as ProposalTemplateSchema) ?? null;
 
   if (fromInstance) {
     return fromInstance;
+  }
+
+  if (!processId) {
+    return null;
   }
 
   const process = await db.query.decisionProcesses.findFirst({

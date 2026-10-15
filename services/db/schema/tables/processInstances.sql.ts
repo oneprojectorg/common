@@ -40,12 +40,10 @@ export const processInstances = pgTable(
   'decision_process_instances',
   {
     id: autoId().primaryKey(),
-    processId: uuid('process_id')
-      .notNull()
-      .references(() => decisionProcesses.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
+    processId: uuid('process_id').references(() => decisionProcesses.id, {
+      onUpdate: 'cascade',
+      onDelete: 'set null',
+    }),
 
     name: varchar({ length: 256 }).notNull(),
     description: text(),
