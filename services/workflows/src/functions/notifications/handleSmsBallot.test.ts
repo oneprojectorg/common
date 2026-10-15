@@ -44,6 +44,7 @@ const NUMBERS = {
   flaggedYes: '+15005550088',
   flaggedBrowse: '+15005550089',
   swappedYes: '+15005550092',
+  fiveDigit: '+15005550094',
 } as const;
 
 const PROPOSALS = [
@@ -122,7 +123,12 @@ const seed = async (
   {
     maxVotesPerMember,
     proposals,
-  }: { maxVotesPerMember: number; proposals: typeof PROPOSALS },
+    firstCode,
+  }: {
+    maxVotesPerMember: number;
+    proposals: typeof PROPOSALS;
+    firstCode?: number;
+  },
 ) => {
   const phone = parsePhoneNumber(number);
   const voter = await fixture.createPhoneOnlyAccount(phone);
@@ -131,6 +137,7 @@ const seed = async (
     maxVotesPerMember,
     proposalTitles: proposals,
     name: `Park Funding ${number}`,
+    firstCode,
   });
   await fixture.addMember(instance.instanceProfileId, voter);
   return { phone, voter, ...instance };
@@ -784,6 +791,40 @@ describe('handleSmsBallot against the database', () => {
       }),
     ]);
     expect(recordedSms).toEqual([]);
+    expect(await readVotes(instanceId)).toEqual([]);
+  });
+
+  it('given a decision whose codes have passed 9999 (planted directly, no service issues that many), when the voter texts INFO with a five-digit code and then that code, then the proposal is described and added as a pick', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const { phone, voter, instanceId } = await seed(
+      fixture,
+      NUMBERS.fiveDigit,
+      {
+        maxVotesPerMember: 2,
+        proposals: PROPOSALS.slice(0, 2),
+        firstCode: 10000,
+      },
+    );
+    const t = new InngestTestEngine({ function: handleSmsBallot });
+
+    const { result } = await t.execute({
+      events: [ballotRequest(instanceId, voter.authUserId, phone)],
+      steps: [
+        reply(phone, 1, { keyword: 'info', argument: '10000' }),
+        reply(phone, 2, { codes: ['10000'] }),
+        silence(3),
+      ],
+    });
+
+    expect(result).toMatchObject({ message: 'ballot expired', picks: 1 });
+    const [, info, pick] = bodies();
+    expect(info).toBe(
+      '10000: "Fifth Ave crosswalk lighting" ($85,000). Lights at the crossing. Text 10000 to add it to your ballot.',
+    );
+    expect(pick).toContain('Pick 1: "Fifth Ave crosswalk lighting" ($85,000).');
     expect(await readVotes(instanceId)).toEqual([]);
   });
 });

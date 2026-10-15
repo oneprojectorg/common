@@ -7,12 +7,13 @@ import {
   listSmsBallotProposals,
   safeParsePhoneNumber,
 } from '@op/common';
+import { SMS_PROPOSAL_CODE } from '@op/core/sms';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
 import { smsNumberRateLimit } from './smsInboundLimits';
 
-const INFO_ARGUMENT_PATTERN = /^(.+?)\s+(\d{3,4})$/;
+const INFO_ARGUMENT_PATTERN = new RegExp(`^(.+?)\\s+(${SMS_PROPOSAL_CODE})$`);
 const { smsInboundReceived } = Events;
 
 export const handleSmsInfoCommand = inngest.createFunction(
