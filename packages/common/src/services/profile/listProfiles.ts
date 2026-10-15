@@ -32,9 +32,7 @@ export const listProfiles = async ({
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
   types?: EntityType[];
-  /** Organizations tagged with any of these focus-area taxonomy terms. */
   focusAreaIds?: string[];
-  /** Organizations tagged with any of these strategy taxonomy terms. */
   strategyIds?: string[];
 }) => {
   try {
@@ -44,8 +42,6 @@ export const listProfiles = async ({
       _: profiles.updatedAt,
     });
 
-    // `id` breaks ties for every ordering, in both ORDER BY and the cursor:
-    // equal names or timestamps otherwise repeat or skip rows across pages.
     const cursorCondition = cursor
       ? getCursorCondition({
           column: orderByColumn,
@@ -59,8 +55,6 @@ export const listProfiles = async ({
     const typeCondition =
       types && types.length > 0 ? inArray(profiles.type, types) : undefined;
 
-    // Term filters match an organization's profile. Each is "any of these
-    // terms"; together they must both hold.
     const focusAreaCondition = focusAreaIds?.length
       ? inArray(
           profiles.id,
