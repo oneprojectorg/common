@@ -14,7 +14,8 @@ export const seedExportRecord = async (
     EXPORT_CACHE_TTL_SECONDS,
   );
 
-  if (written.status !== 'ok') {
+  // `disabled` is a deployment without Redis, which reads report as a miss.
+  if (written.status === 'timeout' || written.status === 'error') {
     throw new CommonError('Could not record the export request.');
   }
 };

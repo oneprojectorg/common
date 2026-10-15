@@ -27,7 +27,7 @@ describe('seedExportRecord', () => {
     );
   });
 
-  it.each([['timeout'], ['error'], ['disabled']] as const)(
+  it.each([['timeout'], ['error']] as const)(
     'throws when the write reports %s',
     async (status) => {
       vi.mocked(setWithStatus).mockResolvedValue({ status });
@@ -37,4 +37,12 @@ describe('seedExportRecord', () => {
       ).rejects.toThrow(CommonError);
     },
   );
+
+  it('passes when no cache is configured, as reads treat that as a miss', async () => {
+    vi.mocked(setWithStatus).mockResolvedValue({ status: 'disabled' });
+
+    await expect(
+      seedExportRecord('key', { status: 'pending' }),
+    ).resolves.toBeUndefined();
+  });
 });

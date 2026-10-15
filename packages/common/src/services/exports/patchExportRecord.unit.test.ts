@@ -90,7 +90,7 @@ describe('patchExportRecord', () => {
     },
   );
 
-  it.each([['timeout'], ['error'], ['disabled']] as const)(
+  it.each([['timeout'], ['error']] as const)(
     'throws when the write reports %s',
     async (status) => {
       vi.mocked(getWithStatus).mockResolvedValue({ status: 'miss' });
@@ -101,4 +101,13 @@ describe('patchExportRecord', () => {
       ).rejects.toThrow(CommonError);
     },
   );
+
+  it('passes when no cache is configured, as reads treat that as a miss', async () => {
+    vi.mocked(getWithStatus).mockResolvedValue({ status: 'miss' });
+    vi.mocked(setWithStatus).mockResolvedValue({ status: 'disabled' });
+
+    await expect(
+      patchExportRecord('key', { status: 'completed' }),
+    ).resolves.toBeUndefined();
+  });
 });
