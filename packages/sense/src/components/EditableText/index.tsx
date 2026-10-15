@@ -71,8 +71,6 @@ function EditableText({
     node?.select();
   }, []);
 
-  useContentHeight(fieldRef, draft, wrap && isEditing);
-
   const open = () => {
     setDraft(value);
     setIsEditing(true);
@@ -181,15 +179,17 @@ function EditableText({
           text
         ) : wrap ? (
           <Textarea
+            unstyled
             rows={1}
             enterKeyHint="done"
-            className={TEXTAREA_CLASSNAME}
+            className="overflow-hidden"
             {...fieldProps}
           />
         ) : (
           <Input
+            unstyled
             enterKeyHint="done"
-            className={INPUT_CLASSNAME}
+            className="field-sizing-content w-auto max-w-full min-w-24"
             {...fieldProps}
           />
         )}
@@ -221,12 +221,6 @@ const BUTTON_CLASSNAME =
   '-m-1 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground motion-reduce:transition-none';
 const REST_BUTTON_CLASSNAME =
   'static focus-visible:ring-0 after:absolute after:inset-0';
-// No chrome, and the box's type: the field looks like the text it replaces.
-const FIELD_CLASSNAME =
-  'h-auto max-w-full rounded-none border-0 bg-transparent p-0 text-current shadow-none [font:inherit] [letter-spacing:inherit] focus-visible:border-0 focus-visible:ring-0';
-const INPUT_CLASSNAME = `${FIELD_CLASSNAME} field-sizing-content w-auto min-w-24`;
-const TEXTAREA_CLASSNAME = `${FIELD_CLASSNAME} min-h-0 w-full resize-none overflow-hidden`;
-
 function DisplayText({
   text,
   muted,
@@ -250,46 +244,6 @@ function DisplayText({
       {text}
     </span>
   );
-}
-
-/** Sizes a textarea to its content where `field-sizing: content` is unsupported (Firefox). */
-function useContentHeight(
-  fieldRef: React.RefObject<FieldElement | null>,
-  value: string,
-  enabled: boolean,
-) {
-  React.useLayoutEffect(() => {
-    if (enabled && !supportsFieldSizing()) {
-      fitToContent(fieldRef.current);
-    }
-  }, [fieldRef, value, enabled]);
-
-  React.useEffect(() => {
-    const field = fieldRef.current;
-    if (!enabled || supportsFieldSizing() || !field) {
-      return;
-    }
-    const observer = new ResizeObserver(() => fitToContent(field));
-    observer.observe(field);
-    return () => {
-      observer.disconnect();
-    };
-  }, [fieldRef, enabled]);
-}
-
-function fitToContent(field: FieldElement | null) {
-  if (!(field instanceof HTMLTextAreaElement)) {
-    return;
-  }
-  field.style.height = 'auto';
-  field.style.height = `${field.scrollHeight}px`;
-}
-
-let fieldSizingSupport: boolean | undefined;
-
-function supportsFieldSizing() {
-  fieldSizingSupport ??= CSS.supports('field-sizing', 'content');
-  return fieldSizingSupport;
 }
 
 export { EditableText };

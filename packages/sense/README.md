@@ -234,6 +234,14 @@ published source lags its declared dependency versions. Reapply if you re-run
   chains, so `className` was silently ignored (the mobile `Sidebar`'s
   `w-(--sidebar-width)` lost to `data-[side=left]:w-7/8`). The `data-[side]`
   variants for insets, borders and translates are stock — keep them.
+- `input.tsx`, `textarea.tsx` — added `unstyled`: drops the chrome (border,
+  fill, padding, radius, height, type size, the focus and invalid rings; the
+  resize grip on `textarea`) and keeps the behaviour, for a field that reads as
+  the text around it (`EditableText`, the process overview). The counterpart of
+  `Button`'s `bare`.
+- `textarea.tsx` — the `ref` goes through `lib/useFieldSizingFallback`, which
+  sizes the box from `scrollHeight` where `field-sizing: content` is
+  unsupported (Firefox) and only merges the ref elsewhere.
 - `sheet.tsx` — added `inline-start` / `inline-end` to `side`, resolved against
   `useDirection` before the physical variants are applied. Base UI already
   reports those two as `data-side` values on its positioned surfaces; `Sheet`

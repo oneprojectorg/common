@@ -1,5 +1,6 @@
 'use client';
 
+import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
 
 // Borderless, document-style text inputs for the Overview page (headline +
@@ -33,7 +34,8 @@ export function OverviewTextField({
   const showCount = variant === 'headline';
 
   const textarea = (
-    <textarea
+    <Textarea
+      unstyled
       rows={1}
       value={value}
       maxLength={maxLength}
@@ -49,10 +51,8 @@ export function OverviewTextField({
       placeholder={placeholder}
       aria-label={placeholder}
       className={cn(
-        // field-sizing-content grows the textarea with its content so long
-        // headlines/descriptions wrap instead of getting cut off.
-        'field-sizing-content resize-none overflow-hidden bg-transparent placeholder:text-muted-foreground focus:outline-none',
-        showCount ? 'min-w-0 flex-1' : 'w-full',
+        'overflow-hidden',
+        showCount && 'min-w-0 flex-1',
         variant === 'headline' && 'font-serif text-headline font-light',
         variant === 'description' && 'text-base',
       )}

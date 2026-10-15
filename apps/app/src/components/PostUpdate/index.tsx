@@ -22,8 +22,8 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import type { ReactNode, RefObject } from 'react';
+import { useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -566,30 +566,6 @@ const PostUpdateWithUser = ({
     }
   };
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      const handleInput = () => {
-        textarea.style.height = '1.5rem';
-        textarea.style.height = `${textarea.scrollHeight}px`;
-      };
-
-      textarea.addEventListener('input', handleInput);
-
-      return () => {
-        textarea.removeEventListener('input', handleInput);
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea && !content) {
-      textarea.style.height = '1.5rem';
-    }
-  }, [content]);
-
   if (!userCanInteract(user)) {
     return null;
   }
@@ -622,7 +598,7 @@ const PostUpdateWithUser = ({
         </InputGroupAddon>
         <div className="flex min-w-0 flex-1 flex-col">
           <InputGroupTextarea
-            ref={textareaRef as RefObject<HTMLTextAreaElement>}
+            rows={1}
             className="min-h-0 overflow-y-hidden ps-1 pt-1"
             placeholder={placeholder || t('composerPlaceholder')}
             value={content}
