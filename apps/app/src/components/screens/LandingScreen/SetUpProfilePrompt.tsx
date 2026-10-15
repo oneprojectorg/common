@@ -54,7 +54,7 @@ export const SetUpProfilePrompt = () => {
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border bg-background p-6 sm:flex-row sm:items-center sm:gap-6">
+    <section className="flex flex-col gap-4 rounded-xl border bg-muted p-6 sm:flex-row sm:items-center sm:gap-6">
       <div className="flex flex-1 flex-col gap-2">
         <Header2 className="font-sans text-base font-strong">
           {t('setUpProfileHeading')}
