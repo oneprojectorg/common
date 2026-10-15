@@ -4,7 +4,9 @@ import { z } from 'zod';
 import { taxonomyTermsEncoder } from '../../encoders/taxonomyTerms';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
-const termOptionSchema = taxonomyTermsEncoder.pick({ id: true, label: true });
+const termOptionSchema = taxonomyTermsEncoder
+  .pick({ id: true, label: true })
+  .extend({ slug: z.string() });
 
 const outputSchema = z.object({
   focusAreas: z.array(termOptionSchema),

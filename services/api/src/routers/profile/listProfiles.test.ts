@@ -154,17 +154,21 @@ describe.concurrent('profile.list', () => {
   });
 
   describe('term filters and ordering', () => {
-    /** One focus-area term and one strategy term, removed after the test. */
     const createTerms = async (
       taskId: string,
       onTestFinished: (fn: () => Promise<void>) => void,
     ) => {
-      const [focusArea, strategy] = await db
+      const [focusArea, otherFocusArea, strategy] = await db
         .insert(taxonomyTerms)
         .values([
           {
             termUri: `test:focus:${taskId}`,
             label: `Test Focus ${taskId}`,
+            facet: 'focusArea',
+          },
+          {
+            termUri: `test:focus2:${taskId}`,
+            label: `Test Focus 2 ${taskId}`,
             facet: 'focusArea',
           },
           {
@@ -174,16 +178,26 @@ describe.concurrent('profile.list', () => {
           },
         ])
         .returning({ id: taxonomyTerms.id });
-      if (!focusArea || !strategy) {
+      if (!focusArea || !otherFocusArea || !strategy) {
         throw new Error('Failed to insert taxonomy term fixtures');
       }
       // Deleting a term cascades to organizations_terms/_strategies.
       onTestFinished(async () => {
         await db
           .delete(taxonomyTerms)
-          .where(inArray(taxonomyTerms.id, [focusArea.id, strategy.id]));
+          .where(
+            inArray(taxonomyTerms.id, [
+              focusArea.id,
+              otherFocusArea.id,
+              strategy.id,
+            ]),
+          );
       });
-      return { focusAreaId: focusArea.id, strategyId: strategy.id };
+      return {
+        focusAreaId: focusArea.id,
+        otherFocusAreaId: otherFocusArea.id,
+        strategyId: strategy.id,
+      };
     };
 
     it('returns only organizations tagged with the focus area', async ({
@@ -192,10 +206,7 @@ describe.concurrent('profile.list', () => {
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { focusAreaId } = await createTerms(task.id, onTestFinished);
-      const [tagged, untagged] = await Promise.all([
-        testData.createOrganization({ users: { admin: 1 } }),
-        testData.createOrganization({ users: { admin: 1 } }),
-      ]);
+      const tagged = await testData.createOrganization({ users: { admin: 1 } });
       await db.insert(organizationsTerms).values({
         organizationId: tagged.organization.id,
         taxonomyTermId: focusAreaId,
@@ -212,9 +223,47 @@ describe.concurrent('profile.list', () => {
       expect(result.items.map((item) => item.id)).toEqual([
         tagged.organization.profileId,
       ]);
-      expect(result.items.map((item) => item.id)).not.toContain(
-        untagged.organization.profileId,
+    });
+
+    it('matches organizations tagged with any of the focus areas', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const { focusAreaId, otherFocusAreaId } = await createTerms(
+        task.id,
+        onTestFinished,
       );
+      const [first, second, untagged] = await Promise.all([
+        testData.createOrganization({ users: { admin: 1 } }),
+        testData.createOrganization({ users: { admin: 1 } }),
+        testData.createOrganization({ users: { admin: 1 } }),
+      ]);
+      await db.insert(organizationsTerms).values([
+        { organizationId: first.organization.id, taxonomyTermId: focusAreaId },
+        {
+          organizationId: second.organization.id,
+          taxonomyTermId: otherFocusAreaId,
+        },
+      ]);
+
+      const { session } = await createIsolatedSession(first.adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+      const result = await caller.list({
+        limit: 100,
+        types: [EntityType.ORG],
+        focusAreaIds: [focusAreaId, otherFocusAreaId],
+      });
+
+      const ids = result.items.map((item) => item.id);
+      expect(ids).toHaveLength(2);
+      expect(ids).toEqual(
+        expect.arrayContaining([
+          first.organization.profileId,
+          second.organization.profileId,
+        ]),
+      );
+      expect(ids).not.toContain(untagged.organization.profileId);
     });
 
     it('returns only organizations tagged with the strategy', async ({
@@ -223,10 +272,7 @@ describe.concurrent('profile.list', () => {
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { strategyId } = await createTerms(task.id, onTestFinished);
-      const [tagged] = await Promise.all([
-        testData.createOrganization({ users: { admin: 1 } }),
-        testData.createOrganization({ users: { admin: 1 } }),
-      ]);
+      const tagged = await testData.createOrganization({ users: { admin: 1 } });
       await db.insert(organizationsStrategies).values({
         organizationId: tagged.organization.id,
         taxonomyTermId: strategyId,
@@ -284,57 +330,71 @@ describe.concurrent('profile.list', () => {
       ]);
     });
 
-    it('pages through equal creation times without repeating or skipping', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-      const { focusAreaId } = await createTerms(task.id, onTestFinished);
-      const orgs = await Promise.all([
-        testData.createOrganization({ users: { admin: 1 } }),
-        testData.createOrganization({ users: { admin: 1 } }),
-        testData.createOrganization({ users: { admin: 1 } }),
-      ]);
-      // Scope the listing to these three, then give them one timestamp so
-      // only the id tie-breaker can order them.
-      await db.insert(organizationsTerms).values(
-        orgs.map(({ organization }) => ({
-          organizationId: organization.id,
-          taxonomyTermId: focusAreaId,
-        })),
-      );
-      const profileIds = orgs.map(({ organization }) => organization.profileId);
-      await db
-        .update(profiles)
-        .set({ createdAt: '2026-01-01T00:00:00.000Z' })
-        .where(inArray(profiles.id, profileIds));
-
-      const [firstOrg] = orgs;
-      if (!firstOrg) {
-        throw new Error('Failed to create organizations');
-      }
-      const { session } = await createIsolatedSession(firstOrg.adminUser.email);
-      const caller = createCaller(await createTestContextWithSession(session));
-
-      const seen: string[] = [];
-      let cursor: string | null = null;
-      do {
-        const page: Awaited<ReturnType<typeof caller.list>> = await caller.list(
-          {
-            limit: 1,
-            types: [EntityType.ORG],
-            focusAreaIds: [focusAreaId],
-            orderBy: 'createdAt',
-            dir: 'desc',
-            cursor,
-          },
+    it.for([
+      ['createdAt', 'asc'],
+      ['createdAt', 'desc'],
+      ['updatedAt', 'asc'],
+      ['updatedAt', 'desc'],
+    ] as const)(
+      'pages through equal %s values (%s) in id order',
+      async ([orderBy, dir], { task, onTestFinished }) => {
+        const testData = new TestOrganizationDataManager(
+          task.id,
+          onTestFinished,
         );
-        seen.push(...page.items.map((item) => item.id));
-        cursor = page.next;
-      } while (cursor && seen.length <= profileIds.length);
+        const { focusAreaId } = await createTerms(task.id, onTestFinished);
+        const orgs = await Promise.all([
+          testData.createOrganization({ users: { admin: 1 } }),
+          testData.createOrganization({ users: { admin: 1 } }),
+          testData.createOrganization({ users: { admin: 1 } }),
+        ]);
+        await db.insert(organizationsTerms).values(
+          orgs.map(({ organization }) => ({
+            organizationId: organization.id,
+            taxonomyTermId: focusAreaId,
+          })),
+        );
+        const profileIds = orgs.map(
+          ({ organization }) => organization.profileId,
+        );
+        await db
+          .update(profiles)
+          .set({
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          })
+          .where(inArray(profiles.id, profileIds));
 
-      expect(seen).toHaveLength(profileIds.length);
-      expect(new Set(seen)).toEqual(new Set(profileIds));
-    });
+        const [firstOrg] = orgs;
+        if (!firstOrg) {
+          throw new Error('Failed to create organizations');
+        }
+        const { session } = await createIsolatedSession(
+          firstOrg.adminUser.email,
+        );
+        const caller = createCaller(
+          await createTestContextWithSession(session),
+        );
+
+        const seen: string[] = [];
+        let cursor: string | null = null;
+        do {
+          const page: Awaited<ReturnType<typeof caller.list>> =
+            await caller.list({
+              limit: 1,
+              types: [EntityType.ORG],
+              focusAreaIds: [focusAreaId],
+              orderBy,
+              dir,
+              cursor,
+            });
+          seen.push(...page.items.map((item) => item.id));
+          cursor = page.next;
+        } while (cursor && seen.length <= profileIds.length);
+
+        const idOrder = [...profileIds].sort();
+        expect(seen).toEqual(dir === 'asc' ? idOrder : idOrder.reverse());
+      },
+    );
   });
 });

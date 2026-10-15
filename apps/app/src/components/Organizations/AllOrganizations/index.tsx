@@ -32,7 +32,6 @@ export const AllOrganizationsSuspense = ({
       types: types ?? [EntityType.ORG],
     },
     {
-      // Always set: without it the list never pages past the first fetch.
       getNextPageParam: nextCursor,
       initialData: initialData
         ? { pages: [initialData], pageParams: [null] }

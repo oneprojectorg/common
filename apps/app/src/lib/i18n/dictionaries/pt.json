@@ -289,7 +289,8 @@
     "sortOldest": "Mais antigas",
     "sortName": "Nome (A–Z)",
     "directoryLoadError": "Não foi possível carregar as organizações. Tente atualizar a página.",
-    "directoryEmpty": "Nenhuma organização corresponde a estes filtros."
+    "directoryEmpty": "Nenhuma organização corresponde a estes filtros.",
+    "directoryResultCount": "{count, plural, one {Mostrando # organização} other {Mostrando # organizações}}"
   },
   "profile": {
     "aboutTab": "Sobre",

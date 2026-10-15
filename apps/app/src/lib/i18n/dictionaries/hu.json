@@ -289,7 +289,8 @@
     "sortOldest": "Legrégebbi",
     "sortName": "Név (A–Z)",
     "directoryLoadError": "Nem sikerült betölteni a szervezeteket. Próbáld frissíteni az oldalt.",
-    "directoryEmpty": "Egy szervezet sem felel meg ezeknek a szűrőknek."
+    "directoryEmpty": "Egy szervezet sem felel meg ezeknek a szűrőknek.",
+    "directoryResultCount": "{count, plural, one {# szervezet látható} other {# szervezet látható}}"
   },
   "profile": {
     "aboutTab": "Névjegy",

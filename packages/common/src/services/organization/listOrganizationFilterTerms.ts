@@ -11,12 +11,7 @@ interface TaxonomyScope {
   facet?: string;
 }
 
-/**
- * The focus-area and strategy terms that at least one organization is tagged
- * with, ordered by label — the options for the organizations directory
- * filters. `organizations_terms` also holds other taxonomies (communities
- * served, funding), so each list is scoped to its taxonomy.
- */
+/** Focus-area and strategy terms at least one organization is tagged with. */
 export const listOrganizationFilterTerms = async ({
   focusAreaTaxonomy = { namespaceUri: 'necSimple', facet: 'focusArea' },
   strategyTaxonomy = { namespaceUri: 'splcStrategies' },
@@ -25,19 +20,26 @@ export const listOrganizationFilterTerms = async ({
   strategyTaxonomy?: TaxonomyScope;
 } = {}) => {
   const [focusAreas, strategies] = await Promise.all([
-    listUsedTerms(focusAreaTaxonomy, organizationsTerms),
-    listUsedTerms(strategyTaxonomy, organizationsStrategies),
+    listUsedTerms({ ...focusAreaTaxonomy, usedIn: organizationsTerms }),
+    listUsedTerms({ ...strategyTaxonomy, usedIn: organizationsStrategies }),
   ]);
 
   return { focusAreas, strategies };
 };
 
-const listUsedTerms = (
-  { namespaceUri, facet }: TaxonomyScope,
-  usedIn: typeof organizationsTerms | typeof organizationsStrategies,
-) =>
-  db
-    .select({ id: taxonomyTerms.id, label: taxonomyTerms.label })
+const listUsedTerms = async ({
+  namespaceUri,
+  facet,
+  usedIn,
+}: TaxonomyScope & {
+  usedIn: typeof organizationsTerms | typeof organizationsStrategies;
+}): Promise<{ id: string; label: string; slug: string }[]> => {
+  const terms = await db
+    .select({
+      id: taxonomyTerms.id,
+      label: taxonomyTerms.label,
+      termUri: taxonomyTerms.termUri,
+    })
     .from(taxonomyTerms)
     .innerJoin(taxonomies, eq(taxonomyTerms.taxonomyId, taxonomies.id))
     .where(
@@ -53,3 +55,16 @@ const listUsedTerms = (
       ),
     )
     .orderBy(asc(taxonomyTerms.label), asc(taxonomyTerms.id));
+
+  return terms.map(({ id, label, termUri }) => ({
+    id,
+    label,
+    slug: getTermSlug(termUri),
+  }));
+};
+
+/** `necSimple:energyAndUtilities` → `energy-and-utilities` */
+const getTermSlug = (termUri: string) =>
+  (termUri.split(':').at(-1) ?? termUri)
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .toLowerCase();
