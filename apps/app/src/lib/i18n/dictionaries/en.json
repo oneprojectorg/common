@@ -1809,7 +1809,20 @@
     },
     "processAdmin": {
       "pageTitle": "Manage {decisionName}",
-      "underConstruction": "The new process admin is being built here."
+      "backToEditor": "Back to editor",
+      "viewProcess": "View process",
+      "stewardedBy": "Stewarded by <steward>{name}</steward>",
+      "aboutHeading": "About the process",
+      "statusDraft": "Draft",
+      "statusLive": "Live",
+      "statusCompleted": "Completed",
+      "statusCancelled": "Cancelled",
+      "noPhasesTitle": "No phases yet",
+      "noPhasesDescription": "Phases you add in the editor appear here.",
+      "noResourcesTitle": "No pinned resources",
+      "noResourcesDescription": "Guides, documents and links participants can refer to.",
+      "noAboutTitle": "No description yet",
+      "noAboutDescription": "Describe the process in the editor so participants know what it is for."
     }
   },
   "loadingProgress": "Loading...",
