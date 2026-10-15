@@ -44,9 +44,7 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
-  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
-  const canMerge =
-    mergeEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
+  const canMerge = canManage && proposal.status !== ProposalStatus.DRAFT;
 
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
   // Shown once submitted; toggles to Undo once rejected, so it stays put.

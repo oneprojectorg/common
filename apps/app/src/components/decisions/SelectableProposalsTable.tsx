@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import {
@@ -43,7 +42,6 @@ export const SelectableProposalsTable = ({
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const selectedSet = new Set(selectedIds);
-  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
 
   if (isMobile) {
     return (
@@ -87,13 +85,11 @@ export const SelectableProposalsTable = ({
               {t('decisions.proposals.selectProposalLabel')}
             </span>
           </TableHead>
-          {mergeEnabled ? (
-            <TableHead className="w-10">
-              <span className="sr-only">
-                {t('decisions.proposals.proposalOptionsLabel')}
-              </span>
-            </TableHead>
-          ) : null}
+          <TableHead className="w-10">
+            <span className="sr-only">
+              {t('decisions.proposals.proposalOptionsLabel')}
+            </span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -157,14 +153,9 @@ export const SelectableProposalsTable = ({
                   className="ms-auto"
                 />
               </TableCell>
-              {mergeEnabled ? (
-                <TableCell>
-                  <ProposalRowMenu
-                    proposal={proposal}
-                    isSelected={isSelected}
-                  />
-                </TableCell>
-              ) : null}
+              <TableCell>
+                <ProposalRowMenu proposal={proposal} isSelected={isSelected} />
+              </TableCell>
             </TableRow>
           );
         })}

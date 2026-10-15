@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { formatCurrency } from '@/utils/formatting';
 import {
   type ProposalWithAggregates,
@@ -60,7 +59,6 @@ export function ReviewSelectionTable({
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
-  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
 
   if (isMobile) {
     return (
@@ -111,13 +109,11 @@ export function ReviewSelectionTable({
           <TableHead scope="col" className="w-28">
             <span className="sr-only">{t('decisions.advanceAction')}</span>
           </TableHead>
-          {mergeEnabled ? (
-            <TableHead scope="col" className="w-10">
-              <span className="sr-only">
-                {t('decisions.proposals.proposalOptionsLabel')}
-              </span>
-            </TableHead>
-          ) : null}
+          <TableHead scope="col" className="w-10">
+            <span className="sr-only">
+              {t('decisions.proposals.proposalOptionsLabel')}
+            </span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -196,14 +192,12 @@ export function ReviewSelectionTable({
                   className="w-28 justify-center"
                 />
               </TableCell>
-              {mergeEnabled ? (
-                <TableCell>
-                  <ProposalRowMenu
-                    proposal={item.proposal}
-                    isSelected={advancing}
-                  />
-                </TableCell>
-              ) : null}
+              <TableCell>
+                <ProposalRowMenu
+                  proposal={item.proposal}
+                  isSelected={advancing}
+                />
+              </TableCell>
             </TableRow>
           );
         })}
