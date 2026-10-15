@@ -6,7 +6,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils';
@@ -25,6 +25,7 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
+import { getInstancePhases, isLastPhase } from './schemas/instanceData';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
@@ -102,14 +103,17 @@ export async function listProposalsWithReviewAggregates(
       user,
       profileId: instance.profileId,
       permissions: { decisions: permission.ADMIN },
-    });
+    }).then((roles) =>
+      checkPermission({ decisions: permission.UPDATE }, roles),
+    );
   }
 
-  const [phaseProposalIds, proposalTemplate] = await Promise.all([
-    getProposalIdsForPhase({ instance, phaseId }),
-    resolveProposalTemplate(instance.instanceData, instance.processId),
-    accessCheck,
-  ]);
+  const [phaseProposalIds, proposalTemplate, canUpdateProposals] =
+    await Promise.all([
+      getProposalIdsForPhase({ instance, phaseId }),
+      resolveProposalTemplate(instance.instanceData, instance.processId),
+      accessCheck,
+    ]);
 
   if ('proposalIds' in input) {
     return listProposalsFiltered({
@@ -126,6 +130,13 @@ export async function listProposalsWithReviewAggregates(
   return listPhaseProposalsWithAggregates({
     processInstanceId,
     phaseId,
+    // Mirrors `updateProposal`, which also refuses every edit in the results phase.
+    isEditable:
+      canUpdateProposals === true &&
+      !isLastPhase(
+        instance.currentStateId,
+        getInstancePhases(instance.instanceData),
+      ),
     phaseProposalIds,
     scoredCriterionKeys,
     rubricTemplate,
@@ -206,6 +217,7 @@ async function listProposalsFiltered({
 async function listPhaseProposalsWithAggregates({
   processInstanceId,
   phaseId,
+  isEditable,
   phaseProposalIds,
   scoredCriterionKeys,
   rubricTemplate,
@@ -213,6 +225,7 @@ async function listPhaseProposalsWithAggregates({
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
+  isEditable: boolean;
   phaseProposalIds: string[];
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
@@ -250,8 +263,7 @@ async function listPhaseProposalsWithAggregates({
     ]);
 
   const items = rows.map((proposal) => ({
-    // Only a decisions admin reaches this mode, and they can edit any proposal.
-    proposal: { ...proposal, isEditable: true },
+    proposal: { ...proposal, isEditable },
     aggregates: getComputedReviewAggregates({
       reviewAssignments: proposal.reviewAssignments,
       scoredCriterionKeys,

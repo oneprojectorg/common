@@ -166,6 +166,27 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(filtered.items[0]?.proposal.isEditable).toBeUndefined();
   });
 
+  it('does not mark rows editable in the results phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.createReviewAssignment({ context, phaseId: 'results' });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    expect(result.items.map((item) => item.proposal.isEditable)).toEqual([
+      false,
+    ]);
+  });
+
   it('returns aggregates for the requested proposalIds in filtered mode', async ({
     task,
     onTestFinished,
