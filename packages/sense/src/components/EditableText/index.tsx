@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { LuPencil } from 'react-icons/lu';
+import { LuCheck, LuPencil } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -24,6 +24,8 @@ interface EditableTextProps extends Omit<
   label: string;
   /** Describes the text's button at rest ("Budget 2027, button, Edit"). */
   editHint?: string;
+  /** Names the button that commits the edit. */
+  doneLabel?: string;
   /** Wraps the text in both states. Style it with `className`: the field inherits its font, letter spacing and colour. */
   as?: EditableTextTag;
   /** Sizes the pencil; it defaults to `size-4`. */
@@ -37,12 +39,13 @@ interface EditableTextProps extends Omit<
   maxLength?: number;
 }
 
-/** One line of text edited in place, such as a title: Enter or blur commits, Escape or a blank value reverts. */
+/** One line of text edited in place, such as a title: Enter, Done or focus leaving commits; Escape or a blank value reverts. */
 function EditableText({
   value,
   onCommit,
   label,
   editHint = 'Edit',
+  doneLabel = 'Done',
   as: Tag = 'p',
   iconClassName,
   placeholder,
@@ -167,20 +170,7 @@ function EditableText({
         event.preventDefault();
         shouldReturnFocusRef.current = true;
         commit();
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        // Keep Escape from also dismissing a dialog this sits in.
-        event.stopPropagation();
-        shouldReturnFocusRef.current = true;
-        revert();
       }
-    },
-    onBlur: () => {
-      // Switching tab or window keeps the edit open.
-      if (!document.hasFocus()) {
-        return;
-      }
-      commit();
     },
   };
   const fieldClassName =
@@ -189,7 +179,32 @@ function EditableText({
   return (
     <Tag className={className} {...props}>
       {isEditing ? (
-        <span className={cn(boxClassName, 'rounded-lg ring-2 ring-ring')}>
+        <span
+          className={cn(boxClassName, 'rounded-lg ring-2 ring-ring')}
+          onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing || event.keyCode === 229) {
+              return;
+            }
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              // Keep Escape from also dismissing a dialog this sits in.
+              event.stopPropagation();
+              shouldReturnFocusRef.current = true;
+              revert();
+            }
+          }}
+          onBlur={(event) => {
+            // Moving between the field and Done stays inside the edit.
+            if (event.currentTarget.contains(event.relatedTarget)) {
+              return;
+            }
+            // Switching tab or window keeps the edit open.
+            if (!document.hasFocus()) {
+              return;
+            }
+            commit();
+          }}
+        >
           {wrap ? (
             <Textarea
               ref={setFieldRef}
@@ -213,10 +228,19 @@ function EditableText({
             />
           )}
           <FirstLine>
-            <LuPencil
-              aria-hidden
-              className={cn(iconSizeClassName, 'invisible')}
-            />
+            <Button
+              variant="bare"
+              aria-label={doneLabel}
+              className="-m-1 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:text-foreground"
+              // Keeps focus in the field, so the click commits once with focus returned to the text.
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                shouldReturnFocusRef.current = true;
+                commit();
+              }}
+            >
+              <LuCheck aria-hidden className={iconSizeClassName} />
+            </Button>
           </FirstLine>
         </span>
       ) : (

@@ -27,7 +27,8 @@ export default meta;
 type Story = StoryObj<typeof EditableText>;
 
 // Click the title, or Tab to it and press Enter. The text is selected on
-// entry; Enter or clicking away commits, Escape reverts, a blank value reverts.
+// entry; Enter, the Done button or clicking away commits, Escape reverts, a
+// blank value reverts.
 export const Default: Story = {
   render: (args) => <ControlledText {...args} initial="Community fund 2027" />,
 };
@@ -159,6 +160,32 @@ export const CommitsOnEnter: Story = {
 
     await userEvent.clear(field);
     await userEvent.type(field, '  Budget 2028  {Enter}');
+    await expect(args.onCommit).toHaveBeenCalledTimes(1);
+    await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
+    await waitFor(() =>
+      expect(
+        canvas.getByRole('button', { name: 'Community fund 2027' }),
+      ).toHaveFocus(),
+    );
+  },
+};
+
+// Done commits by click, and Tab reaches it without committing first.
+export const CommitsOnDone: Story = {
+  args: { value: 'Community fund 2027', onCommit: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button'));
+    const field = canvas.getByRole('textbox');
+    await userEvent.clear(field);
+    await userEvent.type(field, 'Budget 2028');
+
+    await userEvent.tab();
+    const done = canvas.getByRole('button', { name: 'Done' });
+    await expect(done).toHaveFocus();
+    await expect(args.onCommit).not.toHaveBeenCalled();
+
+    await userEvent.click(done);
     await expect(args.onCommit).toHaveBeenCalledTimes(1);
     await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
     await waitFor(() =>
