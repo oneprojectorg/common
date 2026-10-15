@@ -18,7 +18,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
 export type CreateDecisionInstanceOptions = {
-  processId: string;
+  processId: string | null;
   instanceData: DecisionInstanceData;
   name: string;
   description?: string;
