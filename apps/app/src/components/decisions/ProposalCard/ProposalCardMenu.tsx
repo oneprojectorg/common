@@ -44,7 +44,7 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
-  const canMerge = canManage && proposal.status !== ProposalStatus.DRAFT;
+  const canCurate = canManage && proposal.status !== ProposalStatus.DRAFT;
 
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
   // Shown once submitted; toggles to Undo once rejected, so it stays put.
@@ -64,7 +64,7 @@ export function ProposalCardMenu({
     const items: ProposalOptionsMenuItem[] = [];
 
     // Merge leads, per Figma 15311:9078.
-    if (canMerge) {
+    if (canCurate) {
       items.push(
         buildMergeMenuItem({
           isDisabled: isLoading,
