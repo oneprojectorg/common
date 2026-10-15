@@ -60,6 +60,15 @@ test.describe('Process admin shell', () => {
         password: TEST_USER_DEFAULT_PASSWORD,
       });
 
+      // The member can open the decision itself, so the denial below comes from
+      // the admin check rather than from missing access.
+      await memberPage.goto(`/en/decisions/${instance.slug}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(
+        memberPage.getByRole('heading', { name: instance.name, level: 2 }),
+      ).toBeVisible({ timeout: 15_000 });
+
       await memberPage.goto(managePath, {
         waitUntil: 'domcontentloaded',
       });
