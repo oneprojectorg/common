@@ -5,8 +5,6 @@ import { DEFAULT_MONEY_CURRENCY } from '../../money';
 import { normalizeBudget } from './proposalDataSchema';
 import { buildSmsBallotProposalFilter } from './smsBallotScope';
 
-export const SMS_PROPOSAL_FIRST_CODE = 101;
-
 export interface SmsBallotProposal {
   code: string;
   proposalId: string;
