@@ -29,6 +29,21 @@ test.describe('Process admin shell', () => {
     await expect(
       authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        name: 'Process Overview',
+        level: 3,
+      }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        name: 'About the process',
+        level: 3,
+      }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole('link', { name: 'Back to editor' }),
+    ).toHaveAttribute('href', new RegExp(`/decisions/${instance.slug}/edit$`));
   });
 
   test('a participant who is not an admin cannot open the manage page', async ({
