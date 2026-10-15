@@ -1,3 +1,4 @@
+import { setupSSR } from '@/utils/setupSSR';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
@@ -23,10 +24,10 @@ const MainPage = async ({
 }: {
   params: Promise<{ locale: string }>;
 }) => {
-  const { locale } = await params;
+  await setupSSR({ params });
   return (
-    <Suspense fallback={<LandingScreenSkeleton locale={locale} />}>
-      <LandingScreen locale={locale} />
+    <Suspense fallback={<LandingScreenSkeleton />}>
+      <LandingScreen />
     </Suspense>
   );
 };

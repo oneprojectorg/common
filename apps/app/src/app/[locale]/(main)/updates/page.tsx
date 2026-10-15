@@ -1,3 +1,4 @@
+import { setupSSR } from '@/utils/setupSSR';
 import type { Metadata } from 'next';
 
 import { getTranslations } from '@/lib/i18n';
@@ -19,8 +20,8 @@ const UpdatesPage = async ({
 }: {
   params: Promise<{ locale: string }>;
 }) => {
-  const { locale } = await params;
-  return <UpdatesScreen locale={locale} />;
+  await setupSSR({ params });
+  return <UpdatesScreen />;
 };
 
 export default UpdatesPage;
