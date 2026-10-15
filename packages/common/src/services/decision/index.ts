@@ -203,6 +203,7 @@ export * from './voting';
 export * from './votingEligibility';
 export * from './sms';
 export * from './countBallotProposals';
+export * from './decisionSmsLine';
 
 // Process survey
 export * from './processSurvey';
