@@ -61,7 +61,7 @@ describe.concurrent('decisionSmsLine', () => {
     await expect(readLineByNumber(NUMBERS.first)).resolves.toBeUndefined();
   });
 
-  it('given a number bound to one decision, when an admin binds it to another decision, then it fails as a validation error and the other decision stays unbound', async ({
+  it('given a number bound to one decision, when an admin binds it to another decision, then it fails as a conflict and the other decision stays unbound', async ({
     task,
     onTestFinished,
   }) => {
@@ -81,7 +81,7 @@ describe.concurrent('decisionSmsLine', () => {
         instanceId: other.instance.id,
         phoneNumber: NUMBERS.shared,
       }),
-    ).rejects.toMatchObject({ name: 'ValidationError' });
+    ).rejects.toMatchObject({ name: 'ConflictError' });
 
     await expect(
       getDecisionSmsLine({ instanceId: other.instance.id }),
@@ -91,7 +91,7 @@ describe.concurrent('decisionSmsLine', () => {
     });
   });
 
-  it('given a free number, when two admins bind it to two decisions at the same time, then one decision holds it and the other fails as a validation error', async ({
+  it('given a free number, when two admins bind it to two decisions at the same time, then one decision holds it and the other fails as a conflict', async ({
     task,
     onTestFinished,
   }) => {
@@ -121,7 +121,7 @@ describe.concurrent('decisionSmsLine', () => {
     );
     expect(fulfilled).toHaveLength(1);
     expect(rejected).toHaveLength(1);
-    expect(rejected[0]?.reason).toMatchObject({ name: 'ValidationError' });
+    expect(rejected[0]?.reason).toMatchObject({ name: 'ConflictError' });
     const holder = await readLineByNumber(NUMBERS.raced);
     expect([first.instance.id, second.instance.id]).toContain(
       holder?.processInstanceId,

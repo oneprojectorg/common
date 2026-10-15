@@ -2,7 +2,7 @@ import { db, eq, sql } from '@op/db/client';
 import { decisionSmsLines } from '@op/db/schema';
 import { logger } from '@op/logging';
 
-import { NotFoundError, ValidationError } from '../../utils';
+import { ConflictError, NotFoundError } from '../../utils';
 import {
   normalizePhoneNumber,
   parsePhoneNumber,
@@ -50,9 +50,7 @@ export const setDecisionSmsLine = async ({
       columns: { processInstanceId: true },
     });
     if (holder && holder.processInstanceId !== instanceId) {
-      throw new ValidationError('This number is bound to another decision', {
-        phoneNumber: 'This number is bound to another decision',
-      });
+      throw new ConflictError('This number is bound to another decision');
     }
 
     await tx
