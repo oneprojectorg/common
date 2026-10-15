@@ -303,6 +303,7 @@ export const ManualSelectionList = ({
             }
             showVotes={isFinalPhase}
             showBudget={showBudget}
+            canEditProposals={!isFinalPhase}
           />
         )}
 

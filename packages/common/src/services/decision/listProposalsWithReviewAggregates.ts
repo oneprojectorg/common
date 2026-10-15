@@ -87,35 +87,13 @@ export async function listProposalsWithReviewAggregates(
 
   // Filtered mode gates on the raw `phaseId`, not the effective one: a reviewer
   // must name the phase. The gate races the phase lookup, which never throws.
-  let accessCheck: Promise<unknown>;
   if ('proposalIds' in input) {
-    accessCheck = assertCanReadPhaseReviews({
-      instance,
-      phaseId: input.phaseId,
-      user,
-    });
-  } else {
-    if (!instance.profileId) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
-
-    accessCheck = assertProfileAccess({
-      user,
-      profileId: instance.profileId,
-      permissions: { decisions: permission.ADMIN },
-    }).then((roles) =>
-      checkPermission({ decisions: permission.UPDATE }, roles),
-    );
-  }
-
-  const [phaseProposalIds, proposalTemplate, canUpdateProposals] =
-    await Promise.all([
+    const [phaseProposalIds, proposalTemplate] = await Promise.all([
       getProposalIdsForPhase({ instance, phaseId }),
       resolveProposalTemplate(instance.instanceData, instance.processId),
-      accessCheck,
+      assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user }),
     ]);
 
-  if ('proposalIds' in input) {
     return listProposalsFiltered({
       proposalIds: input.proposalIds,
       phaseProposalIds,
@@ -127,12 +105,26 @@ export async function listProposalsWithReviewAggregates(
     });
   }
 
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const [phaseProposalIds, proposalTemplate, roles] = await Promise.all([
+    getProposalIdsForPhase({ instance, phaseId }),
+    resolveProposalTemplate(instance.instanceData, instance.processId),
+    assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: { decisions: permission.ADMIN },
+    }),
+  ]);
+
   return listPhaseProposalsWithAggregates({
     processInstanceId,
     phaseId,
     // Mirrors `updateProposal`, which also refuses every edit in the results phase.
     isEditable:
-      canUpdateProposals === true &&
+      checkPermission({ decisions: permission.UPDATE }, roles) &&
       !isLastPhase(
         instance.currentStateId,
         getInstancePhases(instance.instanceData),

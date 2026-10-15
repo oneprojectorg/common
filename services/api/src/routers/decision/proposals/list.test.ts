@@ -196,40 +196,6 @@ describe.concurrent('listProposals', () => {
     expect(myProposal?.isEditable).toBe(true);
   });
 
-  it('does not mark proposals editable in the last phase', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      processSchema: schemaWithoutPipeline,
-      instanceCount: 1,
-      status: ProcessStatus.PUBLISHED,
-    });
-    const instanceId = setup.instance.instance.id;
-
-    const [proposal, adminCaller] = await Promise.all([
-      testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: 'Last phase proposal' },
-      }),
-      createAuthenticatedCaller(setup.userEmail),
-    ]);
-    await db
-      .update(processInstances)
-      .set({ currentStateId: 'review' })
-      .where(eq(processInstances.id, instanceId));
-
-    const result = await adminCaller.decision.listProposals({
-      processInstanceId: instanceId,
-    });
-
-    expect(result.items.find((p) => p.id === proposal.id)?.isEditable).toBe(
-      false,
-    );
-  });
-
   it('should hide proposals with HIDDEN visibility from non-admin users', async ({
     task,
     onTestFinished,

@@ -29,6 +29,8 @@ interface SelectableProposalsTableProps {
   showVotes?: boolean;
   /** Show the budget column. False when the proposal template collects no budget. */
   showBudget?: boolean;
+  /** Offer Edit in the row menu. Proposals can't be edited in the results phase. */
+  canEditProposals?: boolean;
 }
 
 export const SelectableProposalsTable = ({
@@ -38,6 +40,7 @@ export const SelectableProposalsTable = ({
   getProposalHref,
   showVotes = false,
   showBudget = true,
+  canEditProposals = true,
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -156,7 +159,7 @@ export const SelectableProposalsTable = ({
               <TableCell>
                 <ProposalRowMenu
                   proposal={proposal}
-                  proposalHref={href}
+                  proposalHref={canEditProposals ? href : undefined}
                   isSelected={isSelected}
                 />
               </TableCell>

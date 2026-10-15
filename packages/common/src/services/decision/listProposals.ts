@@ -30,7 +30,7 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { getInstancePhases, isLastPhase } from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
@@ -307,13 +307,10 @@ export const listProposals = async ({
     profileRoles,
   );
 
-  const instancePhases = getInstancePhases(instance.instanceData);
   const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
-    phases: instancePhases,
+    phases: getInstancePhases(instance.instanceData),
     currentPhaseId: instance.currentStateId,
   });
-  // `updateProposal` refuses every edit in the last (results) phase.
-  const isResultsPhase = isLastPhase(instance.currentStateId, instancePhases);
 
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
@@ -332,7 +329,6 @@ export const listProposals = async ({
 
     const isEditable =
       input.phase !== 'results' &&
-      !isResultsPhase &&
       (hasAdminPermission ||
         (proposal.submittedByProfileId === currentProfileId &&
           (proposal.status === ProposalStatus.DRAFT ||
