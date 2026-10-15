@@ -24,10 +24,9 @@ export function CreateProcessFlow() {
 
   const createProcess = useMutation({
     mutationFn: (draft: ProcessDraft) =>
-      utils.client.decision.createInstanceFromWizard.mutate({
+      utils.client.decision.createInstance.mutate({
         name: draft.name,
         type: draft.type,
-        shape: draft.shape,
         phases: draft.pieces.map((piece) => ({
           kind: piece.phaseType,
           name: tWizard(piece.phaseName ?? piece.name),
