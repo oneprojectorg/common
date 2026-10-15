@@ -106,6 +106,22 @@ export const ManualSelectionList = ({
     });
   }, [candidates]);
 
+  // Unfiltered, the list is the whole pool, so a pick missing from it has left
+  // (merged or deleted) and would make the submit fail.
+  useEffect(() => {
+    if (!candidates || categoryId || candidatesQuery.isPlaceholderData) return;
+    const poolIds = new Set(candidates.map((p) => p.id));
+    if (selectedIds.some((id) => !poolIds.has(id))) {
+      setSelectedIds(selectedIds.filter((id) => poolIds.has(id)));
+    }
+  }, [
+    candidates,
+    categoryId,
+    candidatesQuery.isPlaceholderData,
+    selectedIds,
+    setSelectedIds,
+  ]);
+
   const selectedProposals = useMemo(
     () =>
       selectedIds
