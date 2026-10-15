@@ -25,6 +25,7 @@ export const GRADIENT_COLORS = [
   { gradient: 'bg-redTeal', hex: '#e86a4a' },
   { gradient: 'bg-blueGreen', hex: '#1a7ab8' },
   { gradient: 'bg-orangePurple', hex: '#8b2db0' },
+  { gradient: 'bg-coralCoral', hex: '#dc5a24' },
 ] as const;
 
 export const GRADIENTS = GRADIENT_COLORS.map((c) => c.gradient);
