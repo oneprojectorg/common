@@ -1863,6 +1863,10 @@
       "votingPhase": "Szavazás",
       "workThemUp": "Kidolgozásuk",
       "workThemUpDescription": "Ami továbblép, részletesebbé épül ki."
+    },
+    "processAdmin": {
+      "pageTitle": "{decisionName} kezelése",
+      "underConstruction": "Itt készül az új folyamatkezelő felület."
     }
   },
   "loadingProgress": "Betöltés...",
