@@ -91,7 +91,7 @@ function EditableText({
   };
 
   const boxClassName = cn(
-    'relative isolate -mx-2 flex w-fit max-w-full gap-2 rounded-lg px-2 py-1',
+    'relative -mx-2 flex w-fit max-w-full gap-2 rounded-lg px-2 py-1',
     wrap ? 'items-start' : 'items-center',
     className,
   );
@@ -146,7 +146,13 @@ function EditableText({
 
   return (
     <div
-      className={cn(boxClassName, editing && 'ring-2 ring-ring')}
+      className={cn(
+        boxClassName,
+        // At rest the button covers the box, so the box paints its hover and focus.
+        editing
+          ? 'ring-2 ring-ring'
+          : 'transition-colors has-hover:bg-accent has-focus-visible:bg-accent has-focus-visible:ring-3 has-focus-visible:ring-ring/50 motion-reduce:transition-none',
+      )}
       onKeyDown={(event) => {
         // Safari reports the Enter that ends a composition with keyCode 229 instead.
         if (
@@ -214,9 +220,9 @@ function EditableText({
           aria-label={editing ? doneLabel : undefined}
           className={cn(
             '-m-1 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground motion-reduce:transition-none',
-            // At rest the button covers the whole box, so the text is the click target and carries the hover and focus styles.
+            // At rest a transparent pseudo covers the box, so the text is the click and hover target.
             !editing &&
-              'static after:absolute after:inset-0 after:-z-10 after:rounded-lg after:transition-colors hover:after:bg-accent focus-visible:ring-0 focus-visible:after:bg-accent focus-visible:after:ring-3 focus-visible:after:ring-ring/50 active:not-aria-[haspopup]:translate-none motion-reduce:after:transition-none',
+              'static after:absolute after:inset-0 focus-visible:ring-0 active:not-aria-[haspopup]:translate-none',
           )}
           // Keeps focus in the field on press, so the click commits once.
           onMouseDown={editing ? (event) => event.preventDefault() : undefined}
