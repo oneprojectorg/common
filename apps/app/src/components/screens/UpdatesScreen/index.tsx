@@ -19,10 +19,6 @@ import { ListPageLayout } from '@/components/layout/ListPageLayout';
 
 import { Feed } from './Feed';
 
-/**
- * Posts from organizations across Common (Figma 21477:64224). Moved off the
- * home page, which now centres on the user's own processes.
- */
 export const UpdatesScreen = async () => {
   const t = await getTranslations();
 
@@ -44,8 +40,7 @@ export const UpdatesScreen = async () => {
 };
 
 const UpdatesFeed = async () => {
-  // Prefetch on the server to prevent a hydration mismatch; if this fails the
-  // client fetches instead.
+  // Prefetch to avoid a hydration mismatch; on failure the client fetches.
   const [t, user, { utils, queryClient }] = await Promise.all([
     getTranslations(),
     getRequiredUser(),

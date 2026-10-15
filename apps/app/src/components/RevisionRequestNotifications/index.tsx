@@ -49,10 +49,6 @@ const RevisionRequestNotificationsSuspense = () => {
   );
 };
 
-/**
- * Proposals a reviewer has sent back to the user for changes. The user's
- * active processes themselves are listed by the home page's ActiveProcesses.
- */
 export const RevisionRequestNotifications = () => {
   return (
     <ErrorBoundary fallback={null}>

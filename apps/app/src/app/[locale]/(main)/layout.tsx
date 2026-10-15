@@ -39,9 +39,7 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
 
   await assertWalledGardenAccess(user);
 
-  // The sidebar is the primary nav surface, so it starts open on desktop.
-  // sense's SidebarProvider writes each toggle to the `sidebar_state` cookie
-  // but cannot read it back on load — that is this server layout's job.
+  // SidebarProvider writes `sidebar_state` but can't read it back on load.
   const cookieStore = await cookies();
   const isSidebarOpen = cookieStore.get('sidebar_state')?.value !== 'false';
 
@@ -57,9 +55,7 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
           <SiteHeader />
           <div
             style={{ '--header-height': '3.75rem' } as React.CSSProperties}
-            // Only the main well scrolls. The sidebar is a fixed panel; were this
-            // row the scroller, a wheel over the sidebar would scroll the page
-            // behind it and the sidebar's own scroll would chain into the page.
+            // Only the main well scrolls, so the sidebar's scroll can't chain into the page.
             className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background sm:flex-row"
           >
             <SidebarNav />
