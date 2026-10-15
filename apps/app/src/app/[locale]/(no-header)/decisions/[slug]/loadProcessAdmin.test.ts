@@ -3,15 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadProcessAdmin } from './loadProcessAdmin';
 
 const mocks = vi.hoisted(() => ({
-  getUser: vi.fn(),
-  redirectToLogin: vi.fn(),
+  getRequiredUser: vi.fn(),
   loadDecision: vi.fn(),
   isServerFeatureEnabled: vi.fn(),
 }));
 
-vi.mock('@/utils/getUser', () => ({ getUser: mocks.getUser }));
-vi.mock('@/utils/walledGarden', () => ({
-  redirectToLogin: mocks.redirectToLogin,
+vi.mock('@/utils/getUser', () => ({
+  getRequiredUser: mocks.getRequiredUser,
 }));
 vi.mock('./(decision-view)/loadDecision', () => ({
   loadDecision: mocks.loadDecision,
@@ -28,7 +26,7 @@ vi.mock('next/navigation', () => ({
   },
 }));
 
-const user = { authUserId: 'auth-user-1', isAnonymous: false };
+const user = { authUserId: 'auth-user-1' };
 
 const decisionFor = (admin: boolean) => ({
   decisionProfile: {
@@ -42,18 +40,11 @@ const decisionFor = (admin: boolean) => ({
 describe('loadProcessAdmin', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.redirectToLogin.mockRejectedValue(new Error('LOGIN'));
+    mocks.getRequiredUser.mockResolvedValue(user);
   });
 
-  it('redirects a signed-out visitor to login before loading the decision', async () => {
-    mocks.getUser.mockResolvedValue(null);
-
-    await expect(loadProcessAdmin('budget')).rejects.toThrow('LOGIN');
-    expect(mocks.loadDecision).not.toHaveBeenCalled();
-  });
-
-  it('redirects an anonymous session to login', async () => {
-    mocks.getUser.mockResolvedValue({ ...user, isAnonymous: true });
+  it('sends a visitor without an account to login before loading the decision', async () => {
+    mocks.getRequiredUser.mockRejectedValue(new Error('LOGIN'));
 
     await expect(loadProcessAdmin('budget')).rejects.toThrow('LOGIN');
     expect(mocks.loadDecision).not.toHaveBeenCalled();
@@ -61,7 +52,6 @@ describe('loadProcessAdmin', () => {
 
   it('passes a decision load failure through without reading the flag', async () => {
     const failure = new Error('DECISION_FORBIDDEN');
-    mocks.getUser.mockResolvedValue(user);
     mocks.loadDecision.mockRejectedValue(failure);
 
     await expect(loadProcessAdmin('budget')).rejects.toBe(failure);
@@ -71,9 +61,7 @@ describe('loadProcessAdmin', () => {
   it.each([
     ['access.admin is false', { access: { admin: false } }],
     ['access is missing', {}],
-    ['processInstance is missing', null],
   ])('forbids without reading the flag when %s', async (_, processInstance) => {
-    mocks.getUser.mockResolvedValue(user);
     mocks.loadDecision.mockResolvedValue({
       decisionProfile: { name: 'Budget 2027', processInstance },
     });
@@ -83,7 +71,6 @@ describe('loadProcessAdmin', () => {
   });
 
   it('returns not found for an admin with the flag off', async () => {
-    mocks.getUser.mockResolvedValue(user);
     mocks.loadDecision.mockResolvedValue(decisionFor(true));
     mocks.isServerFeatureEnabled.mockResolvedValue(false);
 
@@ -96,7 +83,6 @@ describe('loadProcessAdmin', () => {
 
   it('returns the decision for an admin with the flag on', async () => {
     const decision = decisionFor(true);
-    mocks.getUser.mockResolvedValue(user);
     mocks.loadDecision.mockResolvedValue(decision);
     mocks.isServerFeatureEnabled.mockResolvedValue(true);
 
