@@ -139,12 +139,15 @@ export const EmptyWithoutPlaceholder: Story = {
 };
 
 // Interaction checks. They run in the Interactions panel; nothing runs them in
-// CI until the @storybook/addon-vitest gate lands (see README.md).
+// CI until the @storybook/addon-vitest gate lands (see README.md). Each one
+// commits for real, so a hand edit shows on screen and `args.onCommit` records
+// the call.
 
 // The button is named by the hint and the title; entering selects all; Enter
 // commits the trimmed value once and hands focus back to the button.
 export const CommitsOnEnter: Story = {
   args: { value: 'Community fund 2027', onCommit: fn() },
+  render: (args) => <Interactive {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(
@@ -163,7 +166,7 @@ export const CommitsOnEnter: Story = {
     await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
     await waitFor(() =>
       expect(
-        canvas.getByRole('button', { name: 'Edit Community fund 2027' }),
+        canvas.getByRole('button', { name: 'Edit Budget 2028' }),
       ).toHaveFocus(),
     );
   },
@@ -173,6 +176,7 @@ export const CommitsOnEnter: Story = {
 // and clicking it commits once.
 export const CommitsOnDone: Story = {
   args: { value: 'Community fund 2027', onCommit: fn() },
+  render: (args) => <Interactive {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button'));
@@ -190,7 +194,7 @@ export const CommitsOnDone: Story = {
     await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
     await waitFor(() =>
       expect(
-        canvas.getByRole('button', { name: 'Edit Community fund 2027' }),
+        canvas.getByRole('button', { name: 'Edit Budget 2028' }),
       ).toHaveFocus(),
     );
   },
@@ -199,6 +203,7 @@ export const CommitsOnDone: Story = {
 // Escape reverts and hands focus back to the button.
 export const RevertsOnEscape: Story = {
   args: { value: 'Community fund 2027', onCommit: fn() },
+  render: (args) => <Interactive {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button'));
@@ -216,6 +221,7 @@ export const RevertsOnEscape: Story = {
 // Blank and unchanged values do not reach onCommit.
 export const SkipsBlankAndUnchanged: Story = {
   args: { value: '  Community fund 2027 ', onCommit: fn() },
+  render: (args) => <Interactive {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -235,6 +241,7 @@ export const SkipsBlankAndUnchanged: Story = {
 // breaks become spaces.
 export const CompositionAndPaste: Story = {
   args: { value: 'Community fund 2027', onCommit: fn() },
+  render: (args) => <Interactive {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button'));
@@ -256,6 +263,7 @@ export const CompositionAndPaste: Story = {
 // commits instead of adding a line, and pasted line breaks become spaces.
 export const WrapKeepsOneLine: Story = {
   args: { value: 'Community fund 2027', onCommit: fn(), wrap: true },
+  render: (args) => <Interactive {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button'));
@@ -273,7 +281,7 @@ export const WrapKeepsOneLine: Story = {
     await expect(args.onCommit).toHaveBeenCalledWith('Budget 2028');
     await waitFor(() =>
       expect(
-        canvas.getByRole('button', { name: 'Edit Community fund 2027' }),
+        canvas.getByRole('button', { name: 'Edit Budget 2028' }),
       ).toHaveFocus(),
     );
   },
@@ -282,6 +290,7 @@ export const WrapKeepsOneLine: Story = {
 // Disabled renders the heading text with no button.
 export const DisabledHasNoButton: Story = {
   args: { value: 'Community fund 2027', onCommit: fn(), disabled: true },
+  render: (args) => <Interactive {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.queryByRole('button')).not.toBeInTheDocument();
@@ -292,6 +301,22 @@ export const DisabledHasNoButton: Story = {
 };
 
 type StoryArgs = ComponentProps<typeof EditableText>;
+
+// Commits land on screen while `onCommit` stays the story's spy.
+function Interactive({ value, onCommit, ...args }: StoryArgs) {
+  const [current, setCurrent] = useState(value);
+
+  return (
+    <EditableText
+      {...args}
+      value={current}
+      onCommit={(next) => {
+        setCurrent(next);
+        onCommit(next);
+      }}
+    />
+  );
+}
 
 function ControlledText({
   initial,
