@@ -25,6 +25,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Bullet } from '@/components/Bullet';
 
 import { FinalPhaseSelectionFooter } from '../FinalPhaseSelectionFooter';
+import { ProposalCardDialogProvider } from '../ProposalCardDialogContext';
 import { StandardSelectionFooter } from '../StandardSelectionFooter';
 import { useManualSelection } from '../useManualSelection';
 import {
@@ -150,64 +151,66 @@ export function ReviewSelectionList({
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Header3 className="flex items-center gap-2">
-          {t('decisions.proposals.allProposalsOption')}
-          <Bullet />
-          {items.length}
-        </Header3>
+    <ProposalCardDialogProvider>
+      <div className="flex flex-col gap-6 pb-20">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Header3 className="flex items-center gap-2">
+            {t('decisions.proposals.allProposalsOption')}
+            <Bullet />
+            {items.length}
+          </Header3>
+        </div>
+
+        {items.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuLeaf className="size-6" />
+              </EmptyMedia>
+              <EmptyTitle render={<h3 />}>
+                {t('decisions.review.noProposalsToReview')}
+              </EmptyTitle>
+              <EmptyDescription>
+                {t('decisions.review.noProposalsSubmittedHint')}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ReviewSelectionTable
+            items={items}
+            totalPoints={totalPoints}
+            showScore={hasScoring}
+            onAdvance={handleAdvanceToggle}
+            advancingIds={advancing}
+            decisionSlug={decisionSlug}
+            showBudget={showBudget}
+          />
+        )}
+
+        {isFinalPhase ? (
+          <FinalPhaseSelectionFooter
+            selectedProposals={selectedProposals}
+            numSelected={selectedProposals.length}
+            totalCandidates={items.length}
+            awardsAmounts={showBudget}
+            isConfirmOpen={isConfirmOpen}
+            onConfirmOpenChange={setIsConfirmOpen}
+            onConfirm={handleConfirm}
+            isSubmitting={submitMutation.isPending}
+          />
+        ) : (
+          <StandardSelectionFooter
+            selectedProposals={selectedProposals}
+            numSelected={selectedProposals.length}
+            phaseName={currentPhaseName}
+            isConfirmOpen={isConfirmOpen}
+            onConfirmOpenChange={setIsConfirmOpen}
+            onConfirm={() => handleConfirm()}
+            isSubmitting={submitMutation.isPending}
+          />
+        )}
       </div>
-
-      {items.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LuLeaf className="size-6" />
-            </EmptyMedia>
-            <EmptyTitle render={<h3 />}>
-              {t('decisions.review.noProposalsToReview')}
-            </EmptyTitle>
-            <EmptyDescription>
-              {t('decisions.review.noProposalsSubmittedHint')}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <ReviewSelectionTable
-          items={items}
-          totalPoints={totalPoints}
-          showScore={hasScoring}
-          onAdvance={handleAdvanceToggle}
-          advancingIds={advancing}
-          decisionSlug={decisionSlug}
-          showBudget={showBudget}
-        />
-      )}
-
-      {isFinalPhase ? (
-        <FinalPhaseSelectionFooter
-          selectedProposals={selectedProposals}
-          numSelected={selectedProposals.length}
-          totalCandidates={items.length}
-          awardsAmounts={showBudget}
-          isConfirmOpen={isConfirmOpen}
-          onConfirmOpenChange={setIsConfirmOpen}
-          onConfirm={handleConfirm}
-          isSubmitting={submitMutation.isPending}
-        />
-      ) : (
-        <StandardSelectionFooter
-          selectedProposals={selectedProposals}
-          numSelected={selectedProposals.length}
-          phaseName={currentPhaseName}
-          isConfirmOpen={isConfirmOpen}
-          onConfirmOpenChange={setIsConfirmOpen}
-          onConfirm={() => handleConfirm()}
-          isSubmitting={submitMutation.isPending}
-        />
-      )}
-    </div>
+    </ProposalCardDialogProvider>
   );
 }
 

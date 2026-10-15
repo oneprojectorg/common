@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { formatCurrency } from '@/utils/formatting';
 import {
   type ProposalWithAggregates,
@@ -26,6 +27,7 @@ import { LuRefreshCcw } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from '../selection/AdvanceToggleButton';
+import { ProposalRowMenu } from '../selection/ProposalRowMenu';
 import { SelectionCard } from '../selection/SelectionCard';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 
@@ -58,6 +60,7 @@ export function ReviewSelectionTable({
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
+  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
 
   if (isMobile) {
     return (
@@ -108,6 +111,13 @@ export function ReviewSelectionTable({
           <TableHead scope="col" className="w-28">
             <span className="sr-only">{t('decisions.advanceAction')}</span>
           </TableHead>
+          {mergeEnabled ? (
+            <TableHead scope="col" className="w-10">
+              <span className="sr-only">
+                {t('decisions.proposals.proposalOptionsLabel')}
+              </span>
+            </TableHead>
+          ) : null}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -121,6 +131,7 @@ export function ReviewSelectionTable({
             <TableRow
               key={item.proposal.id}
               data-state={advancing ? 'selected' : undefined}
+              className="group"
             >
               {/* The cell that names the row, so grid navigation can announce
                   which proposal a value belongs to. */}
@@ -185,6 +196,14 @@ export function ReviewSelectionTable({
                   className="w-28 justify-center"
                 />
               </TableCell>
+              {mergeEnabled ? (
+                <TableCell>
+                  <ProposalRowMenu
+                    proposal={item.proposal}
+                    isSelected={advancing}
+                  />
+                </TableCell>
+              ) : null}
             </TableRow>
           );
         })}

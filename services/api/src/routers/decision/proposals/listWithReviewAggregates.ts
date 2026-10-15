@@ -21,6 +21,7 @@ export const listWithReviewAggregatesRouter = router({
       // row: a page of proposals would otherwise open a subscription each.
       ctx.registerQueryChannels([
         Channels.reviewAssignments(input.processInstanceId),
+        Channels.decisionProposals(input.processInstanceId),
       ]);
 
       return result;
