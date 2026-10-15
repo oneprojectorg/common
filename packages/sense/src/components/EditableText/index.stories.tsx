@@ -1,4 +1,4 @@
-import { EditableTitle } from '@op/sense/EditableTitle';
+import { EditableText } from '@op/sense/EditableText';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ComponentProps, useState } from 'react';
 import {
@@ -10,25 +10,26 @@ import {
   within,
 } from 'storybook/test';
 
-const meta: Meta<typeof EditableTitle> = {
-  title: 'Composites/EditableTitle',
-  component: EditableTitle,
+const meta: Meta<typeof EditableText> = {
+  title: 'Composites/EditableText',
+  component: EditableText,
   tags: ['autodocs'],
   args: {
     label: 'Process name',
     as: 'h2',
-    size: 'headline',
+    className: 'font-serif text-headline font-light',
+    iconClassName: 'size-5',
   },
 };
 
 export default meta;
 
-type Story = StoryObj<typeof EditableTitle>;
+type Story = StoryObj<typeof EditableText>;
 
 // Click the title, or Tab to it and press Enter. The text is selected on
 // entry; Enter or clicking away commits, Escape reverts, a blank value reverts.
 export const Default: Story = {
-  render: (args) => <ControlledTitle {...args} initial="Community fund 2027" />,
+  render: (args) => <ControlledText {...args} initial="Community fund 2027" />,
 };
 
 // One line at rest: a long title truncates, and the full text stays in the
@@ -36,7 +37,7 @@ export const Default: Story = {
 export const LongText: Story = {
   render: (args) => (
     <div className="w-96">
-      <ControlledTitle
+      <ControlledText
         {...args}
         initial="Participatory budgeting for neighbourhood infrastructure, parks and libraries across the eastern district"
       />
@@ -50,8 +51,8 @@ export const LongText: Story = {
 export const RightToLeft: Story = {
   render: (args) => (
     <div dir="rtl" className="flex w-96 flex-col gap-4">
-      <ControlledTitle {...args} label="اسم العملية" initial="ميزانية ٢٠٢٧" />
-      <ControlledTitle
+      <ControlledText {...args} label="اسم العملية" initial="ميزانية ٢٠٢٧" />
+      <ControlledText
         {...args}
         label="اسم العملية"
         initial="Community fund 2027?"
@@ -63,34 +64,49 @@ export const RightToLeft: Story = {
 // No title yet: the placeholder shows muted at rest and in the empty field.
 export const Empty: Story = {
   render: (args) => (
-    <ControlledTitle {...args} initial="" placeholder="Untitled process" />
+    <ControlledText {...args} initial="" placeholder="Untitled process" />
   ),
 };
 
 // Plain text: no pencil, no button, nothing in the tab order.
 export const Disabled: Story = {
   args: { disabled: true },
-  render: (args) => <ControlledTitle {...args} initial="Community fund 2027" />,
+  render: (args) => <ControlledText {...args} initial="Community fund 2027" />,
 };
 
-// Each step of the sense type scale. `as` sets the heading level separately.
-export const Sizes: Story = {
+// The text takes its type from the wrapper, so the caller styles it with
+// `className`; the field keeps the same metrics while editing. `as` sets the
+// element, and `iconClassName` sizes the pencil.
+export const Styled: Story = {
   render: (args) => (
     <div className="flex flex-col gap-4">
-      <ControlledTitle
+      <ControlledText
         {...args}
         as="h1"
-        size="display"
-        initial="Display title"
+        className="font-serif text-display font-light"
+        iconClassName="size-6"
+        initial="Display, serif"
       />
-      <ControlledTitle
+      <ControlledText
         {...args}
         as="h2"
-        size="headline"
-        initial="Headline title"
+        className="font-serif text-headline font-light"
+        iconClassName="size-5"
+        initial="Headline, serif"
       />
-      <ControlledTitle {...args} as="h3" size="title" initial="Title title" />
-      <ControlledTitle {...args} as="h4" size="label" initial="Label title" />
+      <ControlledText
+        {...args}
+        as="h3"
+        className="font-sans text-title font-strong"
+        initial="Title, sans"
+      />
+      <ControlledText
+        {...args}
+        as="p"
+        className="text-label text-muted-foreground"
+        iconClassName="size-3.5"
+        initial="Label, muted"
+      />
     </div>
   ),
 };
@@ -103,7 +119,7 @@ export const Controlled: Story = {
 
 // No title and no placeholder: the label stands in, so the button keeps a name.
 export const EmptyWithoutPlaceholder: Story = {
-  render: (args) => <ControlledTitle {...args} initial="" />,
+  render: (args) => <ControlledText {...args} initial="" />,
 };
 
 // Interaction checks. They run in the Interactions panel; nothing runs them in
@@ -204,15 +220,15 @@ export const DisabledHasNoButton: Story = {
   },
 };
 
-type StoryArgs = ComponentProps<typeof EditableTitle>;
+type StoryArgs = ComponentProps<typeof EditableText>;
 
-function ControlledTitle({
+function ControlledText({
   initial,
   ...args
 }: Omit<StoryArgs, 'value' | 'onCommit'> & { initial: string }) {
   const [value, setValue] = useState(initial);
 
-  return <EditableTitle {...args} value={value} onCommit={setValue} />;
+  return <EditableText {...args} value={value} onCommit={setValue} />;
 }
 
 function CommitLog(args: Omit<StoryArgs, 'value' | 'onCommit'>) {
@@ -221,7 +237,7 @@ function CommitLog(args: Omit<StoryArgs, 'value' | 'onCommit'>) {
 
   return (
     <div className="flex flex-col gap-4">
-      <EditableTitle
+      <EditableText
         {...args}
         value={value}
         onCommit={(next) => {

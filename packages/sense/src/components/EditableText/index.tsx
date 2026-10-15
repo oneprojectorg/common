@@ -1,6 +1,5 @@
 'use client';
 
-import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { LuPencil } from 'react-icons/lu';
 
@@ -8,43 +7,45 @@ import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
-type EditableTitleTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p';
+type EditableTextTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p';
 
-interface EditableTitleProps
-  extends
-    Omit<React.ComponentProps<'h2'>, 'onChange' | 'children'>,
-    VariantProps<typeof editableTitleVariants> {
-  /** The committed title. Update it optimistically in `onCommit`, or the old title shows until it changes. */
+interface EditableTextProps extends Omit<
+  React.ComponentProps<'h2'>,
+  'onChange' | 'children'
+> {
+  /** The committed text. Update it optimistically in `onCommit`, or the old text shows until it changes. */
   value: string;
-  /** Gets the trimmed title on Enter or blur; not called when it is blank or equal to the trimmed `value`. */
+  /** Gets the trimmed text on Enter or blur; not called when it is blank or equal to the trimmed `value`. */
   onCommit: (nextValue: string) => void;
-  /** Names the field while editing, and the title at rest when it is blank and has no `placeholder`. */
+  /** Names the field while editing, and the text at rest when it is blank and has no `placeholder`. */
   label: string;
-  /** Describes the title button at rest ("Budget 2027, button, Edit"). */
+  /** Describes the text's button at rest ("Budget 2027, button, Edit"). */
   editHint?: string;
-  /** Wraps the title in both states; `size` sets the type separately. */
-  as?: EditableTitleTag;
-  /** Shown muted when there is no title yet. */
+  /** Wraps the text in both states. Style it with `className`: the field inherits its font, letter spacing and colour. */
+  as?: EditableTextTag;
+  /** Sizes the pencil; it defaults to `size-4`. */
+  iconClassName?: string;
+  /** Shown muted when there is no text yet. */
   placeholder?: string;
   /** Renders plain text, with no pencil and no tab stop. */
   disabled?: boolean;
   maxLength?: number;
 }
 
-/** A heading edited in place: Enter or blur commits, Escape or a blank value reverts. */
-function EditableTitle({
+/** One line of text edited in place, such as a title: Enter or blur commits, Escape or a blank value reverts. */
+function EditableText({
   value,
   onCommit,
   label,
   editHint = 'Edit',
-  as: Tag = 'h2',
-  size,
+  as: Tag = 'p',
+  iconClassName,
   placeholder,
   disabled = false,
   maxLength,
   className,
   ...props
-}: EditableTitleProps) {
+}: EditableTextProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(value);
   const fieldRef = React.useRef<HTMLInputElement>(null);
@@ -103,21 +104,23 @@ function EditableTitle({
     settle();
   };
 
-  const sizeClassName = editableTitleVariants({ size });
   const boxClassName =
     '-mx-2 inline-flex max-w-full items-center gap-2 px-2 py-1';
-  const titleText = <TitleText value={value} fallback={placeholder ?? label} />;
+  const displayText = (
+    <DisplayText value={value} fallback={placeholder ?? label} />
+  );
+  const iconSizeClassName = cn('size-4', iconClassName);
 
   if (disabled) {
     return (
-      <Tag className={cn(sizeClassName, className)} {...props}>
-        <span className={cn(boxClassName, 'min-w-0')}>{titleText}</span>
+      <Tag className={className} {...props}>
+        <span className={cn(boxClassName, 'min-w-0')}>{displayText}</span>
       </Tag>
     );
   }
 
   return (
-    <Tag className={cn(sizeClassName, className)} {...props}>
+    <Tag className={className} {...props}>
       {isEditing ? (
         <span className={cn(boxClassName, 'rounded-lg ring-2 ring-ring')}>
           <Input
@@ -127,10 +130,9 @@ function EditableTitle({
             placeholder={placeholder}
             maxLength={maxLength}
             enterKeyHint="done"
-            className={cn(
-              'field-sizing-content h-auto w-auto max-w-full min-w-24 rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0',
-              sizeClassName,
-            )}
+            // Inline so it beats the Input's type classes; the field keeps the wrapper's metrics.
+            style={INHERIT_TYPOGRAPHY}
+            className="field-sizing-content h-auto w-auto max-w-full min-w-24 rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
             onChange={(event) => setDraft(event.target.value)}
             onPaste={(event) => {
               const pasted = event.clipboardData.getData('text/plain');
@@ -175,7 +177,7 @@ function EditableTitle({
           />
           <LuPencil
             aria-hidden
-            className={cn(pencilSize({ size }), 'invisible shrink-0')}
+            className={cn(iconSizeClassName, 'invisible shrink-0')}
           />
         </span>
       ) : (
@@ -185,17 +187,18 @@ function EditableTitle({
             variant="bare"
             aria-describedby={hintId}
             onClick={open}
+            style={INHERIT_TYPOGRAPHY}
             className={cn(
               boxClassName,
-              'group/editable-title max-w-full justify-start rounded-lg text-start transition-colors hover:bg-accent focus-visible:bg-accent motion-reduce:transition-none',
+              'group/editable-text max-w-full justify-start rounded-lg text-start transition-colors hover:bg-accent focus-visible:bg-accent motion-reduce:transition-none',
             )}
           >
-            {titleText}
+            {displayText}
             <LuPencil
               aria-hidden
               className={cn(
-                pencilSize({ size }),
-                'shrink-0 text-muted-foreground transition-colors group-hover/editable-title:text-foreground group-focus-visible/editable-title:text-foreground motion-reduce:transition-none',
+                'shrink-0 text-muted-foreground transition-colors group-hover/editable-text:text-foreground group-focus-visible/editable-text:text-foreground motion-reduce:transition-none',
+                iconSizeClassName,
               )}
             />
           </Button>
@@ -208,35 +211,14 @@ function EditableTitle({
   );
 }
 
-const editableTitleVariants = cva('font-serif', {
-  variants: {
-    size: {
-      label: 'text-label',
-      title: 'text-title',
-      headline: 'text-headline font-light',
-      display: 'text-display font-light',
-    },
-  },
-  defaultVariants: {
-    size: 'headline',
-  },
-});
+// Form controls reset these; inheriting them keeps both states in the wrapper's type.
+const INHERIT_TYPOGRAPHY: React.CSSProperties = {
+  font: 'inherit',
+  letterSpacing: 'inherit',
+  color: 'inherit',
+};
 
-const pencilSize = cva('', {
-  variants: {
-    size: {
-      label: 'size-4',
-      title: 'size-4',
-      headline: 'size-5',
-      display: 'size-6',
-    },
-  },
-  defaultVariants: {
-    size: 'headline',
-  },
-});
-
-function TitleText({ value, fallback }: { value: string; fallback: string }) {
+function DisplayText({ value, fallback }: { value: string; fallback: string }) {
   const isBlank = value.trim() === '';
 
   // Truncating text takes its direction on the element, with alignment pinned to the page.
@@ -253,5 +235,5 @@ function TitleText({ value, fallback }: { value: string; fallback: string }) {
   );
 }
 
-export { EditableTitle };
-export type { EditableTitleProps };
+export { EditableText };
+export type { EditableTextProps };
