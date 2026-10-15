@@ -1,7 +1,7 @@
 import type { CommonUser } from '@op/api/encoders';
-import { isSafeRedirectPath } from '@op/common/client';
-import { headers } from 'next/headers';
-import { forbidden, redirect } from 'next/navigation';
+import { forbidden } from 'next/navigation';
+
+import { redirectToLogin } from './getUser';
 
 /**
  * The walled-garden gate. Use in the layout of any closed-network route group.
@@ -26,18 +26,4 @@ export async function assertWalledGardenAccess(
   if (!allowNonMembers && !user.isNetworkMember) {
     forbidden();
   }
-}
-
-/**
- * Redirects to login, carrying the attempted path so the user lands back on it
- * after signing in.
- */
-export async function redirectToLogin(): Promise<never> {
-  const pathname = (await headers()).get('x-pathname');
-
-  redirect(
-    isSafeRedirectPath(pathname)
-      ? `/login?redirect=${encodeURIComponent(pathname)}`
-      : '/login',
-  );
 }
