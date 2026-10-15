@@ -17,8 +17,8 @@ export const listWithReviewAggregatesRouter = router({
         user: ctx.user,
       });
 
-      // The instance's assignment channel rather than one proposal channel per
-      // row: a page of proposals would otherwise open a subscription each.
+      // Instance-level channels rather than one proposal channel per row: a
+      // page of proposals would otherwise open a subscription each.
       ctx.registerQueryChannels([
         Channels.reviewAssignments(input.processInstanceId),
         Channels.decisionProposals(input.processInstanceId),
