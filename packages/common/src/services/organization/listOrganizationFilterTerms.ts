@@ -11,6 +11,10 @@ interface TaxonomyScope {
   facet?: string;
 }
 
+interface UsedTermsQuery extends TaxonomyScope {
+  usedIn: typeof organizationsTerms | typeof organizationsStrategies;
+}
+
 /** Focus-area and strategy terms at least one organization is tagged with. */
 export const listOrganizationFilterTerms = async ({
   focusAreaTaxonomy = { namespaceUri: 'necSimple', facet: 'focusArea' },
@@ -31,9 +35,7 @@ const listUsedTerms = async ({
   namespaceUri,
   facet,
   usedIn,
-}: TaxonomyScope & {
-  usedIn: typeof organizationsTerms | typeof organizationsStrategies;
-}): Promise<{ id: string; label: string; slug: string }[]> => {
+}: UsedTermsQuery): Promise<{ id: string; label: string; slug: string }[]> => {
   const terms = await db
     .select({
       id: taxonomyTerms.id,
