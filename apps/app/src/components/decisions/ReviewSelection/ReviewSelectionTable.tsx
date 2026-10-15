@@ -195,6 +195,7 @@ export function ReviewSelectionTable({
               <TableCell>
                 <ProposalRowMenu
                   proposal={item.proposal}
+                  proposalHref={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}`}
                   isSelected={advancing}
                 />
               </TableCell>

@@ -154,7 +154,11 @@ export const SelectableProposalsTable = ({
                 />
               </TableCell>
               <TableCell>
-                <ProposalRowMenu proposal={proposal} isSelected={isSelected} />
+                <ProposalRowMenu
+                  proposal={proposal}
+                  proposalHref={href}
+                  isSelected={isSelected}
+                />
               </TableCell>
             </TableRow>
           );

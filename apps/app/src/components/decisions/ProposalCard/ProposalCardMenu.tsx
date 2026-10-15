@@ -3,6 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import type { ComponentProps } from 'react';
 import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,11 +27,13 @@ export function ProposalCardMenu({
   proposal,
   editHref,
   canManage = false,
+  triggerProps = { variant: 'ghost', size: 'icon-xs' },
 }: {
   proposal: Proposal;
   /** Enables the Edit item. Drafts keep their Edit/Delete buttons instead. */
   editHref?: string;
   canManage?: boolean;
+  triggerProps?: ComponentProps<typeof ProposalOptionsMenu>['triggerProps'];
 }) {
   const t = useTranslations();
   // Owned above the grid, so a list refresh that re-parents this card can't
@@ -143,7 +146,7 @@ export function ProposalCardMenu({
     <ProposalOptionsMenu
       groups={[menuItems]}
       label={t('decisions.proposals.proposalOptionsLabel')}
-      triggerProps={{ variant: 'ghost', size: 'icon-xs' }}
+      triggerProps={triggerProps}
     />
   );
 }
