@@ -31,6 +31,26 @@ test.describe('Process admin shell', () => {
     ).toBeVisible({ timeout: 15_000 });
   });
 
+  test('the editor banner takes an admin to the manage page', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { instance, managePath } = await seedDecision(org);
+
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/edit`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await authenticatedPage
+      .getByRole('link', { name: 'Open the new admin' })
+      .click({ timeout: 15_000 });
+
+    await expect(authenticatedPage).toHaveURL(managePath, { timeout: 15_000 });
+    await expect(
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
+    ).toBeVisible({ timeout: 15_000 });
+  });
+
   test('a participant who is not an admin cannot open the manage page', async ({
     browser,
     org,

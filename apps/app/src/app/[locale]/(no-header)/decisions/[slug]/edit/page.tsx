@@ -1,10 +1,13 @@
+import { getUser } from '@/utils/getUser';
 import { ProcessStatus } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
+import { isServerFeatureEnabled } from '@op/common';
 import type { Metadata } from 'next';
 import { forbidden, notFound } from 'next/navigation';
 
 import { getTranslations } from '@/lib/i18n';
 
+import { NewProcessAdminBanner } from '@/components/decisions/ProcessBuilder/NewProcessAdminBanner';
 import { ProcessBuilderAutosaveProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { ProcessBuilderEditArea } from '@/components/decisions/ProcessBuilder/ProcessBuilderEditArea';
 import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
@@ -75,6 +78,11 @@ const EditDecisionPage = async ({
 
   const isDraft = processInstance.status === ProcessStatus.DRAFT;
 
+  const user = await getUser();
+  const isNewProcessAdminEnabled = user
+    ? await isServerFeatureEnabled('new_process_admin_enabled', user.authUserId)
+    : false;
+
   return (
     <ProcessBuilderShell>
       <ProcessBuilderAutosaveProvider
@@ -87,6 +95,7 @@ const EditDecisionPage = async ({
             decisionProfileId={decisionProfile.id}
             serverData={serverData}
           />
+          {isNewProcessAdminEnabled && <NewProcessAdminBanner slug={slug} />}
           <ProcessBuilderMobileNav instanceId={instanceId} slug={slug} />
           <ProcessBuilderEditArea
             decisionProfileId={decisionProfile.id}

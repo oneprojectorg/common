@@ -1812,7 +1812,10 @@
     },
     "processAdmin": {
       "pageTitle": "Gestionar {decisionName}",
-      "underConstruction": "Aquí se está construyendo la nueva administración del proceso."
+      "underConstruction": "Aquí se está construyendo la nueva administración del proceso.",
+      "bannerTitle": "Prueba la nueva administración del proceso",
+      "bannerDescription": "Estamos rediseñando cómo configuras y gestionas un proceso. Prueba la nueva versión con este proceso.",
+      "bannerAction": "Abrir la nueva administración"
     }
   },
   "loadingProgress": "Cargando...",

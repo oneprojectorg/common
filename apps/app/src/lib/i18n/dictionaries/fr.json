@@ -1812,7 +1812,10 @@
     },
     "processAdmin": {
       "pageTitle": "Gérer {decisionName}",
-      "underConstruction": "La nouvelle administration du processus est en cours de construction ici."
+      "underConstruction": "La nouvelle administration du processus est en cours de construction ici.",
+      "bannerTitle": "Essayez la nouvelle administration du processus",
+      "bannerDescription": "Nous repensons la façon de configurer et de gérer un processus. Découvrez la nouvelle version pour ce processus.",
+      "bannerAction": "Ouvrir la nouvelle administration"
     }
   },
   "loadingProgress": "En train de charger…",

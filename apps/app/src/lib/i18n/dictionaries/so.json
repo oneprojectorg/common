@@ -1812,7 +1812,10 @@
     },
     "processAdmin": {
       "pageTitle": "Maamul {decisionName}",
-      "underConstruction": "Maamulka cusub ee habraaca ayaa halkan laga dhisayaa."
+      "underConstruction": "Maamulka cusub ee habraaca ayaa halkan laga dhisayaa.",
+      "bannerTitle": "Tijaabi maamulka cusub ee habraaca",
+      "bannerDescription": "Waxaan dib u dhisaynaa sida aad u dejiso oo u maamusho habraac. Eeg nooca cusub ee habraacan.",
+      "bannerAction": "Fur maamulka cusub"
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",
