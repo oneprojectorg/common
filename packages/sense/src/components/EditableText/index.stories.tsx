@@ -235,9 +235,9 @@ export const SkipsBlankAndUnchanged: Story = {
 };
 
 // Enter and Escape while an IME is composing leave the edit open; pasted line
-// breaks become spaces.
+// breaks become spaces, and a paste never exceeds `maxLength`.
 export const CompositionAndPaste: Story = {
-  args: { onCommit: fn() },
+  args: { onCommit: fn(), maxLength: 11 },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button'));
@@ -251,6 +251,10 @@ export const CompositionAndPaste: Story = {
 
     await userEvent.clear(field);
     await userEvent.paste('Budget\n2028');
+    await expect(field).toHaveValue('Budget 2028');
+
+    await userEvent.clear(field);
+    await userEvent.paste('Budget\n2028 and beyond');
     await expect(field).toHaveValue('Budget 2028');
   },
 };

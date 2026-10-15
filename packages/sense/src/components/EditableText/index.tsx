@@ -126,12 +126,15 @@ function EditableText({
       // Browsers differ on line breaks in a one-line field; make them spaces.
       event.preventDefault();
       const field = event.currentTarget;
-      field.setRangeText(
-        pasted.replace(/[\r\n]+/g, ' '),
-        field.selectionStart ?? field.value.length,
-        field.selectionEnd ?? field.value.length,
-        'end',
-      );
+      const start = field.selectionStart ?? field.value.length;
+      const end = field.selectionEnd ?? field.value.length;
+      const flattened = pasted.replace(/[\r\n]+/g, ' ');
+      // `setRangeText` skips `maxLength`; keep only what fits beside the unselected text.
+      const room =
+        maxLength === undefined
+          ? flattened.length
+          : Math.max(0, maxLength - field.value.length + end - start);
+      field.setRangeText(flattened.slice(0, room), start, end, 'end');
       setDraft(field.value);
     },
   };
@@ -186,12 +189,23 @@ function EditableText({
             {...fieldProps}
           />
         ) : (
-          <Input
-            unstyled
-            enterKeyHint="done"
-            className="field-sizing-content w-auto max-w-full min-w-24"
-            {...fieldProps}
-          />
+          // The invisible mirror sizes the cell to the draft, so the field keeps the title's width in every browser.
+          <span className="grid w-fit max-w-full min-w-24 grid-cols-1 overflow-hidden">
+            <Input
+              unstyled
+              // No intrinsic width, or the grid would take the field's default 20 characters over the mirror.
+              size={1}
+              enterKeyHint="done"
+              className="col-start-1 row-start-1"
+              {...fieldProps}
+            />
+            <span
+              aria-hidden
+              className="invisible col-start-1 row-start-1 whitespace-pre"
+            >
+              {draft || placeholder}&nbsp;
+            </span>
+          </span>
         )}
       </Tag>
       {/* One line tall, so the button centres on the first line of wrapped text. */}
