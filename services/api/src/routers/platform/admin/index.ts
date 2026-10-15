@@ -1,6 +1,7 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { addUsersToOrganizationRouter } from './addUsersToOrganization';
 import { assignReviewsRouter } from './assignReviews';
+import { clearDecisionSmsLineRouter } from './clearDecisionSmsLine';
 import { getAdminStatsRouter } from './getAdminStats';
 import { getDecisionInstanceRouter } from './getDecisionInstance';
 import { listAllDecisionInstancesRouter } from './listAllDecisionInstances';
@@ -10,11 +11,13 @@ import { listDecisionReviewAssignmentsRouter } from './listDecisionReviewAssignm
 import { makeDecisionPublicRouter } from './makeDecisionPublic';
 import { removeDecisionPublicAccessRouter } from './removeDecisionPublicAccess';
 import { revertDecisionPhaseRouter } from './revertDecisionPhase';
+import { setDecisionSmsLineRouter } from './setDecisionSmsLine';
 import { updateUserProfileRouter } from './updateUserProfile';
 
 export const platformAdminRouter = mergeRouters(
   addUsersToOrganizationRouter,
   assignReviewsRouter,
+  clearDecisionSmsLineRouter,
   getAdminStatsRouter,
   getDecisionInstanceRouter,
   listAllDecisionInstancesRouter,
@@ -24,5 +27,6 @@ export const platformAdminRouter = mergeRouters(
   makeDecisionPublicRouter,
   removeDecisionPublicAccessRouter,
   revertDecisionPhaseRouter,
+  setDecisionSmsLineRouter,
   updateUserProfileRouter,
 );

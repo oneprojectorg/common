@@ -31,6 +31,7 @@ import { MakePublicButton } from './MakePublicButton';
 import { RemovePublicAccessButton } from './RemovePublicAccessButton';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
+import { SmsLineSection } from './SmsLineSection';
 import {
   type PublicAccessState,
   getPublicAccessState,
@@ -169,6 +170,7 @@ const DecisionInstanceDetailContent = ({
           <ConfigurationCard
             instanceId={instanceId}
             isPublic={detail.isPublic}
+            smsLine={detail.smsLine}
             status={detail.status}
             config={detail.config}
             instanceData={detail.instanceData}
@@ -344,12 +346,14 @@ const PhaseCard = ({
 const ConfigurationCard = ({
   instanceId,
   isPublic,
+  smsLine,
   status,
   config,
   instanceData,
 }: {
   instanceId: string;
   isPublic: boolean;
+  smsLine: string | null;
   status: ProcessStatus | null;
   config: AdminDecisionConfig;
   instanceData: unknown;
@@ -422,6 +426,7 @@ const ConfigurationCard = ({
           isPublic={isPublic}
           status={status}
         />
+        <SmsLineSection instanceId={instanceId} smsLine={smsLine} />
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
           {settings.map((setting) => (
             <div

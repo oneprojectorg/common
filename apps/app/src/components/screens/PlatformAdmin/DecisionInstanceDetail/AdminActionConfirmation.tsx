@@ -38,16 +38,19 @@ export const AdminActionConfirmation = ({
   description,
   confirm,
   isPending,
+  confirmDisabled = false,
   isOpen,
   onOpenChange,
   onConfirm,
   children,
 }: {
   trigger: AdminActionTrigger;
-  title: string;
+  title: ReactNode;
   description: string;
   confirm: AdminActionConfirm;
   isPending: boolean;
+  /** Holds the confirm button while the options the action takes are incomplete. */
+  confirmDisabled?: boolean;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onConfirm: () => void;
@@ -79,7 +82,7 @@ export const AdminActionConfirmation = ({
           </AlertDialogCancel>
           <AlertDialogAction
             variant={confirm.variant}
-            disabled={isPending}
+            disabled={isPending || confirmDisabled}
             onClick={onConfirm}
           >
             {isPending ? confirm.pendingLabel : confirm.label}
