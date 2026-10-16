@@ -1,4 +1,9 @@
-import { SMS_KEYWORDS, SMS_PROPOSAL_CODE, type SmsKeyword } from '@op/core/sms';
+import {
+  SMS_ARGUMENT_KEYWORDS,
+  SMS_BARE_KEYWORDS,
+  SMS_PROPOSAL_CODE,
+  type SmsKeyword,
+} from '@op/core/sms';
 import { z } from 'zod';
 
 import { ValidationError } from '../../utils/error';
@@ -80,18 +85,6 @@ export interface SmsCommand {
   codes: string[];
 }
 
-const ARGUMENT_KEYWORDS: ReadonlyArray<SmsKeyword> = [
-  'vote',
-  'show',
-  'proposals',
-  'info',
-  'remove',
-];
-
-const BARE_KEYWORDS: ReadonlyArray<SmsKeyword> = SMS_KEYWORDS.filter(
-  (keyword) => !ARGUMENT_KEYWORDS.includes(keyword),
-);
-
 const bareKeywordPattern = (keyword: string) =>
   new RegExp(`^${keyword}[.!]?$`, 'i');
 
@@ -117,13 +110,13 @@ const noCommand: SmsCommand = { keyword: null, argument: null, codes: [] };
 
 export const parseSmsCommand = (body: string): SmsCommand => {
   const text = body.trim();
-  const bare = BARE_KEYWORDS.find((keyword) =>
+  const bare = SMS_BARE_KEYWORDS.find((keyword) =>
     bareKeywordPattern(keyword).test(text),
   );
   if (bare) {
     return { keyword: bare, argument: null, codes: [] };
   }
-  const withArgument = ARGUMENT_KEYWORDS.find((keyword) =>
+  const withArgument = SMS_ARGUMENT_KEYWORDS.find((keyword) =>
     argumentKeywordPattern(keyword).test(text),
   );
   if (withArgument) {

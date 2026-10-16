@@ -1,3 +1,4 @@
+import { SMS_ARGUMENT_KEYWORDS, SMS_BARE_KEYWORDS } from '@op/core/sms';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
@@ -210,7 +211,7 @@ describe('parseSmsCommand', () => {
   const none = { keyword: null, argument: null, codes: [] };
   const bare = (keyword: string) => ({ keyword, argument: null, codes: [] });
 
-  it.each(['join', 'yes', 'list', 'decisions', 'more', 'done', 'submit'])(
+  it.each(SMS_BARE_KEYWORDS)(
     'given %s alone in any case or with trailing punctuation, when parsed, then it is a bare keyword',
     (keyword) => {
       expect(parseSmsCommand(keyword)).toEqual(bare(keyword));
@@ -227,7 +228,7 @@ describe('parseSmsCommand', () => {
     expect(parseSmsCommand('list all')).toEqual(none);
   });
 
-  it.each(['vote', 'show', 'proposals', 'info', 'remove'])(
+  it.each(SMS_ARGUMENT_KEYWORDS)(
     'given %s followed by an argument, when parsed, then the argument is kept, lowercased',
     (keyword) => {
       expect(parseSmsCommand(`${keyword.toUpperCase()} Columbus`)).toEqual({
