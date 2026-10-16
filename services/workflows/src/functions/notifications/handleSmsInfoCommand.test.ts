@@ -21,7 +21,6 @@ const infoCommand = (from: PhoneNumber, argument: string) => ({
     code: null,
     keyword: 'info' as const,
     argument,
-    codes: [],
   },
 });
 

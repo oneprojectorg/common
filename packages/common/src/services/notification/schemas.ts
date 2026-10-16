@@ -1,7 +1,6 @@
 import {
   SMS_ARGUMENT_KEYWORDS,
   SMS_BARE_KEYWORDS,
-  SMS_PROPOSAL_CODE,
   type SmsKeyword,
 } from '@op/core/sms';
 import { z } from 'zod';
@@ -82,7 +81,6 @@ export const extractSmsCode = (body: string): string | null => {
 export interface SmsCommand {
   keyword: SmsKeyword | null;
   argument: string | null;
-  codes: string[];
 }
 
 const bareKeywordPattern = (keyword: string) =>
@@ -101,12 +99,7 @@ const trimTerminators = (value: string): string => {
   }
   return value.slice(0, end);
 };
-const PICK_CODES_PATTERN = new RegExp(
-  `^${SMS_PROPOSAL_CODE}(?:[\\s,]+${SMS_PROPOSAL_CODE})*[.!]?$`,
-);
-const CODE_PATTERN = new RegExp(SMS_PROPOSAL_CODE, 'g');
-
-const noCommand: SmsCommand = { keyword: null, argument: null, codes: [] };
+const noCommand: SmsCommand = { keyword: null, argument: null };
 
 export const parseSmsCommand = (body: string): SmsCommand => {
   const text = body.trim();
@@ -114,7 +107,7 @@ export const parseSmsCommand = (body: string): SmsCommand => {
     bareKeywordPattern(keyword).test(text),
   );
   if (bare) {
-    return { keyword: bare, argument: null, codes: [] };
+    return { keyword: bare, argument: null };
   }
   const withArgument = SMS_ARGUMENT_KEYWORDS.find((keyword) =>
     argumentKeywordPattern(keyword).test(text),
@@ -127,14 +120,6 @@ export const parseSmsCommand = (body: string): SmsCommand => {
     return {
       keyword: withArgument,
       argument: argument.length > 0 ? argument : null,
-      codes: [],
-    };
-  }
-  if (PICK_CODES_PATTERN.test(text)) {
-    return {
-      keyword: null,
-      argument: null,
-      codes: text.match(CODE_PATTERN) ?? [],
     };
   }
   return noCommand;

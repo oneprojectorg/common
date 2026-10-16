@@ -43,7 +43,6 @@ const inboundText = (
     code,
     keyword,
     argument: null,
-    codes: [],
   },
 });
 
@@ -56,7 +55,6 @@ const reply = (from: PhoneNumber, attempt: number, code: string | null) => ({
       code,
       keyword: null,
       argument: null,
-      codes: [],
     },
   }),
 });
@@ -274,7 +272,6 @@ describe('handleUnknownSmsSignup against the database', () => {
             code: null,
             keyword: 'join',
             argument: null,
-            codes: [],
           },
         },
       ],
