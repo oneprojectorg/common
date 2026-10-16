@@ -17,12 +17,14 @@ export {
   areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
+  getPreviousReviewPhases,
   getVoterCostField,
   getVoterBudget,
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
   resolveReviewSettings,
+  type PreviousReviewPhase,
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
 export {

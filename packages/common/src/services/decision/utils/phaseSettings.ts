@@ -4,6 +4,7 @@ import {
 } from '../schemas/types';
 import type { PhaseReviewSettings, ReviewsPolicy } from '../schemas/types';
 import { assertInstancePhase } from './instance';
+import { getPreviousPhases } from './phaseOrder';
 
 /**
  * Phase-level settings resolution: `rules.<domain>` → legacy `config.*` →
@@ -166,6 +167,44 @@ export function resolveReviewSettings(
     ? instanceData.phases?.find((p) => p.phaseId === phaseId)
     : undefined;
   return reviewSettingsFromPhase(instanceData.config, phase);
+}
+
+/** An earlier review phase, as the review screens list it in their tabs. */
+export interface PreviousReviewPhase {
+  id: string;
+  name: string;
+}
+
+/**
+ * The review phases strictly before `phaseId`, in phase order. With
+ * `openReviewsOnly`, only the phases whose `openReviews` lets a reviewer read
+ * their reviews; without it, every review phase, for callers that read reviews
+ * by capability (admins).
+ */
+export function getPreviousReviewPhases({
+  instanceData,
+  phaseId,
+  openReviewsOnly,
+}: {
+  instanceData: ReviewSettingsInstanceData & {
+    phases?: ReadonlyArray<{
+      phaseId: string;
+      name?: string;
+      rules?: ReviewPhaseRules;
+    }>;
+  };
+  phaseId: string;
+  openReviewsOnly: boolean;
+}): PreviousReviewPhase[] {
+  return getPreviousPhases(instanceData, phaseId)
+    .filter((phase) => {
+      const settings = reviewSettingsFromPhase(instanceData.config, phase);
+      return settings.submit && (!openReviewsOnly || settings.openReviews);
+    })
+    .map((phase) => ({
+      id: phase.phaseId,
+      name: phase.name ?? phase.phaseId,
+    }));
 }
 
 function reviewSettingsFromPhase(
