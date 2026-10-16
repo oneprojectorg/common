@@ -184,6 +184,32 @@ describe.concurrent('submitVote', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
+
+  it('rejects voting on a legacy instance carrying no phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+    });
+
+    await db
+      .update(processInstances)
+      .set({ instanceData: { budget: 1000 }, currentStateId: 'results' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // The read degrades; the write must not. No phase rules means nothing
+    // authorizes a ballot.
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
 });
 
 describe.concurrent('getVotingStatus', () => {
@@ -220,6 +246,60 @@ describe.concurrent('getVotingStatus', () => {
     });
 
     expect(status.votingConfiguration.maxVotesPerMember).toBe(3);
+  });
+
+  it('reports voting closed on a legacy instance carrying no phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await setupVotingInstance(testData, {
+      proposalCount: 0,
+    });
+
+    // A legacy instance's `instanceData` predates `phases` and is keyed by
+    // `currentStateId` alone. The results page's "All proposals" and "My
+    // proposals" tabs read this endpoint with no error boundary of their own,
+    // so throwing here took the whole page down with a 500.
+    await db
+      .update(processInstances)
+      .set({ instanceData: { budget: 1000 }, currentStateId: 'results' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(status.votingConfiguration).toMatchObject({
+      allowDecisions: false,
+      isReadOnly: true,
+    });
+    expect(status.hasVoted).toBe(false);
+  });
+
+  it('reports voting closed when currentStateId matches no phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await setupVotingInstance(testData, {
+      proposalCount: 0,
+    });
+
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'no-such-phase' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(status.votingConfiguration.allowDecisions).toBe(false);
   });
 });
 

@@ -23,7 +23,7 @@ import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
 import { isVotingPhase } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
 
@@ -33,19 +33,31 @@ interface PhaseConfig {
   maxVotesPerMember: number | undefined;
 }
 
+/**
+ * No current phase resolved, so nothing is open. Legacy instances land here:
+ * their `instanceData` predates `phases` entirely, so there are no rules to
+ * read. Voting being closed is the honest answer for a status read.
+ */
+const CLOSED_PHASE_CONFIG: PhaseConfig = {
+  allowProposals: false,
+  allowDecisions: false,
+  maxVotesPerMember: undefined,
+};
+
 /** Extract voting/proposal rules for the current phase. */
 function getCurrentPhaseConfig(processInstance: {
   instanceData: unknown;
   currentStateId: string | null;
 }): PhaseConfig | undefined {
-  const instanceData = processInstance.instanceData as DecisionInstanceData;
   const currentPhaseId = processInstance.currentStateId;
 
   if (!currentPhaseId) {
     return undefined;
   }
 
-  const currentPhase = instanceData.phases.find(
+  // `getInstancePhases`, not a cast: a legacy instance carries no `phases` key
+  // at all, and reading `.find` off the missing array throws.
+  const currentPhase = getInstancePhases(processInstance.instanceData).find(
     (p) =>
       p.phaseId === currentPhaseId ||
       // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId
@@ -196,11 +208,11 @@ export const submitVote = async ({
       ],
     });
 
-    const phaseConfig = getCurrentPhaseConfig(processInstance);
-
-    if (!phaseConfig) {
-      throw new ValidationError('Current state not found');
-    }
+    // Read-only status: an instance with no resolvable phase reports voting
+    // closed rather than failing. `submitVote` still rejects — a write cannot
+    // proceed without rules to check it against.
+    const phaseConfig =
+      getCurrentPhaseConfig(processInstance) ?? CLOSED_PHASE_CONFIG;
 
     const schemaResult = buildVotingSchemaResult(phaseConfig);
     const { votingConfig } = schemaResult;
@@ -385,11 +397,11 @@ export const getVotingStatus = async ({
       orgFallbackPermissions: [{ decisions: permission.READ }],
     });
 
-    const phaseConfig = getCurrentPhaseConfig(processInstance);
-
-    if (!phaseConfig) {
-      throw new ValidationError('Current state not found');
-    }
+    // Read-only status: an instance with no resolvable phase reports voting
+    // closed rather than failing. `submitVote` still rejects — a write cannot
+    // proceed without rules to check it against.
+    const phaseConfig =
+      getCurrentPhaseConfig(processInstance) ?? CLOSED_PHASE_CONFIG;
 
     const schemaResult = buildVotingSchemaResult(phaseConfig);
     const { votingConfig } = schemaResult;
