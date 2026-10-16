@@ -2,6 +2,7 @@ import {
   joinProfileRequests,
   organizationUsers,
   organizations,
+  profiles,
   users,
 } from '@op/db/schema';
 import { and, db, eq } from '@op/db/test';
@@ -298,12 +299,32 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
 
     await page.waitForURL(/new=1/, { timeout: 30000 });
 
+    // The organization from the details step was created with the user in it
     const [orgUserRecord] = await db
-      .select()
+      .select({ id: organizationUsers.id })
       .from(organizationUsers)
-      .where(eq(organizationUsers.authUserId, authUser.id));
+      .innerJoin(
+        organizations,
+        eq(organizationUsers.organizationId, organizations.id),
+      )
+      .innerJoin(profiles, eq(organizations.profileId, profiles.id))
+      .where(
+        and(
+          eq(organizationUsers.authUserId, authUser.id),
+          eq(profiles.name, orgName),
+        ),
+      );
 
     expect(orgUserRecord).toBeTruthy();
+
+    // Policy acceptance was recorded
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    expect(userRecord?.tos).toBe(true);
+    expect(userRecord?.privacy).toBe(true);
   });
 });
 

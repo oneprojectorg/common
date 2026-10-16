@@ -33,15 +33,15 @@ import {
   validator as PersonalDetailsFormValidator,
 } from './PersonalDetailsForm';
 import { PromoteOnboardingFlow } from './PromoteOnboardingFlow';
-import { ToSAcceptanceScreen } from './ToSAcceptanceScreen';
+import {
+  ToSAcceptanceScreen,
+  validator as ToSStepValidator,
+} from './ToSAcceptanceScreen';
 import { organizationFormValidator as OrganizationDetailsFormValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 import { sendOnboardingAnalytics } from './utils';
 
 const OrganizationSearchStepValidator = z.object({});
-
-// The ToS step collects no form values of its own.
-const ToSStepValidator = z.object({});
 
 export type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
   z.infer<typeof OrganizationSearchStepValidator>;
