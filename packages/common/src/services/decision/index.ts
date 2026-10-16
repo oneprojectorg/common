@@ -26,6 +26,7 @@ export * from './reorderPhases';
 export * from './updatePhase';
 
 // Instance management
+export * from './assertCanStewardToProfile';
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';

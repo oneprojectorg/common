@@ -1,11 +1,11 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessRolesWithOrgFallback } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { assertCanStewardToProfile } from './assertCanStewardToProfile';
 import { createDecisionInstance } from './createInstanceFromTemplate';
 import type {
   DecisionInstanceData,
@@ -89,20 +89,11 @@ export const duplicateInstance = async ({
     permissions: { decisions: permission.ADMIN },
   });
 
-  // Org-fallback because org grants live on organizationUsers, not
-  // profileUsers; the caller's own profile skips the check, having no role row.
-  if (resolvedStewardProfileId !== ownerProfileId) {
-    const stewardRoles = await getProfileAccessRolesWithOrgFallback({
-      user,
-      profileId: resolvedStewardProfileId,
-    });
-
-    if (!checkPermission({ profile: permission.ADMIN }, stewardRoles)) {
-      throw new UnauthorizedError(
-        'Not authorized to steward a process to this profile',
-      );
-    }
-  }
+  await assertCanStewardToProfile({
+    user,
+    stewardProfileId: resolvedStewardProfileId,
+    ownerProfileId,
+  });
 
   const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
   if (!sourceData) {
