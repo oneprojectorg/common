@@ -13,6 +13,10 @@ import {
  * outside the public decision views) gate two ways —
  * - no session (or anonymous) → redirected to /login, since logging in can grant access;
  * - a real account that isn't a network member → the forbidden screen, since it can't.
+ *
+ * The public decision views in `(no-header)` have no layout gate at all, so a
+ * logged-out visitor renders the page and its member-only queries 401 instead —
+ * covered by the "Legacy decision route" describe.
  */
 
 const WALLED_GARDEN_ROUTES = [
@@ -85,6 +89,33 @@ test.describe('Walled garden — authenticated non-members', () => {
     ).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole('button', { name: /Go back/i })).toBeVisible();
     await expect(page).not.toHaveURL(/\/login/);
+  });
+});
+
+test.describe('Legacy decision route — logged-out visitors', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  // Regression: this route is in `(no-header)`, so no layout gate intercepts a
+  // logged-out visitor — the page renders and `decision.getLegacyInstance`
+  // answers 401. That status was missing from ResourceErrorBoundary's interrupt
+  // table, so the boundary rethrew and error.tsx rendered the generic 500
+  // screen ("Something went wrong on our end") instead of the no-access one.
+  test('see the forbidden screen, not the generic 500', async ({ page }) => {
+    // The procedure's network-auth gate rejects before input parsing, so the
+    // instance id never has to resolve for the 401 to be the first failure.
+    await page.goto(
+      '/en/profile/one-project/decisions/00000000-0000-4000-8000-000000000000',
+    );
+
+    await expect(
+      page.getByText('You do not have permission to view this page'),
+    ).toBeVisible({ timeout: 15000 });
+    // Not redundant: PageError renders this same copy for its UNAUTHORIZED
+    // branch, so the forbidden text alone doesn't prove error.tsx stayed out
+    // of it. The 500 heading is what distinguishes the two screens.
+    await expect(page.getByText('Something went wrong on our end')).toHaveCount(
+      0,
+    );
   });
 });
 
