@@ -13,6 +13,7 @@ import {
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
+import { remainingReplyWindow } from './replyWindow';
 import {
   SMS_THROTTLE_LIMIT,
   SMS_THROTTLE_PERIOD,
@@ -196,7 +197,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
         {
           event: smsInboundReceived.name,
           match: 'data.from',
-          timeout: new Date(replyDeadline),
+          timeout: remainingReplyWindow(replyDeadline),
         },
       );
 
