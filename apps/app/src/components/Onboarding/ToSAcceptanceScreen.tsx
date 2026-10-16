@@ -11,6 +11,7 @@ import {
 } from '@op/sense/Dialog';
 import { FieldLabel } from '@op/sense/Field';
 import { ReactNode, useId, useRef, useState } from 'react';
+import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -18,6 +19,9 @@ import { PrivacyPolicyContent } from '@/components/PrivacyPolicyContent';
 import { ToSContent } from '@/components/ToSContent';
 
 import { OnboardingCenterLayout } from './OnboardingCenterLayout';
+
+// The ToS step collects no form values of its own.
+export const validator = z.object({});
 
 export type ToSAcceptanceScreenProps = {
   onAccept: () => void;

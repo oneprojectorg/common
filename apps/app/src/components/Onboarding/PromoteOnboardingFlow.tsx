@@ -10,7 +10,6 @@ import { StepperProgressIndicator } from '@op/sense/Stepper';
 import { toast } from '@op/sense/Toast';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
-import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -24,11 +23,11 @@ import {
   PersonalDetailsForm,
   validator as PersonalDetailsFormValidator,
 } from './PersonalDetailsForm';
-import { ToSAcceptanceScreen } from './ToSAcceptanceScreen';
+import {
+  ToSAcceptanceScreen,
+  validator as ToSStepValidator,
+} from './ToSAcceptanceScreen';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
-
-// The ToS step collects no form values of its own.
-const ToSStepValidator = z.object({});
 
 const ProgressInPortal = (props: ProgressComponentProps) => (
   <Portal id="top-slot">
