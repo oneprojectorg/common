@@ -679,6 +679,8 @@
     "supportLinkLabel": "Codsiyada Sifooyinka & Taageerada",
     "logOutAction": "Ka bax",
     "deleteAccountAction": "Tirtir akoonkayga",
+    "downloadMyDataAction": "Soo deji xogtayda",
+    "personalDataExportFailed": "Lama dhoofin karin xogtaada. Fadlan isku day mar kale.",
     "ethicalOpenSourceLink": "Il Furan Akhlaaqeed",
     "openMenuLabel": "Fur menu-ga",
     "logInAction": "Soo gal",

@@ -679,6 +679,8 @@
     "supportLinkLabel": "ফিচার অনুরোধ এবং সহায়তা",
     "logOutAction": "লগ আউট",
     "deleteAccountAction": "আমার অ্যাকাউন্ট মুছুন",
+    "downloadMyDataAction": "আমার ডেটা ডাউনলোড করুন",
+    "personalDataExportFailed": "আপনার ডেটা রপ্তানি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
     "ethicalOpenSourceLink": "নৈতিক ওপেন সোর্স",
     "openMenuLabel": "মেনু খুলুন",
     "logInAction": "লগ ইন",

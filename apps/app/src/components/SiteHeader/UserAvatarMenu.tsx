@@ -44,6 +44,7 @@ import { DeleteOrganizationModal } from '../DeleteOrganizationModal';
 import { PrivacyPolicyContent } from '../PrivacyPolicyContent';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { ToSContent } from '../ToSContent';
+import { usePersonalDataExport } from './usePersonalDataExport';
 
 type LegalDialog = 'privacy' | 'tos' | 'community';
 
@@ -289,11 +290,15 @@ const AvatarMenuContent = ({
   onProfileSwitch,
   onOpenLegal,
   onDeleteAccount,
+  onExportPersonalData,
+  isExportingPersonalData,
 }: {
   asMenuItem?: boolean;
   onClose?: () => void;
   onOpenLegal: (dialog: LegalDialog) => void;
   onDeleteAccount: () => void;
+  onExportPersonalData: () => void;
+  isExportingPersonalData: boolean;
   onProfileSwitch?: (profile: {
     name: string;
     avatarImage?: { name: string } | null;
@@ -331,6 +336,7 @@ const AvatarMenuContent = ({
     ) ?? {};
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const userdataExportEnabled = useFeatureFlag('userdata-export');
 
   return (
     <>
@@ -415,6 +421,17 @@ const AvatarMenuContent = ({
           >
             {t('shell.deleteAccountAction')}
           </ActionRow>
+        ) : null}
+        {userdataExportEnabled ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="self-start"
+            loading={isExportingPersonalData}
+            onClick={onExportPersonalData}
+          >
+            {t('shell.downloadMyDataAction')}
+          </Button>
         ) : null}
 
         <div className="flex gap-1 px-2 text-xs text-muted-foreground">
@@ -527,6 +544,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   };
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const personalDataExport = usePersonalDataExport();
 
   // Hide modal when profile actually changes
   useEffect(() => {
@@ -615,6 +633,8 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
                 onClose={() => setIsDrawerOpen(false)}
                 onOpenLegal={openLegal}
                 onDeleteAccount={openDeleteAccount}
+                onExportPersonalData={personalDataExport.start}
+                isExportingPersonalData={personalDataExport.isRunning}
                 onProfileSwitch={handleProfileSwitch}
               />
             </div>
@@ -651,6 +671,8 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             onClose={() => setIsMenuOpen(false)}
             onOpenLegal={openLegal}
             onDeleteAccount={openDeleteAccount}
+            onExportPersonalData={personalDataExport.start}
+            isExportingPersonalData={personalDataExport.isRunning}
             onProfileSwitch={handleProfileSwitch}
           />
         </DropdownMenuContent>

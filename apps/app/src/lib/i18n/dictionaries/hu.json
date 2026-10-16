@@ -679,6 +679,8 @@
     "supportLinkLabel": "Funkciókérések és támogatás",
     "logOutAction": "Kijelentkezés",
     "deleteAccountAction": "A fiókom törlése",
+    "downloadMyDataAction": "Adataim letöltése",
+    "personalDataExportFailed": "Nem sikerült exportálni az adatait. Kérjük, próbálja újra.",
     "ethicalOpenSourceLink": "Etikus nyílt forráskód",
     "openMenuLabel": "Menü megnyitása",
     "logInAction": "Bejelentkezés",
