@@ -82,9 +82,13 @@ export function TRPCProvider({
             // Bump whenever a persisted payload's shape changes. Entries are
             // kept for 24h, so without this a returning user restores posts
             // shaped for the previous release and renders undefined counts.
-            // Last bumped: every list/paginated payload moved to the
+            // Previously: every list/paginated payload moved to the
             // { items } / { items, next } envelope (#2001–#2003).
-            buster: 'list-items-envelope-1',
+            // Last bumped: React Query 5.66 -> 5.102. The dehydrated query
+            // gained `dehydratedAt` (5.76.2) and `queryType` (5.100.2); an
+            // entry written by 5.66 carries neither, so a restored infinite
+            // query is untagged until an observer re-applies it.
+            buster: 'tanstack-query-5-102-1',
             dehydrateOptions: {
               shouldDehydrateQuery: (query) => {
                 const queryIsReadyForPersistance =
