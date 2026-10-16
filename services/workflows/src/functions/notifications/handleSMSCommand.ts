@@ -1,7 +1,7 @@
 import {
   RateLimitError,
-  countSmsBallotProposals,
-  findSmsDecision,
+  countBallotProposals,
+  findPublishedDecisionBySlug,
   formatSmsDecisionInfo,
   getPhoneSignupState,
   getSmsProvider,
@@ -93,7 +93,10 @@ export const handleSMSCommand = inngest.createFunction(
       }
 
       const decision = await step.run('find-decision', () =>
-        findSmsDecision({ authUserId: account.authUserId, slug: argument }),
+        findPublishedDecisionBySlug({
+          authUserId: account.authUserId,
+          slug: argument,
+        }),
       );
 
       if (!decision) {
@@ -105,7 +108,7 @@ export const handleSMSCommand = inngest.createFunction(
       }
 
       const proposalCount = await step.run('count-proposals', () =>
-        countSmsBallotProposals({
+        countBallotProposals({
           processInstanceId: decision.processInstanceId,
         }),
       );

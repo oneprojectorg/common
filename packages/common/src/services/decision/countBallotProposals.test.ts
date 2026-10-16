@@ -4,7 +4,7 @@ import { ProcessStatus, ProposalStatus, moderationFlags } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { createAutomatedFlag } from '../moderation/moderationFlagStore';
-import { countSmsBallotProposals } from './countSmsBallotProposals';
+import { countBallotProposals } from './countBallotProposals';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
 const shortlistSchema: DecisionSchemaDefinition = {
@@ -49,7 +49,7 @@ const hiddenSubmissionSchema: DecisionSchemaDefinition = {
   ),
 };
 
-describe.concurrent('countSmsBallotProposals', () => {
+describe.concurrent('countBallotProposals', () => {
   it('given a proposal submitted in a phase that hides submissions by default, then it is not counted', async ({
     task,
     onTestFinished,
@@ -76,7 +76,7 @@ describe.concurrent('countSmsBallotProposals', () => {
     expect(advanced).toMatchObject({ conflict: false });
 
     await expect(
-      countSmsBallotProposals({ processInstanceId: instanceId }),
+      countBallotProposals({ processInstanceId: instanceId }),
     ).resolves.toBe(0);
   });
 
@@ -117,7 +117,7 @@ describe.concurrent('countSmsBallotProposals', () => {
     });
 
     await expect(
-      countSmsBallotProposals({ processInstanceId: instanceId }),
+      countBallotProposals({ processInstanceId: instanceId }),
     ).resolves.toBe(1);
   });
 
@@ -149,7 +149,7 @@ describe.concurrent('countSmsBallotProposals', () => {
     expect(advanced).toMatchObject({ conflict: false });
 
     await expect(
-      countSmsBallotProposals({ processInstanceId: instanceId }),
+      countBallotProposals({ processInstanceId: instanceId }),
     ).resolves.toBe(2);
   });
 });

@@ -2,9 +2,9 @@ import { TestDecisionsDataManager } from '@op/common/testing';
 import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { findSmsDecision } from './findSmsDecision';
+import { findPublishedDecisionBySlug } from './findPublishedDecisionBySlug';
 
-describe.concurrent('findSmsDecision', () => {
+describe.concurrent('findPublishedDecisionBySlug', () => {
   it('given a published decision, when a member looks it up by slug, then it is found with its current phase', async ({
     task,
     onTestFinished,
@@ -16,7 +16,7 @@ describe.concurrent('findSmsDecision', () => {
       status: ProcessStatus.PUBLISHED,
     });
 
-    const decision = await findSmsDecision({
+    const decision = await findPublishedDecisionBySlug({
       authUserId: setup.user.id,
       slug: setup.instance.slug,
     });
@@ -39,7 +39,7 @@ describe.concurrent('findSmsDecision', () => {
       status: ProcessStatus.DRAFT,
     });
 
-    const decision = await findSmsDecision({
+    const decision = await findPublishedDecisionBySlug({
       authUserId: setup.user.id,
       slug: setup.instance.slug,
     });
@@ -60,7 +60,7 @@ describe.concurrent('findSmsDecision', () => {
       organization: setup.organization,
     });
 
-    const decision = await findSmsDecision({
+    const decision = await findPublishedDecisionBySlug({
       authUserId: outsider.authUserId,
       slug: setup.instance.slug,
     });

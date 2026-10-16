@@ -99,7 +99,7 @@ const readProfileId = async (authUserId: string) => {
   return row.profileId;
 };
 
-export class SmsVotingFixture {
+export class SmsCommandFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
   private readonly profileIds: string[] = [];
 
