@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SMS_MAX_BODY_LENGTH, clipSmsText, splitSmsBody } from './smsText';
+import { clipSmsText } from './smsText';
 
 describe('clipSmsText', () => {
   it('given text within the limit, then it is returned whole', () => {
@@ -14,56 +14,5 @@ describe('clipSmsText', () => {
 
   it('given text over the limit, then the clipped text stays in the GSM-7 basic set so Twilio keeps 160-character segments', () => {
     expect(clipSmsText('a long sentence', 8)).toMatch(/^[\x20-\x7E]*$/);
-  });
-});
-
-describe('splitSmsBody', () => {
-  const lines = Array.from(
-    { length: 40 },
-    (_, i) => `${i + 1}. ${'x'.repeat(90)}`,
-  );
-
-  it('given lines that fit one text, then one body carries the heading, every line and the footer', () => {
-    expect(
-      splitSmsBody({
-        heading: 'Head:',
-        lines: ['one', 'two'],
-        footer: 'Foot.',
-      }),
-    ).toEqual(['Head:\none\ntwo\nFoot.']);
-  });
-
-  it('given more lines than one text holds, then every body fits, the heading opens the first, the footer closes the last, and each body is numbered', () => {
-    const bodies = splitSmsBody({ heading: 'Head:', lines, footer: 'Foot.' });
-
-    expect(bodies.length).toBeGreaterThan(1);
-    bodies.forEach((body) => {
-      expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
-    });
-    expect(bodies[0]!.startsWith(`Head: (1/${bodies.length})`)).toBe(true);
-    expect(bodies.at(-1)!.endsWith('Foot.')).toBe(true);
-    bodies.slice(0, -1).forEach((body) => {
-      expect(body.endsWith('Foot.')).toBe(false);
-    });
-    expect(bodies[1]!.startsWith(`(2/${bodies.length})`)).toBe(true);
-    expect(bodies.flatMap((body) => body.split('\n'))).toEqual(
-      expect.arrayContaining(lines),
-    );
-  });
-
-  it('given a space separator, then lines are packed into sentences rather than rows', () => {
-    expect(
-      splitSmsBody({
-        lines: ['Pick 1: "A".', 'Pick 2: "B".'],
-        footer: '1 pick left.',
-        separator: ' ',
-      }),
-    ).toEqual(['Pick 1: "A". Pick 2: "B". 1 pick left.']);
-  });
-
-  it('given no lines, then the heading and footer still form one body', () => {
-    expect(
-      splitSmsBody({ heading: 'Head:', lines: [], footer: 'Foot.' }),
-    ).toEqual(['Head:\nFoot.']);
   });
 });

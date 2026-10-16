@@ -213,12 +213,4 @@ export const Events = {
       codes: z.array(z.string()).default([]),
     }),
   },
-  voteSmsBallotRequested: {
-    name: 'vote/sms-ballot-requested' as const,
-    schema: z.object({
-      processInstanceId: z.string().uuid(),
-      authUserId: z.string().uuid(),
-      phone: z.string(),
-    }),
-  },
 } as const;

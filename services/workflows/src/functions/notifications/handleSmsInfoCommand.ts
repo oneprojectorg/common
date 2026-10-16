@@ -108,15 +108,12 @@ export const handleSmsInfoCommand = inngest.createFunction(
     if (!proposal) {
       await text(
         'send-no-proposal-reply',
-        `No proposal with code ${code} in "${decision.name}". Text PROPOSALS ${decision.slug} to browse.`,
+        `No proposal with code ${code} in "${decision.name}".`,
       );
       return { message: 'proposal not found' };
     }
 
-    await text(
-      'send-info-reply',
-      formatSmsProposalInfo(proposal, { slug: decision.slug }),
-    );
+    await text('send-info-reply', formatSmsProposalInfo(proposal));
 
     return { message: 'info sent' };
   },

@@ -1,8 +1,6 @@
 import {
   type DecisionInstanceData,
-  getSmsVotability,
   listProcessParticipants,
-  listSmsOnlyProcessParticipants,
   resolveManualSelectionStatus,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
@@ -14,8 +12,7 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
-const { phaseTransitioned, manualSelectionsConfirmed, voteSmsBallotRequested } =
-  Events;
+const { phaseTransitioned, manualSelectionsConfirmed } = Events;
 
 export const sendPhaseTransitionNotification = inngest.createFunction(
   {
@@ -91,8 +88,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     const instanceData = processData.instanceData as DecisionInstanceData;
     const phases = instanceData?.phases ?? [];
     const toPhaseIndex = phases.findIndex((p) => p.phaseId === toPhaseId);
-    const toPhase = phases[toPhaseIndex];
-    const toPhaseName = toPhase?.name ?? toPhaseId;
+    const toPhaseName = phases[toPhaseIndex]?.name ?? toPhaseId;
     const phaseNumber = toPhaseIndex !== -1 ? toPhaseIndex + 1 : 1;
     const totalPhases = phases.length;
 
@@ -106,110 +102,66 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     // own concern.
     const recipientEmails = selectEmailRecipients(participants);
 
-    let emailsSent = 0;
-
     if (recipientEmails.length === 0) {
-      logger.warn('No email participants found for process instance', {
+      logger.warn('No participants found for process instance', {
         processInstanceId,
         profileId: processData.profileId,
       });
-    } else {
-      const processUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processData.profileSlug}`;
+      return;
+    }
 
+    const processUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processData.profileSlug}`;
+
+    const result = await step.run('send-emails', async () => {
       try {
-        const emailResult = await step.run('send-emails', async () => {
-          try {
-            const emails = recipientEmails.map((email) => ({
-              to: email,
-              subject: PhaseTransitionEmail.subject(
-                processData.name,
-                toPhaseName,
-              ),
-              component: () =>
-                PhaseTransitionEmail({
-                  processTitle: processData.name,
-                  toPhaseName,
-                  phaseNumber,
-                  totalPhases,
-                  processUrl,
-                }),
-            }));
+        const emails = recipientEmails.map((email) => ({
+          to: email,
+          subject: PhaseTransitionEmail.subject(processData.name, toPhaseName),
+          component: () =>
+            PhaseTransitionEmail({
+              processTitle: processData.name,
+              toPhaseName,
+              phaseNumber,
+              totalPhases,
+              processUrl,
+            }),
+        }));
 
-            const { errors } = await OPBatchSend(emails, {
-              // Stable across retries, unique per run: a retry replays
-              // delivered chunks and only the failed ones go out again.
-              idempotencyKeyPrefix: `phase-transition/${runId}`,
-            });
-
-            if (errors.length > 0) {
-              logger.error(
-                'Some phase transition notifications failed to send',
-                { processInstanceId, failedCount: errors.length },
-              );
-              throw new Error(
-                `Phase transition email batch failed for ${errors.length} recipient(s)`,
-              );
-            }
-
-            logger.info('Phase transition notifications sent', {
-              processInstanceId,
-              toPhaseId,
-              sent: emails.length,
-              idempotencyKeyPrefix: `phase-transition/${runId}`,
-            });
-            return { sent: emails.length };
-          } catch (error) {
-            logger.error('Failed to send phase transition notifications', {
-              error,
-              processInstanceId,
-            });
-            throw error;
-          }
+        const { errors } = await OPBatchSend(emails, {
+          // Stable across retries, unique per run: a retry replays delivered
+          // chunks and only the failed ones go out again.
+          idempotencyKeyPrefix: `phase-transition/${runId}`,
         });
 
-        emailsSent = emailResult.sent;
-      } catch (error) {
-        logger.error(
-          'Phase transition emails failed after retries; continuing to SMS vote prompts',
-          { error, processInstanceId },
-        );
-      }
-    }
+        if (errors.length > 0) {
+          logger.error('Some phase transition notifications failed to send', {
+            processInstanceId,
+            failedCount: errors.length,
+          });
+          throw new Error(
+            `Phase transition email batch failed for ${errors.length} recipient(s)`,
+          );
+        }
 
-    const votability = await step.run('get-sms-votability', () =>
-      getSmsVotability({ processInstanceId, phase: toPhase }),
-    );
-
-    if (votability.votingOpen && votability.eligibleProposalCount > 0) {
-      const smsParticipants = await step.run(
-        'get-sms-only-participants',
-        async () => listSmsOnlyProcessParticipants({ processInstanceId }),
-      );
-
-      if (smsParticipants.length > 0) {
-        await step.run('request-sms-ballots', async () =>
-          inngest.send(
-            smsParticipants.map((participant) => ({
-              name: voteSmsBallotRequested.name,
-              data: {
-                processInstanceId,
-                authUserId: participant.authUserId,
-                phone: participant.phone,
-              },
-            })),
-          ),
-        );
-
-        logger.info('Requested SMS ballots for phone-only participants', {
+        logger.info('Phase transition notifications sent', {
           processInstanceId,
-          eligibleProposalCount: votability.eligibleProposalCount,
-          count: smsParticipants.length,
+          toPhaseId,
+          sent: emails.length,
+          idempotencyKeyPrefix: `phase-transition/${runId}`,
         });
+        return { sent: emails.length };
+      } catch (error) {
+        logger.error('Failed to send phase transition notifications', {
+          error,
+          processInstanceId,
+        });
+        throw error;
       }
-    }
+    });
 
     return {
-      message: `${emailsSent} phase transition notification(s) sent`,
+      sent: result.sent,
+      message: `${result.sent} phase transition notification(s) sent`,
     };
   },
 );
