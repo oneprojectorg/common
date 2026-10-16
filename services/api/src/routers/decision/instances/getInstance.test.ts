@@ -182,7 +182,7 @@ describe.concurrent('getInstance', () => {
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
   });
 
-  it('should exclude draft proposals from stats', async ({
+  it('resolves without proposal or participant counts', async ({
     task,
     onTestFinished,
   }) => {
@@ -223,8 +223,9 @@ describe.concurrent('getInstance', () => {
       instanceId: instance.instance.id,
     });
 
-    expect(result.proposalCount).toBe(1);
-    expect(result.participantCount).toBe(1);
+    expect(result.id).toBe(instance.instance.id);
+    expect(result).not.toHaveProperty('proposalCount');
+    expect(result).not.toHaveProperty('participantCount');
   });
 });
 

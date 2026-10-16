@@ -50,8 +50,6 @@ export const getLegacyInstanceRouter = router({
               })(),
             }
           : undefined,
-        proposalCount: instance.proposalCount,
-        participantCount: instance.participantCount,
       });
     }),
 });
