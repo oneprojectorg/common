@@ -45,7 +45,10 @@ export async function ReviewSummaryLayout({
     notFound();
   }
 
-  if (!decisionProfile.processInstance.access?.admin) {
+  const isAdmin = Boolean(decisionProfile.processInstance.access?.admin);
+  const canReview = Boolean(decisionProfile.processInstance.access?.review);
+
+  if (!isAdmin && !canReview) {
     forbidden();
   }
 
@@ -95,6 +98,12 @@ export async function ReviewSummaryLayout({
     phaseId,
   );
 
+  // Mirrors the service's `canReadPhaseReviews`: any reviewer of the process
+  // may read a phase with open reviews, assigned to this proposal or not.
+  if (!isAdmin && !reviewSettings.openReviews) {
+    forbidden();
+  }
+
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
   const isPhaseInProgress =
@@ -129,6 +138,7 @@ export async function ReviewSummaryLayout({
         phaseId={phaseId}
         isPhaseInProgress={isPhaseInProgress}
         reviewSettings={reviewSettings}
+        isAdmin={isAdmin}
       />
     </HydrationBoundary>
   );

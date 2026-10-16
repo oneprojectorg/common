@@ -1,7 +1,6 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { type DecisionAccess } from '@op/api/encoders';
 import { type Proposal } from '@op/common/client';
 import {
   type ReactNode,
@@ -45,8 +44,8 @@ interface ProposalReviewDecorationProviderProps {
   phaseId?: string;
   /** Whether this viewer may see the counts — each surface passes its own gate. */
   enabled: boolean;
-  /** Decides whether the count links to the Review Progress screen. */
-  access?: DecisionAccess | null;
+  /** Whether the count links to the proposal's reviews screen. */
+  canOpenReviews: boolean;
   children: ReactNode;
 }
 
@@ -63,7 +62,7 @@ export function ProposalReviewDecorationProvider({
   decisionSlug,
   phaseId,
   enabled,
-  access,
+  canOpenReviews,
   children,
 }: ProposalReviewDecorationProviderProps) {
   const [proposalIds, setProposalIds] = useState<string[]>([]);
@@ -114,13 +113,13 @@ export function ProposalReviewDecorationProvider({
           <ProposalReviewsCount
             reviewers={item.aggregates.reviewers}
             href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-            access={access ?? undefined}
+            canOpenReviews={canOpenReviews}
             variant="reviewed"
           />
         ),
       };
     },
-    [enabled, itemsByProposalId, decisionSlug, access],
+    [enabled, itemsByProposalId, decisionSlug, canOpenReviews],
   );
 
   const value = useMemo(
