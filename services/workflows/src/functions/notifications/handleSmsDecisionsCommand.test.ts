@@ -31,7 +31,7 @@ beforeEach(() => {
 });
 
 describe('handleSmsDecisionsCommand against the database', () => {
-  it('given a member of two decisions texts DECISIONS, then they are texted both by name and slug, with voting marked where it is open, and not a decision they are outside of', async ({
+  it('given a member of two decisions texts DECISIONS, then they are texted both by name and slug, the one with voting open listed first and marked, and not a decision they are outside of', async ({
     task,
     onTestFinished,
   }) => {
@@ -72,8 +72,8 @@ describe('handleSmsDecisionsCommand against the database', () => {
     expect(body).toContain(
       `Park Funding ${task.id} (voting open) - VOTE ${voting.slug}`,
     );
-    expect(body.indexOf('Bike Lanes')).toBeLessThan(
-      body.indexOf('Park Funding'),
+    expect(body.indexOf('Park Funding')).toBeLessThan(
+      body.indexOf('Bike Lanes'),
     );
     expect(body).not.toContain(outside.slug);
   });

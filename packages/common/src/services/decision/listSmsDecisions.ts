@@ -51,15 +51,17 @@ export async function listSmsDecisions({
     )
     .orderBy(asc(profiles.name), asc(profiles.id));
 
-  return rows.map(({ name, slug, instanceData, currentStateId }) => {
-    const phases = getInstancePhases(instanceData);
-    const currentPhase = phases.find(
-      (phase) => phase.phaseId === currentStateId,
-    );
-    return {
-      name,
-      slug,
-      votingOpen: currentPhase ? isVotingPhase(currentPhase) : false,
-    };
-  });
+  return rows
+    .map(({ name, slug, instanceData, currentStateId }) => {
+      const phases = getInstancePhases(instanceData);
+      const currentPhase = phases.find(
+        (phase) => phase.phaseId === currentStateId,
+      );
+      return {
+        name,
+        slug,
+        votingOpen: currentPhase ? isVotingPhase(currentPhase) : false,
+      };
+    })
+    .sort((a, b) => Number(b.votingOpen) - Number(a.votingOpen));
 }
