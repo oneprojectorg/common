@@ -16,12 +16,15 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { ensurePhaseRows, reconcilePhaseRows } from './phaseRows';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
   InstanceOverview,
   InstanceOverviewUpdate,
+  PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -91,11 +94,7 @@ export const updateDecisionInstance = async ({
 
   // Phases whose endDate actually changed — emitted to the caller so it can
   // fire `phase_end_date_changed` analytics events for committed changes only.
-  const phaseEndDateChanges: Array<{
-    phaseId: string;
-    previousEndDate: string | undefined;
-    newEndDate: string;
-  }> = [];
+  const phaseEndDateChanges: PhaseEndDateChange[] = [];
 
   // Validate rubricTemplate is a structurally valid JSON Schema before persisting
   if (rubricTemplate !== undefined) {
@@ -149,6 +148,10 @@ export const updateDecisionInstance = async ({
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
   const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
+  const existingInstanceData =
+    existingInstance.instanceData as DecisionInstanceData;
+  let updatedInstanceData: DecisionInstanceData | undefined;
+
   if (
     hasConfigUpdate ||
     hasOverviewUpdate ||
@@ -156,10 +159,7 @@ export const updateDecisionInstance = async ({
     hasProposalTemplateUpdate ||
     hasRubricTemplateUpdate
   ) {
-    const existingInstanceData =
-      existingInstance.instanceData as DecisionInstanceData;
-
-    let updatedInstanceData: DecisionInstanceData = { ...existingInstanceData };
+    updatedInstanceData = { ...existingInstanceData };
 
     // Apply config updates (merge with existing config)
     if (hasConfigUpdate) {
@@ -196,64 +196,7 @@ export const updateDecisionInstance = async ({
       updatedInstanceData.overview = mergedOverview;
     }
 
-    // Apply phase updates — replaces the full phases array to accommodate
-    // adding, removing, and reordering phases from the phase editor.
-    // Existing phase data (selectionPipeline, settingsSchema, etc.) is
-    // preserved by merging with the previous phase when a match exists.
-    if (hasPhaseUpdates) {
-      const existingPhaseMap = new Map(
-        existingInstanceData.phases.map((p) => [p.phaseId, p]),
-      );
-
-      for (const phase of phases) {
-        if (phase.endDate === undefined) {
-          continue;
-        }
-        const existing = existingPhaseMap.get(phase.phaseId);
-        if (existing && existing.endDate !== phase.endDate) {
-          phaseEndDateChanges.push({
-            phaseId: phase.phaseId,
-            previousEndDate: existing.endDate,
-            newEndDate: phase.endDate,
-          });
-        }
-      }
-
-      updatedInstanceData.phases = phases.map((phase) => {
-        const existing = existingPhaseMap.get(phase.phaseId);
-        const merged = {
-          ...existing,
-          phaseId: phase.phaseId,
-          ...(phase.name !== undefined && { name: phase.name }),
-          ...(phase.description !== undefined && {
-            description: phase.description,
-          }),
-          ...(typeof phase.headline === 'string' && {
-            headline: phase.headline,
-          }),
-          ...(phase.additionalInfo !== undefined && {
-            additionalInfo: phase.additionalInfo,
-          }),
-          ...(phase.rules !== undefined && { rules: phase.rules }),
-          ...(phase.startDate !== undefined && { startDate: phase.startDate }),
-          ...(phase.endDate !== undefined && { endDate: phase.endDate }),
-          ...(phase.settings !== undefined && { settings: phase.settings }),
-          ...(phase.rubricTemplate != null && {
-            rubricTemplate: phase.rubricTemplate,
-          }),
-        };
-        // `null` clears the phase rubric (falls back to the instance-level template).
-        if (phase.rubricTemplate === null) {
-          delete merged.rubricTemplate;
-        }
-        // Same for the headline — `null` clears it, and a legacy `''` on the
-        // stored phase clears with it.
-        if (phase.headline === null || isBlankHeadline(merged.headline)) {
-          delete merged.headline;
-        }
-        return merged;
-      });
-    }
+    // Phase overrides are applied inside the transaction, against the rows.
 
     // Apply proposal template update (replace entirely)
     if (hasProposalTemplateUpdate) {
@@ -297,6 +240,37 @@ export const updateDecisionInstance = async ({
 
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
+    const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
+
+    // Rows are the source of truth; a decision that has none converts here.
+    const currentPhases = await ensurePhaseRows({
+      db: tx,
+      processInstanceId: instanceId,
+      phases:
+        (locked.instanceData as DecisionInstanceData | null)?.phases ?? [],
+    });
+
+    if (hasPhaseUpdates) {
+      const merged = mergePhaseOverrides({
+        existing: currentPhases,
+        overrides: phases,
+      });
+      phaseEndDateChanges.push(...merged.endDateChanges);
+
+      await reconcilePhaseRows({
+        db: tx,
+        processInstanceId: instanceId,
+        phases: merged.phases,
+      });
+
+      // The blob mirrors the rows for the readers still on it.
+      updatedInstanceData = {
+        ...(updatedInstanceData ?? existingInstanceData),
+        phases: merged.phases,
+      };
+      updateData.instanceData = updatedInstanceData;
+    }
+
     // Update the instance
     const [updatedInstance] = await tx
       .update(processInstances)
@@ -422,6 +396,78 @@ export const updateDecisionInstance = async ({
   }
 
   return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
+};
+
+interface PhaseEndDateChange {
+  phaseId: string;
+  previousEndDate: string | undefined;
+  newEndDate: string;
+}
+
+/**
+ * The phase editor sends the full list, so this adds, removes and reorders.
+ * A phase it names keeps what it does not send (pipeline, settings schema).
+ */
+const mergePhaseOverrides = ({
+  existing,
+  overrides,
+}: {
+  existing: PhaseInstanceData[];
+  overrides: PhaseOverride[];
+}): { phases: PhaseInstanceData[]; endDateChanges: PhaseEndDateChange[] } => {
+  const existingPhaseMap = new Map(existing.map((p) => [p.phaseId, p]));
+  const endDateChanges: PhaseEndDateChange[] = [];
+
+  for (const phase of overrides) {
+    if (phase.endDate === undefined) {
+      continue;
+    }
+    const current = existingPhaseMap.get(phase.phaseId);
+    if (current && current.endDate !== phase.endDate) {
+      endDateChanges.push({
+        phaseId: phase.phaseId,
+        previousEndDate: current.endDate,
+        newEndDate: phase.endDate,
+      });
+    }
+  }
+
+  const phases = overrides.map((phase) => {
+    const current = existingPhaseMap.get(phase.phaseId);
+    const merged = {
+      ...current,
+      phaseId: phase.phaseId,
+      ...(phase.name !== undefined && { name: phase.name }),
+      ...(phase.description !== undefined && {
+        description: phase.description,
+      }),
+      ...(typeof phase.headline === 'string' && {
+        headline: phase.headline,
+      }),
+      ...(phase.additionalInfo !== undefined && {
+        additionalInfo: phase.additionalInfo,
+      }),
+      ...(phase.rules !== undefined && { rules: phase.rules }),
+      ...(phase.startDate !== undefined && { startDate: phase.startDate }),
+      ...(phase.endDate !== undefined && { endDate: phase.endDate }),
+      ...(phase.settings !== undefined && { settings: phase.settings }),
+      ...(phase.rubricTemplate != null && {
+        rubricTemplate: phase.rubricTemplate,
+      }),
+    };
+    // `null` clears the phase rubric (falls back to the instance-level template).
+    if (phase.rubricTemplate === null) {
+      delete merged.rubricTemplate;
+    }
+    // Same for the headline — `null` clears it, and a legacy `''` on the
+    // stored phase clears with it.
+    if (phase.headline === null || isBlankHeadline(merged.headline)) {
+      delete merged.headline;
+    }
+    return merged;
+  });
+
+  return { phases, endDateChanges };
 };
 
 /**
