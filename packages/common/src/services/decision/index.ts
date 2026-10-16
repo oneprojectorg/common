@@ -199,8 +199,8 @@ export * from './utils/phaseTemplates';
 // Voting management
 export * from './voting';
 export * from './votingEligibility';
-export * from './findSmsDecision';
-export * from './countSmsBallotProposals';
+export * from './findPublishedDecisionBySlug';
+export * from './countBallotProposals';
 export * from './formatSmsDecisionInfo';
 
 // Process survey

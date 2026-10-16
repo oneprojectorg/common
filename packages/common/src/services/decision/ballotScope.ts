@@ -6,7 +6,7 @@ import { notSuperseded } from './proposalSupersession';
 import { isReadableByEveryone } from './proposalVisibility';
 import { VOTING_INELIGIBLE_STATUSES } from './votingEligibility';
 
-export async function buildSmsBallotProposalFilter({
+export async function buildBallotProposalFilter({
   processInstanceId,
 }: {
   processInstanceId: string;

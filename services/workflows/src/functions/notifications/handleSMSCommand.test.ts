@@ -5,7 +5,7 @@ import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
-import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
+import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
 import { handleSMSCommand } from './handleSMSCommand';
 
 const NUMBERS = {
@@ -45,7 +45,7 @@ describe('handleSMSCommand against the database', () => {
     task,
     onTestFinished,
   }) => {
-    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.member);
     const member = await fixture.createPhoneOnlyAccount(phone);
     const { instanceProfileId, slug } = await fixture.createVotingInstance({
@@ -74,7 +74,7 @@ describe('handleSMSCommand against the database', () => {
     task,
     onTestFinished,
   }) => {
-    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.submitting);
     const member = await fixture.createPhoneOnlyAccount(phone);
     const { instanceProfileId, slug } = await fixture.createVotingInstance({
@@ -101,7 +101,7 @@ describe('handleSMSCommand against the database', () => {
     task,
     onTestFinished,
   }) => {
-    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.wrongSlug);
     await fixture.createPhoneOnlyAccount(phone);
     const t = new InngestTestEngine({ function: handleSMSCommand });
@@ -120,7 +120,7 @@ describe('handleSMSCommand against the database', () => {
     task,
     onTestFinished,
   }) => {
-    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.chatter);
     await fixture.createPhoneOnlyAccount(phone);
     const t = new InngestTestEngine({ function: handleSMSCommand });
@@ -137,7 +137,7 @@ describe('handleSMSCommand against the database', () => {
     task,
     onTestFinished,
   }) => {
-    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.bareInfo);
     await fixture.createPhoneOnlyAccount(phone);
     const t = new InngestTestEngine({ function: handleSMSCommand });
@@ -154,7 +154,7 @@ describe('handleSMSCommand against the database', () => {
     task,
     onTestFinished,
   }) => {
-    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
     const phone = parsePhoneNumber(NUMBERS.joiner);
     await fixture.createPhoneOnlyAccount(phone);
     const t = new InngestTestEngine({ function: handleSMSCommand });

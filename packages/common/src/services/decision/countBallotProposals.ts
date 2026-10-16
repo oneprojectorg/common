@@ -1,14 +1,14 @@
 import { count, db } from '@op/db/client';
 import { proposals } from '@op/db/schema';
 
-import { buildSmsBallotProposalFilter } from './smsBallotScope';
+import { buildBallotProposalFilter } from './ballotScope';
 
-export async function countSmsBallotProposals({
+export async function countBallotProposals({
   processInstanceId,
 }: {
   processInstanceId: string;
 }): Promise<number> {
-  const filter = await buildSmsBallotProposalFilter({ processInstanceId });
+  const filter = await buildBallotProposalFilter({ processInstanceId });
 
   if (!filter) {
     return 0;

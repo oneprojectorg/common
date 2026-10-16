@@ -1,4 +1,3 @@
-import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { EntityType, ProcessStatus } from '@op/db/schema';
 import { permission } from 'access-zones';
@@ -10,25 +9,21 @@ import {
   getInstancePhases,
 } from './schemas/instanceData';
 
-export interface SmsDecision {
+export interface PublishedDecision {
   profileId: string;
   processInstanceId: string;
   name: string;
   slug: string;
-  url: string;
   currentPhase: PhaseInstanceData | null;
 }
 
-export const decisionUrl = (slug: string): string =>
-  `${OPURLConfig('APP').ENV_URL}/decisions/${slug}`;
-
-export async function findSmsDecision({
+export async function findPublishedDecisionBySlug({
   authUserId,
   slug,
 }: {
   authUserId: string;
   slug: string;
-}): Promise<SmsDecision | null> {
+}): Promise<PublishedDecision | null> {
   const profile = await db.query.profiles.findFirst({
     where: { slug, type: EntityType.DECISION },
     columns: { id: true, name: true, slug: true },
@@ -78,7 +73,6 @@ export async function findSmsDecision({
     processInstanceId: id,
     name: profile.name,
     slug: profile.slug,
-    url: decisionUrl(profile.slug),
     currentPhase,
   };
 }
