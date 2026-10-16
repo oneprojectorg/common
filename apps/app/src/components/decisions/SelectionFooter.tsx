@@ -16,28 +16,31 @@ import {
   type ConfirmResultsHandler,
 } from './ComposeNotificationsDialog';
 
-interface FinalPhaseSelectionFooterProps {
+interface SelectionFooterProps {
   selectedProposals: Proposal[];
   numSelected: number;
   totalCandidates: number;
-  /** The template collects a budget, so winners are awarded an amount. */
-  awardsAmounts: boolean;
+  publishesResults: boolean;
+  phaseName: string;
+  collectsBudget: boolean;
   isConfirmOpen: boolean;
   onConfirmOpenChange: (open: boolean) => void;
   onConfirm: ConfirmResultsHandler;
   isSubmitting: boolean;
 }
 
-export const FinalPhaseSelectionFooter = ({
+export const SelectionFooter = ({
   selectedProposals,
   numSelected,
   totalCandidates,
-  awardsAmounts,
+  publishesResults,
+  phaseName,
+  collectsBudget,
   isConfirmOpen,
   onConfirmOpenChange,
   onConfirm,
   isSubmitting,
-}: FinalPhaseSelectionFooterProps) => {
+}: SelectionFooterProps) => {
   const t = useTranslations('decisions.review');
 
   return (
@@ -45,9 +48,9 @@ export const FinalPhaseSelectionFooter = ({
       <FooterBarStart>
         <span className="flex items-center gap-2 text-base">
           <LuCircleCheck className="size-5 shrink-0" aria-hidden />
-          {/* Keeps "winning": this footer drives the irreversible final-phase
-              publish, and Figma has no frame for this variant. */}
-          {t('winningProposalsSelectedCount', { count: numSelected })}
+          {publishesResults
+            ? t('winningProposalsSelectedCount', { count: numSelected })
+            : t('proposalsSelectedCount', { count: numSelected })}
         </span>
       </FooterBarStart>
       <FooterBarCenter />
@@ -56,18 +59,23 @@ export const FinalPhaseSelectionFooter = ({
           selectedProposals={selectedProposals}
           selectedCount={numSelected}
           notSelectedCount={Math.max(totalCandidates - numSelected, 0)}
-          awardsAmounts={awardsAmounts}
+          awardsAmounts={publishesResults && collectsBudget}
+          phaseName={phaseName}
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
           onConfirm={onConfirm}
           isSubmitting={isSubmitting}
           triggerLabel={
-            <>
-              <span className="sm:hidden">{t('confirmAction')}</span>
-              <span className="hidden sm:inline">
-                {t('confirmWinningProposalsTitle')}
-              </span>
-            </>
+            publishesResults ? (
+              <>
+                <span className="sm:hidden">{t('confirmAction')}</span>
+                <span className="hidden sm:inline">
+                  {t('confirmWinningProposalsTitle')}
+                </span>
+              </>
+            ) : (
+              t('confirmSelectionsAction')
+            )
           }
         />
       </FooterBarEnd>

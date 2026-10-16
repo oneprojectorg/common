@@ -52,6 +52,7 @@ const renderDialog = ({
         selectedCount={selected.length}
         notSelectedCount={1}
         awardsAmounts={awardsAmounts}
+        phaseName="Voting"
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         onConfirm={onConfirm}
@@ -96,9 +97,7 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     expect(within(dialog).getByText('$13,000')).toBeTruthy();
 
     await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
-    await user.click(
-      screen.getByRole('button', { name: 'Send & publish results' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
 
     expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), [
       { proposalId: 'alpha', amount: 5000 },
@@ -120,9 +119,7 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     expect(screen.getByText('$12,000.5')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Continue' }));
-    await user.click(
-      screen.getByRole('button', { name: 'Send & publish results' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
 
     expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), [
       { proposalId: 'alpha', amount: 3000 },
@@ -169,9 +166,7 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     });
 
     await user.click(screen.getByRole('button', { name: 'Open' }));
-    await user.click(
-      screen.getByRole('button', { name: 'Send & publish results' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
 
     expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), undefined);
   });
@@ -199,7 +194,7 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     await user.click(screen.getByRole('button', { name: 'Adjust amounts' }));
     await user.clear(amountField('Proposal Alpha'));
     await user.type(amountField('Proposal Alpha'), '4200');
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Close' }));
     await user.click(screen.getByRole('button', { name: 'Open' }));
 
     expect(screen.getByText('$5,000 Awarded')).toBeTruthy();
@@ -228,9 +223,7 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     await user.click(screen.getByRole('button', { name: 'Open' }));
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     setSelected([alpha, beta]);
-    await user.click(
-      screen.getByRole('button', { name: 'Send & publish results' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
 
     expect(onConfirm).not.toHaveBeenCalled();
     expect(
@@ -241,11 +234,9 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     // Confirming again publishes the new set, and the counts follow it.
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
-      screen.getByRole('tab', { name: /^Funded\s*2 proposals$/ }),
+      screen.getByRole('tab', { name: /^Advanced\s*2 proposals$/ }),
     ).toBeTruthy();
-    await user.click(
-      screen.getByRole('button', { name: 'Send & publish results' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
     expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), [
       { proposalId: 'alpha', amount: 5000 },
       { proposalId: 'beta', amount: 8000 },
@@ -266,11 +257,99 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
         budget: { amount: 6000, currency: 'USD' },
       }),
     ]);
-    await user.click(
-      screen.getByRole('button', { name: 'Send & publish results' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
 
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByText('$6,000 Awarded')).toBeTruthy();
+  });
+});
+
+describe('ComposeNotificationsDialog skip', () => {
+  it('publishes the awarded amounts without notifying anyone', async () => {
+    const { onConfirm, user } = renderDialog({ proposals: [alpha] });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Advance without notifying' }),
+    );
+
+    expect(onConfirm).toHaveBeenCalledWith(undefined, [
+      { proposalId: 'alpha', amount: 5000 },
+    ]);
+  });
+});
+
+describe('ComposeNotificationsDialog notifications', () => {
+  it('composes advancement notifications for the destination phase', async () => {
+    const { onConfirm, user } = renderDialog({
+      proposals: [alpha],
+      awardsAmounts: false,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+
+    expect(
+      screen
+        .getByRole('heading', { name: 'Advance to Voting' })
+        .querySelector('bdi')?.textContent,
+    ).toBe('Voting');
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(
+      screen.getByRole('tab', { name: /^Advanced\s*1 proposal$/ }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('tab', { name: /^Not advanced\s*1 proposal$/ }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
+
+    expect(onConfirm).toHaveBeenCalledWith(
+      {
+        selected: expect.stringContaining('advanced to the {{phase}} phase'),
+        notSelected: expect.stringContaining(
+          'did not advance to the {{phase}} phase',
+        ),
+      },
+      undefined,
+    );
+  });
+
+  it('skips without a message, but will not send one blank', async () => {
+    const { onConfirm, user } = renderDialog({
+      proposals: [alpha],
+      awardsAmounts: false,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.clear(
+      screen.getByRole('textbox', { name: 'Notification Message' }),
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Send & advance' }),
+    ).toHaveProperty('disabled', true);
+    await user.click(
+      screen.getByRole('button', { name: 'Advance without notifying' }),
+    );
+
+    expect(onConfirm).toHaveBeenCalledWith(undefined, undefined);
+  });
+
+  it('confirms nothing once the selection is emptied under the open dialog', async () => {
+    const { user, setSelected } = renderDialog({
+      proposals: [alpha],
+      awardsAmounts: false,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    setSelected([]);
+
+    expect(
+      screen.getByRole('button', { name: 'Advance without notifying' }),
+    ).toHaveProperty('disabled', true);
+    expect(
+      screen.getByRole('button', { name: 'Send & advance' }),
+    ).toHaveProperty('disabled', true);
   });
 });

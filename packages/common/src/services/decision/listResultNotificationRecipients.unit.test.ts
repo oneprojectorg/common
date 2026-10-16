@@ -91,6 +91,7 @@ vi.mock('../email/recipients', () => ({
 }));
 
 vi.mock('./getProposalsForPhase', () => ({
+  getAttachedProposalIds: vi.fn(),
   getProposalIdsForPhase: vi.fn(),
 }));
 
@@ -100,7 +101,10 @@ import {
   type EmailRecipient,
   listMemberProfileRecipientsByProfile,
 } from '../email/recipients';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
+import {
+  getAttachedProposalIds,
+  getProposalIdsForPhase,
+} from './getProposalsForPhase';
 import { listResultNotificationRecipients } from './listResultNotificationRecipients';
 
 const INSTANCE_ID = '11111111-1111-4111-8111-111111111111';
@@ -125,6 +129,7 @@ const findResult = vi.mocked(db.query.decisionProcessResults.findFirst);
 const findInstance = vi.mocked(db.query.processInstances.findFirst);
 const findProposals = vi.mocked(db.query.proposals.findMany);
 const mockPhaseIds = vi.mocked(getProposalIdsForPhase);
+const mockAttachedIds = vi.mocked(getAttachedProposalIds);
 const mockAudiences = vi.mocked(listMemberProfileRecipientsByProfile);
 
 const ADA: EmailRecipient = {
@@ -187,6 +192,7 @@ describe('listResultNotificationRecipients', () => {
     ];
     state().__transitions.rows = [
       {
+        toStateId: 'voting',
         transitionData: { manualSelection: { resultNotifications: MESSAGES } },
       },
     ];
@@ -194,7 +200,7 @@ describe('listResultNotificationRecipients', () => {
     findInstance.mockResolvedValue({
       id: INSTANCE_ID,
       name: 'Participatory Budgeting 2026',
-      instanceData: { phases: [] },
+      instanceData: { phases: [{ phaseId: 'voting', name: 'Voting' }] },
       currentStateId: 'voting',
       profile: { slug: 'pb-2026' },
     } as never);
@@ -271,6 +277,7 @@ describe('listResultNotificationRecipients', () => {
       notification: {
         processTitle: 'Participatory Budgeting 2026',
         processProfileSlug: 'pb-2026',
+        publishesResults: true,
         messages: MESSAGES,
         recipients: [
           {
@@ -281,13 +288,19 @@ describe('listResultNotificationRecipients', () => {
               name: 'Ada',
               proposal: 'Community Garden Revamp',
               amount: '$8,000',
+              phase: 'Voting',
             },
           },
           {
             email: 'bo@example.com',
             proposalProfileId: 'profile-b-not-selected',
             outcome: 'notSelected',
-            values: { name: 'Bo', proposal: 'Bike Lane Study', amount: '' },
+            values: {
+              name: 'Bo',
+              proposal: 'Bike Lane Study',
+              amount: '',
+              phase: 'Voting',
+            },
           },
         ],
       },
@@ -435,6 +448,48 @@ describe('listResultNotificationRecipients', () => {
     await expect(run()).resolves.toEqual({
       ok: false,
       reason: 'resultRetired',
+    });
+  });
+
+  it('sends nothing once the published transition has been reverted', async () => {
+    state().__transitions.rows = [];
+
+    await expect(run()).resolves.toEqual({
+      ok: false,
+      reason: 'transitionReverted',
+    });
+  });
+
+  it('splits the phase pool by the proposals a mid-process transition advanced', async () => {
+    mockAttachedIds.mockResolvedValue(['selected-1']);
+
+    const result = await listResultNotificationRecipients({
+      processInstanceId: INSTANCE_ID,
+      transitionHistoryId: TRANSITION_ID,
+      previousPhaseId: PREVIOUS_PHASE_ID,
+    });
+
+    expect(findResult).not.toHaveBeenCalled();
+    expect(mockAttachedIds).toHaveBeenCalledWith({
+      transitionHistoryId: TRANSITION_ID,
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      notification: {
+        publishesResults: false,
+        recipients: [
+          {
+            email: 'ada@example.com',
+            outcome: 'selected',
+            values: { proposal: 'Community Garden Revamp', amount: '' },
+          },
+          {
+            email: 'bo@example.com',
+            outcome: 'notSelected',
+            values: { proposal: 'Bike Lane Study', amount: '' },
+          },
+        ],
+      },
     });
   });
 

@@ -12,7 +12,10 @@ import {
   type EmailRecipient,
   listMemberProfileRecipientsByProfile,
 } from '../email/recipients';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
+import {
+  getAttachedProposalIds,
+  getProposalIdsForPhase,
+} from './getProposalsForPhase';
 import { normalizeBudget } from './proposalDataSchema';
 import {
   type ResultNotificationMessages,
@@ -21,6 +24,7 @@ import {
   formatResultAmount,
   resultNotificationMessagesSchema,
 } from './resultNotificationTemplate';
+import { getInstancePhases } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 import { isProposalReachable } from './utils/proposal';
 
@@ -37,13 +41,22 @@ export interface ResultNotificationRecipient {
 export interface ResultNotification {
   processTitle: string;
   processProfileSlug: string;
+  publishesResults: boolean;
   messages: ResultNotificationMessages;
   recipients: Array<ResultNotificationRecipient>;
 }
 
 export type ListResultNotificationRecipientsResult =
   | { ok: true; notification: ResultNotification }
-  | { ok: false; reason: 'resultRetired' | 'noRecipients' };
+  | {
+      ok: false;
+      reason: 'resultRetired' | 'transitionReverted' | 'noRecipients';
+    };
+
+/** `null`: selected without an amount. */
+type AnnouncedSelection =
+  | { ok: true; allocatedByProposalId: Map<string, string | null> }
+  | { ok: false; reason: 'resultRetired' };
 
 /**
  * Who hears how the decision went, and the copy they need.
@@ -60,15 +73,21 @@ export async function listResultNotificationRecipients({
   previousPhaseId,
 }: {
   processInstanceId: string;
-  processResultId: string;
+  processResultId?: string;
   transitionHistoryId: string;
   /** The phase whose membership defines the not-selected audience. */
   previousPhaseId: string;
 }): Promise<ListResultNotificationRecipientsResult> {
-  const [resultRow, instance, messages] = await Promise.all([
-    db.query.decisionProcessResults.findFirst({
-      where: { id: processResultId, processInstanceId },
-    }),
+  const publishesResults = processResultId !== undefined;
+  const [selection, instance, composed] = await Promise.all([
+    publishesResults
+      ? getResultSelection({ processInstanceId, processResultId })
+      : getAttachedProposalIds({ transitionHistoryId }).then(
+          (ids): AnnouncedSelection => ({
+            ok: true,
+            allocatedByProposalId: new Map(ids.map((id) => [id, null])),
+          }),
+        ),
     db.query.processInstances.findFirst({
       where: { id: processInstanceId },
       with: { profile: true },
@@ -77,8 +96,12 @@ export async function listResultNotificationRecipients({
   ]);
 
   // Retracted inside the debounce window, or never ours to begin with.
-  if (!resultRow?.success) {
-    return { ok: false, reason: 'resultRetired' };
+  if (!selection.ok) {
+    return selection;
+  }
+
+  if (composed.isReverted) {
+    return { ok: false, reason: 'transitionReverted' };
   }
 
   if (!instance?.profile) {
@@ -87,29 +110,19 @@ export async function listResultNotificationRecipients({
     );
   }
 
-  if (!messages) {
+  if (!composed.messages) {
     throw new CommonError(
       `Transition ${transitionHistoryId} carries no author notifications`,
     );
   }
 
-  const [selections, candidateIds] = await Promise.all([
-    db
-      .select({
-        proposalId: decisionProcessResultSelections.proposalId,
-        allocated: decisionProcessResultSelections.allocated,
-      })
-      .from(decisionProcessResultSelections)
-      .where(
-        eq(decisionProcessResultSelections.processResultId, processResultId),
-      ),
-    getProposalIdsForPhase({ instance, phaseId: previousPhaseId }),
-  ]);
+  const { allocatedByProposalId } = selection;
+  const candidateIds = await getProposalIdsForPhase({
+    instance,
+    phaseId: previousPhaseId,
+  });
 
-  const allocatedByProposalId = new Map(
-    selections.map(({ proposalId, allocated }) => [proposalId, allocated]),
-  );
-  // Selected comes from the result row, not the candidate pool: a proposal
+  // Selected comes from the announced set, not the candidate pool: a proposal
   // created inside the final phase's own window can be selected without ever
   // belonging to the previous phase.
   const notSelectedIds = candidateIds.filter(
@@ -134,12 +147,17 @@ export async function listResultNotificationRecipients({
     [...audiences.values()].flat().map(({ authUserId }) => authUserId),
   );
 
+  const phase =
+    getInstancePhases(instance.instanceData).find(
+      ({ phaseId }) => phaseId === composed.toStateId,
+    )?.name ?? '';
   const recipients = reachable.flatMap((proposal) =>
     toRecipients({
       proposal,
       allocated: allocatedByProposalId.get(proposal.id),
       audience: audiences.get(proposal.profileId) ?? [],
       names,
+      phase,
     }),
   );
 
@@ -160,9 +178,43 @@ export async function listResultNotificationRecipients({
     notification: {
       processTitle: instance.name,
       processProfileSlug: instance.profile.slug,
-      messages,
+      publishesResults,
+      messages: composed.messages,
       recipients,
     },
+  };
+}
+
+async function getResultSelection({
+  processInstanceId,
+  processResultId,
+}: {
+  processInstanceId: string;
+  processResultId: string;
+}): Promise<AnnouncedSelection> {
+  const resultRow = await db.query.decisionProcessResults.findFirst({
+    where: { id: processResultId, processInstanceId },
+  });
+
+  if (!resultRow?.success) {
+    return { ok: false, reason: 'resultRetired' };
+  }
+
+  const selections = await db
+    .select({
+      proposalId: decisionProcessResultSelections.proposalId,
+      allocated: decisionProcessResultSelections.allocated,
+    })
+    .from(decisionProcessResultSelections)
+    .where(
+      eq(decisionProcessResultSelections.processResultId, processResultId),
+    );
+
+  return {
+    ok: true,
+    allocatedByProposalId: new Map(
+      selections.map(({ proposalId, allocated }) => [proposalId, allocated]),
+    ),
   };
 }
 
@@ -176,6 +228,7 @@ function toRecipients({
   allocated,
   audience,
   names,
+  phase,
 }: {
   proposal: {
     id: string;
@@ -186,6 +239,7 @@ function toRecipients({
   allocated: string | null | undefined;
   audience: Array<EmailRecipient>;
   names: Map<string, string>;
+  phase: string;
 }): Array<ResultNotificationRecipient> {
   const outcome: ResultNotificationOutcome =
     allocated === undefined ? 'notSelected' : 'selected';
@@ -217,6 +271,7 @@ function toRecipients({
           name: names.get(authUserId) ?? DEFAULT_GREETING_NAME,
           proposal: proposal.profile.name,
           amount,
+          phase,
         },
       },
     ];
@@ -258,19 +313,35 @@ async function readAuthorNames(
  * would hide the messages and silently send nothing. Re-validated because
  * `transitionData` is a shared jsonb bag several writers touch.
  */
-async function readComposedMessages(
-  transitionHistoryId: string,
-): Promise<ResultNotificationMessages | undefined> {
+async function readComposedMessages(transitionHistoryId: string): Promise<
+  | { isReverted: true }
+  | {
+      isReverted: false;
+      toStateId: string;
+      messages?: ResultNotificationMessages;
+    }
+> {
   const [row] = await db
-    .select({ transitionData: stateTransitionHistory.transitionData })
+    .select({
+      toStateId: stateTransitionHistory.toStateId,
+      transitionData: stateTransitionHistory.transitionData,
+    })
     .from(stateTransitionHistory)
     .where(eq(stateTransitionHistory.id, transitionHistoryId))
     .limit(1);
 
-  const transitionData = row?.transitionData as TransitionData | null;
+  if (!row) {
+    return { isReverted: true };
+  }
+
+  const transitionData = row.transitionData as TransitionData | null;
   const parsed = resultNotificationMessagesSchema.safeParse(
     transitionData?.manualSelection?.resultNotifications,
   );
 
-  return parsed.success ? parsed.data : undefined;
+  return {
+    isReverted: false,
+    toStateId: row.toStateId,
+    messages: parsed.success ? parsed.data : undefined,
+  };
 }

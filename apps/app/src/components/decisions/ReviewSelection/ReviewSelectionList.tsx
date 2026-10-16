@@ -24,9 +24,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '@/components/Bullet';
 
-import { FinalPhaseSelectionFooter } from '../FinalPhaseSelectionFooter';
 import { ProposalCardDialogProvider } from '../ProposalCardDialogContext';
-import { StandardSelectionFooter } from '../StandardSelectionFooter';
+import { SelectionFooter } from '../SelectionFooter';
 import { useManualSelection } from '../useManualSelection';
 import {
   ReviewSelectionTable,
@@ -119,11 +118,6 @@ export function ReviewSelectionList({
         processInstanceId,
         phaseId: previousPhaseId,
       });
-      // The composer holds hand-written copy, so a retryable failure keeps it
-      // open; the standard footer has nothing to preserve.
-      if (!isFinalPhase) {
-        setIsConfirmOpen(false);
-      }
       toast.error(error.message);
     },
   });
@@ -187,28 +181,18 @@ export function ReviewSelectionList({
           />
         )}
 
-        {isFinalPhase ? (
-          <FinalPhaseSelectionFooter
-            selectedProposals={selectedProposals}
-            numSelected={selectedProposals.length}
-            totalCandidates={items.length}
-            awardsAmounts={showBudget}
-            isConfirmOpen={isConfirmOpen}
-            onConfirmOpenChange={setIsConfirmOpen}
-            onConfirm={handleConfirm}
-            isSubmitting={submitMutation.isPending}
-          />
-        ) : (
-          <StandardSelectionFooter
-            selectedProposals={selectedProposals}
-            numSelected={selectedProposals.length}
-            phaseName={currentPhaseName}
-            isConfirmOpen={isConfirmOpen}
-            onConfirmOpenChange={setIsConfirmOpen}
-            onConfirm={() => handleConfirm()}
-            isSubmitting={submitMutation.isPending}
-          />
-        )}
+        <SelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={selectedProposals.length}
+          totalCandidates={items.length}
+          publishesResults={isFinalPhase}
+          phaseName={currentPhaseName}
+          collectsBudget={showBudget}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={setIsConfirmOpen}
+          onConfirm={handleConfirm}
+          isSubmitting={submitMutation.isPending}
+        />
       </div>
     </ProposalCardDialogProvider>
   );

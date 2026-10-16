@@ -39,6 +39,7 @@ interface ComposeNotificationsDialogProps {
    * admin confirms the amount each winner is awarded.
    */
   awardsAmounts: boolean;
+  phaseName: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: ConfirmResultsHandler;
@@ -46,9 +47,8 @@ interface ComposeNotificationsDialogProps {
   triggerLabel: ReactNode;
 }
 
-/** Publishes results; `allocations` is set when the template awards amounts. */
 export type ConfirmResultsHandler = (
-  messages: ResultNotificationMessages,
+  messages?: ResultNotificationMessages,
   allocations?: ProposalAllocation[],
 ) => void;
 
@@ -56,15 +56,9 @@ type OutcomeTab = 'selected' | 'notSelected';
 
 type Step = 'amounts' | 'notifications';
 
-const STEP_LAYOUT = {
-  amounts: {
-    title: 'decisions.review.confirmWinningProposalsTitle',
-    width: 'sm:max-w-2xl',
-  },
-  notifications: {
-    title: 'decisions.proposals.composeNotificationsTitle',
-    width: 'sm:max-w-lg',
-  },
+const STEP_WIDTH = {
+  amounts: 'sm:max-w-2xl',
+  notifications: 'sm:max-w-lg',
 } as const;
 
 const isOutcomeTab = (value: string): value is OutcomeTab =>
@@ -76,6 +70,7 @@ const TOKENS = {
   name: resultNotificationToken('name'),
   proposal: resultNotificationToken('proposal'),
   amount: resultNotificationToken('amount'),
+  phase: resultNotificationToken('phase'),
 };
 
 export const ComposeNotificationsDialog = ({
@@ -83,6 +78,7 @@ export const ComposeNotificationsDialog = ({
   selectedCount,
   notSelectedCount,
   awardsAmounts,
+  phaseName,
   isOpen,
   onOpenChange,
   onConfirm,
@@ -92,9 +88,9 @@ export const ComposeNotificationsDialog = ({
   const t = useTranslations();
 
   const [messages, setMessages] = useState<ResultNotificationMessages>(() => ({
-    selected: t('decisions.proposals.selectedNotificationTemplate', TOKENS),
+    selected: t('decisions.proposals.advancedNotificationTemplate', TOKENS),
     notSelected: t(
-      'decisions.proposals.notSelectedNotificationTemplate',
+      'decisions.proposals.notAdvancedNotificationTemplate',
       TOKENS,
     ),
   }));
@@ -135,22 +131,27 @@ export const ComposeNotificationsDialog = ({
   };
   const hasError = invalid.selected || invalid.notSelected;
 
+  const confirm = (composed?: ResultNotificationMessages) =>
+    awards.publish({
+      onPublish: (allocations) => onConfirm(composed, allocations),
+      onReopen: () => setStep('amounts'),
+    });
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={<Button disabled={selectedCount === 0}>{triggerLabel}</Button>}
       />
 
-      <DialogContent className={STEP_LAYOUT[step].width}>
+      <DialogContent className={STEP_WIDTH[step]}>
         <DialogHeader>
-          <DialogTitle>{t(STEP_LAYOUT[step].title)}</DialogTitle>
+          <StepTitle step={step} phaseName={phaseName} />
         </DialogHeader>
 
         {step === 'amounts' ? (
           <AwardAmountsStep
             proposals={selectedProposals}
             awards={awards}
-            onCancel={() => handleOpenChange(false)}
             onContinue={() =>
               awards.confirm(() => {
                 // Re-frozen here too: a reopened step may confirm a new set.
@@ -183,13 +184,13 @@ export const ComposeNotificationsDialog = ({
                 >
                   <OutcomeTabTrigger
                     value="selected"
-                    label={t('decisions.proposals.fundedStatus')}
+                    label={t('decisions.proposals.advancedAudienceLabel')}
                     count={counts.selected}
                     isInvalid={invalid.selected}
                   />
                   <OutcomeTabTrigger
                     value="notSelected"
-                    label={t('decisions.proposals.notFundedStatus')}
+                    label={t('decisions.proposals.notAdvancedAudienceLabel')}
                     count={counts.notSelected}
                     isInvalid={invalid.notSelected}
                   />
@@ -201,7 +202,7 @@ export const ComposeNotificationsDialog = ({
               <Alert variant="info" role="note" id={hintId}>
                 <LuCircleAlert aria-hidden />
                 <AlertDescription>
-                  {t('decisions.proposals.notificationPlaceholderHint', TOKENS)}
+                  {t(getPlaceholderHintKey(awardsAmounts), TOKENS)}
                 </AlertDescription>
               </Alert>
 
@@ -231,36 +232,26 @@ export const ComposeNotificationsDialog = ({
               </TabsContent>
 
               <p className="text-sm text-muted-foreground">
-                {t('decisions.proposals.publishResultsWarning', {
-                  fundedCount: counts.selected,
-                  notFundedCount: counts.notSelected,
+                {t('decisions.proposals.advanceNotificationsWarning', {
+                  selectedCount: counts.selected,
+                  notSelectedCount: counts.notSelected,
                 })}
               </p>
             </Tabs>
 
             <DialogFooter>
-              <ComposerDismissButton
-                canGoBack={awardsAmounts}
+              <BackButton
+                isShown={awardsAmounts}
                 onBack={() => setStep('amounts')}
-                onCancel={() => handleOpenChange(false)}
                 disabled={isSubmitting}
               />
-              {/* `selectedCount` is live, not the frozen badge count: if the pool
-              refetches the selection away while the admin composes, the
-              mutation would be rejected for an empty `proposalIds`. */}
-              <Button
-                onClick={() =>
-                  awards.publish({
-                    onPublish: (allocations) =>
-                      onConfirm(messages, allocations),
-                    onReopen: () => setStep('amounts'),
-                  })
-                }
-                disabled={hasError || selectedCount === 0}
-                loading={isSubmitting}
-              >
-                {t('decisions.proposals.publishResultsAction')}
-              </Button>
+              <ConfirmButtons
+                onSend={() => confirm(messages)}
+                onSkip={() => confirm()}
+                canSend={!hasError}
+                hasSelection={selectedCount > 0}
+                isSubmitting={isSubmitting}
+              />
             </DialogFooter>
           </>
         )}
@@ -269,30 +260,91 @@ export const ComposeNotificationsDialog = ({
   );
 };
 
+const ConfirmButtons = ({
+  onSend,
+  onSkip,
+  canSend,
+  hasSelection,
+  isSubmitting,
+}: {
+  onSend: () => void;
+  onSkip: () => void;
+  canSend: boolean;
+  hasSelection: boolean;
+  isSubmitting: boolean;
+}) => {
+  const t = useTranslations();
+  const [pendingAction, setPendingAction] = useState<'send' | 'skip'>('send');
+  const isDisabled = !hasSelection || isSubmitting;
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => {
+          setPendingAction('skip');
+          onSkip();
+        }}
+        disabled={isDisabled}
+        loading={isSubmitting && pendingAction === 'skip'}
+      >
+        {t('decisions.proposals.skipNotificationsAction')}
+      </Button>
+      <Button
+        onClick={() => {
+          setPendingAction('send');
+          onSend();
+        }}
+        disabled={isDisabled || !canSend}
+        loading={isSubmitting && pendingAction === 'send'}
+      >
+        {t('decisions.proposals.sendAndAdvanceAction')}
+      </Button>
+    </>
+  );
+};
+
+const StepTitle = ({ step, phaseName }: { step: Step; phaseName: string }) => {
+  const t = useTranslations();
+
+  return (
+    <DialogTitle>
+      {step === 'amounts'
+        ? t('decisions.review.confirmWinningProposalsTitle')
+        : t.rich('decisions.proposals.advanceToPhaseTitle', {
+            phaseName,
+            bdi: (chunks) => <bdi>{chunks}</bdi>,
+          })}
+    </DialogTitle>
+  );
+};
+
+const getPlaceholderHintKey = (awardsAmounts: boolean) =>
+  awardsAmounts
+    ? 'decisions.proposals.notificationPlaceholderHint'
+    : 'decisions.proposals.advanceNotificationPlaceholderHint';
+
 const getInitialStep = (awardsAmounts: boolean): Step =>
   awardsAmounts ? 'amounts' : 'notifications';
 
-/** With an amounts step behind it, the composer steps back instead of closing. */
-const ComposerDismissButton = ({
-  canGoBack,
+const BackButton = ({
+  isShown,
   onBack,
-  onCancel,
   disabled,
 }: {
-  canGoBack: boolean;
+  isShown: boolean;
   onBack: () => void;
-  onCancel: () => void;
   disabled: boolean;
 }) => {
   const t = useTranslations();
 
+  if (!isShown) {
+    return null;
+  }
+
   return (
-    <Button
-      variant="outline"
-      onClick={canGoBack ? onBack : onCancel}
-      disabled={disabled}
-    >
-      {canGoBack ? t('Back') : t('Cancel')}
+    <Button variant="outline" onClick={onBack} disabled={disabled}>
+      {t('Back')}
     </Button>
   );
 };
@@ -358,7 +410,7 @@ const MessageField = ({
       />
       {isInvalid ? (
         <FieldError id={errorId}>
-          {t('decisions.proposals.publishResultsMessageRequired')}
+          {t('decisions.proposals.advanceMessageRequired')}
         </FieldError>
       ) : null}
     </Field>

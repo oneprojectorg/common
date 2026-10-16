@@ -455,7 +455,7 @@ describe('submitManualSelection author notifications', () => {
     },
   );
 
-  it('rejects messages on a phase that publishes nothing', async () => {
+  const mockMidProcessPhase = () => {
     mockFindFirst.mockResolvedValue({
       profileId: DECISION_PROFILE_ID,
       status: 'published',
@@ -470,23 +470,59 @@ describe('submitManualSelection author notifications', () => {
         instanceData: instanceData(false),
       },
     ];
+    const recorded = { set: [] as unknown[] };
     mockTransaction.mockImplementation(
       async (cb) =>
-        await (cb as (tx: unknown) => Promise<unknown>)(makeTx(results)),
+        await (cb as (tx: unknown) => Promise<unknown>)(
+          makeTx(results, recorded),
+        ),
     );
+    return recorded;
+  };
 
-    await expect(
-      submitManualSelection({
-        processInstanceId: INSTANCE_ID,
-        proposalIds: ['prop-1', 'prop-2'],
-        resultNotifications: messages,
-        user,
-      }),
-      // Pinned: four other guards on this path also throw ValidationError.
-    ).rejects.toThrow(/only sent when confirming the final phase/);
+  it('announces the transition without publishing results on a mid-process phase', async () => {
+    const recorded = mockMidProcessPhase();
 
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: ['prop-1', 'prop-2'],
+      resultNotifications: messages,
+      user,
+    });
+
+    expect(recorded.set[0]).toMatchObject({
+      transitionData: {
+        manualSelection: { resultNotifications: messages },
+      },
+    });
     expect(mockProcessResults).not.toHaveBeenCalled();
-    expect(event.send).not.toHaveBeenCalled();
+    expect(event.send).toHaveBeenCalledWith({
+      name: 'decisionResultsNotified',
+      data: {
+        processInstanceId: INSTANCE_ID,
+        transitionHistoryId: TRANSITION_HISTORY_ID,
+        previousPhaseId: PREVIOUS_PHASE_ID,
+      },
+    });
+  });
+  it('advances without announcing anything when a mid-process phase gets no messages', async () => {
+    const recorded = mockMidProcessPhase();
+
+    await submitManualSelection({
+      processInstanceId: INSTANCE_ID,
+      proposalIds: ['prop-1', 'prop-2'],
+      user,
+    });
+
+    expect(recorded.set[0]).toMatchObject({
+      transitionData: { manualSelection: { byProfileId: USER_PROFILE_ID } },
+    });
+    expect(recorded.set[0]).not.toMatchObject({
+      transitionData: { manualSelection: { resultNotifications: {} } },
+    });
+    expect(event.send).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'decisionResultsNotified' }),
+    );
   });
 });
 

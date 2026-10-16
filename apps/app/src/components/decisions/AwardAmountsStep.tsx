@@ -24,7 +24,6 @@ import { type AwardAmounts, isValidAwardAmount } from './useAwardAmounts';
 interface AwardAmountsStepProps {
   proposals: Proposal[];
   awards: AwardAmounts;
-  onCancel: () => void;
   onContinue: () => void;
 }
 
@@ -36,7 +35,6 @@ interface AwardAmountsStepProps {
 export const AwardAmountsStep = ({
   proposals,
   awards,
-  onCancel,
   onContinue,
 }: AwardAmountsStepProps) => {
   const t = useTranslations();
@@ -88,9 +86,6 @@ export const AwardAmountsStep = ({
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>
-          {t('Cancel')}
-        </Button>
         <Button onClick={onContinue} disabled={proposals.length === 0}>
           {t('Continue')}
         </Button>

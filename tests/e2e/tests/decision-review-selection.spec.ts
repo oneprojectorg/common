@@ -293,15 +293,11 @@ test.describe('Decision Review Selection — review → voting flow', () => {
 
     await confirmButton.click();
     const confirmDialog = authenticatedPage.getByRole('dialog', {
-      name: 'Confirm advancing proposals',
+      name: /^Advance to /,
     });
     await expect(confirmDialog).toBeVisible();
-    // Dialog copy mentions the destination phase — currentStateId === voting.
-    await expect(
-      confirmDialog.getByText('move on to the Voting phase'),
-    ).toBeVisible();
 
-    await confirmDialog.getByRole('button', { name: 'Publish' }).click();
+    await confirmDialog.getByRole('button', { name: 'Send & advance' }).click();
     await expect(confirmDialog).not.toBeVisible({ timeout: 15_000 });
 
     // ── 6. submitManualSelection stamps the empty review→voting transition
@@ -325,14 +321,16 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       .where(eq(stateTransitionHistory.id, votingTransition!.id));
     const manualSelection = (
       updated?.transitionData as {
-        manualSelection?: { byProfileId?: string; at?: string };
+        manualSelection?: {
+          byProfileId?: string;
+          at?: string;
+          resultNotifications?: unknown;
+        };
       } | null
     )?.manualSelection;
     expect(manualSelection?.byProfileId).toBeTruthy();
     expect(manualSelection?.at).toBeTruthy();
-    // Voting is intermediate here, so no results publish and the standard
-    // footer composes no author copy.
-    expect(manualSelection).not.toHaveProperty('resultNotifications');
+    expect(manualSelection?.resultNotifications).toBeTruthy();
 
     // ── 7. After confirming, selectionsAreConfirmed flips back to true and
     // ReviewSelectionPage no longer renders.

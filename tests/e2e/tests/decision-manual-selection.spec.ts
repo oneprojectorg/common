@@ -254,10 +254,12 @@ test.describe('Decision Manual Selection — full flow', () => {
 
     await confirmButton.click();
     const dialog = authenticatedPage.getByRole('dialog', {
-      name: 'Confirm advancing proposals',
+      name: /^Advance to /,
     });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole('button', { name: 'Publish' }).click();
+    await dialog
+      .getByRole('button', { name: 'Advance without notifying' })
+      .click();
 
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
@@ -282,6 +284,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     )?.manualSelection;
     expect(manualSelection?.byProfileId).toBeTruthy();
     expect(manualSelection?.at).toBeTruthy();
+    expect(manualSelection).not.toHaveProperty('resultNotifications');
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
     await expect(
@@ -381,15 +384,17 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(amountsDialog.getByText('$12,000')).toBeVisible();
     await amountsDialog.getByRole('button', { name: 'Continue' }).click();
 
-    // Then the Compose Notifications step: one editable message per outcome,
+    // Then the notifications step: one editable message per outcome,
     // prefilled, sent to the authors on publish.
     const dialog = authenticatedPage.getByRole('dialog', {
-      name: 'Compose Notifications',
+      name: /^Advance to /,
     });
     await expect(dialog).toBeVisible();
 
-    await expect(dialog.getByRole('tab', { name: /Funded/ })).toBeVisible();
-    await expect(dialog.getByRole('tab', { name: /Not funded/ })).toBeVisible();
+    await expect(dialog.getByRole('tab', { name: /^Advanced/ })).toBeVisible();
+    await expect(
+      dialog.getByRole('tab', { name: /Not advanced/ }),
+    ).toBeVisible();
     // `keepMounted` leaves the inactive panel in the DOM under `inert`, which
     // takes it out of the a11y tree for real assistive tech — but Playwright's
     // role engine ignores `inert`, so scope to the live panel explicitly.
@@ -397,7 +402,7 @@ test.describe('Decision Manual Selection — full flow', () => {
       .locator('[role="tabpanel"]:not([inert])')
       .getByRole('textbox', { name: 'Notification Message' });
     await expect(activeMessageBox).toHaveValue(
-      /has been selected based on voting results/,
+      /advanced to the \{\{phase\}\} phase/,
     );
 
     // Type into both tabs: the feature's premise is admin-authored copy, so the
@@ -405,15 +410,13 @@ test.describe('Decision Manual Selection — full flow', () => {
     const selectedMessage = `Selected copy ${instance.slug}`;
     const notSelectedMessage = `Not selected copy ${instance.slug}`;
     await activeMessageBox.fill(selectedMessage);
-    await dialog.getByRole('tab', { name: /Not funded/ }).click();
+    await dialog.getByRole('tab', { name: /Not advanced/ }).click();
     await expect(activeMessageBox).toHaveValue(
-      /was not selected in this round/,
+      /did not advance to the \{\{phase\}\} phase/,
     );
     await activeMessageBox.fill(notSelectedMessage);
 
-    await dialog
-      .getByRole('button', { name: 'Send & publish results' })
-      .click();
+    await dialog.getByRole('button', { name: 'Send & advance' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
     // Channel invalidation swaps to ResultsPage and `?resultsLive=1` opens the

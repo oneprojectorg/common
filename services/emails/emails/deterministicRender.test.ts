@@ -50,6 +50,7 @@ describe('email render determinism', () => {
         proposalUrl:
           'https://common.oneproject.org/decisions/pb-2026/proposal/abc',
         isSelected,
+        publishesResults: true,
       };
 
       const first = await render(DecisionResultEmail(props));

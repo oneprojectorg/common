@@ -15,10 +15,9 @@ const { decisionResultsNotified } = Events;
 export const sendDecisionResultNotifications = inngest.createFunction(
   {
     id: 'sendDecisionResultNotifications',
-    // A revert inside this window retires the result row, so an admin who
-    // publishes, backs out and republishes announces only what stands.
+    // Per phase, so a later advance doesn't drop an earlier phase's send.
     debounce: {
-      key: 'event.data.processInstanceId',
+      key: 'event.data.processInstanceId + "-" + event.data.previousPhaseId',
       period: '1m',
       timeout: '3m',
     },
@@ -44,15 +43,20 @@ export const sendDecisionResultNotifications = inngest.createFunction(
     if (!result.ok) {
       logger.info('No decision result notifications to send', {
         processInstanceId,
-        processResultId,
+        transitionHistoryId,
         reason: result.reason,
       });
 
       return;
     }
 
-    const { processTitle, processProfileSlug, messages, recipients } =
-      result.notification;
+    const {
+      processTitle,
+      processProfileSlug,
+      publishesResults,
+      messages,
+      recipients,
+    } = result.notification;
     const appUrl = OPURLConfig('APP').ENV_URL;
 
     const sendResult = await step.run('send-emails', async () =>
@@ -63,7 +67,11 @@ export const sendDecisionResultNotifications = inngest.createFunction(
 
             return {
               to: email,
-              subject: DecisionResultEmail.subject(processTitle, isSelected),
+              subject: DecisionResultEmail.subject({
+                processTitle,
+                isSelected,
+                publishesResults,
+              }),
               component: () =>
                 DecisionResultEmail({
                   processTitle,
@@ -76,12 +84,13 @@ export const sendDecisionResultNotifications = inngest.createFunction(
                   }),
                   proposalUrl: `${appUrl}/decisions/${processProfileSlug}/proposal/${proposalProfileId}`,
                   isSelected,
+                  publishesResults,
                 }),
             };
           },
         ),
         failureMessage: 'decision result notifications',
-        context: { processInstanceId, processResultId },
+        context: { processInstanceId, transitionHistoryId },
         idempotencyKeyPrefix: `decision-results/${runId}`,
       }),
     );

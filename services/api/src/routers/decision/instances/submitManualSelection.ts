@@ -16,11 +16,8 @@ import { trackManualSelectionSubmitted } from '../../../utils/analytics';
 const submitManualSelectionInputSchema = z.object({
   processInstanceId: z.uuid(),
   proposalIds: z.array(z.uuid()).min(1),
-  // Whether this phase publishes results isn't knowable here; the service
-  // owns that half of the gate.
   resultNotifications: resultNotificationMessagesSchema.optional(),
-  // Same split: the service owns the final-phase gate and the check that
-  // every selected proposal has exactly one amount.
+  // Validated in the service.
   allocations: z.array(proposalAllocationSchema).optional(),
 });
 

@@ -42,17 +42,11 @@ import { isReviewPhase } from './utils/phaseSettings';
 export interface SubmitManualSelectionInput {
   processInstanceId: string;
   proposalIds: string[];
-  /**
-   * Only meaningful on the final phase, where this call publishes results;
-   * passing them off it is rejected. Omitting them there publishes without
-   * notifying anyone — every admin surface that can reach the final phase now
-   * composes them, so that path is for callers outside the selection UI.
-   */
   resultNotifications?: ResultNotificationMessages;
   /**
    * The amount awarded to each selected proposal, written to the result's
-   * selection rows. Final phase only, like `resultNotifications`; when given
-   * it must name every selected proposal exactly once.
+   * selection rows. Final phase only; when given it must name every selected
+   * proposal exactly once.
    */
   allocations?: ProposalAllocation[];
   user: User;
@@ -132,7 +126,7 @@ export async function submitManualSelection({
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
   let previousPhaseId: string | null = null;
-  let processResultId: string | null = null;
+  let processResultId: string | undefined;
   let transitionHistoryId: string | null = null;
   let reviewAssignmentInput:
     | Parameters<typeof runGenerateReviewAssignments>[0]
@@ -291,11 +285,11 @@ export async function submitManualSelection({
     }
 
     const publishesResults = isLastPhase(currentStateId, lockedPhases ?? []);
-    assertResultsPayloadAllowed({
-      publishesResults,
-      composedNotifications,
-      allocatedByProposalId,
-    });
+    if (!publishesResults && allocatedByProposalId) {
+      throw new ValidationError(
+        'Amounts are only awarded when confirming the final phase',
+      );
+    }
 
     // On the final phase, fold results processing into this transaction so
     // the new result row is atomic with the attachment write.
@@ -343,7 +337,7 @@ export async function submitManualSelection({
     // Awaited, unlike the send above: publishing is one-shot, so a send
     // dropped when the isolate freezes leaves every author unnotified with no
     // way to retry.
-    if (processResultId && transitionHistoryId && composedNotifications) {
+    if (transitionHistoryId && composedNotifications) {
       try {
         await event.send({
           name: Events.decisionResultsNotified.name,
@@ -358,38 +352,11 @@ export async function submitManualSelection({
         logger.error('Failed to send decision results notified event', {
           processInstanceId,
           processResultId,
+          transitionHistoryId,
           error: err,
         });
       }
     }
-  }
-}
-
-/**
- * Rejected rather than silently dropped: copy or amounts arriving on a phase
- * that publishes nothing would never be used and the admin would never know.
- */
-function assertResultsPayloadAllowed({
-  publishesResults,
-  composedNotifications,
-  allocatedByProposalId,
-}: {
-  publishesResults: boolean;
-  composedNotifications: ResultNotificationMessages | undefined;
-  allocatedByProposalId: Map<string, number> | undefined;
-}) {
-  if (publishesResults) {
-    return;
-  }
-  if (composedNotifications) {
-    throw new ValidationError(
-      'Author notifications are only sent when confirming the final phase',
-    );
-  }
-  if (allocatedByProposalId) {
-    throw new ValidationError(
-      'Amounts are only awarded when confirming the final phase',
-    );
   }
 }
 

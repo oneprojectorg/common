@@ -249,17 +249,17 @@ test.describe('Results phase notifications — every predecessor phase kind', ()
       await amountsDialog.getByRole('button', { name: 'Continue' }).click();
 
       const dialog = page.getByRole('dialog', {
-        name: 'Compose Notifications',
+        name: /^Advance to /,
       });
       await expect(dialog).toBeVisible();
 
-      // Both audiences are addressable, and the not-funded count is the pool
+      // Both audiences are addressable, and the not-advanced count is the pool
       // minus the picks — the set listResultNotificationRecipients resolves.
       await expect(
-        dialog.getByRole('tab', { name: 'Funded 2 proposals' }),
+        dialog.getByRole('tab', { name: 'Advanced 2 proposals' }),
       ).toBeVisible();
       await expect(
-        dialog.getByRole('tab', { name: 'Not funded 1 proposal' }),
+        dialog.getByRole('tab', { name: 'Not advanced 1 proposal' }),
       ).toBeVisible();
 
       // `keepMounted` leaves the inactive panel in the DOM under `inert`, which
@@ -270,12 +270,10 @@ test.describe('Results phase notifications — every predecessor phase kind', ()
       const selectedMessage = `Funded copy from ${predecessor.id}`;
       const notSelectedMessage = `Not funded copy from ${predecessor.id}`;
       await activeMessageBox.fill(selectedMessage);
-      await dialog.getByRole('tab', { name: /Not funded/ }).click();
+      await dialog.getByRole('tab', { name: /Not advanced/ }).click();
       await activeMessageBox.fill(notSelectedMessage);
 
-      await dialog
-        .getByRole('button', { name: 'Send & publish results' })
-        .click();
+      await dialog.getByRole('button', { name: 'Send & advance' }).click();
       await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
       // The composed copy reaches the transition row the notification workflow

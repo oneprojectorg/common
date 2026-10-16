@@ -23,7 +23,6 @@ import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
 import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 
-import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
 import { QUERY_PARAM as RESULTS_LIVE_PARAM } from './FinalPhaseSubmissionSuccessDialog';
 import {
   ManualSelectionToolbar,
@@ -31,7 +30,7 @@ import {
 } from './ManualSelectionToolbar';
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
-import { StandardSelectionFooter } from './StandardSelectionFooter';
+import { SelectionFooter } from './SelectionFooter';
 import { useManualSelection } from './useManualSelection';
 
 interface ManualSelectionListProps {
@@ -122,23 +121,20 @@ export const ManualSelectionList = ({
     setSelectedIds,
   ]);
 
-  const selectedProposals = useMemo(
-    () =>
-      selectedIds
-        .map((id) => proposalCache[id])
-        .filter((p): p is Proposal => Boolean(p)),
-    [selectedIds, proposalCache],
-  );
+  // The cache fills after an effect, so read candidates for the first render.
+  const selectedProposals = useMemo(() => {
+    const candidateById = new Map(
+      candidates?.map((proposal) => [proposal.id, proposal]),
+    );
+    return selectedIds
+      .map((id) => candidateById.get(id) ?? proposalCache[id])
+      .filter((p): p is Proposal => Boolean(p));
+  }, [selectedIds, proposalCache, candidates]);
 
-  // The final phase publishes what its confirm dialog lists: the resolved
-  // proposals, not the stored draft, which can hold ids the cache never
-  // resolved and the service would refuse.
+  // The stored draft can hold ids the service rejects.
   const confirmIds = useMemo(
-    () =>
-      isFinalPhase
-        ? selectedProposals.map((proposal) => proposal.id)
-        : selectedIds,
-    [isFinalPhase, selectedProposals, selectedIds],
+    () => selectedProposals.map((proposal) => proposal.id),
+    [selectedProposals],
   );
 
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
@@ -157,10 +153,6 @@ export const ManualSelectionList = ({
       }
     },
     onError: (error) => {
-      // The final-phase dialog holds hand-written copy; keep it open to fix.
-      if (!isFinalPhase) {
-        setIsConfirmOpen(false);
-      }
       toast.error(error.message);
     },
   });
@@ -323,28 +315,18 @@ export const ManualSelectionList = ({
           />
         )}
 
-        {isFinalPhase ? (
-          <FinalPhaseSelectionFooter
-            selectedProposals={selectedProposals}
-            numSelected={numSelected}
-            totalCandidates={totalCandidates}
-            awardsAmounts={showBudget}
-            isConfirmOpen={isConfirmOpen}
-            onConfirmOpenChange={handleConfirmDialogOpenChange}
-            onConfirm={handleConfirmSelection}
-            isSubmitting={submitMutation.isPending}
-          />
-        ) : (
-          <StandardSelectionFooter
-            selectedProposals={selectedProposals}
-            numSelected={numSelected}
-            phaseName={currentPhaseName}
-            isConfirmOpen={isConfirmOpen}
-            onConfirmOpenChange={handleConfirmDialogOpenChange}
-            onConfirm={() => handleConfirmSelection()}
-            isSubmitting={submitMutation.isPending}
-          />
-        )}
+        <SelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={numSelected}
+          totalCandidates={totalCandidates}
+          publishesResults={isFinalPhase}
+          phaseName={currentPhaseName}
+          collectsBudget={showBudget}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={handleConfirmDialogOpenChange}
+          onConfirm={handleConfirmSelection}
+          isSubmitting={submitMutation.isPending}
+        />
       </div>
     </ProposalCardDialogProvider>
   );
