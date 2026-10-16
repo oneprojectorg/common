@@ -114,9 +114,9 @@ describe('handleTwilioInboundWebhookRequest', () => {
     });
   });
 
-  it('given a text that is INFO, a decision slug and a code, when forwarded, then the event carries the keyword and the rest lowercased', async () => {
+  it('given a text that is SHOW and a decision slug, when forwarded, then the event carries the keyword and the slug lowercased', async () => {
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
-    const params = { ...MESSAGE_PARAMS, Body: 'Info Columbus 102' };
+    const params = { ...MESSAGE_PARAMS, Body: 'Show Columbus' };
     const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
 
     const response = await handleTwilioInboundWebhookRequest({
@@ -133,8 +133,8 @@ describe('handleTwilioInboundWebhookRequest', () => {
         from: '+15005550006',
         messageSid: 'SM456',
         code: null,
-        keyword: 'info',
-        argument: 'columbus 102',
+        keyword: 'show',
+        argument: 'columbus',
       },
     });
   });

@@ -1,6 +1,6 @@
 export const SMS_BARE_KEYWORDS = ['join'] as const;
 
-export const SMS_ARGUMENT_KEYWORDS = ['info'] as const;
+export const SMS_ARGUMENT_KEYWORDS = ['show'] as const;
 
 export const SMS_KEYWORDS = [
   ...SMS_BARE_KEYWORDS,

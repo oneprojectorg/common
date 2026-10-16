@@ -19,8 +19,8 @@ describe('formatSmsDecisionList', () => {
     ).toEqual([
       [
         'Your decisions:',
-        'Park Funding (voting open) - INFO park-funding',
-        'Bike Lanes - INFO bike-lanes',
+        'Park Funding (voting open) - SHOW park-funding',
+        'Bike Lanes - SHOW bike-lanes',
       ].join('\n'),
     ]);
   });
@@ -38,7 +38,7 @@ describe('formatSmsDecisionList', () => {
     bodies.forEach((body) => {
       expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
     });
-    expect(bodies.join('\n')).toContain(`INFO ${decisions[9]!.slug}`);
+    expect(bodies.join('\n')).toContain(`SHOW ${decisions[9]!.slug}`);
   });
 
   it('given more decisions than fit, when formatted, then the first ten are listed and the rest are counted', () => {
@@ -53,7 +53,7 @@ describe('formatSmsDecisionList', () => {
 
     expect(rest).toEqual([]);
     expect(lines).toHaveLength(12);
-    expect(lines[10]).toBe('Decision 10 - INFO decision-10');
+    expect(lines[10]).toBe('Decision 10 - SHOW decision-10');
     expect(lines.at(-1)).toBe('and 2 more');
   });
 });

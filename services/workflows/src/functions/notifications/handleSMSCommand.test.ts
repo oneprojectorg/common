@@ -23,7 +23,7 @@ const NUMBERS = {
 } as const;
 
 const HELP_MESSAGE =
-  'Text INFO to see your decisions, or INFO and a decision name, for example INFO columbus. Reply STOP to unsubscribe.';
+  'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus. Reply STOP to unsubscribe.';
 
 const inbound = (
   from: PhoneNumber,
@@ -46,7 +46,7 @@ beforeEach(() => {
 });
 
 describe('handleSMSCommand against the database', () => {
-  it('given a member texts INFO and the slug of a decision in a voting phase, then they get its phase, that voting is open and how many proposals are on the ballot', async ({
+  it('given a member texts SHOW and the slug of a decision in a voting phase, then they get its phase, that voting is open and how many proposals are on the ballot', async ({
     task,
     onTestFinished,
   }) => {
@@ -66,16 +66,16 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'info', slug)],
+      events: [inbound(phone, 'show', slug)],
     });
 
-    expect(result).toEqual({ message: 'info sent' });
+    expect(result).toEqual({ message: 'decision sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `"Park Funding ${task.id}": Voting phase, voting open, 2 proposals.`,
     ]);
   });
 
-  it('given a member texts INFO and the slug of a decision still taking submissions, then they are told voting is closed', async ({
+  it('given a member texts SHOW and the slug of a decision still taking submissions, then they are told voting is closed', async ({
     task,
     onTestFinished,
   }) => {
@@ -93,16 +93,16 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'info', slug)],
+      events: [inbound(phone, 'show', slug)],
     });
 
-    expect(result).toEqual({ message: 'info sent' });
+    expect(result).toEqual({ message: 'decision sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `"Bike Lanes ${task.id}": Submission phase, voting closed, 1 proposal.`,
     ]);
   });
 
-  it('given a member texts INFO and a slug no decision has, then they are told it was not found', async ({
+  it('given a member texts SHOW and a slug no decision has, then they are told it was not found', async ({
     task,
     onTestFinished,
   }) => {
@@ -112,7 +112,7 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'info', `no-such-decision-${task.id}`)],
+      events: [inbound(phone, 'show', `no-such-decision-${task.id}`)],
     });
 
     expect(result).toEqual({ message: 'decision not found' });
@@ -121,7 +121,7 @@ describe('handleSMSCommand against the database', () => {
     ]);
   });
 
-  it('given a member texts INFO and the slug of a decision they cannot read, then they are told it was not found, the same as a missing one', async ({
+  it('given a member texts SHOW and the slug of a decision they cannot read, then they are told it was not found, the same as a missing one', async ({
     task,
     onTestFinished,
   }) => {
@@ -139,7 +139,7 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(outsiderPhone, 'info', slug)],
+      events: [inbound(outsiderPhone, 'show', slug)],
     });
 
     expect(result).toEqual({ message: 'decision not found' });
@@ -165,7 +165,7 @@ describe('handleSMSCommand against the database', () => {
     expect(recordedSms.map((sms) => sms.body)).toEqual([HELP_MESSAGE]);
   });
 
-  it('given a member of no decision texts INFO alone, then they are told they are in no decision yet', async ({
+  it('given a member of no decision texts SHOW alone, then they are told they are in no decision yet', async ({
     task,
     onTestFinished,
   }) => {
@@ -175,7 +175,7 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'info', null)],
+      events: [inbound(phone, 'show', null)],
     });
 
     expect(result).toEqual({ message: 'decisions sent', count: 0 });
@@ -184,7 +184,7 @@ describe('handleSMSCommand against the database', () => {
     ]);
   });
 
-  it('given a member of two decisions texts INFO alone, then they get both by name and slug with the one open for voting first', async ({
+  it('given a member of two decisions texts SHOW alone, then they get both by name and slug with the one open for voting first', async ({
     task,
     onTestFinished,
   }) => {
@@ -209,15 +209,15 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'info', null)],
+      events: [inbound(phone, 'show', null)],
     });
 
     expect(result).toEqual({ message: 'decisions sent', count: 2 });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       [
         'Your decisions:',
-        `Park Funding ${task.id} (voting open) - INFO ${voting.slug}`,
-        `Bike Lanes ${task.id} - INFO ${submitting.slug}`,
+        `Park Funding ${task.id} (voting open) - SHOW ${voting.slug}`,
+        `Bike Lanes ${task.id} - SHOW ${submitting.slug}`,
       ].join('\n'),
     ]);
   });
@@ -261,7 +261,7 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'info', 'columbus')],
+      events: [inbound(phone, 'show', 'columbus')],
     });
 
     expect(result).toEqual({ message: 'unknown number, skipped' });
