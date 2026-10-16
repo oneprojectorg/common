@@ -2,6 +2,7 @@ import {
   NotFoundError,
   RateLimitError,
   UnauthorizedError,
+  clipSmsText,
   countBallotProposals,
   formatSmsDecisionInfo,
   formatSmsDecisionList,
@@ -19,6 +20,7 @@ import { smsNumberRateLimit } from './smsInboundLimits';
 
 const HELP_MESSAGE =
   'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus. Reply STOP to unsubscribe.';
+const SMS_SLUG_LENGTH = 100;
 const { smsInboundReceived } = Events;
 
 export const handleSMSCommand = inngest.createFunction(
@@ -136,7 +138,7 @@ export const handleSMSCommand = inngest.createFunction(
       if (!decision) {
         await text(
           'send-not-found-reply',
-          `No decision named "${argument}" was found.`,
+          `No decision named "${clipSmsText(argument, SMS_SLUG_LENGTH)}" was found.`,
         );
         return { message: 'decision not found' };
       }
