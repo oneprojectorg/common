@@ -1,6 +1,5 @@
 'use client';
 
-import { type DecisionAccess } from '@op/api/encoders';
 import {
   type ProposalReviewAggregates,
   ProposalReviewAssignmentStatus,
@@ -26,7 +25,7 @@ interface ProposalReviewsCountProps {
   reviewers: Reviewers;
   /** Review summary route for the proposal. */
   href: string;
-  access?: DecisionAccess;
+  canOpenReviews: boolean;
   /**
    * Which copy the count carries:
    *   - `reviews` (default): "{count} Reviews", and nothing at all at zero —
@@ -39,12 +38,13 @@ interface ProposalReviewsCountProps {
 
 /**
  * Submitted-review count for a proposal, with the reviewer names in a tooltip.
- * Links to the review summary for admins; plain text for everyone else.
+ * Links to the review summary for viewers who may open the reviews; plain text
+ * for everyone else.
  */
 export function ProposalReviewsCount({
   reviewers,
   href,
-  access,
+  canOpenReviews,
   variant = 'reviews',
 }: ProposalReviewsCountProps) {
   const t = useTranslations('decisions.proposals');
@@ -61,16 +61,17 @@ export function ProposalReviewsCount({
       ? t('reviewedCount', { count })
       : t('reviewsCount', { count });
   // Dotted underline reads as "explicable", not "navigable" — the tooltip is
-  // the payload for everyone, and admins additionally get a real link. The ring
-  // is the sense focus treatment, replacing react-aria's useFocusable.
+  // the payload for everyone, and those who may open the reviews additionally
+  // get a real link. The ring is the sense focus treatment, replacing
+  // react-aria's useFocusable.
   const className =
     'shrink-0 rounded-sm text-base text-muted-foreground underline decoration-dotted underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
 
   // Nobody has finished, so there are no names to explain: drop the tooltip
   // (and the underline that promises one) rather than open an empty popup. The
-  // admin link stays — "0 Reviewed" is still a way into the progress screen.
+  // link stays — "0 Reviewed" is still a way into the progress screen.
   if (count === 0) {
-    return access?.admin ? (
+    return canOpenReviews ? (
       <Link href={href} className={className}>
         {label}
       </Link>
@@ -90,8 +91,8 @@ export function ProposalReviewsCount({
         render={
           // No aria-label: the visible "{count} Reviews" text is the accessible
           // name, and base-ui exposes the names popup as the description. The
-          // non-admin span still takes focus so keyboard users reach the names.
-          access?.admin ? (
+          // unlinked span still takes focus so keyboard users reach the names.
+          canOpenReviews ? (
             <Link href={href} className={className} />
           ) : (
             <span tabIndex={0} className={className} />

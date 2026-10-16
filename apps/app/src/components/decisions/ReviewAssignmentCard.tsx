@@ -89,7 +89,7 @@ export function ReviewAssignmentCard({
           <ProposalReviewsCount
             reviewers={reviewers}
             href={reviewsHref}
-            access={access}
+            canOpenReviews={Boolean(access?.admin)}
           />
         ) : undefined
       }

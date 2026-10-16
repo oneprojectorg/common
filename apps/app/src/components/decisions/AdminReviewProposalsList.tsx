@@ -58,7 +58,7 @@ export function AdminReviewProposalsList({
         processInstanceId={processInstanceId}
         decisionSlug={decisionSlug}
         enabled={Boolean(access?.admin)}
-        access={access}
+        canOpenReviews={Boolean(access?.admin)}
       >
         <Suspense fallback={<ProposalListSkeleton />}>
           <ProposalsList
