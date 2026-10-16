@@ -10,5 +10,3 @@ export const SMS_KEYWORDS = [
 export type SmsBareKeyword = (typeof SMS_BARE_KEYWORDS)[number];
 export type SmsArgumentKeyword = (typeof SMS_ARGUMENT_KEYWORDS)[number];
 export type SmsKeyword = (typeof SMS_KEYWORDS)[number];
-
-export const SMS_PROPOSAL_CODE = String.raw`\d{3,10}`;
