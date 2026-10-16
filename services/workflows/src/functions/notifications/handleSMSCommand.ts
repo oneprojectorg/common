@@ -18,7 +18,7 @@ import { logger } from '@op/logging';
 import { smsNumberRateLimit } from './smsInboundLimits';
 
 const HELP_MESSAGE =
-  'Text INFO to see your decisions, or INFO and a decision name, for example INFO columbus. Reply STOP to unsubscribe.';
+  'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus. Reply STOP to unsubscribe.';
 const { smsInboundReceived } = Events;
 
 export const handleSMSCommand = inngest.createFunction(
@@ -111,7 +111,7 @@ export const handleSMSCommand = inngest.createFunction(
       return { message: 'decisions sent', count: decisions.length };
     };
 
-    const info = async () => {
+    const show = async () => {
       if (!argument) {
         return listDecisions();
       }
@@ -148,7 +148,7 @@ export const handleSMSCommand = inngest.createFunction(
       );
 
       await text(
-        'send-info-reply',
+        'send-decision-reply',
         formatSmsDecisionInfo({
           name: decision.name,
           phaseName: decision.currentPhase?.name ?? null,
@@ -158,14 +158,14 @@ export const handleSMSCommand = inngest.createFunction(
           proposalCount,
         }),
       );
-      return { message: 'info sent' };
+      return { message: 'decision sent' };
     };
 
     switch (keyword) {
       case 'join':
         return { message: 'join is handled by signup' };
-      case 'info':
-        return info();
+      case 'show':
+        return show();
       default:
         return help();
     }

@@ -19,7 +19,7 @@ export const formatSmsDecisionList = (
     heading: 'Your decisions:',
     lines: listed.map(
       ({ name, slug, votingOpen }) =>
-        `${clipSmsText(name, SMS_LIST_NAME_LENGTH)}${votingOpen ? ' (voting open)' : ''} - INFO ${slug}`,
+        `${clipSmsText(name, SMS_LIST_NAME_LENGTH)}${votingOpen ? ' (voting open)' : ''} - SHOW ${slug}`,
     ),
     footer: remaining > 0 ? `and ${remaining} more` : undefined,
   });
