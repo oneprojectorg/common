@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CommonError } from './error';
@@ -9,6 +10,10 @@ import {
 const storage = vi.hoisted(() => ({
   from: vi.fn(),
   createSignedUrl: vi.fn(),
+}));
+
+vi.mock('@op/logging', () => ({
+  logger: { warn: vi.fn() },
 }));
 
 vi.mock('@op/supabase/server', () => ({
@@ -105,6 +110,23 @@ describe('signStorageDownloadUrlOrNull', () => {
     await expect(
       signStorageDownloadUrlOrNull({ storagePath: 'missing', ttlSeconds: 60 }),
     ).resolves.toBeNull();
+  });
+
+  it('given signing fails, when it logs the failure, then the log leaves out the user’s file name', async () => {
+    storage.createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    await signStorageDownloadUrlOrNull({
+      storagePath: 'proposals/1/Jane_Doe_application.pdf',
+      ttlSeconds: 60,
+    });
+
+    expect(logger.warn).toHaveBeenCalledOnce();
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain(
+      'Jane_Doe',
+    );
   });
 
   it('given the storage client itself fails, when signing, then the error propagates', async () => {

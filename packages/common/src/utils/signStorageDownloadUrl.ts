@@ -46,10 +46,8 @@ export const signStorageDownloadUrlOrNull = async ({
     return await signStorageDownloadUrl({ storagePath, ttlSeconds });
   } catch (error) {
     if (error instanceof CommonError) {
-      logger.warn('Could not sign storage download URL', {
-        storagePath,
-        error,
-      });
+      // No path: upload paths keep the user's file name.
+      logger.warn('Could not sign storage download URL', { error });
       return null;
     }
     throw error;
