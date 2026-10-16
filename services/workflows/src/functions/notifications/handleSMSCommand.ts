@@ -1,9 +1,11 @@
 import {
+  NotFoundError,
   RateLimitError,
+  UnauthorizedError,
   countBallotProposals,
-  findPublishedDecisionBySlug,
   formatSmsDecisionInfo,
   getPhoneSignupState,
+  getPublishedDecisionBySlug,
   getSmsProvider,
   isVotingPhase,
   safeParsePhoneNumber,
@@ -92,12 +94,22 @@ export const handleSMSCommand = inngest.createFunction(
         return help();
       }
 
-      const decision = await step.run('find-decision', () =>
-        findPublishedDecisionBySlug({
-          authUserId: account.authUserId,
-          slug: argument,
-        }),
-      );
+      const decision = await step.run('find-decision', async () => {
+        try {
+          return await getPublishedDecisionBySlug({
+            authUserId: account.authUserId,
+            slug: argument,
+          });
+        } catch (error) {
+          if (
+            error instanceof NotFoundError ||
+            error instanceof UnauthorizedError
+          ) {
+            return null;
+          }
+          throw error;
+        }
+      });
 
       if (!decision) {
         await text(

@@ -199,7 +199,7 @@ export * from './utils/phaseTemplates';
 // Voting management
 export * from './voting';
 export * from './votingEligibility';
-export * from './findPublishedDecisionBySlug';
+export * from './getPublishedDecisionBySlug';
 export * from './countBallotProposals';
 export * from './formatSmsDecisionInfo';
 

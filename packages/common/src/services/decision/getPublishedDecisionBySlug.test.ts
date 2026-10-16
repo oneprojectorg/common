@@ -2,10 +2,10 @@ import { TestDecisionsDataManager } from '@op/common/testing';
 import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { findPublishedDecisionBySlug } from './findPublishedDecisionBySlug';
+import { getPublishedDecisionBySlug } from './getPublishedDecisionBySlug';
 
-describe.concurrent('findPublishedDecisionBySlug', () => {
-  it('given a published decision, when a member looks it up by slug, then it is found with its current phase', async ({
+describe.concurrent('getPublishedDecisionBySlug', () => {
+  it('given a published decision, when a member looks it up by slug, then it is returned with its current phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -16,12 +16,12 @@ describe.concurrent('findPublishedDecisionBySlug', () => {
       status: ProcessStatus.PUBLISHED,
     });
 
-    const decision = await findPublishedDecisionBySlug({
-      authUserId: setup.user.id,
-      slug: setup.instance.slug,
-    });
-
-    expect(decision).toMatchObject({
+    await expect(
+      getPublishedDecisionBySlug({
+        authUserId: setup.user.id,
+        slug: setup.instance.slug,
+      }),
+    ).resolves.toMatchObject({
       processInstanceId: setup.instance.instance.id,
       slug: setup.instance.slug,
       currentPhase: { phaseId: setup.instance.instance.currentStateId },
@@ -39,15 +39,15 @@ describe.concurrent('findPublishedDecisionBySlug', () => {
       status: ProcessStatus.DRAFT,
     });
 
-    const decision = await findPublishedDecisionBySlug({
-      authUserId: setup.user.id,
-      slug: setup.instance.slug,
-    });
-
-    expect(decision).toBeNull();
+    await expect(
+      getPublishedDecisionBySlug({
+        authUserId: setup.user.id,
+        slug: setup.instance.slug,
+      }),
+    ).rejects.toMatchObject({ name: 'NotFoundError' });
   });
 
-  it('given a published decision the caller is not a member of, when they look it up by slug, then it is not found', async ({
+  it('given a published decision the caller is not a member of, when they look it up by slug, then the lookup is refused', async ({
     task,
     onTestFinished,
   }) => {
@@ -60,11 +60,11 @@ describe.concurrent('findPublishedDecisionBySlug', () => {
       organization: setup.organization,
     });
 
-    const decision = await findPublishedDecisionBySlug({
-      authUserId: outsider.authUserId,
-      slug: setup.instance.slug,
-    });
-
-    expect(decision).toBeNull();
+    await expect(
+      getPublishedDecisionBySlug({
+        authUserId: outsider.authUserId,
+        slug: setup.instance.slug,
+      }),
+    ).rejects.toMatchObject({ name: 'UnauthorizedError' });
   });
 });

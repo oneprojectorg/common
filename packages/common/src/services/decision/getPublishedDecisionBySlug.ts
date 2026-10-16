@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { EntityType, ProcessStatus } from '@op/db/schema';
 import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import {
   type PhaseInstanceData,
@@ -17,13 +17,13 @@ export interface PublishedDecision {
   currentPhase: PhaseInstanceData | null;
 }
 
-export async function findPublishedDecisionBySlug({
+export async function getPublishedDecisionBySlug({
   authUserId,
   slug,
 }: {
   authUserId: string;
   slug: string;
-}): Promise<PublishedDecision | null> {
+}): Promise<PublishedDecision> {
   const profile = await db.query.profiles.findFirst({
     where: { slug, type: EntityType.DECISION },
     columns: { id: true, name: true, slug: true },
@@ -43,24 +43,17 @@ export async function findPublishedDecisionBySlug({
     !profile?.processInstance ||
     profile.processInstance.status !== ProcessStatus.PUBLISHED
   ) {
-    return null;
+    throw new NotFoundError('Decision', slug);
   }
 
-  try {
-    await assertProfileAccess({
-      user: { id: authUserId },
-      profileId: profile.id,
-      permissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
-    });
-  } catch (error) {
-    if (error instanceof UnauthorizedError) {
-      return null;
-    }
-    throw error;
-  }
+  await assertProfileAccess({
+    user: { id: authUserId },
+    profileId: profile.id,
+    permissions: [
+      { decisions: permission.ADMIN },
+      { decisions: permission.READ },
+    ],
+  });
 
   const { id, instanceData, currentStateId } = profile.processInstance;
   const currentPhase =

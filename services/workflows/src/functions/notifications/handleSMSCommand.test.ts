@@ -16,6 +16,8 @@ const NUMBERS = {
   chatter: '+15005550095',
   joiner: '+15005550096',
   bareInfo: '+15005550097',
+  owner: '+15005550098',
+  outsider: '+15005550099',
 } as const;
 
 const HELP_MESSAGE =
@@ -113,6 +115,33 @@ describe('handleSMSCommand against the database', () => {
     expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `No decision named "no-such-decision-${task.id}" was found.`,
+    ]);
+  });
+
+  it('given a member texts INFO and the slug of a decision they cannot read, then they are told it was not found, the same as a missing one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const owner = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.owner),
+    );
+    const outsiderPhone = parsePhoneNumber(NUMBERS.outsider);
+    await fixture.createPhoneOnlyAccount(outsiderPhone);
+    const { slug } = await fixture.createVotingInstance({
+      owner,
+      maxVotesPerMember: 1,
+      proposalTitles: ['Fund the park'],
+    });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [inbound(outsiderPhone, 'info', slug)],
+    });
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      `No decision named "${slug}" was found.`,
     ]);
   });
 
