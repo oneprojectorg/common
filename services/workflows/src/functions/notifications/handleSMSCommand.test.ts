@@ -1,5 +1,9 @@
 import { InngestTestEngine } from '@inngest/test';
-import { type PhoneNumber, parsePhoneNumber } from '@op/common';
+import {
+  type PhoneNumber,
+  SMS_MAX_BODY_LENGTH,
+  parsePhoneNumber,
+} from '@op/common';
 import type { SmsKeyword } from '@op/core/sms';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -20,6 +24,7 @@ const NUMBERS = {
   outsider: '+15005550099',
   codeReply: '+15005550089',
   lister: '+15005550088',
+  longText: '+15005550087',
 } as const;
 
 const HELP_MESSAGE =
@@ -119,6 +124,29 @@ describe('handleSMSCommand against the database', () => {
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `No decision named "no-such-decision-${task.id}" was found.`,
     ]);
+  });
+
+  it('given a member texts SHOW followed by as much text as one message holds, then the not-found reply quotes a clipped name and still fits one message', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.longText);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+    const argument = `${task.id}-`.padEnd(
+      SMS_MAX_BODY_LENGTH - 'show '.length,
+      'x',
+    );
+
+    const { result } = await t.execute({
+      events: [inbound(phone, 'show', argument)],
+    });
+
+    expect(result).toEqual({ message: 'decision not found' });
+    const [body] = recordedSms.map((sms) => sms.body);
+    expect(body).toMatch(/^No decision named ".+\.\.\." was found\.$/);
+    expect(body!.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
   });
 
   it('given a member texts SHOW and the slug of a decision they cannot read, then they are told it was not found, the same as a missing one', async ({
