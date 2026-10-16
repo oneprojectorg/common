@@ -2,7 +2,7 @@ import { and, asc, db, eq, isNull, sql } from '@op/db/client';
 import { processInstances, profiles, proposals } from '@op/db/schema';
 
 import { DEFAULT_MONEY_CURRENCY } from '../../money';
-import { normalizeBudget } from './proposalDataSchema';
+import { parseProposalData } from './proposalDataSchema';
 import { buildSmsBallotProposalFilter } from './smsBallotScope';
 
 export interface SmsBallotProposal {
@@ -14,23 +14,10 @@ export interface SmsBallotProposal {
   summary: string | null;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const readCost = (data: unknown): { cost: number | null; currency: string } => {
-  const budget = normalizeBudget(isRecord(data) ? data.budget : undefined);
-  return {
-    cost: budget?.amount ?? null,
-    currency: budget?.currency ?? DEFAULT_MONEY_CURRENCY,
-  };
-};
-
-const readSummary = (data: unknown): string | null => {
-  const summary = isRecord(data) ? data.summary : undefined;
-  return typeof summary === 'string' && summary.trim().length > 0
+const readSummary = (summary: unknown): string | null =>
+  typeof summary === 'string' && summary.trim().length > 0
     ? summary.trim()
     : null;
-};
 
 export const assignShortCodes = async (
   processInstanceId: string,
@@ -95,17 +82,20 @@ export async function listSmsBallotProposals({
     .where(filter)
     .orderBy(asc(proposals.shortCode));
 
-  return rows.flatMap((row) =>
-    row.shortCode === null
-      ? []
-      : [
-          {
-            code: String(row.shortCode),
-            proposalId: row.id,
-            title: row.title,
-            ...readCost(row.proposalData),
-            summary: readSummary(row.proposalData),
-          },
-        ],
-  );
+  return rows.flatMap((row) => {
+    if (row.shortCode === null) {
+      return [];
+    }
+    const data = parseProposalData(row.proposalData);
+    return [
+      {
+        code: String(row.shortCode),
+        proposalId: row.id,
+        title: row.title,
+        cost: data.budget?.amount ?? null,
+        currency: data.budget?.currency ?? DEFAULT_MONEY_CURRENCY,
+        summary: readSummary(data.summary),
+      },
+    ];
+  });
 }
