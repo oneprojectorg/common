@@ -22,7 +22,14 @@ import {
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
+// Until readers move to rows, `instance_data` still keys a phase by its
+// instance-scoped id; a row minted from it keeps that id so the two join.
+export type PhaseRowData = PhaseData & { phaseId?: string };
+
 export const MAX_PHASES_PER_DECISION = 30;
+
+// The profile's name column.
+export const MAX_PHASE_NAME_LENGTH = 256;
 
 const SLUG_ATTEMPTS = 3;
 
@@ -40,10 +47,17 @@ export const insertPhase = async ({
   processInstanceId: string;
   name: string;
   sortOrder: number;
-  data?: PhaseData;
+  data?: PhaseRowData;
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
+  if (name.length > MAX_PHASE_NAME_LENGTH) {
+    throw new ValidationError(
+      `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
+      { name: `Shorten "${name.slice(0, 40)}…"` },
+    );
+  }
+
   const profile = await insertPhaseProfile({ tx, name, generateSlug });
 
   const [phase] = await tx
