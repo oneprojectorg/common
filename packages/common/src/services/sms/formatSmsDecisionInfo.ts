@@ -1,4 +1,4 @@
-import { clipSmsText } from './smsText';
+import { clipSmsText } from './text';
 
 const SMS_DECISION_NAME_LENGTH = 100;
 

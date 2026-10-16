@@ -201,7 +201,6 @@ export * from './voting';
 export * from './votingEligibility';
 export * from './getPublishedDecisionBySlug';
 export * from './countBallotProposals';
-export * from './formatSmsDecisionInfo';
 
 // Process survey
 export * from './processSurvey';
