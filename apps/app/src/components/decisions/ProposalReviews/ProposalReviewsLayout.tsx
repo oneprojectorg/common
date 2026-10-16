@@ -1,5 +1,6 @@
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
+import { resolveReviewSettings } from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -18,13 +19,17 @@ interface ReviewerReviewProps {
   processInstanceId: string;
   proposalProfileId: string;
   phaseId: string;
+  /** Reviewer of the process, and the current phase has open reviews. */
+  canReadOpenReviews: boolean;
 }
 
 /**
  * Resolves the proposal-keyed reviews URL per viewer:
  *   1. instance admin        → the "Review Progress" summary screen
  *   2. reviewer assigned in the current phase → their own review screen
- *   3. anyone else           → forbidden()
+ *   3. unassigned reviewer, current phase has open reviews → the summary
+ *      screen, read-only
+ *   4. anyone else           → forbidden()
  *
  * Once the instance advances past the review phase, a reviewer's own review is
  * reachable through its `/reviews/[assignmentId]` link, and this URL belongs to
@@ -73,6 +78,13 @@ export async function ProposalReviewsLayout({
     forbidden();
   }
 
+  const canReadOpenReviews =
+    Boolean(decisionProfile.processInstance.access?.review) &&
+    resolveReviewSettings(
+      decisionProfile.processInstance.instanceData ?? {},
+      phaseId,
+    ).openReviews;
+
   return (
     <Suspense fallback={<ReviewSkeleton />}>
       <ReviewerReview
@@ -80,6 +92,7 @@ export async function ProposalReviewsLayout({
         processInstanceId={decisionProfile.processInstance.id}
         proposalProfileId={proposalProfileId}
         phaseId={phaseId}
+        canReadOpenReviews={canReadOpenReviews}
       />
     </Suspense>
   );
@@ -87,7 +100,8 @@ export async function ProposalReviewsLayout({
 
 /**
  * Resolves the viewer's assignment for this proposal in `phaseId` and hands it
- * to the review screen. Suspended by the caller so the wait runs behind the
+ * to the review screen; without one, falls through to the read-only summary
+ * when `canReadOpenReviews`. Suspended by the caller so the wait runs behind the
  * review screen's own skeleton.
  */
 async function ReviewerReview({
@@ -95,6 +109,7 @@ async function ReviewerReview({
   processInstanceId,
   proposalProfileId,
   phaseId,
+  canReadOpenReviews,
 }: ReviewerReviewProps) {
   const client = await createClient();
 
@@ -115,8 +130,19 @@ async function ReviewerReview({
     throw error;
   }
 
-  // Neither admin nor a reviewer of this proposal.
   if (!assignmentId) {
+    if (canReadOpenReviews) {
+      return (
+        <Suspense fallback={<ReviewSummarySkeleton />}>
+          <ReviewSummaryLayout
+            decisionSlug={decisionSlug}
+            proposalProfileId={proposalProfileId}
+          />
+        </Suspense>
+      );
+    }
+
+    // Neither admin nor a reviewer of this proposal.
     forbidden();
   }
 

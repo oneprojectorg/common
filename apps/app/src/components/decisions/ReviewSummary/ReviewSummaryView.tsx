@@ -32,6 +32,8 @@ interface ReviewSummaryViewProps {
   phaseId: string;
   isPhaseInProgress?: boolean;
   reviewSettings: ReviewSettings;
+  /** Admins get the summary header and the advance footer; reviewers read only. */
+  isAdmin: boolean;
 }
 
 export function ReviewSummaryView({
@@ -42,6 +44,7 @@ export function ReviewSummaryView({
   phaseId,
   isPhaseInProgress = false,
   reviewSettings,
+  isAdmin,
 }: ReviewSummaryViewProps) {
   const t = useTranslations();
   const { user } = useRequiredUser();
@@ -155,6 +158,8 @@ export function ReviewSummaryView({
       )
     : undefined;
 
+  const showAdvanceFooter = isAdmin && !isPhaseInProgress;
+
   const currentProposalPane = (
     <ProposalPreview
       proposal={proposal}
@@ -170,7 +175,7 @@ export function ReviewSummaryView({
     <div
       className={cn(
         'flex h-dvh flex-col bg-white',
-        !isPhaseInProgress && 'pb-14',
+        showAdvanceFooter && 'pb-14',
       )}
     >
       <DecisionSubpageHeader
@@ -261,12 +266,13 @@ export function ReviewSummaryView({
                   : undefined
               }
               ownReview={ownReview}
+              hideSummaryHeader={!isAdmin}
             />
           )}
         </SplitPane.Pane>
       </SplitPane>
 
-      {!isPhaseInProgress && (
+      {showAdvanceFooter && (
         <ReviewSummaryAdvanceFooter
           instanceId={instanceId}
           proposalId={proposalId}
