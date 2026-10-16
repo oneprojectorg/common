@@ -1812,7 +1812,20 @@
     },
     "processAdmin": {
       "pageTitle": "Gerenciar {decisionName}",
-      "underConstruction": "A nova administração do processo está sendo construída aqui."
+      "backToEditor": "Voltar ao editor",
+      "viewProcess": "Ver processo",
+      "stewardedBy": "Gerenciado por <steward>{name}</steward>",
+      "aboutHeading": "Sobre o processo",
+      "statusDraft": "Rascunho",
+      "statusLive": "Ativo",
+      "statusCompleted": "Concluído",
+      "statusCancelled": "Cancelado",
+      "noPhasesTitle": "Ainda não há fases",
+      "noPhasesDescription": "As fases que você adicionar no editor aparecem aqui.",
+      "noResourcesTitle": "Nenhum recurso fixado",
+      "noResourcesDescription": "Guias, documentos e links que os participantes podem consultar.",
+      "noAboutTitle": "Ainda não há descrição",
+      "noAboutDescription": "Descreva o processo no editor para que os participantes saibam para que ele serve."
     }
   },
   "loadingProgress": "Carregando...",
