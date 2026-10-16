@@ -6,7 +6,7 @@ import {
 } from '@/utils/onboarding';
 import { assertWalledGardenAccess } from '@/utils/walledGarden';
 import { SidebarInset, SidebarProvider } from '@op/sense/Sidebar';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { PolicyReacceptanceModal } from '@/components/PolicyReacceptanceModal';
@@ -39,21 +39,27 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
 
   await assertWalledGardenAccess(user);
 
+  // SidebarProvider writes `sidebar_state` but can't read it back on load.
+  const cookieStore = await cookies();
+  const isSidebarOpen = cookieStore.get('sidebar_state')?.value !== 'false';
+
   return (
     <div className="flex size-full max-h-full flex-col">
       <UserProvider initialUser={user}>
         <PolicyReacceptanceModal />
         <SidebarProvider
-          defaultOpen={false}
+          defaultOpen={isSidebarOpen}
+          style={{ '--sidebar-width': '19rem' } as React.CSSProperties}
           className="min-h-0 flex-1 flex-col overflow-hidden"
         >
           <SiteHeader />
           <div
             style={{ '--header-height': '3.75rem' } as React.CSSProperties}
-            className="relative flex size-full flex-1 flex-col overflow-y-auto bg-background sm:flex-row"
+            // Only the main well scrolls, so the sidebar's scroll can't chain into the page.
+            className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background sm:flex-row"
           >
             <SidebarNav />
-            <SidebarInset>
+            <SidebarInset className="min-h-0 overflow-y-auto">
               <AppLayout>{children}</AppLayout>
             </SidebarInset>
           </div>

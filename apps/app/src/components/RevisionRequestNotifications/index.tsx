@@ -1,13 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
 import {
-  PAGE_LIMIT,
   ProposalReviewRequestState,
   type ProposalRevisionRequestItem,
 } from '@op/common/client';
-import { getTextPreview } from '@op/core';
 import { Button } from '@op/sense/Button';
 import {
   NotificationPanel,
@@ -23,81 +20,40 @@ import { LuPenLine } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '../ButtonLink';
-import { DecisionAvatar } from '../DecisionAvatar';
 import ErrorBoundary from '../ErrorBoundary';
 
-const ActiveDecisionsNotificationsSuspense = () => {
+const RevisionRequestNotificationsSuspense = () => {
   const t = useTranslations();
-  const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
-  const [[{ items: decisions }, revisionData]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.listDecisionProfiles({
-        status: [ProcessStatus.PUBLISHED],
-        limit: PAGE_LIMIT.sm,
-      }),
-      t.decision.listProposalsRevisionRequests({
-        states: [ProposalReviewRequestState.REQUESTED],
-      }),
-    ],
-  );
+  const [{ items: revisionRequests }] =
+    trpc.decision.listProposalsRevisionRequests.useSuspenseQuery({
+      states: [ProposalReviewRequestState.REQUESTED],
+    });
 
-  const revisionRequests = revisionData?.items ?? [];
-  const count = decisions.length + revisionRequests.length;
-
-  if (count === 0) {
+  if (revisionRequests.length === 0) {
     return null;
   }
 
   return (
     <NotificationPanel>
       <NotificationPanelHeader
-        title={t('decisions.activeDecisionsHeading')}
-        count={count}
+        title={t('decisions.revisionRequestsHeading')}
+        count={revisionRequests.length}
       />
       <NotificationPanelList>
         {revisionRequests.map((item) => (
           <RevisionRequestRow key={item.revisionRequest.id} item={item} />
         ))}
-        {decisions.map((decision) => {
-          const instance = decision.processInstance;
-          const description = instance?.description;
-          const isNavigating = navigatingId === decision.id;
-
-          return (
-            <NotificationPanelItem key={decision.id}>
-              <ProfileItem
-                avatar={<DecisionAvatar profile={decision} />}
-                title={decision.name}
-                description={
-                  description
-                    ? getTextPreview({ content: description })
-                    : undefined
-                }
-              />
-              <NotificationPanelActions>
-                <ButtonLink
-                  href={`/decisions/${decision.slug}`}
-                  className="w-full sm:w-auto"
-                  onClick={() => setNavigatingId(decision.id)}
-                  loading={isNavigating}
-                >
-                  {t('decisions.participateAction')}
-                </ButtonLink>
-              </NotificationPanelActions>
-            </NotificationPanelItem>
-          );
-        })}
       </NotificationPanelList>
     </NotificationPanel>
   );
 };
 
-export const ActiveDecisionsNotifications = () => {
+export const RevisionRequestNotifications = () => {
   return (
     <ErrorBoundary fallback={null}>
       <Suspense fallback={null}>
-        <ActiveDecisionsNotificationsSuspense />
+        <RevisionRequestNotificationsSuspense />
       </Suspense>
     </ErrorBoundary>
   );

@@ -147,6 +147,7 @@ const PUBLIC_ROUTES: RouteScan[] = [
 
 const STATIC_AUTH_ROUTES: RouteScan[] = [
   { url: '/en/', label: 'Home', auth: 'authenticated' },
+  { url: '/en/updates', label: 'Updates', auth: 'authenticated' },
   { url: '/en/decisions', label: 'Decisions index', auth: 'authenticated' },
   { url: '/en/profile', label: 'Profile index', auth: 'authenticated' },
   { url: '/en/search', label: 'Search', auth: 'authenticated' },

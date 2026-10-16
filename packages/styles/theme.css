@@ -461,8 +461,7 @@
   background-image: radial-gradient(
     96.92% 140.1% at 72.02% 100%,
     var(--brand-teal-500) 0%,
-    var(--color-red-500) 92%,
-    #fafbfb 100%
+    var(--color-red-500) 92%
   );
 }
 
@@ -512,8 +511,7 @@
   background-image: radial-gradient(
     96.92% 140.1% at 72.02% 100%,
     #DD2D1E 0%,
-    #DB862A 92.19%,
-    #FAFBFB 99.99%
+    #DB862A 92.19%
   );
 }
 
