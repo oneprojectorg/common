@@ -16,9 +16,7 @@ test.describe('Proposal template — location field', () => {
     // 1. Create a draft process from the seeded template.
     await page.goto('/en/');
     await page.getByRole('button', { name: 'Create' }).click();
-    await page
-      .getByRole('menuitem', { name: 'Decision-making process' })
-      .click();
+    await page.getByTestId('create-decision-process').click();
     await page.waitForURL(/\/decisions\/[^/]+\/edit/, { timeout: 12_000 });
     await expect(
       page.getByRole('heading', { name: 'Process Settings' }),

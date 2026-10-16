@@ -1,0 +1,345 @@
+'use client';
+
+import { Button } from '@op/sense/Button';
+import { Progress } from '@op/sense/Progress';
+import { cn } from '@op/sense/lib/utils';
+import { useLocale } from 'next-intl';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { LuArrowLeft, LuArrowRight, LuX } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
+
+import { STEP_HEADING_ID } from './StepHeading';
+import { applyGrantDecision, piecesFor, type GrantDecision } from './content';
+import {
+  EMPTY_ANSWERS,
+  TOTAL_STEPS,
+  isOtherScreen,
+  isScreenComplete,
+  nextScreen,
+  previousScreen,
+  progressPercent,
+  reconcileAnswers,
+  stepOf,
+  type ScreenId,
+  type WizardAnswers,
+} from './flow';
+import {
+  composeOtherPieces,
+  describeOther,
+  type OtherAnswers,
+} from './otherFlow';
+import { IntroBackdrop, IntroStep } from './steps/IntroStep';
+import { MappingStep } from './steps/MappingStep';
+import { NameAccessStep } from './steps/NameAccessStep';
+import { OtherStep } from './steps/OtherStep';
+import { GrantDecisionStep, ShapeStep } from './steps/ShapeStep';
+import { TypeStep } from './steps/TypeStep';
+import type {
+  ProcessDraft,
+  ProcessPiece,
+  ProcessType,
+  ShapeKey,
+} from './types';
+import type { WizardProgress } from './wizardProgress';
+
+interface StepBodyProps {
+  step: number;
+  screen: ScreenId;
+  type: ProcessType | null;
+  shape: ShapeKey | null;
+  grantDecision: GrantDecision | null;
+  other: OtherAnswers;
+  pieces: ProcessPiece[];
+  recap?: ReactNode;
+  name: string;
+  onStart: () => void;
+  onTypeChange: (type: ProcessType) => void;
+  onShapeChange: (shape: ShapeKey) => void;
+  onGrantDecisionChange: (decision: GrantDecision) => void;
+  onOtherChange: (patch: Partial<OtherAnswers>) => void;
+  onNameChange: (name: string) => void;
+  onSubmit: () => void;
+}
+
+export function CreateProcessWizard({
+  initial,
+  onProgressChange,
+  onExit,
+  onComplete,
+  isSubmitting = false,
+}: {
+  initial?: WizardProgress | null;
+  onProgressChange?: (progress: WizardProgress) => void;
+  onExit: () => void;
+  onComplete: (draft: ProcessDraft) => void;
+  isSubmitting?: boolean;
+}) {
+  const t = useTranslations('decisions.createWizard');
+  const tShared = useTranslations();
+  const locale = useLocale();
+
+  const [screen, setScreen] = useState<ScreenId>(initial?.screen ?? 'intro');
+  const [answers, setAnswers] = useState<WizardAnswers>(
+    initial?.answers ?? EMPTY_ANSWERS,
+  );
+  const { type, shape, grantDecision, other, name } = answers;
+
+  useEffect(() => {
+    onProgressChange?.({ screen, answers });
+  }, [onProgressChange, screen, answers]);
+
+  const answer = (patch: Partial<WizardAnswers>) =>
+    setAnswers((previous) =>
+      reconcileAnswers({ ...previous, ...patch }, previous),
+    );
+
+  const step = stepOf(screen);
+  const isOther = type === 'other';
+  // Not before step 4, so answering step 3 doesn't recompose the phases.
+  const isResolved = step >= 4;
+  const pieces = useMemo(
+    () =>
+      isResolved ? resolvePieces({ type, shape, grantDecision, other }) : [],
+    [isResolved, type, shape, grantDecision, other],
+  );
+
+  const canContinue = isScreenComplete(screen, answers);
+
+  // Focus the new step's heading so it is announced; not on mount.
+  const hasStepped = useRef(false);
+
+  useEffect(() => {
+    if (!hasStepped.current) {
+      hasStepped.current = true;
+
+      return;
+    }
+
+    document.getElementById(STEP_HEADING_ID)?.focus();
+  }, [screen]);
+
+  const advance = () => {
+    if (!canContinue || isSubmitting) {
+      return;
+    }
+
+    const next = nextScreen(screen, answers);
+
+    if (!next) {
+      if (type && shape) {
+        onComplete({
+          type,
+          shape,
+          name: name.trim(),
+          pieces,
+        });
+      }
+
+      return;
+    }
+
+    setScreen(next);
+  };
+
+  const back = () => {
+    setScreen(previousScreen(screen, answers) ?? screen);
+  };
+
+  const isTypedStep = step === TOTAL_STEPS;
+  let primaryLabel = tShared('Continue');
+  if (step === 1) {
+    primaryLabel = t('getStartedAction');
+  } else if (step === TOTAL_STEPS) {
+    primaryLabel = t('submitAction');
+  }
+
+  return (
+    <div className="flex h-dvh flex-col bg-muted">
+      {step > 1 ? (
+        <Progress
+          value={progressPercent(screen, type)}
+          aria-label={t('stepProgress', {
+            current: step,
+            total: TOTAL_STEPS,
+          })}
+          className="h-1 shrink-0 rounded-none"
+        />
+      ) : null}
+
+      <div className="flex h-14 shrink-0 items-center justify-between gap-3 px-4 sm:px-6">
+        {step === 1 ? (
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={tShared('Close')}
+            disabled={isSubmitting}
+            onClick={onExit}
+          >
+            <LuX className="size-4" aria-hidden />
+          </Button>
+        ) : (
+          <Button variant="link" disabled={isSubmitting} onClick={back}>
+            <LuArrowLeft className="rtl:-scale-x-100" />
+            {tShared('Back')}
+          </Button>
+        )}
+
+        {step === 1 ? (
+          <Button
+            variant="link"
+            disabled={isSubmitting}
+            onClick={() =>
+              onComplete({
+                type: 'other',
+                shape: 'blank',
+                name: t('untitledProcessName'),
+                pieces: [],
+              })
+            }
+          >
+            {t('createBlankAction')}
+          </Button>
+        ) : (
+          <Button variant="outline" disabled={isSubmitting} onClick={onExit}>
+            {tShared('Exit')}
+          </Button>
+        )}
+      </div>
+
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {step === 1 ? <IntroBackdrop /> : null}
+        <div
+          className={cn(
+            'mx-auto flex w-full px-4 sm:px-6',
+            step === 1 ? 'flex-1' : 'flex-col pt-8',
+            step > 1 && (step === 4 ? 'pb-40' : 'pb-12'),
+            step === 4 ? 'max-w-177' : 'max-w-lg',
+          )}
+        >
+          <StepBody
+            step={step}
+            screen={screen}
+            type={type}
+            shape={shape}
+            grantDecision={grantDecision}
+            other={other}
+            pieces={pieces}
+            recap={
+              isOther && isResolved
+                ? describeOther(other, t, locale)
+                : undefined
+            }
+            name={name}
+            onStart={advance}
+            onTypeChange={(next) => answer({ type: next })}
+            onShapeChange={(next) => answer({ shape: next })}
+            onGrantDecisionChange={(next) => answer({ grantDecision: next })}
+            onOtherChange={(patch) =>
+              setAnswers((previous) =>
+                reconcileAnswers(
+                  { ...previous, other: { ...previous.other, ...patch } },
+                  previous,
+                ),
+              )
+            }
+            onNameChange={(next) => answer({ name: next })}
+            onSubmit={advance}
+          />
+
+          {step > 1 && (canContinue || isTypedStep) ? (
+            <div className="mt-8 flex justify-center">
+              <Button
+                onClick={advance}
+                disabled={!canContinue}
+                loading={isSubmitting}
+                className="min-w-32"
+              >
+                {primaryLabel}
+                <LuArrowRight className="rtl:-scale-x-100" />
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepBody(props: StepBodyProps) {
+  const { step, type } = props;
+
+  if (step === 1) {
+    return <IntroStep onStart={props.onStart} />;
+  }
+
+  if (step === 2) {
+    return <TypeStep value={type} onChange={props.onTypeChange} />;
+  }
+
+  if (step === 3) {
+    return type ? <StepThree {...props} type={type} /> : null;
+  }
+
+  if (step === 4) {
+    return type ? (
+      <MappingStep pieces={props.pieces} recap={props.recap} />
+    ) : null;
+  }
+
+  return (
+    <NameAccessStep
+      name={props.name}
+      onNameChange={props.onNameChange}
+      onSubmit={props.onSubmit}
+    />
+  );
+}
+
+function StepThree({
+  screen,
+  type,
+  shape,
+  grantDecision,
+  other,
+  onShapeChange,
+  onGrantDecisionChange,
+  onOtherChange,
+}: StepBodyProps & { type: ProcessType }) {
+  if (isOtherScreen(screen)) {
+    return <OtherStep step={screen} answers={other} onChange={onOtherChange} />;
+  }
+
+  if (screen === 'grantDecision') {
+    return (
+      <GrantDecisionStep
+        value={grantDecision}
+        onChange={onGrantDecisionChange}
+      />
+    );
+  }
+
+  return <ShapeStep type={type} value={shape} onChange={onShapeChange} />;
+}
+
+function resolvePieces({
+  type,
+  shape,
+  grantDecision,
+  other,
+}: {
+  type: ProcessType | null;
+  shape: ShapeKey | null;
+  grantDecision: GrantDecision | null;
+  other: OtherAnswers;
+}): ProcessPiece[] {
+  if (type === 'other') {
+    return composeOtherPieces(other);
+  }
+
+  if (type === 'grant') {
+    return applyGrantDecision(piecesFor(type, shape), grantDecision);
+  }
+
+  return piecesFor(type, shape);
+}
