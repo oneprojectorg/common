@@ -4,10 +4,12 @@ import {
   UnauthorizedError,
   countBallotProposals,
   formatSmsDecisionInfo,
+  formatSmsDecisionList,
   getPhoneSignupState,
   getPublishedDecisionBySlug,
   getSmsProvider,
   isVotingPhase,
+  listSmsDecisions,
   safeParsePhoneNumber,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
@@ -16,7 +18,7 @@ import { logger } from '@op/logging';
 import { smsNumberRateLimit } from './smsInboundLimits';
 
 const HELP_MESSAGE =
-  'Text INFO and the decision name, for example INFO columbus. Reply STOP to unsubscribe.';
+  'Text INFO to see your decisions, or INFO and a decision name, for example INFO columbus. Reply STOP to unsubscribe.';
 const { smsInboundReceived } = Events;
 
 export const handleSMSCommand = inngest.createFunction(
@@ -93,9 +95,25 @@ export const handleSMSCommand = inngest.createFunction(
       return { message: 'help sent' };
     };
 
+    const listDecisions = async () => {
+      const decisions = await step.run('list-decisions', () =>
+        listSmsDecisions({ authUserId: account.authUserId }),
+      );
+      const bodies = formatSmsDecisionList(decisions);
+      for (const [index, body] of bodies.entries()) {
+        await text(
+          index === 0
+            ? 'send-decision-list'
+            : `send-decision-list-${index + 1}`,
+          body,
+        );
+      }
+      return { message: 'decisions sent', count: decisions.length };
+    };
+
     const info = async () => {
       if (!argument) {
-        return help();
+        return listDecisions();
       }
 
       const decision = await step.run('find-decision', async () => {
