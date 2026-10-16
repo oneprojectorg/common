@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clipSmsText } from './smsText';
+import { clipSmsText } from './text';
 
 describe('clipSmsText', () => {
   it('given text within the limit, then it is returned whole', () => {
