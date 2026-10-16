@@ -146,7 +146,7 @@ describe('formatSmsProposalInfo', () => {
 
     expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
     expect(body.startsWith('218: "Bike lane" ($310,000). words')).toBe(true);
-    expect(body.endsWith('… Text 218 to add it to your ballot.')).toBe(true);
+    expect(body.endsWith('... Text 218 to add it to your ballot.')).toBe(true);
   });
 });
 

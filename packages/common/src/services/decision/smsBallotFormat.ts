@@ -1,6 +1,11 @@
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
 import type { SmsBallotProposal } from './listSmsBallotProposals';
-import { SMS_MAX_BODY_LENGTH, clipSmsText, splitSmsBody } from './smsText';
+import {
+  SMS_ELLIPSIS,
+  SMS_MAX_BODY_LENGTH,
+  clipSmsText,
+  splitSmsBody,
+} from './smsText';
 
 export { SMS_MAX_BODY_LENGTH } from './smsText';
 
@@ -72,7 +77,9 @@ export const formatSmsProposalInfo = (
       : `Text VOTE ${slug} to start your ballot.`;
   const room = SMS_MAX_BODY_LENGTH - heading.length - action.length - 2;
   const summary =
-    proposal.summary && room > 1 ? clipSmsText(proposal.summary, room) : null;
+    proposal.summary && room > SMS_ELLIPSIS.length
+      ? clipSmsText(proposal.summary, room)
+      : null;
 
   return [heading, summary, action].filter(Boolean).join(' ');
 };
