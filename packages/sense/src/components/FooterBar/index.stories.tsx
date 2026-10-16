@@ -64,7 +64,7 @@ export const Voting: Story = {
 };
 
 // Mirrors the advance-proposal footers (ReviewSummaryAdvanceFooter,
-// StandardSelectionFooter): count at the start, toggling secondary action.
+// SelectionFooter): count at the start, toggling secondary action.
 const AdvanceDemo = () => {
   const [advancing, setAdvancing] = useState(true);
 
@@ -112,9 +112,9 @@ export const WithDivider: Story = {
   ),
 };
 
-// Mirrors the selection-confirm footers (StandardSelectionFooter,
-// FinalPhaseSelectionFooter): the end slot is a dialog trigger with a
-// responsive label — short on mobile, full text from `sm:` up.
+// Mirrors the selection-confirm footer (SelectionFooter): the end slot is a
+// dialog trigger with a responsive label — short on mobile, full text from
+// `sm:` up.
 const ConfirmSelectionDemo = () => {
   const [open, setOpen] = useState(false);
 

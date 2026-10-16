@@ -102,7 +102,8 @@ export const Events = {
     name: 'decision/results-notified' as const,
     schema: z.object({
       processInstanceId: z.string().uuid(),
-      processResultId: z.string().uuid(),
+      /** Final phase only. */
+      processResultId: z.string().uuid().optional(),
       transitionHistoryId: z.string().uuid(),
       /** The phase whose membership defines the not-selected audience. */
       previousPhaseId: z.string().min(1),

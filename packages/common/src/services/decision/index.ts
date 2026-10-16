@@ -77,7 +77,14 @@ export * from './isLegacyInstance';
 export * from './listSelectionCandidates';
 export * from './resolveManualSelectionStatus';
 export * from './submitManualSelection';
-export * from './getProposalsForPhase';
+export {
+  type PhaseProposalSqlScope,
+  type PhaseScopedInstance,
+  getPhaseProposalAndDraftIds,
+  getPhaseProposalSqlScope,
+  getProposalIdsForPhase,
+  getProposalsForPhase,
+} from './getProposalsForPhase';
 export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';

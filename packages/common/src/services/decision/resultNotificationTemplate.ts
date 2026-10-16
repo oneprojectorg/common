@@ -9,6 +9,7 @@ export const RESULT_NOTIFICATION_TOKENS = [
   'name',
   'proposal',
   'amount',
+  'phase',
 ] as const;
 
 export type ResultNotificationToken =
@@ -40,6 +41,7 @@ export type ResultNotificationValues = {
   name: string;
   proposal: string;
   amount: string;
+  phase: string;
 };
 
 // One pass with a replacer: chained `replaceAll`s would let a proposal title

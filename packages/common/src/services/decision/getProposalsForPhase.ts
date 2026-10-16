@@ -161,6 +161,12 @@ async function attachmentIdsFor(
   return rows.map((r) => r.id);
 }
 
+export const getAttachedProposalIds = ({
+  transitionHistoryId,
+}: {
+  transitionHistoryId: string;
+}): Promise<string[]> => attachmentIdsFor(transitionHistoryId, defaultDb);
+
 /**
  * Proposal ids matching `predicate` whose `createdAt` falls inside the
  * phase's transition window. The inbound comparator (`'gt'` or `'gte'`) lets

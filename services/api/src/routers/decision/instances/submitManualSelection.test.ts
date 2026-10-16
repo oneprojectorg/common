@@ -779,16 +779,6 @@ describe.concurrent('submitManualSelection', () => {
 
   it.for([
     {
-      payload: 'author copy',
-      payloadFor: () => ({
-        resultNotifications: {
-          selected: 'Selected',
-          notSelected: 'Not selected',
-        },
-      }),
-      message: 'only sent when confirming the final phase',
-    },
-    {
       payload: 'awarded amounts',
       payloadFor: (proposalId: string) => ({
         allocations: [{ proposalId, amount: 500 }],
