@@ -8,14 +8,9 @@ import {
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
-  createUser,
   grantDecisionProfileAccess,
-  makeDecisionPublic,
 } from '@op/common/testing/data';
-import {
-  TestPhoneAuthDataManager,
-  createTestAdminClient,
-} from '@op/common/testing/helpers';
+import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { db, eq, inArray } from '@op/db/client';
 import {
   ProposalStatus,
@@ -24,8 +19,6 @@ import {
   proposals,
   users,
 } from '@op/db/schema';
-import { DECISION_BITS, PERMISSIONS } from '@op/db/seedData/accessControl';
-import { randomUUID } from 'node:crypto';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
@@ -114,14 +107,9 @@ const readProfileId = async (authUserId: string) => {
 
 export class SmsVotingFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
-  private readonly admin = createTestAdminClient();
   private readonly profileIds: string[] = [];
-  private readonly emailAuthUserIds: string[] = [];
 
-  constructor(
-    private readonly testId: string,
-    onTestFinished: RegisterCleanup,
-  ) {
+  constructor(testId: string, onTestFinished: RegisterCleanup) {
     this.phoneAuth = new TestPhoneAuthDataManager(testId, onTestFinished);
     onTestFinished(() => this.cleanup());
   }
@@ -136,13 +124,6 @@ export class SmsVotingFixture {
       profileId: await readProfileId(authUserId),
       email: null,
     };
-  }
-
-  async createEmailAccount(): Promise<FixtureAccount> {
-    const email = `${this.testId}-${randomUUID().slice(0, 6)}@oneproject.org`;
-    const { id } = await createUser({ supabaseAdmin: this.admin, email });
-    this.emailAuthUserIds.push(id);
-    return { authUserId: id, profileId: await readProfileId(id), email };
   }
 
   async createVotingInstance({
@@ -248,38 +229,9 @@ export class SmsVotingFixture {
     });
   }
 
-  async makePublic(
-    instanceProfileId: string,
-    { vote = true }: { vote?: boolean } = {},
-  ) {
-    await makeDecisionPublic({
-      profileId: instanceProfileId,
-      permissionBits:
-        PERMISSIONS.READ |
-        DECISION_BITS.SUBMIT_PROPOSALS |
-        (vote ? DECISION_BITS.VOTE : 0),
-    });
-  }
-
   private async cleanup() {
     if (this.profileIds.length > 0) {
       await db.delete(profiles).where(inArray(profiles.id, this.profileIds));
-    }
-    for (const authUserId of this.emailAuthUserIds) {
-      const [row] = await db
-        .select({ profileId: users.profileId })
-        .from(users)
-        .where(eq(users.authUserId, authUserId))
-        .limit(1);
-      const { error } = await this.admin.auth.admin.deleteUser(authUserId);
-      if (error && error.code !== 'user_not_found') {
-        throw new Error(
-          `Failed to delete email user ${authUserId}: ${error.message}`,
-        );
-      }
-      if (row?.profileId) {
-        await db.delete(profiles).where(eq(profiles.id, row.profileId));
-      }
     }
   }
 }
