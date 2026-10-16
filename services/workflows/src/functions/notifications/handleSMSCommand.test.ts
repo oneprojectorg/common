@@ -18,6 +18,7 @@ const NUMBERS = {
   bareInfo: '+15005550097',
   owner: '+15005550098',
   outsider: '+15005550099',
+  codeReply: '+15005550089',
 } as const;
 
 const HELP_MESSAGE =
@@ -27,12 +28,13 @@ const inbound = (
   from: PhoneNumber,
   keyword: SmsKeyword | null,
   argument: string | null,
+  code: string | null = null,
 ) => ({
   name: Events.smsInboundReceived.name,
   data: {
     from,
     messageSid: `SM-command-${from}`,
-    code: null,
+    code,
     keyword,
     argument,
   },
@@ -177,6 +179,23 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'help sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([HELP_MESSAGE]);
+  });
+
+  it('given a text that is a signup code, even from a number that is already confirmed, then the command function sends nothing because signup owns code replies', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.codeReply);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [inbound(phone, null, null, '123456')],
+    });
+
+    expect(result).toEqual({ message: 'signup code, left to signup' });
+    expect(recordedSms).toEqual([]);
   });
 
   it('given a member texts JOIN, then nothing is sent because the signup function answers JOIN', async ({
