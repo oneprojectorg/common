@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from './error';
@@ -45,6 +46,10 @@ export const signStorageDownloadUrlOrNull = async ({
     return await signStorageDownloadUrl({ storagePath, ttlSeconds });
   } catch (error) {
     if (error instanceof CommonError) {
+      logger.warn('Could not sign storage download URL', {
+        storagePath,
+        error,
+      });
       return null;
     }
     throw error;

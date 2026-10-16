@@ -268,7 +268,10 @@ const readProposals = async (profileId: string) => {
   });
 
   const instances = new Map(
-    submitted.rows.map((row) => [row.processInstanceId, row]),
+    submitted.rows.map(({ processInstanceId, instanceData, processId }) => [
+      processInstanceId,
+      { instanceData, processId },
+    ]),
   );
   const templates = new Map(
     await Promise.all(
@@ -276,7 +279,10 @@ const readProposals = async (profileId: string) => {
         async ([instanceId, { instanceData, processId }]) =>
           [
             instanceId,
-            await resolveProposalTemplate(instanceData, processId),
+            await resolveProposalTemplate(
+              instanceData as Record<string, unknown> | null,
+              processId,
+            ),
           ] as const,
       ),
     ),
