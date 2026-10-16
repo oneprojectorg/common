@@ -55,14 +55,13 @@ describe('handleTwilioInboundWebhookRequest', () => {
         from: '+15005550006',
         messageSid: 'SM456',
         code: null,
-        keyword: 'yes',
+        keyword: null,
         argument: null,
-        codes: [],
       },
     });
   });
 
-  it('given a reply that is a code typed with spaces, when forwarded, then the event carries the digits and not the text', async () => {
+  it('given a reply that is a code typed with spaces, when forwarded, then the event carries the digits and no command', async () => {
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
     const params = { ...MESSAGE_PARAMS, Body: ' 234 567 ' };
     const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
@@ -86,7 +85,6 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: '234567',
         keyword: null,
         argument: null,
-        codes: ['234', '567'],
       },
     });
   });
@@ -112,14 +110,13 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: null,
         keyword: 'join',
         argument: null,
-        codes: [],
       },
     });
   });
 
-  it('given a text that is VOTE and a decision slug, when forwarded, then the event carries the keyword and the slug', async () => {
+  it('given a text that is INFO, a decision slug and a code, when forwarded, then the event carries the keyword and the rest lowercased', async () => {
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
-    const params = { ...MESSAGE_PARAMS, Body: 'Vote Columbus' };
+    const params = { ...MESSAGE_PARAMS, Body: 'Info Columbus 102' };
     const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
 
     const response = await handleTwilioInboundWebhookRequest({
@@ -136,9 +133,8 @@ describe('handleTwilioInboundWebhookRequest', () => {
         from: '+15005550006',
         messageSid: 'SM456',
         code: null,
-        keyword: 'vote',
-        argument: 'columbus',
-        codes: [],
+        keyword: 'info',
+        argument: 'columbus 102',
       },
     });
   });

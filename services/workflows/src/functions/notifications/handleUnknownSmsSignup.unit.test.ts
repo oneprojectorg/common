@@ -50,7 +50,6 @@ const triggerEvent = (
     code,
     keyword,
     argument: null,
-    codes: [],
   },
 });
 
@@ -63,7 +62,6 @@ const reply = (attempt: number, code: string | null) => ({
       code,
       keyword: null,
       argument: null,
-      codes: [],
     },
   }),
 });
@@ -220,7 +218,6 @@ describe('handleUnknownSmsSignup', () => {
             code: null,
             keyword: 'join',
             argument: null,
-            codes: [],
           },
         },
       ],

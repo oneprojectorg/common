@@ -208,8 +208,8 @@ describe('extractSmsCode', () => {
 });
 
 describe('parseSmsCommand', () => {
-  const none = { keyword: null, argument: null, codes: [] };
-  const bare = (keyword: string) => ({ keyword, argument: null, codes: [] });
+  const none = { keyword: null, argument: null };
+  const bare = (keyword: string) => ({ keyword, argument: null });
 
   it.each(SMS_BARE_KEYWORDS)(
     'given %s alone in any case or with trailing punctuation, when parsed, then it is a bare keyword',
@@ -234,22 +234,18 @@ describe('parseSmsCommand', () => {
       expect(parseSmsCommand(`${keyword.toUpperCase()} Columbus`)).toEqual({
         keyword,
         argument: 'columbus',
-        codes: [],
       });
       expect(parseSmsCommand(`${keyword}: 218!`)).toEqual({
         keyword,
         argument: '218',
-        codes: [],
       });
       expect(parseSmsCommand(`${keyword} 101.`)).toEqual({
         keyword,
         argument: '101',
-        codes: [],
       });
       expect(parseSmsCommand(`${keyword} columbus.`)).toEqual({
         keyword,
         argument: 'columbus',
-        codes: [],
       });
       expect(parseSmsCommand(keyword)).toEqual(bare(keyword));
     },
@@ -262,53 +258,8 @@ describe('parseSmsCommand', () => {
     expect(parseSmsCommand('information')).toEqual(none);
   });
 
-  it('given one or more proposal codes, when parsed, then they are the picks in texted order', () => {
-    expect(parseSmsCommand('214')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['214'],
-    });
-    expect(parseSmsCommand(' 108 371 ')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['108', '371'],
-    });
-    expect(parseSmsCommand('108, 371.')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['108', '371'],
-    });
-    expect(parseSmsCommand('1001 102')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['1001', '102'],
-    });
-  });
-
-  it('given a decision has issued more than 9999 codes, when a five-digit or longer code is texted, then it is a pick', () => {
-    expect(parseSmsCommand('10000')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['10000'],
-    });
-    expect(parseSmsCommand('101 10000')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['101', '10000'],
-    });
-    expect(parseSmsCommand('234567')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['234567'],
-    });
-    expect(parseSmsCommand('2147483647')).toEqual({
-      keyword: null,
-      argument: null,
-      codes: ['2147483647'],
-    });
-  });
-
-  it('given digits that cannot be a proposal code, when parsed, then nothing is recognised', () => {
+  it('given only digits or nothing, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('214')).toEqual(none);
     expect(parseSmsCommand('21')).toEqual(none);
     expect(parseSmsCommand('12345678901')).toEqual(none);
     expect(parseSmsCommand('214 and 218')).toEqual(none);
