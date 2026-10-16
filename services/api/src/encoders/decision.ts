@@ -1,5 +1,7 @@
 import {
   PAGE_LIMIT,
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
   proposalSearchSchema,
   PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
@@ -539,7 +541,7 @@ export const instanceResultsEncoder = paginated(proposalSchema);
 
 // Input Schemas
 export const createProcessInputSchema = z.object({
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
   description: z.string().optional(),
   processSchema: processSchemaEncoder,
 });
@@ -548,14 +550,14 @@ export const updateProcessInputSchema = createProcessInputSchema.partial();
 
 export const createInstanceInputSchema = z.object({
   processId: z.uuid(),
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
   description: z.string().optional(),
   instanceData: instanceDataEncoder,
 });
 
 export const createInstanceFromTemplateInputSchema = z.object({
   templateId: z.uuid(),
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
 });
 
 /** Input schema for phase overrides with datetime validation */
