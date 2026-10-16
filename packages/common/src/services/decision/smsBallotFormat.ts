@@ -7,8 +7,6 @@ import {
   splitSmsBody,
 } from './smsText';
 
-export { SMS_MAX_BODY_LENGTH } from './smsText';
-
 const SMS_LIST_TITLE_LENGTH = 100;
 
 const smsCurrency = (currency: string): string =>

@@ -74,8 +74,6 @@ export const extractSmsCode = (body: string): string | null => {
   return SMS_CODE_PATTERN.test(compact) ? compact : null;
 };
 
-export type { SmsKeyword };
-
 export interface SmsCommand {
   keyword: SmsKeyword | null;
   argument: string | null;

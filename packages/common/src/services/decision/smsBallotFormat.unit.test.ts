@@ -8,8 +8,8 @@ import {
   formatSmsProposalInfo,
   formatSmsProposalPages,
   SMS_BALLOT_EMPTY,
-  SMS_MAX_BODY_LENGTH,
 } from './smsBallotFormat';
+import { SMS_MAX_BODY_LENGTH } from './smsText';
 
 const proposal = (
   code: string,
