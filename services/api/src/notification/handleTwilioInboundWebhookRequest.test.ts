@@ -56,11 +56,12 @@ describe('handleTwilioInboundWebhookRequest', () => {
         messageSid: 'SM456',
         code: null,
         keyword: null,
+        argument: null,
       },
     });
   });
 
-  it('given a reply that is a code typed with spaces, when forwarded, then the event carries the digits and not the text', async () => {
+  it('given a reply that is a code typed with spaces, when forwarded, then the event carries the digits and no command', async () => {
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
     const params = { ...MESSAGE_PARAMS, Body: ' 234 567 ' };
     const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
@@ -83,6 +84,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         messageSid: 'SM456',
         code: '234567',
         keyword: null,
+        argument: null,
       },
     });
   });
@@ -107,6 +109,32 @@ describe('handleTwilioInboundWebhookRequest', () => {
         messageSid: 'SM456',
         code: null,
         keyword: 'join',
+        argument: null,
+      },
+    });
+  });
+
+  it('given a text that is SHOW and a decision slug, when forwarded, then the event carries the keyword and the slug lowercased', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const params = { ...MESSAGE_PARAMS, Body: 'Show Columbus' };
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const response = await handleTwilioInboundWebhookRequest({
+      rawBody: rawBodyOf(params),
+      signature,
+      url: URL,
+    });
+
+    expect(response.status).toBe(200);
+    expect(inngest.send).toHaveBeenCalledWith({
+      id: 'sms-inbound-SM456',
+      name: Events.smsInboundReceived.name,
+      data: {
+        from: '+15005550006',
+        messageSid: 'SM456',
+        code: null,
+        keyword: 'show',
+        argument: 'columbus',
       },
     });
   });

@@ -37,7 +37,13 @@ const inboundText = (
   keyword: 'join' | null = 'join',
 ) => ({
   name: Events.smsInboundReceived.name,
-  data: { from, messageSid: `SM-${from}-${code ?? 'text'}`, code, keyword },
+  data: {
+    from,
+    messageSid: `SM-${from}-${code ?? 'text'}`,
+    code,
+    keyword,
+    argument: null,
+  },
 });
 
 const reply = (from: PhoneNumber, attempt: number, code: string | null) => ({
@@ -48,6 +54,7 @@ const reply = (from: PhoneNumber, attempt: number, code: string | null) => ({
       messageSid: `SM-reply-${from}-${attempt}`,
       code,
       keyword: null,
+      argument: null,
     },
   }),
 });
@@ -264,6 +271,7 @@ describe('handleUnknownSmsSignup against the database', () => {
             messageSid: 'SM-bad',
             code: null,
             keyword: 'join',
+            argument: null,
           },
         },
       ],

@@ -1,4 +1,5 @@
 import { RejectionReason } from '@op/core/decisions';
+import { SMS_KEYWORDS } from '@op/core/sms';
 import { z } from 'zod';
 
 // Mirrors the db `moderation_item_type` enum values; kept as a plain string
@@ -207,7 +208,8 @@ export const Events = {
       from: z.string(),
       messageSid: z.string(),
       code: z.string().nullable(),
-      keyword: z.enum(['join']).nullable(),
+      keyword: z.enum(SMS_KEYWORDS).nullable(),
+      argument: z.string().nullable().default(null),
     }),
   },
 } as const;

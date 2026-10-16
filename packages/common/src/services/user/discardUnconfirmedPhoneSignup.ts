@@ -1,4 +1,4 @@
-import { and, db, eq, isNull, lte, or } from '@op/db/client';
+import { and, db, eq, isNull, lte, or, sql } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { alias } from 'drizzle-orm/pg-core';
@@ -37,7 +37,10 @@ export const discardUnconfirmedPhoneSignup = async ({
         isNull(authUsers.phoneConfirmedAt),
         or(
           isNull(authUsers.confirmationSentAt),
-          lte(authUsers.confirmationSentAt, codeSentNoLaterThan),
+          lte(
+            sql`date_trunc('milliseconds', ${authUsers.confirmationSentAt})`,
+            sql`${codeSentNoLaterThan.toISOString()}::timestamptz`,
+          ),
         ),
       ),
     )
