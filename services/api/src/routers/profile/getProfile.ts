@@ -21,6 +21,8 @@ export const getProfileRouter = router({
         .extend({
           types: z.array(z.enum(EntityType)).optional(),
           orderBy: z.enum(['createdAt', 'updatedAt', 'name']).optional(),
+          focusAreaIds: z.array(z.uuid()).max(50).optional(),
+          strategyIds: z.array(z.uuid()).max(50).optional(),
         })
         .optional(),
     )
@@ -32,6 +34,8 @@ export const getProfileRouter = router({
         orderBy,
         dir,
         types,
+        focusAreaIds,
+        strategyIds,
       } = input ?? {};
       const { items, next } = await listProfiles({
         cursor,
@@ -39,6 +43,8 @@ export const getProfileRouter = router({
         orderBy,
         dir,
         types,
+        focusAreaIds,
+        strategyIds,
       });
 
       return {

@@ -278,7 +278,19 @@
     "accountAvatarAlt": "User avatar",
     "accountDeletedTitle": "Account Deleted",
     "accountDeletedBody": "{profileName} has been deleted. All associated data have been permanently removed.",
-    "deleteAccountError": "Failed to delete account"
+    "deleteAccountError": "Failed to delete account",
+    "directorySubtitle": "Discover all of the organizations who are part of Common.",
+    "allFocusAreasOption": "All focus areas",
+    "focusAreaFilterLabel": "Filter by focus area",
+    "allStrategiesOption": "All strategies",
+    "strategyFilterLabel": "Filter by strategy",
+    "sortLabel": "Sort organizations",
+    "sortNewest": "Newest",
+    "sortOldest": "Oldest",
+    "sortName": "Name (A–Z)",
+    "directoryLoadError": "Unable to load organizations.",
+    "directoryEmpty": "No organizations match these filters.",
+    "directoryResultCount": "{count, plural, one {Showing # organization} other {Showing # organizations}}"
   },
   "profile": {
     "aboutTab": "About",
