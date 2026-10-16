@@ -58,11 +58,11 @@ describe('handleSmsInfoCommand against the database', () => {
 
     expect(result).toEqual({ message: 'info sent' });
     expect(recordedSms[0]!.body).toBe(
-      `102: "Cleveland Ave protected bike lane" ($310,000). A curb-protected lane between Morse Rd and Innis Ave. Text VOTE ${slug} to start your ballot.`,
+      '102: "Cleveland Ave protected bike lane" ($310,000). A curb-protected lane between Morse Rd and Innis Ave.',
     );
   });
 
-  it('given a code no proposal has, then the member is told and pointed at PROPOSALS', async ({
+  it('given a code no proposal has, then the member is told which decision has no such code', async ({
     task,
     onTestFinished,
   }) => {
@@ -82,7 +82,9 @@ describe('handleSmsInfoCommand against the database', () => {
     });
 
     expect(result).toEqual({ message: 'proposal not found' });
-    expect(recordedSms[0]!.body).toContain(`PROPOSALS ${slug}`);
+    expect(recordedSms[0]!.body).toMatch(
+      /^No proposal with code 999 in ".+"\.$/,
+    );
   });
 
   it('given a decision whose codes have passed 9999 (planted directly, no service issues that many), when a member texts INFO with the slug and a five-digit code, then they get that proposal', async ({
@@ -110,7 +112,7 @@ describe('handleSmsInfoCommand against the database', () => {
 
     expect(result).toEqual({ message: 'info sent' });
     expect(recordedSms[0]!.body).toBe(
-      `10001: "Cleveland Ave protected bike lane" ($310,000). Text VOTE ${slug} to start your ballot.`,
+      '10001: "Cleveland Ave protected bike lane" ($310,000).',
     );
   });
 });
