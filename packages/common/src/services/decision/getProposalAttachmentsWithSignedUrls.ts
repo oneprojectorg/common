@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 
-import { signStorageDownloadUrl } from '../../utils/signStorageDownloadUrl';
+import { signStorageDownloadUrlOrNull } from '../../utils/signStorageDownloadUrl';
 import {
   type ProposalAttachment,
   proposalAttachmentSchema,
@@ -34,10 +34,11 @@ export async function getProposalAttachmentsWithSignedUrls(
         return { ...join, attachment: { ...join.attachment, url: undefined } };
       }
       // 4-hour TTL — the review pane re-fetches on each open
-      const url = await signStorageDownloadUrl({
-        storagePath,
-        ttlSeconds: 60 * 60 * 4,
-      });
+      const url =
+        (await signStorageDownloadUrlOrNull({
+          storagePath,
+          ttlSeconds: 60 * 60 * 4,
+        })) ?? undefined;
       return { ...join, attachment: { ...join.attachment, url } };
     }),
   );

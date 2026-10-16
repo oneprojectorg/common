@@ -7,14 +7,24 @@ import {
   individuals,
   postReactions,
   posts,
+  processInstances,
+  ProposalStatus,
   profiles,
   proposals,
   users,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
+import pMap from 'p-map';
 
 import { NotFoundError } from '../../utils';
-import { PERSONAL_DATA_EXPORT_MAX_ROWS_PER_SECTION } from './constants';
+import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
+import { parseProposalData } from '../decision/proposalDataSchema';
+import { buildProposalListPreview } from '../decision/proposalListPreview';
+import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
+import {
+  PERSONAL_DATA_EXPORT_MAX_ROWS_PER_SECTION,
+  PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY,
+} from './constants';
 import type { PersonalDataExportSection } from './schemas';
 
 // Personal profile only: org profiles are shared, so their rows have no
@@ -233,8 +243,10 @@ const whereSubmittedBySubject = (profileId: string) =>
     isNull(proposals.moderationDetachedAt),
   );
 
-const readProposals = (profileId: string) =>
-  collectSection({
+// The body lives in the collab document, and `proposalData` keeps
+// creation-time title and budget, so both are resolved from the document.
+const readProposals = async (profileId: string) => {
+  const submitted = await collectSection({
     section: 'proposals',
     read: (limit) =>
       db
@@ -246,12 +258,75 @@ const readProposals = (profileId: string) =>
           visibility: proposals.visibility,
           createdAt: proposals.createdAt,
           updatedAt: proposals.updatedAt,
+          instanceData: processInstances.instanceData,
+          processId: processInstances.processId,
         })
         .from(proposals)
+        .innerJoin(
+          processInstances,
+          eq(processInstances.id, proposals.processInstanceId),
+        )
         .where(whereSubmittedBySubject(profileId))
         .orderBy(asc(proposals.createdAt), asc(proposals.id))
         .limit(limit),
   });
+
+  const instances = new Map(
+    submitted.rows.map(({ processInstanceId, instanceData, processId }) => [
+      processInstanceId,
+      { instanceData, processId },
+    ]),
+  );
+  const templates = new Map(
+    await pMap(
+      instances,
+      async ([instanceId, { instanceData, processId }]) =>
+        [
+          instanceId,
+          await resolveProposalTemplate(
+            instanceData as Record<string, unknown> | null,
+            processId,
+          ),
+        ] as const,
+      { concurrency: PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY },
+    ),
+  );
+
+  const documents = await getProposalDocumentsContent(
+    submitted.rows.map((row) => ({
+      id: row.id,
+      proposalData: row.proposalData,
+      proposalTemplate: templates.get(row.processInstanceId),
+      collaborationDocVersionId:
+        row.status === ProposalStatus.DRAFT
+          ? undefined
+          : parseProposalData(row.proposalData).collaborationDocVersionId,
+    })),
+    // An export that drops a body silently is incomplete, so mark it.
+    { onFetchError: 'unavailable' },
+  );
+
+  return {
+    ...submitted,
+    rows: submitted.rows.map(
+      ({ instanceData, processId, proposalData, ...row }) => {
+        const snapshot = parseProposalData(proposalData);
+        const document = documents.get(row.id) ?? null;
+        const { systemFieldOverrides } = buildProposalListPreview({
+          documentContent: document ?? undefined,
+          proposalTemplate: templates.get(row.processInstanceId) ?? null,
+          existingBudget: snapshot.budget,
+        });
+
+        return {
+          ...row,
+          proposalData: { ...snapshot, ...systemFieldOverrides },
+          document,
+        };
+      },
+    ),
+  };
+};
 
 const readAttachments = (profileId: string) =>
   collectSection({

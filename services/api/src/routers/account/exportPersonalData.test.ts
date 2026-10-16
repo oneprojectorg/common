@@ -1,10 +1,13 @@
-import { collectPersonalData } from '@op/common';
+import { mockCollab, textFragment } from '@op/collab/testing';
+import { collectPersonalData, parseProposalData } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   customFormSubmissions,
   customForms,
   posts,
+  ProposalStatus,
+  proposals,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -173,6 +176,121 @@ describe.concurrent('collectPersonalData', () => {
 
     expect(exportedIds).toContain(mine.id);
     expect(exportedIds).not.toContain(theirs.id);
+  });
+
+  it('holds the pinned document text and its title and budget, over the creation-time snapshot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'budget', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          budget: {
+            type: 'object',
+            title: 'Budget',
+            'x-format': 'money',
+            properties: {
+              amount: { type: 'number' },
+              currency: { type: 'string', default: 'USD' },
+            },
+          },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+    const subject = await createParticipant(
+      testData,
+      setup.organization,
+      setup.instance.profileId,
+    );
+
+    const proposal = await testData.createProposal({
+      userEmail: subject.email,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Stale Title' },
+    });
+
+    const proposalData = parseProposalData(proposal.proposalData);
+    const { collaborationDocId } = proposalData;
+
+    if (!collaborationDocId) {
+      throw new Error('Test setup: proposal has no collaboration document');
+    }
+
+    const summary = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Pinned body' }] },
+      ],
+    };
+
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Live Title'),
+      summary: textFragment('Live body'),
+    });
+    mockCollab.setVersionedDocFragmentResponses(collaborationDocId, 2, {
+      title: textFragment('Pinned Title'),
+      budget: textFragment('{"amount":500,"currency":"EUR"}'),
+      summary,
+    });
+
+    await db
+      .update(proposals)
+      .set({
+        status: ProposalStatus.SUBMITTED,
+        proposalData: { ...proposalData, collaborationDocVersionId: 2 },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    const file = await collectPersonalData({ authUserId: subject.authUserId });
+
+    const [exported] = file.proposals;
+
+    expect(exported?.proposalData).toMatchObject({
+      title: 'Pinned Title',
+      budget: { amount: 500, currency: 'EUR' },
+    });
+    expect(exported?.document).toEqual({
+      type: 'json',
+      fragments: expect.objectContaining({ summary }),
+    });
+  });
+
+  it('marks a proposal document it could not fetch as unavailable rather than dropping it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const subject = await createParticipant(
+      testData,
+      setup.organization,
+      setup.instance.profileId,
+    );
+
+    // No mocked response: the collab server answers 404.
+    await testData.createProposal({
+      userEmail: subject.email,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Missing Doc' },
+    });
+
+    const file = await collectPersonalData({ authUserId: subject.authUserId });
+
+    expect(file.proposals[0]?.document).toEqual({ type: 'unavailable' });
   });
 
   it('reaches submissions filed against the subject’s own proposals, and stops there', async ({

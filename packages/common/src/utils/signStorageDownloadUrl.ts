@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from './error';
@@ -31,4 +32,24 @@ export const signStorageDownloadUrl = async ({
   }
 
   return data.signedUrl;
+};
+
+// Null, not a throw: a missing link degrades one attachment, not the whole read.
+export const signStorageDownloadUrlOrNull = async ({
+  storagePath,
+  ttlSeconds,
+}: {
+  storagePath: string;
+  ttlSeconds: number;
+}): Promise<string | null> => {
+  try {
+    return await signStorageDownloadUrl({ storagePath, ttlSeconds });
+  } catch (error) {
+    if (error instanceof CommonError) {
+      // No path: upload paths keep the user's file name.
+      logger.warn('Could not sign storage download URL', { error });
+      return null;
+    }
+    throw error;
+  }
 };

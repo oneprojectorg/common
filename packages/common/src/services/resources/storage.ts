@@ -2,7 +2,7 @@ import { cache, invalidate } from '@op/cache';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from '../../utils/error';
-import { signStorageDownloadUrl } from '../../utils/signStorageDownloadUrl';
+import { signStorageDownloadUrlOrNull } from '../../utils/signStorageDownloadUrl';
 import { signStorageUploadUrl } from '../../utils/signStorageUploadUrl';
 import { ASSETS_BUCKET } from '../../utils/storage';
 import { resourcePathPrefix } from './constants';
@@ -34,28 +34,17 @@ export const signResourceUploadUrl = (input: {
     fileName: input.fileName,
   });
 
-// Null, not a throw: a list view degrades to a missing link rather than failing.
-const signOrNull = async (
-  filePath: string,
-  ttlSeconds: number,
-): Promise<string | null> => {
-  try {
-    return await signStorageDownloadUrl({ storagePath: filePath, ttlSeconds });
-  } catch (error) {
-    if (error instanceof CommonError) {
-      return null;
-    }
-    throw error;
-  }
-};
-
 export const getResourceSignedUrl = async (
   filePath: string,
 ): Promise<string | null> => {
   return cache({
     type: 'resourceSignedUrl',
     params: [filePath],
-    fetch: () => signOrNull(filePath, SIGNED_URL_TTL_SECONDS),
+    fetch: () =>
+      signStorageDownloadUrlOrNull({
+        storagePath: filePath,
+        ttlSeconds: SIGNED_URL_TTL_SECONDS,
+      }),
     options: {
       ttl: SIGNED_URL_CACHE_TTL_MS,
     },
@@ -74,7 +63,10 @@ const EXTERNAL_SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
 export const getExternalResourceSignedUrl = (
   filePath: string,
 ): Promise<string | null> =>
-  signOrNull(filePath, EXTERNAL_SIGNED_URL_TTL_SECONDS);
+  signStorageDownloadUrlOrNull({
+    storagePath: filePath,
+    ttlSeconds: EXTERNAL_SIGNED_URL_TTL_SECONDS,
+  });
 
 export const deleteResourceObject = async (filePath: string): Promise<void> => {
   const sb = supabase();

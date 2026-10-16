@@ -1,11 +1,19 @@
+import { logger } from '@op/logging';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CommonError } from './error';
-import { signStorageDownloadUrl } from './signStorageDownloadUrl';
+import {
+  signStorageDownloadUrl,
+  signStorageDownloadUrlOrNull,
+} from './signStorageDownloadUrl';
 
 const storage = vi.hoisted(() => ({
   from: vi.fn(),
   createSignedUrl: vi.fn(),
+}));
+
+vi.mock('@op/logging', () => ({
+  logger: { warn: vi.fn() },
 }));
 
 vi.mock('@op/supabase/server', () => ({
@@ -78,5 +86,54 @@ describe('signStorageDownloadUrl', () => {
     await expect(
       signStorageDownloadUrl({ storagePath: 'missing', ttlSeconds: 60 }),
     ).rejects.toThrow(CommonError);
+  });
+});
+
+describe('signStorageDownloadUrlOrNull', () => {
+  it('given storage signs the path, when signing, then it returns the signed URL', async () => {
+    storage.createSignedUrl.mockResolvedValue({
+      data: { signedUrl: 'https://storage.example/c?token=1' },
+      error: null,
+    });
+
+    await expect(
+      signStorageDownloadUrlOrNull({ storagePath: 'file.pdf', ttlSeconds: 60 }),
+    ).resolves.toBe('https://storage.example/c?token=1');
+  });
+
+  it('given storage reports an error, when signing, then it returns null instead of throwing', async () => {
+    storage.createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    await expect(
+      signStorageDownloadUrlOrNull({ storagePath: 'missing', ttlSeconds: 60 }),
+    ).resolves.toBeNull();
+  });
+
+  it('given signing fails, when it logs the failure, then the log leaves out the user’s file name', async () => {
+    storage.createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    await signStorageDownloadUrlOrNull({
+      storagePath: 'proposals/1/Jane_Doe_application.pdf',
+      ttlSeconds: 60,
+    });
+
+    expect(logger.warn).toHaveBeenCalledOnce();
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain(
+      'Jane_Doe',
+    );
+  });
+
+  it('given the storage client itself fails, when signing, then the error propagates', async () => {
+    storage.createSignedUrl.mockRejectedValue(new TypeError('fetch failed'));
+
+    await expect(
+      signStorageDownloadUrlOrNull({ storagePath: 'file.pdf', ttlSeconds: 60 }),
+    ).rejects.toThrow(TypeError);
   });
 });
