@@ -10,7 +10,7 @@ import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { signStorageDownloadUrl } from '../../utils/signStorageDownloadUrl';
+import { signStorageDownloadUrlOrNull } from '../../utils/signStorageDownloadUrl';
 import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import { generateProposalHtml } from './generateProposalHtml';
@@ -205,10 +205,11 @@ export const getProposal = async ({
           return pa;
         }
 
-        const url = await signStorageDownloadUrl({
-          storagePath,
-          ttlSeconds: 60 * 60 * 24,
-        });
+        const url =
+          (await signStorageDownloadUrlOrNull({
+            storagePath,
+            ttlSeconds: 60 * 60 * 24,
+          })) ?? undefined;
 
         return {
           ...pa,

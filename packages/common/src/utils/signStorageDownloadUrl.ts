@@ -32,3 +32,21 @@ export const signStorageDownloadUrl = async ({
 
   return data.signedUrl;
 };
+
+// Null, not a throw: a missing link degrades one attachment, not the whole read.
+export const signStorageDownloadUrlOrNull = async ({
+  storagePath,
+  ttlSeconds,
+}: {
+  storagePath: string;
+  ttlSeconds: number;
+}): Promise<string | null> => {
+  try {
+    return await signStorageDownloadUrl({ storagePath, ttlSeconds });
+  } catch (error) {
+    if (error instanceof CommonError) {
+      return null;
+    }
+    throw error;
+  }
+};

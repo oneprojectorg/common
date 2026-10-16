@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CommonError } from './error';
-import { signStorageDownloadUrl } from './signStorageDownloadUrl';
+import {
+  signStorageDownloadUrl,
+  signStorageDownloadUrlOrNull,
+} from './signStorageDownloadUrl';
 
 const storage = vi.hoisted(() => ({
   from: vi.fn(),
@@ -78,5 +81,37 @@ describe('signStorageDownloadUrl', () => {
     await expect(
       signStorageDownloadUrl({ storagePath: 'missing', ttlSeconds: 60 }),
     ).rejects.toThrow(CommonError);
+  });
+});
+
+describe('signStorageDownloadUrlOrNull', () => {
+  it('given storage signs the path, when signing, then it returns the signed URL', async () => {
+    storage.createSignedUrl.mockResolvedValue({
+      data: { signedUrl: 'https://storage.example/c?token=1' },
+      error: null,
+    });
+
+    await expect(
+      signStorageDownloadUrlOrNull({ storagePath: 'file.pdf', ttlSeconds: 60 }),
+    ).resolves.toBe('https://storage.example/c?token=1');
+  });
+
+  it('given storage reports an error, when signing, then it returns null instead of throwing', async () => {
+    storage.createSignedUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'Object not found' },
+    });
+
+    await expect(
+      signStorageDownloadUrlOrNull({ storagePath: 'missing', ttlSeconds: 60 }),
+    ).resolves.toBeNull();
+  });
+
+  it('given the storage client itself fails, when signing, then the error propagates', async () => {
+    storage.createSignedUrl.mockRejectedValue(new TypeError('fetch failed'));
+
+    await expect(
+      signStorageDownloadUrlOrNull({ storagePath: 'file.pdf', ttlSeconds: 60 }),
+    ).rejects.toThrow(TypeError);
   });
 });
