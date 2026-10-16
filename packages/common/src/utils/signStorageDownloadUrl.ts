@@ -1,0 +1,34 @@
+import { createSBServiceClient } from '@op/supabase/server';
+
+import { CommonError } from './error';
+import { ASSETS_BUCKET } from './storage';
+
+// Service-role: private buckets have no storage policy. Authorize before calling.
+// Lives outside the utils barrel because `@op/supabase/server` is server-only.
+export const signStorageDownloadUrl = async ({
+  bucket = ASSETS_BUCKET,
+  storagePath,
+  ttlSeconds,
+  downloadAs,
+}: {
+  bucket?: string;
+  storagePath: string;
+  ttlSeconds: number;
+  // Forces `Content-Disposition: attachment` under this file name.
+  downloadAs?: string;
+}): Promise<string> => {
+  const supabase = createSBServiceClient();
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(
+      storagePath,
+      ttlSeconds,
+      downloadAs === undefined ? undefined : { download: downloadAs },
+    );
+
+  if (error || !data?.signedUrl) {
+    throw new CommonError(error?.message ?? 'Could not sign download URL');
+  }
+
+  return data.signedUrl;
+};
