@@ -1,25 +1,37 @@
 import { InngestTestEngine } from '@inngest/test';
 import { type PhoneNumber, parsePhoneNumber } from '@op/common';
+import type { SmsKeyword } from '@op/core/sms';
 import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsVotingFixture } from '../../../testing/smsVotingFixture';
-import { handleSmsInfoCommand } from './handleSmsInfoCommand';
+import { handleSMSCommand } from './handleSMSCommand';
 
 const NUMBERS = {
   member: '+15005550090',
   wrongCode: '+15005550091',
   fiveDigit: '+15005550093',
+  stranger: '+15005550094',
+  chatter: '+15005550095',
+  joiner: '+15005550096',
+  bareInfo: '+15005550097',
 } as const;
 
-const infoCommand = (from: PhoneNumber, argument: string) => ({
+const HELP_MESSAGE =
+  'Text INFO, the decision name and a proposal code, for example INFO columbus 102. Reply STOP to unsubscribe.';
+
+const inbound = (
+  from: PhoneNumber,
+  keyword: SmsKeyword | null,
+  argument: string | null,
+) => ({
   name: Events.smsInboundReceived.name,
   data: {
     from,
-    messageSid: `SM-info-${from}`,
+    messageSid: `SM-command-${from}`,
     code: null,
-    keyword: 'info' as const,
+    keyword,
     argument,
   },
 });
@@ -28,7 +40,7 @@ beforeEach(() => {
   resetRecordedSms();
 });
 
-describe('handleSmsInfoCommand against the database', () => {
+describe('handleSMSCommand against the database', () => {
   it('given a member texts INFO with the slug and a code, then they get the cost and summary of that proposal', async ({
     task,
     onTestFinished,
@@ -49,10 +61,10 @@ describe('handleSmsInfoCommand against the database', () => {
       ],
     });
     await fixture.addMember(instanceProfileId, member);
-    const t = new InngestTestEngine({ function: handleSmsInfoCommand });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [infoCommand(phone, `${slug} 102`)],
+      events: [inbound(phone, 'info', `${slug} 102`)],
     });
 
     expect(result).toEqual({ message: 'info sent' });
@@ -74,10 +86,10 @@ describe('handleSmsInfoCommand against the database', () => {
       proposalTitles: ['Fund the park'],
     });
     await fixture.addMember(instanceProfileId, member);
-    const t = new InngestTestEngine({ function: handleSmsInfoCommand });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [infoCommand(phone, `${slug} 999`)],
+      events: [inbound(phone, 'info', `${slug} 999`)],
     });
 
     expect(result).toEqual({ message: 'proposal not found' });
@@ -103,15 +115,78 @@ describe('handleSmsInfoCommand against the database', () => {
       ],
     });
     await fixture.addMember(instanceProfileId, member);
-    const t = new InngestTestEngine({ function: handleSmsInfoCommand });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [infoCommand(phone, `${slug} 10001`)],
+      events: [inbound(phone, 'info', `${slug} 10001`)],
     });
 
     expect(result).toEqual({ message: 'info sent' });
     expect(recordedSms[0]!.body).toBe(
       '10001: "Cleveland Ave protected bike lane" ($310,000).',
     );
+  });
+
+  it('given a member texts something that is not a command, then they get the help text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.chatter);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [inbound(phone, null, null)],
+    });
+
+    expect(result).toEqual({ message: 'help sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([HELP_MESSAGE]);
+  });
+
+  it('given a member texts INFO with no decision and code after it, then they get the help text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.bareInfo);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [inbound(phone, 'info', null)],
+    });
+
+    expect(result).toEqual({ message: 'help sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([HELP_MESSAGE]);
+  });
+
+  it('given a member texts JOIN, then nothing is sent because the signup function answers JOIN', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsVotingFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.joiner);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [inbound(phone, 'join', null)],
+    });
+
+    expect(result).toEqual({ message: 'join is handled by signup' });
+    expect(recordedSms).toEqual([]);
+  });
+
+  it('given a number with no account texts a command, then nothing is sent because the signup function owns unknown numbers', async () => {
+    const phone = parsePhoneNumber(NUMBERS.stranger);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [inbound(phone, 'info', 'columbus 102')],
+    });
+
+    expect(result).toEqual({ message: 'unknown number, skipped' });
+    expect(recordedSms).toEqual([]);
   });
 });
