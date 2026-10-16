@@ -5,6 +5,7 @@ import {
   areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
+  getPreviousReviewPhases,
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
   isReviewPhase,
@@ -480,5 +481,91 @@ describe('areCommentsAllowed', () => {
     expect(areCommentsAllowed({ phases: [], currentPhaseId: 'open' })).toBe(
       true,
     );
+  });
+});
+
+describe('getPreviousReviewPhases', () => {
+  const instanceData = {
+    phases: [
+      { phaseId: 'submission', name: 'Submission', rules: {} },
+      {
+        phaseId: 'feasibility',
+        name: 'Feasibility Review',
+        rules: { reviews: { submit: true } },
+      },
+      {
+        phaseId: 'legacy',
+        rules: { proposals: { review: true } },
+      },
+      {
+        phaseId: 'open',
+        name: 'Open Review',
+        rules: { reviews: { submit: true, openReviews: true } },
+      },
+      {
+        phaseId: 'equity',
+        name: 'Impact & Equity',
+        rules: { reviews: { submit: true } },
+      },
+      {
+        phaseId: 'voting',
+        name: 'Voting',
+        rules: { voting: { submit: true } },
+      },
+    ],
+  };
+
+  it('lists every earlier review phase in phase order when not filtering by openReviews', () => {
+    expect(
+      getPreviousReviewPhases({
+        instanceData,
+        phaseId: 'equity',
+        openReviewsOnly: false,
+      }),
+    ).toEqual([
+      { id: 'feasibility', name: 'Feasibility Review' },
+      { id: 'legacy', name: 'legacy' },
+      { id: 'open', name: 'Open Review' },
+    ]);
+  });
+
+  it('keeps only the earlier phases with openReviews when filtering', () => {
+    expect(
+      getPreviousReviewPhases({
+        instanceData,
+        phaseId: 'equity',
+        openReviewsOnly: true,
+      }),
+    ).toEqual([{ id: 'open', name: 'Open Review' }]);
+  });
+
+  it('excludes the phase itself and the phases after it', () => {
+    expect(
+      getPreviousReviewPhases({
+        instanceData,
+        phaseId: 'open',
+        openReviewsOnly: false,
+      }),
+    ).toEqual([
+      { id: 'feasibility', name: 'Feasibility Review' },
+      { id: 'legacy', name: 'legacy' },
+    ]);
+  });
+
+  it('is empty for the first phase and for an unknown phase', () => {
+    expect(
+      getPreviousReviewPhases({
+        instanceData,
+        phaseId: 'submission',
+        openReviewsOnly: false,
+      }),
+    ).toEqual([]);
+    expect(
+      getPreviousReviewPhases({
+        instanceData,
+        phaseId: 'missing',
+        openReviewsOnly: false,
+      }),
+    ).toEqual([]);
   });
 });
