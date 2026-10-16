@@ -15,6 +15,7 @@ import { screens } from '@op/styles/constants';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from './selection/AdvanceToggleButton';
+import { ProposalRowMenu } from './selection/ProposalRowMenu';
 import { SelectionCard } from './selection/SelectionCard';
 import { SelectionCategoryChips } from './selection/SelectionCategoryChips';
 import { resolvePresentationFields } from './selection/proposalPresentation';
@@ -28,6 +29,8 @@ interface SelectableProposalsTableProps {
   showVotes?: boolean;
   /** Show the budget column. False when the proposal template collects no budget. */
   showBudget?: boolean;
+  /** Offer Edit in the row menu. Proposals can't be edited in the results phase. */
+  canEditProposals?: boolean;
 }
 
 export const SelectableProposalsTable = ({
@@ -37,6 +40,7 @@ export const SelectableProposalsTable = ({
   getProposalHref,
   showVotes = false,
   showBudget = true,
+  canEditProposals = true,
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -84,6 +88,11 @@ export const SelectableProposalsTable = ({
               {t('decisions.proposals.selectProposalLabel')}
             </span>
           </TableHead>
+          <TableHead className="w-11">
+            <span className="sr-only">
+              {t('decisions.proposals.proposalOptionsLabel')}
+            </span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -96,7 +105,7 @@ export const SelectableProposalsTable = ({
           const href = getProposalHref?.(proposal);
 
           return (
-            <TableRow key={proposal.id}>
+            <TableRow key={proposal.id} className="group">
               <TableCell>
                 <div className="flex flex-col">
                   {href ? (
@@ -145,6 +154,13 @@ export const SelectableProposalsTable = ({
                   title={fields.title}
                   onPress={() => onToggle(proposal.id)}
                   className="ms-auto"
+                />
+              </TableCell>
+              <TableCell>
+                <ProposalRowMenu
+                  proposal={proposal}
+                  proposalHref={canEditProposals ? href : undefined}
+                  isSelected={isSelected}
                 />
               </TableCell>
             </TableRow>

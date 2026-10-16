@@ -3,6 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import type { ComponentProps } from 'react';
 import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,11 +27,13 @@ export function ProposalCardMenu({
   proposal,
   editHref,
   canManage = false,
+  triggerProps = { variant: 'ghost', size: 'icon-xs' },
 }: {
   proposal: Proposal;
   /** Enables the Edit item. Drafts keep their Edit/Delete buttons instead. */
   editHref?: string;
   canManage?: boolean;
+  triggerProps?: ComponentProps<typeof ProposalOptionsMenu>['triggerProps'];
 }) {
   const t = useTranslations();
   // Owned above the grid, so a list refresh that re-parents this card can't
@@ -44,9 +47,7 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
-  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
-  const canMerge =
-    mergeEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
+  const canCurate = canManage && proposal.status !== ProposalStatus.DRAFT;
 
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
   // Shown once submitted; toggles to Undo once rejected, so it stays put.
@@ -66,7 +67,7 @@ export function ProposalCardMenu({
     const items: ProposalOptionsMenuItem[] = [];
 
     // Merge leads, per Figma 15311:9078.
-    if (canMerge) {
+    if (canCurate) {
       items.push(
         buildMergeMenuItem({
           isDisabled: isLoading,
@@ -145,7 +146,7 @@ export function ProposalCardMenu({
     <ProposalOptionsMenu
       groups={[menuItems]}
       label={t('decisions.proposals.proposalOptionsLabel')}
-      triggerProps={{ variant: 'ghost', size: 'icon-xs' }}
+      triggerProps={triggerProps}
     />
   );
 }

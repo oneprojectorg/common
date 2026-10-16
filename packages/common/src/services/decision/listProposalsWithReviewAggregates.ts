@@ -6,7 +6,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils';
@@ -25,6 +25,7 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
+import { getInstancePhases, isLastPhase } from './schemas/instanceData';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
@@ -86,32 +87,13 @@ export async function listProposalsWithReviewAggregates(
 
   // Filtered mode gates on the raw `phaseId`, not the effective one: a reviewer
   // must name the phase. The gate races the phase lookup, which never throws.
-  let accessCheck: Promise<unknown>;
   if ('proposalIds' in input) {
-    accessCheck = assertCanReadPhaseReviews({
-      instance,
-      phaseId: input.phaseId,
-      user,
-    });
-  } else {
-    if (!instance.profileId) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
+    const [phaseProposalIds, proposalTemplate] = await Promise.all([
+      getProposalIdsForPhase({ instance, phaseId }),
+      resolveProposalTemplate(instance.instanceData, instance.processId),
+      assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user }),
+    ]);
 
-    accessCheck = assertProfileAccess({
-      user,
-      profileId: instance.profileId,
-      permissions: { decisions: permission.ADMIN },
-    });
-  }
-
-  const [phaseProposalIds, proposalTemplate] = await Promise.all([
-    getProposalIdsForPhase({ instance, phaseId }),
-    resolveProposalTemplate(instance.instanceData, instance.processId),
-    accessCheck,
-  ]);
-
-  if ('proposalIds' in input) {
     return listProposalsFiltered({
       proposalIds: input.proposalIds,
       phaseProposalIds,
@@ -123,9 +105,30 @@ export async function listProposalsWithReviewAggregates(
     });
   }
 
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const [phaseProposalIds, proposalTemplate, roles] = await Promise.all([
+    getProposalIdsForPhase({ instance, phaseId }),
+    resolveProposalTemplate(instance.instanceData, instance.processId),
+    assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: { decisions: permission.ADMIN },
+    }),
+  ]);
+
   return listPhaseProposalsWithAggregates({
     processInstanceId,
     phaseId,
+    // Mirrors `updateProposal`, which also refuses every edit in the results phase.
+    isEditable:
+      checkPermission({ decisions: permission.UPDATE }, roles) &&
+      !isLastPhase(
+        instance.currentStateId,
+        getInstancePhases(instance.instanceData),
+      ),
     phaseProposalIds,
     scoredCriterionKeys,
     rubricTemplate,
@@ -206,6 +209,7 @@ async function listProposalsFiltered({
 async function listPhaseProposalsWithAggregates({
   processInstanceId,
   phaseId,
+  isEditable,
   phaseProposalIds,
   scoredCriterionKeys,
   rubricTemplate,
@@ -213,6 +217,7 @@ async function listPhaseProposalsWithAggregates({
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
+  isEditable: boolean;
   phaseProposalIds: string[];
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
@@ -250,7 +255,7 @@ async function listPhaseProposalsWithAggregates({
     ]);
 
   const items = rows.map((proposal) => ({
-    proposal,
+    proposal: { ...proposal, isEditable },
     aggregates: getComputedReviewAggregates({
       reviewAssignments: proposal.reviewAssignments,
       scoredCriterionKeys,

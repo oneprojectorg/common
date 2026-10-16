@@ -26,6 +26,7 @@ import { LuRefreshCcw } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from '../selection/AdvanceToggleButton';
+import { ProposalRowMenu } from '../selection/ProposalRowMenu';
 import { SelectionCard } from '../selection/SelectionCard';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 
@@ -108,6 +109,11 @@ export function ReviewSelectionTable({
           <TableHead scope="col" className="w-28">
             <span className="sr-only">{t('decisions.advanceAction')}</span>
           </TableHead>
+          <TableHead scope="col" className="w-11">
+            <span className="sr-only">
+              {t('decisions.proposals.proposalOptionsLabel')}
+            </span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -121,6 +127,7 @@ export function ReviewSelectionTable({
             <TableRow
               key={item.proposal.id}
               data-state={advancing ? 'selected' : undefined}
+              className="group"
             >
               {/* The cell that names the row, so grid navigation can announce
                   which proposal a value belongs to. */}
@@ -183,6 +190,13 @@ export function ReviewSelectionTable({
                   onPress={() => onAdvance(item.proposal.id)}
                   title={title}
                   className="w-28 justify-center"
+                />
+              </TableCell>
+              <TableCell>
+                <ProposalRowMenu
+                  proposal={item.proposal}
+                  proposalHref={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}`}
+                  isSelected={advancing}
                 />
               </TableCell>
             </TableRow>

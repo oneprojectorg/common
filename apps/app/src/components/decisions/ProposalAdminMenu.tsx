@@ -81,7 +81,6 @@ function ProposalAdminMenuItems({
       });
     },
   });
-  const mergeEnabled = useFeatureFlag('merge-proposals') ?? false;
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
   // The parent gate already requires admin + non-draft, so the slot always
   // shows; it just toggles to Undo once rejected.
@@ -90,15 +89,13 @@ function ProposalAdminMenuItems({
     useProposalRejectionActions(proposal);
 
   // A superseded proposal leaves every listing, so its own page is the only
-  // surface that can offer the undo. Gated with the item it feeds.
+  // surface that can offer the undo.
   const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
     { sourceProposalId: proposal.id },
-    { enabled: mergeEnabled },
   );
   const supersededBy = mergedAway?.items[0];
 
   const triggerLabel = t('decisions.proposals.proposalOptionsLabel');
-  const showMergeDialog = mergeEnabled && !supersededBy;
 
   const handleUnmerge = () =>
     unmergeMutation.mutate(
@@ -131,18 +128,16 @@ function ProposalAdminMenuItems({
     isAdvancing;
 
   // Merge leads, matching the card kebab (Figma 15311:9078).
-  const mergeItem = mergeEnabled
-    ? buildMergeMenuItem({
-        isDisabled: isBusy,
-        mergeLabel: t('decisions.proposals.mergeProposalAction'),
-        onMerge: () => setIsMergeModalOpen(true),
-        unmerge: {
-          isSuperseded: Boolean(supersededBy),
-          label: t('decisions.proposals.unmergeAction'),
-          onAction: handleUnmerge,
-        },
-      })
-    : null;
+  const mergeItem = buildMergeMenuItem({
+    isDisabled: isBusy,
+    mergeLabel: t('decisions.proposals.mergeProposalAction'),
+    onMerge: () => setIsMergeModalOpen(true),
+    unmerge: {
+      isSuperseded: Boolean(supersededBy),
+      label: t('decisions.proposals.unmergeAction'),
+      onAction: handleUnmerge,
+    },
+  });
 
   const advanceMenuItem = advanceItem(isBusy);
 
@@ -161,7 +156,7 @@ function ProposalAdminMenuItems({
       : null;
 
   const items: ProposalOptionsMenuItem[] = [
-    ...(mergeItem ? [mergeItem] : []),
+    mergeItem,
     ...(rejectItem ? [rejectItem] : []),
     ...(advanceMenuItem ? [advanceMenuItem] : []),
     {
@@ -199,7 +194,7 @@ function ProposalAdminMenuItems({
         onOpenChange={setIsDeleteModalOpen}
         onDeleted={() => router.push(backHref)}
       />
-      {showMergeDialog ? (
+      {!supersededBy ? (
         <MergeProposalDialog
           proposal={proposal}
           open={isMergeModalOpen}

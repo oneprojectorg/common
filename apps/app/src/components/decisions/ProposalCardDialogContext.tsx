@@ -46,8 +46,11 @@ const ProposalCardDialogContext = createContext<ProposalCardDialogs | null>(
  * callbacks through all four would undo that.
  */
 export function ProposalCardDialogProvider({
+  mergePhaseId,
   children,
 }: {
+  /** Phase the merge dialog picks its target from. Defaults to the current phase. */
+  mergePhaseId?: string;
   children: ReactNode;
 }) {
   const merge = useHostedProposalDialog();
@@ -70,6 +73,7 @@ export function ProposalCardDialogProvider({
       {merge.proposal ? (
         <MergeProposalDialog
           proposal={merge.proposal}
+          phaseId={mergePhaseId}
           open={merge.isOpen}
           onOpenChange={merge.setIsOpen}
         />

@@ -29,6 +29,7 @@ import {
   ManualSelectionToolbar,
   type SelectionFilters,
 } from './ManualSelectionToolbar';
+import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { StandardSelectionFooter } from './StandardSelectionFooter';
 import { useManualSelection } from './useManualSelection';
@@ -104,6 +105,22 @@ export const ManualSelectionList = ({
       return next;
     });
   }, [candidates]);
+
+  // Unfiltered, the list is the whole pool, so a pick missing from it has left
+  // (merged or deleted) and would make the submit fail.
+  useEffect(() => {
+    if (!candidates || categoryId || candidatesQuery.isFetching) return;
+    const poolIds = new Set(candidates.map((p) => p.id));
+    if (selectedIds.some((id) => !poolIds.has(id))) {
+      setSelectedIds(selectedIds.filter((id) => poolIds.has(id)));
+    }
+  }, [
+    candidates,
+    categoryId,
+    candidatesQuery.isFetching,
+    selectedIds,
+    setSelectedIds,
+  ]);
 
   const selectedProposals = useMemo(
     () =>
@@ -262,67 +279,73 @@ export const ManualSelectionList = ({
   const showBudget = templateCollectsBudget(
     instance.instanceData?.proposalTemplate,
   );
-  const currentPhaseName =
-    instance.instanceData?.phases?.find(
-      (p) => p.phaseId === instance.currentStateId,
-    )?.name ?? '';
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhaseIndex = phases.findIndex(
+    (p) => p.phaseId === instance.currentStateId,
+  );
+  const currentPhaseName = phases[currentPhaseIndex]?.name ?? '';
+  // Candidates come from the previous phase, so merge targets do too.
+  const previousPhaseId = phases[currentPhaseIndex - 1]?.phaseId;
 
   return (
-    <div className="relative flex flex-col gap-6 pb-20">
-      <ManualSelectionToolbar
-        count={candidates.length}
-        categories={categories}
-        filters={toolbarFilters}
-        onChange={handleToolbarChange}
-        pinOffset={pinOffset}
-      />
+    <ProposalCardDialogProvider mergePhaseId={previousPhaseId}>
+      <div className="relative flex flex-col gap-6 pb-20">
+        <ManualSelectionToolbar
+          count={candidates.length}
+          categories={categories}
+          filters={toolbarFilters}
+          onChange={handleToolbarChange}
+          pinOffset={pinOffset}
+        />
 
-      {candidates.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LuLeaf className="size-6" />
-            </EmptyMedia>
-            <EmptyTitle>
-              {t('decisions.review.noProposalsMatchFilter')}
-            </EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <SelectableProposalsTable
-          proposals={candidates}
-          selectedIds={selectedIds}
-          onToggle={toggleProposal}
-          getProposalHref={(p) =>
-            `/decisions/${decisionSlug}/proposal/${p.profileId}`
-          }
-          showVotes={isFinalPhase}
-          showBudget={showBudget}
-        />
-      )}
+        {candidates.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuLeaf className="size-6" />
+              </EmptyMedia>
+              <EmptyTitle>
+                {t('decisions.review.noProposalsMatchFilter')}
+              </EmptyTitle>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <SelectableProposalsTable
+            proposals={candidates}
+            selectedIds={selectedIds}
+            onToggle={toggleProposal}
+            getProposalHref={(p) =>
+              `/decisions/${decisionSlug}/proposal/${p.profileId}`
+            }
+            showVotes={isFinalPhase}
+            showBudget={showBudget}
+            canEditProposals={!isFinalPhase}
+          />
+        )}
 
-      {isFinalPhase ? (
-        <FinalPhaseSelectionFooter
-          selectedProposals={selectedProposals}
-          numSelected={numSelected}
-          totalCandidates={totalCandidates}
-          awardsAmounts={showBudget}
-          isConfirmOpen={isConfirmOpen}
-          onConfirmOpenChange={handleConfirmDialogOpenChange}
-          onConfirm={handleConfirmSelection}
-          isSubmitting={submitMutation.isPending}
-        />
-      ) : (
-        <StandardSelectionFooter
-          selectedProposals={selectedProposals}
-          numSelected={numSelected}
-          phaseName={currentPhaseName}
-          isConfirmOpen={isConfirmOpen}
-          onConfirmOpenChange={handleConfirmDialogOpenChange}
-          onConfirm={() => handleConfirmSelection()}
-          isSubmitting={submitMutation.isPending}
-        />
-      )}
-    </div>
+        {isFinalPhase ? (
+          <FinalPhaseSelectionFooter
+            selectedProposals={selectedProposals}
+            numSelected={numSelected}
+            totalCandidates={totalCandidates}
+            awardsAmounts={showBudget}
+            isConfirmOpen={isConfirmOpen}
+            onConfirmOpenChange={handleConfirmDialogOpenChange}
+            onConfirm={handleConfirmSelection}
+            isSubmitting={submitMutation.isPending}
+          />
+        ) : (
+          <StandardSelectionFooter
+            selectedProposals={selectedProposals}
+            numSelected={numSelected}
+            phaseName={currentPhaseName}
+            isConfirmOpen={isConfirmOpen}
+            onConfirmOpenChange={handleConfirmDialogOpenChange}
+            onConfirm={() => handleConfirmSelection()}
+            isSubmitting={submitMutation.isPending}
+          />
+        )}
+      </div>
+    </ProposalCardDialogProvider>
   );
 };
