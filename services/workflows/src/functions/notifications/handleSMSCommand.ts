@@ -34,9 +34,13 @@ export const handleSMSCommand = inngest.createFunction(
   },
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
-    const { from, keyword, argument } = smsInboundReceived.schema.parse(
+    const { from, keyword, argument, code } = smsInboundReceived.schema.parse(
       event.data,
     );
+
+    if (code !== null) {
+      return { message: 'signup code, left to signup' };
+    }
 
     const parsedFrom = safeParsePhoneNumber(from);
 
