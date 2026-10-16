@@ -14,13 +14,17 @@ import {
   users,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
+import pMap from 'p-map';
 
 import { NotFoundError } from '../../utils';
 import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
 import { parseProposalData } from '../decision/proposalDataSchema';
 import { buildProposalListPreview } from '../decision/proposalListPreview';
 import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
-import { PERSONAL_DATA_EXPORT_MAX_ROWS_PER_SECTION } from './constants';
+import {
+  PERSONAL_DATA_EXPORT_MAX_ROWS_PER_SECTION,
+  PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY,
+} from './constants';
 import type { PersonalDataExportSection } from './schemas';
 
 // Personal profile only: org profiles are shared, so their rows have no
@@ -274,17 +278,17 @@ const readProposals = async (profileId: string) => {
     ]),
   );
   const templates = new Map(
-    await Promise.all(
-      [...instances].map(
-        async ([instanceId, { instanceData, processId }]) =>
-          [
-            instanceId,
-            await resolveProposalTemplate(
-              instanceData as Record<string, unknown> | null,
-              processId,
-            ),
-          ] as const,
-      ),
+    await pMap(
+      instances,
+      async ([instanceId, { instanceData, processId }]) =>
+        [
+          instanceId,
+          await resolveProposalTemplate(
+            instanceData as Record<string, unknown> | null,
+            processId,
+          ),
+        ] as const,
+      { concurrency: PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY },
     ),
   );
 
