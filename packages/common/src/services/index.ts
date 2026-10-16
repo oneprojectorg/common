@@ -4,6 +4,8 @@ export * from './moderation';
 export * from './terms';
 export * from './access';
 export * from './email';
+export * from './exports';
+export * from './personalDataExport';
 export * from './organization';
 export * from './platform';
 export * from './individual';

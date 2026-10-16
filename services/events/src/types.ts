@@ -46,6 +46,13 @@ export const Events = {
       format: z.enum(['csv']),
     }),
   },
+  personalDataExportRequested: {
+    name: 'user/personal-data-export-requested' as const,
+    schema: z.object({
+      exportId: z.string().uuid(),
+      userId: z.string().uuid(),
+    }),
+  },
   profileInviteSent: {
     name: 'profile/invites-sent' as const,
     schema: z.object({

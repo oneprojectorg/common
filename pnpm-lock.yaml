@@ -1635,9 +1635,6 @@ importers:
       '@op/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
-      '@op/cache':
-        specifier: workspace:*
-        version: link:../cache
       '@op/common':
         specifier: workspace:*
         version: link:../../packages/common

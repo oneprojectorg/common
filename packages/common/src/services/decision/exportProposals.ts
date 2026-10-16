@@ -1,4 +1,3 @@
-import { set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { Events, event } from '@op/events';
@@ -8,7 +7,8 @@ import { randomUUID } from 'crypto';
 
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { EXPORT_CACHE_TTL_SECONDS, exportStatusCacheKey } from './exports';
+import { seedExportRecord } from '../exports';
+import { exportStatusCacheKey } from './exports';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
@@ -63,18 +63,14 @@ export const exportProposals = async ({
   // requires `format`, so a partial record fails the first read instead of
   // answering it. This cache is the only store of export state — no table
   // stands behind it — so nothing else can supply what the seed omits.
-  await set(
-    exportStatusCacheKey(exportId),
-    {
-      exportId,
-      processInstanceId: input.processInstanceId,
-      userId: user.id,
-      format: input.format,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    },
-    EXPORT_CACHE_TTL_SECONDS,
-  );
+  await seedExportRecord(exportStatusCacheKey(exportId), {
+    exportId,
+    processInstanceId: input.processInstanceId,
+    userId: user.id,
+    format: input.format,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  });
 
   // Trigger workflow
   await event.send({

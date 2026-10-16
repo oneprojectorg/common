@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // what it hands onward — the job it asks for, and the record the first status
 // read will find.
 vi.mock('@op/cache', () => ({
-  set: vi.fn(),
+  setWithStatus: vi.fn(),
 }));
 
 vi.mock('@op/db/client', () => ({
@@ -17,7 +17,7 @@ vi.mock('../assert', () => ({
   assertProfileAccess: vi.fn(),
 }));
 
-import { set } from '@op/cache';
+import { setWithStatus } from '@op/cache';
 import { db } from '@op/db/client';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
@@ -34,6 +34,7 @@ const sendEvent = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(setWithStatus).mockResolvedValue({ status: 'ok' });
 
   vi.mocked(db.select).mockReturnValue({
     from: () => ({
@@ -81,7 +82,7 @@ describe('exportProposals request', () => {
 
 describe('exportProposals status record', () => {
   const seededRecord = (): Record<string, unknown> => {
-    const [, record] = vi.mocked(set).mock.calls[0] as [
+    const [, record] = vi.mocked(setWithStatus).mock.calls[0] as [
       string,
       Record<string, unknown>,
       number,
@@ -114,7 +115,10 @@ describe('exportProposals status record', () => {
   it('files the record under the id it hands back', async () => {
     const { exportId } = await requestExport();
 
-    const [key] = vi.mocked(set).mock.calls[0] as [string, ...unknown[]];
+    const [key] = vi.mocked(setWithStatus).mock.calls[0] as [
+      string,
+      ...unknown[],
+    ];
     const [payload] = sendEvent.mock.calls[0] as [
       { data: { exportId: string } },
     ];

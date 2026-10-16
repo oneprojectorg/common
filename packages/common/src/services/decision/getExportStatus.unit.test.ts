@@ -42,8 +42,8 @@ import {
   EXPORTS_BUCKET,
   EXPORT_CACHE_TTL_SECONDS,
   EXPORT_URL_TTL_SECONDS,
-  exportFilePath,
-} from './exports';
+} from '../exports';
+import { exportFilePath } from './exports';
 import type { ExportStatusData } from './getExportStatus';
 import { getExportStatus } from './getExportStatus';
 
