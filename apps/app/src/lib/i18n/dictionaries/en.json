@@ -5,6 +5,7 @@
   "Name": "Name",
   "Website": "Website",
   "Email": "Email",
+  "SMS": "SMS",
   "Select": "Select",
   "Back": "Back",
   "Privacy Policy": "Privacy Policy",
@@ -734,6 +735,23 @@
     "noAccessHint": "Contact the person who shared this link if you think this is a mistake.",
     "goToCommonAction": "Go to Common",
     "newTabHint": "(opens in a new tab)"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account and preferences",
+    "notificationsNav": "Notifications",
+    "notificationsHeading": "Email notifications",
+    "proposalsAndCommentsLabel": "Your proposals and comments",
+    "proposalsAndCommentsDescription": "Someone replies to you or comments on your proposal.",
+    "thingsYouFollowLabel": "Things you follow",
+    "thingsYouFollowDescription": "Updates from proposals and processes you follow.",
+    "processUpdatesLabel": "Process updates",
+    "processUpdatesDescription": "Phase changes, posts, and events for processes you’re part of.",
+    "relationshipRequestsLabel": "Relationship requests",
+    "relationshipRequestsDescription": "An organization asks to connect with one you manage.",
+    "savingStatus": "Saving…",
+    "savedStatus": "Saved",
+    "saveErrorStatus": "We could not save your change. Try again."
   },
   "decisions": {
     "processBuilder": {
