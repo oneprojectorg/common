@@ -386,13 +386,13 @@ export const relations = defineRelations(schema, (r) => ({
   /**
    * Process instance relations
    *
-   * stewardProfileId is nullable.
+   * stewardProfileId and processId are nullable.
    */
   processInstances: {
     process: r.one.decisionProcesses({
       from: r.processInstances.processId,
       to: r.decisionProcesses.id,
-      optional: false,
+      optional: true,
     }),
     profile: r.one.profiles({
       from: r.processInstances.profileId,
