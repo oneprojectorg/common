@@ -178,6 +178,24 @@ export function isPhaseSection(sectionId: string): boolean {
   return sectionId.startsWith('phase-');
 }
 
+// Helper to create a dynamic review phase section ID
+export function reviewPhaseToSectionId(phaseId: string): string {
+  return `reviewPhase-${phaseId}`;
+}
+
+// Helper to extract phaseId from a dynamic review phase section ID
+export function sectionIdToReviewPhaseId(sectionId: string): string | null {
+  if (sectionId.startsWith('reviewPhase-')) {
+    return sectionId.slice(12);
+  }
+  return null;
+}
+
+// Check if a section ID is a dynamic review phase section
+export function isReviewPhaseSection(sectionId: string): boolean {
+  return sectionId.startsWith('reviewPhase-');
+}
+
 const SECTION_ID_SET = new Set<string>(
   Object.values(SECTIONS_BY_STEP).flatMap((sections) =>
     sections.map((s) => s.id),
