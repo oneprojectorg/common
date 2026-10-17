@@ -1,4 +1,5 @@
 export { TEST_USER_DEFAULT_PASSWORD } from './constants';
+export { withoutTestTransactions } from './withoutTestTransactions';
 export {
   createIsolatedSession,
   createIsolatedTestClient,

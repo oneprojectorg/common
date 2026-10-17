@@ -1,5 +1,18 @@
-import { type SupabaseClient, createClient } from '@supabase/supabase-js';
-import { beforeAll, beforeEach, vi } from 'vitest';
+import { db, eq, inArray } from '@op/db/client';
+import { profiles, users } from '@op/db/schema';
+import {
+  afterTestTransaction,
+  inTestTransaction,
+  runInTestTransaction,
+} from '@op/db/test';
+import {
+  AuthError,
+  type SupabaseClient,
+  createClient,
+} from '@supabase/supabase-js';
+import { aroundEach, beforeAll, beforeEach, vi } from 'vitest';
+
+import './taskMeta';
 
 // Mocks a test asserts against live in `./mocks` — see ./mocks/README.md.
 
@@ -103,9 +116,51 @@ beforeAll(async () => {
   // Make test clients available globally
   supabaseTestClient = testSupabase;
   supabaseTestAdminClient = testSupabaseAdmin;
+  deferAuthDeletesPastTheRollback(testSupabaseAdmin);
 });
+
+const DEFERRED_DELETE = new AuthError(
+  'Deferred until the test transaction is rolled back',
+  202,
+  'deferred_delete',
+);
+
+const deferAuthDeletesPastTheRollback = (client: SupabaseClient) => {
+  const admin = client.auth.admin;
+  const deleteUser = admin.deleteUser.bind(admin);
+  admin.deleteUser = (id, shouldSoftDelete) =>
+    inTestTransaction()
+      ? afterTestTransaction(async () => {
+          const owned = await db
+            .select({ profileId: users.profileId })
+            .from(users)
+            .where(eq(users.authUserId, id));
+          await deleteUser(id, shouldSoftDelete);
+          const profileIds = owned.flatMap(({ profileId }) =>
+            profileId ? [profileId] : [],
+          );
+          if (profileIds.length > 0) {
+            await db.delete(profiles).where(inArray(profiles.id, profileIds));
+          }
+        }).then(() => ({ data: { user: null }, error: DEFERRED_DELETE }))
+      : deleteUser(id, shouldSoftDelete);
+};
 
 // Setup test environment for each test
 beforeEach(async () => {
   vi.clearAllMocks();
 });
+
+const TEST_TRANSACTION_TIMEOUT_MS = 60_000;
+
+if (process.env.TEST_DB_TRANSACTIONS !== 'off') {
+  aroundEach(async (runTest, _context, suite) => {
+    if (suite.file.meta.testTransactions === 'off') {
+      await runTest();
+      return;
+    }
+    await runInTestTransaction(async () => {
+      await runTest();
+    });
+  }, TEST_TRANSACTION_TIMEOUT_MS);
+}

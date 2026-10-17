@@ -1,6 +1,7 @@
 import {
   TestDecisionsDataManager,
   schemaWithPipeline,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
@@ -29,6 +30,8 @@ import {
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+withoutTestTransactions();
 
 const createCaller = createCallerFactory(appRouter);
 

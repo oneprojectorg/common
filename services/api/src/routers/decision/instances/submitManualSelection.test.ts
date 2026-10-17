@@ -2,6 +2,7 @@ import { getProposalsForPhase } from '@op/common';
 import {
   TestDecisionsDataManager,
   schemaWithoutPipeline,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import { db, desc, eq, inArray } from '@op/db/client';
 import {
@@ -30,6 +31,8 @@ import {
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+withoutTestTransactions();
 
 type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 

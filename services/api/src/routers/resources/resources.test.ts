@@ -1,3 +1,4 @@
+import { withoutTestTransactions } from '@op/common/testing';
 import { and, db, eq } from '@op/db/client';
 import { resourceCollectionItems } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -8,6 +9,8 @@ import {
   resourceExists,
   setupInstance,
 } from '../../test/helpers/resourcesTestUtils';
+
+withoutTestTransactions();
 
 type ResourceInCollectionDTO = {
   id: string;

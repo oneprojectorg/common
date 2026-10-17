@@ -6,6 +6,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
+import { afterTestTransaction } from '@op/db/test';
 import { inArray } from 'drizzle-orm';
 
 import { supabaseTestAdminClient } from '../supabase';
@@ -138,7 +139,11 @@ export class TestJoinProfileRequestDataManager {
    *
    * This method is automatically called via onTestFinished when using test data creation methods.
    */
-  async cleanup(): Promise<void> {
+  cleanup(): Promise<void> {
+    return afterTestTransaction(() => this.removeRows());
+  }
+
+  private async removeRows(): Promise<void> {
     if (this.createdJoinRequestIds.length > 0) {
       await db
         .delete(joinProfileRequests)

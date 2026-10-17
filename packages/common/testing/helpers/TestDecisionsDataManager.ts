@@ -11,6 +11,7 @@ import {
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { afterTestTransaction } from '@op/db/test';
 import type { User } from '@op/supabase/lib';
 import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
@@ -778,7 +779,11 @@ export class TestDecisionsDataManager {
    * Uses exact IDs tracked during creation to avoid race conditions with concurrent tests.
    * Relies on database cascade deletes to automatically clean up related records.
    */
-  async cleanup(): Promise<void> {
+  cleanup(): Promise<void> {
+    return afterTestTransaction(() => this.removeRows());
+  }
+
+  private async removeRows(): Promise<void> {
     if (!supabaseTestAdminClient) {
       throw new Error('Supabase admin test client not initialized');
     }

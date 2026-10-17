@@ -4,6 +4,7 @@ import {
   getCurrentProposalHistoryId,
   reviseProposal,
   TestReviewsDataManager,
+  withoutTestTransactions,
 } from '@op/common/testing';
 import {
   ModerationFlagStatus,
@@ -28,6 +29,8 @@ import {
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+withoutTestTransactions();
 
 const createCaller = createCallerFactory(appRouter);
 

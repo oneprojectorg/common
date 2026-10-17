@@ -23,7 +23,7 @@ export const TEST_ENV = {
   // Each worker holds its own pool, so the app default of 10 leaves Postgres no
   // headroom for the rest of the Supabase stack and the auth server starts
   // answering `Database error querying schema`.
-  DB_POOL_MAX: '4',
+  DB_POOL_MAX: '8',
   // TipTap Cloud credentials - required for collab mock to be invoked
   NEXT_PUBLIC_TIPTAP_APP_ID: 'test-tiptap-app',
   TIPTAP_SECRET: 'test-tiptap-secret',

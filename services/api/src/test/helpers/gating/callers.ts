@@ -1,6 +1,7 @@
 import { parsePhoneNumber } from '@op/common';
 import { db } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
+import { afterTestTransaction } from '@op/db/test';
 import { inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
@@ -49,27 +50,31 @@ export const createGatingCallers = (
   const createdAuthUserIds: string[] = [];
   const createdProfileIds: string[] = [];
 
-  onTestFinished(async () => {
-    if (createdProfileIds.length > 0) {
-      await db.delete(profiles).where(inArray(profiles.id, createdProfileIds));
-    }
-    if (createdAuthUserIds.length > 0) {
-      await db
-        .delete(users)
-        .where(inArray(users.authUserId, createdAuthUserIds));
-      const results = await Promise.allSettled(
-        createdAuthUserIds.map((id) =>
-          supabaseTestAdminClient.auth.admin.deleteUser(id),
-        ),
-      );
-      const failures = results.filter((r) => r.status === 'rejected');
-      if (failures.length > 0) {
-        console.warn(
-          `Failed to delete ${failures.length}/${createdAuthUserIds.length} gating auth users`,
-        );
+  onTestFinished(() =>
+    afterTestTransaction(async () => {
+      if (createdProfileIds.length > 0) {
+        await db
+          .delete(profiles)
+          .where(inArray(profiles.id, createdProfileIds));
       }
-    }
-  });
+      if (createdAuthUserIds.length > 0) {
+        await db
+          .delete(users)
+          .where(inArray(users.authUserId, createdAuthUserIds));
+        const results = await Promise.allSettled(
+          createdAuthUserIds.map((id) =>
+            supabaseTestAdminClient.auth.admin.deleteUser(id),
+          ),
+        );
+        const failures = results.filter((r) => r.status === 'rejected');
+        if (failures.length > 0) {
+          console.warn(
+            `Failed to delete ${failures.length}/${createdAuthUserIds.length} gating auth users`,
+          );
+        }
+      }
+    }),
+  );
 
   // Sign in as an already-seeded user.
   const existingCaller = async (email: string) => {

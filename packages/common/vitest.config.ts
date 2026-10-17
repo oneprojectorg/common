@@ -32,7 +32,7 @@ export default defineConfig({
         test: {
           ...integration.test,
           name: 'integration',
-          include: ['src/**/*.test.{ts,tsx}'],
+          include: ['src/**/*.test.{ts,tsx}', 'testing/**/*.test.ts'],
           exclude: [...configDefaults.exclude, '**/*.unit.test.{ts,tsx}'],
           // Vitest rejects projects with different `maxWorkers` in one group, and
           // a later group keeps unit tests from competing with the database workers.

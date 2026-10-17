@@ -1,3 +1,4 @@
+import { withoutTestTransactions } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { resourceCollectionProfiles } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +8,8 @@ import {
   createOutsiderCaller,
   setupInstance,
 } from '../../test/helpers/resourcesTestUtils';
+
+withoutTestTransactions();
 
 type CollectionDTO = {
   id: string;
