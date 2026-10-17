@@ -17,9 +17,9 @@ export const DecisionResultsTabs = ({
   /** Whether to surface the "My ballot" tab — only when a voting phase took place. */
   showBallotTab?: boolean;
   /**
-   * Whether to surface the "Analysis" tab.
+   * Whether to surface the "What we heard" tab.
    *
-   * The panel reads a stored snapshot and cannot produce one, so a decision
+   * The panel reads a stored analysis and cannot produce one, so a decision
    * nobody has analysed would get a tab whose only content is "no analysis
    * yet". The caller knows whether there is one; this keeps the tab row honest
    * about what is behind it.
@@ -44,7 +44,7 @@ export const DecisionResultsTabs = ({
             <TabsTrigger value="ballot">{t('My ballot')}</TabsTrigger>
           ) : null}
           {showAnalysisTab ? (
-            <TabsTrigger value="analysis">{t('Analysis')}</TabsTrigger>
+            <TabsTrigger value="analysis">{t('What we heard')}</TabsTrigger>
           ) : null}
         </TabsList>
       </div>

@@ -40,7 +40,7 @@ import { ThemeSizeChart } from './ThemeSizeChart';
 import { type ProposalRoute, proposalHref } from './proposalHrefs';
 
 /** One proposal as the analysis names it. */
-type AnalyzedProposal =
+export type AnalyzedProposal =
   ThemeAnalysisResult['themes'][number]['proposals'][number];
 
 /**
@@ -174,7 +174,7 @@ const Section = ({
  * `dir="auto"` because the title is the participant's own text, in whatever
  * script they wrote it, inside a dialog laid out for the facilitator's locale.
  */
-const ProposalLink = ({
+export const ProposalLink = ({
   proposal,
   route,
   className,
@@ -222,7 +222,7 @@ const ProposalLink = ({
  * whose proposals all failed the grounding check renders nothing, which is the
  * honest outcome: the claim survived and its evidence did not.
  */
-const ProposalRefs = ({
+export const ProposalRefs = ({
   proposals,
   route,
 }: {
@@ -508,7 +508,15 @@ const SuggestionIcon = ({ kind }: { kind: ThemeAnalysisSuggestionKind }) => {
   return <LuPencilLine aria-hidden />;
 };
 
-const SuggestionsSection = ({
+/**
+ * The suggestions, with the merge action for a reader who may merge.
+ *
+ * Exported because the What we heard tab shows this section alone to admins:
+ * it is the one part of the analysis that asks someone to do something, and a
+ * resident has nothing to do. It renders an accordion item, so it has to sit
+ * inside an `Accordion`.
+ */
+export const SuggestionsSection = ({
   suggestions,
   route,
   canMerge,

@@ -39,7 +39,7 @@ import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
-import { ThemeAnalysisTab } from '../ThemeAnalysisTab';
+import { WhatWeHeardTab } from '../WhatWeHeardTab';
 import { useLatestThemeAnalysis } from '../useLatestThemeAnalysis';
 
 // Common instance fields used by ResultsPage
@@ -142,7 +142,7 @@ function ResultsPageContent({
   const showBallotTab =
     isLegacy || hasVotingPhase(instance.instanceData?.phases ?? []);
 
-  // The Analysis tab only when there is an analysis to read. The panel cannot
+  // What we heard only when there is an analysis to read. The panel cannot
   // produce one, so an empty tab would be a row of text saying so — and this
   // read is already on the page for the proposals list's control, so the tab
   // costs nothing extra to decide.
@@ -262,7 +262,7 @@ function ResultsPageContent({
 
             {hasAnalysis ? (
               <DecisionResultsTabPanel value="analysis">
-                <ThemeAnalysisTab
+                <WhatWeHeardTab
                   instanceId={instanceId}
                   slug={profileSlug}
                   decisionSlug={decisionSlug}
