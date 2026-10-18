@@ -75,9 +75,13 @@ describe('signStorageDownloadUrl', () => {
       error: { message: 'Object not found' },
     });
 
-    await expect(
-      signStorageDownloadUrl({ storagePath: 'missing', ttlSeconds: 60 }),
-    ).rejects.toThrow(new CommonError('Object not found'));
+    const signing = signStorageDownloadUrl({
+      storagePath: 'missing',
+      ttlSeconds: 60,
+    });
+
+    await expect(signing).rejects.toBeInstanceOf(CommonError);
+    await expect(signing).rejects.toThrow('Object not found');
   });
 
   it('given storage returns neither data nor error, when signing, then it throws a CommonError', async () => {
