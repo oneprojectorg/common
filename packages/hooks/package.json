@@ -18,7 +18,7 @@
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/supabase": "workspace:*",
-    "@tanstack/react-query": "5.66.11",
+    "@tanstack/react-query": "5.102.8",
     "js-cookie": "^3.0.5",
     "next-intl": "^4.8.3",
     "react": "^19.0.1",
