@@ -229,14 +229,16 @@ const VotingProposalsList = ({
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
-  const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  // The proposals themselves, not their ids: a filter can drop a selected
+  // proposal from `proposals`, and the ballot must still show and submit it.
+  const [selectedProposals, setSelectedProposals] = useState<Proposal[]>([]);
   const [isVoteReviewOpen, setIsVoteReviewOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
   const t = useTranslations();
   const openInSheet = useOpenProposalInSheet();
 
-  const numSelected = selectedProposalIds.length;
+  const numSelected = selectedProposals.length;
 
   // Get voting status for this user and process
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
@@ -272,33 +274,29 @@ const VotingProposalsList = ({
   const isReadOnly = hasVoted || !canVote;
   const maxVotesPerMember = voteStatus?.votingConfiguration?.maxVotesPerMember;
 
-  const toggleProposal = (proposalId: string) => {
-    setSelectedProposalIds((prev) => {
-      const isSelected = prev.includes(proposalId);
+  const toggleProposal = (proposal: Proposal) => {
+    setSelectedProposals((prev) => {
+      const isSelected = prev.some(({ id }) => id === proposal.id);
 
       if (isSelected) {
-        return prev.filter((id) => id !== proposalId);
+        return prev.filter(({ id }) => id !== proposal.id);
       }
       if (maxVotesPerMember === undefined || prev.length < maxVotesPerMember) {
-        return [...prev, proposalId];
+        return [...prev, proposal];
       }
       return prev;
     });
   };
 
   const isProposalSelected = (proposalId: string) =>
-    selectedProposalIds.includes(proposalId);
-
-  // Get selected proposals for the modal
-  const selectedProposals =
-    proposals?.filter((p) => selectedProposalIds.includes(p.id)) || [];
+    selectedProposals.some(({ id }) => id === proposalId);
 
   // Handle successful vote submission
   const handleVoteSuccess = () => {
     // Closed from here rather than by a `DialogClose` inside it, because the
     // close fires from a mutation callback, not a click.
     setIsVoteReviewOpen(false);
-    setSelectedProposalIds([]);
+    setSelectedProposals([]);
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
     });
@@ -424,7 +422,7 @@ const VotingProposalsList = ({
                     ? t('decisions.proposals.deselectProposalLabel')
                     : t('decisions.proposals.selectProposalLabel')
                 }
-                onClick={() => toggleProposal(proposal.id)}
+                onClick={() => toggleProposal(proposal)}
                 className="cursor-pointer"
                 aside={
                   canManageProposals || proposal.isEditable || showCheckbox ? (
@@ -445,7 +443,7 @@ const VotingProposalsList = ({
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => {
-                              toggleProposal(proposal.id);
+                              toggleProposal(proposal);
                             }}
                             aria-label={
                               isSelected
