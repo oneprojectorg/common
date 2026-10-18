@@ -20,7 +20,7 @@ const TITLES = [
 ] as const;
 
 test.describe('Vote selection across filters', () => {
-  test('submits every selected proposal when a filter hides some of them', async ({
+  test('submits every selected proposal when a filter hides some of them, without the ones deselected', async ({
     authenticatedPage,
     org,
   }) => {
@@ -75,6 +75,12 @@ test.describe('Vote selection across filters', () => {
       authenticatedPage.getByText('3 proposals selected'),
     ).toBeVisible();
 
+    await ballotToggle('Riverside Bike Path').click();
+    await expect(ballotToggle('Riverside Bike Path')).not.toBeChecked();
+    await expect(
+      authenticatedPage.getByText('2 proposals selected'),
+    ).toBeVisible();
+
     await authenticatedPage
       .getByRole('button', { name: 'Submit my votes' })
       .click();
@@ -84,7 +90,8 @@ test.describe('Vote selection across filters', () => {
     });
     const ballot = dialog.getByRole('list', { name: 'Selected proposals' });
     await expect(ballot.getByRole('heading', { level: 3 })).toHaveText([
-      ...TITLES,
+      'Downtown Mural',
+      'Harbor Reading Room',
     ]);
 
     await dialog.getByRole('button', { name: 'Submit votes' }).click();
@@ -102,8 +109,9 @@ test.describe('Vote selection across filters', () => {
       .select({ proposalId: decisionsVoteProposals.proposalId })
       .from(decisionsVoteProposals)
       .where(eq(decisionsVoteProposals.voteSubmissionId, submission.id));
+    const [, mural, harbor] = proposals;
     expect(votes.map((vote) => vote.proposalId).sort()).toEqual(
-      proposals.map((proposal) => proposal.id).sort(),
+      [mural?.id, harbor?.id].sort(),
     );
   });
 });
