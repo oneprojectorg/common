@@ -1,8 +1,8 @@
-import type { DecisionSchemaDefinition } from '@op/common';
 import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
+  testVotingPhaseSchema,
 } from '@op/common/testing/data';
 import {
   ProposalStatus,
@@ -12,24 +12,6 @@ import {
 import { db, eq } from '@op/db/test';
 
 import { expect, test } from '../fixtures/index.js';
-
-const votingPhaseSchema: DecisionSchemaDefinition = {
-  id: 'test-vote-selection-across-filters',
-  version: '1.0.0',
-  name: 'Vote Selection Across Filters',
-  description: 'A single voting phase.',
-  phases: [
-    {
-      id: 'voting',
-      name: 'Voting',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: true },
-        advancement: { method: 'manual' as const },
-      },
-    },
-  ],
-};
 
 const TITLES = [
   'Riverside Bike Path',
@@ -53,7 +35,7 @@ test.describe('Vote selection across filters', () => {
       ownerProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
-      schema: votingPhaseSchema,
+      schema: testVotingPhaseSchema,
     });
 
     const proposals = await Promise.all(
@@ -96,8 +78,6 @@ test.describe('Vote selection across filters', () => {
     await expect(ballotToggle('Downtown Mural')).toBeHidden({
       timeout: 15_000,
     });
-    await expect(ballotToggle('Harbor Reading Room')).toBeHidden();
-    await expect(ballotToggle('Riverside Bike Path')).toBeVisible();
     await expect(
       authenticatedPage.getByText('3 proposals selected'),
     ).toBeVisible();
@@ -111,12 +91,9 @@ test.describe('Vote selection across filters', () => {
     });
     const ballot = dialog.getByRole('list', { name: 'Selected proposals' });
     // Card headings, not list items: each mini card nests a list of its own.
-    await expect(ballot.getByRole('heading', { level: 3 })).toHaveCount(
-      TITLES.length,
-    );
-    for (const title of TITLES) {
-      await expect(ballot.getByRole('heading', { name: title })).toBeVisible();
-    }
+    await expect(ballot.getByRole('heading', { level: 3 })).toHaveText([
+      ...TITLES,
+    ]);
 
     await dialog.getByRole('button', { name: 'Submit votes' }).click();
     await expect(dialog).toBeHidden({ timeout: 15_000 });

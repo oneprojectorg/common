@@ -4,6 +4,7 @@ import {
   createOrganization,
   getSeededTemplate,
   grantDecisionProfileAccess,
+  testVotingPhaseSchema,
 } from '@op/common/testing/data';
 
 import {
@@ -53,29 +54,6 @@ const reviewPhaseSchema: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'manual' as const },
-      },
-    },
-  ],
-};
-
-/**
- * Schema that starts in the voting phase.
- * currentStateId will be 'voting', routing to VotingPage via rules.voting.submit capability.
- */
-const votingPhaseSchema: DecisionSchemaDefinition = {
-  id: 'test-voting',
-  version: '1.0.0',
-  name: 'Test Voting Schema',
-  description: 'Schema for testing voting phase',
-  phases: [
-    {
-      id: 'voting',
-      name: 'Voting',
-      description: 'Members vote.',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: true },
         advancement: { method: 'manual' as const },
       },
     },
@@ -173,7 +151,7 @@ test.describe('Decision Role Capabilities', () => {
       ownerProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
-      schema: votingPhaseSchema,
+      schema: testVotingPhaseSchema,
       grantAdminAccess: false,
     });
 
