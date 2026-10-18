@@ -20,11 +20,6 @@ const TITLES = [
 ] as const;
 
 test.describe('Vote selection across filters', () => {
-  /**
-   * The ballot is the voter's selection, not whatever the list happens to show:
-   * narrowing the list after choosing must not drop the hidden choices from the
-   * confirmation or from the submitted vote.
-   */
   test('submits every selected proposal when a filter hides some of them', async ({
     authenticatedPage,
     org,
@@ -56,7 +51,6 @@ test.describe('Vote selection across filters', () => {
       authenticatedPage.getByRole('heading', { name, level: 2 }),
     ).toBeVisible({ timeout: 30_000 });
 
-    // Each card's own checkbox, found through the card that carries the title.
     const ballotToggle = (title: string) =>
       authenticatedPage
         .getByRole('button', { name: /select proposal/i })
@@ -71,7 +65,6 @@ test.describe('Vote selection across filters', () => {
       authenticatedPage.getByText('3 proposals selected'),
     ).toBeVisible();
 
-    // Narrow the list to one of the three.
     await authenticatedPage
       .getByRole('searchbox', { name: 'Search proposals' })
       .fill('bike path');
@@ -90,7 +83,6 @@ test.describe('Vote selection across filters', () => {
       name: 'Review your votes',
     });
     const ballot = dialog.getByRole('list', { name: 'Selected proposals' });
-    // Card headings, not list items: each mini card nests a list of its own.
     await expect(ballot.getByRole('heading', { level: 3 })).toHaveText([
       ...TITLES,
     ]);

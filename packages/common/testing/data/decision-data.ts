@@ -154,10 +154,6 @@ export const testMinimalSchema = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-/**
- * A single phase that opens straight onto voting, so proposals seeded into the
- * instance are on the ballot without advancing through a submission phase.
- */
 export const testVotingPhaseSchema = {
   id: 'test-voting',
   version: '1.0.0',

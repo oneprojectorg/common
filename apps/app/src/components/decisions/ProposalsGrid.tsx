@@ -229,8 +229,6 @@ const VotingProposalsList = ({
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
-  // The proposals themselves, not their ids: a filter can drop a selected
-  // proposal from `proposals`, and the ballot must still show and submit it.
   const [selectedProposals, setSelectedProposals] = useState<Proposal[]>([]);
   const [isVoteReviewOpen, setIsVoteReviewOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
