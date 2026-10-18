@@ -154,6 +154,25 @@ export const testMinimalSchema = {
   ],
 } satisfies DecisionSchemaDefinition;
 
+export const testVotingPhaseSchema = {
+  id: 'test-voting',
+  version: '1.0.0',
+  name: 'Test Voting Schema',
+  description: 'Schema for testing voting phase',
+  phases: [
+    {
+      id: 'voting',
+      name: 'Voting',
+      description: 'Members vote.',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: true },
+        advancement: { method: 'manual' as const },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
 export interface CreateDecisionProcessOptions {
   /** Profile ID of the user creating the process */
   createdByProfileId: string;

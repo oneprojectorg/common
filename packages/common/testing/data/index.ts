@@ -30,6 +30,7 @@ export {
   TEST_PERMISSION_BITS,
   testMinimalSchema,
   testSimpleVotingSchema,
+  testVotingPhaseSchema,
   type CreateDecisionInstanceOptions,
   type CreateDecisionInstanceResult,
   type CreateDecisionProcessOptions,
