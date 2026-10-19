@@ -142,4 +142,4 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 // The panel is a focus stop (Base UI makes it one, and it scrolls), so it
 // needs a visible ring; inset so the dialog's overflow can't clip it.
 const PANEL_CLASS_NAME =
-  'min-w-0 overflow-y-auto px-4 pt-6 pb-8 focus-visible:inset-ring-3 focus-visible:inset-ring-ring/50 sm:p-8';
+  'min-w-0 overflow-y-auto [scrollbar-gutter:stable] px-4 pt-6 pb-8 focus-visible:inset-ring-3 focus-visible:inset-ring-ring/50 sm:p-8';
