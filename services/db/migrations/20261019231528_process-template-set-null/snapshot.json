@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "c2773bd4-ad8f-49e4-b17e-b4ae3955cf53",
+  "id": "51e07490-f5b9-47a7-a02c-f5afeeecf462",
   "prevIds": [
-    "154ba2cf-7cf5-4587-8e41-5657a5d63c36"
+    "c2d444c1-b057-40f1-9756-87bd8d3d4416"
   ],
   "ddl": [
     {
@@ -2317,6 +2317,19 @@
       "table": "decisions_vote_proposals"
     },
     {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "rank",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_proposals"
+    },
+    {
       "type": "timestamp with time zone",
       "typeSchema": null,
       "notNull": false,
@@ -4379,19 +4392,6 @@
       "generated": null,
       "identity": null,
       "name": "status",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_process_instances"
-    },
-    {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "101",
-      "generated": null,
-      "identity": null,
-      "name": "next_short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_process_instances"
@@ -6600,19 +6600,6 @@
       "table": "decision_proposals"
     },
     {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "short_code",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_proposals"
-    },
-    {
       "type": "uuid",
       "typeSchema": null,
       "notNull": true,
@@ -8711,6 +8698,34 @@
       "method": "btree",
       "concurrently": true,
       "name": "decisions_vote_proposals_proposal_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decisions_vote_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "vote_submission_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "rank",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "rank IS NOT NULL",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decisions_vote_proposals_vote_submission_id_rank_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "decisions_vote_proposals"
@@ -11612,34 +11627,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_proposal_reviews"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "process_instance_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "short_code",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "proposals_process_short_code_uniq",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "decision_proposals"
     },
     {
       "nameExplicit": false,
