@@ -3,7 +3,7 @@
   "dialect": "postgres",
   "id": "c2d444c1-b057-40f1-9756-87bd8d3d4416",
   "prevIds": [
-    "154ba2cf-7cf5-4587-8e41-5657a5d63c36"
+    "e8dcf381-8445-4a41-9506-aac85bbc7be3"
   ],
   "ddl": [
     {
@@ -4397,19 +4397,6 @@
       "table": "decision_process_instances"
     },
     {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "101",
-      "generated": null,
-      "identity": null,
-      "name": "next_short_code",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_process_instances"
-    },
-    {
       "type": "tsvector",
       "typeSchema": null,
       "notNull": false,
@@ -6608,19 +6595,6 @@
       "generated": null,
       "identity": null,
       "name": "moderation_detached_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_proposals"
-    },
-    {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_proposals"
@@ -11653,34 +11627,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_proposal_reviews"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "process_instance_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "short_code",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "proposals_process_short_code_uniq",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "decision_proposals"
     },
     {
       "nameExplicit": false,
