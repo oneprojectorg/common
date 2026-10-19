@@ -1,4 +1,3 @@
-import { setupSSR } from '@/utils/setupSSR';
 import type { Metadata } from 'next';
 
 import { getTranslations } from '@/lib/i18n';
@@ -15,13 +14,6 @@ export async function generateMetadata({
   return { title: t('shell.updatesNavTitle') };
 }
 
-const UpdatesPage = async ({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) => {
-  await setupSSR({ params });
-  return <UpdatesScreen />;
-};
+const UpdatesPage = () => <UpdatesScreen />;
 
 export default UpdatesPage;

@@ -1,4 +1,3 @@
-import { setupSSR } from '@/utils/setupSSR';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
@@ -19,12 +18,7 @@ export async function generateMetadata({
   return { title: t('Home') };
 }
 
-const MainPage = async ({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) => {
-  await setupSSR({ params });
+const MainPage = () => {
   return (
     <Suspense fallback={<LandingScreenSkeleton />}>
       <LandingScreen />
