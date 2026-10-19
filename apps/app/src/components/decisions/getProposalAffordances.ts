@@ -1,3 +1,4 @@
+import { ProposalStatus } from '@op/api/encoders';
 import { getInstanceCurrentPhase, isReviewPhase } from '@op/common/client';
 
 /**
@@ -13,9 +14,9 @@ export interface ProposalAffordances {
     revisions: boolean;
   };
   /**
-   * Decision-admin curation: merge, do not advance, hide, delete. Not
-   * `proposal.access.admin` — the author is admin of the proposal's own
-   * profile.
+   * Decision-admin curation of a submitted proposal: merge, do not advance,
+   * hide, delete. Not `proposal.access.admin` — the author is admin of the
+   * proposal's own profile.
    */
   moderation: boolean;
 }
@@ -37,7 +38,10 @@ export function getProposalAffordances({
   instance: Parameters<
     typeof getInstanceCurrentPhase<ProposalReviewPhase>
   >[0] & { access?: { admin?: boolean; review?: boolean } | null };
-  proposal: { submittedBy?: { id: string } | null };
+  proposal: {
+    submittedBy?: { id: string } | null;
+    status?: string | null;
+  };
   user: { currentProfile?: { id: string } | null } | null | undefined;
 }): ProposalAffordances {
   const currentProfileId = user?.currentProfile?.id;
@@ -54,6 +58,6 @@ export function getProposalAffordances({
       feedback,
       revisions: !!currentPhase && isReviewPhase(currentPhase) && feedback,
     },
-    moderation: isDecisionAdmin,
+    moderation: isDecisionAdmin && proposal.status !== ProposalStatus.DRAFT,
   };
 }

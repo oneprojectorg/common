@@ -213,6 +213,12 @@ describe.concurrent('updateProposal visibility', () => {
     ).rejects.toMatchObject({
       cause: { statusCode: 403 },
     });
+
+    const row = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+      columns: { visibility: true },
+    });
+    expect(row?.visibility).toBe(Visibility.VISIBLE);
   });
 
   it('should filter hidden proposals from listProposals for non-admins', async ({

@@ -34,8 +34,7 @@ import { useProposalRejectionActions } from './useProposalRejectionActions';
  * The Figma frame also shows shortlist / reject-from-shortlist here, but #1630
  * removed those actions from the app, so they aren't offered on either surface.
  *
- * Mount it only when `ProposalAffordances.moderation` holds and the proposal
- * has left draft.
+ * Mount it only when `ProposalAffordances.moderation` holds.
  */
 export function ProposalAdminMenu({
   proposal,

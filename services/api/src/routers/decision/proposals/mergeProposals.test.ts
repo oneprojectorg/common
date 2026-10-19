@@ -442,6 +442,12 @@ describe.concurrent('mergeProposals', () => {
         targetProposalId: target.id,
       }),
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+
+    const [edge] = await db
+      .select()
+      .from(proposalRelationships)
+      .where(eq(proposalRelationships.sourceProposalId, source.id));
+    expect(edge).toBeUndefined();
   });
 });
 

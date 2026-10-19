@@ -6,7 +6,6 @@ import {
 } from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal, ProposalSelection } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
 import type { ReactNode } from 'react';
@@ -142,12 +141,7 @@ export function ProposalView({
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
       commentsEnabled={commentsEnabled}
-      moderationProposal={
-        affordances.moderation &&
-        currentProposal.status !== ProposalStatus.DRAFT
-          ? currentProposal
-          : undefined
-      }
+      moderationProposal={affordances.moderation ? currentProposal : undefined}
       notices={
         <ProposalMergeNotice
           proposal={currentProposal}
