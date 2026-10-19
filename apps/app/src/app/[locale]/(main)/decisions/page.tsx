@@ -16,13 +16,8 @@ export async function generateMetadata({
   return { title: t('decisions.decisionsLabel') };
 }
 
-const DecisionsListingPage = async ({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) => {
-  const { locale } = await params;
-  const t = await getTranslations({ locale });
+const DecisionsListingPage = async () => {
+  const t = await getTranslations();
 
   return (
     <ListPageLayout>
