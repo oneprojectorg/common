@@ -10,10 +10,6 @@ import { useTranslations } from '@/lib/i18n';
 import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
 import { type Confirmation, InlineConfirmation } from './InlineConfirmation';
 
-/**
- * The Your data tab: download a copy of everything, or delete the account
- * (after a confirmation).
- */
 export const YourDataSettings = () => {
   const t = useTranslations('settings');
   const tShared = useTranslations();
@@ -32,7 +28,7 @@ export const YourDataSettings = () => {
             <Button
               variant="outline"
               onClick={() => {
-                // TODO: request the export from the API.
+                // mock: no export is requested yet
                 confirmationCount.current += 1;
                 setConfirmation({
                   id: confirmationCount.current,
@@ -56,20 +52,25 @@ export const YourDataSettings = () => {
           title={t('deleteAccountTitle')}
           hint={t('deleteAccountHint')}
           action={
-            <Button variant="destructive" onClick={() => setIsDeleteOpen(true)}>
-              {tShared('Delete')}
-            </Button>
+            <ConfirmDeleteModal
+              isOpen={isDeleteOpen}
+              title={t('deleteAccountConfirmTitle')}
+              message={t('deleteAccountConfirmBody')}
+              // mock: the account is not deleted yet
+              onConfirm={() => setIsDeleteOpen(false)}
+              onCancel={() => setIsDeleteOpen(false)}
+              trigger={
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleteOpen(true)}
+                >
+                  {tShared('Delete')}
+                </Button>
+              }
+            />
           }
         />
       </div>
-      <ConfirmDeleteModal
-        isOpen={isDeleteOpen}
-        title={t('deleteAccountConfirmTitle')}
-        message={t('deleteAccountConfirmBody')}
-        // TODO: delete the account through the API.
-        onConfirm={() => setIsDeleteOpen(false)}
-        onCancel={() => setIsDeleteOpen(false)}
-      />
     </div>
   );
 };
