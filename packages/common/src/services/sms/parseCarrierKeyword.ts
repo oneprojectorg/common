@@ -4,10 +4,12 @@ import {
   type SmsCarrierKeyword,
 } from '@op/core/sms';
 
-const TRAILING_PUNCTUATION = /[.!?]+$/;
+import { trimTrailing } from './text';
+
+const CARRIER_TERMINATORS = new Set(['.', '!', '?']);
 
 export const parseCarrierKeyword = (body: string): SmsCarrierKeyword | null => {
-  const word = body.trim().replace(TRAILING_PUNCTUATION, '').toLowerCase();
+  const word = trimTrailing(body.trim(), CARRIER_TERMINATORS).toLowerCase();
   return (
     SMS_CARRIER_KEYWORD_TYPES.find((type) =>
       SMS_CARRIER_KEYWORDS[type].includes(word),

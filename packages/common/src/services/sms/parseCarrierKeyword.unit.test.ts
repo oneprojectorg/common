@@ -36,6 +36,10 @@ describe('parseCarrierKeyword', () => {
     },
   );
 
+  it('given STOP followed by the longest run of punctuation a text can hold, when parsed, then it is the carrier STOP keyword', () => {
+    expect(parseCarrierKeyword(`STOP${'!'.repeat(1596)}`)).toBe('STOP');
+  });
+
   it.each([
     'stop it',
     'helpful',
