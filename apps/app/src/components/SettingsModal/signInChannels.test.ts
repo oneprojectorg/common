@@ -44,7 +44,7 @@ describe('validateChannelValue', () => {
   });
 
   it('rejects a number the login screen would reject', () => {
-    // No `+`, and not a North American length, so it has no country code.
+    // no `+` and not a North American length, so it has no country code
     expect(validateChannelValue('phone', '44 20 7946 0958', null)).toBe(
       'invalid',
     );

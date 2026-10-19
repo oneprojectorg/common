@@ -33,9 +33,7 @@ import {
 
 interface SignInChannelRowProps {
   channel: SignInChannel;
-  /** The address or number on file, or `null` when there is none. */
   value: string | null;
-  /** The other channel's value. Remove is only offered while it exists. */
   otherValue: string | null;
   onSave: (value: string) => void;
   onRemove: () => void;
@@ -62,12 +60,6 @@ type Editor =
 
 const CODE_LENGTH = 6;
 
-/**
- * One sign-in channel in Account settings: the sign-in email or the phone
- * number. Shows the value with Remove and Change, or an empty state with Add.
- * Add and Change open an inline flow (enter the value, then confirm it with a
- * 6-digit code); Remove asks for confirmation inline.
- */
 export const SignInChannelRow = ({
   channel,
   value,
@@ -84,8 +76,7 @@ export const SignInChannelRow = ({
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const confirmationCount = useRef(0);
 
-  // Add and Change share one slot, so focus has one place to return to when
-  // an inline flow closes and its controls unmount.
+  // Add and Change share one slot so focus has somewhere to return when an inline flow closes
   const primaryActionRef = useRef<HTMLButtonElement>(null);
   const restoreFocus = useRef(false);
   useEffect(() => {
@@ -96,13 +87,10 @@ export const SignInChannelRow = ({
   });
 
   const canRemove = Boolean(value && otherValue);
-  // The other row can remove its channel while this one is asking to remove
-  // this one. That question no longer applies, so drop it: only hiding it would
-  // bring it back once the other channel is added again.
+  // the other row can remove its channel mid-question; reset, since hiding would bring it back
   if (editor?.step === 'remove' && !canRemove) {
     setEditor(null);
   }
-  // Keeps the pass React discards after the reset above from rendering it.
   const activeEditor = editor?.step === 'remove' && !canRemove ? null : editor;
 
   const confirm = (message: ReactNode, tone: Confirmation['tone']) => {
@@ -153,12 +141,12 @@ export const SignInChannelRow = ({
       return;
     }
 
-    // TODO: verify the code with the API. Any 6 digits pass for now.
+    // mock: any 6 digits pass until the API verifies them
     onSave(activeEditor.value);
     if (activeEditor.mode === 'add') {
       confirm(copy.added, 'success');
     } else if (channel === 'email') {
-      // The notice goes to the old address, in case someone else changed it.
+      // sent to the old address in case someone else changed it
       confirm(
         t.rich('emailUpdated', { email: value ?? '', value: isolateValue }),
         'success',
@@ -242,7 +230,6 @@ export const SignInChannelRow = ({
             setEditor({ ...activeEditor, code, codeError: false })
           }
           onResend={() =>
-            // TODO: send a new code through the API.
             setEditor({ ...activeEditor, resent: true, codeError: false })
           }
           onSubmit={submitCode}
@@ -268,10 +255,6 @@ export const SignInChannelRow = ({
   );
 };
 
-/**
- * Keeps an address or number left-to-right inside translated copy, and lets a
- * long one wrap rather than push the row wider than a phone screen.
- */
 const isolateValue = (chunks: ReactNode) => (
   <bdi dir="ltr" className="font-strong wrap-anywhere">
     {chunks}
@@ -344,8 +327,7 @@ const EnterValueStep = ({
         </FieldLabel>
         <Input
           id={inputId}
-          // Replaces the button that opened it, so focus would otherwise be
-          // lost.
+          // replaces the button that opened it, so focus would otherwise be lost
           autoFocus
           type={channel === 'email' ? 'email' : 'tel'}
           autoComplete={channel === 'email' ? 'email' : 'tel'}
@@ -367,11 +349,9 @@ const EnterValueStep = ({
   );
 };
 
-// input-otp's REGEXP_ONLY_DIGITS, inlined to avoid a direct dependency on the
-// package (as in AuthPanel).
+// input-otp's REGEXP_ONLY_DIGITS, inlined to avoid a direct dependency (as in AuthPanel)
 const DIGITS_ONLY_PATTERN = '^\\d+$';
 
-// A code copied out of an email brings whitespace with it.
 const keepDigits = (pasted: string): string => pasted.replace(/\D/g, '');
 
 const EnterCodeStep = ({
@@ -396,8 +376,7 @@ const EnterCodeStep = ({
   return (
     <form noValidate onSubmit={onSubmit} className="mt-4 flex flex-col gap-4">
       <Field>
-        {/* `block`: the label is a flex row by default, which would put a gap
-            around the address inside the sentence. */}
+        {/* block: the label's default flex row would gap around the address in the sentence */}
         <FieldLabel htmlFor={codeId} className="block font-normal">
           {channel === 'email'
             ? t.rich('emailCodeLabel', {
@@ -422,7 +401,7 @@ const EnterCodeStep = ({
           aria-invalid={editor.codeError ? true : undefined}
           aria-describedby={editor.codeError ? errorId : undefined}
         >
-          {/* Codes read left to right in every language. */}
+          {/* codes read LTR in every language */}
           <InputOTPGroup dir="ltr">
             {Array.from({ length: CODE_LENGTH }, (_, index) => (
               <InputOTPSlot
@@ -486,7 +465,7 @@ const ConfirmRemoveStep = ({
             })}
       </p>
       <div className="flex flex-wrap justify-end gap-2">
-        {/* The safe choice takes focus; the button that opened this is gone. */}
+        {/* the safe choice takes focus; the button that opened this is gone */}
         <Button variant="outline" autoFocus onClick={onCancel}>
           {tShared('Cancel')}
         </Button>

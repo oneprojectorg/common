@@ -30,10 +30,6 @@ import type {
 
 type AccountSettingsProps = AccountSettingsValues & AccountSettingsActions;
 
-/**
- * The Account tab: the two sign-in channels (each optional, at least one
- * required), two-step verification, and the interface language.
- */
 export const AccountSettings = ({
   email,
   phone,
@@ -79,8 +75,6 @@ export const AccountSettings = ({
               {twoStepHint}
             </FieldDescription>
           </FieldContent>
-          {/* Base UI's Switch renders a hidden <input> carrying the id, so the
-              label associates with it. */}
           <Switch
             id={twoStepId}
             aria-describedby={twoStepHintId}
@@ -100,11 +94,6 @@ const languageItems = i18nConfig.locales.map((locale) => ({
   label: localeDisplayNames[locale],
 }));
 
-/**
- * Moved here from the old General tab. Unlike the rest of the modal this is
- * live: choosing a language reloads the page in it, as the header's globe
- * menu does.
- */
 const LanguageField = () => {
   const t = useTranslations('settings');
   const { currentLocale, switchLocale } = useLocaleSwitch();

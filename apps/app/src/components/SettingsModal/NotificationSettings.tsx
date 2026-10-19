@@ -29,7 +29,6 @@ interface NotificationSettingsProps {
     channel: keyof NotificationChannels,
     enabled: boolean,
   ) => void;
-  /** Opens the Account tab, where a missing channel can be added. */
   onGoToAccount: () => void;
 }
 
@@ -40,11 +39,6 @@ const TOPICS: Array<NotificationTopic> = [
   'relationshipRequests',
 ];
 
-/**
- * The Notifications tab: one row per topic, each with a switch for every
- * channel on file. A channel that isn't on file gets a note pointing to
- * Account instead of a switch.
- */
 export const NotificationSettings = ({
   email,
   phone,
@@ -115,16 +109,13 @@ const NotificationRow = ({
   const descriptionId = useId();
 
   return (
-    // The spacing sits on a wrapper: a fieldset's own padding goes between its
-    // legend and the rest, not above the legend.
+    // a fieldset's padding lands below its legend, so the row spacing sits on a wrapper
     <div className="py-8 first:pt-0 last:pb-0">
-      {/* The legend names the group, so each switch only needs its channel. */}
       <FieldSet aria-describedby={descriptionId} className="min-w-0 gap-0">
         <FieldLegend variant="label" className="mb-0">
           {copy.title}
         </FieldLegend>
-        {/* Sense pulls a second-to-last description up into its label;
-            here the switches come after it. */}
+        {/* undo Sense's nth-last-2 pull-up: here the switches, not a label, follow */}
         <FieldDescription id={descriptionId} className="nth-last-2:mt-0">
           {copy.hint}
         </FieldDescription>

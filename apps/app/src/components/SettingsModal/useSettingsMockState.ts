@@ -7,7 +7,6 @@ import { type SignInChannel, otherChannel } from './signInChannels';
 export interface AccountSettings {
   email: string | null;
   phone: string | null;
-  /** Only meaningful while both channels are on file. */
   twoStepEnabled: boolean;
 }
 
@@ -23,7 +22,6 @@ export type NotificationTopic =
   | 'processUpdates'
   | 'relationshipRequests';
 
-/** Which channels deliver a notification topic. `sms` goes to the phone. */
 export interface NotificationChannels {
   email: boolean;
   sms: boolean;
@@ -46,8 +44,7 @@ export interface SettingsMockActions extends AccountSettingsActions {
   ) => void;
 }
 
-// TODO: replace with the settings API. The modal is UI-only for now: nothing
-// here is saved, and everything but the email is a placeholder.
+// TODO: replace with the settings API; nothing is saved and all but the email is a placeholder
 const MOCK_PHONE = '+1-555-555-5555';
 
 const MOCK_NOTIFICATIONS: NotificationPreferences = {
@@ -57,12 +54,6 @@ const MOCK_NOTIFICATIONS: NotificationPreferences = {
   relationshipRequests: { email: true, sms: false },
 };
 
-/**
- * Local state standing in for the settings API while the Settings modal is
- * built UI-first. Enforces the same rules the API will: the account keeps at
- * least one sign-in channel, two-step verification needs both, and removing a
- * channel turns off the notifications it delivered.
- */
 export const useSettingsMockState = (
   initialEmail: string | null,
 ): SettingsMockState & SettingsMockActions => {
