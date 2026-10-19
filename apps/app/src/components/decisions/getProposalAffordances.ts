@@ -12,7 +12,11 @@ export interface ProposalAffordances {
     /** Mid-phase only; the feedback panel carries the history afterwards. */
     revisions: boolean;
   };
-  /** Decision-admin curation: merge, do not advance, hide, delete. */
+  /**
+   * Decision-admin curation: merge, do not advance, hide, delete. Not
+   * `proposal.access.admin` — the author is admin of the proposal's own
+   * profile.
+   */
   moderation: boolean;
 }
 

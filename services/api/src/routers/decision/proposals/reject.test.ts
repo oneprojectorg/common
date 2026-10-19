@@ -4,19 +4,7 @@ import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { appRouter } from '../..';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
-import { createCallerFactory } from '../../../trpcFactory';
-
-const createCaller = createCallerFactory(appRouter);
-
-async function createAuthenticatedCaller(email: string) {
-  const { session } = await createIsolatedSession(email);
-  return createCaller(await createTestContextWithSession(session));
-}
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('rejectProposal', () => {
   it("rejects the proposal's author, who is admin of the proposal but not the decision", async ({

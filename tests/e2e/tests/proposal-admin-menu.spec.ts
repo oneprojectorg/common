@@ -1,10 +1,9 @@
-import type { DecisionSchemaDefinition } from '@op/common';
 import {
   createDecisionInstance,
-  createOrganization,
+  createInstanceMember,
   createProposal,
   getSeededTemplate,
-  grantDecisionProfileAccess,
+  testMinimalSchema,
 } from '@op/common/testing/data';
 import { ProposalStatus } from '@op/db/schema';
 
@@ -14,23 +13,6 @@ import {
   expect,
   test,
 } from '../fixtures/index.js';
-
-const schema: DecisionSchemaDefinition = {
-  id: 'test-proposal-admin-menu',
-  version: '1.0.0',
-  name: 'Proposal Admin Menu Test Schema',
-  description: 'A single submission phase.',
-  phases: [
-    {
-      id: 'submission',
-      name: 'Submission',
-      rules: {
-        proposals: { submit: true },
-        advancement: { method: 'manual' },
-      },
-    },
-  ],
-};
 
 test.describe('Proposal page admin menu', () => {
   test('is offered to a decision admin but not to a participant viewing their own proposal', async ({
@@ -45,20 +27,12 @@ test.describe('Proposal page admin menu', () => {
       ownerProfileId: org.organizationProfile.id,
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
-      schema,
+      schema: testMinimalSchema,
     });
-
-    const participantOrg = await createOrganization({
-      testId: `proposal-admin-menu-${Date.now()}`,
+    const { user: participant } = await createInstanceMember({
       supabaseAdmin,
-      users: { admin: 1, member: 0 },
-    });
-    const participant = participantOrg.adminUser;
-    await grantDecisionProfileAccess({
-      profileId: instance.profileId,
-      authUserId: participant.authUserId,
-      email: participant.email,
-      isAdmin: false,
+      testId: `proposal-admin-menu-${Date.now()}`,
+      instanceProfileId: instance.profileId,
     });
 
     // The author holds admin on the proposal's own profile, which is not

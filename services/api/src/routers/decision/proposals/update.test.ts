@@ -195,13 +195,15 @@ describe.concurrent('updateProposal visibility', () => {
       instanceProfileIds: [setup.instance.profileId],
     });
     // The author holds admin on the proposal's own profile, not the decision.
-    const proposal = await testData.createProposal({
-      userEmail: author.email,
-      processInstanceId: setup.instance.instance.id,
-      proposalData: { title: 'Author Proposal' },
-      status: ProposalStatus.SUBMITTED,
-    });
-    const authorCaller = await createAuthenticatedCaller(author.email);
+    const [proposal, authorCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Author Proposal' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(author.email),
+    ]);
 
     await expect(
       authorCaller.decision.updateProposal({

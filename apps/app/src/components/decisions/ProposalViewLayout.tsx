@@ -47,8 +47,8 @@ export function ProposalViewLayout({
     isActive: boolean;
   };
   /**
-   * Admin overflow menu (merge / do not advance / hide / delete). Pass only
-   * for a decision admin — see `ProposalAffordances.moderation`.
+   * Admin overflow menu (merge / do not advance / hide / delete); see
+   * `ProposalAdminMenu` for when to pass it.
    */
   moderationProposal?: Proposal;
   /**
