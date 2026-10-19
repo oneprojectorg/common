@@ -32,8 +32,21 @@ export type NotificationPreferences = Record<
   NotificationChannels
 >;
 
+export type ParticipationMode = 'name' | 'anonymous';
+
+/** How the user appears in one decision process they joined. */
+export interface ProcessPrivacy {
+  id: string;
+  processName: string;
+  organizationName: string;
+  /** Shown instead of the user's name while they stay anonymous. */
+  participantNumber: string;
+  mode: ParticipationMode;
+}
+
 interface SettingsMockState extends AccountSettings {
   notifications: NotificationPreferences;
+  processes: Array<ProcessPrivacy>;
 }
 
 export interface SettingsMockActions extends AccountSettingsActions {
@@ -42,6 +55,7 @@ export interface SettingsMockActions extends AccountSettingsActions {
     channel: keyof NotificationChannels,
     enabled: boolean,
   ) => void;
+  setParticipationMode: (processId: string, mode: ParticipationMode) => void;
 }
 
 // TODO: replace with the settings API; nothing is saved and all but the email is a placeholder
@@ -54,6 +68,30 @@ const MOCK_NOTIFICATIONS: NotificationPreferences = {
   relationshipRequests: { email: true, sms: false },
 };
 
+const MOCK_PROCESSES: Array<ProcessPrivacy> = [
+  {
+    id: 'our-voice-our-choice',
+    processName: 'Our Voice, Our Choice Budget',
+    organizationName: 'City of Columbus',
+    participantNumber: '483',
+    mode: 'anonymous',
+  },
+  {
+    id: 'ai-provider-input',
+    processName: 'AI Provider Input Process',
+    organizationName: 'One Project',
+    participantNumber: '332',
+    mode: 'anonymous',
+  },
+  {
+    id: 'cowop-fund',
+    processName: '2026 COWOP Fund for Co-ops',
+    organizationName: 'COWOP',
+    participantNumber: '118',
+    mode: 'name',
+  },
+];
+
 export const useSettingsMockState = (
   initialEmail: string | null,
 ): SettingsMockState & SettingsMockActions => {
@@ -62,6 +100,7 @@ export const useSettingsMockState = (
     phone: MOCK_PHONE,
     twoStepEnabled: Boolean(initialEmail),
     notifications: MOCK_NOTIFICATIONS,
+    processes: MOCK_PROCESSES,
   }));
 
   const setChannel = (channel: SignInChannel, value: string) =>
@@ -107,12 +146,21 @@ export const useSettingsMockState = (
       },
     }));
 
+  const setParticipationMode = (processId: string, mode: ParticipationMode) =>
+    setState((prev) => ({
+      ...prev,
+      processes: prev.processes.map((process) =>
+        process.id === processId ? { ...process, mode } : process,
+      ),
+    }));
+
   return {
     ...state,
     setChannel,
     removeChannel,
     setTwoStepEnabled,
     setNotification,
+    setParticipationMode,
   };
 };
 

@@ -20,6 +20,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { AccountSettings } from './AccountSettings';
 import { NotificationSettings } from './NotificationSettings';
+import { PrivacySettings } from './PrivacySettings';
+import { YourDataSettings } from './YourDataSettings';
 import { useSettingsMockState } from './useSettingsMockState';
 
 interface SettingsModalProps {
@@ -27,7 +29,7 @@ interface SettingsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type SettingsSection = 'account' | 'notifications';
+type SettingsSection = 'account' | 'privacy' | 'notifications' | 'data';
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const t = useTranslations('settings');
@@ -46,7 +48,9 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
   const sections: Array<{ value: SettingsSection; label: string }> = [
     { value: 'account', label: t('accountTab') },
+    { value: 'privacy', label: t('privacyTab') },
     { value: 'notifications', label: t('notificationsTab') },
+    { value: 'data', label: t('yourDataTab') },
   ];
 
   return (
@@ -113,6 +117,13 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
               setTwoStepEnabled={settings.setTwoStepEnabled}
             />
           </TabsContent>
+          <TabsContent value="privacy" className={PANEL_CLASS_NAME}>
+            <PrivacySettings
+              processes={settings.processes}
+              userName={user.currentProfile?.name ?? user.name ?? ''}
+              setParticipationMode={settings.setParticipationMode}
+            />
+          </TabsContent>
           <TabsContent value="notifications" className={PANEL_CLASS_NAME}>
             <NotificationSettings
               email={settings.email}
@@ -121,6 +132,9 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
               setNotification={settings.setNotification}
               onGoToAccount={goToAccount}
             />
+          </TabsContent>
+          <TabsContent value="data" className={PANEL_CLASS_NAME}>
+            <YourDataSettings />
           </TabsContent>
         </Tabs>
       </DialogContent>
