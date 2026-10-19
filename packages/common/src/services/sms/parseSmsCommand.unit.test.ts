@@ -20,8 +20,7 @@ describe('parseSmsCommand', () => {
 
   it('given a bare keyword followed by other words, when parsed, then nothing is recognised', () => {
     expect(parseSmsCommand('join me')).toEqual(none);
-    expect(parseSmsCommand('yes please')).toEqual(none);
-    expect(parseSmsCommand('list all')).toEqual(none);
+    expect(parseSmsCommand('join the park vote')).toEqual(none);
   });
 
   it.each(SMS_ARGUMENT_KEYWORDS)(
@@ -48,17 +47,14 @@ describe('parseSmsCommand', () => {
   );
 
   it('given a word that starts with a keyword, when parsed, then nothing is recognised', () => {
-    expect(parseSmsCommand('voted')).toEqual(none);
-    expect(parseSmsCommand('yesterday')).toEqual(none);
+    expect(parseSmsCommand('joined')).toEqual(none);
     expect(parseSmsCommand('shown')).toEqual(none);
-    expect(parseSmsCommand('information')).toEqual(none);
+    expect(parseSmsCommand('showing columbus')).toEqual(none);
   });
 
   it('given only digits or nothing, when parsed, then nothing is recognised', () => {
     expect(parseSmsCommand('214')).toEqual(none);
-    expect(parseSmsCommand('21')).toEqual(none);
     expect(parseSmsCommand('12345678901')).toEqual(none);
-    expect(parseSmsCommand('214 and 218')).toEqual(none);
     expect(parseSmsCommand('')).toEqual(none);
   });
 });

@@ -7,13 +7,12 @@ describe('clipSmsText', () => {
     expect(clipSmsText('short', 10)).toBe('short');
   });
 
-  it('given text over the limit, then it is cut to the limit with a three-dot ellipsis', () => {
-    expect(clipSmsText('a long sentence', 8)).toBe('a lon...');
-    expect(clipSmsText('a long sentence', 8)).toHaveLength(8);
-  });
+  it('given text over the limit, then it is cut to the limit with a three-dot ellipsis that stays in the GSM-7 basic set', () => {
+    const clipped = clipSmsText('a long sentence', 8);
 
-  it('given text over the limit, then the clipped text stays in the GSM-7 basic set so Twilio keeps 160-character segments', () => {
-    expect(clipSmsText('a long sentence', 8)).toMatch(/^[\x20-\x7E]*$/);
+    expect(clipped).toBe('a lon...');
+    expect(clipped).toHaveLength(8);
+    expect(clipped).toMatch(/^[\x20-\x7E]*$/);
   });
 });
 

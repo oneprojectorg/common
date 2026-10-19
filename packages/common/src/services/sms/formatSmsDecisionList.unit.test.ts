@@ -38,7 +38,10 @@ describe('formatSmsDecisionList', () => {
     bodies.forEach((body) => {
       expect(body.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
     });
-    expect(bodies.join('\n')).toContain(`SHOW ${decisions[9]!.slug}`);
+    const joined = bodies.join('\n');
+    decisions.forEach((decision) => {
+      expect(joined).toContain(`SHOW ${decision.slug}`);
+    });
   });
 
   it('given more decisions than fit, when formatted, then the first ten are listed and the rest are counted', () => {

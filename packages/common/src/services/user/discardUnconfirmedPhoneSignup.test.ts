@@ -1,15 +1,16 @@
 import { TestPhoneAuthDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { authUsers } from '@op/db/schema';
-import { randomInt } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { parsePhoneNumber, toGoTruePhoneFormat } from '../notification/schemas';
 import { discardUnconfirmedPhoneSignup } from './discardUnconfirmedPhoneSignup';
 import { getPhoneSignupState } from './getPhoneSignupState';
 
-const testPhone = () =>
-  parsePhoneNumber(`+1500555${String(randomInt(1000, 9999))}`);
+const NUMBERS = {
+  microseconds: '+15005551001',
+  newer: '+15005551002',
+} as const;
 
 describe.concurrent('discardUnconfirmedPhoneSignup', () => {
   it('given a code stamp with microseconds (planted directly: GoTrue stamps finer than a Date can carry), when the cutoff is that stamp read back, then the attempt is discarded', async ({
@@ -17,7 +18,7 @@ describe.concurrent('discardUnconfirmedPhoneSignup', () => {
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
-    const phone = testPhone();
+    const phone = parsePhoneNumber(NUMBERS.microseconds);
     const authUserId = await testData.createUser({
       phone,
       confirmed: false,
@@ -53,7 +54,7 @@ describe.concurrent('discardUnconfirmedPhoneSignup', () => {
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
-    const phone = testPhone();
+    const phone = parsePhoneNumber(NUMBERS.newer);
     const codeSentAt = new Date(Date.now() - 60_000);
     await testData.createUser({ phone, confirmed: false, codeSentAt });
 
