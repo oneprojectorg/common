@@ -926,7 +926,7 @@ export async function createProposal(
     }
   }
 
-  const [proposal] = await db
+  const [draft] = await db
     .insert(proposals)
     .values({
       id: proposalId,
@@ -934,12 +934,25 @@ export async function createProposal(
       submittedByProfileId,
       profileId: proposalProfile.id,
       proposalData: storedProposalData,
-      status,
+      status: ProposalStatus.DRAFT,
     })
     .returning();
 
-  if (!proposal) {
+  if (!draft) {
     throw new Error('Failed to create proposal');
+  }
+
+  const [proposal] =
+    status === ProposalStatus.DRAFT
+      ? [draft]
+      : await db
+          .update(proposals)
+          .set({ status })
+          .where(eq(proposals.id, draft.id))
+          .returning();
+
+  if (!proposal) {
+    throw new Error(`Failed to move proposal ${draft.id} to ${status}`);
   }
 
   return {
