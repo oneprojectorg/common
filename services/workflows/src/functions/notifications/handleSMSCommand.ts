@@ -39,14 +39,7 @@ export const handleSMSCommand = inngest.createFunction(
       limit: SMS_THROTTLE_LIMIT,
       period: SMS_THROTTLE_PERIOD,
     },
-    debounce: {
-      key: 'event.data.from',
-      period: '5s',
-    },
-    singleton: {
-      key: 'event.data.from',
-      mode: 'skip',
-    },
+    concurrency: { key: 'event.data.from', limit: 1 },
   },
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
