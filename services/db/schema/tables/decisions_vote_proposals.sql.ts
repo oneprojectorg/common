@@ -1,6 +1,13 @@
-import type { InferModel } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
-import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { serviceRolePolicies, timestamps } from '../../helpers';
 import { decisionsVoteSubmissions } from './decisions_vote_submissions.sql';
@@ -23,6 +30,9 @@ export const decisionsVoteProposals = pgTable(
         onDelete: 'cascade',
       }),
 
+    // 1-based ballot position; null when the phase is unranked.
+    rank: integer('rank'),
+
     ...timestamps,
   },
   (table) => [
@@ -30,6 +40,9 @@ export const decisionsVoteProposals = pgTable(
     primaryKey({ columns: [table.voteSubmissionId, table.proposalId] }),
     index().on(table.voteSubmissionId).concurrently(),
     index().on(table.proposalId).concurrently(),
+    uniqueIndex()
+      .on(table.voteSubmissionId, table.rank)
+      .where(sql`rank IS NOT NULL`),
   ],
 );
 
@@ -47,4 +60,4 @@ export const decisionsVoteProposalsRelations = relations(
   }),
 );
 
-export type DecisionVoteProposal = InferModel<typeof decisionsVoteProposals>;
+export type DecisionVoteProposal = typeof decisionsVoteProposals.$inferSelect;
