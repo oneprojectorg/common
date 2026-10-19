@@ -36,6 +36,9 @@ import { useProposalRejectionActions } from './useProposalRejectionActions';
  *
  * Mount it only when `ProposalAffordances.moderation` holds.
  */
+// Pre-existing: this is the body of the former `ProposalAdminMenuItems`,
+// renamed when its gating wrapper moved into `getProposalAffordances`.
+// fallow-ignore-next-line complexity
 export function ProposalAdminMenu({
   proposal,
   backHref,
