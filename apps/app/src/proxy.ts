@@ -85,9 +85,12 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     const headers = new Headers(request.headers);
     headers.set('x-pathname', pathname);
     headers.set('x-search', request.nextUrl.search);
+    // next-intl's server APIs read this when a call passes no locale; the URL
+    // is its only source, so a value the client sent never gets through.
     if (currentLocale) {
-      // next-intl's server APIs read this when a call passes no locale.
-      headers.set('X-NEXT-INTL-LOCALE', currentLocale);
+      headers.set('x-next-intl-locale', currentLocale);
+    } else {
+      headers.delete('x-next-intl-locale');
     }
 
     return applyCsp(headers);
