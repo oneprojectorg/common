@@ -1,12 +1,5 @@
-/**
- * The server learns the request locale from the `X-NEXT-INTL-LOCALE` header
- * next-intl's own middleware sets, and the proxy stands in for that
- * middleware on locale-prefixed paths. Without the header, the root layout's
- * first `getLocale()` resolves the default locale and next-intl caches that
- * for the request, so every later `getTranslations()` that passes no locale
- * renders English under `/ar`. Matcher tests live in `proxy.test.ts`, CSP in
- * `proxyCsp.test.ts`.
- */
+// The proxy stands in for next-intl's middleware on prefixed paths, so it owns
+// the locale header its server APIs read. Matcher: proxy.test.ts; CSP: proxyCsp.test.ts.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getClaims = vi.fn();

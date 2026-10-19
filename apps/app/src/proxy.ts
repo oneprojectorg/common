@@ -81,18 +81,12 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   //
   // x-pathname / x-search expose the path and query to Server Components, which
   // Next doesn't surface to layouts otherwise.
-  //
-  // X-NEXT-INTL-LOCALE is what next-intl's own middleware sets and what its
-  // server APIs read when no locale is passed. The root layout sits above
-  // [locale] and calls getLocale() before that segment's setRequestLocale
-  // runs; next-intl caches that first resolution for the request, so without
-  // this header every getTranslations() with no locale argument renders the
-  // default locale under /ar.
   const buildForwardedHeaders = () => {
     const headers = new Headers(request.headers);
     headers.set('x-pathname', pathname);
     headers.set('x-search', request.nextUrl.search);
     if (currentLocale) {
+      // next-intl's server APIs read this when a call passes no locale.
       headers.set('X-NEXT-INTL-LOCALE', currentLocale);
     }
 
